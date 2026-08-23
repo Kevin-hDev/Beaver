@@ -12,6 +12,19 @@
 - **Reliable isolated sessions** — every execution receives its own conversation, saves the scheduled prompt before resolving its workspace, supports the project-free default, and refuses a project that has been removed instead of silently running elsewhere.
 - **Complete automation history** — wakeup conversations preserve intermediate assistant turns, tool calls, and tool results without duplicating the prompt, including when the agent finishes without a textual reply, while token estimates cover the complete generated trace.
 
+### Provider models
+
+- **Latest provider models** — GLM-5.3 for Z.AI, Grok 4.6 for xAI, and Gemini 3.7 Flash for Google are now available with their current context, tool, vision, and reasoning capabilities. Grok 4.5 remains available alongside Grok 4.6.
+- **Reliable xAI OAuth routing** — Grok OAuth conversations now use xAI's authenticated CLI proxy and account-specific model catalog, with bounded catalog parsing, safe token refresh, explicit quota handling, and no OAuth token sent to the public API host.
+- **Current provider onboarding** — provider descriptions in all seven interface languages now highlight GLM-5.3, Grok 4.6, and Gemini 3.7 Flash without displaying model prices in the selector.
+
+### OpenAI Fast mode
+
+- **Per-conversation Fast control** — supported OpenAI API and ChatGPT OAuth models now show a `Fast` toggle at the top of the reasoning menu. It starts disabled, is stored independently for each conversation, and is restored after reopening Beaver.
+- **Native provider routing** — Fast requests use OpenAI's service tier for API keys and the priority tier plus routing hint for ChatGPT OAuth, while disabled or unsupported sessions keep the standard request behavior.
+- **Reasoning-compatible API transport** — OpenAI API conversations now use the Responses endpoint, allowing reasoning levels and Fast mode to work together instead of failing with a Chat Completions parameter error.
+- **Observable delivery tier** — stream diagnostics record both the requested Fast setting and the tier actually served, making provider downgrades visible without exposing credentials or response bodies.
+
 ---
 
 ## v1.1.4
