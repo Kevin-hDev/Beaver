@@ -84,4 +84,12 @@ fn stable_provider_codes_survive_session_persistence() {
         "provider_quota_exhausted"
     );
     assert_eq!(safe_code("rate_limit"), "rate_limit");
+    assert_eq!(
+        classify_error("service_tier_unavailable", false),
+        "service_tier_unavailable"
+    );
+    assert_eq!(
+        safe_code("service_tier_unavailable"),
+        "service_tier_unavailable"
+    );
 }

@@ -145,7 +145,7 @@ async fn receive_response(
                     .map_err(|_| WebSocketFailure::Unavailable { partial })?;
                 let applied = measurement.apply(&mut accumulator, on_event, &parsed);
                 partial = accumulator.has_partial_output();
-                let outcome = applied.map_err(|_| WebSocketFailure::Unavailable { partial })?;
+                let outcome = applied.map_err(|error| accumulator_failure(&error, partial))?;
                 deadline = tokio::time::Instant::now() + idle;
                 if let Some(outcome) = outcome {
                     return Ok(outcome);
@@ -194,13 +194,29 @@ fn cooldown_active(now_ms: u64, disabled_until_ms: u64) -> bool {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum WebSocketFailure {
     Cancelled,
-    Unavailable { partial: bool },
+    ProviderRejected {
+        code: crate::services::llm::provider_error::ProviderErrorCode,
+    },
+    Unavailable {
+        partial: bool,
+    },
 }
 
 impl WebSocketFailure {
     pub(super) fn has_partial_output(self) -> bool {
         matches!(self, Self::Unavailable { partial: true })
     }
+}
+
+fn accumulator_failure(error: &str, partial: bool) -> WebSocketFailure {
+    use crate::services::llm::provider_error::ProviderErrorCode;
+
+    let code = match error {
+        "service_tier_unavailable" => ProviderErrorCode::ServiceTierUnavailable,
+        "provider_request_rejected" => ProviderErrorCode::ProviderRequestRejected,
+        _ => return WebSocketFailure::Unavailable { partial },
+    };
+    WebSocketFailure::ProviderRejected { code }
 }
 
 #[cfg(test)]

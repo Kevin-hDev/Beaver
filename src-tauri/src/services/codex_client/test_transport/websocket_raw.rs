@@ -139,6 +139,11 @@ pub(super) async fn write_reply(
             1_u8,
             b"{\"type\":\"response.completed\",\"response\":{\"usage\":{}}}".as_slice(),
         ),
+        WebSocketReply::ServiceTierRejected => (
+            1_u8,
+            b"{\"type\":\"response.failed\",\"response\":{\"error\":{\"param\":\"service_tier\"}}}"
+                .as_slice(),
+        ),
         WebSocketReply::Unavailable => (8_u8, &[][..]),
     };
     if payload.len() > 125 {

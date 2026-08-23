@@ -107,6 +107,7 @@ pub(super) fn classify_error(message: &str, is_connection: bool) -> String {
             | "provider_quota_exhausted"
             | "provider_payload_too_large"
             | "provider_configuration_invalid"
+            | "service_tier_unavailable"
     ) {
         return lower;
     }

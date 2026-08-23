@@ -7,6 +7,7 @@ pub(crate) enum HttpReply {
 #[derive(Debug, Clone, Copy)]
 pub(crate) enum WebSocketReply {
     Success,
+    ServiceTierRejected,
     Unavailable,
 }
 

@@ -52,4 +52,22 @@ fn fallback_knows_whether_partial_output_must_be_cleared() {
     assert!(WebSocketFailure::Unavailable { partial: true }.has_partial_output());
     assert!(!WebSocketFailure::Unavailable { partial: false }.has_partial_output());
     assert!(!WebSocketFailure::Cancelled.has_partial_output());
+    assert!(!WebSocketFailure::ProviderRejected {
+        code: crate::services::llm::provider_error::ProviderErrorCode::ServiceTierUnavailable,
+    }
+    .has_partial_output());
+}
+
+#[test]
+fn accumulator_keeps_only_closed_permanent_provider_codes() {
+    assert_eq!(
+        accumulator_failure("service_tier_unavailable", false),
+        WebSocketFailure::ProviderRejected {
+            code: crate::services::llm::provider_error::ProviderErrorCode::ServiceTierUnavailable,
+        }
+    );
+    assert_eq!(
+        accumulator_failure("private upstream detail", false),
+        WebSocketFailure::Unavailable { partial: false }
+    );
 }

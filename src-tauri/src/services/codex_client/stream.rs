@@ -54,6 +54,9 @@ pub async fn stream_chat_with_budget(
                 return Ok(outcome);
             }
             Err(websocket::WebSocketFailure::Cancelled) => return Err("Annulé".to_string()),
+            Err(websocket::WebSocketFailure::ProviderRejected { code }) => {
+                return Err(code.as_str().to_string());
+            }
             Err(error) => {
                 websocket::mark_unavailable();
                 crate::services::agent_local::stream_diagnostics::record_retry(

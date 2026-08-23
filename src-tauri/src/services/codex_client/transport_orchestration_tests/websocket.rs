@@ -142,3 +142,53 @@ async fn fallback_to_http_keeps_the_original_fast_capture() {
         "model=gpt-5.6-sol;tier=priority",
     );
 }
+
+#[tokio::test]
+async fn structured_service_tier_rejection_never_reconnects_or_falls_back() {
+    let scenario = CodexTransportScenario::start(
+        Some(vec![HttpReply::Success]),
+        Some(WebSocketReply::ServiceTierRejected),
+    )
+    .await;
+    let emitter = AgentEventEmitter::test("session-ws-fast-refusal".to_string());
+    let tools = [serde_json::json!({
+        "type": "function",
+        "function": {
+            "name": "safe_tool",
+            "description": "test",
+            "parameters": {"type": "object", "properties": {}}
+        }
+    })];
+
+    let error = scenario
+        .scope(stream::stream_chat_with_budget(
+            &emitter,
+            "session-ws-fast-refusal",
+            "request-ws-fast-refusal",
+            "gpt-5.6-sol",
+            &messages(),
+            &tools,
+            None,
+            FastModeRequest::Fast,
+            CancellationToken::new(),
+            false,
+            None,
+            None,
+        ))
+        .await
+        .unwrap_err();
+    scenario.wait_for_websocket_captures(1).await;
+    let websocket_captures = scenario.websocket_captures();
+
+    assert_eq!(error, "service_tier_unavailable");
+    assert_eq!(websocket_captures.len(), 1);
+    assert!(scenario.http_captures().is_empty());
+    assert!(websocket::should_attempt());
+    assert_websocket_capture(
+        &websocket_captures[0],
+        "gpt-5.6-sol",
+        Some("priority"),
+        "model=gpt-5.6-sol;tier=priority",
+    );
+    assert_eq!(websocket_captures[0].request.tool_count, 1);
+}
