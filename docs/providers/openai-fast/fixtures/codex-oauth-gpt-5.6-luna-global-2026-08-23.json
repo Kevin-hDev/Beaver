@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-08-23",
+  "provider": "codex-oauth",
+  "canonical_provider": "openai",
+  "model": "gpt-5.6-luna",
+  "region": "global",
+  "transport": "responses",
+  "source_urls": [
+    "https://developers.openai.com/api/reference/cli/resources/responses/methods/retrieve",
+    "https://github.com/openai/codex/blob/main/codex-rs/protocol/src/config_types.rs"
+  ],
+  "fast_validation": {
+    "status": "failed",
+    "reason": "Every completed request captured fast_requested=true but service_tier_served=default. The backend did not confirm Fast processing."
+  },
+  "requests": [
+    {
+      "purpose": "standard_text",
+      "request_id": "957cab9f-b201-4664-9a2a-4d5176edbf5a",
+      "attempt": 1,
+      "status": "completed",
+      "fast_requested": false,
+      "service_tier_served": "default",
+      "input_tokens": 10550,
+      "output_tokens": 6,
+      "total_ms": 2840
+    },
+    {
+      "purpose": "fast_text",
+      "request_id": "c12e77be-a542-4537-9639-fe53d9b0236d",
+      "attempt": 1,
+      "status": "completed",
+      "fast_requested": true,
+      "service_tier_served": "default",
+      "input_tokens": 10574,
+      "output_tokens": 6,
+      "total_ms": 2580
+    },
+    {
+      "purpose": "fast_tool_and_continuation",
+      "request_id": "c1427452-33d1-4df1-ba11-05e681dd9103",
+      "attempt": 1,
+      "status": "completed",
+      "fast_requested": true,
+      "service_tier_served": "default",
+      "continuation_cached_input_tokens": 9984,
+      "turns": 2
+    },
+    {
+      "purpose": "fast_image",
+      "request_id": "de1619e4-f951-435d-ad3d-24f36cafa43e",
+      "attempt": 1,
+      "status": "completed",
+      "fast_requested": true,
+      "service_tier_served": "default",
+      "output_tokens": 21,
+      "total_ms": 6178
+    },
+    {
+      "purpose": "fast_streaming",
+      "request_id": "faad0c81-49e4-4246-bf89-a404497af960",
+      "attempt": 1,
+      "status": "completed",
+      "fast_requested": true,
+      "service_tier_served": "default",
+      "output_tokens": 177,
+      "total_ms": 5487
+    }
+  ],
+  "scenarios": {
+    "P01_catalog": { "status": "passed", "evidence": "The account catalog advertised GPT-5.6 Luna and the priority Fast tier." },
+    "P02_simple_chat": { "status": "passed", "evidence": "Standard and Fast text requests completed on the first attempt." },
+    "P03_streaming": { "status": "passed", "evidence": "A 177-token streamed answer completed." },
+    "P04_simple_tool": { "status": "passed", "evidence": "One list_dir call completed and the second provider turn returned the final answer." },
+    "P05_parallel_tools": { "status": "blocked", "reason": "The Codex transport contract currently disables parallel tool calls." },
+    "P06_tool_failure": { "status": "blocked", "reason": "No deliberate tool failure was sent to the billed provider." },
+    "P07_thinking_two_turns": { "status": "blocked", "reason": "The two-turn tool request completed, but no signed reasoning continuity was observable." },
+    "P08_cache": { "status": "passed", "evidence": "The continuation reported 9984 cached input tokens." },
+    "P09_http_errors": { "status": "blocked", "reason": "Live 401 and 429 cases were not induced on the account." },
+    "P10_stream_error_cancel": { "status": "blocked", "reason": "No interruption was induced during this bounded campaign." },
+    "P11_metrics": { "status": "passed", "evidence": "Each request persisted requested tier, served tier, usage, timing and one attempt." },
+    "P12_secrets_logs": { "status": "passed", "evidence": "The bounded scan of campaign sessions, metrics and logs found zero credential markers." },
+    "P13_cost_data": { "status": "blocked", "reason": "OAuth metrics returned no exact API cost and subscription credit use was not independently observable." }
+  },
+  "visual": {
+    "fast_row_first": "passed",
+    "toggle_default_off": "passed",
+    "toggle_menu_stays_open": "passed",
+    "no_price_or_speed_copy": "passed"
+  },
+  "sensitive_data_in_fixture": false
+}
