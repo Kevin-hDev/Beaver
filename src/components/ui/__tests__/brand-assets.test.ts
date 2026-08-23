@@ -1,5 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { resolve } from "node:path";
+import { createCanvas, loadImage } from "@napi-rs/canvas";
 import { describe, expect, it } from "vitest";
 
 const root = process.cwd();
@@ -20,6 +22,12 @@ function readText(relativePath: string): string {
   return readFileSync(path(relativePath), "utf8");
 }
 
+function sha256(relativePath: string): string {
+  // Les chemins sont tous des constantes internes déclarées dans ce test.
+  // eslint-disable-next-line security/detect-non-literal-fs-filename
+  return createHash("sha256").update(readFileSync(path(relativePath))).digest("hex");
+}
+
 function pngInfo(relativePath: string): { width: number; height: number; hasAlpha: boolean } {
   // Les chemins sont tous des constantes internes déclarées dans ce test.
   // eslint-disable-next-line security/detect-non-literal-fs-filename
@@ -37,8 +45,20 @@ function pngSize(relativePath: string): { width: number; height: number } {
   return { width, height };
 }
 
+async function pngPixel(
+  relativePath: string,
+  x: number,
+  y: number,
+): Promise<[number, number, number, number]> {
+  const image = await loadImage(path(relativePath));
+  const canvas = createCanvas(image.width, image.height);
+  const context = canvas.getContext("2d");
+  context.drawImage(image, 0, 0);
+  return [...context.getImageData(x, y, 1, 1).data] as [number, number, number, number];
+}
+
 describe("assets de marque", () => {
-  it("conserve uniquement les deux sources visuelles actives", () => {
+  it("conserve le logo approuvé avec son fond sombre et ses coins arrondis", async () => {
     expect(fileExists("public/castor-surface.svg")).toBe(true);
     expect(fileExists("public/castor-encre.svg")).toBe(true);
     expect(pngInfo("src/assets/logo.png")).toEqual({
@@ -46,6 +66,12 @@ describe("assets de marque", () => {
       height: 1024,
       hasAlpha: true,
     });
+    expect((await pngPixel("src/assets/logo.png", 0, 0))[3]).toBe(0);
+    expect((await pngPixel("src/assets/logo.png", 512, 0))[3]).toBe(255);
+    // Le logo est le produit visuel lui-même : son empreinte verrouille l'image approuvée.
+    expect(sha256("src/assets/logo.png")).toBe(
+      "7282d130d743f011bfabd76d0a5d1be71c9e5e9e36ff2229ff5e695e46b0b763",
+    );
 
     for (const obsolete of [
       "src/assets/logo-dark.png",
@@ -100,12 +126,13 @@ describe("assets de marque", () => {
     );
   });
 
-  it("fournit toutes les icônes desktop requises", () => {
+  it("fournit toutes les icônes desktop requises", async () => {
     expect(pngSize("src-tauri/icons/32x32.png")).toEqual({ width: 32, height: 32 });
     expect(pngSize("src-tauri/icons/128x128.png")).toEqual({ width: 128, height: 128 });
     expect(pngSize("src-tauri/icons/128x128@2x.png")).toEqual({ width: 256, height: 256 });
     expect(pngSize("src-tauri/icons/tray.png")).toEqual({ width: 64, height: 64 });
     expect(pngInfo("src-tauri/icons/tray.png").hasAlpha).toBe(true);
+    expect((await pngPixel("src-tauri/icons/tray.png", 0, 0))[3]).toBe(0);
     expect(fileExists("src-tauri/icons/icon.icns")).toBe(true);
     expect(fileExists("src-tauri/icons/icon.ico")).toBe(true);
   });
