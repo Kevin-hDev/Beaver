@@ -1,0 +1,33 @@
+Phase 2 OpenAI Fast — correction du transport API
+
+Cause confirmée:
+- Chat Completions acceptait Fast sans raisonnement mais rejetait reasoning_effort avec HTTP 400.
+- Responses accepte le même compte, gpt-5.6-luna et reasoning.effort=medium.
+
+Correction:
+- OpenAI par clé API utilise désormais /v1/responses pour les générations interactives et les compressions.
+- Le payload envoie reasoning.effort imbriqué, service_tier fast/default, outils et continuations au format Responses.
+- La clé API reste confinée à la route OpenAI; aucun jeton Codex OAuth n'est partagé.
+- Conversion d'outils, lecteur SSE, replay et métriques Responses restent des autorités communes.
+- Le chemin mort reasoning_effort OpenAI Chat Completions a été retiré.
+
+Preuves automatiques:
+- cargo test --lib: 3910 verts, 0 rouge, 5 ignorés.
+- cargo clippy --all-targets -- -D warnings, cargo check --all-targets et cargo fmt: verts.
+- Vitest: 472 fichiers, 2499 tests verts; scripts build/CI/CEF/E2E/extensions verts.
+- contracts:check, tsc et lint: verts.
+- Mutations vérifiées rouges: retrait du routage Responses interactif, retour au champ plat, retrait du routage Responses de compression.
+- graphify update . exécuté.
+
+Preuves provider réelles, bornées et sans secret:
+- Responses Standard + medium: completed, tier servi default.
+- Responses Fast + medium via le sender Beaver corrigé: completed, tier servi priority.
+- Modèle: gpt-5.6-luna; aucune réponse complète ni clé conservée.
+- Campagne P01-P13 encore partielle: outils réels, second tour, image, annulation et coût non déclarés validés.
+
+Fichiers reviewer:
+- docs/providers/openai-fast/SPEC.md
+- docs/superpowers/plans/2026-08-22-phase-2-openai-fast.md
+- docs/providers/openai-fast/fixtures/openai-api-gpt-5.6-luna-global-2026-08-23.json
+- src-tauri/src/services/llm/openai_responses.rs
+- src-tauri/src/services/llm/openai_responses_tests.rs
