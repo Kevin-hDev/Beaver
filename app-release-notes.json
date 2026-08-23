@@ -1,4 +1,48 @@
 {
+  "1.1.5": {
+    "de": [
+      "Geplante Ausführungen nutzen jetzt den vollständigen Agent-Local-Kontext und bewahren ihren gesamten Verlauf zuverlässig auf.",
+      "GLM-5.3, Grok 4.6 und Gemini 3.7 Flash sind jetzt verfügbar, mit sichererem OAuth-Routing für xAI.",
+      "Unterstützte OpenAI-Modelle bieten einen dauerhaften Schnellmodus pro Unterhaltung, der auch mit Denkstufen funktioniert.",
+      "Beaver verwendet jetzt das neue abgerundete Symbol in der App, im Dock, in der Taskleiste und im Systembereich."
+    ],
+    "en": [
+      "Scheduled runs now use the complete Agent Local context and preserve their full execution history reliably.",
+      "GLM-5.3, Grok 4.6, and Gemini 3.7 Flash are now available, with safer OAuth routing for xAI.",
+      "Supported OpenAI models now offer a persistent per-conversation Fast mode that works with reasoning levels.",
+      "Beaver now uses its new rounded icon across the app, Dock, taskbar, system tray, and packaged applications."
+    ],
+    "es": [
+      "Las ejecuciones programadas usan ahora todo el contexto de Agent Local y conservan de forma fiable su historial completo.",
+      "GLM-5.3, Grok 4.6 y Gemini 3.7 Flash ya están disponibles, con un enrutamiento OAuth más seguro para xAI.",
+      "Los modelos OpenAI compatibles ofrecen ahora un modo Rápido persistente por conversación que funciona con los niveles de razonamiento.",
+      "Beaver usa ahora su nuevo icono redondeado en la aplicación, el Dock, la barra de tareas y la bandeja del sistema."
+    ],
+    "fr": [
+      "Les exécutions programmées utilisent maintenant tout le contexte Agent Local et conservent fiablement leur historique complet.",
+      "GLM-5.3, Grok 4.6 et Gemini 3.7 Flash sont maintenant disponibles, avec un routage OAuth xAI plus sûr.",
+      "Les modèles OpenAI compatibles proposent maintenant un mode Rapide persistant par conversation qui fonctionne avec les niveaux de raisonnement.",
+      "Beaver utilise maintenant sa nouvelle icône arrondie dans l’application, le Dock, la barre des tâches et la zone de notification."
+    ],
+    "it": [
+      "Le esecuzioni pianificate usano ora tutto il contesto Agent Local e conservano in modo affidabile la cronologia completa.",
+      "GLM-5.3, Grok 4.6 e Gemini 3.7 Flash sono ora disponibili, con un instradamento OAuth più sicuro per xAI.",
+      "I modelli OpenAI compatibili offrono ora una modalità Rapida persistente per conversazione che funziona con i livelli di ragionamento.",
+      "Beaver usa ora la nuova icona arrotondata nell’app, nel Dock, nella barra delle applicazioni e nell’area di notifica."
+    ],
+    "ja": [
+      "スケジュール実行で Agent Local の完全なコンテキストが使われ、実行履歴全体が確実に保存されるようになりました。",
+      "GLM-5.3、Grok 4.6、Gemini 3.7 Flash が利用可能になり、xAI の OAuth ルーティングもより安全になりました。",
+      "対応する OpenAI モデルで、推論レベルと併用できる会話ごとの永続的な高速モードが利用可能になりました。",
+      "Beaver の新しい角丸アイコンが、アプリ、Dock、タスクバー、システムトレイで統一して使われるようになりました。"
+    ],
+    "zh": [
+      "计划任务现在会使用完整的 Agent Local 上下文，并可靠保存全部执行历史。",
+      "GLM-5.3、Grok 4.6 和 Gemini 3.7 Flash 现已可用，同时 xAI 的 OAuth 路由更加安全。",
+      "受支持的 OpenAI 模型现提供按会话持久保存的快速模式，并可与推理级别同时使用。",
+      "Beaver 现在在应用、Dock、任务栏和系统托盘中统一使用新的圆角图标。"
+    ]
+  },
   "1.1.4": {
     "de": [
       "Codex OAuth und Unteragenten erhalten jetzt zuverlässig ihren vollständigen Werkzeugkontext, während Unterhaltungen der Unteragenten sicher schreibgeschützt bleiben.",

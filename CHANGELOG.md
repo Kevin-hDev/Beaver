@@ -25,6 +25,10 @@
 - **Reasoning-compatible API transport** — OpenAI API conversations now use the Responses endpoint, allowing reasoning levels and Fast mode to work together instead of failing with a Chat Completions parameter error.
 - **Observable delivery tier** — stream diagnostics record both the requested Fast setting and the tier actually served, making provider downgrades visible without exposing credentials or response bodies.
 
+### Application identity
+
+- **Refreshed Beaver icon** — the About page, Dock, taskbar, system tray, macOS menu bar, and packaged applications now share the new rounded Beaver artwork across desktop and mobile assets.
+
 ---
 
 ## v1.1.4
