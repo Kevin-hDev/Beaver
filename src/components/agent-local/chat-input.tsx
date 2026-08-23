@@ -23,12 +23,12 @@ const K_ESC = "Escape";
 
 export function ChatInput({
   draftKey,
-  modelName, providerName, isStreaming, reasoningMode, files,
+  modelName, providerName, isStreaming, reasoningMode, fastModeEnabled, fastModePending, files,
   contextUsed, contextMax, contextBreakdown, retryIndicator,
   interactiveRequest, onInteractiveResolved,
   permissionMode, availablePermissionModes, missingDirectory, missingDirectoryResolving,
   planModeEnabled = false, onPermissionModeChange, onResolveMissingDirectory, onPlanModeChange,
-  onSend, onStop, onFileImport, onModelChange, onReasoningModeChange,
+  onSend, onStop, onFileImport, onModelChange, onReasoningModeChange, onFastModeChange,
   onRemoveFile, onPreviewFile, onClearFiles,
 }: ChatInputProps) {
   const { t } = useTranslation();
@@ -174,6 +174,8 @@ export function ChatInput({
             modelName={modelName}
             providerName={providerName}
             reasoningMode={reasoningMode}
+            fastModeEnabled={fastModeEnabled}
+            fastModePending={fastModePending}
             contextUsed={contextUsed}
             contextMax={contextMax}
             contextBreakdown={contextBreakdown}
@@ -190,6 +192,7 @@ export function ChatInput({
             onFileImport={onFileImport}
             onModelChange={onModelChange}
             onReasoningModeChange={onReasoningModeChange}
+            onFastModeChange={onFastModeChange}
             onSend={handleSend}
             onStop={stopNow}
           />

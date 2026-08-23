@@ -58,6 +58,8 @@ const baseProps = {
   modelName: "test-model",
   providerName: "test-provider",
   isStreaming: false,
+  fastModeEnabled: false,
+  fastModePending: false,
   contextUsed: 0,
   contextMax: 8000,
   permissionMode: "chat" as PermissionMode,
@@ -65,6 +67,7 @@ const baseProps = {
   onFileImport: vi.fn(),
   onModelChange: vi.fn(),
   onReasoningModeChange: vi.fn(),
+  onFastModeChange: vi.fn(),
   onSend: vi.fn(),
   onStop: vi.fn(),
 };

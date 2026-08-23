@@ -23,7 +23,10 @@ export interface ChatViewProps {
   initialSkills?: { name: string; content: string }[];
   initialFiles?: DroppedFile[];
   reasoningMode?: string | null;
+  fastModeEnabled: boolean;
+  fastModePending: boolean;
   onReasoningModeChange: (mode: ReasoningMode) => void;
+  onFastModeChange: (enabled: boolean) => void;
   onInitialMessageSent?: () => void;
   terminalState: ReturnType<typeof useTerminal>;
   onFileOperationsChange?: (operations: FileOperationGroups) => void;

@@ -12,7 +12,7 @@ interface ProjectsHookRef {
 }
 
 interface CreateFn {
-  (name: string, model: string, provider?: string, projectId?: string, reasoningMode?: string | null, supportsThinking?: boolean): Promise<AgentSessionMeta>;
+  (name: string, model: string, provider?: string, projectId?: string, reasoningMode?: string | null, supportsThinking?: boolean, fastModeEnabled?: boolean): Promise<AgentSessionMeta>;
 }
 
 interface RenameFn {
@@ -28,6 +28,8 @@ export interface SessionActionsDeps {
   setWelcomeModel: (v: { model: string; provider: string } | null) => void;
   welcomeReasoningMode?: string | null;
   welcomeSupportsThinking?: boolean;
+  welcomeFastModeEnabled: boolean;
+  setWelcomeFastModeEnabled: (enabled: boolean) => void;
   projectsHook: ProjectsHookRef;
   onSessionChange?: (id: string | null) => void;
 }
@@ -44,6 +46,8 @@ export function useSessionActions(deps: SessionActionsDeps) {
     setWelcomeModel,
     welcomeReasoningMode,
     welcomeSupportsThinking,
+    welcomeFastModeEnabled,
+    setWelcomeFastModeEnabled,
     projectsHook,
     onSessionChange,
   } = deps;
@@ -78,15 +82,17 @@ export function useSessionActions(deps: SessionActionsDeps) {
         projectId,
         welcomeReasoningMode,
         welcomeSupportsThinking,
+        welcomeFastModeEnabled,
       );
       setPendingMessage(text);
       setPendingWorkingDir(project?.path);
       setPendingSkills(skills);
       setPendingFiles(files && files.length > 0 ? files : undefined);
       setWelcomeModel(null);
+      setWelcomeFastModeEnabled(false);
       onSessionChange?.(session.id);
     },
-    [create, defaultModel, defaultProvider, welcomeModel, setWelcomeModel, welcomeReasoningMode, welcomeSupportsThinking, t, projectsHook.projects, onSessionChange],
+    [create, defaultModel, defaultProvider, welcomeModel, setWelcomeModel, welcomeReasoningMode, welcomeSupportsThinking, welcomeFastModeEnabled, setWelcomeFastModeEnabled, t, projectsHook.projects, onSessionChange],
   );
 
   const handleAutoRename = useCallback(

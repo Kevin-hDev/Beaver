@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { Brain, CaretDown, Check } from "@/components/ui/icons";
+import { FastModeIcon } from "@/components/ui/fast-mode-icon";
+import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useKeyboard } from "@/hooks/use-keyboard";
 import {
@@ -21,6 +23,9 @@ interface ReasoningSelectorProps {
   model: AvailableModel | null;
   reasoningMode?: string | null;
   onChange: (mode: ReasoningMode) => void;
+  fastModeEnabled: boolean;
+  fastModePending: boolean;
+  onFastModeChange: (enabled: boolean) => void;
   align?: "left" | "right";
 }
 
@@ -28,6 +33,9 @@ export function ReasoningSelector({
   model,
   reasoningMode,
   onChange,
+  fastModeEnabled,
+  fastModePending,
+  onFastModeChange,
   align = "left",
 }: ReasoningSelectorProps) {
   const { t } = useTranslation();
@@ -65,6 +73,20 @@ export function ReasoningSelector({
       className="rs-dropdown"
       aria-label={t("agentLocal.reasoningTitle")}
     >
+      {model?.supports_fast_mode === true && (
+        <div className="rs-fast-row">
+          <span className="rs-fast-label">
+            <FastModeIcon className="rs-fast-icon" />
+            <span>{t("agentLocal.fastMode")}</span>
+          </span>
+          <ToggleSwitch
+            checked={fastModeEnabled}
+            disabled={fastModePending}
+            onCheckedChange={onFastModeChange}
+            ariaLabel={t("agentLocal.fastMode")}
+          />
+        </div>
+      )}
       {options.map((option) => (
         <button
           key={option.mode}

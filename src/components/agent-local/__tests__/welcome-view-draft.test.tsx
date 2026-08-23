@@ -78,6 +78,8 @@ const props = {
   onSend: vi.fn(),
   onModelChange: vi.fn(),
   onReasoningModeChange: vi.fn(),
+  fastModeEnabled: false,
+  onFastModeChange: vi.fn(),
 };
 
 afterEach(() => {

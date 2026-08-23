@@ -27,6 +27,8 @@ function dependencies(create = vi.fn()): SessionActionsDeps {
     defaultProvider: "provider",
     welcomeModel: null,
     setWelcomeModel: vi.fn(),
+    welcomeFastModeEnabled: true,
+    setWelcomeFastModeEnabled: vi.fn(),
     projectsHook: { projects: [project], add: vi.fn().mockResolvedValue(project) },
     onSessionChange: vi.fn(),
   };
@@ -63,5 +65,34 @@ describe("useSessionActions", () => {
 
     expect(create).toHaveBeenCalledWith("agentLocal.newSession", "m", "p", project.id);
     expect(deps.onSessionChange).toHaveBeenCalledWith("session-1");
+  });
+
+  it("transmet Rapide à la création d'accueil puis remet le brouillon à false", async () => {
+    const create = vi.fn().mockResolvedValue({ id: "session-fast" });
+    const deps = dependencies(create);
+    const { result } = renderHook(() => useSessionActions(deps), { wrapper });
+
+    await act(() => result.current.handleWelcomeSend("Bonjour"));
+
+    expect(create).toHaveBeenCalledWith(
+      "Bonjour",
+      "model",
+      "provider",
+      undefined,
+      undefined,
+      undefined,
+      true,
+    );
+    expect(deps.setWelcomeFastModeEnabled).toHaveBeenCalledWith(false);
+  });
+
+  it("conserve le brouillon Rapide si la création échoue", async () => {
+    const create = vi.fn().mockRejectedValue(new Error("échec interne"));
+    const deps = dependencies(create);
+    const { result } = renderHook(() => useSessionActions(deps), { wrapper });
+
+    await expect(act(() => result.current.handleWelcomeSend("Bonjour"))).rejects.toThrow();
+
+    expect(deps.setWelcomeFastModeEnabled).not.toHaveBeenCalled();
   });
 });

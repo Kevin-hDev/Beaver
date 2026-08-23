@@ -80,6 +80,29 @@
   -webkit-backdrop-filter: var(--popover-backdrop-filter, none);
 }
 
+.rs-fast-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  min-height: 32px;
+  padding: 0 9px;
+  color: var(--ink);
+  font-size: var(--text-xs);
+}
+
+.rs-fast-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  min-width: 0;
+}
+
+.rs-fast-icon {
+  flex-shrink: 0;
+  color: var(--ink-muted);
+}
+
 .rs-option {
   display: flex;
   align-items: center;

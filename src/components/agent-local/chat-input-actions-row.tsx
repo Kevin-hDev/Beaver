@@ -18,6 +18,8 @@ interface ChatInputActionsRowProps {
   modelName: string;
   providerName: string;
   reasoningMode?: string | null;
+  fastModeEnabled: boolean;
+  fastModePending: boolean;
   contextUsed: number;
   contextMax: number;
   contextBreakdown?: ContextUsageBreakdown;
@@ -35,6 +37,7 @@ interface ChatInputActionsRowProps {
   onFileImport: () => void;
   onModelChange: (model: string, provider: string) => void;
   onReasoningModeChange: (mode: ReasoningMode) => void;
+  onFastModeChange: (enabled: boolean) => void;
   onSend: () => void;
   onStop: () => void;
 }
@@ -43,6 +46,8 @@ export function ChatInputActionsRow({
   modelName,
   providerName,
   reasoningMode,
+  fastModeEnabled,
+  fastModePending,
   contextUsed,
   contextMax,
   contextBreakdown,
@@ -60,6 +65,7 @@ export function ChatInputActionsRow({
   onFileImport,
   onModelChange,
   onReasoningModeChange,
+  onFastModeChange,
   onSend,
   onStop,
 }: ChatInputActionsRowProps) {
@@ -96,6 +102,9 @@ export function ChatInputActionsRow({
         onSelect={onModelChange}
         reasoningMode={reasoningMode}
         onReasoningModeChange={onReasoningModeChange}
+        fastModeEnabled={fastModeEnabled}
+        fastModePending={fastModePending}
+        onFastModeChange={onFastModeChange}
         align="right"
       />
       <SendStopButton state={buttonState} onSend={onSend} onStop={onStop} />

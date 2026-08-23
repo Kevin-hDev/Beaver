@@ -2,6 +2,22 @@
 
 ## Icons
 
+### Typicons
+
+Typicons — flash-outline
+
+Copyright © Stephen Hutchings
+
+Source: https://icon-sets.iconify.design/typcn/flash-outline/
+
+License: Creative Commons Attribution-ShareAlike 4.0 International
+
+License URL: https://creativecommons.org/licenses/by-sa/4.0/
+
+Changes made: the SVG was converted to a React component rendered through
+InlineIcon; the viewBox and path are unchanged, and currentColor is preserved
+so the drawing follows the active theme.
+
 ### Font-GIS
 
 The "Exploration" icon in the conversation view (`src/components/ui/search-globe-icon.tsx`)

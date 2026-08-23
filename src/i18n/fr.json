@@ -272,6 +272,7 @@
     "selectModel": "Choisir un modèle",
     "selectModelHint": "Sélectionner le modèle",
     "reasoningTitle": "Réflexion",
+    "fastMode": "Rapide",
     "reasoningOff": "Désactivée",
     "reasoningAuto": "Activée",
     "reasoningLow": "Limitée",

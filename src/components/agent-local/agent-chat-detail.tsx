@@ -28,6 +28,8 @@ interface AgentChatDetailProps {
   pendingSkills?: { name: string; content: string }[];
   pendingFiles?: DroppedFile[];
   reasoningMode?: string | null;
+  fastModeEnabled: boolean;
+  fastModePending: boolean;
   terminal: ReturnType<typeof useTerminal>;
   filePreview: ReturnType<typeof useFilePreview>;
   fullscreenSwitching: boolean;
@@ -41,6 +43,7 @@ interface AgentChatDetailProps {
   onNewSessionInProject: (model: string, provider: string, projectId: string) => void;
   onAutoRename: (id: string, name: string) => void;
   onReasoningModeChange: (mode: ReasoningMode) => void;
+  onFastModeChange: (enabled: boolean) => void;
   onInitialMessageSent: () => void;
   onFileOperationsChange: (operations: FileOperationGroups) => void;
   onPreviewFullscreenChange: (fullscreen: boolean) => void;
@@ -106,7 +109,10 @@ export function AgentChatDetail(props: AgentChatDetailProps) {
           initialSkills={props.pendingSkills}
           initialFiles={props.pendingFiles}
           reasoningMode={props.reasoningMode}
+          fastModeEnabled={props.fastModeEnabled}
+          fastModePending={props.fastModePending}
           onReasoningModeChange={props.onReasoningModeChange}
+          onFastModeChange={props.onFastModeChange}
           onInitialMessageSent={props.onInitialMessageSent}
           terminalState={props.terminal}
           onFileOperationsChange={props.onFileOperationsChange}

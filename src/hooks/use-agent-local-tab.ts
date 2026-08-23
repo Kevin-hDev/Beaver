@@ -6,6 +6,7 @@ import { useTerminal } from "@/hooks/use-terminal";
 import { useDefaultModel } from "@/hooks/use-default-model";
 import { useAvailableModels } from "@/hooks/use-available-models";
 import { useSessionActions } from "@/hooks/use-session-actions";
+import { useSessionFastMode } from "@/hooks/use-session-fast-mode";
 import { useFilePreview } from "@/hooks/use-file-preview";
 import { useAgentLocalShortcuts } from "@/hooks/use-agent-local-shortcuts";
 import { useAgentLocalTabPanelSync } from "@/hooks/use-agent-local-tab-panel-sync";
@@ -46,6 +47,7 @@ export function useAgentLocalTab({ navState, onSessionChange, onNavChange, listF
   const { model: defaultModel, provider: defaultProvider } = useDefaultModel();
   const [welcomeModel, setWelcomeModel] = useState<{ model: string; provider: string } | null>(null);
   const [welcomeReasoningMode, setWelcomeReasoningMode] = useState<string | null>(null);
+  const [welcomeFastModeEnabled, setWelcomeFastModeEnabled] = useState(false);
   const [fileOperations, setFileOperations] = useState<FileOperationGroups>({ all: [], latest: [] });
 
   const { groups: availableModels } = useAvailableModels();
@@ -74,6 +76,7 @@ export function useAgentLocalTab({ navState, onSessionChange, onNavChange, listF
     welcomeReasoningMode,
   );
   const filePreviewState = useFilePreview(activeSessionId ?? null, fileOperations.all, activeProject?.path);
+  const { setFastMode, isFastModePending } = useSessionFastMode(refresh);
 
   useUnavailableModelFallback({
     enabled: !activeSession?.parent_session_id,
@@ -95,6 +98,8 @@ export function useAgentLocalTab({ navState, onSessionChange, onNavChange, listF
     setWelcomeModel,
     welcomeReasoningMode,
     welcomeSupportsThinking: welcomeReasoning.supportsThinking,
+    welcomeFastModeEnabled,
+    setWelcomeFastModeEnabled,
     projectsHook,
     onSessionChange,
   });
@@ -182,6 +187,7 @@ export function useAgentLocalTab({ navState, onSessionChange, onNavChange, listF
     model, provider, currentDefault, activeProject,
     filePreview, fileOperations, setFileOperations,
     reasoningMode, setReasoningMode, welcomeModel, setWelcomeModel,
+    welcomeFastModeEnabled, setWelcomeFastModeEnabled, setFastMode, isFastModePending,
     sessionActions, handleSelectById, handleDeleteProject, handleDeleteSession,
   };
 }

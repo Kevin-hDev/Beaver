@@ -26,10 +26,13 @@ interface WelcomeViewProps {
   onModelChange: (model: string, provider: string) => void;
   reasoningMode?: string | null;
   onReasoningModeChange: (mode: ReasoningMode) => void;
+  fastModeEnabled: boolean;
+  onFastModeChange: (enabled: boolean) => void;
 }
 
 export function WelcomeView({
   model, provider, projects, onAddProject, onSend, onModelChange, reasoningMode, onReasoningModeChange,
+  fastModeEnabled, onFastModeChange,
 }: WelcomeViewProps) {
   const { t } = useTranslation();
   const permMode = usePermissionMode();
@@ -97,6 +100,8 @@ export function WelcomeView({
               providerName={provider}
               isStreaming={false}
               reasoningMode={reasoningMode}
+              fastModeEnabled={fastModeEnabled}
+              fastModePending={false}
               files={fileDrop.files}
               contextUsed={0}
               contextMax={0}
@@ -114,6 +119,7 @@ export function WelcomeView({
               })()}
               onModelChange={onModelChange}
               onReasoningModeChange={onReasoningModeChange}
+              onFastModeChange={onFastModeChange}
             />
             <ProjectSelector
               projects={projects}

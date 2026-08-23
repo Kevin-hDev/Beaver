@@ -267,6 +267,7 @@
     "selectModel": "选择模型",
     "selectModelHint": "选择模型",
     "reasoningTitle": "推理",
+    "fastMode": "快速",
     "reasoningOff": "关闭",
     "reasoningAuto": "开启",
     "reasoningLow": "低",

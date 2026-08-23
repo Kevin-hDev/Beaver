@@ -272,6 +272,7 @@
     "selectModel": "Choose a model",
     "selectModelHint": "Select model",
     "reasoningTitle": "Reasoning",
+    "fastMode": "Fast",
     "reasoningOff": "Off",
     "reasoningAuto": "On",
     "reasoningLow": "Low",

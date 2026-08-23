@@ -10,6 +10,9 @@ interface ModelControlsProps {
   onSelect: (model: string, provider: string) => void;
   reasoningMode?: string | null;
   onReasoningModeChange: (mode: ReasoningMode) => void;
+  fastModeEnabled: boolean;
+  fastModePending: boolean;
+  onFastModeChange: (enabled: boolean) => void;
   align?: "left" | "right";
 }
 
@@ -19,6 +22,9 @@ export function ModelControls({
   onSelect,
   reasoningMode,
   onReasoningModeChange,
+  fastModeEnabled,
+  fastModePending,
+  onFastModeChange,
   align = "left",
 }: ModelControlsProps) {
   const { groups } = useAvailableModels();
@@ -41,6 +47,9 @@ export function ModelControls({
         model={selectedEntry}
         reasoningMode={reasoningMode}
         onChange={onReasoningModeChange}
+        fastModeEnabled={fastModeEnabled}
+        fastModePending={fastModePending}
+        onFastModeChange={onFastModeChange}
         align={align}
       />
     </>

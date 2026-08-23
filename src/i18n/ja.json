@@ -267,6 +267,7 @@
     "selectModel": "モデルを選択",
     "selectModelHint": "モデルを選択",
     "reasoningTitle": "推論",
+    "fastMode": "高速",
     "reasoningOff": "オフ",
     "reasoningAuto": "オン",
     "reasoningLow": "低",

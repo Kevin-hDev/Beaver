@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ReasoningSelector } from "../reasoning-selector";
 import type { AvailableModel } from "@/hooks/use-available-models";
@@ -13,6 +14,7 @@ vi.mock("react-i18next", () => ({
         "agentLocal.reasoningAuto": "Activée",
         "agentLocal.reasoningMedium": "Moyenne",
         "agentLocal.reasoningHigh": "Forte",
+        "agentLocal.fastMode": "Rapide",
       };
       return labels[key] ?? key;
     },
@@ -37,12 +39,18 @@ function renderSelector(
   overrides: Partial<AvailableModel> = {},
   reasoningMode: ReasoningMode = "high",
   onChange = vi.fn(),
+  fastModeEnabled = false,
+  fastModePending = false,
+  onFastModeChange = vi.fn(),
 ) {
   return render(
     <ReasoningSelector
       model={model(overrides)}
       reasoningMode={reasoningMode}
       onChange={onChange}
+      fastModeEnabled={fastModeEnabled}
+      fastModePending={fastModePending}
+      onFastModeChange={onFastModeChange}
       align="right"
     />,
   );
@@ -85,5 +93,110 @@ describe("ReasoningSelector", () => {
     fireEvent.click(screen.getByRole("button", { name: "Désactivée" }));
 
     expect(onChange).toHaveBeenCalledWith("off");
+  });
+
+  it("place Rapide en tête sans prix ni promesse de vitesse", () => {
+    renderSelector({ supports_fast_mode: true, reasoning_modes: ["off", "high"] });
+
+    fireEvent.click(screen.getByRole("button", { name: /Forte/ }));
+
+    const fastSwitch = screen.getByRole("switch", { name: "Rapide" });
+    const firstReasoning = screen.getByRole("button", { name: "Désactivée" });
+    expect(screen.getAllByRole("switch")).toHaveLength(1);
+    expect(fastSwitch).not.toBeChecked();
+    expect(fastSwitch.compareDocumentPosition(firstReasoning) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByText("Rapide").closest("div")?.nextElementSibling).not.toBeNull();
+    expect(screen.queryByText(/1\.5|2\.5|[$€]|crédit|credit/i)).toBeNull();
+  });
+
+  it("masque Rapide pour un modèle incompatible", () => {
+    renderSelector({ supports_fast_mode: false });
+
+    fireEvent.click(screen.getByRole("button", { name: /Forte/ }));
+
+    expect(screen.queryByRole("switch", { name: "Rapide" })).toBeNull();
+  });
+
+  it("active Rapide sans fermer le menu ni changer le raisonnement", () => {
+    const onReasoningChange = vi.fn();
+    const onFastModeChange = vi.fn();
+    renderSelector(
+      { supports_fast_mode: true },
+      "high",
+      onReasoningChange,
+      false,
+      false,
+      onFastModeChange,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Forte/ }));
+    fireEvent.click(screen.getByRole("switch", { name: "Rapide" }));
+
+    expect(onFastModeChange).toHaveBeenCalledWith(true);
+    expect(onReasoningChange).not.toHaveBeenCalled();
+    expect(screen.getByRole("switch", { name: "Rapide" })).toBeTruthy();
+  });
+
+  it("désactive la bascule pendant la sauvegarde", () => {
+    renderSelector({ supports_fast_mode: true }, "high", vi.fn(), true, true);
+
+    fireEvent.click(screen.getByRole("button", { name: /Forte/ }));
+
+    expect(screen.getByRole("switch", { name: "Rapide" })).toBeDisabled();
+  });
+
+  it("conserve la préférence si le modèle devient incompatible puis compatible", () => {
+    const view = renderSelector({ supports_fast_mode: true }, "high", vi.fn(), true);
+    fireEvent.click(screen.getByRole("button", { name: /Forte/ }));
+    expect(screen.getByRole("switch", { name: "Rapide" })).toBeChecked();
+
+    view.rerender(
+      <ReasoningSelector
+        model={model({ supports_fast_mode: false })}
+        reasoningMode="high"
+        onChange={vi.fn()}
+        fastModeEnabled
+        fastModePending={false}
+        onFastModeChange={vi.fn()}
+      />,
+    );
+    expect(screen.queryByRole("switch", { name: "Rapide" })).toBeNull();
+
+    view.rerender(
+      <ReasoningSelector
+        model={model({ supports_fast_mode: true })}
+        reasoningMode="high"
+        onChange={vi.fn()}
+        fastModeEnabled
+        fastModePending={false}
+        onFastModeChange={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole("switch", { name: "Rapide" })).toBeChecked();
+  });
+
+  it("s'active au clavier et publie aria-checked", () => {
+    function ControlledSelector() {
+      const [enabled, setEnabled] = useState(false);
+      return (
+        <ReasoningSelector
+          model={model({ supports_fast_mode: true })}
+          reasoningMode="high"
+          onChange={vi.fn()}
+          fastModeEnabled={enabled}
+          fastModePending={false}
+          onFastModeChange={setEnabled}
+        />
+      );
+    }
+    render(<ControlledSelector />);
+    fireEvent.click(screen.getByRole("button", { name: /Forte/ }));
+    const fastSwitch = screen.getByRole("switch", { name: "Rapide" });
+    fastSwitch.focus();
+
+    fireEvent.click(fastSwitch, { detail: 0 });
+
+    expect(fastSwitch).toHaveFocus();
+    expect(fastSwitch).toHaveAttribute("aria-checked", "true");
   });
 });

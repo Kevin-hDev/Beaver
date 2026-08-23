@@ -39,7 +39,7 @@ export function ChatView({
   sessionId, model, provider, projects, git, onAddProject,
   onSessionsRefresh, onApplySwitch, onNewSession, onNewSessionInProject, onAutoRename,
   initialMessage, initialWorkingDir, initialSkills, initialFiles,
-  reasoningMode, onReasoningModeChange, onInitialMessageSent,
+  reasoningMode, fastModeEnabled, fastModePending, onReasoningModeChange, onFastModeChange, onInitialMessageSent,
   terminalState, onFileOperationsChange, onFilePreviewPath,
   onOpenSubagent, isSubagent = false,
   canCloneMessages = false, onCloneMessage, onCancelCloneSummary,
@@ -112,15 +112,12 @@ export function ChatView({
     projects, model, provider, onAddProject, onNewSessionInProject,
   });
   const preflightAccessPrompt = usePreflightDirectoryAccessPrompt(chat.forbiddenAllowedPaths, chat.dismissForbiddenDirectory);
-  /* Une conversation qui vient d'être créée depuis l'accueil n'a rien à charger :
-     elle se montre dès son premier rendu. Attendre la fin de la lecture du
-     disque laissait l'écran vide entre le champ qui part et celui qui arrive,
-     et cette substitution se voyait. */
+  /* Une conversation créée depuis l'accueil se montre dès son premier rendu :
+     attendre le disque laisserait voir le remplacement des deux champs. */
   const [handingOver] = useState(!isSubagent && hasComposerPosition);
   const visible = handingOver || !chat.sessionLoading;
-  /* Le champ ne descend qu'une fois la conversation peinte : lancé pendant
-     qu'elle est encore transparente, le glissement se jouerait à l'abri des
-     regards et le champ paraîtrait surgir à sa place. */
+  /* Le champ ne descend qu'une fois la conversation peinte, sinon son
+     glissement invisible le ferait surgir directement à l'arrivée. */
   const inputColumnRef = useRef<HTMLDivElement>(null);
   useComposerHandoff(inputColumnRef, visible);
   return (
@@ -174,7 +171,7 @@ export function ChatView({
                 {!isAtBottom && <ScrollBottomButton onClick={scrollToBottom} />}
                 <ChatInput
                   draftKey={sessionComposerDraftKey(sessionId)}
-                  modelName={model} providerName={provider} isStreaming={chat.isStreaming} reasoningMode={reasoningMode}
+                  modelName={model} providerName={provider} isStreaming={chat.isStreaming} reasoningMode={reasoningMode} fastModeEnabled={fastModeEnabled} fastModePending={fastModePending}
                   files={fileDrop.files} contextUsed={contextUsage.used}
                   contextMax={chat.contextUsageVisible ? contextMax : 0} contextBreakdown={contextUsage}
                   retryIndicator={runtime.retryIndicator}
@@ -190,7 +187,7 @@ export function ChatView({
                   onPlanModeChange={(enabled) => void chat.setPlanModeEnabled(enabled)}
                   onRemoveFile={fileDrop.removeFile} onPreviewFile={setPreview} onSend={handleSend}
                   onStop={() => void chat.stop()} onClearFiles={fileDrop.clearFiles} onFileImport={handleFileImport}
-                  onModelChange={handleModelSelect} onReasoningModeChange={onReasoningModeChange}
+                  onModelChange={handleModelSelect} onReasoningModeChange={onReasoningModeChange} onFastModeChange={onFastModeChange}
                 />
               </div>
               <ChatInputFooter

@@ -267,6 +267,7 @@
     "selectModel": "Scegli un modello",
     "selectModelHint": "Seleziona modello",
     "reasoningTitle": "Ragionamento",
+    "fastMode": "Rapido",
     "reasoningOff": "Disattivato",
     "reasoningAuto": "Attivato",
     "reasoningLow": "Basso",

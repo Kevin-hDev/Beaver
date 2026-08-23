@@ -11,6 +11,8 @@ export interface ChatInputProps {
   providerName: string;
   isStreaming: boolean;
   reasoningMode?: string | null;
+  fastModeEnabled: boolean;
+  fastModePending: boolean;
   files?: DroppedFile[];
   contextUsed: number;
   contextMax: number;
@@ -35,6 +37,7 @@ export interface ChatInputProps {
   onFileImport: () => void;
   onModelChange: (model: string, provider: string) => void;
   onReasoningModeChange: (mode: ReasoningMode) => void;
+  onFastModeChange: (enabled: boolean) => void;
   onRemoveFile?: (index: number) => void;
   onPreviewFile?: (file: DroppedFile) => void;
   onClearFiles?: () => void;

@@ -31,6 +31,7 @@ export function ToggleSwitch({
         type="checkbox"
         role="switch"
         aria-label={ariaLabel}
+        aria-checked={checked}
         checked={checked}
         disabled={disabled}
         onChange={(event) => onCheckedChange(event.target.checked)}

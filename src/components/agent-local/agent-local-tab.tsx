@@ -35,6 +35,7 @@ export const AgentLocalTab = memo(function AgentLocalTab({
   const { model, provider, currentDefault, activeProject } = s;
   const { filePreview, fileOperations, setFileOperations } = s;
   const { reasoningMode, setReasoningMode, setWelcomeModel } = s;
+  const { welcomeFastModeEnabled, setWelcomeFastModeEnabled, setFastMode, isFastModePending } = s;
   const { sessionActions, handleSelectById } = s;
   const {
     pendingMessage, setPendingMessage,
@@ -51,6 +52,8 @@ export const AgentLocalTab = memo(function AgentLocalTab({
   const displayProject = resolveDisplayProject(projectsHook.projects, displaySession, activeProject);
   const { displayModel, displayProvider } = resolveDisplayModel(displaySession, model, provider);
   const displayReasoningMode = resolveDisplayReasoningMode(displaySession, reasoningMode);
+  const displayedFastMode = displaySession?.fast_mode_enabled ?? welcomeFastModeEnabled;
+  const displayedFastPending = displaySessionId ? isFastModePending(displaySessionId) : false;
   const terminalCwd = displayProject?.path || "";
   const sessionSummary = useSessionSummary(displaySessionId ?? null);
   const summaryGit = useGitBranch(displayProject?.path);
@@ -126,6 +129,8 @@ export const AgentLocalTab = memo(function AgentLocalTab({
           pendingSkills={pendingSkills}
           pendingFiles={pendingFiles}
           reasoningMode={displayReasoningMode}
+          fastModeEnabled={displayedFastMode}
+          fastModePending={displayedFastPending}
           terminal={terminal}
           filePreview={filePreview}
           fullscreenSwitching={fullscreenSwitching}
@@ -141,6 +146,9 @@ export const AgentLocalTab = memo(function AgentLocalTab({
             void handleCreateInProjectWithModel(m, p, pid)}
           onAutoRename={(id, msg) => void handleAutoRename(id, msg)}
           onReasoningModeChange={setReasoningMode}
+          onFastModeChange={(enabled) => {
+            if (displaySessionId) void setFastMode(displaySessionId, enabled);
+          }}
           onInitialMessageSent={() => {
             setPendingMessage(null);
             setPendingWorkingDir(undefined);
@@ -179,13 +187,15 @@ export const AgentLocalTab = memo(function AgentLocalTab({
             onModelChange={(m, p) => setWelcomeModel({ model: m, provider: p })}
             reasoningMode={reasoningMode}
             onReasoningModeChange={setReasoningMode}
+            fastModeEnabled={welcomeFastModeEnabled}
+            onFastModeChange={setWelcomeFastModeEnabled}
           />
         </div>
       )}
     </div>
   ), [
     activeSession?.name, activeSessionId, archive, currentDefault.model, currentDefault.provider, displayModel, displayProject?.path,
-    displayProvider, displayReasoningMode, displaySession?.parent_session_id,
+    displayProvider, displayReasoningMode, displayedFastMode, displayedFastPending, displaySession?.parent_session_id,
     displaySessionId,
     availablePanel, fileOperations, filePreview, fileTreeNav, forecastNav.setPanelMode, forecastContent, uncommittedFiles,
     fullscreenSwitching, handleAutoRename, handleCreateInProjectWithModel, handleCreateWithModel,
@@ -193,6 +203,7 @@ export const AgentLocalTab = memo(function AgentLocalTab({
     pendingFiles, pendingMessage, pendingSkills, pendingWorkingDir, projectsHook, refresh,
     sessionSummary, sessionTabs, setFileOperations, setPendingFiles, setPendingMessage, setPendingSkills, setPendingWorkingDir, setReasoningMode,
     setWelcomeModel, summaryGit, tabGit, terminal, terminalCwd, reasoningMode, updateModel,
+    setFastMode, welcomeFastModeEnabled, setWelcomeFastModeEnabled,
   ]);
 
   return <><PanelSlot name="list">{list}</PanelSlot><PanelSlot name="detail">{detail}</PanelSlot>{tabGit.dialogs}</>;

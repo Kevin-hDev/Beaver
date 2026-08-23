@@ -1,4 +1,7 @@
+import { render } from "@testing-library/react";
+import { createElement } from "react";
 import { describe, expect, it } from "vitest";
+import { FastModeIcon } from "../fast-mode-icon";
 
 /* Un dossier et une discussion ont chacun un seul dessin dans l'application.
    Trois dessins concurrents cohabitaient : l'un dans la barre latérale, un
@@ -37,6 +40,24 @@ describe("autorité unique des dessins de dossier et de discussion", () => {
     const declarations = declarationsOf("CopyIcon");
 
     expect(declarations).toEqual(["/src/components/ui/copy-icon.tsx"]);
+  });
+
+  it("ne déclare l'icône Rapide qu'à un seul endroit", () => {
+    expect(declarationsOf("FastModeIcon")).toEqual([
+      "/src/components/ui/fast-mode-icon.tsx",
+    ]);
+  });
+
+  it("rend le tracé Rapide original comme décoration thématique", () => {
+    const { container } = render(createElement(FastModeIcon));
+    const icon = container.querySelector("svg");
+    const path = container.querySelector("path");
+
+    expect(icon?.getAttribute("aria-hidden")).toBe("true");
+    expect(icon?.getAttribute("focusable")).toBe("false");
+    expect(icon?.getAttribute("viewBox")).toBe("0 0 24 24");
+    expect(path?.getAttribute("fill")).toBe("currentColor");
+    expect(path?.getAttribute("d")).toBe("M14.5 4h.005M14.5 4L12 10l5 2.898L9.5 20l2.5-6l-5-2.9zm0-2a2.02 2.02 0 0 0-1.379.551L5.624 9.646a2 2 0 0 0-.61 1.686c.072.626.437 1.182.982 1.498l3.482 2.021l-1.826 4.381a2.003 2.003 0 0 0 1.847 2.77c.498 0 .993-.186 1.375-.548l7.5-7.103a2 2 0 0 0 .61-1.685a2 2 0 0 0-.982-1.498L14.52 9.15l1.789-4.293A2 2 0 0 0 14.5 2");
   });
 });
 
