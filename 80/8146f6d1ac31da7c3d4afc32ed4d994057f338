@@ -1,0 +1,45 @@
+The proof, since a widened timing budget is exactly the kind of change that
+usually hides a defect rather than fixing one.
+
+run_watchdog reaches the emergency drain through a loop bounded by the ultimate
+deadline:
+
+  wait_until(timeline.tauri_exit_deadline());
+  final_action::run(...);                            // exits = 1
+  wait_until(timeline.emergency_deadline());
+  while Instant::now() < timeline.ultimate_deadline() {
+      inventory.drain_once(actions.signaler.as_ref());   // signaler touched here
+      ...
+  }
+
+Start the watchdog after that deadline and the loop body never runs once. The
+signaler is never called at all — not late, never. exits still reaches 1, which
+is why the first wait always succeeded and only the second one failed.
+
+Both watchdog tests failed alternately on macOS CI for this one reason, and
+that alternation was the tell: blocked_watchdog_cannot_delay_the_ultimate_exit
+waits on signaler.entered, watchdog_requests_tauri_exit_then_starts_emergency_
+drain waits on signaler.calls — the same event under two names.
+
+Demonstrated by injecting a delay between the origin and the spawn, against the
+new 400ms ultimate deadline:
+
+  sleep 300ms  ->  ok
+  sleep 500ms  ->  FAILED, "attente expirée : processus d'urgence signalé"
+
+The flip lands on the deadline, on the predicted wait. Locally the test passed
+40 times in isolation and 15 times on a fully saturated machine, so repetition
+alone would never have found this — the setup simply has to outlast the whole
+schedule, which a shared runner can do and this Mac does not.
+
+Two things changed, both aimed at that cause. The origin is now taken as late
+as possible, so no setup time is charged against the schedule the watchdog has
+to walk. And the schedule is long enough to outlast a thread reaching the CPU.
+Production is unaffected: it works in seconds (8/10/13/15), where scheduling
+latency is noise.
+
+wait_until's bound went to 10s for a different reason: it guards against a hung
+test, it does not measure anything, so it should sit far above the schedule
+rather than be tuned to it.
+
+Whole Rust suite on macOS: 3668 passed, 0 failed, 3 ignored.

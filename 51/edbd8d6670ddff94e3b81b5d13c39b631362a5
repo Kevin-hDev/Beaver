@@ -1,0 +1,11 @@
+Phase 1 provider models - corrections de la re-review 0ec10dcd.
+
+Autorites reviewer: docs/providers/releases-2026-08/SPEC.md et docs/providers/releases-2026-08/reviews/REREVIEW-0ec10dcd.md.
+
+C1-C10 corriges. Points renforces pendant la revue finale: les entrees xAI masquees restent soumises aux controles route, identifiant et doublon; le chemin chat OAuth exige un CatalogChatRequest restreint; les tests HTTP traversent send_json_request pour le routage modele et le cache; les types de resultat outil TS sont generes depuis Rust.
+
+Preuves finales: cargo test: 3828 passes, 5 ignores, puis 1 test integration passe; cargo clippy --all-targets -- -D warnings vert; cargo fmt --check vert; npm test: 468 fichiers et 2468 tests Vitest verts, plus build 56, CI 16, CEF 45 avec 1 skip Windows, E2E 70 et extension host 53; npx tsc --noEmit vert; npm run lint vert; npm run contracts:check vert; git diff --check vert.
+
+Mutations: retrait du branchement C2 refuse a la compilation; retrait des en-tetes C3 fait echouer les deux tests wiremock; les mutations ciblees C1, C4, C6, C7 et C8 rougissent aussi. Application Tauri ouverte et ecran accueil inspecte sans regression visuelle apparente. Le cas catalogue vide est valide par tests logique et composant, sans falsifier un catalogue reel.
+
+Revue independante finale: APPROUVE, aucun finding bloquant, majeur ou mineur restant. Aucun appel reel fournisseur effectue. Graphify mis a jour. Aucun changement hors perimetre intentionnel.

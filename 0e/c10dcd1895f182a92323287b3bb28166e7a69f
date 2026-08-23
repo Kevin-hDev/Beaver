@@ -1,0 +1,11 @@
+Correction du commit cacbc85e apres revue A/B par mutations.
+
+Correctifs: origine /user derivee du proxy xAI OAuth; filtrage des modeles non textuels; restriction des modes par le catalogue pour Chat Completions et par intersection registre/runtime; en-tete de routage teste sur une requete reelle; Grok 4.5 restaure a son comportement precedent; alias grok-4.6-latest centralise; erreurs OAuth stables; migration d'identite documentee; contrat x-authenticateresponse ajoute a la SPEC.
+
+Frontend: restauration de l'erreur persistee testee a travers useAgentChat; anciens echecs masques pendant un run actif ou apres une reponse plus recente; safe_summary non restitue dans l'UI; codes Rust et traductions centralises et verifies dans les sept langues; AgentDiagnosticRun et ses types imbriques generes depuis Rust avec controle de derive.
+
+Decisions: une liste dynamique explicite ne peut que restreindre le registre; une intersection disjointe donne zero mode autorise pour echouer ferme. Les indicateurs generiques de support ne fabriquent pas de niveaux. La borne MAX_MODES redondante a ete retiree: la liste blanche de huit valeurs uniques impose deja cette limite. Le contrat TS complet genere remplace le simple test de forme minimal propose par la revue.
+
+Preuves: npm test vert (468 fichiers, 2465 tests Vitest, puis 56 build, 16 CI, 45 CEF + 1 ignore, 70 E2E runner, 53 extension host); npx tsc --noEmit vert; npm run lint vert; cargo clippy --all-targets -- -D warnings vert; cargo test vert (3824 bibliotheque + 1 integration, 5 ignores, 0 echec); npm run contracts:check vert; cargo fmt --check et git diff --check verts. Les protections A1, A2, A4, B4, B5, B7, B8 et B9 ont ete vues rouges avant correction ou par mutation ciblee.
+
+Documents de phase 1 pour le reviewer: docs/providers/releases-2026-08/SPEC.md et docs/superpowers/plans/2026-08-22-phase-1-provider-models.md. Rapports sources: docs/providers/releases-2026-08/reviews/REVIEW-cacbc85e.md, A-xai-oauth.md et B-models-errors.md.

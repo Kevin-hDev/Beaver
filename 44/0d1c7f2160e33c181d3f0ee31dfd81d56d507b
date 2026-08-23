@@ -1,0 +1,11 @@
+CI evidence and decisions
+
+Run 32489660482 exposed two portability gaps under environments not available in the original local pass.
+
+Rust 1.98 strict Clippy reported chunks_exact_to_as_chunks in the CEF nonce verifier and Ollama SHA parser, plus result_large_err at the SearXNG async publication boundary. The conversions use fixed-size as_chunks after the existing length checks. The nonce comparison still accumulates every XOR word before deciding. Rejected SearXNG handles are boxed only at the uncommon ownership-return boundary so cleanup retains the exact child handle without inflating every async result.
+
+The Windows tests compiled Unix process_tree code because its module used cfg(any(unix, test)), and two platform-neutral receipt tests depended on a Unix-only fixture. The Unix implementation and imports are now cfg(unix); the neutral tests use a plain temporary directory. No test behavior is disabled on its supported platform.
+
+Executed locally with exact CI toolchain Rust 1.98.0: cargo +1.98.0 fmt --check; cargo +1.98.0 clippy --all-targets -- -D warnings; services::searxng 85 passed and 1 release-wheelhouse test ignored; inherited-pipe global-deadline test 5 consecutive isolated passes; process_tree unit tests 4 passed; Ollama document tests 10 passed; CEF supervision 57 passed; graphify update completed.
+
+A macOS cross-check cannot prove MSVC native dependencies because Windows SDK headers are unavailable locally. Native Windows compilation remains deliberately delegated to the PR runner; no Windows success is claimed by this note.

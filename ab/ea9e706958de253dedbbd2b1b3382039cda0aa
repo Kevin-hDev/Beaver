@@ -1,0 +1,19 @@
+Cause and design
+
+The sidebar rendered the backend payload correctly; the backend published CPU with zero values when its single startup probe was unavailable. GPU memory refresh was coupled to Ollama startup and never retried. On macOS, real CEF startup proved that sysctl/vm_stat stdout pipes can remain open during the initial process burst. The fix makes memory observation an independently supervised 10-second loop, retains the last successful bounded snapshot, and uses sysinfo directly for Apple unified memory. Linux and Windows keep dedicated-VRAM probes, with controlled sysfs parsing and a restored Windows performance-counter fallback. GpuMemoryKind is now the shared authority for forecast and sidebar behavior.
+
+User-visible contract
+
+Apple Silicon reports RAM. Linux and Windows report VRAM. CPU is shown only when Ollama reports a loaded model with zero GPU allocation. An idle unavailable probe hides the badge instead of displaying CPU with missing values. Existing settings text was updated in all seven locales.
+
+Executed evidence
+
+cargo test --lib gpu_vram: 13 passed; forecast hardware profile: 4 passed; Ollama polling: 7 passed. cargo test --lib -- --test-threads=4: 3790 passed, 4 ignored. npx vitest run: 2440 passed before the final backend-only source switch; targeted badge/i18n run: 36 passed. cargo clippy --all-targets -- -D warnings, cargo fmt --check, npx tsc --noEmit, and npm run lint passed. graphify update . completed.
+
+Real application proof
+
+npm run tauri dev built and launched the CEF application. The old subprocess implementation reproduced the startup pipe failure. After switching macOS to sysinfo, the actual sidebar displayed RAM 68% in the dark theme and RAM 67% in the light theme. Cmd+Q completed coordinated cleanup with global work registry empty and native WebView descendants=0.
+
+Platform boundary
+
+The pure Windows fallback parser and controlled Linux DRM sysfs parser execute on macOS tests. Cross-target cargo checks could not reach Beaver code because the local machine lacks the Windows SDK and Linux GTK sysroot; native Windows/Linux CI remains the authority for those platform-specific probes.

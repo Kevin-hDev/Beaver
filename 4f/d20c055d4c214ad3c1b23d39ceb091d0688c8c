@@ -1,0 +1,25 @@
+Why this only surfaced now, and what it says about the test.
+
+The macOS job had never run the whole suite — it ran filtered steps, and
+nothing they named touched these fixtures. The first complete run put seven of
+them on a machine where a copied system binary does not execute.
+
+Proof, outside the test entirely:
+
+  cp /usr/bin/yes ./faux-ollama && ./faux-ollama   ->  killed, code 137
+  codesign -f -s - ./faux-ollama && ./faux-ollama  ->  alive
+
+The failure mode is worth keeping in mind for the reviewer:
+emergency_capacity_reap_failure_is_recoverable_without_a_slot fills all 128
+emergency slots, then asserts publish returns EmergencyCapacity. It returned
+Identity — publish_inner revalidates identity first (process.rs:143), getpgid
+came back -1 on the dead child, and it never reached the capacity branch. The
+test was asserting on an error it could not have produced. Now that the child
+survives, the branch is genuinely exercised for the first time.
+
+The same shape sits in the other fixtures: they copy /usr/bin/true, whose exit
+code they do not check, so a SIGKILLed child would have read as success. Going
+through install_system_binary closes that off for all of them at once.
+
+Whole Rust suite on macOS: 3668 passed, 0 failed, 3 ignored, 99.7s — the first
+time it has completed there.

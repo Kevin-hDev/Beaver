@@ -1,0 +1,9 @@
+Correctif de la review du commit 877ab436.
+
+Raison : un échec de provider configuré est plus actionnable que le code du repli local. finish_search ne renvoie donc le code SearXNG structuré que lorsque la liste des échecs providers est vide. Sinon, il conserve les erreurs providers, ajoute le code local au diagnostic et journalise uniquement le code fixe et le nombre borné de providers en échec. Les classifications authentification et HTTP 429 restent ainsi autoritaires.
+
+TDD réellement observé : avant le correctif, le test de frontière obtenait machine_code SearXNG au lieu de None et le test outil obtenait web_search_runtime_unavailable au lieu de web_search_auth_failed. Le contrat Windows était rouge car les étapes étaient absentes. La mutation du README avec une seconde paire de parenthèses autour de la boucle est désormais rouge, 2 parenthèses trouvées au lieu de 1.
+
+Preuves finales : recherche 8 sur 8 ; classificateur web 7 sur 7 avec authentification et 429 ; contrats CI 16 sur 16 ; cargo fmt et clippy strict verts ; cargo test --lib en série 3767 réussis, 0 échec, 4 ignorés ; Vitest 461 fichiers et 2432 tests ; TypeScript et lint verts ; graphify update exécuté. Deux courses sans rapport sont apparues sous exécution parallèle puis ont réussi 5 sur 5 isolément chacune ; la suite complète en série est verte.
+
+Windows : la CI Windows installe uv via astral-sh/setup-uv épinglé, exécute UV_PYTHON_INSTALL_BIN=1 avec la version Python contrôlée, puis vérifie python3.14 dans une étape PowerShell distincte. Cette porte est ajoutée mais son résultat natif reste explicitement en attente du prochain run CI ; aucune réussite Windows native n'est revendiquée dans cette note.

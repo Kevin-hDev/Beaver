@@ -1,0 +1,38 @@
+Phase 2 OpenAI Fast — implementation et validation reelle du 2026-08-23
+
+Autorites:
+- SPEC: docs/providers/openai-fast/SPEC.md
+- Plan: docs/superpowers/plans/2026-08-22-phase-2-openai-fast.md
+- API fixture: docs/providers/openai-fast/fixtures/openai-api-gpt-5.6-luna-global-2026-08-23.json
+- OAuth fixture: docs/providers/openai-fast/fixtures/codex-oauth-gpt-5.6-luna-global-2026-08-23.json
+
+Correction issue de la validation visuelle:
+- Le catalogue OpenAI API exposait supports_fast_mode mais aucun reasoning_mode; le menu qui heberge Rapide disparaissait.
+- 194b3d13 ajoute l'autorite de raisonnement GPT-5.6 [off, low, medium, high, xhigh, max] aux trois modeles API verifies et verrouille l'inventaire.
+- Mutation verifiee: retirer les modes de gpt-5.6-luna rend le test rouge avec left=[] et right=[off..max].
+
+Validation visuelle reelle, Beaver Dev, theme clair:
+- OpenAI API et Codex OAuth affichent Rapide en premiere ligne avec l'icone eclair, sans prix ni multiplicateur.
+- Le switch est desactive par defaut et le menu reste ouvert au clic.
+- Deux sessions API restent independantes et reviennent apres redemarrage avec Fast respectivement on et off.
+
+Campagne reelle gpt-5.6-luna:
+- Codex OAuth: texte standard, texte Fast, outil avec continuation, image et streaming ont termine au premier essai.
+- Toutes les requetes OAuth Fast ont fast_requested=true mais service_tier_served=default. Fast n'est donc pas valide fonctionnellement sur ce backend.
+- OpenAI API: un appel Standard et un appel Fast, un seul essai chacun, ont recu HTTP 400 avant le premier evenement. Le corps provider n'est pas persiste; la cause compte/parametre n'est pas inventee.
+- Le journal API prouve fast_requested=false puis true, served=unknown, usage=null et aucun retry.
+- Scan borne des sessions, metriques et logs de campagne: zero marqueur de credential.
+
+Preuves finales:
+- cargo test --lib: 3909 passed, 5 ignored, 0 failed.
+- cargo clippy --all-targets -- -D warnings: vert.
+- cargo fmt --check, jq empty fixtures, git diff --check: verts.
+- graphify update .: vert, aucune topologie code modifiee.
+- Suite frontend complete precedente de cette branche: 472 fichiers / 2499 tests, tsc, lint et contracts:check verts; aucun frontend n'a change apres cette preuve.
+
+Limites honnetes:
+- Aucun 401/429 reel n'a ete induit, aucune compression couteuse ni panne outil volontaire n'a ete envoyee.
+- Aucun succes Fast reel n'a ete observe: OAuth a servi default et l'API a refuse les deux requetes.
+- VoiceOver et les themes autres que clair restent couverts par les tests, pas par cette campagne visuelle.
+
+Addendum de cloture: la suite frontend complete a ete relancee apres les deux commits finaux: 472 fichiers Vitest / 2499 tests verts, scripts build/CI/CEF/E2E/extensions verts, tsc vert, lint vert et contracts:check vert.

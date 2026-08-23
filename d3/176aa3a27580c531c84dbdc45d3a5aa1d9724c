@@ -1,0 +1,9 @@
+Contexte : les réveils créés depuis l’interface étaient persistés avec agentic=false. Le scheduler utilisait alors un chemin LLM non-streaming séparé qui envoyait seulement le prompt utilisateur, sans system prompt, outils, skills, mémoire, MCP ni historique.
+
+Décision : le scheduler ne possède plus de second moteur conversationnel. Tous les réveils passent par run_stream_task, l’autorité Agent Local utilisée par une session manuelle. Le mode FullAccess interne force le mode auto même si le réglage global est manuel. Une liste d’outils vide délègue au catalogue complet actuellement activé. La seule sélection propre au réveil est le projet facultatif.
+
+Persistance : chaque exécution crée une session Heartbeat dédiée et enregistre toute la trace non-système, notamment les appels d’outils et leurs résultats. Les anciens champs agentic, working_dir, skill_ids et tool_names ainsi que le chemin collect_chat devenu mort ont été supprimés.
+
+Preuve réelle du 2026-08-22 : un réveil GPT-5.6 Luna associé au projet TEST a exécuté list_dir dans /Users/kevinh/Projects/TEST. La session cc95b2bb-cf5c-4510-add1-511759e14ca0 contient le prompt, l’appel list_dir, son résultat et la réponse AGENTS.md. La fenêtre de contexte affichait 14.2K tokens : outils système 5.7K, MCP 344, skills 3.7K, méta-contexte 1.1K et system prompt 3.3K. La planification de test d’origine et le thème clair ont été restaurés.
+
+Validation : cargo test 3793 réussis et 4 ignorés ; cargo clippy --all-targets -- -D warnings ; npm test 2448 tests frontend réussis plus les suites de scripts ; npm run lint ; npx tsc --noEmit ; formulaire vérifié visuellement en thèmes clair et sombre ; graphify update . exécuté.

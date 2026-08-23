@@ -1,0 +1,160 @@
+Contexte pour la revue — traitement des alertes Dependabot du 2026-08-19
+
+État initial : 52 alertes ouvertes. 51 portaient sur torch et transformers dans
+les runtimes Python du sidecar Forecast, 1 sur glib côté Rust.
+État final : 14 fermées (1 critique, 4 hautes, 5 moyennes, 4 faibles),
+38 restantes — toutes bloquées en amont, détail et preuves plus bas.
+
+Rien n'a été rejeté ni masqué : ce qui reste ouvert l'est parce que la montée
+casse le modèle, pas parce qu'on a renoncé à la faire.
+
+CE QUI A CHANGÉ
+
+chronos.in    transformers 4.57.6 -> 5.15.1, huggingface-hub 0.36.2 -> 1.24.0
+              (transformers >= 5.15 exige hf-hub >= 1.5)     -> 3 alertes fermées
+flowstate.in  granite-tsfm 0.3.6 -> 0.3.8, transformers -> 5.15.1,
+              huggingface-hub épinglé à 1.28.0
+              (0.3.8 est la 1re version à lever le plafond
+              transformers<5)                                -> 3 alertes fermées
+sundial.in    torch 2.2.2 -> 2.10.0                          -> 8 alertes fermées
+                                                                dont CVE-2025-32434
+                                                                (critique, torch.load)
+kairos.in     + jaxtyping==0.3.11                            -> 0 alerte : correctif
+                                                                de bug, voir plus bas
+moirai.in     inchangé, commentaire de blocage ajouté
+
+Les 12 fichiers .lock (4 familles x 3 OS) sont régénérés par
+scripts/forecast/lock-runtimes.sh, jamais édités à la main.
+
+CORRECTIF DE BUG TROUVÉ EN CHEMIN — À REGARDER EN PRIORITÉ
+
+Le runtime Kairos ne pouvait pas démarrer. Kairos déclare jaxtyping~=0.3 et
+l'importe dans tsfm/model/kairos/layers.py, chargé dès
+`from tsfm.model.kairos import AutoModel`. Or jaxtyping n'était pas dans
+kairos.in, et install_audited_source (sidecar_runtime_install.rs:109-110)
+installe la source auditée avec --no-deps : la dépendance n'était donc résolue
+par personne.
+
+Reproduit : sans jaxtyping, ModuleNotFoundError à la 1re prédiction.
+Avec jaxtyping==0.3.11, kairos-10m charge et prédit (sortie (1, 9, 8)).
+
+C'est un défaut indépendant des alertes de sécurité. Il vaut la peine de se
+demander pourquoi aucun test ne l'a vu : les tests d'adaptateurs
+(test_secure_adapters.py) remplacent tsfm par un faux module, donc ils ne
+chargent jamais le vrai paquet.
+
+POURQUOI 38 ALERTES RESTENT — PREUVES
+
+1. sundial : 18 restantes (5 hautes). transformers est figé à 4.40.1.
+   Sundial charge avec trust_remote_code=True (sundial_adapter.py:55) : le code
+   exécuté est celui livré avec le modèle (modeling_sundial.py,
+   ts_generation_mixin.py), écrit pour l'API de cache de transformers 4.40.
+   Testé sur le vrai modèle thuml/sundial-base-128m, révision 3212e4256449,
+   empreintes vérifiées contre model-artifacts.json :
+     4.40.1  generate() OK, sortie (1, 4, 12)
+     4.44.2  RuntimeError, tenseur 256 contre 16 en dimension 3
+     4.46.3  idem
+     4.47.1  idem
+     4.53.0  AttributeError DynamicCache.get_max_length
+     4.57.6  AttributeError DynamicCache.seen_tokens
+     5.15.1  AttributeError DynamicCache.seen_tokens
+   Le 1er correctif transformers demandé est en 4.48.0 : il est hors d'atteinte.
+   Débloqué le jour où thuml met son modèle à jour, pas avant.
+   torch, lui, n'était pas contraint : 2.10.0 validé avec 4.40.1.
+
+2. moirai : 9 restantes (1 critique). uni2ts 2.0.0 déclare torch>=2.1,<2.5,
+   sur PyPI comme sur sa branche main (vérifié le 2026-08-19). 2.0.0 est la
+   dernière version publiée. torch reste donc 2.4.1.
+
+3. kairos : 4 restantes (2 hautes). Kairos déclare transformers~=4.56 et importe
+   find_pruneable_heads_and_indices depuis transformers.pytorch_utils, retiré en
+   transformers 5. Testé : ImportError à l'import sous 5.15.1, OK sous 4.57.6.
+
+4. chronos, flowstate, tabpfn, timesfm, tirex, toto : 1 alerte faible chacune,
+   toujours la même — CVE-2025-3000, torch.jit.script, corrigée en torch 2.13.0
+   seulement. Inatteignable : à partir de torch 2.12 il n'existe plus de wheel
+   macOS 13, uniquement macosx_14_0_arm64, et uv ne permet pas de cibler une
+   version minimale de macOS (--python-platform n'expose aucune option pour ça).
+   L'éteindre coûterait le support de macOS 13 pour une faille faible sur une
+   fonction que Beaver n'appelle pas. Non fait volontairement.
+   flowstate a de toute façon son propre plafond : granite-tsfm exige torch<2.11.
+
+5. glib 0.18.5, Cargo.lock, moyenne. Dépendance transitive de toute la pile GTK
+   sur Linux : atk, cairo-rs, gdk, gdk-pixbuf, gdkx11, gio, gtk, javascriptcore-rs,
+   libappindicator, pango, soup3, webkit2gtk — 12 crates qui exigent ^0.18.
+   Le 1er correctif est en glib 0.20.0, aucun backport en 0.18.x, et
+   webkit2gtk 2.0.2 est la dernière version publiée. Rien à faire ici.
+   Le code fautif (VariantStrIter) provoque un déréférencement de pointeur nul,
+   pas une prise de contrôle, et le projet ne l'appelle nulle part.
+
+POURQUOI CES ALERTES RESTANTES NE SONT PAS ATTEIGNABLES
+
+Les avis les plus graves qui restent — les RCE transformers, la critique
+torch.load de moirai — supposent tous un fichier de modèle fabriqué par un
+attaquant. Beaver ne peut pas en charger un :
+  - model-artifacts.json fige dépôt, révision git et sha256 de chaque fichier
+  - model_artifacts.rs compare les empreintes en temps constant (subtle)
+  - model_path() dérive d'un model_id validé contre le catalogue, jamais d'une
+    saisie utilisateur
+  - tous les adaptateurs chargent avec local_files_only=True
+Ce n'est pas un argument pour laisser les versions vieillir, c'est la raison pour
+laquelle le risque résiduel est faible malgré 38 alertes ouvertes.
+
+DÉCISION : PAS D'ENTRÉE pip DANS dependabot.yml
+
+Motif écrit dans .github/dependabot.yml. En deux lignes : Dependabot relie une
+entrée pip-compile à sa sortie par l'en-tête --output-file, à défaut par la
+convention nom.in -> nom.txt. lock-runtimes.sh compile avec --no-header vers
+nom.<os>.lock. Dependabot modifierait donc les .in sans régénérer les .lock —
+ceux que Rust embarque par include_str! — et les deux divergeraient en silence.
+Les avis de sécurité pip continuent d'arriver : ils ne dépendent pas de ce fichier.
+
+CE QUI A ÉTÉ VÉRIFIÉ
+
+Chaque runtime a été installé depuis le .lock généré (--require-hashes), puis le
+vrai modèle chargé et une prédiction produite. Empreintes de tous les fichiers de
+modèle vérifiées contre model-artifacts.json avant chargement.
+  chronos-bolt-tiny  OK   transformers 5.15.1
+  chronos-2          OK   transformers 5.15.1
+  flowstate-r1.1     OK   transformers 5.15.1, sortie (1, 8, 1)
+  kairos-10m         OK   transformers 4.57.6, sortie (1, 9, 8)
+  sundial-128m       OK   transformers 4.40.1, sortie (1, 4, 12)
+
+  cargo test --lib forecast   341 passés, 0 échec
+  cargo clippy --all-targets -- -D warnings   propre
+  tests Python du sidecar (test_secure_adapters, test_contracts)   7 passés
+
+  Suite Rust complète : 3659 passés, 2 échecs, 7 tests écartés.
+  Ces 2 échecs et ces 7 tests écartés sont PRÉEXISTANTS. Vérifié en rejouant
+  chacun sur main, chantier mis de côté par git stash — mêmes résultats :
+    handoff_preserves_exactly_one_validated_helper       échoue déjà sur main
+    emergency_capacity_reap_failure_is_recoverable_...   échoue déjà sur main
+    les 7 tests PTY de services::terminal::tests         bloquent déjà sur main,
+    (test_pty_* et test_multiple_independent_sessions)   plus de 60 s chacun
+  Le blocage des tests PTY vient de PtySession::close (pty_session_unix.rs:125),
+  qui appelle child.wait() sans borne de temps. Aucun rapport avec ce commit,
+  mais la suite Rust ne peut pas aller à son terme tant que ce n'est pas traité.
+
+Les runtimes moirai, tabpfn, timesfm, tirex et toto ne sont pas modifiés : ils
+n'ont pas été réinstallés ni retestés.
+
+POINTS QUE LA REVUE PEUT VOULOIR TRANCHER
+
+- Trou de test : aucun test ne détecterait le prochain oubli de dépendance du
+  type de celui de jaxtyping, puisque les tests d'adaptateurs remplacent le vrai
+  paquet par un faux. Installer chaque lock et importer le vrai module coûterait
+  cher en CI ; un contrôle plus léger suffirait — vérifier que chaque import
+  déclaré par la source auditée figure dans le lock. Chantier à ouvrir,
+  volontairement hors de ce commit.
+- Les 38 alertes restantes ont été marquées « tolerable_risk » sur GitHub le
+  2026-08-19, sur décision de Kevin, avec un motif écrit par groupe de cause :
+  transformers bloqué par Sundial (17), torch bloqué par uni2ts (9), torch 2.13
+  inatteignable sur macOS (8), transformers bloqué par Kairos (3), glib (1).
+  Aucune n'a été rejetée sans raison vérifiable : chaque motif nomme la contrainte
+  amont, la version qui casse et la date du test. Elles se rouvrent d'elles-mêmes
+  si un jour la contrainte tombe.
+  Les 14 alertes que ce commit corrige sont restées ouvertes exprès : GitHub les
+  fermera au push, et les fermer à la main aurait masqué la correction réelle.
+- Sundial est le seul adaptateur qui exécute du code livré avec le modèle, et son
+  transformers ne bougera plus. Il reste couvert par la vérification sha256, mais
+  c'est le seul endroit où la défense tient à une seule couche.

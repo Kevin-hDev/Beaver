@@ -1,0 +1,14 @@
+Release CI correction after reproducing both failures.
+
+Root causes:
+- Brand audit counted every tracked binary asset against the 5,000 text-file budget. Git inventory is now independently bounded at 10,000 entries while text scanning remains bounded at 5,000.
+- Persistence audit truncated Rust files at the first #[cfg(test)], allowing later production accesses to escape review. It now audits the complete bounded source and the reviewed inventory includes every current access.
+
+Verification:
+- npm run check: 7/7 green; 2,499 frontend tests and 3,913 Rust tests passed (5 ignored).
+- npm run test:brand-boundaries: 14/14.
+- npm run test:persistence-migration: 9/9.
+- Release validation commands green: SearXNG scripts, installers, release workflow, bridge release, update manifest, cargo check.
+- graphify update . completed.
+
+Unrelated docs/beaver-site edits and local screenshots were preserved and excluded.

@@ -1,0 +1,7 @@
+Revue corrective du chemin des réveils Agent Local.
+
+Corrections : le prompt utilisateur est persisté avant la résolution du dossier, ce qui rend le cas sans projet exécutable ; seuls les messages produits après ce prompt sont ajoutés à la fin ; un projet retiré est refusé avant la création de la session ; la création avec projet partage désormais la même autorité que les sessions manuelles ; le compteur estime tous les tours assistant et leurs appels outils.
+
+Décisions produit conservées volontairement : une session distincte par exécution ; mode FullAccess ; catalogue complet des outils activés par utilisateur, y compris manage_automation.
+
+Preuves : les tests rouges reproduisaient une session sans message et acceptaient un identifiant de projet absent. Après correction, 44 tests scheduler passent ; cargo test donne 3797 réussis, 4 ignorés et 0 échec ; cargo clippy --all-targets -- -D warnings passe ; graphify update . a été exécuté.

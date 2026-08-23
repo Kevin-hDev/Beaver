@@ -1,0 +1,27 @@
+Phase 2 OpenAI Fast
+
+Autorités:
+- préférence durable: AgentSession.fast_mode_enabled
+- capacité: ModelInfo.supports_fast_mode
+- transport: FastModeRequest capturé une fois par génération
+
+Fil:
+- OpenAI API: fast/default
+- Codex OAuth: priority/champ absent + x-codex-routing-hint
+- OpenAI API non activé ou non annoncé: default
+- Codex non compatible/autre provider: champ absent
+
+Preuves exécutées:
+- contracts:check, TypeScript, lint et npm test verts
+- Vitest: 472 fichiers, 2499 tests verts
+- cargo fmt, cargo check --all-targets et clippy strict verts
+- cargo test: 3909 verts, 5 ignorés; intégration prelogger 1 verte
+- mutations ciblées: 27/27 détectées
+- lancement natif Beaver réussi après compilation CEF
+- validation visuelle des 12 états non exécutée: Mac verrouillé
+- validation réelle provider non exécutée — accord de coût non donné
+- graphify update . vert pour le code
+
+Documentation reviewer:
+- docs/providers/openai-fast/SPEC.md
+- docs/superpowers/plans/2026-08-22-phase-2-openai-fast.md

@@ -1,0 +1,25 @@
+Release 1.1.5 Windows package validation correction.
+
+Root cause:
+- The installed executable validator still compared the extracted Windows icon to the pixel hash of the previous Beaver icon.
+- The v1.1.5 NSIS package correctly embedded the new icon, so post-install validation failed after the package itself built successfully.
+
+Correction:
+- src-tauri/icons/icon.ico is now the single packaging authority for Windows branding.
+- check-nsis-migration.ps1 passes that source asset to the installed executable validator.
+- windows-artifact-helpers.ps1 extracts and hashes pixels from both the installed executable icon and the authoritative ICO, with bounded files and fail-closed error handling.
+- The obsolete hardcoded old-icon pixel hash was removed.
+- Brand and migration tests lock the approved ICO and the complete source-to-validator wiring.
+
+Verification:
+- npm run test:package-migration: 6/6 passed.
+- npx vitest run src/components/ui/__tests__/brand-assets.test.ts: 11/11 passed.
+- npm run test:release-workflow: 39/39 passed.
+- npm run test:install: passed.
+- npm run test:brand-boundaries: 14/14 passed.
+- npm run check: 7/7 green; 2499 frontend/script tests and 3913 Rust tests passed, 5 ignored.
+- graphify update . completed.
+
+Scope:
+- Only the five release/brand validation files in this commit are part of the correction.
+- Unrelated Beaver site mockup and screenshot working-tree changes were preserved.

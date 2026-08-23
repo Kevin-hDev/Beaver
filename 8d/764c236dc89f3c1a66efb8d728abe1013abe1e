@@ -1,0 +1,45 @@
+How it was found, and what it does not fix.
+
+The full macOS suite had never run in CI — the job only ever ran filtered
+steps. The first run of `cargo test --all` sat on one line for an hour. libtest
+prints `test NAME ... ` before running and terminates the line with the result,
+and CI stdout is not a terminal, so the partial line stays in the buffer: the
+last name shown is the last test that FINISHED, and the one that hangs is the
+next in alphabetical order. That pointed at test_multiple_independent_sessions,
+and `sample` on the local process confirmed it exactly:
+
+  tests.rs:90               end of test_multiple_independent_sessions
+    drop_glue PtySession
+      PtySession::drop      pty_session_unix.rs:139
+        PtySession::shutdown pty_session_unix.rs:125
+          portable_pty Child::wait
+            std::process::Child::wait
+              __wait4       <- eight minutes and counting
+
+The three shells told the rest: one in state ?Es — trying to exit, never
+getting there — and two untouched, because the drops run in series and the
+first never returned. Killing the test binary, which closes the master, made
+the stuck shell vanish within the second.
+
+The cycle: the kernel holds a shell inside its own exit while the pty master
+stays open and undrained; the master is a field of PtySession, released only
+once the drop completes — that is, after the wait. Each waited on the other.
+
+Beaver itself is not affected. OwnedSession runs a beaver-pty-reader thread
+that drains the master continuously, including through close(): the loop only
+leaves on Ok(0) or Err, which is what closing the master produces. The trap
+needs a master held open and never read, which only tests do.
+
+That is also why test_pty_kill changed. It kept its reader alive and unread
+across kill(), a state the application never reaches; the other tests passed
+only because Drop discards the error. It now drops the reader first, which is
+the order OwnedSession::close produces.
+
+What this does not fix: PtySession::spawn hands the caller a reader cloned
+from the master, so two owners hold the same descriptor and neither can
+guarantee it closes. The bound makes that survivable rather than resolved. The
+Windows path has the same unbounded wait, with console.close() likewise after
+it rather than before.
+
+Local: 12/12 in 12.9s where the suite used to hang; whole Rust suite 3666
+passed, 2 failed in 101s — the two known failures, untouched by this.

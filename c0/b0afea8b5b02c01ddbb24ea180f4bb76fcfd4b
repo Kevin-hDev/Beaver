@@ -1,0 +1,5 @@
+Rectification des preuves du correctif SearXNG du 21 août 2026.
+
+La note initiale était inexacte sur deux points. Le cross-check complet x86_64-pc-windows-gnu avec la feature windows-tests termine bien avec un code 0 sur c0b0afea ; les avertissements observés sont préexistants. La suite cargo test --lib observée pendant la re-review de c0b0afea comptait 3751 à 3752 succès avec un ou deux échecs de préparation ou environnement, et non 3753 succès entièrement verts.
+
+La preuve complète verte et les corrections des lacunes restantes appartiennent au commit 877ab436 et sont détaillées dans sa propre note. Le reste des raisons architecturales de cette note demeure valide.

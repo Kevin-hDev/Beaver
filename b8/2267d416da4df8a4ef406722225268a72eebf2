@@ -1,0 +1,29 @@
+Phase 2 OpenAI Fast — correctifs de review F1/F2/F3/F5/F6.
+
+Correctifs:
+- F3: une configuration de routage WebSocket invalide devient un refus permanent provider_configuration_invalid; elle n'active ni cooldown WebSocket ni repli HTTP.
+- F1: suppression des annotations dead_code et commentaires de phase devenus faux.
+- F2: les identifiants OpenAI/Codex et le code d'erreur utilisent leurs autorités existantes.
+- F5: la SPEC documente l'invariant actuel du sélecteur Fast hébergé dans les modes de raisonnement.
+- F6: service_tier est absent du payload Responses quand Fast est non compatible, au lieu d'être sérialisé à null.
+
+TDD et protections:
+- invalid_routing_configuration_is_a_permanent_rejection était rouge avant correction (Unavailable au lieu de ProviderRejected), puis vert.
+- unsupported_fast_mode_omits_service_tier était rouge avant correction (champ null présent), puis vert.
+- test d'orchestration: une route invalide ne désactive pas WebSocket et ne déclenche pas le repli.
+
+Validation relancée:
+- cargo test --lib: 3913 réussis, 0 échec, 5 ignorés. Une première exécution parallèle avait rencontré l'instabilité SearXNG inherited_pipes; le test ciblé puis la suite complète lancée seule sont verts.
+- cargo clippy --all-targets -- -D warnings: vert.
+- cargo check --all-targets: vert.
+- cargo fmt --check: vert.
+- npm test -- --run: 472 fichiers, 2499 tests, tous verts; build/CI/CEF/E2E/extensions verts.
+- npm run contracts:check, npx tsc --noEmit, npm run lint: verts.
+- git diff --check et scan de secrets ciblé: verts.
+- graphify update .: graphe code reconstruit, 36127 noeuds et 74460 arêtes.
+
+Périmètre volontaire:
+- F4 est une dette de versionnage des sessions préexistante.
+- F7/F8/F9/F11/F12 restent informatifs et hors correctif.
+- F10: les preuves de la branche montrent déjà que l'API Fast retourne priority; restent hors de ce correctif la mesure de performance/P01-P13 et le cas OAuth servi en default.
+- Aucun appel provider réel n'a été lancé pendant ce correctif.
