@@ -119,7 +119,7 @@ async fn probe(candidate: &PythonRuntime, manifest: &RuntimeManifest) -> bool {
         .is_some_and(|output| probe_matches(&output, manifest))
 }
 
-#[cfg(test)]
+#[cfg(all(test, windows))]
 pub(super) async fn run_probe_for_test(
     program: PathBuf,
     args: Vec<OsString>,
