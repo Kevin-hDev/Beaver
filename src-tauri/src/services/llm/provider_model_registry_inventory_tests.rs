@@ -104,9 +104,12 @@ fn corrected_limits_and_capabilities_are_stable() {
 #[test]
 fn openai_fast_mode_is_limited_to_the_verified_api_models() {
     for model in ["gpt-5.6-sol", "gpt-5.6", "gpt-5.6-terra", "gpt-5.6-luna"] {
-        assert!(
-            lookup("openai", model).unwrap().supports_fast_mode,
-            "{model}"
+        let entry = lookup("openai", model).unwrap();
+        assert!(entry.supports_fast_mode, "{model}");
+        assert_eq!(
+            entry.reasoning_modes,
+            ["off", "low", "medium", "high", "xhigh", "max"],
+            "{model} must keep the reasoning menu that hosts the Fast toggle"
         );
     }
     assert!(lookup("openai", "gpt-5.6-terra-pro").is_none());
