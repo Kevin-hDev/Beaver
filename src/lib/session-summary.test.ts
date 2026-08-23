@@ -122,6 +122,7 @@ function meta(id: string, parent: string, type: "explorer" | "coder"): AgentSess
     created_at: "2026-07-01T12:00:00Z",
     model: "gpt",
     provider: "openai",
+    fast_mode_enabled: false,
     message_count: 0,
     parent_session_id: parent,
     subagent_type: type,

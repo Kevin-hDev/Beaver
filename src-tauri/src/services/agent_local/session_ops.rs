@@ -45,9 +45,10 @@ pub async fn clear_project_id(project_id: &str) -> Result<(), String> {
     let all = list().await?;
     for meta in all {
         if meta.project_id.as_deref() == Some(project_id) {
-            let mut session = get(&meta.id).await?;
-            session.project_id = None;
-            save(&session).await?;
+            super::session_store_updates::update_locked(&meta.id, |session| {
+                session.project_id = None;
+            })
+            .await?;
         }
     }
     Ok(())

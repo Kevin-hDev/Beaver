@@ -1,4 +1,23 @@
 use super::session_store::{get, save, validate_session_id};
+#[cfg(test)]
+pub(super) use super::session_store_update_gate::{
+    update_fast_mode_with_after_load, update_fast_mode_with_writer,
+};
+
+pub(super) async fn update_locked<R>(
+    id: &str,
+    mutate: impl FnOnce(&mut super::types_session::AgentSession) -> R,
+) -> Result<R, String> {
+    super::session_store_update_gate::update_locked(id, mutate).await
+}
+
+pub async fn update_fast_mode(id: &str, enabled: bool) -> Result<bool, String> {
+    update_locked(id, |session| {
+        session.fast_mode_enabled = enabled;
+        session.fast_mode_enabled
+    })
+    .await
+}
 
 pub async fn update_model(
     id: &str,
@@ -7,24 +26,24 @@ pub async fn update_model(
     reasoning_mode: Option<String>,
     supports_thinking: Option<bool>,
 ) -> Result<(), String> {
-    validate_session_id(id)?;
-    let mut session = get(id).await?;
-    let previous_mode = reasoning_mode.or_else(|| session.reasoning_mode.clone());
-    let supports_thinking = supports_thinking.unwrap_or_else(|| {
-        crate::services::reasoning::provider_model_supports_thinking(provider, model)
-    });
-    session.model = model.to_string();
-    session.provider = provider.to_string();
-    session.reasoning_mode = crate::services::reasoning::normalize_for_model(
-        provider,
-        model,
-        previous_mode.as_deref(),
-        supports_thinking,
-    );
-    session.thinking_enabled =
-        crate::services::reasoning::enabled(session.reasoning_mode.as_deref(), false);
-    session.context_tokens = None;
-    save(&session).await
+    update_locked(id, |session| {
+        let previous_mode = reasoning_mode.or_else(|| session.reasoning_mode.clone());
+        let supports_thinking = supports_thinking.unwrap_or_else(|| {
+            crate::services::reasoning::provider_model_supports_thinking(provider, model)
+        });
+        session.model = model.to_string();
+        session.provider = provider.to_string();
+        session.reasoning_mode = crate::services::reasoning::normalize_for_model(
+            provider,
+            model,
+            previous_mode.as_deref(),
+            supports_thinking,
+        );
+        session.thinking_enabled =
+            crate::services::reasoning::enabled(session.reasoning_mode.as_deref(), false);
+        session.context_tokens = None;
+    })
+    .await
 }
 
 pub async fn update_reasoning(
@@ -32,29 +51,29 @@ pub async fn update_reasoning(
     reasoning_mode: Option<String>,
     supports_thinking: Option<bool>,
 ) -> Result<(), String> {
-    validate_session_id(id)?;
-    let mut session = get(id).await?;
-    let mode = crate::services::reasoning::sanitize_mode(reasoning_mode);
-    let supports_thinking = supports_thinking.unwrap_or_else(|| {
-        if session.provider == "ollama" && mode.is_some() {
-            true
-        } else {
-            crate::services::reasoning::provider_model_supports_thinking(
-                &session.provider,
-                &session.model,
-            )
-        }
-    });
-    let mode = crate::services::reasoning::normalize_for_model(
-        &session.provider,
-        &session.model,
-        mode.as_deref(),
-        supports_thinking,
-    );
-    session.thinking_enabled = !matches!(mode.as_deref(), None | Some("off"));
-    session.reasoning_mode = mode;
-    session.context_tokens = None;
-    save(&session).await
+    update_locked(id, |session| {
+        let mode = crate::services::reasoning::sanitize_mode(reasoning_mode);
+        let supports_thinking = supports_thinking.unwrap_or_else(|| {
+            if session.provider == "ollama" && mode.is_some() {
+                true
+            } else {
+                crate::services::reasoning::provider_model_supports_thinking(
+                    &session.provider,
+                    &session.model,
+                )
+            }
+        });
+        let mode = crate::services::reasoning::normalize_for_model(
+            &session.provider,
+            &session.model,
+            mode.as_deref(),
+            supports_thinking,
+        );
+        session.thinking_enabled = !matches!(mode.as_deref(), None | Some("off"));
+        session.reasoning_mode = mode;
+        session.context_tokens = None;
+    })
+    .await
 }
 
 pub async fn update_working_dir(id: &str, dir: &str) -> Result<(), String> {

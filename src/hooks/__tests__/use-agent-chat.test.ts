@@ -55,6 +55,7 @@ const session: AgentSession = {
   model: "llama3",
   provider: "ollama",
   thinking_enabled: false,
+  fast_mode_enabled: false,
   messages: [
     { id: "m1", role: "user", content: "Salut", files: [], timestamp: "2026-06-24T10:00:00Z" },
     { id: "m2", role: "assistant", content: "Bonjour", files: [], timestamp: "2026-06-24T10:00:01Z" },

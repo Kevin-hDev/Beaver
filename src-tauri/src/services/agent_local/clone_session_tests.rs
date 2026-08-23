@@ -32,6 +32,7 @@ fn session() -> AgentSession {
         model: "llama3".into(),
         provider: "ollama".into(),
         thinking_enabled: false,
+        fast_mode_enabled: false,
         reasoning_mode: None,
         accumulated_tokens: 0,
         context_tokens: None,
@@ -168,4 +169,14 @@ fn build_clone_does_not_inherit_git_branch() {
     );
 
     assert_eq!(clone.git_branch, None);
+}
+
+#[test]
+fn build_clone_does_not_inherit_fast_mode() {
+    let mut source = session();
+    source.fast_mode_enabled = true;
+
+    let clone = build_clone(&source, "m2", CloneMode::Cut, 1, &source.id);
+
+    assert!(!clone.fast_mode_enabled);
 }

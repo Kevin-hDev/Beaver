@@ -15,6 +15,7 @@ fn session(id: &str, parent: Option<&str>) -> AgentSession {
         model: "llama3".into(),
         provider: "ollama".into(),
         thinking_enabled: false,
+        fast_mode_enabled: false,
         reasoning_mode: None,
         accumulated_tokens: 0,
         context_tokens: None,

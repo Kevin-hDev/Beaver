@@ -23,6 +23,7 @@ function session(id: string, projectId?: string): AgentSessionMeta {
     archived_at: "2026-02-01T00:00:00Z",
     model: "llama3",
     provider: "ollama",
+    fast_mode_enabled: false,
     message_count: 1,
     project_id: projectId,
   };

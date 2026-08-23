@@ -4,7 +4,7 @@ import { ConversationList } from "../conversation-list";
 import type { AgentSessionMeta, Project } from "@/types/agent";
 
 function makeSession(overrides: Partial<AgentSessionMeta> = {}): AgentSessionMeta {
-  return { id: "s1", name: "Test", model: "llama3", provider: "ollama", message_count: 5, created_at: "2026-01-01", ...overrides };
+  return { id: "s1", name: "Test", model: "llama3", provider: "ollama", fast_mode_enabled: false, message_count: 5, created_at: "2026-01-01", ...overrides };
 }
 
 function makeProject(overrides: Partial<Project> = {}): Project {

@@ -1,110 +1,11 @@
 use crate::services::agent_local::types_session::{AgentSession, AgentSessionMeta};
-use chrono::Utc;
-use uuid::Uuid;
-
 pub use super::session_id::validate_session_id;
 pub(crate) use super::session_locks::lock_session;
 pub use super::session_locks::remove_session_lock;
 pub use super::session_store_messages::{add_messages, add_messages_with_context};
-
-pub async fn create_gateway(
-    name: &str,
-    model: &str,
-    provider: &str,
-    gateway_channel_key: String,
-) -> Result<AgentSession, String> {
-    let mut session = create_full(name, model, provider, false, None).await?;
-    session.is_gateway = true;
-    session.gateway_channel_key = Some(gateway_channel_key);
-    save(&session).await?;
-    Ok(session)
-}
-
-pub async fn create_full(
-    name: &str,
-    model: &str,
-    provider: &str,
-    is_heartbeat: bool,
-    project_id: Option<String>,
-) -> Result<AgentSession, String> {
-    let reasoning_mode = crate::services::reasoning::default_mode(provider, model);
-    let now = Utc::now();
-    let session = AgentSession {
-        id: Uuid::new_v4().to_string(),
-        name: name.to_string(),
-        created_at: now,
-        updated_at: Some(now),
-        archived_at: None,
-        pinned_at: None,
-        model: model.to_string(),
-        provider: provider.to_string(),
-        thinking_enabled: crate::services::reasoning::enabled(reasoning_mode.as_deref(), false),
-        reasoning_mode,
-        accumulated_tokens: 0,
-        context_tokens: None,
-        messages: Vec::new(),
-        todos: Vec::new(),
-        todo_neglect_count: 0,
-        todo_runs: Vec::new(),
-        active_todo_run_id: None,
-        stream_failures: Vec::new(),
-        diagnostic_runs: Vec::new(),
-        plan_mode_enabled: false,
-        plan_runs: Vec::new(),
-        active_plan_id: None,
-        plan_workflow_status: Default::default(),
-        is_heartbeat,
-        is_gateway: false,
-        gateway_channel_key: None,
-        project_id,
-        working_dir: String::new(),
-        working_dir_managed: false,
-        parent_session_id: None,
-        subagent_type: None,
-        subagent_worktree: None,
-        subagent_prompt: None,
-        subagent_status: None,
-        subagent_run_id: None,
-        subagent_description: None,
-        subagent_color_key: None,
-        subagent_summary: None,
-        subagent_last_activity: None,
-        subagent_queued_prompts: Vec::new(),
-        subagent_hidden_reports: Vec::new(),
-        clone_parent_session_id: None,
-        clone_parent_message_id: None,
-        clone_mode: None,
-        clone_summary: None,
-        clone_read_files: Vec::new(),
-        clone_modified_files: Vec::new(),
-        clone_root_session_id: None,
-        git_branch: None,
-    };
-    save(&session).await?;
-    Ok(session)
-}
-
-pub async fn create_with_project(
-    name: &str,
-    model: &str,
-    provider: &str,
-    is_heartbeat: bool,
-    project_id: Option<String>,
-) -> Result<AgentSession, String> {
-    let project_path = match project_id.as_deref() {
-        Some(project_id) => Some(super::directory_access::project_path(project_id).await?),
-        None => None,
-    };
-    let mut session = create_full(name, model, provider, is_heartbeat, project_id).await?;
-    if let Some(path) = project_path {
-        session.working_dir = path.to_string_lossy().to_string();
-        if let Err(error) = save(&session).await {
-            let _ = delete_one(&session.id).await;
-            return Err(error);
-        }
-    }
-    Ok(session)
-}
+pub use super::session_store_create::{
+    create_full, create_gateway, create_with_project, create_with_project_and_fast_mode,
+};
 
 pub async fn get(id: &str) -> Result<AgentSession, String> {
     validate_session_id(id)?;
@@ -157,10 +58,10 @@ pub(crate) async fn write_to_dir(
 }
 
 pub async fn rename(id: &str, name: &str) -> Result<(), String> {
-    validate_session_id(id)?;
-    let mut session = get(id).await?;
-    session.name = name.to_string();
-    save(&session).await
+    super::session_store_updates::update_locked(id, |session| {
+        session.name = name.to_string();
+    })
+    .await
 }
 
 pub(crate) async fn delete_one(id: &str) -> Result<(), String> {
@@ -196,7 +97,7 @@ pub use super::session_archive::list_archived;
 pub use super::session_ops::{clear_project_id, export_markdown, truncate_and_replace};
 pub use super::session_store_updates::{
     refresh_working_dir, set_managed_working_dir, switch_working_dir_to_project, update_model,
-    update_reasoning, update_working_dir,
+    update_fast_mode, update_reasoning, update_working_dir,
 };
 
 #[path = "session_store_tests.rs"]

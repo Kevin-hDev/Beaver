@@ -11,11 +11,15 @@ pub mod session_order;
 pub mod session_pin;
 pub mod session_security;
 pub mod session_store;
+mod session_store_create;
 mod session_store_compaction;
 mod session_store_document;
 pub(crate) mod session_store_messages;
 pub mod session_store_todos;
 pub mod session_store_updates;
+mod session_store_update_gate;
+#[cfg(test)]
+mod session_fast_mode_tests;
 pub mod session_subagents;
 pub mod session_tabs;
 pub mod session_tabs_file;

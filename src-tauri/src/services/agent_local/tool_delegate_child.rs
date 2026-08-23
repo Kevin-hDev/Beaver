@@ -203,11 +203,16 @@ pub(super) async fn inherit_parent_context(
     child: &mut AgentSession,
     parent: &AgentSession,
 ) -> Result<(), String> {
-    child.model = parent.model.clone();
-    child.provider = parent.provider.clone();
-    child.thinking_enabled = parent.thinking_enabled;
-    child.reasoning_mode = parent.reasoning_mode.clone();
-    child.working_dir = parent.working_dir.clone();
-    child.working_dir_managed = parent.working_dir_managed;
-    session_store::save(child).await
+    let lock = session_store::lock_session(&child.id).await;
+    let _guard = lock.lock().await;
+    let mut current = session_store::get(&child.id).await?;
+    current.model = parent.model.clone();
+    current.provider = parent.provider.clone();
+    current.thinking_enabled = parent.thinking_enabled;
+    current.reasoning_mode = parent.reasoning_mode.clone();
+    current.working_dir = parent.working_dir.clone();
+    current.working_dir_managed = parent.working_dir_managed;
+    session_store::save(&current).await?;
+    *child = current;
+    Ok(())
 }

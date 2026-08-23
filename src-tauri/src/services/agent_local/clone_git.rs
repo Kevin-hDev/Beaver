@@ -22,11 +22,14 @@ pub async fn create_linked_branch(
     clone_session_id: &str,
     repo_path: &Path,
 ) -> Result<CloneGitBranchResult, branch::CreateBranchError> {
+    let session_lock = session_store::lock_session(clone_session_id).await;
+    let session_guard = session_lock.lock().await;
     let mut clone = session_store::get(clone_session_id)
         .await
         .map_err(|_| branch::CreateBranchError::InternalError)?;
     ensure_clone_belongs_to_root(&clone, root_session_id).await?;
     if let Some(branch_name) = clone.git_branch.clone() {
+        drop(session_guard);
         let tabs = session_tabs::set_clone_git_branch(
             root_session_id,
             clone_session_id,
@@ -42,6 +45,7 @@ pub async fn create_linked_branch(
     session_store::save(&clone)
         .await
         .map_err(|_| branch::CreateBranchError::InternalError)?;
+    drop(session_guard);
     let tabs = session_tabs::set_clone_git_branch(
         root_session_id,
         clone_session_id,
@@ -56,6 +60,8 @@ pub async fn unlink_branch(
     root_session_id: &str,
     clone_session_id: &str,
 ) -> Result<session_tabs::SessionTabs, GitActionError> {
+    let session_lock = session_store::lock_session(clone_session_id).await;
+    let session_guard = session_lock.lock().await;
     let mut clone = session_store::get(clone_session_id)
         .await
         .map_err(|_| GitActionError::CloneUnavailable)?;
@@ -64,6 +70,7 @@ pub async fn unlink_branch(
     session_store::save(&clone)
         .await
         .map_err(|_| GitActionError::InternalError)?;
+    drop(session_guard);
     session_tabs::set_clone_git_branch(root_session_id, clone_session_id, None)
         .await
         .map_err(|_| GitActionError::InternalError)

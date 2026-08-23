@@ -100,6 +100,8 @@ pub async fn sync_git_branches_from_sessions(
             synced_tabs.push(tab);
             continue;
         }
+        let lock = session_store::lock_session(&tab.session_id).await;
+        let _guard = lock.lock().await;
         let Ok(mut session) = session_store::get(&tab.session_id).await else {
             continue;
         };

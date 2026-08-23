@@ -74,6 +74,7 @@ macro_rules! generate {
             crate::commands::resolve_missing_session_directory,
             crate::commands::add_messages_to_session,
             crate::commands::create_agent_session,
+            crate::commands::set_session_fast_mode,
             crate::commands::rename_agent_session,
             crate::commands::update_session_model,
             crate::commands::update_session_reasoning,

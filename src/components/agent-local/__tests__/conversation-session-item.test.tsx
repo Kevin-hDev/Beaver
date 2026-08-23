@@ -26,6 +26,7 @@ function session(overrides: Partial<AgentSessionMeta> = {}): AgentSessionMeta {
     name: "Test",
     model: "llama3",
     provider: "ollama",
+    fast_mode_enabled: false,
     message_count: 1,
     created_at: "2026-01-01T00:00:00Z",
     ...overrides,

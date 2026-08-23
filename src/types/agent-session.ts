@@ -39,6 +39,7 @@ export interface AgentSession {
   model: string;
   provider: string;
   thinking_enabled: boolean;
+  fast_mode_enabled: boolean;
   reasoning_mode?: string;
   accumulated_tokens: number;
   context_tokens?: number;
@@ -87,6 +88,7 @@ export interface AgentSessionMeta {
   model: string;
   provider: string;
   thinking_enabled?: boolean;
+  fast_mode_enabled: boolean;
   reasoning_mode?: string;
   message_count: number;
   project_id?: string;

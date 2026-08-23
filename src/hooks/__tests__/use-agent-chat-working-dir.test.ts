@@ -25,6 +25,7 @@ const session: AgentSession = {
   model: "llama3",
   provider: "ollama",
   thinking_enabled: false,
+  fast_mode_enabled: false,
   project_id: "project-1",
   working_dir: "/private/tmp/stale-directory",
   messages: [

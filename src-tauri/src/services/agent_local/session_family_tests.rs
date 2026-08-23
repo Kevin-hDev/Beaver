@@ -12,6 +12,7 @@ fn meta(id: &str, parent: Option<&str>, clone_parent: Option<&str>) -> AgentSess
         model: "llama3".into(),
         provider: "ollama".into(),
         thinking_enabled: false,
+        fast_mode_enabled: false,
         reasoning_mode: None,
         message_count: 0,
         is_heartbeat: false,

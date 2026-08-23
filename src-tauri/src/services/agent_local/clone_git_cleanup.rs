@@ -68,6 +68,8 @@ async fn linked_sessions_for_branch(
 
 async fn unlink_branch_from_sessions(session_ids: &[String]) -> Result<(), GitActionError> {
     for session_id in session_ids {
+        let lock = session_store::lock_session(session_id).await;
+        let _guard = lock.lock().await;
         let mut session = session_store::get(session_id)
             .await
             .map_err(|_| GitActionError::InternalError)?;

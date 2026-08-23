@@ -36,7 +36,10 @@ pub async fn get_agent_session(id: String) -> Result<AgentSession, String> {
 #[tauri::command]
 pub async fn save_agent_session(mut session: AgentSession) -> Result<(), String> {
     crate::services::agent_local::session_user_write::ensure_allowed(&session.id).await?;
+    let lock = session_store::lock_session(&session.id).await;
+    let _guard = lock.lock().await;
     let current = session_store::get(&session.id).await?;
+    session.fast_mode_enabled = current.fast_mode_enabled;
     session.working_dir = current.working_dir;
     session.working_dir_managed = current.working_dir_managed;
     crate::services::agent_local::directory_access::ensure_session_allowed(&session).await?;
@@ -101,10 +104,17 @@ pub async fn create_agent_session(
     project_id: Option<String>,
     reasoning_mode: Option<String>,
     supports_thinking: Option<bool>,
+    fast_mode_enabled: Option<bool>,
 ) -> Result<AgentSession, String> {
     let provider = provider.unwrap_or_else(|| "ollama".to_string());
-    let mut session =
-        session_store::create_with_project(&name, &model, &provider, false, project_id).await?;
+    let mut session = session_store::create_with_project_and_fast_mode(
+        &name,
+        &model,
+        &provider,
+        project_id,
+        fast_mode_enabled.unwrap_or(false),
+    )
+    .await?;
     if reasoning_mode.is_some() {
         session_store::update_reasoning(&session.id, reasoning_mode, supports_thinking).await?;
         if let Ok(updated) = session_store::get(&session.id).await {
@@ -112,6 +122,12 @@ pub async fn create_agent_session(
         }
     }
     Ok(session)
+}
+
+#[tauri::command]
+pub async fn set_session_fast_mode(id: String, enabled: bool) -> Result<bool, String> {
+    crate::services::agent_local::session_user_write::ensure_allowed(&id).await?;
+    session_store::update_fast_mode(&id, enabled).await
 }
 
 #[tauri::command]

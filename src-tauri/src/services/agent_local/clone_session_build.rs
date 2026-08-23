@@ -17,6 +17,8 @@ pub(super) fn build_clone(
     clone.created_at = now;
     clone.updated_at = Some(now);
     clone.archived_at = None;
+    // Un clone est une nouvelle session : il ne reprend pas une préférence de coût/vitesse.
+    clone.fast_mode_enabled = false;
     clone.messages = source.messages[..=message_index].to_vec();
     super::session_store_messages::recompute_accumulated_tokens(&mut clone);
     clone.stream_failures.clear();

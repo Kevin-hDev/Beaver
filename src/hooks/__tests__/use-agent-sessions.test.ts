@@ -21,6 +21,7 @@ const mockSession: AgentSessionMeta = {
   created_at: "2026-05-09T10:00:00Z",
   model: "llama3",
   provider: "ollama",
+  fast_mode_enabled: false,
   message_count: 3,
 };
 
@@ -86,9 +87,38 @@ describe("useAgentSessions", () => {
       projectId: null,
       reasoningMode: null,
       supportsThinking: null,
+      fastModeEnabled: false,
     });
     expect(invoke).toHaveBeenCalledWith("list_agent_sessions");
     expect(result.current.sessions).toEqual([mockSession, newSession]);
+  });
+
+  it("create transmet le brouillon Fast dans la première écriture", async () => {
+    const newSession: AgentSessionMeta = {
+      ...mockSession,
+      id: "session-fast",
+      fast_mode_enabled: true,
+    };
+    vi.mocked(invoke)
+      .mockResolvedValueOnce([mockSession])
+      .mockResolvedValueOnce(newSession)
+      .mockResolvedValueOnce([mockSession, newSession]);
+    const { result } = renderHook(() => useAgentSessions());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => {
+      await result.current.create("Fast", "gpt-5.6", "openai", undefined, null, true, true);
+    });
+
+    expect(invoke).toHaveBeenCalledWith("create_agent_session", {
+      name: "Fast",
+      model: "gpt-5.6",
+      provider: "openai",
+      projectId: null,
+      reasoningMode: null,
+      supportsThinking: true,
+      fastModeEnabled: true,
+    });
   });
 
   it("rename appelle invoke rename_agent_session puis refresh", async () => {

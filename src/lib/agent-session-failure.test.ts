@@ -5,7 +5,7 @@ import type { AgentSession } from "@/types/agent";
 function session(): AgentSession {
   return {
     id: "session-fixture", name: "Fixture", created_at: "2026-08-22T12:00:00Z",
-    model: "grok-4.6", provider: "xai-oauth", thinking_enabled: true,
+    model: "grok-4.6", provider: "xai-oauth", thinking_enabled: true, fast_mode_enabled: false,
     accumulated_tokens: 0,
     messages: [{
       id: "user-1", role: "user", content: "Bonjour", files: [],

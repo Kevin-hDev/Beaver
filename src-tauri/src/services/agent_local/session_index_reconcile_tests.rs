@@ -13,6 +13,7 @@ fn session(id: &str) -> AgentSession {
         model: "llama3".into(),
         provider: "ollama".into(),
         thinking_enabled: false,
+        fast_mode_enabled: false,
         reasoning_mode: None,
         accumulated_tokens: 0,
         context_tokens: None,
@@ -89,6 +90,28 @@ async fn reconcile_rebuilds_stale_active_clone_index() {
         entries[0].clone_parent_message_id,
         session.clone_parent_message_id
     );
+}
+
+#[tokio::test]
+async fn reconcile_rebuilds_an_index_with_stale_fast_mode() {
+    let tmp = TempDir::new().unwrap();
+    let mut session = session("clone-fast");
+    session.fast_mode_enabled = true;
+    let mut stale = meta_from_session(&session);
+    stale.fast_mode_enabled = false;
+    assert!(index_meta_drifted(&stale, &session));
+    tokio::fs::write(
+        tmp.path().join("clone-fast.json"),
+        serde_json::to_string_pretty(&session).unwrap(),
+    )
+    .await
+    .unwrap();
+
+    let entries = reconcile_index(&tmp.path().join("index.json"), vec![stale])
+        .await
+        .unwrap();
+
+    assert!(entries[0].fast_mode_enabled);
 }
 
 #[tokio::test]

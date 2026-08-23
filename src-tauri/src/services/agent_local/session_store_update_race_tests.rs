@@ -111,3 +111,65 @@ async fn selecting_a_directory_makes_it_visible_again() {
         .await
         .expect("delete session");
 }
+
+#[tokio::test]
+async fn fast_mode_update_and_rename_keep_both_mutations() {
+    let session = session_store::create_full("Before", "gpt-5.6", "openai", false, None)
+        .await
+        .expect("create session");
+    let (loaded_tx, loaded_rx) = tokio::sync::oneshot::channel();
+    let (release_tx, release_rx) = tokio::sync::oneshot::channel();
+    let update_id = session.id.clone();
+    let update = tokio::spawn(async move {
+        session_store_updates::update_fast_mode_with_after_load(
+            &update_id,
+            true,
+            move || async move {
+                let _ = loaded_tx.send(());
+                let _ = release_rx.await;
+            },
+        )
+        .await
+    });
+    loaded_rx.await.expect("fast update loaded session");
+
+    let rename_id = session.id.clone();
+    let rename = tokio::spawn(async move { session_store::rename(&rename_id, "After").await });
+    let mut rename = Box::pin(rename);
+    assert!(tokio::time::timeout(std::time::Duration::from_millis(30), &mut rename)
+        .await
+        .is_err());
+
+    let _ = release_tx.send(());
+    update.await.expect("join update").expect("update fast mode");
+    rename.await.expect("join rename").expect("rename session");
+    let saved = session_store::get(&session.id).await.expect("load session");
+    assert!(saved.fast_mode_enabled);
+    assert_eq!(saved.name, "After");
+    session_store::delete_one(&session.id)
+        .await
+        .expect("delete session");
+}
+
+#[test]
+fn user_session_writers_are_routed_through_the_shared_lock_gate() {
+    let updates = include_str!("session_store_updates.rs");
+    let store = include_str!("session_store.rs");
+    let commands = include_str!("../../commands/agent_sessions.rs");
+    let clone_git = include_str!("clone_git.rs");
+    let clone_git_link = include_str!("clone_git_link.rs");
+    let clone_git_cleanup = include_str!("clone_git_cleanup.rs");
+    let tabs_git = include_str!("session_tabs_git.rs");
+    let session_ops = include_str!("session_ops.rs");
+    let delegate_child = include_str!("tool_delegate_child.rs");
+
+    assert_eq!(updates.matches("update_locked(id, |session|").count(), 3);
+    assert!(store.contains("session_store_updates::update_locked(id, |session|"));
+    assert!(commands.contains("let lock = session_store::lock_session(&session.id).await;"));
+    assert_eq!(clone_git.matches("lock_session(clone_session_id)").count(), 2);
+    assert!(clone_git_link.contains("lock_session(clone_session_id)"));
+    assert!(clone_git_cleanup.contains("lock_session(session_id)"));
+    assert!(tabs_git.contains("lock_session(&tab.session_id)"));
+    assert!(session_ops.contains("session_store_updates::update_locked(&meta.id"));
+    assert!(delegate_child.contains("lock_session(&child.id)"));
+}

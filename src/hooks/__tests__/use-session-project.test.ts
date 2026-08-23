@@ -31,6 +31,7 @@ function session(projectId: string | undefined, workingDir: string): AgentSessio
     model: "llama3",
     provider: "ollama",
     thinking_enabled: false,
+    fast_mode_enabled: false,
     accumulated_tokens: 0,
     messages: [],
     created_at: "2026-07-12T00:00:00Z",

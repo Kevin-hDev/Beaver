@@ -18,6 +18,7 @@ fn session(id: &str, status: &str, parent: bool, offset_secs: i64) -> AgentSessi
         model: "llama3".into(),
         provider: "ollama".into(),
         thinking_enabled: false,
+        fast_mode_enabled: false,
         reasoning_mode: None,
         accumulated_tokens: 0,
         context_tokens: None,

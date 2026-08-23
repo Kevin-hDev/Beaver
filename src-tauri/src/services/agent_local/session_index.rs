@@ -58,6 +58,7 @@ async fn reconcile_index(
 fn index_meta_drifted(meta: &AgentSessionMeta, session: &AgentSession) -> bool {
     let expected = meta_from_session(session);
     meta.archived_at != session.archived_at
+        || meta.fast_mode_enabled != session.fast_mode_enabled
         || meta.parent_session_id != session.parent_session_id
         || meta.subagent_type != session.subagent_type
         || meta.subagent_status != session.subagent_status
@@ -147,6 +148,7 @@ pub fn meta_from_session(session: &AgentSession) -> AgentSessionMeta {
         model: session.model.clone(),
         provider: session.provider.clone(),
         thinking_enabled: session.thinking_enabled,
+        fast_mode_enabled: session.fast_mode_enabled,
         reasoning_mode: session.reasoning_mode.clone(),
         message_count: session.messages.len(),
         is_heartbeat: session.is_heartbeat,

@@ -173,6 +173,7 @@ function session(messages: AgentMessage[], id = "s1"): AgentSession {
     model: "gpt",
     provider: "openai",
     thinking_enabled: false,
+    fast_mode_enabled: false,
     accumulated_tokens: 0,
     messages,
   };
@@ -196,6 +197,7 @@ function subagentMeta(id: string, parentId: string): AgentSessionMeta {
     created_at: "2026-07-01T12:00:00Z",
     model: "gpt",
     provider: "openai",
+    fast_mode_enabled: false,
     message_count: 1,
     parent_session_id: parentId,
     subagent_type: "explorer",

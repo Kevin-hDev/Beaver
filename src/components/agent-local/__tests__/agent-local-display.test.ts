@@ -6,8 +6,8 @@ import {
 
 describe("agent local display resolution", () => {
   const sessions: AgentSessionMeta[] = [
-    { id: "main", name: "Main", model: "m", provider: "p", message_count: 0, created_at: "2026-01-01" },
-    { id: "clone", name: "Clone", model: "m", provider: "p", message_count: 0, created_at: "2026-01-01", project_id: "p2" },
+    { id: "main", name: "Main", model: "m", provider: "p", fast_mode_enabled: false, message_count: 0, created_at: "2026-01-01" },
+    { id: "clone", name: "Clone", model: "m", provider: "p", fast_mode_enabled: false, message_count: 0, created_at: "2026-01-01", project_id: "p2" },
   ];
   const projects: Project[] = [
     { id: "p1", name: "One", path: "/one", order: 0, created_at: "2026-01-01" },

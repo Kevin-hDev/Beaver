@@ -13,6 +13,8 @@ pub async fn link_existing_branch(
         return Err(GitActionError::BranchUnavailable);
     }
 
+    let session_lock = session_store::lock_session(clone_session_id).await;
+    let session_guard = session_lock.lock().await;
     let mut clone = session_store::get(clone_session_id)
         .await
         .map_err(|_| GitActionError::CloneUnavailable)?;
@@ -21,6 +23,7 @@ pub async fn link_existing_branch(
     session_store::save(&clone)
         .await
         .map_err(|_| GitActionError::InternalError)?;
+    drop(session_guard);
     session_tabs::set_clone_git_branch(
         root_session_id,
         clone_session_id,

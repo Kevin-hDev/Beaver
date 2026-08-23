@@ -65,6 +65,7 @@ export function useAgentSessions() {
       projectId?: string,
       reasoningMode?: string | null,
       supportsThinking?: boolean,
+      fastModeEnabled = false,
     ) => {
       const session = await invoke<AgentSessionMeta>("create_agent_session", {
         name,
@@ -73,6 +74,7 @@ export function useAgentSessions() {
         projectId: projectId ?? null,
         reasoningMode: reasoningMode ?? null,
         supportsThinking: supportsThinking ?? null,
+        fastModeEnabled,
       });
       await refresh();
       return session;

@@ -16,6 +16,7 @@ fn clone_session(id: &str, parent_id: &str, root_id: Option<&str>) -> AgentSessi
         model: "llama3".into(),
         provider: "ollama".into(),
         thinking_enabled: false,
+        fast_mode_enabled: false,
         reasoning_mode: None,
         accumulated_tokens: 0,
         context_tokens: None,

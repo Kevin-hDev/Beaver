@@ -15,6 +15,7 @@ function session(id: string, name = `Session ${id}`, extra: Partial<AgentSession
     created_at: `2026-01-${id.padStart(2, "0")}`,
     model: "llama3",
     provider: "ollama",
+    fast_mode_enabled: false,
     message_count: 1,
     ...extra,
   };

@@ -16,6 +16,7 @@ const archivedSession: AgentSessionMeta = {
   archived_at: "2026-05-11T10:00:00Z",
   model: "llama3",
   provider: "ollama",
+  fast_mode_enabled: false,
   message_count: 3,
 };
 

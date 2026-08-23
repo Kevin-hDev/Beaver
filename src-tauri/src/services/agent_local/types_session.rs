@@ -55,6 +55,8 @@ pub struct AgentSession {
     pub provider: String,
     #[serde(default)]
     pub thinking_enabled: bool,
+    #[serde(default)]
+    pub fast_mode_enabled: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reasoning_mode: Option<String>,
     pub accumulated_tokens: u32,
@@ -158,6 +160,8 @@ pub struct AgentSessionMeta {
     pub provider: String,
     #[serde(default)]
     pub thinking_enabled: bool,
+    #[serde(default)]
+    pub fast_mode_enabled: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reasoning_mode: Option<String>,
     pub message_count: usize,

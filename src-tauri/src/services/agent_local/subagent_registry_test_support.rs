@@ -12,6 +12,7 @@ pub fn meta(id: &str, status: &str) -> AgentSessionMeta {
         model: "llama3".into(),
         provider: "ollama".into(),
         thinking_enabled: false,
+        fast_mode_enabled: false,
         reasoning_mode: None,
         message_count: 0,
         is_heartbeat: false,

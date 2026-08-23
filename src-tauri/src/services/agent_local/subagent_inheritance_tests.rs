@@ -12,6 +12,7 @@ async fn fresh_child_inherits_parent_model_and_reasoning() {
     .expect("parent");
     parent.thinking_enabled = true;
     parent.reasoning_mode = Some("high".into());
+    parent.fast_mode_enabled = true;
     parent.working_dir = project.path().to_string_lossy().to_string();
     super::session_store::save(&parent).await.expect("save parent");
 
@@ -32,6 +33,7 @@ async fn fresh_child_inherits_parent_model_and_reasoning() {
     assert_eq!(child.provider, parent.provider);
     assert!(child.thinking_enabled);
     assert_eq!(child.reasoning_mode.as_deref(), Some("high"));
+    assert!(!child.fast_mode_enabled);
     assert_eq!(child.working_dir, parent.working_dir);
     super::session_store::delete_one(&child.id)
         .await
