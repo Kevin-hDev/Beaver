@@ -3,6 +3,11 @@ use serde::{Deserialize, Deserializer};
 
 use super::RequestProjection;
 
+#[path = "projection_scan.rs"]
+mod scan;
+#[path = "projection_tests.rs"]
+mod tests;
+
 const MAX_CAPTURE_ITEMS: usize = 2_048;
 const MAX_MODEL_BYTES: usize = 128;
 const MAX_TIER_BYTES: usize = 16;
@@ -20,18 +25,15 @@ struct WireProjection {
     input: usize,
     #[serde(default, deserialize_with = "count_items")]
     tools: usize,
-    #[serde(default, deserialize_with = "present")]
-    access_token: bool,
-    #[serde(default, deserialize_with = "present")]
-    refresh_token: bool,
-    #[serde(default, deserialize_with = "present")]
-    authorization: bool,
 }
 
 pub(super) fn parse(body_bytes: &[u8]) -> Result<RequestProjection, String> {
     if body_bytes.len() > crate::services::secure_http::LLM_BODY_LIMIT {
         return Err(invalid());
     }
+    // Scan independently so ignored input/tool payloads cannot hide a sensitive field.
+    let forbidden_field_present =
+        scan::forbidden_field_present(body_bytes).map_err(|_| invalid())?;
     let wire: WireProjection = serde_json::from_slice(body_bytes).map_err(|_| invalid())?;
     Ok(RequestProjection {
         model: wire.model,
@@ -39,7 +41,7 @@ pub(super) fn parse(body_bytes: &[u8]) -> Result<RequestProjection, String> {
         envelope_type: wire.envelope_type,
         input_count: wire.input,
         tool_count: wire.tools,
-        forbidden_field_present: wire.access_token || wire.refresh_token || wire.authorization,
+        forbidden_field_present,
         body_bytes: body_bytes.len(),
     })
 }
@@ -154,13 +156,6 @@ where
         }
     }
     deserializer.deserialize_seq(CountVisitor)
-}
-
-fn present<'de, D>(deserializer: D) -> Result<bool, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    IgnoredAny::deserialize(deserializer).map(|_| true)
 }
 
 fn invalid() -> String {

@@ -7,6 +7,9 @@ use super::sensitive_buffer::SensitiveBuffer;
 use super::WebSocketReply;
 use crate::services::codex_oauth::token::constant_time_secret_eq;
 
+#[path = "websocket_raw_bounds_tests.rs"]
+mod bounds_tests;
+
 const MAX_HANDSHAKE_BYTES: usize = 16 * 1024;
 
 pub(super) struct HandshakeCapture {
@@ -30,7 +33,13 @@ pub(super) async fn accept(
             return Err(invalid());
         }
         let mut chunk = [0_u8; 1024];
-        let read = stream.read(&mut chunk).await.map_err(|_| invalid())?;
+        // A read is limited to the exact remainder so an oversized handshake cannot pass.
+        let remaining = MAX_HANDSHAKE_BYTES - request.len();
+        let max_read = remaining.min(chunk.len());
+        let read = stream
+            .read(&mut chunk[..max_read])
+            .await
+            .map_err(|_| invalid())?;
         if read == 0 {
             return Err(invalid());
         }

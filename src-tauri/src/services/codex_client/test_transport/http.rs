@@ -12,6 +12,9 @@ use crate::services::codex_oauth::store::CodexTokens;
 use crate::services::codex_oauth::token::constant_time_secret_eq;
 use crate::services::secure_http::AuthenticatedClient;
 
+#[path = "http_bounds_tests.rs"]
+mod bounds_tests;
+
 const MAX_TEST_REQUEST_BYTES: usize = 64 * 1024;
 const SUCCESS_BODY: &str = concat!(
     "data: {\"type\":\"response.completed\",",
@@ -168,7 +171,13 @@ async fn read_request(
             return Err(invalid());
         }
         let mut chunk = [0_u8; 1024];
-        let read = socket.read(&mut chunk).await.map_err(|_| invalid())?;
+        // A read is limited to the exact remainder so an oversized complete body cannot pass.
+        let remaining = MAX_TEST_REQUEST_BYTES - bytes.len();
+        let max_read = remaining.min(chunk.len());
+        let read = socket
+            .read(&mut chunk[..max_read])
+            .await
+            .map_err(|_| invalid())?;
         if read == 0 {
             return Err(invalid());
         }
