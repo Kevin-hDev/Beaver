@@ -212,6 +212,7 @@ impl OllamaManager {
                 closing: false,
                 generation: 0,
                 status: super::types::OllamaRuntimeStatus::initial(),
+                compute_mode: None,
             }),
             owned_process: std::sync::Mutex::new(None),
             active_cancellation: std::sync::Mutex::new(None),

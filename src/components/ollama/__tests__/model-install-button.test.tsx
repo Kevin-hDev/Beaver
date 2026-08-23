@@ -27,6 +27,13 @@ const runningDownload: ModelDownloadState = {
   errorKey: null,
 };
 
+const failedDownload: ModelDownloadState = {
+  ...runningDownload,
+  id: "failed-download",
+  status: "failed",
+  errorKey: "model-download-failed",
+};
+
 describe("ModelInstallButton", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -54,5 +61,22 @@ describe("ModelInstallButton", () => {
       expect(screen.getByRole("button", { name: "ollama.cancel" })).toBeVisible();
     });
     expect(showToast).toHaveBeenCalledWith("ollama.vramWarning", "info", 4000);
+  });
+
+  it("affiche l'échec terminal du téléchargement Ollama", async () => {
+    vi.mocked(invoke).mockImplementation((command) => {
+      if (command === "list_model_downloads") return Promise.resolve([failedDownload]);
+      return Promise.resolve(undefined);
+    });
+
+    render(
+      <ModelInstallButton
+        fullName="large-model:70b"
+        isInstalled={false}
+        hasUpdate={false}
+      />,
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("errors.downloadFailed");
   });
 });

@@ -1,3 +1,4 @@
+use super::compute_mode::OllamaComputeMode;
 use super::polling::{build_gpu_status, PsResponse};
 use crate::services::gpu_vram::{GpuMemoryKind, GpuMemorySnapshot};
 
@@ -5,7 +6,7 @@ fn snapshot(kind: GpuMemoryKind, total_mb: u64, used_mb: u64) -> GpuMemorySnapsh
     GpuMemorySnapshot {
         kind,
         total_mb,
-        used_mb,
+        used_mb: Some(used_mb),
     }
 }
 
@@ -16,9 +17,11 @@ fn dedicated_memory_is_reported_as_vram() {
     let status = build_gpu_status(
         &ps,
         Some(snapshot(GpuMemoryKind::Dedicated, 24_000, 19_000)),
+        None,
+        32_768,
     );
     assert_eq!(status.accelerator, "VRAM");
-    assert_eq!(status.vram_used_mb, 19000);
+    assert_eq!(status.vram_used_mb, Some(19000));
     assert_eq!(status.vram_total_mb, 24000);
 }
 
@@ -26,26 +29,50 @@ fn dedicated_memory_is_reported_as_vram() {
 fn cpu_fallback() {
     let json = r#"{"models":[{"name":"gemma4:e4b","size":3000000000,"size_vram":0}]}"#;
     let ps: PsResponse = serde_json::from_str(json).unwrap();
-    assert_eq!(build_gpu_status(&ps, None).accelerator, "CPU");
+    let status = build_gpu_status(&ps, None, None, 32_768);
+    assert_eq!(status.accelerator, "CPU · RAM");
+    assert_eq!(status.vram_used_mb, Some(2_861));
+    assert_eq!(status.vram_total_mb, 32_768);
+}
+
+#[test]
+fn cpu_model_reports_ram_even_when_the_desktop_uses_vram() {
+    let json = r#"{"models":[{"name":"smollm2:135m","size":270000000,"size_vram":0}]}"#;
+    let ps: PsResponse = serde_json::from_str(json).unwrap();
+    let status = build_gpu_status(
+        &ps,
+        Some(snapshot(GpuMemoryKind::Dedicated, 16_384, 2_048)),
+        Some(OllamaComputeMode::Cpu),
+        32_768,
+    );
+
+    assert_eq!(status.accelerator, "CPU · RAM");
+    assert_eq!(status.vram_used_mb, Some(257));
+    assert_eq!(status.vram_total_mb, 32_768);
 }
 
 #[test]
 fn gpu_with_system_usage_without_total() {
     let json = r#"{"models":[{"name":"qwen3:14b","size":9000000000,"size_vram":5368709120}]}"#;
     let ps: PsResponse = serde_json::from_str(json).unwrap();
-    let status = build_gpu_status(&ps, Some(snapshot(GpuMemoryKind::Dedicated, 0, 5_120)));
+    let status = build_gpu_status(
+        &ps,
+        Some(snapshot(GpuMemoryKind::Dedicated, 0, 5_120)),
+        None,
+        32_768,
+    );
     assert_eq!(status.accelerator, "VRAM");
-    assert_eq!(status.vram_used_mb, 5120);
+    assert_eq!(status.vram_used_mb, Some(5120));
 }
 
 #[test]
 fn ollama_gpu_allocation_without_a_system_measurement_keeps_unknown_values() {
     let json = r#"{"models":[{"name":"qwen3:14b","size":9000000000,"size_vram":5368709120}]}"#;
     let ps: PsResponse = serde_json::from_str(json).unwrap();
-    let status = build_gpu_status(&ps, None);
+    let status = build_gpu_status(&ps, None, None, 32_768);
 
     assert_eq!(status.accelerator, "VRAM");
-    assert_eq!(status.vram_used_mb, 0);
+    assert_eq!(status.vram_used_mb, None);
     assert_eq!(status.vram_total_mb, 0);
 }
 
@@ -54,6 +81,8 @@ fn idle_with_vram_shows_vram() {
     let status = build_gpu_status(
         &PsResponse { models: vec![] },
         Some(snapshot(GpuMemoryKind::Dedicated, 16_000, 0)),
+        None,
+        32_768,
     );
     assert_eq!(status.accelerator, "VRAM");
     assert!(status.model_loaded.is_none());
@@ -61,7 +90,7 @@ fn idle_with_vram_shows_vram() {
 
 #[test]
 fn idle_without_a_measurement_is_not_misreported_as_cpu() {
-    let status = build_gpu_status(&PsResponse { models: vec![] }, None);
+    let status = build_gpu_status(&PsResponse { models: vec![] }, None, None, 32_768);
     assert_eq!(status.accelerator, "");
     assert!(status.model_loaded.is_none());
 }
@@ -71,11 +100,27 @@ fn apple_unified_memory_is_identified_as_ram() {
     let status = build_gpu_status(
         &PsResponse { models: vec![] },
         Some(snapshot(GpuMemoryKind::Unified, 24_576, 12_288)),
+        None,
+        32_768,
     );
 
     assert_eq!(status.accelerator, "RAM");
     assert_eq!(status.vram_total_mb, 24_576);
-    assert_eq!(status.vram_used_mb, 12_288);
+    assert_eq!(status.vram_used_mb, Some(12_288));
+}
+
+#[test]
+fn idle_owned_cpu_runtime_keeps_the_applied_mode_visible() {
+    let status = build_gpu_status(
+        &PsResponse { models: vec![] },
+        Some(snapshot(GpuMemoryKind::Dedicated, 16_384, 2_048)),
+        Some(OllamaComputeMode::Cpu),
+        32_768,
+    );
+
+    assert_eq!(status.accelerator, "CPU · RAM");
+    assert_eq!(status.vram_used_mb, Some(0));
+    assert_eq!(status.vram_total_mb, 32_768);
 }
 
 #[test]

@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig, normalizePath } from "vite";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
@@ -9,7 +9,7 @@ import path from "path";
 const cargoTargetDirs = [
   path.resolve(import.meta.dirname, "src-tauri/target"),
   path.resolve(import.meta.dirname, "target"),
-];
+].map(normalizePath);
 
 export default defineConfig({
   plugins: [
@@ -36,8 +36,8 @@ export default defineConfig({
       ignored: (watchedPath) =>
         cargoTargetDirs.some(
           (targetDir) =>
-            watchedPath === targetDir ||
-            watchedPath.startsWith(`${targetDir}${path.sep}`),
+            normalizePath(watchedPath) === targetDir ||
+            normalizePath(watchedPath).startsWith(`${targetDir}/`),
         ),
     },
   },

@@ -36,7 +36,7 @@ mod tests {
         let measurement = GpuMemorySnapshot {
             kind: GpuMemoryKind::Dedicated,
             total_mb: 16_384,
-            used_mb: 4_096,
+            used_mb: Some(4_096),
         };
 
         cache.publish(Some(measurement));

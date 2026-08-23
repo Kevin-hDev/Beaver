@@ -184,6 +184,7 @@ landlock = "0.4.4"
 # ConPTY children are created suspended and enter Beaver's global Job before
 # they can execute, preserving the single native confinement authority.
 windows-spawn = "=0.1.0"
+windows = { version = "=0.61.3", features = ["Win32_Graphics_Dxgi"] }
 windows-sys = { version = "0.61", features = [
     "Win32_Foundation",
     "Win32_Globalization",

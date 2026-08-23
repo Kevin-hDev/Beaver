@@ -36,7 +36,7 @@ impl OllamaSpawnProfile {
     ) -> Result<Self, OllamaErrorCode> {
         Self::resolve_inner(
             paths,
-            super::spawn_environment::collect_bounded(inherited_environment)?,
+            super::spawn_environment::collect_inherited_bounded(inherited_environment)?,
             inherited_cwd,
             identity,
             false,
@@ -52,7 +52,7 @@ impl OllamaSpawnProfile {
     ) -> Result<Self, OllamaErrorCode> {
         Self::resolve_inner(
             paths,
-            super::spawn_environment::collect_bounded(inherited_environment)?,
+            super::spawn_environment::collect_inherited_bounded(inherited_environment)?,
             inherited_cwd,
             identity,
             true,
@@ -69,7 +69,7 @@ impl OllamaSpawnProfile {
     ) -> Result<Self, OllamaErrorCode> {
         Self::resolve_inner(
             paths,
-            super::spawn_environment::collect_bounded(inherited_environment)?,
+            super::spawn_environment::collect_inherited_bounded(inherited_environment)?,
             inherited_cwd,
             identity,
             false,
@@ -83,7 +83,7 @@ impl OllamaSpawnProfile {
         inherited_cwd: &Path,
         identity: &dyn PathIdentityResolver,
     ) -> Result<(), OllamaErrorCode> {
-        let inherited = super::spawn_environment::collect_bounded(inherited_environment)?;
+        let inherited = super::spawn_environment::collect_inherited_bounded(inherited_environment)?;
         let environment = super::spawn_environment::freeze(inherited, Vec::new())?;
         let working_directory = identity.canonical_directory(inherited_cwd)?;
         resolve_models_directory(paths, &environment, &working_directory, identity, false)

@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { GpuStatusBadge } from "../gpu-status-badge";
 import { useGpuStatus } from "@/hooks/use-gpu-status";
@@ -59,5 +59,35 @@ describe("GpuStatusBadge", () => {
     render(<GpuStatusBadge />);
 
     expect(screen.getByText("VRAM 5.0 GB")).toBeTruthy();
+  });
+
+  it("shows a real zero measurement instead of an unavailable dash", () => {
+    mockedUseGpuStatus.mockReturnValue({
+      accelerator: "VRAM",
+      vramUsedMb: 0,
+      vramTotalMb: 16384,
+      modelLoaded: null,
+      vramPercent: 0,
+    });
+
+    render(<GpuStatusBadge />);
+
+    fireEvent.mouseEnter(screen.getByText("VRAM 0%"));
+    expect(screen.getByText("VRAM — 0 MB / 16.0 GB")).toBeTruthy();
+  });
+
+  it("keeps an unavailable measurement distinct from a real zero", () => {
+    mockedUseGpuStatus.mockReturnValue({
+      accelerator: "VRAM",
+      vramUsedMb: null,
+      vramTotalMb: 16384,
+      modelLoaded: null,
+      vramPercent: 0,
+    });
+
+    render(<GpuStatusBadge />);
+
+    fireEvent.mouseEnter(screen.getByText("VRAM"));
+    expect(screen.getByText("VRAM — — / 16.0 GB")).toBeTruthy();
   });
 });

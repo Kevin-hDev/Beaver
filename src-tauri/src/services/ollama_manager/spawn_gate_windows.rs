@@ -1,3 +1,4 @@
+use super::ollama_tree_job::OllamaTreeJob;
 use super::process::OllamaProcessError;
 use super::spawn_profile::OllamaSpawnAttempt;
 #[path = "spawn_gate_windows_support.rs"]
@@ -8,8 +9,8 @@ use std::ptr;
 use std::time::Instant;
 use windows_sys::Win32::Foundation::{WAIT_OBJECT_0, WAIT_TIMEOUT};
 use windows_sys::Win32::System::Threading::{
-    CreateProcessW, ResumeThread, TerminateProcess, WaitForSingleObject, CREATE_NO_WINDOW,
-    CREATE_SUSPENDED, CREATE_UNICODE_ENVIRONMENT, PROCESS_INFORMATION, STARTUPINFOW,
+    CreateProcessW, ResumeThread, WaitForSingleObject, CREATE_NO_WINDOW, CREATE_SUSPENDED,
+    CREATE_UNICODE_ENVIRONMENT, PROCESS_INFORMATION, STARTUPINFOW,
 };
 
 #[cfg(test)]
@@ -20,6 +21,7 @@ use support::{quote_path, wide_path, wide_string};
 pub(crate) struct NativeGatedProcess {
     process: OwnedHandle,
     thread: OwnedHandle,
+    tree_job: OllamaTreeJob,
     identity: OwnedProcessIdentity,
     opened: bool,
     termination_requested: bool,
@@ -57,6 +59,7 @@ fn create_with_hooks(
         ..unsafe { std::mem::zeroed() }
     };
     let mut info = unsafe { std::mem::zeroed::<PROCESS_INFORMATION>() };
+    let tree_job = OllamaTreeJob::create()?;
     let flags = CREATE_SUSPENDED | CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT;
     let expected_executable = match attempt.profile().executable().execution_identity() {
         Some(identity) if identity != 0 => identity,
@@ -85,6 +88,11 @@ fn create_with_hooks(
         support::terminate_created_process(info.hProcess, info.hThread);
         return Err(OllamaProcessError::Admission);
     }
+    if tree_job.assign_process(info.hProcess).is_err() {
+        support::terminate_created_process(info.hProcess, info.hThread);
+        crate::services::owned_process::release(info.dwProcessId);
+        return Err(OllamaProcessError::Admission);
+    }
     let identity = match OwnedProcess::identity_from_handle_with_executable(
         info.hProcess,
         expected_executable,
@@ -103,6 +111,7 @@ fn create_with_hooks(
     Ok(NativeGatedProcess {
         process: unsafe { OwnedHandle::from_raw_handle(info.hProcess) },
         thread: unsafe { OwnedHandle::from_raw_handle(info.hThread) },
+        tree_job,
         identity,
         opened: false,
         termination_requested: false,
@@ -153,7 +162,7 @@ impl NativeGatedProcess {
         if self.reaped || self.termination_requested {
             return Ok(());
         }
-        if unsafe { TerminateProcess(self.process.as_raw_handle(), 1) } != 0 {
+        if self.tree_job.terminate().is_ok() {
             self.termination_requested = true;
             return Ok(());
         }
@@ -175,6 +184,7 @@ impl NativeGatedProcess {
         let result = unsafe { WaitForSingleObject(self.process.as_raw_handle(), millis) };
         match result {
             WAIT_OBJECT_0 => {
+                self.tree_job.wait(deadline)?;
                 crate::services::owned_process::release(self.identity.pid);
                 self.reaped = true;
                 Ok(())

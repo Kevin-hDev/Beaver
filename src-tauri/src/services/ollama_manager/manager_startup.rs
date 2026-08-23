@@ -140,7 +140,25 @@ impl OllamaManager {
     }
 
     pub(crate) fn publish_daemon(&self, daemon: super::types::DaemonState) {
-        self.inner().lock_state().status.daemon = daemon;
+        let mut state = self.inner().lock_state();
+        if !matches!(daemon, super::types::DaemonState::Owned { .. }) {
+            state.compute_mode = None;
+        }
+        state.status.daemon = daemon;
+    }
+
+    pub(crate) fn publish_owned_daemon(
+        &self,
+        endpoint: super::types::OllamaEndpoint,
+        compute_mode: super::compute_mode::OllamaComputeMode,
+    ) {
+        let mut state = self.inner().lock_state();
+        state.compute_mode = Some(compute_mode);
+        state.status.daemon = super::types::DaemonState::Owned { endpoint };
+    }
+
+    pub(crate) fn active_compute_mode(&self) -> Option<super::compute_mode::OllamaComputeMode> {
+        self.inner().lock_state().compute_mode
     }
 
     #[cfg(test)]

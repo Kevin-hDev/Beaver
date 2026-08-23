@@ -1,6 +1,6 @@
 use crate::services::work_registry::ServiceWorkCancellation;
 
-pub(super) async fn detect_owned(cancel: &ServiceWorkCancellation) -> Option<(u64, u64)> {
+pub(super) async fn detect_owned(cancel: &ServiceWorkCancellation) -> Option<(u64, Option<u64>)> {
     if !cfg!(target_arch = "aarch64") || cancel.is_cancelled() {
         return None;
     }
@@ -11,7 +11,7 @@ pub(super) async fn detect_owned(cancel: &ServiceWorkCancellation) -> Option<(u6
         system.refresh_memory();
         let total_mb = system.total_memory() / 1_048_576;
         let used_mb = system.used_memory() / 1_048_576;
-        (total_mb > 0).then_some((total_mb, used_mb.min(total_mb)))
+        (total_mb > 0).then_some((total_mb, Some(used_mb.min(total_mb))))
     })
     .await
     .ok()
@@ -38,7 +38,7 @@ mod tests {
             .expect("Apple unified memory");
 
         assert!(total_mb >= 4_096);
-        assert!(used_mb <= total_mb);
+        assert!(used_mb.expect("unified usage") <= total_mb);
         drop(admission);
     }
 }

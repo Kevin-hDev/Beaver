@@ -36,6 +36,7 @@ struct OllamaManagerState {
     closing: bool,
     generation: u64,
     status: OllamaRuntimeStatus,
+    compute_mode: Option<super::compute_mode::OllamaComputeMode>,
 }
 
 pub(crate) struct OllamaOperationGuard<'a> {

@@ -4,14 +4,14 @@ import { cleanupTauriListener } from "@/lib/tauri-listen";
 
 interface GpuStatusEvent {
   accelerator: string;
-  vram_used_mb: number;
+  vram_used_mb: number | null;
   vram_total_mb: number;
   model_loaded: string | null;
 }
 
 export interface GpuStatus {
   accelerator: string;
-  vramUsedMb: number;
+  vramUsedMb: number | null;
   vramTotalMb: number;
   modelLoaded: string | null;
   vramPercent: number;
@@ -19,7 +19,7 @@ export interface GpuStatus {
 
 const EMPTY: GpuStatus = {
   accelerator: "",
-  vramUsedMb: 0,
+  vramUsedMb: null,
   vramTotalMb: 0,
   modelLoaded: null,
   vramPercent: 0,
@@ -31,7 +31,7 @@ export function useGpuStatus(): GpuStatus {
   useEffect(() => {
     const unlisten = listen<GpuStatusEvent>("ollama-gpu-status", (e) => {
       const p = e.payload;
-      const pct = p.vram_total_mb > 0
+      const pct = p.vram_used_mb !== null && p.vram_total_mb > 0
         ? Math.round((p.vram_used_mb / p.vram_total_mb) * 100)
         : 0;
       setStatus({

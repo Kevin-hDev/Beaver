@@ -6,6 +6,7 @@ mod bundle_receipt;
 mod canonical_executable;
 mod cleanup;
 mod cleanup_inspection;
+mod compute_mode;
 mod constants;
 mod download;
 mod download_stream;
@@ -33,6 +34,8 @@ mod journal;
 mod journal_store;
 mod manager;
 mod migration;
+#[cfg(windows)]
+mod ollama_tree_job;
 mod path_identity;
 mod path_identity_resolver;
 pub(crate) mod polling;
@@ -73,6 +76,7 @@ mod spawn_gate_unix;
 mod spawn_gate_windows;
 mod spawn_profile;
 mod spawn_profile_paths;
+mod spawn_settings;
 mod staging_recovery;
 mod startup;
 mod startup_recovery;
@@ -88,6 +92,8 @@ mod adoption_tests;
 mod blocking_tests;
 #[cfg(test)]
 mod cleanup_tests;
+#[cfg(test)]
+mod compute_mode_tests;
 #[cfg(test)]
 mod document_tests;
 #[cfg(test)]
@@ -139,6 +145,8 @@ mod spawn_profile_test_support;
 #[cfg(test)]
 mod spawn_profile_tests;
 #[cfg(test)]
+mod spawn_settings_tests;
+#[cfg(test)]
 mod startup_tests;
 #[cfg(test)]
 mod storage_error_tests;
@@ -160,6 +168,8 @@ mod windows_durable_fs_tests;
 mod windows_path_identity_tests;
 #[cfg(all(test, windows))]
 mod windows_spawn_gate_tests;
+#[cfg(all(test, windows))]
+mod windows_tree_job_tests;
 
 #[allow(unused_imports)]
 pub use bundle_receipt::{BundlePlatform, BundleReceipt};

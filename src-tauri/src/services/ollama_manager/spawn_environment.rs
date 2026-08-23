@@ -84,14 +84,50 @@ pub(crate) fn collect_bounded<I>(entries: I) -> Result<Vec<(OsString, OsString)>
 where
     I: IntoIterator<Item = (OsString, OsString)>,
 {
+    collect_bounded_with(entries, false)
+}
+
+pub(crate) fn collect_inherited_bounded<I>(
+    entries: I,
+) -> Result<Vec<(OsString, OsString)>, OllamaErrorCode>
+where
+    I: IntoIterator<Item = (OsString, OsString)>,
+{
+    collect_bounded_with(entries, true)
+}
+
+fn collect_bounded_with<I>(
+    entries: I,
+    filter_windows_pseudo_variables: bool,
+) -> Result<Vec<(OsString, OsString)>, OllamaErrorCode>
+where
+    I: IntoIterator<Item = (OsString, OsString)>,
+{
     let mut collected = Vec::new();
-    for entry in entries {
-        if collected.len() >= MAX_OLLAMA_ENV_ENTRIES {
+    for (inspected, entry) in entries.into_iter().enumerate() {
+        if inspected >= MAX_OLLAMA_ENV_ENTRIES {
             return Err(OllamaErrorCode::OllamaInternal);
+        }
+        if filter_windows_pseudo_variables && is_windows_pseudo_variable(&entry.0) {
+            continue;
         }
         collected.push(entry);
     }
     Ok(collected)
+}
+
+fn is_windows_pseudo_variable(key: &OsStr) -> bool {
+    #[cfg(windows)]
+    {
+        // Explorer inherits hidden current-directory entries such as `=C:` and
+        // `=::`; Win32 consumes them internally and child environment keys cannot.
+        key.to_string_lossy().starts_with('=')
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = key;
+        false
+    }
 }
 
 pub(crate) fn freeze_from_snapshot(

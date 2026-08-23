@@ -1074,6 +1074,7 @@ dependencies = [
  "urlencoding",
  "uuid",
  "which",
+ "windows",
  "windows-spawn",
  "windows-sys 0.61.2",
  "wiremock",

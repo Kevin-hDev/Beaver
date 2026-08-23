@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { useAvailableModels } from "@/hooks/use-available-models";
@@ -26,10 +26,14 @@ export function AdvancedSettings({ focusTarget, onFocusTargetHandled }: Advanced
   const { t } = useTranslation();
   const { groups } = useAvailableModels();
   const [state, setState] = useState<AdvancedSettingsState>(ADVANCED_SETTINGS_DEFAULTS);
+  const stateRef = useRef<AdvancedSettingsState>(ADVANCED_SETTINGS_DEFAULTS);
 
   const loadSettings = useCallback(() => {
     invoke<AdvancedSettingsState>("get_advanced_settings")
-      .then(setState)
+      .then((settings) => {
+        stateRef.current = settings;
+        setState(settings);
+      })
       .catch(() => showToast(i18n.t("errors.operationFailed"), "error"));
   }, []);
 
@@ -39,19 +43,27 @@ export function AdvancedSettings({ focusTarget, onFocusTargetHandled }: Advanced
 
   useFsEvent("fs:config-changed", loadSettings);
 
-  const save = useCallback((patch: Partial<AdvancedSettingsState>) => {
-    setState((prev) => {
-      const next = { ...prev, ...patch };
-      invoke("set_advanced_settings", { settings: next }).catch(() => showToast(i18n.t("errors.saveFailed"), "error"));
+  const save = useCallback(async (patch: Partial<AdvancedSettingsState>): Promise<boolean> => {
+    const next = { ...stateRef.current, ...patch };
+    stateRef.current = next;
+    setState(next);
+    try {
+      await invoke("set_advanced_settings", { settings: next });
       notifySettingsChanged();
-      return next;
-    });
-  }, []);
+      return true;
+    } catch {
+      showToast(i18n.t("errors.saveFailed"), "error");
+      loadSettings();
+      return false;
+    }
+  }, [loadSettings]);
 
   const saveAllowedPaths = useCallback(async (paths: string[]) => {
     try {
       const normalized = await invoke<string[]>("set_allowed_paths", { paths });
-      setState((current) => ({ ...current, allowed_paths: normalized }));
+      const next = { ...stateRef.current, allowed_paths: normalized };
+      stateRef.current = next;
+      setState(next);
       notifySettingsChanged();
     } catch {
       showToast(i18n.t("errors.saveFailed"), "error");

@@ -43,3 +43,17 @@
   background: var(--pulse);
   transition: width 200ms ease-out;
 }
+
+.ollama-download-action {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-xs);
+}
+
+.ollama-download-error {
+  max-width: 180px;
+  color: var(--danger);
+  font-size: var(--text-xs);
+  text-align: right;
+}
