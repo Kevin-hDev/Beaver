@@ -8,6 +8,7 @@ mod model_catalog_wire;
 mod replay;
 pub mod request;
 mod request_http;
+mod routing_hint;
 pub mod stream;
 mod stream_accumulator;
 mod stream_measurement;

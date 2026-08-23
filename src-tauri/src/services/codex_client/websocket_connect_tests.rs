@@ -6,6 +6,7 @@ use zeroize::Zeroizing;
 use super::*;
 use crate::services::codex_oauth::store::CodexTokens;
 use crate::services::codex_oauth::token::constant_time_secret_eq;
+use crate::services::llm::fast_mode::FastModeRequest;
 
 fn credentials() -> CodexTokens {
     CodexTokens {
@@ -25,8 +26,43 @@ fn websocket_limits_match_the_bounded_llm_transport() {
 }
 
 #[tokio::test]
+async fn handshake_carries_fast_routing_from_the_canonical_request() {
+    let request = crate::services::codex_client::request::build_codex_request(
+        "gpt-5.6-sol",
+        &[],
+        &[],
+        None,
+        Some("session-test"),
+        FastModeRequest::Fast,
+    );
+    let routing_hint = crate::services::codex_client::routing_hint::for_request(&request).unwrap();
+    let headers = capture_handshake(&routing_hint).await;
+
+    assert_eq!(headers, (true, true, true, true));
+    assert_eq!(routing_hint, "model=gpt-5.6-sol;tier=priority");
+}
+
+#[tokio::test]
+async fn handshake_omits_tier_for_standard_routing() {
+    let request = crate::services::codex_client::request::build_codex_request(
+        "gpt-5.6-sol",
+        &[],
+        &[],
+        None,
+        Some("session-test"),
+        FastModeRequest::Standard,
+    );
+    let routing_hint = crate::services::codex_client::routing_hint::for_request(&request).unwrap();
+    let headers = capture_handshake(&routing_hint).await;
+
+    assert_eq!(headers, (true, true, true, true));
+    assert_eq!(routing_hint, "model=gpt-5.6-sol");
+    assert!(!routing_hint.contains(";tier="));
+}
+
 #[allow(clippy::result_large_err)] // Signature imposée par le callback de tungstenite.
-async fn handshake_carries_current_codex_headers_without_logging_secrets() {
+async fn capture_handshake(routing_hint: &str) -> (bool, bool, bool, bool) {
+    let expected_routing = routing_hint.to_string();
     let listener = tokio::net::TcpListener::bind((std::net::Ipv4Addr::LOCALHOST, 0))
         .await
         .unwrap();
@@ -59,8 +95,13 @@ async fn handshake_carries_current_codex_headers_without_logging_secrets() {
                     .get("session-id")
                     .and_then(|v| v.to_str().ok())
                     == Some("session-test");
+                let routing = request
+                    .headers()
+                    .get("x-codex-routing-hint")
+                    .and_then(|v| v.to_str().ok())
+                    == Some(expected_routing.as_str());
                 if let Some(sender) = header_tx.take() {
-                    let _ = sender.send((authorization, beta, originator, session));
+                    let _ = sender.send((authorization, beta, originator, session && routing));
                 }
                 Ok(response)
             },
@@ -71,13 +112,13 @@ async fn handshake_carries_current_codex_headers_without_logging_secrets() {
     });
 
     let url = format!("ws://{address}");
-    let mut socket = connect_loopback_at(&url, &credentials(), Some("session-test"))
+    let mut socket = connect_loopback_at(&url, &credentials(), Some("session-test"), routing_hint)
         .await
         .unwrap();
     let headers = header_rx.await.unwrap();
-    assert_eq!(headers, (true, true, true, true));
     socket.close(None).await.unwrap();
     server.await.unwrap();
+    headers
 }
 
 #[test]

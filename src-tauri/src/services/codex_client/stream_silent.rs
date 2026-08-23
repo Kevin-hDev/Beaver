@@ -15,6 +15,7 @@ pub async fn collect_chat_silent_for_compression(
     messages: &[ChatMessage],
     tools: &[serde_json::Value],
     reasoning_mode: Option<&str>,
+    fast_mode: crate::services::llm::fast_mode::FastModeRequest,
     max_output_tokens: Option<u32>,
     session_id: Option<&str>,
     cancel: CancellationToken,
@@ -29,6 +30,7 @@ pub async fn collect_chat_silent_for_compression(
         tools,
         reasoning_mode,
         session_id,
+        fast_mode,
         request_timeout,
         &cancel,
     )

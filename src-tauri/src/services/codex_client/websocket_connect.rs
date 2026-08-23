@@ -20,17 +20,20 @@ const MAX_METADATA_HEADER_BYTES: usize = 256;
 pub(super) type CodexSocket =
     tokio_tungstenite::WebSocketStream<tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>>;
 
-pub(super) async fn connect(session_id: &str) -> Result<CodexSocket, ConnectError> {
+pub(super) async fn connect(
+    session_id: &str,
+    routing_hint: &str,
+) -> Result<CodexSocket, ConnectError> {
     let credentials = token::ensure_valid()
         .await
         .map_err(|_| ConnectError::Unavailable)?;
-    match connect_once(&credentials, Some(session_id)).await {
+    match connect_once(&credentials, Some(session_id), routing_hint).await {
         Ok(socket) => Ok(socket),
         Err(ConnectError::Unauthorized) => {
             let refreshed = token::recover_after_unauthorized(credentials.access.as_str())
                 .await
                 .map_err(|_| ConnectError::Unavailable)?;
-            connect_once(&refreshed, Some(session_id)).await
+            connect_once(&refreshed, Some(session_id), routing_hint).await
         }
         Err(error) => Err(error),
     }
@@ -39,12 +42,14 @@ pub(super) async fn connect(session_id: &str) -> Result<CodexSocket, ConnectErro
 async fn connect_once(
     credentials: &CodexTokens,
     session_id: Option<&str>,
+    routing_hint: &str,
 ) -> Result<CodexSocket, ConnectError> {
     connect_at(
         CODEX_WEBSOCKET_URL,
         WebSocketUrlPolicy::CodexProduction,
         credentials,
         session_id,
+        routing_hint,
     )
     .await
 }
@@ -54,12 +59,14 @@ async fn connect_loopback_at(
     url: &str,
     credentials: &CodexTokens,
     session_id: Option<&str>,
+    routing_hint: &str,
 ) -> Result<CodexSocket, ConnectError> {
     connect_at(
         url,
         WebSocketUrlPolicy::LoopbackTest,
         credentials,
         session_id,
+        routing_hint,
     )
     .await
 }
@@ -69,6 +76,7 @@ async fn connect_at(
     policy: WebSocketUrlPolicy,
     credentials: &CodexTokens,
     session_id: Option<&str>,
+    routing_hint: &str,
 ) -> Result<CodexSocket, ConnectError> {
     if !websocket_url_allowed(url, policy) {
         return Err(ConnectError::Unavailable);
@@ -98,6 +106,11 @@ async fn connect_at(
         crate::services::codex_oauth::ORIGINATOR,
     )?;
     insert(headers, USER_AGENT, &crate::services::brand::user_agent())?;
+    insert(
+        headers,
+        HeaderName::from_static("x-codex-routing-hint"),
+        routing_hint,
+    )?;
     if let Some(session_id) = session_id {
         insert_metadata(headers, "session-id", session_id)?;
         insert_metadata(headers, "thread-id", session_id)?;

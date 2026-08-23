@@ -45,6 +45,7 @@ pub async fn stream_chat_no_done(
             messages,
             tools,
             reasoning_mode,
+            fast_mode,
             cancel,
             buffer_content,
             realtime_budget,

@@ -26,6 +26,7 @@ pub async fn stream_chat_with_budget(
     messages: &[ChatMessage],
     tools: &[serde_json::Value],
     reasoning_mode: Option<&str>,
+    fast_mode: crate::services::llm::fast_mode::FastModeRequest,
     cancel: CancellationToken,
     buffer_content: bool,
     realtime_budget: Option<RealtimeBudget>,
@@ -40,6 +41,7 @@ pub async fn stream_chat_with_budget(
             messages,
             tools,
             reasoning_mode,
+            fast_mode,
             cancel.clone(),
             buffer_content,
             realtime_budget.clone(),
@@ -77,6 +79,7 @@ pub async fn stream_chat_with_budget(
         tools,
         reasoning_mode,
         Some(session_id),
+        fast_mode,
         &cancel,
     )
     .await?;

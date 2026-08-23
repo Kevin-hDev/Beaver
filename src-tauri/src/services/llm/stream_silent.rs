@@ -38,6 +38,7 @@ pub async fn collect_chat_silent_for_compression(
             messages,
             &[],
             None,
+            fast_mode,
             Some(max_tokens),
             Some(session_id),
             cancel,

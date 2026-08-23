@@ -18,18 +18,20 @@ pub(super) enum RequestDeadline {
 
 pub(super) async fn post(
     body: &str,
+    routing_hint: &str,
     model: &str,
     tool_count: usize,
     deadline: RequestDeadline,
 ) -> Result<Response, String> {
     let client = build_client(deadline)?;
     let credentials = token::ensure_valid().await?;
-    let mut response = send_once(&client, &credentials, body).await?;
+    let endpoint = format!("{CODEX_API_BASE}/responses");
+    let mut response = send_once(&client, &credentials, &endpoint, body, routing_hint).await?;
     if response.status() == StatusCode::UNAUTHORIZED {
         let refreshed = token::recover_after_unauthorized(credentials.access.as_str()).await?;
         drop(response);
         drop(credentials);
-        response = send_once(&client, &refreshed, body).await?;
+        response = send_once(&client, &refreshed, &endpoint, body, routing_hint).await?;
     }
     http_error::require_success(response, model, body.len(), tool_count).await
 }
@@ -64,16 +66,19 @@ fn build_client(deadline: RequestDeadline) -> Result<AuthenticatedClient, String
 async fn send_once(
     client: &AuthenticatedClient,
     credentials: &CodexTokens,
+    endpoint: &str,
     body: &str,
+    routing_hint: &str,
 ) -> Result<Response, String> {
     let request = client
-        .post(format!("{CODEX_API_BASE}/responses"))
+        .post(endpoint)
         .bearer_auth(credentials.access.as_str())
         .header("chatgpt-account-id", credentials.account_hint.as_str())
         .header("originator", crate::services::codex_oauth::ORIGINATOR)
         .header("User-Agent", crate::services::brand::user_agent())
         .header("Content-Type", "application/json")
         .header("Accept", "text/event-stream")
+        .header("x-codex-routing-hint", routing_hint)
         .body(body.to_string());
     client
         .send(request)

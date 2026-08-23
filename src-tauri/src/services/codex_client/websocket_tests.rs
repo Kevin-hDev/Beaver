@@ -1,37 +1,41 @@
 use super::*;
-use crate::services::codex_client::types::ReasoningConfig;
+use crate::services::llm::fast_mode::FastModeRequest;
 
-fn request() -> CodexRequest {
-    CodexRequest {
-        model: "gpt-test".to_string(),
-        instructions: "test".to_string(),
-        input: vec![serde_json::json!({"role": "user", "content": "bonjour"})],
-        stream: true,
-        store: false,
-        tools: Vec::new(),
-        tool_choice: "auto".to_string(),
-        parallel_tool_calls: false,
-        prompt_cache_key: Some("bv1_fixture".to_string()),
-        reasoning: Some(ReasoningConfig {
-            effort: "medium".to_string(),
-            summary: "auto".to_string(),
-        }),
-        include: vec!["reasoning.encrypted_content".to_string()],
-    }
+fn request(fast_mode: FastModeRequest) -> CodexRequest {
+    crate::services::codex_client::request::build_codex_request(
+        "gpt-5.6-sol",
+        &[],
+        &[],
+        None,
+        Some("session-test"),
+        fast_mode,
+    )
 }
 
 #[test]
 fn websocket_payload_uses_the_current_response_create_envelope() {
-    let payload = build_payload(&request()).unwrap();
+    let payload = build_payload(&request(FastModeRequest::Fast)).unwrap();
     let value: serde_json::Value = serde_json::from_str(&payload).unwrap();
 
     assert_eq!(value["type"], "response.create");
-    assert_eq!(value["model"], "gpt-test");
+    assert_eq!(value["model"], "gpt-5.6-sol");
+    assert_eq!(value["service_tier"], "priority");
     assert_eq!(value["stream"], true);
     assert_eq!(value["tools"], serde_json::json!([]));
     assert_eq!(value["tool_choice"], "auto");
     assert_eq!(value["parallel_tool_calls"], false);
-    assert_eq!(value["prompt_cache_key"], "bv1_fixture");
+    assert!(value["prompt_cache_key"]
+        .as_str()
+        .is_some_and(|key| key.starts_with("bv1_")));
+}
+
+#[test]
+fn websocket_standard_payload_omits_service_tier() {
+    let payload = build_payload(&request(FastModeRequest::Standard)).unwrap();
+    let value: serde_json::Value = serde_json::from_str(&payload).unwrap();
+
+    assert_eq!(value["type"], "response.create");
+    assert!(value.get("service_tier").is_none());
 }
 
 #[test]

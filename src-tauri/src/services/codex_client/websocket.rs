@@ -37,15 +37,24 @@ pub(super) async fn stream_chat(
     messages: &[ChatMessage],
     tools: &[serde_json::Value],
     reasoning_mode: Option<&str>,
+    fast_mode: crate::services::llm::fast_mode::FastModeRequest,
     cancel: CancellationToken,
     buffer_content: bool,
     realtime_budget: Option<RealtimeBudget>,
     measurement: &mut StreamMeasurement<'_>,
 ) -> Result<StreamOutcome, WebSocketFailure> {
-    let request =
-        request::build_codex_request(model, messages, tools, reasoning_mode, Some(session_id));
+    let request = request::build_codex_request(
+        model,
+        messages,
+        tools,
+        reasoning_mode,
+        Some(session_id),
+        fast_mode,
+    );
     let payload = build_payload(&request)?;
-    let mut socket = websocket_connect::connect(session_id)
+    let routing_hint = super::routing_hint::for_request(&request)
+        .map_err(|_| WebSocketFailure::Unavailable { partial: false })?;
+    let mut socket = websocket_connect::connect(session_id, &routing_hint)
         .await
         .map_err(|_| WebSocketFailure::Unavailable { partial: false })?;
     measurement.mark_headers();

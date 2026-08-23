@@ -1,3 +1,7 @@
+#![expect(
+    clippy::too_many_arguments,
+    reason = "transport boundary keeps the captured Fast mode explicit"
+)]
 use std::future::Future;
 use std::time::Duration;
 use tokio_util::sync::CancellationToken;
@@ -5,6 +9,7 @@ use tokio_util::sync::CancellationToken;
 use super::types::{CodexRequest, ReasoningConfig};
 use super::{convert, request_http};
 use crate::services::agent_local::types_ollama::ChatMessage;
+use crate::services::llm::fast_mode::FastModeRequest;
 use crate::services::llm::provider_error::ProviderErrorCode;
 
 pub async fn post_codex_stream(
@@ -13,6 +18,7 @@ pub async fn post_codex_stream(
     tools: &[serde_json::Value],
     reasoning_mode: Option<&str>,
     session_id: Option<&str>,
+    fast_mode: FastModeRequest,
     cancel: &CancellationToken,
 ) -> Result<reqwest::Response, String> {
     send_request(
@@ -21,6 +27,7 @@ pub async fn post_codex_stream(
         tools,
         reasoning_mode,
         session_id,
+        fast_mode,
         request_http::RequestDeadline::Streaming,
         cancel,
     )
@@ -33,6 +40,7 @@ pub async fn post_codex_stream_with_timeout(
     tools: &[serde_json::Value],
     reasoning_mode: Option<&str>,
     session_id: Option<&str>,
+    fast_mode: FastModeRequest,
     timeout: Duration,
     cancel: &CancellationToken,
 ) -> Result<reqwest::Response, String> {
@@ -42,6 +50,7 @@ pub async fn post_codex_stream_with_timeout(
         tools,
         reasoning_mode,
         session_id,
+        fast_mode,
         request_http::RequestDeadline::Total(timeout),
         cancel,
     )
@@ -54,15 +63,24 @@ async fn send_request(
     tools: &[serde_json::Value],
     reasoning_mode: Option<&str>,
     session_id: Option<&str>,
+    fast_mode: FastModeRequest,
     deadline: request_http::RequestDeadline,
     cancel: &CancellationToken,
 ) -> Result<reqwest::Response, String> {
-    let body = build_codex_request(model, messages, tools, reasoning_mode, session_id);
+    let body = build_codex_request(
+        model,
+        messages,
+        tools,
+        reasoning_mode,
+        session_id,
+        fast_mode,
+    );
+    let routing_hint = super::routing_hint::for_request(&body)?;
     let body_json = serde_json::to_string(&body)
         .map_err(|_| provider_error(ProviderErrorCode::ProviderConfigurationInvalid))?;
     cancel_aware(
         cancel,
-        request_http::post(&body_json, model, tools.len(), deadline),
+        request_http::post(&body_json, &routing_hint, model, tools.len(), deadline),
     )
     .await
 }
@@ -88,6 +106,7 @@ pub(super) fn build_codex_request(
     tools: &[serde_json::Value],
     reasoning_mode: Option<&str>,
     session_id: Option<&str>,
+    fast_mode: FastModeRequest,
 ) -> CodexRequest {
     let (instructions, input) = convert::convert_messages_with_tools(messages, tools);
     let converted_tools = convert::convert_tools_to_responses_api(tools);
@@ -109,42 +128,11 @@ pub(super) fn build_codex_request(
             effort: crate::services::reasoning::codex_effort(model, reasoning_mode),
             summary: "auto".to_string(),
         }),
+        service_tier: fast_mode.codex_value().map(str::to_string),
         include: vec!["reasoning.encrypted_content".to_string()],
     }
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn codex_request_keeps_only_model_supported_effort() {
-        let sol = build_codex_request("gpt-5.6-sol", &[], &[], Some("ultra"), None);
-        let luna = build_codex_request("gpt-5.6-luna", &[], &[], Some("ultra"), None);
-
-        assert_eq!(sol.reasoning.unwrap().effort, "ultra");
-        assert_eq!(luna.reasoning.unwrap().effort, "medium");
-    }
-
-    #[test]
-    fn request_keeps_the_official_empty_tools_contract() {
-        let request = build_codex_request("gpt-5.6-sol", &[], &[], None, Some("session-1"));
-        let json = serde_json::to_value(request).unwrap();
-
-        assert_eq!(json["tools"], serde_json::json!([]));
-        assert_eq!(json["tool_choice"], "auto");
-        assert!(json["prompt_cache_key"]
-            .as_str()
-            .is_some_and(|value| value.starts_with("bv1_")));
-    }
-
-    #[tokio::test]
-    async fn cancellation_is_observed_before_response_headers() {
-        let cancel = CancellationToken::new();
-        cancel.cancel();
-
-        let result = cancel_aware(&cancel, std::future::pending::<Result<(), String>>()).await;
-
-        assert_eq!(result.unwrap_err(), "Annulé");
-    }
-}
+#[path = "request_tests.rs"]
+mod tests;
