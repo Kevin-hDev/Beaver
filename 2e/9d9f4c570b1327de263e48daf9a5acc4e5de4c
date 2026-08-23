@@ -34,3 +34,5 @@ Limites honnetes:
 - Aucun 401/429 reel n'a ete induit, aucune compression couteuse ni panne outil volontaire n'a ete envoyee.
 - Aucun succes Fast reel n'a ete observe: OAuth a servi default et l'API a refuse les deux requetes.
 - VoiceOver et les themes autres que clair restent couverts par les tests, pas par cette campagne visuelle.
+
+Addendum de cloture: la suite frontend complete a ete relancee apres les deux commits finaux: 472 fichiers Vitest / 2499 tests verts, scripts build/CI/CEF/E2E/extensions verts, tsc vert, lint vert et contracts:check vert.
