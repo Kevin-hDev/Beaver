@@ -102,6 +102,7 @@ where
         max_tokens: request.max_tokens,
         purpose: request.purpose,
         session_id: request.session_id,
+        fast_mode: request.fast_mode,
     })
 }
 

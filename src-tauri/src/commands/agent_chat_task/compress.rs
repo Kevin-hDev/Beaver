@@ -26,6 +26,8 @@ pub(crate) async fn handle_compress_command(
 ) -> Result<(), String> {
     use crate::services::compress::{engine, prompt, state};
 
+    let fast_mode =
+        crate::services::llm::fast_mode::for_session(session_id, provider, model).await?;
     let _ = on_event.send(StreamEvent::Compressing {
         status: "start".to_string(),
     });
@@ -61,6 +63,7 @@ pub(crate) async fn handle_compress_command(
     );
     let summary_raw = match collect_summary(
         provider,
+        fast_mode,
         model,
         session_id,
         compress_msgs,
@@ -95,6 +98,7 @@ pub(crate) async fn handle_compress_command(
 
 async fn collect_summary(
     provider: &str,
+    fast_mode: crate::services::llm::fast_mode::FastModeRequest,
     model: &str,
     session_id: &str,
     messages: Vec<ChatMessage>,
@@ -121,6 +125,7 @@ async fn collect_summary(
         crate::services::llm::request_purpose::RequestPurpose::for_session(session_id).await;
     let result = crate::services::llm::stream::collect_chat_silent_for_compression(
         provider,
+        fast_mode,
         model,
         &messages,
         output_limit,

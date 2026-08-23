@@ -17,6 +17,7 @@ use tokio_util::sync::CancellationToken;
 pub async fn run_agent_loop(
     on_event: &AgentEventEmitter,
     provider_id: &str,
+    fast_mode: super::fast_mode::FastModeRequest,
     model: &str,
     messages: &mut Vec<ChatMessage>,
     mut tools: crate::services::agent_local::extension_tool_set::ExtensionToolSet,
@@ -50,6 +51,7 @@ pub async fn run_agent_loop(
     let compression = LoopCompression {
         on_event,
         provider_id,
+        fast_mode,
         model,
         session_id: &session_id,
         request_id: &request_id,
@@ -65,6 +67,7 @@ pub async fn run_agent_loop(
             on_event,
             messages,
             provider_id,
+            fast_mode,
             model,
             tools: tools.active(),
             think,

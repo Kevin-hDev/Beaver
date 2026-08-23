@@ -149,6 +149,7 @@ async fn collect_summary(
         crate::services::llm::request_purpose::RequestPurpose::for_session(session_id).await;
     let result = crate::services::llm::stream::collect_chat_silent_for_compression(
         provider,
+        crate::services::llm::fast_mode::standard_for_internal(provider),
         model,
         &messages,
         SUMMARY_MAX_TOKENS,

@@ -10,6 +10,7 @@ pub enum ToolCompressionProvider<'a> {
     Cloud {
         provider_id: &'a str,
         model: &'a str,
+        fast_mode: crate::services::llm::fast_mode::FastModeRequest,
     },
 }
 
@@ -44,10 +45,15 @@ impl ToolCompression<'_> {
                 .await
                 .is_some()
             }
-            ToolCompressionProvider::Cloud { provider_id, model } => {
+            ToolCompressionProvider::Cloud {
+                provider_id,
+                model,
+                fast_mode,
+            } => {
                 crate::services::llm::compress_hook::try_auto_compress(
                     self.on_event,
                     provider_id,
+                    fast_mode,
                     model,
                     messages,
                     self.session_id,
@@ -62,5 +68,25 @@ impl ToolCompression<'_> {
                 .is_some()
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ToolCompressionProvider;
+    use crate::services::llm::fast_mode::FastModeRequest;
+
+    #[test]
+    fn tool_executor_compression_carries_the_generation_capture() {
+        let provider = ToolCompressionProvider::Cloud {
+            provider_id: "openai",
+            model: "gpt-5.6-luna",
+            fast_mode: FastModeRequest::Fast,
+        };
+
+        let ToolCompressionProvider::Cloud { fast_mode, .. } = provider else {
+            panic!("cloud compression expected");
+        };
+        assert_eq!(fast_mode, FastModeRequest::Fast);
     }
 }

@@ -16,6 +16,7 @@ pub async fn stream_chat_no_done(
     turn: u32,
     attempt: u32,
     provider_id: &str,
+    fast_mode: super::fast_mode::FastModeRequest,
     purpose: RequestPurpose,
     model: &str,
     messages: &[ChatMessage],
@@ -64,6 +65,7 @@ pub async fn stream_chat_no_done(
                     max_tokens: None,
                     purpose,
                     session_id: Some(session_id),
+                    fast_mode,
                 },
                 cancel,
                 buffer_content,
@@ -83,6 +85,7 @@ pub async fn stream_chat_no_done(
             max_tokens: None,
             purpose,
             session_id: Some(session_id),
+            fast_mode,
         };
         match super::stream_http::post_chat_request_measured(&cfg, measurement.as_mut()).await {
             Ok(resp) => {

@@ -72,6 +72,7 @@ fn chat_request_uses_the_subscription_catalog_restriction() {
         max_tokens: None,
         purpose: RequestPurpose::ManualChat,
         session_id: Some("session-fixture"),
+        fast_mode: crate::services::llm::fast_mode::FastModeRequest::Unsupported,
     };
     let mut model = catalog_model();
     model.backend = XaiBackend::ChatCompletions;

@@ -12,6 +12,7 @@ use tokio_util::sync::CancellationToken;
 pub async fn try_auto_compress(
     on_event: &AgentEventEmitter,
     provider_id: &str,
+    fast_mode: super::fast_mode::FastModeRequest,
     model: &str,
     messages: &mut Vec<ChatMessage>,
     session_id: &str,
@@ -63,6 +64,7 @@ pub async fn try_auto_compress(
         crate::services::llm::request_purpose::RequestPurpose::for_session(session_id).await;
     match stream::collect_chat_silent_for_compression(
         provider_id,
+        fast_mode,
         model,
         &compress_msgs,
         output_limit,

@@ -10,6 +10,7 @@ use tokio_util::sync::CancellationToken;
 pub(super) struct ApiRequestParams<'a> {
     pub on_event: &'a AgentEventEmitter,
     pub provider_id: &'a str,
+    pub fast_mode: super::fast_mode::FastModeRequest,
     pub model: &'a str,
     pub messages: &'a mut Vec<ChatMessage>,
     pub tools: &'a [serde_json::Value],
@@ -95,6 +96,7 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
         turn,
         &mut next_attempt,
         params.provider_id,
+        params.fast_mode,
         purpose,
         params.model,
         params.messages,
@@ -152,6 +154,7 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
                 turn,
                 &mut next_attempt,
                 params.provider_id,
+                params.fast_mode,
                 purpose,
                 params.model,
                 params.messages,

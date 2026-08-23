@@ -14,6 +14,7 @@ pub struct RequestConfig<'a> {
     pub max_tokens: Option<u32>,
     pub purpose: RequestPurpose,
     pub session_id: Option<&'a str>,
+    pub fast_mode: super::fast_mode::FastModeRequest,
 }
 
 use super::stream_http_payload::build_chat_payload;

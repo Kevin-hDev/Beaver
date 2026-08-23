@@ -10,6 +10,8 @@ pub(crate) async fn run(
     response_language: String,
 ) -> Result<Vec<ChatMessage>, String> {
     let canonical_provider = llm::route::canonical_provider_id(&params.provider);
+    let fast_mode =
+        llm::fast_mode::for_session(&params.session_id, &params.provider, &params.model).await?;
     let ctx =
         crate::services::compress::context_resolve::resolve_api(canonical_provider, &params.model)
             .await;
@@ -131,6 +133,7 @@ pub(crate) async fn run(
     llm::agent_loop::run_agent_loop(
         &params.on_event,
         &params.provider,
+        fast_mode,
         &params.model,
         &mut messages,
         extension_tools,

@@ -13,6 +13,7 @@ pub(crate) mod agent_loop_tools;
 mod agent_loop_turn;
 pub mod catalog;
 pub mod compress_hook;
+pub mod fast_mode;
 mod kimi_models;
 #[cfg(test)]
 mod kimi_models_tests;

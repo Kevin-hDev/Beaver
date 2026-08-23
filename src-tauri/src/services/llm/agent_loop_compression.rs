@@ -13,6 +13,7 @@ use tokio_util::sync::CancellationToken;
 pub(super) struct LoopCompression<'a> {
     pub on_event: &'a AgentEventEmitter,
     pub provider_id: &'a str,
+    pub fast_mode: super::fast_mode::FastModeRequest,
     pub model: &'a str,
     pub session_id: &'a str,
     pub request_id: &'a str,
@@ -57,6 +58,7 @@ impl LoopCompression<'_> {
         compress_hook::try_auto_compress(
             self.on_event,
             self.provider_id,
+            self.fast_mode,
             self.model,
             messages,
             self.session_id,
@@ -159,6 +161,7 @@ impl LoopCompression<'_> {
             provider: ToolCompressionProvider::Cloud {
                 provider_id: self.provider_id,
                 model: self.model,
+                fast_mode: self.fast_mode,
             },
             session_id: self.session_id,
             request_id: self.request_id,

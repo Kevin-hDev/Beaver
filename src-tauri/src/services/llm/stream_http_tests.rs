@@ -4,6 +4,7 @@ use wiremock::matchers::any;
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
 use super::*;
+use crate::services::llm::fast_mode::FastModeRequest;
 
 #[tokio::test]
 async fn chat_request_refuses_redirects_before_forwarding_the_body() {
@@ -73,6 +74,7 @@ fn gpt_56_uses_max_completion_tokens_in_chat_payload() {
         max_tokens: Some(32_000),
         purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
         session_id: None,
+        fast_mode: FastModeRequest::Standard,
     };
 
     let route = route::resolve("openai").unwrap();
@@ -95,6 +97,7 @@ fn openrouter_gpt_56_uses_max_completion_tokens() {
         max_tokens: Some(32_000),
         purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
         session_id: None,
+        fast_mode: FastModeRequest::Unsupported,
     };
 
     let route = route::resolve("openrouter").unwrap();
@@ -138,6 +141,7 @@ fn chat_payload_respects_each_route_cache_and_usage_contract() {
             max_tokens: None,
             purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
             session_id: Some("session-1"),
+            fast_mode: super::super::fast_mode::standard_for_internal(provider),
         };
 
         let payload = build_chat_payload(&cfg, &route, None);
@@ -179,6 +183,7 @@ fn streaming_output_limit_field_matches_model_family() {
             max_tokens: Some(8_000),
             purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
             session_id: None,
+            fast_mode: super::super::fast_mode::standard_for_internal(provider),
         };
         let route = route::resolve(provider).unwrap();
         let payload = build_chat_payload(&cfg, &route, Some(8_000));
@@ -215,6 +220,7 @@ async fn groq_and_cerebras_payloads_omit_automatic_limits() {
             max_tokens: None,
             purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
             session_id: None,
+            fast_mode: FastModeRequest::Unsupported,
         };
 
         let payload = build_chat_payload(&cfg, &route, resolved);
@@ -285,6 +291,7 @@ async fn timeout_above_secure_limit_uses_a_stable_code() {
         max_tokens: None,
         purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
         session_id: None,
+        fast_mode: FastModeRequest::Standard,
     };
     let timeout = crate::services::secure_http::MAX_AUTHENTICATED_TIMEOUT + Duration::from_secs(1);
 
@@ -293,4 +300,62 @@ async fn timeout_above_secure_limit_uses_a_stable_code() {
         .expect_err("timeout must be rejected");
 
     assert_eq!(error.to_string(), "provider_configuration_invalid");
+}
+
+#[test]
+fn chat_payload_emits_only_the_closed_api_fast_tiers() {
+    for (provider_id, model, fast_mode, expected) in [
+        (
+            "openai",
+            "gpt-5.6-luna",
+            FastModeRequest::Fast,
+            Some("fast"),
+        ),
+        (
+            "openai",
+            "gpt-5.6-luna",
+            FastModeRequest::Standard,
+            Some("default"),
+        ),
+        (
+            "openai",
+            "unadvertised-model",
+            FastModeRequest::for_api(false, true),
+            Some("default"),
+        ),
+        (
+            "openrouter",
+            "openai/gpt-5.6-luna",
+            FastModeRequest::Unsupported,
+            None,
+        ),
+    ] {
+        let cfg = RequestConfig {
+            provider_id,
+            model,
+            messages: &[],
+            tools: &[],
+            think: false,
+            reasoning_mode: None,
+            max_tokens: None,
+            purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
+            session_id: None,
+            fast_mode,
+        };
+        let route = route::resolve(provider_id).expect("known provider");
+        let payload = build_chat_payload(&cfg, &route, None);
+
+        assert_eq!(
+            payload.get("service_tier").and_then(|value| value.as_str()),
+            expected,
+            "{provider_id}/{model}"
+        );
+        for forbidden in ["auto", "flex", "priority", "ultrafast"] {
+            assert_ne!(
+                payload.get("service_tier").and_then(|value| value.as_str()),
+                Some(forbidden),
+                "{provider_id}/{model}"
+            );
+        }
+    }
 }

@@ -19,6 +19,9 @@ pub(super) fn build_chat_payload(
     if super::prompt_cache_policy::include_usage(route) {
         payload["stream_options"] = serde_json::json!({ "include_usage": true });
     }
+    if let Some(value) = cfg.fast_mode.api_value() {
+        payload["service_tier"] = value.into();
+    }
     if let Some(max) = max_tokens {
         let field = super::model_metadata::request_output_limit_field(provider_id, cfg.model);
         payload[field] = max.into();
