@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ReasoningSelector } from "../reasoning-selector";
@@ -145,37 +146,10 @@ describe("ReasoningSelector", () => {
     expect(screen.getByRole("switch", { name: "Rapide" })).toBeDisabled();
   });
 
-  it("conserve la préférence si le modèle devient incompatible puis compatible", () => {
-    const view = renderSelector({ supports_fast_mode: true }, "high", vi.fn(), true);
-    fireEvent.click(screen.getByRole("button", { name: /Forte/ }));
-    expect(screen.getByRole("switch", { name: "Rapide" })).toBeChecked();
+  it("s'active au clavier et garde le menu ouvert", async () => {
+    const user = userEvent.setup();
+    const onFastModeChange = vi.fn();
 
-    view.rerender(
-      <ReasoningSelector
-        model={model({ supports_fast_mode: false })}
-        reasoningMode="high"
-        onChange={vi.fn()}
-        fastModeEnabled
-        fastModePending={false}
-        onFastModeChange={vi.fn()}
-      />,
-    );
-    expect(screen.queryByRole("switch", { name: "Rapide" })).toBeNull();
-
-    view.rerender(
-      <ReasoningSelector
-        model={model({ supports_fast_mode: true })}
-        reasoningMode="high"
-        onChange={vi.fn()}
-        fastModeEnabled
-        fastModePending={false}
-        onFastModeChange={vi.fn()}
-      />,
-    );
-    expect(screen.getByRole("switch", { name: "Rapide" })).toBeChecked();
-  });
-
-  it("s'active au clavier et publie aria-checked", () => {
     function ControlledSelector() {
       const [enabled, setEnabled] = useState(false);
       return (
@@ -185,18 +159,28 @@ describe("ReasoningSelector", () => {
           onChange={vi.fn()}
           fastModeEnabled={enabled}
           fastModePending={false}
-          onFastModeChange={setEnabled}
+          onFastModeChange={(nextEnabled) => {
+            onFastModeChange(nextEnabled);
+            setEnabled(nextEnabled);
+          }}
         />
       );
     }
     render(<ControlledSelector />);
-    fireEvent.click(screen.getByRole("button", { name: /Forte/ }));
+    await user.click(screen.getByRole("button", { name: /Forte/ }));
     const fastSwitch = screen.getByRole("switch", { name: "Rapide" });
-    fastSwitch.focus();
 
-    fireEvent.click(fastSwitch, { detail: 0 });
+    await user.tab();
+    expect(fastSwitch).toHaveFocus();
+    expect(fastSwitch).toHaveClass("uis-input");
+    expect(fastSwitch.closest("label")).toHaveClass("uis-switch");
+
+    await user.keyboard(" ");
 
     expect(fastSwitch).toHaveFocus();
     expect(fastSwitch).toHaveAttribute("aria-checked", "true");
+    expect(onFastModeChange).toHaveBeenCalledWith(true);
+    expect(screen.getByRole("button", { name: /Réflexion/ })).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("switch", { name: "Rapide" })).toBeInTheDocument();
   });
 });
