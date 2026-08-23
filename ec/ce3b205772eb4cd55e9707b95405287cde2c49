@@ -1,0 +1,21 @@
+Application icon refresh
+
+Source authority:
+- src/assets/logo.png is the approved 1024x1024 artwork.
+- The RGB artwork matches /Users/kevinh/Downloads/iconss/logo.png exactly: AE 0 (0).
+- The alpha channel reuses the previous Beaver squircle mask exactly: AE 0 (0).
+- The dark background is intentionally preserved inside the rounded icon.
+
+Generated assets:
+- Tauri desktop, Windows, iOS and Android icon set regenerated from src/assets/logo.png with: npx tauri icon src/assets/logo.png
+- src-tauri/icons/tray.png is the generated 64x64 derivative from the same rounded master.
+
+Verification:
+- npx vitest run src/components/ui/__tests__/brand-assets.test.ts: 11 passed, including decoded transparent-corner assertions
+- npm run test:release-workflow: 39 passed
+- npx tsc --noEmit: passed
+- npm run lint: passed
+- git diff --check: passed
+- graphify update .: completed
+- Beaver Dev compiled and opened successfully on macOS using port 5174 because Jauge occupied 5173
+- Visually verified the rounded icon in the macOS Dock and menu bar.
