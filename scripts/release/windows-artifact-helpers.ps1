@@ -13,21 +13,61 @@ function Test-AssociatedIcon([string]$Path) {
     }
 }
 
-function Test-BeaverExecutableBrand([string]$Path, [string]$ExpectedVersion) {
+function Get-IconPixelHash([Drawing.Icon]$Icon) {
+    if ($null -eq $Icon) {
+        return $null
+    }
+
+    $bitmap = $Icon.ToBitmap()
+    try {
+        if ($bitmap.Width -le 0 -or $bitmap.Height -le 0 -or $bitmap.Width -gt 256 -or $bitmap.Height -gt 256) {
+            return $null
+        }
+        $pixels = New-Object byte[] ($bitmap.Width * $bitmap.Height * 4)
+        $offset = 0
+        for ($y = 0; $y -lt $bitmap.Height; $y += 1) {
+            for ($x = 0; $x -lt $bitmap.Width; $x += 1) {
+                [BitConverter]::GetBytes($bitmap.GetPixel($x, $y).ToArgb()).CopyTo($pixels, $offset)
+                $offset += 4
+            }
+        }
+        $sha256 = [Security.Cryptography.SHA256]::Create()
+        try {
+            return -join @($sha256.ComputeHash($pixels) | ForEach-Object { $_.ToString("x2") })
+        } finally {
+            $sha256.Dispose()
+        }
+    } finally {
+        $bitmap.Dispose()
+    }
+}
+
+function Test-BeaverExecutableBrand(
+    [string]$Path,
+    [string]$ExpectedVersion,
+    [string]$ExpectedIconPath
+) {
     $maxExecutableBytes = 536870912
-    $expectedIconSha256 = "5a862b4fea99dd6898b2c864eca5deab26229554ebf66c45f06319c643972f95"
+    $maxIconBytes = 8388608
     if (
         [string]::IsNullOrWhiteSpace($Path) -or
+        [string]::IsNullOrWhiteSpace($ExpectedIconPath) -or
         $ExpectedVersion -notmatch "^[0-9]+\.[0-9]+\.[0-9]+$" -or
-        -not (Test-Path -LiteralPath $Path -PathType Leaf)
+        -not (Test-Path -LiteralPath $Path -PathType Leaf) -or
+        -not (Test-Path -LiteralPath $ExpectedIconPath -PathType Leaf)
     ) {
         return $false
     }
 
     try {
         $item = Get-Item -LiteralPath $Path -Force
+        $iconItem = Get-Item -LiteralPath $ExpectedIconPath -Force
         $isLink = ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0
-        if ($isLink -or $item.Length -le 0 -or $item.Length -gt $maxExecutableBytes) {
+        $iconIsLink = ($iconItem.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0
+        if (
+            $isLink -or $item.Length -le 0 -or $item.Length -gt $maxExecutableBytes -or
+            $iconIsLink -or $iconItem.Length -le 0 -or $iconItem.Length -gt $maxIconBytes
+        ) {
             return $false
         }
         if (
@@ -38,36 +78,24 @@ function Test-BeaverExecutableBrand([string]$Path, [string]$ExpectedVersion) {
         }
 
         Add-Type -AssemblyName System.Drawing
-        $actualIcon = [Drawing.Icon]::ExtractAssociatedIcon($item.FullName)
-        if ($null -eq $actualIcon) {
-            return $false
-        }
+        # The packaged ICO is authoritative, so executable validation follows branding changes automatically.
+        $expectedIcon = [Drawing.Icon]::new($iconItem.FullName, 32, 32)
         try {
-            $bitmap = $actualIcon.ToBitmap()
+            $actualIcon = [Drawing.Icon]::ExtractAssociatedIcon($item.FullName)
+            if ($null -eq $actualIcon) {
+                return $false
+            }
             try {
-                if ($bitmap.Width -le 0 -or $bitmap.Height -le 0 -or $bitmap.Width -gt 256 -or $bitmap.Height -gt 256) {
-                    return $false
-                }
-                $pixels = New-Object byte[] ($bitmap.Width * $bitmap.Height * 4)
-                $offset = 0
-                for ($y = 0; $y -lt $bitmap.Height; $y += 1) {
-                    for ($x = 0; $x -lt $bitmap.Width; $x += 1) {
-                        [BitConverter]::GetBytes($bitmap.GetPixel($x, $y).ToArgb()).CopyTo($pixels, $offset)
-                        $offset += 4
-                    }
-                }
-                $sha256 = [Security.Cryptography.SHA256]::Create()
-                try {
-                    $hash = -join @($sha256.ComputeHash($pixels) | ForEach-Object { $_.ToString("x2") })
-                    return $hash -ceq $expectedIconSha256
-                } finally {
-                    $sha256.Dispose()
-                }
+                $actualHash = Get-IconPixelHash $actualIcon
+                $expectedHash = Get-IconPixelHash $expectedIcon
+                return -not [string]::IsNullOrWhiteSpace($actualHash) -and
+                    -not [string]::IsNullOrWhiteSpace($expectedHash) -and
+                    $actualHash -ceq $expectedHash
             } finally {
-                $bitmap.Dispose()
+                $actualIcon.Dispose()
             }
         } finally {
-            $actualIcon.Dispose()
+            $expectedIcon.Dispose()
         }
     } catch {
         return $false

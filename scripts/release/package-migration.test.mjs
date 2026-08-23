@@ -115,6 +115,17 @@ test("les validateurs natifs de paquets sont présents et bornés", () => {
   assert.match(windowsHelpers, /function Test-FullyQualifiedWindowsPath/);
   assert.match(windowsHelpers, /function Test-BeaverShortcutState/);
   assert.match(windowsHelpers, /function Test-UpdaterHelper/);
+  assert.match(windowsHelpers, /function Get-IconPixelHash/);
+  assert.match(windowsHelpers, /\$ExpectedIconPath/);
+  assert.match(windowsHelpers, /Get-IconPixelHash \$actualIcon/);
+  assert.match(windowsHelpers, /Get-IconPixelHash \$expectedIcon/);
+  assert.match(windowsHelpers, /\$actualHash -ceq \$expectedHash/);
+  assert.match(nsis, /src-tauri\/icons\/icon\.ico/);
+  assert.match(
+    nsis,
+    /Test-BeaverExecutableBrand \$binary \$expectedVersion \$expectedIcon/,
+  );
+  assert.doesNotMatch(windowsHelpers, /expectedIconSha256/);
   assert.match(nsis, /\.IndexOf\(\$value, \[StringComparison\]::OrdinalIgnoreCase\) -ge 0/);
   assert.doesNotMatch(nsis, /\.Contains\(\$value, \[StringComparison\]/);
   assert.doesNotMatch(nsis, /IsPathFullyQualified/);

@@ -135,6 +135,10 @@ describe("assets de marque", () => {
     expect((await pngPixel("src-tauri/icons/tray.png", 0, 0))[3]).toBe(0);
     expect(fileExists("src-tauri/icons/icon.icns")).toBe(true);
     expect(fileExists("src-tauri/icons/icon.ico")).toBe(true);
+    // icon.ico is the Windows packaging authority, not a duplicated pixel hash.
+    expect(sha256("src-tauri/icons/icon.ico")).toBe(
+      "76efa8ed52632b06614fa7c95d8d5dd0ff20f9f00b13104b7c2aadb69a3581e5",
+    );
   });
 
   it("utilise Beaver sur les surfaces desktop sans changer l'identifiant système", () => {

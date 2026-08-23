@@ -156,7 +156,8 @@ function Test-InstalledState {
         Stop-Validation
     }
     $expectedVersion = [string](Read-BoundedText "src-tauri/tauri.conf.json" | ConvertFrom-Json).version
-    if (-not (Test-BeaverExecutableBrand $binary $expectedVersion)) {
+    $expectedIcon = Join-Path $Root "src-tauri/icons/icon.ico"
+    if (-not (Test-BeaverExecutableBrand $binary $expectedVersion $expectedIcon)) {
         Stop-Validation
     }
 
