@@ -118,8 +118,7 @@ impl OllamaManager {
         if !version_ready {
             let _ = tokio::task::spawn_blocking(move || {
                 process.terminate_and_reap(
-                    std::time::Instant::now()
-                        + super::constants::PROCESS_REAP_FALLBACK_TIMEOUT,
+                    std::time::Instant::now() + super::constants::PROCESS_REAP_FALLBACK_TIMEOUT,
                 )
             })
             .await;
