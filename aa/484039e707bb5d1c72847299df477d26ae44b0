@@ -1,0 +1,49 @@
+Correction follow-up for the Windows installed-brand / native-icon validation review.
+
+Scope
+- Branch: codex/windows-installed-brand-validation
+- Review range: ec17340a..aa484039
+- Windows-only release validation. Previously validated macOS work is outside this range.
+
+Why this commit exists
+The review confirmed the native icon implementation but found gaps around ICO frame guarantees, PowerShell source coverage, embedded C# compilation, reflection, Unicode/case-sensitive discovery, installed npm wrappers, and behavioral proof. The fixes use one source-policy entry point and bounded helpers rather than additional text searches.
+
+Implemented guarantees
+- ICO source frames are validated from decoded payload dimensions and native rendered content at 16, 32, 48, and 256 pixels.
+- Native extraction is exercised in separate Windows PowerShell 5.1 and PowerShell 7 processes at both 16 and 32 pixels; dimensions and rendered hashes must agree.
+- Repository PowerShell discovery uses unquoted Git paths and case-insensitive pathspecs, covering Unicode names and uppercase .PS1.
+- Installed extension-host PowerShell wrappers are scanned through a bounded tree owner: 64 scripts, 20,000 entries, depth 32, internal junction deduplication, external traversal rejected.
+- Add-Type compilation is closed to the three existing owners and exact source shapes. Embedded C# is inspected before compilation.
+- Bounded static value flow covers variables, reassignment, concatenation, parentheses, Replace (case-insensitive), char/string casts, arrays, typed arrays, and PowerShell wildcards.
+- Dynamic Add-Type access through variables, aliases, Get-Command/gcm, Invoke-Expression, ScriptBlock.Create, arrays, typed arrays, wildcards, and reordered parameters is rejected.
+- Managed icon decoders through System.Drawing, WPF/XAML, reflection, GetType/GetMethod/GetConstructor families, and InvokeMember (including statically constructed member names) are rejected. The native owner's two exact GetMethod calls remain the only reflection exception.
+- The generated npm/npx wrappers remain accepted; their dynamic execution does not compile managed code.
+- The previous Node test was reduced from code-shape assertions to configuration and parsed-YAML contracts.
+- Every modified or added code/test file is at or below 230 lines.
+
+TDD evidence
+Before implementation, dedicated fixtures failed for the reported forms: dynamic command/alias, ordinary embedded C#, URL/comment parsing, variable reflection, XAML, uppercase .PS1, Get-Command CommandInfo, Replace transformations, InvokeMember, wildcard/array inputs, System.Char casts, constructed member names, and typed arrays. The same fixtures pass after the implementation.
+
+Local executions on the committed content
+PowerShell engines used:
+- Windows PowerShell 5.1.26100.9168 / Desktop
+- PowerShell 7.6.4 / Core from the Codex bundled runtime
+
+Under each engine:
+- scripts/release/check-nsis-migration.test.ps1: exit 0; icon, native engine, package file, Add-Type policy, dynamic policy, syntax/source policy, source validation, and package contracts all reported OK.
+- scripts/release/check-nsis-migration.ps1 -Mode Source with the real Beaver_1.1.5_x64-setup.exe: exit 0.
+- scripts/release/check-nsis-migration.ps1 -Mode Installed against the real Beaver 1.1.5 installation: exit 0.
+- Installed scan found and accepted exactly five wrappers: jiti.ps1, nanoid.ps1, xml-js.ps1, npm.ps1, and npx.ps1.
+
+Additional local executions:
+- node --test scripts/release/package-migration.test.mjs: 5/5 passed.
+- npm run lint: exit 0.
+- npx tsc --noEmit: exit 0.
+- git diff --cached --check before commit: exit 0 (only normal LF/CRLF checkout warnings).
+- graphify update .: exit 0; graph updated to 36,458 nodes and 75,077 edges.
+
+Independent adverse re-review
+The reviewer repeatedly replayed the bypasses under both engines. Final verdict: READY. It independently confirmed that 19 forbidden forms return managed-icon-decoder, the innocent $value.GetType() case remains accepted, both Source/Installed modes pass, all five installed wrappers pass, and no changed file exceeds 230 lines.
+
+Remote status
+No post-commit GitHub CI result is claimed by this note. CI must be read on the exact pushed SHA before release approval.
