@@ -7,10 +7,7 @@ use super::runtime_command::{run_runtime_command, RuntimeStage};
 
 static LOG_GUARD: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 
-#[cfg(not(target_os = "linux"))]
 const INHERITED_PIPE_TIMEOUT: Duration = Duration::from_secs(2);
-#[cfg(target_os = "linux")]
-const INHERITED_PIPE_TIMEOUT: Duration = Duration::from_millis(50);
 #[cfg(windows)]
 const PROCESS_START_TIMEOUT: Duration = Duration::from_secs(2);
 #[cfg(not(windows))]
@@ -134,8 +131,8 @@ async fn inherited_pipes_from_a_descendant_obey_the_global_deadline() {
     );
     let started = std::time::Instant::now();
 
-    // Loaded macOS and Windows runners need enough time to start Python before the
-    // inherited-pipe deadline itself can be exercised.
+    // Loaded CI runners need enough time to start Python before the inherited-pipe
+    // deadline itself can be exercised.
     let result = run_fixture(&parent, INHERITED_PIPE_TIMEOUT).await;
 
     assert_eq!(result.unwrap_err().category(), "timeout");
