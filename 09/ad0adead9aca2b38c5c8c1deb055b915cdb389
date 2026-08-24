@@ -1,0 +1,23 @@
+Release 1.1.5 Windows package validation diagnostics.
+
+Evidence:
+- Release workflow 32695503240 compiled and installed the Windows NSIS package, then failed inside the installed-state validator with only the generic public error.
+- The preceding v1.1.5 Windows attempt failed at the same point, so retrying could not identify or correct the responsible contract.
+
+Change:
+- Every fail-closed validation branch now carries one fixed, bounded category.
+- CI prints only that category before preserving the generic public exception.
+- Categories contain no path, registry value, version metadata, or secret.
+- The installer icon helper uses the same category authority.
+- Contract tests require categorized calls and forbid uncategorized Stop-Validation sites.
+
+Verification:
+- npm run test:package-migration: 6/6 passed.
+- npm run test:release-workflow: 39/39 passed.
+- npm run lint: passed.
+- git diff --check: passed.
+- graphify update . completed.
+
+Scope:
+- Only scripts/release/check-nsis-migration.ps1, scripts/release/windows-artifact-helpers.ps1, and scripts/release/package-migration.test.mjs are part of this diagnostic correction.
+- Existing Beaver site mockup and screenshot working-tree changes remain untouched.
