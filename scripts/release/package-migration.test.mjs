@@ -102,6 +102,9 @@ test("les validateurs natifs de paquets sont présents et bornés", () => {
   const windowsBrand = readBounded(
     "scripts/release/windows-brand-validation.ps1",
   );
+  const windowsNativeIcon = readBounded(
+    "scripts/release/windows-native-icon.ps1",
+  );
 
   assert.match(deb, /dpkg-deb/);
   assert.match(deb, /MAX_CONTENT_ENTRIES=20000/);
@@ -126,6 +129,12 @@ test("les validateurs natifs de paquets sont présents et bornés", () => {
   assert.match(windowsBrand, /function Get-VisibleBitmapPixelHash/);
   assert.match(windowsBrand, /function Get-RenderedIconPixelHashes/);
   assert.match(windowsBrand, /function Get-BeaverExecutableBrandFailure/);
+  assert.match(windowsBrand, /windows-native-icon\.ps1/);
+  assert.match(windowsNativeIcon, /function Get-FixedSizeNativeIcon/);
+  assert.match(windowsNativeIcon, /PrivateExtractIcons/);
+  assert.match(windowsNativeIcon, /DestroyIcon/);
+  assert.doesNotMatch(`${windowsBrand}\n${windowsNativeIcon}`, /ExtractAssociatedIcon/);
+  assert.doesNotMatch(`${windowsBrand}\n${windowsNativeIcon}`, /\[Drawing\.Icon\]::new/);
   for (const code of [
     "installed-brand-input",
     "installed-brand-product",
@@ -169,5 +178,8 @@ test("les validateurs natifs de paquets sont présents et bornés", () => {
       new RegExp(`\\$${variable} = @\\(Get-ExistingRegistryPaths `),
     );
   }
-  assert.doesNotMatch(`${nsis}\n${windowsHelpers}\n${windowsBrand}`, /Invoke-Expression|cmd\.exe/i);
+  assert.doesNotMatch(
+    `${nsis}\n${windowsHelpers}\n${windowsBrand}\n${windowsNativeIcon}`,
+    /Invoke-Expression|cmd\.exe/i,
+  );
 });

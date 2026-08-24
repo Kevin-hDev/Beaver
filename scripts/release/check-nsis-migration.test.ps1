@@ -69,6 +69,26 @@ try {
     Assert-True ((Get-BeaverExecutableBrandFailure "" "1.1.1" $validHelper) -ceq "installed-brand-input")
 
     Add-Type -AssemblyName System.Drawing
+    $referenceIconPath = [IO.Path]::GetFullPath(
+        (Join-Path $PSScriptRoot "../../src-tauri/icons/icon.ico")
+    )
+    $firstIcon = $null
+    $secondIcon = $null
+    try {
+        $firstIcon = Get-FixedSizeNativeIcon $referenceIconPath 32
+        $secondIcon = Get-FixedSizeNativeIcon $referenceIconPath 32
+        Assert-True ($firstIcon.Width -eq 32 -and $firstIcon.Height -eq 32)
+        Assert-True ($secondIcon.Width -eq 32 -and $secondIcon.Height -eq 32)
+        $firstHashes = @(Get-RenderedIconPixelHashes $firstIcon)
+        $secondHashes = @(Get-RenderedIconPixelHashes $secondIcon)
+        Assert-True ($firstHashes.Count -eq 2 -and $secondHashes.Count -eq 2)
+        Assert-True ($firstHashes[0] -ceq $secondHashes[0])
+        Assert-True ($firstHashes[1] -ceq $secondHashes[1])
+    } finally {
+        if ($null -ne $firstIcon) { $firstIcon.Dispose() }
+        if ($null -ne $secondIcon) { $secondIcon.Dispose() }
+    }
+
     $transparentRed = New-Object Drawing.Bitmap 2, 2
     $transparentBlue = New-Object Drawing.Bitmap 2, 2
     $visibleRed = New-Object Drawing.Bitmap 2, 2

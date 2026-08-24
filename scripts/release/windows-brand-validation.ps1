@@ -1,3 +1,5 @@
+. (Join-Path $PSScriptRoot "windows-native-icon.ps1")
+
 function Get-VisibleBitmapPixelHash([Drawing.Bitmap]$Source, [int]$BackgroundArgb) {
     if ($null -eq $Source) {
         return $null
@@ -93,13 +95,13 @@ function Get-BeaverExecutableBrandFailure(
 
         Add-Type -AssemblyName System.Drawing
         try {
-            $expectedIcon = [Drawing.Icon]::new($iconItem.FullName, 32, 32)
+            $expectedIcon = Get-FixedSizeNativeIcon $iconItem.FullName 32
         } catch {
             return "installed-brand-icon-reference"
         }
         try {
             try {
-                $actualIcon = [Drawing.Icon]::ExtractAssociatedIcon($item.FullName)
+                $actualIcon = Get-FixedSizeNativeIcon $item.FullName 32
             } catch {
                 return "installed-brand-icon-extract"
             }
