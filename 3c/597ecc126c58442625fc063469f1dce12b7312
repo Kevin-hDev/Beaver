@@ -1,0 +1,34 @@
+Windows v1.1.5 executable icon validation correction.
+
+Observed failure:
+- Release run 32724593530 built successfully on macOS, Linux, and Windows.
+- Windows SearXNG runtime verification passed, then installed package validation failed with the bounded category installed-brand.
+- The release runner was clean and used no Rust build cache, disproving the previous cached-ICO root-cause hypothesis.
+
+Correction:
+- The validator now compares the icon as Windows renders it on opaque black and white backgrounds.
+- This deliberately ignores RGB bytes hidden below fully transparent pixels while still detecting visible color, alpha, or shape changes.
+- The raw ICO remains the single branding authority.
+- The ineffective explicit Cargo icon watcher was removed.
+- The PowerShell behavioral test proves hidden transparent RGB is ignored and visible RGB is not.
+- The native PowerShell validator now runs in normal Windows CI before any release build.
+
+Verification before push:
+- npm run test:package-migration: 6/6 passed.
+- npm run test:release-workflow: 39/39 passed.
+- npm run check: 7/7 passed.
+- Frontend/scripts: 473 files and 2504 tests passed.
+- Rust: 3930 passed, 5 ignored, 0 failed; format and clippy passed.
+- git diff --check passed.
+- graphify update . completed.
+
+Remaining platform proof:
+- System.Drawing behavior and the installed NSIS executable must be validated by Windows CI and then by a fresh three-OS release run.
+
+Scope:
+- .github/workflows/ci.yml
+- scripts/release/check-nsis-migration.test.ps1
+- scripts/release/package-migration.test.mjs
+- scripts/release/windows-artifact-helpers.ps1
+- src-tauri/build.rs
+- Unrelated Beaver site and screenshot changes were preserved.
