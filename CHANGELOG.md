@@ -29,6 +29,21 @@
 
 - **Refreshed Beaver icon** — the About page, Dock, taskbar, system tray, macOS menu bar, and packaged applications now share the new rounded Beaver artwork across desktop and mobile assets.
 
+### Windows local runtime reliability
+
+- **Accurate Windows hardware telemetry** — VRAM capacity and usage now come from the same DXGI adapter, and Beaver shares one hardware snapshot between the interface and Forecast instead of running competing probes.
+- **Mode-aware activity badge** — GPU mode shows VRAM and GPU activity, while CPU mode shows system RAM and CPU activity instead of implying that Ollama is still using the GPU.
+- **Effective Ollama compute settings** — CPU/GPU and single-/multi-model choices are saved before a coordinated restart and are applied to the newly started Ollama process. Single-model mode limits Ollama to one loaded model at a time.
+- **Complete Windows Ollama restarts** — Beaver now owns the complete Ollama process tree in a private Job Object, so restarts remove the previous daemon and every `llama-server` descendant before launching the replacement.
+- **Clearer model installation failures** — install and update actions remain tied to the ready Ollama runtime, and a failed download now produces a visible translated error instead of appearing to do nothing.
+
+### Startup and development reliability
+
+- **Exact native launch-at-login entries** — Beaver now owns and repairs its Windows registry entry, macOS LaunchAgent, or Linux desktop entry instead of accepting stale executable paths or arguments. Disabling the setting removes the owned entry idempotently.
+- **Reliable hidden startup** — Beaver starts hidden only when launch at login and hidden startup are both enabled and the exact native autostart marker is present; manual launches remain visible.
+- **Reliable advanced-settings saves** — settings that restart Ollama wait for persistence, while ordinary interface events use a separate handled save path without dropping errors or weakening lint rules.
+- **Stable Windows development watching** — Vite consistently excludes both Cargo `target` directories on Windows, preventing locked Rust executables and libraries from repeatedly terminating the development server with `EBUSY`.
+
 ---
 
 ## v1.1.4
