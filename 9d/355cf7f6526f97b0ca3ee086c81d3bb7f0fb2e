@@ -1,0 +1,45 @@
+Commit Windows runtime reliability — état vérifié le 2026-08-24
+
+Périmètre
+- Empêche Vite de surveiller target/ et src-tauri/target/ afin d’éviter les EBUSY sur les binaires Cargo.
+- Confine les sondes Python SearXNG dans l’autorité de processus et les détruit à l’expiration.
+- Remplace la détection VRAM Windows ambiguë par une jointure DXGI/compteurs fondée sur le même adaptateur (LUID), sans inventer d’usage si la mesure manque.
+- Publie une seule photographie GPU/RAM partagée pour l’interface et Forecast.
+- Applique réellement le choix CPU/GPU à l’environnement Ollama au prochain démarrage.
+- Applique réellement le mode mono-modèle/multi-modèles : OLLAMA_MAX_LOADED_MODELS=1 quand désactivé, automatique quand activé.
+- Sauvegarde les réglages avant de demander le redémarrage Ollama.
+- Affiche RAM/CPU en mode CPU et VRAM/GPU en mode GPU.
+- Rend l’installation de modèle inactive tant que le runtime Ollama n’est pas prêt.
+- Sur Windows, place le démon Ollama dans un Job Object privé imbriqué. Un redémarrage termine ainsi le démon et tous ses llama-server descendants avant le nouveau lancement.
+
+Raisons d’architecture
+- La configuration persistée est l’unique autorité CPU/GPU et mono/multi ; l’environnement de spawn ne fait que la traduire.
+- La photographie GPU publiée est l’unique source synchrone de mesure ; aucun consommateur ne relance sa propre sonde.
+- Le Job Object privé Ollama est l’unique autorité de destruction de son arbre, tout en conservant le Job global Beaver pour la fermeture de l’application.
+- Le processus racine est affecté aux deux Jobs avant ResumeThread : aucun descendant ne peut échapper entre le spawn et le confinement.
+
+Preuves automatiques vertes
+- node --test scripts/build/vite-watch-target.test.mjs : 1/1.
+- Vitest ciblé (badge GPU, installation modèle, réglages Ollama, statut runtime) : 12/12.
+- npx tsc --noEmit : vert.
+- cargo test --features windows-tests services::ollama_manager --lib -- --test-threads=1 : 299/299, 1 test développeur ignoré.
+- cargo test --features windows-tests services::gpu_vram --lib -- --test-threads=1 : 15/15, 1 test GPU physique ignoré.
+- cargo test --features windows-tests services::searxng::python_runtime_tests --lib -- --test-threads=1 : 4/4.
+- cargo test --features windows-tests services::forecast::hardware_profile::tests --lib -- --test-threads=1 : 6/6.
+- git diff --check : aucune erreur.
+- graphify update . : succès, aucune modification de topologie.
+
+Preuves natives Windows
+- Détection VRAM affichée avec capacité et usage sur la machine réelle.
+- Mode CPU : modèle chargé sans consommation VRAM correspondante et badge RAM/CPU.
+- Retour GPU : modèle chargé en VRAM et badge VRAM/GPU.
+- Les réglages sauvegardés déclenchent le redémarrage attendu.
+- À chaque bascule CPU/GPU et mono/multi, les PID du démon précédent et de llama-server disparaissent avant le nouveau démon.
+- Fermeture finale : aucun processus Beaver/Ollama résiduel.
+
+Réserve de test à ne pas masquer
+- Une exécution globale cargo test --features windows-tests --lib a donné 3770 réussites, 9 échecs et 6 ignorés.
+- Les échecs sont dans des tests Git temporaires, un cutpoint de stockage Ollama et des tests SearXNG à délais de 50 ms/1 s ; les exécutions Python locales ont elles-mêmes varié jusqu’à environ 1,0 s sous Windows.
+- Les domaines et nouveaux chemins modifiés ont ensuite été relancés isolément et sont verts avec les comptes ci-dessus. La CI complète reste obligatoire avant fusion.
+
+Aucun push ni fusion n’est inclus dans ce commit.

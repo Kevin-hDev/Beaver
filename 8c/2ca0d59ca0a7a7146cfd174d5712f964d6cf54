@@ -1,0 +1,11 @@
+Jalon 4 Windows — contrats de vérification portables et délais de test SearXNG.
+
+Causes racines: le test de résolution Python imposait le candidat Unix python3.99 même lorsque le code transmettait win32 et sélectionnait correctement py-3.99. Deux contrats README recherchaient uniquement des fins de ligne LF alors que core.autocrlf=true matérialise légitimement CRLF. Les tests SearXNG mélangeaient enfin la garantie de terminaison avec un démarrage Python sous 50 ms/1 s; la mesure native a observé un premier démarrage à 1207 ms puis 20 à 195 ms.
+
+Correction: l'attente du candidat Python dérive de process.platform; le README est normalisé une seule fois vers LF avant analyse. Les délais SearXNG de test ont une autorité Windows unique: 2 s pour publier les PID, 3 s pour une commande normale, puis une borne de nettoyage séparée de 900 ms. Le test des pipes réussis reçoit une échéance globale de 5 s mais doit finir avant 4 s, ce qui continue de prouver qu'il ne consomme pas l'échéance. Aucun délai ni comportement de production n'est modifié et aucun test n'est ignoré.
+
+TDD observé: avant correction, les contrats CI échouaient 13/16, puis les tests ciblés sont passés 4/4. Le module Rust isolé échouait d'abord sur les fichiers PID vides puis sur des commandes normales classées timeout; après centralisation, il passe 16/16.
+
+Preuves finales locales: node tests ciblés 4/4; npm run lint vert; npx tsc --noEmit vert; contrats CI 16/16; CEF 35 réussis et 11 sauts macOS attendus; E2E runner 70/70; extensions host 53/53; cargo fmt --check vert; cargo check --lib vert; cargo clippy --lib -- -D warnings vert; suite Rust Windows complète 3787 réussites, 0 échec, 6 ignorés; git diff --check vert; graphify update . terminé sans changement de topologie.
+
+Limite locale explicite: npm test atteint 2504/2504 Vitest puis 55/56 scripts de build. L'unique échec restant est le test sain de refus d'un lien symbolique, car cette session Windows refuse toute création de symlink avec EPERM et le même fichier est identique à origin/main. Le test n'a pas été affaibli; la CI Windows doit l'exécuter dans son environnement autorisé.

@@ -1,0 +1,9 @@
+Jalon 4 Windows — correction du contrat de sauvegarde des réglages avancés.
+
+Cause: le commit 9d355cf7 a rendu save asynchrone avec un résultat Promise<boolean> afin que les bascules Ollama puissent attendre la persistance avant le redémarrage. Cinq contrôles génériques continuaient à retourner cette promesse depuis des callbacks React qui exigent void, ce qui faisait échouer la règle no-misused-promises.
+
+Correction: save conserve son contrat Promise<boolean>, nécessaire à OllamaSettingsSection. Un adaptateur unique saveFromEvent retourne réellement void et lance la sauvegarde déjà entièrement gérée pour les cinq contrôles qui ne redémarrent pas Ollama: tray, modèle par défaut, compression, seuil et dossier de sortie. Aucune règle ESLint supprimée ou ignorée.
+
+Cycle de preuve: npm run lint reproduisait 5 erreurs avant correction. Une première hypothèse consistant à rendre save entièrement void a fait passer le lint mais npx tsc --noEmit a correctement échoué car Ollama attend Promise<boolean>; cette hypothèse a été retirée. Après séparation des contrats: npm run lint vert, npx tsc --noEmit vert, Vitest settings-tab-report + ollama-settings-section 17/17 verts, git diff --check vert, graphify update . exécuté sans changement de topologie.
+
+Aucun push, aucune CI et aucune validation de démarrage OS dans ce commit. Le test natif de Lancer au démarrage / Démarrage masqué attend toujours un paquet 1.1.5 installé.

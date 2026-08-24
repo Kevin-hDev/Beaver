@@ -1,0 +1,7 @@
+PR #34 — correction des deux premières étapes CI rouges sur Windows.
+
+Backend: cargo fmt --check était vert mais le contrôle élargi des sources incluses détectait manager_process.rs, fichier conditionnel absent du parcours normal de rustfmt sur ce runner. rustfmt a été appliqué directement avec edition 2021 et skip_children=true, exactement comme l'autorité CI; seul un retour à la ligne a changé, sans logique.
+
+Frontend: les trois usages internes nouveaux de clgo proviennent des preuves exactes du marqueur --clgo-autostart dans les tests Linux, macOS et Windows. Le scanner signalait 106 usages internes contre 103 attendus et zéro référence inconnue. L'autorité chiffrée a été mise à 106; aucune exclusion ni règle de détection n'a été ajoutée.
+
+Preuves rouges observées dans le run GitHub 32680574926: Backend/Format check for included Rust sources et Frontend/Brand boundaries contract. Preuves vertes locales après correction: RUSTFMT_BASE_SHA=bb2e1686 node scripts/build/check-rust-format.mjs; npm run test:brand-boundaries 14/14 avec INCONNU ET BLOQUANT 0; git diff --check; graphify update . terminé.

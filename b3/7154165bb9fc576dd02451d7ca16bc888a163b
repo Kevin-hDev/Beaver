@@ -1,0 +1,13 @@
+Jalon 4 Windows — autorité native unique pour Lancer au démarrage / Démarrage masqué.
+
+Cause racine: tauri-plugin-autostart/auto-launch ne validait que l'existence de l'entrée. Une ancienne cible ou des arguments obsolètes restaient considérés valides; Windows écrivait en outre le chemin sans guillemets et ne réparait pas StartupApproved. Linux ne protégeait pas complètement Exec et macOS construisait le plist sans contrat exact vérifié.
+
+Correction: Beaver possède maintenant l'entrée active exacte sur chaque OS. Windows réconcilie HKCU Run + StartupApproved avec une commande chemin-exe entre guillemets suivie de --clgo-autostart. macOS écrit atomiquement un LaunchAgent plist structuré. Linux écrit atomiquement un fichier .desktop dont Exec est échappé. À chaque démarrage et mutation du réglage, Absent/Exact/Stale est lu puis réparé et revérifié; la désactivation est idempotente. L'ancien auto-launch ne subsiste que pour supprimer une éventuelle entrée historique CL-GO lors de la migration. Le plugin Tauri et ses permissions ont été retirés afin de supprimer la seconde autorité.
+
+Démarrage masqué: le contrat existant est conservé et retesté; la fenêtre est masquée uniquement avec autostart=true, start_hidden=true et le marqueur exact --clgo-autostart. Un lancement manuel reste visible.
+
+TDD observé: les tests de réconciliation exacte, documents natifs et registre Windows ont d'abord échoué avant l'implémentation. Preuves finales Windows: cargo test --features windows-tests services::autostart_migration --lib -- --test-threads=1 => 16/16; app_events::tests => 3/3; commands::config::tests => 6/6. Le test Windows utilise de vraies valeurs HKCU à nom UUID, couvre chemin avec espaces, entrée obsolète, StartupApproved désactivé, réparation, double désactivation et nettoyage RAII; aucune valeur temporaire ne reste.
+
+Contrôles: cargo check --lib vert; cargo clippy --lib -- -D warnings vert; cargo fmt --check vert; git diff --check vert; npx tsc --noEmit vert; graphify update . exécuté. npm run lint reste rouge sur 5 no-misused-promises préexistants dans src/components/settings/advanced-settings.tsx lignes 107, 118, 146, 161 et 181, fichier absent de ce commit.
+
+Limites honnêtes: Windows natif est couvert par le registre réel et les contrats de masquage. Les documents macOS/Linux sont validés structurellement par tests, mais leur compilation CI et un vrai démarrage de session sur ces deux OS restent obligatoires avant de les déclarer natifs verts. Aucune CI ni aucun push n'a été lancé avec ce commit.
