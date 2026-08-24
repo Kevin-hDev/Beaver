@@ -4,6 +4,17 @@ interface InvocationResult {
   value?: unknown;
 }
 
+export async function waitForTauriBridge(): Promise<void> {
+  await browser.waitUntil(
+    () => browser.execute(
+      () => typeof window.__TAURI__?.core?.invoke === "function",
+    ),
+    {
+      timeoutMsg: "Tauri IPC bridge did not become ready",
+    },
+  );
+}
+
 export async function invokeTauri<T>(
   command: string,
   payload: Record<string, unknown> = {},
