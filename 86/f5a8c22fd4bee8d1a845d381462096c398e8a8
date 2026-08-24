@@ -42,3 +42,10 @@ Next actions
 2. Run the full PR CI on all configured jobs.
 3. If any code correction follows, use a dedicated commit, add a matching git note, and restart the full CI.
 4. Keep v1.1.5 publication blocked until CI and review are both explicitly green.
+
+Full PR CI evidence
+- PR #35 CI completed green on commit 86f5a8c2.
+- 11/11 reported checks passed: Analyse actions, Analyse javascript-typescript, Analyse rust, Backend (Rust), Backend Linux WebView (E2E), Backend Windows CEF (Rust), Backend Windows tests (Rust), Backend macOS CEF (Rust), Desktop E2E (CEF), Frontend (TS/React), and GitGuardian Security Checks.
+- CodeQL also completed successfully.
+- Long native jobs: Windows CEF 43m56s; macOS CEF 25m28s.
+- No CI correction or rerun was needed. Review remains the only gate before merge/release.
