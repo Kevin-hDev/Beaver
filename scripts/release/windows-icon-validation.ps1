@@ -1,47 +1,7 @@
 . (Join-Path $PSScriptRoot "windows-native-icon.ps1")
+. (Join-Path $PSScriptRoot "windows-ico-structure.ps1")
 
-$script:WindowsBrandIconSizes = @(32, 48, 256)
-
-function Get-WindowsIcoFrameSizes([IO.FileInfo]$File) {
-    if ($null -eq $File -or $File.Extension -ine ".ico") {
-        throw (New-Object IO.InvalidDataException("Invalid icon reference."))
-    }
-    $bytes = [IO.File]::ReadAllBytes($File.FullName)
-    if (
-        $bytes.Length -lt 22 -or
-        [BitConverter]::ToUInt16($bytes, 0) -ne 0 -or
-        [BitConverter]::ToUInt16($bytes, 2) -ne 1
-    ) {
-        throw (New-Object IO.InvalidDataException("Invalid icon reference."))
-    }
-    $count = [int][BitConverter]::ToUInt16($bytes, 4)
-    $directoryEnd = 6 + (16 * $count)
-    if ($count -le 0 -or $count -gt 256 -or $directoryEnd -gt $bytes.Length) {
-        throw (New-Object IO.InvalidDataException("Invalid icon reference."))
-    }
-
-    $sizes = New-Object int[] $count
-    for ($index = 0; $index -lt $count; $index += 1) {
-        $offset = 6 + (16 * $index)
-        $width = [int]$bytes[$offset]
-        $height = [int]$bytes[$offset + 1]
-        if ($width -eq 0) { $width = 256 }
-        if ($height -eq 0) { $height = 256 }
-        $imageBytes = [uint64][BitConverter]::ToUInt32($bytes, $offset + 8)
-        $imageOffset = [uint64][BitConverter]::ToUInt32($bytes, $offset + 12)
-        $imageEnd = $imageOffset + $imageBytes
-        if (
-            $width -ne $height -or
-            $imageBytes -eq 0 -or
-            $imageOffset -lt $directoryEnd -or
-            $imageEnd -gt $bytes.Length
-        ) {
-            throw (New-Object IO.InvalidDataException("Invalid icon reference."))
-        }
-        $sizes[$index] = $width
-    }
-    return $sizes
-}
+$script:WindowsBrandIconSizes = @(16, 32, 48, 256)
 
 function Test-WindowsReferenceIcon([IO.FileInfo]$File) {
     try {

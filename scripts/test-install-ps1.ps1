@@ -1,24 +1,24 @@
-$ErrorActionPreference = "Stop"
-
-$paths = @(
-    (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..\install.ps1")).Path
+[CmdletBinding()]
+param(
+    [switch]$ListOnly
 )
-$releaseScripts = Get-ChildItem -LiteralPath (Join-Path $PSScriptRoot "release") `
-    -Filter "*.ps1" -File | Sort-Object FullName
-$paths += @($releaseScripts | ForEach-Object { $_.FullName })
+
+$ErrorActionPreference = "Stop"
+$MaxPowerShellScripts = 256
+$repositoryRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
+. (Join-Path $PSScriptRoot "release\windows-powershell-source-validation.ps1")
+
+$paths = @(Get-RepositoryPowerShellFiles $repositoryRoot $MaxPowerShellScripts)
+if ($ListOnly) {
+    $paths
+    return
+}
 
 foreach ($path in $paths) {
-    $tokens = $null
-    $errors = $null
-    [void][System.Management.Automation.Language.Parser]::ParseFile(
-        $path,
-        [ref]$tokens,
-        [ref]$errors
-    )
-    if ($errors.Count -ne 0) {
-        Write-Error "PowerShell syntax invalid"
+    if ($null -ne (Get-PowerShellSourceFailure $path)) {
+        Write-Error "PowerShell source validation failed."
         exit 1
     }
 }
 
-Write-Host "PowerShell syntax OK"
+Write-Host "PowerShell syntax and source policy OK"

@@ -3,7 +3,8 @@
 function Get-BeaverExecutableBrandFailure(
     [string]$Path,
     [string]$ExpectedVersion,
-    [string]$ExpectedIconPath = ""
+    [string]$ExpectedIconPath = "",
+    [string]$AllowedRoot = ""
 ) {
     $maxExecutableBytes = 536870912
     $maxIconBytes = 8388608
@@ -12,7 +13,7 @@ function Get-BeaverExecutableBrandFailure(
     }
 
     try {
-        $item = Get-BoundedPackageFile $Path $maxExecutableBytes
+        $item = Get-BoundedPackageFile $Path $maxExecutableBytes $AllowedRoot
     } catch {
         return "installed-brand-input"
     }
@@ -52,9 +53,10 @@ function Get-BeaverExecutableBrandFailure(
 function Test-BeaverExecutableBrand(
     [string]$Path,
     [string]$ExpectedVersion,
-    [string]$ExpectedIconPath = ""
+    [string]$ExpectedIconPath = "",
+    [string]$AllowedRoot = ""
 ) {
     return [string]::IsNullOrEmpty(
-        (Get-BeaverExecutableBrandFailure $Path $ExpectedVersion $ExpectedIconPath)
+        (Get-BeaverExecutableBrandFailure $Path $ExpectedVersion $ExpectedIconPath $AllowedRoot)
     )
 }

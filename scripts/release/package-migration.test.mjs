@@ -132,14 +132,6 @@ test("les validateurs natifs de paquets sont présents et bornés", () => {
   assert.match(windowsHelpers, /function Test-FullyQualifiedWindowsPath/);
   assert.match(windowsHelpers, /function Test-BeaverShortcutState/);
   assert.match(windowsHelpers, /windows-brand-validation\.ps1/);
-  const iconValidators = [
-    windowsHelpers,
-    windowsBrand,
-    windowsNativeIcon,
-    windowsIconValidation,
-  ].join("\n");
-  assert.doesNotMatch(iconValidators, /ExtractAssociatedIcon/iu);
-  assert.doesNotMatch(iconValidators, /\[Drawing\.Icon\]::new/iu);
   for (const code of [
     "installed-brand-input",
     "installed-brand-product",
@@ -154,10 +146,6 @@ test("les validateurs natifs de paquets sont présents et bornés", () => {
     assert.ok(windowsBrand.includes(`"${code}"`), `diagnostic absent: ${code}`);
   }
   assert.match(nsis, /src-tauri\/icons\/icon\.ico/);
-  assert.match(
-    nsis,
-    /Get-BeaverExecutableBrandFailure \$binary \$expectedVersion \$expectedIcon/,
-  );
   assert.match(nsis, /\.IndexOf\(\$value, \[StringComparison\]::OrdinalIgnoreCase\) -ge 0/);
   assert.doesNotMatch(nsis, /\.Contains\(\$value, \[StringComparison\]/);
   assert.doesNotMatch(nsis, /IsPathFullyQualified/);

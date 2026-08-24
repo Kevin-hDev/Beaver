@@ -13,7 +13,6 @@ $MaxUpdaterHelperBytes = 67108864
 $MaxExtensionHostBytes = 4194304
 $MaxNodeRuntimeBytes = 268435456
 $Root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot "../.."))
-$RootPrefix = $Root.TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
 
 function Stop-Validation {
     param(
@@ -40,15 +39,12 @@ function Stop-Validation {
 . (Join-Path $PSScriptRoot "windows-artifact-helpers.ps1")
 
 function Read-BoundedText([string]$RelativePath) {
-    $path = [IO.Path]::GetFullPath((Join-Path $Root $RelativePath))
-    if (-not $path.StartsWith($RootPrefix, [StringComparison]::OrdinalIgnoreCase)) {
+    try {
+        $path = [IO.Path]::GetFullPath((Join-Path $Root $RelativePath))
+        return Read-BoundedPackageText $path $MaxSourceBytes $Root
+    } catch {
         Stop-Validation "source-read"
     }
-    $item = Get-Item -LiteralPath $path
-    if (-not $item.PSIsContainer -and $item.Length -gt 0 -and $item.Length -le $MaxSourceBytes) {
-        return [IO.File]::ReadAllText($item.FullName)
-    }
-    Stop-Validation "source-read"
 }
 
 function Test-SourceContracts {
@@ -81,7 +77,7 @@ function Test-SourceContracts {
             Stop-Validation "source-icons"
         }
         $iconPath = Join-Path $Root "src-tauri/$($expectedIcons[$index])"
-        if (-not (Test-BoundedPackageFile $iconPath $MaxIconBytes)) {
+        if (-not (Test-BoundedPackageFile $iconPath $MaxIconBytes $Root)) {
             Stop-Validation "source-icons"
         }
     }
@@ -172,7 +168,8 @@ function Test-InstalledState {
     }
     $expectedVersion = [string](Read-BoundedText "src-tauri/tauri.conf.json" | ConvertFrom-Json).version
     $expectedIcon = Join-Path $Root "src-tauri/icons/icon.ico"
-    $brandFailure = Get-BeaverExecutableBrandFailure $binary $expectedVersion $expectedIcon
+    $brandFailure = Get-BeaverExecutableBrandFailure `
+        $binary $expectedVersion $expectedIcon $installDir
     if (-not [string]::IsNullOrEmpty($brandFailure)) {
         Stop-Validation $brandFailure
     }
@@ -181,15 +178,15 @@ function Test-InstalledState {
     if ([string]::IsNullOrWhiteSpace($helperPath)) {
         Stop-Validation "installed-updater"
     }
-    if (-not (Test-BoundedPackageFile $helperPath $MaxUpdaterHelperBytes)) {
+    if (-not (Test-BoundedPackageFile $helperPath $MaxUpdaterHelperBytes $installDir)) {
         Stop-Validation "installed-updater"
     }
 
     $extensionHost = Join-ValidatedWindowsPath $installDir "resources\extension-host\host.mjs"
     $nodeRuntime = Join-ValidatedWindowsPath $installDir "resources\extension-host\runtime\node.exe"
     if (
-        -not (Test-BoundedPackageFile $extensionHost $MaxExtensionHostBytes) -or
-        -not (Test-BoundedPackageFile $nodeRuntime $MaxNodeRuntimeBytes)
+        -not (Test-BoundedPackageFile $extensionHost $MaxExtensionHostBytes $installDir) -or
+        -not (Test-BoundedPackageFile $nodeRuntime $MaxNodeRuntimeBytes $installDir)
     ) {
         Stop-Validation "installed-extension-host"
     }

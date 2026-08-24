@@ -8,6 +8,10 @@ function Assert-False([bool]$Value) {
     if ($Value) { throw "PowerShell package contract failed." }
 }
 
+. (Join-Path $PSScriptRoot "windows-icon-validation.test.ps1")
+. (Join-Path $PSScriptRoot "windows-package-file.test.ps1")
+. (Join-Path $PSScriptRoot "windows-powershell-source-validation.test.ps1")
+
 function New-TestShortcut([string]$Path, [string]$Target) {
     $shell = New-Object -ComObject WScript.Shell
     try {
@@ -59,42 +63,17 @@ try {
     Assert-False (Test-BeaverShortcutState @() @() $binary)
 
     $validHelper = Join-Path $temporaryRoot "valid-updater.exe"
-    $emptyHelper = Join-Path $temporaryRoot "empty-updater.exe"
     [IO.File]::WriteAllBytes($validHelper, [byte[]]@(1, 2, 3))
-    [IO.File]::WriteAllBytes($emptyHelper, [byte[]]@())
-    Assert-True (Test-BoundedPackageFile $validHelper 67108864)
-    Assert-False (Test-BoundedPackageFile $emptyHelper 67108864)
-
-    $originalLocation = (Get-Location).Path
-    $originalProcessDirectory = [Environment]::CurrentDirectory
-    try {
-        Set-Location -LiteralPath $temporaryRoot
-        [Environment]::CurrentDirectory = $temporaryBase
-        $resolvedRelative = Get-BoundedPackageFile ".\valid-updater.exe" 67108864
-        Assert-True ($resolvedRelative.FullName -ceq $validHelper)
-    } finally {
-        [Environment]::CurrentDirectory = $originalProcessDirectory
-        Set-Location -LiteralPath $originalLocation
-    }
 
     Assert-False (Test-BeaverExecutableBrand $validHelper "1.1.1" $validHelper)
     Assert-True ((Get-BeaverExecutableBrandFailure $validHelper "1.1.1" $validHelper) -ceq "installed-brand-product")
     Assert-True ((Get-BeaverExecutableBrandFailure "" "1.1.1" $validHelper) -ceq "installed-brand-input")
 
-    Add-Type -AssemblyName System.Drawing
     $referenceIconPath = [IO.Path]::GetFullPath(
         (Join-Path $PSScriptRoot "../../src-tauri/icons/icon.ico")
     )
     $referenceIconFile = Get-BoundedPackageFile $referenceIconPath 8388608
     Assert-True (Test-WindowsReferenceIcon $referenceIconFile)
-
-    $missingFramePath = Join-Path $temporaryRoot "missing-32.ico"
-    $missingFrameBytes = [IO.File]::ReadAllBytes($referenceIconPath)
-    Assert-True ($missingFrameBytes[6] -eq 32 -and $missingFrameBytes[7] -eq 32)
-    $missingFrameBytes[6] = 31
-    [IO.File]::WriteAllBytes($missingFramePath, $missingFrameBytes)
-    $missingFrameFile = Get-BoundedPackageFile $missingFramePath 8388608
-    Assert-False (Test-WindowsReferenceIcon $missingFrameFile)
 
     $compiler = @(
         (Join-Path $env:WINDIR "Microsoft.NET\Framework64\v4.0.30319\csc.exe"),
@@ -125,9 +104,6 @@ try {
     Assert-True (
         (Get-NativeIconContentFailure $plainFile $referenceIconFile) -ceq "actual-extract"
     )
-    Assert-True (
-        (Get-NativeIconContentFailure $brandedFile $missingFrameFile) -ceq "reference-format"
-    )
     Assert-False (Test-WindowsReferenceIcon $brandedFile)
 
     $originalInteropIdentity = $script:NativeIconInteropType.FullName
@@ -154,23 +130,6 @@ try {
     )
     . $nativeModulePath
     Assert-True ($script:NativeIconInteropType.FullName -ceq $originalInteropIdentity)
-
-    $firstIcon = $null
-    $secondIcon = $null
-    try {
-        $firstIcon = Get-FixedSizeNativeIcon $referenceIconFile 32
-        $secondIcon = Get-FixedSizeNativeIcon $referenceIconFile 32
-        Assert-True ($firstIcon.Width -eq 32 -and $firstIcon.Height -eq 32)
-        Assert-True ($secondIcon.Width -eq 32 -and $secondIcon.Height -eq 32)
-        $firstHashes = @(Get-RenderedIconPixelHashes $firstIcon)
-        $secondHashes = @(Get-RenderedIconPixelHashes $secondIcon)
-        Assert-True ($firstHashes.Count -eq 2 -and $secondHashes.Count -eq 2)
-        Assert-True ($firstHashes[0] -ceq $secondHashes[0])
-        Assert-True ($firstHashes[1] -ceq $secondHashes[1])
-    } finally {
-        if ($null -ne $firstIcon) { $firstIcon.Dispose() }
-        if ($null -ne $secondIcon) { $secondIcon.Dispose() }
-    }
 
     $transparentRed = New-Object Drawing.Bitmap 2, 2
     $transparentBlue = New-Object Drawing.Bitmap 2, 2
