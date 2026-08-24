@@ -1,0 +1,44 @@
+Windows release handoff — installed-brand validator correction
+
+Scope
+- Windows-only follow-up to f399e882. No Tauri, icon asset, NSIS hook, application runtime, macOS, or Linux behavior changed.
+- Release v1.1.5 remains blocked until this commit passes the full PR CI and review. Do not create or move a release tag from this note alone.
+
+Observed root cause
+- The NSIS package built successfully and installed successfully.
+- ProductName=Beaver and FileVersion/ProductVersion=1.1.5 were correct.
+- The installed validator failed as installed-brand-icon-size under PowerShell 7 and installed-brand-icon-content under Windows PowerShell 5.1.
+- System.Drawing.Icon.ExtractAssociatedIcon returned 40x40 at Windows DPI 125%, while the reference decoder returned 32x32.
+- The managed ICO decoder also rendered different pixels across the two PowerShell/.NET engines.
+- A native diagnostic using PrivateExtractIcons at explicit 32x32 produced identical EXE/ICO hashes under both engines. The package and embedded icon were correct; the validator was the false negative.
+
+Correction
+- Added scripts/release/windows-native-icon.ps1 as the single owner of fixed-size native Windows icon extraction.
+- Both the installed EXE and source ICO now use PrivateExtractIcons at exactly 32x32.
+- Native HICON handles and borrowed/cloned Drawing.Icon objects are released on every path; DestroyIcon failure is propagated.
+- The two-background visible-pixel comparison remains unchanged.
+- The native module is separate so every code/test file remains below the 230-line project limit.
+
+Regression coverage (TDD)
+- Before implementation, package-migration.test.mjs failed because the fixed native extractor was absent.
+- Before implementation, check-nsis-migration.test.ps1 failed under both pwsh and Windows PowerShell because Get-FixedSizeNativeIcon did not exist.
+- The tests now exercise the real repository ICO twice at 32x32, compare deterministic black/white rendered hashes, require native extraction/cleanup, and prevent reintroduction of the two DPI/runtime-dependent APIs in the installed-brand validator.
+
+Fresh local evidence on Windows
+- npm run test:package-migration: 6/6 pass.
+- npm run test:release-workflow: 40/40 pass.
+- check-nsis-migration.test.ps1: pass under pwsh and powershell.exe (PowerShell package contracts OK).
+- check-nsis-migration.ps1 -Mode Source: pass under pwsh and powershell.exe.
+- Existing target/release/bundle/nsis/Beaver_1.1.5_x64-setup.exe: installed validator pass under pwsh and powershell.exe against the real installed package.
+- git diff --check: pass.
+- Modified production/test files: 77, 155, 124, and 185 lines; all <=230.
+- graphify update . completed; no final topology change remained after the test-only cleanup adjustment.
+
+Prerequisite discovered during the native Windows build
+- The local machine initially lacked CPython 3.14 required by release preparation. CPython 3.14.3 was installed with uv; the subsequent NSIS build completed. This is an environment prerequisite, not a repository correction in this commit.
+
+Next actions
+1. Review only 86f5a8c2 relative to f399e882 for this Windows correction.
+2. Run the full PR CI on all configured jobs.
+3. If any code correction follows, use a dedicated commit, add a matching git note, and restart the full CI.
+4. Keep v1.1.5 publication blocked until CI and review are both explicitly green.
