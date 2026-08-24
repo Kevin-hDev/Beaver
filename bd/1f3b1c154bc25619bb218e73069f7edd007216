@@ -1,0 +1,20 @@
+Release notes completion for Beaver 1.1.5.
+
+Reason:
+- The Windows local runtime reliability and startup/development sections were added to CHANGELOG.md after the original four in-app notes were written.
+- User-facing release notes must not omit a major category included in the published release.
+
+Change:
+- Added one concise Windows/Ollama reliability sentence and one native startup/settings reliability sentence in all seven supported locales.
+- Kept the release-note contract at exactly six complete sentences per locale.
+
+Verification:
+- app-release-notes.mjs v1.1.5 generated the English release notes successfully.
+- 1.1.5 contains seven locales and six sentences per locale.
+- npm run test:release-workflow: 39/39 passed.
+- git diff --check passed.
+- graphify update . completed.
+
+Scope:
+- Only app-release-notes.json belongs to this commit.
+- Unrelated Beaver site mockup and screenshot changes remain untouched.
