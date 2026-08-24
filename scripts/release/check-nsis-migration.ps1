@@ -16,6 +16,20 @@ $Root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot "../.."))
 $RootPrefix = $Root.TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
 
 function Stop-Validation {
+    param(
+        [Parameter(Mandatory)]
+        [ValidateSet(
+            "source-read", "source-config", "source-resource", "source-icons",
+            "source-hook-required", "source-hook-forbidden", "source-installer",
+            "source-installer-icon", "installed-legacy-registry", "installed-registry",
+            "installed-location", "installed-binary", "installed-brand",
+            "installed-updater", "installed-extension-host", "installed-legacy-shortcuts",
+            "installed-shortcuts"
+        )]
+        [string]$Code
+    )
+    # Fixed categories preserve generic failures while making CI regressions diagnosable.
+    Write-Host "Windows package check failed: $Code"
     throw "Windows package validation failed."
 }
 
@@ -24,13 +38,13 @@ function Stop-Validation {
 function Read-BoundedText([string]$RelativePath) {
     $path = [IO.Path]::GetFullPath((Join-Path $Root $RelativePath))
     if (-not $path.StartsWith($RootPrefix, [StringComparison]::OrdinalIgnoreCase)) {
-        Stop-Validation
+        Stop-Validation "source-read"
     }
     $item = Get-Item -LiteralPath $path
     if (-not $item.PSIsContainer -and $item.Length -gt 0 -and $item.Length -le $MaxSourceBytes) {
         return [IO.File]::ReadAllText($item.FullName)
     }
-    Stop-Validation
+    Stop-Validation "source-read"
 }
 
 function Test-SourceContracts {
@@ -38,14 +52,14 @@ function Test-SourceContracts {
     $windowsConfig = Read-BoundedText "src-tauri/tauri.windows.conf.json" | ConvertFrom-Json
     $helperResource = "target/updater-helper/cl-go-dash-updater.exe"
     if ($config.productName -ne "Beaver" -or $config.identifier -ne "com.clgo.dash") {
-        Stop-Validation
+        Stop-Validation "source-config"
     }
     if ($config.bundle.windows.nsis.installerHooks -ne "windows/nsis-hooks.nsh") {
-        Stop-Validation
+        Stop-Validation "source-config"
     }
     $helperProperty = $windowsConfig.bundle.resources.PSObject.Properties[$helperResource]
     if ($null -eq $helperProperty -or $helperProperty.Value -cne $helperResource) {
-        Stop-Validation
+        Stop-Validation "source-resource"
     }
     $expectedIcons = @(
         "icons/32x32.png",
@@ -56,15 +70,15 @@ function Test-SourceContracts {
     )
     $actualIcons = @($config.bundle.icon)
     if ($actualIcons.Count -ne $expectedIcons.Count) {
-        Stop-Validation
+        Stop-Validation "source-icons"
     }
     for ($index = 0; $index -lt $expectedIcons.Count; $index += 1) {
         if ($actualIcons[$index] -cne $expectedIcons[$index]) {
-            Stop-Validation
+            Stop-Validation "source-icons"
         }
         $icon = Get-Item -LiteralPath (Join-Path $Root "src-tauri/$($expectedIcons[$index])")
         if ($icon.PSIsContainer -or $icon.Length -le 0 -or $icon.Length -gt $MaxIconBytes) {
-            Stop-Validation
+            Stop-Validation "source-icons"
         }
     }
 
@@ -84,7 +98,7 @@ function Test-SourceContracts {
     )
     foreach ($value in $required) {
         if (-not $hook.Contains($value)) {
-            Stop-Validation
+            Stop-Validation "source-hook-required"
         }
     }
 
@@ -96,7 +110,7 @@ function Test-SourceContracts {
     )
     foreach ($value in $forbidden) {
         if ($hook.IndexOf($value, [StringComparison]::OrdinalIgnoreCase) -ge 0) {
-            Stop-Validation
+            Stop-Validation "source-hook-forbidden"
         }
     }
 
@@ -111,7 +125,7 @@ function Test-SourceContracts {
             $installer.Length -gt $MaxInstallerBytes -or
             $installer.Name -cne $expected
         ) {
-            Stop-Validation
+            Stop-Validation "source-installer"
         }
         Test-AssociatedIcon $installer.FullName
     }
@@ -136,37 +150,37 @@ function Test-InstalledState {
     $oldProduct = @(Get-ExistingRegistryPaths "Software\clgo\CL-GO")
     $newProduct = @(Get-ExistingRegistryPaths "Software\clgo\Beaver")
     if ($oldUninstall.Count -ne 0 -or $oldProduct.Count -ne 0) {
-        Stop-Validation
+        Stop-Validation "installed-legacy-registry"
     }
     if ($newUninstall.Count -ne 1 -or $newProduct.Count -ne 1) {
-        Stop-Validation
+        Stop-Validation "installed-registry"
     }
 
     $metadata = Get-ItemProperty -LiteralPath $newUninstall[0]
     $installDir = [string]$metadata.InstallLocation
     $installDir = $installDir.Trim('"')
     if (-not (Test-FullyQualifiedWindowsPath $installDir)) {
-        Stop-Validation
+        Stop-Validation "installed-location"
     }
     $binary = Join-ValidatedWindowsPath $installDir "cl-go-dash.exe"
     if ([string]::IsNullOrWhiteSpace($binary)) {
-        Stop-Validation
+        Stop-Validation "installed-binary"
     }
     if (-not (Test-Path -LiteralPath $binary -PathType Leaf)) {
-        Stop-Validation
+        Stop-Validation "installed-binary"
     }
     $expectedVersion = [string](Read-BoundedText "src-tauri/tauri.conf.json" | ConvertFrom-Json).version
     $expectedIcon = Join-Path $Root "src-tauri/icons/icon.ico"
     if (-not (Test-BeaverExecutableBrand $binary $expectedVersion $expectedIcon)) {
-        Stop-Validation
+        Stop-Validation "installed-brand"
     }
 
     $helperPath = Join-ValidatedWindowsPath $installDir "target\updater-helper\cl-go-dash-updater.exe"
     if ([string]::IsNullOrWhiteSpace($helperPath)) {
-        Stop-Validation
+        Stop-Validation "installed-updater"
     }
     if (-not (Test-UpdaterHelper $helperPath $MaxUpdaterHelperBytes)) {
-        Stop-Validation
+        Stop-Validation "installed-updater"
     }
 
     $extensionHost = Join-ValidatedWindowsPath $installDir "resources\extension-host\host.mjs"
@@ -175,7 +189,7 @@ function Test-InstalledState {
         -not (Test-UpdaterHelper $extensionHost $MaxExtensionHostBytes) -or
         -not (Test-UpdaterHelper $nodeRuntime $MaxNodeRuntimeBytes)
     ) {
-        Stop-Validation
+        Stop-Validation "installed-extension-host"
     }
 
     $legacyShortcuts = @(
@@ -186,7 +200,7 @@ function Test-InstalledState {
         (Join-Path $env:PUBLIC "Desktop\CL-GO.lnk")
     )
     if ($legacyShortcuts.Where({ Test-Path -LiteralPath $_ }).Count -ne 0) {
-        Stop-Validation
+        Stop-Validation "installed-legacy-shortcuts"
     }
 
     $startMenuShortcuts = @(
@@ -200,7 +214,7 @@ function Test-InstalledState {
         (Join-Path $env:PUBLIC "Desktop\Beaver.lnk")
     ).Where({ Test-Path -LiteralPath $_ })
     if (-not (Test-BeaverShortcutState $startMenuShortcuts $desktopShortcuts $binary)) {
-        Stop-Validation
+        Stop-Validation "installed-shortcuts"
     }
 }
 

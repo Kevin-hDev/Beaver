@@ -105,6 +105,9 @@ test("les validateurs natifs de paquets sont présents et bornés", () => {
   assert.match(deb, /Package.*beaver/);
   assert.match(deb, /usr\/bin\/cl-go-dash/);
   assert.match(nsis, /Get-ItemProperty/);
+  assert.match(nsis, /Windows package check failed: \$Code/);
+  assert.match(nsis, /\[ValidateSet\([\s\S]*installed-shortcuts[\s\S]*\)\]/);
+  assert.doesNotMatch(nsis, /Stop-Validation\s*(?:\r?\n|$)/);
   assert.match(nsis, /cl-go-dash\.exe/);
   assert.match(nsis, /target\\updater-helper\\cl-go-dash-updater\.exe/);
   assert.match(nsis, /MaxUpdaterHelperBytes/);

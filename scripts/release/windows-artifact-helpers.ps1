@@ -2,11 +2,11 @@ function Test-AssociatedIcon([string]$Path) {
     Add-Type -AssemblyName System.Drawing
     $icon = [Drawing.Icon]::ExtractAssociatedIcon($Path)
     if ($null -eq $icon) {
-        Stop-Validation
+        Stop-Validation "source-installer-icon"
     }
     try {
         if ($icon.Width -le 0 -or $icon.Height -le 0) {
-            Stop-Validation
+            Stop-Validation "source-installer-icon"
         }
     } finally {
         $icon.Dispose()
