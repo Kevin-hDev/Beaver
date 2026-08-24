@@ -1,17 +1,15 @@
 $ErrorActionPreference = "Stop"
 
 $paths = @(
-    "..\install.ps1",
-    "release\check-nsis-migration.ps1",
-    "release\check-nsis-migration.test.ps1",
-    "release\windows-data-fingerprint.ps1",
-    "release\windows-data-fingerprint.test.ps1",
-    "release\windows-artifact-helpers.ps1"
+    (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..\install.ps1")).Path
 )
-foreach ($relativePath in $paths) {
+$releaseScripts = Get-ChildItem -LiteralPath (Join-Path $PSScriptRoot "release") `
+    -Filter "*.ps1" -File | Sort-Object FullName
+$paths += @($releaseScripts | ForEach-Object { $_.FullName })
+
+foreach ($path in $paths) {
     $tokens = $null
     $errors = $null
-    $path = (Resolve-Path (Join-Path $PSScriptRoot $relativePath)).Path
     [void][System.Management.Automation.Language.Parser]::ParseFile(
         $path,
         [ref]$tokens,

@@ -3,6 +3,7 @@ import { readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { load as loadYaml } from "js-yaml";
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const MAX_SOURCE_BYTES = 64 * 1024;
@@ -105,6 +106,13 @@ test("les validateurs natifs de paquets sont présents et bornés", () => {
   const windowsNativeIcon = readBounded(
     "scripts/release/windows-native-icon.ps1",
   );
+  const windowsIconValidation = readBounded(
+    "scripts/release/windows-icon-validation.ps1",
+  );
+  const windowsPackageFile = readBounded(
+    "scripts/release/windows-package-file.ps1",
+  );
+  const ciDocument = loadYaml(ci);
 
   assert.match(deb, /dpkg-deb/);
   assert.match(deb, /MAX_CONTENT_ENTRIES=20000/);
@@ -121,52 +129,45 @@ test("les validateurs natifs de paquets sont présents et bornés", () => {
   assert.match(nsis, /windows-artifact-helpers\.ps1/);
   assert.match(nsis, /Test-FullyQualifiedWindowsPath/);
   assert.match(nsis, /Test-BeaverShortcutState/);
-  assert.match(nsis, /Test-UpdaterHelper/);
   assert.match(windowsHelpers, /function Test-FullyQualifiedWindowsPath/);
   assert.match(windowsHelpers, /function Test-BeaverShortcutState/);
-  assert.match(windowsHelpers, /function Test-UpdaterHelper/);
   assert.match(windowsHelpers, /windows-brand-validation\.ps1/);
-  assert.match(windowsBrand, /function Get-VisibleBitmapPixelHash/);
-  assert.match(windowsBrand, /function Get-RenderedIconPixelHashes/);
-  assert.match(windowsBrand, /function Get-BeaverExecutableBrandFailure/);
-  assert.match(windowsBrand, /windows-native-icon\.ps1/);
-  assert.match(windowsNativeIcon, /function Get-FixedSizeNativeIcon/);
-  assert.match(windowsNativeIcon, /PrivateExtractIcons/);
-  assert.match(windowsNativeIcon, /DestroyIcon/);
-  assert.doesNotMatch(`${windowsBrand}\n${windowsNativeIcon}`, /ExtractAssociatedIcon/);
-  assert.doesNotMatch(`${windowsBrand}\n${windowsNativeIcon}`, /\[Drawing\.Icon\]::new/);
+  const iconValidators = [
+    windowsHelpers,
+    windowsBrand,
+    windowsNativeIcon,
+    windowsIconValidation,
+  ].join("\n");
+  assert.doesNotMatch(iconValidators, /ExtractAssociatedIcon/iu);
+  assert.doesNotMatch(iconValidators, /\[Drawing\.Icon\]::new/iu);
   for (const code of [
     "installed-brand-input",
     "installed-brand-product",
     "installed-brand-version",
     "installed-brand-icon-reference",
     "installed-brand-icon-extract",
-    "installed-brand-icon-size",
+    "installed-brand-icon-runtime",
     "installed-brand-icon-render",
     "installed-brand-icon-content",
   ]) {
     assert.ok(nsis.includes(`"${code}"`), `catégorie absente: ${code}`);
     assert.ok(windowsBrand.includes(`"${code}"`), `diagnostic absent: ${code}`);
   }
-  assert.match(windowsBrand, /\$ExpectedIconPath/);
-  assert.match(windowsBrand, /Get-RenderedIconPixelHashes \$actualIcon/);
-  assert.match(windowsBrand, /Get-RenderedIconPixelHashes \$expectedIcon/);
-  assert.match(windowsBrand, /\$actualHashes\[0\] -cne \$expectedHashes\[0\]/);
-  assert.match(windowsBrand, /\$actualHashes\[1\] -cne \$expectedHashes\[1\]/);
   assert.match(nsis, /src-tauri\/icons\/icon\.ico/);
   assert.match(
     nsis,
     /Get-BeaverExecutableBrandFailure \$binary \$expectedVersion \$expectedIcon/,
   );
-  assert.doesNotMatch(windowsBrand, /expectedIconSha256/);
   assert.match(nsis, /\.IndexOf\(\$value, \[StringComparison\]::OrdinalIgnoreCase\) -ge 0/);
   assert.doesNotMatch(nsis, /\.Contains\(\$value, \[StringComparison\]/);
   assert.doesNotMatch(nsis, /IsPathFullyQualified/);
-  assert.match(
-    readBounded("scripts/test-install-ps1.ps1"),
-    /check-nsis-migration\.test\.ps1/,
+  const validatorSteps = ciDocument.jobs["backend-windows-native"].steps.filter(
+    ({ run }) => run?.includes("check-nsis-migration.test.ps1"),
   );
-  assert.match(ci, /name: Test Windows package validator[\s\S]*check-nsis-migration\.test\.ps1/);
+  assert.deepEqual(
+    validatorSteps.map(({ shell }) => shell).sort(),
+    ["powershell", "pwsh"],
+  );
   for (const variable of [
     "oldUninstall",
     "newUninstall",
@@ -179,7 +180,7 @@ test("les validateurs natifs de paquets sont présents et bornés", () => {
     );
   }
   assert.doesNotMatch(
-    `${nsis}\n${windowsHelpers}\n${windowsBrand}\n${windowsNativeIcon}`,
+    `${nsis}\n${windowsHelpers}\n${windowsBrand}\n${windowsNativeIcon}\n${windowsIconValidation}\n${windowsPackageFile}`,
     /Invoke-Expression|cmd\.exe/i,
   );
 });

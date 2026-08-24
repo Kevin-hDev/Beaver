@@ -21,10 +21,11 @@ function Stop-Validation {
         [ValidateSet(
             "source-read", "source-config", "source-resource", "source-icons",
             "source-hook-required", "source-hook-forbidden", "source-installer",
-            "source-installer-icon", "installed-legacy-registry", "installed-registry",
+            "source-installer-icon", "source-installer-icon-runtime",
+            "installed-legacy-registry", "installed-registry",
             "installed-location", "installed-binary", "installed-brand-input",
             "installed-brand-product", "installed-brand-version", "installed-brand-icon-reference",
-            "installed-brand-icon-extract", "installed-brand-icon-size",
+            "installed-brand-icon-extract", "installed-brand-icon-runtime",
             "installed-brand-icon-render", "installed-brand-icon-content",
             "installed-updater", "installed-extension-host", "installed-legacy-shortcuts",
             "installed-shortcuts"
@@ -79,8 +80,8 @@ function Test-SourceContracts {
         if ($actualIcons[$index] -cne $expectedIcons[$index]) {
             Stop-Validation "source-icons"
         }
-        $icon = Get-Item -LiteralPath (Join-Path $Root "src-tauri/$($expectedIcons[$index])")
-        if ($icon.PSIsContainer -or $icon.Length -le 0 -or $icon.Length -gt $MaxIconBytes) {
+        $iconPath = Join-Path $Root "src-tauri/$($expectedIcons[$index])"
+        if (-not (Test-BoundedPackageFile $iconPath $MaxIconBytes)) {
             Stop-Validation "source-icons"
         }
     }
@@ -118,19 +119,16 @@ function Test-SourceContracts {
     }
 
     if ($InstallerPath) {
-        $installer = Get-Item -LiteralPath $InstallerPath
         $expected = "Beaver_{0}_x64-setup.exe" -f $config.version
-        $isLink = ($installer.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0
-        if (
-            $installer.PSIsContainer -or
-            $isLink -or
-            $installer.Length -le 0 -or
-            $installer.Length -gt $MaxInstallerBytes -or
-            $installer.Name -cne $expected
-        ) {
+        try {
+            $installer = Get-BoundedPackageFile $InstallerPath $MaxInstallerBytes
+        } catch {
             Stop-Validation "source-installer"
         }
-        Test-AssociatedIcon $installer.FullName
+        if ($installer.Name -cne $expected) {
+            Stop-Validation "source-installer"
+        }
+        Test-AssociatedIcon $installer.FullName $MaxInstallerBytes
     }
 }
 
@@ -183,15 +181,15 @@ function Test-InstalledState {
     if ([string]::IsNullOrWhiteSpace($helperPath)) {
         Stop-Validation "installed-updater"
     }
-    if (-not (Test-UpdaterHelper $helperPath $MaxUpdaterHelperBytes)) {
+    if (-not (Test-BoundedPackageFile $helperPath $MaxUpdaterHelperBytes)) {
         Stop-Validation "installed-updater"
     }
 
     $extensionHost = Join-ValidatedWindowsPath $installDir "resources\extension-host\host.mjs"
     $nodeRuntime = Join-ValidatedWindowsPath $installDir "resources\extension-host\runtime\node.exe"
     if (
-        -not (Test-UpdaterHelper $extensionHost $MaxExtensionHostBytes) -or
-        -not (Test-UpdaterHelper $nodeRuntime $MaxNodeRuntimeBytes)
+        -not (Test-BoundedPackageFile $extensionHost $MaxExtensionHostBytes) -or
+        -not (Test-BoundedPackageFile $nodeRuntime $MaxNodeRuntimeBytes)
     ) {
         Stop-Validation "installed-extension-host"
     }
