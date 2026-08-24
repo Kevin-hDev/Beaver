@@ -1,0 +1,17 @@
+Windows release icon validation hardening - Windows follow-up for v1.1.5.
+
+Scope: closes the 15 findings from the review of the native Windows icon extraction series, then closes every new Important found during three independent re-review passes. This commit changes only Windows release validation scripts and their tests.
+
+Architecture: windows-package-file.ps1 is the single bounded file authority. It resolves one path, checks every ancestor from the volume root for reparse points, enforces the optional allowed root, opens files without write/delete sharing, and reads at most MaxBytes plus one. Source and installed validation now delegate to it.
+
+ICO guarantee: windows-ico-structure.ps1 reads the ICO directory and the real PNG or DIB payload dimensions. Required brand frames are 16, 32, 48 and 256 pixels. DIB validation accepts only documented header sizes, validates XOR and AND regions, indexed palettes, BI_BITFIELDS RGB and optional alpha masks, bit-depth range, contiguous non-overlapping masks, and bounded dimensions. Tests cover missing frames, forged aliases, malformed offsets and lengths, truncated payloads, invalid headers, palettes and masks, plus valid indexed, 16-bit, 32-bit and alpha frames.
+
+PowerShell guarantee: every tracked or non-ignored PS1 returned by one bounded Git inventory is parsed as an AST under the portal used by CI. Managed Icon, Image and Bitmap references are denied by default. The closed allowlist contains only typed parameters, the native FromHandle/Clone path, and in-memory Bitmap width/height construction. Module-qualified New-Object, dynamic types, assembly-qualified types and reflective construction are covered. The portal runs for real from the package contract under Windows PowerShell 5.1 and PowerShell 7.
+
+Additional cleanup: the dead associated-icon and size checks were removed, the reference ICO format remains explicit, extraction/runtime errors keep distinct fixed categories, System.Drawing loading has one production owner, syntax discovery covers the whole repository, and brittle text-shape assertions were replaced by behavioral contracts. All 15 changed files remain at or below 230 lines.
+
+Executed evidence: check-nsis-migration.test.ps1 passed under Windows PowerShell 5.1.26100.9168/Desktop and PowerShell 7.6.4/Core with all five contracts OK. The complete syntax/source portal passed under both engines. test:package-migration passed 6/6; test:release-workflow passed 40/40; installers-security passed 4/4; brand-boundaries passed 14/14; lint exited 0. The real Beaver 1.1.5 NSIS installer source validation and the real release executable brand validation passed under both engines. Git Bash install.sh tests passed.
+
+General-suite disclosure: npm test completed the frontend phase with 473 files and 2504 tests passing, then the unrelated pre-existing scripts/build/python-runtime.test.mjs symlink fixture failed because this Windows session lacks symlink privilege (EPERM). The remaining CI, CEF, E2E-runner and extension-host suites were run separately and passed. No claim is made that the full npm test command was green.
+
+Maintenance and review: graphify update . completed after the final code change. Independent review attacked alternate PowerShell constructors, namespace and assembly forms, reflection, ICO table aliases, DIB truncation, palettes, RGB masks and alpha masks. Final verdict: zero Critical, zero Important, Ready to commit: Yes. No CI result is claimed for this new commit; a new remote run is required after push.
