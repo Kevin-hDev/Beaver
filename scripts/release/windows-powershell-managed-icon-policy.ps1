@@ -6,6 +6,9 @@ function Test-ManagedIconType(
     if ([string]::IsNullOrWhiteSpace($TypeName)) { return $false }
     $normalized = @($TypeName.Split(",", 2))[0].Trim().ToLowerInvariant()
     if ($normalized -in $ExpectedNames) { return $true }
+    if (-not $normalized.StartsWith("system.") -and "system.$normalized" -in $ExpectedNames) {
+        return $true
+    }
     if ($normalized -notmatch "\.") {
         foreach ($namespace in $ImportedNamespaces) {
             if ("$namespace.$normalized" -in $ExpectedNames) { return $true }
@@ -24,7 +27,34 @@ function Get-ManagedIconTypeKind([string]$TypeName, [string[]]$ImportedNamespace
     if (Test-ManagedIconType $TypeName @("drawing.image", "system.drawing.image") $ImportedNamespaces) {
         return "image"
     }
+    if (Test-ManagedIconType $TypeName @(
+        "system.windows.media.imaging.bitmapdecoder",
+        "system.windows.media.imaging.bitmapframe",
+        "system.windows.media.imaging.bitmapimage",
+        "system.windows.media.imaging.bmpbitmapdecoder",
+        "system.windows.media.imaging.gifbitmapdecoder",
+        "system.windows.media.imaging.iconbitmapdecoder",
+        "system.windows.media.imaging.jpegbitmapdecoder",
+        "system.windows.media.imaging.pngbitmapdecoder",
+        "system.windows.media.imaging.tiffbitmapdecoder",
+        "system.windows.media.imaging.wmpbitmapdecoder"
+    ) $ImportedNamespaces) {
+        return "wpf-decoder"
+    }
+    if (Test-ManagedIconType $TypeName @(
+        "system.windows.markup.xamlreader",
+        "system.xaml.xamlservices"
+    ) $ImportedNamespaces) {
+        return "xaml-loader"
+    }
     return $null
+}
+
+. (Join-Path $PSScriptRoot "windows-powershell-reflection-policy.ps1")
+
+function Test-ParameterName([string]$Actual, [string]$Expected) {
+    return -not [string]::IsNullOrWhiteSpace($Actual) -and
+        $Expected.StartsWith($Actual, [StringComparison]::OrdinalIgnoreCase)
 }
 
 function Test-BitmapDimensionNode(
@@ -95,7 +125,7 @@ function Get-NewObjectTypeIndex([Management.Automation.Language.CommandAst]$Node
         $element = $Node.CommandElements[$index]
         if (
             $element -is [Management.Automation.Language.CommandParameterAst] -and
-            $element.ParameterName -ieq "TypeName"
+            (Test-ParameterName $element.ParameterName "TypeName")
         ) { return $index + 1 }
     }
     if (
@@ -123,7 +153,9 @@ function Test-AllowedNewBitmap(
 
 function Test-BannedManagedIconNode(
     [Management.Automation.Language.Ast]$Node,
-    [string[]]$ImportedNamespaces
+    [string[]]$ImportedNamespaces,
+    [string]$OwnerPath,
+    [Management.Automation.Language.ScriptBlockAst]$Ast
 ) {
     if (
         $Node -is [Management.Automation.Language.TypeExpressionAst] -or
@@ -135,7 +167,7 @@ function Test-BannedManagedIconNode(
     }
     if ($Node -is [Management.Automation.Language.InvokeMemberExpressionAst]) {
         $member = [string]$Node.Member.Value
-        if ($member -in @("CreateInstance", "GetConstructor", "GetType")) { return $true }
+        if (Test-ReflectionManagedDecoderNode $Ast $Node $OwnerPath) { return $true }
         if ($Node.Expression -isnot [Management.Automation.Language.TypeExpressionAst]) {
             return $Node.Static -and $member -in @(
                 "new", "ExtractAssociatedIcon", "FromFile", "FromStream"
@@ -153,7 +185,7 @@ function Test-BannedManagedIconNode(
     if ($commandName -ine "New-Object") { return $false }
     if ($Node.CommandElements.Where({
         $_ -is [Management.Automation.Language.CommandParameterAst] -and
-        $_.ParameterName -ieq "ComObject"
+        (Test-ParameterName $_.ParameterName "ComObject")
     }).Count -ne 0) { return $false }
     $typeIndex = Get-NewObjectTypeIndex $Node
     if ($typeIndex -lt 0 -or $typeIndex -ge $Node.CommandElements.Count) { return $true }

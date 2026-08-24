@@ -9,7 +9,10 @@ function Assert-False([bool]$Value) {
 }
 
 . (Join-Path $PSScriptRoot "windows-icon-validation.test.ps1")
+. (Join-Path $PSScriptRoot "windows-native-icon-engine.test.ps1")
 . (Join-Path $PSScriptRoot "windows-package-file.test.ps1")
+. (Join-Path $PSScriptRoot "windows-powershell-add-type-policy.test.ps1")
+. (Join-Path $PSScriptRoot "windows-powershell-dynamic-policy.test.ps1")
 . (Join-Path $PSScriptRoot "windows-powershell-source-validation.test.ps1")
 
 function New-TestShortcut([string]$Path, [string]$Target) {
@@ -24,6 +27,7 @@ function New-TestShortcut([string]$Path, [string]$Target) {
 }
 
 . (Join-Path $PSScriptRoot "windows-artifact-helpers.ps1")
+. (Join-Path $PSScriptRoot "windows-installed-extension-validation.ps1")
 
 $randomBytes = New-Object byte[] 16
 $random = [Security.Cryptography.RandomNumberGenerator]::Create()
@@ -64,6 +68,24 @@ try {
 
     $validHelper = Join-Path $temporaryRoot "valid-updater.exe"
     [IO.File]::WriteAllBytes($validHelper, [byte[]]@(1, 2, 3))
+
+    $installedExtensionRoot = Join-Path $temporaryRoot "installed-extension"
+    $installedHostRoot = Join-Path $installedExtensionRoot "resources/extension-host"
+    [void](New-Item -ItemType Directory -Path (Join-Path $installedHostRoot "runtime") -Force)
+    [IO.File]::WriteAllText((Join-Path $installedHostRoot "host.mjs"), "export {};")
+    [IO.File]::WriteAllBytes((Join-Path $installedHostRoot "runtime/node.exe"), [byte[]]@(1))
+    [IO.File]::WriteAllText((Join-Path $installedHostRoot "safe.ps1"), "Write-Output 'ok'")
+    Assert-True ($null -eq (Get-InstalledExtensionHostFailure $installedExtensionRoot))
+    $bannedInstalledScript = Join-Path $installedHostRoot "banned.ps1"
+    [IO.File]::WriteAllText($bannedInstalledScript, "[Drawing.Icon]::new('icon.ico')")
+    Assert-True (
+        (Get-InstalledExtensionHostFailure $installedExtensionRoot) -ceq "source"
+    )
+    [IO.File]::Delete($bannedInstalledScript)
+    [IO.File]::Delete((Join-Path $installedHostRoot "runtime/node.exe"))
+    Assert-True (
+        (Get-InstalledExtensionHostFailure $installedExtensionRoot) -ceq "binary"
+    )
 
     Assert-False (Test-BeaverExecutableBrand $validHelper "1.1.1" $validHelper)
     Assert-True ((Get-BeaverExecutableBrandFailure $validHelper "1.1.1" $validHelper) -ceq "installed-brand-product")
@@ -151,6 +173,8 @@ try {
         $transparentBlue.Dispose()
         $visibleRed.Dispose()
     }
+    & (Join-Path $PSScriptRoot "check-nsis-migration.ps1") -Mode Source
+    Assert-True $?
 } finally {
     if (Test-Path -LiteralPath $temporaryRoot) {
         if (

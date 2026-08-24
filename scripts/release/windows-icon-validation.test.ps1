@@ -182,24 +182,6 @@ try {
         )
     }
 
-    $probe = Join-Path $PSScriptRoot "windows-native-icon.test-probe.ps1"
-    $engineResults = @()
-    foreach ($engineName in @("powershell.exe", "pwsh.exe")) {
-        $engine = Get-Command $engineName -ErrorAction Stop
-        $json = & $engine.Source -NoProfile -NonInteractive -File $probe `
-            -IconPath $referenceIconPath -Size 32
-        Assert-IconTrue ($LASTEXITCODE -eq 0)
-        $engineResults += ($json | ConvertFrom-Json)
-    }
-    Assert-IconTrue ($engineResults.Count -eq 2)
-    Assert-IconTrue ($engineResults[0].PSVersion -match "^5\.1\.")
-    Assert-IconTrue ($engineResults[0].PSEdition -ceq "Desktop")
-    Assert-IconTrue ($engineResults[1].PSVersion -match "^7\.")
-    Assert-IconTrue ($engineResults[1].PSEdition -ceq "Core")
-    Assert-IconTrue ($engineResults[0].Width -eq 32 -and $engineResults[0].Height -eq 32)
-    Assert-IconTrue ($engineResults[1].Width -eq 32 -and $engineResults[1].Height -eq 32)
-    Assert-IconTrue ($engineResults[0].Hashes[0] -ceq $engineResults[1].Hashes[0])
-    Assert-IconTrue ($engineResults[0].Hashes[1] -ceq $engineResults[1].Hashes[1])
 } finally {
     if (Test-Path -LiteralPath $temporaryRoot) {
         if (

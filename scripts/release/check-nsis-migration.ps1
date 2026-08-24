@@ -10,8 +10,6 @@ $MaxSourceBytes = 65536
 $MaxInstallerBytes = 2147483648
 $MaxIconBytes = 8388608
 $MaxUpdaterHelperBytes = 67108864
-$MaxExtensionHostBytes = 4194304
-$MaxNodeRuntimeBytes = 268435456
 $Root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot "../.."))
 
 function Stop-Validation {
@@ -26,7 +24,8 @@ function Stop-Validation {
             "installed-brand-product", "installed-brand-version", "installed-brand-icon-reference",
             "installed-brand-icon-extract", "installed-brand-icon-runtime",
             "installed-brand-icon-render", "installed-brand-icon-content",
-            "installed-updater", "installed-extension-host", "installed-legacy-shortcuts",
+            "installed-updater", "installed-extension-host", "installed-extension-host-source",
+            "installed-legacy-shortcuts",
             "installed-shortcuts"
         )]
         [string]$Code
@@ -37,6 +36,8 @@ function Stop-Validation {
 }
 
 . (Join-Path $PSScriptRoot "windows-artifact-helpers.ps1")
+. (Join-Path $PSScriptRoot "windows-powershell-source-validation.ps1")
+. (Join-Path $PSScriptRoot "windows-installed-extension-validation.ps1")
 
 function Read-BoundedText([string]$RelativePath) {
     try {
@@ -182,13 +183,12 @@ function Test-InstalledState {
         Stop-Validation "installed-updater"
     }
 
-    $extensionHost = Join-ValidatedWindowsPath $installDir "resources\extension-host\host.mjs"
-    $nodeRuntime = Join-ValidatedWindowsPath $installDir "resources\extension-host\runtime\node.exe"
-    if (
-        -not (Test-BoundedPackageFile $extensionHost $MaxExtensionHostBytes $installDir) -or
-        -not (Test-BoundedPackageFile $nodeRuntime $MaxNodeRuntimeBytes $installDir)
-    ) {
+    $extensionHostFailure = Get-InstalledExtensionHostFailure $installDir
+    if ($extensionHostFailure -ceq "binary") {
         Stop-Validation "installed-extension-host"
+    }
+    if ($extensionHostFailure -ceq "source") {
+        Stop-Validation "installed-extension-host-source"
     }
 
     $legacyShortcuts = @(
