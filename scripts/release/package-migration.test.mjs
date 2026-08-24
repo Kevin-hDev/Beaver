@@ -38,11 +38,16 @@ test("les paquets livrent la licence sans dialogue bloquant dans le DMG", () => 
 
 test("le bundle Windows utilise le hook de migration dédié", () => {
   const config = JSON.parse(readBounded("src-tauri/tauri.conf.json"));
+  const buildScript = readBounded("src-tauri/build.rs");
 
   assert.equal(config.bundle.windows.nsis.installMode, "currentUser");
   assert.equal(
     config.bundle.windows.nsis.installerHooks,
     "windows/nsis-hooks.nsh",
+  );
+  assert.match(
+    buildScript,
+    /cargo:rerun-if-changed=icons\/icon\.ico[\s\S]*tauri_build::build\(\)/,
   );
 });
 
