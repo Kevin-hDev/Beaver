@@ -99,6 +99,9 @@ test("les validateurs natifs de paquets sont présents et bornés", () => {
   const windowsHelpers = readBounded(
     "scripts/release/windows-artifact-helpers.ps1",
   );
+  const windowsBrand = readBounded(
+    "scripts/release/windows-brand-validation.ps1",
+  );
 
   assert.match(deb, /dpkg-deb/);
   assert.match(deb, /MAX_CONTENT_ENTRIES=20000/);
@@ -119,19 +122,34 @@ test("les validateurs natifs de paquets sont présents et bornés", () => {
   assert.match(windowsHelpers, /function Test-FullyQualifiedWindowsPath/);
   assert.match(windowsHelpers, /function Test-BeaverShortcutState/);
   assert.match(windowsHelpers, /function Test-UpdaterHelper/);
-  assert.match(windowsHelpers, /function Get-VisibleBitmapPixelHash/);
-  assert.match(windowsHelpers, /function Get-RenderedIconPixelHashes/);
-  assert.match(windowsHelpers, /\$ExpectedIconPath/);
-  assert.match(windowsHelpers, /Get-RenderedIconPixelHashes \$actualIcon/);
-  assert.match(windowsHelpers, /Get-RenderedIconPixelHashes \$expectedIcon/);
-  assert.match(windowsHelpers, /\$actualHashes\[0\] -ceq \$expectedHashes\[0\]/);
-  assert.match(windowsHelpers, /\$actualHashes\[1\] -ceq \$expectedHashes\[1\]/);
+  assert.match(windowsHelpers, /windows-brand-validation\.ps1/);
+  assert.match(windowsBrand, /function Get-VisibleBitmapPixelHash/);
+  assert.match(windowsBrand, /function Get-RenderedIconPixelHashes/);
+  assert.match(windowsBrand, /function Get-BeaverExecutableBrandFailure/);
+  for (const code of [
+    "installed-brand-input",
+    "installed-brand-product",
+    "installed-brand-version",
+    "installed-brand-icon-reference",
+    "installed-brand-icon-extract",
+    "installed-brand-icon-size",
+    "installed-brand-icon-render",
+    "installed-brand-icon-content",
+  ]) {
+    assert.ok(nsis.includes(`"${code}"`), `catégorie absente: ${code}`);
+    assert.ok(windowsBrand.includes(`"${code}"`), `diagnostic absent: ${code}`);
+  }
+  assert.match(windowsBrand, /\$ExpectedIconPath/);
+  assert.match(windowsBrand, /Get-RenderedIconPixelHashes \$actualIcon/);
+  assert.match(windowsBrand, /Get-RenderedIconPixelHashes \$expectedIcon/);
+  assert.match(windowsBrand, /\$actualHashes\[0\] -cne \$expectedHashes\[0\]/);
+  assert.match(windowsBrand, /\$actualHashes\[1\] -cne \$expectedHashes\[1\]/);
   assert.match(nsis, /src-tauri\/icons\/icon\.ico/);
   assert.match(
     nsis,
-    /Test-BeaverExecutableBrand \$binary \$expectedVersion \$expectedIcon/,
+    /Get-BeaverExecutableBrandFailure \$binary \$expectedVersion \$expectedIcon/,
   );
-  assert.doesNotMatch(windowsHelpers, /expectedIconSha256/);
+  assert.doesNotMatch(windowsBrand, /expectedIconSha256/);
   assert.match(nsis, /\.IndexOf\(\$value, \[StringComparison\]::OrdinalIgnoreCase\) -ge 0/);
   assert.doesNotMatch(nsis, /\.Contains\(\$value, \[StringComparison\]/);
   assert.doesNotMatch(nsis, /IsPathFullyQualified/);
@@ -151,5 +169,5 @@ test("les validateurs natifs de paquets sont présents et bornés", () => {
       new RegExp(`\\$${variable} = @\\(Get-ExistingRegistryPaths `),
     );
   }
-  assert.doesNotMatch(`${nsis}\n${windowsHelpers}`, /Invoke-Expression|cmd\.exe/i);
+  assert.doesNotMatch(`${nsis}\n${windowsHelpers}\n${windowsBrand}`, /Invoke-Expression|cmd\.exe/i);
 });

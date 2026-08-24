@@ -22,7 +22,10 @@ function Stop-Validation {
             "source-read", "source-config", "source-resource", "source-icons",
             "source-hook-required", "source-hook-forbidden", "source-installer",
             "source-installer-icon", "installed-legacy-registry", "installed-registry",
-            "installed-location", "installed-binary", "installed-brand",
+            "installed-location", "installed-binary", "installed-brand-input",
+            "installed-brand-product", "installed-brand-version", "installed-brand-icon-reference",
+            "installed-brand-icon-extract", "installed-brand-icon-size",
+            "installed-brand-icon-render", "installed-brand-icon-content",
             "installed-updater", "installed-extension-host", "installed-legacy-shortcuts",
             "installed-shortcuts"
         )]
@@ -171,8 +174,9 @@ function Test-InstalledState {
     }
     $expectedVersion = [string](Read-BoundedText "src-tauri/tauri.conf.json" | ConvertFrom-Json).version
     $expectedIcon = Join-Path $Root "src-tauri/icons/icon.ico"
-    if (-not (Test-BeaverExecutableBrand $binary $expectedVersion $expectedIcon)) {
-        Stop-Validation "installed-brand"
+    $brandFailure = Get-BeaverExecutableBrandFailure $binary $expectedVersion $expectedIcon
+    if (-not [string]::IsNullOrEmpty($brandFailure)) {
+        Stop-Validation $brandFailure
     }
 
     $helperPath = Join-ValidatedWindowsPath $installDir "target\updater-helper\cl-go-dash-updater.exe"

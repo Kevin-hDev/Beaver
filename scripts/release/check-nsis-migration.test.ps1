@@ -65,6 +65,8 @@ try {
     Assert-True (Test-UpdaterHelper $validHelper 67108864)
     Assert-False (Test-UpdaterHelper $emptyHelper 67108864)
     Assert-False (Test-BeaverExecutableBrand $validHelper "1.1.1" $validHelper)
+    Assert-True ((Get-BeaverExecutableBrandFailure $validHelper "1.1.1" $validHelper) -ceq "installed-brand-product")
+    Assert-True ((Get-BeaverExecutableBrandFailure "" "1.1.1" $validHelper) -ceq "installed-brand-input")
 
     Add-Type -AssemblyName System.Drawing
     $transparentRed = New-Object Drawing.Bitmap 2, 2

@@ -190,6 +190,31 @@ test("la vérification Windows possède ses variables et propage son échec nati
   );
 });
 
+test("conserve brièvement un paquet Windows refusé sans le rendre publiable", () => {
+  const steps = workflowDocument.jobs.build.steps;
+  const inspectionIndex = steps.findIndex(
+    ({ name }) => name === "Inspect and install Windows package",
+  );
+  const rejected = steps.find(
+    ({ name }) => name === "Preserve rejected Windows candidate",
+  );
+  const rejectedIndex = steps.indexOf(rejected);
+  const verifiedIndex = steps.findIndex(
+    ({ name }) => name === "Upload verified native artifact",
+  );
+
+  assert.ok(inspectionIndex >= 0 && rejectedIndex > inspectionIndex);
+  assert.ok(verifiedIndex > rejectedIndex);
+  assert.equal(
+    rejected.if,
+    "failure() && runner.os == 'Windows' && steps.paths.outcome == 'success'",
+  );
+  assert.equal(rejected.with.name, "beaver-windows-x64-rejected-${{ github.run_id }}");
+  assert.equal(rejected.with["retention-days"], 1);
+  assert.notEqual(rejected.with.name, "beaver-windows-x64");
+  assert.doesNotMatch(JSON.stringify(workflowDocument.jobs.manifest.steps), /rejected/u);
+});
+
 test("le parcours Windows résout et valide sans Bash", () => {
   assert.match(
     workflow,

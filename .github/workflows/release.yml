@@ -280,6 +280,17 @@ jobs:
           & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass `
             -File scripts/release/check-nsis-migration.ps1 -Mode Installed -InstallerPath $installer
 
+      # A rejected candidate is isolated from publication and retained only for root-cause analysis.
+      - name: Preserve rejected Windows candidate
+        if: failure() && runner.os == 'Windows' && steps.paths.outcome == 'success'
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: beaver-windows-x64-rejected-${{ github.run_id }}
+          path: ${{ steps.paths.outputs.asset }}
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 1
+
       - name: Upload verified native artifact
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
