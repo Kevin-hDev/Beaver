@@ -1,0 +1,17 @@
+CHANGELOG v1.1.5 — Windows runtime reliability documentation
+
+Scope
+- Added the user-facing Windows local runtime reliability section for the fixes merged by PR #34.
+- Documented accurate DXGI-backed VRAM reporting, CPU/RAM versus GPU/VRAM activity, effective Ollama compute and model-loading settings, complete Windows Ollama tree restarts, and visible model download failures.
+- Added the startup and development reliability section for exact native autostart ownership, hidden-start conditions, reliable settings persistence, and Vite exclusion of Cargo target directories.
+- Pure CI portability corrections were intentionally not presented as user features.
+
+Authority and evidence
+- Source commits: 9d355cf7, b3715416, and d1e870e0, including their git notes and native Windows proofs.
+- node scripts/app-release-notes.mjs 1.1.5: passed.
+- CHANGELOG v1.1.5 and both new subsection headings: structurally verified.
+- git diff --check: passed; CHANGELOG.md was the only committed file.
+
+Known documentation-index limitation
+- graphify . --update was attempted and failed before modifying graph files because this session has no configured LLM API key for semantic document extraction.
+- No partial graph output was committed; only CHANGELOG.md changed.
