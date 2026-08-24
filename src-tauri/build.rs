@@ -6,8 +6,6 @@ fn main() {
     extension_contract_build::generate();
     prepare_cef_bundle_placeholders();
     prepare_updater_helper_placeholder();
-    // Tauri 2.6.3 reads this ICO but does not register it with Cargo's cache invalidation.
-    println!("cargo:rerun-if-changed=icons/icon.ico");
     tauri_build::build();
 
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("macos") {

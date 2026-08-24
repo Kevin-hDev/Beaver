@@ -38,16 +38,11 @@ test("les paquets livrent la licence sans dialogue bloquant dans le DMG", () => 
 
 test("le bundle Windows utilise le hook de migration dédié", () => {
   const config = JSON.parse(readBounded("src-tauri/tauri.conf.json"));
-  const buildScript = readBounded("src-tauri/build.rs");
 
   assert.equal(config.bundle.windows.nsis.installMode, "currentUser");
   assert.equal(
     config.bundle.windows.nsis.installerHooks,
     "windows/nsis-hooks.nsh",
-  );
-  assert.match(
-    buildScript,
-    /cargo:rerun-if-changed=icons\/icon\.ico[\s\S]*tauri_build::build\(\)/,
   );
 });
 
@@ -98,6 +93,7 @@ test("le hook Windows valide avant de nettoyer les anciennes métadonnées", () 
 });
 
 test("les validateurs natifs de paquets sont présents et bornés", () => {
+  const ci = readBounded(".github/workflows/ci.yml");
   const deb = readBounded("scripts/release/check-deb-migration.sh");
   const nsis = readBounded("scripts/release/check-nsis-migration.ps1");
   const windowsHelpers = readBounded(
@@ -123,11 +119,13 @@ test("les validateurs natifs de paquets sont présents et bornés", () => {
   assert.match(windowsHelpers, /function Test-FullyQualifiedWindowsPath/);
   assert.match(windowsHelpers, /function Test-BeaverShortcutState/);
   assert.match(windowsHelpers, /function Test-UpdaterHelper/);
-  assert.match(windowsHelpers, /function Get-IconPixelHash/);
+  assert.match(windowsHelpers, /function Get-VisibleBitmapPixelHash/);
+  assert.match(windowsHelpers, /function Get-RenderedIconPixelHashes/);
   assert.match(windowsHelpers, /\$ExpectedIconPath/);
-  assert.match(windowsHelpers, /Get-IconPixelHash \$actualIcon/);
-  assert.match(windowsHelpers, /Get-IconPixelHash \$expectedIcon/);
-  assert.match(windowsHelpers, /\$actualHash -ceq \$expectedHash/);
+  assert.match(windowsHelpers, /Get-RenderedIconPixelHashes \$actualIcon/);
+  assert.match(windowsHelpers, /Get-RenderedIconPixelHashes \$expectedIcon/);
+  assert.match(windowsHelpers, /\$actualHashes\[0\] -ceq \$expectedHashes\[0\]/);
+  assert.match(windowsHelpers, /\$actualHashes\[1\] -ceq \$expectedHashes\[1\]/);
   assert.match(nsis, /src-tauri\/icons\/icon\.ico/);
   assert.match(
     nsis,
@@ -141,6 +139,7 @@ test("les validateurs natifs de paquets sont présents et bornés", () => {
     readBounded("scripts/test-install-ps1.ps1"),
     /check-nsis-migration\.test\.ps1/,
   );
+  assert.match(ci, /name: Test Windows package validator[\s\S]*check-nsis-migration\.test\.ps1/);
   for (const variable of [
     "oldUninstall",
     "newUninstall",

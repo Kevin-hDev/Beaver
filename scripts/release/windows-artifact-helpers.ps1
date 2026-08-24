@@ -13,15 +13,23 @@ function Test-AssociatedIcon([string]$Path) {
     }
 }
 
-function Get-IconPixelHash([Drawing.Icon]$Icon) {
-    if ($null -eq $Icon) {
+function Get-VisibleBitmapPixelHash([Drawing.Bitmap]$Source, [int]$BackgroundArgb) {
+    if ($null -eq $Source) {
         return $null
     }
 
-    $bitmap = $Icon.ToBitmap()
+    if ($Source.Width -le 0 -or $Source.Height -le 0 -or $Source.Width -gt 256 -or $Source.Height -gt 256) {
+        return $null
+    }
+
+    $bitmap = New-Object Drawing.Bitmap $Source.Width, $Source.Height
     try {
-        if ($bitmap.Width -le 0 -or $bitmap.Height -le 0 -or $bitmap.Width -gt 256 -or $bitmap.Height -gt 256) {
-            return $null
+        $graphics = [Drawing.Graphics]::FromImage($bitmap)
+        try {
+            $graphics.Clear([Drawing.Color]::FromArgb($BackgroundArgb))
+            $graphics.DrawImageUnscaled($Source, 0, 0)
+        } finally {
+            $graphics.Dispose()
         }
         $pixels = New-Object byte[] ($bitmap.Width * $bitmap.Height * 4)
         $offset = 0
@@ -39,6 +47,23 @@ function Get-IconPixelHash([Drawing.Icon]$Icon) {
         }
     } finally {
         $bitmap.Dispose()
+    }
+}
+
+function Get-RenderedIconPixelHashes([Drawing.Icon]$Icon) {
+    if ($null -eq $Icon) {
+        return @()
+    }
+
+    $source = $Icon.ToBitmap()
+    try {
+        # Two opaque backgrounds compare only pixels Windows can actually display.
+        return @(
+            (Get-VisibleBitmapPixelHash $source ([Drawing.Color]::Black.ToArgb())),
+            (Get-VisibleBitmapPixelHash $source ([Drawing.Color]::White.ToArgb()))
+        )
+    } finally {
+        $source.Dispose()
     }
 }
 
@@ -86,11 +111,14 @@ function Test-BeaverExecutableBrand(
                 return $false
             }
             try {
-                $actualHash = Get-IconPixelHash $actualIcon
-                $expectedHash = Get-IconPixelHash $expectedIcon
-                return -not [string]::IsNullOrWhiteSpace($actualHash) -and
-                    -not [string]::IsNullOrWhiteSpace($expectedHash) -and
-                    $actualHash -ceq $expectedHash
+                $actualHashes = @(Get-RenderedIconPixelHashes $actualIcon)
+                $expectedHashes = @(Get-RenderedIconPixelHashes $expectedIcon)
+                return $actualHashes.Count -eq 2 -and
+                    $expectedHashes.Count -eq 2 -and
+                    -not [string]::IsNullOrWhiteSpace($actualHashes[0]) -and
+                    -not [string]::IsNullOrWhiteSpace($actualHashes[1]) -and
+                    $actualHashes[0] -ceq $expectedHashes[0] -and
+                    $actualHashes[1] -ceq $expectedHashes[1]
             } finally {
                 $actualIcon.Dispose()
             }

@@ -65,6 +65,28 @@ try {
     Assert-True (Test-UpdaterHelper $validHelper 67108864)
     Assert-False (Test-UpdaterHelper $emptyHelper 67108864)
     Assert-False (Test-BeaverExecutableBrand $validHelper "1.1.1" $validHelper)
+
+    Add-Type -AssemblyName System.Drawing
+    $transparentRed = New-Object Drawing.Bitmap 2, 2
+    $transparentBlue = New-Object Drawing.Bitmap 2, 2
+    $visibleRed = New-Object Drawing.Bitmap 2, 2
+    try {
+        $transparentRed.SetPixel(0, 0, [Drawing.Color]::FromArgb(0, 255, 0, 0))
+        $transparentBlue.SetPixel(0, 0, [Drawing.Color]::FromArgb(0, 0, 0, 255))
+        $visibleRed.SetPixel(0, 0, [Drawing.Color]::FromArgb(255, 255, 0, 0))
+        foreach ($background in @([Drawing.Color]::Black, [Drawing.Color]::White)) {
+            $backgroundArgb = $background.ToArgb()
+            $firstHash = Get-VisibleBitmapPixelHash $transparentRed $backgroundArgb
+            $secondHash = Get-VisibleBitmapPixelHash $transparentBlue $backgroundArgb
+            $visibleHash = Get-VisibleBitmapPixelHash $visibleRed $backgroundArgb
+            Assert-True ($firstHash -ceq $secondHash)
+            Assert-False ($firstHash -ceq $visibleHash)
+        }
+    } finally {
+        $transparentRed.Dispose()
+        $transparentBlue.Dispose()
+        $visibleRed.Dispose()
+    }
 } finally {
     if (Test-Path -LiteralPath $temporaryRoot) {
         if (
