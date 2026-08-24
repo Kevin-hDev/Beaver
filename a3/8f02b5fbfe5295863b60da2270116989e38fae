@@ -1,0 +1,27 @@
+Release 1.1.5 Windows executable icon cache correction.
+
+Observed failure:
+- Release workflow 32709673765 built macOS and Linux successfully, but Windows failed its installed-state inspection with the bounded category installed-brand.
+- The previous hardcoded validator hash exactly matched frame 0 of the old 32x32 ICO, while the current source ICO has a different frame hash.
+
+Root cause:
+- Pinned tauri-build 2.6.3 reads icons/icon.ico and embeds it with tauri-winres, but only emits Cargo rerun directives for configuration files and resources, not for the chosen ICO.
+- A restored Cargo target can therefore link the previous Windows resource after an icon-only branding change.
+
+Correction:
+- src-tauri/build.rs now explicitly emits cargo:rerun-if-changed=icons/icon.ico before tauri_build::build().
+- The reason is documented at the decision site.
+- The package migration contract requires the exact invalidation directive before the Tauri build call; removing it makes the test fail.
+
+Verification:
+- npm run test:package-migration: red before correction, then 6/6 passed.
+- npm run test:release-workflow: 39/39 passed.
+- cargo fmt --all --check: passed.
+- cargo check: passed.
+- cargo clippy --all-targets -- -D warnings: passed.
+- git diff --check: passed.
+- graphify update . completed.
+
+Scope:
+- Only src-tauri/build.rs and scripts/release/package-migration.test.mjs belong to this correction.
+- Existing Beaver site mockup and screenshot working-tree changes remain untouched.
