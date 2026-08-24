@@ -4,43 +4,57 @@
       "Geplante Ausführungen nutzen jetzt den vollständigen Agent-Local-Kontext und bewahren ihren gesamten Verlauf zuverlässig auf.",
       "GLM-5.3, Grok 4.6 und Gemini 3.7 Flash sind jetzt verfügbar, mit sichererem OAuth-Routing für xAI.",
       "Unterstützte OpenAI-Modelle bieten einen dauerhaften Schnellmodus pro Unterhaltung, der auch mit Denkstufen funktioniert.",
-      "Beaver verwendet jetzt das neue abgerundete Symbol in der App, im Dock, in der Taskleiste und im Systembereich."
+      "Beaver verwendet jetzt das neue abgerundete Symbol in der App, im Dock, in der Taskleiste und im Systembereich.",
+      "Unter Windows zeigt Beaver die Hardwareaktivität jetzt korrekt an und übernimmt CPU-, GPU- und Modellladeeinstellungen durch vollständige, zuverlässige Ollama-Neustarts.",
+      "Autostart und verborgener Start nutzen jetzt exakte native Einträge; erweiterte Einstellungen und die Windows-Entwicklungsüberwachung sind zuverlässiger."
     ],
     "en": [
       "Scheduled runs now use the complete Agent Local context and preserve their full execution history reliably.",
       "GLM-5.3, Grok 4.6, and Gemini 3.7 Flash are now available, with safer OAuth routing for xAI.",
       "Supported OpenAI models now offer a persistent per-conversation Fast mode that works with reasoning levels.",
-      "Beaver now uses its new rounded icon across the app, Dock, taskbar, system tray, and packaged applications."
+      "Beaver now uses its new rounded icon across the app, Dock, taskbar, system tray, and packaged applications.",
+      "Windows now reports hardware activity accurately and applies CPU, GPU, and model-loading settings through complete, reliable Ollama restarts.",
+      "Launch at login and hidden startup now use exact native entries, while advanced settings and Windows development watching save and run more reliably."
     ],
     "es": [
       "Las ejecuciones programadas usan ahora todo el contexto de Agent Local y conservan de forma fiable su historial completo.",
       "GLM-5.3, Grok 4.6 y Gemini 3.7 Flash ya están disponibles, con un enrutamiento OAuth más seguro para xAI.",
       "Los modelos OpenAI compatibles ofrecen ahora un modo Rápido persistente por conversación que funciona con los niveles de razonamiento.",
-      "Beaver usa ahora su nuevo icono redondeado en la aplicación, el Dock, la barra de tareas y la bandeja del sistema."
+      "Beaver usa ahora su nuevo icono redondeado en la aplicación, el Dock, la barra de tareas y la bandeja del sistema.",
+      "Windows muestra ahora la actividad del hardware con precisión y aplica los ajustes de CPU, GPU y carga de modelos mediante reinicios completos y fiables de Ollama.",
+      "El inicio de sesión y el arranque oculto usan entradas nativas exactas; los ajustes avanzados y la supervisión de desarrollo en Windows son más fiables."
     ],
     "fr": [
       "Les exécutions programmées utilisent maintenant tout le contexte Agent Local et conservent fiablement leur historique complet.",
       "GLM-5.3, Grok 4.6 et Gemini 3.7 Flash sont maintenant disponibles, avec un routage OAuth xAI plus sûr.",
       "Les modèles OpenAI compatibles proposent maintenant un mode Rapide persistant par conversation qui fonctionne avec les niveaux de raisonnement.",
-      "Beaver utilise maintenant sa nouvelle icône arrondie dans l’application, le Dock, la barre des tâches et la zone de notification."
+      "Beaver utilise maintenant sa nouvelle icône arrondie dans l’application, le Dock, la barre des tâches et la zone de notification.",
+      "Windows affiche maintenant l’activité matérielle avec précision et applique les réglages CPU, GPU et de chargement des modèles grâce à des redémarrages Ollama complets et fiables.",
+      "Le lancement à l’ouverture de session et le démarrage masqué utilisent des entrées natives exactes ; les réglages avancés et la surveillance Windows sont plus fiables."
     ],
     "it": [
       "Le esecuzioni pianificate usano ora tutto il contesto Agent Local e conservano in modo affidabile la cronologia completa.",
       "GLM-5.3, Grok 4.6 e Gemini 3.7 Flash sono ora disponibili, con un instradamento OAuth più sicuro per xAI.",
       "I modelli OpenAI compatibili offrono ora una modalità Rapida persistente per conversazione che funziona con i livelli di ragionamento.",
-      "Beaver usa ora la nuova icona arrotondata nell’app, nel Dock, nella barra delle applicazioni e nell’area di notifica."
+      "Beaver usa ora la nuova icona arrotondata nell’app, nel Dock, nella barra delle applicazioni e nell’area di notifica.",
+      "Windows mostra ora con precisione l’attività hardware e applica le impostazioni di CPU, GPU e caricamento dei modelli tramite riavvii completi e affidabili di Ollama.",
+      "L’avvio all’accesso e l’avvio nascosto usano voci native esatte; le impostazioni avanzate e il monitoraggio dello sviluppo Windows sono più affidabili."
     ],
     "ja": [
       "スケジュール実行で Agent Local の完全なコンテキストが使われ、実行履歴全体が確実に保存されるようになりました。",
       "GLM-5.3、Grok 4.6、Gemini 3.7 Flash が利用可能になり、xAI の OAuth ルーティングもより安全になりました。",
       "対応する OpenAI モデルで、推論レベルと併用できる会話ごとの永続的な高速モードが利用可能になりました。",
-      "Beaver の新しい角丸アイコンが、アプリ、Dock、タスクバー、システムトレイで統一して使われるようになりました。"
+      "Beaver の新しい角丸アイコンが、アプリ、Dock、タスクバー、システムトレイで統一して使われるようになりました。",
+      "Windows ではハードウェア使用状況が正確に表示され、CPU、GPU、モデル読み込みの設定が完全で安定した Ollama の再起動を通じて適用されるようになりました。",
+      "ログイン時の起動と非表示起動で正確なネイティブ設定が使われ、詳細設定の保存と Windows 開発時の監視もより安定しました。"
     ],
     "zh": [
       "计划任务现在会使用完整的 Agent Local 上下文，并可靠保存全部执行历史。",
       "GLM-5.3、Grok 4.6 和 Gemini 3.7 Flash 现已可用，同时 xAI 的 OAuth 路由更加安全。",
       "受支持的 OpenAI 模型现提供按会话持久保存的快速模式，并可与推理级别同时使用。",
-      "Beaver 现在在应用、Dock、任务栏和系统托盘中统一使用新的圆角图标。"
+      "Beaver 现在在应用、Dock、任务栏和系统托盘中统一使用新的圆角图标。",
+      "Windows 现在会准确显示硬件活动，并通过完整可靠的 Ollama 重启应用 CPU、GPU 和模型加载设置。",
+      "登录时启动和隐藏启动现在使用精确的原生配置，同时高级设置保存和 Windows 开发监视也更加可靠。"
     ]
   },
   "1.1.4": {
