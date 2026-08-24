@@ -29,6 +29,11 @@ export function ModelInstallButton(props: ModelInstallButtonProps) {
       && item.modelId === fullName
       && (item.status === "running" || item.status === "queued"),
   ) ?? null;
+  const failedDownload = downloads.find(
+    (item) => item.kind === "ollama"
+      && item.modelId === fullName
+      && item.status === "failed",
+  ) ?? null;
 
   const handleInstall = useCallback(async () => {
     if (sizeGb && sizeGb > 0) {
@@ -99,13 +104,20 @@ export function ModelInstallButton(props: ModelInstallButtonProps) {
 
   const showUpdateTooltip = isInstalled && hasUpdate;
   const button = (
-    <button
-      className="btn btn-sm btn-primary"
-      style={{ width: BTN_WIDTH }}
-      onClick={() => void handleInstall()}
-    >
-      {label}
-    </button>
+    <div className="ollama-download-action">
+      <button
+        className="btn btn-sm btn-primary"
+        style={{ width: BTN_WIDTH }}
+        onClick={() => void handleInstall()}
+      >
+        {label}
+      </button>
+      {failedDownload && (
+        <span className="ollama-download-error" role="alert">
+          {t("errors.downloadFailed")}
+        </span>
+      )}
+    </div>
   );
 
   return showUpdateTooltip ? (

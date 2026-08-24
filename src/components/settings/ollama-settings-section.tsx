@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { IS_MAC } from "@/lib/platform";
@@ -19,7 +19,7 @@ interface OllamaSettingsProps {
   hardwareAccel: string;
   multiModel: boolean;
   showGpuStatus: boolean;
-  onSave: (patch: Record<string, unknown>) => void;
+  onSave: (patch: Record<string, unknown>) => Promise<boolean>;
 }
 
 export function OllamaSettingsSection({
@@ -28,6 +28,7 @@ export function OllamaSettingsSection({
   const { t } = useTranslation();
   const [accelChanged, setAccelChanged] = useState(false);
   const [restarting, setRestarting] = useState(false);
+  const pendingRestartSave = useRef<Promise<boolean>>(Promise.resolve(true));
   const runtime = useOllamaRuntimeStatus();
 
   const hardwareAccelOptions = useMemo((): SelectOption[] => [
@@ -48,6 +49,7 @@ export function OllamaSettingsSection({
   const handleRestart = async () => {
     setRestarting(true);
     try {
+      if (!await pendingRestartSave.current) return;
       const outcome = await invoke<OllamaStartOutcome>("restart_ollama_sidecar");
       const presentation = classifyOllamaRestartOutcome(outcome);
       await runtime.refresh();
@@ -67,6 +69,11 @@ export function OllamaSettingsSection({
     }
   };
 
+  const saveRestartSetting = (patch: Record<string, unknown>) => {
+    pendingRestartSave.current = onSave(patch);
+    setAccelChanged(true);
+  };
+
   return (
     <SettingsCard>
       <SettingsRow
@@ -76,7 +83,7 @@ export function OllamaSettingsSection({
         <SettingsSelect
           options={keepAliveOptions}
           value={keepAlive}
-          onChange={(v) => { onSave({ keep_alive: v }); setAccelChanged(true); }}
+          onChange={(v) => saveRestartSetting({ keep_alive: v })}
         />
       </SettingsRow>
 
@@ -90,7 +97,7 @@ export function OllamaSettingsSection({
             value={hardwareAccel}
             changed={accelChanged}
             restarting={restarting}
-            onSelect={(v) => { onSave({ hardware_accel: v }); setAccelChanged(true); }}
+            onSelect={(v) => saveRestartSetting({ hardware_accel: v })}
             onRestart={() => void handleRestart()}
             restartLabel={t("settings.advanced.hardwareAccelRestart")}
           />
@@ -104,7 +111,7 @@ export function OllamaSettingsSection({
         <ToggleSwitch
           checked={multiModel}
           ariaLabel={t("settings.advanced.multiModelTitle")}
-          onCheckedChange={(v) => { onSave({ multi_model: v }); setAccelChanged(true); }}
+          onCheckedChange={(v) => saveRestartSetting({ multi_model: v })}
         />
       </SettingsRow>
 
@@ -115,7 +122,7 @@ export function OllamaSettingsSection({
         <ToggleSwitch
           checked={showGpuStatus}
           ariaLabel={t("settings.advanced.showGpuStatusTitle")}
-          onCheckedChange={(v) => onSave({ show_gpu_status: v })}
+          onCheckedChange={(v) => { void onSave({ show_gpu_status: v }); }}
         />
       </SettingsRow>
 

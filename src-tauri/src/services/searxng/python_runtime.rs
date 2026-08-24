@@ -2,17 +2,13 @@ use std::ffi::{OsStr, OsString};
 #[cfg(all(test, unix))]
 use std::path::Path;
 use std::path::PathBuf;
-use std::process::Stdio;
 use std::time::Duration;
-
-use tokio::io::AsyncReadExt;
 
 use super::python_runtime_path::{command_for, gui_path, locate};
 use super::runtime_error::RuntimeError;
 use super::runtime_manifest::RuntimeManifest;
 
 const PROBE_TIMEOUT: Duration = Duration::from_secs(5);
-const MAX_PROBE_BYTES: usize = 64;
 const PROBE_CODE: &str =
     "import sys; print(sys.implementation.name); print(sys.version_info.major); print(sys.version_info.minor)";
 
@@ -117,41 +113,25 @@ fn candidates(manifest: &RuntimeManifest, path: &OsStr) -> Vec<PythonRuntime> {
 
 async fn probe(candidate: &PythonRuntime, manifest: &RuntimeManifest) -> bool {
     let mut command = candidate.command();
-    command
-        .args(["-c", PROBE_CODE])
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::null())
-        .kill_on_drop(true);
-    let Ok(mut child) = command.spawn() else {
-        return false;
-    };
-    tokio::time::timeout(PROBE_TIMEOUT, async {
-        let Some(mut stdout) = child.stdout.take() else {
-            return false;
-        };
-        let mut output = Vec::with_capacity(MAX_PROBE_BYTES);
-        let mut chunk = [0_u8; 32];
-        loop {
-            let Ok(read) = stdout.read(&mut chunk).await else {
-                return false;
-            };
-            if read == 0 {
-                break;
-            }
-            if output.len() + read > MAX_PROBE_BYTES {
-                return false;
-            }
-            output.extend_from_slice(&chunk[..read]);
-        }
-        drop(stdout);
-        child
-            .wait()
-            .await
-            .is_ok_and(|status| status.success() && probe_matches(&output, manifest))
+    command.args(["-c", PROBE_CODE]);
+    super::python_probe::run(&mut command, PROBE_TIMEOUT, |_| {})
+        .await
+        .is_some_and(|output| probe_matches(&output, manifest))
+}
+
+#[cfg(all(test, windows))]
+pub(super) async fn run_probe_for_test(
+    program: PathBuf,
+    args: Vec<OsString>,
+    timeout: Duration,
+    started: tokio::sync::oneshot::Sender<u32>,
+) -> Option<Vec<u8>> {
+    let mut command = crate::services::background_command::new_tokio(program);
+    command.args(args);
+    super::python_probe::run(&mut command, timeout, move |pid| {
+        let _ = started.send(pid);
     })
     .await
-    .unwrap_or(false)
 }
 
 pub(super) fn probe_matches(output: &[u8], manifest: &RuntimeManifest) -> bool {

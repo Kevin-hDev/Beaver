@@ -27,7 +27,7 @@ pub(crate) struct PsResponse {
 #[derive(Debug, Clone, Serialize)]
 pub(crate) struct GpuStatusPayload {
     pub accelerator: String,
-    pub vram_used_mb: u64,
+    pub vram_used_mb: Option<u64>,
     pub vram_total_mb: u64,
     pub model_loaded: Option<String>,
 }
@@ -35,20 +35,39 @@ pub(crate) struct GpuStatusPayload {
 pub(crate) fn build_gpu_status(
     ps: &PsResponse,
     snapshot: Option<crate::services::gpu_vram::GpuMemorySnapshot>,
+    active_compute_mode: Option<super::compute_mode::OllamaComputeMode>,
+    system_ram_total_mb: u64,
 ) -> GpuStatusPayload {
-    let (accelerator, vram_total_mb, vram_used_mb) = match snapshot {
-        Some(snapshot) => (
-            match snapshot.kind {
-                crate::services::gpu_vram::GpuMemoryKind::Dedicated => "VRAM",
-                crate::services::gpu_vram::GpuMemoryKind::Unified => "RAM",
-                crate::services::gpu_vram::GpuMemoryKind::Unknown => "",
-            },
-            snapshot.total_mb,
-            snapshot.used_mb,
-        ),
-        None if ps.models.iter().any(|model| model.size_vram > 0) => ("VRAM", 0, 0),
-        None if !ps.models.is_empty() => ("CPU", 0, 0),
-        None => ("", 0, 0),
+    let cpu_model_bytes = ps.models.iter().fold(0_u64, |total, model| {
+        total.saturating_add(model.size.saturating_sub(model.size_vram))
+    });
+    let model_uses_gpu = ps.models.iter().any(|model| model.size_vram > 0);
+    let cpu_runtime = !ps.models.is_empty() && !model_uses_gpu
+        || ps.models.is_empty()
+            && matches!(
+                active_compute_mode,
+                Some(super::compute_mode::OllamaComputeMode::Cpu)
+            );
+    let (accelerator, vram_total_mb, vram_used_mb) = if cpu_runtime {
+        (
+            "CPU · RAM",
+            system_ram_total_mb,
+            Some(cpu_model_bytes / 1_048_576),
+        )
+    } else {
+        match snapshot {
+            Some(snapshot) => (
+                match snapshot.kind {
+                    crate::services::gpu_vram::GpuMemoryKind::Dedicated => "VRAM",
+                    crate::services::gpu_vram::GpuMemoryKind::Unified => "RAM",
+                    crate::services::gpu_vram::GpuMemoryKind::Unknown => "",
+                },
+                snapshot.total_mb,
+                snapshot.used_mb,
+            ),
+            None if model_uses_gpu => ("VRAM", 0, None),
+            None => ("", 0, None),
+        }
     };
     GpuStatusPayload {
         accelerator: accelerator.into(),
@@ -158,6 +177,23 @@ impl OllamaManager {
         } else {
             PsResponse { models: vec![] }
         };
-        let _ = app.emit("ollama-gpu-status", &build_gpu_status(&ps, snapshot));
+        let _ = app.emit(
+            "ollama-gpu-status",
+            &build_gpu_status(
+                &ps,
+                snapshot,
+                self.active_compute_mode(),
+                system_ram_total_mb(),
+            ),
+        );
     }
+}
+
+fn system_ram_total_mb() -> u64 {
+    static TOTAL_MB: std::sync::OnceLock<u64> = std::sync::OnceLock::new();
+    *TOTAL_MB.get_or_init(|| {
+        let mut system = sysinfo::System::new();
+        system.refresh_memory();
+        system.total_memory() / 1_048_576
+    })
 }

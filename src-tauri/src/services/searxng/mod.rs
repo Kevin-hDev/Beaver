@@ -10,6 +10,7 @@ mod paths;
 mod private_file;
 mod process;
 mod process_receipt;
+mod python_probe;
 mod python_runtime;
 mod python_runtime_path;
 mod runtime;

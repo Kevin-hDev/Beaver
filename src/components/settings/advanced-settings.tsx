@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { useAvailableModels } from "@/hooks/use-available-models";
@@ -26,10 +26,14 @@ export function AdvancedSettings({ focusTarget, onFocusTargetHandled }: Advanced
   const { t } = useTranslation();
   const { groups } = useAvailableModels();
   const [state, setState] = useState<AdvancedSettingsState>(ADVANCED_SETTINGS_DEFAULTS);
+  const stateRef = useRef<AdvancedSettingsState>(ADVANCED_SETTINGS_DEFAULTS);
 
   const loadSettings = useCallback(() => {
     invoke<AdvancedSettingsState>("get_advanced_settings")
-      .then(setState)
+      .then((settings) => {
+        stateRef.current = settings;
+        setState(settings);
+      })
       .catch(() => showToast(i18n.t("errors.operationFailed"), "error"));
   }, []);
 
@@ -39,19 +43,32 @@ export function AdvancedSettings({ focusTarget, onFocusTargetHandled }: Advanced
 
   useFsEvent("fs:config-changed", loadSettings);
 
-  const save = useCallback((patch: Partial<AdvancedSettingsState>) => {
-    setState((prev) => {
-      const next = { ...prev, ...patch };
-      invoke("set_advanced_settings", { settings: next }).catch(() => showToast(i18n.t("errors.saveFailed"), "error"));
+  const save = useCallback(async (patch: Partial<AdvancedSettingsState>): Promise<boolean> => {
+    const next = { ...stateRef.current, ...patch };
+    stateRef.current = next;
+    setState(next);
+    try {
+      await invoke("set_advanced_settings", { settings: next });
       notifySettingsChanged();
-      return next;
-    });
-  }, []);
+      return true;
+    } catch {
+      showToast(i18n.t("errors.saveFailed"), "error");
+      loadSettings();
+      return false;
+    }
+  }, [loadSettings]);
+
+  const saveFromEvent = useCallback((patch: Partial<AdvancedSettingsState>): void => {
+    // Generic controls do not restart Ollama, so their handled save result is intentionally ignored.
+    void save(patch);
+  }, [save]);
 
   const saveAllowedPaths = useCallback(async (paths: string[]) => {
     try {
       const normalized = await invoke<string[]>("set_allowed_paths", { paths });
-      setState((current) => ({ ...current, allowed_paths: normalized }));
+      const next = { ...stateRef.current, allowed_paths: normalized };
+      stateRef.current = next;
+      setState(next);
       notifySettingsChanged();
     } catch {
       showToast(i18n.t("errors.saveFailed"), "error");
@@ -92,7 +109,7 @@ export function AdvancedSettings({ focusTarget, onFocusTargetHandled }: Advanced
             <ToggleSwitch
               checked={state.show_tray}
               ariaLabel={t("settings.advanced.trayTitle")}
-              onCheckedChange={(v) => save({ show_tray: v })}
+              onCheckedChange={(v) => saveFromEvent({ show_tray: v })}
             />
           </SettingsRow>
 
@@ -103,7 +120,7 @@ export function AdvancedSettings({ focusTarget, onFocusTargetHandled }: Advanced
             <SettingsSelect
               groups={modelGroups}
               value={state.default_model}
-              onChange={(v) => save({ default_model: v })}
+              onChange={(v) => saveFromEvent({ default_model: v })}
               searchable
               searchPlaceholder={t("settings.advanced.searchModel")}
             />
@@ -131,7 +148,7 @@ export function AdvancedSettings({ focusTarget, onFocusTargetHandled }: Advanced
             <ToggleSwitch
               checked={state.compression_enabled}
               ariaLabel={t("settings.advanced.compressionEnabledTitle")}
-              onCheckedChange={(v) => save({ compression_enabled: v })}
+              onCheckedChange={(v) => saveFromEvent({ compression_enabled: v })}
             />
           </SettingsRow>
 
@@ -146,7 +163,7 @@ export function AdvancedSettings({ focusTarget, onFocusTargetHandled }: Advanced
                 max={100}
                 value={state.compression_threshold}
                 disabled={!state.compression_enabled}
-                onChange={(e) => save({ compression_threshold: Number(e.target.value) })}
+                onChange={(e) => saveFromEvent({ compression_threshold: Number(e.target.value) })}
                 className="compression-slider"
                 style={{ width: 120, opacity: state.compression_enabled ? 1 : 0.4, cursor: state.compression_enabled ? "pointer" : "not-allowed" }}
               />
@@ -166,7 +183,7 @@ export function AdvancedSettings({ focusTarget, onFocusTargetHandled }: Advanced
 
         <SessionWorkspaceSettings
           outputsDirectory={state.session_outputs_directory}
-          onOutputsDirectoryChange={(directory) => save({ session_outputs_directory: directory })}
+          onOutputsDirectoryChange={(directory) => saveFromEvent({ session_outputs_directory: directory })}
         />
 
       </div>

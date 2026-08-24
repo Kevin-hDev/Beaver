@@ -18,6 +18,7 @@ pub(crate) const MAX_OLLAMA_PATH_COMPONENTS: usize = 64;
 #[allow(dead_code)]
 pub(crate) const PROCESS_REAP_FALLBACK_TIMEOUT: Duration =
     crate::app_exit::OLLAMA_REAP_RESERVE_TIMEOUT;
+pub(crate) const OWNED_START_TIMEOUT: Duration = Duration::from_secs(10);
 
 #[allow(dead_code)]
 pub(crate) const MAX_PROBE_PORT_ATTEMPTS: usize = 3;

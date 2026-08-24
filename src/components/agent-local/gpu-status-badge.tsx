@@ -27,14 +27,16 @@ export function GpuStatusBadge() {
   if (!showGpuStatus || !gpu.accelerator) return null;
 
   const pct = gpu.vramPercent;
-  const label = pct > 0
+  const usedMb = gpu.vramUsedMb;
+  const usageKnown = usedMb !== null;
+  const label = usageKnown && gpu.vramTotalMb > 0
     ? `${gpu.accelerator} ${pct}%`
-    : gpu.vramUsedMb > 0
-      ? `${gpu.accelerator} ${formatMb(gpu.vramUsedMb)}`
+    : usageKnown
+      ? `${gpu.accelerator} ${formatMb(usedMb)}`
       : gpu.accelerator;
   const isHigh = pct >= 85;
 
-  const usedStr = gpu.vramUsedMb > 0 ? formatMb(gpu.vramUsedMb) : "—";
+  const usedStr = usageKnown ? formatMb(usedMb) : "—";
   const totalStr = gpu.vramTotalMb > 0 ? formatMb(gpu.vramTotalMb) : "—";
   const tooltip = gpu.modelLoaded
     ? `${gpu.accelerator} — ${usedStr} / ${totalStr} (${gpu.modelLoaded})`

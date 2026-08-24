@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
+import { cleanupTauriListener } from "@/lib/tauri-listen";
 import type { OllamaRuntimeStatus } from "@/types/ollama-runtime";
 import { parseOllamaRuntimeStatus } from "@/lib/ollama-runtime-status";
 
@@ -28,6 +30,19 @@ export function useOllamaRuntimeStatus(): OllamaRuntimeStatusResult {
       setLoading(false);
     }
   }, []);
-  useEffect(() => { void Promise.resolve().then(refresh); }, [refresh]);
+  useEffect(() => {
+    let active = true;
+    const unlisten = listen<boolean>("ollama-status", () => { void refresh(); });
+    // Armer l'écoute avant la lecture ferme la course avec un démarrage Ollama
+    // qui se termine pendant le montage du panneau.
+    void unlisten.then(
+      () => { if (active) void refresh(); },
+      () => { if (active) void refresh(); },
+    );
+    return () => {
+      active = false;
+      cleanupTauriListener(unlisten);
+    };
+  }, [refresh]);
   return { status, loading, readError, refresh };
 }

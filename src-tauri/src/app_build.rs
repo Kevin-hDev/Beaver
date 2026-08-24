@@ -13,7 +13,6 @@ pub(super) fn build(
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
-        .plugin(crate::services::autostart_migration::plugin())
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             crate::runtime_state::show_main_window(app);
         }));

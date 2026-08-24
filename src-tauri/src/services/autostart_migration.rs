@@ -3,8 +3,9 @@ use auto_launch::{AutoLaunch, AutoLaunchBuilder};
 use std::path::PathBuf;
 #[cfg(target_os = "linux")]
 use tauri::Manager;
-use tauri::Runtime;
-use tauri_plugin_autostart::{AutoLaunchManager, ManagerExt};
+
+// Beaver owns the exact OS entry so stale paths, arguments and disabled states are repairable.
+mod native_entry;
 
 pub const ACTIVE_ENTRY_NAME: &str = crate::services::brand::DISPLAY_NAME;
 const LEGACY_ENTRY_NAME: &str = "CL-GO";
@@ -19,24 +20,42 @@ enum MigrationError {
     Marker,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum ExactEntryState {
+    Absent,
+    Exact,
+    Stale,
+}
+
+trait ExactLaunchEntry {
+    fn state(&self) -> Result<ExactEntryState, MigrationError>;
+    fn install(&self) -> Result<(), MigrationError>;
+    fn remove(&self) -> Result<(), MigrationError>;
+}
+
+fn synchronize_exact_entry(
+    entry: &impl ExactLaunchEntry,
+    requested: bool,
+) -> Result<(), MigrationError> {
+    match (requested, entry.state()?) {
+        (true, ExactEntryState::Exact) | (false, ExactEntryState::Absent) => return Ok(()),
+        (true, ExactEntryState::Absent | ExactEntryState::Stale) => entry.install()?,
+        (false, ExactEntryState::Exact | ExactEntryState::Stale) => entry.remove()?,
+    }
+    let expected = if requested {
+        ExactEntryState::Exact
+    } else {
+        ExactEntryState::Absent
+    };
+    (entry.state()? == expected)
+        .then_some(())
+        .ok_or(MigrationError::State)
+}
+
 trait LaunchEntry {
     fn is_enabled(&self) -> Result<bool, MigrationError>;
     fn enable(&self) -> Result<(), MigrationError>;
     fn disable(&self) -> Result<(), MigrationError>;
-}
-
-impl LaunchEntry for AutoLaunchManager {
-    fn is_enabled(&self) -> Result<bool, MigrationError> {
-        AutoLaunchManager::is_enabled(self).map_err(|_| MigrationError::State)
-    }
-
-    fn enable(&self) -> Result<(), MigrationError> {
-        AutoLaunchManager::enable(self).map_err(|_| MigrationError::State)
-    }
-
-    fn disable(&self) -> Result<(), MigrationError> {
-        AutoLaunchManager::disable(self).map_err(|_| MigrationError::State)
-    }
 }
 
 impl LaunchEntry for AutoLaunch {
@@ -53,13 +72,18 @@ impl LaunchEntry for AutoLaunch {
     }
 }
 
-pub fn plugin<R: Runtime>() -> tauri::plugin::TauriPlugin<R> {
-    let builder = tauri_plugin_autostart::Builder::new()
-        .app_name(ACTIVE_ENTRY_NAME)
-        .arg(AUTOSTART_ARG);
-    #[cfg(target_os = "macos")]
-    let builder = builder.macos_launcher(tauri_plugin_autostart::MacosLauncher::LaunchAgent);
-    builder.build()
+impl LaunchEntry for native_entry::NativeEntry {
+    fn is_enabled(&self) -> Result<bool, MigrationError> {
+        Ok(ExactLaunchEntry::state(self)? == ExactEntryState::Exact)
+    }
+
+    fn enable(&self) -> Result<(), MigrationError> {
+        ExactLaunchEntry::install(self)
+    }
+
+    fn disable(&self) -> Result<(), MigrationError> {
+        ExactLaunchEntry::remove(self)
+    }
 }
 
 pub fn synchronize_at_startup(app: &tauri::AppHandle, requested: bool) {
@@ -73,32 +97,33 @@ pub fn synchronize_for_settings(app: &tauri::AppHandle, requested: bool) -> Resu
 }
 
 fn synchronize(app: &tauri::AppHandle, requested: bool) -> Result<(), MigrationError> {
-    let active = app.autolaunch();
+    let executable = executable_path(app)?;
+    let active = native_entry::NativeEntry::new(ACTIVE_ENTRY_NAME, &executable)?;
     let marker = marker_path();
     if marker.try_exists().map_err(|_| MigrationError::Marker)? {
-        return synchronize_entry(active.inner(), requested);
+        return synchronize_exact_entry(&active, requested);
     }
 
-    let legacy = build_legacy_entry(app)?;
-    migrate_and_mark(active.inner(), &legacy, requested, || {
+    let legacy = build_legacy_entry(&executable)?;
+    migrate_and_mark(&active, &legacy, requested, || {
         crate::services::private_store::atomic_write(&marker, b"ok")
             .map_err(|_| MigrationError::Marker)
     })
 }
 
-fn build_legacy_entry(app: &tauri::AppHandle) -> Result<AutoLaunch, MigrationError> {
-    let executable = executable_path(app)?;
+fn build_legacy_entry(executable: &std::path::Path) -> Result<AutoLaunch, MigrationError> {
+    let executable = executable.display().to_string();
     let mut builder = AutoLaunchBuilder::new();
     builder
         .set_app_name(LEGACY_ENTRY_NAME)
-        .set_app_path(&executable)
+        .set_app_path(executable.as_str())
         .set_args(&[AUTOSTART_ARG]);
     #[cfg(target_os = "macos")]
     builder.set_use_launch_agent(true);
     builder.build().map_err(|_| MigrationError::Setup)
 }
 
-fn executable_path(app: &tauri::AppHandle) -> Result<String, MigrationError> {
+fn executable_path(app: &tauri::AppHandle) -> Result<PathBuf, MigrationError> {
     let current = std::env::current_exe().map_err(|_| MigrationError::Setup)?;
     #[cfg(target_os = "linux")]
     let current = app.env().appimage.map(PathBuf::from).unwrap_or(current);
@@ -106,7 +131,7 @@ fn executable_path(app: &tauri::AppHandle) -> Result<String, MigrationError> {
     let _ = app;
     #[cfg(target_os = "macos")]
     let current = current.canonicalize().map_err(|_| MigrationError::Setup)?;
-    Ok(current.display().to_string())
+    Ok(current)
 }
 
 fn marker_path() -> PathBuf {
@@ -149,15 +174,6 @@ where
     write_marker()
 }
 
-fn synchronize_entry(entry: &impl LaunchEntry, requested: bool) -> Result<(), MigrationError> {
-    let current = entry.is_enabled()?;
-    if requested {
-        ensure_enabled(entry, current)
-    } else {
-        ensure_disabled(entry)
-    }
-}
-
 fn ensure_enabled(entry: &impl LaunchEntry, already_enabled: bool) -> Result<(), MigrationError> {
     if !already_enabled {
         let _ = entry.enable();
@@ -188,3 +204,11 @@ fn verify_final_state(
 #[cfg(test)]
 #[path = "autostart_migration_tests.rs"]
 mod tests;
+
+#[cfg(all(test, windows))]
+#[path = "autostart_windows_tests.rs"]
+mod windows_tests;
+
+#[cfg(test)]
+#[path = "autostart_document_tests.rs"]
+mod document_tests;

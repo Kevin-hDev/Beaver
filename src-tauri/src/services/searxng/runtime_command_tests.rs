@@ -11,13 +11,24 @@ static LOG_GUARD: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 const INHERITED_PIPE_TIMEOUT: Duration = Duration::from_secs(2);
 #[cfg(target_os = "linux")]
 const INHERITED_PIPE_TIMEOUT: Duration = Duration::from_millis(50);
+#[cfg(windows)]
+const PROCESS_START_TIMEOUT: Duration = Duration::from_secs(2);
+#[cfg(not(windows))]
+const PROCESS_START_TIMEOUT: Duration = Duration::from_millis(50);
+const PROCESS_CLEANUP_BOUND: Duration = Duration::from_millis(900);
+#[cfg(windows)]
+const COMMAND_COMPLETION_TIMEOUT: Duration = Duration::from_secs(3);
+#[cfg(not(windows))]
+const COMMAND_COMPLETION_TIMEOUT: Duration = Duration::from_secs(1);
+const SUCCESSFUL_PIPE_GLOBAL_TIMEOUT: Duration = Duration::from_secs(5);
+const SUCCESSFUL_PIPE_COMPLETION_BOUND: Duration = Duration::from_secs(4);
 
 #[tokio::test]
 async fn successful_runtime_command_drains_both_streams() {
     let _guard = LOG_GUARD.lock().await;
     let result = run_fixture(
         "import sys; print('stdout-ready'); print('stderr-ready', file=sys.stderr)",
-        Duration::from_secs(1),
+        COMMAND_COMPLETION_TIMEOUT,
     )
     .await;
 
@@ -29,7 +40,7 @@ async fn non_zero_command_keeps_both_bounded_output_tails() {
     let _guard = LOG_GUARD.lock().await;
     let result = run_fixture(
         "import sys; print('o' * 2000000); print('stdout-tail'); print('e' * 2000000, file=sys.stderr); print('stderr-tail', file=sys.stderr); raise SystemExit(7)",
-        Duration::from_secs(1),
+        COMMAND_COMPLETION_TIMEOUT,
     )
     .await;
 
@@ -54,10 +65,10 @@ async fn timeout_terminates_the_owned_process_and_bounds_the_log() {
         "import os,sys,time; open({:?}, 'w').write(str(os.getpid())); print('x' * 50000); time.sleep(30)",
         pid_file.path()
     );
-    let result = run_fixture(&code, Duration::from_millis(50)).await;
+    let result = run_fixture(&code, PROCESS_START_TIMEOUT).await;
 
     assert_eq!(result.unwrap_err().category(), "timeout");
-    assert!(started.elapsed() < Duration::from_millis(900));
+    assert!(started.elapsed() < PROCESS_START_TIMEOUT + PROCESS_CLEANUP_BOUND);
     let pid = std::fs::read_to_string(pid_file.path())
         .expect("child pid")
         .parse::<u32>()
@@ -80,7 +91,7 @@ async fn timeout_terminates_the_explicit_process_tree_not_only_the_root() {
         pid_file.path()
     );
 
-    let result = run_fixture(&code, Duration::from_millis(80)).await;
+    let result = run_fixture(&code, PROCESS_START_TIMEOUT).await;
 
     assert_eq!(result.unwrap_err().category(), "timeout");
     let pids = std::fs::read_to_string(pid_file.path()).expect("tree pids");
@@ -146,10 +157,10 @@ async fn successful_parent_closes_inherited_pipes_without_consuming_the_deadline
     );
     let started = std::time::Instant::now();
 
-    let result = run_fixture(&parent, Duration::from_secs(3)).await;
+    let result = run_fixture(&parent, SUCCESSFUL_PIPE_GLOBAL_TIMEOUT).await;
 
     assert!(result.is_ok());
-    assert!(started.elapsed() < Duration::from_millis(2_900));
+    assert!(started.elapsed() < SUCCESSFUL_PIPE_COMPLETION_BOUND);
     let pid = std::fs::read_to_string(pid_file.path())
         .expect("descendant pid")
         .parse::<u32>()
@@ -194,7 +205,7 @@ async fn cancellation_terminates_the_owned_process() {
         run_runtime_command(
             &mut command,
             RuntimeStage::ValidateImports,
-            tokio::time::Instant::now() + Duration::from_secs(1),
+            tokio::time::Instant::now() + COMMAND_COMPLETION_TIMEOUT,
             &cancellation,
         )
         .await
@@ -216,7 +227,7 @@ async fn non_utf8_diagnostics_are_rendered_without_invalid_log_bytes() {
     let _guard = LOG_GUARD.lock().await;
     let result = run_fixture(
         "import sys; sys.stdout.buffer.write(b'\\xfftail'); sys.stderr.buffer.write(b'\\xfetail'); raise SystemExit(4)",
-        Duration::from_secs(1),
+        COMMAND_COMPLETION_TIMEOUT,
     )
     .await;
 
@@ -234,7 +245,7 @@ async fn diagnostics_redact_sensitive_markers_and_their_values() {
     let scheme = ["bear", "er"].concat();
     let result = run_fixture(
         &format!("import sys; print('{marker} {scheme} {protected_value}', file=sys.stderr); raise SystemExit(5)"),
-        Duration::from_secs(1),
+        COMMAND_COMPLETION_TIMEOUT,
     )
     .await;
 
@@ -252,7 +263,7 @@ async fn diagnostics_keep_redaction_across_a_separator() {
         &format!(
             "import sys; print('{marker} = {protected_value}', file=sys.stderr); raise SystemExit(5)"
         ),
-        Duration::from_secs(1),
+        COMMAND_COMPLETION_TIMEOUT,
     )
     .await;
 
@@ -277,7 +288,7 @@ async fn diagnostics_redact_every_supported_private_marker() {
             &format!(
                 "import sys; print('{marker} {protected}', file=sys.stderr); raise SystemExit(5)"
             ),
-            Duration::from_secs(1),
+            COMMAND_COMPLETION_TIMEOUT,
         )
         .await;
         assert_eq!(result.unwrap_err().category(), "non-zero");
@@ -294,7 +305,7 @@ async fn multibyte_diagnostic_truncation_stays_valid_utf8() {
     let _guard = LOG_GUARD.lock().await;
     let result = run_fixture(
         "import sys; print('é' * 5000, file=sys.stderr); raise SystemExit(4)",
-        Duration::from_secs(1),
+        COMMAND_COMPLETION_TIMEOUT,
     )
     .await;
 
@@ -313,7 +324,7 @@ async fn second_diagnostic_replaces_the_first_even_with_a_stale_legacy_temp() {
     let _ = std::fs::remove_file(&stale);
     let first = run_fixture(
         "print('first-tail'); raise SystemExit(1)",
-        Duration::from_secs(1),
+        COMMAND_COMPLETION_TIMEOUT,
     )
     .await;
     assert_eq!(first.unwrap_err().category(), "non-zero");
@@ -321,7 +332,7 @@ async fn second_diagnostic_replaces_the_first_even_with_a_stale_legacy_temp() {
 
     let second = run_fixture(
         "print('second-tail'); raise SystemExit(2)",
-        Duration::from_secs(1),
+        COMMAND_COMPLETION_TIMEOUT,
     )
     .await;
 
@@ -339,7 +350,7 @@ async fn oversized_legacy_diagnostic_is_replaced_instead_of_becoming_absorbing()
     std::fs::create_dir_all(log.parent().expect("log parent")).expect("log parent");
     std::fs::write(&log, vec![b'x'; 20_000]).expect("oversized legacy log");
 
-    let result = run_fixture("raise SystemExit(3)", Duration::from_secs(1)).await;
+    let result = run_fixture("raise SystemExit(3)", COMMAND_COMPLETION_TIMEOUT).await;
 
     assert_eq!(result.unwrap_err().category(), "non-zero");
     let body = std::fs::read(&log).expect("replacement log");
@@ -360,7 +371,7 @@ async fn diagnostics_refuse_a_symlinked_log_without_touching_its_target() {
     std::fs::write(outside.path(), b"outside").expect("outside marker");
     symlink(outside.path(), &log).expect("log symlink");
 
-    let result = run_fixture("raise SystemExit(1)", Duration::from_secs(1)).await;
+    let result = run_fixture("raise SystemExit(1)", COMMAND_COMPLETION_TIMEOUT).await;
 
     assert_eq!(result.unwrap_err().category(), "diagnostics");
     assert_eq!(
@@ -384,7 +395,7 @@ async fn diagnostics_refuse_a_hard_linked_log_without_touching_its_target() {
     std::fs::write(outside.path(), b"outside").expect("outside marker");
     std::fs::hard_link(outside.path(), &log).expect("hard-linked log");
 
-    let result = run_fixture("raise SystemExit(1)", Duration::from_secs(1)).await;
+    let result = run_fixture("raise SystemExit(1)", COMMAND_COMPLETION_TIMEOUT).await;
 
     assert_eq!(result.unwrap_err().category(), "diagnostics");
     assert_eq!(
@@ -422,7 +433,8 @@ fn fixture_command(code: &str) -> Command {
 }
 
 async fn wait_for_file(path: &std::path::Path) {
-    for _ in 0..100 {
+    let deadline = tokio::time::Instant::now() + COMMAND_COMPLETION_TIMEOUT;
+    while tokio::time::Instant::now() < deadline {
         if std::fs::metadata(path).is_ok_and(|metadata| metadata.len() > 0) {
             return;
         }

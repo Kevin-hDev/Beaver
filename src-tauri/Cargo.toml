@@ -45,7 +45,6 @@ tauri = { version = "=2.11.4", features = ["macos-private-api", "tray-icon", "im
 tauri-plugin-fs = "2"
 tauri-plugin-shell = "2"
 tauri-plugin-dialog = "2"
-tauri-plugin-autostart = "2"
 tauri-plugin-log = "2.9.0"
 auto-launch = "=0.5.0"
 tauri-plugin-single-instance = "2"
@@ -181,9 +180,11 @@ portable-pty = "0.9"
 landlock = "0.4.4"
 
 [target.'cfg(windows)'.dependencies]
+winreg = "0.55"
 # ConPTY children are created suspended and enter Beaver's global Job before
 # they can execute, preserving the single native confinement authority.
 windows-spawn = "=0.1.0"
+windows = { version = "=0.61.3", features = ["Win32_Graphics_Dxgi"] }
 windows-sys = { version = "0.61", features = [
     "Win32_Foundation",
     "Win32_Globalization",

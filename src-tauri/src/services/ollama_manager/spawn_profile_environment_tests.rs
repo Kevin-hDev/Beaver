@@ -35,6 +35,40 @@ fn frozen_environment_preserves_unknown_inherited_values_and_overrides_once() {
     assert_eq!(environment.count("OLLAMA_MODELS"), 1);
 }
 
+#[cfg(windows)]
+#[test]
+fn windows_drive_pseudo_variables_are_not_forwarded_to_ollama() {
+    let resolver = FakeResolver::with_paths(&paths());
+    let profile = resolve(
+        &resolver,
+        &[
+            ("HOME", HOME),
+            ("=::", r"::\"),
+            ("=C:", CWD),
+            ("PATH", r"C:\Windows\System32"),
+        ],
+    )
+    .expect("Windows inherited environment");
+
+    assert_eq!(profile.environment().get("=::"), None);
+    assert_eq!(profile.environment().get("=C:"), None);
+    assert_eq!(
+        profile.environment().get("PATH"),
+        Some(r"C:\Windows\System32")
+    );
+}
+
+#[cfg(windows)]
+#[test]
+fn windows_arbitrary_embedded_equals_remains_invalid() {
+    let resolver = FakeResolver::with_paths(&paths());
+
+    assert_eq!(
+        resolve(&resolver, &[("BAD=KEY", "value")]),
+        Err(OllamaErrorCode::OllamaInternal)
+    );
+}
+
 #[test]
 fn rejects_duplicate_keys_and_all_environment_limits_before_spawn() {
     let resolver = FakeResolver::with_paths(&paths());

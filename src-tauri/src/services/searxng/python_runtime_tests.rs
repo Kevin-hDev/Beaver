@@ -8,6 +8,8 @@ use super::runtime_manifest::RuntimeManifest;
 use std::ffi::OsStr;
 #[cfg(unix)]
 use std::path::Path;
+#[cfg(windows)]
+use std::time::Duration;
 
 #[test]
 fn python_probe_accepts_native_lf_and_crlf_output() {
@@ -83,6 +85,60 @@ fn platform_lookup_suffix_is_the_runtime_authority() {
     assert_eq!(lookup_suffixes(), [OsStr::new(".exe")]);
     #[cfg(not(windows))]
     assert_eq!(lookup_suffixes(), [OsStr::new("")]);
+}
+
+#[cfg(windows)]
+#[tokio::test]
+async fn windows_python_probe_is_confined_by_the_process_authority() {
+    let python = crate::services::test_runtime::python().expect("test Python");
+    let (started_tx, started_rx) = tokio::sync::oneshot::channel();
+    let probe = tokio::spawn(super::python_runtime::run_probe_for_test(
+        python,
+        vec![
+            "-c".into(),
+            "import time; time.sleep(0.5); print('ok')".into(),
+        ],
+        Duration::from_secs(2),
+        started_tx,
+    ));
+    let pid = started_rx.await.expect("probe pid");
+
+    assert!(crate::services::owned_process::OwnedProcess::is_confined_for_test(pid));
+    assert_eq!(probe.await.expect("probe task"), Some(b"ok\r\n".to_vec()));
+    assert!(wait_until_process_is_gone(pid).await);
+}
+
+#[cfg(windows)]
+#[tokio::test]
+async fn timed_out_windows_python_probe_is_reaped() {
+    let python = crate::services::test_runtime::python().expect("test Python");
+    let (started_tx, started_rx) = tokio::sync::oneshot::channel();
+    let probe = tokio::spawn(super::python_runtime::run_probe_for_test(
+        python,
+        vec!["-c".into(), "import time; time.sleep(30)".into()],
+        Duration::from_millis(50),
+        started_tx,
+    ));
+    let pid = started_rx.await.expect("probe pid");
+
+    assert!(probe.await.expect("probe task").is_none());
+    assert!(wait_until_process_is_gone(pid).await);
+}
+
+#[cfg(windows)]
+async fn wait_until_process_is_gone(pid: u32) -> bool {
+    let deadline = std::time::Instant::now() + Duration::from_secs(2);
+    loop {
+        let mut processes = sysinfo::System::new();
+        processes.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
+        if processes.process(sysinfo::Pid::from_u32(pid)).is_none() {
+            return true;
+        }
+        if std::time::Instant::now() >= deadline {
+            return false;
+        }
+        tokio::time::sleep(Duration::from_millis(25)).await;
+    }
 }
 
 #[cfg(unix)]

@@ -11,6 +11,8 @@ mod owned_probe_tests;
 mod snapshot;
 #[cfg(target_os = "windows")]
 mod windows;
+#[cfg(target_os = "windows")]
+mod windows_dxgi;
 #[cfg(any(test, target_os = "windows"))]
 mod windows_snapshot;
 
@@ -32,7 +34,7 @@ pub enum GpuMemoryKind {
 pub struct GpuMemorySnapshot {
     pub kind: GpuMemoryKind,
     pub total_mb: u64,
-    pub used_mb: u64,
+    pub used_mb: Option<u64>,
 }
 
 static SNAPSHOT: LazyLock<Arc<SnapshotCache>> =
@@ -112,7 +114,7 @@ async fn measure_owned(
 #[allow(clippy::needless_return)] // pattern multi-cfg cross-plateforme
 async fn detect_owned(
     cancel: &crate::services::work_registry::ServiceWorkCancellation,
-) -> Option<(u64, u64)> {
+) -> Option<(u64, Option<u64>)> {
     #[cfg(target_os = "macos")]
     {
         macos::detect_owned(cancel).await
@@ -155,7 +157,7 @@ mod tests {
         SNAPSHOT.replace(Some(GpuMemorySnapshot {
             kind: GpuMemoryKind::Dedicated,
             total_mb: 24_576,
-            used_mb: 8_192,
+            used_mb: Some(8_192),
         }));
 
         assert_eq!(detect_vram_mb(), Some(24_576));
@@ -199,7 +201,7 @@ mod tests {
                     (attempt > 0).then_some(GpuMemorySnapshot {
                         kind: GpuMemoryKind::Dedicated,
                         total_mb: 8_192,
-                        used_mb: 2_048,
+                        used_mb: Some(2_048),
                     })
                 }
             },

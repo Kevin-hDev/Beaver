@@ -1,7 +1,7 @@
 use super::owned_probe::{self, ProbeSpec};
 use crate::services::work_registry::ServiceWorkCancellation;
 
-pub(super) async fn detect_owned(cancel: &ServiceWorkCancellation) -> Option<(u64, u64)> {
+pub(super) async fn detect_owned(cancel: &ServiceWorkCancellation) -> Option<(u64, Option<u64>)> {
     if let Some(info) = nvidia_smi_info_owned(cancel).await {
         return Some(info);
     }
@@ -17,7 +17,7 @@ pub(super) async fn detect_owned(cancel: &ServiceWorkCancellation) -> Option<(u6
     if cancel.is_cancelled() {
         None
     } else {
-        snapshot
+        snapshot.map(|(total_mb, used_mb)| (total_mb, Some(used_mb)))
     }
 }
 
@@ -25,7 +25,7 @@ fn drm_memory_snapshot() -> Option<(u64, u64)> {
     super::linux_drm_snapshot::read(std::path::Path::new("/sys/class/drm"))
 }
 
-async fn nvidia_smi_info_owned(cancel: &ServiceWorkCancellation) -> Option<(u64, u64)> {
+async fn nvidia_smi_info_owned(cancel: &ServiceWorkCancellation) -> Option<(u64, Option<u64>)> {
     let output = owned_probe::run(
         ProbeSpec::new("nvidia-smi").args([
             "--query-gpu=memory.total,memory.used",
@@ -35,6 +35,7 @@ async fn nvidia_smi_info_owned(cancel: &ServiceWorkCancellation) -> Option<(u64,
     )
     .await?;
     parse_nvidia_rows(&output.stdout, output.truncated)
+        .map(|(total_mb, used_mb)| (total_mb, Some(used_mb)))
 }
 
 fn parse_nvidia_rows(bytes: &[u8], truncated: bool) -> Option<(u64, u64)> {
