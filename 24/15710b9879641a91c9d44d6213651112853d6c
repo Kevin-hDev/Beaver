@@ -1,0 +1,14 @@
+CI placement correction.
+
+Observed:
+- CI run 32734517941 executed the new PowerShell package-validator test in Backend Linux WebView because the workflow insertion matched the first identical npm dependency block.
+- The Windows-only cleanup guard failed closed on the Unix path, and the Linux job stopped before its WebView journey.
+
+Correction:
+- The step now lives after the uniquely identified Windows CEF source preparation block.
+- No product or validator behavior changed.
+
+Verification:
+- The workflow context shows the step inside Backend Windows CEF.
+- package migration contracts: 6/6 passed.
+- git diff --check passed.
