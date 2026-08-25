@@ -29,6 +29,12 @@
 
 - **Refreshed Beaver icon** — the About page, Dock, taskbar, system tray, macOS menu bar, and packaged applications now share the new rounded Beaver artwork across desktop and mobile assets.
 
+### Visual design
+
+- **Unified depth and corners** — cards, controls, fields, menus, and windows now share one corner radius and a consistent raised-or-recessed visual language across macOS, Windows, and Linux.
+- **Clearer interaction states** — lists use cleaner separators and inset hover states, text selection is easier to see, and composer controls stay visually aligned.
+- **Consistent desktop window shape** — the native application frame now preserves Beaver's rounded window corners on macOS, Windows, and Linux.
+
 ### Windows local runtime reliability
 
 - **Accurate Windows hardware telemetry** — VRAM capacity and usage now come from the same DXGI adapter, and Beaver shares one hardware snapshot between the interface and Forecast instead of running competing probes.
