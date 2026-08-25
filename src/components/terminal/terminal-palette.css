@@ -33,8 +33,8 @@
   --term-bright-cyan: color-mix(in srgb, var(--term-cyan) 72%, var(--ink));
   --term-bright-white: var(--ink);
 
-  /* Sélection : une teinte de l'accent plutôt qu'un gris neutre, pour qu'elle
-     se distingue du fond sur les six thèmes sans masquer le texte. */
-  --term-selection: color-mix(in srgb, var(--pulse) 28%, transparent);
+  /* La sélection de l'application, à l'identique (tokens.css) : deux recettes
+     voisines de la même chose se seraient éloignées au premier réglage. */
+  --term-selection: var(--text-selection-bg);
   --term-cursor: var(--pulse);
 }
