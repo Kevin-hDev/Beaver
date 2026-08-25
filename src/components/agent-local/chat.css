@@ -178,8 +178,13 @@
 .chat-input-spacer { flex: 1; }
 
 /* Send/stop — composes .icon-btn (src/styles/buttons.css);
-   keeps its muted color, opacity-only hover and disabled dim. */
+   keeps its muted color, opacity-only hover and disabled dim.
+   Décalage optique de 3 px, comme le « + » de l'autre bout de la rangée : le
+   dessin ne remplit pas son carré et le centrage géométrique le fait paraître
+   trop haut. */
 .send-btn {
+  position: relative;
+  top: 3px;
   color: var(--ink-muted);
   transition: opacity var(--ease-smooth), color var(--ease-smooth);
 }
