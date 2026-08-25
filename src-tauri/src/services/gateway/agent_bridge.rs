@@ -114,7 +114,8 @@ impl GatewayAgentBridge {
         let session = session_store::get(&session_id)
             .await
             .map_err(BridgeError::SessionError)?;
-        let mut messages = message_convert::build_chat_messages(&session);
+        let mut messages =
+            message_convert::build_chat_messages(&session).map_err(BridgeError::SessionError)?;
         let history_len = messages.len();
         messages.push(message_convert::new_user_message(&msg.content));
         session_store::add_messages(
@@ -199,3 +200,7 @@ impl GatewayAgentBridge {
         Ok(())
     }
 }
+
+#[cfg(test)]
+#[path = "agent_bridge_tests.rs"]
+mod tests;

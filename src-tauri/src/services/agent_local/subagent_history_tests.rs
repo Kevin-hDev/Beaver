@@ -5,20 +5,30 @@ use tokio_util::sync::CancellationToken;
 #[tokio::test]
 async fn history_persists_supported_roles_without_dropping_the_queue() {
     let (parent, mut child, registered) = active_child("history").await;
-    child.subagent_queued_prompts.push("correction concurrente".into());
+    child
+        .subagent_queued_prompts
+        .push("correction concurrente".into());
     session_store::save(&child).await.expect("save queue");
     let messages = vec![
         chat("system", "système"),
         chat("user", "mission"),
-        ChatMessage::assistant("appel".into(), Some("raisonnement".into()), Some(vec![ToolCallOllama {
+        ChatMessage::assistant(
+            "appel".into(),
+            Some("raisonnement".into()),
+            Some(vec![ToolCallOllama {
                 id: Some("call-42".into()),
                 extra_content: None,
                 function: ToolCallFunction {
                     name: "read_file".into(),
                     arguments: serde_json::json!({"path": "README.md"}),
                 },
-            }])),
-        ChatMessage::tool("contenu".into(), Some("call-42".into()), Some("read_file".into())),
+            }]),
+        ),
+        ChatMessage::tool(
+            "contenu".into(),
+            Some("call-42".into()),
+            Some("read_file".into()),
+        ),
     ];
 
     let persisted = subagent_history::persist_for_execution(
@@ -38,7 +48,10 @@ async fn history_persists_supported_roles_without_dropping_the_queue() {
     assert_eq!(saved.messages[2].role, "tool");
     assert_eq!(saved.messages[1].thinking.as_deref(), Some("raisonnement"));
     assert_eq!(saved.messages[1].tool_calls.as_ref().map(Vec::len), Some(1));
-    assert_eq!(saved.subagent_queued_prompts, vec!["correction concurrente"]);
+    assert_eq!(
+        saved.subagent_queued_prompts,
+        vec!["correction concurrente"]
+    );
     assert_eq!(
         saved.accumulated_tokens,
         crate::services::token_counting::estimate_agent_messages_tokens(&saved.messages)
@@ -62,7 +75,9 @@ async fn history_keeps_only_the_latest_two_thousand_messages() {
     .await
     .expect("persist bounded history");
 
-    let saved = session_store::get(&child.id).await.expect("load bounded history");
+    let saved = session_store::get(&child.id)
+        .await
+        .expect("load bounded history");
     assert_eq!(saved.messages.len(), 2_000);
     assert_eq!(saved.messages[0].content, "message-2");
     assert_eq!(saved.messages[1_999].content, "message-2001");
@@ -100,9 +115,11 @@ async fn history_save_and_concurrent_correction_both_survive() {
         .await
     });
     let mut correction = Box::pin(correction);
-    assert!(tokio::time::timeout(std::time::Duration::from_millis(30), &mut correction)
-        .await
-        .is_err());
+    assert!(
+        tokio::time::timeout(std::time::Duration::from_millis(30), &mut correction)
+            .await
+            .is_err()
+    );
 
     let _ = release_tx.send(());
     history
@@ -113,20 +130,25 @@ async fn history_save_and_concurrent_correction_both_survive() {
         .await
         .expect("join correction")
         .expect("persist correction");
-    let saved = session_store::get(&child.id).await.expect("load concurrent child");
+    let saved = session_store::get(&child.id)
+        .await
+        .expect("load concurrent child");
     assert_eq!(saved.messages.len(), 2);
-    assert_eq!(saved.subagent_queued_prompts, vec!["correction concurrente"]);
+    assert_eq!(
+        saved.subagent_queued_prompts,
+        vec!["correction concurrente"]
+    );
     cleanup(&parent.id, &child.id).await;
 }
 
 fn chat(role: &str, content: &str) -> ChatMessage {
     match role {
-"system" => ChatMessage::system(content.into()),
-"user" => ChatMessage::user(content.into()),
-"assistant" => ChatMessage::assistant(content.into(), None, None),
-"tool" => ChatMessage::tool(content.into(), None, None),
-other => panic!("unsupported chat role in test/setup: {other}"),
-}
+        "system" => ChatMessage::system(content.into()),
+        "user" => ChatMessage::user(content.into()),
+        "assistant" => ChatMessage::assistant(content.into(), None, None),
+        "tool" => ChatMessage::tool(content.into(), None, None),
+        other => panic!("unsupported chat role in test/setup: {other}"),
+    }
 }
 
 async fn active_child(
@@ -136,28 +158,20 @@ async fn active_child(
     super::types_session::AgentSession,
     subagent_registry::RegisteredSubagent,
 ) {
-    let parent = session_store::create_full(
-        &format!("Parent {suffix}"),
-        "llama3",
-        "ollama",
-        false,
-        None,
-    )
-    .await
-    .expect("create parent");
+    let parent =
+        session_store::create_full(&format!("Parent {suffix}"), "llama3", "ollama", false, None)
+            .await
+            .expect("create parent");
     let mut child = session_store::create_full("Geminitor", "llama3", "ollama", false, None)
         .await
         .expect("create child");
     child.parent_session_id = Some(parent.id.clone());
     child.subagent_type = Some("explorer".into());
     child.subagent_status = Some(subagent_status::RUNNING.into());
-    let registered = subagent_registry::register_execution(
-        &parent.id,
-        &child.id,
-        CancellationToken::new(),
-    )
-    .await
-    .expect("register child");
+    let registered =
+        subagent_registry::register_execution(&parent.id, &child.id, CancellationToken::new())
+            .await
+            .expect("register child");
     child.subagent_run_id = Some(registered.run_id.clone());
     session_store::save(&child).await.expect("save child");
     (parent, child, registered)
@@ -165,6 +179,10 @@ async fn active_child(
 
 async fn cleanup(parent_id: &str, child_id: &str) {
     subagent_registry::unregister(child_id).await;
-    session_store::delete_one(child_id).await.expect("delete child");
-    session_store::delete_one(parent_id).await.expect("delete parent");
+    session_store::delete_one(child_id)
+        .await
+        .expect("delete child");
+    session_store::delete_one(parent_id)
+        .await
+        .expect("delete parent");
 }

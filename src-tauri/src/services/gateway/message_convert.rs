@@ -4,13 +4,18 @@ use crate::services::agent_local::types_session::{
     AgentMessage, AgentSession, ToolActivityRecord, ToolCallRequest,
 };
 
-pub fn build_chat_messages(session: &AgentSession) -> Vec<ChatMessage> {
-    session
+const INVALID_SESSION_HISTORY: &str = "Historique de session invalide.";
+
+pub fn build_chat_messages(session: &AgentSession) -> Result<Vec<ChatMessage>, String> {
+    let mut messages = Vec::new();
+    for message in session
         .messages
         .iter()
-        .filter(|m| m.role != "system")
-        .flat_map(agent_to_chat_messages)
-        .collect()
+        .filter(|message| message.role != "system")
+    {
+        messages.extend(agent_to_chat_messages(message)?);
+    }
+    Ok(messages)
 }
 
 pub fn new_user_message(content: &str) -> ChatMessage {
@@ -43,7 +48,10 @@ pub fn chat_to_agent_message(m: &ChatMessage) -> Option<AgentMessage> {
     })
 }
 
-fn agent_to_chat_messages(m: &AgentMessage) -> Vec<ChatMessage> {
+fn agent_to_chat_messages(m: &AgentMessage) -> Result<Vec<ChatMessage>, String> {
+    if !matches!(m.role.as_str(), "system" | "user" | "assistant" | "tool") {
+        return Err(INVALID_SESSION_HISTORY.to_string());
+    }
     if let Some(segments) = &m.segments {
         let mut out = Vec::new();
         let mut id_counter = 0usize;
@@ -51,14 +59,14 @@ fn agent_to_chat_messages(m: &AgentMessage) -> Vec<ChatMessage> {
             push_tool_turn(&mut out, &seg.tools, &seg.content, &mut id_counter);
         }
         if !out.is_empty() {
-            return out;
+            return Ok(out);
         }
     }
     if let Some(activities) = &m.tool_activities {
         let mut out = Vec::new();
         let mut id_counter = 0usize;
         push_tool_turn(&mut out, activities, &m.content, &mut id_counter);
-        return out;
+        return Ok(out);
     }
     let message = match m.role.as_str() {
         "system" => ChatMessage::system(m.content.clone()),
@@ -69,9 +77,9 @@ fn agent_to_chat_messages(m: &AgentMessage) -> Vec<ChatMessage> {
             session_tool_calls_to_chat(m.tool_calls.as_ref()),
         ),
         "tool" => ChatMessage::tool(m.content.clone(), None, m.tool_name.clone()),
-        _ => return Vec::new(),
+        _ => return Err(INVALID_SESSION_HISTORY.to_string()),
     };
-    vec![message]
+    Ok(vec![message])
 }
 
 fn push_tool_turn(
@@ -164,32 +172,5 @@ pub fn new_user_agent_message(content: &str) -> AgentMessage {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn scheduled_history_keeps_tool_calls_and_results() {
-        let call = ToolCallOllama {
-            id: Some("call-1".into()),
-            extra_content: None,
-            function: ToolCallFunction {
-                name: "read_file".into(),
-                arguments: serde_json::json!({"path":"README.md"}),
-            },
-        };
-        let assistant = ChatMessage::assistant(String::new(), None, Some(vec![call]));
-        let tool = ChatMessage::tool(
-            "Beaver".into(),
-            Some("call-1".into()),
-            Some("read_file".into()),
-        );
-
-        let saved_call = chat_to_agent_message(&assistant).unwrap();
-        let saved_result = chat_to_agent_message(&tool).unwrap();
-
-        assert_eq!(saved_call.tool_calls.unwrap()[0].function.name, "read_file");
-        assert_eq!(saved_result.role, "tool");
-        assert_eq!(saved_result.tool_name.as_deref(), Some("read_file"));
-        assert_eq!(saved_result.content, "Beaver");
-    }
-}
+#[path = "message_convert_tests.rs"]
+mod tests;

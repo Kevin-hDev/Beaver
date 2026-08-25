@@ -6,8 +6,12 @@ use tokio_util::sync::CancellationToken;
 async fn history_save_failure_keeps_previous_history_and_queue_intact() {
     let (parent, mut child, registered) = active_child("save failure").await;
     child.messages.push(saved_message("ancienne histoire"));
-    child.subagent_queued_prompts.push("correction durable".into());
-    session_store::save(&child).await.expect("save initial child");
+    child
+        .subagent_queued_prompts
+        .push("correction durable".into());
+    session_store::save(&child)
+        .await
+        .expect("save initial child");
     let path = crate::services::paths::data_dir()
         .join("agent-sessions")
         .join(format!("{}.json", child.id));
@@ -24,9 +28,7 @@ async fn history_save_failure_keeps_previous_history_and_queue_intact() {
             tokio::fs::rename(&blocked, &backup_path)
                 .await
                 .expect("backup child");
-            tokio::fs::create_dir(&blocked)
-                .await
-                .expect("block save");
+            tokio::fs::create_dir(&blocked).await.expect("block save");
         },
     )
     .await;
@@ -34,7 +36,9 @@ async fn history_save_failure_keeps_previous_history_and_queue_intact() {
     tokio::fs::rename(&backup, &path)
         .await
         .expect("restore child");
-    let saved = session_store::get(&child.id).await.expect("load restored child");
+    let saved = session_store::get(&child.id)
+        .await
+        .expect("load restored child");
 
     assert!(result.is_err());
     assert_eq!(saved.messages.len(), 1);
@@ -46,7 +50,9 @@ async fn history_save_failure_keeps_previous_history_and_queue_intact() {
 #[test]
 fn task_persists_history_before_terminal_completion_and_fails_closed() {
     let source = include_str!("subagent_task.rs");
-    let history = source.find("subagent_history::persist_for_execution").unwrap();
+    let history = source
+        .find("subagent_history::persist_for_execution")
+        .unwrap();
     let terminal = history
         + source[history..]
             .find("subagent_completion_events::persist_terminal")
@@ -58,12 +64,12 @@ fn task_persists_history_before_terminal_completion_and_fails_closed() {
 
 fn chat(role: &str, content: &str) -> ChatMessage {
     match role {
-"system" => ChatMessage::system(content.into()),
-"user" => ChatMessage::user(content.into()),
-"assistant" => ChatMessage::assistant(content.into(), None, None),
-"tool" => ChatMessage::tool(content.into(), None, None),
-other => panic!("unsupported chat role in test/setup: {other}"),
-}
+        "system" => ChatMessage::system(content.into()),
+        "user" => ChatMessage::user(content.into()),
+        "assistant" => ChatMessage::assistant(content.into(), None, None),
+        "tool" => ChatMessage::tool(content.into(), None, None),
+        other => panic!("unsupported chat role in test/setup: {other}"),
+    }
 }
 
 fn saved_message(content: &str) -> super::types_session::AgentMessage {
@@ -77,28 +83,20 @@ async fn active_child(
     super::types_session::AgentSession,
     subagent_registry::RegisteredSubagent,
 ) {
-    let parent = session_store::create_full(
-        &format!("Parent {suffix}"),
-        "llama3",
-        "ollama",
-        false,
-        None,
-    )
-    .await
-    .expect("create parent");
+    let parent =
+        session_store::create_full(&format!("Parent {suffix}"), "llama3", "ollama", false, None)
+            .await
+            .expect("create parent");
     let mut child = session_store::create_full("Child", "llama3", "ollama", false, None)
         .await
         .expect("create child");
     child.parent_session_id = Some(parent.id.clone());
     child.subagent_type = Some("explorer".into());
     child.subagent_status = Some(subagent_status::RUNNING.into());
-    let registered = subagent_registry::register_execution(
-        &parent.id,
-        &child.id,
-        CancellationToken::new(),
-    )
-    .await
-    .expect("register child");
+    let registered =
+        subagent_registry::register_execution(&parent.id, &child.id, CancellationToken::new())
+            .await
+            .expect("register child");
     child.subagent_run_id = Some(registered.run_id.clone());
     session_store::save(&child).await.expect("save child");
     (parent, child, registered)
@@ -106,6 +104,10 @@ async fn active_child(
 
 async fn cleanup(parent_id: &str, child_id: &str) {
     subagent_registry::unregister(child_id).await;
-    session_store::delete_one(child_id).await.expect("delete child");
-    session_store::delete_one(parent_id).await.expect("delete parent");
+    session_store::delete_one(child_id)
+        .await
+        .expect("delete child");
+    session_store::delete_one(parent_id)
+        .await
+        .expect("delete parent");
 }

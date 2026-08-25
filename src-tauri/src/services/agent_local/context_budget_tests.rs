@@ -2,12 +2,12 @@ use super::*;
 
 fn msg(role: &str, content: &str) -> ChatMessage {
     match role {
-"system" => ChatMessage::system(content.to_string()),
-"user" => ChatMessage::user(content.to_string()),
-"assistant" => ChatMessage::assistant(content.to_string(), None, None),
-"tool" => ChatMessage::tool(content.to_string(), None, None),
-other => panic!("unsupported chat role in test/setup: {other}"),
-}
+        "system" => ChatMessage::system(content.to_string()),
+        "user" => ChatMessage::user(content.to_string()),
+        "assistant" => ChatMessage::assistant(content.to_string(), None, None),
+        "tool" => ChatMessage::tool(content.to_string(), None, None),
+        other => panic!("unsupported chat role in test/setup: {other}"),
+    }
 }
 
 #[test]
@@ -152,8 +152,7 @@ fn payload_reduction_changes_an_oversized_request_once() {
     ];
     let before = token_estimate::estimate_tokens(&messages);
 
-    let changed =
-        reduce_after_payload_too_large(&mut messages, 100_000, &[], "ollama").unwrap();
+    let changed = reduce_after_payload_too_large(&mut messages, 100_000, &[], "ollama").unwrap();
 
     assert!(changed);
     assert!(token_estimate::estimate_tokens(&messages) < before);
@@ -189,7 +188,11 @@ fn payload_reduction_reports_known_counts_when_context_window_is_unknown() {
 #[test]
 fn codex_does_not_prune_reasoning_that_is_not_sent() {
     let mut messages = vec![msg("system", "rules"), msg("user", &"a".repeat(280_000))];
-    messages.push(ChatMessage::assistant("recent answer".into(), Some("r".repeat(80_000)), None));
+    messages.push(ChatMessage::assistant(
+        "recent answer".into(),
+        Some("r".repeat(80_000)),
+        None,
+    ));
     let original_len = messages.len();
     let original_content = messages[1].content.clone();
 
@@ -223,8 +226,14 @@ fn pruning_keeps_a_tool_call_and_all_results_together() {
         .iter()
         .position(|message| message.tool_calls.is_some())
         .expect("complete tool chain retained");
-    assert_eq!(messages[call_index + 1].tool_call_id.as_deref(), Some("call-1"));
-    assert_eq!(messages[call_index + 2].tool_call_id.as_deref(), Some("call-2"));
+    assert_eq!(
+        messages[call_index + 1].tool_call_id.as_deref(),
+        Some("call-1")
+    );
+    assert_eq!(
+        messages[call_index + 2].tool_call_id.as_deref(),
+        Some("call-2")
+    );
 }
 
 #[test]
@@ -240,7 +249,9 @@ fn oversized_tool_chain_is_omitted_as_a_whole() {
 
     assert!(messages.iter().all(|message| message.tool_calls.is_none()));
     assert!(messages.iter().all(|message| message.role != "tool"));
-    assert!(messages.iter().any(|message| message.content.contains("recent answer")));
+    assert!(messages
+        .iter()
+        .any(|message| message.content.contains("recent answer")));
 }
 
 #[test]
@@ -271,21 +282,32 @@ fn pruning_keeps_a_contiguous_recent_suffix() {
 
     prepare_for_request(&mut messages, 8_000, &[], "openai").unwrap();
 
-    assert!(messages.iter().any(|message| message.content == "recent marker"));
-    assert!(messages.iter().all(|message| message.content != "old marker"));
+    assert!(messages
+        .iter()
+        .any(|message| message.content == "recent marker"));
+    assert!(messages
+        .iter()
+        .all(|message| message.content != "old marker"));
 }
 
 fn assistant_with_calls(ids: &[&str]) -> ChatMessage {
-    ChatMessage::assistant(String::new(), None, Some(ids.iter().enumerate().map(|(index, id)| {
-            super::super::types_ollama::ToolCallOllama {
-                id: Some((*id).into()),
-                extra_content: None,
-                function: super::super::types_ollama::ToolCallFunction {
-                    name: if index == 0 { "grep" } else { "glob" }.into(),
-                    arguments: serde_json::json!({}),
-                },
-            }
-        }).collect()))
+    ChatMessage::assistant(
+        String::new(),
+        None,
+        Some(
+            ids.iter()
+                .enumerate()
+                .map(|(index, id)| super::super::types_ollama::ToolCallOllama {
+                    id: Some((*id).into()),
+                    extra_content: None,
+                    function: super::super::types_ollama::ToolCallFunction {
+                        name: if index == 0 { "grep" } else { "glob" }.into(),
+                        arguments: serde_json::json!({}),
+                    },
+                })
+                .collect(),
+        ),
+    )
 }
 
 fn tool_message(id: &str, name: &str, content: &str) -> ChatMessage {
