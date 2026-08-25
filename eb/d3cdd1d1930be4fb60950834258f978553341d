@@ -1,0 +1,42 @@
+Decision: behavioral artifact validation replaces source-code policing for Windows icons.
+
+Why:
+- A packaged-result comparison catches the bad outcome regardless of whether it came from DPI, a managed decoder, cache reuse, or a future implementation change.
+- The removed AST portal was bypassable, produced false positives, and duplicated the behavioral authority.
+- The retained modules have one bounded file authority and validate the actual icon frames embedded in the artifact.
+
+Retained guarantees:
+- Test-AssociatedIcon rejects the generic Windows fallback for an executable without an icon.
+- The ICO directory is checked against each payload's real dimensions.
+- Frames 16, 32, 48, and 256 are compared using native fixed-size extraction.
+- The native interop class identity derives from the source SHA-256, so an edited module recompiles in a long-lived shell.
+- Package reads are bounded, reject reparse points, and expose only generic boundary failures.
+- Windows PowerShell 5.1 and PowerShell 7 run in separate processes at sizes 16 and 32.
+- Pull-request CI executes the package contract under both engines.
+- NSIS registry ordering/deletion, shortcut targeting, forbidden commands, and traversal guards are restored.
+- PowerShell repository validation checks syntax only; Git is the bounded inventory authority and core.quotepath=false preserves non-ASCII paths.
+
+Removed:
+- Add-Type, reflection, alias, dynamic-command, value-flow, installed-wrapper, and general AST source policies.
+- Implementation-spelling assertions from package-migration.test.mjs.
+
+Evidence actually executed on Windows:
+- Baseline RED: check-nsis-migration.test.ps1 failed because Get-BoundedPackageFile did not exist.
+- Mutation RED: restoring ExtractAssociatedIcon made the no-icon executable contract fail.
+- Mutation RED: using a fixed interop class name made the reload contract fail.
+- Windows PowerShell 5.1 check-nsis-migration.test.ps1: all five displayed contracts OK.
+- PowerShell 7.6.4 at C:\Users\huynh\.cache\codex-runtimes\codex-primary-runtime\dependencies\native\powershell\pwsh.exe: all five displayed contracts OK.
+- Source validation of target/release/bundle/nsis/Beaver_1.1.5_x64-setup.exe passed under both engines.
+- Real target/release/cl-go-dash.exe icon/version validation passed under both engines.
+- npm run test:package-migration: 6/6 passed.
+- npm run test:brand-boundaries: 14/14 passed, zero unknown references.
+- npm run test:release-workflow: 40/40 passed.
+- npm run lint: exit 0.
+- npx tsc --noEmit: exit 0.
+- graphify update .: exit 0; 36,413 nodes and 74,998 edges.
+- git diff --cached --check: exit 0.
+- Compared with aa484039: 117 insertions and 1,413 deletions; every portal module is absent.
+
+Full-suite limitation recorded, not hidden:
+- npm test reached 473/473 Vitest files and 2,504/2,504 Vitest tests passed.
+- It then stopped in test:build-scripts at 55/56 because Windows denied creation of a temporary symlink with EPERM in scripts/build/python-runtime.test.mjs. No icon-validator file is involved; this machine lacks the required symlink privilege. The failure was not suppressed or changed.

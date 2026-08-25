@@ -1,0 +1,56 @@
+Windows release review corrections — native icon validator hardening
+
+Scope and gate
+- Branch: codex/windows-installed-brand-validation
+- Corrects the review findings introduced around 86f5a8c2; application runtime, Tauri, NSIS hooks, icon assets, macOS, and Linux behavior are unchanged.
+- v1.1.5 remains blocked until this commit passes a new full PR CI and a new independent review.
+- The rendered-pixel comparison remains intentionally in place. Direct PE/ICO resource canonicalization from review point 9 was not added without a proven need; both sides now use one native extractor and required source frames are checked independently.
+
+Root causes verified before correction
+- PrivateExtractIcons returns the requested output dimensions even for 31, 37, and 200 pixels, so the old 32x32 equality check was tautological.
+- Drawing.Icon.ExtractAssociatedIcon returned a generic 40x40 shell icon for C:\Windows\System32\where.exe although PrivateExtractIcons found no embedded icon resource.
+- PowerShell relative-path lookup and IO.Path.GetFullPath diverged when the PowerShell location and process current directory differed.
+- PR CI exercised only pwsh while release CI also exercised Windows PowerShell 5.1.
+- The prior automated test extracted only icon.ico and never reached the icon path of a real executable.
+
+Architecture and decisions
+- scripts/release/windows-package-file.ps1 is the single package-file boundary: one PowerShell-relative resolution, regular-file/reparse/size validation, and generic failures.
+- scripts/release/windows-native-icon.ps1 is the single System.Drawing/native interop owner. The embedded C# class name is derived from a SHA-256 of its source, so edited interop recompiles in long-lived PowerShell sessions.
+- Native handles are cloned into managed icons and released on every path. Extraction failures and runtime/cleanup failures are distinct.
+- scripts/release/windows-icon-validation.ps1 owns ICO structure parsing, the required Windows frame sizes (32, 48, and 256), two-background pixel hashing, and multi-size EXE/ICO comparison.
+- The source installer check now uses the native resource extractor and cannot accept Windows' generic fallback icon.
+- Cleanup/environment failures map to source-installer-icon-runtime or installed-brand-icon-runtime instead of blaming the reference ICO.
+- The dead installed-brand-icon-size category and null check were removed.
+- scripts/test-install-ps1.ps1 discovers every release/*.ps1 file, so new validators cannot silently escape syntax parsing.
+- package-migration.test.mjs parses CI YAML structurally for the pwsh/PowerShell 5.1 pair and removes icon implementation-shape assertions now covered by execution.
+
+TDD evidence
+- The bounded-file/path test failed under PowerShell 7 and 5.1 because Test-BoundedPackageFile did not exist.
+- The ICO/real-EXE test failed under both engines because Test-WindowsReferenceIcon did not exist.
+- The CI YAML test failed with actual shell list [pwsh] instead of [powershell, pwsh].
+- The installer diagnostic test failed under both engines because Get-NativeIconResourceFailure did not exist.
+- Tests compile two real Windows PE fixtures with the .NET Framework C# compiler: one with icon.ico embedded and one without an icon. They prove the branded PE matches 32/48/256, the plain PE is refused, an ICO missing its 32 frame is refused, cleanup failure is classified runtime, and an edited interop module gets a new type identity in the same process.
+
+Fresh Windows evidence after the final change
+- check-nsis-migration.test.ps1: pass under pwsh and Windows PowerShell 5.1 (PowerShell package contracts OK).
+- scripts/test-install-ps1.ps1: pass under pwsh and Windows PowerShell 5.1 (PowerShell syntax OK).
+- npm run test:package-migration: 6/6 pass.
+- npm run test:release-workflow: 40/40 pass.
+- check-nsis-migration.ps1 -Mode Source against target/release/bundle/nsis/Beaver_1.1.5_x64-setup.exe: pass under both engines.
+- Get-BeaverExecutableBrandFailure against target/release/cl-go-dash.exe, version 1.1.5, and the repository icon.ico: pass under both engines.
+- scripts/test-install-sh.sh: pass through C:\Program Files\Git\bin\bash.exe.
+- scripts/installers-security.test.mjs: 4/4 pass.
+- npm run lint: pass.
+- git diff --cached --check: pass before commit.
+- Every modified production and test file remains at or below 230 lines; check-nsis-migration.ps1 is 226 lines.
+- graphify update . completed successfully. The installed graphify package reported its skill metadata was older and community labels could be refreshed; this did not fail the AST update.
+
+Environment note
+- npm run test:install initially failed before tests because the bare bash command resolves to WSL on this machine and no WSL distribution is installed. Its three components were then executed explicitly: test-install-sh.sh with installed Git Bash, installers-security.test.mjs, and test:package-migration; all passed.
+
+Next actions
+1. Push this commit and refs/notes/commits.
+2. Let PR #35 run the complete configured CI, including the new PowerShell 5.1 PR step.
+3. Request an independent review of 1dc55a4a relative to 86f5a8c2.
+4. If any correction follows, use a dedicated commit plus git note and restart the complete CI.
+5. Do not merge or publish v1.1.5 until CI and review are explicitly green.

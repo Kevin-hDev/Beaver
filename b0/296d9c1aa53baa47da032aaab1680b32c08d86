@@ -1,0 +1,15 @@
+Pin exit-status propagation of the real gates invoked by the package suite.
+
+Decision and reason:
+- check-nsis-migration.test.ps1 invokes the production syntax gate and the production validator with the call operator. Today every failure path in that chain is a thrown error (verified: no exit and no Write-Error in check-nsis-migration.ps1, its dot-sourced modules, or test-install-ps1.ps1), so failures propagate under ErrorActionPreference=Stop.
+- That guarantee rested only on the throw-only property staying true. If a future failure path used an exit code instead, the suite would silently stay green. Assert-True $? after each of the two invocations pins the guarantee permanently.
+- Both invocations are pinned, not just the validator: leaving one unpinned would be a half-adopted mechanism.
+
+Scope:
+- scripts/release/check-nsis-migration.test.ps1 only, +2 lines. No production code changed.
+
+Evidence actually executed on Windows after the change:
+- check-nsis-migration.test.ps1: all six displayed contracts OK, exit 0, under Windows PowerShell 5.1.26100.9168/Desktop and PowerShell 7.6.4/Core (Codex bundled runtime), default console code page 850.
+- Propagation itself was proven during the review of bf32358e on a scratchpad copy: two distinct validator failures (source-icons, source-read) each turned the suite red after its sub-contracts passed.
+- graphify update . completed (AST update).
+- Not rerun for this two-line test-file change: npm lint, tsc, and the Node suites; test:package-migration (6/6) and test:release-workflow (40/40) were green on this tree immediately before the change, and neither reads this file.

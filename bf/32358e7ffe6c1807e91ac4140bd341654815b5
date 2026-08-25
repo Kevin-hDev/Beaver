@@ -1,0 +1,27 @@
+Purpose: close the three confirmed follow-up gaps in the simplified Windows release validator.
+
+Changes:
+- check-nsis-migration.test.ps1 now executes the real check-nsis-migration.ps1 in Source mode, so pull-request CI exercises the production validator before a release tag exists.
+- test-install-ps1.ps1 decodes Git inventory output as UTF-8 only around the native call, then restores the prior console encoding.
+- PowerShell discovery again includes tracked and untracked non-ignored files with case-insensitive root and recursive *.ps1 pathspecs.
+- A real temporary Git repository test covers tracked étape.ps1, untracked invalid Deploy.PS1, exact path discovery, syntax rejection, and console-encoding restoration.
+
+Decision reason:
+The CI authority must execute the production validator, and the syntax inventory must cover every PowerShell file that can enter the working tree without depending on the Windows console code page.
+
+Evidence actually executed on Windows:
+- Before wiring the production validator, injecting `throw "Validator invocation mutation."` into check-nsis-migration.ps1 left the package suite green.
+- After wiring it, the same mutation made the suite fail at the injected line.
+- Before the inventory fix, the new isolated-repository contract failed under Windows PowerShell 5.1 and PowerShell 7.6.4 because the gate could not enumerate the requested repository.
+- Final check-nsis-migration.test.ps1 under Windows PowerShell 5.1: icon, native-engine, package-file, syntax-inventory, syntax, real Source validator, and package contracts all passed.
+- Final check-nsis-migration.test.ps1 under PowerShell 7.6.4: the same contracts all passed.
+- npm run test:package-migration: 6/6 passed.
+- npm run test:brand-boundaries: 14/14 passed, zero unknown references.
+- npm run test:release-workflow: 40/40 passed.
+- npm run lint: exit 0.
+- npx tsc --noEmit: exit 0.
+- graphify update .: exit 0; 36,415 nodes and 74,999 edges.
+- git diff --cached --check: exit 0.
+
+Not claimed:
+- The full npm test aggregate was not rerun for this follow-up; its previously recorded local EPERM symlink limitation is unchanged and unrelated to these PowerShell-only changes.

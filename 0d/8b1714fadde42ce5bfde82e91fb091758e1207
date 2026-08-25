@@ -1,0 +1,15 @@
+Decision: remove the overbuilt Windows icon source-policy portal before reconstructing the minimal artifact validator.
+
+Why:
+- AST policing of Add-Type, reflection, aliases, dynamic commands, installed wrappers, and value flow was bypassable and produced false positives.
+- The authoritative contract is the observable packaged result: the executable icon must match the repository ICO.
+- This revert is intentionally recoverable and does not rewrite pushed history.
+
+Scope:
+- Reverts aa484039, ec17340a, and 1dc55a4a in reverse chronological order.
+- Returns the release-validator scope exactly to 86f5a8c2.
+- A following reconstruction commit will restore only the proven behavioral guarantees and the installer security contracts.
+
+Evidence actually executed:
+- git revert --no-commit aa484039 ec17340a 1dc55a4a: exit 0, no conflicts.
+- git diff --exit-code 86f5a8c2 -- .github/workflows/ci.yml scripts/release scripts/test-install-ps1.ps1: exit 0.
