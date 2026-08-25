@@ -130,7 +130,6 @@
   width: 100%;
   padding: var(--memory-topic-padding-y) var(--memory-topic-padding-x);
   border: 0;
-  border-bottom: 1px solid var(--edge);
   color: var(--ink);
   background: transparent;
   text-align: left;
