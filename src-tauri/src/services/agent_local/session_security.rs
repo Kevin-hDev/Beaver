@@ -1,6 +1,6 @@
 use super::sensitive_data::{
-    redact_high_confidence_string, redact_high_confidence_text, redact_json_preserving_shape,
-    redact_sensitive_json_field, redact_string,
+    redact_high_confidence_string, redact_high_confidence_text,
+    redact_json_high_confidence_preserving_shape, redact_json_preserving_shape, redact_string,
 };
 use super::types_ollama::ChatMessage;
 use super::types_session::SubagentLastActivity;
@@ -30,9 +30,8 @@ pub fn sanitize_chat_messages(messages: &mut [ChatMessage]) {
 }
 
 pub fn sanitize_session_value(value: &mut serde_json::Value) {
-    redact_session_json(value, 0, false);
+    sanitize_session_root(value);
     bound_context_snapshot(value);
-    sanitize_embedded_tool_data(value, 0);
 }
 
 fn bound_context_snapshot(value: &mut serde_json::Value) {
@@ -59,69 +58,95 @@ pub fn redacted_activity(value: &Option<SubagentLastActivity>) -> Option<Subagen
     })
 }
 
-fn sanitize_embedded_tool_data(value: &mut serde_json::Value, depth: usize) {
-    if depth > 32 {
+fn sanitize_session_root(value: &mut serde_json::Value) {
+    let Some(session) = value.as_object_mut() else {
+        redact_json_high_confidence_preserving_shape(value);
         return;
-    }
-    match value {
-        serde_json::Value::Array(items) => {
-            for item in items {
-                sanitize_embedded_tool_data(item, depth + 1);
-            }
+    };
+    for (key, item) in session {
+        match key.as_str() {
+            "messages" => sanitize_messages(item),
+            key if is_session_link(key) => {}
+            _ => redact_json_high_confidence_preserving_shape(item),
         }
-        serde_json::Value::Object(map) => {
-            let is_tool_message = matches!(
-                map.get("role").and_then(serde_json::Value::as_str),
-                Some("tool")
-            );
-            if is_tool_message {
-                redact_session_json(value, depth, true);
-                return;
-            }
-            for key in ["tool_calls", "tool_activities", "tools"] {
-                if let Some(tool_data) = map.get_mut(key) {
-                    redact_session_json(tool_data, depth + 1, true);
-                }
-            }
-            for (key, item) in map {
-                if !is_protected_session_field(key) {
-                    sanitize_embedded_tool_data(item, depth + 1);
-                }
-            }
-        }
-        _ => {}
     }
 }
 
-fn redact_session_json(value: &mut serde_json::Value, depth: usize, broad: bool) {
-    if depth > 32 {
+fn sanitize_messages(value: &mut serde_json::Value) {
+    let Some(messages) = value.as_array_mut() else {
+        redact_json_high_confidence_preserving_shape(value);
+        return;
+    };
+    for message in messages {
+        sanitize_message(message);
+    }
+}
+
+fn sanitize_message(value: &mut serde_json::Value) {
+    let Some(message) = value.as_object_mut() else {
+        redact_json_high_confidence_preserving_shape(value);
+        return;
+    };
+    let broad = message
+        .get("role")
+        .and_then(serde_json::Value::as_str)
+        .is_some_and(|role| role == "tool");
+    for (key, item) in message {
+        match key.as_str() {
+            "id" | "turn_id" | "tool_call_id" | "stream_run_id" | "continuation" => {}
+            "tool_calls" => sanitize_tool_calls(item),
+            "tool_activities" => redact_json_preserving_shape(item),
+            "segments" => sanitize_segments(item),
+            _ if broad => redact_json_preserving_shape(item),
+            _ => redact_json_high_confidence_preserving_shape(item),
+        }
+    }
+}
+
+fn sanitize_tool_calls(value: &mut serde_json::Value) {
+    let Some(calls) = value.as_array_mut() else {
         redact_json_preserving_shape(value);
         return;
-    }
-    match value {
-        serde_json::Value::String(content) if broad => redact_string(content),
-        serde_json::Value::String(content) => redact_high_confidence_string(content),
-        serde_json::Value::Array(items) => {
-            for item in items {
-                redact_session_json(item, depth + 1, broad);
+    };
+    for call in calls {
+        let Some(call) = call.as_object_mut() else {
+            redact_json_preserving_shape(call);
+            continue;
+        };
+        for (key, item) in call {
+            match key.as_str() {
+                "id" | "extra_content" => {}
+                _ => redact_json_preserving_shape(item),
             }
         }
-        serde_json::Value::Object(map) => {
-            for (key, item) in map {
-                if is_protected_session_field(key) {
-                    continue;
-                }
-                if !redact_sensitive_json_field(key, item) {
-                    redact_session_json(item, depth + 1, broad);
-                }
-            }
-        }
-        _ => {}
     }
 }
 
-fn is_protected_session_field(key: &str) -> bool {
-    matches!(key, "continuation" | "extra_content" | "id") || key.ends_with("_id")
+fn sanitize_segments(value: &mut serde_json::Value) {
+    redact_json_high_confidence_preserving_shape(value);
+    let Some(segments) = value.as_array_mut() else {
+        return;
+    };
+    for segment in segments {
+        if let Some(tools) = segment.get_mut("tools") {
+            redact_json_preserving_shape(tools);
+        }
+    }
+}
+
+fn is_session_link(key: &str) -> bool {
+    matches!(
+        key,
+        "id" | "active_todo_run_id"
+            | "active_plan_id"
+            | "gateway_channel_key"
+            | "project_id"
+            | "parent_session_id"
+            | "subagent_run_id"
+            | "clone_parent_session_id"
+            | "clone_parent_message_id"
+            | "clone_root_session_id"
+    )
 }
 
 #[cfg(test)]

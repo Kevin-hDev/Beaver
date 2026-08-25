@@ -10,7 +10,9 @@ use crate::services::reasoning_continuity::envelope::{
 };
 
 use super::session_limits::MAX_SESSION_FILE_BYTES;
-use super::types_session::{AgentMessage, ToolCallRequest, ToolCallRequestFunction};
+use super::types_session::{
+    AgentMessage, ToolActivityRecord, ToolCallRequest, ToolCallRequestFunction,
+};
 
 const CAPTURE_DATE: &str = "2026-08-25";
 const WRITER_COMMIT: &str = "2848a17e87fa641bff067dc4b5c9a2398bae6540";
@@ -155,16 +157,40 @@ async fn writer_redacts_visible_text_without_mutating_opaque_state_or_provider_i
         "google": {"thought_signature": "Bearer opaque-tool-signature-12345678"},
         "codex": {"output_items": [{"id": "sk-output-item-12345678"}]}
     });
+    let controlled_collisions = json!({
+        "id": "sk-controlled-id-12345678",
+        "continuation": "Bearer controlled-continuation-12345678",
+        "extra_content": "aaaaaaaaaaaaaaaaaaaa.bbbbb.cccccccccccccccccccc",
+        "provider_id": "sk-controlled-provider-id-12345678"
+    });
     session.messages[1].content = "sk-visible-content-12345678".into();
+    session.messages[1].id = "sk-message-id-12345678".into();
     session.messages[1].turn_id = "sk-turn-id-12345678".into();
+    session.messages[1].tool_call_id = Some("sk-linked-call-id-12345678".into());
     session.messages[1].continuation = Some(opaque.clone());
     session.messages[1].tool_calls = Some(vec![ToolCallRequest {
         id: "sk-provider-call-12345678".into(),
         extra_content: Some(tool_extra.clone()),
         function: ToolCallRequestFunction {
             name: "read_file".into(),
-            arguments: json!({"path":"fixture.txt"}),
+            arguments: controlled_collisions.clone(),
         },
+    }]);
+    session.messages[1].tool_activities = Some(vec![ToolActivityRecord {
+        name: "read_file".into(),
+        summary: "fixture".into(),
+        domain: None,
+        resolved_path: None,
+        args: Some(controlled_collisions.clone()),
+        result: Some(controlled_collisions.to_string()),
+        is_error: Some(false),
+        result_meta: None,
+        content: None,
+        old_text: None,
+        new_text: None,
+        start_line: None,
+        affected_paths: Vec::new(),
+        file_changes: Vec::new(),
     }]);
 
     super::session_store_document::write_to_path(path.clone(), &session)
@@ -175,7 +201,12 @@ async fn writer_redacts_visible_text_without_mutating_opaque_state_or_provider_i
         .expect("read v2");
 
     assert_eq!(restored.messages[1].content, "[REDACTED]");
+    assert_eq!(restored.messages[1].id, "sk-message-id-12345678");
     assert_eq!(restored.messages[1].turn_id, "sk-turn-id-12345678");
+    assert_eq!(
+        restored.messages[1].tool_call_id.as_deref(),
+        Some("sk-linked-call-id-12345678")
+    );
     assert_eq!(
         restored.messages[1].tool_calls.as_ref().unwrap()[0].id,
         "sk-provider-call-12345678"
@@ -185,6 +216,27 @@ async fn writer_redacts_visible_text_without_mutating_opaque_state_or_provider_i
         Some(tool_extra)
     );
     assert_eq!(restored.messages[1].continuation, Some(opaque));
+    let arguments = &restored.messages[1].tool_calls.as_ref().unwrap()[0]
+        .function
+        .arguments;
+    for key in ["id", "continuation", "extra_content", "provider_id"] {
+        assert_eq!(arguments[key], "[REDACTED]");
+    }
+    let activity = &restored.messages[1].tool_activities.as_ref().unwrap()[0];
+    let args = activity.args.as_ref().unwrap();
+    for key in ["id", "continuation", "extra_content", "provider_id"] {
+        assert_eq!(args[key], "[REDACTED]");
+    }
+    let result = activity.result.as_deref().unwrap();
+    for secret in [
+        "sk-controlled-id-12345678",
+        "controlled-continuation-12345678",
+        "aaaaaaaaaaaaaaaaaaaa.bbbbb.cccccccccccccccccccc",
+        "sk-controlled-provider-id-12345678",
+    ] {
+        assert!(!result.contains(secret));
+    }
+    assert!(result.contains("[REDACTED]"));
 }
 
 #[tokio::test]
