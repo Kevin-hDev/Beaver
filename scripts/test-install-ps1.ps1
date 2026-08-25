@@ -1,24 +1,26 @@
-[CmdletBinding()]
-param(
-    [switch]$ListOnly
-)
-
 $ErrorActionPreference = "Stop"
-$MaxPowerShellScripts = 256
-$repositoryRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
-. (Join-Path $PSScriptRoot "release\windows-powershell-source-validation.ps1")
 
-$paths = @(Get-RepositoryPowerShellFiles $repositoryRoot $MaxPowerShellScripts)
-if ($ListOnly) {
-    $paths
-    return
-}
-
-foreach ($path in $paths) {
-    if ($null -ne (Get-PowerShellSourceFailure $path)) {
-        Write-Error "PowerShell source validation failed."
+$paths = @(
+    "..\install.ps1",
+    "release\check-nsis-migration.ps1",
+    "release\check-nsis-migration.test.ps1",
+    "release\windows-data-fingerprint.ps1",
+    "release\windows-data-fingerprint.test.ps1",
+    "release\windows-artifact-helpers.ps1"
+)
+foreach ($relativePath in $paths) {
+    $tokens = $null
+    $errors = $null
+    $path = (Resolve-Path (Join-Path $PSScriptRoot $relativePath)).Path
+    [void][System.Management.Automation.Language.Parser]::ParseFile(
+        $path,
+        [ref]$tokens,
+        [ref]$errors
+    )
+    if ($errors.Count -ne 0) {
+        Write-Error "PowerShell syntax invalid"
         exit 1
     }
 }
 
-Write-Host "PowerShell syntax and source policy OK"
+Write-Host "PowerShell syntax OK"

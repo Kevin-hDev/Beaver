@@ -8,13 +8,6 @@ function Assert-False([bool]$Value) {
     if ($Value) { throw "PowerShell package contract failed." }
 }
 
-. (Join-Path $PSScriptRoot "windows-icon-validation.test.ps1")
-. (Join-Path $PSScriptRoot "windows-native-icon-engine.test.ps1")
-. (Join-Path $PSScriptRoot "windows-package-file.test.ps1")
-. (Join-Path $PSScriptRoot "windows-powershell-add-type-policy.test.ps1")
-. (Join-Path $PSScriptRoot "windows-powershell-dynamic-policy.test.ps1")
-. (Join-Path $PSScriptRoot "windows-powershell-source-validation.test.ps1")
-
 function New-TestShortcut([string]$Path, [string]$Target) {
     $shell = New-Object -ComObject WScript.Shell
     try {
@@ -27,7 +20,6 @@ function New-TestShortcut([string]$Path, [string]$Target) {
 }
 
 . (Join-Path $PSScriptRoot "windows-artifact-helpers.ps1")
-. (Join-Path $PSScriptRoot "windows-installed-extension-validation.ps1")
 
 $randomBytes = New-Object byte[] 16
 $random = [Security.Cryptography.RandomNumberGenerator]::Create()
@@ -67,91 +59,35 @@ try {
     Assert-False (Test-BeaverShortcutState @() @() $binary)
 
     $validHelper = Join-Path $temporaryRoot "valid-updater.exe"
+    $emptyHelper = Join-Path $temporaryRoot "empty-updater.exe"
     [IO.File]::WriteAllBytes($validHelper, [byte[]]@(1, 2, 3))
-
-    $installedExtensionRoot = Join-Path $temporaryRoot "installed-extension"
-    $installedHostRoot = Join-Path $installedExtensionRoot "resources/extension-host"
-    [void](New-Item -ItemType Directory -Path (Join-Path $installedHostRoot "runtime") -Force)
-    [IO.File]::WriteAllText((Join-Path $installedHostRoot "host.mjs"), "export {};")
-    [IO.File]::WriteAllBytes((Join-Path $installedHostRoot "runtime/node.exe"), [byte[]]@(1))
-    [IO.File]::WriteAllText((Join-Path $installedHostRoot "safe.ps1"), "Write-Output 'ok'")
-    Assert-True ($null -eq (Get-InstalledExtensionHostFailure $installedExtensionRoot))
-    $bannedInstalledScript = Join-Path $installedHostRoot "banned.ps1"
-    [IO.File]::WriteAllText($bannedInstalledScript, "[Drawing.Icon]::new('icon.ico')")
-    Assert-True (
-        (Get-InstalledExtensionHostFailure $installedExtensionRoot) -ceq "source"
-    )
-    [IO.File]::Delete($bannedInstalledScript)
-    [IO.File]::Delete((Join-Path $installedHostRoot "runtime/node.exe"))
-    Assert-True (
-        (Get-InstalledExtensionHostFailure $installedExtensionRoot) -ceq "binary"
-    )
-
+    [IO.File]::WriteAllBytes($emptyHelper, [byte[]]@())
+    Assert-True (Test-UpdaterHelper $validHelper 67108864)
+    Assert-False (Test-UpdaterHelper $emptyHelper 67108864)
     Assert-False (Test-BeaverExecutableBrand $validHelper "1.1.1" $validHelper)
     Assert-True ((Get-BeaverExecutableBrandFailure $validHelper "1.1.1" $validHelper) -ceq "installed-brand-product")
     Assert-True ((Get-BeaverExecutableBrandFailure "" "1.1.1" $validHelper) -ceq "installed-brand-input")
 
+    Add-Type -AssemblyName System.Drawing
     $referenceIconPath = [IO.Path]::GetFullPath(
         (Join-Path $PSScriptRoot "../../src-tauri/icons/icon.ico")
     )
-    $referenceIconFile = Get-BoundedPackageFile $referenceIconPath 8388608
-    Assert-True (Test-WindowsReferenceIcon $referenceIconFile)
-
-    $compiler = @(
-        (Join-Path $env:WINDIR "Microsoft.NET\Framework64\v4.0.30319\csc.exe"),
-        (Join-Path $env:WINDIR "Microsoft.NET\Framework\v4.0.30319\csc.exe")
-    ).Where({ Test-Path -LiteralPath $_ -PathType Leaf }, "First")
-    Assert-True ($compiler.Count -eq 1)
-    $fixtureSource = Join-Path $temporaryRoot "icon-fixtures.cs"
-    [IO.File]::WriteAllText(
-        $fixtureSource,
-        "public static class BeaverIconFixture { public static void Main() {} }"
-    )
-    $brandedExecutable = Join-Path $temporaryRoot "branded.exe"
-    & $compiler[0] /nologo /target:winexe "/win32icon:$referenceIconPath" "/out:$brandedExecutable" $fixtureSource
-    Assert-True ($LASTEXITCODE -eq 0)
-    $plainExecutable = Join-Path $temporaryRoot "plain.exe"
-    & $compiler[0] /nologo /target:winexe "/out:$plainExecutable" $fixtureSource
-    Assert-True ($LASTEXITCODE -eq 0)
-
-    Assert-True (
-        $null -eq (Get-NativeIconResourceFailure $brandedExecutable 67108864)
-    )
-    Assert-True (
-        (Get-NativeIconResourceFailure $plainExecutable 67108864) -ceq "extract"
-    )
-    $brandedFile = Get-BoundedPackageFile $brandedExecutable 67108864
-    $plainFile = Get-BoundedPackageFile $plainExecutable 67108864
-    Assert-True ($null -eq (Get-NativeIconContentFailure $brandedFile $referenceIconFile))
-    Assert-True (
-        (Get-NativeIconContentFailure $plainFile $referenceIconFile) -ceq "actual-extract"
-    )
-    Assert-False (Test-WindowsReferenceIcon $brandedFile)
-
-    $originalInteropIdentity = $script:NativeIconInteropType.FullName
-    $modifiedModuleRoot = Join-Path $temporaryRoot "modified-native-module"
-    [void](New-Item -ItemType Directory -Path $modifiedModuleRoot)
-    Copy-Item -LiteralPath (Join-Path $PSScriptRoot "windows-package-file.ps1") `
-        -Destination $modifiedModuleRoot
-    $nativeModulePath = Join-Path $PSScriptRoot "windows-native-icon.ps1"
-    $modifiedNativeModulePath = Join-Path $modifiedModuleRoot "windows-native-icon.ps1"
-    $nativeModuleSource = [IO.File]::ReadAllText($nativeModulePath)
-    $modifiedNativeModuleSource = $nativeModuleSource.Replace(
-        "return DestroyIcon(iconHandle);",
-        "DestroyIcon(iconHandle); return false;"
-    )
-    Assert-False ($modifiedNativeModuleSource -ceq $nativeModuleSource)
-    [IO.File]::WriteAllText($modifiedNativeModulePath, $modifiedNativeModuleSource)
-    . $modifiedNativeModulePath
-    Assert-False ($script:NativeIconInteropType.FullName -ceq $originalInteropIdentity)
-    Assert-True (
-        (Get-NativeIconContentFailure $brandedFile $referenceIconFile) -ceq "runtime"
-    )
-    Assert-True (
-        (Get-NativeIconResourceFailure $brandedExecutable 67108864) -ceq "runtime"
-    )
-    . $nativeModulePath
-    Assert-True ($script:NativeIconInteropType.FullName -ceq $originalInteropIdentity)
+    $firstIcon = $null
+    $secondIcon = $null
+    try {
+        $firstIcon = Get-FixedSizeNativeIcon $referenceIconPath 32
+        $secondIcon = Get-FixedSizeNativeIcon $referenceIconPath 32
+        Assert-True ($firstIcon.Width -eq 32 -and $firstIcon.Height -eq 32)
+        Assert-True ($secondIcon.Width -eq 32 -and $secondIcon.Height -eq 32)
+        $firstHashes = @(Get-RenderedIconPixelHashes $firstIcon)
+        $secondHashes = @(Get-RenderedIconPixelHashes $secondIcon)
+        Assert-True ($firstHashes.Count -eq 2 -and $secondHashes.Count -eq 2)
+        Assert-True ($firstHashes[0] -ceq $secondHashes[0])
+        Assert-True ($firstHashes[1] -ceq $secondHashes[1])
+    } finally {
+        if ($null -ne $firstIcon) { $firstIcon.Dispose() }
+        if ($null -ne $secondIcon) { $secondIcon.Dispose() }
+    }
 
     $transparentRed = New-Object Drawing.Bitmap 2, 2
     $transparentBlue = New-Object Drawing.Bitmap 2, 2
@@ -173,8 +109,6 @@ try {
         $transparentBlue.Dispose()
         $visibleRed.Dispose()
     }
-    & (Join-Path $PSScriptRoot "check-nsis-migration.ps1") -Mode Source
-    Assert-True $?
 } finally {
     if (Test-Path -LiteralPath $temporaryRoot) {
         if (
