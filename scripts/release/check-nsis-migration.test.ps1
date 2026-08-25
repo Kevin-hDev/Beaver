@@ -160,5 +160,7 @@ try {
 }
 
 & (Join-Path $PSScriptRoot "../test-install-ps1.ps1")
+Assert-True $?
 & (Join-Path $PSScriptRoot "check-nsis-migration.ps1") -Mode Source
+Assert-True $?
 Write-Host "PowerShell package contracts OK"
