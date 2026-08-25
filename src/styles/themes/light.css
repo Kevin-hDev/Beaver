@@ -55,7 +55,6 @@
   --edge-strong: #d3cfc8;
   /* Boutons secondaires — recette « présence » (spec phase 2 §1.1) */
   --btn-secondary-bg: #ffffff;
-  --btn-inner-highlight: rgba(255, 255, 255, 0.6);
   --field-bg: #f1efea;
 
   /* Surface variants */
@@ -73,11 +72,8 @@
   --tooltip-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
   --chat-composer-bg: rgba(215, 213, 208, 0.40);
   --chat-composer-border: var(--tooltip-border);
-  /* Relief — réglé sur banc d'essai avec Kevin les 24 et 25 août 2026
-     (docs/mokup/), voir src/styles/relief.css. Sur un fond clair rien ne
-     peut être plus clair que le fond : le trait y est de l'encre et non de
-     la lumière, il descend de 19 sous la luminance 245 du fond, et
-     l'ombre s'y fait beaucoup plus discrète. */
+  /* Relief — réglé sur docs/mokup/, voir src/styles/relief.css. Sur fond clair
+     le trait est de l'encre : il descend de 19 sous la luminance 245 du fond. */
   --relief-stroke-rgb: 0, 0, 0;
   --relief-stroke-top: 0.14;
   --relief-stroke-bottom: 0.04;

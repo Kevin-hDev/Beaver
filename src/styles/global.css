@@ -14,11 +14,8 @@
 @import "./drag-reorder.css";
 @import "./fields.css";
 
-/* Les arrondis ne sont plus ici : ils étaient déclarés une seconde fois,
-   avec leurs propres valeurs, et les deux listes divergeaient en silence —
-   changer tokens.css ne déplaçait alors que la moitié de l'application.
-   tokens.css fait seul autorité. Aucune classe `rounded-*` n'est utilisée
-   dans le projet, ce bloc ne servait donc qu'à les dupliquer. */
+/* Pas d'arrondi ici : tokens.css fait seul autorité. Ils y étaient déclarés
+   une seconde fois et les deux listes divergeaient en silence. */
 @theme {
   --font-sans: "Geist Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono Variable", ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;

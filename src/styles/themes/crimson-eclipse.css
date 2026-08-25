@@ -55,7 +55,6 @@
   --edge-strong: rgba(228, 228, 231, 0.18);
   /* Boutons secondaires — recette « présence » (spec phase 2 §1.1) */
   --btn-secondary-bg: rgba(228, 228, 231, 0.06);
-  --btn-inner-highlight: rgba(255, 255, 255, 0.04);
   --field-bg: rgba(0, 0, 0, 0.30);
 
   /* Surface variants */
@@ -73,15 +72,9 @@
   --tooltip-shadow: 0 5px 18px rgba(0, 0, 0, 0.48);
   --chat-composer-bg: rgba(31, 31, 35, 0.68);
   --chat-composer-border: rgba(228, 228, 231, 0.16);
-  /* Relief — réglé sur banc d'essai avec Kevin les 24 et 25 août 2026
-     (docs/mokup/), voir src/styles/relief.css. Le trait est une lumière :
-     sur ce fond (luminance 8), il ressort de +30 et l'ombre creuse
-     de 4,3.
-     Réglage propre aux deux fonds les plus noirs de Beaver : l'ombre n'a
-     presque plus de noir à creuser, alors le trait du haut reprend son
-     travail et un filet revient en bas, là où les quatre autres thèmes
-     n'ont rien. Le décalage de l'ombre passe de 3 à 5 px : à défaut de
-     porter plus fort, elle porte plus loin. */
+  /* Relief — réglé sur docs/mokup/, voir src/styles/relief.css. Fond si noir
+     (luminance 8) que l'ombre ne peut creuser que de 4,3 : le trait du haut
+     reprend son travail et un filet revient en bas. */
   --relief-stroke-rgb: 255, 255, 255;
   --relief-stroke-top: 0.12;
   --relief-stroke-bottom: 0.04;

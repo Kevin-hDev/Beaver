@@ -1,29 +1,17 @@
-/* ==================================================================
-   relief.css — la primitive de relief de Beaver : un trait éclairé par
-   le haut, et une ombre pour l'épaisseur.
-
-   Autorité unique. Tout objet qui doit se détacher du fond porte la
-   classe `.relief` ; aucun composant ne redessine son propre contour.
-
-   Réglée sur banc d'essai avec Kevin les 24 et 25 août 2026
-   (docs/mokup/), thème par thème, mesure au pixel à l'appui. Les sept
-   valeurs vives vivent dans src/styles/themes/ : chaque thème a son
-   fond, donc son réglage.
-   ================================================================== */
+/* Relief — trait éclairé par le haut, ombre pour l'épaisseur.
+   Autorité unique : aucun composant ne redessine son contour.
+   Valeurs par thème dans src/styles/themes/, réglées sur docs/mokup/. */
 
 [data-theme] {
-  /* Épaisseur du trait, commune aux six thèmes. Un demi-pixel : c'est
-     la finesse qui distingue un contour dessiné d'un cadre posé. */
   --relief-stroke-width: 0.5px;
+  /* Sur un écran sans densité double, 0.5px occupe un pixel entier et
+     paraît deux fois plus épais — voir la règle en bas de fichier. */
+  --relief-stroke-scale: 1;
+  --relief-top: calc(var(--relief-stroke-top) * var(--relief-stroke-scale));
+  --relief-bottom: calc(var(--relief-stroke-bottom) * var(--relief-stroke-scale));
 
-  /* --- Élévation : trois hauteurs, une seule recette ---------------
-     L'ombre dit à quelle hauteur flotte l'objet. Trois valeurs
-     indépendantes divergeraient au premier ajustement ; celles-ci
-     dérivent toutes du réglage du thème, donc le rapport entre les
-     trois ne peut pas se perdre.
-     · posé      — boutons, champs, pastilles : touchent la page
-     · flottant  — champ de saisie, menus, infobulles : décollés
-     · au-dessus — fenêtres, notifications : recouvrent le reste       */
+  /* Trois hauteurs dérivées d'un seul réglage : posé (boutons, champs),
+     flottant (champ de saisie, menus), au-dessus (fenêtres, notifications). */
   --elev-rest: 0 calc(var(--relief-shadow-y) * 0.5)
     calc(var(--relief-shadow-blur) * 0.5)
     rgba(0, 0, 0, calc(var(--relief-shadow-alpha) * 0.8));
@@ -34,16 +22,22 @@
     rgba(0, 0, 0, min(1, calc(var(--relief-shadow-alpha) * 1.15)));
 }
 
-/* Le trait vit dans une couronne masquée et non dans `border` : une
-   bordure en dégradé posée sur la boîte transparaît sous un fond
-   translucide et éclaircit tout l'intérieur de l'objet. Mesuré sur le
-   banc d'essai : le fond du champ passait de 28 à 45. */
-.relief {
+/* Les objets nommés ici portent le trait sans avoir à écrire la classe :
+   le CSS ne sait pas hériter d'une règle, et une couronne par composant
+   finirait par diverger. Les deux listes sont identiques. */
+.relief,
+.btn:not(.btn-ghost),
+.icon-btn-secondary {
   position: relative;
   border: 0;
 }
 
-.relief::before {
+/* Couronne masquée et non `border` : une bordure en dégradé transparaît
+   sous un fond translucide et éclaircit tout l'intérieur (mesuré 45 au
+   lieu de 28 sur le banc d'essai). */
+.relief::before,
+.btn:not(.btn-ghost)::before,
+.icon-btn-secondary::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -51,8 +45,8 @@
   padding: var(--relief-stroke-width);
   background: linear-gradient(
     180deg,
-    rgba(var(--relief-stroke-rgb), var(--relief-stroke-top)),
-    rgba(var(--relief-stroke-rgb), var(--relief-stroke-bottom))
+    rgba(var(--relief-stroke-rgb), var(--relief-top)),
+    rgba(var(--relief-stroke-rgb), var(--relief-bottom))
   );
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
@@ -65,18 +59,27 @@
   pointer-events: none;
 }
 
-/* Sur un écran sans densité double — la plupart des Windows et Linux —
-   un trait de 0.5px occupe un pixel entier : il paraît deux fois plus
-   épais que sur le Mac où il a été réglé. On lui retire une part de son
-   encre pour retrouver la même présence. */
 @media (max-resolution: 1.5dppx) {
-  .relief::before {
-    background: linear-gradient(
-      180deg,
-      rgba(var(--relief-stroke-rgb), calc(var(--relief-stroke-top) * 0.6)),
-      rgba(var(--relief-stroke-rgb), calc(var(--relief-stroke-bottom) * 0.6))
-    );
+  [data-theme] {
+    --relief-stroke-scale: 0.6;
   }
+}
+
+/* Un champ est creusé : pas d'ombre portée, et c'est son bord inférieur
+   qui capte la lumière. Des ombres internes plutôt que la couronne —
+   `.field` est posée sur des `<input>`, qui ne rendent aucun
+   pseudo-élément. Mêmes valeurs des deux côtés. */
+.field {
+  border: 0;
+  box-shadow:
+    inset 0 var(--relief-stroke-width) 0
+      rgba(var(--relief-stroke-rgb), calc(var(--relief-top) * 0.35)),
+    inset 0 calc(var(--relief-stroke-width) * -1) 0
+      rgba(var(--relief-stroke-rgb), calc(var(--relief-top) * 1.1)),
+    inset var(--relief-stroke-width) 0 0
+      rgba(var(--relief-stroke-rgb), calc(var(--relief-top) * 0.7)),
+    inset calc(var(--relief-stroke-width) * -1) 0 0
+      rgba(var(--relief-stroke-rgb), calc(var(--relief-top) * 0.7));
 }
 
 .elev-rest {
@@ -91,14 +94,7 @@
   box-shadow: var(--elev-above);
 }
 
-/* Focus clavier — décision de Kevin, 25 août 2026 : l'objet au focus
-   garde exactement son apparence normale. Ni anneau, ni halo, ni
-   couleur d'accent. Ce que le navigateur dessinerait de lui-même est
-   retiré aussi, comme partout ailleurs (src/styles/focus.css).
-
-   Réserve consignée : sur un champ, le curseur de saisie qui clignote
-   dit où l'on est ; sur un bouton, plus rien ne le dit, et la
-   navigation au clavier ne montre plus ce qu'on s'apprête à activer. */
+/* Le focus ne produit aucun changement visuel — décision de Kevin. */
 .relief:focus-visible,
 .relief:focus-within {
   outline: none;

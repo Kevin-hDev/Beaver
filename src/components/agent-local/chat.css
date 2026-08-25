@@ -150,11 +150,9 @@
   min-width: 0;
 }
 
-/* Le champ de saisie n'a plus de fond ni de bordure propres : son trait
-   éclairé par le haut et son ombre le dessinent seuls (`relief elev-float`,
-   posés dans chat-input.tsx — voir src/styles/relief.css). Le fond a été
-   retiré à dessein : plus clair que la page, il empêchait le bas du trait
-   de s'éteindre, et le relief restait bosselé au lieu d'être éclairé. */
+/* Ni fond ni bordure propres : le trait et l'ombre le dessinent seuls
+   (`relief elev-float`, posés dans chat-input.tsx). Le fond, plus clair que
+   la page, empêchait le bas du trait de s'éteindre. */
 .chat-input-bubble {
   width: 100%;
   border-radius: var(--radius);

@@ -134,8 +134,9 @@ describe("champs et listes dépliantes", () => {
   });
 
   it("n'habille pas le champ d'un relief de bouton", () => {
-    // Le liseré intérieur annonce qu'on peut cliquer. Un champ se creuse.
-    expect(fieldsCss).not.toContain("--btn-inner-highlight");
+    // Un bouton se pose et projette son ombre ; un champ se creuse.
+    expect(fieldsCss).not.toMatch(/box-shadow:\s*(?!inset)/);
+    expect(fieldsCss).not.toContain("var(--elev-");
   });
 });
 

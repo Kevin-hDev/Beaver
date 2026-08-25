@@ -55,7 +55,6 @@
   --edge-strong: rgba(255, 255, 255, 0.12);
   /* Boutons secondaires — recette « présence » (spec phase 2 §1.1) */
   --btn-secondary-bg: rgba(255, 255, 255, 0.05);
-  --btn-inner-highlight: rgba(255, 255, 255, 0.04);
   --field-bg: rgba(0, 0, 0, 0.22);
 
   /* Surface variants */
@@ -73,10 +72,8 @@
   --tooltip-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
   --chat-composer-bg: var(--surface-glass);
   --chat-composer-border: var(--tooltip-border);
-  /* Relief — réglé sur banc d'essai avec Kevin les 24 et 25 août 2026
-     (docs/mokup/), voir src/styles/relief.css. Le trait est une lumière :
-     sur ce fond (luminance 18), il ressort de +19 et l'ombre creuse
-     de 10. */
+  /* Relief — réglé sur docs/mokup/, voir src/styles/relief.css.
+     Sur ce fond (luminance 18), le trait ressort de +19, l'ombre creuse de 10. */
   --relief-stroke-rgb: 255, 255, 255;
   --relief-stroke-top: 0.08;
   --relief-stroke-bottom: 0;
