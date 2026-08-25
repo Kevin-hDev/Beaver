@@ -2,7 +2,9 @@ use crate::services::agent_local::types_session::{AgentSession, AgentSessionMeta
 pub use super::session_id::validate_session_id;
 pub(crate) use super::session_locks::lock_session;
 pub use super::session_locks::remove_session_lock;
-pub use super::session_store_messages::{add_messages, add_messages_with_context};
+pub use super::session_store_messages::add_messages;
+#[cfg(test)]
+pub use super::session_store_messages::add_messages_with_context;
 pub use super::session_store_create::{
     create_full, create_gateway, create_with_project, create_with_project_and_fast_mode,
 };
@@ -106,11 +108,10 @@ pub async fn restore(id: &str) -> Result<(), String> {
 }
 
 pub use super::session_archive::list_archived;
-pub use super::session_ops::{clear_project_id, export_markdown, truncate_and_replace};
+pub use super::session_ops::{clear_project_id, export_markdown};
 pub use super::session_store_updates::{
-    assign_project_if_missing, refresh_working_dir, set_managed_working_dir,
-    switch_working_dir_to_project, update_fast_mode, update_model, update_reasoning,
-    update_working_dir,
+    refresh_working_dir, set_managed_working_dir, switch_working_dir_to_project,
+    update_fast_mode, update_model, update_reasoning, update_working_dir,
 };
 
 #[path = "session_store_tests.rs"]

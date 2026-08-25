@@ -6,7 +6,6 @@ import { useAgentPermissionDelivery } from "./use-agent-permission-delivery";
 import { listenGatewaySessionUpdates } from "./use-gateway-session-updates";
 import { clearInteractiveChoiceState, EMPTY_CHAT_STATE, type ChatState } from "./agent-chat-stream-callbacks";
 import { resolveSessionContext } from "./agent-token-estimate";
-import { createEditedUserMessage } from "./agent-message-builders";
 import { useAgentMissingDirectory } from "./use-agent-missing-directory";
 import { useAgentMessageSend } from "./use-agent-message-send";
 import { showToast } from "@/lib/toast-emitter";
@@ -164,24 +163,33 @@ export function useAgentChat(
     if (!sessionId) return;
     const idx = state.messages.findIndex((m) => m.id === messageId);
     if (idx < 0) return;
+    const userIdx = findUserMessageAtOrBefore(state.messages, idx);
+    if (userIdx < 0) return;
+    const userMessage = state.messages[userIdx];
     try {
-      await invoke("truncate_and_replace_at", { sessionId, messageId, replacement: null });
+      await invoke("truncate_and_replace_at", {
+        sessionId,
+        input: { message_id: userMessage.id, new_content: userMessage.content },
+      });
     } catch (error) {
       showToast(admissionErrorMessage(error, i18n.t, "errors.sessionSaveFailed"), "error");
       return;
     }
     const freshTokenCount = await syncTokenCount();
-    const msgs = state.messages.slice(0, idx + 1);
+    const msgs = state.messages.slice(0, userIdx + 1);
     await doStream(msgs, msgs, sessionId, undefined, freshTokenCount, permModeRef.current);
   }, [sessionId, state.messages, doStream, syncTokenCount]);
 
   const edit = useCallback(async (messageId: string, newContent: string) => {
     if (!sessionId) return;
     const idx = state.messages.findIndex((m) => m.id === messageId);
-    if (idx < 0) return;
-    const newMsg = createEditedUserMessage(state.messages[idx], newContent);
+    if (idx < 0 || state.messages[idx].role !== "user") return;
+    const newMsg = { ...state.messages[idx], content: newContent };
     try {
-      await invoke("truncate_and_replace_at", { sessionId, messageId, replacement: newMsg });
+      await invoke("truncate_and_replace_at", {
+        sessionId,
+        input: { message_id: messageId, new_content: newContent },
+      });
     } catch (error) {
       showToast(admissionErrorMessage(error, i18n.t, "errors.sessionSaveFailed"), "error");
       return;
@@ -209,4 +217,11 @@ export function useAgentChat(
     dismissForbiddenDirectory: dismissForbidden,
     sendMessage, reload, edit, stop, clearInteractiveChoice,
   };
+}
+
+function findUserMessageAtOrBefore(messages: AgentMessage[], index: number): number {
+  for (let cursor = index; cursor >= 0; cursor -= 1) {
+    if (messages[cursor].role === "user") return cursor;
+  }
+  return -1;
 }

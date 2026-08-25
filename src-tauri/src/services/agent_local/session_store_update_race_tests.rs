@@ -277,15 +277,18 @@ fn user_session_writers_are_routed_through_the_shared_lock_gate() {
     let clone_git_cleanup = include_str!("clone_git_cleanup.rs");
     let tabs_git = include_str!("session_tabs_git.rs");
     let session_ops = include_str!("session_ops.rs");
+    let session_mutations = include_str!("session_mutations.rs");
     let delegate_child = include_str!("tool_delegate_child.rs");
 
-    assert_eq!(updates.matches("update_locked(id, |session|").count(), 4);
+    assert_eq!(updates.matches("update_locked(id, |session|").count(), 3);
     assert!(store.contains("session_store_updates::update_locked(id, |session|"));
-    assert!(commands.contains("session_store::assign_project_if_missing"));
+    assert!(commands.contains("session_ops::apply_metadata_patch"));
     assert_eq!(clone_git.matches("lock_session(clone_session_id)").count(), 2);
     assert!(clone_git_link.contains("lock_session(clone_session_id)"));
     assert!(clone_git_cleanup.contains("lock_session(session_id)"));
     assert!(tabs_git.contains("lock_session(&tab.session_id)"));
     assert!(session_ops.contains("session_store_updates::update_locked(&meta.id"));
+    assert!(session_mutations.contains("session_store_updates::update_locked(id"));
+    assert!(session_mutations.contains("session_store::lock_session(id)"));
     assert!(delegate_child.contains("lock_session(&child.id)"));
 }

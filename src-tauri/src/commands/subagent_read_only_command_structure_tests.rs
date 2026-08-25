@@ -32,7 +32,7 @@ fn child_guard_runs_before_each_user_session_mutation() {
     let source = include_str!("agent_sessions.rs");
     for (command, boundary) in [
         (
-            "pub async fn assign_session_project",
+            "pub async fn update_session_project",
             "directory_access::project_path",
         ),
         ("pub async fn rename_agent_session", "session_store::rename"),
@@ -42,7 +42,7 @@ fn child_guard_runs_before_each_user_session_mutation() {
         ),
         (
             "pub async fn add_messages_to_session",
-            "add_messages_with_context",
+            "add_visible_messages_with_context",
         ),
         (
             "pub async fn update_session_model",
@@ -58,7 +58,7 @@ fn child_guard_runs_before_each_user_session_mutation() {
         ),
         (
             "pub async fn truncate_and_replace_at",
-            "session_store::truncate_and_replace",
+            "session_ops::edit_user_message",
         ),
     ] {
         assert_guard_precedes(command_body(source, command), boundary);

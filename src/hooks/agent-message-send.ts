@@ -8,6 +8,7 @@ import { showToast } from "@/lib/toast-emitter";
 import { admissionErrorMessage } from "@/lib/admission-error";
 import i18n from "@/i18n";
 import type { AgentMessage } from "@/types/agent";
+import { toVisibleMessageInput } from "./agent-visible-message-input";
 
 export interface AgentSendPayload {
   text: string;
@@ -39,7 +40,7 @@ interface PersistAgentMessageOptions extends AgentSendPayload {
 export async function persistAgentMessage(options: PersistAgentMessageOptions) {
   if (options.projectId && options.messages.length === 0) {
     try {
-      await invoke("assign_session_project", {
+      await invoke("update_session_project", {
         id: options.sessionId,
         projectId: options.projectId,
       });
@@ -72,7 +73,7 @@ export async function persistAgentMessage(options: PersistAgentMessageOptions) {
   try {
     await invoke("add_messages_to_session", {
       id: options.sessionId,
-      messages: [userMessage],
+      messages: [toVisibleMessageInput(userMessage)],
       tokens: 0,
     });
   } catch (error) {

@@ -1,4 +1,8 @@
-use super::session_store::{get, list, lock_session, save, validate_session_id};
+use super::session_store::{get, list, validate_session_id};
+#[cfg(test)]
+use super::session_store::{lock_session, save};
+
+pub use super::session_mutations::{apply_metadata_patch, edit_user_message};
 
 pub async fn export_markdown(id: &str) -> Result<String, String> {
     validate_session_id(id)?;
@@ -16,6 +20,7 @@ pub async fn export_markdown(id: &str) -> Result<String, String> {
     Ok(md)
 }
 
+#[cfg(test)]
 pub async fn truncate_and_replace(
     session_id: &str,
     message_id: &str,

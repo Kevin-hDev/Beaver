@@ -1,5 +1,8 @@
+use crate::models::agent_session_contract::{
+    EditUserMessageInput, SessionMetadataPatch, VisibleMessageInput,
+};
 use crate::services::agent_local::session_store;
-use crate::services::agent_local::types_session::{AgentMessage, AgentSession, AgentSessionMeta};
+use crate::services::agent_local::types_session::AgentSessionMeta;
 
 #[tauri::command]
 pub async fn list_agent_sessions() -> Result<Vec<AgentSessionMeta>, String> {
@@ -29,15 +32,17 @@ pub async fn list_archived_agent_sessions() -> Result<Vec<AgentSessionMeta>, Str
 }
 
 #[tauri::command]
-pub async fn get_agent_session(id: String) -> Result<AgentSession, String> {
-    session_store::get(&id).await
-}
-
-#[tauri::command]
-pub async fn assign_session_project(id: String, project_id: String) -> Result<bool, String> {
+pub async fn update_session_project(id: String, project_id: String) -> Result<(), String> {
     crate::services::agent_local::session_user_write::ensure_allowed(&id).await?;
     crate::services::agent_local::directory_access::project_path(&project_id).await?;
-    session_store::assign_project_if_missing(&id, &project_id).await
+    crate::services::agent_local::session_ops::apply_metadata_patch(
+        &id,
+        SessionMetadataPatch {
+            project_id: Some(project_id),
+            ..SessionMetadataPatch::default()
+        },
+    )
+    .await
 }
 
 #[tauri::command]
@@ -80,42 +85,32 @@ pub async fn resolve_missing_session_directory(
 #[tauri::command]
 pub async fn add_messages_to_session(
     id: String,
-    messages: Vec<AgentMessage>,
+    messages: Vec<VisibleMessageInput>,
     tokens: u32,
     context_tokens: Option<u32>,
     context_limit: Option<u32>,
 ) -> Result<(), String> {
     crate::services::agent_local::session_user_write::ensure_allowed(&id).await?;
-    session_store::add_messages_with_context(&id, messages, tokens, context_tokens, context_limit)
-        .await
+    crate::services::agent_local::session_store_messages::add_visible_messages_with_context(
+        &id,
+        messages,
+        tokens,
+        context_tokens,
+        context_limit,
+    )
+    .await
 }
 
 #[tauri::command]
-pub async fn create_agent_session(
-    name: String,
-    model: String,
-    provider: Option<String>,
-    project_id: Option<String>,
-    reasoning_mode: Option<String>,
-    supports_thinking: Option<bool>,
-    fast_mode_enabled: Option<bool>,
-) -> Result<AgentSession, String> {
-    let provider = provider.unwrap_or_else(|| "ollama".to_string());
-    let mut session = session_store::create_with_project_and_fast_mode(
-        &name,
-        &model,
-        &provider,
-        project_id,
-        fast_mode_enabled.unwrap_or(false),
-    )
-    .await?;
-    if reasoning_mode.is_some() {
-        session_store::update_reasoning(&session.id, reasoning_mode, supports_thinking).await?;
-        if let Ok(updated) = session_store::get(&session.id).await {
-            session = updated;
-        }
+pub async fn update_session_metadata(
+    id: String,
+    patch: SessionMetadataPatch,
+) -> Result<(), String> {
+    crate::services::agent_local::session_user_write::ensure_allowed(&id).await?;
+    if let Some(project_id) = patch.project_id.as_deref() {
+        crate::services::agent_local::directory_access::project_path(project_id).await?;
     }
-    Ok(session)
+    crate::services::agent_local::session_ops::apply_metadata_patch(&id, patch).await
 }
 
 #[tauri::command]
@@ -203,9 +198,8 @@ pub async fn export_agent_session_markdown(id: String) -> Result<String, String>
 #[tauri::command]
 pub async fn truncate_and_replace_at(
     session_id: String,
-    message_id: String,
-    replacement: Option<AgentMessage>,
+    input: EditUserMessageInput,
 ) -> Result<(), String> {
     crate::services::agent_local::session_user_write::ensure_allowed(&session_id).await?;
-    session_store::truncate_and_replace(&session_id, &message_id, replacement).await
+    crate::services::agent_local::session_ops::edit_user_message(&session_id, input).await
 }

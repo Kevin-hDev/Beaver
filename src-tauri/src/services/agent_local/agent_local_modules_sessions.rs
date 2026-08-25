@@ -20,6 +20,7 @@ mod session_migration_wire;
 #[cfg(test)]
 mod session_migration_tests;
 pub mod session_ops;
+mod session_mutations;
 pub mod session_order;
 pub mod session_pin;
 pub mod session_security;
@@ -31,6 +32,15 @@ pub(crate) mod session_store_messages;
 pub mod session_store_todos;
 pub mod session_store_updates;
 mod session_store_update_gate;
+pub mod session_view;
+mod session_view_message;
+mod session_visible_input;
+#[cfg(test)]
+mod session_view_contract_tests;
+#[cfg(test)]
+mod session_view_mutation_tests;
+#[cfg(test)]
+mod session_view_test_support;
 #[cfg(test)]
 mod session_fast_mode_tests;
 pub mod session_subagents;

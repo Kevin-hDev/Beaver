@@ -9,7 +9,10 @@ vi.mock("@/lib/toast-emitter", () => ({ showToast: vi.fn() }));
 vi.mock("@/i18n", () => ({ default: { t: (key: string) => key } }));
 
 describe("persistAgentMessage", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    invoke.mockReset().mockResolvedValue(undefined);
+  });
 
   it("ne relance pas le stream lorsque le message rejoint le run actif", async () => {
     const doStream = vi.fn();
@@ -60,7 +63,7 @@ describe("persistAgentMessage", () => {
 
   it("arrête l'envoi si l'association du projet est refusée", async () => {
     invoke.mockImplementation((command: string) => {
-      if (command === "assign_session_project") {
+      if (command === "update_session_project") {
         return Promise.reject(new Error("subagent-read-only"));
       }
       return Promise.resolve(undefined);
@@ -88,11 +91,14 @@ describe("persistAgentMessage", () => {
       doStream: vi.fn(),
     });
 
-    expect(invoke).toHaveBeenCalledWith("assign_session_project", {
+    expect(invoke).toHaveBeenCalledWith("update_session_project", {
       id: "session-1",
       projectId: "project-1",
     });
     expect(invoke).not.toHaveBeenCalledWith("get_agent_session", expect.anything());
-    expect(invoke).not.toHaveBeenCalledWith("save_agent_session", expect.anything());
+    expect(invoke.mock.calls.map(([command]) => String(command))).toEqual([
+      "update_session_project",
+      "add_messages_to_session",
+    ]);
   });
 });

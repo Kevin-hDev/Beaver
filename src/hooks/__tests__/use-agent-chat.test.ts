@@ -19,8 +19,7 @@ const getStreamSnapshot = vi.fn(() => null);
 
 interface TruncatePayload {
   sessionId: string;
-  messageId: string;
-  replacement: AgentMessage | null;
+  input: { message_id: string; new_content: string };
 }
 
 let lastStreamMessages: AgentMessage[] | null = null;
@@ -56,6 +55,12 @@ const session: AgentSession = {
   provider: "ollama",
   thinking_enabled: false,
   fast_mode_enabled: false,
+  plan_mode_enabled: false,
+  plan_workflow_status: "needs_context",
+  is_heartbeat: false,
+  is_gateway: false,
+  working_dir: "",
+  working_dir_managed: false,
   messages: [
     { id: "m1", role: "user", content: "Salut", files: [], timestamp: "2026-06-24T10:00:00Z" },
     { id: "m2", role: "assistant", content: "Bonjour", files: [], timestamp: "2026-06-24T10:00:01Z" },
@@ -86,8 +91,7 @@ describe("useAgentChat", () => {
 
     expect(invoke).toHaveBeenCalledWith("truncate_and_replace_at", {
       sessionId: "session-1",
-      messageId: "m2",
-      replacement: null,
+      input: { message_id: "m1", new_content: "Salut" },
     });
     expect(invoke).not.toHaveBeenCalledWith("truncate_session_at", expect.anything());
     expect(startStream).toHaveBeenCalled();
@@ -183,10 +187,10 @@ describe("useAgentChat", () => {
     });
 
     expect(lastTruncatePayload?.sessionId).toBe("session-1");
-    expect(lastTruncatePayload?.messageId).toBe("m1");
-    expect(lastTruncatePayload?.replacement?.role).toBe("user");
-    expect(lastTruncatePayload?.replacement?.content).toBe("Décris mieux cette image");
-    expect(lastTruncatePayload?.replacement?.files).toEqual([imageFile]);
+    expect(lastTruncatePayload?.input).toEqual({
+      message_id: "m1",
+      new_content: "Décris mieux cette image",
+    });
     expect(lastStreamMessages?.[0]?.files).toEqual([imageFile]);
   });
 

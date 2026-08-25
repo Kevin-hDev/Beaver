@@ -28,6 +28,11 @@ const session: AgentSession = {
   fast_mode_enabled: false,
   project_id: "project-1",
   working_dir: "/private/tmp/stale-directory",
+  working_dir_managed: false,
+  plan_mode_enabled: false,
+  plan_workflow_status: "needs_context",
+  is_heartbeat: false,
+  is_gateway: false,
   messages: [
     {
       id: "m1",

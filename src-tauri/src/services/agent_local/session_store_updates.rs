@@ -20,17 +20,6 @@ pub async fn update_fast_mode(id: &str, enabled: bool) -> Result<bool, String> {
     .await
 }
 
-pub async fn assign_project_if_missing(id: &str, project_id: &str) -> Result<bool, String> {
-    update_locked(id, |session| {
-        if session.project_id.is_some() {
-            return false;
-        }
-        session.project_id = Some(project_id.to_string());
-        true
-    })
-    .await
-}
-
 pub async fn update_model(
     id: &str,
     model: &str,

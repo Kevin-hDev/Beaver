@@ -1,3 +1,4 @@
+use crate::models::agent_session_contract::VisibleMessageInput;
 use crate::services::agent_local::session_permission_state;
 use crate::services::agent_local::session_store;
 pub(super) use crate::services::agent_local::session_user_write::SUBAGENT_READ_ONLY;
@@ -57,6 +58,28 @@ pub(super) fn user_message(content: &str) -> AgentMessage {
         segments: None,
         files: Vec::new(),
         timestamp: chrono::Utc::now(),
+        tokens: 0,
+        work_duration_ms: None,
+        skill_names: None,
+        stream_run_id: None,
+        stream_part: None,
+    }
+}
+
+pub(super) fn visible_user_message(content: &str) -> VisibleMessageInput {
+    let message = user_message(content);
+    VisibleMessageInput {
+        id: message.id,
+        role: message.role,
+        content: message.content,
+        thinking: None,
+        tool_calls: None,
+        tool_name: None,
+        tool_call_id: None,
+        tool_activities: None,
+        segments: None,
+        files: Vec::new(),
+        timestamp: message.timestamp,
         tokens: 0,
         work_duration_ms: None,
         skill_names: None,

@@ -10,6 +10,7 @@ import { flushFrameNotify } from "./agent-stream-notify";
 import { startUiPersistence } from "./agent-stream-persistence-owner";
 import type { StreamKind } from "./agent-chat-stream-types";
 import type { AgentMessage } from "@/types/agent";
+import { toVisibleMessageInput } from "./agent-visible-message-input";
 
 export interface StreamSnapshot extends ChatState {
   pendingPermissions: PermissionRequestState[];
@@ -90,7 +91,7 @@ export function persistMessages(
 ) {
   if (final) record.state = { ...record.state, persisted: true };
   const run = () => Promise.resolve(invoke("add_messages_to_session", {
-    id: sessionId, messages, tokens,
+    id: sessionId, messages: messages.map(toVisibleMessageInput), tokens,
     contextTokens: final && record.state.hasContextUsageSnapshot
       ? record.state.sessionTokenCount
       : null,

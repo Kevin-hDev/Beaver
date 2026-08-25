@@ -1,3 +1,4 @@
+pub mod agent_session_contract;
 pub mod config;
 pub mod file_tree;
 pub mod gateway_config;
@@ -8,6 +9,8 @@ pub use config::*;
 pub use gateway_config::*;
 pub use mascot::*;
 
+#[cfg(test)]
+mod agent_session_contract_tests;
 #[cfg(test)]
 mod file_tree_tests;
 #[cfg(test)]

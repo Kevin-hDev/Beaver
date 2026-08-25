@@ -21,7 +21,7 @@ describe("collectFileOperationGroups avec bash", () => {
     ]);
   });
 
-  it("inclut les fichiers touchés lors de la continuation d'un processus", () => {
+  it("inclut les fichiers touchés lors de la suite d'un processus", () => {
     const operations = collectFileOperations([], {
       liveTools: [tool({
         name: "bash_control",
