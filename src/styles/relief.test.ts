@@ -6,6 +6,7 @@ const globalCss = readFileSync("src/styles/global.css", "utf8");
 const tokensCss = readFileSync("src/styles/tokens.css", "utf8");
 const chatCss = readFileSync("src/components/agent-local/chat.css", "utf8");
 const chatInputTsx = readFileSync("src/components/agent-local/chat-input.tsx", "utf8");
+const appLayoutCss = readFileSync("src/components/layout/app-layout.css", "utf8");
 
 const themeCss = {
   dark: readFileSync("src/styles/themes/dark.css", "utf8"),
@@ -112,6 +113,14 @@ describe("Arrondi unique", () => {
 
   it("n'est plus déclaré une seconde fois dans la feuille globale", () => {
     expect(globalCss).not.toMatch(/@theme\s*\{[^}]*--radius/s);
+  });
+
+  it("laisse au cadre de la fenêtre le coin de macOS", () => {
+    // Les panneaux touchent le bord : un coin plus serré que celui du système
+    // laisse un liseré entre les deux.
+    expect(token(tokensCss, "--radius-window")).toBe("16px");
+    expect(appLayoutCss).not.toContain("var(--radius)");
+    expect(appLayoutCss).not.toContain("var(--radius-panel)");
   });
 });
 

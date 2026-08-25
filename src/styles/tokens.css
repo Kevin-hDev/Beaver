@@ -25,6 +25,10 @@
   --radius-md: var(--radius);
   --radius-panel: var(--radius);
   --radius-md-bubble: var(--radius);
+  /* Le cadre de la fenêtre suit le coin arrondi de macOS, pas l'arrondi de
+     Beaver : les panneaux touchent le bord, et un coin plus serré que celui
+     du système laisse un liseré entre les deux. Il ne bouge pas avec --radius. */
+  --radius-window: 16px;
   --radius-full: 50%; /* une forme, pas un arrondi */
 
   --ease-smooth: 200ms ease-out;
