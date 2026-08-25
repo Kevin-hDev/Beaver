@@ -46,6 +46,7 @@ pub fn chat_to_agent_message(m: &ChatMessage) -> Option<AgentMessage> {
         tokens: 0,
         work_duration_ms: None,
         skill_names: None,
+        skill_ids: None,
         stream_run_id: None,
         stream_part: None,
     })
@@ -187,6 +188,7 @@ pub fn new_user_agent_message(content: &str) -> AgentMessage {
         tokens: 0,
         work_duration_ms: None,
         skill_names: None,
+        skill_ids: None,
         stream_run_id: None,
         stream_part: None,
     }

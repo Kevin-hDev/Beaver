@@ -40,6 +40,10 @@ pub struct AgentMessage {
     pub work_duration_ms: Option<u64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub skill_names: Option<Vec<String>>,
+    /// Identifiants privés nécessaires pour recharger les skills côté Rust.
+    /// Ils ne font volontairement pas partie des contrats IPC visibles.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub skill_ids: Option<Vec<String>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stream_run_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]

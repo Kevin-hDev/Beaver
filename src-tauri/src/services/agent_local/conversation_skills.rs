@@ -53,7 +53,7 @@ pub async fn resolve(
     Ok(resolved)
 }
 
-fn validate_reference(reference: &SkillReference) -> Result<(), ConversationInputError> {
+pub(super) fn validate_reference(reference: &SkillReference) -> Result<(), ConversationInputError> {
     if !super::tool_skill_loader::valid_skill_id(&reference.id)
         || reference.name.as_ref().is_some_and(|name| {
             name.is_empty()
@@ -63,6 +63,42 @@ fn validate_reference(reference: &SkillReference) -> Result<(), ConversationInpu
         })
     {
         return Err(error(ConversationInputErrorKind::Invalid));
+    }
+    Ok(())
+}
+
+pub(super) fn validate_persisted_references(
+    ids: Option<&[String]>,
+    names: Option<&[String]>,
+) -> Result<(), ConversationInputError> {
+    let names = names.unwrap_or_default();
+    if names.len() > MAX_SKILLS_PER_TURN {
+        return Err(error(ConversationInputErrorKind::Invalid));
+    }
+    let Some(ids) = ids else {
+        return Ok(()); // Legacy v2 : aucun ID ni corps n'est déduit du nom visible.
+    };
+    if names.iter().any(|name| {
+            name.is_empty()
+                || name.len() > MAX_SKILL_NAME_BYTES
+                || name.chars().count() > MAX_REFERENCE_NAME_CHARS
+                || name.chars().any(char::is_control)
+        })
+    {
+        return Err(error(ConversationInputErrorKind::Invalid));
+    }
+    if ids.is_empty() || ids.len() != names.len() || ids.len() > MAX_SKILLS_PER_TURN {
+        return Err(error(ConversationInputErrorKind::Invalid));
+    }
+    let mut unique = HashSet::with_capacity(ids.len());
+    for (id, name) in ids.iter().zip(names) {
+        let reference = SkillReference {
+            id: id.clone(),
+            name: Some(name.clone()),
+        };
+        if !unique.insert(id.as_str()) || validate_reference(&reference).is_err() {
+            return Err(error(ConversationInputErrorKind::Invalid));
+        }
     }
     Ok(())
 }

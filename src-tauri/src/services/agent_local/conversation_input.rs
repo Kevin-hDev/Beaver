@@ -65,7 +65,6 @@ pub async fn resolve(input: NewUserTurnInput) -> Result<ResolvedTurnInput, Conve
     resolve_with_key_source(input, crate::services::attachment_access::attachment_key).await
 }
 
-#[cfg(test)]
 pub(crate) async fn resolve_with_key(
     input: NewUserTurnInput,
     key: &[u8],

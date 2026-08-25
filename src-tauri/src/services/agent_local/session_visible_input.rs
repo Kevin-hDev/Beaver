@@ -34,6 +34,7 @@ pub(super) fn into_message(input: VisibleMessageInput, turn_id: String) -> Resul
         files: input.files.into_iter().map(file_input).collect(),
         timestamp: input.timestamp, tokens: input.tokens,
         work_duration_ms: input.work_duration_ms, skill_names: input.skill_names,
+        skill_ids: None,
         stream_run_id: input.stream_run_id, stream_part: input.stream_part,
     };
     message.validate_stream_metadata()?;

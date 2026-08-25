@@ -30,35 +30,55 @@ pub(super) struct DecodedDataUrl {
 pub(super) fn validate_wire_bounds(
     input: &TurnAttachmentInput,
 ) -> Result<(), ConversationInputError> {
-    if input.name.len() > MAX_ATTACHMENT_NAME_BYTES
-        || input.path.len() > MAX_ATTACHMENT_PATH_BYTES
-        || input.mime_type.len() > MAX_ATTACHMENT_MIME_BYTES
-        || input
-            .thumbnail
-            .as_ref()
-            .is_some_and(|value| value.len() > MAX_ATTACHMENT_THUMBNAIL_BYTES)
-        || input
-            .access_grant
-            .as_ref()
-            .is_some_and(|value| value.len() > MAX_ATTACHMENT_GRANT_BYTES)
-        || input.size > MAX_ATTACHMENT_SIZE
+    validate_fields(
+        &input.name,
+        &input.path,
+        &input.mime_type,
+        input.size,
+        input.thumbnail.as_deref(),
+        input.access_grant.as_deref(),
+    )
+}
+
+pub(super) fn validate_persisted(
+    file: &super::types_message::FileAttachment,
+) -> Result<(), ConversationInputError> {
+    validate_fields(
+        &file.name,
+        &file.path,
+        &file.mime_type,
+        file.size,
+        file.thumbnail.as_deref(),
+        file.access_grant.as_deref(),
+    )?;
+    validate_name(&file.name)
+}
+
+fn validate_fields(
+    name: &str,
+    path: &str,
+    mime_type: &str,
+    size: u64,
+    thumbnail: Option<&str>,
+    access_grant: Option<&str>,
+) -> Result<(), ConversationInputError> {
+    if name.len() > MAX_ATTACHMENT_NAME_BYTES
+        || path.len() > MAX_ATTACHMENT_PATH_BYTES
+        || mime_type.len() > MAX_ATTACHMENT_MIME_BYTES
+        || thumbnail.is_some_and(|value| value.len() > MAX_ATTACHMENT_THUMBNAIL_BYTES)
+        || access_grant.is_some_and(|value| value.len() > MAX_ATTACHMENT_GRANT_BYTES)
+        || size > MAX_ATTACHMENT_SIZE
     {
         return Err(error(ConversationInputErrorKind::Limit));
     }
-    if input.mime_type.is_empty() {
+    if mime_type.is_empty() {
         return Err(error(ConversationInputErrorKind::Type));
     }
-    if [&input.name, &input.path, &input.mime_type]
+    if [name, path, mime_type]
         .into_iter()
         .any(|value| value.chars().any(char::is_control))
-        || input
-            .thumbnail
-            .as_ref()
-            .is_some_and(|value| value.chars().any(char::is_control))
-        || input
-            .access_grant
-            .as_ref()
-            .is_some_and(|value| value.chars().any(char::is_control))
+        || thumbnail.is_some_and(|value| value.chars().any(char::is_control))
+        || access_grant.is_some_and(|value| value.chars().any(char::is_control))
     {
         return Err(error(ConversationInputErrorKind::Invalid));
     }

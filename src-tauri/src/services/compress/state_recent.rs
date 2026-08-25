@@ -63,6 +63,7 @@ pub fn chat_to_agent_message(message: &ChatMessage) -> AgentMessage {
         tokens,
         work_duration_ms: None,
         skill_names: None,
+        skill_ids: None,
         stream_run_id: None,
         stream_part: None,
     }

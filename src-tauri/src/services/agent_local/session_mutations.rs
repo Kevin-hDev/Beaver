@@ -2,7 +2,6 @@ use crate::models::agent_session_contract::{EditUserMessageInput, SessionMetadat
 
 const MAX_SESSION_NAME_BYTES: usize = 512;
 const MAX_PROVIDER_ID_BYTES: usize = 64;
-const MAX_EDIT_CONTENT_BYTES: usize = 1024 * 1024;
 
 pub async fn apply_metadata_patch(
     id: &str,
@@ -37,20 +36,11 @@ pub async fn apply_metadata_patch(
 }
 
 pub async fn edit_user_message(id: &str, input: EditUserMessageInput) -> Result<(), String> {
-    validate_edit(&input)?;
     super::session_store::validate_session_id(id)?;
     let lock = super::session_store::lock_session(id).await;
     let _guard = lock.lock().await;
     let mut session = super::session_store::get(id).await?;
-    let index = session
-        .messages
-        .iter()
-        .position(|message| message.id == input.message_id && message.role == "user")
-        .ok_or_else(invalid_mutation)?;
-    session.messages.truncate(index + 1);
-    session.messages[index].content = input.new_content;
-    session.context_tokens = None;
-    super::session_store_messages::recompute_accumulated_tokens(&mut session);
+    super::conversation_edit::apply_to_session(&mut session, input)?;
     super::session_store::save(&session).await
 }
 
@@ -85,16 +75,6 @@ fn validate_patch(patch: &SessionMetadataPatch) -> Result<(), String> {
             .is_some_and(|project_id| {
                 super::session_migration_ids::validate_id(project_id).is_err()
             })
-    {
-        return Err(invalid_mutation());
-    }
-    Ok(())
-}
-
-fn validate_edit(input: &EditUserMessageInput) -> Result<(), String> {
-    if super::session_migration_ids::validate_id(&input.message_id).is_err()
-        || input.new_content.len() > MAX_EDIT_CONTENT_BYTES
-        || input.new_content.contains('\0')
     {
         return Err(invalid_mutation());
     }

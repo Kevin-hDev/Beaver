@@ -32,6 +32,29 @@ fn real_v1_fixture_keeps_visible_thinking_without_promoting_continuation() {
 }
 
 #[tokio::test]
+async fn v2_writer_rejects_invalid_private_skill_links_but_accepts_legacy_names() {
+    let root = tempfile::tempdir().unwrap();
+    let invalid = [
+        (vec!["../forged"], vec!["Skill"]),
+        (vec!["local:same", "local:same"], vec!["One", "Two"]),
+        (vec!["local:one"], vec!["One", "Two"]),
+    ];
+    for (index, (ids, names)) in invalid.into_iter().enumerate() {
+        let mut session = base_session();
+        session.messages[0].skill_ids = Some(ids.into_iter().map(str::to_string).collect());
+        session.messages[0].skill_names = Some(names.into_iter().map(str::to_string).collect());
+        let path = root.path().join(format!("invalid-{index}.json"));
+        assert!(super::session_store_document::write_to_path(path, &session).await.is_err());
+    }
+
+    let mut legacy = base_session();
+    legacy.messages[0].skill_names = Some(vec![String::new(), "../legacy-visible".into()]);
+    legacy.messages[0].skill_ids = None;
+    super::session_store_document::write_to_path(root.path().join("legacy.json"), &legacy)
+        .await.expect("legacy names remain writable");
+}
+
+#[tokio::test]
 async fn legacy_tool_ids_are_local_linked_and_stable_after_commit() {
     let root = tempfile::tempdir().expect("tempdir");
     let path = root.path().join("00000000-0000-4000-8000-000000000002.json");

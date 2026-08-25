@@ -7,9 +7,18 @@ pub mod context_usage_runtime;
 mod conversation_attachment_format;
 mod conversation_attachment_types;
 pub mod conversation_attachments;
+pub mod conversation_admission;
+mod conversation_edit;
+pub mod conversation_history;
+mod conversation_history_build;
+mod conversation_history_field_validation;
+mod conversation_history_resolve;
+mod conversation_history_validation;
 pub mod conversation_input;
 #[cfg(test)]
 mod conversation_input_tests;
+#[cfg(test)]
+mod conversation_history_tests;
 pub mod conversation_skills;
 mod skill_limits;
 mod skill_manifest_read;

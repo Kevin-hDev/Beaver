@@ -83,6 +83,11 @@ pub(super) fn validate_v2(session: &AgentSession) -> Result<(), String> {
     }
     for message in &session.messages {
         super::session_migration_ids::validate_id(&message.turn_id)?;
+        super::conversation_skills::validate_persisted_references(
+            message.skill_ids.as_deref(),
+            message.skill_names.as_deref(),
+        )
+        .map_err(|_| invalid())?;
         if message.role == "tool" {
             super::session_migration_ids::validate_id(
                 message.tool_call_id.as_deref().ok_or_else(invalid)?,

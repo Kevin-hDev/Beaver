@@ -20,6 +20,7 @@ fn message_with_tool(tool: ToolActivityRecord) -> AgentMessage {
         tokens: 0,
         work_duration_ms: None,
         skill_names: None,
+        skill_ids: None,
         stream_run_id: None,
         stream_part: None,
     }
@@ -95,6 +96,7 @@ fn inherited_context_message(summary: &str) -> AgentMessage {
         tokens: 0,
         work_duration_ms: None,
         skill_names: None,
+        skill_ids: None,
         stream_run_id: None,
         stream_part: None,
     }
@@ -123,6 +125,7 @@ fn serialize_messages_extracts_inherited_context() {
         tokens: 0,
         work_duration_ms: None,
         skill_names: None,
+        skill_ids: None,
         stream_run_id: None,
         stream_part: None,
     };
@@ -161,6 +164,7 @@ fn serialize_messages_extracts_inherited_context_anywhere_in_suffix() {
         tokens: 0,
         work_duration_ms: None,
         skill_names: None,
+        skill_ids: None,
         stream_run_id: None,
         stream_part: None,
     };
@@ -181,6 +185,7 @@ fn serialize_messages_extracts_inherited_context_anywhere_in_suffix() {
         tokens: 0,
         work_duration_ms: None,
         skill_names: None,
+        skill_ids: None,
         stream_run_id: None,
         stream_part: None,
     };
@@ -224,6 +229,7 @@ fn serialize_messages_omits_inherited_context_when_absent() {
         tokens: 0,
         work_duration_ms: None,
         skill_names: None,
+        skill_ids: None,
         stream_run_id: None,
         stream_part: None,
     };

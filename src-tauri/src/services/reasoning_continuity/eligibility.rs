@@ -59,7 +59,7 @@ pub fn decide(envelope: &ReasoningEnvelope, target: &ReplayTarget) -> ReplayDeci
     ReplayDecision::Allowed
 }
 
-fn state_matches_contract(contract: ContractId, state: &ContinuationState) -> bool {
+pub(crate) fn state_matches_contract(contract: ContractId, state: &ContinuationState) -> bool {
     matches!(
         (contract, state),
         (

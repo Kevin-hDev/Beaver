@@ -129,7 +129,8 @@ mod tests {
             timestamp: chrono::Utc::now(),
             tokens: 0,
             work_duration_ms: None,
-            skill_names: None,
+        skill_names: None,
+        skill_ids: None,
             stream_run_id: None,
             stream_part: None,
         };
@@ -253,7 +254,8 @@ mod tests {
             timestamp: chrono::Utc::now(),
             tokens: 0,
             work_duration_ms: None,
-            skill_names: None,
+        skill_names: None,
+        skill_ids: None,
             stream_run_id: None,
             stream_part: None,
         });
@@ -274,7 +276,8 @@ mod tests {
             timestamp: chrono::Utc::now(),
             tokens: 0,
             work_duration_ms: None,
-            skill_names: None,
+        skill_names: None,
+        skill_ids: None,
             stream_run_id: None,
             stream_part: None,
         };
