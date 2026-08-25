@@ -27,66 +27,13 @@ pub enum LimitError {
     RemoteResponseId,
     SchemaVersion,
     ArithmeticOverflow,
+    CaptureClosed,
+    CaptureSkeleton,
 }
 
 impl std::fmt::Display for LimitError {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         formatter.write_str("reasoning_continuity_invalid")
-    }
-}
-
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-pub struct CaptureBudget {
-    item_count: usize,
-    serialized_bytes: usize,
-}
-
-impl CaptureBudget {
-    pub const fn new() -> Self {
-        Self {
-            item_count: 0,
-            serialized_bytes: 0,
-        }
-    }
-
-    pub fn observe_item(&mut self, item: &Value) -> Result<(), LimitError> {
-        if json_depth(item, 0)? > MAX_JSON_DEPTH {
-            return Err(LimitError::JsonDepth);
-        }
-        let next_items = self
-            .item_count
-            .checked_add(1)
-            .ok_or(LimitError::ArithmeticOverflow)?;
-        if next_items > MAX_NATIVE_ITEMS {
-            return Err(LimitError::NativeItems);
-        }
-        let item_bytes = serde_json::to_vec(item)
-            .map_err(|_| LimitError::EnvelopeBytes)?
-            .len();
-        let next_bytes = self
-            .serialized_bytes
-            .checked_add(item_bytes)
-            .ok_or(LimitError::ArithmeticOverflow)?;
-        if next_bytes > MAX_ENVELOPE_BYTES {
-            return Err(LimitError::EnvelopeBytes);
-        }
-        self.item_count = next_items;
-        self.serialized_bytes = next_bytes;
-        Ok(())
-    }
-
-    pub fn observe_serialized_bytes(&mut self, additional: usize) -> Result<(), LimitError> {
-        let next = checked_envelope_bytes(self.serialized_bytes, additional)?;
-        self.serialized_bytes = next;
-        Ok(())
-    }
-
-    pub const fn item_count(self) -> usize {
-        self.item_count
-    }
-
-    pub const fn serialized_bytes(self) -> usize {
-        self.serialized_bytes
     }
 }
 
@@ -162,6 +109,12 @@ fn validate_bounded_identifier(value: &str, max: usize) -> Result<(), ()> {
             .all(|character| !character.is_control() && !character.is_whitespace()))
     .then_some(())
     .ok_or(())
+}
+
+pub fn validate_json_depth(value: &Value) -> Result<(), LimitError> {
+    (json_depth(value, 0)? <= MAX_JSON_DEPTH)
+        .then_some(())
+        .ok_or(LimitError::JsonDepth)
 }
 
 fn json_depth(value: &Value, depth: usize) -> Result<usize, LimitError> {

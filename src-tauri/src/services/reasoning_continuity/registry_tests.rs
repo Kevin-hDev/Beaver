@@ -1,7 +1,12 @@
-use super::contract::{ContractId, CredentialScope, ReasoningModeId, ReplayTarget, RouteId};
+use super::contract::{
+    ContinuationUse, ContractId, CredentialScope, ReasoningModeId, ReplayTarget, RouteId,
+};
 use super::eligibility::{decide, BlockReason, ReplayDecision};
 use super::envelope::{CompletionState, ContinuationState, ReasoningEnvelope, ReasoningSource};
-use super::registry::{active_routes, replay_policy, route_contract, ReplayRequirement};
+use super::registry::{
+    active_routes, replay_policy, replay_policy_from_routes, route_contract, ActivationState,
+    AdapterId, ModelPolicy, ReplayRequirement, RouteContract,
+};
 
 #[test]
 fn inventory_has_exactly_eleven_contracts_and_fourteen_closed_routes() {
@@ -82,6 +87,7 @@ fn r01_unknown_model_and_excluded_route_fail_closed() {
         model_id: "unknown/model".into(),
         credential_scope: scope.clone(),
         reasoning_mode: ReasoningModeId::High,
+        continuation_use: ContinuationUse::UserContinuation,
     };
     assert!(replay_policy(&unknown_model).is_none());
 
@@ -90,6 +96,7 @@ fn r01_unknown_model_and_excluded_route_fail_closed() {
         model_id: "any".into(),
         credential_scope: scope,
         reasoning_mode: ReasoningModeId::Auto,
+        continuation_use: ContinuationUse::UserContinuation,
     };
     assert_eq!(
         replay_policy(&groq).unwrap().requirement,
@@ -123,6 +130,7 @@ fn r01_unknown_target_is_blocked_before_any_replay() {
         model_id: "unknown/model".into(),
         credential_scope: scope,
         reasoning_mode: ReasoningModeId::High,
+        continuation_use: ContinuationUse::UserContinuation,
     };
 
     assert_eq!(
@@ -132,11 +140,155 @@ fn r01_unknown_target_is_blocked_before_any_replay() {
 }
 
 #[test]
+fn exact_mode_and_continuation_use_are_independent_policy_dimensions() {
+    const POLICIES: &[ModelPolicy] = &[
+        ModelPolicy {
+            model_id: "deepseek-v4-flash",
+            reasoning_mode: ReasoningModeId::High,
+            continuation_use: ContinuationUse::UserContinuation,
+            requirement: ReplayRequirement::Required,
+            activation: ActivationState::LiveValidated,
+            fixture_id: Some("synthetic-high-user"),
+            fixture_date: Some("2026-08-25"),
+        },
+        ModelPolicy {
+            model_id: "deepseek-v4-flash",
+            reasoning_mode: ReasoningModeId::High,
+            continuation_use: ContinuationUse::ToolContinuation,
+            requirement: ReplayRequirement::Required,
+            activation: ActivationState::Disabled,
+            fixture_id: None,
+            fixture_date: None,
+        },
+    ];
+    const ROUTES: &[RouteContract] = &[RouteContract {
+        route_id: RouteId::DeepSeek,
+        contract_id: ContractId::DeepSeekChatV1,
+        adapter: AdapterId::ChatReasoning,
+        models: POLICIES,
+    }];
+    let scope = CredentialScope::authenticated("fixture-scope").unwrap();
+    let target = |reasoning_mode, continuation_use| ReplayTarget {
+        route_id: RouteId::DeepSeek,
+        model_id: "deepseek-v4-flash".into(),
+        credential_scope: scope.clone(),
+        reasoning_mode,
+        continuation_use,
+    };
+
+    let user = replay_policy_from_routes(
+        ROUTES,
+        &target(ReasoningModeId::High, ContinuationUse::UserContinuation),
+    )
+    .unwrap();
+    assert_eq!(user.requirement, ReplayRequirement::Required);
+    assert_eq!(user.activation, ActivationState::LiveValidated);
+
+    let tool = replay_policy_from_routes(
+        ROUTES,
+        &target(ReasoningModeId::High, ContinuationUse::ToolContinuation),
+    )
+    .unwrap();
+    assert_eq!(tool.requirement, ReplayRequirement::Required);
+    assert_eq!(tool.activation, ActivationState::Disabled);
+
+    assert!(replay_policy_from_routes(
+        ROUTES,
+        &target(ReasoningModeId::Low, ContinuationUse::UserContinuation)
+    )
+    .is_none());
+    assert!(replay_policy_from_routes(
+        ROUTES,
+        &target(ReasoningModeId::Off, ContinuationUse::UserContinuation)
+    )
+    .is_none());
+}
+
+#[test]
+fn deepseek_user_and_tool_continuations_have_distinct_requirements() {
+    let scope = CredentialScope::authenticated("fixture-scope").unwrap();
+    let target = |continuation_use| ReplayTarget {
+        route_id: RouteId::DeepSeek,
+        model_id: "deepseek-v4-flash".into(),
+        credential_scope: scope.clone(),
+        reasoning_mode: ReasoningModeId::High,
+        continuation_use,
+    };
+
+    assert_eq!(
+        replay_policy(&target(ContinuationUse::UserContinuation))
+            .unwrap()
+            .requirement,
+        ReplayRequirement::Forbidden
+    );
+    assert_eq!(
+        replay_policy(&target(ContinuationUse::ToolContinuation))
+            .unwrap()
+            .requirement,
+        ReplayRequirement::Required
+    );
+    assert!(replay_policy(&ReplayTarget {
+        reasoning_mode: ReasoningModeId::Off,
+        ..target(ContinuationUse::ToolContinuation)
+    })
+    .is_none());
+
+    let envelope = ReasoningEnvelope::new(
+        ContractId::DeepSeekChatV1,
+        ReasoningSource {
+            route_id: RouteId::DeepSeek,
+            model_id: "deepseek-v4-flash".into(),
+            credential_scope: scope.clone(),
+            reasoning_mode: ReasoningModeId::High,
+        },
+        CompletionState::Complete,
+        ContinuationState::ChatReasoning {
+            reasoning_content: "opaque".into(),
+        },
+        Vec::new(),
+    );
+    assert_eq!(
+        decide(
+            &envelope,
+            &ReplayTarget {
+                reasoning_mode: ReasoningModeId::Low,
+                ..target(ContinuationUse::ToolContinuation)
+            }
+        ),
+        ReplayDecision::Blocked(BlockReason::UnknownTarget)
+    );
+}
+
+#[test]
+fn local_scope_is_valid_only_for_ollama() {
+    let ollama = ReplayTarget {
+        route_id: RouteId::Ollama,
+        model_id: "qwen3.5:4b".into(),
+        credential_scope: CredentialScope::local_uncredentialed(),
+        reasoning_mode: ReasoningModeId::Auto,
+        continuation_use: ContinuationUse::UserContinuation,
+    };
+    assert!(replay_policy(&ollama).is_some());
+
+    let mut authenticated_ollama = ollama.clone();
+    authenticated_ollama.credential_scope = CredentialScope::authenticated("scope").unwrap();
+    assert!(replay_policy(&authenticated_ollama).is_none());
+
+    let mut local_cloud = ollama;
+    local_cloud.route_id = RouteId::DeepSeek;
+    local_cloud.model_id = "deepseek-v4-flash".into();
+    local_cloud.reasoning_mode = ReasoningModeId::High;
+    local_cloud.continuation_use = ContinuationUse::ToolContinuation;
+    assert!(replay_policy(&local_cloud).is_none());
+}
+
+#[test]
 fn every_declared_model_is_disabled_and_none_is_live_validated() {
     for route in active_routes() {
         assert!(!route.models.is_empty());
         for model in route.models {
             assert_eq!(model.activation, super::registry::ActivationState::Disabled);
+            assert_ne!(model.reasoning_mode, ReasoningModeId::Off);
             assert!(model.fixture_id.is_none());
             assert!(model.fixture_date.is_none());
         }

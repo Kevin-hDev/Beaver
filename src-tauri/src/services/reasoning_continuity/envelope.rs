@@ -1,9 +1,11 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+use super::bounded_json::serialized_len_bounded;
 use super::contract::{ContractId, CredentialScope, ReasoningModeId, RouteId};
 use super::limits::{
-    validate_model_id, validate_remote_response_id, CaptureBudget, LimitError, MAX_ENVELOPE_BYTES,
+    validate_json_depth, validate_model_id, validate_remote_response_id, LimitError,
+    MAX_ENVELOPE_BYTES, MAX_NATIVE_ITEMS,
 };
 use super::tool_links::{self, ToolLink};
 
@@ -23,6 +25,14 @@ pub struct ReasoningSource {
     pub model_id: String,
     pub credential_scope: CredentialScope,
     pub reasoning_mode: ReasoningModeId,
+}
+
+impl ReasoningSource {
+    fn validate(&self) -> Result<(), LimitError> {
+        validate_model_id(&self.model_id)?;
+        super::limits::validate_credential_scope(self.credential_scope.as_str())?;
+        self.credential_scope.validate_for_route(self.route_id)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -70,16 +80,10 @@ impl ReasoningEnvelope {
         if self.schema_version != REASONING_ENVELOPE_SCHEMA_VERSION {
             return Err(LimitError::SchemaVersion);
         }
-        validate_model_id(&self.source.model_id)?;
-        super::limits::validate_credential_scope(self.source.credential_scope.as_str())?;
+        self.source.validate()?;
         tool_links::validate(&self.tool_links)?;
         validate_continuation(&self.continuation)?;
-        let bytes = serde_json::to_vec(self)
-            .map_err(|_| LimitError::EnvelopeBytes)?
-            .len();
-        (bytes <= MAX_ENVELOPE_BYTES)
-            .then_some(())
-            .ok_or(LimitError::EnvelopeBytes)
+        serialized_len_bounded(self, MAX_ENVELOPE_BYTES).map(|_| ())
     }
 }
 
@@ -99,9 +103,11 @@ fn validate_continuation(state: &ContinuationState) -> Result<(), LimitError> {
 }
 
 fn validate_items(items: &[Value]) -> Result<(), LimitError> {
-    let mut budget = CaptureBudget::new();
+    if items.len() > MAX_NATIVE_ITEMS {
+        return Err(LimitError::NativeItems);
+    }
     for item in items {
-        budget.observe_item(item)?;
+        validate_json_depth(item)?;
     }
     Ok(())
 }

@@ -91,6 +91,13 @@ pub enum ReasoningModeId {
     Ultra,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ContinuationUse {
+    UserContinuation,
+    ToolContinuation,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
 #[serde(transparent)]
 pub struct CredentialScope(String);
@@ -115,6 +122,14 @@ impl CredentialScope {
     pub fn as_str(&self) -> &str {
         &self.0
     }
+
+    pub fn validate_for_route(&self, route_id: RouteId) -> Result<(), LimitError> {
+        let is_local = self.0 == Self::LOCAL_UNCREDENTIALED;
+        let expects_local = route_id == RouteId::Ollama;
+        (is_local == expects_local)
+            .then_some(())
+            .ok_or(LimitError::CredentialScope)
+    }
 }
 
 impl<'de> Deserialize<'de> for CredentialScope {
@@ -134,11 +149,13 @@ pub struct ReplayTarget {
     pub model_id: String,
     pub credential_scope: CredentialScope,
     pub reasoning_mode: ReasoningModeId,
+    pub continuation_use: ContinuationUse,
 }
 
 impl ReplayTarget {
     pub fn validate(&self) -> Result<(), LimitError> {
         validate_model_id(&self.model_id)?;
-        validate_credential_scope(self.credential_scope.as_str())
+        validate_credential_scope(self.credential_scope.as_str())?;
+        self.credential_scope.validate_for_route(self.route_id)
     }
 }
