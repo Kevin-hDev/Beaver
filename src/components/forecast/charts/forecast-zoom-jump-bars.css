@@ -15,6 +15,7 @@
   pointer-events: auto;
 }
 
+/* Garde 2 px : la barre ne fait que 4 px de large, 6 px la rendrait ovale. */
 .fzjb-bar {
   width: 4px;
   border: none;

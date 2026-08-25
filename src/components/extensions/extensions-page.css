@@ -12,10 +12,6 @@
   overflow: hidden;
 }
 
-.extp-list .extr-row:last-child {
-  border-bottom: 0;
-}
-
 .extp-info-line {
   display: flex;
   align-items: center;
@@ -23,13 +19,8 @@
   min-height: var(--extensions-info-row-height);
   gap: var(--space-md);
   padding: var(--space-sm) var(--space-md);
-  border-bottom: var(--line-thin) solid var(--edge);
   color: var(--ink);
   font-size: var(--text-sm);
-}
-
-.extp-info-line:last-child {
-  border-bottom: 0;
 }
 
 .extp-info-line > span:first-child {

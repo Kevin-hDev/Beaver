@@ -31,7 +31,6 @@ describe("settings CSS wiring", () => {
 
     expect(container.querySelector(".as-root")).not.toBeNull();
     expect(container.querySelectorAll(".as-info-row")).toHaveLength(3);
-    expect(container.querySelectorAll(".as-info-row-border")).toHaveLength(2);
     expect(container.querySelector(".as-github-btn")).not.toBeNull();
     expect(container.querySelector(".as-app-logo")).toBeInstanceOf(HTMLImageElement);
     expect(getByText("Beaver")).not.toBeNull();

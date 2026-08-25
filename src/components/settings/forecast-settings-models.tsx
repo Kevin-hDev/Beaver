@@ -123,11 +123,10 @@ function FamilyModelList({ group, onSelectModel, onBack, onRefresh }: FamilyMode
       </button>
       <h3 className="fs-section-title">{t(group.titleKey)}</h3>
       <SettingsCard>
-        {group.models.map((model, index) => (
+        {group.models.map((model) => (
           <ModelListRow
             key={model.id}
             model={model}
-            isLast={index >= group.models.length - 1}
             onSelect={() => onSelectModel(model.id)}
             onRefresh={onRefresh}
           />
@@ -139,12 +138,11 @@ function FamilyModelList({ group, onSelectModel, onBack, onRefresh }: FamilyMode
 
 interface ModelListRowProps {
   model: ForecastModelEntry;
-  isLast: boolean;
   onSelect: () => void;
   onRefresh: () => void;
 }
 
-function ModelListRow({ model, isLast, onSelect, onRefresh }: ModelListRowProps) {
+function ModelListRow({ model, onSelect, onRefresh }: ModelListRowProps) {
   const { t } = useTranslation();
   const summaryKey = getForecastModelSummaryKey(model.id);
   const summary = t(summaryKey);
@@ -158,7 +156,7 @@ function ModelListRow({ model, isLast, onSelect, onRefresh }: ModelListRowProps)
     <div
       role="button"
       tabIndex={0}
-      className={`fs-model-row${isLast ? " fs-row-last" : ""}`}
+      className="fs-model-row"
       onClick={onSelect}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") {

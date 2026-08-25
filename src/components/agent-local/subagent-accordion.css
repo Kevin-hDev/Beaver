@@ -1,6 +1,6 @@
 .sa-accordion {
   margin-bottom: 6px;
-  border-radius: 20px; /* intentional: speech-bubble shape */
+  border-radius: var(--radius);
   background: var(--chat-composer-bg);
   border: 0.5px solid var(--chat-composer-border);
   overflow: hidden;

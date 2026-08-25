@@ -5,7 +5,7 @@
   width: 100%;
   gap: var(--space-sm);
   border: 0.5px solid var(--tooltip-border);
-  border-radius: 20px; /* intentional: speech-bubble shape */
+  border-radius: var(--radius);
   padding: 10px 14px;
   background: var(--surface);
   color: var(--ink);

@@ -150,15 +150,12 @@
   min-width: 0;
 }
 
+/* Ni fond ni bordure propres : le trait et l'ombre le dessinent seuls
+   (`relief elev-float`, posés dans chat-input.tsx). Le fond, plus clair que
+   la page, empêchait le bas du trait de s'éteindre. */
 .chat-input-bubble {
-  position: relative;
   width: 100%;
-  border-radius: 20px; /* intentional: speech-bubble shape */
-  border: 0.5px solid var(--chat-composer-border);
-  background: var(--chat-composer-bg);
-  box-shadow:
-    -1px -1px 1px var(--chat-composer-edge-highlight),
-    1px 1px 1px var(--chat-composer-edge-shade);
+  border-radius: var(--radius);
   display: flex;
   flex-direction: column;
 }
@@ -181,8 +178,13 @@
 .chat-input-spacer { flex: 1; }
 
 /* Send/stop — composes .icon-btn (src/styles/buttons.css);
-   keeps its muted color, opacity-only hover and disabled dim. */
+   keeps its muted color, opacity-only hover and disabled dim.
+   Décalage optique aligné sur le « + » de l'autre bout de la rangée : le dessin
+   ne remplit pas son carré et le centrage géométrique le fait paraître trop
+   haut. Les deux boutons doivent bouger ensemble. */
 .send-btn {
+  position: relative;
+  top: 4px;
   color: var(--ink-muted);
   transition: opacity var(--ease-smooth), color var(--ease-smooth);
 }

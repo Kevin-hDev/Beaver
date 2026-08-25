@@ -36,9 +36,6 @@
   --signal-ok-border: rgba(34, 197, 94, 0.3);
   --context-ring-fill: #b8b8bf;
   --context-ring-track: rgba(184, 184, 191, 0.20);
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.3);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
-  --shadow-lg: 0 4px 24px rgba(0, 0, 0, 0.4);
   --dialog-backdrop: rgba(0, 0, 0, 0.55);
 
   /* Aliases — tokens référencés par les composants (spec phase 2 §2) */
@@ -55,7 +52,6 @@
   --edge-strong: rgba(255, 255, 255, 0.12);
   /* Boutons secondaires — recette « présence » (spec phase 2 §1.1) */
   --btn-secondary-bg: rgba(255, 255, 255, 0.05);
-  --btn-inner-highlight: rgba(255, 255, 255, 0.04);
   --field-bg: rgba(0, 0, 0, 0.22);
 
   /* Surface variants */
@@ -63,18 +59,21 @@
   --surface-overlay: rgba(37, 37, 37, 0.70);
   --card-on-glass: rgba(58, 58, 58, 0.72);
   --chip-bg: rgba(0, 0, 0, 0.35);
-  --memory-topic-list-border: transparent;
-  --memory-topic-list-bg: var(--surface-glass);
   /* Marche d'élévation au-dessus de l'overlay — cartes sur panneaux (≈ #282828 sur --void) */
   --surface-raised: rgba(46, 46, 46, 0.80);
   --tooltip-bg: #252525;
   --tooltip-border: rgba(255, 255, 255, 0.10);
   --tooltip-text: var(--ink);
-  --tooltip-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
   --chat-composer-bg: var(--surface-glass);
   --chat-composer-border: var(--tooltip-border);
-  --chat-composer-edge-highlight: rgba(255, 255, 255, 0.1);
-  --chat-composer-edge-shade: rgba(0, 0, 0, 0.48);
+  /* Relief — réglé sur docs/mokup/, voir src/styles/relief.css.
+     Sur ce fond (luminance 18), le trait ressort de +19, l'ombre creuse de 10. */
+  --relief-stroke-rgb: 255, 255, 255;
+  --relief-stroke-top: 0.08;
+  --relief-stroke-bottom: 0;
+  --relief-shadow-y: 3px;
+  --relief-shadow-blur: 3px;
+  --relief-shadow-alpha: 0.55;
   --code-block-border: rgba(255, 255, 255, 0.08);
   --agent-trace-text: #5f5f68;
   --agent-trace-hover: #777783;

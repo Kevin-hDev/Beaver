@@ -13,6 +13,7 @@
   z-index: var(--z-dropdown);
   backdrop-filter: var(--popover-backdrop-filter, none);
   -webkit-backdrop-filter: var(--popover-backdrop-filter, none);
+  padding: 0 var(--list-gutter);
 }
 
 .slash-item {
@@ -21,6 +22,7 @@
   gap: var(--space-sm);
   min-height: 28px;
   padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius);
   cursor: pointer;
   transition: background var(--ease-smooth);
 }

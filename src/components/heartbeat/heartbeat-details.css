@@ -94,7 +94,6 @@
   50% { opacity: 0; }
 }
 
-
 .wk-details-body {
   padding: var(--chrome-5);
   display: flex;
@@ -172,11 +171,6 @@
   align-items: center;
   padding: 12px 20px;
   font-size: var(--text-xs);
-  border-bottom: 1px solid var(--edge);
-}
-
-.wk-history-row:last-child {
-  border-bottom: none;
 }
 
 .wk-history-status {
