@@ -8,17 +8,12 @@
   width: 100%;
   padding: var(--space-sm) var(--space-lg);
   border: 0;
-  border-bottom: var(--line-thin) solid var(--edge);
   background: transparent;
   color: inherit;
   font: inherit;
   text-align: left;
   cursor: pointer;
   transition: background var(--ease-smooth);
-}
-
-.wk-row:last-child {
-  border-bottom: none;
 }
 
 .wk-row:hover {

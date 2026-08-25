@@ -94,7 +94,7 @@ export function ConnectorsDetail({
       </SettingsCard>
 
       <SettingsCard>
-        <div className="ctd-row ctd-row-border">
+        <div className="ctd-row">
           <span className="ctd-row-label">{t("connectors.detail.author")}</span>
           <span className="ctd-row-value">{connector.author}</span>
         </div>

@@ -40,11 +40,6 @@
   padding: var(--chrome-3) 20px;
   font-size: var(--text-sm);
 }
-
-.mp-spec-row-border {
-  border-bottom: 1px solid var(--edge);
-}
-
 .mp-spec-label {
   color: var(--ink-muted);
   font-size: var(--text-xs);

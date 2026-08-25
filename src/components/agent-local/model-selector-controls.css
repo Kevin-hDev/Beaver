@@ -62,7 +62,6 @@
 .ms-search {
   position: relative;
   padding: 8px;
-  border-bottom: 1px solid var(--edge);
 }
 
 .ms-search-icon {

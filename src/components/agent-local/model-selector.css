@@ -72,7 +72,6 @@
   top: 0;
   z-index: 1;
   user-select: none;
-  border-bottom: 1px solid var(--edge);
 }
 
 .ms-provider:hover,
@@ -129,7 +128,6 @@
   font-weight: 600;
   color: var(--select-text);
   background: transparent;
-  border-bottom: 1px solid var(--edge);
   position: sticky;
   top: 0;
   z-index: 1;

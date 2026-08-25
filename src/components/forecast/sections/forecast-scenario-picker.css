@@ -49,11 +49,6 @@
   color: var(--ink-faint);
   font-size: var(--text-sm);
 }
-
-.fsp-group {
-  border-bottom: 1px solid var(--edge);
-}
-
 .fsp-group-btn {
   width: 100%;
   display: flex;

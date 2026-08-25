@@ -91,7 +91,7 @@ export function ApiKeysDetails({
             {t("apiKeys.details.openSite")} <ArrowSquareOut size="var(--icon-xs)" />
           </button>
         </DetailRow>
-        <DetailRow label={t("apiKeys.details.apiKey")} value="••••••••" last />
+        <DetailRow label={t("apiKeys.details.apiKey")} value="••••••••" />
       </SettingsCard>
 
       {confirmDelete && (
@@ -103,11 +103,11 @@ export function ApiKeysDetails({
   );
 }
 
-function DetailRow({ label, value, children, last }: {
-  label: string; value?: string; children?: React.ReactNode; last?: boolean;
+function DetailRow({ label, value, children }: {
+  label: string; value?: string; children?: React.ReactNode;
 }) {
   return (
-    <div className={`akd-row ${last ? "" : "akd-row-border"}`}>
+    <div className="akd-row">
       <span className="akd-row-label">
         {label}
       </span>
