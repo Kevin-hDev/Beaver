@@ -73,8 +73,21 @@
   --tooltip-shadow: 0 5px 18px rgba(0, 3, 12, 0.44);
   --chat-composer-bg: rgba(24, 42, 70, 0.62);
   --chat-composer-border: rgba(186, 205, 226, 0.18);
-  --chat-composer-edge-highlight: rgba(186, 205, 226, 0.12);
-  --chat-composer-edge-shade: rgba(0, 3, 12, 0.55);
+  /* Relief — réglé sur banc d'essai avec Kevin les 24 et 25 août 2026
+     (docs/mokup/), voir src/styles/relief.css. Le trait est une lumière :
+     sur ce fond (luminance 11), il ressort de +29,7 et l'ombre creuse
+     de 6,7.
+     Réglage propre aux deux fonds les plus noirs de Beaver : l'ombre n'a
+     presque plus de noir à creuser, alors le trait du haut reprend son
+     travail et un filet revient en bas, là où les quatre autres thèmes
+     n'ont rien. Le décalage de l'ombre passe de 3 à 5 px : à défaut de
+     porter plus fort, elle porte plus loin. */
+  --relief-stroke-rgb: 255, 255, 255;
+  --relief-stroke-top: 0.12;
+  --relief-stroke-bottom: 0.04;
+  --relief-shadow-y: 5px;
+  --relief-shadow-blur: 3px;
+  --relief-shadow-alpha: 0.55;
   --code-block-border: rgba(186, 205, 226, 0.12);
   --agent-trace-text: #6e819d;
   --agent-trace-hover: #92a5bd;

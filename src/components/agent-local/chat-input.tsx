@@ -133,7 +133,7 @@ export function ChatInput({
   return (
     <>
       {interactiveFeedback.error && <ErrorBubble message={interactiveFeedback.error} />}
-      <div className={`chat-input-bubble${interactivePending ? " chat-input-bubble-interactive" : ""}`} ref={bubbleRef}>
+      <div className={`chat-input-bubble relief elev-float${interactivePending ? " chat-input-bubble-interactive" : ""}`} ref={bubbleRef}>
       {interactivePending ? (
         <InteractiveChoicePanel
           request={interactiveRequest ?? undefined}

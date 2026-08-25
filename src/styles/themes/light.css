@@ -73,8 +73,17 @@
   --tooltip-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
   --chat-composer-bg: rgba(215, 213, 208, 0.40);
   --chat-composer-border: var(--tooltip-border);
-  --chat-composer-edge-highlight: rgba(255, 255, 255, 0.65);
-  --chat-composer-edge-shade: rgba(0, 0, 0, 0.10);
+  /* Relief — réglé sur banc d'essai avec Kevin les 24 et 25 août 2026
+     (docs/mokup/), voir src/styles/relief.css. Sur un fond clair rien ne
+     peut être plus clair que le fond : le trait y est de l'encre et non de
+     la lumière, il descend de 19 sous la luminance 245 du fond, et
+     l'ombre s'y fait beaucoup plus discrète. */
+  --relief-stroke-rgb: 0, 0, 0;
+  --relief-stroke-top: 0.14;
+  --relief-stroke-bottom: 0.04;
+  --relief-shadow-y: 2px;
+  --relief-shadow-blur: 2px;
+  --relief-shadow-alpha: 0.25;
   --code-block-border: rgba(0, 0, 0, 0.12);
   --agent-trace-text: #6f6f76;
   --agent-trace-hover: #4f4f55;

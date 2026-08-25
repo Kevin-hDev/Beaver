@@ -73,8 +73,16 @@
   --tooltip-shadow: 0 3px 12px rgba(0, 12, 10, 0.38);
   --chat-composer-bg: rgba(13, 58, 49, 0.56);
   --chat-composer-border: var(--tooltip-border);
-  --chat-composer-edge-highlight: rgba(207, 225, 207, 0.12);
-  --chat-composer-edge-shade: rgba(0, 12, 10, 0.52);
+  /* Relief — réglé sur banc d'essai avec Kevin les 24 et 25 août 2026
+     (docs/mokup/), voir src/styles/relief.css. Le trait est une lumière :
+     sur ce fond (luminance 21), il ressort de +18,7 et l'ombre creuse
+     de 11,3. */
+  --relief-stroke-rgb: 255, 255, 255;
+  --relief-stroke-top: 0.08;
+  --relief-stroke-bottom: 0;
+  --relief-shadow-y: 3px;
+  --relief-shadow-blur: 3px;
+  --relief-shadow-alpha: 0.55;
   --code-block-border: rgba(207, 225, 207, 0.12);
   --agent-trace-text: #789485;
   --agent-trace-hover: #9fb3a4;

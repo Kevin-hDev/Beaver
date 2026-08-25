@@ -1,0 +1,105 @@
+/* ==================================================================
+   relief.css — la primitive de relief de Beaver : un trait éclairé par
+   le haut, et une ombre pour l'épaisseur.
+
+   Autorité unique. Tout objet qui doit se détacher du fond porte la
+   classe `.relief` ; aucun composant ne redessine son propre contour.
+
+   Réglée sur banc d'essai avec Kevin les 24 et 25 août 2026
+   (docs/mokup/), thème par thème, mesure au pixel à l'appui. Les sept
+   valeurs vives vivent dans src/styles/themes/ : chaque thème a son
+   fond, donc son réglage.
+   ================================================================== */
+
+[data-theme] {
+  /* Épaisseur du trait, commune aux six thèmes. Un demi-pixel : c'est
+     la finesse qui distingue un contour dessiné d'un cadre posé. */
+  --relief-stroke-width: 0.5px;
+
+  /* --- Élévation : trois hauteurs, une seule recette ---------------
+     L'ombre dit à quelle hauteur flotte l'objet. Trois valeurs
+     indépendantes divergeraient au premier ajustement ; celles-ci
+     dérivent toutes du réglage du thème, donc le rapport entre les
+     trois ne peut pas se perdre.
+     · posé      — boutons, champs, pastilles : touchent la page
+     · flottant  — champ de saisie, menus, infobulles : décollés
+     · au-dessus — fenêtres, notifications : recouvrent le reste       */
+  --elev-rest: 0 calc(var(--relief-shadow-y) * 0.5)
+    calc(var(--relief-shadow-blur) * 0.5)
+    rgba(0, 0, 0, calc(var(--relief-shadow-alpha) * 0.8));
+  --elev-float: 0 var(--relief-shadow-y) var(--relief-shadow-blur)
+    rgba(0, 0, 0, var(--relief-shadow-alpha));
+  --elev-above: 0 calc(var(--relief-shadow-y) * 2.5)
+    calc(var(--relief-shadow-blur) * 3.5)
+    rgba(0, 0, 0, min(1, calc(var(--relief-shadow-alpha) * 1.15)));
+}
+
+/* Le trait vit dans une couronne masquée et non dans `border` : une
+   bordure en dégradé posée sur la boîte transparaît sous un fond
+   translucide et éclaircit tout l'intérieur de l'objet. Mesuré sur le
+   banc d'essai : le fond du champ passait de 28 à 45. */
+.relief {
+  position: relative;
+  border: 0;
+}
+
+.relief::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: var(--relief-stroke-width);
+  background: linear-gradient(
+    180deg,
+    rgba(var(--relief-stroke-rgb), var(--relief-stroke-top)),
+    rgba(var(--relief-stroke-rgb), var(--relief-stroke-bottom))
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Sur un écran sans densité double — la plupart des Windows et Linux —
+   un trait de 0.5px occupe un pixel entier : il paraît deux fois plus
+   épais que sur le Mac où il a été réglé. On lui retire une part de son
+   encre pour retrouver la même présence. */
+@media (max-resolution: 1.5dppx) {
+  .relief::before {
+    background: linear-gradient(
+      180deg,
+      rgba(var(--relief-stroke-rgb), calc(var(--relief-stroke-top) * 0.6)),
+      rgba(var(--relief-stroke-rgb), calc(var(--relief-stroke-bottom) * 0.6))
+    );
+  }
+}
+
+.elev-rest {
+  box-shadow: var(--elev-rest);
+}
+
+.elev-float {
+  box-shadow: var(--elev-float);
+}
+
+.elev-above {
+  box-shadow: var(--elev-above);
+}
+
+/* Focus clavier — décision de Kevin, 25 août 2026 : l'objet au focus
+   garde exactement son apparence normale. Ni anneau, ni halo, ni
+   couleur d'accent. Ce que le navigateur dessinerait de lui-même est
+   retiré aussi, comme partout ailleurs (src/styles/focus.css).
+
+   Réserve consignée : sur un champ, le curseur de saisie qui clignote
+   dit où l'on est ; sur un bouton, plus rien ne le dit, et la
+   navigation au clavier ne montre plus ce qu'on s'apprête à activer. */
+.relief:focus-visible,
+.relief:focus-within {
+  outline: none;
+}
