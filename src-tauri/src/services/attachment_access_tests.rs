@@ -2,7 +2,9 @@ use std::fs;
 
 use tempfile::tempdir;
 
-use super::attachment_access::{register_paths, verify_access_grant};
+use super::attachment_access::{
+    read_verified_after, register_paths, verify_access_grant, VerifiedAttachmentError,
+};
 
 const TEST_KEY: [u8; 32] = [7; 32];
 
@@ -47,6 +49,19 @@ fn traversal_is_refused_before_canonicalization() {
     assert!(result.is_err());
 }
 
+#[test]
+fn relative_control_and_directory_paths_are_refused() {
+    let dir = tempdir().unwrap();
+    assert!(register_paths(&["relative.txt".into()], &TEST_KEY, |_| true).is_err());
+    assert!(register_paths(&["/tmp/bad\nname".into()], &TEST_KEY, |_| true).is_err());
+    assert!(register_paths(
+        &[dir.path().to_string_lossy().to_string()],
+        &TEST_KEY,
+        |_| true
+    )
+    .is_err());
+}
+
 #[cfg(unix)]
 #[test]
 fn symbolic_link_is_refused_before_canonicalization() {
@@ -78,6 +93,19 @@ fn forged_grant_is_refused() {
     );
 
     assert!(result.is_err());
+}
+
+#[test]
+fn invalid_hmac_key_is_refused() {
+    let dir = tempdir().unwrap();
+    let path = dir.path().join("notes.txt");
+    fs::write(&path, b"safe").unwrap();
+    let raw = path.to_string_lossy().to_string();
+    let registered = register_paths(&[raw], &TEST_KEY, |_| true).unwrap();
+
+    assert!(
+        verify_access_grant(&registered[0].path, &registered[0].access_grant, b"short").is_err()
+    );
 }
 
 #[test]
@@ -131,4 +159,73 @@ fn capabilities_do_not_expose_global_or_docs_file_access() {
     assert!(!main.to_string().contains("fs:allow-stat"));
     assert!(!docs.to_string().contains("fs:"));
     assert!(!workbench.to_string().contains("fs:"));
+}
+
+#[test]
+fn verified_read_uses_the_bounded_open_handle() {
+    let dir = tempdir().unwrap();
+    let path = dir.path().join("notes.txt");
+    fs::write(&path, b"safe").unwrap();
+    let raw = path.to_string_lossy().to_string();
+    let registered = register_paths(&[raw], &TEST_KEY, |_| true).unwrap();
+
+    let read = read_verified_after(
+        &registered[0].path,
+        &registered[0].access_grant,
+        &TEST_KEY,
+        4,
+        || {},
+    )
+    .unwrap();
+
+    assert_eq!(read.bytes, b"safe");
+}
+
+#[test]
+fn same_sized_file_substitution_after_grant_is_rejected_by_identity() {
+    let dir = tempdir().unwrap();
+    let path = dir.path().join("notes.txt");
+    fs::write(&path, b"safe").unwrap();
+    let raw = path.to_string_lossy().to_string();
+    let registered = register_paths(&[raw], &TEST_KEY, |_| true).unwrap();
+
+    let result = read_verified_after(
+        &registered[0].path,
+        &registered[0].access_grant,
+        &TEST_KEY,
+        4,
+        || {
+            fs::remove_file(&path).unwrap();
+            fs::write(&path, b"evil").unwrap();
+        },
+    );
+
+    assert!(matches!(result, Err(VerifiedAttachmentError::Access)));
+}
+
+#[cfg(unix)]
+#[test]
+fn symlink_substitution_after_grant_is_never_followed() {
+    use std::os::unix::fs::symlink;
+
+    let dir = tempdir().unwrap();
+    let path = dir.path().join("notes.txt");
+    let target = dir.path().join("target.txt");
+    fs::write(&path, b"safe").unwrap();
+    fs::write(&target, b"other").unwrap();
+    let raw = path.to_string_lossy().to_string();
+    let registered = register_paths(&[raw], &TEST_KEY, |_| true).unwrap();
+
+    let result = read_verified_after(
+        &registered[0].path,
+        &registered[0].access_grant,
+        &TEST_KEY,
+        16,
+        || {
+            fs::remove_file(&path).unwrap();
+            symlink(&target, &path).unwrap();
+        },
+    );
+
+    assert!(matches!(result, Err(VerifiedAttachmentError::Access)));
 }

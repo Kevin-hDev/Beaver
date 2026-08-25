@@ -1,7 +1,7 @@
 use crate::services::agent_local::skill_catalog;
 use crate::services::agent_local::types_tools::SkillInfo;
 
-const MAX_SKILL_ID_BYTES: usize = 768;
+pub(crate) const MAX_SKILL_ID_BYTES: usize = crate::models::agent_turn_contract::MAX_SKILL_ID_BYTES;
 const MAX_DISPLAY_NAME_CHARS: usize = 120;
 
 pub struct LoadedSkill {
@@ -47,13 +47,7 @@ pub async fn load_skill(skill_id: &str) -> Result<String, String> {
 }
 
 pub async fn load_skill_with_metadata(skill_id: &str) -> Result<LoadedSkill, SkillLoadError> {
-    if skill_id.is_empty()
-        || skill_id.len() > MAX_SKILL_ID_BYTES
-        || skill_id.contains("..")
-        || skill_id
-            .chars()
-            .any(|value| matches!(value, '/' | '\\' | '\0'))
-    {
+    if !valid_skill_id(skill_id) {
         return Err(SkillLoadError::InvalidId);
     }
     let requested = skill_id.to_string();
@@ -86,6 +80,15 @@ pub async fn load_skill_with_metadata(skill_id: &str) -> Result<LoadedSkill, Ski
     })
     .await
     .map_err(|_| SkillLoadError::Unavailable)?
+}
+
+pub(crate) fn valid_skill_id(skill_id: &str) -> bool {
+    !skill_id.is_empty()
+        && skill_id.len() <= MAX_SKILL_ID_BYTES
+        && !skill_id.contains("..")
+        && !skill_id
+            .chars()
+            .any(|value| matches!(value, '/' | '\\') || value.is_control())
 }
 
 fn display_name(name: &str) -> String {

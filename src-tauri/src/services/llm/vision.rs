@@ -2,7 +2,7 @@ use crate::services::agent_local::types_ollama::ChatMessage;
 use serde_json::{json, Value};
 
 pub const MAX_IMAGES_PER_MESSAGE: usize = 8;
-pub const MAX_IMAGE_BYTES: usize = 20 * 1024 * 1024;
+pub const MAX_IMAGE_BYTES: usize = crate::models::agent_turn_contract::MAX_TURN_IMAGE_BYTES;
 pub const IMAGE_TOKEN_ESTIMATE: usize = 1_100;
 
 pub const NOTICE_UNSUPPORTED_MODEL: &str = "vision.unsupportedModel";

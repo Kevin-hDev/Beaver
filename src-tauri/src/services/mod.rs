@@ -5,6 +5,8 @@ pub mod app_log;
 #[cfg(test)]
 mod app_log_tests;
 pub mod attachment_access;
+mod attachment_access_identity;
+mod attachment_access_read;
 #[cfg(test)]
 mod attachment_access_tests;
 pub mod autostart_migration;

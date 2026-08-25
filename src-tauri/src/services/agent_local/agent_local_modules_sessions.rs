@@ -4,6 +4,13 @@ mod context_budget_prune;
 pub mod context_capacity_error;
 pub mod context_usage_buckets;
 pub mod context_usage_runtime;
+mod conversation_attachment_format;
+mod conversation_attachment_types;
+pub mod conversation_attachments;
+pub mod conversation_input;
+#[cfg(test)]
+mod conversation_input_tests;
+pub mod conversation_skills;
 pub mod generation_metrics;
 pub mod session_archive;
 mod session_artifacts;

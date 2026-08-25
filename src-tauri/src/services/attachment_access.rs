@@ -6,9 +6,14 @@ use serde::Serialize;
 use sha2::Sha256;
 use zeroize::Zeroize;
 
-pub const MAX_ATTACHMENTS: usize = 15;
-pub const MAX_ATTACHMENT_SIZE: u64 = 20 * 1024 * 1024;
-const MAX_PATH_BYTES: usize = 4096;
+pub const MAX_ATTACHMENTS: usize = crate::models::agent_turn_contract::MAX_TURN_ATTACHMENTS;
+pub const MAX_ATTACHMENT_SIZE: u64 =
+    crate::models::agent_turn_contract::MAX_TURN_IMAGE_BYTES as u64;
+#[cfg(test)]
+pub(super) use super::attachment_access_read::read_verified_after;
+pub(crate) use super::attachment_access_read::{read_verified, VerifiedAttachmentError};
+const MAX_PATH_BYTES: usize = crate::models::agent_turn_contract::MAX_ATTACHMENT_PATH_BYTES;
+const HMAC_VAULT_KEY: &str = "attachments.hmac.v1";
 const GRANT_PREFIX: &str = "v1.";
 const GRANT_DOMAIN: &[u8] = b"cl-go-dash:attachment-access:v1";
 const ERROR_CODE: &str = "attachment_access_denied";
@@ -18,6 +23,11 @@ pub struct RegisteredAttachment {
     pub path: String,
     pub size: u64,
     pub access_grant: String,
+}
+
+pub(crate) fn attachment_key() -> Result<zeroize::Zeroizing<Vec<u8>>, String> {
+    crate::services::api_keys::get_or_create_random_raw(HMAC_VAULT_KEY, 32)
+        .map_err(|_| ERROR_CODE.to_string())
 }
 
 pub fn register_paths<F>(
@@ -35,7 +45,7 @@ where
     let mut registered = Vec::with_capacity(paths.len());
     for raw in paths {
         let raw_path = validate_raw_path(raw)?;
-        let (canonical, size) = validate_file(raw_path, MAX_ATTACHMENT_SIZE)?;
+        let (canonical, size, _) = validate_file(raw_path, MAX_ATTACHMENT_SIZE)?;
         if !is_allowed(raw_path) && !is_allowed(&canonical) {
             return Err(ERROR_CODE.into());
         }
@@ -53,11 +63,19 @@ where
 }
 
 pub fn verify_access_grant(raw: &str, access_grant: &str, key: &[u8]) -> Result<PathBuf, String> {
+    verify_access_grant_with_identity(raw, access_grant, key).map(|(path, _)| path)
+}
+
+pub(super) fn verify_access_grant_with_identity(
+    raw: &str,
+    access_grant: &str,
+    key: &[u8],
+) -> Result<(PathBuf, super::attachment_access_identity::FileIdentity), String> {
     if key.len() != 32 {
         return Err(ERROR_CODE.into());
     }
     let raw_path = validate_raw_path(raw)?;
-    let (canonical, _) = validate_file(raw_path, MAX_ATTACHMENT_SIZE)?;
+    let (canonical, _, identity) = validate_file(raw_path, MAX_ATTACHMENT_SIZE)?;
     let canonical_text = canonical.to_str().ok_or(ERROR_CODE)?;
     let encoded = access_grant.strip_prefix(GRANT_PREFIX).ok_or(ERROR_CODE)?;
     if encoded.len() != 64 {
@@ -72,7 +90,7 @@ pub fn verify_access_grant(raw: &str, access_grant: &str, key: &[u8]) -> Result<
     if !valid {
         return Err(ERROR_CODE.into());
     }
-    Ok(canonical)
+    Ok((canonical, identity))
 }
 
 pub fn selected_file<F>(raw: &str, max_size: u64, is_allowed: F) -> Result<PathBuf, String>
@@ -80,7 +98,7 @@ where
     F: Fn(&Path) -> bool,
 {
     let raw_path = validate_raw_path(raw)?;
-    let (canonical, _) = validate_file(raw_path, max_size)?;
+    let (canonical, _, _) = validate_file(raw_path, max_size)?;
     if !is_allowed(raw_path) && !is_allowed(&canonical) {
         return Err(ERROR_CODE.into());
     }
@@ -125,7 +143,17 @@ fn validate_raw_path(raw: &str) -> Result<&Path, String> {
     Ok(path)
 }
 
-fn validate_file(path: &Path, max_size: u64) -> Result<(PathBuf, u64), String> {
+fn validate_file(
+    path: &Path,
+    max_size: u64,
+) -> Result<
+    (
+        PathBuf,
+        u64,
+        super::attachment_access_identity::FileIdentity,
+    ),
+    String,
+> {
     let source = path
         .symlink_metadata()
         .map_err(|_| ERROR_CODE.to_string())?;
@@ -137,5 +165,6 @@ fn validate_file(path: &Path, max_size: u64) -> Result<(PathBuf, u64), String> {
     if !metadata.is_file() || metadata.len() > max_size {
         return Err(ERROR_CODE.into());
     }
-    Ok((canonical, metadata.len()))
+    let identity = super::attachment_access_identity::from_metadata(&metadata).ok_or(ERROR_CODE)?;
+    Ok((canonical, metadata.len(), identity))
 }

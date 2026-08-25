@@ -31,10 +31,9 @@ if (process.platform === "darwin" && existsSync(cmakeWrapper)) {
 }
 args.push(
   "test",
-  "models::agent_session_contract_tests::export_typescript_agent_session_contract",
+  "export_typescript_agent_",
   "--",
   "--ignored",
-  "--exact",
   "--nocapture",
 );
 
