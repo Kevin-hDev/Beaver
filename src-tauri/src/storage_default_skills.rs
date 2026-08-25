@@ -2,9 +2,10 @@ use sha2::{Digest, Sha256};
 use std::path::Path;
 use tauri::Manager;
 
+use crate::services::skill_manifest_policy::MAX_SKILL_MANIFEST_BYTES;
+
 const MAX_DEFAULT_SKILLS: usize = 64;
 const MAX_SKILL_BUNDLE_ENTRIES: usize = 128;
-const MAX_SKILL_MANIFEST_BYTES: u64 = 256 * 1024;
 const LEGACY_SKILL_CREATE_SHA256: &str =
     "83bfadbb28ba109f15e2cef383ac8317c14c2358e388ae24dd6ab3b77e428dac";
 const LEGACY_FORECASTING_STUB_SHA256: &str =
@@ -173,7 +174,7 @@ fn read_manifest(path: &Path) -> Result<Vec<u8>, String> {
         std::fs::symlink_metadata(path).map_err(|_| "Manifeste de skill indisponible")?;
     if !metadata.is_file()
         || metadata.file_type().is_symlink()
-        || metadata.len() > MAX_SKILL_MANIFEST_BYTES
+        || metadata.len() > MAX_SKILL_MANIFEST_BYTES as u64
     {
         return Err("Manifeste de skill invalide".to_string());
     }

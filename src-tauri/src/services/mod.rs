@@ -77,6 +77,9 @@ mod security_cleanup_sessions;
 mod shutdown_completion;
 #[cfg(test)]
 mod shutdown_completion_tests;
+pub(crate) mod skill_manifest_policy;
+#[cfg(test)]
+mod skill_manifest_policy_tests;
 pub mod stream_utils;
 // This resolver trusts Windows' SystemRoot and has no caller on other platforms.
 #[cfg(windows)]

@@ -1,4 +1,4 @@
-pub const MAX_SKILL_CONTENT_BYTES: usize = 256 * 1024;
+pub use crate::services::skill_manifest_policy::MAX_SKILL_MANIFEST_BYTES as MAX_SKILL_CONTENT_BYTES;
 pub const MAX_SKILL_SOURCE_NAME_BYTES: usize = 256;
 pub const MAX_SKILL_BUNDLE_PATH_BYTES: usize = 4096;
 

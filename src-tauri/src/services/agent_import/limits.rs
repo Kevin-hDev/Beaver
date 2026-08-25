@@ -5,7 +5,7 @@ pub const MAX_RULES_PER_SOURCE: usize = 256;
 pub const MAX_TOTAL_SKILLS: usize = 2_048;
 pub const MAX_SCAN_DEPTH: usize = 12;
 pub const MAX_SCAN_ENTRIES: usize = 10_000;
-pub const MAX_MANIFEST_BYTES: u64 = 256 * 1024;
+pub use crate::services::skill_manifest_policy::MAX_SKILL_MANIFEST_BYTES as MAX_MANIFEST_BYTES;
 pub const MAX_INSTRUCTION_BYTES: u64 = 256 * 1024;
 pub const MAX_ITEM_ID_BYTES: usize = 768;
 pub const MAX_PATH_BYTES: usize = 4096;

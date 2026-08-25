@@ -49,7 +49,7 @@ pub fn discover_documents(spec: &SourceSpec) -> (Vec<DiscoveredItem>, bool, bool
 pub fn skill_item(spec: &SourceSpec, manifest: &Path) -> Option<DiscoveredItem> {
     let logical_bundle = manifest.parent()?.to_path_buf();
     let fallback = logical_bundle.file_name()?.to_string_lossy();
-    let (name, description) = read_skill_metadata(manifest, &fallback, MAX_MANIFEST_BYTES)?;
+    let (name, description) = read_skill_metadata(manifest, &fallback, MAX_MANIFEST_BYTES as u64)?;
     let canonical_manifest = manifest.canonicalize().ok()?;
     let canonical_bundle = canonical_manifest.parent()?.to_path_buf();
     Some(DiscoveredItem {

@@ -76,7 +76,7 @@ fn keeps_the_stub_manifest_when_a_full_bundle_is_invalid() {
     write_skill(
         &resources,
         "forecasting",
-        &vec![b'x'; MAX_SKILL_MANIFEST_BYTES as usize + 1],
+        &vec![b'x'; MAX_SKILL_MANIFEST_BYTES + 1],
     );
     write_skill(&installed, "forecasting", b"official-stub");
     std::fs::create_dir_all(resources.join("forecasting/references")).unwrap();

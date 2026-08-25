@@ -27,7 +27,7 @@ pub fn find_skills(roots: &[PathBuf], allowed_home: &Path) -> WalkResult {
         for name in SKILL_FILES {
             let candidate = path.join(name);
             if candidate.is_file() {
-                return if is_small_file(&candidate, MAX_MANIFEST_BYTES) {
+                return if is_small_file(&candidate, MAX_MANIFEST_BYTES as u64) {
                     DirectoryMatch::Found(candidate)
                 } else {
                     DirectoryMatch::Rejected
