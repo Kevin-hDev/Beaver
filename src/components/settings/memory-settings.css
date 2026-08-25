@@ -115,11 +115,10 @@
   font-weight: 600;
 }
 
+/* Fond, bordure et coins viennent de `.settings-card` (settings-card.css) :
+   c'est la même carte, elle ne se redessine pas ici. */
 .mems-topic-list {
   overflow: hidden;
-  border: 1px solid var(--memory-topic-list-border);
-  border-radius: var(--radius-md);
-  background: var(--memory-topic-list-bg);
 }
 
 .mems-topic {

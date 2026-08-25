@@ -59,8 +59,6 @@
   --surface-overlay: rgba(255, 255, 255, 0.86);
   --card-on-glass: rgba(255, 255, 255, 0.84);
   --chip-bg: rgba(16, 40, 82, 0.10);
-  --memory-topic-list-border: var(--edge);
-  --memory-topic-list-bg: var(--shell);
   /* Thème clair : le blanc est le sommet — l'élévation est portée par l'ombre */
   --surface-raised: var(--surface);
   --tooltip-bg: #ffffff;

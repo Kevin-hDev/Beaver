@@ -59,8 +59,6 @@
   --surface-overlay: rgba(31, 31, 35, 0.82);
   --card-on-glass: rgba(46, 46, 51, 0.80);
   --chip-bg: rgba(0, 0, 0, 0.40);
-  --memory-topic-list-border: transparent;
-  --memory-topic-list-bg: var(--surface-glass);
   /* Marche d'élévation au-dessus de l'overlay, gris neutre (pas de teinte rouge) */
   --surface-raised: rgba(40, 40, 45, 0.86);
   --tooltip-bg: #18181b;
