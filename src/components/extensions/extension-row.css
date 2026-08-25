@@ -3,6 +3,8 @@
   align-items: center;
   min-height: var(--extensions-row-height);
   transition: background var(--ease-smooth);
+  border-radius: var(--radius);
+  margin: 0 var(--list-gutter);
 }
 
 .extr-row:hover {

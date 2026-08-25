@@ -45,6 +45,7 @@
   min-height: 0;
   min-width: 0;
   overscroll-behavior: contain;
+  padding: 0 var(--list-gutter);
 }
 
 .ms-empty {
@@ -63,6 +64,7 @@
   box-sizing: border-box;
   min-height: 28px;
   padding: 0 var(--space-md);
+  border-radius: var(--radius);
   font-size: 11px;
   font-weight: 600;
   color: var(--ink);
@@ -144,6 +146,7 @@
   box-sizing: border-box;
   min-height: 28px;
   padding: 0 var(--space-md);
+  border-radius: var(--radius);
   font-size: var(--text-xs);
   cursor: pointer;
   color: var(--ink);

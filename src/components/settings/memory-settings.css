@@ -135,6 +135,8 @@
   background: transparent;
   text-align: left;
   cursor: pointer;
+  border-radius: var(--radius);
+  margin: 0 var(--list-gutter);
 }
 
 .mems-topic:last-child {

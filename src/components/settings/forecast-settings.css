@@ -50,6 +50,8 @@
   padding: 12px 20px;
   cursor: pointer;
   transition: background 100ms ease-out;
+  border-radius: var(--radius);
+  margin: 0 var(--list-gutter);
 }
 
 .fs-family-row:hover {
@@ -75,6 +77,8 @@
   padding: 12px 20px;
   cursor: pointer;
   transition: background 100ms ease-out;
+  border-radius: var(--radius);
+  margin: 0 var(--list-gutter);
 }
 
 .fs-model-row:hover {

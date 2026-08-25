@@ -31,6 +31,12 @@
   --radius-window: 16px;
   --radius-full: 50%; /* une forme, pas un arrondi */
 
+  /* Retrait du survol dans une liste : le conteneur le porte en marge interne,
+     la ligne y pose ses coins arrondis. Décidé avec Kevin le 25 août 2026 à
+     partir du menu des modes du champ de saisie. En px et non en rem : c'est un
+     détail de cadre, il ne grandit pas avec le texte. */
+  --list-gutter: 4px;
+
   /* La sélection de texte prend l'accent du thème. Sans elle, la couleur venait
      du système : sur le fond crème du thème Clair, elle ne se voyait pas. */
   --text-selection-bg: color-mix(in srgb, var(--pulse) 32%, transparent);
