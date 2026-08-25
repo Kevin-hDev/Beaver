@@ -97,3 +97,30 @@ fn refresh_rejects_an_explicit_empty_token() {
 
     assert!(from_refresh(response, &current()).is_err());
 }
+
+#[test]
+fn legacy_refresh_creates_a_scope_that_stays_stable() {
+    let mut legacy = current();
+    legacy.credential_scope = None;
+    let first = from_refresh(
+        CodexTokenResponse {
+            access_token: None,
+            refresh_token: None,
+            expires_in: None,
+        },
+        &legacy,
+    )
+    .unwrap();
+    assert!(first.credential_scope.is_some());
+
+    let second = from_refresh(
+        CodexTokenResponse {
+            access_token: None,
+            refresh_token: None,
+            expires_in: None,
+        },
+        &first,
+    )
+    .unwrap();
+    assert_eq!(second.credential_scope, first.credential_scope);
+}

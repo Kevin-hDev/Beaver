@@ -18,7 +18,7 @@ pub(crate) fn generate_credential_scope() -> Result<CredentialScope, String> {
     let mut bytes = [0_u8; 32];
     rand::rngs::OsRng.fill_bytes(&mut bytes);
     let encoded = URL_SAFE_NO_PAD.encode(bytes);
-    bytes.fill(0);
+    bytes.zeroize();
     CredentialScope::authenticated(encoded).map_err(|_| scope_unavailable())
 }
 
@@ -103,6 +103,10 @@ where
 {
     let mut candidate = ZeroizingMap(map.clone());
     let mut report = prepare_credential_scope_migration(&mut candidate.0);
+    if validate_vault_candidate(&candidate.0).is_err() {
+        report.blocked.append(&mut report.changed);
+        return report;
+    }
     if report.changed.is_empty() {
         return report;
     }
@@ -152,8 +156,11 @@ fn migrate_api_scope(
     }
     match generate_credential_scope() {
         Ok(scope) => {
-            map.insert(physical, scope.as_str().to_string());
-            report.changed.push(route);
+            if stage_raw_entries(map, &[(logical.as_str(), scope.as_str())]).is_ok() {
+                report.changed.push(route);
+            } else {
+                report.blocked.push(route);
+            }
         }
         Err(_) => report.blocked.push(route),
     }

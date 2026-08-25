@@ -68,13 +68,18 @@ pub(super) fn from_refresh(
             current.account_hint.clone(),
         ),
     };
+    let credential_scope = Some(
+        current
+            .credential_scope_for_refresh()
+            .map_err(|_| invalid())?,
+    );
     Ok(CodexTokens {
         access,
         refresh: refresh.unwrap_or_else(|| current.refresh.clone()),
         expires_at,
         refresh_not_before,
         account_hint,
-        credential_scope: current.credential_scope.clone(),
+        credential_scope,
     })
 }
 

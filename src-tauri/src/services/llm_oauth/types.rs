@@ -56,8 +56,16 @@ impl TokenBundle {
         Ok(())
     }
 
-    pub(crate) fn preserve_credential_scope_from(&mut self, current: &Self) {
+    pub(crate) fn ensure_credential_scope_for_persistence(&mut self) -> Result<(), String> {
+        if self.credential_scope.is_none() {
+            self.credential_scope = Some(crate::services::api_keys::generate_credential_scope()?);
+        }
+        Ok(())
+    }
+
+    pub(crate) fn preserve_credential_scope_from(&mut self, current: &Self) -> Result<(), String> {
         self.credential_scope = current.credential_scope.clone();
+        self.ensure_credential_scope_for_persistence()
     }
 }
 

@@ -132,3 +132,68 @@ fn oauth_logout_then_login_rotates_while_refresh_preserves_scope() {
     let after_logout_login = generate_credential_scope().unwrap();
     assert_ne!(after_logout_login, first);
 }
+
+#[test]
+fn full_vault_blocks_only_the_missing_api_scope() {
+    let mut map = HashMap::from([("openai".to_string(), "api-secret".to_string())]);
+    for index in 0..(MAX_VAULT_ENTRIES - 1) {
+        map.insert(format!("legacy-{index}"), "value".to_string());
+    }
+    let writes = Cell::new(0_u8);
+
+    let report = commit_credential_scope_migration_with(&mut map, |_| {
+        writes.set(writes.get() + 1);
+        Ok(())
+    });
+
+    assert_eq!(map.len(), MAX_VAULT_ENTRIES);
+    assert_eq!(writes.get(), 0);
+    assert!(report.blocked.contains(&RouteId::OpenAi));
+    assert!(scope_from_map(&map, RouteId::OpenAi).is_err());
+}
+
+#[test]
+fn oversized_oauth_upgrade_stays_legacy_while_other_scope_persists() {
+    let legacy = Zeroizing::new(format!(
+        r#"{{"access":"{}","refresh":"{}","expires_at":9}}"#,
+        "a".repeat(4_050),
+        "r".repeat(4_050)
+    ));
+    assert!(legacy.len() <= MAX_RAW_VALUE_LEN);
+    let oauth_key = prefixed_raw_key(LLM_OAUTH_KIMI_KEY).unwrap();
+    let mut map = HashMap::from([
+        ("openai".to_string(), "api-secret".to_string()),
+        (oauth_key.clone(), legacy.to_string()),
+    ]);
+    let writes = Cell::new(0_u8);
+
+    let report = commit_credential_scope_migration_with(&mut map, |candidate| {
+        writes.set(writes.get() + 1);
+        assert!(scope_from_map(candidate, RouteId::OpenAi).is_ok());
+        Ok(())
+    });
+
+    assert_eq!(writes.get(), 1);
+    assert!(report.blocked.contains(&RouteId::MoonshotOauth));
+    assert!(scope_from_map(&map, RouteId::OpenAi).is_ok());
+    assert!(bool::from(
+        map.get(&oauth_key)
+            .unwrap()
+            .as_bytes()
+            .ct_eq(legacy.as_bytes())
+    ));
+}
+
+#[test]
+fn raw_staging_validates_the_whole_batch_before_mutation() {
+    let mut map = HashMap::new();
+    let long_key = "k".repeat(MAX_RAW_KEY_LEN + 1);
+    let invalid_key = [("valid", "value"), (long_key.as_str(), "value")];
+    assert!(stage_raw_entries(&mut map, &invalid_key).is_err());
+    assert!(map.is_empty());
+
+    let long_value = "v".repeat(MAX_RAW_VALUE_LEN + 1);
+    let invalid_value = [("valid", "value"), ("other", long_value.as_str())];
+    assert!(stage_raw_entries(&mut map, &invalid_value).is_err());
+    assert!(map.is_empty());
+}

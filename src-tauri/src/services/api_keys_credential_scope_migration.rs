@@ -32,8 +32,11 @@ fn migrate_llm_oauth_scope(
     record.credential_scope = Some(scope);
     match encode_llm_oauth_record(&record, route) {
         Ok(encoded) => {
-            map.insert(physical_key, encoded.to_string());
-            report.changed.push(route);
+            if stage_raw_entries(map, &[(logical_key, &encoded)]).is_ok() {
+                report.changed.push(route);
+            } else {
+                report.blocked.push(route);
+            }
         }
         Err(_) => report.blocked.push(route),
     }
@@ -66,8 +69,11 @@ fn migrate_codex_oauth_scope(
     record.credential_scope = Some(scope);
     match encode_codex_oauth_record(&record) {
         Ok(encoded) => {
-            map.insert(physical_key, encoded.to_string());
-            report.changed.push(route);
+            if stage_raw_entries(map, &[(CODEX_OAUTH_KEY, &encoded)]).is_ok() {
+                report.changed.push(route);
+            } else {
+                report.blocked.push(route);
+            }
         }
         Err(_) => report.blocked.push(route),
     }

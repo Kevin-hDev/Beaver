@@ -148,3 +148,28 @@ fn api_key_and_scope_are_committed_as_one_candidate() {
     assert!(!state.keys.contains_key("openai"));
     assert!(!state.keys.contains_key(&scope_key));
 }
+
+#[test]
+fn candidate_validation_rejects_oversized_raw_values_before_persistence() {
+    let mut state = state_with_old_secret();
+    let persisted = std::cell::Cell::new(false);
+
+    let result = commit_candidate_with(
+        &mut state,
+        |candidate| {
+            candidate.insert(
+                prefixed_raw_key("oversized")?,
+                "v".repeat(MAX_RAW_VALUE_LEN + 1),
+            );
+            Ok(())
+        },
+        |_, _| {
+            persisted.set(true);
+            Ok(())
+        },
+    );
+
+    assert!(result.is_err());
+    assert!(!persisted.get());
+    assert!(!state.keys.contains_key("raw:oversized"));
+}

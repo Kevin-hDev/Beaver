@@ -28,9 +28,23 @@ impl CodexTokens {
     pub fn is_expired(&self) -> bool {
         chrono::Utc::now().timestamp() >= self.expires_at
     }
+
+    pub(crate) fn credential_scope_for_refresh(&self) -> Result<CredentialScope, String> {
+        match self.credential_scope.clone() {
+            Some(scope) => Ok(scope),
+            None => api_keys::generate_credential_scope(),
+        }
+    }
 }
 
 pub fn save(tokens: &CodexTokens) -> Result<(), String> {
+    save_record_with(tokens, api_keys::set_raw)
+}
+
+fn save_record_with<P>(tokens: &CodexTokens, persist: P) -> Result<(), String>
+where
+    P: FnOnce(&str, &str) -> Result<(), String>,
+{
     validate(tokens)?;
     let scope = tokens.credential_scope.clone().ok_or_else(unavailable)?;
     let raw = api_keys::new_codex_oauth_record(
@@ -42,7 +56,7 @@ pub fn save(tokens: &CodexTokens) -> Result<(), String> {
         scope,
     );
     let json = api_keys::encode_codex_oauth_record(&raw)?;
-    api_keys::set_raw(api_keys::CODEX_OAUTH_KEY, &json)
+    persist(api_keys::CODEX_OAUTH_KEY, &json)
 }
 
 pub fn load() -> Result<Option<CodexTokens>, String> {
@@ -50,7 +64,11 @@ pub fn load() -> Result<Option<CodexTokens>, String> {
         return Ok(None);
     }
     let json = api_keys::get_raw(api_keys::CODEX_OAUTH_KEY).map_err(|_| unavailable())?;
-    let mut raw = api_keys::decode_codex_oauth_record(&json)?;
+    load_record(&json).map(Some)
+}
+
+fn load_record(json: &str) -> Result<CodexTokens, String> {
+    let mut raw = api_keys::decode_codex_oauth_record(json)?;
     let tokens = CodexTokens {
         access: Zeroizing::new(std::mem::take(&mut raw.access)),
         refresh: Zeroizing::new(std::mem::take(&mut raw.refresh)),
@@ -60,7 +78,7 @@ pub fn load() -> Result<Option<CodexTokens>, String> {
         credential_scope: raw.credential_scope.take(),
     };
     validate(&tokens)?;
-    Ok(Some(tokens))
+    Ok(tokens)
 }
 
 pub fn clear() -> Result<(), String> {

@@ -33,6 +33,9 @@ async fn enrich_existing_xai(expected_generation: u64) -> Result<AccessToken, St
     super::xai_identity::enrich(&mut tokens, None)
         .await
         .map_err(|_| "Connexion impossible".to_string())?;
+    tokens
+        .ensure_credential_scope_for_persistence()
+        .map_err(|_| "Connexion impossible".to_string())?;
     let generation = store::save_if_generation(provider, &tokens, current_generation)?;
     Ok(AccessToken {
         value: tokens.access,
@@ -68,7 +71,9 @@ async fn refresh_locked(
     };
     match refreshed {
         Ok(mut tokens) => {
-            tokens.preserve_credential_scope_from(&current);
+            tokens
+                .preserve_credential_scope_from(&current)
+                .map_err(|_| "Renouvellement impossible".to_string())?;
             if provider == LlmOAuthProvider::Xai {
                 let previous = current.user_id.as_ref().map(|value| value.as_str());
                 if let Err(error) = super::xai_identity::enrich(&mut tokens, previous).await {
