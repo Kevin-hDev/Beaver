@@ -80,6 +80,9 @@ pub async fn login(
                 registered.completion.complete(());
                 return Err("Connexion impossible".to_string());
             }
+            tokens
+                .assign_new_credential_scope()
+                .map_err(|_| "Connexion impossible".to_string())?;
             let _guard = lifecycle::lock(provider).await;
             if registered.cancel.is_cancelled() {
                 emit_progress(&app, provider, "cancelled", None, None);

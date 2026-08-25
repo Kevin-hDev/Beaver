@@ -1,32 +1,12 @@
-use serde::{Deserialize, Serialize};
-use zeroize::{Zeroize, Zeroizing};
+use zeroize::Zeroizing;
 
 use crate::services::api_keys;
+use crate::services::reasoning_continuity::contract::CredentialScope;
 
-const VAULT_KEY: &str = "_codex_oauth";
 const REFRESH_WINDOW_SECS: i64 = 5 * 60;
 const MAX_ACCESS_TOKEN_BYTES: usize = 512 * 1024;
 const MAX_REFRESH_TOKEN_BYTES: usize = 64 * 1024;
 const MAX_ACCOUNT_HINT_BYTES: usize = 128;
-
-#[derive(Serialize, Deserialize)]
-struct Stored {
-    access: String,
-    refresh: String,
-    expires_at: i64,
-    #[serde(default)]
-    refresh_not_before: i64,
-    #[serde(rename = "account_id")]
-    account_hint: String,
-}
-
-impl Drop for Stored {
-    fn drop(&mut self) {
-        self.access.zeroize();
-        self.refresh.zeroize();
-        self.account_hint.zeroize();
-    }
-}
 
 pub struct CodexTokens {
     pub access: Zeroizing<String>,
@@ -35,6 +15,7 @@ pub struct CodexTokens {
     pub(crate) refresh_not_before: i64,
     /// Indice de routage non vérifié. Le serveur valide le bearer token.
     pub account_hint: Zeroizing<String>,
+    pub credential_scope: Option<CredentialScope>,
 }
 
 impl CodexTokens {
@@ -51,38 +32,39 @@ impl CodexTokens {
 
 pub fn save(tokens: &CodexTokens) -> Result<(), String> {
     validate(tokens)?;
-    let raw = Stored {
-        access: tokens.access.to_string(),
-        refresh: tokens.refresh.to_string(),
-        expires_at: tokens.expires_at,
-        refresh_not_before: tokens.refresh_not_before,
-        account_hint: tokens.account_hint.as_str().to_string(),
-    };
-    let mut json = serde_json::to_string(&raw).map_err(|_| unavailable())?;
-    let result = api_keys::set_raw(VAULT_KEY, &json);
-    json.zeroize();
-    result
+    let scope = tokens.credential_scope.clone().ok_or_else(unavailable)?;
+    let raw = api_keys::new_codex_oauth_record(
+        tokens.access.to_string(),
+        tokens.refresh.to_string(),
+        tokens.expires_at,
+        tokens.refresh_not_before,
+        tokens.account_hint.as_str().to_string(),
+        scope,
+    );
+    let json = api_keys::encode_codex_oauth_record(&raw)?;
+    api_keys::set_raw(api_keys::CODEX_OAUTH_KEY, &json)
 }
 
 pub fn load() -> Result<Option<CodexTokens>, String> {
-    if !api_keys::has_raw(VAULT_KEY).map_err(|_| unavailable())? {
+    if !api_keys::has_raw(api_keys::CODEX_OAUTH_KEY).map_err(|_| unavailable())? {
         return Ok(None);
     }
-    let json = api_keys::get_raw(VAULT_KEY).map_err(|_| unavailable())?;
-    let mut raw: Stored = serde_json::from_str(&json).map_err(|_| unavailable())?;
+    let json = api_keys::get_raw(api_keys::CODEX_OAUTH_KEY).map_err(|_| unavailable())?;
+    let mut raw = api_keys::decode_codex_oauth_record(&json)?;
     let tokens = CodexTokens {
         access: Zeroizing::new(std::mem::take(&mut raw.access)),
         refresh: Zeroizing::new(std::mem::take(&mut raw.refresh)),
         expires_at: raw.expires_at,
         refresh_not_before: raw.refresh_not_before,
         account_hint: Zeroizing::new(std::mem::take(&mut raw.account_hint)),
+        credential_scope: raw.credential_scope.take(),
     };
     validate(&tokens)?;
     Ok(Some(tokens))
 }
 
 pub fn clear() -> Result<(), String> {
-    api_keys::delete_raw(VAULT_KEY)
+    api_keys::delete_raw(api_keys::CODEX_OAUTH_KEY)
 }
 
 pub fn is_logged_in() -> bool {

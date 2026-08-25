@@ -10,6 +10,9 @@ fn tokens_with_expiry(expires_at: i64) -> CodexTokens {
         expires_at,
         refresh_not_before: 0,
         account_hint: Zeroizing::new("acct_123".to_string()),
+        credential_scope: Some(
+            crate::services::api_keys::generate_credential_scope().expect("scope"),
+        ),
     }
 }
 
@@ -79,7 +82,7 @@ fn an_expired_token_ignores_the_refresh_cooldown() {
 
 #[test]
 fn legacy_storage_defaults_the_refresh_cooldown_to_zero() {
-    let stored: super::Stored = serde_json::from_str(
+    let stored = crate::services::api_keys::decode_codex_oauth_record(
         r#"{"access":"a","refresh":"r","expires_at":1,"account_id":"acct_1"}"#,
     )
     .unwrap();

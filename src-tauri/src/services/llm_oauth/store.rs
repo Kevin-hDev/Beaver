@@ -1,32 +1,12 @@
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use serde::{Deserialize, Serialize};
-use zeroize::{Zeroize, Zeroizing};
+use zeroize::Zeroizing;
 
 use super::{LlmOAuthProvider, TokenBundle};
 use crate::services::api_keys;
 
 const MAX_TOKEN_LEN: usize = 4_096;
 static GENERATIONS: [AtomicU64; 2] = [AtomicU64::new(0), AtomicU64::new(0)];
-
-#[derive(Serialize, Deserialize)]
-struct StoredTokens {
-    access: String,
-    refresh: String,
-    expires_at: i64,
-    #[serde(default)]
-    user_id: Option<String>,
-}
-
-impl Drop for StoredTokens {
-    fn drop(&mut self) {
-        self.access.zeroize();
-        self.refresh.zeroize();
-        if let Some(value) = &mut self.user_id {
-            value.zeroize();
-        }
-    }
-}
 
 pub fn save_if_generation(
     provider: LlmOAuthProvider,
@@ -41,16 +21,16 @@ pub fn save_if_generation(
 
 fn save(provider: LlmOAuthProvider, tokens: &TokenBundle) -> Result<u64, String> {
     validate(tokens)?;
-    let stored = StoredTokens {
-        access: tokens.access.to_string(),
-        refresh: tokens.refresh.to_string(),
-        expires_at: tokens.expires_at,
-        user_id: tokens.user_id.as_ref().map(|value| value.to_string()),
-    };
-    let mut json = serde_json::to_string(&stored).map_err(|_| unavailable())?;
-    let result = api_keys::set_raw(provider.vault_key(), &json);
-    json.zeroize();
-    result?;
+    let scope = tokens.credential_scope.clone().ok_or_else(unavailable)?;
+    let stored = api_keys::new_llm_oauth_record(
+        tokens.access.to_string(),
+        tokens.refresh.to_string(),
+        tokens.expires_at,
+        tokens.user_id.as_ref().map(|value| value.to_string()),
+        scope,
+    );
+    let json = api_keys::encode_llm_oauth_record(&stored, provider.reasoning_route())?;
+    api_keys::set_raw(provider.vault_key(), &json)?;
     Ok(GENERATIONS[provider.index()].fetch_add(1, Ordering::SeqCst) + 1)
 }
 
@@ -59,12 +39,13 @@ pub fn load(provider: LlmOAuthProvider) -> Result<Option<TokenBundle>, String> {
         Ok(value) => value,
         Err(_) => return Ok(None),
     };
-    let mut stored: StoredTokens = serde_json::from_str(&json).map_err(|_| unavailable())?;
+    let mut stored = api_keys::decode_llm_oauth_record(&json, provider.reasoning_route())?;
     let tokens = TokenBundle {
         access: Zeroizing::new(std::mem::take(&mut stored.access)),
         refresh: Zeroizing::new(std::mem::take(&mut stored.refresh)),
         expires_at: stored.expires_at,
         user_id: stored.user_id.take().map(Zeroizing::new),
+        credential_scope: stored.credential_scope.take(),
     };
     validate(&tokens)?;
     Ok(Some(tokens))
@@ -109,6 +90,7 @@ mod tests {
             refresh: Zeroizing::new("r".to_string()),
             expires_at: 1,
             user_id: None,
+            credential_scope: None,
         };
         assert!(validate(&tokens).is_err());
     }
@@ -131,8 +113,36 @@ mod tests {
             refresh: Zeroizing::new("refresh".to_string()),
             expires_at: 1,
             user_id: None,
+            credential_scope: None,
         };
         let stale = generation(provider).saturating_add(1);
         assert!(save_if_generation(provider, &tokens, stale).is_err());
+    }
+
+    #[test]
+    fn login_rotates_scope_and_refresh_preserves_it() {
+        let mut login = TokenBundle {
+            access: Zeroizing::new("access".to_string()),
+            refresh: Zeroizing::new("refresh".to_string()),
+            expires_at: 1,
+            user_id: None,
+            credential_scope: None,
+        };
+        login.assign_new_credential_scope().unwrap();
+        let first = login.credential_scope.clone().unwrap();
+
+        let mut refreshed = TokenBundle {
+            access: Zeroizing::new("new-access".to_string()),
+            refresh: Zeroizing::new("refresh".to_string()),
+            expires_at: 2,
+            user_id: None,
+            credential_scope: None,
+        };
+        refreshed.preserve_credential_scope_from(&login);
+        assert_eq!(refreshed.credential_scope.as_ref(), Some(&first));
+
+        let mut next_login = refreshed;
+        next_login.assign_new_credential_scope().unwrap();
+        assert_ne!(next_login.credential_scope.as_ref(), Some(&first));
     }
 }

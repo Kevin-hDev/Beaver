@@ -68,6 +68,7 @@ async fn refresh_locked(
     };
     match refreshed {
         Ok(mut tokens) => {
+            tokens.preserve_credential_scope_from(&current);
             if provider == LlmOAuthProvider::Xai {
                 let previous = current.user_id.as_ref().map(|value| value.as_str());
                 if let Err(error) = super::xai_identity::enrich(&mut tokens, previous).await {

@@ -39,6 +39,9 @@ pub(super) fn from_exchange(mut raw: CodexTokenResponse) -> Result<CodexTokens, 
         expires_at,
         refresh_not_before: 0,
         account_hint: Zeroizing::new(claims.account_hint),
+        credential_scope: Some(
+            crate::services::api_keys::generate_credential_scope().map_err(|_| invalid())?,
+        ),
     })
 }
 
@@ -71,6 +74,7 @@ pub(super) fn from_refresh(
         expires_at,
         refresh_not_before,
         account_hint,
+        credential_scope: current.credential_scope.clone(),
     })
 }
 

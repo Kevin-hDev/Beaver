@@ -22,6 +22,9 @@ fn current() -> CodexTokens {
         expires_at: 1_900_000_000,
         refresh_not_before: 0,
         account_hint: Zeroizing::new("acct_test".to_string()),
+        credential_scope: Some(
+            crate::services::api_keys::generate_credential_scope().expect("scope"),
+        ),
     }
 }
 
@@ -37,6 +40,21 @@ fn exchange_prefers_the_jwt_expiration() {
 
     assert_eq!(tokens.expires_at, 1_900_000_000);
     assert_eq!(tokens.refresh_not_before, 0);
+    assert!(tokens.credential_scope.is_some());
+}
+
+#[test]
+fn a_new_exchange_rotates_the_local_credential_scope() {
+    let response = || CodexTokenResponse {
+        access_token: Some(access_token(1_900_000_000)),
+        refresh_token: Some("refresh".to_string()),
+        expires_in: Some(3_600),
+    };
+
+    let first = from_exchange(response()).unwrap();
+    let second = from_exchange(response()).unwrap();
+
+    assert_ne!(first.credential_scope, second.credential_scope);
 }
 
 #[test]
@@ -47,11 +65,12 @@ fn refresh_preserves_fields_omitted_by_the_server() {
         expires_in: None,
     };
 
-    let tokens = from_refresh(response, &current()).unwrap();
+    let current = current();
+    let tokens = from_refresh(response, &current).unwrap();
 
     assert!(constant_time_secret_eq(
         tokens.access.as_bytes(),
-        current().access.as_bytes()
+        current.access.as_bytes()
     ));
     assert!(constant_time_secret_eq(
         tokens.refresh.as_bytes(),
@@ -59,6 +78,13 @@ fn refresh_preserves_fields_omitted_by_the_server() {
     ));
     assert_eq!(tokens.expires_at, 1_900_000_000);
     assert!(tokens.refresh_not_before > chrono::Utc::now().timestamp());
+    assert_eq!(
+        tokens.credential_scope.as_ref().map(|scope| scope.as_str()),
+        current
+            .credential_scope
+            .as_ref()
+            .map(|scope| scope.as_str())
+    );
 }
 
 #[test]
