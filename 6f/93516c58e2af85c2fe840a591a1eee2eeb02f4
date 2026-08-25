@@ -1,0 +1,9 @@
+Release v1.1.5 metadata follow-up.
+
+Reason: after CI 32841895108 became fully green on commit 714d8214, the final release review found that the visual-design branch merged into main was absent from both release authorities. Publishing at that point would have omitted a major user-visible category.
+
+Scope: CHANGELOG.md now documents the unified corner radius, raised/recessed depth system, clearer interaction states, composer alignment, visible text selection, and rounded native windows across macOS, Windows, and Linux. app-release-notes.json keeps the six-item product summary but expands the icon sentence in all seven required locales to include the visual refresh and rounded desktop windows.
+
+Verification before commit: npm run test:release-workflow passed 40/40; node scripts/app-release-notes.mjs 1.1.5 validated the changelog entry, seven exact locales, six items per locale, sentence endings, whitespace, and 180-character bounds; git diff --check passed; graphify . --update and graphify cluster-only . completed.
+
+Release gate: this documentation commit changes the release SHA, so the previous green CI must not be reused. Wait for CI and CodeQL on 6f93516c to be fully green before recreating tag/release v1.1.5.
