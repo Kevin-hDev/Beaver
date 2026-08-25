@@ -1,18 +1,33 @@
 [CmdletBinding()]
 param(
-    [switch]$ListOnly
+    [switch]$ListOnly,
+    [string]$RepositoryRoot = ""
 )
 
 $ErrorActionPreference = "Stop"
 $MaxPowerShellScripts = 256
-$repositoryRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
+$repositoryRoot = if ([string]::IsNullOrWhiteSpace($RepositoryRoot)) {
+    [IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
+} else {
+    [IO.Path]::GetFullPath($RepositoryRoot)
+}
 $repositoryPrefix = $repositoryRoot.TrimEnd(
     [IO.Path]::DirectorySeparatorChar,
     [IO.Path]::AltDirectorySeparatorChar
 ) + [IO.Path]::DirectorySeparatorChar
 
-# Git is the authority for release source inventory; disabling quotePath preserves non-ASCII names.
-$relativePaths = @(& git -C $repositoryRoot -c core.quotepath=false ls-files -- "*.ps1")
+# Git emits UTF-8; force its decoding only for this bounded inventory and restore the console.
+$previousConsoleOutputEncoding = [Console]::OutputEncoding
+try {
+    [Console]::OutputEncoding = New-Object Text.UTF8Encoding($false)
+    $relativePaths = @(
+        & git -C $repositoryRoot -c core.quotepath=false `
+            ls-files --cached --others --exclude-standard -- `
+            ":(icase,glob)*.ps1" ":(icase,glob)**/*.ps1"
+    )
+} finally {
+    [Console]::OutputEncoding = $previousConsoleOutputEncoding
+}
 if ($LASTEXITCODE -ne 0 -or $relativePaths.Count -le 0 -or
     $relativePaths.Count -gt $MaxPowerShellScripts) {
     throw "PowerShell syntax inventory failed."
@@ -23,7 +38,8 @@ $paths = foreach ($relativePath in $relativePaths) {
         [string]::IsNullOrWhiteSpace($relativePath) -or
         $relativePath.Length -gt 4096 -or
         [IO.Path]::IsPathRooted($relativePath) -or
-        $relativePath -match "(^|[\\/])\.\.([\\/]|$)"
+        $relativePath -match "(^|[\\/])\.\.([\\/]|$)" -or
+        [IO.Path]::GetExtension($relativePath) -ine ".ps1"
     ) {
         throw "PowerShell syntax inventory failed."
     }

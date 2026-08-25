@@ -15,6 +15,7 @@ function Stop-Validation([string]$Code) {
 . (Join-Path $PSScriptRoot "windows-icon-validation.test.ps1")
 . (Join-Path $PSScriptRoot "windows-native-icon-engine.test.ps1")
 . (Join-Path $PSScriptRoot "windows-package-file.test.ps1")
+. (Join-Path $PSScriptRoot "windows-powershell-syntax-inventory.test.ps1")
 
 function New-TestShortcut([string]$Path, [string]$Target) {
     $shell = New-Object -ComObject WScript.Shell
@@ -159,4 +160,5 @@ try {
 }
 
 & (Join-Path $PSScriptRoot "../test-install-ps1.ps1")
+& (Join-Path $PSScriptRoot "check-nsis-migration.ps1") -Mode Source
 Write-Host "PowerShell package contracts OK"
