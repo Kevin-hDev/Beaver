@@ -11,6 +11,10 @@ pub mod conversation_input;
 #[cfg(test)]
 mod conversation_input_tests;
 pub mod conversation_skills;
+mod skill_limits;
+mod skill_manifest_read;
+#[cfg(test)]
+mod skill_manifest_read_tests;
 pub mod generation_metrics;
 pub mod session_archive;
 mod session_artifacts;

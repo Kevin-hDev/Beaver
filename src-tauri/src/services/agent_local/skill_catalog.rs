@@ -6,7 +6,6 @@ use std::collections::{BTreeMap, HashMap};
 use std::path::{Path, PathBuf};
 
 const SKILL_FILENAMES: &[&str] = &["skill.md", "SKILL.md"];
-const MAX_SKILL_BYTES: u64 = 256 * 1024;
 const MAX_LOCAL_SKILLS: usize = 2048;
 
 pub struct SkillCatalogEntry {
@@ -103,7 +102,11 @@ fn external_entries(home: &Path) -> Vec<SkillCatalogEntry> {
 }
 
 fn metadata(manifest: &Path, fallback: &str) -> Option<(String, String)> {
-    let (name, description) = read_skill_metadata(manifest, fallback, MAX_SKILL_BYTES)?;
+    let (name, description) = read_skill_metadata(
+        manifest,
+        fallback,
+        super::skill_limits::MAX_SKILL_CONTENT_BYTES as u64,
+    )?;
     Some((
         name,
         description

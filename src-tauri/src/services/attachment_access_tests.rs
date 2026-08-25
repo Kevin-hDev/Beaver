@@ -78,6 +78,23 @@ fn symbolic_link_is_refused_before_canonicalization() {
     assert!(result.is_err());
 }
 
+#[cfg(unix)]
+#[test]
+fn canonical_path_with_control_character_is_refused_after_parent_symlink_resolution() {
+    use std::os::unix::fs::symlink;
+
+    let dir = tempdir().unwrap();
+    let target = dir.path().join("canonical\ncontrol");
+    let alias = dir.path().join("clean-alias");
+    fs::create_dir(&target).unwrap();
+    fs::write(target.join("notes.txt"), b"safe").unwrap();
+    symlink(&target, &alias).unwrap();
+    let raw = alias.join("notes.txt").to_string_lossy().to_string();
+
+    assert!(!raw.chars().any(char::is_control));
+    assert!(register_paths(&[raw], &TEST_KEY, |_| true).is_err());
+}
+
 #[test]
 fn forged_grant_is_refused() {
     let dir = tempdir().unwrap();

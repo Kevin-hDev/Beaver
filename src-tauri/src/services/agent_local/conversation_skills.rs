@@ -7,8 +7,8 @@ use crate::models::agent_turn_contract::{
 use super::conversation_input::{ConversationInputError, ConversationInputErrorKind};
 
 const MAX_REFERENCE_NAME_CHARS: usize = 120;
-const MAX_RESOLVED_SKILL_BYTES: usize = 256 * 1024;
-const MAX_RESOLVED_SKILLS_BYTES: usize = MAX_SKILLS_PER_TURN * MAX_RESOLVED_SKILL_BYTES;
+const MAX_RESOLVED_SKILLS_BYTES: usize =
+    MAX_SKILLS_PER_TURN * super::skill_limits::MAX_RESOLVED_SKILL_BYTES;
 
 #[allow(dead_code, reason = "consumed by conversation admission in Task 8")]
 #[derive(Debug)]
@@ -35,7 +35,7 @@ pub async fn resolve(
         let loaded = super::tool_skill_loader::load_skill_with_metadata(&reference.id)
             .await
             .map_err(|_| error(ConversationInputErrorKind::Skill))?;
-        if loaded.content.len() > MAX_RESOLVED_SKILL_BYTES {
+        if loaded.content.len() > super::skill_limits::MAX_RESOLVED_SKILL_BYTES {
             return Err(error(ConversationInputErrorKind::Limit));
         }
         total_bytes = total_bytes

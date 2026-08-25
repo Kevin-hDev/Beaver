@@ -1,6 +1,9 @@
 use std::io::Read;
 use std::path::Path;
 
+#[cfg(test)]
+use super::skill_limits::MAX_SKILL_CONTENT_BYTES;
+
 const MAX_METADATA_BYTES: u64 = 32 * 1024;
 pub const MAX_SKILL_DESCRIPTION_CHARS: usize = 250;
 
@@ -149,7 +152,8 @@ mod tests {
         content.push(0xff);
         std::fs::write(&path, content).unwrap();
 
-        let metadata = read_skill_metadata(&path, "fallback", 256 * 1024).unwrap();
+        let metadata =
+            read_skill_metadata(&path, "fallback", MAX_SKILL_CONTENT_BYTES as u64).unwrap();
 
         assert_eq!(metadata.0, "bounded");
         assert_eq!(metadata.1, "Prefix only");

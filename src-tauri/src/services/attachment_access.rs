@@ -129,17 +129,8 @@ fn constant_time_32(left: &[u8; 32], right: &[u8; 32]) -> bool {
 }
 
 fn validate_raw_path(raw: &str) -> Result<&Path, String> {
-    if raw.is_empty() || raw.len() > MAX_PATH_BYTES || raw.chars().any(char::is_control) {
-        return Err(ERROR_CODE.into());
-    }
     let path = Path::new(raw);
-    if !path.is_absolute()
-        || path
-            .components()
-            .any(|component| matches!(component, Component::ParentDir))
-    {
-        return Err(ERROR_CODE.into());
-    }
+    validate_path_text(path, raw)?;
     Ok(path)
 }
 
@@ -161,10 +152,30 @@ fn validate_file(
         return Err(ERROR_CODE.into());
     }
     let canonical = path.canonicalize().map_err(|_| ERROR_CODE.to_string())?;
+    validate_canonical_path(&canonical)?;
     let metadata = canonical.metadata().map_err(|_| ERROR_CODE.to_string())?;
     if !metadata.is_file() || metadata.len() > max_size {
         return Err(ERROR_CODE.into());
     }
     let identity = super::attachment_access_identity::from_metadata(&metadata).ok_or(ERROR_CODE)?;
     Ok((canonical, metadata.len(), identity))
+}
+
+fn validate_canonical_path(path: &Path) -> Result<(), String> {
+    let text = path.to_str().ok_or(ERROR_CODE)?;
+    validate_path_text(path, text)
+}
+
+fn validate_path_text(path: &Path, text: &str) -> Result<(), String> {
+    if text.is_empty()
+        || text.len() > MAX_PATH_BYTES
+        || text.chars().any(char::is_control)
+        || !path.is_absolute()
+        || path
+            .components()
+            .any(|component| matches!(component, Component::ParentDir))
+    {
+        return Err(ERROR_CODE.into());
+    }
+    Ok(())
 }

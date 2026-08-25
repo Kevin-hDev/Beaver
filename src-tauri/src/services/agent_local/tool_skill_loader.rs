@@ -57,25 +57,33 @@ pub async fn load_skill_with_metadata(skill_id: &str) -> Result<LoadedSkill, Ski
             .into_iter()
             .find(|entry| entry.info.id == requested)
             .ok_or(SkillLoadError::NotFound)?;
-        let metadata =
-            std::fs::metadata(&entry.manifest).map_err(|_| SkillLoadError::Unavailable)?;
-        if !metadata.is_file() || metadata.len() > 256 * 1024 {
+        let content = super::skill_manifest_read::read(&entry.manifest)
+            .map_err(|_| SkillLoadError::Unavailable)?;
+        let source = entry.info.source_name;
+        let directory = entry
+            .bundle_root
+            .to_str()
+            .ok_or(SkillLoadError::Unavailable)?;
+        if source.len() > super::skill_limits::MAX_SKILL_SOURCE_NAME_BYTES
+            || directory.len() > super::skill_limits::MAX_SKILL_BUNDLE_PATH_BYTES
+            || source.chars().any(char::is_control)
+            || directory.chars().any(char::is_control)
+        {
             return Err(SkillLoadError::Unavailable);
         }
-        let content =
-            std::fs::read_to_string(&entry.manifest).map_err(|_| SkillLoadError::Unavailable)?;
         let (_, _, body) = crate::services::agent_local::skill_parser::parse_skill_content(
             &content,
             &entry.info.name,
         );
+        let enriched = format!(
+            "Skill source: {source}\nSkill directory: {directory}\n\n{body}"
+        );
+        if enriched.len() > super::skill_limits::MAX_RESOLVED_SKILL_BYTES {
+            return Err(SkillLoadError::Unavailable);
+        }
         Ok(LoadedSkill {
             name: display_name(&entry.info.name),
-            content: format!(
-                "Skill source: {}\nSkill directory: {}\n\n{}",
-                entry.info.source_name,
-                entry.bundle_root.display(),
-                body
-            ),
+            content: enriched,
         })
     })
     .await
