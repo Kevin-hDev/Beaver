@@ -17,14 +17,7 @@ pub(crate) fn apply(messages: &mut Vec<ChatMessage>, provider: &str, model: &str
         system.content.push_str(GEMMA4_THINKING_GUARD);
         return;
     }
-    messages.insert(
-        0,
-        ChatMessage {
-            role: "system".to_string(),
-            content: GEMMA4_THINKING_GUARD.to_string(),
-            ..Default::default()
-        },
-    );
+    messages.insert(0, ChatMessage::system(GEMMA4_THINKING_GUARD.to_string()));
 }
 
 fn needs_guard(provider: &str, model: &str) -> bool {
@@ -45,10 +38,12 @@ mod tests {
     use super::*;
 
     fn message(role: &str, content: &str) -> ChatMessage {
-        ChatMessage {
-            role: role.to_string(),
-            content: content.to_string(),
-            ..Default::default()
+        match role {
+            "system" => ChatMessage::system(content.to_string()),
+            "user" => ChatMessage::user(content.to_string()),
+            "assistant" => ChatMessage::assistant(content.to_string(), None, None),
+            "tool" => ChatMessage::tool(content.to_string(), None, None),
+            other => panic!("unsupported chat role in test/setup: {other}"),
         }
     }
 

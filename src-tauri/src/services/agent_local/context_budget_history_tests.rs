@@ -85,27 +85,16 @@ fn empty_ids_are_normalized_but_empty_tool_names_are_rejected() {
 }
 
 fn assistant_call(id: &str, content: &str) -> ChatMessage {
-    ChatMessage {
-        role: "assistant".into(),
-        content: content.into(),
-        tool_calls: Some(vec![ToolCallOllama {
+    ChatMessage::assistant(content.into(), None, Some(vec![ToolCallOllama {
             id: Some(id.into()),
             extra_content: None,
             function: ToolCallFunction {
                 name: "grep".into(),
                 arguments: serde_json::json!({}),
             },
-        }]),
-        ..Default::default()
-    }
+        }]))
 }
 
 fn tool_result(id: &str) -> ChatMessage {
-    ChatMessage {
-        role: "tool".into(),
-        content: "ok".into(),
-        tool_name: Some("grep".into()),
-        tool_call_id: Some(id.into()),
-        ..Default::default()
-    }
+    ChatMessage::tool("ok".into(), Some(id.into()), Some("grep".into()))
 }

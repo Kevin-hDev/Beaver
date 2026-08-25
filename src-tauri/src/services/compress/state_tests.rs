@@ -5,10 +5,12 @@ use crate::services::agent_local::types_session::{
 };
 
 fn chat(role: &str, content: &str) -> ChatMessage {
-    ChatMessage {
-        role: role.to_string(),
-        content: content.to_string(),
-        ..Default::default()
+    match role {
+        "system" => ChatMessage::system(content.to_string()),
+        "user" => ChatMessage::user(content.to_string()),
+        "assistant" => ChatMessage::assistant(content.to_string(), None, None),
+        "tool" => ChatMessage::tool(content.to_string(), None, None),
+        other => panic!("unsupported chat role in test/setup: {other}"),
     }
 }
 
@@ -72,13 +74,11 @@ fn open_tool_chain_is_not_safe_to_compress() {
     assert!(!state::is_safe_to_compress(&[assistant.clone()]));
     assert!(state::is_safe_to_compress(&[
         assistant,
-        ChatMessage {
-            role: "tool".to_string(),
-            content: "ok".to_string(),
-            tool_name: Some("read_file".to_string()),
-            tool_call_id: Some("call-1".to_string()),
-            ..Default::default()
-        },
+        ChatMessage::tool(
+            "ok".to_string(),
+            Some("call-1".to_string()),
+            Some("read_file".to_string())
+        ),
     ]));
 }
 

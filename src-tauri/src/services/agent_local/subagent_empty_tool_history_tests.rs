@@ -6,26 +6,15 @@ use tokio_util::sync::CancellationToken;
 async fn empty_tool_result_survives_persistence_and_reconstruction() {
     let (parent, child, run) = active_child().await;
     let messages = vec![
-        ChatMessage {
-            role: "assistant".into(),
-            content: "appel".into(),
-            tool_calls: Some(vec![ToolCallOllama {
+        ChatMessage::assistant("appel".into(), None, Some(vec![ToolCallOllama {
                 id: Some("call-empty".into()),
                 extra_content: None,
                 function: ToolCallFunction {
                     name: "write_file".into(),
                     arguments: serde_json::json!({"path": "note.txt", "content": "ok"}),
                 },
-            }]),
-            ..Default::default()
-        },
-        ChatMessage {
-            role: "tool".into(),
-            content: String::new(),
-            tool_name: Some("write_file".into()),
-            tool_call_id: Some("call-empty".into()),
-            ..Default::default()
-        },
+            }])),
+        ChatMessage::tool(String::new(), Some("call-empty".into()), Some("write_file".into())),
     ];
 
     subagent_history::persist_for_execution(

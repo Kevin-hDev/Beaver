@@ -26,11 +26,7 @@ fn request<'a>(
 
 #[test]
 fn api_request_uses_responses_reasoning_and_fast_contract() {
-    let messages = [ChatMessage {
-        role: "user".into(),
-        content: "bonjour".into(),
-        ..Default::default()
-    }];
+    let messages = [ChatMessage::user("bonjour".into())];
     let body = build_request(&request(
         &messages,
         &[],
@@ -51,9 +47,10 @@ fn api_request_uses_responses_reasoning_and_fast_contract() {
 #[test]
 fn api_request_preserves_tool_continuation_in_responses_shape() {
     let messages = [
-        ChatMessage {
-            role: "assistant".into(),
-            tool_calls: Some(vec![
+        ChatMessage::assistant(
+            String::new(),
+            None,
+            Some(vec![
                 crate::services::agent_local::types_ollama::ToolCallOllama {
                     id: Some("call_1".into()),
                     function: crate::services::agent_local::types_ollama::ToolCallFunction {
@@ -63,14 +60,8 @@ fn api_request_preserves_tool_continuation_in_responses_shape() {
                     extra_content: None,
                 },
             ]),
-            ..Default::default()
-        },
-        ChatMessage {
-            role: "tool".into(),
-            content: "18 C".into(),
-            tool_call_id: Some("call_1".into()),
-            ..Default::default()
-        },
+        ),
+        ChatMessage::tool("18 C".into(), Some("call_1".into()), None),
     ];
     let tools = [serde_json::json!({
         "type": "function",
@@ -95,11 +86,7 @@ fn api_request_preserves_tool_continuation_in_responses_shape() {
 
 #[test]
 fn unsupported_fast_mode_omits_service_tier() {
-    let messages = [ChatMessage {
-        role: "user".into(),
-        content: "bonjour".into(),
-        ..Default::default()
-    }];
+    let messages = [ChatMessage::user("bonjour".into())];
     let body = build_request(&request(
         &messages,
         &[],
@@ -121,11 +108,7 @@ async fn runtime_dispatch_cannot_fall_back_to_chat_completions() {
     let emitter = crate::services::agent_local::stream_events::AgentEventEmitter::test(
         session_id.to_string(),
     );
-    let messages = [ChatMessage {
-        role: "user".into(),
-        content: "bonjour".into(),
-        ..Default::default()
-    }];
+    let messages = [ChatMessage::user("bonjour".into())];
 
     crate::services::llm::stream::stream_chat_no_done(
         &emitter,

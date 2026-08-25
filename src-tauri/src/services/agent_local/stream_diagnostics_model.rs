@@ -107,26 +107,15 @@ mod tests {
     #[test]
     fn request_stats_counts_reasoning_without_content() {
         let messages = vec![
-            ChatMessage {
-                role: "assistant".to_string(),
-                content: "".to_string(),
-                reasoning_content: Some("réflexion".to_string()),
-                tool_calls: Some(vec![ToolCallOllama {
+            ChatMessage::assistant("".to_string(), Some("réflexion".to_string()), Some(vec![ToolCallOllama {
                     id: Some("call_1".to_string()),
                     extra_content: None,
                     function: ToolCallFunction {
                         name: "grep".to_string(),
                         arguments: json!({"pattern": "x"}),
                     },
-                }]),
-                ..Default::default()
-            },
-            ChatMessage {
-                role: "tool".to_string(),
-                content: "ok".to_string(),
-                tool_call_id: Some("call_1".to_string()),
-                ..Default::default()
-            },
+                }])),
+            ChatMessage::tool("ok".to_string(), Some("call_1".to_string()), None),
         ];
 
         assert_eq!(

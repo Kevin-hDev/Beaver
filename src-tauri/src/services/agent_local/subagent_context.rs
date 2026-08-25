@@ -7,11 +7,7 @@ pub async fn build_messages(
     fallback_prompt: &str,
     prior_messages: Option<Vec<ChatMessage>>,
 ) -> Vec<ChatMessage> {
-    let mut messages = vec![ChatMessage {
-        role: "system".to_string(),
-        content: system_prompt,
-        ..Default::default()
-    }];
+    let mut messages = vec![ChatMessage::system(system_prompt)];
 
     if let Some(prior) = prior_messages {
         messages.extend(prior.into_iter().filter(|message| message.role != "system"));
@@ -20,11 +16,7 @@ pub async fn build_messages(
     }
 
     if messages.len() == 1 {
-        messages.push(ChatMessage {
-            role: "user".to_string(),
-            content: fallback_prompt.to_string(),
-            ..Default::default()
-        });
+        messages.push(ChatMessage::user(fallback_prompt.to_string()));
     }
 
     messages
@@ -41,15 +33,16 @@ fn saved_to_chat(message: AgentMessage) -> Option<ChatMessage> {
     {
         return None;
     }
-    Some(ChatMessage {
-        role: message.role,
-        content: message.content,
-        images: None,
-        tool_calls,
-        tool_name: message.tool_name,
-        tool_call_id: None,
-        reasoning_content: message.thinking,
-    })
+    match message.role.as_str() {
+        "user" => Some(ChatMessage::user(message.content)),
+        "assistant" => Some(ChatMessage::assistant(
+            message.content,
+            message.thinking,
+            tool_calls,
+        )),
+        "tool" => Some(ChatMessage::tool(message.content, None, message.tool_name)),
+        _ => None,
+    }
 }
 
 fn convert_tool_calls(calls: Vec<ToolCallRequest>) -> Vec<ToolCallOllama> {
@@ -100,31 +93,16 @@ mod tests {
     #[tokio::test]
     async fn in_memory_history_keeps_provider_tool_ids_under_one_fresh_system_message() {
         let prior = vec![
-            ChatMessage {
-                role: "system".into(),
-                content: "ancien système".into(),
-                ..Default::default()
-            },
-            ChatMessage {
-                role: "assistant".into(),
-                content: "appel".into(),
-                tool_calls: Some(vec![ToolCallOllama {
+            ChatMessage::system("ancien système".into()),
+            ChatMessage::assistant("appel".into(), None, Some(vec![ToolCallOllama {
                     id: Some("call-exact".into()),
                     extra_content: None,
                     function: ToolCallFunction {
                         name: "read_file".into(),
                         arguments: serde_json::json!({"path": "README.md"}),
                     },
-                }]),
-                ..Default::default()
-            },
-            ChatMessage {
-                role: "tool".into(),
-                content: "résultat".into(),
-                tool_name: Some("read_file".into()),
-                tool_call_id: Some("call-exact".into()),
-                ..Default::default()
-            },
+                }])),
+            ChatMessage::tool("résultat".into(), Some("call-exact".into()), Some("read_file".into())),
         ];
 
         let messages = build_messages("missing", "nouveau système".into(), "fallback", Some(prior))

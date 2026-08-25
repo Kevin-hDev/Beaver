@@ -2,12 +2,7 @@ use super::*;
 use crate::services::agent_local::types_ollama::{ToolCallFunction, ToolCallOllama};
 
 fn user_with_png() -> ChatMessage {
-    ChatMessage {
-        role: "user".into(),
-        content: "Regarde".into(),
-        images: Some(vec!["iVBORw0KGgo=".into()]),
-        ..Default::default()
-    }
+    ChatMessage::user("Regarde".into()).with_images(vec!["iVBORw0KGgo=".into()])
 }
 
 #[test]
@@ -34,10 +29,10 @@ fn mistral_image_uses_string_url() {
 
 #[test]
 fn assistant_tool_call_preserves_extra_content() {
-    let msg = ChatMessage {
-        role: "assistant".into(),
-        content: String::new(),
-        tool_calls: Some(vec![ToolCallOllama {
+    let msg = ChatMessage::assistant(
+        String::new(),
+        None,
+        Some(vec![ToolCallOllama {
             id: Some("function-call-1".into()),
             extra_content: Some(serde_json::json!({
                 "google": { "thought_signature": "sig-a" }
@@ -47,8 +42,7 @@ fn assistant_tool_call_preserves_extra_content() {
                 arguments: serde_json::json!({ "path": "a" }),
             },
         }]),
-        ..Default::default()
-    };
+    );
 
     let out = message_to_openai(&msg, "google");
     assert_eq!(

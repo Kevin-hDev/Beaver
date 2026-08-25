@@ -118,32 +118,17 @@ mod boundary_tests {
     #[test]
     fn message_limit_never_keeps_a_tool_result_without_its_call() {
         let mut messages = vec![
-            ChatMessage {
-                role: "assistant".into(),
-                content: "appel".into(),
-                tool_calls: Some(vec![ToolCallOllama {
+            ChatMessage::assistant("appel".into(), None, Some(vec![ToolCallOllama {
                     id: Some("call-boundary".into()),
                     extra_content: None,
                     function: ToolCallFunction {
                         name: "read_file".into(),
                         arguments: serde_json::json!({"path": "README.md"}),
                     },
-                }]),
-                ..Default::default()
-            },
-            ChatMessage {
-                role: "tool".into(),
-                content: "résultat".into(),
-                tool_name: Some("read_file".into()),
-                tool_call_id: Some("call-boundary".into()),
-                ..Default::default()
-            },
+                }])),
+            ChatMessage::tool("résultat".into(), Some("call-boundary".into()), Some("read_file".into())),
         ];
-        messages.extend((0..1_999).map(|index| ChatMessage {
-            role: "user".into(),
-            content: format!("message-{index}"),
-            ..Default::default()
-        }));
+        messages.extend((0..1_999).map(|index| ChatMessage::user(format!("message-{index}"))));
 
         let saved = bounded_saved_messages(&messages);
 

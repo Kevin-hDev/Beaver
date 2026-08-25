@@ -1,11 +1,7 @@
 use super::*;
 
 fn msg(content: &str) -> ChatMessage {
-    ChatMessage {
-        role: "user".to_string(),
-        content: content.to_string(),
-        ..Default::default()
-    }
+    ChatMessage::user(content.to_string())
 }
 
 #[test]

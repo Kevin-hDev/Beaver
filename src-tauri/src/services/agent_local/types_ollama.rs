@@ -121,7 +121,7 @@ pub struct ChatOptions {
     pub num_ctx: Option<u32>,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChatMessage {
     #[serde(default)]
     pub role: String,

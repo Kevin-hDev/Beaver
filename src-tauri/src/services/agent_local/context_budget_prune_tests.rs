@@ -2,12 +2,7 @@ use super::*;
 
 #[test]
 fn trimming_drops_reasoning_and_respects_the_exact_budget() {
-    let message = ChatMessage {
-        role: "assistant".into(),
-        content: "visible".repeat(10_000),
-        reasoning_content: Some("hidden".repeat(20_000)),
-        ..Default::default()
-    };
+    let message = ChatMessage::assistant("visible".repeat(10_000), Some("hidden".repeat(20_000)), None);
 
     let trimmed = trim_message(&message, 100);
 
@@ -18,11 +13,7 @@ fn trimming_drops_reasoning_and_respects_the_exact_budget() {
 
 #[test]
 fn wide_characters_and_a_tiny_budget_cannot_overflow() {
-    let message = ChatMessage {
-        role: "user".into(),
-        content: "你🙂".repeat(1_000),
-        ..Default::default()
-    };
+    let message = ChatMessage::user("你🙂".repeat(1_000));
 
     for budget in [0, 1, 10, 100] {
         let trimmed = trim_message(&message, budget);

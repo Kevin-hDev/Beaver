@@ -104,11 +104,7 @@ fn build_session_messages(
 
 fn summary_agent_message(summary: &str, suppress_follow_up: bool) -> AgentMessage {
     let content = prompt::format_summary_message(summary, suppress_follow_up);
-    let chat = ChatMessage {
-        role: "user".to_string(),
-        content: content.clone(),
-        ..Default::default()
-    };
+    let chat = ChatMessage::user(content.clone());
     AgentMessage {
         id: uuid::Uuid::new_v4().to_string(),
         role: "user".to_string(),

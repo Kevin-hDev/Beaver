@@ -39,13 +39,5 @@ async fn inbox_rejects_more_than_eight_waiting_batches() {
 }
 
 fn user(content: &str) -> ChatMessage {
-    ChatMessage {
-        role: "user".into(),
-        content: content.into(),
-        images: None,
-        tool_calls: None,
-        tool_name: None,
-        tool_call_id: None,
-        reasoning_content: None,
-    }
+    ChatMessage::user(content.into())
 }

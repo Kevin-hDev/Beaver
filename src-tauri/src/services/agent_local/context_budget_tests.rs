@@ -1,11 +1,13 @@
 use super::*;
 
 fn msg(role: &str, content: &str) -> ChatMessage {
-    ChatMessage {
-        role: role.to_string(),
-        content: content.to_string(),
-        ..Default::default()
-    }
+    match role {
+"system" => ChatMessage::system(content.to_string()),
+"user" => ChatMessage::user(content.to_string()),
+"assistant" => ChatMessage::assistant(content.to_string(), None, None),
+"tool" => ChatMessage::tool(content.to_string(), None, None),
+other => panic!("unsupported chat role in test/setup: {other}"),
+}
 }
 
 #[test]
@@ -187,12 +189,7 @@ fn payload_reduction_reports_known_counts_when_context_window_is_unknown() {
 #[test]
 fn codex_does_not_prune_reasoning_that_is_not_sent() {
     let mut messages = vec![msg("system", "rules"), msg("user", &"a".repeat(280_000))];
-    messages.push(ChatMessage {
-        role: "assistant".into(),
-        content: "recent answer".into(),
-        reasoning_content: Some("r".repeat(80_000)),
-        ..Default::default()
-    });
+    messages.push(ChatMessage::assistant("recent answer".into(), Some("r".repeat(80_000)), None));
     let original_len = messages.len();
     let original_content = messages[1].content.clone();
 
@@ -279,10 +276,7 @@ fn pruning_keeps_a_contiguous_recent_suffix() {
 }
 
 fn assistant_with_calls(ids: &[&str]) -> ChatMessage {
-    ChatMessage {
-        role: "assistant".into(),
-        content: String::new(),
-        tool_calls: Some(ids.iter().enumerate().map(|(index, id)| {
+    ChatMessage::assistant(String::new(), None, Some(ids.iter().enumerate().map(|(index, id)| {
             super::super::types_ollama::ToolCallOllama {
                 id: Some((*id).into()),
                 extra_content: None,
@@ -291,17 +285,9 @@ fn assistant_with_calls(ids: &[&str]) -> ChatMessage {
                     arguments: serde_json::json!({}),
                 },
             }
-        }).collect()),
-        ..Default::default()
-    }
+        }).collect()))
 }
 
 fn tool_message(id: &str, name: &str, content: &str) -> ChatMessage {
-    ChatMessage {
-        role: "tool".into(),
-        content: content.into(),
-        tool_name: Some(name.into()),
-        tool_call_id: Some(id.into()),
-        ..Default::default()
-    }
+    ChatMessage::tool(content.into(), Some(id.into()), Some(name.into()))
 }

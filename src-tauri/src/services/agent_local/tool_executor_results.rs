@@ -58,15 +58,7 @@ pub fn push_tool_message(
 ) -> ToolFollowUp {
     let follow_up = tr.take_follow_up();
     let content = super::tool_result_model::render(name, &tr);
-    messages.push(ChatMessage {
-        role: "tool".to_string(),
-        content,
-        images: None,
-        tool_calls: None,
-        tool_name: Some(name.to_string()),
-        tool_call_id: tool_call_id.map(str::to_string),
-        reasoning_content: None,
-    });
+    messages.push(ChatMessage::tool(content, tool_call_id.map(str::to_string), Some(name.to_string())));
     follow_up
 }
 

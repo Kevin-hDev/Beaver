@@ -39,10 +39,10 @@ fn collector_attaches_bounded_codex_state_to_first_tool() {
 
 #[test]
 fn replay_rejects_state_for_another_tool_call() {
-    let message = ChatMessage {
-        role: "assistant".to_string(),
-        content: String::new(),
-        tool_calls: Some(vec![ToolCallOllama {
+    let message = ChatMessage::assistant(
+        String::new(),
+        None,
+        Some(vec![ToolCallOllama {
             id: Some("call_1".to_string()),
             extra_content: Some(serde_json::json!({
                 "codex": {
@@ -59,8 +59,7 @@ fn replay_rejects_state_for_another_tool_call() {
                 arguments: serde_json::json!({}),
             },
         }]),
-        ..Default::default()
-    };
+    );
 
     assert!(items_from_message(&message).is_none());
 }

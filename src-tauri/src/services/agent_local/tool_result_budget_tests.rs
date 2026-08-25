@@ -7,27 +7,11 @@ mod tests {
     use crate::services::agent_local::types_ollama::ChatMessage;
 
     fn tool_msg(content: &str) -> ChatMessage {
-        ChatMessage {
-            role: "tool".to_string(),
-            content: content.to_string(),
-            images: None,
-            tool_calls: None,
-            tool_name: None,
-            tool_call_id: None,
-            reasoning_content: None,
-        }
+        ChatMessage::tool(content.to_string(), None, None)
     }
 
     fn assistant_msg(content: &str) -> ChatMessage {
-        ChatMessage {
-            role: "assistant".to_string(),
-            content: content.to_string(),
-            images: None,
-            tool_calls: None,
-            tool_name: None,
-            tool_call_id: None,
-            reasoning_content: None,
-        }
+        ChatMessage::assistant(content.to_string(), None, None)
     }
 
     /// Messages dont le total est sous le budget ne doivent pas être modifiés.

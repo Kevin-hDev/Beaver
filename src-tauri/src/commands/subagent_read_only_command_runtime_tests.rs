@@ -37,11 +37,7 @@ async fn queue_agent_message_rejects_a_child_without_changing_the_active_inbox()
     let result = super::agent_chat_queue::queue_agent_message(
         session.id.clone(),
         41,
-        vec![ChatMessage {
-            role: "user".to_string(),
-            content: "must never be queued".to_string(),
-            ..Default::default()
-        }],
+        vec![ChatMessage::user("must never be queued".to_string())],
         app.state::<ActiveStreams>(),
     )
     .await;

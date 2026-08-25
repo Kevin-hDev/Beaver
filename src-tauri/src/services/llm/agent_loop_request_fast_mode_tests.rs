@@ -8,10 +8,12 @@ use crate::services::llm::stream_test_transport::{ScriptedResponse, StreamScenar
 use tokio_util::sync::CancellationToken;
 
 fn message(role: &str, content: String) -> ChatMessage {
-    ChatMessage {
-        role: role.into(),
-        content,
-        ..Default::default()
+    match role {
+        "system" => ChatMessage::system(content),
+        "user" => ChatMessage::user(content),
+        "assistant" => ChatMessage::assistant(content, None, None),
+        "tool" => ChatMessage::tool(content, None, None),
+        other => panic!("unsupported chat role in test/setup: {other}"),
     }
 }
 

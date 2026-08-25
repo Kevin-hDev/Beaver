@@ -81,11 +81,7 @@ fn build_message(
             ));
         }
     }
-    ChatMessage {
-        role: "user".to_string(),
-        content,
-        ..Default::default()
-    }
+    ChatMessage::user(content)
 }
 
 fn capsule_total_tokens(context_window: u64) -> usize {

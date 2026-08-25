@@ -25,11 +25,7 @@ async fn last_turn_keeps_correction_unconsumed_and_context_untouched() {
     child.subagent_run_id = Some(registered.run_id.clone());
     session_store::save(&child).await.expect("save child");
     let mut orchestrator = ParentSubagentOrchestrator::new(&child.id).await;
-    let messages = [ChatMessage {
-        role: "assistant".into(),
-        content: "réponse terminale".into(),
-        ..Default::default()
-    }];
+    let messages = [ChatMessage::assistant("réponse terminale".into(), None, None)];
 
     let result = orchestrator.ensure_no_followup_at_turn_limit().await;
 

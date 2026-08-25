@@ -2,11 +2,13 @@ use super::extract_summary_from_messages;
 use crate::services::agent_local::types_ollama::ChatMessage;
 
 fn msg(role: &str, content: &str) -> ChatMessage {
-    ChatMessage {
-        role: role.to_string(),
-        content: content.to_string(),
-        ..Default::default()
-    }
+    match role {
+"system" => ChatMessage::system(content.to_string()),
+"user" => ChatMessage::user(content.to_string()),
+"assistant" => ChatMessage::assistant(content.to_string(), None, None),
+"tool" => ChatMessage::tool(content.to_string(), None, None),
+other => panic!("unsupported chat role in test/setup: {other}"),
+}
 }
 
 #[test]

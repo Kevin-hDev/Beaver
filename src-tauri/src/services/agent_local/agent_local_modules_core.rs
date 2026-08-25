@@ -16,6 +16,9 @@ pub mod agent_work_supervision;
 #[cfg(test)]
 mod agent_work_supervision_tests;
 pub mod app_handle_global;
+pub mod chat_message;
+#[cfg(test)]
+mod chat_message_tests;
 pub mod circuit_breaker;
 #[cfg(test)]
 pub mod circuit_breaker_tests;
@@ -30,11 +33,6 @@ pub mod clone_summary;
 pub mod clone_summary_ops;
 pub mod clone_summary_prompt;
 pub mod compress_hook;
-pub mod context_budget;
-mod context_budget_history;
-mod context_budget_prune;
-pub mod context_capacity_error;
-pub mod context_usage_buckets;
 pub mod diagnostic_args;
 #[cfg(test)]
 mod diagnostic_args_tests;

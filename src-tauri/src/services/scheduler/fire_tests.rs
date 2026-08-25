@@ -72,32 +72,11 @@ async fn heartbeat_session_rejects_a_project_removed_before_execution() {
 #[test]
 fn persistence_keeps_only_messages_produced_after_the_scheduled_prompt() {
     let completed = vec![
-        ChatMessage {
-            role: "system".into(),
-            content: "Contexte Beaver".into(),
-            ..Default::default()
-        },
-        ChatMessage {
-            role: "user".into(),
-            content: "Inspecte le projet".into(),
-            ..Default::default()
-        },
-        ChatMessage {
-            role: "assistant".into(),
-            content: "Je vérifie.".into(),
-            ..Default::default()
-        },
-        ChatMessage {
-            role: "tool".into(),
-            content: "README.md".into(),
-            tool_name: Some("list_dir".into()),
-            ..Default::default()
-        },
-        ChatMessage {
-            role: "assistant".into(),
-            content: "Terminé.".into(),
-            ..Default::default()
-        },
+        ChatMessage::system("Contexte Beaver".into()),
+        ChatMessage::user("Inspecte le projet".into()),
+        ChatMessage::assistant("Je vérifie.".into(), None, None),
+        ChatMessage::tool("README.md".into(), None, Some("list_dir".into())),
+        ChatMessage::assistant("Terminé.".into(), None, None),
     ];
 
     let persisted = persisted_agent_messages(&completed);
@@ -116,14 +95,11 @@ async fn tool_trace_is_persisted_before_missing_text_is_reported() {
         .expect("create heartbeat session");
     let result = ScheduledAgentResult {
         messages: vec![
-            ChatMessage {
-                role: "user".into(),
-                content: "Inspecte le projet".into(),
-                ..Default::default()
-            },
-            ChatMessage {
-                role: "assistant".into(),
-                tool_calls: Some(vec![ToolCallOllama {
+            ChatMessage::user("Inspecte le projet".into()),
+            ChatMessage::assistant(
+                String::new(),
+                None,
+                Some(vec![ToolCallOllama {
                     id: Some("call-1".into()),
                     extra_content: None,
                     function: ToolCallFunction {
@@ -131,14 +107,8 @@ async fn tool_trace_is_persisted_before_missing_text_is_reported() {
                         arguments: serde_json::json!({"path": "."}),
                     },
                 }]),
-                ..Default::default()
-            },
-            ChatMessage {
-                role: "tool".into(),
-                content: "README.md".into(),
-                tool_name: Some("list_dir".into()),
-                ..Default::default()
-            },
+            ),
+            ChatMessage::tool("README.md".into(), None, Some("list_dir".into())),
         ],
         tokens: 12,
         has_text_result: false,

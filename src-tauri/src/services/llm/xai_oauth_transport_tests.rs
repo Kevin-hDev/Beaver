@@ -33,11 +33,7 @@ fn backend_paths_are_pinned_to_the_subscription_proxy() {
 fn responses_payload_uses_catalog_reasoning_and_never_a_remote_route() {
     let payload = build_responses_payload(
         &catalog_model(),
-        &[ChatMessage {
-            role: "user".into(),
-            content: "bonjour".into(),
-            ..Default::default()
-        }],
+        &[ChatMessage::user("bonjour".into())],
         &[],
         Some("xhigh"),
         Some("session-fixture"),

@@ -51,11 +51,7 @@ pub async fn e2e_verify_child_chat_stream_read_only(
         app.clone(),
         session.id.clone(),
         "e2e-model".to_string(),
-        vec![ChatMessage {
-            role: "user".to_string(),
-            content: "read-only boundary".to_string(),
-            ..Default::default()
-        }],
+        vec![ChatMessage::user("read-only boundary".to_string())],
         Vec::new(),
         false,
         Some("ollama".to_string()),

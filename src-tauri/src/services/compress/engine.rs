@@ -38,15 +38,9 @@ pub fn build_compression_request_content(
     custom_instructions: Option<&str>,
 ) -> Vec<ChatMessage> {
     let mut prepared = prepare_messages_for_compression(messages);
-    prepared.push(ChatMessage {
-        role: "user".to_string(),
-        content: prompt::build_compression_prompt(custom_instructions),
-        images: None,
-        tool_calls: None,
-        tool_name: None,
-        tool_call_id: None,
-        reasoning_content: None,
-    });
+    prepared.push(ChatMessage::user(prompt::build_compression_prompt(
+        custom_instructions,
+    )));
     prepared
 }
 
@@ -55,24 +49,9 @@ pub fn build_post_compression_messages(
     summary: &str,
     suppress_follow_up: bool,
 ) -> Vec<ChatMessage> {
-    let boundary = ChatMessage {
-        role: "system".to_string(),
-        content: BOUNDARY_CONTENT.to_string(),
-        images: None,
-        tool_calls: None,
-        tool_name: None,
-        tool_call_id: None,
-        reasoning_content: None,
-    };
-    let summary_msg = ChatMessage {
-        role: "user".to_string(),
-        content: prompt::format_summary_message(summary, suppress_follow_up),
-        images: None,
-        tool_calls: None,
-        tool_name: None,
-        tool_call_id: None,
-        reasoning_content: None,
-    };
+    let boundary = ChatMessage::system(BOUNDARY_CONTENT.to_string());
+    let summary_msg =
+        ChatMessage::user(prompt::format_summary_message(summary, suppress_follow_up));
     vec![boundary, summary_msg]
 }
 

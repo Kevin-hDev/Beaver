@@ -26,11 +26,7 @@ async fn temporary_retry_keeps_fast_after_the_session_changes() {
         .await
         .expect("capture generation");
     let emitter = AgentEventEmitter::test(session.id.clone());
-    let messages = [ChatMessage {
-        role: "user".into(),
-        content: "hello".into(),
-        ..Default::default()
-    }];
+    let messages = [ChatMessage::user("hello".into())];
     let mut next_attempt = 1;
 
     let retry = retry_stream(
@@ -116,11 +112,7 @@ async fn structured_service_tier_refusal_is_sent_once_even_with_tools() {
     let scenario =
         StreamScenario::start(&session.id, [ScriptedResponse::ServiceTierRejected]).await;
     let emitter = AgentEventEmitter::test(session.id.clone());
-    let messages = [ChatMessage {
-        role: "user".into(),
-        content: "hello".into(),
-        ..Default::default()
-    }];
+    let messages = [ChatMessage::user("hello".into())];
     let tools = [serde_json::json!({
         "type": "function",
         "function": {

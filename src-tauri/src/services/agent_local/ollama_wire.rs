@@ -59,12 +59,10 @@ mod tests {
 
     #[test]
     fn native_payload_uses_ollama_thinking_and_strips_api_fields() {
-        let message = ChatMessage {
-            role: "assistant".into(),
-            content: String::new(),
-            reasoning_content: Some("raisonnement".into()),
-            tool_call_id: Some("call_1".into()),
-            tool_calls: Some(vec![ToolCallOllama {
+        let mut message = ChatMessage::assistant(
+            String::new(),
+            Some("raisonnement".into()),
+            Some(vec![ToolCallOllama {
                 id: Some("call_1".into()),
                 extra_content: Some(json!({"provider": "api"})),
                 function: ToolCallFunction {
@@ -72,8 +70,8 @@ mod tests {
                     arguments: json!({"query": "test"}),
                 },
             }]),
-            ..Default::default()
-        };
+        );
+        message.tool_call_id = Some("call_1".into());
 
         let value = messages_value(&[message]);
         let serialized = value.to_string();

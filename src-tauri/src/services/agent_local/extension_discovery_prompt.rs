@@ -23,11 +23,7 @@ mod tests {
 
     #[test]
     fn only_mentions_discovery_when_the_tool_is_available() {
-        let mut messages = vec![ChatMessage {
-            role: "system".to_string(),
-            content: "Base".to_string(),
-            ..Default::default()
-        }];
+        let mut messages = vec![ChatMessage::system("Base".to_string())];
 
         append(&mut messages, &[]);
         assert_eq!(messages[0].content, "Base");

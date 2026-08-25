@@ -194,11 +194,7 @@ async fn clone_summary_sends_openai_default_even_for_a_fast_source_session() {
     .await
     .expect("create source session");
     let scenario = StreamScenario::start(&source.id, [ScriptedResponse::Success]).await;
-    let messages = vec![ChatMessage {
-        role: "user".into(),
-        content: "summarize this".into(),
-        ..Default::default()
-    }];
+    let messages = vec![ChatMessage::user("summarize this".into())];
 
     let summary = collect_summary(
         "openai",

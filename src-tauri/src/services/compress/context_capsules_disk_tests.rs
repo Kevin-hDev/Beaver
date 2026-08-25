@@ -3,9 +3,10 @@ use crate::services::agent_local::types_ollama::{ChatMessage, ToolCallFunction, 
 use tempfile::tempdir;
 
 fn assistant(tool: &str, path: &str) -> ChatMessage {
-    ChatMessage {
-        role: "assistant".to_string(),
-        tool_calls: Some(vec![ToolCallOllama {
+    ChatMessage::assistant(
+        String::new(),
+        None,
+        Some(vec![ToolCallOllama {
             id: None,
             extra_content: None,
             function: ToolCallFunction {
@@ -13,24 +14,15 @@ fn assistant(tool: &str, path: &str) -> ChatMessage {
                 arguments: serde_json::json!({ "path": path }),
             },
         }]),
-        ..Default::default()
-    }
+    )
 }
 
 fn tool(content: &str) -> ChatMessage {
-    ChatMessage {
-        role: "tool".to_string(),
-        content: content.to_string(),
-        ..Default::default()
-    }
+    ChatMessage::tool(content.to_string(), None, None)
 }
 
 fn user(content: &str) -> ChatMessage {
-    ChatMessage {
-        role: "user".to_string(),
-        content: content.to_string(),
-        ..Default::default()
-    }
+    ChatMessage::user(content.to_string())
 }
 
 #[tokio::test]

@@ -78,11 +78,7 @@ fn report_context_is_assistant_and_xml_escaped() {
 
 #[test]
 fn report_policy_is_system_and_unique() {
-    let mut messages = vec![ChatMessage {
-        role: "user".into(),
-        content: "Question existante".into(),
-        ..Default::default()
-    }];
+    let mut messages = vec![ChatMessage::user("Question existante".into())];
 
     ensure_report_policy(&mut messages);
     ensure_report_policy(&mut messages);

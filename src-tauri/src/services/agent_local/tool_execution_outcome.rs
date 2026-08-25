@@ -32,23 +32,15 @@ impl ToolExecutionOutcome {
             match follow_up {
                 ToolFollowUp::None => {}
                 ToolFollowUp::UserMessage(content) => {
-                    messages.push(message("user", content));
+                    messages.push(ChatMessage::user(content));
                 }
                 ToolFollowUp::SystemMessage(content) => {
-                    messages.push(message("system", content));
+                    messages.push(ChatMessage::system(content));
                 }
                 ToolFollowUp::Stop => stop = true,
             }
         }
         stop
-    }
-}
-
-fn message(role: &str, content: String) -> ChatMessage {
-    ChatMessage {
-        role: role.to_string(),
-        content,
-        ..Default::default()
     }
 }
 
@@ -61,7 +53,7 @@ mod tests {
         let mut outcome = ToolExecutionOutcome::default();
         outcome.record(ToolFollowUp::UserMessage("User answer".into()));
         outcome.record(ToolFollowUp::SystemMessage("Backend state".into()));
-        let mut messages = vec![message("tool", "Receipt".into())];
+        let mut messages = vec![ChatMessage::tool("Receipt".into(), None, None)];
 
         assert!(!outcome.apply_follow_ups(&mut messages));
         assert_eq!(

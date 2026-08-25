@@ -114,11 +114,7 @@ where
     )
     .await
     .map_err(|_| delivery_error())?;
-    messages.extend(prompts.iter().map(|prompt| ChatMessage {
-        role: "user".to_string(),
-        content: prompt.clone(),
-        ..Default::default()
-    }));
+    messages.extend(prompts.iter().map(|prompt| ChatMessage::user(prompt.clone())));
     Ok(prompts.len())
 }
 

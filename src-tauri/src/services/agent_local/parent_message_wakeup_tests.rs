@@ -42,8 +42,5 @@ async fn queued_user_message_wakes_the_parent_without_ending_the_child() {
 }
 
 fn user(content: &str) -> ChatMessage {
-    ChatMessage {
-        role: "user".into(), content: content.into(), images: None,
-        tool_calls: None, tool_name: None, tool_call_id: None, reasoning_content: None,
-    }
+    ChatMessage::user(content.into())
 }

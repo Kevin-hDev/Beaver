@@ -14,15 +14,7 @@ pub fn build_chat_messages(session: &AgentSession) -> Vec<ChatMessage> {
 }
 
 pub fn new_user_message(content: &str) -> ChatMessage {
-    ChatMessage {
-        role: "user".to_string(),
-        content: content.to_string(),
-        images: None,
-        tool_calls: None,
-        tool_name: None,
-        tool_call_id: None,
-        reasoning_content: None,
-    }
+    ChatMessage::user(content.to_string())
 }
 
 pub fn chat_to_agent_message(m: &ChatMessage) -> Option<AgentMessage> {
@@ -68,15 +60,18 @@ fn agent_to_chat_messages(m: &AgentMessage) -> Vec<ChatMessage> {
         push_tool_turn(&mut out, activities, &m.content, &mut id_counter);
         return out;
     }
-    vec![ChatMessage {
-        role: m.role.clone(),
-        content: m.content.clone(),
-        images: None,
-        tool_calls: session_tool_calls_to_chat(m.tool_calls.as_ref()),
-        tool_name: m.tool_name.clone(),
-        tool_call_id: None,
-        reasoning_content: m.thinking.clone(),
-    }]
+    let message = match m.role.as_str() {
+        "system" => ChatMessage::system(m.content.clone()),
+        "user" => ChatMessage::user(m.content.clone()),
+        "assistant" => ChatMessage::assistant(
+            m.content.clone(),
+            m.thinking.clone(),
+            session_tool_calls_to_chat(m.tool_calls.as_ref()),
+        ),
+        "tool" => ChatMessage::tool(m.content.clone(), None, m.tool_name.clone()),
+        _ => return Vec::new(),
+    };
+    vec![message]
 }
 
 fn push_tool_turn(
@@ -101,28 +96,21 @@ fn push_tool_turn(
         })
         .collect();
     if !tool_calls.is_empty() {
-        out.push(ChatMessage {
-            role: "assistant".to_string(),
-            content: String::new(),
-            tool_calls: Some(tool_calls.clone()),
-            ..Default::default()
-        });
+        out.push(ChatMessage::assistant(
+            String::new(),
+            None,
+            Some(tool_calls.clone()),
+        ));
         for (tool, call) in tools.iter().zip(tool_calls.iter()) {
-            out.push(ChatMessage {
-                role: "tool".to_string(),
-                content: tool.result.clone().unwrap_or_default(),
-                tool_name: Some(tool.name.clone()),
-                tool_call_id: call.id.clone(),
-                ..Default::default()
-            });
+            out.push(ChatMessage::tool(
+                tool.result.clone().unwrap_or_default(),
+                call.id.clone(),
+                Some(tool.name.clone()),
+            ));
         }
     }
     if !content.is_empty() {
-        out.push(ChatMessage {
-            role: "assistant".to_string(),
-            content: content.to_string(),
-            ..Default::default()
-        });
+        out.push(ChatMessage::assistant(content.to_string(), None, None));
     }
 }
 
@@ -189,18 +177,12 @@ mod tests {
                 arguments: serde_json::json!({"path":"README.md"}),
             },
         };
-        let assistant = ChatMessage {
-            role: "assistant".into(),
-            tool_calls: Some(vec![call]),
-            ..Default::default()
-        };
-        let tool = ChatMessage {
-            role: "tool".into(),
-            content: "Beaver".into(),
-            tool_name: Some("read_file".into()),
-            tool_call_id: Some("call-1".into()),
-            ..Default::default()
-        };
+        let assistant = ChatMessage::assistant(String::new(), None, Some(vec![call]));
+        let tool = ChatMessage::tool(
+            "Beaver".into(),
+            Some("call-1".into()),
+            Some("read_file".into()),
+        );
 
         let saved_call = chat_to_agent_message(&assistant).unwrap();
         let saved_result = chat_to_agent_message(&tool).unwrap();

@@ -38,16 +38,7 @@ pub fn wrap_tool_results(messages: &[ChatMessage]) -> Vec<ChatMessage> {
                 }
                 _ => format!("{TOOL_RESPONSE_OPEN}\n{}\n{TOOL_RESPONSE_CLOSE}", m.content),
             };
-            ChatMessage {
-                role: "user".to_string(),
-                content: wrapped,
-                // tool_calls / tool_name / tool_call_id : sans objet pour un message user
-                images: None,
-                tool_calls: None,
-                tool_name: None,
-                tool_call_id: None,
-                reasoning_content: None,
-            }
+            ChatMessage::user(wrapped)
         })
         .collect()
 }

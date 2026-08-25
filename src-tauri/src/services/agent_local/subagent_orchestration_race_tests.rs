@@ -145,11 +145,7 @@ async fn report_policy_and_body_match_api_and_ollama_payloads() {
         .await
         .expect("append report");
     let mut orchestrator = ParentSubagentOrchestrator::new(&parent.id).await;
-    let mut messages = vec![super::types_ollama::ChatMessage {
-        role: "user".into(),
-        content: "Question".into(),
-        ..Default::default()
-    }];
+    let mut messages = vec![super::types_ollama::ChatMessage::user("Question".into())];
     orchestrator
         .prepare_for_model_request(&mut messages)
         .await

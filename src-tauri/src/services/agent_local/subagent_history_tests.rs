@@ -10,27 +10,15 @@ async fn history_persists_supported_roles_without_dropping_the_queue() {
     let messages = vec![
         chat("system", "système"),
         chat("user", "mission"),
-        ChatMessage {
-            role: "assistant".into(),
-            content: "appel".into(),
-            tool_calls: Some(vec![ToolCallOllama {
+        ChatMessage::assistant("appel".into(), Some("raisonnement".into()), Some(vec![ToolCallOllama {
                 id: Some("call-42".into()),
                 extra_content: None,
                 function: ToolCallFunction {
                     name: "read_file".into(),
                     arguments: serde_json::json!({"path": "README.md"}),
                 },
-            }]),
-            reasoning_content: Some("raisonnement".into()),
-            ..Default::default()
-        },
-        ChatMessage {
-            role: "tool".into(),
-            content: "contenu".into(),
-            tool_name: Some("read_file".into()),
-            tool_call_id: Some("call-42".into()),
-            ..Default::default()
-        },
+            }])),
+        ChatMessage::tool("contenu".into(), Some("call-42".into()), Some("read_file".into())),
     ];
 
     let persisted = subagent_history::persist_for_execution(
@@ -132,11 +120,13 @@ async fn history_save_and_concurrent_correction_both_survive() {
 }
 
 fn chat(role: &str, content: &str) -> ChatMessage {
-    ChatMessage {
-        role: role.into(),
-        content: content.into(),
-        ..Default::default()
-    }
+    match role {
+"system" => ChatMessage::system(content.into()),
+"user" => ChatMessage::user(content.into()),
+"assistant" => ChatMessage::assistant(content.into(), None, None),
+"tool" => ChatMessage::tool(content.into(), None, None),
+other => panic!("unsupported chat role in test/setup: {other}"),
+}
 }
 
 async fn active_child(

@@ -66,11 +66,7 @@ fn generated_output_tokens(messages: &[ChatMessage]) -> u32 {
 }
 
 fn initial_messages(prompt: &str) -> Vec<ChatMessage> {
-    vec![ChatMessage {
-        role: "user".into(),
-        content: prompt.to_string(),
-        ..Default::default()
-    }]
+    vec![ChatMessage::user(prompt.to_string())]
 }
 
 #[cfg(test)]
@@ -90,10 +86,10 @@ mod tests {
     #[test]
     fn token_estimate_includes_intermediate_answers_and_tool_calls() {
         let messages = vec![
-            ChatMessage {
-                role: "assistant".into(),
-                content: "a".repeat(400),
-                tool_calls: Some(vec![ToolCallOllama {
+            ChatMessage::assistant(
+                "a".repeat(400),
+                None,
+                Some(vec![ToolCallOllama {
                     id: Some("call-1".into()),
                     extra_content: None,
                     function: ToolCallFunction {
@@ -101,19 +97,9 @@ mod tests {
                         arguments: serde_json::json!({"path": "."}),
                     },
                 }]),
-                ..Default::default()
-            },
-            ChatMessage {
-                role: "tool".into(),
-                content: "README.md".into(),
-                tool_name: Some("list_dir".into()),
-                ..Default::default()
-            },
-            ChatMessage {
-                role: "assistant".into(),
-                content: "Terminé.".into(),
-                ..Default::default()
-            },
+            ),
+            ChatMessage::tool("README.md".into(), None, Some("list_dir".into())),
+            ChatMessage::assistant("Terminé.".into(), None, None),
         ];
 
         assert!(generated_output_tokens(&messages) >= 100);

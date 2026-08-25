@@ -188,20 +188,14 @@ mod tests {
     use serde_json::json;
 
     fn assistant_with_reasoning() -> ChatMessage {
-        ChatMessage {
-            role: "assistant".to_string(),
-            content: "".to_string(),
-            reasoning_content: Some("réflexion".to_string()),
-            tool_calls: Some(vec![ToolCallOllama {
+        ChatMessage::assistant("".to_string(), Some("réflexion".to_string()), Some(vec![ToolCallOllama {
                 id: Some("call_1".to_string()),
                 extra_content: None,
                 function: ToolCallFunction {
                     name: "grep".to_string(),
                     arguments: json!({"pattern": "x"}),
                 },
-            }]),
-            ..Default::default()
-        }
+            }]))
     }
 
     #[test]

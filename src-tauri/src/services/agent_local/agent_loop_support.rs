@@ -69,13 +69,7 @@ pub fn build_assistant_message(result: &StreamResult) -> ChatMessage {
     } else {
         Some(result.thinking.clone())
     };
-    ChatMessage {
-        role: "assistant".to_string(),
-        content: result.content.clone(),
-        tool_calls,
-        reasoning_content: reasoning,
-        ..Default::default()
-    }
+    ChatMessage::assistant(result.content.clone(), reasoning, tool_calls)
 }
 
 pub fn build_for_plan(result: &StreamResult, plan_active: bool) -> ChatMessage {
