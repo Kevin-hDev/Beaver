@@ -8,8 +8,13 @@ pub fn redact_json_preserving_shape(value: &mut Value) {
     redact_json_in_place(value, 0, true);
 }
 
-pub fn redact_json_high_confidence_preserving_shape(value: &mut Value) {
-    redact_json_in_place(value, 0, false);
+pub fn redact_sensitive_json_field(key: &str, value: &mut Value) -> bool {
+    if !is_sensitive_key(key) {
+        return false;
+    }
+    zeroize_json_value(value, 0);
+    *value = Value::String(REDACTED.to_string());
+    true
 }
 
 fn redact_json_in_place(value: &mut Value, depth: usize, broad: bool) {

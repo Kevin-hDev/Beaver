@@ -61,6 +61,40 @@ async fn legacy_tool_ids_are_local_linked_and_stable_after_commit() {
 }
 
 #[tokio::test]
+async fn legacy_messages_share_one_turn_until_the_next_user_message() {
+    let root = tempfile::tempdir().expect("tempdir");
+    let path = root.path().join("00000000-0000-4000-8000-000000000008.json");
+    let bytes = v1_with_two_turns();
+    crate::services::private_store::atomic_write(&path, &bytes).expect("seed v1");
+    let loaded = super::session_migration::read(&bytes, path.clone()).expect("load v1");
+    let first_turn = loaded.session().messages[0].turn_id.clone();
+    let second_turn = loaded.session().messages[4].turn_id.clone();
+
+    assert!(super::session_migration::is_legacy_local_id(&first_turn));
+    assert!(super::session_migration::is_legacy_local_id(&second_turn));
+    assert_ne!(first_turn, second_turn);
+    assert!(loaded.session().messages[..4]
+        .iter()
+        .all(|message| message.turn_id == first_turn));
+    assert!(loaded.session().messages[4..]
+        .iter()
+        .all(|message| message.turn_id == second_turn));
+
+    super::session_migration::commit_v2(&loaded)
+        .await
+        .expect("commit v2");
+    let restored = super::session_store_document::read_from_path(path)
+        .await
+        .expect("reload v2");
+    assert!(restored.messages[..4]
+        .iter()
+        .all(|message| message.turn_id == first_turn));
+    assert!(restored.messages[4..]
+        .iter()
+        .all(|message| message.turn_id == second_turn));
+}
+
+#[tokio::test]
 async fn v2_round_trip_keeps_order_tool_ids_and_opaque_envelope() {
     let root = tempfile::tempdir().expect("tempdir");
     let path = root.path().join("session.json");
@@ -105,6 +139,52 @@ async fn v2_round_trip_keeps_order_tool_ids_and_opaque_envelope() {
         "provider-call-1"
     );
     assert_eq!(restored.messages[1].continuation, Some(envelope));
+}
+
+#[tokio::test]
+async fn writer_redacts_visible_text_without_mutating_opaque_state_or_provider_ids() {
+    let root = tempfile::tempdir().expect("tempdir");
+    let path = root.path().join("session.json");
+    let mut session = base_session();
+    let opaque = responses_envelope(vec![json!({
+        "type": "reasoning",
+        "encrypted_content": "Bearer opaque-native-token-12345678",
+        "provider_item_id": "sk-native-item-12345678"
+    })]);
+    let tool_extra = json!({
+        "google": {"thought_signature": "Bearer opaque-tool-signature-12345678"},
+        "codex": {"output_items": [{"id": "sk-output-item-12345678"}]}
+    });
+    session.messages[1].content = "sk-visible-content-12345678".into();
+    session.messages[1].turn_id = "sk-turn-id-12345678".into();
+    session.messages[1].continuation = Some(opaque.clone());
+    session.messages[1].tool_calls = Some(vec![ToolCallRequest {
+        id: "sk-provider-call-12345678".into(),
+        extra_content: Some(tool_extra.clone()),
+        function: ToolCallRequestFunction {
+            name: "read_file".into(),
+            arguments: json!({"path":"fixture.txt"}),
+        },
+    }]);
+
+    super::session_store_document::write_to_path(path.clone(), &session)
+        .await
+        .expect("write v2");
+    let restored = super::session_store_document::read_from_path(path)
+        .await
+        .expect("read v2");
+
+    assert_eq!(restored.messages[1].content, "[REDACTED]");
+    assert_eq!(restored.messages[1].turn_id, "sk-turn-id-12345678");
+    assert_eq!(
+        restored.messages[1].tool_calls.as_ref().unwrap()[0].id,
+        "sk-provider-call-12345678"
+    );
+    assert_eq!(
+        restored.messages[1].tool_calls.as_ref().unwrap()[0].extra_content,
+        Some(tool_extra)
+    );
+    assert_eq!(restored.messages[1].continuation, Some(opaque));
 }
 
 #[tokio::test]
@@ -317,6 +397,28 @@ fn v1_with_tool_chain() -> Vec<u8> {
         "tool_name": "read_file",
         "files": [],
         "timestamp": "2026-08-25T10:00:00Z",
+        "tokens": 0
+    }));
+    serde_json::to_vec_pretty(&value).unwrap()
+}
+
+fn v1_with_two_turns() -> Vec<u8> {
+    let mut value: serde_json::Value = serde_json::from_slice(&v1_with_tool_chain()).unwrap();
+    let messages = value["messages"].as_array_mut().unwrap();
+    messages.push(json!({
+        "id": "00000000-0000-4000-8000-000000000008",
+        "role": "user",
+        "content": "fixture-second-user",
+        "files": [],
+        "timestamp": "2026-08-25T10:01:00Z",
+        "tokens": 0
+    }));
+    messages.push(json!({
+        "id": "00000000-0000-4000-8000-000000000009",
+        "role": "assistant",
+        "content": "fixture-second-assistant",
+        "files": [],
+        "timestamp": "2026-08-25T10:01:01Z",
         "tokens": 0
     }));
     serde_json::to_vec_pretty(&value).unwrap()

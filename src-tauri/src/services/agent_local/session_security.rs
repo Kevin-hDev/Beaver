@@ -1,6 +1,6 @@
 use super::sensitive_data::{
-    redact_high_confidence_string, redact_high_confidence_text,
-    redact_json_high_confidence_preserving_shape, redact_json_preserving_shape, redact_string,
+    redact_high_confidence_string, redact_high_confidence_text, redact_json_preserving_shape,
+    redact_sensitive_json_field, redact_string,
 };
 use super::types_ollama::ChatMessage;
 use super::types_session::SubagentLastActivity;
@@ -30,7 +30,7 @@ pub fn sanitize_chat_messages(messages: &mut [ChatMessage]) {
 }
 
 pub fn sanitize_session_value(value: &mut serde_json::Value) {
-    redact_json_high_confidence_preserving_shape(value);
+    redact_session_json(value, 0, false);
     bound_context_snapshot(value);
     sanitize_embedded_tool_data(value, 0);
 }
@@ -75,20 +75,53 @@ fn sanitize_embedded_tool_data(value: &mut serde_json::Value, depth: usize) {
                 Some("tool")
             );
             if is_tool_message {
-                redact_json_preserving_shape(value);
+                redact_session_json(value, depth, true);
                 return;
             }
             for key in ["tool_calls", "tool_activities", "tools"] {
                 if let Some(tool_data) = map.get_mut(key) {
-                    redact_json_preserving_shape(tool_data);
+                    redact_session_json(tool_data, depth + 1, true);
                 }
             }
-            for item in map.values_mut() {
-                sanitize_embedded_tool_data(item, depth + 1);
+            for (key, item) in map {
+                if !is_protected_session_field(key) {
+                    sanitize_embedded_tool_data(item, depth + 1);
+                }
             }
         }
         _ => {}
     }
+}
+
+fn redact_session_json(value: &mut serde_json::Value, depth: usize, broad: bool) {
+    if depth > 32 {
+        redact_json_preserving_shape(value);
+        return;
+    }
+    match value {
+        serde_json::Value::String(content) if broad => redact_string(content),
+        serde_json::Value::String(content) => redact_high_confidence_string(content),
+        serde_json::Value::Array(items) => {
+            for item in items {
+                redact_session_json(item, depth + 1, broad);
+            }
+        }
+        serde_json::Value::Object(map) => {
+            for (key, item) in map {
+                if is_protected_session_field(key) {
+                    continue;
+                }
+                if !redact_sensitive_json_field(key, item) {
+                    redact_session_json(item, depth + 1, broad);
+                }
+            }
+        }
+        _ => {}
+    }
+}
+
+fn is_protected_session_field(key: &str) -> bool {
+    matches!(key, "continuation" | "extra_content" | "id") || key.ends_with("_id")
 }
 
 #[cfg(test)]

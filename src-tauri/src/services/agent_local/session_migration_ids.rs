@@ -78,11 +78,10 @@ pub(super) fn is_legacy_local_id(value: &str) -> bool {
 
 fn assign_missing_ids(messages: &mut [Value], replace: bool) -> Result<(), String> {
     let mut pending = VecDeque::<(String, String)>::new();
+    let mut active_turn = None::<String>;
     for message in messages {
         let object = message.as_object_mut().ok_or_else(invalid)?;
-        if replace || !object.contains_key("turn_id") {
-            object.insert("turn_id".into(), Value::String(legacy_id("turn")));
-        }
+        assign_turn_id(object, replace, &mut active_turn);
         if replace {
             object.remove("continuation");
             object.remove("tool_call_id");
@@ -114,6 +113,28 @@ fn assign_missing_ids(messages: &mut [Value], replace: bool) -> Result<(), Strin
         }
     }
     Ok(())
+}
+
+fn assign_turn_id(
+    object: &mut serde_json::Map<String, Value>,
+    replace: bool,
+    active_turn: &mut Option<String>,
+) {
+    let existing = (!replace)
+        .then(|| object.get("turn_id").and_then(Value::as_str))
+        .flatten()
+        .map(str::to_string);
+    let starts_turn = object.get("role").and_then(Value::as_str) == Some("user")
+        || active_turn.is_none();
+    if starts_turn {
+        *active_turn = Some(existing.clone().unwrap_or_else(|| legacy_id("turn")));
+    }
+    if replace || existing.is_none() {
+        object.insert(
+            "turn_id".into(),
+            Value::String(active_turn.clone().unwrap_or_else(|| legacy_id("turn"))),
+        );
+    }
 }
 
 fn assign_tool_result_id(

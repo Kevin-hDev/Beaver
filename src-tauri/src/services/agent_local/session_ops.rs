@@ -22,6 +22,9 @@ pub async fn truncate_and_replace(
     replacement: Option<crate::services::agent_local::types_session::AgentMessage>,
 ) -> Result<(), String> {
     validate_session_id(session_id)?;
+    if let Some(message) = replacement.as_ref() {
+        super::session_store_messages::validate_legacy_ipc_message(message)?;
+    }
     let lock = lock_session(session_id).await;
     let _guard = lock.lock().await;
     let mut session = get(session_id).await?;

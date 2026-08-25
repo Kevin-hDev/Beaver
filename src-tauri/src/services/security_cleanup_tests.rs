@@ -66,6 +66,51 @@ fn rewritten_sessions_are_private() {
 }
 
 #[test]
+fn cleanup_redacts_visible_text_without_mutating_continuation_or_provider_ids() {
+    let root = TempDir::new().unwrap();
+    let session = root.path().join("agent-sessions/session.json");
+    let continuation = serde_json::json!({
+        "schema_version": 1,
+        "continuation": {
+            "type": "responses_local",
+            "items": [{
+                "encrypted_content": "Bearer opaque-native-token-12345678",
+                "provider_item_id": "sk-native-item-12345678"
+            }]
+        }
+    });
+    write(
+        &session,
+        &serde_json::to_vec_pretty(&serde_json::json!({
+            "messages": [{
+                "id": "sk-message-id-12345678",
+                "turn_id": "sk-turn-id-12345678",
+                "role": "assistant",
+                "content": "sk-visible-content-12345678",
+                "tool_calls": [{
+                    "id": "sk-provider-call-12345678",
+                    "function": {"name":"read_file","arguments":{}}
+                }],
+                "continuation": continuation
+            }]
+        }))
+        .unwrap(),
+    );
+
+    run_in(root.path()).unwrap();
+    let restored: serde_json::Value = serde_json::from_slice(&fs::read(session).unwrap()).unwrap();
+
+    assert_eq!(restored["messages"][0]["content"], "[REDACTED]");
+    assert_eq!(restored["messages"][0]["id"], "sk-message-id-12345678");
+    assert_eq!(restored["messages"][0]["turn_id"], "sk-turn-id-12345678");
+    assert_eq!(
+        restored["messages"][0]["tool_calls"][0]["id"],
+        "sk-provider-call-12345678"
+    );
+    assert_eq!(restored["messages"][0]["continuation"], continuation);
+}
+
+#[test]
 fn refuses_to_delete_a_directory_at_a_legacy_file_path() {
     let root = TempDir::new().unwrap();
     let unexpected = root.path().join("secrets.enc.bak-corrupted");

@@ -19,6 +19,14 @@ pub(crate) fn recompute_accumulated_tokens(session: &mut AgentSession) {
     session.context_tokens = None;
 }
 
+pub(super) fn validate_legacy_ipc_message(message: &AgentMessage) -> Result<(), String> {
+    message
+        .continuation
+        .is_none()
+        .then_some(())
+        .ok_or_else(|| "Message de session invalide".to_string())
+}
+
 pub async fn add_messages(
     id: &str,
     new_messages: Vec<AgentMessage>,
@@ -35,11 +43,8 @@ pub async fn add_messages_with_context(
     context_limit: Option<u32>,
 ) -> Result<(), String> {
     super::session_store::validate_session_id(id)?;
-    if new_messages
-        .iter()
-        .any(|message| message.continuation.is_some())
-    {
-        return Err("Message de session invalide".to_string());
+    for message in &new_messages {
+        validate_legacy_ipc_message(message)?;
     }
     for message in &new_messages {
         message.validate_stream_metadata()?;

@@ -28,16 +28,29 @@ pub(super) fn paths_in(dir: &Path, id: &str) -> Result<Vec<PathBuf>, String> {
             paths.push(entry.path());
         }
     }
-    paths.sort_by_key(|path| path.file_name().map(|name| name != main.as_str()));
+    paths.sort_by_key(|path| path.file_name().map(|name| name == main.as_str()));
     Ok(paths)
 }
 
 pub(super) fn remove_all_in(dir: &Path, id: &str) -> Result<(), String> {
+    remove_all_in_inner(dir, id, false)
+}
+
+#[cfg(test)]
+pub(super) fn remove_all_in_fail_before_main(dir: &Path, id: &str) -> Result<(), String> {
+    remove_all_in_inner(dir, id, true)
+}
+
+fn remove_all_in_inner(dir: &Path, id: &str, fail_before_main: bool) -> Result<(), String> {
     let paths = paths_in(dir, id)?;
+    let main = format!("{id}.json");
     let mut found_main = false;
     for path in paths {
-        if path.file_name().and_then(|name| name.to_str()) == Some(&format!("{id}.json")) {
+        if path.file_name().and_then(|name| name.to_str()) == Some(main.as_str()) {
             found_main = true;
+            if fail_before_main {
+                return Err(delete_failed());
+            }
         }
         std::fs::remove_file(path).map_err(|_| delete_failed())?;
     }
@@ -78,5 +91,27 @@ mod tests {
             "abc.json",
             "abc.json.v1.bak"
         ));
+    }
+
+    #[test]
+    fn failure_after_artifacts_keeps_main_retryable_without_backup() {
+        let root = tempfile::tempdir().unwrap();
+        let id = "550e8400-e29b-41d4-a716-446655440000";
+        let main = root.path().join(format!("{id}.json"));
+        let backup = root.path().join(format!("{id}.json.v1.bak"));
+        let temp = root
+            .path()
+            .join(format!(".{id}.json.0123456789abcdef0123456789abcdef.tmp"));
+        crate::services::private_store::atomic_write(&main, b"main").unwrap();
+        crate::services::private_store::atomic_write(&backup, b"backup").unwrap();
+        crate::services::private_store::atomic_write(&temp, b"temp").unwrap();
+
+        assert!(super::remove_all_in_fail_before_main(root.path(), id).is_err());
+        assert!(main.is_file());
+        assert!(!backup.exists());
+        assert!(!temp.exists());
+
+        super::remove_all_in(root.path(), id).expect("retry deletion");
+        assert!(!main.exists());
     }
 }
