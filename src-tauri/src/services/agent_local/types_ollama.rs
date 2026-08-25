@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::services::reasoning_continuity::envelope::ReasoningEnvelope;
+
 pub use super::types_stream::{StreamEvent, StreamOutcome, StreamResult};
 
 #[derive(Debug, Clone, Serialize)]
@@ -135,9 +137,15 @@ pub struct ChatMessage {
     /// Requis par OpenAI-compat pour les messages `role: "tool"` — ignoré par Ollama.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub tool_call_id: Option<String>,
-    /// Contenu thinking/reasoning renvoyé au provider pour continuité multi-tour.
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub reasoning_content: Option<String>,
+    /// Vue lisible uniquement ; elle n'est jamais une source de rejeu provider.
+    #[serde(skip)]
+    pub display_thinking: Option<String>,
+    /// État natif opaque ; seuls les adaptateurs autorisés peuvent le sérialiser.
+    #[serde(skip)]
+    pub continuation: Option<ReasoningEnvelope>,
+    /// Compatibilité jetable du tool-loop courant, supprimée à la bascule Task 19.
+    #[serde(skip)]
+    pub legacy_tool_loop_reasoning: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

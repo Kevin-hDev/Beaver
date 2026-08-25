@@ -11,7 +11,7 @@ fn message(role: &str, content: String) -> ChatMessage {
     match role {
         "system" => ChatMessage::system(content),
         "user" => ChatMessage::user(content),
-        "assistant" => ChatMessage::assistant(content, None, None),
+        "assistant" => ChatMessage::assistant(content, None, None, None, None),
         "tool" => ChatMessage::tool(content, None, None),
         other => panic!("unsupported chat role in test/setup: {other}"),
     }

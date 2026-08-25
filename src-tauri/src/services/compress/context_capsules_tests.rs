@@ -5,6 +5,8 @@ fn assistant(path: &str) -> ChatMessage {
     ChatMessage::assistant(
         String::new(),
         None,
+        None,
+        None,
         Some(vec![ToolCallOllama {
             id: None,
             extra_content: None,

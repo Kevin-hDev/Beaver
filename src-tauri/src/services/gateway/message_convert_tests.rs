@@ -108,7 +108,8 @@ fn valid_session_roles_keep_their_existing_gateway_shape() {
             .collect::<Vec<_>>(),
         ["user", "assistant", "tool"]
     );
-    assert_eq!(history[1].reasoning_content.as_deref(), Some("reasoning"));
+    assert_eq!(history[1].display_thinking.as_deref(), Some("reasoning"));
+    assert!(history[1].legacy_tool_loop_reasoning.is_none());
     assert_eq!(history[2].tool_name.as_deref(), Some("lookup"));
 }
 
@@ -122,7 +123,7 @@ fn scheduled_history_keeps_tool_calls_and_results() {
             arguments: serde_json::json!({"path":"README.md"}),
         },
     };
-    let assistant = ChatMessage::assistant(String::new(), None, Some(vec![call]));
+    let assistant = ChatMessage::assistant(String::new(), None, None, None, Some(vec![call]));
     let tool = ChatMessage::tool(
         "Beaver".into(),
         Some("call-1".into()),

@@ -57,7 +57,7 @@ mod tests {
         match role {
             "system" => ChatMessage::system(content.to_string()),
             "user" => ChatMessage::user(content.to_string()),
-            "assistant" => ChatMessage::assistant(content.to_string(), None, None),
+            "assistant" => ChatMessage::assistant(content.to_string(), None, None, None, None),
             "tool" => ChatMessage::tool(content.to_string(), None, None),
             other => panic!("unsupported chat role in test/setup: {other}"),
         }
@@ -132,7 +132,7 @@ mod tests {
     #[test]
     fn codex_request_excludes_reasoning_that_is_not_replayed() {
         let mut message = msg("assistant", "answer");
-        message.reasoning_content = Some("hidden reasoning".repeat(100));
+        message.legacy_tool_loop_reasoning = Some("hidden reasoning".repeat(100));
         let messages = [message];
 
         assert!(

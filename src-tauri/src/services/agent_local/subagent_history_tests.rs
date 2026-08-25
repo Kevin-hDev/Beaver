@@ -15,6 +15,8 @@ async fn history_persists_supported_roles_without_dropping_the_queue() {
         ChatMessage::assistant(
             "appel".into(),
             Some("raisonnement".into()),
+            None,
+            Some("raisonnement".into()),
             Some(vec![ToolCallOllama {
                 id: Some("call-42".into()),
                 extra_content: None,
@@ -145,7 +147,7 @@ fn chat(role: &str, content: &str) -> ChatMessage {
     match role {
         "system" => ChatMessage::system(content.into()),
         "user" => ChatMessage::user(content.into()),
-        "assistant" => ChatMessage::assistant(content.into(), None, None),
+        "assistant" => ChatMessage::assistant(content.into(), None, None, None, None),
         "tool" => ChatMessage::tool(content.into(), None, None),
         other => panic!("unsupported chat role in test/setup: {other}"),
     }

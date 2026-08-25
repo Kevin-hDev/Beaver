@@ -14,7 +14,10 @@ pub fn sanitize_chat_messages(messages: &mut [ChatMessage]) {
         } else {
             redact_high_confidence_string(&mut message.content);
         }
-        if let Some(reasoning) = message.reasoning_content.as_mut() {
+        if let Some(reasoning) = message.display_thinking.as_mut() {
+            redact_high_confidence_string(reasoning);
+        }
+        if let Some(reasoning) = message.legacy_tool_loop_reasoning.as_mut() {
             redact_high_confidence_string(reasoning);
         }
         for call in message.tool_calls.iter_mut().flatten() {

@@ -25,7 +25,11 @@ fn message_value(message: &ChatMessage) -> Value {
     insert_optional(&mut value, "images", message.images.as_ref());
     insert_tool_calls(&mut value, message);
     insert_optional(&mut value, "tool_name", message.tool_name.as_ref());
-    insert_optional(&mut value, "thinking", message.reasoning_content.as_ref());
+    insert_optional(
+        &mut value,
+        "thinking",
+        message.legacy_tool_loop_reasoning.as_ref(),
+    );
     Value::Object(value)
 }
 
@@ -61,6 +65,8 @@ mod tests {
     fn native_payload_uses_ollama_thinking_and_strips_api_fields() {
         let mut message = ChatMessage::assistant(
             String::new(),
+            Some("raisonnement".into()),
+            None,
             Some("raisonnement".into()),
             Some(vec![ToolCallOllama {
                 id: Some("call_1".into()),

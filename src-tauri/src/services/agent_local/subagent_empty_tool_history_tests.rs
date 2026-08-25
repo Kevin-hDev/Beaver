@@ -6,7 +6,7 @@ use tokio_util::sync::CancellationToken;
 async fn empty_tool_result_survives_persistence_and_reconstruction() {
     let (parent, child, run) = active_child().await;
     let messages = vec![
-        ChatMessage::assistant("appel".into(), None, Some(vec![ToolCallOllama {
+        ChatMessage::assistant("appel".into(), None, None, None, Some(vec![ToolCallOllama {
                 id: Some("call-empty".into()),
                 extra_content: None,
                 function: ToolCallFunction {

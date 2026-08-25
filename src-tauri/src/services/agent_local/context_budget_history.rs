@@ -45,7 +45,7 @@ pub fn repair_invalid_history(messages: &mut Vec<ChatMessage>) -> HistoryRepairR
                 .saturating_add(chain.len().saturating_sub(1));
             let mut assistant = chain.remove(0);
             assistant.tool_calls = None;
-            if !assistant.content.is_empty() || assistant.reasoning_content.is_some() {
+            if !assistant.content.is_empty() || assistant.display_thinking.is_some() {
                 repaired.push(assistant);
             }
         } else if message.role == "tool" {

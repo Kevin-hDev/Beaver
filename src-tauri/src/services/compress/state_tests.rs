@@ -8,7 +8,7 @@ fn chat(role: &str, content: &str) -> ChatMessage {
     match role {
         "system" => ChatMessage::system(content.to_string()),
         "user" => ChatMessage::user(content.to_string()),
-        "assistant" => ChatMessage::assistant(content.to_string(), None, None),
+        "assistant" => ChatMessage::assistant(content.to_string(), None, None, None, None),
         "tool" => ChatMessage::tool(content.to_string(), None, None),
         other => panic!("unsupported chat role in test/setup: {other}"),
     }

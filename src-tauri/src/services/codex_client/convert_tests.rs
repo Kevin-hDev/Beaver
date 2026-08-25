@@ -35,6 +35,8 @@ fn convert_splits_tool_calls_into_separate_items() {
         ChatMessage::assistant(
             "Je vais lire le fichier.".into(),
             None,
+            None,
+            None,
             Some(vec![ToolCallOllama {
                 id: Some("call_1".into()),
                 extra_content: None,
@@ -73,6 +75,8 @@ fn convert_replays_codex_output_items_without_rebuilding_them() {
     let msgs = vec![ChatMessage::assistant(
         "Texte déjà présent dans les items Codex.".into(),
         None,
+        None,
+        None,
         Some(vec![ToolCallOllama {
             id: Some("call_1".into()),
             extra_content: Some(serde_json::json!({
@@ -103,6 +107,8 @@ fn codex_aliases_extension_tool_names_in_definitions_and_history() {
     })];
     let messages = vec![ChatMessage::assistant(
         String::new(),
+        None,
+        None,
         None,
         Some(vec![ToolCallOllama {
             id: Some("call_1".into()),

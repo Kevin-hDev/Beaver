@@ -11,7 +11,7 @@ mod tests {
     }
 
     fn assistant_msg(content: &str) -> ChatMessage {
-        ChatMessage::assistant(content.to_string(), None, None)
+        ChatMessage::assistant(content.to_string(), None, None, None, None)
     }
 
     /// Messages dont le total est sous le budget ne doivent pas être modifiés.

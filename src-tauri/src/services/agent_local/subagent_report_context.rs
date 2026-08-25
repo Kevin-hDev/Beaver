@@ -49,10 +49,16 @@ fn report_batch_to_message(reports: &[SubagentHiddenReport]) -> ChatMessage {
         .map(format_report)
         .collect::<Vec<_>>()
         .join("\n");
-    ChatMessage::assistant(format!(
+    ChatMessage::assistant(
+        format!(
             "{SUBAGENT_REPORT_CONTEXT_PREFIX}\n\
              <subagent_reports>\n{items}\n</subagent_reports>"
-        ), None, None)
+        ),
+        None,
+        None,
+        None,
+        None,
+    )
 }
 
 fn format_report(report: &SubagentHiddenReport) -> String {

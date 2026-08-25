@@ -74,7 +74,7 @@ fn request_stats(messages: &[ChatMessage]) -> ModelRequestStats {
                 stats.assistant_messages += 1;
                 stats.assistant_content_chars += char_count(&message.content);
                 stats.assistant_tool_calls += message.tool_calls.as_ref().map_or(0, Vec::len);
-                if let Some(reasoning) = message.reasoning_content.as_ref() {
+                if let Some(reasoning) = message.legacy_tool_loop_reasoning.as_ref() {
                     if !reasoning.is_empty() {
                         stats.assistant_reasoning_messages += 1;
                         stats.assistant_reasoning_chars += char_count(reasoning);
@@ -107,7 +107,7 @@ mod tests {
     #[test]
     fn request_stats_counts_reasoning_without_content() {
         let messages = vec![
-            ChatMessage::assistant("".to_string(), Some("réflexion".to_string()), Some(vec![ToolCallOllama {
+            ChatMessage::assistant("".to_string(), Some("réflexion".to_string()), None, Some("réflexion".to_string()), Some(vec![ToolCallOllama {
                     id: Some("call_1".to_string()),
                     extra_content: None,
                     function: ToolCallFunction {

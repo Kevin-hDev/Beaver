@@ -1,4 +1,5 @@
 use super::types_ollama::{ChatMessage, ToolCallOllama};
+use crate::services::reasoning_continuity::envelope::ReasoningEnvelope;
 
 impl ChatMessage {
     pub fn system(content: String) -> Self {
@@ -11,7 +12,9 @@ impl ChatMessage {
 
     pub fn assistant(
         content: String,
-        reasoning_content: Option<String>,
+        display_thinking: Option<String>,
+        continuation: Option<ReasoningEnvelope>,
+        legacy_tool_loop_reasoning: Option<String>,
         tool_calls: Option<Vec<ToolCallOllama>>,
     ) -> Self {
         Self {
@@ -21,7 +24,9 @@ impl ChatMessage {
             tool_calls,
             tool_name: None,
             tool_call_id: None,
-            reasoning_content,
+            display_thinking,
+            continuation,
+            legacy_tool_loop_reasoning,
         }
     }
 
@@ -33,7 +38,9 @@ impl ChatMessage {
             tool_calls: None,
             tool_name,
             tool_call_id,
-            reasoning_content: None,
+            display_thinking: None,
+            continuation: None,
+            legacy_tool_loop_reasoning: None,
         }
     }
 
@@ -57,7 +64,9 @@ impl ChatMessage {
             tool_calls: None,
             tool_name: None,
             tool_call_id: None,
-            reasoning_content: None,
+            display_thinking: None,
+            continuation: None,
+            legacy_tool_loop_reasoning: None,
         }
     }
 }

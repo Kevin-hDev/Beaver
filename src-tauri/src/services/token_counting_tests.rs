@@ -29,7 +29,7 @@ fn estimates_emoji_as_wide() {
 #[test]
 fn chat_estimate_counts_replayed_reasoning() {
     let mut message = msg("answer");
-    message.reasoning_content = Some("r".repeat(400));
+    message.legacy_tool_loop_reasoning = Some("r".repeat(400));
 
     assert_eq!(estimate_chat_tokens(&[message.clone()]), 102);
     assert_eq!(estimate_chat_tokens_without_reasoning(&[message]), 2);

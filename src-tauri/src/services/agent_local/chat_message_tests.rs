@@ -6,7 +6,9 @@ fn system_and_user_messages_cannot_carry_reasoning_or_tools() {
         ChatMessage::system("rules".to_owned()),
         ChatMessage::user("question".to_owned()),
     ] {
-        assert!(message.reasoning_content.is_none());
+        assert!(message.display_thinking.is_none());
+        assert!(message.continuation.is_none());
+        assert!(message.legacy_tool_loop_reasoning.is_none());
         assert!(message.tool_calls.is_none());
         assert!(message.tool_call_id.is_none());
         assert!(message.tool_name.is_none());
@@ -27,11 +29,18 @@ fn assistant_requires_reasoning_and_tool_calls_at_construction() {
     let message = ChatMessage::assistant(
         "answer".to_owned(),
         Some("reasoning".to_owned()),
+        None,
+        Some("reasoning".to_owned()),
         Some(tool_calls.clone()),
     );
 
     assert_eq!(message.role, "assistant");
-    assert_eq!(message.reasoning_content.as_deref(), Some("reasoning"));
+    assert_eq!(message.display_thinking.as_deref(), Some("reasoning"));
+    assert!(message.continuation.is_none());
+    assert_eq!(
+        message.legacy_tool_loop_reasoning.as_deref(),
+        Some("reasoning")
+    );
     assert_eq!(message.tool_calls.unwrap()[0].id.as_deref(), Some("call-1"));
 }
 
@@ -46,7 +55,7 @@ fn tool_requires_call_id_and_name_at_construction() {
     assert_eq!(message.role, "tool");
     assert_eq!(message.tool_call_id.as_deref(), Some("call-1"));
     assert_eq!(message.tool_name.as_deref(), Some("lookup"));
-    assert!(message.reasoning_content.is_none());
+    assert!(message.legacy_tool_loop_reasoning.is_none());
 }
 
 #[test]
@@ -63,5 +72,25 @@ fn images_are_added_without_changing_message_role() {
 
     assert_eq!(message.role, "user");
     assert_eq!(message.images, Some(vec!["base64".to_owned()]));
-    assert!(message.reasoning_content.is_none());
+    assert!(message.display_thinking.is_none());
+    assert!(message.continuation.is_none());
+    assert!(message.legacy_tool_loop_reasoning.is_none());
+}
+
+#[test]
+fn generic_serde_never_exposes_reasoning_fields() {
+    let message = ChatMessage::assistant(
+        "visible".into(),
+        Some("display-only".into()),
+        None,
+        Some("current-run-only".into()),
+        None,
+    );
+
+    let serialized = serde_json::to_string(&message).unwrap();
+    assert!(!serialized.contains("display-only"));
+    assert!(!serialized.contains("current-run-only"));
+    assert!(!serialized.contains("display_thinking"));
+    assert!(!serialized.contains("continuation"));
+    assert!(!serialized.contains("legacy_tool_loop_reasoning"));
 }

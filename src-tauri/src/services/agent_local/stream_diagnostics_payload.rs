@@ -162,7 +162,7 @@ fn native_payload_stats(messages: &[ChatMessage]) -> PayloadStats {
             stats.assistant_items += 1;
             stats.assistant_content_chars += char_count(&message.content);
             stats.tool_calls += message.tool_calls.as_ref().map_or(0, Vec::len);
-            if let Some(reasoning) = message.reasoning_content.as_ref() {
+            if let Some(reasoning) = message.legacy_tool_loop_reasoning.as_ref() {
                 stats.reasoning_fields += 1;
                 stats.reasoning_chars += char_count(reasoning);
             }
@@ -188,7 +188,7 @@ mod tests {
     use serde_json::json;
 
     fn assistant_with_reasoning() -> ChatMessage {
-        ChatMessage::assistant("".to_string(), Some("réflexion".to_string()), Some(vec![ToolCallOllama {
+        ChatMessage::assistant("".to_string(), Some("réflexion".to_string()), None, Some("réflexion".to_string()), Some(vec![ToolCallOllama {
                 id: Some("call_1".to_string()),
                 extra_content: None,
                 function: ToolCallFunction {

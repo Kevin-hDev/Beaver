@@ -58,6 +58,7 @@ pub mod process_identity;
 pub mod process_tree;
 pub mod provider_usage;
 pub mod reasoning;
+pub mod reasoning_continuity;
 mod reasoning_effort;
 mod reasoning_google;
 #[cfg(test)]

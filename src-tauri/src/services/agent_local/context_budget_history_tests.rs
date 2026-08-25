@@ -85,7 +85,7 @@ fn empty_ids_are_normalized_but_empty_tool_names_are_rejected() {
 }
 
 fn assistant_call(id: &str, content: &str) -> ChatMessage {
-    ChatMessage::assistant(content.into(), None, Some(vec![ToolCallOllama {
+    ChatMessage::assistant(content.into(), None, None, None, Some(vec![ToolCallOllama {
             id: Some(id.into()),
             extra_content: None,
             function: ToolCallFunction {

@@ -4,7 +4,7 @@ fn msg(role: &str, content: &str) -> ChatMessage {
     match role {
         "system" => ChatMessage::system(content.to_string()),
         "user" => ChatMessage::user(content.to_string()),
-        "assistant" => ChatMessage::assistant(content.to_string(), None, None),
+        "assistant" => ChatMessage::assistant(content.to_string(), None, None, None, None),
         "tool" => ChatMessage::tool(content.to_string(), None, None),
         other => panic!("unsupported chat role in test/setup: {other}"),
     }
@@ -192,6 +192,8 @@ fn codex_does_not_prune_reasoning_that_is_not_sent() {
         "recent answer".into(),
         Some("r".repeat(80_000)),
         None,
+        Some("r".repeat(80_000)),
+        None,
     ));
     let original_len = messages.len();
     let original_content = messages[1].content.clone();
@@ -293,6 +295,8 @@ fn pruning_keeps_a_contiguous_recent_suffix() {
 fn assistant_with_calls(ids: &[&str]) -> ChatMessage {
     ChatMessage::assistant(
         String::new(),
+        None,
+        None,
         None,
         Some(
             ids.iter()

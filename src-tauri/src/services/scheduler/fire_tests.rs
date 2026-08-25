@@ -74,9 +74,9 @@ fn persistence_keeps_only_messages_produced_after_the_scheduled_prompt() {
     let completed = vec![
         ChatMessage::system("Contexte Beaver".into()),
         ChatMessage::user("Inspecte le projet".into()),
-        ChatMessage::assistant("Je vérifie.".into(), None, None),
+        ChatMessage::assistant("Je vérifie.".into(), None, None, None, None),
         ChatMessage::tool("README.md".into(), None, Some("list_dir".into())),
-        ChatMessage::assistant("Terminé.".into(), None, None),
+        ChatMessage::assistant("Terminé.".into(), None, None, None, None),
     ];
 
     let persisted = persisted_agent_messages(&completed);
@@ -98,6 +98,8 @@ async fn tool_trace_is_persisted_before_missing_text_is_reported() {
             ChatMessage::user("Inspecte le projet".into()),
             ChatMessage::assistant(
                 String::new(),
+                None,
+                None,
                 None,
                 Some(vec![ToolCallOllama {
                     id: Some("call-1".into()),

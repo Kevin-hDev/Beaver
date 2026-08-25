@@ -72,7 +72,7 @@ fn to_saved(message: &ChatMessage) -> Option<AgentMessage> {
     if message.role != "tool"
         && message.content.trim().is_empty()
         && tool_calls.as_ref().is_none_or(Vec::is_empty)
-        && message.reasoning_content.as_deref().is_none_or(str::is_empty)
+        && message.display_thinking.as_deref().is_none_or(str::is_empty)
     {
         return None;
     }
@@ -80,7 +80,7 @@ fn to_saved(message: &ChatMessage) -> Option<AgentMessage> {
         id: uuid::Uuid::new_v4().to_string(),
         role: message.role.clone(),
         content: message.content.clone(),
-        thinking: message.reasoning_content.clone(),
+        thinking: message.display_thinking.clone(),
         tool_calls,
         tool_name: message.tool_name.clone(),
         tool_activities: None,
@@ -118,7 +118,7 @@ mod boundary_tests {
     #[test]
     fn message_limit_never_keeps_a_tool_result_without_its_call() {
         let mut messages = vec![
-            ChatMessage::assistant("appel".into(), None, Some(vec![ToolCallOllama {
+            ChatMessage::assistant("appel".into(), None, None, None, Some(vec![ToolCallOllama {
                     id: Some("call-boundary".into()),
                     extra_content: None,
                     function: ToolCallFunction {

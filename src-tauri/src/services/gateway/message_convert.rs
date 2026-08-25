@@ -30,7 +30,7 @@ pub fn chat_to_agent_message(m: &ChatMessage) -> Option<AgentMessage> {
         id: uuid::Uuid::new_v4().to_string(),
         role: m.role.clone(),
         content: m.content.clone(),
-        thinking: None,
+        thinking: m.display_thinking.clone(),
         tool_calls: m
             .tool_calls
             .as_ref()
@@ -74,6 +74,8 @@ fn agent_to_chat_messages(m: &AgentMessage) -> Result<Vec<ChatMessage>, String> 
         "assistant" => ChatMessage::assistant(
             m.content.clone(),
             m.thinking.clone(),
+            None,
+            None,
             session_tool_calls_to_chat(m.tool_calls.as_ref()),
         ),
         "tool" => ChatMessage::tool(m.content.clone(), None, m.tool_name.clone()),
@@ -107,6 +109,8 @@ fn push_tool_turn(
         out.push(ChatMessage::assistant(
             String::new(),
             None,
+            None,
+            None,
             Some(tool_calls.clone()),
         ));
         for (tool, call) in tools.iter().zip(tool_calls.iter()) {
@@ -118,7 +122,13 @@ fn push_tool_turn(
         }
     }
     if !content.is_empty() {
-        out.push(ChatMessage::assistant(content.to_string(), None, None));
+        out.push(ChatMessage::assistant(
+            content.to_string(),
+            None,
+            None,
+            None,
+            None,
+        ));
     }
 }
 

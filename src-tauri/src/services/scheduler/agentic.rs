@@ -89,6 +89,8 @@ mod tests {
             ChatMessage::assistant(
                 "a".repeat(400),
                 None,
+                None,
+                None,
                 Some(vec![ToolCallOllama {
                     id: Some("call-1".into()),
                     extra_content: None,
@@ -99,7 +101,7 @@ mod tests {
                 }]),
             ),
             ChatMessage::tool("README.md".into(), None, Some("list_dir".into())),
-            ChatMessage::assistant("Terminé.".into(), None, None),
+            ChatMessage::assistant("Terminé.".into(), None, None, None, None),
         ];
 
         assert!(generated_output_tokens(&messages) >= 100);

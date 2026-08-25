@@ -151,7 +151,9 @@ fn trim_message(message: &ChatMessage, max_tokens: usize) -> ChatMessage {
     trimmed.content = truncate_content(&message.content, max_tokens);
     trimmed.images = None;
     trimmed.tool_calls = None;
-    trimmed.reasoning_content = None;
+    trimmed.display_thinking = None;
+    trimmed.continuation = None;
+    trimmed.legacy_tool_loop_reasoning = None;
     trimmed
 }
 

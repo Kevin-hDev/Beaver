@@ -38,6 +38,8 @@ fn saved_to_chat(message: AgentMessage) -> Option<ChatMessage> {
         "assistant" => Some(ChatMessage::assistant(
             message.content,
             message.thinking,
+            None,
+            None,
             tool_calls,
         )),
         "tool" => Some(ChatMessage::tool(message.content, None, message.tool_name)),
@@ -94,7 +96,7 @@ mod tests {
     async fn in_memory_history_keeps_provider_tool_ids_under_one_fresh_system_message() {
         let prior = vec![
             ChatMessage::system("ancien système".into()),
-            ChatMessage::assistant("appel".into(), None, Some(vec![ToolCallOllama {
+            ChatMessage::assistant("appel".into(), None, None, None, Some(vec![ToolCallOllama {
                     id: Some("call-exact".into()),
                     extra_content: None,
                     function: ToolCallFunction {

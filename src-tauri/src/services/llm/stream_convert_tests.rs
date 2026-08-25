@@ -32,6 +32,8 @@ fn assistant_tool_call_preserves_extra_content() {
     let msg = ChatMessage::assistant(
         String::new(),
         None,
+        None,
+        None,
         Some(vec![ToolCallOllama {
             id: Some("function-call-1".into()),
             extra_content: Some(serde_json::json!({

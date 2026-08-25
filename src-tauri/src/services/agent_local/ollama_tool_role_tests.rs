@@ -33,7 +33,7 @@ fn wraps_tool_message_as_user_with_tool_response() {
 fn leaves_user_and_assistant_messages_untouched() {
     let msgs = vec![
         user_msg("Bonjour"),
-        ChatMessage::assistant("Salut".to_string(), None, None),
+        ChatMessage::assistant("Salut".to_string(), None, None, None, None),
     ];
     let out = wrap_tool_results(&msgs);
     assert_eq!(out[0].role, "user");

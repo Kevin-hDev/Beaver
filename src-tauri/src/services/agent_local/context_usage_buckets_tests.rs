@@ -5,7 +5,7 @@ fn message(role: &str, content: &str) -> ChatMessage {
     match role {
         "system" => ChatMessage::system(content.into()),
         "user" => ChatMessage::user(content.into()),
-        "assistant" => ChatMessage::assistant(content.into(), None, None),
+        "assistant" => ChatMessage::assistant(content.into(), None, None, None, None),
         "tool" => ChatMessage::tool(content.into(), None, None),
         other => panic!("unsupported chat role in test/setup: {other}"),
     }
@@ -61,7 +61,7 @@ fn partitions_the_prepared_request_without_changing_its_total() {
 #[test]
 fn codex_omits_reasoning_that_is_not_replayed() {
     let mut assistant = message("assistant", &"a".repeat(40));
-    assistant.reasoning_content = Some("r".repeat(400));
+    assistant.legacy_tool_loop_reasoning = Some("r".repeat(400));
 
     let codex = RequestContextUsage::from_request(
         crate::services::codex_client::PROVIDER_ID,

@@ -82,7 +82,9 @@ fn validate_batch(messages: &[ChatMessage]) -> Result<(), String> {
             || message.tool_calls.is_some()
             || message.tool_name.is_some()
             || message.tool_call_id.is_some()
-            || message.reasoning_content.is_some()
+            || message.display_thinking.is_some()
+            || message.continuation.is_some()
+            || message.legacy_tool_loop_reasoning.is_some()
         {
             return Err("Message invalide".into());
         }

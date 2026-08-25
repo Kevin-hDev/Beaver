@@ -38,7 +38,7 @@ pub fn chat_to_agent_message(message: &ChatMessage) -> AgentMessage {
         id: uuid::Uuid::new_v4().to_string(),
         role: message.role.clone(),
         content: message.content.clone(),
-        thinking: message.reasoning_content.clone(),
+        thinking: message.display_thinking.clone(),
         tool_calls: message.tool_calls.as_ref().map(|calls| {
             calls
                 .iter()

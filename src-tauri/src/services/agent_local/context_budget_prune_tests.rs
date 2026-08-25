@@ -2,11 +2,19 @@ use super::*;
 
 #[test]
 fn trimming_drops_reasoning_and_respects_the_exact_budget() {
-    let message = ChatMessage::assistant("visible".repeat(10_000), Some("hidden".repeat(20_000)), None);
+    let message = ChatMessage::assistant(
+        "visible".repeat(10_000),
+        Some("hidden".repeat(20_000)),
+        None,
+        Some("hidden".repeat(20_000)),
+        None,
+    );
 
     let trimmed = trim_message(&message, 100);
 
-    assert!(trimmed.reasoning_content.is_none());
+    assert!(trimmed.display_thinking.is_none());
+    assert!(trimmed.continuation.is_none());
+    assert!(trimmed.legacy_tool_loop_reasoning.is_none());
     assert!(crate::services::token_counting::estimate_chat_message_tokens(&trimmed) <= 100);
     assert!(trimmed.content.contains("message truncated"));
 }

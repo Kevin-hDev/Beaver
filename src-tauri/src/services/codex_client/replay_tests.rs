@@ -42,6 +42,8 @@ fn replay_rejects_state_for_another_tool_call() {
     let message = ChatMessage::assistant(
         String::new(),
         None,
+        None,
+        None,
         Some(vec![ToolCallOllama {
             id: Some("call_1".to_string()),
             extra_content: Some(serde_json::json!({

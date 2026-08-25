@@ -13,7 +13,7 @@ fn runtime_messages() -> Vec<ChatMessage> {
     vec![
         ChatMessage::system("rules".into()),
         ChatMessage::user("question".into()),
-        ChatMessage::assistant("answer".into(), None, None),
+        ChatMessage::assistant("answer".into(), None, None, None, None),
     ]
 }
 

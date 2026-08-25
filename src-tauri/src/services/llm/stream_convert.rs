@@ -34,7 +34,7 @@ fn message_to_openai_with_names(
                 "role": "assistant",
                 "content": content,
             });
-            if let Some(rc) = &msg.reasoning_content {
+            if let Some(rc) = &msg.legacy_tool_loop_reasoning {
                 obj["reasoning_content"] = json!(rc);
             }
             if let Some(tcs) = &msg.tool_calls {

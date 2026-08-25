@@ -50,6 +50,8 @@ fn api_request_preserves_tool_continuation_in_responses_shape() {
         ChatMessage::assistant(
             String::new(),
             None,
+            None,
+            None,
             Some(vec![
                 crate::services::agent_local::types_ollama::ToolCallOllama {
                     id: Some("call_1".into()),
