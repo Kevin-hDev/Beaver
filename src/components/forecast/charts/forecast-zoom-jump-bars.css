@@ -15,6 +15,9 @@
   pointer-events: auto;
 }
 
+/* Seul objet de l'application à ne pas prendre l'arrondi commun de 6 px :
+   la barre ne mesure que 4 px de large, et 6 px d'arrondi la transformerait
+   en ovale. La raison est sa largeur, pas un choix de style. */
 .fzjb-bar {
   width: 4px;
   border: none;
