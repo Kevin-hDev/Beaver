@@ -36,9 +36,6 @@
   --signal-ok-border: rgba(34, 197, 94, 0.3);
   --context-ring-fill: #b8b8bf;
   --context-ring-track: rgba(184, 184, 191, 0.20);
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.3);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
-  --shadow-lg: 0 4px 24px rgba(0, 0, 0, 0.4);
   --dialog-backdrop: rgba(0, 0, 0, 0.55);
 
   /* Aliases — tokens référencés par les composants (spec phase 2 §2) */
@@ -69,7 +66,6 @@
   --tooltip-bg: #252525;
   --tooltip-border: rgba(255, 255, 255, 0.10);
   --tooltip-text: var(--ink);
-  --tooltip-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
   --chat-composer-bg: var(--surface-glass);
   --chat-composer-border: var(--tooltip-border);
   /* Relief — réglé sur docs/mokup/, voir src/styles/relief.css.

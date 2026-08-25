@@ -82,6 +82,16 @@
       rgba(var(--relief-stroke-rgb), calc(var(--relief-top) * 0.7));
 }
 
+/* Les quatre ombres héritées renvoient aux trois hauteurs. Elles avaient
+   chacune leur valeur dans chaque thème : vingt-quatre réglages pour trois
+   hauteurs, qui ne s'accordaient plus. */
+[data-theme] {
+  --shadow-sm: var(--elev-rest);
+  --shadow-card: var(--elev-float);
+  --tooltip-shadow: var(--elev-float);
+  --shadow-lg: var(--elev-above);
+}
+
 .elev-rest {
   box-shadow: var(--elev-rest);
 }
