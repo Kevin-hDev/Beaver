@@ -128,6 +128,7 @@ async fn tool_trace_is_persisted_before_missing_text_is_reported() {
 
     assert!(outcome.is_err());
     assert_eq!(roles, vec!["user", "assistant", "tool"]);
+    assert_eq!(saved.messages[2].tool_call_id.as_deref(), Some("call-1"));
 
     session_store::delete_one(&session_id)
         .await

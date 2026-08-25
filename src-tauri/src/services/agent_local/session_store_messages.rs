@@ -1,6 +1,6 @@
 use super::types_session::{AgentMessage, AgentSession};
 
-const MAX_MESSAGES_PER_SESSION: usize = 2_000;
+use super::session_limits::MAX_MESSAGES_PER_SESSION;
 
 pub(super) fn append_bounded(
     session: &mut AgentSession,
@@ -35,6 +35,12 @@ pub async fn add_messages_with_context(
     context_limit: Option<u32>,
 ) -> Result<(), String> {
     super::session_store::validate_session_id(id)?;
+    if new_messages
+        .iter()
+        .any(|message| message.continuation.is_some())
+    {
+        return Err("Message de session invalide".to_string());
+    }
     for message in &new_messages {
         message.validate_stream_metadata()?;
     }

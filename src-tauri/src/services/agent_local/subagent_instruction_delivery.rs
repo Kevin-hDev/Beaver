@@ -160,11 +160,14 @@ async fn ensure_current_run(
 pub(super) fn agent_message(prompt: &str) -> AgentMessage {
     AgentMessage {
         id: uuid::Uuid::new_v4().to_string(),
+        turn_id: AgentMessage::new_turn_id(),
         role: "user".to_string(),
         content: prompt.to_string(),
         thinking: None,
         tool_calls: None,
         tool_name: None,
+        tool_call_id: None,
+        continuation: None,
         tool_activities: None,
         segments: None,
         files: Vec::new(),

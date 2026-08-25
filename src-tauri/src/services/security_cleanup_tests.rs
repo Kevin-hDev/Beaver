@@ -87,3 +87,76 @@ fn ignores_a_directory_that_only_looks_like_a_session_file() {
     assert!(unexpected.is_dir());
     assert!(root.path().join(MARKER_FILE).is_file());
 }
+
+#[test]
+fn removes_orphan_backup_even_after_hardening_marker_exists() {
+    let root = TempDir::new().unwrap();
+    run_in(root.path()).unwrap();
+    let backup = root
+        .path()
+        .join("agent-sessions/550e8400-e29b-41d4-a716-446655440000.json.v1.bak");
+    write(&backup, b"private fixture backup");
+
+    run_in(root.path()).unwrap();
+
+    assert!(!backup.exists());
+}
+
+#[test]
+fn keeps_backup_attached_to_regular_session() {
+    let root = TempDir::new().unwrap();
+    let main = root
+        .path()
+        .join("agent-sessions/550e8400-e29b-41d4-a716-446655440000.json");
+    let backup = main.with_file_name("550e8400-e29b-41d4-a716-446655440000.json.v1.bak");
+    write(&main, br#"{"messages":[]}"#);
+    write(&backup, b"private fixture backup");
+
+    run_in(root.path()).unwrap();
+
+    assert!(backup.is_file());
+}
+
+#[test]
+fn rejects_noncanonical_or_wrong_type_backup() {
+    let root = TempDir::new().unwrap();
+    let invalid = root.path().join("agent-sessions/not-valid!.json.v1.bak");
+    write(&invalid, b"fixture");
+    assert!(run_in(root.path()).is_err());
+
+    fs::remove_file(&invalid).unwrap();
+    let directory = root
+        .path()
+        .join("agent-sessions/550e8400-e29b-41d4-a716-446655440000.json.v1.bak");
+    fs::create_dir_all(directory).unwrap();
+    assert!(run_in(root.path()).is_err());
+}
+
+#[cfg(unix)]
+#[test]
+fn rejects_symbolic_backup() {
+    use std::os::unix::fs::symlink;
+
+    let root = TempDir::new().unwrap();
+    let directory = root.path().join("agent-sessions");
+    fs::create_dir_all(&directory).unwrap();
+    let target = root.path().join("target");
+    write(&target, b"fixture");
+    let backup = directory.join("550e8400-e29b-41d4-a716-446655440000.json.v1.bak");
+    symlink(target, backup).unwrap();
+
+    assert!(run_in(root.path()).is_err());
+}
+
+#[test]
+fn refuses_to_scan_more_than_the_central_session_file_limit() {
+    let root = TempDir::new().unwrap();
+    let directory = root.path().join("agent-sessions");
+    fs::create_dir_all(&directory).unwrap();
+    for index in 0..=crate::services::agent_local::session_limits::MAX_SESSION_FILES {
+        write(&directory.join(format!("ignored-{index}.txt")), b"");
+    }
+
+    assert!(run_in(root.path()).is_err());
+    assert!(!root.path().join(MARKER_FILE).exists());
+}

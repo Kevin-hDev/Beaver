@@ -36,6 +36,7 @@ pub fn chat_to_agent_message(message: &ChatMessage) -> AgentMessage {
     let tokens = token_estimate::estimate_tokens(std::slice::from_ref(message)) as u32;
     AgentMessage {
         id: uuid::Uuid::new_v4().to_string(),
+        turn_id: AgentMessage::new_turn_id(),
         role: message.role.clone(),
         content: message.content.clone(),
         thinking: message.display_thinking.clone(),
@@ -43,6 +44,7 @@ pub fn chat_to_agent_message(message: &ChatMessage) -> AgentMessage {
             calls
                 .iter()
                 .map(|call| ToolCallRequest {
+                    id: call.id.clone().unwrap_or_else(ToolCallRequest::local_id),
                     extra_content: call.extra_content.clone(),
                     function: ToolCallRequestFunction {
                         name: call.function.name.clone(),
@@ -52,6 +54,8 @@ pub fn chat_to_agent_message(message: &ChatMessage) -> AgentMessage {
                 .collect()
         }),
         tool_name: message.tool_name.clone(),
+        tool_call_id: message.tool_call_id.clone(),
+        continuation: message.continuation.clone(),
         tool_activities: None,
         segments: None,
         files: vec![],

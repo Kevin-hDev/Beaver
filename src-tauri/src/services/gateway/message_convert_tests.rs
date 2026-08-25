@@ -4,11 +4,14 @@ use chrono::Utc;
 fn agent_message(role: &str, content: &str) -> AgentMessage {
     AgentMessage {
         id: "message-1".into(),
+        turn_id: "turn-1".into(),
         role: role.into(),
         content: content.into(),
         thinking: None,
         tool_calls: None,
         tool_name: None,
+        tool_call_id: None,
+        continuation: None,
         tool_activities: None,
         segments: None,
         files: Vec::new(),
@@ -23,6 +26,8 @@ fn agent_message(role: &str, content: &str) -> AgentMessage {
 
 fn session(messages: Vec<AgentMessage>) -> AgentSession {
     AgentSession {
+        schema_version:
+            crate::services::agent_local::session_limits::CURRENT_SESSION_SCHEMA_VERSION,
         id: "session-1".into(),
         name: "Gateway".into(),
         created_at: Utc::now(),

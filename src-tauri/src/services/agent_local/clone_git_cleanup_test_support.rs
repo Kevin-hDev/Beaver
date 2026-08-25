@@ -25,6 +25,7 @@ pub(super) fn session(
     git_branch: Option<&str>,
 ) -> AgentSession {
     AgentSession {
+        schema_version: crate::services::agent_local::session_limits::CURRENT_SESSION_SCHEMA_VERSION,
         id: id.into(),
         name: id.into(),
         created_at: Utc::now(),

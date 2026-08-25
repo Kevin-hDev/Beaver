@@ -25,11 +25,14 @@ impl DelegatePromptPersistence {
 fn user_message(content: &str) -> super::types_session::AgentMessage {
     super::types_session::AgentMessage {
         id: uuid::Uuid::new_v4().to_string(),
+        turn_id: super::types_session::AgentMessage::new_turn_id(),
         role: "user".to_string(),
         content: content.to_string(),
         thinking: None,
         tool_calls: None,
         tool_name: None,
+        tool_call_id: None,
+        continuation: None,
         tool_activities: None,
         segments: None,
         files: Vec::new(),

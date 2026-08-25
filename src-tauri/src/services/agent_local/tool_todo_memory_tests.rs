@@ -115,6 +115,7 @@ fn user_turn_auto_pauses_stale_active_todo() {
 #[test]
 fn legacy_session_defaults_missing_neglect_count() {
     let json = json!({
+        "schema_version": super::session_limits::CURRENT_SESSION_SCHEMA_VERSION,
         "id": "abc-123",
         "name": "Legacy",
         "created_at": Utc::now(),
@@ -133,6 +134,7 @@ fn legacy_session_defaults_missing_neglect_count() {
 
 fn test_session() -> AgentSession {
     AgentSession {
+        schema_version: super::session_limits::CURRENT_SESSION_SCHEMA_VERSION,
         id: "abc-123".into(),
         name: "Test".into(),
         created_at: Utc::now(),

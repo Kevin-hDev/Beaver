@@ -3,6 +3,7 @@ use serde_json::json;
 
 fn legacy_session_json() -> serde_json::Value {
     json!({
+        "schema_version": super::session_limits::CURRENT_SESSION_SCHEMA_VERSION,
         "id": "550e8400-e29b-41d4-a716-446655440000",
         "name": "Legacy",
         "created_at": "2026-08-22T12:00:00Z",

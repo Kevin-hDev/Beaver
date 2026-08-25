@@ -48,11 +48,14 @@ pub(super) fn build_clone(
 pub(super) fn hidden_context_message(summary: &str) -> AgentMessage {
     AgentMessage {
         id: Uuid::new_v4().to_string(),
+        turn_id: AgentMessage::new_turn_id(),
         role: "user".to_string(),
         content: clone_summary::hidden_context_content(summary),
         thinking: None,
         tool_calls: None,
         tool_name: None,
+        tool_call_id: None,
+        continuation: None,
         tool_activities: None,
         segments: None,
         files: vec![],

@@ -17,11 +17,14 @@ fn chat(role: &str, content: &str) -> ChatMessage {
 fn agent(role: &str, content: &str) -> AgentMessage {
     AgentMessage {
         id: uuid::Uuid::new_v4().to_string(),
+        turn_id: AgentMessage::new_turn_id(),
         role: role.to_string(),
         content: content.to_string(),
         thinking: None,
         tool_calls: None,
         tool_name: None,
+        tool_call_id: None,
+        continuation: None,
         tool_activities: None,
         segments: None,
         files: vec![],

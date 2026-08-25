@@ -4,6 +4,7 @@ use crate::services::gateway::message_convert;
 use crate::services::llm;
 use crate::services::scheduler::log;
 use chrono::{DateTime, Local};
+use std::collections::VecDeque;
 use tauri::{AppHandle, Emitter};
 use tokio_util::sync::CancellationToken;
 
@@ -107,9 +108,43 @@ fn persisted_agent_messages(
 ) -> Vec<crate::services::agent_local::types_session::AgentMessage> {
     let mut non_system = completed.iter().filter(|message| message.role != "system");
     non_system.next();
-    non_system
-        .filter_map(message_convert::chat_to_agent_message)
-        .collect()
+    let mut pending_calls = VecDeque::<(String, String)>::new();
+    let mut persisted = Vec::new();
+    for message in
+        non_system.take(crate::services::agent_local::session_limits::MAX_MESSAGES_PER_SESSION)
+    {
+        let Some(mut saved) = message_convert::chat_to_agent_message(message) else {
+            continue;
+        };
+        for call in saved.tool_calls.iter().flatten() {
+            pending_calls.push_back((call.function.name.clone(), call.id.clone()));
+        }
+        if saved.role == "tool" {
+            link_tool_result(&mut saved, &mut pending_calls);
+        }
+        persisted.push(saved);
+    }
+    persisted
+}
+
+fn link_tool_result(
+    message: &mut crate::services::agent_local::types_session::AgentMessage,
+    pending: &mut VecDeque<(String, String)>,
+) {
+    let position = message.tool_call_id.as_ref().map_or_else(
+        || {
+            pending.iter().position(|(name, _)| {
+                message
+                    .tool_name
+                    .as_ref()
+                    .is_none_or(|tool_name| tool_name == name)
+            })
+        },
+        |id| pending.iter().position(|(_, pending_id)| pending_id == id),
+    );
+    if let Some((_, id)) = position.and_then(|position| pending.remove(position)) {
+        message.tool_call_id.get_or_insert(id);
+    }
 }
 
 async fn create_heartbeat_session(wakeup: &ScheduledWakeup) -> Result<String, String> {

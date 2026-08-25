@@ -9,6 +9,7 @@ use uuid::Uuid;
 fn session(id: &str, status: &str, parent: bool, offset_secs: i64) -> AgentSession {
     let created_at = Utc::now() + Duration::seconds(offset_secs);
     AgentSession {
+        schema_version: crate::services::agent_local::session_limits::CURRENT_SESSION_SCHEMA_VERSION,
         id: id.to_string(),
         name: id.to_string(),
         created_at,

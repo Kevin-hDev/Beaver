@@ -71,6 +71,7 @@ pub mod search;
 pub mod searxng;
 pub mod secure_http;
 pub mod security_cleanup;
+mod security_cleanup_sessions;
 mod shutdown_completion;
 #[cfg(test)]
 mod shutdown_completion_tests;

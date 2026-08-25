@@ -96,6 +96,7 @@ fn archive_subagent_requires_parent_ownership() {
 
 fn child(status: &str) -> AgentSession {
     AgentSession {
+        schema_version: crate::services::agent_local::session_limits::CURRENT_SESSION_SCHEMA_VERSION,
         id: uuid::Uuid::new_v4().to_string(),
         name: "Geminitor".into(),
         created_at: Utc::now(),

@@ -5,11 +5,14 @@ use serde_json::json;
 fn message_with_tool(tool: ToolActivityRecord) -> AgentMessage {
     AgentMessage {
         id: "m1".into(),
+        turn_id: "turn-m1".into(),
         role: "assistant".into(),
         content: "done".into(),
         thinking: None,
         tool_calls: None,
         tool_name: None,
+        tool_call_id: None,
+        continuation: None,
         tool_activities: Some(vec![tool]),
         segments: None,
         files: vec![],
@@ -77,11 +80,14 @@ fn serialize_adds_truncated_marker_at_limit() {
 fn inherited_context_message(summary: &str) -> AgentMessage {
     AgentMessage {
         id: "inherited".into(),
+        turn_id: "turn-inherited".into(),
         role: "user".into(),
         content: format!("{CLONE_SUMMARY_PREFIX}\n\n{summary}"),
         thinking: None,
         tool_calls: None,
         tool_name: None,
+        tool_call_id: None,
+        continuation: None,
         tool_activities: None,
         segments: None,
         files: vec![],
@@ -102,11 +108,14 @@ fn serialize_messages_extracts_inherited_context() {
     let inherited = inherited_context_message("Previous attempt hit a bug in parser.rs.");
     let normal = AgentMessage {
         id: "after".into(),
+        turn_id: "turn-after".into(),
         role: "user".into(),
         content: "Now let's try a different approach.".into(),
         thinking: None,
         tool_calls: None,
         tool_name: None,
+        tool_call_id: None,
+        continuation: None,
         tool_activities: None,
         segments: None,
         files: vec![],
@@ -137,11 +146,14 @@ fn serialize_messages_extracts_inherited_context_anywhere_in_suffix() {
     let inherited = inherited_context_message("Avoid the off-by-one in loop.");
     let before = AgentMessage {
         id: "before".into(),
+        turn_id: "turn-before".into(),
         role: "assistant".into(),
         content: "first attempt".into(),
         thinking: None,
         tool_calls: None,
         tool_name: None,
+        tool_call_id: None,
+        continuation: None,
         tool_activities: None,
         segments: None,
         files: vec![],
@@ -154,11 +166,14 @@ fn serialize_messages_extracts_inherited_context_anywhere_in_suffix() {
     };
     let after = AgentMessage {
         id: "after".into(),
+        turn_id: "turn-after".into(),
         role: "user".into(),
         content: "retry".into(),
         thinking: None,
         tool_calls: None,
         tool_name: None,
+        tool_call_id: None,
+        continuation: None,
         tool_activities: None,
         segments: None,
         files: vec![],
@@ -194,11 +209,14 @@ fn serialize_messages_omits_inherited_context_when_absent() {
     // Sans hidden context message, pas de bloc <inherited_context>.
     let normal = AgentMessage {
         id: "m1".into(),
+        turn_id: "turn-m1".into(),
         role: "user".into(),
         content: "hello".into(),
         thinking: None,
         tool_calls: None,
         tool_name: None,
+        tool_call_id: None,
+        continuation: None,
         tool_activities: None,
         segments: None,
         files: vec![],

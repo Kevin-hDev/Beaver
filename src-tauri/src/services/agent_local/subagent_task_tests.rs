@@ -105,6 +105,7 @@ mod tests {
 
     fn child_session(status: &str) -> AgentSession {
         AgentSession {
+            schema_version: crate::services::agent_local::session_limits::CURRENT_SESSION_SCHEMA_VERSION,
             id: Uuid::new_v4().to_string(),
             name: "Geminitor".into(),
             created_at: Utc::now(),

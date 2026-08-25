@@ -107,11 +107,14 @@ fn summary_agent_message(summary: &str, suppress_follow_up: bool) -> AgentMessag
     let chat = ChatMessage::user(content.clone());
     AgentMessage {
         id: uuid::Uuid::new_v4().to_string(),
+        turn_id: AgentMessage::new_turn_id(),
         role: "user".to_string(),
         content,
         thinking: None,
         tool_calls: None,
         tool_name: None,
+        tool_call_id: None,
+        continuation: None,
         tool_activities: None,
         segments: None,
         files: vec![],

@@ -6,11 +6,19 @@ pub mod context_usage_buckets;
 pub mod context_usage_runtime;
 pub mod generation_metrics;
 pub mod session_archive;
+mod session_artifacts;
 pub mod session_family;
 pub mod session_id;
 pub mod session_index;
 mod session_index_io;
 pub mod session_locks;
+pub mod session_limits;
+pub mod session_migration;
+mod session_migration_backup;
+mod session_migration_ids;
+mod session_migration_wire;
+#[cfg(test)]
+mod session_migration_tests;
 pub mod session_ops;
 pub mod session_order;
 pub mod session_pin;
@@ -43,6 +51,8 @@ pub mod stream_diagnostics_support;
 mod stream_diagnostics_support_tests;
 #[cfg(test)]
 mod types_diagnostics_contract_tests;
+mod types_message_continuation;
+mod types_message_ids;
 #[cfg(test)]
 pub mod stream_diagnostics_tests;
 mod stream_diagnostics_tool_record;

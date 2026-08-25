@@ -5,11 +5,14 @@ use chrono::Utc;
 fn message(id: &str, role: &str, content: &str) -> AgentMessage {
     AgentMessage {
         id: id.into(),
+        turn_id: format!("turn-{id}"),
         role: role.into(),
         content: content.into(),
         thinking: None,
         tool_calls: None,
         tool_name: None,
+        tool_call_id: None,
+        continuation: None,
         tool_activities: None,
         segments: None,
         files: vec![],
@@ -24,6 +27,7 @@ fn message(id: &str, role: &str, content: &str) -> AgentMessage {
 
 fn session() -> AgentSession {
     AgentSession {
+        schema_version: crate::services::agent_local::session_limits::CURRENT_SESSION_SCHEMA_VERSION,
         id: "550e8400-e29b-41d4-a716-446655440000".into(),
         name: "Main".into(),
         created_at: Utc::now(),

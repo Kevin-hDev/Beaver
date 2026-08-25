@@ -28,6 +28,7 @@ pub fn chat_to_agent_message(m: &ChatMessage) -> Option<AgentMessage> {
     }
     Some(AgentMessage {
         id: uuid::Uuid::new_v4().to_string(),
+        turn_id: AgentMessage::new_turn_id(),
         role: m.role.clone(),
         content: m.content.clone(),
         thinking: m.display_thinking.clone(),
@@ -36,6 +37,8 @@ pub fn chat_to_agent_message(m: &ChatMessage) -> Option<AgentMessage> {
             .as_ref()
             .map(|calls| chat_tool_calls_to_session(calls)),
         tool_name: m.tool_name.clone(),
+        tool_call_id: m.tool_call_id.clone(),
+        continuation: m.continuation.clone(),
         tool_activities: None,
         segments: None,
         files: vec![],
@@ -74,11 +77,15 @@ fn agent_to_chat_messages(m: &AgentMessage) -> Result<Vec<ChatMessage>, String> 
         "assistant" => ChatMessage::assistant(
             m.content.clone(),
             m.thinking.clone(),
-            None,
+            m.continuation.clone(),
             None,
             session_tool_calls_to_chat(m.tool_calls.as_ref()),
         ),
-        "tool" => ChatMessage::tool(m.content.clone(), None, m.tool_name.clone()),
+        "tool" => ChatMessage::tool(
+            m.content.clone(),
+            m.tool_call_id.clone(),
+            m.tool_name.clone(),
+        ),
         _ => return Err(INVALID_SESSION_HISTORY.to_string()),
     };
     Ok(vec![message])
@@ -137,7 +144,7 @@ fn session_tool_calls_to_chat(calls: Option<&Vec<ToolCallRequest>>) -> Option<Ve
         items
             .iter()
             .map(|call| ToolCallOllama {
-                id: None,
+                id: Some(call.id.clone()),
                 extra_content: call.extra_content.clone(),
                 function: ToolCallFunction {
                     name: call.function.name.clone(),
@@ -152,6 +159,7 @@ fn chat_tool_calls_to_session(calls: &[ToolCallOllama]) -> Vec<ToolCallRequest> 
     calls
         .iter()
         .map(|call| ToolCallRequest {
+            id: call.id.clone().unwrap_or_else(ToolCallRequest::local_id),
             extra_content: call.extra_content.clone(),
             function: crate::services::agent_local::types_session::ToolCallRequestFunction {
                 name: call.function.name.clone(),
@@ -164,11 +172,14 @@ fn chat_tool_calls_to_session(calls: &[ToolCallOllama]) -> Vec<ToolCallRequest> 
 pub fn new_user_agent_message(content: &str) -> AgentMessage {
     AgentMessage {
         id: uuid::Uuid::new_v4().to_string(),
+        turn_id: AgentMessage::new_turn_id(),
         role: "user".to_string(),
         content: content.to_string(),
         thinking: None,
         tool_calls: None,
         tool_name: None,
+        tool_call_id: None,
+        continuation: None,
         tool_activities: None,
         segments: None,
         files: vec![],

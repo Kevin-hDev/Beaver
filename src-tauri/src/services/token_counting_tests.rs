@@ -68,11 +68,14 @@ fn agent_estimate_counts_tool_payload_once() {
     };
     let message = AgentMessage {
         id: uuid::Uuid::new_v4().to_string(),
+        turn_id: AgentMessage::new_turn_id(),
         role: "assistant".into(),
         content: String::new(),
         thinking: None,
         tool_calls: None,
         tool_name: None,
+        tool_call_id: None,
+        continuation: None,
         tool_activities: Some(vec![activity]),
         segments: None,
         files: vec![],

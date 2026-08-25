@@ -10,6 +10,8 @@ use super::{
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AgentMessage {
     pub id: String,
+    #[serde(default = "AgentMessage::new_turn_id")]
+    pub turn_id: String,
     pub role: String,
     pub content: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -18,6 +20,14 @@ pub struct AgentMessage {
     pub tool_calls: Option<Vec<ToolCallRequest>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tool_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_call_id: Option<String>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "super::types_message_continuation::deserialize"
+    )]
+    pub continuation: Option<crate::services::reasoning_continuity::envelope::ReasoningEnvelope>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tool_activities: Option<Vec<ToolActivityRecord>>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -179,6 +189,8 @@ pub struct SavedSegment {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ToolCallRequest {
+    #[serde(default = "ToolCallRequest::local_id")]
+    pub id: String,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub extra_content: Option<serde_json::Value>,
     pub function: ToolCallRequestFunction,

@@ -56,6 +56,7 @@ async fn create_full_with_fast_mode(
     let reasoning_mode = crate::services::reasoning::default_mode(provider, model);
     let now = Utc::now();
     let session = AgentSession {
+        schema_version: super::session_limits::CURRENT_SESSION_SCHEMA_VERSION,
         id: Uuid::new_v4().to_string(),
         name: name.to_string(),
         created_at: now,

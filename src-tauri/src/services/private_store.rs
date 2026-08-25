@@ -9,6 +9,8 @@ fn private_store_error() -> String {
 
 pub(crate) use cache::{CachedStore, StoreErrorCodes, StoreFailure, StoreLoad};
 pub(crate) use private_store_atomic::atomic_write;
+#[cfg(test)]
+pub(crate) use private_store_atomic::atomic_write_fail_before_replace;
 
 #[path = "private_store/cache.rs"]
 mod cache;

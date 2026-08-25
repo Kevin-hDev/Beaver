@@ -38,11 +38,15 @@ fn saved_to_chat(message: AgentMessage) -> Option<ChatMessage> {
         "assistant" => Some(ChatMessage::assistant(
             message.content,
             message.thinking,
-            None,
+            message.continuation,
             None,
             tool_calls,
         )),
-        "tool" => Some(ChatMessage::tool(message.content, None, message.tool_name)),
+        "tool" => Some(ChatMessage::tool(
+            message.content,
+            message.tool_call_id,
+            message.tool_name,
+        )),
         _ => None,
     }
 }
@@ -51,7 +55,7 @@ fn convert_tool_calls(calls: Vec<ToolCallRequest>) -> Vec<ToolCallOllama> {
     calls
         .into_iter()
         .map(|call| ToolCallOllama {
-            id: None,
+            id: Some(call.id),
             extra_content: call.extra_content,
             function: ToolCallFunction {
                 name: call.function.name,
@@ -68,11 +72,14 @@ mod tests {
     fn saved(role: &str, content: &str) -> AgentMessage {
         AgentMessage {
             id: "m1".into(),
+            turn_id: "turn-1".into(),
             role: role.into(),
             content: content.into(),
             thinking: None,
             tool_calls: None,
             tool_name: None,
+            tool_call_id: None,
+            continuation: None,
             tool_activities: None,
             segments: None,
             files: vec![],

@@ -39,6 +39,7 @@ pub enum CloneMode {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AgentSession {
+    pub schema_version: u16,
     pub id: String,
     pub name: String,
     pub created_at: DateTime<Utc>,

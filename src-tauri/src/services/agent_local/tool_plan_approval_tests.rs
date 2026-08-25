@@ -80,6 +80,7 @@ fn adjustments_and_dismissal_keep_plan_mode_without_preview() {
 fn session() -> AgentSession {
     let now = Utc::now();
     AgentSession {
+        schema_version: crate::services::agent_local::session_limits::CURRENT_SESSION_SCHEMA_VERSION,
         id: "abc-123".into(),
         name: "Test".into(),
         created_at: now,

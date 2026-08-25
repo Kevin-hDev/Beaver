@@ -76,12 +76,14 @@ pub async fn rename(id: &str, name: &str) -> Result<(), String> {
 
 pub(crate) async fn delete_one(id: &str) -> Result<(), String> {
     validate_session_id(id)?;
-    let path = crate::services::paths::data_file_for_read("agent-sessions", &format!("{id}.json"))
-        .await
-        .map_err(|_| "Session introuvable".to_string())?;
-    tokio::fs::remove_file(&path)
-        .await
-        .map_err(|_| "Suppression de session impossible".to_string())?;
+    let directory = crate::services::paths::data_dir().join("agent-sessions");
+    tokio::task::spawn_blocking({
+        let directory = directory.clone();
+        let id = id.to_string();
+        move || super::session_artifacts::remove_all_in(&directory, &id)
+    })
+    .await
+    .map_err(|_| "Suppression de session impossible".to_string())??;
     let _ = crate::services::agent_local::session_index::remove_entry(id).await;
     let _ = super::subagent_change_store::remove(id).await;
     super::extension_session_state::remove(id).await;

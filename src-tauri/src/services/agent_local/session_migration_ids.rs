@@ -1,0 +1,147 @@
+use std::collections::VecDeque;
+
+use base64::Engine;
+use rand::RngCore;
+use serde_json::Value;
+
+use super::session_limits::{self, CURRENT_SESSION_SCHEMA_VERSION};
+
+const LEGACY_ID_PREFIX: &str = "legacy-local-";
+
+pub(super) fn migrate_value(value: &mut Value) -> Result<(), String> {
+    let object = value.as_object_mut().ok_or_else(invalid)?;
+    object.insert(
+        "schema_version".to_string(),
+        Value::from(CURRENT_SESSION_SCHEMA_VERSION),
+    );
+    let messages = object
+        .get_mut("messages")
+        .and_then(Value::as_array_mut)
+        .ok_or_else(invalid)?;
+    assign_missing_ids(messages, true)
+}
+
+pub(super) fn normalize_future_view(value: &mut Value) -> Result<(), String> {
+    let messages = value
+        .as_object_mut()
+        .and_then(|object| object.get_mut("messages"))
+        .and_then(Value::as_array_mut)
+        .ok_or_else(invalid)?;
+    assign_missing_ids(messages, false)
+}
+
+pub(super) fn validate_required_v2_fields(value: &Value) -> Result<(), String> {
+    let messages = value
+        .as_object()
+        .and_then(|object| object.get("messages"))
+        .and_then(Value::as_array)
+        .ok_or_else(invalid)?;
+    for message in messages {
+        let message = message.as_object().ok_or_else(invalid)?;
+        validate_id(
+            message
+                .get("turn_id")
+                .and_then(Value::as_str)
+                .ok_or_else(invalid)?,
+        )?;
+        if message.get("role").and_then(Value::as_str) == Some("tool") {
+            validate_id(
+                message
+                    .get("tool_call_id")
+                    .and_then(Value::as_str)
+                    .ok_or_else(invalid)?,
+            )?;
+        }
+        if let Some(calls) = message.get("tool_calls").and_then(Value::as_array) {
+            for call in calls {
+                validate_id(
+                    call.as_object()
+                        .and_then(|call| call.get("id"))
+                        .and_then(Value::as_str)
+                        .ok_or_else(invalid)?,
+                )?;
+            }
+        }
+    }
+    Ok(())
+}
+
+pub(super) fn validate_id(value: &str) -> Result<(), String> {
+    crate::services::reasoning_continuity::limits::validate_provider_call_id(value)
+        .map_err(|_| invalid())
+}
+
+#[cfg(test)]
+pub(super) fn is_legacy_local_id(value: &str) -> bool {
+    value.starts_with(LEGACY_ID_PREFIX)
+}
+
+fn assign_missing_ids(messages: &mut [Value], replace: bool) -> Result<(), String> {
+    let mut pending = VecDeque::<(String, String)>::new();
+    for message in messages {
+        let object = message.as_object_mut().ok_or_else(invalid)?;
+        if replace || !object.contains_key("turn_id") {
+            object.insert("turn_id".into(), Value::String(legacy_id("turn")));
+        }
+        if replace {
+            object.remove("continuation");
+            object.remove("tool_call_id");
+        }
+        if let Some(calls) = object.get_mut("tool_calls").and_then(Value::as_array_mut) {
+            for call in calls {
+                let call = call.as_object_mut().ok_or_else(invalid)?;
+                let name = call
+                    .get("function")
+                    .and_then(Value::as_object)
+                    .and_then(|function| function.get("name"))
+                    .and_then(Value::as_str)
+                    .ok_or_else(invalid)?
+                    .to_string();
+                let id = if replace {
+                    legacy_id("call")
+                } else {
+                    call.get("id")
+                        .and_then(Value::as_str)
+                        .map(str::to_string)
+                        .unwrap_or_else(|| legacy_id("call"))
+                };
+                call.insert("id".into(), Value::String(id.clone()));
+                pending.push_back((name, id));
+            }
+        }
+        if object.get("role").and_then(Value::as_str) == Some("tool") {
+            assign_tool_result_id(object, &mut pending, replace);
+        }
+    }
+    Ok(())
+}
+
+fn assign_tool_result_id(
+    object: &mut serde_json::Map<String, Value>,
+    pending: &mut VecDeque<(String, String)>,
+    replace: bool,
+) {
+    let name = object.get("tool_name").and_then(Value::as_str);
+    let position = pending
+        .iter()
+        .position(|(pending_name, _)| name.is_none_or(|name| pending_name == name));
+    let id = position
+        .and_then(|position| pending.remove(position))
+        .map_or_else(|| legacy_id("result"), |(_, id)| id);
+    if replace || !object.contains_key("tool_call_id") {
+        object.insert("tool_call_id".into(), Value::String(id));
+    }
+}
+
+fn legacy_id(kind: &str) -> String {
+    let mut random = [0_u8; 24];
+    rand::rngs::OsRng.fill_bytes(&mut random);
+    format!(
+        "{LEGACY_ID_PREFIX}{kind}-{}",
+        base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(random)
+    )
+}
+
+fn invalid() -> String {
+    session_limits::invalid_session()
+}
