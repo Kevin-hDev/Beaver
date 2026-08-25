@@ -6,10 +6,11 @@ import { RESOLVED_THEME_OPTIONS, type ResolvedTheme } from "@/lib/app-themes";
 const indexHtml = readFileSync("index.html", "utf8");
 const bootstrapSource = indexHtml.match(/<script>([\s\S]*?)<\/script>/)?.[1];
 
-function runBootstrap(choice: string | null, prefersDark = false) {
+function runBootstrap(choice: string | null, prefersDark = false, userAgent = "Mozilla/5.0 (Macintosh)") {
   const attributes: Record<string, string> = {};
   const context = {
     localStorage: { getItem: () => choice },
+    navigator: { userAgent },
     window: { matchMedia: () => ({ matches: prefersDark }) },
     document: {
       documentElement: {
