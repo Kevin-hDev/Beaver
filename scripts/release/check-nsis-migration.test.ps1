@@ -8,6 +8,15 @@ function Assert-False([bool]$Value) {
     if ($Value) { throw "PowerShell package contract failed." }
 }
 
+function Stop-Validation([string]$Code) {
+    throw "Windows package check failed: $Code"
+}
+
+. (Join-Path $PSScriptRoot "windows-icon-validation.test.ps1")
+. (Join-Path $PSScriptRoot "windows-native-icon-engine.test.ps1")
+. (Join-Path $PSScriptRoot "windows-package-file.test.ps1")
+. (Join-Path $PSScriptRoot "windows-powershell-syntax-inventory.test.ps1")
+
 function New-TestShortcut([string]$Path, [string]$Target) {
     $shell = New-Object -ComObject WScript.Shell
     try {
@@ -68,7 +77,56 @@ try {
     Assert-True ((Get-BeaverExecutableBrandFailure $validHelper "1.1.1" $validHelper) -ceq "installed-brand-product")
     Assert-True ((Get-BeaverExecutableBrandFailure "" "1.1.1" $validHelper) -ceq "installed-brand-input")
 
-    Add-Type -AssemblyName System.Drawing
+    $referenceIconPath = [IO.Path]::GetFullPath(
+        (Join-Path $PSScriptRoot "../../src-tauri/icons/icon.ico")
+    )
+    $compiler = @(
+        (Join-Path $env:WINDIR "Microsoft.NET\Framework64\v4.0.30319\csc.exe"),
+        (Join-Path $env:WINDIR "Microsoft.NET\Framework\v4.0.30319\csc.exe")
+    ).Where({ Test-Path -LiteralPath $_ -PathType Leaf }, "First")
+    Assert-True ($compiler.Count -eq 1)
+    $fixtureSource = Join-Path $temporaryRoot "plain-fixture.cs"
+    $plainExecutable = Join-Path $temporaryRoot "plain.exe"
+    [IO.File]::WriteAllText(
+        $fixtureSource,
+        "public static class BeaverPlainFixture { public static void Main() {} }"
+    )
+    & $compiler[0] /nologo /target:winexe "/out:$plainExecutable" $fixtureSource
+    Assert-True ($LASTEXITCODE -eq 0)
+    Assert-True (
+        (Get-NativeIconResourceFailure $plainExecutable 67108864) -ceq "extract"
+    )
+    $plainRejected = $false
+    try {
+        Test-AssociatedIcon $plainExecutable 67108864
+    } catch {
+        $plainRejected = $_.Exception.Message -ceq `
+            "Windows package check failed: source-installer-icon"
+    }
+    Assert-True $plainRejected
+
+    $originalInteropIdentity = $script:NativeIconInteropType.FullName
+    $modifiedModuleRoot = Join-Path $temporaryRoot "modified-native-module"
+    [void](New-Item -ItemType Directory -Path $modifiedModuleRoot)
+    Copy-Item -LiteralPath (Join-Path $PSScriptRoot "windows-package-file.ps1") `
+        -Destination $modifiedModuleRoot
+    $nativeModulePath = Join-Path $PSScriptRoot "windows-native-icon.ps1"
+    $modifiedNativeModulePath = Join-Path $modifiedModuleRoot "windows-native-icon.ps1"
+    $nativeModuleSource = [IO.File]::ReadAllText($nativeModulePath)
+    $modifiedNativeModuleSource = $nativeModuleSource.Replace(
+        "return DestroyIcon(iconHandle);",
+        "DestroyIcon(iconHandle); return false;"
+    )
+    Assert-False ($modifiedNativeModuleSource -ceq $nativeModuleSource)
+    [IO.File]::WriteAllText($modifiedNativeModulePath, $modifiedNativeModuleSource)
+    . $modifiedNativeModulePath
+    Assert-False ($script:NativeIconInteropType.FullName -ceq $originalInteropIdentity)
+    Assert-True (
+        (Get-NativeIconResourceFailure $referenceIconPath 8388608) -ceq "runtime"
+    )
+    . $nativeModulePath
+    Assert-True ($script:NativeIconInteropType.FullName -ceq $originalInteropIdentity)
+
     $transparentRed = New-Object Drawing.Bitmap 2, 2
     $transparentBlue = New-Object Drawing.Bitmap 2, 2
     $visibleRed = New-Object Drawing.Bitmap 2, 2
@@ -101,4 +159,8 @@ try {
     }
 }
 
+& (Join-Path $PSScriptRoot "../test-install-ps1.ps1")
+Assert-True $?
+& (Join-Path $PSScriptRoot "check-nsis-migration.ps1") -Mode Source
+Assert-True $?
 Write-Host "PowerShell package contracts OK"
