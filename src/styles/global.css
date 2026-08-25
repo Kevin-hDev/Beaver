@@ -58,6 +58,10 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+::selection {
+  background: var(--text-selection-bg);
+}
+
 
 /* Themed icon toggle */
 [data-theme="dark"] .themed-icon-light { display: none; }

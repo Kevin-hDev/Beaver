@@ -31,6 +31,10 @@
   --radius-window: 16px;
   --radius-full: 50%; /* une forme, pas un arrondi */
 
+  /* La sélection de texte prend l'accent du thème. Sans elle, la couleur venait
+     du système : sur le fond crème du thème Clair, elle ne se voyait pas. */
+  --text-selection-bg: color-mix(in srgb, var(--pulse) 32%, transparent);
+
   --ease-smooth: 200ms ease-out;
   --ease-gentle: 300ms ease-out;
   --motion-attention-loop: 2.4s;
