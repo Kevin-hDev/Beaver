@@ -48,13 +48,14 @@ pub(super) async fn stream_chat(
             .await
         }
         XaiBackend::Responses => {
-            let payload = build_responses_payload(
+            let payload = try_build_responses_payload(
                 &catalog_model,
                 request.messages,
                 request.tools,
                 request.reasoning_mode,
                 request.session_id,
-            );
+                request.continuation_target,
+            )?;
             let response = post_responses(&catalog_model, &payload, request.purpose).await?;
             crate::services::codex_client::stream::consume_external_responses_sse(
                 on_event,
@@ -110,6 +111,7 @@ where
         purpose: request.purpose,
         session_id: request.session_id,
         fast_mode: request.fast_mode,
+        continuation_target: request.continuation_target,
     })
 }
 
@@ -134,15 +136,23 @@ pub(super) fn catalog_reasoning_mode<'a>(
         })
 }
 
-pub(super) fn build_responses_payload(
+pub(super) fn try_build_responses_payload(
     model: &XaiCatalogModel,
     messages: &[ChatMessage],
     tools: &[serde_json::Value],
     requested_mode: Option<&str>,
     session_id: Option<&str>,
-) -> serde_json::Value {
+    continuation_target: Option<
+        &crate::services::reasoning_continuity::contract::ContinuationTarget,
+    >,
+) -> Result<serde_json::Value, String> {
     let (instructions, input) =
-        crate::services::codex_client::convert::convert_messages_with_tools(messages, tools);
+        crate::services::codex_client::convert::convert_messages_with_tools_and_continuity(
+            messages,
+            tools,
+            continuation_target,
+        )
+        .map_err(|_| "reasoning_continuity_invalid".to_string())?;
     let effort = catalog_reasoning_mode(model, requested_mode);
     let tools = crate::services::codex_client::convert::convert_tools_to_responses_api(
         "xai", &model.id, tools,
@@ -164,21 +174,7 @@ pub(super) fn build_responses_payload(
     if let Some(effort) = effort {
         payload["reasoning"] = serde_json::json!({"effort": effort});
     }
-    payload
-}
-
-/// xAI OAuth réutilisera le transport Responses déjà en place lorsque son
-/// couple exact sera live-validé ; la route API xAI ne reçoit aucun dispatch.
-#[allow(
-    dead_code,
-    reason = "Task 19 connects this only after a live-validated xAI OAuth policy"
-)]
-pub(crate) fn apply_continuity(
-    messages: &[ChatMessage],
-    approval: &super::reasoning_wire::replay::ReplayApproval<'_>,
-    input: &mut Vec<serde_json::Value>,
-) -> Result<(), super::reasoning_wire::replay::ReplayApplyError> {
-    crate::services::codex_client::convert::convert_continuity(messages, approval, input)
+    Ok(payload)
 }
 
 async fn post_responses(

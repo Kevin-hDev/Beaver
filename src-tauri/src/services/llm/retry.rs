@@ -53,7 +53,9 @@ pub async fn retry_stream(
     cancel: CancellationToken,
     buffer_content: bool,
     realtime_budget: Option<RealtimeBudget>,
-    capture_context: Option<&super::reasoning_wire::ReasoningCaptureContext>,
+    continuation_target: Option<
+        &crate::services::reasoning_continuity::contract::ContinuationTarget,
+    >,
 ) -> Result<StreamOutcome, String> {
     let policy = retry_policy(provider_id);
     let mut attempt = 0_usize;
@@ -94,11 +96,15 @@ pub async fn retry_stream(
             cancel.clone(),
             buffer_content,
             realtime_budget.clone(),
-            capture_context
-                .cloned()
+            continuation_target
+                .and_then(
+                    crate::services::reasoning_continuity::contract::ContinuationTarget::replay,
+                )
+                .map(super::reasoning_wire::ReasoningCaptureContext::from_target)
                 .map(super::reasoning_wire::ReasoningCapture::new)
                 .transpose()
                 .map_err(|_| "provider_configuration_invalid".to_string())?,
+            continuation_target,
         )
         .await
         {

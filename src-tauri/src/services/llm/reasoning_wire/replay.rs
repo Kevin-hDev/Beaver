@@ -50,6 +50,27 @@ pub(crate) fn approved<'a>(
     })
 }
 
+/// Le type de cible est conservé jusqu'au transport : une fixture debug ne
+/// peut contourner que l'activation, jamais la provenance ni le contrat.
+pub(crate) fn approval_for_target<'a>(
+    target: &'a crate::services::reasoning_continuity::contract::ContinuationTarget,
+    envelope: &'a ReasoningEnvelope,
+) -> Result<ReplayApproval<'a>, ReplayApplyError> {
+    let replay_target = target.replay().ok_or(ReplayApplyError::Blocked)?;
+    let policy = crate::services::reasoning_continuity::registry::replay_policy(replay_target)
+        .ok_or(ReplayApplyError::Blocked)?;
+    #[cfg(debug_assertions)]
+    if target.is_fixture_candidate() {
+        return fixture_candidate::approved(policy, envelope, replay_target);
+    }
+    approved(
+        eligibility::decide(envelope, replay_target),
+        policy,
+        envelope,
+        replay_target,
+    )
+}
+
 pub(crate) fn apply_chat_continuity(
     messages: &[ChatMessage],
     approval: &ReplayApproval<'_>,

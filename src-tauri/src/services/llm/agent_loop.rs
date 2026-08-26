@@ -35,8 +35,12 @@ pub async fn run_agent_loop(
     permission_mode: &str,
     plan_mode_active: bool,
     context_usage_seed: ContextUsageSeed,
-    capture_context: Option<super::reasoning_wire::ReasoningCaptureContext>,
-    #[cfg(debug_assertions)] mut fixture_run: Option<&mut crate::services::reasoning_fixture_run::FixtureRunContext>,
+    continuation_target: Option<
+        crate::services::reasoning_continuity::contract::ContinuationTarget,
+    >,
+    #[cfg(debug_assertions)] mut fixture_run: Option<
+        &mut crate::services::reasoning_fixture_run::FixtureRunContext,
+    >,
     mut journal: Option<
         &mut crate::services::agent_local::conversation_journal::ConversationJournal,
     >,
@@ -87,7 +91,7 @@ pub async fn run_agent_loop(
             turn,
             subagents: &mut subagents,
             context_usage_seed,
-            capture_context: capture_context.clone(),
+            continuation_target: continuation_target.clone(),
         })
         .await?;
         generation.merge(request_output.generation);

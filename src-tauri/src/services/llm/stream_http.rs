@@ -15,6 +15,9 @@ pub struct RequestConfig<'a> {
     pub purpose: RequestPurpose,
     pub session_id: Option<&'a str>,
     pub fast_mode: super::fast_mode::FastModeRequest,
+    /// Décision d'admission conservée jusqu'au constructeur du payload.
+    pub continuation_target:
+        Option<&'a crate::services::reasoning_continuity::contract::ContinuationTarget>,
 }
 
 use super::stream_http_payload::build_chat_payload;

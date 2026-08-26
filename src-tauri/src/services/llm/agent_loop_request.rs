@@ -24,7 +24,8 @@ pub(super) struct ApiRequestParams<'a> {
     pub turn: usize,
     pub subagents: &'a mut ParentSubagentOrchestrator,
     pub context_usage_seed: ContextUsageSeed,
-    pub capture_context: Option<crate::services::llm::reasoning_wire::ReasoningCaptureContext>,
+    pub continuation_target:
+        Option<crate::services::reasoning_continuity::contract::ContinuationTarget>,
 }
 
 pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput, String> {
@@ -107,7 +108,7 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
         params.cancel.clone(),
         plan_active,
         realtime_budget,
-        params.capture_context.as_ref(),
+        params.continuation_target.as_ref(),
     )
     .await;
     let outcome = match first_attempt {
@@ -166,7 +167,7 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
                 params.cancel.clone(),
                 plan_active,
                 reduced_budget,
-                params.capture_context.as_ref(),
+                params.continuation_target.as_ref(),
             )
             .await?
         }

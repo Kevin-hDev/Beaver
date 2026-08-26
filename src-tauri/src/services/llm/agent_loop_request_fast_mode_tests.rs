@@ -64,7 +64,7 @@ async fn payload_reduction_retry_keeps_the_generation_fast_capture() {
         turn: 0,
         subagents: &mut subagents,
         context_usage_seed: ContextUsageSeed::default(),
-        capture_context: None,
+        continuation_target: None,
     });
     let change_preference = async {
         scenario.wait_for_payloads(1).await;

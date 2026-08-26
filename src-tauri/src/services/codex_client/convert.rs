@@ -10,6 +10,20 @@ pub fn convert_messages_with_tools(
     messages: &[ChatMessage],
     tools: &[serde_json::Value],
 ) -> (String, Vec<serde_json::Value>) {
+    convert_messages_with_tools_and_continuity(messages, tools, None)
+        .expect("a payload without a continuation target cannot be rejected")
+}
+
+pub(crate) fn convert_messages_with_tools_and_continuity(
+    messages: &[ChatMessage],
+    tools: &[serde_json::Value],
+    target: Option<&crate::services::reasoning_continuity::contract::ContinuationTarget>,
+) -> Result<
+    (String, Vec<serde_json::Value>),
+    crate::services::llm::reasoning_wire::replay::ReplayApplyError,
+> {
+    let target =
+        crate::services::llm::reasoning_wire::responses::target_for_request(messages, target)?;
     let mut instructions = String::new();
     let mut input = Vec::new();
     let tool_names = crate::services::llm::tool_schema::ToolNameMap::new(tools);
@@ -24,6 +38,13 @@ pub fn convert_messages_with_tools(
         }
 
         if msg.role == "assistant" {
+            if let Some(items) = crate::services::llm::reasoning_wire::responses::items_for_message(
+                msg,
+                target.as_ref(),
+            )? {
+                input.extend(items);
+                continue;
+            }
             if let Some(mut items) = replay::items_from_message(msg) {
                 alias_replay_tool_names(&mut items, &tool_names);
                 input.extend(items);
@@ -66,7 +87,7 @@ pub fn convert_messages_with_tools(
             input.push(serde_json::json!({"role": msg.role, "content": msg.content}));
         }
     }
-    (instructions, input)
+    Ok((instructions, input))
 }
 
 fn alias_replay_tool_names(

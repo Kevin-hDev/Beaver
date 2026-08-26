@@ -25,6 +25,9 @@ mod websocket_url;
 pub(crate) mod test_transport;
 
 #[cfg(test)]
+#[path = "reasoning_continuity_tests.rs"]
+mod reasoning_continuity_tests;
+#[cfg(test)]
 #[path = "transport_orchestration_tests.rs"]
 mod transport_orchestration_tests;
 

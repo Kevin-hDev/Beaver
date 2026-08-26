@@ -27,6 +27,9 @@ pub async fn stream_chat_no_done(
     buffer_content: bool,
     realtime_budget: Option<RealtimeBudget>,
     reasoning_capture: Option<super::reasoning_wire::ReasoningCapture>,
+    continuation_target: Option<
+        &crate::services::reasoning_continuity::contract::ContinuationTarget,
+    >,
 ) -> Result<StreamOutcome, String> {
     let mut measurement = super::stream_metrics::start(
         provider_id,
@@ -52,6 +55,7 @@ pub async fn stream_chat_no_done(
             buffer_content,
             realtime_budget,
             reasoning_capture,
+            continuation_target,
             measurement.as_mut(),
         )
         .await
@@ -67,6 +71,7 @@ pub async fn stream_chat_no_done(
             purpose,
             session_id: Some(session_id),
             fast_mode,
+            continuation_target,
         };
         // OpenAI API partage le contrat Responses avec Codex, mais jamais ses jetons OAuth.
         super::openai_responses::stream_chat(
@@ -94,6 +99,7 @@ pub async fn stream_chat_no_done(
                     purpose,
                     session_id: Some(session_id),
                     fast_mode,
+                    continuation_target,
                 },
                 cancel,
                 buffer_content,
@@ -115,6 +121,7 @@ pub async fn stream_chat_no_done(
             purpose,
             session_id: Some(session_id),
             fast_mode,
+            continuation_target,
         };
         match super::stream_http::post_chat_request_measured(&cfg, measurement.as_mut()).await {
             Ok(resp) => {

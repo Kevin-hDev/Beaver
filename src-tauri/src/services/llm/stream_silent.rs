@@ -110,5 +110,6 @@ fn request_config<'a>(
         max_tokens,
         purpose,
         session_id,
+        continuation_target: None,
     }
 }

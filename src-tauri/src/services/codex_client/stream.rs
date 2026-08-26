@@ -31,6 +31,9 @@ pub async fn stream_chat_with_budget(
     buffer_content: bool,
     realtime_budget: Option<RealtimeBudget>,
     reasoning_capture: Option<crate::services::llm::reasoning_wire::ReasoningCapture>,
+    continuation_target: Option<
+        &crate::services::reasoning_continuity::contract::ContinuationTarget,
+    >,
     measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
 ) -> Result<StreamOutcome, String> {
     let mut measurement = StreamMeasurement::new(measurement);
@@ -79,7 +82,7 @@ pub async fn stream_chat_with_budget(
             }
         }
     }
-    let resp = request::post_codex_stream(
+    let resp = request::post_codex_stream_with_continuity(
         model,
         messages,
         tools,
@@ -87,6 +90,7 @@ pub async fn stream_chat_with_budget(
         Some(session_id),
         fast_mode,
         &cancel,
+        continuation_target,
     )
     .await?;
     measurement.mark_headers();

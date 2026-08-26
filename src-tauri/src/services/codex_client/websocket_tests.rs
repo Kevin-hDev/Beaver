@@ -125,6 +125,7 @@ async fn invalid_routing_configuration_never_disables_websocket_or_falls_back() 
         None,
         None,
         None,
+        None,
     )
     .await
     .unwrap_err();

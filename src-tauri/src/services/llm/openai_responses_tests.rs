@@ -1,4 +1,4 @@
-use super::build_request;
+use super::{build_request, try_build_request};
 use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::llm::fast_mode::FastModeRequest;
 use crate::services::llm::request_purpose::RequestPurpose;
@@ -21,7 +21,48 @@ fn request<'a>(
         purpose: RequestPurpose::ManualChat,
         session_id: Some("session-fixture"),
         fast_mode,
+        continuation_target: None,
     }
+}
+
+fn fixture_target(
+    scope: &str,
+) -> crate::services::reasoning_continuity::contract::ContinuationTarget {
+    use crate::services::reasoning_continuity::contract::{
+        ContinuationTarget, ContinuationUse, CredentialScope, ReasoningModeId, ReplayTarget,
+        RouteId,
+    };
+    ContinuationTarget::FixtureCandidate(ReplayTarget {
+        route_id: RouteId::OpenAi,
+        model_id: "gpt-5.6-luna".into(),
+        credential_scope: CredentialScope::authenticated(scope).unwrap(),
+        reasoning_mode: ReasoningModeId::Medium,
+        continuation_use: ContinuationUse::UserContinuation,
+    })
+}
+
+fn native_assistant(
+    target: &crate::services::reasoning_continuity::contract::ContinuationTarget,
+) -> ChatMessage {
+    let replay = target.replay().unwrap();
+    ChatMessage::assistant(
+        "visible answer".into(),
+        None,
+        Some(crate::services::reasoning_continuity::envelope::ReasoningEnvelope::new(
+            crate::services::reasoning_continuity::contract::ContractId::OpenAiResponsesV1,
+            crate::services::reasoning_continuity::envelope::ReasoningSource::from_target(replay),
+            crate::services::reasoning_continuity::envelope::CompletionState::Complete,
+            crate::services::reasoning_continuity::envelope::ContinuationState::ResponsesLocal {
+                items: vec![
+                    serde_json::json!({"type":"reasoning","encrypted_content":"opaque"}),
+                    serde_json::json!({"type":"message","content":[]}),
+                ],
+            },
+            Vec::new(),
+        )),
+        None,
+        None,
+    )
 }
 
 #[test]
@@ -99,6 +140,45 @@ fn unsupported_fast_mode_omits_service_tier() {
     assert!(body.get("service_tier").is_none());
 }
 
+#[test]
+fn responses_continuity_replays_native_items_at_the_assistant_position_without_tools() {
+    let target = fixture_target("openai-scope");
+    let messages = [
+        native_assistant(&target),
+        ChatMessage::user("continue".into()),
+    ];
+    let mut config = request(&messages, &[], Some("medium"), FastModeRequest::Standard);
+    config.continuation_target = Some(&target);
+
+    let body = try_build_request(&config).unwrap();
+
+    assert_eq!(body["input"][0]["type"], "reasoning");
+    assert_eq!(body["input"][0]["encrypted_content"], "opaque");
+    assert_eq!(body["input"][1]["type"], "message");
+    assert_eq!(body["input"][2]["role"], "user");
+}
+
+#[test]
+fn responses_continuity_blocks_wrong_scope_and_required_missing_state() {
+    let target = fixture_target("openai-scope");
+    let messages = [
+        native_assistant(&target),
+        ChatMessage::user("continue".into()),
+    ];
+    let wrong = fixture_target("other-openai-scope");
+    let mut config = request(&messages, &[], Some("medium"), FastModeRequest::Standard);
+    config.continuation_target = Some(&wrong);
+    assert!(try_build_request(&config).is_err());
+
+    let missing = [
+        ChatMessage::assistant("visible".into(), None, None, None, None),
+        ChatMessage::user("continue".into()),
+    ];
+    let mut config = request(&missing, &[], Some("medium"), FastModeRequest::Standard);
+    config.continuation_target = Some(&target);
+    assert!(try_build_request(&config).is_err());
+}
+
 #[tokio::test]
 async fn runtime_dispatch_cannot_fall_back_to_chat_completions() {
     let session_id = "openai-responses-runtime";
@@ -128,6 +208,7 @@ async fn runtime_dispatch_cannot_fall_back_to_chat_completions() {
         Some("medium"),
         tokio_util::sync::CancellationToken::new(),
         false,
+        None,
         None,
         None,
     )

@@ -8,7 +8,7 @@ mod openrouter;
     reason = "Task 18 prepares adapters; Task 19 alone connects live-validated routes"
 )]
 pub(crate) mod replay;
-mod responses;
+pub(crate) mod responses;
 mod tool_link_capture;
 
 use crate::services::reasoning_continuity::bounded_json::serialized_len_bounded_from;
