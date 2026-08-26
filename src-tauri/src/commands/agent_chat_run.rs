@@ -103,7 +103,7 @@ pub(crate) async fn start(
         stream,
         work,
         admitted,
-        target.continuation,
+        target,
         resolved_dir,
         result.clone(),
     )

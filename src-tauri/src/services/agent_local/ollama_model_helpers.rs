@@ -105,7 +105,7 @@ fn parse_capabilities(json: &serde_json::Value) -> Vec<String> {
                 .filter_map(|v| v.as_str().map(String::from))
                 .collect()
         })
-        .unwrap_or_else(|| vec!["completion".to_string()])
+        .unwrap_or_default()
 }
 
 fn s(v: &serde_json::Value, key: &str) -> String {

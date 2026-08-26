@@ -73,29 +73,19 @@ pub async fn new_turn_for_continuation(
     input: ResolvedTurnInput,
     target: ContinuationTarget,
 ) -> Result<AdmittedTurn, ConversationAdmissionError> {
-    new_turn_inner(
-        session_id,
-        input,
-        target,
-        true,
-        super::conversation_history_resolve::AttachmentKeySource::Vault,
-        || async {},
-        |session| async move { super::session_store::save(&session).await },
-        || async {},
-    )
-    .await
+    let lease = super::session_locks::acquire_admission_lease(session_id).await;
+    new_turn_with_lease(&lease, input, target).await
 }
 
 pub(crate) async fn new_turn_with_lease(
-    session_id: &str,
+    lease: &super::session_locks::AdmissionLease,
     input: ResolvedTurnInput,
     target: ContinuationTarget,
 ) -> Result<AdmittedTurn, ConversationAdmissionError> {
     new_turn_inner(
-        session_id,
+        lease.session_id(),
         input,
         target,
-        false,
         super::conversation_history_resolve::AttachmentKeySource::Vault,
         || async {},
         |session| async move { super::session_store::save(&session).await },
@@ -112,7 +102,6 @@ async fn new_turn_inner<A, AFut, W, WFut, P, PFut>(
     session_id: &str,
     input: ResolvedTurnInput,
     target: ContinuationTarget,
-    acquire_lock: bool,
     key_source: super::conversation_history_resolve::AttachmentKeySource,
     after_load: A,
     writer: W,
@@ -127,12 +116,6 @@ where
     PFut: std::future::Future<Output = ()>,
 {
     super::session_store::validate_session_id(session_id).map_err(|_| error())?;
-    let lock = super::session_store::lock_session(session_id).await;
-    let _guard = if acquire_lock {
-        Some(lock.lock().await)
-    } else {
-        None
-    };
     let mut session = super::session_store::get(session_id)
         .await
         .map_err(|_| error())?;

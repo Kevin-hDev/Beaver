@@ -63,6 +63,7 @@ pub mod reasoning;
 pub mod reasoning_continuity;
 mod reasoning_effort;
 mod reasoning_google;
+pub(crate) mod reasoning_ollama;
 #[cfg(test)]
 mod reasoning_tests;
 pub mod runtime_background;

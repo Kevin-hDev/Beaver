@@ -68,6 +68,7 @@ export function useAgentStream() {
       }
     }
     activeSessionRef.current = sessionId;
+    generationRef.current = null;
     const run = ++runRef.current;
     stoppingRef.current = false;
     streamingRef.current = true;

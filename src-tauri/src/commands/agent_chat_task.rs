@@ -102,10 +102,19 @@ fn validate_canonical_target(params: &StreamTaskParams) -> Result<(), String> {
     let mode = serde_json::to_value(target.reasoning_mode())
         .ok()
         .and_then(|value| value.as_str().map(str::to_owned));
+    let ollama_reasoning_matches = match (target.route_id(), params.ollama_reasoning.as_ref()) {
+        (crate::services::reasoning_continuity::contract::RouteId::Ollama, Some(reasoning)) => {
+            reasoning.mode == target.reasoning_mode()
+        }
+        (crate::services::reasoning_continuity::contract::RouteId::Ollama, None) => false,
+        (_, None) => true,
+        (_, Some(_)) => false,
+    };
     if target.validate().is_err()
         || route != Some(target.route_id())
         || target.model_id() != params.model
         || mode.as_deref() != Some(params.reasoning_mode.as_deref().unwrap_or("off"))
+        || !ollama_reasoning_matches
     {
         return Err("conversation_admission_failed".to_string());
     }

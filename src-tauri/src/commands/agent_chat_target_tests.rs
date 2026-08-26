@@ -35,26 +35,32 @@ async fn forged_frontend_hints_cannot_change_persisted_reasoning_mode() {
         "Canonical target",
         "qwen3.5:4b",
         "ollama",
-        false,
+        true,
         None,
     )
     .await
     .unwrap();
+    session.thinking_enabled = true;
     session.reasoning_mode = Some("high".to_string());
     crate::services::agent_local::session_store::save(&session)
         .await
         .unwrap();
 
-    let target = resolve(
+    let target = resolve_with_ollama_capabilities(
         &session.id,
         "ollama",
         "qwen3.5:4b",
         Some("off"),
         Some(false),
+        &["completion".into(), "thinking".into()],
     )
     .await
     .unwrap();
-    assert_eq!(target.continuation.reasoning_mode(), ReasoningModeId::High);
+    assert_eq!(target.continuation.reasoning_mode(), ReasoningModeId::Auto);
+    assert_eq!(
+        target.ollama_reasoning.as_ref().map(|value| &value.payload),
+        Some(&crate::services::agent_local::types_ollama::OllamaThink::Bool(true))
+    );
     assert!(resolve(
         &session.id,
         "xai-oauth",
@@ -138,12 +144,63 @@ async fn legacy_thinking_enabled_without_mode_keeps_implicit_runtime_mode() {
         .await
         .unwrap();
 
-    let target = resolve(&session.id, "ollama", "qwen3.5:4b", None, None)
+    let target = resolve_with_ollama_capabilities(
+        &session.id,
+        "ollama",
+        "qwen3.5:4b",
+        None,
+        None,
+        &["thinking".into()],
+    )
+    .await
+    .unwrap();
+    assert!(target.think);
+    assert_eq!(target.reasoning_mode.as_deref(), Some("auto"));
+    assert_eq!(target.continuation.reasoning_mode(), ReasoningModeId::Auto);
+    assert_eq!(
+        target.ollama_reasoning.as_ref().map(|value| &value.payload),
+        Some(&crate::services::agent_local::types_ollama::OllamaThink::Bool(true))
+    );
+    cleanup(&session.id).await;
+}
+
+#[tokio::test]
+async fn legacy_gpt_oss_uses_medium_for_provenance_and_transport() {
+    let mut session = crate::services::agent_local::session_store::create_full(
+        "Legacy GPT OSS",
+        "gpt-oss:20b",
+        "ollama",
+        true,
+        None,
+    )
+    .await
+    .unwrap();
+    session.thinking_enabled = true;
+    session.reasoning_mode = None;
+    crate::services::agent_local::session_store::save(&session)
         .await
         .unwrap();
-    assert!(target.think);
-    assert_eq!(target.reasoning_mode, None);
-    assert_eq!(target.continuation.reasoning_mode(), ReasoningModeId::Off);
+
+    let target = resolve_with_ollama_capabilities(
+        &session.id,
+        "ollama",
+        "gpt-oss:20b",
+        None,
+        None,
+        &["thinking".into()],
+    )
+    .await
+    .unwrap();
+    let effective = target.ollama_reasoning.as_ref().unwrap();
+    assert_eq!(
+        target.continuation.reasoning_mode(),
+        ReasoningModeId::Medium
+    );
+    assert_eq!(effective.mode, ReasoningModeId::Medium);
+    assert_eq!(
+        effective.payload,
+        crate::services::agent_local::types_ollama::OllamaThink::Level("medium".into())
+    );
     cleanup(&session.id).await;
 }
 

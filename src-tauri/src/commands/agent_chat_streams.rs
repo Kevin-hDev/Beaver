@@ -39,8 +39,8 @@ where
     }
     let request_id = start_request().await;
     // Même lease que l'admission durable : elle définit l'ordre remplacement/admission.
-    let session_lease = crate::services::agent_local::session_store::lock_session(session_id).await;
-    let session_guard = session_lease.lock().await;
+    let session_guard =
+        crate::services::agent_local::session_locks::acquire_admission_lease(session_id).await;
     let inserted = {
         let mut map = streams.0.lock().await;
         if map.len()

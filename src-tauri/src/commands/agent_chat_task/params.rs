@@ -20,6 +20,7 @@ pub(crate) struct StreamTaskParams {
     pub conversation: Option<super::conversation::StreamConversation>,
     pub continuation_target:
         Option<crate::services::reasoning_continuity::contract::ContinuationTarget>,
+    pub ollama_reasoning: Option<crate::services::reasoning_ollama::EffectiveOllamaReasoning>,
     pub tools: Vec<serde_json::Value>,
     pub think: bool,
     pub provider: String,

@@ -150,6 +150,7 @@ impl GatewayAgentBridge {
                 crate::commands::agent_chat_task::StreamConversation::internal_legacy(messages),
             ),
             continuation_target: None,
+            ollama_reasoning: None,
             tools: vec![],
             think: false,
             provider,

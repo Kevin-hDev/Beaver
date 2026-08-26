@@ -8,11 +8,11 @@ where
     W: FnOnce(AgentSession) -> Fut,
     Fut: std::future::Future<Output = Result<(), String>>,
 {
+    let _lease = super::session_locks::acquire_admission_lease(session_id).await;
     new_turn_inner(
         session_id,
         input,
         crate::services::reasoning_continuity::contract::ContinuationTarget::Replay(target),
-        true,
         super::conversation_history_resolve::AttachmentKeySource::Vault,
         || async {},
         writer,
@@ -31,11 +31,11 @@ where
     P: FnOnce() -> Fut,
     Fut: std::future::Future<Output = ()>,
 {
+    let _lease = super::session_locks::acquire_admission_lease(session_id).await;
     new_turn_inner(
         session_id,
         input,
         crate::services::reasoning_continuity::contract::ContinuationTarget::Replay(target),
-        true,
         super::conversation_history_resolve::AttachmentKeySource::Vault,
         || async {},
         |session| async move { super::session_store::save(&session).await },
@@ -54,11 +54,11 @@ where
     A: FnOnce() -> Fut,
     Fut: std::future::Future<Output = ()>,
 {
+    let _lease = super::session_locks::acquire_admission_lease(session_id).await;
     new_turn_inner(
         session_id,
         input,
         crate::services::reasoning_continuity::contract::ContinuationTarget::Replay(target),
-        true,
         super::conversation_history_resolve::AttachmentKeySource::Vault,
         after_load,
         |session| async move { super::session_store::save(&session).await },
@@ -73,11 +73,11 @@ pub(crate) async fn new_turn_with_key(
     target: ReplayTarget,
     key: &[u8],
 ) -> Result<AdmittedTurn, ConversationAdmissionError> {
+    let _lease = super::session_locks::acquire_admission_lease(session_id).await;
     new_turn_inner(
         session_id,
         input,
         crate::services::reasoning_continuity::contract::ContinuationTarget::Replay(target),
-        true,
         super::conversation_history_resolve::AttachmentKeySource::Fixed(
             key.try_into().map_err(|_| error())?,
         ),

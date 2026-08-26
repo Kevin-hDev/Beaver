@@ -214,6 +214,9 @@ impl OllamaClient {
                 ::log::warn!("[ollama] /api/show: {e}");
                 "ollama-show-error".to_string()
             })?;
+        if !resp.status().is_success() {
+            return Err("ollama-show-error".to_string());
+        }
         let json: serde_json::Value = resp.json().await.map_err(|e| e.to_string())?;
         Ok(parse_show_response(name, &json))
     }

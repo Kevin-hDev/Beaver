@@ -195,3 +195,42 @@ async fn client_uses_the_injected_runtime_endpoint() {
         "managed client must follow the selected port"
     );
 }
+
+#[tokio::test]
+async fn show_model_never_trusts_capabilities_from_an_error_response() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/api/show"))
+        .respond_with(ResponseTemplate::new(404).set_body_json(serde_json::json!({
+            "capabilities": ["thinking"]
+        })))
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let client = OllamaClient::with_base_url(&server.uri()).expect("loopback test server");
+
+    assert!(client.show_model("missing:latest").await.is_err());
+}
+
+#[tokio::test]
+async fn show_model_keeps_missing_capabilities_unknown() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/api/show"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "details": { "family": "unknown" },
+            "model_info": { "general.architecture": "unknown" }
+        })))
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let client = OllamaClient::with_base_url(&server.uri()).expect("loopback test server");
+    let info = client
+        .show_model("unknown:latest")
+        .await
+        .expect("valid Ollama response");
+
+    assert!(info.capabilities.is_empty());
+}

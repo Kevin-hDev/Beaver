@@ -200,6 +200,48 @@ describe("useAgentStream", () => {
     expect(mocks.invoke).toHaveBeenCalledTimes(1);
   });
 
+  it("n'utilise jamais la génération de la session précédente pendant une nouvelle admission", async () => {
+    const admissionB = {
+      ...ADMISSION,
+      generation: 84,
+      turnId: "00000000-0000-4000-8000-000000000011",
+      userMessageId: "00000000-0000-4000-8000-000000000012",
+      assistantMessageId: "00000000-0000-4000-8000-000000000013",
+    };
+    let resolveAdmissionB = (_value: typeof admissionB) => {};
+    mocks.invoke
+      .mockResolvedValueOnce(ADMISSION)
+      .mockImplementationOnce(() => new Promise<typeof admissionB>((resolve) => {
+        resolveAdmissionB = resolve;
+      }))
+      .mockResolvedValueOnce(true);
+    const { result } = renderHook(() => useAgentStream());
+
+    await act(async () => {
+      await result.current.startStream(
+        "session-a", "model", "provider", turn("A"), false,
+        { displayMessages: [userMessage("A")], baseTokenCount: 0 },
+      );
+    });
+    let startingB!: Promise<void>;
+    await act(async () => {
+      startingB = result.current.startStream(
+        "session-b", "model", "provider", turn("B"), false,
+        { displayMessages: [userMessage("B")], baseTokenCount: 0 },
+      );
+      await vi.waitFor(() => expect(mocks.invoke).toHaveBeenCalledTimes(2));
+      expect(await result.current.queueStreamMessage(
+        "session-b", input("B2"), userMessage("B2", "queued-b"),
+      )).toBe(true);
+      resolveAdmissionB(admissionB);
+      await startingB;
+    });
+
+    expect(mocks.invoke).toHaveBeenLastCalledWith("queue_agent_message", {
+      sessionId: "session-b", generation: 84, input: input("B2"),
+    });
+  });
+
   it("retire le staging transitoire au démontage sans relancer un stream", async () => {
     let resolveAdmission = (_value: typeof ADMISSION) => {};
     mocks.invoke.mockImplementationOnce(() => new Promise<typeof ADMISSION>((resolve) => {

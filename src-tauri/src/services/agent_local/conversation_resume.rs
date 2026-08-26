@@ -22,31 +22,31 @@ pub async fn resume_for_continuation(
     input: ResumeTurnInput,
     target: ContinuationTarget,
 ) -> Result<AdmittedTurn, ConversationAdmissionError> {
-    resume_inner(session_id, input, target, true, AttachmentKeySource::Vault).await
+    let lease = super::session_locks::acquire_admission_lease(session_id).await;
+    resume_with_lease(&lease, input, target).await
 }
 
 pub(crate) async fn resume_with_lease(
-    session_id: &str,
+    lease: &super::session_locks::AdmissionLease,
     input: ResumeTurnInput,
     target: ContinuationTarget,
 ) -> Result<AdmittedTurn, ConversationAdmissionError> {
-    resume_inner(session_id, input, target, false, AttachmentKeySource::Vault).await
+    resume_inner(
+        lease.session_id(),
+        input,
+        target,
+        AttachmentKeySource::Vault,
+    )
+    .await
 }
 
 async fn resume_inner(
     session_id: &str,
     input: ResumeTurnInput,
     target: ContinuationTarget,
-    acquire_lock: bool,
     key_source: AttachmentKeySource,
 ) -> Result<AdmittedTurn, ConversationAdmissionError> {
     super::session_store::validate_session_id(session_id).map_err(|_| error())?;
-    let lock = super::session_store::lock_session(session_id).await;
-    let _guard = if acquire_lock {
-        Some(lock.lock().await)
-    } else {
-        None
-    };
     let session = super::session_store::get(session_id)
         .await
         .map_err(|_| error())?;
@@ -89,11 +89,11 @@ pub(crate) async fn resume_with_key(
     target: ReplayTarget,
     key: &[u8],
 ) -> Result<AdmittedTurn, ConversationAdmissionError> {
+    let lease = super::session_locks::acquire_admission_lease(session_id).await;
     resume_inner(
-        session_id,
+        lease.session_id(),
         input,
         ContinuationTarget::Replay(target),
-        true,
         AttachmentKeySource::Fixed(key.try_into().map_err(|_| error())?),
     )
     .await

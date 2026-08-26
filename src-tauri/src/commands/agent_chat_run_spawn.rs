@@ -6,7 +6,7 @@ async fn spawn(
     stream: super::agent_chat_admission::AgentChatAdmission,
     work: super::agent_chat_work::AgentStreamAdmission,
     admitted: crate::services::agent_local::conversation_admission::AdmittedTurn,
-    continuation_target: crate::services::reasoning_continuity::contract::ContinuationTarget,
+    target: super::agent_chat_target::ResolvedChatTarget,
     resolved_dir: super::agent_working_dir::ResolvedWorkingDir,
     result: ChatStreamAdmission,
 ) -> Result<(), String> {
@@ -36,7 +36,8 @@ async fn spawn(
                 request_id: stream_request_id.clone(),
                 model: request.model,
                 conversation: Some(StreamConversation::canonical(admitted)),
-                continuation_target: Some(continuation_target),
+                continuation_target: Some(target.continuation),
+                ollama_reasoning: target.ollama_reasoning,
                 tools: request.tools,
                 think: request.think,
                 provider: request.provider,

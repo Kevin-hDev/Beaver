@@ -118,6 +118,22 @@ pub enum ReasoningModeId {
     Ultra,
 }
 
+impl ReasoningModeId {
+    pub fn from_name(mode: Option<&str>) -> Option<Self> {
+        match mode.unwrap_or("off") {
+            "off" => Some(Self::Off),
+            "auto" => Some(Self::Auto),
+            "low" => Some(Self::Low),
+            "medium" => Some(Self::Medium),
+            "high" => Some(Self::High),
+            "xhigh" => Some(Self::Xhigh),
+            "max" => Some(Self::Max),
+            "ultra" => Some(Self::Ultra),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ContinuationUse {

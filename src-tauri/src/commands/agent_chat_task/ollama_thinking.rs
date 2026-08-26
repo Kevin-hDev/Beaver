@@ -1,12 +1,23 @@
 use super::params::StreamTaskParams;
 use crate::services::agent_local::types_ollama::OllamaThink;
 
-pub(super) fn resolve(params: &StreamTaskParams) -> OllamaThink {
+pub(super) async fn resolve(params: &StreamTaskParams) -> Result<OllamaThink, String> {
+    if params.continuation_target.is_some() {
+        return params
+            .ollama_reasoning
+            .as_ref()
+            .map(|effective| effective.payload.clone())
+            .ok_or_else(|| "conversation_admission_failed".to_string());
+    }
+    let info = crate::services::agent_local::ollama_client::OllamaClient::from_global()?
+        .show_model(&params.model)
+        .await
+        .map_err(|_| "conversation_admission_failed".to_string())?;
     canonical(
         &params.model,
         params.reasoning_mode.as_deref(),
         params.think,
-        params.capability_hints.supports_thinking,
+        Some(&info.capabilities),
     )
 }
 
@@ -14,20 +25,9 @@ pub(super) fn canonical(
     model: &str,
     reasoning_mode: Option<&str>,
     think: bool,
-    _frontend_hint: Option<bool>,
-) -> OllamaThink {
-    let supports_thinking =
-        crate::services::reasoning::provider_model_supports_thinking("ollama", model);
-    let effective_mode = crate::services::reasoning::normalize_for_model(
-        "ollama",
-        model,
-        reasoning_mode,
-        supports_thinking,
-    );
-    crate::services::reasoning::ollama_think(
-        model,
-        effective_mode.as_deref(),
-        think && supports_thinking,
-    )
-    .unwrap_or(OllamaThink::Bool(false))
+    capabilities: Option<&[String]>,
+) -> Result<OllamaThink, String> {
+    crate::services::reasoning_ollama::resolve(model, reasoning_mode, think, capabilities)
+        .map(|effective| effective.payload)
+        .map_err(|_| "conversation_admission_failed".to_string())
 }

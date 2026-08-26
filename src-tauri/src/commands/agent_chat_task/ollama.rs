@@ -44,7 +44,7 @@ pub(crate) async fn run(
         resolve_plan_mode(&params).await && tool_catalog::has_plan_tools(&enabled_tool_names);
 
     let snap = common::collect_git_snapshot(&working_dir).await;
-    let ollama_think = super::ollama_thinking::resolve(&params);
+    let ollama_think = super::ollama_thinking::resolve(&params).await?;
     let prompt_mode =
         crate::services::agent_local::system_prompt_defaults::mode_for_permission(&mode.mode);
     let prompt_tier = ctx.prompt_tier.unwrap_or_else(|| {
