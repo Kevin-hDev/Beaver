@@ -150,7 +150,7 @@ mod tests {
 
     #[test]
     fn fixture_candidate_bypasses_only_activation_for_an_exact_non_forbidden_policy() {
-        let target = fixture_target("qwen3.5:4b");
+        let target = fixture_target("deepseek-r1:latest");
         let envelope = fixture_envelope(&target);
         assert_eq!(
             decide(&envelope, &target),
