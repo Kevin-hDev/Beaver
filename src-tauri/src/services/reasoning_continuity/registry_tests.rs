@@ -297,7 +297,7 @@ fn local_scope_is_valid_only_for_ollama() {
 }
 
 #[test]
-fn only_exact_validated_ollama_models_are_live_validated() {
+fn only_exact_live_fixture_pairs_are_activated() {
     let mut live = Vec::new();
     for route in active_routes() {
         assert!(!route.models.is_empty());
@@ -314,18 +314,50 @@ fn only_exact_validated_ollama_models_are_live_validated() {
     }
     let expected = [
         (
+            RouteId::Ollama,
             "gemma4:e2b-it-q4_K_M",
+            ReasoningModeId::Auto,
+            ReplayRequirement::Optional,
             "ollama-local-gemma4-e2b-it-q4-k-m-local-2026-08-26",
         ),
-        ("qwen3.5:4b", "ollama-local-qwen3-5-4b-local-2026-08-26"),
+        (
+            RouteId::Ollama,
+            "qwen3.5:4b",
+            ReasoningModeId::Auto,
+            ReplayRequirement::Optional,
+            "ollama-local-qwen3-5-4b-local-2026-08-26",
+        ),
+        (
+            RouteId::CodexOauth,
+            "gpt-5.6-luna",
+            ReasoningModeId::Medium,
+            ReplayRequirement::Required,
+            "codex-oauth-gpt-5-6-luna-local-2026-08-26",
+        ),
+        (
+            RouteId::XaiOauth,
+            "grok-4.6",
+            ReasoningModeId::High,
+            ReplayRequirement::Required,
+            "xai-oauth-grok-4-6-local-2026-08-26",
+        ),
+        (
+            RouteId::Zai,
+            "glm-4.5-flash",
+            ReasoningModeId::Auto,
+            ReplayRequirement::Optional,
+            "zai-api-glm-4-5-flash-local-2026-08-26",
+        ),
     ];
-    assert_eq!(live.len(), 4);
+    assert_eq!(live.len(), expected.len() * 2);
     for (route, model) in live {
-        assert_eq!(route, RouteId::Ollama);
-        assert!(expected.iter().any(|(model_id, fixture_id)| {
-            model.model_id == *model_id && model.fixture_id == Some(*fixture_id)
+        assert!(expected.iter().any(|entry| {
+            route == entry.0
+                && model.model_id == entry.1
+                && model.reasoning_mode == entry.2
+                && model.requirement == entry.3
+                && model.fixture_id == Some(entry.4)
         }));
-        assert_eq!(model.reasoning_mode, ReasoningModeId::Auto);
         assert!(matches!(
             model.continuation_use,
             ContinuationUse::UserContinuation | ContinuationUse::ToolContinuation

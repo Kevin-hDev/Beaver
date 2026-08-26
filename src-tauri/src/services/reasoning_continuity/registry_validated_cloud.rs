@@ -1,0 +1,119 @@
+use super::contract::{ContinuationUse, ReasoningModeId};
+use super::registry::{ModelPolicy, ReplayRequirement};
+use super::registry_inventory::{disabled, live};
+
+pub(super) const OLLAMA: &[ModelPolicy] = &[
+    live(
+        "gemma4:e2b-it-q4_K_M",
+        ReasoningModeId::Auto,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Optional,
+        "ollama-local-gemma4-e2b-it-q4-k-m-local-2026-08-26",
+        "2026-08-26",
+    ),
+    live(
+        "gemma4:e2b-it-q4_K_M",
+        ReasoningModeId::Auto,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Optional,
+        "ollama-local-gemma4-e2b-it-q4-k-m-local-2026-08-26",
+        "2026-08-26",
+    ),
+    live(
+        "qwen3.5:4b",
+        ReasoningModeId::Auto,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Optional,
+        "ollama-local-qwen3-5-4b-local-2026-08-26",
+        "2026-08-26",
+    ),
+    live(
+        "qwen3.5:4b",
+        ReasoningModeId::Auto,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Optional,
+        "ollama-local-qwen3-5-4b-local-2026-08-26",
+        "2026-08-26",
+    ),
+    disabled(
+        "deepseek-r1:latest",
+        ReasoningModeId::Auto,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Optional,
+    ),
+    disabled(
+        "deepseek-r1:latest",
+        ReasoningModeId::Auto,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Optional,
+    ),
+];
+
+pub(super) const XAI_OAUTH: &[ModelPolicy] = &[
+    live(
+        "grok-4.6",
+        ReasoningModeId::High,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Required,
+        "xai-oauth-grok-4-6-local-2026-08-26",
+        "2026-08-26",
+    ),
+    live(
+        "grok-4.6",
+        ReasoningModeId::High,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Required,
+        "xai-oauth-grok-4-6-local-2026-08-26",
+        "2026-08-26",
+    ),
+];
+
+pub(super) const ZAI: &[ModelPolicy] = &[
+    live(
+        "glm-4.5-flash",
+        ReasoningModeId::Auto,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Optional,
+        "zai-api-glm-4-5-flash-local-2026-08-26",
+        "2026-08-26",
+    ),
+    live(
+        "glm-4.5-flash",
+        ReasoningModeId::Auto,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Optional,
+        "zai-api-glm-4-5-flash-local-2026-08-26",
+        "2026-08-26",
+    ),
+    disabled(
+        "glm-5.3",
+        ReasoningModeId::Max,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Optional,
+    ),
+    disabled(
+        "glm-5.3",
+        ReasoningModeId::Max,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Optional,
+    ),
+];
+
+pub(super) const CODEX: &[ModelPolicy] = &[
+    live(
+        "gpt-5.6-luna",
+        ReasoningModeId::Medium,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Required,
+        "codex-oauth-gpt-5-6-luna-local-2026-08-26",
+        "2026-08-26",
+    ),
+    live(
+        "gpt-5.6-luna",
+        ReasoningModeId::Medium,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Required,
+        "codex-oauth-gpt-5-6-luna-local-2026-08-26",
+        "2026-08-26",
+    ),
+];

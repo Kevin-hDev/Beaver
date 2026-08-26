@@ -14,6 +14,7 @@ pub mod fingerprint;
 pub mod limits;
 pub mod registry;
 mod registry_inventory;
+mod registry_validated_cloud;
 pub mod tool_links;
 
 #[cfg(test)]

@@ -1,5 +1,6 @@
 use super::contract::{ContinuationUse, ContractId, ReasoningModeId, RouteId};
 use super::registry::{ActivationState, AdapterId, ModelPolicy, ReplayRequirement, RouteContract};
+use super::registry_validated_cloud::{CODEX, OLLAMA, XAI_OAUTH, ZAI};
 
 use ReplayRequirement::{Forbidden, Optional, Required};
 
@@ -29,7 +30,7 @@ const fn tool(
     )
 }
 
-const fn disabled(
+pub(super) const fn disabled(
     model_id: &'static str,
     reasoning_mode: ReasoningModeId,
     continuation_use: ContinuationUse,
@@ -46,10 +47,11 @@ const fn disabled(
     }
 }
 
-const fn live(
+pub(super) const fn live(
     model_id: &'static str,
     reasoning_mode: ReasoningModeId,
     continuation_use: ContinuationUse,
+    requirement: ReplayRequirement,
     fixture_id: &'static str,
     fixture_date: &'static str,
 ) -> ModelPolicy {
@@ -57,45 +59,13 @@ const fn live(
         model_id,
         reasoning_mode,
         continuation_use,
-        requirement: Optional,
+        requirement,
         activation: ActivationState::LiveValidated,
         fixture_id: Some(fixture_id),
         fixture_date: Some(fixture_date),
     }
 }
 
-const OLLAMA: &[ModelPolicy] = &[
-    live(
-        "gemma4:e2b-it-q4_K_M",
-        ReasoningModeId::Auto,
-        ContinuationUse::UserContinuation,
-        "ollama-local-gemma4-e2b-it-q4-k-m-local-2026-08-26",
-        "2026-08-26",
-    ),
-    live(
-        "gemma4:e2b-it-q4_K_M",
-        ReasoningModeId::Auto,
-        ContinuationUse::ToolContinuation,
-        "ollama-local-gemma4-e2b-it-q4-k-m-local-2026-08-26",
-        "2026-08-26",
-    ),
-    live(
-        "qwen3.5:4b",
-        ReasoningModeId::Auto,
-        ContinuationUse::UserContinuation,
-        "ollama-local-qwen3-5-4b-local-2026-08-26",
-        "2026-08-26",
-    ),
-    live(
-        "qwen3.5:4b",
-        ReasoningModeId::Auto,
-        ContinuationUse::ToolContinuation,
-        "ollama-local-qwen3-5-4b-local-2026-08-26",
-        "2026-08-26",
-    ),
-    user("deepseek-r1:latest", ReasoningModeId::Auto, Optional),
-    tool("deepseek-r1:latest", ReasoningModeId::Auto, Optional),
-];
 const GOOGLE: &[ModelPolicy] = &[
     user("gemini-3.7-flash", ReasoningModeId::Medium, Required),
     tool("gemini-3.7-flash", ReasoningModeId::Medium, Required),
@@ -130,10 +100,6 @@ const XAI: &[ModelPolicy] = &[
     user("grok-4.6", ReasoningModeId::High, Forbidden),
     tool("grok-4.6", ReasoningModeId::High, Forbidden),
 ];
-const XAI_OAUTH: &[ModelPolicy] = &[
-    user("grok-4.6", ReasoningModeId::High, Required),
-    tool("grok-4.6", ReasoningModeId::High, Required),
-];
 const MOONSHOT: &[ModelPolicy] = &[
     user("kimi-k2.7-code", ReasoningModeId::Auto, Required),
     tool("kimi-k2.7-code", ReasoningModeId::Auto, Required),
@@ -142,17 +108,6 @@ const MOONSHOT_OAUTH: &[ModelPolicy] = &[
     user("kimi-for-coding", ReasoningModeId::Auto, Required),
     tool("kimi-for-coding", ReasoningModeId::Auto, Required),
 ];
-const ZAI: &[ModelPolicy] = &[
-    user("glm-4.5-flash", ReasoningModeId::Auto, Optional),
-    tool("glm-4.5-flash", ReasoningModeId::Auto, Optional),
-    user("glm-5.3", ReasoningModeId::Max, Optional),
-    tool("glm-5.3", ReasoningModeId::Max, Optional),
-];
-const CODEX: &[ModelPolicy] = &[
-    user("gpt-5.6-luna", ReasoningModeId::Medium, Required),
-    tool("gpt-5.6-luna", ReasoningModeId::Medium, Required),
-];
-
 pub(super) const ACTIVE_ROUTES: &[RouteContract] = &[
     route(
         RouteId::Ollama,
