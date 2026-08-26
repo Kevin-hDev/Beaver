@@ -8,6 +8,7 @@ mod openrouter;
     reason = "Task 18 prepares adapters; Task 19 alone connects live-validated routes"
 )]
 pub(crate) mod replay;
+mod responses;
 
 use crate::services::reasoning_continuity::bounded_json::serialized_len_bounded_from;
 use crate::services::reasoning_continuity::capture_budget::CaptureBudget;
@@ -18,7 +19,7 @@ use crate::services::reasoning_continuity::envelope::{
     CompletionState, ContinuationState, ReasoningEnvelope, ReasoningSource,
 };
 use crate::services::reasoning_continuity::limits::{LimitError, MAX_ENVELOPE_BYTES};
-use capture::{contract_for, empty_continuation, has_native_items, response_items};
+use capture::{contract_for, empty_continuation, has_native_items};
 use serde_json::Value;
 
 /// Provenance fixée avant lecture du premier événement provider.
@@ -62,6 +63,8 @@ pub(crate) struct ReasoningCapture {
     provider_complete: bool,
     partial: bool,
     failure_code: Option<&'static str>,
+    response_item_events_seen: bool,
+    response_tool_links: Vec<crate::services::reasoning_continuity::tool_links::ToolLink>,
 }
 
 impl ReasoningCapture {
@@ -90,6 +93,8 @@ impl ReasoningCapture {
             provider_complete: false,
             partial: false,
             failure_code: None,
+            response_item_events_seen: false,
+            response_tool_links: Vec::new(),
         })
     }
 
@@ -104,7 +109,7 @@ impl ReasoningCapture {
             ContractId::OpenRouterDetailsV1 => self.append_items(openrouter::details(event)),
             ContractId::OpenAiResponsesV1
             | ContractId::XaiResponsesV1
-            | ContractId::CodexResponsesV1 => self.append_items(response_items(event)),
+            | ContractId::CodexResponsesV1 => self.append_response_items(event),
             ContractId::CerebrasChatV1 => self.append_chat(event, true),
             ContractId::DeepSeekChatV1 | ContractId::KimiChatV1 | ContractId::ZaiChatV1 => {
                 self.append_chat(event, false)
@@ -142,7 +147,7 @@ impl ReasoningCapture {
             self.context.source(),
             CompletionState::Complete,
             self.continuation.take()?,
-            Vec::new(),
+            std::mem::take(&mut self.response_tool_links),
         );
         envelope.validate().ok().map(|_| envelope)
     }
@@ -152,10 +157,12 @@ impl ReasoningCapture {
         None
     }
 
+    #[cfg(test)]
     pub(crate) const fn is_partial(&self) -> bool {
         self.partial
     }
 
+    #[cfg(test)]
     pub(crate) const fn failure_code(&self) -> Option<&'static str> {
         self.failure_code
     }
@@ -214,6 +221,30 @@ impl ReasoningCapture {
                 | ContinuationState::ResponsesLocal { items: parts } => parts.push(item),
                 _ => return Err(LimitError::CaptureSkeleton),
             }
+        }
+        Ok(())
+    }
+
+    fn append_response_items(&mut self, event: &Value) -> Result<(), LimitError> {
+        let item = responses::completed_item(event).map_err(|_| LimitError::CaptureSkeleton)?;
+        if let Some(item) = item {
+            self.response_item_events_seen = true;
+            self.append_response_item(item)?;
+            return Ok(());
+        }
+        if !self.response_item_events_seen {
+            for item in responses::final_items(event).map_err(|_| LimitError::CaptureSkeleton)? {
+                self.append_response_item(item)?;
+            }
+        }
+        Ok(())
+    }
+
+    fn append_response_item(&mut self, item: Value) -> Result<(), LimitError> {
+        let link = responses::tool_link(&item).map_err(|_| LimitError::CaptureSkeleton)?;
+        self.append_items(vec![item])?;
+        if let Some(link) = link {
+            self.response_tool_links.push(link);
         }
         Ok(())
     }

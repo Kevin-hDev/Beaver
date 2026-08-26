@@ -1,6 +1,5 @@
 use crate::services::reasoning_continuity::contract::{ContractId, RouteId};
 use crate::services::reasoning_continuity::envelope::ContinuationState;
-use serde_json::Value;
 
 pub(super) fn contract_for(route: RouteId) -> Option<ContractId> {
     crate::services::reasoning_continuity::registry::route_contract(route)
@@ -38,15 +37,4 @@ pub(super) fn has_native_items(continuation: &ContinuationState) -> bool {
             | ContinuationState::OpenRouterDetails { .. }
             | ContinuationState::ResponsesLocal { .. }
     )
-}
-
-pub(super) fn response_items(event: &Value) -> Vec<Value> {
-    if event.get("type").and_then(Value::as_str) == Some("response.output_item.done") {
-        return event.get("item").cloned().into_iter().collect();
-    }
-    event
-        .pointer("/response/output")
-        .and_then(Value::as_array)
-        .cloned()
-        .unwrap_or_default()
 }

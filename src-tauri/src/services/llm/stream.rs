@@ -51,6 +51,7 @@ pub async fn stream_chat_no_done(
             cancel,
             buffer_content,
             realtime_budget,
+            reasoning_capture,
             measurement.as_mut(),
         )
         .await
@@ -74,6 +75,7 @@ pub async fn stream_chat_no_done(
             cancel,
             buffer_content,
             realtime_budget,
+            reasoning_capture,
             measurement.as_mut(),
         )
         .await
@@ -96,6 +98,7 @@ pub async fn stream_chat_no_done(
                 cancel,
                 buffer_content,
                 realtime_budget,
+                reasoning_capture,
             },
             measurement.as_mut(),
         )

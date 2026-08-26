@@ -13,6 +13,7 @@ pub(super) struct StreamContext<'a> {
     pub cancel: CancellationToken,
     pub buffer_content: bool,
     pub realtime_budget: Option<RealtimeBudget>,
+    pub reasoning_capture: Option<super::reasoning_wire::ReasoningCapture>,
 }
 
 pub(super) async fn stream_chat(
@@ -25,6 +26,7 @@ pub(super) async fn stream_chat(
         cancel,
         buffer_content,
         realtime_budget,
+        reasoning_capture,
     } = context;
     let catalog_model = crate::services::llm_oauth::xai_catalog_model(request.model).await?;
     match catalog_model.backend {
@@ -40,7 +42,7 @@ pub(super) async fn stream_chat(
                 realtime_budget,
                 request.tools,
                 crate::services::provider_usage::UsageContext::chat("xai", request.model),
-                None,
+                reasoning_capture,
                 measurement,
             )
             .await
@@ -63,6 +65,7 @@ pub(super) async fn stream_chat(
                 "xai",
                 request.model,
                 request.tools,
+                reasoning_capture,
                 measurement,
             )
             .await

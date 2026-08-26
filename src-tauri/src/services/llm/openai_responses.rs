@@ -74,6 +74,7 @@ pub(super) async fn stream_chat(
     cancel: CancellationToken,
     buffer_content: bool,
     realtime_budget: Option<RealtimeBudget>,
+    reasoning_capture: Option<super::reasoning_wire::ReasoningCapture>,
     mut measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
 ) -> Result<StreamOutcome, String> {
     let response = post(config, measurement.as_deref_mut())
@@ -88,6 +89,7 @@ pub(super) async fn stream_chat(
         "openai",
         config.model,
         config.tools,
+        reasoning_capture,
         measurement,
     )
     .await
