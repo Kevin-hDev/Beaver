@@ -1,7 +1,9 @@
 use super::{ReasoningCapture, ReasoningCaptureContext};
 use crate::services::reasoning_continuity::contract::{CredentialScope, ReasoningModeId, RouteId};
 use crate::services::reasoning_continuity::envelope::ContinuationState;
-use crate::services::reasoning_continuity::limits::{MAX_ENVELOPE_BYTES, MAX_NATIVE_ITEMS};
+use crate::services::reasoning_continuity::limits::{
+    MAX_ENVELOPE_BYTES, MAX_NATIVE_ITEMS, MAX_TOOL_CALLS,
+};
 use serde_json::{json, Value};
 
 fn context(route_id: RouteId, model_id: &str) -> ReasoningCaptureContext {
@@ -114,4 +116,27 @@ fn r07_first_limit_excess_releases_native_state_and_cannot_recover() {
         ReasoningCapture::new(context(RouteId::OpenRouter, "moonshotai/kimi-k2.5")).unwrap();
     depth.observe_json(&json!({"choices":[{"delta":{"reasoning_details":[nested]}}]}));
     assert!(depth.is_partial());
+}
+
+#[test]
+fn response_tool_link_limit_stops_capture_before_the_65th_link_is_stored() {
+    let mut capture = ReasoningCapture::new(context(RouteId::OpenAi, "gpt-5.6-luna")).unwrap();
+    for index in 0..MAX_TOOL_CALLS {
+        capture.observe_json(&json!({
+            "type": "response.output_item.done",
+            "item": {"type":"function_call", "call_id":format!("call-{index}"), "name":"fixture"}
+        }));
+    }
+    assert_eq!(capture.response_tool_links.len(), MAX_TOOL_CALLS);
+    capture.observe_json(&json!({
+        "type": "response.output_item.done",
+        "item": {"type":"function_call", "call_id":"call-overflow", "name":"fixture"}
+    }));
+    assert!(capture.is_partial());
+    assert_eq!(capture.response_tool_links.len(), MAX_TOOL_CALLS);
+    capture.observe_json(&json!({
+        "type": "response.output_item.done",
+        "item": {"type":"function_call", "call_id":"call-after-stop", "name":"fixture"}
+    }));
+    assert_eq!(capture.response_tool_links.len(), MAX_TOOL_CALLS);
 }

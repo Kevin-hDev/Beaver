@@ -17,6 +17,7 @@ pub struct SanitizedFixtureReport {
     fixture_id: String,
     route: String,
     model: String,
+    region: String,
     reasoning_mode: String,
     generated_at: String,
     scenarios: Vec<FixtureScenario>,
@@ -33,6 +34,7 @@ struct FixtureScenario {
 #[tauri::command]
 pub async fn export_reasoning_fixture_report(
     session_id: String,
+    region: String,
 ) -> Result<SanitizedFixtureReport, String> {
     crate::services::agent_local::session_id::validate_session_id(&session_id)
         .map_err(|_| unavailable())?;
@@ -40,18 +42,26 @@ pub async fn export_reasoning_fixture_report(
         .await
         .map_err(|_| unavailable())?;
     validate_session(&session)?;
-    let fixture_id = uuid::Uuid::new_v4().to_string();
+    let generated_at = chrono::Utc::now();
+    let fixture_id = crate::services::reasoning_fixture_store::derive_fixture_id(
+        &session.provider,
+        &session.model,
+        &region,
+        generated_at.date_naive(),
+    )
+    .map_err(|_| unavailable())?;
     let scenarios = scenarios(&session);
     let report = SanitizedFixtureReport {
         schema_version: 1,
         fixture_id: fixture_id.clone(),
         route: session.provider,
         model: session.model,
+        region,
         reasoning_mode: session
             .reasoning_mode
             .clone()
             .unwrap_or_else(|| "off".to_string()),
-        generated_at: chrono::Utc::now().to_rfc3339(),
+        generated_at: generated_at.to_rfc3339(),
         scenarios,
     };
     let bytes = serde_json::to_vec(&report).map_err(|_| unavailable())?;
@@ -178,9 +188,10 @@ mod tests {
     fn report_never_serializes_a_session_id() {
         let report = SanitizedFixtureReport {
             schema_version: 1,
-            fixture_id: uuid::Uuid::new_v4().to_string(),
+            fixture_id: "ollama-local-test-us-east-1-2026-08-26".to_string(),
             route: "ollama".to_string(),
             model: "test".to_string(),
+            region: "us-east-1".to_string(),
             reasoning_mode: "auto".to_string(),
             generated_at: "2026-01-01T00:00:00Z".to_string(),
             scenarios: Vec::new(),
