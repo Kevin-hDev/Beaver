@@ -63,6 +63,8 @@ pub mod reasoning;
 pub mod reasoning_continuity;
 mod reasoning_effort;
 pub mod reasoning_fixture_store;
+#[cfg(debug_assertions)]
+pub mod reasoning_fixture_tools;
 mod reasoning_google;
 pub(crate) mod reasoning_ollama;
 pub(crate) mod reasoning_profile;

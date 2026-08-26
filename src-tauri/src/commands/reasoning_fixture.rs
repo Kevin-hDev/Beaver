@@ -1,6 +1,13 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 const MAX_SCENARIOS: usize = 64;
+const MAX_FIXTURE_OPERATIONS: usize = 8;
+
+#[derive(Debug, Deserialize)]
+pub struct FixtureOperation {
+    tool_id: String,
+    arguments: serde_json::Value,
+}
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -51,6 +58,36 @@ pub async fn export_reasoning_fixture_report(
         .await
         .map_err(|_| unavailable())?;
     Ok(report)
+}
+
+/// Exécute un lot debug borné. L'outil lui-même garde la allowlist et les
+/// schémas fermés ; l'IPC ne choisit jamais une commande générale.
+#[tauri::command]
+pub async fn run_reasoning_fixture_tools(
+    operations: Vec<FixtureOperation>,
+) -> Result<Vec<serde_json::Value>, String> {
+    run_fixture_operations(operations).await
+}
+
+async fn run_fixture_operations(
+    operations: Vec<FixtureOperation>,
+) -> Result<Vec<serde_json::Value>, String> {
+    if operations.is_empty() || operations.len() > MAX_FIXTURE_OPERATIONS {
+        return Err(unavailable());
+    }
+    let mut tools = crate::services::reasoning_fixture_tools::isolated_toolset()
+        .await
+        .map_err(|_| unavailable())?;
+    let mut results = Vec::with_capacity(operations.len());
+    for operation in operations {
+        results.push(
+            tools
+                .execute(&operation.tool_id, &operation.arguments)
+                .await
+                .map_err(|_| unavailable())?,
+        );
+    }
+    Ok(results)
 }
 
 fn validate_session(
@@ -133,5 +170,29 @@ mod tests {
         };
         let json = serde_json::to_string(&report).unwrap();
         assert!(!json.contains("session_id"));
+    }
+
+    #[tokio::test]
+    async fn bounded_fixture_operations_run_only_through_the_isolated_toolset() {
+        let results = run_fixture_operations(vec![
+            FixtureOperation {
+                tool_id: "fixture.write_note".to_string(),
+                arguments: serde_json::json!({ "value": "fixture" }),
+            },
+            FixtureOperation {
+                tool_id: "fixture.read_note".to_string(),
+                arguments: serde_json::json!({}),
+            },
+        ])
+        .await
+        .expect("fixture operations");
+
+        assert_eq!(
+            results,
+            vec![
+                serde_json::json!({ "written": true }),
+                serde_json::json!({ "value": "fixture" })
+            ]
+        );
     }
 }

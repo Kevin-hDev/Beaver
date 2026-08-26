@@ -138,7 +138,8 @@ macro_rules! for_build {
                 crate::commands::e2e_request_exit,
                 crate::commands::e2e_native_webviews,
                 crate::commands::e2e_verify_child_chat_stream_read_only,
-                crate::commands::export_reasoning_fixture_report
+                crate::commands::export_reasoning_fixture_report,
+                crate::commands::run_reasoning_fixture_tools
             ]
         }
         #[cfg(all(feature = "e2e", not(debug_assertions)))]
@@ -151,7 +152,10 @@ macro_rules! for_build {
         }
         #[cfg(all(not(feature = "e2e"), debug_assertions))]
         {
-            crate::invoke_handler::generate![crate::commands::export_reasoning_fixture_report]
+            crate::invoke_handler::generate![
+                crate::commands::export_reasoning_fixture_report,
+                crate::commands::run_reasoning_fixture_tools
+            ]
         }
         #[cfg(all(not(feature = "e2e"), not(debug_assertions)))]
         {
