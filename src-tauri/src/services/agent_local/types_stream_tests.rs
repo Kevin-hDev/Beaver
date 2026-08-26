@@ -128,3 +128,26 @@ fn done_exposes_whether_tps_is_estimated() {
     assert_eq!(serialized["data"]["tpsEstimated"], true);
     assert_eq!(serialized["data"]["evalDurationNs"], 2_000_000_000_u64);
 }
+
+#[test]
+fn turn_lifecycle_events_expose_only_local_ids() {
+    for event in [
+        StreamEvent::TurnAdmitted {
+            turn_id: "turn-local".into(),
+            user_message_id: "user-local".into(),
+            assistant_message_id: "assistant-local".into(),
+        },
+        StreamEvent::TurnCommitted {
+            turn_id: "turn-local".into(),
+            user_message_id: "user-local".into(),
+            assistant_message_id: "assistant-local".into(),
+        },
+    ] {
+        let serialized = serde_json::to_value(event).unwrap();
+        let data = &serialized["data"];
+        assert_eq!(data.as_object().unwrap().len(), 3);
+        for forbidden in ["continuation", "replaySource", "credentialScope", "history"] {
+            assert!(data.get(forbidden).is_none());
+        }
+    }
+}

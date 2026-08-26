@@ -135,6 +135,24 @@ where
     })
 }
 
+pub(crate) fn validate_intention(input: &NewUserTurnInput) -> Result<(), ConversationInputError> {
+    validate_top_level(input)?;
+    let mut skill_ids = HashSet::with_capacity(input.skills.len());
+    for file in &input.files {
+        super::conversation_attachment_format::validate_wire_bounds(file)?;
+        super::conversation_attachment_format::validate_name(&file.name)?;
+    }
+    for skill in &input.skills {
+        super::conversation_skills::validate_reference(skill)?;
+        if !skill_ids.insert(skill.id.as_str()) {
+            return Err(ConversationInputError::new(
+                ConversationInputErrorKind::Invalid,
+            ));
+        }
+    }
+    Ok(())
+}
+
 fn validate_top_level(input: &NewUserTurnInput) -> Result<(), ConversationInputError> {
     if input.content.len() > MAX_TURN_CONTENT_BYTES
         || input.content.contains('\0')

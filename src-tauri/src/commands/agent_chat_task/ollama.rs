@@ -8,6 +8,7 @@ use crate::services::agent_local::types_ollama::{ChatMessage, OllamaThink, Strea
 
 pub(crate) async fn run(
     params: StreamTaskParams,
+    mut messages: Vec<ChatMessage>,
     mode: StreamMode,
     response_language: String,
 ) -> Result<Vec<ChatMessage>, String> {
@@ -81,7 +82,6 @@ pub(crate) async fn run(
                 )
             }
         };
-    let mut messages = params.messages;
     let prepared_memory = crate::services::agent_local::memory_context::prepare(
         &params.session_id,
         &messages,

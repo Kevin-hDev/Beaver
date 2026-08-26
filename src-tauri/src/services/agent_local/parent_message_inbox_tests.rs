@@ -1,43 +1,63 @@
 use super::parent_message_inbox::ParentMessageInbox;
-use super::types_ollama::ChatMessage;
+use crate::models::agent_turn_contract::{NewUserTurnInput, SkillReference};
 
 #[tokio::test]
-async fn queued_messages_are_drained_in_order() {
+async fn one_intention_is_admitted_only_after_an_explicit_commit_signal() {
     let inbox = ParentMessageInbox::new();
-    inbox.enqueue(vec![user("premier")]).await.unwrap();
-    inbox.enqueue(vec![user("second")]).await.unwrap();
+    inbox.enqueue(user("premier")).await.unwrap();
+    inbox.enqueue(user("second")).await.unwrap();
 
-    let mut messages = Vec::new();
-    assert_eq!(inbox.drain_into(&mut messages).await, 2);
-    assert_eq!(messages[0].content, "premier");
-    assert_eq!(messages[1].content, "second");
+    assert_eq!(inbox.len().await, 2);
+    let admitted = inbox
+        .admit_one_after_commit(|input| async move { Ok::<_, String>(input.content) })
+        .await
+        .unwrap();
+    assert_eq!(admitted.as_deref(), Some("premier"));
+    assert_eq!(inbox.len().await, 1);
 }
 
 #[tokio::test]
-async fn finish_is_atomic_with_the_last_message() {
+async fn failed_admission_keeps_the_front_intention_and_never_skips_it() {
     let inbox = ParentMessageInbox::new();
-    inbox.enqueue(vec![user("suite")]).await.unwrap();
+    inbox.enqueue(user("premier")).await.unwrap();
+    inbox.enqueue(user("second")).await.unwrap();
 
-    let mut messages = Vec::new();
-    assert!(inbox.finish_or_drain(&mut messages).await);
-    assert_eq!(messages.len(), 1);
-    assert!(inbox.enqueue(vec![user("trop tard")]).await.unwrap());
-
-    assert!(inbox.finish_or_drain(&mut messages).await);
-    assert_eq!(messages.len(), 2);
-    assert!(!inbox.finish_or_drain(&mut messages).await);
-    assert!(!inbox.enqueue(vec![user("fermé")]).await.unwrap());
+    let failed = inbox
+        .admit_one_after_commit(|_| async { Err::<String, _>("blocked".to_string()) })
+        .await;
+    assert!(failed.is_err());
+    assert_eq!(inbox.len().await, 2);
+    let admitted = inbox
+        .admit_one_after_commit(|input| async move { Ok::<_, String>(input.content) })
+        .await
+        .unwrap();
+    assert_eq!(admitted.as_deref(), Some("premier"));
 }
 
 #[tokio::test]
-async fn inbox_rejects_more_than_eight_waiting_batches() {
+async fn inbox_rejects_more_than_eight_waiting_intentions() {
     let inbox = ParentMessageInbox::new();
     for index in 0..8 {
-        inbox.enqueue(vec![user(&index.to_string())]).await.unwrap();
+        inbox.enqueue(user(&index.to_string())).await.unwrap();
     }
-    assert!(inbox.enqueue(vec![user("neuf")]).await.is_err());
+    assert!(inbox.enqueue(user("neuf")).await.is_err());
+    assert_eq!(inbox.len().await, 8);
 }
 
-fn user(content: &str) -> ChatMessage {
-    ChatMessage::user(content.into())
+#[tokio::test]
+async fn eight_skill_references_remain_one_queue_entry_and_close_is_fail_closed() {
+    let inbox = ParentMessageInbox::new();
+    let mut input = user("question");
+    input.skills = (0..8)
+        .map(|index| SkillReference { id: format!("skill-{index}"), name: None })
+        .collect();
+    assert!(inbox.enqueue(input).await.unwrap());
+    assert_eq!(inbox.len().await, 1);
+    inbox.close().await;
+    assert!(!inbox.enqueue(user("trop tard")).await.unwrap());
+    assert_eq!(inbox.len().await, 1);
+}
+
+fn user(content: &str) -> NewUserTurnInput {
+    NewUserTurnInput { content: content.into(), files: Vec::new(), skills: Vec::new() }
 }

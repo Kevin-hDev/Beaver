@@ -1,11 +1,11 @@
-use crate::services::agent_local::types_ollama::ChatMessage;
+use crate::models::agent_turn_contract::NewUserTurnInput;
 use crate::ActiveStreams;
 
 #[tauri::command]
 pub async fn queue_agent_message(
     session_id: String,
     generation: u64,
-    messages: Vec<ChatMessage>,
+    input: NewUserTurnInput,
     streams: tauri::State<'_, ActiveStreams>,
 ) -> Result<bool, String> {
     crate::services::agent_local::session_store::validate_session_id(&session_id)
@@ -21,7 +21,7 @@ pub async fn queue_agent_message(
         }
         inbox.clone()
     };
-    inbox.enqueue(messages).await.map_err(|_| generic_error())
+    inbox.enqueue(input).await.map_err(|_| generic_error())
 }
 
 fn generic_error() -> String {

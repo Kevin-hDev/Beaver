@@ -76,6 +76,31 @@ impl RouteId {
         Self::CodexOauth,
         Self::Groq,
     ];
+
+    pub fn from_provider_id(provider: &str) -> Option<Self> {
+        Self::ALL
+            .into_iter()
+            .find(|route| route.provider_id() == provider)
+    }
+
+    pub const fn provider_id(self) -> &'static str {
+        match self {
+            Self::Ollama => "ollama",
+            Self::Google => "google",
+            Self::Mistral => "mistral",
+            Self::Cerebras => "cerebras",
+            Self::OpenRouter => "openrouter",
+            Self::OpenAi => "openai",
+            Self::DeepSeek => "deepseek",
+            Self::Xai => "xai",
+            Self::XaiOauth => "xai-oauth",
+            Self::Moonshot => "moonshot",
+            Self::MoonshotOauth => "moonshot-oauth",
+            Self::Zai => "zai",
+            Self::CodexOauth => "codex-oauth",
+            Self::Groq => "groq",
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]

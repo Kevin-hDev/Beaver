@@ -8,3 +8,7 @@ export type SkillReference = { id: string, name?: string, };
 export type NewUserTurnInput = { content: string, files: Array<TurnAttachmentInput>, skills: Array<SkillReference>, };
 
 export type ResumeTurnInput = { message_id: string, };
+
+export type TurnStart = { "type": "new", "input": NewUserTurnInput } | { "type": "resume", "input": ResumeTurnInput };
+
+export type ChatStreamAdmission = { generation: number, turnId: string, userMessageId: string, assistantMessageId: string, };

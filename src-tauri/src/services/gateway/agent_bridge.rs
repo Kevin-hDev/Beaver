@@ -146,7 +146,9 @@ impl GatewayAgentBridge {
             session_id: session_id.clone(),
             request_id: request_id.clone(),
             model,
-            messages,
+            conversation: Some(
+                crate::commands::agent_chat_task::StreamConversation::internal_legacy(messages),
+            ),
             tools: vec![],
             think: false,
             provider,

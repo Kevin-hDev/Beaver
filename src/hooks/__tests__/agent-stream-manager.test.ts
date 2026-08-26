@@ -88,6 +88,7 @@ describe("agentStreamManager", () => {
     expect(after?.currentContent).toBe("");
     const lastMessage = after?.messages[after.messages.length - 1];
     expect(lastMessage?.content).toBe("début");
+    expect(mocks.invoke).not.toHaveBeenCalled();
   });
 
   it("accepte une nouvelle génération après l'annulation de la précédente", async () => {
@@ -184,5 +185,31 @@ describe("agentStreamManager", () => {
     const after = agentStreamManager.getSnapshot("s1");
     expect(after?.isStreaming).toBe(true);
     expect(after?.currentContent).toBe("suite");
+  });
+
+  it("réconcilie le user et l'assistant avec les IDs Rust seulement sur la génération active", async () => {
+    const turn = {
+      turnId: "00000000-0000-4000-8000-000000000001",
+      userMessageId: "00000000-0000-4000-8000-000000000002",
+      assistantMessageId: "00000000-0000-4000-8000-000000000003",
+    };
+    await agentStreamManager.startSession(
+      "s1", [message("optimistic", "user", "Question")], 10,
+    );
+    agentStreamManager.setSessionGeneration("s1", 7);
+    agentStreamManager.reconcileTurnAdmission("s1", { generation: 7, ...turn }, "optimistic");
+    emit("s1", { event: "token", data: { content: "Réponse", tokenCount: 1, tps: 1 } }, 7);
+
+    emit("s1", { event: "turnCommitted", data: turn }, 6);
+    expect(agentStreamManager.getSnapshot("s1")?.messages).toHaveLength(1);
+    emit("s1", { event: "turnCommitted", data: turn }, 7);
+
+    const messages = agentStreamManager.getSnapshot("s1")?.messages ?? [];
+    expect(messages[0]).toEqual(expect.objectContaining({
+      id: turn.userMessageId, turn_id: turn.turnId,
+    }));
+    expect(messages[1]).toEqual(expect.objectContaining({
+      id: turn.assistantMessageId, turn_id: turn.turnId, content: "Réponse",
+    }));
   });
 });

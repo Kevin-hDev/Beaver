@@ -4,11 +4,12 @@ import type { useSlashCommands } from "@/hooks/use-slash-commands";
 import type { SlashItem } from "@/hooks/use-slash-commands";
 import { activeSkillsInText, replaceSlashToken } from "@/lib/skill-text";
 import type { ComposerDraftSkill } from "@/hooks/use-composer-draft";
+import type { SkillReference } from "@/types/agent-turn.generated";
 
 export interface ActiveSkillsState {
   activeSkills: SkillInfo[];
   handleSelectSkill: (item: SlashItem) => Promise<void>;
-  getSkillsPayload: () => { name: string; content: string }[] | undefined;
+  getSkillsPayload: () => SkillReference[] | undefined;
 }
 
 export function useActiveSkills(
@@ -38,10 +39,10 @@ export function useActiveSkills(
     const visibleSkills = activeSkillsInText(text, activeSkills);
     if (visibleSkills.length === 0) return undefined;
     return visibleSkills.map((s) => ({
+      id: s.id,
       name: s.command,
-      content: draftSkills.find((entry) => entry.info.id === s.id)?.content ?? "",
     }));
-  }, [activeSkills, draftSkills, text]);
+  }, [activeSkills, text]);
 
   return {
     activeSkills,

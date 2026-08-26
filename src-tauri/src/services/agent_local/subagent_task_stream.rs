@@ -67,7 +67,9 @@ pub(super) async fn run_inner(
         session_id: child_session_id.clone(),
         request_id: request_id.clone(),
         model,
-        messages,
+        conversation: Some(
+            crate::commands::agent_chat_task::StreamConversation::internal_legacy(messages),
+        ),
         tools,
         think: runtime_context.think,
         provider,

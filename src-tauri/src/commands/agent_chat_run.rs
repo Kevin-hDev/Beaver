@@ -1,0 +1,161 @@
+use super::agent_chat_task::{
+    run_stream_task, StreamCapabilityHints, StreamConversation, StreamTaskParams,
+};
+use crate::models::agent_turn_contract::{ChatStreamAdmission, TurnStart};
+use crate::services::agent_local::agent_work_supervision::AgentWorkServices;
+use crate::services::agent_local::stream_events::AgentEventEmitter;
+use crate::services::agent_local::types_ollama::StreamEvent;
+use crate::ActiveStreams;
+use tauri::Manager;
+
+pub(crate) struct ChatStreamRequest {
+    pub session_id: String,
+    pub model: String,
+    pub turn: Option<TurnStart>,
+    pub tools: Vec<serde_json::Value>,
+    pub think: bool,
+    pub provider: String,
+    pub working_dir: Option<String>,
+    pub capability_hints: StreamCapabilityHints,
+    pub reasoning_mode: Option<String>,
+    pub permission_mode: Option<String>,
+    pub plan_mode: Option<bool>,
+}
+
+pub(crate) async fn start(
+    app: tauri::AppHandle,
+    mut request: ChatStreamRequest,
+    streams: &ActiveStreams,
+) -> Result<ChatStreamAdmission, String> {
+    crate::services::agent_local::session_user_write::ensure_allowed(&request.session_id).await?;
+    let stream = admit_stream(&app, &request, streams).await?;
+    let work = match super::agent_chat_work::admit(&app.state::<AgentWorkServices>()) {
+        Ok(work) => work,
+        Err(error) => {
+            rollback(streams, &request.session_id, &stream).await;
+            return Err(error);
+        }
+    };
+    let target = match super::agent_chat_target::resolve(
+        &request.session_id,
+        &request.provider,
+        &request.model,
+        request.reasoning_mode.as_deref(),
+        request.capability_hints.supports_thinking,
+    )
+    .await
+    {
+        Ok(target) => target,
+        Err(error) => {
+            rollback(streams, &request.session_id, &stream).await;
+            return Err(error);
+        }
+    };
+    let resolved_dir = match super::agent_working_dir::resolve_for_session(
+        &request.session_id,
+        request.working_dir.as_deref(),
+    )
+    .await
+    {
+        Ok(directory) => directory,
+        Err(_) => {
+            rollback(streams, &request.session_id, &stream).await;
+            return Err(generic_error());
+        }
+    };
+    let turn = match super::agent_chat_turn::prepare(request.turn.take().ok_or_else(generic_error)?)
+        .await
+    {
+        Ok(turn) => turn,
+        Err(error) => {
+            rollback(streams, &request.session_id, &stream).await;
+            return Err(error);
+        }
+    };
+    let admitted = match super::agent_chat_turn::admit(&request.session_id, turn, target).await {
+        Ok(admitted) => admitted,
+        Err(error) => {
+            rollback(streams, &request.session_id, &stream).await;
+            return Err(error);
+        }
+    };
+    let result = ChatStreamAdmission {
+        generation: stream.generation,
+        turn_id: admitted.turn_id.clone(),
+        user_message_id: admitted.user_message_id.clone(),
+        assistant_message_id: admitted.assistant_message_id.clone(),
+    };
+    spawn(
+        app,
+        request,
+        streams,
+        stream,
+        work,
+        admitted,
+        resolved_dir,
+        result.clone(),
+    )
+    .await?;
+    Ok(result)
+}
+
+async fn admit_stream(
+    app: &tauri::AppHandle,
+    request: &ChatStreamRequest,
+    streams: &ActiveStreams,
+) -> Result<super::agent_chat_admission::AgentChatAdmission, String> {
+    let replacement_app = app.clone();
+    let cancelled_session = request.session_id.clone();
+    let diagnostic_session = request.session_id.clone();
+    super::agent_chat_admission::admit(
+        &request.session_id,
+        request.permission_mode.as_deref(),
+        streams,
+        move |(token, generation, request_id, inbox)| async move {
+            crate::services::mascot::cancel_session(
+                &replacement_app,
+                &cancelled_session,
+                generation,
+            );
+            inbox.close().await;
+            crate::services::agent_local::session_locks::cancel_with_lock(
+                &cancelled_session,
+                &token,
+            )
+            .await;
+            crate::services::agent_local::stream_diagnostics::record_cancelled(
+                &cancelled_session,
+                &request_id,
+            )
+            .await;
+        },
+        move |generation| async move {
+            crate::services::agent_local::stream_diagnostics::start_request(
+                &diagnostic_session,
+                generation,
+            )
+            .await
+        },
+    )
+    .await
+}
+
+async fn rollback(
+    streams: &ActiveStreams,
+    session_id: &str,
+    stream: &super::agent_chat_admission::AgentChatAdmission,
+) {
+    stream.cancel.cancel();
+    stream.parent_message_inbox.close().await;
+    let mut map = streams.0.lock().await;
+    if matches!(map.get(session_id), Some((_, generation, _, _)) if *generation == stream.generation)
+    {
+        map.remove(session_id);
+    }
+}
+
+fn generic_error() -> String {
+    "conversation_admission_failed".to_string()
+}
+
+include!("agent_chat_run_spawn.rs");

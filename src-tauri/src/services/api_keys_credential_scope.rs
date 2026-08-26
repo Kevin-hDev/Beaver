@@ -179,18 +179,7 @@ const API_ROUTES: [RouteId; 9] = [
 ];
 
 fn api_provider_for_route(route: RouteId) -> Option<&'static str> {
-    match route {
-        RouteId::Google => Some("google"),
-        RouteId::Mistral => Some("mistral"),
-        RouteId::Cerebras => Some("cerebras"),
-        RouteId::OpenRouter => Some("openrouter"),
-        RouteId::OpenAi => Some("openai"),
-        RouteId::DeepSeek => Some("deepseek"),
-        RouteId::Xai => Some("xai"),
-        RouteId::Moonshot => Some("moonshot"),
-        RouteId::Zai => Some("zai"),
-        _ => None,
-    }
+    API_ROUTES.contains(&route).then(|| route.provider_id())
 }
 
 #[allow(dead_code, reason = "supports credential_scope before Task 5 adopts it")]
@@ -204,12 +193,7 @@ fn oauth_vault_key(route: RouteId) -> Option<&'static str> {
 }
 
 fn credential_scope_route_label(route: RouteId) -> &'static str {
-    api_provider_for_route(route).unwrap_or(match route {
-        RouteId::XaiOauth => "xai-oauth",
-        RouteId::MoonshotOauth => "moonshot-oauth",
-        RouteId::CodexOauth => "codex-oauth",
-        _ => "unknown",
-    })
+    route.provider_id()
 }
 
 fn scope_unavailable() -> String {

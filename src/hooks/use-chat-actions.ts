@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef } from "react";
 import { open as openFileDialog } from "@tauri-apps/plugin-dialog";
 import type { DroppedFile } from "@/hooks/use-file-drop";
+import type { SkillReference } from "@/types/agent-turn.generated";
 
 interface ChatActionsOptions {
   readOnly: boolean;
   chat: {
     messages: { role: string; id: string }[];
-    sendMessage: (text: string, files?: DroppedFile[], workingDir?: string, projectId?: string, skills?: { name: string; content: string }[]) => Promise<void>;
+    sendMessage: (text: string, files?: DroppedFile[], workingDir?: string, projectId?: string, skills?: SkillReference[]) => Promise<void>;
     reload: (id: string) => Promise<void>;
     isStreaming: boolean;
   };
@@ -17,7 +18,7 @@ interface ChatActionsOptions {
   sessionId: string;
   initialMessage?: string;
   initialWorkingDir?: string;
-  initialSkills?: { name: string; content: string }[];
+  initialSkills?: SkillReference[];
   initialFiles?: DroppedFile[];
   onInitialMessageSent?: () => void;
   fileDrop: { addByPaths: (paths: string[]) => Promise<void> };
@@ -48,7 +49,7 @@ export function useChatActions({
   const handleSend = useCallback((
     text: string,
     sentFiles?: DroppedFile[],
-    skills?: { name: string; content: string }[],
+    skills?: SkillReference[],
   ) => {
     if (readOnly) return;
     const isFirst = chat.messages.length < 1;

@@ -15,6 +15,7 @@ import { showToast } from "@/lib/toast-emitter";
 import { noteComposerPosition, takeComposerPosition } from "@/lib/composer-handoff";
 import { waitForTitleExit } from "./welcome-leave";
 import { WELCOME_COMPOSER_DRAFT_KEY } from "@/hooks/use-composer-draft";
+import type { SkillReference } from "@/types/agent-turn.generated";
 import "./welcome-view.css";
 
 interface WelcomeViewProps {
@@ -22,7 +23,7 @@ interface WelcomeViewProps {
   provider: string;
   projects: Project[];
   onAddProject: (path: string) => Promise<Project>;
-  onSend: (text: string, files?: DroppedFile[], projectId?: string, skills?: { name: string; content: string }[]) => void | Promise<void>;
+  onSend: (text: string, files?: DroppedFile[], projectId?: string, skills?: SkillReference[]) => void | Promise<void>;
   onModelChange: (model: string, provider: string) => void;
   reasoningMode?: string | null;
   onReasoningModeChange: (mode: ReasoningMode) => void;
@@ -51,7 +52,7 @@ export function WelcomeView({
     selectProjectDirectory(id, projects, requestDirectoryAccess, setSelectedProjectId);
   }, [projects, requestDirectoryAccess]);
 
-  const handleSend = useCallback((text: string, files?: DroppedFile[], skills?: { name: string; content: string }[]) => {
+  const handleSend = useCallback((text: string, files?: DroppedFile[], skills?: SkillReference[]) => {
     const hasFiles = files && files.length > 0;
     if (!text.trim() && !hasFiles && (!skills || skills.length < 1)) return;
     const send = async () => {

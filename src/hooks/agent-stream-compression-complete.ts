@@ -33,7 +33,6 @@ export function handleCompressionComplete(
       contextUsageBuckets: null,
       contextUsageBaseSegments: 0,
       contextUsageIncludesReasoning: true,
-      persisted: true,
     };
     notify(record);
     notifyActivity(sessionId, record);

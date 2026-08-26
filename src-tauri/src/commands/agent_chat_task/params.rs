@@ -1,5 +1,4 @@
 use crate::services::agent_local::stream_events::AgentEventEmitter;
-use crate::services::agent_local::types_ollama::ChatMessage;
 use tokio_util::sync::CancellationToken;
 
 #[derive(Debug, Clone, Default)]
@@ -14,7 +13,7 @@ pub(crate) struct StreamTaskParams {
     pub session_id: String,
     pub request_id: String,
     pub model: String,
-    pub messages: Vec<ChatMessage>,
+    pub conversation: Option<super::conversation::StreamConversation>,
     pub tools: Vec<serde_json::Value>,
     pub think: bool,
     pub provider: String,

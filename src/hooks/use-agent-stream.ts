@@ -1,11 +1,15 @@
 import { useRef, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { agentStreamManager, type StreamSnapshot } from "./agent-stream-manager";
-import { resolveAgentStreamMessages } from "./agent-stream-message-resolver";
 import type { AgentMessage } from "@/types/agent";
+import type {
+  ChatStreamAdmission,
+  NewUserTurnInput,
+  TurnStart,
+} from "@/types/agent-turn.generated";
 import type { StreamKind } from "./agent-chat-stream-types";
 import i18n from "@/i18n";
-import { admissionErrorMessage, isAdmissionError } from "@/lib/admission-error";
+import { admissionErrorMessage } from "@/lib/admission-error";
 import { showToast } from "@/lib/toast-emitter";
 
 interface StreamStartState {
@@ -13,9 +17,8 @@ interface StreamStartState {
   baseTokenCount: number;
 }
 
-function resolveStreamKind(messages: AgentMessage[]): StreamKind {
-  const lastMessage = messages[messages.length - 1];
-  return lastMessage?.role === "user" && lastMessage.content.trim() === "/compress"
+function resolveStreamKind(turn: TurnStart): StreamKind {
+  return turn.type === "new" && turn.input.content.trim() === "/compress"
     ? "compression"
     : "chat";
 }
@@ -30,7 +33,7 @@ export function useAgentStream() {
     sessionId: string,
     model: string,
     provider: string,
-    messages: AgentMessage[],
+    turn: TurnStart,
     think: boolean,
     startState: StreamStartState,
     workingDir?: string,
@@ -40,6 +43,7 @@ export function useAgentStream() {
     reasoningMode?: string | null,
     permissionMode?: string,
     planMode?: boolean,
+    optimisticUserMessageId?: string,
   ) => {
     const run = ++runRef.current;
     stoppingRef.current = false;
@@ -48,16 +52,15 @@ export function useAgentStream() {
       sessionId,
       startState.displayMessages,
       startState.baseTokenCount,
-      resolveStreamKind(messages),
+      resolveStreamKind(turn),
     );
 
     try {
-      const chatMessages = await resolveAgentStreamMessages(messages);
-      const gen = await invoke<number>("chat_stream", {
+      const admission = await invoke<ChatStreamAdmission>("chat_stream", {
         sessionId,
         model,
         provider,
-        messages: chatMessages,
+        turn,
         tools: [],
         think,
         workingDir: workingDir ?? null,
@@ -69,12 +72,20 @@ export function useAgentStream() {
         planMode: planMode ?? null,
       });
       if (runRef.current !== run || stoppingRef.current) {
-        agentStreamManager.stopSession(sessionId, gen);
-        await invoke("cancel_agent_request", { sessionId, generation: gen }).catch(() => {});
+        agentStreamManager.stopSession(sessionId, admission.generation);
+        await invoke("cancel_agent_request", {
+          sessionId,
+          generation: admission.generation,
+        }).catch(() => {});
         return;
       }
-      generationRef.current = gen;
-      agentStreamManager.setSessionGeneration(sessionId, gen);
+      generationRef.current = admission.generation;
+      agentStreamManager.setSessionGeneration(sessionId, admission.generation);
+      agentStreamManager.reconcileTurnAdmission(
+        sessionId,
+        admission,
+        optimisticUserMessageId,
+      );
     } catch (error) {
       agentStreamManager.failSession(
         sessionId,
@@ -86,7 +97,7 @@ export function useAgentStream() {
 
   const queueStreamMessage = useCallback(async (
     sessionId: string,
-    messages: AgentMessage[],
+    input: NewUserTurnInput,
     displayMessage: AgentMessage,
   ): Promise<boolean> => {
     const generation = generationRef.current;
@@ -97,13 +108,11 @@ export function useAgentStream() {
       const queued = await invoke<boolean>("queue_agent_message", {
         sessionId,
         generation,
-        messages: await resolveAgentStreamMessages(messages),
+        input,
       });
       if (queued) return true;
     } catch (error) {
-      if (isAdmissionError(error)) {
-        showToast(admissionErrorMessage(error, i18n.t), "error");
-      }
+      showToast(admissionErrorMessage(error, i18n.t), "error");
     }
     agentStreamManager.removeQueuedUserMessage(sessionId, displayMessage.id);
     return false;

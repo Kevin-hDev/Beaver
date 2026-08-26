@@ -5,6 +5,7 @@ mod api_tools;
 pub(crate) mod common;
 mod compress;
 mod context_usage_seed;
+mod conversation;
 mod gemma4_thinking_guard;
 mod ollama;
 mod params;
@@ -13,6 +14,7 @@ mod session_events;
 pub(crate) mod tool_policy;
 mod workspace_prompt;
 
+pub(crate) use conversation::StreamConversation;
 pub(crate) use params::{StreamCapabilityHints, StreamPermissionMode, StreamTaskParams};
 
 use crate::services::agent_local::types_ollama::ChatMessage;
@@ -55,21 +57,26 @@ async fn run_stream_task_inner(mut params: StreamTaskParams) -> Result<Vec<ChatM
     if let Some(permission_emitter) = params.permission_emitter.take() {
         params.on_event = params.on_event.with_permission_emitter(permission_emitter);
     }
-    if compress::is_compress_command(&params.messages) {
+    let messages = params
+        .conversation
+        .take()
+        .ok_or_else(|| "conversation_admission_failed".to_string())?
+        .into_messages()?;
+    if compress::is_compress_command(&messages) {
         let working_dir = common::resolve_working_dir(&params.working_dir)?;
         common::update_working_dir(&params.session_id, &working_dir).await?;
         compress::handle_compress_command(
             &params.on_event,
             &params.session_id,
             &params.request_id,
-            &params.messages,
+            &messages,
             &params.model,
             &params.provider,
             &working_dir,
             params.cancel.clone(),
         )
         .await?;
-        return Ok(params.messages);
+        return Ok(messages);
     }
 
     let mode = common::resolve_permission_mode(&params.permission_mode).await;
@@ -77,9 +84,9 @@ async fn run_stream_task_inner(mut params: StreamTaskParams) -> Result<Vec<ChatM
     session_events::emit_started(&params.session_id, &mode.mode);
 
     if chat_engine(&params.provider) == ChatEngine::Ollama {
-        ollama::run(params, mode, response_language).await
+        ollama::run(params, messages, mode, response_language).await
     } else {
-        api::run(params, mode, response_language).await
+        api::run(params, messages, mode, response_language).await
     }
 }
 

@@ -10,7 +10,7 @@ use tokio_util::sync::CancellationToken;
 
 #[test]
 fn chat_stream_uses_the_tested_replacement_path() {
-    let command = include_str!("agent_chat.rs");
+    let command = include_str!("agent_chat_run.rs");
     let admission = include_str!("agent_chat_admission.rs");
 
     assert!(
@@ -25,9 +25,9 @@ fn chat_stream_uses_the_tested_replacement_path() {
 
 #[test]
 fn replacement_finishes_before_the_new_work_admission() {
-    let source = include_str!("agent_chat.rs");
+    let source = include_str!("agent_chat_run.rs");
     let replacement = source
-        .find("agent_chat_admission::admit")
+        .find("let stream = admit_stream")
         .expect("stream replacement admission boundary");
     let admission = source
         .find("agent_chat_work::admit")
@@ -36,6 +36,24 @@ fn replacement_finishes_before_the_new_work_admission() {
     assert!(
         replacement < admission,
         "a replacement temporarily consumes two stream admissions"
+    );
+}
+
+#[test]
+fn capacity_precedes_resolution_and_durable_admission_precedes_spawn() {
+    let source = include_str!("agent_chat_run.rs");
+    let capacity = source.find("agent_chat_work::admit").unwrap();
+    let target = source.find("agent_chat_target::resolve").unwrap();
+    let resolution = source.find("agent_chat_turn::prepare").unwrap();
+    let durable = source.find("agent_chat_turn::admit").unwrap();
+    let spawn = source.find("spawn(").unwrap();
+
+    assert!(capacity < target);
+    assert!(target < resolution);
+    assert!(resolution < durable);
+    assert!(
+        durable < spawn,
+        "provider work can start before the user is durable"
     );
 }
 

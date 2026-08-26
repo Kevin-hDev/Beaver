@@ -10,7 +10,6 @@ import {
 import { KNOWN_ERROR_KEYS } from "@/lib/agent-error-codes";
 import { activeItemAfterToolResult, pendingToolIndices, thinkingItem, toolItems } from "./active-stream-item";
 import { applyToolResult } from "./agent-chat-tool-results";
-import { checkpointQueuedUserMessages } from "./agent-stream-user-checkpoint";
 import { finishInterruptedStream, finishStream } from "./agent-chat-stream-finalize";
 import { applyContextUsage, applyGeneratedTokenCount } from "./agent-stream-context-usage";
 import { applyToolOutput } from "./agent-chat-stream-tool-output";
@@ -61,6 +60,9 @@ export function applyStreamEvent(
     case "generationStarted":
       next.contextUsageVisible = true;
       break;
+    case "turnAdmitted":
+    case "turnCommitted":
+      break;
     case "toolCall":
       ensureTimers();
       next.contextUsageVisible = true;
@@ -110,10 +112,6 @@ export function applyStreamEvent(
     }
     case "turnEnd":
       next.retryIndicator = null;
-      {
-        const checkpoint = checkpointQueuedUserMessages(next);
-        if (checkpoint) return checkpoint;
-      }
       next.completedSegments = appendCurrentSegment(next);
       next.currentContent = "";
       next.currentContentPhase = undefined;

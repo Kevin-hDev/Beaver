@@ -13,13 +13,9 @@ export interface StreamRecord {
   cleanupTimer: ReturnType<typeof setTimeout> | null;
   notifyHandle: { cancel: () => void } | null;
   started: boolean;
-  backendOwnsPersistence: boolean;
-  isSubagentBackendStream: boolean;
   activeGeneration: number | null;
   cancelledGenerations: number[];
   cancelledWithoutGeneration: boolean;
-  persistenceQueue: Promise<void>;
-  persistencePending: boolean;
 }
 
 export function enforceSessionLimit(records: Map<string, StreamRecord>) {

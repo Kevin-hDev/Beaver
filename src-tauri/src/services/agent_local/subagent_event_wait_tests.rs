@@ -145,7 +145,11 @@ fn orchestrator_contains_no_temporal_wakeup() {
 
 #[test]
 fn replacement_cancels_only_parent_while_stop_keeps_owned_child_cancellation() {
-    let replacement = include_str!("../../commands/agent_chat.rs");
+    let replacement = [
+        include_str!("../../commands/agent_chat.rs"),
+        include_str!("../../commands/agent_chat_run.rs"),
+    ]
+    .concat();
     let cancel_command = include_str!("../../commands/agent_chat_cancel.rs");
 
     assert!(replacement.contains("cancel_with_lock"));

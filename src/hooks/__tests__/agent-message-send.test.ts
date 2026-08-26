@@ -14,91 +14,67 @@ describe("persistAgentMessage", () => {
     invoke.mockReset().mockResolvedValue(undefined);
   });
 
-  it("ne relance pas le stream lorsque le message rejoint le run actif", async () => {
+  it("met en file une seule intention et ne relance pas le stream", async () => {
     const doStream = vi.fn();
     const queueStreamMessage = vi.fn().mockResolvedValue(true);
-
     await persistAgentMessage({
-      sessionId: "session-1",
-      messages: [{
-        id: "u1", role: "user", content: "Question", files: [],
-        timestamp: "2026-07-12T10:00:00Z",
-      }],
-      text: "Ajoute une comparaison",
-      doStream,
-      queueStreamMessage,
+      sessionId: "session-1", messages: [], text: "Compare",
+      skills: [{ id: "local:review", name: "review" }],
+      doStream, queueStreamMessage,
     });
 
-    expect(queueStreamMessage).toHaveBeenCalledOnce();
+    expect(queueStreamMessage).toHaveBeenCalledWith(
+      "session-1",
+      { content: "Compare", files: [], skills: [{ id: "local:review", name: "review" }] },
+      expect.objectContaining({ role: "user", content: "Compare" }),
+    );
     expect(doStream).not.toHaveBeenCalled();
-    expect(invoke).not.toHaveBeenCalledWith("add_messages_to_session", expect.anything());
+    expect(invoke).not.toHaveBeenCalled();
   });
 
-  it("ne démarre pas l'agent si le premier message n'a pas été enregistré", async () => {
-    invoke.mockRejectedValueOnce(new Error("save failed"));
+  it("démarre avec TurnStart sans persistance frontend ni contenu de skill", async () => {
     const doStream = vi.fn();
-
     await persistAgentMessage({
-      sessionId: "session-1",
-      messages: [],
-      text: "Crée un rapport",
-      doStream,
+      sessionId: "session-1", messages: [], text: "Analyse",
+      skills: [{ id: "local:audit", name: "audit" }], doStream,
     });
 
-    expect(doStream).not.toHaveBeenCalled();
+    expect(doStream).toHaveBeenCalledOnce();
+    const turn: unknown = doStream.mock.calls[0]?.[0];
+    expect(turn).toEqual({
+      type: "new",
+      input: {
+        content: "Analyse", files: [],
+        skills: [{ id: "local:audit", name: "audit" }],
+      },
+    });
+    expect(JSON.stringify(turn)).not.toContain("content de manifeste");
+    expect(invoke).not.toHaveBeenCalled();
   });
 
-  it("traduit le refus lecture seule lors de la persistance du message", async () => {
-    invoke.mockRejectedValueOnce(new Error("subagent-read-only"));
-
+  it("associe le projet seul puis laisse Rust admettre le user", async () => {
+    const doStream = vi.fn();
     await persistAgentMessage({
-      sessionId: "child-session",
-      messages: [],
-      text: "Message interdit",
-      doStream: vi.fn(),
+      sessionId: "session-1", messages: [], text: "Premier message",
+      projectId: "project-1", doStream,
     });
 
-    expect(showToast).toHaveBeenCalledWith("errors.admission.subagentReadOnly", "error");
+    expect(invoke).toHaveBeenCalledTimes(1);
+    expect(invoke).toHaveBeenCalledWith("update_session_project", {
+      id: "session-1", projectId: "project-1",
+    });
+    expect(doStream).toHaveBeenCalledOnce();
   });
 
   it("arrête l'envoi si l'association du projet est refusée", async () => {
-    invoke.mockImplementation((command: string) => {
-      if (command === "update_session_project") {
-        return Promise.reject(new Error("subagent-read-only"));
-      }
-      return Promise.resolve(undefined);
-    });
+    invoke.mockRejectedValueOnce(new Error("subagent-read-only"));
     const doStream = vi.fn();
-
     await persistAgentMessage({
-      sessionId: "child-session",
-      messages: [],
-      text: "Message interdit",
-      projectId: "project-1",
-      doStream,
+      sessionId: "child-session", messages: [], text: "Message interdit",
+      projectId: "project-1", doStream,
     });
 
-    expect(invoke).not.toHaveBeenCalledWith("add_messages_to_session", expect.anything());
+    expect(showToast).toHaveBeenCalledWith("errors.admission.subagentReadOnly", "error");
     expect(doStream).not.toHaveBeenCalled();
-  });
-
-  it("associe seulement le projet sans renvoyer le document de session", async () => {
-    await persistAgentMessage({
-      sessionId: "session-1",
-      messages: [],
-      text: "Premier message",
-      projectId: "project-1",
-      doStream: vi.fn(),
-    });
-
-    expect(invoke).toHaveBeenCalledWith("update_session_project", {
-      id: "session-1",
-      projectId: "project-1",
-    });
-    expect(invoke).not.toHaveBeenCalledWith("get_agent_session", expect.anything());
-    expect(invoke.mock.calls.map(([command]) => String(command))).toEqual([
-      "update_session_project",
-      "add_messages_to_session",
-    ]);
   });
 });

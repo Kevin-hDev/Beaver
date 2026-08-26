@@ -1,5 +1,5 @@
+use crate::models::agent_turn_contract::{NewUserTurnInput, TurnStart};
 use crate::services::agent_local::session_store;
-use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::agent_local::types_session::AgentSession;
 use crate::ActiveStreams;
 use serde::Serialize;
@@ -51,7 +51,11 @@ pub async fn e2e_verify_child_chat_stream_read_only(
         app.clone(),
         session.id.clone(),
         "e2e-model".to_string(),
-        vec![ChatMessage::user("read-only boundary".to_string())],
+        TurnStart::New(NewUserTurnInput {
+            content: "read-only boundary".to_string(),
+            files: Vec::new(),
+            skills: Vec::new(),
+        }),
         Vec::new(),
         false,
         Some("ollama".to_string()),

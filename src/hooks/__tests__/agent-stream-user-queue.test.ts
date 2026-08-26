@@ -23,7 +23,7 @@ describe("active stream user queue", () => {
     });
   });
 
-  it("conserve le travail visible avant le nouveau message", async () => {
+  it("garde l'intention en attente tant qu'aucun commit durable n'est signalé", async () => {
     await agentStreamManager.startSession("s1", [message("u1", "Question")], 10);
     agentStreamManager.setSessionGeneration("s1", 7);
     emit({ event: "token", data: { content: "Travail en cours", tokenCount: 3, tps: 1 } });
@@ -35,27 +35,10 @@ describe("active stream user queue", () => {
 
     const after = agentStreamManager.getSnapshot("s1");
     expect(after?.isStreaming).toBe(true);
-    expect(after?.messages.map((item) => item.content)).toEqual([
-      "Question", "Travail en cours", "Ajoute ceci",
-    ]);
-    expect(after?.completedSegments).toEqual([]);
-    expect(after?.queuedUserMessages).toEqual([]);
-    const checkpoint = after?.messages[1] as StreamGroupedMessage;
-    const input = after?.messages[2] as StreamGroupedMessage;
-    expect(checkpoint.stream_run_id).toMatch(UUID_RE);
-    expect(checkpoint.stream_part).toBe("checkpoint");
-    expect(input.stream_run_id).toBe(checkpoint.stream_run_id);
-    expect(input.stream_part).toBe("input");
-    await vi.waitFor(() => expect(mocks.invoke).toHaveBeenCalledWith(
-      "add_messages_to_session",
-      expect.objectContaining({
-        id: "s1",
-        messages: [
-          expect.objectContaining({ role: "assistant", content: "Travail en cours" }),
-          expect.objectContaining({ role: "user", content: "Ajoute ceci" }),
-        ],
-      }),
-    ));
+    expect(after?.messages.map((item) => item.content)).toEqual(["Question"]);
+    expect(after?.completedSegments).toHaveLength(1);
+    expect(after?.queuedUserMessages.map((item) => item.content)).toEqual(["Ajoute ceci"]);
+    expect(mocks.invoke).not.toHaveBeenCalled();
     emit({ event: "token", data: { content: "Réponse suivante", tokenCount: 2, tps: 1 } });
     emit({
       event: "done",
@@ -63,27 +46,14 @@ describe("active stream user queue", () => {
         evalCount: 2, evalDurationNs: 0, finalTps: 1, promptTokens: 5, contextTokens: 20,
       },
     });
-    await vi.waitFor(() => expect(mocks.invoke).toHaveBeenCalledTimes(2));
-    expect(mocks.invoke.mock.calls[1]?.[1]).toEqual(expect.objectContaining({
-      messages: [expect.objectContaining({
-        content: "Réponse suivante",
-        stream_run_id: checkpoint.stream_run_id,
-        stream_part: "final",
-      })],
-    }));
+    expect(agentStreamManager.getSnapshot("s1")?.queuedUserMessages).toHaveLength(1);
+    expect(mocks.invoke).not.toHaveBeenCalled();
   });
 });
 
 function message(id: string, content: string): AgentMessage {
   return { id, role: "user", content, files: [], timestamp: "2026-07-12T10:00:00Z" };
 }
-
-interface StreamGroupedMessage extends AgentMessage {
-  stream_run_id?: string;
-  stream_part?: "checkpoint" | "input" | "final";
-}
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function emit(event: StreamEvent) {
   streamHandler?.({ payload: { sessionId: "s1", generation: 7, event } });

@@ -8,14 +8,18 @@ import { showToast } from "@/lib/toast-emitter";
 import { admissionErrorMessage } from "@/lib/admission-error";
 import i18n from "@/i18n";
 import type { AgentMessage } from "@/types/agent";
-import { toVisibleMessageInput } from "./agent-visible-message-input";
+import type {
+  NewUserTurnInput,
+  SkillReference,
+  TurnStart,
+} from "@/types/agent-turn.generated";
 
 export interface AgentSendPayload {
   text: string;
   sentFiles?: PendingChatFile[];
   workingDir?: string;
   projectId?: string;
-  skills?: { name: string; content: string }[];
+  skills?: SkillReference[];
 }
 
 interface PersistAgentMessageOptions extends AgentSendPayload {
@@ -23,16 +27,17 @@ interface PersistAgentMessageOptions extends AgentSendPayload {
   messages: AgentMessage[];
   permissionMode?: string;
   doStream: (
-    llmMessages: AgentMessage[],
+    turn: TurnStart,
     displayMessages: AgentMessage[],
     sessionId: string,
     workingDir?: string,
     baseTokenCount?: number,
     permissionMode?: string,
+    optimisticUserMessageId?: string,
   ) => Promise<void>;
   queueStreamMessage?: (
     sessionId: string,
-    messages: AgentMessage[],
+    input: NewUserTurnInput,
     displayMessage: AgentMessage,
   ) => Promise<boolean>;
 }
@@ -50,42 +55,26 @@ export async function persistAgentMessage(options: PersistAgentMessageOptions) {
     }
   }
   const files = pendingFilesToAttachments(options.sentFiles);
-  const skillNames = options.skills?.map((skill) => skill.name);
+  const skillNames = options.skills?.flatMap((skill) => skill.name ? [skill.name] : []);
   const userMessage = createUserMessage(options.text || "", files, skillNames);
   const displayMessages = [...options.messages, userMessage];
-  const queuedLlmMessages: AgentMessage[] = [];
-  for (const skill of options.skills ?? []) {
-    queuedLlmMessages.push({
-      id: `skill-${crypto.randomUUID()}`,
-      role: "user",
-      content: `The user has loaded the following skill. Follow its instructions exactly:\n\n${skill.content}`,
-      files: [],
-      timestamp: new Date().toISOString(),
-    });
-  }
-  queuedLlmMessages.push(userMessage);
+  const input: NewUserTurnInput = {
+    content: options.text || "",
+    files,
+    skills: options.skills ?? [],
+  };
   if (await options.queueStreamMessage?.(
     options.sessionId,
-    queuedLlmMessages,
+    input,
     userMessage,
   )) return;
-  const llmMessages = [...options.messages, ...queuedLlmMessages];
-  try {
-    await invoke("add_messages_to_session", {
-      id: options.sessionId,
-      messages: [toVisibleMessageInput(userMessage)],
-      tokens: 0,
-    });
-  } catch (error) {
-    showToast(admissionErrorMessage(error, i18n.t, "errors.sessionSaveFailed"), "error");
-    return;
-  }
   await options.doStream(
-    llmMessages,
+    { type: "new", input },
     displayMessages,
     options.sessionId,
     options.workingDir,
     undefined,
     options.permissionMode,
+    userMessage.id,
   );
 }

@@ -11,7 +11,7 @@ let streamHandler: ((event: {
 vi.mock("@tauri-apps/api/core", () => ({ invoke: mocks.invoke }));
 vi.mock("@tauri-apps/api/event", () => ({ listen: mocks.listen }));
 
-describe("subagent backend persistence ownership", () => {
+describe("autorité de persistance Rust", () => {
   beforeEach(() => {
     records.clear();
     vi.clearAllMocks();
@@ -30,7 +30,7 @@ describe("subagent backend persistence ownership", () => {
     emit("child-a", tokenEvent("rapport"));
     emit("child-a", doneEvent());
 
-    expect(persistCalls()).toHaveLength(0);
+    expect(mocks.invoke).not.toHaveBeenCalled();
   });
 
   it("ne persiste pas deux fois si le snapshot enfant précède startSession", async () => {
@@ -40,14 +40,14 @@ describe("subagent backend persistence ownership", () => {
     emit("child-b", tokenEvent("rapport"));
     emit("child-b", doneEvent());
 
-    expect(persistCalls()).toHaveLength(0);
+    expect(mocks.invoke).not.toHaveBeenCalled();
   });
 
-  it("réactive la persistance frontend pour un nouveau stream UI après un gateway", async () => {
+  it("ne réactive jamais une persistance frontend après un gateway", async () => {
     agentStreamManager.subscribe("gateway", () => {});
     emit("gateway", tokenEvent("backend"));
     emit("gateway", doneEvent());
-    expect(persistCalls()).toHaveLength(0);
+    expect(mocks.invoke).not.toHaveBeenCalled();
 
     await agentStreamManager.startSession("gateway", [message("u2", "user", "question")], 0);
     emit("gateway", {
@@ -62,20 +62,23 @@ describe("subagent backend persistence ownership", () => {
     emit("gateway", tokenEvent("frontend"));
     emit("gateway", doneEvent());
 
-    expect(persistCalls()).toHaveLength(1);
-    expect(persistCalls()[0]?.[1]).toEqual(expect.objectContaining({
-      contextTokens: 2,
-      contextLimit: 372_000,
-    }));
+    expect(mocks.invoke).not.toHaveBeenCalled();
+  });
+
+  it("conserve l'affichage partiel sur erreur sans écriture frontend", async () => {
+    await agentStreamManager.startSession("ui", [message("u1", "user", "question")], 0);
+    emit("ui", tokenEvent("réponse partielle"));
+    emit("ui", { event: "error", data: { message: "provider_error" } });
+
+    const snapshot = agentStreamManager.getSnapshot("ui");
+    const messages = snapshot?.messages ?? [];
+    expect(messages[messages.length - 1]?.content).toBe("réponse partielle");
+    expect(mocks.invoke).not.toHaveBeenCalled();
   });
 });
 
 function emit(sessionId: string, event: StreamEvent) {
   streamHandler?.({ payload: { sessionId, event } });
-}
-
-function persistCalls() {
-  return mocks.invoke.mock.calls.filter(([command]) => command === "add_messages_to_session");
 }
 
 function message(id: string, role: AgentMessage["role"], content: string): AgentMessage {

@@ -4,12 +4,15 @@ import { invoke } from "@tauri-apps/api/core";
 import { useAgentChat } from "../use-agent-chat";
 import { showToast } from "@/lib/toast-emitter";
 import type { AgentMessage, AgentSession, FileAttachment } from "@/types/agent";
+import type { TurnStart } from "@/types/agent-turn.generated";
 
 type StartStreamMock = (
   sessionId: string,
   model: string,
   provider: string,
-  messages: AgentMessage[],
+  turn: TurnStart,
+  think: boolean,
+  startState: { displayMessages: AgentMessage[] },
 ) => void | Promise<void>;
 
 const startStream = vi.fn<StartStreamMock>();
@@ -75,8 +78,8 @@ describe("useAgentChat", () => {
     lastStreamMessages = null;
     lastTruncatePayload = null;
     prepareResult = { status: "ready" };
-    startStream.mockImplementation((_sessionId, _model, _provider, messages) => {
-      lastStreamMessages = messages;
+    startStream.mockImplementation((_sessionId, _model, _provider, _turn, _think, startState) => {
+      lastStreamMessages = startState.displayMessages;
     });
     mockSessionInvoke(session);
   });
@@ -139,7 +142,7 @@ describe("useAgentChat", () => {
       "session-1",
       "google/gemma-4-31b-it",
       "openrouter",
-      expect.any(Array),
+      expect.objectContaining({ type: "new" }),
       true,
       expect.any(Object),
       undefined,
@@ -149,6 +152,7 @@ describe("useAgentChat", () => {
       "auto",
       undefined,
       false,
+      expect.any(String),
     );
   });
 
@@ -208,13 +212,11 @@ describe("useAgentChat", () => {
     });
     expect(result.current.missingDirectory?.missing_path).toBe("/tmp/gone/project");
     expect(startStream).not.toHaveBeenCalled();
-    expect(vi.mocked(invoke).mock.calls.filter(([command]) => command === "add_messages_to_session")).toHaveLength(0);
 
     await act(async () => {
       await result.current.resolveMissingDirectory("switch");
     });
     expect(startStream).toHaveBeenCalledTimes(1);
-    expect(vi.mocked(invoke).mock.calls.filter(([command]) => command === "add_messages_to_session")).toHaveLength(1);
   });
 
   it("restaure l'erreur persistee sans message assistant ni diagnostic brut", async () => {

@@ -1,10 +1,9 @@
-use super::types_ollama::ChatMessage;
+use crate::models::agent_turn_contract::NewUserTurnInput;
 use std::collections::VecDeque;
+use std::future::Future;
 use tokio::sync::{watch, Mutex};
 
-const MAX_QUEUED_BATCHES: usize = 8;
-const MAX_MESSAGES_PER_BATCH: usize = 16;
-const MAX_BATCH_CHARS: usize = 16 * 1024 * 1024;
+pub const MAX_QUEUED_INTENTIONS: usize = 8;
 
 pub struct ParentMessageInbox {
     state: Mutex<InboxState>,
@@ -13,7 +12,7 @@ pub struct ParentMessageInbox {
 
 struct InboxState {
     accepting: bool,
-    batches: VecDeque<Vec<ChatMessage>>,
+    intentions: VecDeque<NewUserTurnInput>,
 }
 
 impl ParentMessageInbox {
@@ -22,45 +21,44 @@ impl ParentMessageInbox {
         Self {
             state: Mutex::new(InboxState {
                 accepting: true,
-                batches: VecDeque::new(),
+                intentions: VecDeque::new(),
             }),
             signal,
         }
     }
 
-    pub async fn enqueue(&self, messages: Vec<ChatMessage>) -> Result<bool, String> {
-        validate_batch(&messages)?;
+    pub async fn enqueue(&self, input: NewUserTurnInput) -> Result<bool, String> {
+        super::conversation_input::validate_intention(&input).map_err(|_| generic_error())?;
         let mut state = self.state.lock().await;
         if !state.accepting {
             return Ok(false);
         }
-        if state.batches.len() >= MAX_QUEUED_BATCHES {
-            return Err("File de messages pleine".into());
+        if state.intentions.len() >= MAX_QUEUED_INTENTIONS {
+            return Err(generic_error());
         }
-        state.batches.push_back(messages);
+        state.intentions.push_back(input);
         self.signal.send_modify(|sequence| *sequence = sequence.wrapping_add(1));
         Ok(true)
     }
 
-    pub async fn drain_into(&self, messages: &mut Vec<ChatMessage>) -> usize {
+    #[allow(dead_code, reason = "Task 10 calls this only after its durable turn commit")]
+    pub async fn admit_one_after_commit<F, Fut, T>(&self, admit: F) -> Result<Option<T>, String>
+    where
+        F: FnOnce(NewUserTurnInput) -> Fut,
+        Fut: Future<Output = Result<T, String>>,
+    {
         let mut state = self.state.lock().await;
-        let count = state.batches.len();
-        while let Some(batch) = state.batches.pop_front() {
-            messages.extend(batch);
-        }
-        count
+        let Some(input) = state.intentions.front().cloned() else {
+            return Ok(None);
+        };
+        let admitted = admit(input).await?;
+        state.intentions.pop_front();
+        Ok(Some(admitted))
     }
 
-    pub async fn finish_or_drain(&self, messages: &mut Vec<ChatMessage>) -> bool {
-        let mut state = self.state.lock().await;
-        if state.batches.is_empty() {
-            state.accepting = false;
-            return false;
-        }
-        while let Some(batch) = state.batches.pop_front() {
-            messages.extend(batch);
-        }
-        true
+    #[allow(dead_code, reason = "queue observability is consumed by Task 10 and tests")]
+    pub async fn len(&self) -> usize {
+        self.state.lock().await.intentions.len()
     }
 
     pub fn subscribe(&self) -> watch::Receiver<u64> {
@@ -72,33 +70,6 @@ impl ParentMessageInbox {
     }
 }
 
-fn validate_batch(messages: &[ChatMessage]) -> Result<(), String> {
-    if messages.is_empty() || messages.len() > MAX_MESSAGES_PER_BATCH {
-        return Err("Message invalide".into());
-    }
-    let mut chars = 0usize;
-    for message in messages {
-        if message.role != "user"
-            || message.tool_calls.is_some()
-            || message.tool_name.is_some()
-            || message.tool_call_id.is_some()
-            || message.display_thinking.is_some()
-            || message.continuation.is_some()
-            || message.legacy_tool_loop_reasoning.is_some()
-        {
-            return Err("Message invalide".into());
-        }
-        chars = chars.saturating_add(message.content.chars().count());
-        let images = message.images.as_deref().unwrap_or_default();
-        if images.len() > 8 {
-            return Err("Message invalide".into());
-        }
-        chars = images
-            .iter()
-            .fold(chars, |total, image| total.saturating_add(image.chars().count()));
-        if chars > MAX_BATCH_CHARS {
-            return Err("Message invalide".into());
-        }
-    }
-    Ok(())
+fn generic_error() -> String {
+    "conversation_admission_failed".to_string()
 }

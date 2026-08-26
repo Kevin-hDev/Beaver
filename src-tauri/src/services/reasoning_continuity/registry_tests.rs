@@ -56,6 +56,14 @@ fn closed_identifiers_serialize_to_the_exact_normative_wire_values() {
 }
 
 #[test]
+fn provider_route_mapping_has_one_exhaustive_round_trip() {
+    for route in RouteId::ALL {
+        assert_eq!(RouteId::from_provider_id(route.provider_id()), Some(route));
+    }
+    assert_eq!(RouteId::from_provider_id("forged"), None);
+}
+
+#[test]
 fn every_scoped_route_maps_to_the_normative_contract() {
     let expected = [
         (RouteId::Ollama, ContractId::OllamaNativeV1),

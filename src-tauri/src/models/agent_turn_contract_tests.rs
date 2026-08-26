@@ -1,11 +1,51 @@
 use serde_json::json;
 
 use super::agent_turn_contract::{
-    typescript_bindings, NewUserTurnInput, ResumeTurnInput, SkillReference, TurnAttachmentInput,
-    MAX_ATTACHMENT_GRANT_BYTES, MAX_ATTACHMENT_MIME_BYTES, MAX_ATTACHMENT_NAME_BYTES,
-    MAX_ATTACHMENT_PATH_BYTES, MAX_ATTACHMENT_THUMBNAIL_BYTES, MAX_RESUME_MESSAGE_ID_BYTES,
-    MAX_SKILL_ID_BYTES, MAX_SKILL_NAME_BYTES, MAX_TURN_CONTENT_BYTES,
+    typescript_bindings, ChatStreamAdmission, NewUserTurnInput, ResumeTurnInput, SkillReference,
+    TurnAttachmentInput, TurnStart, MAX_ATTACHMENT_GRANT_BYTES, MAX_ATTACHMENT_MIME_BYTES,
+    MAX_ATTACHMENT_NAME_BYTES, MAX_ATTACHMENT_PATH_BYTES, MAX_ATTACHMENT_THUMBNAIL_BYTES,
+    MAX_RESUME_MESSAGE_ID_BYTES, MAX_SKILL_ID_BYTES, MAX_SKILL_NAME_BYTES, MAX_TURN_CONTENT_BYTES,
 };
+
+#[test]
+fn chat_turn_start_is_a_strict_single_intention() {
+    let new_turn: TurnStart = serde_json::from_value(json!({
+        "type": "new",
+        "input": {"content": "question", "files": [], "skills": []}
+    }))
+    .unwrap();
+    assert!(matches!(new_turn, TurnStart::New(_)));
+
+    let resume: TurnStart = serde_json::from_value(json!({
+        "type": "resume",
+        "input": {"message_id": "00000000-0000-4000-8000-000000000001"}
+    }))
+    .unwrap();
+    assert!(matches!(resume, TurnStart::Resume(_)));
+
+    for forged in [
+        json!({"type": "new", "input": {"content": "q", "files": [], "skills": []}, "messages": []}),
+        json!({"type": "new", "input": {"content": "q", "files": [], "skills": [], "history": []}}),
+    ] {
+        assert!(serde_json::from_value::<TurnStart>(forged).is_err());
+    }
+}
+
+#[test]
+fn admission_contract_contains_only_local_identifiers() {
+    let admission = ChatStreamAdmission {
+        generation: 7,
+        turn_id: "00000000-0000-4000-8000-000000000001".into(),
+        user_message_id: "00000000-0000-4000-8000-000000000002".into(),
+        assistant_message_id: "00000000-0000-4000-8000-000000000003".into(),
+    };
+    let value = serde_json::to_value(admission).unwrap();
+    assert_eq!(value["generation"], 7);
+    assert_eq!(value["turnId"], "00000000-0000-4000-8000-000000000001");
+    for forbidden in ["history", "continuation", "credentialScope", "replaySource"] {
+        assert!(value.get(forbidden).is_none());
+    }
+}
 
 #[test]
 fn turn_inputs_reject_unknown_sensitive_fields_at_every_level() {

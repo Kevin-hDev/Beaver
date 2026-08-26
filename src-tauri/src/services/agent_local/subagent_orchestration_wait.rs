@@ -23,9 +23,6 @@ impl ParentSubagentOrchestrator {
                 self.reports_injected_since_last_request = true;
                 return Ok(true);
             }
-            if self.drain_parent_messages(messages).await > 0 {
-                return Ok(true);
-            }
             let snapshot = subagent_registry::parent_snapshot(&self.parent_session_id).await;
             if snapshot.active_child_ids.is_empty() {
                 if terminal_failed(&snapshot) {
@@ -38,7 +35,7 @@ impl ParentSubagentOrchestrator {
                     }
                     return Err(subagent_completion::SUBAGENT_COMPLETION_ERROR.to_string());
                 }
-                return Ok(self.finish_parent_messages(messages).await);
+                return Ok(false);
             }
             let signal = terminal_signal
                 .as_mut()

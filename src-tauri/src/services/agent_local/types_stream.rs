@@ -36,6 +36,19 @@ pub enum StreamEvent {
     },
     GenerationStarted {},
     #[serde(rename_all = "camelCase")]
+    TurnAdmitted {
+        turn_id: String,
+        user_message_id: String,
+        assistant_message_id: String,
+    },
+    #[allow(dead_code, reason = "Task 10 emits only after its durable journal commit")]
+    #[serde(rename_all = "camelCase")]
+    TurnCommitted {
+        turn_id: String,
+        user_message_id: String,
+        assistant_message_id: String,
+    },
+    #[serde(rename_all = "camelCase")]
     ToolCall {
         name: String,
         arguments: serde_json::Value,

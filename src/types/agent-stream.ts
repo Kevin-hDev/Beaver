@@ -48,6 +48,8 @@ export type StreamEvent =
   | { event: "thinking"; data: { content: string; tokenCount?: number } }
   | { event: "contextUsage"; data: { inputTokens: number; outputTokens: number; contextLimit: number; estimated: boolean; breakdown?: StreamContextUsageBreakdown } }
   | { event: "generationStarted"; data: Record<string, never> }
+  | { event: "turnAdmitted"; data: { turnId: string; userMessageId: string; assistantMessageId: string } }
+  | { event: "turnCommitted"; data: { turnId: string; userMessageId: string; assistantMessageId: string } }
   | { event: "toolCall"; data: { name: string; arguments: Record<string, unknown>; toolCallIndex?: number; toolCallId?: string; domain?: "memory" } }
   | { event: "toolOutput"; data: { toolCallIndex: number; content: string; elapsedMs: number } }
   | { event: "toolResult"; data: { name: string; content: string; isError: boolean; status?: ToolResultStatus; error?: ToolErrorInfo; warnings?: string[]; truncated?: boolean; displaySummary?: string; toolCallIndex: number; toolCallId?: string; resolvedPath?: string; domain?: "memory"; affectedPaths?: string[]; fileChanges?: ToolFileChangeRecord[]; startLine?: number } }

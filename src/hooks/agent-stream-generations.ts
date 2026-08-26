@@ -8,6 +8,8 @@ const STREAM_CONTINUATION_EVENTS = new Set<StreamEvent["event"]>([
   "thinking",
   "contextUsage",
   "generationStarted",
+  "turnAdmitted",
+  "turnCommitted",
   "toolCall",
   "toolResult",
   "turnEnd",

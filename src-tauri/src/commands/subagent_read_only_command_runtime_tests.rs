@@ -1,8 +1,8 @@
 use super::subagent_read_only_command_test_support::{
     child_session, cleanup, snapshot, SUBAGENT_READ_ONLY,
 };
+use crate::models::agent_turn_contract::NewUserTurnInput;
 use crate::services::agent_local::parent_message_inbox::ParentMessageInbox;
-use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::ActiveStreams;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -37,13 +37,12 @@ async fn queue_agent_message_rejects_a_child_without_changing_the_active_inbox()
     let result = super::agent_chat_queue::queue_agent_message(
         session.id.clone(),
         41,
-        vec![ChatMessage::user("must never be queued".to_string())],
+        turn("must never be queued"),
         app.state::<ActiveStreams>(),
     )
     .await;
     let after_session = snapshot(&session.id).await;
-    let mut queued_messages = Vec::new();
-    let queued_batches = sentinel_inbox.drain_into(&mut queued_messages).await;
+    let queued_intentions = sentinel_inbox.len().await;
 
     {
         let streams = app.state::<ActiveStreams>();
@@ -63,8 +62,7 @@ async fn queue_agent_message_rejects_a_child_without_changing_the_active_inbox()
         Some(SUBAGENT_READ_ONLY)
     );
     assert_eq!(after_session, before_session);
-    assert_eq!(queued_batches, 0);
-    assert!(queued_messages.is_empty());
+    assert_eq!(queued_intentions, 0);
 }
 
 #[tokio::test]
@@ -125,6 +123,41 @@ async fn chat_admission_rejects_a_child_before_runtime_or_disk_mutation() {
 }
 
 #[tokio::test]
+async fn agent_chat_queue_rejects_a_stale_generation_without_mutation() {
+    let session = crate::services::agent_local::session_store::create_full(
+        "Stale queue",
+        "qwen3.5:4b",
+        "ollama",
+        false,
+        None,
+    )
+    .await
+    .unwrap();
+    let inbox = Arc::new(ParentMessageInbox::new());
+    let app = tauri::test::mock_builder()
+        .manage(ActiveStreams(Mutex::new(HashMap::from([(
+            session.id.clone(),
+            (CancellationToken::new(), 42, "active".into(), inbox.clone()),
+        )]))))
+        .build(tauri::test::mock_context(tauri::test::noop_assets()))
+        .expect("build isolated Tauri app");
+
+    let result = super::agent_chat_queue::queue_agent_message(
+        session.id.clone(),
+        41,
+        turn("stale"),
+        app.state::<ActiveStreams>(),
+    )
+    .await;
+
+    assert_eq!(result, Ok(false));
+    assert_eq!(inbox.len().await, 0);
+    crate::services::agent_local::session_store::delete_one(&session.id)
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
 async fn malformed_queue_session_id_keeps_the_public_generic_error() {
     let app = tauri::test::mock_builder()
         .manage(ActiveStreams(Mutex::new(HashMap::new())))
@@ -134,12 +167,20 @@ async fn malformed_queue_session_id_keeps_the_public_generic_error() {
     let result = super::agent_chat_queue::queue_agent_message(
         "../invalid".to_string(),
         1,
-        Vec::new(),
+        turn("invalid"),
         app.state::<ActiveStreams>(),
     )
     .await;
 
     assert_eq!(result, Err("Impossible d'envoyer ce message".to_string()));
+}
+
+fn turn(content: &str) -> NewUserTurnInput {
+    NewUserTurnInput {
+        content: content.to_string(),
+        files: Vec::new(),
+        skills: Vec::new(),
+    }
 }
 
 fn request_start_count(

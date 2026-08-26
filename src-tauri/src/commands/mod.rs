@@ -2,10 +2,13 @@ pub mod agent_chat;
 pub(crate) mod agent_chat_admission;
 pub mod agent_chat_cancel;
 pub mod agent_chat_queue;
+pub(crate) mod agent_chat_run;
 #[cfg(test)]
 mod agent_chat_stream_replacement_tests;
 pub(crate) mod agent_chat_streams;
+pub(crate) mod agent_chat_target;
 pub(crate) mod agent_chat_task;
+pub(crate) mod agent_chat_turn;
 pub(crate) mod agent_chat_work;
 #[cfg(test)]
 mod agent_chat_work_tests;

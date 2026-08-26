@@ -5,12 +5,33 @@ use serde::de::{SeqAccess, Visitor};
 use serde::{Deserialize, Deserializer};
 
 use super::agent_turn_contract::{
-    NewUserTurnInput, ResumeTurnInput, SkillReference, TurnAttachmentInput,
+    NewUserTurnInput, ResumeTurnInput, SkillReference, TurnAttachmentInput, TurnStart,
     MAX_ATTACHMENT_GRANT_BYTES, MAX_ATTACHMENT_MIME_BYTES, MAX_ATTACHMENT_NAME_BYTES,
     MAX_ATTACHMENT_PATH_BYTES, MAX_ATTACHMENT_THUMBNAIL_BYTES, MAX_RESUME_MESSAGE_ID_BYTES,
     MAX_SKILLS_PER_TURN, MAX_SKILL_ID_BYTES, MAX_SKILL_NAME_BYTES, MAX_TURN_ATTACHMENTS,
     MAX_TURN_CONTENT_BYTES,
 };
+
+pub(super) fn turn_start<'de, D>(deserializer: D) -> Result<TurnStart, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    #[derive(Deserialize)]
+    #[serde(
+        tag = "type",
+        content = "input",
+        rename_all = "camelCase",
+        deny_unknown_fields
+    )]
+    enum Wire {
+        New(NewUserTurnInput),
+        Resume(ResumeTurnInput),
+    }
+    Ok(match Wire::deserialize(deserializer)? {
+        Wire::New(input) => TurnStart::New(input),
+        Wire::Resume(input) => TurnStart::Resume(input),
+    })
+}
 
 pub(super) fn new_turn<'de, D>(deserializer: D) -> Result<NewUserTurnInput, D::Error>
 where

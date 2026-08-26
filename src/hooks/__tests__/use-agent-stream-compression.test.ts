@@ -22,6 +22,7 @@ vi.mock("../agent-stream-manager", () => ({
     failSession: vi.fn(),
     stopSession: vi.fn(),
     setSessionGeneration: vi.fn(),
+    reconcileTurnAdmission: vi.fn(),
     subscribe: vi.fn(),
     getSnapshot: vi.fn(),
     isStreaming: vi.fn(),
@@ -56,7 +57,7 @@ describe("useAgentStream compression", () => {
         "session-1",
         "model",
         "provider",
-        [command],
+        { type: "new", input: { content: command.content, files: [], skills: [] } },
         false,
         { displayMessages: [command], baseTokenCount: 123 },
       );
@@ -79,7 +80,7 @@ describe("useAgentStream compression", () => {
         "session-1",
         "model",
         "provider",
-        [message],
+        { type: "new", input: { content: message.content, files: [], skills: [] } },
         false,
         { displayMessages: [message], baseTokenCount: 123 },
       );

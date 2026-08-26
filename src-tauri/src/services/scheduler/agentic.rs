@@ -26,7 +26,9 @@ pub async fn run(
         session_id: session_id.to_string(),
         request_id: Uuid::new_v4().to_string(),
         model: wakeup.model.clone(),
-        messages,
+        conversation: Some(
+            crate::commands::agent_chat_task::StreamConversation::internal_legacy(messages),
+        ),
         tools: Vec::new(),
         think: false,
         provider: wakeup.provider.clone(),

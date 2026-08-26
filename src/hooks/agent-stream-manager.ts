@@ -17,7 +17,6 @@ import {
 import {
   getOrCreateRecord,
   getRecord,
-  persistMessages,
   records,
   snapshot,
   startStreamRecord,
@@ -27,11 +26,6 @@ import {
 import { subscribeStreamActivity } from "./agent-stream-activity";
 import { getActivity, getSnapshot, isStreaming, setSessionGeneration } from "./agent-stream-access";
 import { handleCompressionComplete } from "./agent-stream-compression-complete";
-import {
-  finishPersistenceRun,
-  frontendShouldPersist,
-  markIncomingBackendRun,
-} from "./agent-stream-persistence-owner";
 import { applySessionSnapshot } from "./agent-stream-snapshot";
 import {
   notifyRecord as notify,
@@ -44,6 +38,11 @@ import { webToolErrorToastMessage } from "./web-tool-error-toast";
 import { queueUserMessage, removeQueuedUserMessage } from "./agent-stream-user-queue";
 import { failSession } from "./agent-stream-failure";
 import type { StreamKind } from "./agent-chat-stream-types";
+import {
+  reconcileTurnAdmission,
+  reconcileTurnCommitted,
+  reconcileTurnEvent,
+} from "./agent-stream-turns";
 
 export type { StreamSnapshot } from "./agent-stream-records";
 const EVENT_NAME = "agent-stream-event";
@@ -56,7 +55,8 @@ let listenPromise: Promise<UnlistenFn> | null = null;
 
 export const agentStreamManager = { startSession, stopSession, failSession, setSessionGeneration,
   clearPermission: clearStreamPermission, getSnapshot, getActivity, isStreaming, subscribe,
-  queueUserMessage, removeQueuedUserMessage, subscribeActivity: subscribeStreamActivity };
+  queueUserMessage, removeQueuedUserMessage, reconcileTurnAdmission,
+  subscribeActivity: subscribeStreamActivity };
 
 function ensureListener() {
   if (!listenPromise) {
@@ -92,10 +92,6 @@ function stopSession(sessionId: string, generation?: number | null) {
   record.state = result.state;
   flushFrameNotify(record, notify);
   notifyActivity(sessionId, record);
-  if (result.messagesToPersist && !record.state.persisted && frontendShouldPersist(record)) {
-    persistMessages(sessionId, record, result.messagesToPersist, 0, true, notify);
-  }
-  finishPersistenceRun(record);
 }
 
 function subscribe(sessionId: string, subscriber: Subscriber): () => void {
@@ -118,7 +114,7 @@ function handleStreamEvent(sessionId: string, event: StreamEvent, generation: nu
   const record = getOrCreateRecord(sessionId);
   clearCleanup(record);
 
-  markIncomingBackendRun(record);
+  if (!record.started || record.state.completed) record.started = true;
 
   if (!acceptsStreamEvent(record, generation, event)) return;
 
@@ -145,8 +141,18 @@ function handleStreamEvent(sessionId: string, event: StreamEvent, generation: nu
     return;
   }
 
+  if (event.event === "turnAdmitted") {
+    reconcileTurnEvent(sessionId, event.data);
+    return;
+  }
+
+  if (event.event === "turnCommitted") {
+    reconcileTurnCommitted(sessionId, event.data);
+    return;
+  }
+
   if (!record.state.isStreaming && event.event !== "done" && event.event !== "error") {
-    record.state = { ...record.state, isStreaming: true, persisted: false, completed: false };
+    record.state = { ...record.state, isStreaming: true, completed: false };
   }
 
   const toastMessage = webToolErrorToastMessage(sessionId, event);
@@ -167,18 +173,6 @@ function handleStreamEvent(sessionId: string, event: StreamEvent, generation: nu
     flushFrameNotify(record, notify);
   }
   notifyActivity(sessionId, record);
-
-  if (result.messagesToPersist && !record.state.persisted && frontendShouldPersist(record)) {
-    persistMessages(
-      sessionId,
-      record,
-      result.messagesToPersist,
-      result.assistantTokens ?? 0,
-      record.state.completed,
-      notify,
-    );
-  }
-  if (record.state.completed) finishPersistenceRun(record);
 
   if (record.state.completed && record.subscribers.size === 0) {
     scheduleCleanup(sessionId, record, records);

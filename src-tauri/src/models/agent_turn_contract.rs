@@ -54,6 +54,34 @@ pub struct ResumeTurnInput {
     pub message_id: String,
 }
 
+#[derive(Debug, Clone, Serialize)]
+#[serde(tag = "type", content = "input", rename_all = "camelCase")]
+#[cfg_attr(test, derive(ts_rs::TS))]
+pub enum TurnStart {
+    New(NewUserTurnInput),
+    Resume(ResumeTurnInput),
+}
+
+impl<'de> Deserialize<'de> for TurnStart {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        super::agent_turn_contract_wire::turn_start(deserializer)
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(test, derive(ts_rs::TS))]
+pub struct ChatStreamAdmission {
+    #[cfg_attr(test, ts(type = "number"))]
+    pub generation: u64,
+    pub turn_id: String,
+    pub user_message_id: String,
+    pub assistant_message_id: String,
+}
+
 impl<'de> Deserialize<'de> for NewUserTurnInput {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -100,6 +128,8 @@ pub(crate) fn typescript_bindings() -> String {
         SkillReference::decl(&config),
         NewUserTurnInput::decl(&config),
         ResumeTurnInput::decl(&config),
+        TurnStart::decl(&config),
+        ChatStreamAdmission::decl(&config),
     ];
     format!(
         "// @generated from Rust by `npm run contracts:generate:agent`.\n\

@@ -4,6 +4,7 @@ import type { PermissionMode } from "@/hooks/use-permission-mode";
 import type { ReasoningMode } from "@/lib/reasoning-modes";
 import type { AgentInteractiveChoiceRequest, RetryIndicatorState } from "@/types/agent";
 import type { MissingSessionDirectory } from "@/hooks/use-agent-missing-directory";
+import type { SkillReference } from "@/types/agent-turn.generated";
 
 export interface ChatInputProps {
   draftKey: string;
@@ -31,7 +32,7 @@ export interface ChatInputProps {
   onSend: (
     text: string,
     files?: DroppedFile[],
-    skills?: { name: string; content: string }[],
+    skills?: SkillReference[],
   ) => void;
   onStop: () => void;
   onFileImport: () => void;
