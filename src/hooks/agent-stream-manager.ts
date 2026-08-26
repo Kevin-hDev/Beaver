@@ -77,9 +77,12 @@ async function startSession(
   messages: AgentMessage[],
   sessionTokenCount: number,
   streamKind: StreamKind = "chat",
+  awaitingAdmission = false,
 ) {
   await ensureListener();
-  const record = startStreamRecord(sessionId, messages, sessionTokenCount, streamKind);
+  const record = startStreamRecord(
+    sessionId, messages, sessionTokenCount, streamKind, awaitingAdmission,
+  );
   flushFrameNotify(record, notify);
   notifyActivity(sessionId, record);
 }

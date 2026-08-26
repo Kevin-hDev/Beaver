@@ -4,7 +4,7 @@ use crate::services::agent_local::agent_loop;
 use crate::services::agent_local::agent_settings::AgentSettings;
 use crate::services::agent_local::tool_catalog;
 use crate::services::agent_local::tool_dispatcher;
-use crate::services::agent_local::types_ollama::{ChatMessage, OllamaThink, StreamEvent};
+use crate::services::agent_local::types_ollama::{ChatMessage, StreamEvent};
 
 pub(crate) async fn run(
     params: StreamTaskParams,
@@ -44,7 +44,7 @@ pub(crate) async fn run(
         resolve_plan_mode(&params).await && tool_catalog::has_plan_tools(&enabled_tool_names);
 
     let snap = common::collect_git_snapshot(&working_dir).await;
-    let ollama_think = resolve_ollama_think(&params);
+    let ollama_think = super::ollama_thinking::resolve(&params);
     let prompt_mode =
         crate::services::agent_local::system_prompt_defaults::mode_for_permission(&mode.mode);
     let prompt_tier = ctx.prompt_tier.unwrap_or_else(|| {
@@ -200,26 +200,8 @@ fn todo_tools_enabled(enabled_tool_names: &[String]) -> bool {
     )
 }
 
-fn resolve_ollama_think(params: &StreamTaskParams) -> OllamaThink {
-    let supports_thinking = params
-        .capability_hints
-        .supports_thinking
-        .unwrap_or_else(|| {
-            crate::services::reasoning::provider_model_supports_thinking("ollama", &params.model)
-        });
-    let effective_mode = crate::services::reasoning::normalize_for_model(
-        "ollama",
-        &params.model,
-        params.reasoning_mode.as_deref(),
-        supports_thinking,
-    );
-    crate::services::reasoning::ollama_think(
-        &params.model,
-        effective_mode.as_deref(),
-        params.think && supports_thinking,
-    )
-    .unwrap_or(OllamaThink::Bool(false))
-}
+#[cfg(test)]
+use super::ollama_thinking::canonical as canonical_ollama_think;
 
 #[cfg(test)]
 #[path = "ollama_tests.rs"]

@@ -5,6 +5,7 @@
 
 mod bounded_json;
 pub mod capture_budget;
+mod continuation_target;
 pub mod contract;
 pub mod eligibility;
 pub mod envelope;

@@ -8,6 +8,7 @@ mod context_usage_seed;
 mod conversation;
 mod gemma4_thinking_guard;
 mod ollama;
+mod ollama_thinking;
 mod params;
 mod prompt_settings;
 mod session_events;
@@ -57,6 +58,7 @@ async fn run_stream_task_inner(mut params: StreamTaskParams) -> Result<Vec<ChatM
     if let Some(permission_emitter) = params.permission_emitter.take() {
         params.on_event = params.on_event.with_permission_emitter(permission_emitter);
     }
+    validate_canonical_target(&params)?;
     let messages = params
         .conversation
         .take()
@@ -88,6 +90,26 @@ async fn run_stream_task_inner(mut params: StreamTaskParams) -> Result<Vec<ChatM
     } else {
         api::run(params, messages, mode, response_language).await
     }
+}
+
+fn validate_canonical_target(params: &StreamTaskParams) -> Result<(), String> {
+    let Some(target) = params.continuation_target.as_ref() else {
+        return Ok(());
+    };
+    let route = crate::services::reasoning_continuity::contract::RouteId::from_provider_id(
+        &params.provider,
+    );
+    let mode = serde_json::to_value(target.reasoning_mode())
+        .ok()
+        .and_then(|value| value.as_str().map(str::to_owned));
+    if target.validate().is_err()
+        || route != Some(target.route_id())
+        || target.model_id() != params.model
+        || mode.as_deref() != Some(params.reasoning_mode.as_deref().unwrap_or("off"))
+    {
+        return Err("conversation_admission_failed".to_string());
+    }
+    Ok(())
 }
 
 fn mascot_outcome(result: &Result<Vec<ChatMessage>, String>) -> MascotSessionOutcome {

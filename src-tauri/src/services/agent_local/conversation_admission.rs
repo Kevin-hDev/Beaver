@@ -7,12 +7,14 @@ use chrono::Utc;
 use uuid::Uuid;
 
 use crate::models::agent_turn_contract::ResumeTurnInput;
-use crate::services::reasoning_continuity::contract::ReplayTarget;
+use crate::services::reasoning_continuity::contract::{ContinuationTarget, ReplayTarget};
 
 use super::conversation_history::{ConversationHistory, ProviderRole};
 use super::conversation_input::ResolvedTurnInput;
 use super::types_message::AgentMessage;
 use super::types_session::AgentSession;
+use super::conversation_admission_ids::allocate_ids;
+pub(super) use super::conversation_admission_ids::unique_uuid;
 
 pub const PUBLIC_ERROR_CODE: &str = super::conversation_history::PUBLIC_ERROR_CODE;
 #[cfg(test)]
@@ -50,15 +52,32 @@ pub async fn resume(
     super::conversation_resume::resume(session_id, input, target).await
 }
 
+pub async fn resume_for_continuation(
+    session_id: &str,
+    input: ResumeTurnInput,
+    target: ContinuationTarget,
+) -> Result<AdmittedTurn, ConversationAdmissionError> {
+    super::conversation_resume::resume_for_continuation(session_id, input, target).await
+}
+
 pub async fn new_turn(
     session_id: &str,
     input: ResolvedTurnInput,
     target: ReplayTarget,
 ) -> Result<AdmittedTurn, ConversationAdmissionError> {
+    new_turn_for_continuation(session_id, input, ContinuationTarget::Replay(target)).await
+}
+
+pub async fn new_turn_for_continuation(
+    session_id: &str,
+    input: ResolvedTurnInput,
+    target: ContinuationTarget,
+) -> Result<AdmittedTurn, ConversationAdmissionError> {
     new_turn_inner(
         session_id,
         input,
         target,
+        true,
         super::conversation_history_resolve::AttachmentKeySource::Vault,
         || async {},
         |session| async move { super::session_store::save(&session).await },
@@ -67,10 +86,33 @@ pub async fn new_turn(
     .await
 }
 
+pub(crate) async fn new_turn_with_lease(
+    session_id: &str,
+    input: ResolvedTurnInput,
+    target: ContinuationTarget,
+) -> Result<AdmittedTurn, ConversationAdmissionError> {
+    new_turn_inner(
+        session_id,
+        input,
+        target,
+        false,
+        super::conversation_history_resolve::AttachmentKeySource::Vault,
+        || async {},
+        |session| async move { super::session_store::save(&session).await },
+        || async {},
+    )
+    .await
+}
+
+#[allow(
+    clippy::too_many_arguments,
+    reason = "test seams keep the durable admission order explicit"
+)]
 async fn new_turn_inner<A, AFut, W, WFut, P, PFut>(
     session_id: &str,
     input: ResolvedTurnInput,
-    target: ReplayTarget,
+    target: ContinuationTarget,
+    acquire_lock: bool,
     key_source: super::conversation_history_resolve::AttachmentKeySource,
     after_load: A,
     writer: W,
@@ -86,12 +128,16 @@ where
 {
     super::session_store::validate_session_id(session_id).map_err(|_| error())?;
     let lock = super::session_store::lock_session(session_id).await;
-    let _guard = lock.lock().await;
+    let _guard = if acquire_lock {
+        Some(lock.lock().await)
+    } else {
+        None
+    };
     let mut session = super::session_store::get(session_id)
         .await
         .map_err(|_| error())?;
     after_load().await;
-    let history = super::conversation_history_resolve::from_session(
+    let history = super::conversation_history_resolve::from_session_for_continuation(
         &session,
         &target,
         key_source,
@@ -126,8 +172,8 @@ where
         tool_name: None,
         tool_call_id: None,
         continuation: None,
-        replay_source: Some(
-            crate::services::reasoning_continuity::envelope::ReasoningSource::from_target(&target),
+        replay_source: target.replay().map(
+            crate::services::reasoning_continuity::envelope::ReasoningSource::from_target,
         ),
         tool_activities: None,
         segments: None,
@@ -146,7 +192,7 @@ where
     super::session_store_messages::recompute_accumulated_tokens(&mut session);
     writer(session).await.map_err(|_| error())?;
 
-    let history = super::conversation_history::load_for_admission(
+    let history = super::conversation_history::load_for_admission_continuation(
         session_id,
         &target,
         &user_message_id,
@@ -165,39 +211,6 @@ where
         assistant_message_id,
         history,
     })
-}
-
-pub(super) fn unique_uuid<F>(
-    used: &mut HashSet<String>,
-    generator: &mut F,
-) -> Result<String, ConversationAdmissionError>
-where
-    F: FnMut() -> String,
-{
-    for _ in 0..4 {
-        let candidate = generator();
-        let valid = Uuid::parse_str(&candidate)
-            .ok()
-            .is_some_and(|id| id.get_version_num() == 4);
-        if valid && used.insert(candidate.clone()) {
-            return Ok(candidate);
-        }
-    }
-    Err(error())
-}
-
-fn allocate_ids<F>(
-    used: &mut HashSet<String>,
-    mut generator: F,
-) -> Result<(String, String, String), ConversationAdmissionError>
-where
-    F: FnMut() -> String,
-{
-    Ok((
-        unique_uuid(used, &mut generator)?,
-        unique_uuid(used, &mut generator)?,
-        unique_uuid(used, &mut generator)?,
-    ))
 }
 
 pub(super) const fn error() -> ConversationAdmissionError {

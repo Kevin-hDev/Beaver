@@ -29,6 +29,7 @@ pub async fn run(
         conversation: Some(
             crate::commands::agent_chat_task::StreamConversation::internal_legacy(messages),
         ),
+        continuation_target: None,
         tools: Vec::new(),
         think: false,
         provider: wakeup.provider.clone(),

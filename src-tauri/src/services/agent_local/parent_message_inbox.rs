@@ -47,7 +47,11 @@ impl ParentMessageInbox {
         F: FnOnce(NewUserTurnInput) -> Fut,
         Fut: Future<Output = Result<T, String>>,
     {
+        // Cette lease est propre à une inbox et borne une seule admission durable.
         let mut state = self.state.lock().await;
+        if !state.accepting {
+            return Ok(None);
+        }
         let Some(input) = state.intentions.front().cloned() else {
             return Ok(None);
         };

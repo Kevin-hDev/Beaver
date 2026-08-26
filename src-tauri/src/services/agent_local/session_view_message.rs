@@ -5,7 +5,7 @@ use crate::models::agent_session_contract::{
 
 use super::types_message::{AgentMessage, FileAttachment, SavedSegment, ToolActivityRecord};
 
-pub(super) fn from_message(message: &AgentMessage) -> Result<AgentMessageView, String> {
+pub(crate) fn from_message(message: &AgentMessage) -> Result<AgentMessageView, String> {
     Ok(AgentMessageView {
         id: message.id.clone(),
         turn_id: message.turn_id.clone(),

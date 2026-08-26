@@ -6,6 +6,7 @@ async fn spawn(
     stream: super::agent_chat_admission::AgentChatAdmission,
     work: super::agent_chat_work::AgentStreamAdmission,
     admitted: crate::services::agent_local::conversation_admission::AdmittedTurn,
+    continuation_target: crate::services::reasoning_continuity::contract::ContinuationTarget,
     resolved_dir: super::agent_working_dir::ResolvedWorkingDir,
     result: ChatStreamAdmission,
 ) -> Result<(), String> {
@@ -16,6 +17,7 @@ async fn spawn(
     let task_inbox = stream.parent_message_inbox.clone();
     let run_inbox = task_inbox.clone();
     let request_id = stream.request_id.clone();
+    let permission_mode = stream.permission_mode.clone();
     let generation = stream.generation;
     let emitter = AgentEventEmitter::with_generation(app.clone(), session_id.clone(), generation);
     let _ = emitter.send(StreamEvent::TurnAdmitted {
@@ -34,6 +36,7 @@ async fn spawn(
                 request_id: stream_request_id.clone(),
                 model: request.model,
                 conversation: Some(StreamConversation::canonical(admitted)),
+                continuation_target: Some(continuation_target),
                 tools: request.tools,
                 think: request.think,
                 provider: request.provider,
@@ -42,7 +45,7 @@ async fn spawn(
                 capability_hints: request.capability_hints,
                 reasoning_mode: request.reasoning_mode,
                 permission_mode: super::agent_chat_task::StreamPermissionMode::Bounded(Some(
-                    stream.permission_mode,
+                    permission_mode,
                 )),
                 permission_emitter: None,
                 parent_message_inbox: Some(run_inbox.clone()),
@@ -59,12 +62,7 @@ async fn spawn(
         }),
     );
     if let Err(error) = spawn_result {
-        stream.cancel.cancel();
-        task_inbox.close().await;
-        let mut map = streams.0.lock().await;
-        if matches!(map.get(&session_id), Some((_, active, _, _)) if *active == generation) {
-            map.remove(&session_id);
-        }
+        rollback(streams, &session_id, &stream).await;
         return Err(error);
     }
     Ok(())

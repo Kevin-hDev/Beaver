@@ -51,6 +51,9 @@ pub(crate) async fn start(
             return Err(error);
         }
     };
+    request.think = target.think;
+    request.reasoning_mode = target.reasoning_mode.clone();
+    request.capability_hints = StreamCapabilityHints::default();
     let resolved_dir = match super::agent_working_dir::resolve_for_session(
         &request.session_id,
         request.working_dir.as_deref(),
@@ -72,7 +75,15 @@ pub(crate) async fn start(
             return Err(error);
         }
     };
-    let admitted = match super::agent_chat_turn::admit(&request.session_id, turn, target).await {
+    let admitted = match super::agent_chat_turn::admit_current(
+        streams,
+        &request.session_id,
+        stream.generation,
+        turn,
+        target.continuation.clone(),
+    )
+    .await
+    {
         Ok(admitted) => admitted,
         Err(error) => {
             rollback(streams, &request.session_id, &stream).await;
@@ -92,6 +103,7 @@ pub(crate) async fn start(
         stream,
         work,
         admitted,
+        target.continuation,
         resolved_dir,
         result.clone(),
     )
@@ -140,7 +152,7 @@ async fn admit_stream(
     .await
 }
 
-async fn rollback(
+pub(crate) async fn rollback(
     streams: &ActiveStreams,
     session_id: &str,
     stream: &super::agent_chat_admission::AgentChatAdmission,
@@ -148,9 +160,19 @@ async fn rollback(
     stream.cancel.cancel();
     stream.parent_message_inbox.close().await;
     let mut map = streams.0.lock().await;
-    if matches!(map.get(session_id), Some((_, generation, _, _)) if *generation == stream.generation)
-    {
+    let current = matches!(map.get(session_id), Some((_, generation, _, _)) if *generation == stream.generation);
+    if current {
         map.remove(session_id);
+    }
+    drop(map);
+    if current {
+        crate::services::agent_local::stream_diagnostics::record_failure(
+            session_id,
+            Some(&stream.request_id),
+            generic_error().as_str(),
+            false,
+        )
+        .await;
     }
 }
 

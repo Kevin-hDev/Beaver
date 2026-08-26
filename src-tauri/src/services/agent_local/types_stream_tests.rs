@@ -1,4 +1,5 @@
 use super::StreamEvent;
+use super::super::types_message::AgentMessage;
 use crate::services::agent_local::tool_result_contract::ToolResultStatus;
 use crate::services::agent_local::types_interactive::AgentInteractiveChoiceKind;
 
@@ -149,5 +150,45 @@ fn turn_lifecycle_events_expose_only_local_ids() {
         for forbidden in ["continuation", "replaySource", "credentialScope", "history"] {
             assert!(data.get(forbidden).is_none());
         }
+    }
+}
+
+#[test]
+fn session_snapshot_projects_only_positive_message_view_fields() {
+    let envelope = super::super::session_view_test_support::responses_envelope(
+        crate::services::reasoning_continuity::envelope::CompletionState::Complete,
+    );
+    let private = AgentMessage {
+            id: "assistant-1".into(),
+            turn_id: "turn-1".into(),
+            role: "assistant".into(),
+            content: "visible".into(),
+            thinking: Some("visible thinking".into()),
+            tool_calls: None,
+            tool_name: None,
+            tool_call_id: None,
+            replay_source: Some(envelope.source.clone()),
+            continuation: Some(envelope),
+            tool_activities: None,
+            segments: None,
+            files: Vec::new(),
+            timestamp: chrono::Utc::now(),
+            tokens: 0,
+            work_duration_ms: None,
+            skill_names: Some(vec!["Visible".into()]),
+            skill_ids: Some(vec!["private:skill:id".into()]),
+            stream_run_id: None,
+            stream_part: None,
+        };
+    let event = StreamEvent::SessionSnapshot {
+        messages: super::super::session_view::messages(&[private]).unwrap(),
+        token_count: 0,
+    };
+
+    let serialized = serde_json::to_value(event).unwrap();
+    let message = &serialized["data"]["messages"][0];
+    assert_eq!(message["content"], "visible");
+    for forbidden in ["continuation", "replay_source", "replaySource", "skill_ids", "skillIds"] {
+        assert!(message.get(forbidden).is_none(), "private field {forbidden}");
     }
 }

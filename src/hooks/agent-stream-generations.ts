@@ -54,6 +54,7 @@ export function acceptsStreamEvent(
   event: StreamEvent,
 ): boolean {
   if (typeof generation === "number") {
+    if (record.awaitingAdmission) return false;
     if (record.cancelledGenerations.includes(generation)) return false;
     if (record.activeGeneration !== null && record.activeGeneration !== generation) {
       quarantineGeneration(record, generation);

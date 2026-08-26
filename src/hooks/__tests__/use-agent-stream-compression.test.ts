@@ -68,6 +68,7 @@ describe("useAgentStream compression", () => {
       [command],
       123,
       "compression",
+      true,
     );
   });
 
@@ -91,6 +92,7 @@ describe("useAgentStream compression", () => {
       [message],
       123,
       "chat",
+      true,
     );
   });
 });

@@ -92,6 +92,9 @@ pub async fn record_extension_tools(
 
 pub async fn record_completed(session_id: &str, request_id: &str) {
     let _ = support::update_run(session_id, request_id, |session, run| {
+        if run.ended_at.is_some() {
+            return;
+        }
         run.status = "completed".to_string();
         run.phase = "completed".to_string();
         run.severity = "info".to_string();
@@ -105,6 +108,9 @@ pub async fn record_completed(session_id: &str, request_id: &str) {
 
 pub async fn record_cancelled(session_id: &str, request_id: &str) {
     let _ = support::update_run(session_id, request_id, |_session, run| {
+        if run.ended_at.is_some() {
+            return;
+        }
         run.status = "cancelled".to_string();
         run.phase = "failed".to_string();
         run.severity = "warning".to_string();
@@ -124,13 +130,19 @@ pub async fn record_failure(
 ) -> Option<AgentErrorDiagnosticSummary> {
     let mut summary = None;
     let _ = support::update_session(session_id, |session| {
-        push_failure(session, message, is_connection);
         if let Some(id) = request_id {
             if let Some(idx) = support::find_run(session, id) {
+                if session.diagnostic_runs[idx].ended_at.is_some() {
+                    summary = Some(failure::summary_from_run(&session.diagnostic_runs[idx]));
+                    return;
+                }
+                push_failure(session, message, is_connection);
                 failure::apply_failure(session, idx, message, is_connection);
                 summary = Some(failure::summary_from_run(&session.diagnostic_runs[idx]));
+                return;
             }
         }
+        push_failure(session, message, is_connection);
     })
     .await;
     summary

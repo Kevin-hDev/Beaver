@@ -1,11 +1,44 @@
 use serde_json::json;
 
 use super::agent_turn_contract::{
-    typescript_bindings, ChatStreamAdmission, NewUserTurnInput, ResumeTurnInput, SkillReference,
-    TurnAttachmentInput, TurnStart, MAX_ATTACHMENT_GRANT_BYTES, MAX_ATTACHMENT_MIME_BYTES,
-    MAX_ATTACHMENT_NAME_BYTES, MAX_ATTACHMENT_PATH_BYTES, MAX_ATTACHMENT_THUMBNAIL_BYTES,
-    MAX_RESUME_MESSAGE_ID_BYTES, MAX_SKILL_ID_BYTES, MAX_SKILL_NAME_BYTES, MAX_TURN_CONTENT_BYTES,
+    typescript_bindings, ChatStreamAdmission, ChatStreamRequestInput, NewUserTurnInput,
+    ResumeTurnInput, SkillReference, TurnAttachmentInput, TurnStart, MAX_ATTACHMENT_GRANT_BYTES,
+    MAX_ATTACHMENT_MIME_BYTES, MAX_ATTACHMENT_NAME_BYTES, MAX_ATTACHMENT_PATH_BYTES,
+    MAX_ATTACHMENT_THUMBNAIL_BYTES, MAX_RESUME_MESSAGE_ID_BYTES, MAX_SKILL_ID_BYTES,
+    MAX_SKILL_NAME_BYTES, MAX_TURN_CONTENT_BYTES,
 };
+
+#[test]
+fn chat_stream_root_accepts_one_strict_request_and_rejects_controls() {
+    let valid = json!({
+        "sessionId": "session-1",
+        "model": "qwen3.5:4b",
+        "provider": "ollama",
+        "turn": {"type": "new", "input": {"content": "q", "files": [], "skills": []}},
+        "workingDir": null,
+        "permissionMode": null,
+        "planMode": null
+    });
+    assert!(serde_json::from_value::<ChatStreamRequestInput>(valid.clone()).is_ok());
+
+    for (field, value) in [
+        ("messages", json!([])),
+        ("unknown", json!(true)),
+        ("think", json!(true)),
+        ("supportsThinking", json!(true)),
+        ("supportsTools", json!(true)),
+        ("supportsVision", json!(true)),
+        ("reasoningMode", json!("high")),
+        ("tools", json!([])),
+    ] {
+        let mut forged = valid.clone();
+        forged[field] = value;
+        assert!(
+            serde_json::from_value::<ChatStreamRequestInput>(forged).is_err(),
+            "forged root field {field}"
+        );
+    }
+}
 
 #[test]
 fn chat_turn_start_is_a_strict_single_intention() {

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { agentStreamManager } from "../agent-stream-manager";
 import { records } from "../agent-stream-records";
 import type { AgentMessage, StreamEvent } from "@/types/agent";
+import type { AgentMessageView } from "@/types/agent-session.generated";
 
 const mocks = vi.hoisted(() => ({ invoke: vi.fn(), listen: vi.fn() }));
 let streamHandler: ((event: {
@@ -81,11 +82,19 @@ function emit(sessionId: string, event: StreamEvent) {
   streamHandler?.({ payload: { sessionId, event } });
 }
 
-function message(id: string, role: AgentMessage["role"], content: string): AgentMessage {
-  return { id, role, content, timestamp: "2026-07-11T10:00:00Z", files: [] };
+function message(
+  id: string,
+  role: AgentMessage["role"],
+  content: string,
+): AgentMessage & AgentMessageView {
+  return {
+    id, turn_id: `turn-${id}`, role, content,
+    timestamp: "2026-07-11T10:00:00Z", files: [], tokens: 0,
+    reasoning_replay_status: "unavailable",
+  };
 }
 
-function snapshotEvent(messages: AgentMessage[]): StreamEvent {
+function snapshotEvent(messages: AgentMessageView[]): StreamEvent {
   return { event: "sessionSnapshot", data: { messages, tokenCount: 0 } };
 }
 

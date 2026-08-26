@@ -38,24 +38,39 @@ where
         }
     }
     let request_id = start_request().await;
-    let old_stream = {
+    // Même lease que l'admission durable : elle définit l'ordre remplacement/admission.
+    let session_lease = crate::services::agent_local::session_store::lock_session(session_id).await;
+    let session_guard = session_lease.lock().await;
+    let inserted = {
         let mut map = streams.0.lock().await;
         if map.len()
             >= crate::services::agent_local::agent_work_supervision::MAX_ACTIVE_AGENT_STREAMS
             && !map.contains_key(session_id)
         {
-            return Err(ACTIVE_STREAM_LIMIT_REACHED.to_string());
+            None
+        } else {
+            Some(map.insert(
+                session_id.to_string(),
+                (cancel.clone(), generation, request_id.clone(), inbox),
+            ))
         }
-        let old_stream = map.insert(
-            session_id.to_string(),
-            (cancel.clone(), generation, request_id.clone(), inbox),
-        );
-        crate::services::agent_local::subagent_registry::adopt_children_for_parent_stream(
-            session_id, &cancel,
+    };
+    let Some(old_stream) = inserted else {
+        drop(session_guard);
+        crate::services::agent_local::stream_diagnostics::record_failure(
+            session_id,
+            Some(&request_id),
+            "conversation_admission_failed",
+            false,
         )
         .await;
-        old_stream
+        return Err(ACTIVE_STREAM_LIMIT_REACHED.to_string());
     };
+    drop(session_guard);
+    crate::services::agent_local::subagent_registry::adopt_children_for_parent_stream(
+        session_id, &cancel,
+    )
+    .await;
     if let Some(old_stream) = old_stream {
         cancel_previous(old_stream).await;
     }

@@ -8,6 +8,7 @@ mod conversation_attachment_format;
 mod conversation_attachment_types;
 pub mod conversation_attachments;
 pub mod conversation_admission;
+mod conversation_admission_ids;
 mod conversation_edit;
 pub mod conversation_history;
 mod conversation_history_build;
@@ -15,7 +16,7 @@ mod conversation_history_field_validation;
 mod conversation_history_resolve;
 mod conversation_history_validation;
 pub mod conversation_input;
-mod conversation_resume;
+pub(crate) mod conversation_resume;
 #[cfg(test)]
 mod conversation_input_tests;
 #[cfg(test)]

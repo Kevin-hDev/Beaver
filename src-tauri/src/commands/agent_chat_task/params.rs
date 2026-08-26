@@ -2,6 +2,10 @@ use crate::services::agent_local::stream_events::AgentEventEmitter;
 use tokio_util::sync::CancellationToken;
 
 #[derive(Debug, Clone, Default)]
+#[allow(
+    dead_code,
+    reason = "legacy internal producers cannot govern canonical chat"
+)]
 pub(crate) struct StreamCapabilityHints {
     pub supports_tools: Option<bool>,
     pub supports_thinking: Option<bool>,
@@ -14,6 +18,8 @@ pub(crate) struct StreamTaskParams {
     pub request_id: String,
     pub model: String,
     pub conversation: Option<super::conversation::StreamConversation>,
+    pub continuation_target:
+        Option<crate::services::reasoning_continuity::contract::ContinuationTarget>,
     pub tools: Vec<serde_json::Value>,
     pub think: bool,
     pub provider: String,

@@ -56,10 +56,12 @@ pub(super) async fn run_inner(
         super::stream_diagnostics::start_request(&child_session_id, generation).await;
     super::subagent_activity::record_status(&child_session_id, "Démarré", None).await;
     if let Ok(child_session) = session_store::get(&child_session_id).await {
-        let _ = emitter.send(StreamEvent::SessionSnapshot {
-            messages: child_session.messages,
-            token_count: child_session.accumulated_tokens,
-        });
+        if let Ok(messages) = super::session_view::messages(&child_session.messages) {
+            let _ = emitter.send(StreamEvent::SessionSnapshot {
+                messages,
+                token_count: child_session.accumulated_tokens,
+            });
+        }
     }
 
     let result = run_stream_task(StreamTaskParams {
@@ -70,6 +72,7 @@ pub(super) async fn run_inner(
         conversation: Some(
             crate::commands::agent_chat_task::StreamConversation::internal_legacy(messages),
         ),
+        continuation_target: None,
         tools,
         think: runtime_context.think,
         provider,

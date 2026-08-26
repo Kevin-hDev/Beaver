@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { runReasoningMutation } from "./session-reasoning-mutation";
 import { listen } from "@tauri-apps/api/event";
 import { cleanupTauriListener } from "@/lib/tauri-listen";
 import type { AgentSessionMeta } from "@/types/agent";
@@ -151,10 +152,12 @@ export function useAgentSessions() {
   const updateReasoning = useCallback(
     async (id: string, reasoningMode: string | null, supportsThinking?: boolean) => {
       try {
-        await invoke("update_session_reasoning", {
-          id,
-          reasoningMode,
-          supportsThinking: supportsThinking ?? null,
+        await runReasoningMutation(id, async () => {
+          await invoke("update_session_reasoning", {
+            id,
+            reasoningMode,
+            supportsThinking: supportsThinking ?? null,
+          });
         });
         await refresh();
       } catch (error) {

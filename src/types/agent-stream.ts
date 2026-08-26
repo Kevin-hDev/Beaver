@@ -1,6 +1,6 @@
 import type { AgentInteractiveChoiceRequest } from "./agent-interactive";
-import type { AgentMessage } from "./agent-message";
 import type { ToolFileChangeRecord } from "./agent-message";
+import type { AgentMessageView } from "./agent-session.generated";
 import type { AgentPlanPreview } from "./agent-plan";
 import type { SubagentStatus } from "./agent-session";
 import type { AgentTodoItem } from "./agent-todo";
@@ -69,7 +69,7 @@ export type StreamEvent =
   | { event: "retryIndicator"; data: RetryIndicatorState }
   | { event: "compressing"; data: { status: string } }
   | { event: "compressionComplete"; data: Record<string, never> }
-  | { event: "sessionSnapshot"; data: { messages: AgentMessage[]; tokenCount: number } }
+  | { event: "sessionSnapshot"; data: { messages: AgentMessageView[]; tokenCount: number } }
   | { event: "subagentSpawned"; data: { subagentSessionId: string; subagentName: string; subagentType: string; subagentDescription: string; subagentColorKey: string; promptPreview: string; runId?: string } }
   | { event: "subagentCompleted"; data: { subagentSessionId: string; success: boolean; status: SubagentStatus; summary: string; runId?: string } }
   | { event: "todoUpdated"; data: { todos: AgentTodoItem[] } }

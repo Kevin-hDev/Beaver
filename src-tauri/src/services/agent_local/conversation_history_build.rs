@@ -1,6 +1,6 @@
 use std::ops::Range;
 
-use crate::services::reasoning_continuity::contract::ReplayTarget;
+use crate::services::reasoning_continuity::contract::{ContinuationTarget, ReplayTarget};
 use crate::services::reasoning_continuity::envelope::{CompletionState, ReasoningEnvelope};
 
 use super::conversation_history::{
@@ -12,15 +12,24 @@ pub(super) fn from_session(
     session: &super::types_session::AgentSession,
     target: &ReplayTarget,
 ) -> Result<ConversationHistory, ConversationHistoryError> {
+    from_continuation(session, &ContinuationTarget::Replay(target.clone()))
+}
+
+pub(super) fn from_continuation(
+    session: &super::types_session::AgentSession,
+    target: &ContinuationTarget,
+) -> Result<ConversationHistory, ConversationHistoryError> {
     validate_target(session, target)?;
     let turns = super::conversation_history_validation::validate(&session.messages)?;
     validate_envelopes(&session.messages)?;
-    let suffix = compatible_suffix(&session.messages, &turns, target);
+    let suffix = target.replay().map_or(session.messages.len(), |replay| {
+        compatible_suffix(&session.messages, &turns, replay)
+    });
     let mut messages = session
         .messages
         .iter()
         .enumerate()
-        .map(|(index, message)| convert(message, index >= suffix, target))
+        .map(|(index, message)| convert(message, index >= suffix, target.replay()))
         .collect::<Result<Vec<_>, _>>()?;
     if suffix > 0 && suffix < messages.len() {
         messages[suffix].continuity_barrier_before = true;
@@ -33,19 +42,19 @@ pub(super) fn from_session(
 
 fn validate_target(
     session: &super::types_session::AgentSession,
-    target: &ReplayTarget,
+    target: &ContinuationTarget,
 ) -> Result<(), ConversationHistoryError> {
     target.validate().map_err(|_| ConversationHistoryError)?;
-    let route = serde_json::to_value(target.route_id)
+    let route = serde_json::to_value(target.route_id())
         .ok()
         .and_then(|value| value.as_str().map(str::to_owned))
         .ok_or(ConversationHistoryError)?;
-    let mode = serde_json::to_value(target.reasoning_mode)
+    let mode = serde_json::to_value(target.reasoning_mode())
         .ok()
         .and_then(|value| value.as_str().map(str::to_owned))
         .ok_or(ConversationHistoryError)?;
     let session_mode = session.reasoning_mode.as_deref().unwrap_or("off");
-    if session.provider != route || session.model != target.model_id || session_mode != mode {
+    if session.provider != route || session.model != target.model_id() || session_mode != mode {
         return Err(ConversationHistoryError);
     }
     Ok(())
@@ -98,7 +107,7 @@ fn matches_target(envelope: &ReasoningEnvelope, target: &ReplayTarget) -> bool {
 fn convert(
     message: &AgentMessage,
     in_suffix: bool,
-    target: &ReplayTarget,
+    target: Option<&ReplayTarget>,
 ) -> Result<ProviderMessage, ConversationHistoryError> {
     let role = match message.role.as_str() {
         "user" => ProviderRole::User,
@@ -109,7 +118,9 @@ fn convert(
     let continuation = message
         .continuation
         .as_ref()
-        .filter(|envelope| in_suffix && matches_target(envelope, target))
+        .filter(|envelope| {
+            target.is_some_and(|target| in_suffix && matches_target(envelope, target))
+        })
         .cloned();
     Ok(ProviderMessage {
         message_id: Some(message.id.clone()),

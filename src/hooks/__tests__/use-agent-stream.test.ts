@@ -16,10 +16,14 @@ const mocks = vi.hoisted(() => ({
   setSessionGeneration: vi.fn(), reconcileTurnAdmission: vi.fn(), subscribe: vi.fn(),
   getSnapshot: vi.fn(), isStreaming: vi.fn(), queueUserMessage: vi.fn(),
   removeQueuedUserMessage: vi.fn(), showToast: vi.fn(),
+  awaitPendingReasoning: vi.fn(),
 }));
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: mocks.invoke }));
 vi.mock("@/lib/toast-emitter", () => ({ showToast: mocks.showToast }));
+vi.mock("../session-reasoning-mutation", () => ({
+  awaitPendingReasoning: mocks.awaitPendingReasoning,
+}));
 vi.mock("../agent-stream-manager", () => ({
   agentStreamManager: {
     startSession: mocks.startSession, failSession: mocks.failSession,
@@ -46,7 +50,8 @@ function userMessage(content: string, id = "optimistic"): AgentMessage {
 describe("useAgentStream", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.invoke.mockResolvedValue(ADMISSION);
+    mocks.invoke.mockReset().mockResolvedValue(ADMISSION);
+    mocks.awaitPendingReasoning.mockResolvedValue(undefined);
     mocks.startSession.mockResolvedValue(undefined);
     mocks.queueUserMessage.mockReturnValue(true);
   });
@@ -65,10 +70,10 @@ describe("useAgentStream", () => {
       { displayMessages: [message], baseTokenCount: 0 },
     ));
 
-    expect(mocks.invoke).toHaveBeenCalledWith("chat_stream", expect.objectContaining({
-      turn: next,
-    }));
-    expect(mocks.invoke.mock.calls[0]?.[1]).not.toHaveProperty("messages");
+    expect(mocks.invoke).toHaveBeenCalledWith("chat_stream", { request: {
+      sessionId: "session-1", model: "model", provider: "provider", turn: next,
+      workingDir: null, permissionMode: null, planMode: null,
+    } });
   });
 
   it("adopte la génération et les trois identifiants Rust", async () => {
@@ -86,6 +91,32 @@ describe("useAgentStream", () => {
     expect(mocks.reconcileTurnAdmission).toHaveBeenCalledWith(
       "session-1", ADMISSION, "optimistic",
     );
+  });
+
+  it("attend la persistance d'un changement de mode avant l'admission", async () => {
+    let releaseMode = () => {};
+    mocks.awaitPendingReasoning.mockImplementationOnce(() => new Promise<void>((resolve) => {
+      releaseMode = resolve;
+    }));
+    const message = userMessage("Question");
+    const { result } = renderHook(() => useAgentStream());
+
+    let starting!: Promise<void>;
+    await act(async () => {
+      starting = result.current.startStream(
+        "session-1", "model", "provider", turn("Question"), true,
+        { displayMessages: [message], baseTokenCount: 0 },
+      );
+      await Promise.resolve();
+    });
+    expect(mocks.invoke).not.toHaveBeenCalled();
+
+    await act(async () => {
+      releaseMode();
+      await starting;
+    });
+    expect(mocks.awaitPendingReasoning).toHaveBeenCalledWith("session-1");
+    expect(mocks.invoke).toHaveBeenCalledTimes(1);
   });
 
   it("met en file une intention unique sans historique", async () => {
@@ -106,6 +137,93 @@ describe("useAgentStream", () => {
       sessionId: "session-1", generation: 42, input: input("Suite"),
     });
     expect(mocks.invoke.mock.calls[1]?.[1]).not.toHaveProperty("messages");
+  });
+
+  it("borne et diffère un second envoi pendant l'admission Rust", async () => {
+    let resolveAdmission = (_value: typeof ADMISSION) => {};
+    mocks.invoke.mockImplementationOnce(() => new Promise<typeof ADMISSION>((resolve) => {
+      resolveAdmission = resolve;
+    })).mockResolvedValueOnce(true);
+    const first = userMessage("Question");
+    const queued = userMessage("Suite", "queued");
+    const { result } = renderHook(() => useAgentStream());
+
+    let starting!: Promise<void>;
+    let queuedDuringAdmission = false;
+    await act(async () => {
+      starting = result.current.startStream(
+        "session-1", "model", "provider", turn("Question"), false,
+        { displayMessages: [first], baseTokenCount: 0 },
+      );
+      await vi.waitFor(() => expect(mocks.invoke).toHaveBeenCalledTimes(1));
+      queuedDuringAdmission = await result.current.queueStreamMessage(
+        "session-1", input("Suite"), queued,
+      );
+      resolveAdmission(ADMISSION);
+      await starting;
+    });
+    expect(queuedDuringAdmission).toBe(true);
+    expect(mocks.invoke).toHaveBeenCalledTimes(2);
+    expect(mocks.queueUserMessage).toHaveBeenCalledWith("session-1", queued);
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(mocks.invoke).toHaveBeenLastCalledWith("queue_agent_message", {
+      sessionId: "session-1", generation: 42, input: input("Suite"),
+    });
+  });
+
+  it("ne mélange jamais le staging de deux sessions", async () => {
+    let resolveAdmission = (_value: typeof ADMISSION) => {};
+    mocks.invoke.mockImplementationOnce(() => new Promise<typeof ADMISSION>((resolve) => {
+      resolveAdmission = resolve;
+    }));
+    const { result } = renderHook(() => useAgentStream());
+    let starting!: Promise<void>;
+    let crossSession = true;
+    await act(async () => {
+      starting = result.current.startStream(
+        "session-1", "model", "provider", turn("Question"), false,
+        { displayMessages: [userMessage("Question")], baseTokenCount: 0 },
+      );
+      await vi.waitFor(() => expect(mocks.invoke).toHaveBeenCalledTimes(1));
+      crossSession = await result.current.queueStreamMessage(
+        "session-2", input("Autre"), userMessage("Autre", "other"),
+      );
+      resolveAdmission(ADMISSION);
+      await starting;
+    });
+
+    expect(crossSession).toBe(false);
+    expect(mocks.queueUserMessage).not.toHaveBeenCalled();
+    expect(mocks.invoke).toHaveBeenCalledTimes(1);
+  });
+
+  it("retire le staging transitoire au démontage sans relancer un stream", async () => {
+    let resolveAdmission = (_value: typeof ADMISSION) => {};
+    mocks.invoke.mockImplementationOnce(() => new Promise<typeof ADMISSION>((resolve) => {
+      resolveAdmission = resolve;
+    }));
+    const { result, unmount } = renderHook(() => useAgentStream());
+    let starting!: Promise<void>;
+    await act(async () => {
+      starting = result.current.startStream(
+        "session-1", "model", "provider", turn("Question"), false,
+        { displayMessages: [userMessage("Question")], baseTokenCount: 0 },
+      );
+      await vi.waitFor(() => expect(mocks.invoke).toHaveBeenCalledTimes(1));
+      await result.current.queueStreamMessage(
+        "session-1", input("Suite"), userMessage("Suite", "queued-unmount"),
+      );
+      unmount();
+    });
+    expect(mocks.removeQueuedUserMessage).toHaveBeenCalledWith(
+      "session-1", "queued-unmount",
+    );
+    resolveAdmission(ADMISSION);
+    await starting;
+    expect(mocks.invoke).toHaveBeenCalledTimes(1);
   });
 
   it("annule avec la génération Rust active", async () => {

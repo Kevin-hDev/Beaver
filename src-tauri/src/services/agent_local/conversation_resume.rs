@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use uuid::Uuid;
 
 use crate::models::agent_turn_contract::ResumeTurnInput;
-use crate::services::reasoning_continuity::contract::ReplayTarget;
+use crate::services::reasoning_continuity::contract::{ContinuationTarget, ReplayTarget};
 
 use super::conversation_admission::{error, unique_uuid, AdmittedTurn, ConversationAdmissionError};
 use super::conversation_history::ProviderRole;
@@ -14,22 +14,43 @@ pub async fn resume(
     input: ResumeTurnInput,
     target: ReplayTarget,
 ) -> Result<AdmittedTurn, ConversationAdmissionError> {
-    resume_inner(session_id, input, target, AttachmentKeySource::Vault).await
+    resume_for_continuation(session_id, input, ContinuationTarget::Replay(target)).await
+}
+
+pub async fn resume_for_continuation(
+    session_id: &str,
+    input: ResumeTurnInput,
+    target: ContinuationTarget,
+) -> Result<AdmittedTurn, ConversationAdmissionError> {
+    resume_inner(session_id, input, target, true, AttachmentKeySource::Vault).await
+}
+
+pub(crate) async fn resume_with_lease(
+    session_id: &str,
+    input: ResumeTurnInput,
+    target: ContinuationTarget,
+) -> Result<AdmittedTurn, ConversationAdmissionError> {
+    resume_inner(session_id, input, target, false, AttachmentKeySource::Vault).await
 }
 
 async fn resume_inner(
     session_id: &str,
     input: ResumeTurnInput,
-    target: ReplayTarget,
+    target: ContinuationTarget,
+    acquire_lock: bool,
     key_source: AttachmentKeySource,
 ) -> Result<AdmittedTurn, ConversationAdmissionError> {
     super::session_store::validate_session_id(session_id).map_err(|_| error())?;
     let lock = super::session_store::lock_session(session_id).await;
-    let _guard = lock.lock().await;
+    let _guard = if acquire_lock {
+        Some(lock.lock().await)
+    } else {
+        None
+    };
     let session = super::session_store::get(session_id)
         .await
         .map_err(|_| error())?;
-    let history = super::conversation_history_resolve::from_session(
+    let history = super::conversation_history_resolve::from_session_for_continuation(
         &session,
         &target,
         key_source,
@@ -71,7 +92,8 @@ pub(crate) async fn resume_with_key(
     resume_inner(
         session_id,
         input,
-        target,
+        ContinuationTarget::Replay(target),
+        true,
         AttachmentKeySource::Fixed(key.try_into().map_err(|_| error())?),
     )
     .await

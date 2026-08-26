@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 
 use super::limits::{validate_credential_scope, validate_model_id, LimitError};
 
+pub use super::continuation_target::{ContinuationTarget, NonReplayTarget};
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum ContractId {

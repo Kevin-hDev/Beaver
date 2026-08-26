@@ -33,6 +33,7 @@ export function getOrCreateRecord(sessionId: string): StreamRecord {
     notifyHandle: null,
     started: false,
     activeGeneration: null,
+    awaitingAdmission: false,
     cancelledGenerations: [],
     cancelledWithoutGeneration: false,
   };
@@ -52,12 +53,20 @@ export function startStreamRecord(
   messages: AgentMessage[],
   sessionTokenCount: number,
   streamKind: StreamKind,
+  awaitingAdmission = false,
 ): StreamRecord {
   const record = getOrCreateRecord(sessionId);
   clearCleanup(record);
   record.state = createManagedStreamState(messages, sessionTokenCount, streamKind);
   record.started = true;
+  if (awaitingAdmission && record.activeGeneration !== null) {
+    record.cancelledGenerations = [
+      ...record.cancelledGenerations,
+      record.activeGeneration,
+    ].slice(-16);
+  }
   record.activeGeneration = null;
+  record.awaitingAdmission = awaitingAdmission;
   record.cancelledWithoutGeneration = false;
   touchSession(sessionId, record);
   return record;

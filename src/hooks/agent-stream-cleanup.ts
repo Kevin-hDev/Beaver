@@ -14,6 +14,7 @@ export interface StreamRecord {
   notifyHandle: { cancel: () => void } | null;
   started: boolean;
   activeGeneration: number | null;
+  awaitingAdmission: boolean;
   cancelledGenerations: number[];
   cancelledWithoutGeneration: boolean;
 }

@@ -5,6 +5,7 @@ import { toStreamActivity } from "./agent-stream-activity";
 export function setSessionGeneration(sessionId: string, generation: number) {
   const record = getRecord(sessionId);
   if (!record) return;
+  record.awaitingAdmission = false;
   setStreamGeneration(record, generation);
 }
 

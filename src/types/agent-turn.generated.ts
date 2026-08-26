@@ -11,4 +11,6 @@ export type ResumeTurnInput = { message_id: string, };
 
 export type TurnStart = { "type": "new", "input": NewUserTurnInput } | { "type": "resume", "input": ResumeTurnInput };
 
+export type ChatStreamRequestInput = { sessionId: string, model: string, provider: string, turn: TurnStart, workingDir: string | null, permissionMode: string | null, planMode: boolean | null, };
+
 export type ChatStreamAdmission = { generation: number, turnId: string, userMessageId: string, assistantMessageId: string, };

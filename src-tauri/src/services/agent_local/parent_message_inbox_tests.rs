@@ -1,5 +1,10 @@
 use super::parent_message_inbox::ParentMessageInbox;
 use crate::models::agent_turn_contract::{NewUserTurnInput, SkillReference};
+use std::sync::{
+    atomic::{AtomicUsize, Ordering},
+    Arc,
+};
+use tokio::sync::oneshot;
 
 #[tokio::test]
 async fn one_intention_is_admitted_only_after_an_explicit_commit_signal() {
@@ -56,6 +61,54 @@ async fn eight_skill_references_remain_one_queue_entry_and_close_is_fail_closed(
     inbox.close().await;
     assert!(!inbox.enqueue(user("trop tard")).await.unwrap());
     assert_eq!(inbox.len().await, 1);
+}
+
+#[tokio::test]
+async fn close_before_drain_never_invokes_the_admission_closure() {
+    let inbox = ParentMessageInbox::new();
+    inbox.enqueue(user("question")).await.unwrap();
+    inbox.close().await;
+    let calls = Arc::new(AtomicUsize::new(0));
+    let observed = Arc::clone(&calls);
+
+    let admitted = inbox
+        .admit_one_after_commit(move |_| {
+            observed.fetch_add(1, Ordering::SeqCst);
+            async { Ok::<_, String>(()) }
+        })
+        .await
+        .unwrap();
+
+    assert!(admitted.is_none());
+    assert_eq!(calls.load(Ordering::SeqCst), 0);
+    assert_eq!(inbox.len().await, 1);
+}
+
+#[tokio::test]
+async fn concurrent_drain_and_close_have_one_linearized_order() {
+    let inbox = Arc::new(ParentMessageInbox::new());
+    inbox.enqueue(user("question")).await.unwrap();
+    let (entered_tx, entered_rx) = oneshot::channel();
+    let (release_tx, release_rx) = oneshot::channel();
+    let draining_inbox = Arc::clone(&inbox);
+    let draining = tokio::spawn(async move {
+        draining_inbox
+            .admit_one_after_commit(move |_| async move {
+                let _ = entered_tx.send(());
+                let _ = release_rx.await;
+                Ok::<_, String>("admitted")
+            })
+            .await
+    });
+    entered_rx.await.unwrap();
+    let closing_inbox = Arc::clone(&inbox);
+    let closing = tokio::spawn(async move { closing_inbox.close().await });
+    release_tx.send(()).unwrap();
+
+    assert_eq!(draining.await.unwrap().unwrap(), Some("admitted"));
+    closing.await.unwrap();
+    assert_eq!(inbox.len().await, 0);
+    assert!(!inbox.enqueue(user("late")).await.unwrap());
 }
 
 fn user(content: &str) -> NewUserTurnInput {

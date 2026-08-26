@@ -82,6 +82,19 @@ pub struct ChatStreamAdmission {
     pub assistant_message_id: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ChatStreamRequestInput {
+    pub session_id: String,
+    pub model: String,
+    pub provider: String,
+    pub turn: TurnStart,
+    pub working_dir: Option<String>,
+    pub permission_mode: Option<String>,
+    pub plan_mode: Option<bool>,
+}
+
 impl<'de> Deserialize<'de> for NewUserTurnInput {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -129,6 +142,7 @@ pub(crate) fn typescript_bindings() -> String {
         NewUserTurnInput::decl(&config),
         ResumeTurnInput::decl(&config),
         TurnStart::decl(&config),
+        ChatStreamRequestInput::decl(&config),
         ChatStreamAdmission::decl(&config),
     ];
     format!(

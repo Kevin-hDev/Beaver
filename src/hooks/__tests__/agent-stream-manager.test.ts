@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { agentStreamManager } from "../agent-stream-manager";
 import { records } from "../agent-stream-records";
 import type { AgentMessage, StreamEvent } from "@/types/agent";
+import type { AgentMessageView } from "@/types/agent-session.generated";
 
 const mocks = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -18,8 +19,16 @@ vi.mock("@tauri-apps/api/event", () => ({
   listen: mocks.listen,
 }));
 
-function message(id: string, role: AgentMessage["role"], content: string): AgentMessage {
-  return { id, role, content, timestamp: "2026-06-24T10:00:00Z", files: [] };
+function message(
+  id: string,
+  role: AgentMessage["role"],
+  content: string,
+): AgentMessage & AgentMessageView {
+  return {
+    id, turn_id: `turn-${id}`, role, content,
+    timestamp: "2026-06-24T10:00:00Z", files: [], tokens: 0,
+    reasoning_replay_status: "unavailable",
+  };
 }
 
 function emit(sessionId: string, event: StreamEvent, generation?: number) {
@@ -211,5 +220,20 @@ describe("agentStreamManager", () => {
     expect(messages[1]).toEqual(expect.objectContaining({
       id: turn.assistantMessageId, turn_id: turn.turnId, content: "Réponse",
     }));
+  });
+
+  it("met en file une intention pendant l'attente de la génération Rust", async () => {
+    await agentStreamManager.startSession(
+      "s1", [message("u1", "user", "Question")], 10, "chat", true,
+    );
+
+    const queued = agentStreamManager.queueUserMessage(
+      "s1", message("u2", "user", "Suite"),
+    );
+
+    expect(queued).toBe(true);
+    expect(agentStreamManager.getSnapshot("s1")?.queuedUserMessages).toEqual([
+      expect.objectContaining({ id: "u2", content: "Suite" }),
+    ]);
   });
 });

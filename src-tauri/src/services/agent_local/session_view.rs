@@ -80,6 +80,15 @@ pub fn from_session(session: &AgentSession) -> Result<AgentSessionView, String> 
     })
 }
 
+pub(crate) fn messages(
+    source: &[super::types_message::AgentMessage],
+) -> Result<Vec<crate::models::agent_session_contract::AgentMessageView>, String> {
+    source
+        .iter()
+        .map(super::session_view_message::from_message)
+        .collect()
+}
+
 pub(super) fn replay_status(envelope: Option<&ReasoningEnvelope>) -> ReasoningReplayStatus {
     let Some(envelope) = envelope else {
         return ReasoningReplayStatus::Unavailable;

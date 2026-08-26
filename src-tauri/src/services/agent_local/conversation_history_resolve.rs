@@ -1,5 +1,5 @@
 use crate::models::agent_turn_contract::{NewUserTurnInput, SkillReference, TurnAttachmentInput};
-use crate::services::reasoning_continuity::contract::ReplayTarget;
+use crate::services::reasoning_continuity::contract::{ContinuationTarget, ReplayTarget};
 
 use super::conversation_history::{ConversationHistory, ConversationHistoryError};
 use super::types_message::AgentMessage;
@@ -17,7 +17,22 @@ pub(super) async fn from_session(
     key_source: AttachmentKeySource,
     skip_user_id: Option<&str>,
 ) -> Result<ConversationHistory, ConversationHistoryError> {
-    let mut history = super::conversation_history_build::from_session(session, target)?;
+    from_session_for_continuation(
+        session,
+        &ContinuationTarget::Replay(target.clone()),
+        key_source,
+        skip_user_id,
+    )
+    .await
+}
+
+pub(super) async fn from_session_for_continuation(
+    session: &super::types_session::AgentSession,
+    target: &ContinuationTarget,
+    key_source: AttachmentKeySource,
+    skip_user_id: Option<&str>,
+) -> Result<ConversationHistory, ConversationHistoryError> {
+    let mut history = super::conversation_history_build::from_continuation(session, target)?;
     let needs_key = session.messages.iter().any(|message| {
         message.role == "user"
             && Some(message.id.as_str()) != skip_user_id

@@ -1,4 +1,4 @@
-use crate::models::agent_turn_contract::{NewUserTurnInput, TurnStart};
+use crate::models::agent_turn_contract::{ChatStreamRequestInput, NewUserTurnInput, TurnStart};
 use crate::services::agent_local::session_store;
 use crate::services::agent_local::types_session::AgentSession;
 use crate::ActiveStreams;
@@ -49,23 +49,19 @@ pub async fn e2e_verify_child_chat_stream_read_only(
     let absent_before = !streams.0.lock().await.contains_key(&session.id);
     let result = super::chat_stream(
         app.clone(),
-        session.id.clone(),
-        "e2e-model".to_string(),
-        TurnStart::New(NewUserTurnInput {
-            content: "read-only boundary".to_string(),
-            files: Vec::new(),
-            skills: Vec::new(),
-        }),
-        Vec::new(),
-        false,
-        Some("ollama".to_string()),
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
+        ChatStreamRequestInput {
+            session_id: session.id.clone(),
+            model: "e2e-model".to_string(),
+            provider: "ollama".to_string(),
+            turn: TurnStart::New(NewUserTurnInput {
+                content: "read-only boundary".to_string(),
+                files: Vec::new(),
+                skills: Vec::new(),
+            }),
+            working_dir: None,
+            permission_mode: None,
+            plan_mode: None,
+        },
         streams,
     )
     .await;

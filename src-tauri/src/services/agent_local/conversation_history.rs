@@ -2,7 +2,7 @@
 
 use std::fmt;
 
-use crate::services::reasoning_continuity::contract::ReplayTarget;
+use crate::services::reasoning_continuity::contract::{ContinuationTarget, ReplayTarget};
 use crate::services::reasoning_continuity::envelope::ReasoningEnvelope;
 
 use super::conversation_attachments::ResolvedImage;
@@ -182,10 +182,27 @@ pub(super) async fn load_for_admission(
     current: super::conversation_input::ResolvedTurnInput,
     key_source: super::conversation_history_resolve::AttachmentKeySource,
 ) -> Result<ConversationHistory, ConversationHistoryError> {
+    load_for_admission_continuation(
+        session_id,
+        &ContinuationTarget::Replay(target.clone()),
+        current_user_id,
+        current,
+        key_source,
+    )
+    .await
+}
+
+pub(super) async fn load_for_admission_continuation(
+    session_id: &str,
+    target: &ContinuationTarget,
+    current_user_id: &str,
+    current: super::conversation_input::ResolvedTurnInput,
+    key_source: super::conversation_history_resolve::AttachmentKeySource,
+) -> Result<ConversationHistory, ConversationHistoryError> {
     let session = super::session_store::get(session_id)
         .await
         .map_err(|_| ConversationHistoryError)?;
-    let mut history = super::conversation_history_resolve::from_session(
+    let mut history = super::conversation_history_resolve::from_session_for_continuation(
         &session,
         target,
         key_source,

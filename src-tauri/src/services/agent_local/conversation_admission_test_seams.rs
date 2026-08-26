@@ -11,7 +11,8 @@ where
     new_turn_inner(
         session_id,
         input,
-        target,
+        crate::services::reasoning_continuity::contract::ContinuationTarget::Replay(target),
+        true,
         super::conversation_history_resolve::AttachmentKeySource::Vault,
         || async {},
         writer,
@@ -33,7 +34,8 @@ where
     new_turn_inner(
         session_id,
         input,
-        target,
+        crate::services::reasoning_continuity::contract::ContinuationTarget::Replay(target),
+        true,
         super::conversation_history_resolve::AttachmentKeySource::Vault,
         || async {},
         |session| async move { super::session_store::save(&session).await },
@@ -55,7 +57,8 @@ where
     new_turn_inner(
         session_id,
         input,
-        target,
+        crate::services::reasoning_continuity::contract::ContinuationTarget::Replay(target),
+        true,
         super::conversation_history_resolve::AttachmentKeySource::Vault,
         after_load,
         |session| async move { super::session_store::save(&session).await },
@@ -73,7 +76,8 @@ pub(crate) async fn new_turn_with_key(
     new_turn_inner(
         session_id,
         input,
-        target,
+        crate::services::reasoning_continuity::contract::ContinuationTarget::Replay(target),
+        true,
         super::conversation_history_resolve::AttachmentKeySource::Fixed(
             key.try_into().map_err(|_| error())?,
         ),

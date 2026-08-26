@@ -2,7 +2,11 @@ pub mod agent_chat;
 pub(crate) mod agent_chat_admission;
 pub mod agent_chat_cancel;
 pub mod agent_chat_queue;
+#[cfg(test)]
+mod agent_chat_request_runtime_tests;
 pub(crate) mod agent_chat_run;
+#[cfg(test)]
+mod agent_chat_run_tests;
 #[cfg(test)]
 mod agent_chat_stream_replacement_tests;
 pub(crate) mod agent_chat_streams;

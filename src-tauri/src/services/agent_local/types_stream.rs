@@ -135,7 +135,7 @@ pub enum StreamEvent {
     CompressionComplete {},
     #[serde(rename_all = "camelCase")]
     SessionSnapshot {
-        messages: Vec<crate::services::agent_local::types_session::AgentMessage>,
+        messages: Vec<crate::models::agent_session_contract::AgentMessageView>,
         token_count: u32,
     },
     #[serde(rename_all = "camelCase")]
