@@ -5,6 +5,9 @@ use crate::services::reasoning_continuity::envelope::{ContinuationState, Reasoni
 use crate::services::reasoning_continuity::registry::{AdapterId, ReplayPolicy};
 use serde_json::Value;
 
+#[cfg(debug_assertions)]
+pub(crate) mod fixture_candidate;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum ReplayApplyError {
     Blocked,

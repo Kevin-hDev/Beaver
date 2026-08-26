@@ -164,6 +164,13 @@ pub(crate) async fn run(
 
     #[cfg(debug_assertions)]
     let mut fixture_run = params.fixture_run.take();
+    #[cfg(debug_assertions)]
+    let fixture_candidate = params
+        .continuation_target
+        .as_ref()
+        .filter(|target| target.is_fixture_candidate())
+        .and_then(|target| target.replay())
+        .cloned();
     let completed = agent_loop::run_agent_loop(
         &params.on_event,
         &mut messages,
@@ -185,6 +192,8 @@ pub(crate) async fn run(
             .as_ref()
             .and_then(crate::services::reasoning_continuity::contract::ContinuationTarget::replay)
             .is_some(),
+        #[cfg(debug_assertions)]
+        fixture_candidate,
         #[cfg(debug_assertions)]
         fixture_run.as_mut(),
         journal.as_mut(),

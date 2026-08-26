@@ -1,17 +1,31 @@
 use super::types_ollama::{ChatMessage, ChatRequest};
 use serde_json::{json, Map, Value};
 
-pub fn chat_request(request: &ChatRequest, messages: &[ChatMessage]) -> Value {
+pub fn chat_request(
+    request: &ChatRequest,
+    messages: &[ChatMessage],
+) -> Result<Value, crate::services::llm::reasoning_wire::replay::ReplayApplyError> {
+    let mut payload_messages = messages_value(messages);
+    #[cfg(debug_assertions)]
+    if let Some(target) = request.fixture_candidate.as_ref() {
+        apply_fixture_continuity(
+            messages,
+            target,
+            payload_messages
+                .as_array_mut()
+                .ok_or(crate::services::llm::reasoning_wire::replay::ReplayApplyError::PayloadMismatch)?,
+        )?;
+    }
     let mut body = Map::new();
     body.insert("model".into(), json!(request.model));
-    body.insert("messages".into(), messages_value(messages));
+    body.insert("messages".into(), payload_messages);
     body.insert("stream".into(), json!(request.stream));
     body.insert("truncate".into(), json!(false));
     insert_optional(&mut body, "tools", request.tools.as_ref());
     insert_optional(&mut body, "options", request.options.as_ref());
     insert_optional(&mut body, "keep_alive", request.keep_alive.as_ref());
     insert_optional(&mut body, "think", request.think.as_ref());
-    Value::Object(body)
+    Ok(Value::Object(body))
 }
 
 pub fn messages_value(messages: &[ChatMessage]) -> Value {
@@ -34,6 +48,23 @@ pub(crate) fn apply_continuity(
         approval,
         payload_messages,
     )
+}
+
+#[cfg(debug_assertions)]
+fn apply_fixture_continuity(
+    messages: &[ChatMessage],
+    target: &crate::services::reasoning_continuity::contract::ReplayTarget,
+    payload_messages: &mut [Value],
+) -> Result<(), crate::services::llm::reasoning_wire::replay::ReplayApplyError> {
+    let policy = crate::services::reasoning_continuity::registry::replay_policy(target)
+        .ok_or(crate::services::llm::reasoning_wire::replay::ReplayApplyError::Blocked)?;
+    for envelope in messages.iter().filter_map(|message| message.continuation.as_ref()) {
+        let approval = crate::services::llm::reasoning_wire::replay::fixture_candidate::approved(
+            policy, envelope, target,
+        )?;
+        apply_continuity(messages, &approval, payload_messages)?;
+    }
+    Ok(())
 }
 
 fn message_value(message: &ChatMessage) -> Value {
@@ -116,10 +147,61 @@ mod tests {
             keep_alive: None,
             think: None,
             capture_reasoning: false,
+            fixture_candidate: None,
         };
-        let value = chat_request(&request, &[]);
+        let value = chat_request(&request, &[]).unwrap();
 
         assert_eq!(value["truncate"], false);
         assert!(value.get("think").is_none());
+    }
+
+    #[cfg(debug_assertions)]
+    #[test]
+    fn fixture_candidate_replays_native_thinking_while_normal_disabled_stays_closed() {
+        use crate::services::reasoning_continuity::contract::{
+            ContinuationUse, ContractId, CredentialScope, ReasoningModeId, ReplayTarget, RouteId,
+        };
+        use crate::services::reasoning_continuity::envelope::{
+            CompletionState, ContinuationState, ReasoningEnvelope, ReasoningSource,
+        };
+
+        let target = ReplayTarget {
+            route_id: RouteId::Ollama,
+            model_id: "qwen3.5:4b".into(),
+            credential_scope: CredentialScope::local_uncredentialed(),
+            reasoning_mode: ReasoningModeId::Auto,
+            continuation_use: ContinuationUse::UserContinuation,
+        };
+        let continuation = ReasoningEnvelope::new(
+            ContractId::OllamaNativeV1,
+            ReasoningSource::from_target(&target),
+            CompletionState::Complete,
+            ContinuationState::OllamaNative { thinking: "opaque historic".into() },
+            Vec::new(),
+        );
+        let later = ReasoningEnvelope::new(
+            ContractId::OllamaNativeV1,
+            ReasoningSource::from_target(&target),
+            CompletionState::Complete,
+            ContinuationState::OllamaNative { thinking: "opaque later".into() },
+            Vec::new(),
+        );
+        let messages = [
+            ChatMessage::assistant("answer".into(), None, Some(continuation), None, None),
+            ChatMessage::assistant("later answer".into(), None, Some(later), None, None),
+        ];
+        let mut request = ChatRequest {
+            model: target.model_id.clone(), messages: Vec::new(), stream: true, tools: None,
+            options: None, keep_alive: None, think: None, capture_reasoning: true,
+            fixture_candidate: None,
+        };
+
+        let normal = chat_request(&request, &messages).unwrap();
+        assert!(normal["messages"][0].get("thinking").is_none());
+        assert!(normal["messages"][1].get("thinking").is_none());
+        request.fixture_candidate = Some(target);
+        let replay = chat_request(&request, &messages).unwrap();
+        assert_eq!(replay["messages"][0]["thinking"], "opaque historic");
+        assert_eq!(replay["messages"][1]["thinking"], "opaque later");
     }
 }

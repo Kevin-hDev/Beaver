@@ -39,7 +39,7 @@ pub async fn record_ollama_payload(
     turn: usize,
     request: &ChatRequest,
 ) {
-    let mut stats = native_payload_stats(&request.messages);
+    let mut stats = native_payload_stats(request);
     stats.tool_calls += request.tools.as_ref().map_or(0, Vec::len);
     record_payload(session_id, request_id, turn, "ollama", "ollama_chat", stats).await;
     record_ollama_tool_messages(session_id, request_id, turn, &request.messages).await;
@@ -152,21 +152,27 @@ fn openai_payload_stats(provider_id: &str, messages: &[ChatMessage]) -> PayloadS
     stats
 }
 
-fn native_payload_stats(messages: &[ChatMessage]) -> PayloadStats {
+fn native_payload_stats(request: &ChatRequest) -> PayloadStats {
+    let Ok(payload) = super::ollama_wire::chat_request(request, &request.messages) else {
+        return PayloadStats::default();
+    };
+    let Some(messages) = payload["messages"].as_array() else {
+        return PayloadStats::default();
+    };
     let mut stats = PayloadStats {
         items: messages.len(),
         ..Default::default()
     };
     for message in messages {
-        if message.role == "assistant" {
+        if message["role"].as_str() == Some("assistant") {
             stats.assistant_items += 1;
-            stats.assistant_content_chars += char_count(&message.content);
-            stats.tool_calls += message.tool_calls.as_ref().map_or(0, Vec::len);
-            if let Some(reasoning) = message.legacy_tool_loop_reasoning.as_ref() {
+            stats.assistant_content_chars += value_text_chars(&message["content"]);
+            stats.tool_calls += message["tool_calls"].as_array().map_or(0, Vec::len);
+            if message.get("thinking").is_some() {
                 stats.reasoning_fields += 1;
-                stats.reasoning_chars += char_count(reasoning);
+                stats.reasoning_chars += value_text_chars(&message["thinking"]);
             }
-        } else if message.role == "tool" {
+        } else if message["role"].as_str() == Some("tool") {
             stats.tool_results += 1;
         }
     }

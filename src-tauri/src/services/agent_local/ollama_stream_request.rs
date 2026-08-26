@@ -44,7 +44,8 @@ pub async fn open_chat_response(
     emit_retry_indicator: bool,
 ) -> Result<OpenChatResponse, String> {
     let wire_messages = wrap_tool_results(&request.messages);
-    let wire_request = ollama_wire::chat_request(request, &wire_messages);
+    let wire_request = ollama_wire::chat_request(request, &wire_messages)
+        .map_err(|_| "reasoning_continuity_invalid".to_string())?;
 
     let client = reqwest::Client::new();
     let base_url = ollama.base_url().await?;

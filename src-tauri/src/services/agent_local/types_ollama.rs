@@ -118,6 +118,11 @@ pub struct ChatRequest {
     /// Décision canonique d'admission, jamais sérialisée au provider.
     #[serde(skip)]
     pub capture_reasoning: bool,
+    /// Cible temporaire réservée à la fixture debug : elle ne peut jamais
+    /// exister dans un binaire de production ni dans un chat normal.
+    #[cfg(debug_assertions)]
+    #[serde(skip)]
+    pub fixture_candidate: Option<crate::services::reasoning_continuity::contract::ReplayTarget>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

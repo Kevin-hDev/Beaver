@@ -122,6 +122,7 @@ mod tests {
             keep_alive: Some("5m".into()),
             think: Some(OllamaThink::Bool(true)),
             capture_reasoning: false,
+            fixture_candidate: None,
         };
         let retry = build_thinking_disabled_retry(&req).unwrap();
         assert_eq!(retry.think, Some(OllamaThink::Bool(false)));
@@ -139,6 +140,7 @@ mod tests {
             keep_alive: Some("5m".into()),
             think: Some(OllamaThink::Bool(false)),
             capture_reasoning: false,
+            fixture_candidate: None,
         };
         assert!(build_thinking_disabled_retry(&req).is_none());
     }

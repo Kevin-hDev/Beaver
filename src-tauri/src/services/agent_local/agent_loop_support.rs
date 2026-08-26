@@ -42,6 +42,8 @@ pub fn build_request(
         keep_alive: Some(keep_alive),
         think: Some(think),
         capture_reasoning: false,
+        #[cfg(debug_assertions)]
+        fixture_candidate: None,
     }
 }
 

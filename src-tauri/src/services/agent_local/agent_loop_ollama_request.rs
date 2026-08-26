@@ -25,6 +25,8 @@ pub(super) struct OllamaRequestParams<'a> {
     pub subagents: &'a mut ParentSubagentOrchestrator,
     pub context_usage_seed: ContextUsageSeed,
     pub capture_reasoning: bool,
+    #[cfg(debug_assertions)]
+    pub fixture_candidate: Option<&'a crate::services::reasoning_continuity::contract::ReplayTarget>,
     pub enable_eager_tools: bool,
 }
 
@@ -74,6 +76,10 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
         params.think.clone(),
     );
     request.capture_reasoning = params.capture_reasoning;
+    #[cfg(debug_assertions)]
+    {
+        request.fixture_candidate = params.fixture_candidate.cloned();
+    }
     if !request.capture_reasoning {
         crate::services::reasoning_continuity::diagnostics::record_blocked(
             params.session_id,
