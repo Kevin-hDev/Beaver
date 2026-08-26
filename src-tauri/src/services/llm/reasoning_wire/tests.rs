@@ -47,7 +47,7 @@ fn r02_r03_preserve_native_values_and_serialized_bytes() {
         for event in fixture(name)["events"].as_array().expect("events") {
             capture.observe_json(event);
         }
-        capture.observe_done(&fixture(name)["events"].as_array().unwrap().last().unwrap());
+        capture.observe_done(fixture(name)["events"].as_array().unwrap().last().unwrap());
         let envelope = capture.finish_complete().expect("complete envelope");
         let expected = fixture(name)["expected_native"].clone();
         let actual = match envelope.continuation {

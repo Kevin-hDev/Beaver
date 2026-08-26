@@ -15,7 +15,7 @@ export type OwnedRunState =
   | { kind: "stopping"; runId: number; generation: number | null }
   | { kind: "terminal" };
 
-export type QueueStreamResult = "queued" | "start-new" | "stopping";
+export type QueueStreamResult = "queued" | "start-new" | "stopping" | "unavailable";
 
 export function assignStreamRun(record: StreamRecord, run?: StreamRun) {
   record.runOwner = run?.owner ?? null;

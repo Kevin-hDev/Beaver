@@ -1,4 +1,4 @@
-use super::create_heartbeat_session;
+use super::{create_heartbeat_session, delete_empty_heartbeat};
 use crate::models::{ScheduledWakeup, WakeupSchedule};
 use crate::services::agent_local::session_store;
 use crate::services::reasoning_continuity::contract::{
@@ -61,4 +61,15 @@ async fn heartbeat_session_defers_prompt_persistence_to_conversation_admission()
     tokio::fs::remove_dir_all(workspace_root)
         .await
         .expect("delete test workspace");
+}
+
+#[tokio::test]
+async fn failed_admission_removes_an_empty_heartbeat_session() {
+    let session_id = create_heartbeat_session(&wakeup(None))
+        .await
+        .expect("create heartbeat session");
+
+    delete_empty_heartbeat(&session_id).await;
+
+    assert!(session_store::get(&session_id).await.is_err());
 }

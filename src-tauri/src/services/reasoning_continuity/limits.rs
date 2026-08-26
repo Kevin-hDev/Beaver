@@ -55,6 +55,7 @@ pub fn checked_tool_calls(current: usize, additional: usize) -> Result<usize, Li
         .ok_or(LimitError::ToolCalls)
 }
 
+#[cfg(test)]
 pub fn checked_session_continuity_bytes(
     current: usize,
     additional: usize,
@@ -65,10 +66,6 @@ pub fn checked_session_continuity_bytes(
     (next <= MAX_SESSION_CONTINUITY_BYTES)
         .then_some(next)
         .ok_or(LimitError::SessionBytes)
-}
-
-pub fn validate_session_continuity_bytes(bytes: usize) -> Result<(), LimitError> {
-    checked_session_continuity_bytes(0, bytes).map(|_| ())
 }
 
 pub fn validate_model_id(value: &str) -> Result<(), LimitError> {

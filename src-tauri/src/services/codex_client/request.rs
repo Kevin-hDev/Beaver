@@ -12,6 +12,7 @@ use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::llm::fast_mode::FastModeRequest;
 use crate::services::llm::provider_error::ProviderErrorCode;
 
+#[cfg(test)]
 pub async fn post_codex_stream(
     model: &str,
     messages: &[ChatMessage],

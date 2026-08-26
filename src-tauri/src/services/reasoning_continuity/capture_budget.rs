@@ -6,7 +6,7 @@ use super::limits::{
     checked_envelope_bytes, validate_json_depth, LimitError, MAX_ENVELOPE_BYTES, MAX_NATIVE_ITEMS,
 };
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CaptureBudget {
     item_count: usize,
     serialized_bytes: usize,
@@ -29,15 +29,6 @@ impl CaptureBudget {
         })
     }
 
-    #[cfg(test)]
-    pub const fn without_envelope_overhead() -> Self {
-        Self {
-            item_count: 0,
-            serialized_bytes: 0,
-            closed: false,
-        }
-    }
-
     pub fn observe_item(&mut self, item: &Value) -> Result<(), LimitError> {
         self.ensure_open()?;
         let result = self.checked_item(item);
@@ -47,25 +38,13 @@ impl CaptureBudget {
         result
     }
 
-    pub fn observe_serialized_bytes(&mut self, additional: usize) -> Result<(), LimitError> {
-        self.ensure_open()?;
-        match checked_envelope_bytes(self.serialized_bytes, additional) {
-            Ok(next) => {
-                self.serialized_bytes = next;
-                Ok(())
-            }
-            Err(error) => {
-                self.closed = true;
-                Err(error)
-            }
-        }
-    }
-
-    pub const fn item_count(self) -> usize {
+    #[cfg(test)]
+    pub const fn item_count(&self) -> usize {
         self.item_count
     }
 
-    pub const fn serialized_bytes(self) -> usize {
+    #[cfg(test)]
+    pub const fn serialized_bytes(&self) -> usize {
         self.serialized_bytes
     }
 

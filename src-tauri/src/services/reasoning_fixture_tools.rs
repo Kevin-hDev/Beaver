@@ -8,6 +8,7 @@ const WRITE_NOTE: &str = "fixture.write_note";
 const READ_NOTE: &str = "fixture.read_note";
 const NOTE_FILE: &str = "fixture-note.txt";
 const MAX_NOTE_BYTES: usize = 1024;
+const MAX_STALE_DIRECTORIES: usize = 64;
 
 pub struct FixtureToolset {
     directory: TempDir,
@@ -68,13 +69,43 @@ pub async fn isolated_toolset() -> Result<FixtureToolset, String> {
     isolated_toolset_in(crate::services::paths::data_dir().join("reasoning-fixture-runtime")).await
 }
 
-#[cfg(test)]
-pub(crate) async fn isolated_toolset_in(runtime: PathBuf) -> Result<FixtureToolset, String> {
-    create_in(runtime).await
+#[cfg(debug_assertions)]
+pub(crate) fn purge_stale_runtime() -> Result<(), String> {
+    purge_stale_runtime_in(&crate::services::paths::data_dir().join("reasoning-fixture-runtime"))
 }
 
-#[cfg(not(test))]
-async fn isolated_toolset_in(runtime: PathBuf) -> Result<FixtureToolset, String> {
+#[cfg(any(debug_assertions, test))]
+fn purge_stale_runtime_in(runtime: &std::path::Path) -> Result<(), String> {
+    let metadata = match std::fs::symlink_metadata(runtime) {
+        Ok(value) => value,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+        Err(_) => return Err(unavailable()),
+    };
+    if metadata.file_type().is_symlink() || !metadata.is_dir() {
+        return Err(unavailable());
+    }
+    for (index, entry) in std::fs::read_dir(runtime)
+        .map_err(|_| unavailable())?
+        .enumerate()
+    {
+        if index >= MAX_STALE_DIRECTORIES {
+            return Err(unavailable());
+        }
+        let entry = entry.map_err(|_| unavailable())?;
+        let file_type = entry.file_type().map_err(|_| unavailable())?;
+        let is_fixture = entry
+            .file_name()
+            .to_str()
+            .is_some_and(|name| name.starts_with("fixture-"));
+        if file_type.is_symlink() || !file_type.is_dir() || !is_fixture {
+            return Err(unavailable());
+        }
+        std::fs::remove_dir_all(entry.path()).map_err(|_| unavailable())?;
+    }
+    Ok(())
+}
+
+pub(crate) async fn isolated_toolset_in(runtime: PathBuf) -> Result<FixtureToolset, String> {
     create_in(runtime).await
 }
 

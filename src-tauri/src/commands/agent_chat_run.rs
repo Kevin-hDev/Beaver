@@ -1,50 +1,17 @@
 use super::agent_chat_task::{
     run_stream_task, StreamCapabilityHints, StreamConversation, StreamTaskParams,
 };
-use crate::models::agent_turn_contract::{ChatStreamAdmission, TurnStart};
+use crate::models::agent_turn_contract::ChatStreamAdmission;
 use crate::services::agent_local::agent_work_supervision::AgentWorkServices;
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::types_ollama::StreamEvent;
 use crate::ActiveStreams;
 use tauri::Manager;
 
-pub(crate) struct ChatStreamRequest {
-    pub session_id: String,
-    pub model: String,
-    pub turn: Option<TurnStart>,
-    pub tools: Vec<serde_json::Value>,
-    pub think: bool,
-    pub provider: String,
-    pub working_dir: Option<String>,
-    pub capability_hints: StreamCapabilityHints,
-    pub reasoning_mode: Option<String>,
-    pub permission_mode: Option<String>,
-    pub plan_mode: Option<bool>,
-    #[cfg(debug_assertions)]
-    pub fixture_run: Option<crate::services::reasoning_fixture_run::FixtureRunContext>,
-}
-
-impl ChatStreamRequest {
-    pub(crate) fn from_input(
-        input: crate::models::agent_turn_contract::ChatStreamRequestInput,
-    ) -> Self {
-        Self {
-            session_id: input.session_id,
-            model: input.model,
-            turn: Some(input.turn),
-            tools: Vec::new(),
-            think: false,
-            provider: input.provider,
-            working_dir: input.working_dir,
-            capability_hints: StreamCapabilityHints::default(),
-            reasoning_mode: None,
-            permission_mode: input.permission_mode,
-            plan_mode: input.plan_mode,
-            #[cfg(debug_assertions)]
-            fixture_run: None,
-        }
-    }
-}
+#[path = "agent_chat_request.rs"]
+mod request;
+use request::generic_error;
+pub(crate) use request::ChatStreamRequest;
 
 #[cfg(debug_assertions)]
 pub(crate) async fn start_fixture(
@@ -159,11 +126,12 @@ pub(crate) async fn start(
     {
         Ok(directory) => directory,
         Err(_) => {
+            let admission_rollback = admitted.rollback();
             let rollback_result = super::agent_chat_turn::rollback_current(
                 streams,
                 &request.session_id,
                 stream.generation,
-                &admitted,
+                &admission_rollback,
             )
             .await;
             rollback(streams, &request.session_id, &stream).await;
@@ -176,6 +144,7 @@ pub(crate) async fn start(
         user_message_id: admitted.turn.user_message_id.clone(),
         assistant_message_id: admitted.turn.assistant_message_id.clone(),
     };
+    let admission_rollback = admitted.rollback();
     spawn(
         app,
         request,
@@ -183,6 +152,7 @@ pub(crate) async fn start(
         stream,
         work,
         admitted.turn,
+        admission_rollback,
         target,
         resolved_dir,
         result.clone(),
@@ -254,10 +224,6 @@ pub(crate) async fn rollback(
         )
         .await;
     }
-}
-
-fn generic_error() -> String {
-    "conversation_admission_failed".to_string()
 }
 
 include!("agent_chat_run_spawn.rs");

@@ -6,13 +6,6 @@ use super::conversation_history::{
 };
 use super::types_message::AgentMessage;
 
-pub(super) fn from_session(
-    session: &super::types_session::AgentSession,
-    target: &ReplayTarget,
-) -> Result<ConversationHistory, ConversationHistoryError> {
-    from_continuation(session, &ContinuationTarget::Replay(target.clone()))
-}
-
 pub(super) fn from_continuation(
     session: &super::types_session::AgentSession,
     target: &ContinuationTarget,
@@ -31,13 +24,51 @@ pub(super) fn from_continuation(
         .enumerate()
         .map(|(index, message)| convert(message, index >= suffix, target.replay()))
         .collect::<Result<Vec<_>, _>>()?;
-    if suffix > 0 && suffix < messages.len() {
-        messages[suffix].continuity_barrier_before = true;
+    let history_len = messages.len();
+    let mut prefix_count = 0usize;
+    if let Some(summary) = session.clone_summary.as_deref() {
+        messages.insert(
+            prefix_count,
+            context_message(
+                format!("clone-summary-{}", session.id),
+                super::clone_summary::hidden_context_content(summary),
+            ),
+        );
+        prefix_count += 1;
+    }
+    if let Some(context) =
+        super::subagent_report_context::durable_context(&session.subagent_hidden_reports)
+    {
+        messages.insert(
+            prefix_count,
+            context_message(format!("subagent-reports-{}", session.id), context),
+        );
+        prefix_count += 1;
+    }
+    if suffix > 0 && suffix < history_len {
+        messages[suffix + prefix_count].continuity_barrier_before = true;
     }
     Ok(ConversationHistory {
         messages,
-        compatible_suffix_start: suffix,
+        compatible_suffix_start: suffix + prefix_count,
     })
+}
+
+fn context_message(turn_id: String, content: String) -> ProviderMessage {
+    ProviderMessage {
+        message_id: None,
+        turn_id,
+        role: ProviderRole::User,
+        content,
+        images: Vec::new(),
+        tool_calls: None,
+        tool_name: None,
+        tool_call_id: None,
+        display_thinking: None,
+        continuation: None,
+        tool_loop_reasoning: None,
+        continuity_barrier_before: false,
+    }
 }
 
 fn validate_target(
@@ -108,15 +139,12 @@ fn convert(
         role,
         content: message.content.clone(),
         images: Vec::new(),
-        files: message.files.clone(),
         tool_calls: message.tool_calls.clone(),
         tool_name: message.tool_name.clone(),
         tool_call_id: message.tool_call_id.clone(),
         display_thinking: message.thinking.clone(),
         continuation,
-        legacy_tool_loop_reasoning: None,
-        skill_id: None,
-        skill_name: None,
+        tool_loop_reasoning: None,
         continuity_barrier_before: false,
     })
 }

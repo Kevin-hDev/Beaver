@@ -14,10 +14,11 @@ impl ChatMessage {
         content: String,
         display_thinking: Option<String>,
         continuation: Option<ReasoningEnvelope>,
-        legacy_tool_loop_reasoning: Option<String>,
+        tool_loop_reasoning: Option<String>,
         tool_calls: Option<Vec<ToolCallOllama>>,
     ) -> Self {
         Self {
+            continuity_barrier_before: false,
             role: "assistant".to_owned(),
             content,
             images: None,
@@ -26,12 +27,13 @@ impl ChatMessage {
             tool_call_id: None,
             display_thinking,
             continuation,
-            legacy_tool_loop_reasoning,
+            tool_loop_reasoning,
         }
     }
 
     pub fn tool(content: String, tool_call_id: Option<String>, tool_name: Option<String>) -> Self {
         Self {
+            continuity_barrier_before: false,
             role: "tool".to_owned(),
             content,
             images: None,
@@ -40,7 +42,7 @@ impl ChatMessage {
             tool_call_id,
             display_thinking: None,
             continuation: None,
-            legacy_tool_loop_reasoning: None,
+            tool_loop_reasoning: None,
         }
     }
 
@@ -58,6 +60,7 @@ impl ChatMessage {
 
     fn new(role: &str, content: String) -> Self {
         Self {
+            continuity_barrier_before: false,
             role: role.to_owned(),
             content,
             images: None,
@@ -66,7 +69,7 @@ impl ChatMessage {
             tool_call_id: None,
             display_thinking: None,
             continuation: None,
-            legacy_tool_loop_reasoning: None,
+            tool_loop_reasoning: None,
         }
     }
 }

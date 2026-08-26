@@ -11,12 +11,16 @@ use super::support::{cleanup, complete_turn, create_session, resolved, session_p
 
 #[tokio::test]
 async fn persists_user_before_return_and_reserves_three_uuid_v4_ids() {
-    let session = create_session().await;
+    let mut session = create_session().await;
+    session.model = "qwen3.5:4b".to_string();
+    super::super::session_store::save(&session)
+        .await
+        .expect("persist validated model");
     let observed_id = session.id.clone();
     let admitted = conversation_admission::new_turn_with_after_persist(
         &session.id,
         resolved("question durable"),
-        target("model-a"),
+        target("qwen3.5:4b"),
         move || async move {
             let persisted = super::super::session_store::get(&observed_id)
                 .await
@@ -46,7 +50,7 @@ async fn persists_user_before_return_and_reserves_three_uuid_v4_ids() {
     assert_eq!(persisted.messages[0].turn_id, admitted.turn_id);
     assert_eq!(persisted.messages[0].files.len(), 1);
     let source = persisted.messages[0].replay_source.as_ref().expect("durable turn provenance");
-    assert_eq!(source.model_id, "model-a");
+    assert_eq!(source.model_id, "qwen3.5:4b");
     assert_eq!(source.route_id, crate::services::reasoning_continuity::contract::RouteId::Ollama);
     assert_eq!(
         persisted.messages[0].skill_names.as_deref(),
@@ -179,9 +183,7 @@ async fn current_provider_snapshot_keeps_resolved_content_images_and_ordered_ski
     let messages = &admitted.history.messages;
 
     assert_eq!(messages.len(), 3);
-    assert_eq!(messages[0].skill_id.as_deref(), Some("local:first"));
     assert!(messages[0].content.ends_with("first exact body"));
-    assert_eq!(messages[1].skill_id.as_deref(), Some("local:second"));
     assert!(messages[1].content.ends_with("second exact body"));
     assert!(messages[0].message_id.is_none() && messages[1].message_id.is_none());
     assert_eq!(

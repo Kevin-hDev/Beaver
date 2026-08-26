@@ -8,9 +8,13 @@ pub fn run() -> Result<(), String> {
 }
 
 fn run_in(root: &Path) -> Result<(), String> {
-    crate::services::security_cleanup_sessions::remove_orphan_backups(
+    if crate::services::security_cleanup_sessions::remove_orphan_backups(
         &root.join("agent-sessions"),
-    )?;
+    )
+    .is_err()
+    {
+        log::warn!("orphan_session_backup_cleanup_failed");
+    }
     let marker = root.join(MARKER_FILE);
     match std::fs::symlink_metadata(&marker) {
         Ok(metadata) if metadata.is_file() && !metadata.file_type().is_symlink() => return Ok(()),

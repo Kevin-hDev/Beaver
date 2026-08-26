@@ -10,7 +10,6 @@ const MAX_REFERENCE_NAME_CHARS: usize = 120;
 const MAX_RESOLVED_SKILLS_BYTES: usize =
     MAX_SKILLS_PER_TURN * super::skill_limits::MAX_RESOLVED_SKILL_BYTES;
 
-#[allow(dead_code, reason = "consumed by conversation admission in Task 8")]
 #[derive(Debug)]
 pub struct ResolvedSkill {
     pub id: String,

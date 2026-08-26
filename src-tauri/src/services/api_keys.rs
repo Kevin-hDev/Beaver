@@ -79,6 +79,10 @@ pub fn init() -> Result<(), String> {
         .lock()
         .map_err(|_| "coffre indisponible".to_string())?;
     *state = Some(VaultState { master_key, keys });
+    drop(state);
+    crate::services::attachment_access::ensure_attachment_key()?;
+    crate::services::reasoning_continuity::fingerprint::ensure_fingerprint_key()
+        .map_err(|_| "coffre indisponible".to_string())?;
     Ok(())
 }
 

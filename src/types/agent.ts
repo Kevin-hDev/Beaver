@@ -59,7 +59,6 @@ export type {
   EditUserMessageInput,
   ReasoningReplayStatus,
   SessionMetadataPatch,
-  VisibleMessageInput,
 } from "./agent-session.generated";
 export type {
   AgentTodoItem,

@@ -84,3 +84,25 @@ where
     }
     Ok(request_id)
 }
+
+pub(crate) async fn finish_active_stream(
+    streams: &ActiveStreams,
+    session_id: &str,
+    generation: u64,
+) -> bool {
+    let removed = {
+        let mut map = streams.0.lock().await;
+        if matches!(map.get(session_id), Some((_, active, _, _)) if *active == generation) {
+            map.remove(session_id)
+        } else {
+            None
+        }
+    };
+    let Some((_, _, _, inbox)) = removed else {
+        return false;
+    };
+    inbox.close().await;
+    crate::services::agent_local::permission_gate::clear_session(session_id).await;
+    crate::services::agent_local::session_store::remove_session_lock(session_id).await;
+    true
+}

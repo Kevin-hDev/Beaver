@@ -82,7 +82,7 @@ fn add_message(target: &mut [usize; 4], message: &ChatMessage, include_reasoning
     if include_reasoning {
         units[MESSAGES] = units[MESSAGES].saturating_add(
             message
-                .legacy_tool_loop_reasoning
+                .tool_loop_reasoning
                 .as_deref()
                 .map(token_counting::text_units)
                 .unwrap_or(0),
@@ -139,7 +139,7 @@ fn message_tokens(message: &ChatMessage, include_reasoning: bool) -> usize {
     if include_reasoning {
         units = units.saturating_add(
             message
-                .legacy_tool_loop_reasoning
+                .tool_loop_reasoning
                 .as_deref()
                 .map(token_counting::text_units)
                 .unwrap_or(0),

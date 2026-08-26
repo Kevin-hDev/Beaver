@@ -133,7 +133,7 @@ fn cleanup_redacts_visible_text_without_mutating_continuation_or_provider_ids() 
     );
     assert_eq!(
         restored["messages"][0]["tool_calls"][0]["extra_content"],
-        tool_extra
+        serde_json::json!({ "google": tool_extra["google"].clone() })
     );
     assert_eq!(restored["messages"][0]["continuation"], continuation);
     for key in ["id", "continuation", "extra_content", "provider_id"] {
@@ -213,23 +213,23 @@ fn keeps_backup_attached_to_regular_session() {
 }
 
 #[test]
-fn rejects_noncanonical_or_wrong_type_backup() {
+fn ignores_noncanonical_or_wrong_type_backup_without_blocking_hardening() {
     let root = TempDir::new().unwrap();
     let invalid = root.path().join("agent-sessions/not-valid!.json.v1.bak");
     write(&invalid, b"fixture");
-    assert!(run_in(root.path()).is_err());
+    assert!(run_in(root.path()).is_ok());
 
     fs::remove_file(&invalid).unwrap();
     let directory = root
         .path()
         .join("agent-sessions/550e8400-e29b-41d4-a716-446655440000.json.v1.bak");
     fs::create_dir_all(directory).unwrap();
-    assert!(run_in(root.path()).is_err());
+    assert!(run_in(root.path()).is_ok());
 }
 
 #[cfg(unix)]
 #[test]
-fn rejects_symbolic_backup() {
+fn ignores_symbolic_backup_without_following_it() {
     use std::os::unix::fs::symlink;
 
     let root = TempDir::new().unwrap();
@@ -240,7 +240,8 @@ fn rejects_symbolic_backup() {
     let backup = directory.join("550e8400-e29b-41d4-a716-446655440000.json.v1.bak");
     symlink(target, backup).unwrap();
 
-    assert!(run_in(root.path()).is_err());
+    assert!(run_in(root.path()).is_ok());
+    assert_eq!(fs::read(root.path().join("target")).unwrap(), b"fixture");
 }
 
 #[test]

@@ -25,13 +25,15 @@ export type SavedSegmentView = { thinking?: string, tools: Array<ToolActivityRec
 
 export type AgentMessageView = { id: string, turn_id: string, role: "user" | "assistant" | "tool", content: string, thinking?: string, tool_calls?: Array<ToolCallRequestView>, tool_name?: string, tool_call_id?: string, tool_activities?: Array<ToolActivityRecordView>, segments?: Array<SavedSegmentView>, files: Array<FileAttachmentView>, timestamp: string, tokens: number, work_duration_ms?: number, skill_names?: Array<string>, stream_run_id?: string, stream_part?: "checkpoint" | "input" | "final", reasoning_replay_status: ReasoningReplayStatus, };
 
-export type VisibleMessageInput = { id: string, role: "user" | "assistant" | "tool", content: string, thinking?: string, tool_calls?: Array<ToolCallRequestView>, tool_name?: string, tool_call_id?: string, tool_activities?: Array<ToolActivityRecordView>, segments?: Array<SavedSegmentView>, files: Array<FileAttachmentView>, timestamp: string, tokens: number, work_duration_ms?: number, skill_names?: Array<string>, stream_run_id?: string, stream_part?: "checkpoint" | "input" | "final", };
-
 export type SubagentLastActivityView = { kind: string, label: string, detail?: string, updated_at: string, };
 
 export type AgentStreamFailureView = { code: string, occurred_at: string, is_connection: boolean, active_todo_run_id?: string, active_todo_title?: string, };
 
-export type ContinuityCapability = { requirement: string, local_available: boolean, remote_available: boolean, state: string, explanation_key: string, };
+export type ContinuityRequirement = "required" | "optional";
+
+export type ContinuityState = "locked" | "available";
+
+export type ContinuityCapability = { requirement: ContinuityRequirement, local_available: boolean, remote_available: boolean, state: ContinuityState, explanation_key: string, };
 
 export type AgentSessionView = { id: string, name: string, created_at: string, updated_at?: string, archived_at?: string, pinned_at?: string, model: string, provider: string, thinking_enabled: boolean, fast_mode_enabled: boolean, reasoning_mode?: string, preserve_reasoning: PreserveReasoningSetting, continuity_capability?: ContinuityCapability, accumulated_tokens: number, context_tokens?: number, messages: Array<AgentMessageView>, todos?: AgentTodoItem[], todo_runs?: AgentTodoRun[], active_todo_run_id?: string, stream_failures?: Array<AgentStreamFailureView>, diagnostic_runs?: AgentDiagnosticRun[], plan_mode_enabled: boolean, plan_runs?: AgentPlanRun[], active_plan_id?: string, plan_workflow_status: AgentPlanWorkflowStatus, is_heartbeat: boolean, is_gateway: boolean, gateway_channel_key?: string, project_id?: string, working_dir: string, working_dir_managed: boolean, parent_session_id?: string, subagent_type?: "explorer" | "coder", subagent_worktree?: string, subagent_status?: string, subagent_run_id?: string, subagent_description?: string, subagent_color_key?: string, subagent_summary?: string, subagent_last_activity?: SubagentLastActivityView, clone_parent_session_id?: string, clone_parent_message_id?: string, clone_mode?: "cut" | "summary", clone_root_session_id?: string, git_branch?: string, };
 

@@ -3,9 +3,8 @@ use super::contract::{ContinuationUse, ContractId, CredentialScope, ReasoningMod
 use super::eligibility::{decide, BlockReason, ReplayDecision};
 use super::envelope::{CompletionState, ContinuationState, ReasoningEnvelope, ReasoningSource};
 use super::limits::{
-    checked_envelope_bytes, checked_session_continuity_bytes, checked_tool_calls,
-    validate_session_continuity_bytes, LimitError, MAX_ENVELOPE_BYTES, MAX_NATIVE_ITEMS,
-    MAX_SESSION_CONTINUITY_BYTES, MAX_TOOL_CALLS,
+    checked_envelope_bytes, checked_session_continuity_bytes, checked_tool_calls, LimitError,
+    MAX_ENVELOPE_BYTES, MAX_NATIVE_ITEMS, MAX_SESSION_CONTINUITY_BYTES, MAX_TOOL_CALLS,
 };
 use super::tool_links::ToolLink;
 use serde_json::{json, Value};
@@ -162,7 +161,7 @@ fn r07_incremental_item_limit_rejects_the_whole_capture() {
     for index in 0..MAX_NATIVE_ITEMS {
         budget.observe_item(&json!({"index": index})).unwrap();
     }
-    let before = budget;
+    let before = budget.clone();
 
     assert_eq!(
         budget.observe_item(&json!({"index": MAX_NATIVE_ITEMS})),
@@ -211,11 +210,6 @@ fn r07_envelope_tool_and_session_limits_reject_without_truncation() {
         links,
     );
     assert_eq!(too_many_links.validate(), Err(LimitError::ToolCalls));
-
-    assert_eq!(
-        validate_session_continuity_bytes(MAX_SESSION_CONTINUITY_BYTES + 1),
-        Err(LimitError::SessionBytes)
-    );
 }
 
 #[test]
@@ -244,21 +238,7 @@ fn r07_json_depth_is_bounded_before_native_items_are_retained() {
 }
 
 #[test]
-fn r07_incremental_byte_additions_are_checked_before_mutation() {
-    let mut budget = CaptureBudget::without_envelope_overhead();
-    budget.observe_serialized_bytes(MAX_ENVELOPE_BYTES).unwrap();
-    let before = budget;
-
-    assert_eq!(
-        budget.observe_serialized_bytes(1),
-        Err(LimitError::EnvelopeBytes)
-    );
-    assert_eq!(budget.item_count(), before.item_count());
-    assert_eq!(budget.serialized_bytes(), before.serialized_bytes());
-    assert_eq!(
-        budget.observe_serialized_bytes(0),
-        Err(LimitError::CaptureClosed)
-    );
+fn r07_arithmetic_limits_are_checked_before_mutation() {
     assert_eq!(
         checked_envelope_bytes(1, usize::MAX),
         Err(LimitError::ArithmeticOverflow)
@@ -339,7 +319,7 @@ fn r07_envelope_overhead_is_counted_before_an_item_is_retained() {
     );
     let mut budget = CaptureBudget::from_envelope_skeleton(&skeleton).unwrap();
     let item = Value::String("x".repeat(MAX_ENVELOPE_BYTES - 2));
-    let before = budget;
+    let before = budget.clone();
 
     assert_eq!(budget.observe_item(&item), Err(LimitError::EnvelopeBytes));
     assert_eq!(budget.item_count(), before.item_count());

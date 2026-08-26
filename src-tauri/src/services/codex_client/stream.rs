@@ -129,7 +129,6 @@ async fn consume_sse(
         model,
         tools,
         reasoning_capture,
-        false,
         STREAM_STALL_TIMEOUT,
         measurement,
     )
@@ -146,7 +145,6 @@ pub(crate) async fn consume_external_responses_sse(
     model: &str,
     tools: &[serde_json::Value],
     reasoning_capture: Option<crate::services::llm::reasoning_wire::ReasoningCapture>,
-    legacy_codex_replay: bool,
     measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
 ) -> Result<StreamOutcome, String> {
     let mut measurement = StreamMeasurement::new(measurement);
@@ -160,7 +158,6 @@ pub(crate) async fn consume_external_responses_sse(
         model,
         tools,
         reasoning_capture,
-        legacy_codex_replay,
         STREAM_STALL_TIMEOUT,
         &mut measurement,
     )
@@ -177,7 +174,6 @@ async fn consume_sse_with_timeout(
     model: &str,
     tools: &[serde_json::Value],
     reasoning_capture: Option<crate::services::llm::reasoning_wire::ReasoningCapture>,
-    _legacy_codex_replay: bool,
     idle_timeout: std::time::Duration,
     measurement: &mut StreamMeasurement<'_>,
 ) -> Result<StreamOutcome, String> {

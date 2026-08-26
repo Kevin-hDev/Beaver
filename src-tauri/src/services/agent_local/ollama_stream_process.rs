@@ -7,6 +7,11 @@ use tokio::sync::mpsc;
 
 pub(crate) use super::ollama_stream_filter::flush_filter;
 
+pub struct ProcessChunkOptions<'a> {
+    pub buffer_content: bool,
+    pub reasoning_capture: Option<&'a mut ReasoningCapture>,
+}
+
 pub fn process_chunk(
     text: &str,
     on_event: &AgentEventEmitter,
@@ -14,12 +19,11 @@ pub fn process_chunk(
     result: &mut StreamResult,
     tool_tx: Option<&mpsc::UnboundedSender<(usize, String, serde_json::Value)>>,
     think_filter: &mut ThinkTagFilter,
-    buffer_content: bool,
-    mut reasoning_capture: Option<&mut ReasoningCapture>,
+    mut options: ProcessChunkOptions<'_>,
 ) -> Result<(), String> {
     let chunk: serde_json::Value =
         serde_json::from_str(text).map_err(|e| format!("JSON invalide: {e}"))?;
-    if let Some(reasoning_capture) = reasoning_capture.as_deref_mut() {
+    if let Some(reasoning_capture) = options.reasoning_capture.as_deref_mut() {
         reasoning_capture.observe_json(&chunk);
         reasoning_capture.observe_done(&chunk);
     }
@@ -43,8 +47,8 @@ pub fn process_chunk(
         if let Some(duration_ns) = done_generation_duration(&chunk) {
             result.generation.record_native_duration(duration_ns);
         }
-        flush_filter(think_filter, on_event, token_count, result, buffer_content);
-        result.continuation = reasoning_capture
+        flush_filter(think_filter, on_event, token_count, result, options.buffer_content);
+        result.continuation = options.reasoning_capture
             .as_deref_mut()
             .and_then(ReasoningCapture::finish_complete);
         return Ok(());
@@ -76,7 +80,7 @@ pub fn process_chunk(
                 on_event,
                 token_count,
                 result,
-                buffer_content,
+                options.buffer_content,
             );
         }
     }
@@ -104,7 +108,7 @@ pub fn process_chunk(
             );
             result.tool_calls.push((name.clone(), args.clone()));
             result.tool_call_ids.push(tool_call_id.clone());
-            if let Some(reasoning_capture) = reasoning_capture.as_deref_mut() {
+            if let Some(reasoning_capture) = options.reasoning_capture.as_deref_mut() {
                 reasoning_capture.observe_native_tool_link(tool_call_id.clone(), name.clone());
             }
             let _ = on_event.send(StreamEvent::ToolCall {

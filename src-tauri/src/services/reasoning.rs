@@ -99,8 +99,8 @@ fn fallback_supported_modes(provider: &str, model: &str) -> &'static [&'static s
             &["off", "high"]
         }
         "mistral" => &[],
-        "cerebras" if is_gpt_oss(model) => &["low", "medium", "high"],
-        "cerebras" => &["auto"],
+        "cerebras" if is_gpt_oss(model) => &["off", "low", "medium", "high"],
+        "cerebras" => &["off", "auto"],
         "moonshot" if crate::services::llm::providers::moonshot::is_k3(&lower(model)) => {
             &["low", "high", "max"]
         }

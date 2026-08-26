@@ -4,7 +4,7 @@ use super::{
     agent_loop_ollama_request::OllamaRequestParams,
     agent_loop_limits::MAX_TURNS, agent_loop_plan, agent_loop_support, circuit_breaker,
     context_usage_buckets::ContextUsageSeed, context_usage_runtime,
-    stream_events::AgentEventEmitter, tool_executor,
+    stream_events::AgentEventEmitter,
     types_ollama::{ChatMessage, OllamaThink}, write_guard_registry,
 };
 use crate::services::token_counting;
@@ -40,6 +40,8 @@ pub async fn run_agent_loop(
     let mut plan_repairs = 0;
     #[cfg(debug_assertions)]
     let fixture_mode = fixture_run.is_some();
+    #[cfg(not(debug_assertions))]
+    let fixture_mode = false;
     let mut subagents =
         agent_loop_support::prepare_subagents(&session_id, parent_message_inbox).await;
     let compression = LoopCompression {
@@ -52,9 +54,7 @@ pub async fn run_agent_loop(
         working_dir: &working_dir,
     };
     for turn in 0..MAX_TURNS {
-        if cancel.is_cancelled() {
-            return Err("Annulé".to_string());
-        }
+        agent_loop_support::ensure_not_cancelled(&cancel)?;
         let request_output = super::agent_loop_ollama_request::run(OllamaRequestParams {
             on_event,
             messages,
@@ -94,22 +94,21 @@ pub async fn run_agent_loop(
         let input_tokens = request_output.input_tokens;
         let result = request_output.result;
         if interrupted {
-            if let Some(journal) = journal.as_deref_mut() {
-                journal
-                    .persist_partial(agent_loop_support::build_assistant_message(&result))
-                    .await?;
-            }
-            super::stream_buffer::finalize_interrupted_content(on_event, &result, plan_active);
-            context_usage_runtime::emit_result(on_event, input_tokens, &result, configured_context);
             eager_handle.abort();
-            compression
-                .handle_interrupted(
-                    messages,
-                    &result,
-                    LastCounts::new(&mut last_prompt, &mut last_eval),
-                    cancel.clone(),
-                )
-                .await?;
+            super::agent_loop_interrupted::handle(
+                on_event,
+                messages,
+                &result,
+                plan_active,
+                input_tokens,
+                configured_context,
+                &compression,
+                &mut last_prompt,
+                &mut last_eval,
+                cancel.clone(),
+                journal.as_deref_mut(),
+            )
+            .await?;
             continue;
         }
         token_counting::add_real_count(&mut total_eval, result.eval_count);
@@ -166,86 +165,43 @@ pub async fn run_agent_loop(
             }
             break;
         }
-        if turn == MAX_TURNS - 1 {
-            eager_handle.abort();
-            agent_loop_support::ensure_more_turns(turn, model).await?;
-        }
-        if let Err(msg) = breaker.check(&result.tool_calls) {
-            eager_handle.abort();
-            agent_loop_support::decharge_gpu(model).await;
-            return Err(msg);
-        }
-        let control_only = super::subagent_tool_control::is_control_only(&result.tool_calls);
-        #[cfg(debug_assertions)]
-        if fixture_mode {
-            eager_handle.abort();
-        }
-        #[cfg(debug_assertions)]
-        let eager_results = if fixture_mode {
-            Default::default()
-        } else {
-            eager_handle.await.unwrap_or_default()
-        };
-        #[cfg(not(debug_assertions))]
-        let eager_results = eager_handle.await.unwrap_or_default();
-        let tool_start = messages.len();
-        #[cfg(debug_assertions)]
-        let tool_outcome = match fixture_run.as_deref_mut() {
-            Some(run) => {
-                super::fixture_tool_executor::execute(
-                    on_event,
-                    messages,
-                    &result.tool_calls,
-                    &result.tool_call_ids,
-                    run,
-                    &cancel,
-                )
-                .await
-            }
-            None => {
-                tool_executor::run_tools_with_eager(
-                    on_event,
-                    messages,
-                    &result.tool_calls,
-                    &working_dir,
-                    permission_mode,
-                    &session_id,
-                    &request_id,
-                    cancel.clone(),
-                    &mut write_guard,
-                    plan_active,
-                    Some(eager_results),
-                    &result.tool_call_ids,
-                    None,
-                )
-                .await
-            }
-        };
-        #[cfg(not(debug_assertions))]
-        let tool_outcome = tool_executor::run_tools_with_eager(
-            on_event,
-            messages,
+        let prepared = super::agent_loop_tool_batch::prepare(
+            eager_handle,
+            fixture_mode,
             &result.tool_calls,
-            &working_dir,
-            permission_mode,
-            &session_id,
-            &request_id,
-            cancel.clone(),
-            &mut write_guard,
-            plan_active,
-            Some(eager_results),
-            &[],
-            None,
+            turn,
+            model,
+            &mut breaker,
+        )
+        .await?;
+        let tool_start = messages.len();
+        let tool_outcome = super::agent_loop_tool_batch::execute(
+            super::agent_loop_tool_batch::ToolBatchContext {
+                on_event,
+                messages,
+                tool_calls: &result.tool_calls,
+                tool_call_ids: &result.tool_call_ids,
+                working_dir: &working_dir,
+                permission_mode,
+                session_id: &session_id,
+                request_id: &request_id,
+                cancel: cancel.clone(),
+                write_guard: &mut write_guard,
+                plan_active,
+                eager_results: prepared.eager_results,
+                #[cfg(debug_assertions)]
+                fixture_run: fixture_run.as_deref_mut(),
+            },
         )
         .await;
         let compressed_during_tools = tool_outcome.compressed;
         let tool_end = messages.len();
+        let stop_after_tools = tool_outcome.apply_follow_ups(&mut messages[tool_start..tool_end])?;
         if let Some(journal) = journal.as_deref_mut() {
             journal
                 .persist_tool_results(&messages[tool_start..tool_end])
                 .await?;
         }
-        let stop_after_tools = tool_outcome.apply_follow_ups(messages);
         #[cfg(debug_assertions)]
         if !fixture_mode {
             super::extension_tool_set::refresh_and_record(&mut tools, &session_id, &request_id)
@@ -254,7 +210,7 @@ pub async fn run_agent_loop(
         #[cfg(not(debug_assertions))]
         super::extension_tool_set::refresh_and_record(&mut tools, &session_id, &request_id).await?;
         subagents
-            .wait_after_tool_batch(control_only, messages, cancel.clone())
+            .wait_after_tool_batch(prepared.control_only, messages, cancel.clone())
             .await?;
         let counts = LastCounts::new(&mut last_prompt, &mut last_eval);
         compression

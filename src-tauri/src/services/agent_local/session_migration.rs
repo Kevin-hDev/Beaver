@@ -19,7 +19,7 @@ pub struct LoadedSession {
     session: AgentSession,
     path: PathBuf,
     version: LoadedVersion,
-    original: Zeroizing<Vec<u8>>,
+    original: Option<Zeroizing<Vec<u8>>>,
 }
 
 impl LoadedSession {
@@ -59,7 +59,7 @@ pub fn read(bytes: &[u8], path: PathBuf) -> Result<LoadedSession, String> {
         session,
         path,
         version,
-        original: Zeroizing::new(bytes.to_vec()),
+        original: (version == LoadedVersion::V1).then(|| Zeroizing::new(bytes.to_vec())),
     })
 }
 
@@ -77,7 +77,11 @@ pub(super) async fn commit_v2_bytes(
         return Err(session_limits::save_failed());
     }
     session_limits::validate_serialized_size(bytes.len())?;
-    super::session_migration_backup::publish(&loaded.path, loaded.original.as_slice(), bytes).await
+    let original = loaded
+        .original
+        .as_deref()
+        .ok_or_else(session_limits::save_failed)?;
+    super::session_migration_backup::publish(&loaded.path, original, bytes).await
 }
 
 #[cfg(test)]
@@ -86,8 +90,11 @@ pub(super) async fn commit_v2_fail_before_rename(loaded: &LoadedSession) -> Resu
         return Err(session_limits::save_failed());
     }
     let backup = super::session_migration_backup::backup_path(&loaded.path)?;
-    super::session_migration_backup::ensure_exact_backup(&backup, loaded.original.as_slice())
-        .await?;
+    let original = loaded
+        .original
+        .as_deref()
+        .ok_or_else(session_limits::save_failed)?;
+    super::session_migration_backup::ensure_exact_backup(&backup, original).await?;
     let path = loaded.path.clone();
     let bytes = serialize_v2(loaded.session())?;
     tokio::task::spawn_blocking(move || {
@@ -98,11 +105,14 @@ pub(super) async fn commit_v2_fail_before_rename(loaded: &LoadedSession) -> Resu
 }
 
 pub(super) async fn acknowledge_v2(loaded: &LoadedSession) -> Result<(), String> {
-    if loaded.version == LoadedVersion::V2 {
-        super::session_migration_backup::acknowledge(&loaded.path).await
-    } else {
-        Ok(())
+    if loaded.version == LoadedVersion::V2
+        && super::session_migration_backup::acknowledge(&loaded.path)
+            .await
+            .is_err()
+    {
+        log::warn!("session_migration_backup_cleanup_failed");
     }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -115,7 +125,7 @@ pub(super) fn serialize_v2(session: &AgentSession) -> Result<Vec<u8>, String> {
     if session.schema_version != CURRENT_SESSION_SCHEMA_VERSION {
         return Err(session_limits::save_failed());
     }
-    super::session_migration_wire::validate_v2(session)
+    super::session_migration_wire::validate_v2_writable(session)
         .map_err(|_| session_limits::save_failed())?;
     let bytes = serde_json::to_vec_pretty(session).map_err(|_| session_limits::save_failed())?;
     session_limits::validate_serialized_size(bytes.len())?;

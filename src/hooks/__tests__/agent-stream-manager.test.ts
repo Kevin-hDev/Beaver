@@ -328,20 +328,6 @@ describe("agentStreamManager", () => {
     expect(agentStreamManager.getSnapshot("renew")?.currentContent).toBe("nouvelle");
   });
 
-  it("ne remplit plus le buffer après le démontage de l'admission", async () => {
-    await agentStreamManager.startSession(
-      "discarded", [message("u1", "user", "Question")], 0, "chat", true,
-    );
-    agentStreamManager.discardPendingAdmission("discarded");
-
-    emit("discarded", {
-      event: "token", data: { content: "tardif", tokenCount: 1, tps: 1 },
-    }, 94);
-
-    expect(records.get("discarded")?.pendingAdmissionBuckets).toHaveLength(0);
-    expect(agentStreamManager.getSnapshot("discarded")?.currentContent).toBe("");
-  });
-
   it("borne les buffers précoces par génération sans évincer un bucket exploitable", async () => {
     await agentStreamManager.startSession(
       "bounded", [message("u1", "user", "Question")], 0, "chat", true,
@@ -354,8 +340,6 @@ describe("agentStreamManager", () => {
     }
 
     expect(records.get("bounded")?.pendingAdmissionBuckets).toHaveLength(32);
-    agentStreamManager.discardPendingAdmission("bounded");
-    expect(records.get("bounded")?.pendingAdmissionBuckets).toHaveLength(0);
   });
 
   it("refuse une génération écartée même après rotation de la quarantaine", async () => {

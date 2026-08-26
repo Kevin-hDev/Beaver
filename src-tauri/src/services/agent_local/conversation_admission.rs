@@ -1,13 +1,14 @@
-#![allow(dead_code, reason = "the Rust chat boundary adopts admission in Task 9")]
-
 use std::collections::HashSet;
 use std::fmt;
 
 use chrono::Utc;
 use uuid::Uuid;
 
+#[cfg(test)]
 use crate::models::agent_turn_contract::ResumeTurnInput;
-use crate::services::reasoning_continuity::contract::{ContinuationTarget, ReplayTarget};
+use crate::services::reasoning_continuity::contract::ContinuationTarget;
+#[cfg(test)]
+use crate::services::reasoning_continuity::contract::ReplayTarget;
 
 use super::conversation_history::{ConversationHistory, ProviderRole};
 use super::conversation_input::ResolvedTurnInput;
@@ -44,6 +45,7 @@ pub struct AdmittedTurn {
     pub history: ConversationHistory,
 }
 
+#[cfg(test)]
 pub async fn resume(
     session_id: &str,
     input: ResumeTurnInput,
@@ -52,14 +54,7 @@ pub async fn resume(
     super::conversation_resume::resume(session_id, input, target).await
 }
 
-pub async fn resume_for_continuation(
-    session_id: &str,
-    input: ResumeTurnInput,
-    target: ContinuationTarget,
-) -> Result<AdmittedTurn, ConversationAdmissionError> {
-    super::conversation_resume::resume_for_continuation(session_id, input, target).await
-}
-
+#[cfg(test)]
 pub async fn new_turn(
     session_id: &str,
     input: ResolvedTurnInput,
@@ -179,9 +174,7 @@ where
         tool_name: None,
         tool_call_id: None,
         continuation: None,
-        replay_source: target.replay().map(
-            crate::services::reasoning_continuity::envelope::ReasoningSource::from_target,
-        ),
+        replay_source: super::conversation_admission_replay::source_for_admission(&target),
         tool_activities: None,
         segments: None,
         files: input.files.clone(),

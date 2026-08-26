@@ -26,6 +26,7 @@ pub struct Transition {
     pub replayable_message_indexes: Vec<usize>,
 }
 
+#[cfg(test)]
 pub fn for_target(session: &AgentSession, target: &ReplayTarget) -> Transition {
     for_continuation(session, &ContinuationTarget::Replay(target.clone()))
 }
@@ -45,6 +46,9 @@ pub fn for_continuation(session: &AgentSession, target: &ContinuationTarget) -> 
             .iter()
             .position(|message| message.turn_id != session.messages[turn_start].turn_id)
             .map_or(session.messages.len(), |offset| turn_start + offset);
+        let compaction_boundary = session.messages[turn_start..turn_end]
+            .iter()
+            .any(|message| crate::services::compress::state_recent::is_compression_context(&message.content));
         let barrier = session.messages[turn_start..turn_end]
             .iter()
             .find_map(|message| {
@@ -55,7 +59,11 @@ pub fn for_continuation(session: &AgentSession, target: &ContinuationTarget) -> 
                     .or(message.replay_source.as_ref())
                     .and_then(|source| barrier_for(source, replay_target))
             });
-        if let Some(barrier) = barrier {
+        if compaction_boundary {
+            result.barrier = Some(ContinuityBarrier::Compaction);
+            result.compatible_suffix_start = turn_end;
+            result.replayable_message_indexes.clear();
+        } else if let Some(barrier) = barrier {
             result.barrier = Some(barrier);
             // A provider state cannot be split from the visible user/assistant/tool turn it belongs to.
             result.compatible_suffix_start = turn_end;

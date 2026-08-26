@@ -57,7 +57,11 @@ fn message_to_openai_with_names(
                     .collect();
                 for (value, tc) in tc_arr.iter_mut().zip(tcs.iter()) {
                     if let Some(extra_content) = &tc.extra_content {
-                        value["extra_content"] = extra_content.clone();
+                        if let Some(extra_content) =
+                            extra_content_for_provider(extra_content, provider_id)
+                        {
+                            value["extra_content"] = extra_content;
+                        }
                     }
                 }
                 obj["tool_calls"] = json!(tc_arr);
@@ -80,6 +84,20 @@ fn message_to_openai_with_names(
             json!({ "role": msg.role, "content": msg.content })
         }
     }
+}
+
+fn extra_content_for_provider(extra: &Value, provider_id: &str) -> Option<Value> {
+    if provider_id == crate::services::codex_client::PROVIDER_ID {
+        return Some(extra.clone());
+    }
+    let mut filtered = extra.clone();
+    if let Some(object) = filtered.as_object_mut() {
+        object.remove("codex");
+        if object.is_empty() {
+            return None;
+        }
+    }
+    Some(filtered)
 }
 
 pub fn messages_to_openai(messages: &[ChatMessage], provider_id: &str) -> Vec<Value> {

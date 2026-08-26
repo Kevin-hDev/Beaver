@@ -11,7 +11,6 @@ pub enum ReplayRequirement {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ActivationState {
     Disabled,
-    FixtureValidated,
     LiveValidated,
 }
 
@@ -47,18 +46,45 @@ pub struct RouteContract {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ReplayPolicy {
-    pub contract_id: Option<ContractId>,
-    pub adapter: Option<AdapterId>,
-    pub requirement: ReplayRequirement,
-    pub activation: ActivationState,
+    contract_id: Option<ContractId>,
+    adapter: Option<AdapterId>,
+    requirement: ReplayRequirement,
+    activation: ActivationState,
 }
 
 impl ReplayPolicy {
+    pub const fn requirement(self) -> ReplayRequirement {
+        self.requirement
+    }
+
+    pub const fn activation(self) -> ActivationState {
+        self.activation
+    }
+
     /// La bascule reste centralisée dans le registre : aucun adaptateur ne peut
     /// sérialiser une enveloppe tant que son couple exact n'est pas validé réel.
     pub(crate) fn live_adapter(self) -> Option<(ContractId, AdapterId)> {
         (self.activation == ActivationState::LiveValidated)
             .then_some((self.contract_id?, self.adapter?))
+    }
+
+    pub(crate) fn fixture_adapter(self) -> Option<(ContractId, AdapterId)> {
+        Some((self.contract_id?, self.adapter?))
+    }
+
+    #[cfg(test)]
+    pub(crate) const fn for_test(
+        contract_id: Option<ContractId>,
+        adapter: Option<AdapterId>,
+        requirement: ReplayRequirement,
+        activation: ActivationState,
+    ) -> Self {
+        Self {
+            contract_id,
+            adapter,
+            requirement,
+            activation,
+        }
     }
 }
 

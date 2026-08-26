@@ -1,10 +1,14 @@
 use crate::models::agent_session_contract::EditUserMessageInput;
+#[cfg(test)]
 use crate::services::reasoning_continuity::contract::ReplayTarget;
 
+#[cfg(test)]
 use super::conversation_admission::{error, ConversationAdmissionError};
+#[cfg(test)]
 use super::conversation_history::ConversationHistory;
 use super::types_session::AgentSession;
 
+#[cfg(test)]
 pub async fn edit_user_message(
     session_id: &str,
     input: EditUserMessageInput,
@@ -21,6 +25,7 @@ pub async fn edit_user_message(
     .await
 }
 
+#[cfg(test)]
 async fn edit_inner<A, AFut, W, WFut>(
     session_id: &str,
     input: EditUserMessageInput,

@@ -3,6 +3,8 @@ use std::path::{Path, PathBuf};
 
 use super::session_limits::MAX_SESSION_FILES;
 
+const MAX_SESSION_ARTIFACTS: usize = 64;
+
 pub(super) fn paths_in(dir: &Path, id: &str) -> Result<Vec<PathBuf>, String> {
     super::session_store::validate_session_id(id)?;
     let main = format!("{id}.json");
@@ -21,6 +23,9 @@ pub(super) fn paths_in(dir: &Path, id: &str) -> Result<Vec<PathBuf>, String> {
         let name = entry.file_name();
         let name = name.to_str().ok_or_else(delete_failed)?;
         if name == main || name == backup || is_known_temp(name, &main, &backup) {
+            if paths.len() >= MAX_SESSION_ARTIFACTS {
+                return Err(delete_failed());
+            }
             let file_type = entry.file_type().map_err(|_| delete_failed())?;
             if !file_type.is_file() && !file_type.is_symlink() {
                 return Err(delete_failed());

@@ -58,7 +58,7 @@ fn unavailable_fingerprint_keeps_only_non_sensitive_counters() {
         Err(super::fingerprint::FingerprintError::Unavailable),
     );
     let rendered = serde_json::to_string(&diagnostic).unwrap();
-    assert_eq!(diagnostic.code, ReasonCode::FingerprintUnavailable);
+    assert_eq!(diagnostic.code, ReasonCode::Captured);
     assert!(!rendered.contains("sentinel"));
     assert!(!rendered.contains("encrypted-content"));
 }

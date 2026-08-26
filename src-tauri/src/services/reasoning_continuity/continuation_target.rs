@@ -51,9 +51,15 @@ impl ContinuationTarget {
         }
     }
 
-    #[cfg(debug_assertions)]
     pub const fn is_fixture_candidate(&self) -> bool {
-        matches!(self, Self::FixtureCandidate(_))
+        #[cfg(debug_assertions)]
+        {
+            matches!(self, Self::FixtureCandidate(_))
+        }
+        #[cfg(not(debug_assertions))]
+        {
+            false
+        }
     }
 
     pub fn route_id(&self) -> RouteId {

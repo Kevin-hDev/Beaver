@@ -6,6 +6,7 @@ async fn spawn(
     stream: super::agent_chat_admission::AgentChatAdmission,
     work: super::agent_chat_work::AgentStreamAdmission,
     admitted: crate::services::agent_local::conversation_admission::AdmittedTurn,
+    admission_rollback: super::agent_chat_turn::AdmissionRollback,
     target: super::agent_chat_target::ResolvedChatTarget,
     resolved_dir: super::agent_working_dir::ResolvedWorkingDir,
     result: ChatStreamAdmission,
@@ -19,6 +20,7 @@ async fn spawn(
     let request_id = stream.request_id.clone();
     let permission_mode = stream.permission_mode.clone();
     let generation = stream.generation;
+    let spawn_rollback = admission_rollback.clone();
     let emitter = AgentEventEmitter::with_generation(app.clone(), session_id.clone(), generation);
     let _ = emitter.send(StreamEvent::TurnAdmitted {
         turn_id: result.turn_id.clone(),
@@ -58,6 +60,16 @@ async fn spawn(
             })
             .await;
             run_inbox.close().await;
+            if outcome.is_err() {
+                let streams = task_app.state::<ActiveStreams>();
+                let _ = super::agent_chat_turn::rollback_current(
+                    &streams,
+                    &task_session,
+                    generation,
+                    &admission_rollback,
+                )
+                .await;
+            }
             let is_current = cleanup_current(&task_app, &task_session, generation).await;
             match outcome {
                 Ok(completed) if is_current => completed.emit_done(&emitter),
@@ -70,6 +82,13 @@ async fn spawn(
         }),
     );
     if let Err(error) = spawn_result {
+        let _ = super::agent_chat_turn::rollback_current(
+            streams,
+            &session_id,
+            generation,
+            &spawn_rollback,
+        )
+        .await;
         rollback(streams, &session_id, &stream).await;
         return Err(error);
     }
@@ -77,21 +96,8 @@ async fn spawn(
 }
 
 async fn cleanup_current(app: &tauri::AppHandle, session_id: &str, generation: u64) -> bool {
-    let current = {
-        let state = app.state::<ActiveStreams>();
-        let mut map = state.0.lock().await;
-        if matches!(map.get(session_id), Some((_, active, _, _)) if *active == generation) {
-            map.remove(session_id);
-            true
-        } else {
-            false
-        }
-    };
-    if current {
-        crate::services::agent_local::permission_gate::clear_session(session_id).await;
-        crate::services::agent_local::session_store::remove_session_lock(session_id).await;
-    }
-    current
+    let state = app.state::<ActiveStreams>();
+    super::agent_chat_streams::finish_active_stream(&state, session_id, generation).await
 }
 
 async fn emit_failure(

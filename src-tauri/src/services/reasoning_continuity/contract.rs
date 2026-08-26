@@ -24,6 +24,7 @@ pub enum ContractId {
 }
 
 impl ContractId {
+    #[cfg(test)]
     pub const ALL: [Self; 11] = [
         Self::OllamaNativeV1,
         Self::GeminiCompatV1,
@@ -157,7 +158,6 @@ impl CredentialScope {
         Ok(Self(value))
     }
 
-    #[allow(dead_code, reason = "the local route consumes this in Task 4")]
     pub fn local_uncredentialed() -> Self {
         Self(Self::LOCAL_UNCREDENTIALED.to_owned())
     }

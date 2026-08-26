@@ -18,6 +18,7 @@ pub(super) fn migrate_value(value: &mut Value) -> Result<(), String> {
         .get_mut("messages")
         .and_then(Value::as_array_mut)
         .ok_or_else(invalid)?;
+    merge_consecutive_users(messages)?;
     assign_missing_ids(messages, true)
 }
 
@@ -84,6 +85,7 @@ fn assign_missing_ids(messages: &mut [Value], replace: bool) -> Result<(), Strin
         assign_turn_id(object, replace, &mut active_turn);
         if replace {
             object.remove("continuation");
+            object.remove("replay_source");
             object.remove("tool_call_id");
         }
         if let Some(calls) = object.get_mut("tool_calls").and_then(Value::as_array_mut) {
@@ -111,6 +113,59 @@ fn assign_missing_ids(messages: &mut [Value], replace: bool) -> Result<(), Strin
         if object.get("role").and_then(Value::as_str) == Some("tool") {
             assign_tool_result_id(object, &mut pending, replace);
         }
+    }
+    Ok(())
+}
+
+/// Les anciennes compressions pouvaient produire plusieurs messages user à
+/// la suite. Leur texte appartenait au même contexte logique : on le regroupe
+/// avant d'allouer les tours v2 afin de rendre la session poursuivable.
+fn merge_consecutive_users(messages: &mut Vec<Value>) -> Result<(), String> {
+    let mut repaired = Vec::<Value>::with_capacity(messages.len());
+    for message in messages.drain(..) {
+        let is_user = message.get("role").and_then(Value::as_str) == Some("user");
+        let previous_is_user = repaired
+            .last()
+            .and_then(|value| value.get("role"))
+            .and_then(Value::as_str)
+            == Some("user");
+        if is_user && previous_is_user {
+            merge_user_message(repaired.last_mut().ok_or_else(invalid)?, message)?;
+        } else {
+            repaired.push(message);
+        }
+    }
+    *messages = repaired;
+    Ok(())
+}
+
+fn merge_user_message(target: &mut Value, source: Value) -> Result<(), String> {
+    let target = target.as_object_mut().ok_or_else(invalid)?;
+    let source = source.as_object().ok_or_else(invalid)?;
+    let extra = source.get("content").and_then(Value::as_str).unwrap_or_default();
+    if !extra.is_empty() {
+        let content = target
+            .entry("content")
+            .or_insert_with(|| Value::String(String::new()))
+            .as_str()
+            .ok_or_else(invalid)?;
+        let merged = if content.is_empty() {
+            extra.to_string()
+        } else {
+            format!("{content}\n\n{extra}")
+        };
+        target.insert("content".into(), Value::String(merged));
+    }
+    for field in ["files", "skill_names", "skill_ids"] {
+        let Some(extra) = source.get(field).and_then(Value::as_array) else {
+            continue;
+        };
+        target
+            .entry(field)
+            .or_insert_with(|| Value::Array(Vec::new()))
+            .as_array_mut()
+            .ok_or_else(invalid)?
+            .extend(extra.iter().cloned());
     }
     Ok(())
 }

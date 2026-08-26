@@ -4,13 +4,29 @@ use serde::{Deserialize, Serialize};
 use super::AgentMessageView;
 use crate::services::agent_local::types_session::PreserveReasoningSetting;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[serde(rename_all = "snake_case")]
+pub enum ContinuityRequirement {
+    Required,
+    Optional,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[serde(rename_all = "snake_case")]
+pub enum ContinuityState {
+    Locked,
+    Available,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(test, derive(ts_rs::TS))]
 pub struct ContinuityCapability {
-    pub requirement: String,
+    pub requirement: ContinuityRequirement,
     pub local_available: bool,
     pub remote_available: bool,
-    pub state: String,
+    pub state: ContinuityState,
     pub explanation_key: String,
 }
 

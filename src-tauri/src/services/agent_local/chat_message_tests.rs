@@ -8,7 +8,7 @@ fn system_and_user_messages_cannot_carry_reasoning_or_tools() {
     ] {
         assert!(message.display_thinking.is_none());
         assert!(message.continuation.is_none());
-        assert!(message.legacy_tool_loop_reasoning.is_none());
+        assert!(message.tool_loop_reasoning.is_none());
         assert!(message.tool_calls.is_none());
         assert!(message.tool_call_id.is_none());
         assert!(message.tool_name.is_none());
@@ -38,7 +38,7 @@ fn assistant_requires_reasoning_and_tool_calls_at_construction() {
     assert_eq!(message.display_thinking.as_deref(), Some("reasoning"));
     assert!(message.continuation.is_none());
     assert_eq!(
-        message.legacy_tool_loop_reasoning.as_deref(),
+        message.tool_loop_reasoning.as_deref(),
         Some("reasoning")
     );
     assert_eq!(message.tool_calls.unwrap()[0].id.as_deref(), Some("call-1"));
@@ -55,7 +55,7 @@ fn tool_requires_call_id_and_name_at_construction() {
     assert_eq!(message.role, "tool");
     assert_eq!(message.tool_call_id.as_deref(), Some("call-1"));
     assert_eq!(message.tool_name.as_deref(), Some("lookup"));
-    assert!(message.legacy_tool_loop_reasoning.is_none());
+    assert!(message.tool_loop_reasoning.is_none());
 }
 
 #[test]
@@ -74,7 +74,7 @@ fn images_are_added_without_changing_message_role() {
     assert_eq!(message.images, Some(vec!["base64".to_owned()]));
     assert!(message.display_thinking.is_none());
     assert!(message.continuation.is_none());
-    assert!(message.legacy_tool_loop_reasoning.is_none());
+    assert!(message.tool_loop_reasoning.is_none());
 }
 
 #[test]
@@ -92,5 +92,5 @@ fn generic_serde_never_exposes_reasoning_fields() {
     assert!(!serialized.contains("current-run-only"));
     assert!(!serialized.contains("display_thinking"));
     assert!(!serialized.contains("continuation"));
-    assert!(!serialized.contains("legacy_tool_loop_reasoning"));
+    assert!(!serialized.contains("tool_loop_reasoning"));
 }

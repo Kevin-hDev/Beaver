@@ -49,7 +49,7 @@ pub(crate) async fn resolve(
     let scope = if route_id == RouteId::Groq {
         None
     } else {
-        Some(crate::services::api_keys::credential_scope(route_id).map_err(|_| generic_error())?)
+        crate::services::api_keys::credential_scope(route_id).ok()
     };
     resolve_session(
         session,
@@ -105,23 +105,22 @@ fn continuation_for_session(
     reasoning_mode: ReasoningModeId,
 ) -> Result<ContinuationTarget, String> {
     let blocked = || {
-        let target = NonReplayTarget {
+        Ok(ContinuationTarget::Forbidden(NonReplayTarget {
             route_id,
             model_id: session.model.clone(),
             reasoning_mode,
-        };
-        target.validate().map_err(|_| generic_error())?;
-        Ok(ContinuationTarget::Forbidden(target))
+        }))
     };
     if route_id == RouteId::Groq {
         return blocked();
     }
-    let target = build_with_mode(
-        &session.model,
-        route_id,
-        credential_scope.ok_or_else(generic_error)?,
-        reasoning_mode,
-    )?;
+    let Some(credential_scope) = credential_scope else {
+        return blocked();
+    };
+    let target = match build_with_mode(&session.model, route_id, credential_scope, reasoning_mode) {
+        Ok(target) => target,
+        Err(_) => return blocked(),
+    };
     let mut tool_target = target.clone();
     tool_target.continuation_use = ContinuationUse::ToolContinuation;
     let policies = [
@@ -131,10 +130,10 @@ fn continuation_for_session(
     let required = policies
         .iter()
         .flatten()
-        .any(|policy| policy.requirement == ReplayRequirement::Required);
+        .any(|policy| policy.requirement() == ReplayRequirement::Required);
     let has_live_replay_policy = policies.iter().flatten().any(|policy| {
-        policy.activation == ActivationState::LiveValidated
-            && policy.requirement != ReplayRequirement::Forbidden
+        policy.activation() == ActivationState::LiveValidated
+            && policy.requirement() != ReplayRequirement::Forbidden
     });
     // La capture garde le scope initial jusqu'au tour outil : une politique
     // user forbidden ne doit jamais effacer une politique tool live required.

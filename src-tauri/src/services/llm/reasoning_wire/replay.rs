@@ -11,6 +11,8 @@ use crate::services::reasoning_continuity::envelope::ContinuationState;
 
 #[path = "replay_apply.rs"]
 mod replay_apply;
+#[path = "replay_apply_chat.rs"]
+mod replay_apply_chat;
 #[cfg(test)]
 pub(crate) use replay_apply::apply_chat_continuity;
 pub(crate) use replay_apply::{
@@ -38,7 +40,7 @@ pub(crate) struct ReplayApproval<'a> {
     adapter: AdapterId,
 }
 
-pub(crate) fn approved<'a>(
+fn approved<'a>(
     decision: ReplayDecision,
     policy: ReplayPolicy,
     envelope: &'a ReasoningEnvelope,
@@ -99,6 +101,16 @@ pub(crate) fn target_for_request(
         ContinuationUse::UserContinuation
     };
     target.map(|target| target.for_continuation_use(continuation_use))
+}
+
+/// Une transition de route, modèle, compte ou version rend les tours plus
+/// anciens lisibles, mais hors du contrat de rejeu du nouvel appel.
+pub(crate) fn messages_after_barrier(messages: &[ChatMessage]) -> &[ChatMessage] {
+    let start = messages
+        .iter()
+        .rposition(|message| message.continuity_barrier_before)
+        .unwrap_or(0);
+    &messages[start..]
 }
 
 #[cfg(test)]

@@ -2,8 +2,6 @@ use serde::{Deserialize, Serialize};
 
 #[path = "agent_message_view_contract.rs"]
 mod message;
-#[path = "agent_message_input_contract.rs"]
-mod message_input;
 #[path = "agent_session_view_contract.rs"]
 mod session;
 
@@ -11,9 +9,9 @@ pub use message::{
     AgentMessageView, FileAttachmentView, SavedSegmentView, ToolActivityRecordView,
     ToolCallFunctionView, ToolCallRequestView, ToolFileChangeView,
 };
-pub use message_input::VisibleMessageInput;
 pub use session::{
-    AgentSessionView, AgentStreamFailureView, ContinuityCapability, SubagentLastActivityView,
+    AgentSessionView, AgentStreamFailureView, ContinuityCapability, ContinuityRequirement,
+    ContinuityState, SubagentLastActivityView,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -68,9 +66,10 @@ pub(crate) fn typescript_bindings() -> String {
         message::ToolActivityRecordView::decl(&config),
         message::SavedSegmentView::decl(&config),
         message::AgentMessageView::decl(&config),
-        message_input::VisibleMessageInput::decl(&config),
         session::SubagentLastActivityView::decl(&config),
         session::AgentStreamFailureView::decl(&config),
+        session::ContinuityRequirement::decl(&config),
+        session::ContinuityState::decl(&config),
         session::ContinuityCapability::decl(&config),
         session::AgentSessionView::decl(&config),
         SessionMetadataPatch::decl(&config),

@@ -76,11 +76,26 @@ async fn dispatch(
     let session_id = create_heartbeat_session(wakeup).await?;
     // Le scheduler ne possède pas de second moteur : tout réveil utilise le
     // contexte et les outils de l'Agent Local en accès complet.
-    let result = super::agentic::run(app, wakeup, &session_id, cancel.clone()).await?;
+    let result = match super::agentic::run(app, wakeup, &session_id, cancel.clone()).await {
+        Ok(result) => result,
+        Err(error) => {
+            delete_empty_heartbeat(&session_id).await;
+            return Err(error);
+        }
+    };
     if !result.has_text_result {
         return Err("L'automatisation n'a produit aucun résultat.".to_string());
     }
     Ok((session_id, result.tokens))
+}
+
+async fn delete_empty_heartbeat(session_id: &str) {
+    let Ok(session) = session_store::get(session_id).await else {
+        return;
+    };
+    if session.messages.is_empty() && session_store::delete_one(session_id).await.is_err() {
+        ::log::warn!("empty_heartbeat_cleanup_failed");
+    }
 }
 
 async fn create_heartbeat_session(wakeup: &ScheduledWakeup) -> Result<String, String> {

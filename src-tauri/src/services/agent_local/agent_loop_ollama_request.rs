@@ -199,8 +199,8 @@ fn live_target_for_request(
     };
     let allowed = crate::services::reasoning_continuity::registry::replay_policy(&target)
         .is_some_and(|policy| {
-            policy.activation == ActivationState::LiveValidated
-                && policy.requirement != ReplayRequirement::Forbidden
+            policy.activation() == ActivationState::LiveValidated
+                && policy.requirement() != ReplayRequirement::Forbidden
         });
     allowed
         .then_some(target)

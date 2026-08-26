@@ -86,7 +86,7 @@ mod tests {
             )
             .await;
 
-            assert!(!outcome.apply_follow_ups(&mut messages));
+            assert!(!outcome.apply_follow_ups(&mut messages).unwrap());
             assert_eq!(messages.len(), 3);
             assert!(messages[0].content.contains("written"));
             assert!(messages[1].content.contains("fixture"));

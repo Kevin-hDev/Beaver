@@ -2,6 +2,12 @@ use crate::services::agent_local::types_ollama::{
     ChatMessage, ChatRequest, OllamaThink, StreamResult, ToolCallFunction, ToolCallOllama,
 };
 
+pub fn ensure_not_cancelled(cancel: &tokio_util::sync::CancellationToken) -> Result<(), String> {
+    (!cancel.is_cancelled())
+        .then_some(())
+        .ok_or_else(|| "Annulé".to_string())
+}
+
 pub async fn prepare_subagents(
     session_id: &str,
     parent_message_inbox: Option<std::sync::Arc<super::parent_message_inbox::ParentMessageInbox>>,

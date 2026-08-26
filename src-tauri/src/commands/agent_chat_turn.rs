@@ -11,6 +11,25 @@ pub(crate) struct AdmittedCurrentTurn {
     kind: AdmittedTurnKind,
 }
 
+#[derive(Clone)]
+pub(crate) struct AdmissionRollback {
+    turn_id: String,
+    user_message_id: String,
+    before: crate::services::agent_local::types_session::AgentSession,
+    kind: AdmittedTurnKind,
+}
+
+impl AdmittedCurrentTurn {
+    pub(crate) fn rollback(&self) -> AdmissionRollback {
+        AdmissionRollback {
+            turn_id: self.turn.turn_id.clone(),
+            user_message_id: self.turn.user_message_id.clone(),
+            before: self.before.clone(),
+            kind: self.kind,
+        }
+    }
+}
+
 #[derive(Clone, Copy)]
 enum AdmittedTurnKind {
     New,
@@ -79,7 +98,7 @@ pub(crate) async fn rollback_current(
     streams: &crate::ActiveStreams,
     session_id: &str,
     generation: u64,
-    admitted: &AdmittedCurrentTurn,
+    admitted: &AdmissionRollback,
 ) -> Result<(), String> {
     let lease =
         crate::services::agent_local::session_locks::acquire_admission_lease(session_id).await;
@@ -106,22 +125,22 @@ pub(crate) async fn rollback_current(
 
 fn matches_admitted_turn(
     session: &crate::services::agent_local::types_session::AgentSession,
-    admitted: &AdmittedCurrentTurn,
+    admitted: &AdmissionRollback,
 ) -> bool {
     match admitted.kind {
         AdmittedTurnKind::New => {
             session.messages.len() == admitted.before.messages.len() + 1
                 && session.messages.last().is_some_and(|message| {
-                    message.id == admitted.turn.user_message_id
-                        && message.turn_id == admitted.turn.turn_id
+                    message.id == admitted.user_message_id
+                        && message.turn_id == admitted.turn_id
                         && message.role == "user"
                 })
         }
         AdmittedTurnKind::Resume => {
             session.messages.len() == admitted.before.messages.len()
                 && session.messages.last().is_some_and(|message| {
-                    message.id == admitted.turn.user_message_id
-                        && message.turn_id == admitted.turn.turn_id
+                    message.id == admitted.user_message_id
+                        && message.turn_id == admitted.turn_id
                         && message.role == "user"
                 })
         }

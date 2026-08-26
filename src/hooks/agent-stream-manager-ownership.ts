@@ -38,13 +38,6 @@ export function getDeferredStop(sessionId: string, run: StreamRun, generation: n
   return record ? bindDeferredStop(record, run, generation) : null;
 }
 
-export function isOwnerStreaming(owner: symbol) {
-  for (const record of records.values()) {
-    if (record.runOwner === owner && record.state.isStreaming) return true;
-  }
-  return false;
-}
-
 export function getOwnedRunState(sessionId: string, owner: symbol) {
   const record = getRecord(sessionId);
   return record ? ownedRunState(record, owner) : { kind: "terminal" as const };

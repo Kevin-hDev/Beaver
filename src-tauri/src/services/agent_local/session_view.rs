@@ -1,8 +1,8 @@
 use serde::Serialize;
 
 use crate::models::agent_session_contract::{
-    AgentSessionView, AgentStreamFailureView, ContinuityCapability, ReasoningReplayStatus,
-    SubagentLastActivityView,
+    AgentSessionView, AgentStreamFailureView, ContinuityCapability, ContinuityRequirement,
+    ContinuityState, ReasoningReplayStatus, SubagentLastActivityView,
 };
 use crate::services::reasoning_continuity::contract::{ContinuationUse, ReasoningModeId, RouteId};
 use crate::services::reasoning_continuity::envelope::{CompletionState, ReasoningEnvelope};
@@ -94,7 +94,7 @@ fn effective_preserve_reasoning(
     let Some(capability) = continuity_capability(session) else {
         return session.preserve_reasoning;
     };
-    if capability.requirement == "required"
+    if capability.requirement == ContinuityRequirement::Required
         && session.preserve_reasoning == super::types_session::PreserveReasoningSetting::Off
     {
         // Une route qui exige la continuité ne peut jamais exposer une option
@@ -158,15 +158,23 @@ pub fn continuity_capability(session: &AgentSession) -> Option<ContinuityCapabil
             .iter()
             .all(|policy| policy.fixture_id.is_some() && policy.fixture_date.is_some());
     let (requirement, state, explanation_key) = match requirement {
-        ReplayRequirement::Required => ("required", "locked", "agentLocal.continuityRequired"),
-        ReplayRequirement::Optional => ("optional", "available", "agentLocal.continuityOptional"),
+        ReplayRequirement::Required => (
+            ContinuityRequirement::Required,
+            ContinuityState::Locked,
+            "agentLocal.continuityRequired",
+        ),
+        ReplayRequirement::Optional => (
+            ContinuityRequirement::Optional,
+            ContinuityState::Available,
+            "agentLocal.continuityOptional",
+        ),
         ReplayRequirement::Forbidden => return None,
     };
     Some(ContinuityCapability {
-        requirement: requirement.to_string(),
+        requirement,
         local_available: true,
         remote_available,
-        state: state.to_string(),
+        state,
         explanation_key: explanation_key.to_string(),
     })
 }

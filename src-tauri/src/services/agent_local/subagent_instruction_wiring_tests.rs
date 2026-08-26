@@ -30,9 +30,9 @@ fn api_and_ollama_drain_before_each_request_and_again_before_no_tool_exit() {
 
 #[test]
 fn correction_arriving_with_tool_calls_cannot_skip_tool_execution() {
-    for source in [
-        include_str!("../llm/agent_loop.rs"),
-        include_str!("agent_loop.rs"),
+    for (source, executor) in [
+        (include_str!("../llm/agent_loop.rs"), "agent_loop_tools::execute_tool_batch"),
+        (include_str!("agent_loop.rs"), "agent_loop_tool_batch::execute"),
     ] {
         let request = source.find("let request_output").expect("model request");
         let no_tool = source
@@ -41,6 +41,6 @@ fn correction_arriving_with_tool_calls_cannot_skip_tool_execution() {
         let before_no_tool = &source[request..no_tool];
 
         assert!(!before_no_tool.contains("subagent_instruction_delivery::drain"));
-        assert!(source[no_tool..].contains("tool_executor::run_tools"));
+        assert!(source[no_tool..].contains(executor));
     }
 }

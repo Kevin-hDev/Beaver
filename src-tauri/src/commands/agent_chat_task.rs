@@ -8,6 +8,7 @@ mod context_usage_seed;
 mod conversation;
 mod gemma4_thinking_guard;
 mod ollama;
+mod ollama_setup;
 mod ollama_thinking;
 mod params;
 mod prompt_settings;

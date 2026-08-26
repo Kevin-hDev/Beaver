@@ -47,7 +47,7 @@ pub(crate) async fn resolve(
     else {
         return Ok(resolved);
     };
-    if policy.requirement != ReplayRequirement::Forbidden {
+    if policy.requirement() != ReplayRequirement::Forbidden {
         resolved.continuation = ContinuationTarget::FixtureCandidate(target);
     }
     Ok(resolved)

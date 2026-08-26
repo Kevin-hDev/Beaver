@@ -1,6 +1,6 @@
 use serde_json::json;
 
-use crate::models::agent_session_contract::{ReasoningReplayStatus, VisibleMessageInput};
+use crate::models::agent_session_contract::ReasoningReplayStatus;
 use crate::services::reasoning_continuity::envelope::CompletionState;
 
 use super::session_view_test_support::{fixture_session, responses_envelope};
@@ -123,25 +123,4 @@ fn visible_messages_keep_turn_order_and_provider_tool_ids() {
     );
     assert_eq!(view.messages[1].tool_calls.as_ref().unwrap()[0].id, "provider-call-one");
     assert_eq!(view.messages[2].tool_call_id.as_deref(), Some("provider-call-one"));
-}
-
-#[test]
-fn visible_shim_rejects_an_unbounded_tool_call_collection() {
-    let calls = (0..=crate::services::reasoning_continuity::limits::MAX_TOOL_CALLS)
-        .map(|index| json!({
-            "id": format!("call-{index}"),
-            "function": {"name": "inspect", "arguments": {}}
-        }))
-        .collect::<Vec<_>>();
-    let input: VisibleMessageInput = serde_json::from_value(json!({
-        "id": "00000000-0000-4000-8000-000000000019",
-        "role": "assistant",
-        "content": "visible",
-        "tool_calls": calls,
-        "files": [],
-        "timestamp": "2026-08-25T10:00:00Z"
-    }))
-    .expect("syntactically visible input");
-
-    assert!(super::session_visible_input::into_message(input, "turn-visible".into()).is_err());
 }

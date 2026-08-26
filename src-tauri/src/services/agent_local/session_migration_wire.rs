@@ -59,8 +59,9 @@ pub(super) fn parse_v1(bytes: &[u8]) -> Result<AgentSession, String> {
 pub(super) fn parse_v2(bytes: &[u8]) -> Result<AgentSession, String> {
     let value: Value = serde_json::from_slice(bytes).map_err(|_| invalid())?;
     super::session_migration_ids::validate_required_v2_fields(&value)?;
-    let session: AgentSession = serde_json::from_value(value).map_err(|_| invalid())?;
-    validate_v2(&session)?;
+    let mut session: AgentSession = serde_json::from_value(value).map_err(|_| invalid())?;
+    degrade_unreplayable(&mut session);
+    validate_v2_readable(&session)?;
     Ok(session)
 }
 
@@ -76,7 +77,12 @@ pub(super) fn parse_future(bytes: &[u8], version: u16) -> Result<AgentSession, S
     Ok(session)
 }
 
-pub(super) fn validate_v2(session: &AgentSession) -> Result<(), String> {
+pub(super) fn validate_v2_writable(session: &AgentSession) -> Result<(), String> {
+    validate_v2_readable(session)?;
+    session_limits::validate_continuity(session)
+}
+
+fn validate_v2_readable(session: &AgentSession) -> Result<(), String> {
     if session.schema_version != CURRENT_SESSION_SCHEMA_VERSION
         || session.messages.len() > super::session_limits::MAX_MESSAGES_PER_SESSION
     {
@@ -116,7 +122,43 @@ pub(super) fn validate_v2(session: &AgentSession) -> Result<(), String> {
             }
         }
     }
-    session_limits::validate_continuity(session)
+    Ok(())
+}
+
+fn degrade_unreplayable(session: &mut AgentSession) {
+    for message in &mut session.messages {
+        if message.role != "assistant"
+            || message
+                .continuation
+                .as_ref()
+                .is_some_and(|envelope| envelope.validate().is_err())
+        {
+            message.continuation = None;
+        }
+        if message.role != "user"
+            || message
+                .replay_source
+                .as_ref()
+                .is_some_and(|source| source.validate().is_err())
+        {
+            message.replay_source = None;
+        }
+        if super::conversation_skills::validate_persisted_references(
+            message.skill_ids.as_deref(),
+            message.skill_names.as_deref(),
+        )
+        .is_err()
+        {
+            message.skill_ids = None;
+            message.skill_names = None;
+        }
+    }
+    if session_limits::validate_continuity(session).is_err() {
+        for message in &mut session.messages {
+            message.continuation = None;
+            message.replay_source = None;
+        }
+    }
 }
 
 fn validate_v1_shape(wire: &V1SessionWire) -> Result<(), String> {
@@ -140,7 +182,7 @@ fn validate_v1_shape(wire: &V1SessionWire) -> Result<(), String> {
 
 fn parse_v2_value(value: Value) -> Result<AgentSession, String> {
     let session: AgentSession = serde_json::from_value(value).map_err(|_| invalid())?;
-    validate_v2(&session)?;
+    validate_v2_writable(&session)?;
     Ok(session)
 }
 

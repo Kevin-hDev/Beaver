@@ -26,6 +26,12 @@ pub fn opaque_hmac(
     Ok(opaque_hmac_with_key(&key, context, opaque))
 }
 
+pub(crate) fn ensure_fingerprint_key() -> Result<(), FingerprintError> {
+    crate::services::api_keys::get_or_create_random_raw(VAULT_KEY, 32)
+        .map(|_| ())
+        .map_err(|_| FingerprintError::Unavailable)
+}
+
 pub(crate) fn opaque_hmac_with_key(
     key: &Zeroizing<Vec<u8>>,
     context: FingerprintContext<'_>,

@@ -5,6 +5,7 @@ use crate::services::llm_oauth::{XaiBackend, XaiCatalogModel};
 use crate::services::secure_http::{read_bounded, AuthenticatedClient, PROVIDER_ERROR_LIMIT};
 use tokio_util::sync::CancellationToken;
 
+pub(super) use super::xai_oauth_chat::prepare as prepare_chat_request;
 pub(super) use super::xai_oauth_transport_status::classify_status;
 
 pub(super) struct StreamContext<'a> {
@@ -29,10 +30,15 @@ pub(super) async fn stream_chat(
         reasoning_capture,
     } = context;
     let catalog_model = crate::services::llm_oauth::xai_catalog_model(request.model).await?;
+    if catalog_model.backend != XaiBackend::Responses
+        && super::xai_oauth_transport_status::requires_responses_backend(&request)
+    {
+        return Err("reasoning_continuity_invalid".to_string());
+    }
     match catalog_model.backend {
         XaiBackend::ChatCompletions => {
             let request = prepare_chat_request(request, &catalog_model);
-            let response = post_catalog_chat_request(&request, measurement.as_deref_mut()).await;
+            let response = super::xai_oauth_chat::post(&request, measurement.as_deref_mut()).await;
             let response = response.map_err(|error| error.to_string())?;
             super::stream_consume::consume_stream(
                 on_event,
@@ -67,52 +73,11 @@ pub(super) async fn stream_chat(
                 request.model,
                 request.tools,
                 reasoning_capture,
-                false,
                 measurement,
             )
             .await
         }
     }
-}
-
-pub(super) struct CatalogChatRequest<'a>(super::stream_http::RequestConfig<'a>);
-
-impl<'a> std::ops::Deref for CatalogChatRequest<'a> {
-    type Target = super::stream_http::RequestConfig<'a>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-async fn post_catalog_chat_request(
-    request: &CatalogChatRequest<'_>,
-    measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
-) -> Result<reqwest::Response, super::stream_http::RequestError> {
-    // Ce type fermé empêche le chemin OAuth d'envoyer une requête chat non restreinte.
-    super::stream_http::post_chat_request_measured(request, measurement).await
-}
-
-pub(super) fn prepare_chat_request<'request, 'catalog>(
-    request: super::stream_http::RequestConfig<'request>,
-    model: &'catalog XaiCatalogModel,
-) -> CatalogChatRequest<'catalog>
-where
-    'request: 'catalog,
-{
-    CatalogChatRequest(super::stream_http::RequestConfig {
-        provider_id: request.provider_id,
-        model: request.model,
-        messages: request.messages,
-        tools: request.tools,
-        think: request.think,
-        reasoning_mode: catalog_reasoning_mode(model, request.reasoning_mode),
-        max_tokens: request.max_tokens,
-        purpose: request.purpose,
-        session_id: request.session_id,
-        fast_mode: request.fast_mode,
-        continuation_target: request.continuation_target,
-    })
 }
 
 pub(super) fn catalog_reasoning_mode<'a>(

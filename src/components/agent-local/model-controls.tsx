@@ -5,6 +5,7 @@ import { admissionErrorMessage } from "@/lib/admission-error";
 import type { ReasoningMode } from "@/lib/reasoning-modes";
 import { showToast } from "@/lib/toast-emitter";
 import type {
+  AgentSessionView,
   ContinuityCapability,
   PreserveReasoningSetting,
 } from "@/types/agent-session.generated";
@@ -59,12 +60,7 @@ export function ModelControls({
   useEffect(() => {
     if (!sessionId) return;
     let current = true;
-    void invoke<{
-      model: string;
-      provider: string;
-      continuity_capability?: ContinuityCapability;
-      preserve_reasoning: PreserveReasoningSetting;
-    }>("get_agent_session", { id: sessionId }).then((session) => {
+    void invoke<AgentSessionView>("get_agent_session", { id: sessionId }).then((session) => {
       if (!current || session.model !== selectedModel || session.provider !== selectedProvider) return;
       setContinuity({
         capability: session.continuity_capability,

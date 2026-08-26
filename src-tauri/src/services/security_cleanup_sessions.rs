@@ -18,12 +18,15 @@ pub(super) fn remove_orphan_backups(directory: &Path) -> Result<(), String> {
         let entry = entry.map_err(|_| failed())?;
         let name = entry.file_name();
         let name = name.to_str().ok_or_else(failed)?;
-        if !name.ends_with(".v1.bak") {
+        if !name.ends_with(BACKUP_SUFFIX) {
             continue;
         }
-        let id = name.strip_suffix(BACKUP_SUFFIX).ok_or_else(failed)?;
-        crate::services::agent_local::session_store::validate_session_id(id)
-            .map_err(|_| failed())?;
+        let Some(id) = name.strip_suffix(BACKUP_SUFFIX) else {
+            continue;
+        };
+        if crate::services::agent_local::session_store::validate_session_id(id).is_err() {
+            continue;
+        }
         let file_type = entry.file_type().map_err(|_| failed())?;
         if !file_type.is_file() || file_type.is_symlink() {
             return Err(failed());

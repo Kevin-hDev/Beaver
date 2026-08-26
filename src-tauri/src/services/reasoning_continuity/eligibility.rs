@@ -49,7 +49,7 @@ fn decide_with_activation(
     let Some(policy) = registry::replay_policy(target) else {
         return ReplayDecision::Blocked(BlockReason::UnknownTarget);
     };
-    if policy.requirement == ReplayRequirement::Forbidden {
+    if policy.requirement() == ReplayRequirement::Forbidden {
         return ReplayDecision::Blocked(BlockReason::Forbidden);
     }
     match envelope.completion {
@@ -64,7 +64,7 @@ fn decide_with_activation(
     {
         return ReplayDecision::Blocked(BlockReason::ProvenanceMismatch);
     }
-    if policy.contract_id != Some(envelope.contract_id)
+    if policy.fixture_adapter().map(|value| value.0) != Some(envelope.contract_id)
         || !state_matches_contract(envelope.contract_id, &envelope.continuation)
     {
         return ReplayDecision::Blocked(BlockReason::ContractMismatch);
@@ -72,7 +72,7 @@ fn decide_with_activation(
     if envelope.validate().is_err() {
         return ReplayDecision::Blocked(BlockReason::InvalidEnvelope);
     }
-    if policy.activation != ActivationState::LiveValidated && !allow_fixture_candidate {
+    if policy.activation() != ActivationState::LiveValidated && !allow_fixture_candidate {
         return ReplayDecision::Blocked(BlockReason::NotLiveValidated);
     }
     ReplayDecision::Allowed

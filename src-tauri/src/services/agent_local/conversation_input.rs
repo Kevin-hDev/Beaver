@@ -31,12 +31,12 @@ impl ConversationInputError {
         Self { kind }
     }
 
-    #[allow(dead_code, reason = "consumed by diagnostics from Task 9")]
+    #[cfg(test)]
     pub fn kind(self) -> ConversationInputErrorKind {
         self.kind
     }
 
-    #[allow(dead_code, reason = "consumed by the IPC error adapter from Task 9")]
+    #[cfg(test)]
     pub fn public_code(self) -> &'static str {
         PUBLIC_ERROR_CODE
     }
@@ -50,7 +50,6 @@ impl fmt::Display for ConversationInputError {
 
 impl std::error::Error for ConversationInputError {}
 
-#[allow(dead_code, reason = "adopted by conversation admission in Task 8")]
 #[derive(Debug)]
 pub struct ResolvedTurnInput {
     pub user_content: String,
@@ -60,7 +59,6 @@ pub struct ResolvedTurnInput {
     pub skills: Vec<super::conversation_skills::ResolvedSkill>,
 }
 
-#[allow(dead_code, reason = "adopted by the chat IPC boundary in Task 9")]
 pub async fn resolve(input: NewUserTurnInput) -> Result<ResolvedTurnInput, ConversationInputError> {
     resolve_with_key_source(input, crate::services::attachment_access::attachment_key).await
 }

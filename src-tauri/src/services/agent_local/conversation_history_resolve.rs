@@ -1,5 +1,7 @@
 use crate::models::agent_turn_contract::{NewUserTurnInput, SkillReference, TurnAttachmentInput};
-use crate::services::reasoning_continuity::contract::{ContinuationTarget, ReplayTarget};
+use crate::services::reasoning_continuity::contract::ContinuationTarget;
+#[cfg(test)]
+use crate::services::reasoning_continuity::contract::ReplayTarget;
 
 use super::conversation_history::{ConversationHistory, ConversationHistoryError};
 use super::types_message::AgentMessage;
@@ -11,6 +13,7 @@ pub(super) enum AttachmentKeySource {
     Fixed([u8; 32]),
 }
 
+#[cfg(test)]
 pub(super) async fn from_session(
     session: &super::types_session::AgentSession,
     target: &ReplayTarget,

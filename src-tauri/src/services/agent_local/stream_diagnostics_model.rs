@@ -82,7 +82,7 @@ fn request_stats(messages: &[ChatMessage]) -> ModelRequestStats {
                     }
                 });
                 if let Some(reasoning) = native_reasoning
-                    .or(message.legacy_tool_loop_reasoning.as_ref())
+                    .or(message.tool_loop_reasoning.as_ref())
                 {
                     if !reasoning.is_empty() {
                         stats.assistant_reasoning_messages += 1;

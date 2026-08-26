@@ -17,7 +17,7 @@ pub fn sanitize_chat_messages(messages: &mut [ChatMessage]) {
         if let Some(reasoning) = message.display_thinking.as_mut() {
             redact_high_confidence_string(reasoning);
         }
-        if let Some(reasoning) = message.legacy_tool_loop_reasoning.as_mut() {
+        if let Some(reasoning) = message.tool_loop_reasoning.as_mut() {
             redact_high_confidence_string(reasoning);
         }
         for call in message.tool_calls.iter_mut().flatten() {
@@ -116,7 +116,12 @@ fn sanitize_tool_calls(value: &mut serde_json::Value) {
         };
         for (key, item) in call {
             match key.as_str() {
-                "id" | "extra_content" => {}
+                "id" => {}
+                "extra_content" => {
+                    if let Some(extra) = item.as_object_mut() {
+                        extra.remove("codex");
+                    }
+                }
                 _ => redact_json_preserving_shape(item),
             }
         }

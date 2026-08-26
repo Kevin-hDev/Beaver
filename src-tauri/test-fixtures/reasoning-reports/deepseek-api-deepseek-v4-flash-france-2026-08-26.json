@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "fixture_id": "deepseek-api-deepseek-v4-flash-france-2026-08-26",
+  "route": "deepseek",
+  "model": "deepseek-v4-flash",
+  "region": "france",
+  "reasoning_mode": "high",
+  "generated_at": "2026-08-26T20:26:46.577934+00:00",
+  "scenarios": [
+    {
+      "requirement": "capture_and_persist",
+      "status": "passe",
+      "request_count": 2,
+      "reasoning_event_count": 2,
+      "decisions": [
+        "reasoning decision=\"captured\" code=\"captured\" items=1 bytes=556 hmac=ac4d153ea7d1353d",
+        "reasoning decision=\"persisted\" code=\"persisted\" items=1 bytes=556 hmac=ac4d153ea7d1353d"
+      ]
+    },
+    {
+      "requirement": "capture_and_persist",
+      "status": "passe",
+      "request_count": 2,
+      "reasoning_event_count": 3,
+      "decisions": [
+        "reasoning decision=\"replayed\" code=\"replayed\" items=1 bytes=556 hmac=ac4d153ea7d1353d",
+        "reasoning decision=\"captured\" code=\"captured\" items=1 bytes=462 hmac=45bb0b35058996a2",
+        "reasoning decision=\"persisted\" code=\"persisted\" items=1 bytes=462 hmac=45bb0b35058996a2"
+      ]
+    },
+    {
+      "requirement": "replay_and_continue",
+      "status": "passe",
+      "request_count": 2,
+      "reasoning_event_count": 3,
+      "decisions": [
+        "reasoning decision=\"replayed\" code=\"replayed\" items=1 bytes=556 hmac=ac4d153ea7d1353d",
+        "reasoning decision=\"captured\" code=\"captured\" items=1 bytes=462 hmac=45bb0b35058996a2",
+        "reasoning decision=\"persisted\" code=\"persisted\" items=1 bytes=462 hmac=45bb0b35058996a2"
+      ]
+    }
+  ]
+}

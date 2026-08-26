@@ -3,16 +3,20 @@ use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use super::*;
 use crate::services::codex_oauth::token::constant_time_secret_eq;
 
-fn access_token(exp: i64) -> String {
+fn access_token_for(exp: i64, account: &str) -> String {
     let header = URL_SAFE_NO_PAD.encode(b"{}");
     let payload = URL_SAFE_NO_PAD.encode(
         serde_json::to_vec(&serde_json::json!({
             "exp": exp,
-            "https://api.openai.com/auth": {"chatgpt_account_id": "acct_test"}
+            "https://api.openai.com/auth": {"chatgpt_account_id": account}
         }))
         .unwrap(),
     );
     format!("{header}.{payload}.signature")
+}
+
+fn access_token(exp: i64) -> String {
+    access_token_for(exp, "acct_test")
 }
 
 fn current() -> CodexTokens {
@@ -96,6 +100,22 @@ fn refresh_rejects_an_explicit_empty_token() {
     };
 
     assert!(from_refresh(response, &current()).is_err());
+}
+
+#[test]
+fn refresh_rotates_scope_when_the_account_changes() {
+    let current = current();
+    let previous_scope = current.credential_scope.clone();
+    let response = CodexTokenResponse {
+        access_token: Some(access_token_for(1_900_000_000, "acct_other")),
+        refresh_token: None,
+        expires_in: None,
+    };
+
+    let refreshed = from_refresh(response, &current).unwrap();
+
+    assert_eq!(refreshed.account_hint.as_str(), "acct_other");
+    assert_ne!(refreshed.credential_scope, previous_scope);
 }
 
 #[test]

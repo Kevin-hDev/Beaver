@@ -137,6 +137,10 @@ pub struct ChatOptions {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChatMessage {
+    /// Coupe la vérification de continuité : les assistants placés avant cette
+    /// frontière appartiennent à un historique antérieur au contrat courant.
+    #[serde(skip)]
+    pub continuity_barrier_before: bool,
     #[serde(default)]
     pub role: String,
     pub content: String,
@@ -155,9 +159,9 @@ pub struct ChatMessage {
     /// État natif opaque ; seuls les adaptateurs autorisés peuvent le sérialiser.
     #[serde(skip)]
     pub continuation: Option<ReasoningEnvelope>,
-    /// Compatibilité jetable du tool-loop courant, supprimée à la bascule Task 19.
+    /// Texte aplati interdit sur le wire ; seule l'enveloppe native fait autorité.
     #[serde(skip)]
-    pub legacy_tool_loop_reasoning: Option<String>,
+    pub tool_loop_reasoning: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

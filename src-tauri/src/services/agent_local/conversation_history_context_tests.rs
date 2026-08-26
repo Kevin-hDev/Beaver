@@ -60,7 +60,7 @@ async fn next_turn_rebuilds_prior_text_image_and_skill_context_from_rust_authori
         .history
         .messages
         .iter()
-        .find(|item| item.skill_id.as_deref() == Some(fixture.skill_id.as_str()))
+        .find(|item| item.content.contains("trusted historical body"))
         .expect("historical skill instruction");
     assert!(skill.content.contains("trusted historical body"));
     let persisted = super::super::session_store::get(&session.id).await.unwrap();
@@ -86,7 +86,6 @@ async fn legacy_skill_names_without_private_ids_stay_readable_without_invented_c
     let history = conversation_history::load_for_target(&session.id, &target("model-a"))
         .await.expect("legacy message remains readable");
     assert_eq!(history.messages.len(), 1);
-    assert!(history.messages[0].skill_id.is_none());
     assert_eq!(history.messages[0].content, "visible only");
     cleanup(&session.id).await;
 }
@@ -209,9 +208,11 @@ async fn resume_rebuilds_prior_context_before_accepting_a_simple_terminal_user()
         .expect("prior durable user");
     assert!(prior.content.contains("historical text exact"));
     assert_eq!(prior.images.len(), 1);
-    assert!(resumed.history.messages.iter().any(|item| {
-        item.skill_id.as_deref() == Some(fixture.skill_id.as_str())
-    }));
+    assert!(resumed
+        .history
+        .messages
+        .iter()
+        .any(|item| item.content.contains("trusted historical body")));
     fixture.cleanup();
     cleanup(&session.id).await;
 }

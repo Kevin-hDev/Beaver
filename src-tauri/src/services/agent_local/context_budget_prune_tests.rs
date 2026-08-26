@@ -14,7 +14,7 @@ fn trimming_drops_reasoning_and_respects_the_exact_budget() {
 
     assert!(trimmed.display_thinking.is_none());
     assert!(trimmed.continuation.is_none());
-    assert!(trimmed.legacy_tool_loop_reasoning.is_none());
+    assert!(trimmed.tool_loop_reasoning.is_none());
     assert!(crate::services::token_counting::estimate_chat_message_tokens(&trimmed) <= 100);
     assert!(trimmed.content.contains("message truncated"));
 }

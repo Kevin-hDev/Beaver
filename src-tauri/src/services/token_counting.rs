@@ -44,7 +44,7 @@ fn estimate_chat_message_tokens_with_reasoning(
     let mut units = text_units(&message.content);
     if include_reasoning {
         units += message
-            .legacy_tool_loop_reasoning
+            .tool_loop_reasoning
             .as_deref()
             .map(text_units)
             .unwrap_or(0);

@@ -1,12 +1,15 @@
 use crate::services::agent_local::types_ollama::ChatMessage;
+#[cfg(test)]
 use crate::services::agent_local::types_session::{
     AgentMessage, ToolCallRequest, ToolCallRequestFunction,
 };
+#[cfg(test)]
 use crate::services::compress::token_estimate;
 
 const SUMMARY_PREFIX: &str = "This session is being continued from a previous conversation";
 const CONTEXT_PREFIX: &str = "Recent file context preserved across compression:";
 
+#[cfg(test)]
 pub fn recent_messages(
     session_messages: &[AgentMessage],
     runtime_messages: &[ChatMessage],
@@ -32,6 +35,7 @@ pub fn tool_chain_is_closed(messages: &[ChatMessage]) -> bool {
     pending == 0
 }
 
+#[cfg(test)]
 pub fn chat_to_agent_message(message: &ChatMessage) -> AgentMessage {
     let tokens = token_estimate::estimate_tokens(std::slice::from_ref(message)) as u32;
     AgentMessage {
@@ -76,12 +80,14 @@ pub fn include_chat_message(message: &ChatMessage) -> bool {
         && !is_compression_context(&message.content)
 }
 
+#[cfg(test)]
 pub fn include_agent_message(message: &AgentMessage) -> bool {
     message.role != "system"
         && !is_compress_command(&message.content)
         && !is_compression_context(&message.content)
 }
 
+#[cfg(test)]
 fn merged_session_source(
     session_messages: &[AgentMessage],
     runtime_messages: &[ChatMessage],
@@ -110,11 +116,12 @@ fn is_compress_command(content: &str) -> bool {
     content.trim() == "/compress"
 }
 
-fn is_compression_context(content: &str) -> bool {
+pub(crate) fn is_compression_context(content: &str) -> bool {
     let trimmed = content.trim_start();
     trimmed.starts_with(SUMMARY_PREFIX) || trimmed.starts_with(CONTEXT_PREFIX)
 }
 
+#[cfg(test)]
 fn same_message(left: &AgentMessage, right: &AgentMessage) -> bool {
     left.role == right.role && left.content == right.content && left.tool_name == right.tool_name
 }

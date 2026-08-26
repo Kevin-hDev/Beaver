@@ -9,17 +9,15 @@ pub enum ReasoningDecision {
     Persisted,
     Replayed,
     Blocked,
-    Compacted,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ReasonCode {
     Captured,
-    FingerprintUnavailable,
-    ProvenanceMismatch,
-    Partial,
-    Compacted,
+    Persisted,
+    Replayed,
+    Blocked,
     Disabled,
 }
 
@@ -42,10 +40,7 @@ pub fn record(
 ) -> SafeReasoningDiagnostic {
     SafeReasoningDiagnostic {
         decision,
-        code: match fingerprint {
-            Ok(_) => code,
-            Err(_) => ReasonCode::FingerprintUnavailable,
-        },
+        code,
         item_count,
         byte_count,
         hmac_prefix: fingerprint
@@ -74,7 +69,7 @@ pub async fn record_envelope(
     };
     let diagnostic = record(
         decision,
-        ReasonCode::Captured,
+        code_for_decision(decision),
         item_count(&envelope.continuation),
         opaque.len(),
         super::fingerprint::opaque_hmac(
@@ -105,17 +100,30 @@ pub async fn record_blocked(session_id: &str, request_id: &str) {
 }
 
 async fn record_safe(session_id: &str, request_id: &str, diagnostic: SafeReasoningDiagnostic) {
-    let decision = serde_json::to_string(&diagnostic.decision).unwrap_or_default();
-    let code = serde_json::to_string(&diagnostic.code).unwrap_or_default();
-    let prefix = diagnostic.hmac_prefix.as_deref().unwrap_or("none");
-    let message = format!(
-        "reasoning decision={decision} code={code} items={} bytes={} hmac={prefix}",
-        diagnostic.item_count, diagnostic.byte_count
-    );
+    let message = format_safe_message(&diagnostic);
     crate::services::agent_local::stream_diagnostics::record_reasoning(
         session_id, request_id, &message,
     )
     .await;
+}
+
+fn format_safe_message(diagnostic: &SafeReasoningDiagnostic) -> String {
+    let decision = serde_json::to_string(&diagnostic.decision).unwrap_or_default();
+    let code = serde_json::to_string(&diagnostic.code).unwrap_or_default();
+    let prefix = diagnostic.hmac_prefix.as_deref().unwrap_or("none");
+    format!(
+        "reasoning decision={decision} code={code} items={} bytes={} hmac={prefix}",
+        diagnostic.item_count, diagnostic.byte_count
+    )
+}
+
+const fn code_for_decision(decision: ReasoningDecision) -> ReasonCode {
+    match decision {
+        ReasoningDecision::Captured => ReasonCode::Captured,
+        ReasoningDecision::Persisted => ReasonCode::Persisted,
+        ReasoningDecision::Replayed => ReasonCode::Replayed,
+        ReasoningDecision::Blocked => ReasonCode::Blocked,
+    }
 }
 
 fn item_count(state: &ContinuationState) -> usize {
@@ -132,5 +140,27 @@ fn item_count(state: &ContinuationState) -> usize {
             reasoning: thinking,
         } => (!thinking.is_empty()) as usize,
         ContinuationState::RemoteContinuation { .. } => 1,
+    }
+}
+
+#[cfg(test)]
+mod safe_message_tests {
+    use super::*;
+
+    #[test]
+    fn safe_message_never_contains_opaque_input() {
+        let sentinel = "opaque-secret-sentinel";
+        let diagnostic = record(
+            ReasoningDecision::Replayed,
+            ReasonCode::Replayed,
+            2,
+            sentinel.len(),
+            Ok("0123456789abcdefremaining".to_string()),
+        );
+        let message = format_safe_message(&diagnostic);
+
+        assert!(!message.contains(sentinel));
+        assert!(message.contains("decision=\"replayed\""));
+        assert!(message.contains("hmac=0123456789abcdef"));
     }
 }

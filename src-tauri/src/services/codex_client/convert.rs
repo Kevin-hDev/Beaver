@@ -1,10 +1,12 @@
 use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::llm::vision;
 
+#[cfg(test)]
 pub fn convert_messages(messages: &[ChatMessage]) -> (String, Vec<serde_json::Value>) {
     convert_messages_with_tools(messages, &[])
 }
 
+#[cfg(test)]
 pub fn convert_messages_with_tools(
     messages: &[ChatMessage],
     tools: &[serde_json::Value],

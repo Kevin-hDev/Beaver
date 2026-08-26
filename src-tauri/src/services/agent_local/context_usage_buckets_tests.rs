@@ -61,7 +61,7 @@ fn partitions_the_prepared_request_without_changing_its_total() {
 #[test]
 fn codex_omits_reasoning_that_is_not_replayed() {
     let mut assistant = message("assistant", &"a".repeat(40));
-    assistant.legacy_tool_loop_reasoning = Some("r".repeat(400));
+    assistant.tool_loop_reasoning = Some("r".repeat(400));
 
     let codex = RequestContextUsage::from_request(
         crate::services::codex_client::PROVIDER_ID,

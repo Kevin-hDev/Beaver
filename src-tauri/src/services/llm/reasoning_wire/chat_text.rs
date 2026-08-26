@@ -1,27 +1,29 @@
 use crate::services::agent_local::types_ollama::ChatMessage;
-use crate::services::reasoning_continuity::contract::{ContinuationTarget, RouteId};
+use crate::services::reasoning_continuity::contract::{ContinuationTarget, ContractId, RouteId};
 use crate::services::reasoning_continuity::registry::ReplayRequirement;
 use serde_json::Value;
 
-pub(super) fn fragments(event: &Value) -> Vec<&str> {
+pub(super) fn fragments(event: &Value, contract: ContractId) -> Vec<&str> {
     let Some(delta) = event.pointer("/choices/0/delta") else {
         return event
             .pointer("/choices/0/message")
-            .map_or_else(Vec::new, from_message);
+            .map_or_else(Vec::new, |message| from_message(message, contract));
     };
-    from_message(delta)
+    from_message(delta, contract)
 }
 
-fn from_message(message: &Value) -> Vec<&str> {
-    [
-        "reasoning_content",
-        "reasoning",
-        "thought",
-        "thought_summary",
-    ]
-    .into_iter()
-    .filter_map(|key| message.get(key).and_then(Value::as_str))
-    .collect()
+fn from_message(message: &Value, contract: ContractId) -> Vec<&str> {
+    let keys: &[&str] = match contract {
+        ContractId::CerebrasChatV1 => &["reasoning"],
+        ContractId::DeepSeekChatV1 | ContractId::KimiChatV1 | ContractId::ZaiChatV1 => {
+            &["reasoning_content"]
+        }
+        _ => &[],
+    };
+    keys.iter()
+        .copied()
+        .filter_map(|key| message.get(key).and_then(Value::as_str))
+        .collect()
 }
 
 /// Applique une enveloppe native au message assistant exact. Les politiques
@@ -32,7 +34,8 @@ pub(crate) fn apply_continuity(
     target: Option<&ContinuationTarget>,
     payload: &mut Value,
 ) -> Result<(), super::replay::ReplayApplyError> {
-    let Some(target) = super::replay::target_for_request(messages, target) else {
+    let replay_messages = super::replay::messages_after_barrier(messages);
+    let Some(target) = super::replay::target_for_request(replay_messages, target) else {
         return Ok(());
     };
     let Some(replay_target) = target.replay() else {
@@ -46,7 +49,7 @@ pub(crate) fn apply_continuity(
     else {
         return Err(super::replay::ReplayApplyError::Blocked);
     };
-    if policy.requirement == ReplayRequirement::Forbidden {
+    if policy.requirement() == ReplayRequirement::Forbidden {
         return Ok(());
     }
     let mut applied_index = None;
@@ -59,11 +62,14 @@ pub(crate) fn apply_continuity(
             return Err(super::replay::ReplayApplyError::PayloadMismatch);
         }
         for (index, message) in messages.iter().enumerate() {
+            if index + replay_messages.len() < messages.len() {
+                continue;
+            }
             if message.role != "assistant" {
                 continue;
             }
             let Some(envelope) = message.continuation.as_ref() else {
-                if policy.requirement == ReplayRequirement::Required {
+                if policy.requirement() == ReplayRequirement::Required {
                     return Err(super::replay::ReplayApplyError::Blocked);
                 }
                 continue;

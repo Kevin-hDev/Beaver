@@ -354,7 +354,7 @@ async fn successful_edit_returns_the_exact_sanitized_document_history() {
 }
 
 #[tokio::test]
-async fn resume_refuses_context_that_cannot_be_reconstructed_exactly() {
+async fn resume_keeps_legacy_skill_names_without_inventing_private_context() {
     let mut session = create_session().await;
     let mut contextual = message("context-user", "context-turn", "user", "question");
     contextual.skill_names = Some(vec!["Skill local".into()]);
@@ -363,7 +363,7 @@ async fn resume_refuses_context_that_cannot_be_reconstructed_exactly() {
         .await
         .expect("seed contextual terminal");
 
-    let error = conversation_admission::resume(
+    let admitted = conversation_admission::resume(
         &session.id,
         ResumeTurnInput {
             message_id: contextual.id,
@@ -371,9 +371,9 @@ async fn resume_refuses_context_that_cannot_be_reconstructed_exactly() {
         target("model-a"),
     )
     .await
-    .expect_err("contextual resume must fail closed");
+    .expect("legacy names remain readable without private skill ids");
 
-    assert_eq!(error.to_string(), ERROR);
+    assert_eq!(admitted.history.messages.last().unwrap().content, "question");
     cleanup(&session.id).await;
 }
 

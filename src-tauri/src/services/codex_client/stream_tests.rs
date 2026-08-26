@@ -84,7 +84,6 @@ async fn completed_sse_returns_the_accumulated_result() {
             "gpt-5.6-sol",
             &[],
             None,
-            false,
             Duration::from_secs(1),
             &mut measurement,
         )
@@ -117,7 +116,6 @@ async fn closed_or_done_before_completion_is_rejected() {
             "gpt-5.6-sol",
             &[],
             None,
-            false,
             Duration::from_secs(1),
             &mut measurement,
         )
@@ -145,7 +143,6 @@ async fn stalled_sse_is_cancelled_by_user_or_idle_deadline() {
         "gpt-5.6-sol",
         &[],
         None,
-        false,
         Duration::from_secs(1),
         &mut measurement,
     )
@@ -165,7 +162,6 @@ async fn stalled_sse_is_cancelled_by_user_or_idle_deadline() {
         "gpt-5.6-sol",
         &[],
         None,
-        false,
         Duration::from_millis(20),
         &mut measurement,
     )

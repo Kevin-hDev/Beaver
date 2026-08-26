@@ -33,7 +33,14 @@ pub(super) async fn append_locked(
         return Ok(());
     }
     if session.subagent_hidden_reports.len() >= MAX_PENDING_REPORTS {
-        return Err("La file de rapports de sous-agents est pleine.".to_string());
+        let Some(oldest_delivered) = session
+            .subagent_hidden_reports
+            .iter()
+            .position(|stored| stored.delivered)
+        else {
+            return Err("La file de rapports de sous-agents est pleine.".to_string());
+        };
+        session.subagent_hidden_reports.remove(oldest_delivered);
     }
     session.subagent_hidden_reports.push(report);
     super::session_store::save(session).await
@@ -44,7 +51,13 @@ pub async fn peek_reports(session_id: &str) -> Vec<SubagentHiddenReport> {
     let _guard = lock.lock().await;
     super::session_store::get(session_id)
         .await
-        .map(|session| session.subagent_hidden_reports)
+        .map(|session| {
+            session
+                .subagent_hidden_reports
+                .into_iter()
+                .filter(|report| !report.delivered)
+                .collect()
+        })
         .unwrap_or_default()
 }
 
@@ -66,9 +79,11 @@ pub async fn acknowledge_reports_cancellable(
     let _guard = lock.lock().await;
     let mut session = super::session_store::get(session_id).await?;
     let report_ids = report_ids.iter().collect::<BTreeSet<_>>();
-    session
-        .subagent_hidden_reports
-        .retain(|report| !report_ids.contains(&report.id));
+    for report in &mut session.subagent_hidden_reports {
+        if report_ids.contains(&report.id) {
+            report.delivered = true;
+        }
+    }
     if cancel.is_cancelled() {
         return Err("Annulé".to_string());
     }
@@ -84,7 +99,9 @@ pub async fn has_pending_except(session_id: &str, ignored_child_ids: &BTreeSet<S
             session
                 .subagent_hidden_reports
                 .iter()
-                .any(|report| !ignored_child_ids.contains(&report.child_session_id))
+                .any(|report| {
+                    !report.delivered && !ignored_child_ids.contains(&report.child_session_id)
+                })
         })
         .unwrap_or(false)
 }
@@ -104,6 +121,7 @@ pub fn build_report(
         status,
         summary: truncate_chars(&summary, MAX_REPORT_SUMMARY_CHARS),
         created_at: Utc::now(),
+        delivered: false,
     }
 }
 

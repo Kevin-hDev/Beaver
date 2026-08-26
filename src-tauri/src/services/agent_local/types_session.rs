@@ -19,6 +19,8 @@ pub struct SubagentHiddenReport {
     pub status: String,
     pub summary: String,
     pub created_at: DateTime<Utc>,
+    #[serde(default)]
+    pub delivered: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

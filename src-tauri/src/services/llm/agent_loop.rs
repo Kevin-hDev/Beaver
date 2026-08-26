@@ -8,7 +8,7 @@ use crate::services::agent_local::{
     agent_loop_finish, agent_loop_limits::MAX_TURNS, agent_loop_plan, circuit_breaker,
     context_usage_buckets::ContextUsageSeed, context_usage_runtime, extension_tool_set,
     generation_metrics::GenerationAggregate, stream_events::AgentEventEmitter,
-    subagent_orchestration, tool_executor, types_ollama::ChatMessage, write_guard_registry,
+    subagent_orchestration, types_ollama::ChatMessage, write_guard_registry,
 };
 use crate::services::token_counting;
 use std::path::PathBuf;
@@ -172,61 +172,32 @@ pub async fn run_agent_loop(
         let control_only =
             agent_loop_tools::prepare_tool_batch(&result.tool_calls, turn, &mut breaker).await?;
         let tool_start = messages.len();
-        #[cfg(debug_assertions)]
-        let tool_outcome = match fixture_run.as_deref_mut() {
-            Some(run) => {
-                crate::services::agent_local::fixture_tool_executor::execute(
-                    on_event,
-                    messages,
-                    &result.tool_calls,
-                    &result.tool_call_ids,
-                    run,
-                    &cancel,
-                )
-                .await
-            }
-            None => {
-                tool_executor::run_tools(
-                    on_event,
-                    messages,
-                    &result.tool_calls,
-                    &working_dir,
-                    permission_mode,
-                    &session_id,
-                    &request_id,
-                    cancel.clone(),
-                    &mut write_guard,
-                    plan_active,
-                    &result.tool_call_ids,
-                    None,
-                )
-                .await
-            }
-        };
-        #[cfg(not(debug_assertions))]
-        let tool_outcome = tool_executor::run_tools(
-            on_event,
-            messages,
-            &result.tool_calls,
-            &working_dir,
-            permission_mode,
-            &session_id,
-            &request_id,
-            cancel.clone(),
-            &mut write_guard,
-            plan_active,
-            &result.tool_call_ids,
-            None,
-        )
-        .await;
+        let tool_outcome =
+            agent_loop_tools::execute_tool_batch(agent_loop_tools::ToolBatchContext {
+                on_event,
+                messages,
+                tool_calls: &result.tool_calls,
+                tool_call_ids: &result.tool_call_ids,
+                working_dir: &working_dir,
+                permission_mode,
+                session_id: &session_id,
+                request_id: &request_id,
+                cancel: cancel.clone(),
+                write_guard: &mut write_guard,
+                plan_active,
+                #[cfg(debug_assertions)]
+                fixture_run: fixture_run.as_deref_mut(),
+            })
+            .await;
         let compressed_during_tools = tool_outcome.compressed;
         let tool_end = messages.len();
+        let stop_after_tools =
+            tool_outcome.apply_follow_ups(&mut messages[tool_start..tool_end])?;
         if let Some(journal) = journal.as_deref_mut() {
             journal
                 .persist_tool_results(&messages[tool_start..tool_end])
                 .await?;
         }
-        let stop_after_tools = tool_outcome.apply_follow_ups(messages);
         #[cfg(debug_assertions)]
         if !fixture_mode {
             extension_tool_set::refresh_and_record(&mut tools, &session_id, &request_id).await?;

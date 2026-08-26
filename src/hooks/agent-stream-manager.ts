@@ -54,7 +54,6 @@ import {
   adoptOwner,
   getDeferredStop,
   getOwnedRunState,
-  isOwnerStreaming,
   matchesRun,
   ownsOwner,
   ownsRun,
@@ -73,9 +72,9 @@ type Subscriber = (snapshot: StreamSnapshot) => void;
 let listenPromise: Promise<UnlistenFn> | null = null;
 
 export const agentStreamManager = { startSession, stopSession, failSession, setSessionGeneration,
-  discardPendingAdmission, ownsRun, matchesRun, ownsOwner, adoptOwner,
+  ownsRun, matchesRun, ownsOwner, adoptOwner,
   getDeferredStop, getOwnedRunState, claimStop, releaseStop, completeStop,
-  releaseOwner, isOwnerStreaming,
+  releaseOwner,
   clearPermission: clearStreamPermission, getSnapshot, getActivity, isStreaming, subscribe,
   queueUserMessage, removeQueuedUserMessage, reconcileTurnAdmission,
   subscribeActivity: subscribeStreamActivity };
@@ -127,12 +126,6 @@ function setSessionGeneration(sessionId: string, generation: number) {
     handleStreamEvent(sessionId, item.event, item.generation);
   }
   return "accepted" as const;
-}
-
-function discardPendingAdmission(sessionId: string) {
-  const record = getRecord(sessionId);
-  if (!record?.awaitingAdmission) return;
-  markStreamCancelled(record);
 }
 
 function subscribe(sessionId: string, subscriber: Subscriber): () => void {

@@ -23,7 +23,7 @@ interface WelcomeViewProps {
   provider: string;
   projects: Project[];
   onAddProject: (path: string) => Promise<Project>;
-  onSend: (text: string, files?: DroppedFile[], projectId?: string, skills?: SkillReference[]) => void | Promise<void>;
+  onSend: (text: string, files?: DroppedFile[], projectId?: string, skills?: SkillReference[]) => boolean | Promise<boolean | void> | void;
   onModelChange: (model: string, provider: string) => void;
   reasoningMode?: string | null;
   onReasoningModeChange: (mode: ReasoningMode) => void;
@@ -52,9 +52,9 @@ export function WelcomeView({
     selectProjectDirectory(id, projects, requestDirectoryAccess, setSelectedProjectId);
   }, [projects, requestDirectoryAccess]);
 
-  const handleSend = useCallback((text: string, files?: DroppedFile[], skills?: SkillReference[]) => {
+  const handleSend = useCallback(async (text: string, files?: DroppedFile[], skills?: SkillReference[]) => {
     const hasFiles = files && files.length > 0;
-    if (!text.trim() && !hasFiles && (!skills || skills.length < 1)) return;
+    if (!text.trim() && !hasFiles && (!skills || skills.length < 1)) return false;
     const send = async () => {
       /* Le champ ne bouge plus d'ici : il note sa place et c'est celui de la
          conversation qui, en naissant, descendra depuis elle. Une distance
@@ -65,7 +65,13 @@ export function WelcomeView({
       setLeaving(true);
       await waitForTitleExit(contentRef.current);
       try {
-        await onSend(text, files, selectedProjectId ?? undefined, skills);
+        const accepted = await onSend(text, files, selectedProjectId ?? undefined, skills);
+        if (accepted === false) {
+          takeComposerPosition();
+          setLeaving(false);
+          return false;
+        }
+        return true;
       } catch (error) {
         takeComposerPosition();
         setLeaving(false);
@@ -75,13 +81,15 @@ export function WelcomeView({
     const project = projects.find((candidate) => candidate.id === selectedProjectId);
     if (selectedProjectId && !project) {
       showToast(t("errors.operationFailed"), "error");
-      return;
+      return false;
     }
     if (project) {
-      void requestDirectoryAccess(project.path, send);
-    } else {
-      void send().catch(() => showToast(t("errors.operationFailed"), "error"));
+      return requestDirectoryAccess(project.path, send);
     }
+    return send().catch(() => {
+      showToast(t("errors.operationFailed"), "error");
+      return false;
+    });
   }, [onSend, projects, requestDirectoryAccess, selectedProjectId, t]);
 
   return (

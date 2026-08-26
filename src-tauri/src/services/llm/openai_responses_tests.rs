@@ -60,6 +60,22 @@ fn fixture_target(
     })
 }
 
+fn xai_fixture_target(
+    scope: &str,
+) -> crate::services::reasoning_continuity::contract::ContinuationTarget {
+    use crate::services::reasoning_continuity::contract::{
+        ContinuationTarget, ContinuationUse, CredentialScope, ReasoningModeId, ReplayTarget,
+        RouteId,
+    };
+    ContinuationTarget::FixtureCandidate(ReplayTarget {
+        route_id: RouteId::Xai,
+        model_id: "grok-4.6".into(),
+        credential_scope: CredentialScope::authenticated(scope).unwrap(),
+        reasoning_mode: ReasoningModeId::High,
+        continuation_use: ContinuationUse::UserContinuation,
+    })
+}
+
 fn native_assistant(
     target: &crate::services::reasoning_continuity::contract::ContinuationTarget,
 ) -> ChatMessage {
@@ -76,6 +92,30 @@ fn native_assistant(
                     serde_json::json!({"type":"reasoning","encrypted_content":"opaque"}),
                     serde_json::json!({"type":"message","content":[]}),
                 ],
+            },
+            Vec::new(),
+        )),
+        None,
+        None,
+    )
+}
+
+fn xai_native_assistant(
+    target: &crate::services::reasoning_continuity::contract::ContinuationTarget,
+) -> ChatMessage {
+    let replay = target.replay().unwrap();
+    ChatMessage::assistant(
+        "visible answer".into(),
+        None,
+        Some(crate::services::reasoning_continuity::envelope::ReasoningEnvelope::new(
+            crate::services::reasoning_continuity::contract::ContractId::XaiResponsesV1,
+            crate::services::reasoning_continuity::envelope::ReasoningSource::from_target(replay),
+            crate::services::reasoning_continuity::envelope::CompletionState::Complete,
+            crate::services::reasoning_continuity::envelope::ContinuationState::ResponsesLocal {
+                items: vec![serde_json::json!({
+                    "type":"reasoning",
+                    "encrypted_content":"opaque-xai"
+                })],
             },
             Vec::new(),
         )),
@@ -211,6 +251,35 @@ fn responses_continuity_blocks_wrong_scope_and_required_missing_state() {
     let mut config = request(&missing, &[], Some("medium"), FastModeRequest::Standard);
     config.continuation_target = Some(&target);
     assert!(try_build_request(&config).is_err());
+}
+
+#[test]
+fn responses_continuity_ignores_required_state_before_a_migration_barrier() {
+    let target = fixture_target("openai-scope");
+    let old = ChatMessage::assistant("legacy answer".into(), None, None, None, None);
+    let mut current = ChatMessage::user("continue".into());
+    current.continuity_barrier_before = true;
+    let messages = [old, current];
+    let mut config = request(&messages, &[], Some("medium"), FastModeRequest::Standard);
+    config.continuation_target = Some(&target);
+
+    assert!(try_build_request(&config).is_ok());
+}
+
+#[test]
+fn xai_responses_continuity_replays_native_items() {
+    let target = xai_fixture_target("xai-scope");
+    let messages = [
+        xai_native_assistant(&target),
+        ChatMessage::user("continue".into()),
+    ];
+    let mut config = xai_request(&messages, &[]);
+    config.continuation_target = Some(&target);
+
+    let body = try_build_request(&config).expect("xAI native replay");
+
+    assert_eq!(body["input"][0]["type"], "reasoning");
+    assert_eq!(body["input"][0]["encrypted_content"], "opaque-xai");
 }
 
 #[tokio::test]

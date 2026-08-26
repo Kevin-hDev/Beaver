@@ -14,7 +14,7 @@ pub mod conversation_history;
 mod conversation_history_build;
 mod conversation_history_field_validation;
 mod conversation_history_resolve;
-mod conversation_history_validation;
+pub(crate) mod conversation_history_validation;
 pub mod conversation_transition;
 pub mod conversation_compaction;
 pub mod conversation_input;
@@ -67,7 +67,6 @@ mod session_store_update_gate;
 pub mod session_continuity;
 pub mod session_view;
 mod session_view_message;
-mod session_visible_input;
 #[cfg(test)]
 mod session_view_contract_tests;
 #[cfg(test)]
@@ -97,7 +96,9 @@ mod stream_diagnostics_support_tests;
 #[cfg(test)]
 mod types_diagnostics_contract_tests;
 mod types_message_continuation;
+mod types_message_source;
 mod types_message_ids;
+mod conversation_admission_replay;
 #[cfg(test)]
 pub mod stream_diagnostics_tests;
 mod stream_diagnostics_tool_record;

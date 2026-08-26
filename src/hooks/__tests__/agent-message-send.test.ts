@@ -43,7 +43,7 @@ describe("persistAgentMessage", () => {
     expect(accepted).toBe(false);
     expect(doStream).not.toHaveBeenCalled();
     expect(showToast).toHaveBeenCalledWith(
-      "errors.admission.serviceShuttingDown", "error",
+      "errors.streamStopping", "info",
     );
   });
 

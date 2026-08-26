@@ -1,4 +1,5 @@
 use serde::Deserialize;
+use subtle::ConstantTimeEq;
 use zeroize::{Zeroize, Zeroizing};
 
 use super::jwt;
@@ -68,11 +69,20 @@ pub(super) fn from_refresh(
             current.account_hint.clone(),
         ),
     };
-    let credential_scope = Some(
+    let same_account = current.account_hint.len() == account_hint.len()
+        && bool::from(
+            current
+                .account_hint
+                .as_bytes()
+                .ct_eq(account_hint.as_bytes()),
+        );
+    let credential_scope = Some(if same_account {
         current
             .credential_scope_for_refresh()
-            .map_err(|_| invalid())?,
-    );
+            .map_err(|_| invalid())?
+    } else {
+        crate::services::api_keys::generate_credential_scope().map_err(|_| invalid())?
+    });
     Ok(CodexTokens {
         access,
         refresh: refresh.unwrap_or_else(|| current.refresh.clone()),

@@ -1,8 +1,10 @@
 use crate::models::agent_turn_contract::{ChatStreamAdmission, ChatStreamRequestInput};
 use serde::{Deserialize, Serialize};
 
-const MAX_SCENARIOS: usize = 64;
 const MAX_FIXTURE_OPERATIONS: usize = 8;
+
+#[path = "reasoning_fixture_scenarios.rs"]
+mod fixture_scenarios;
 
 #[derive(Debug, Deserialize)]
 pub struct FixtureOperation {
@@ -20,15 +22,7 @@ pub struct SanitizedFixtureReport {
     region: String,
     reasoning_mode: String,
     generated_at: String,
-    scenarios: Vec<FixtureScenario>,
-}
-
-#[derive(Debug, Serialize)]
-struct FixtureScenario {
-    status: &'static str,
-    request_count: usize,
-    reasoning_event_count: usize,
-    decisions: Vec<String>,
+    scenarios: Vec<fixture_scenarios::FixtureScenario>,
 }
 
 #[tauri::command]
@@ -41,7 +35,7 @@ pub async fn export_reasoning_fixture_report(
     let session = crate::services::agent_local::session_store::get(&session_id)
         .await
         .map_err(|_| unavailable())?;
-    validate_session(&session)?;
+    fixture_scenarios::validate_session(&session)?;
     let generated_at = chrono::Utc::now();
     let fixture_id = crate::services::reasoning_fixture_store::derive_fixture_id(
         &session.provider,
@@ -50,7 +44,10 @@ pub async fn export_reasoning_fixture_report(
         generated_at.date_naive(),
     )
     .map_err(|_| unavailable())?;
-    let scenarios = scenarios(&session);
+    let scenarios = fixture_scenarios::collect(&session);
+    if !fixture_scenarios::proves_required_scenarios(&scenarios) {
+        return Err(unavailable());
+    }
     let report = SanitizedFixtureReport {
         schema_version: 1,
         fixture_id: fixture_id.clone(),
@@ -121,70 +118,7 @@ async fn run_fixture_operations(
     Ok(results)
 }
 
-fn validate_session(
-    session: &crate::services::agent_local::types_session::AgentSession,
-) -> Result<(), String> {
-    let users = session
-        .messages
-        .iter()
-        .filter(|message| message.role == "user")
-        .count();
-    let has_tool = session
-        .messages
-        .iter()
-        .any(|message| message.role == "tool")
-        || session
-            .diagnostic_runs
-            .iter()
-            .any(|run| !run.recent_tools.is_empty() || run.last_tool.is_some());
-    let has_model_result = session
-        .diagnostic_runs
-        .iter()
-        .any(|run| run.events.iter().any(|event| event.phase == "model_result"));
-    let has_payload = session.diagnostic_runs.iter().any(|run| {
-        run.events
-            .iter()
-            .any(|event| event.phase == "provider_payload")
-    });
-    (users >= 2
-        && session.diagnostic_runs.len() >= 2
-        && has_tool
-        && has_model_result
-        && has_payload
-        && session.diagnostic_runs.len() <= MAX_SCENARIOS)
-        .then_some(())
-        .ok_or_else(unavailable)
-}
-
-fn scenarios(
-    session: &crate::services::agent_local::types_session::AgentSession,
-) -> Vec<FixtureScenario> {
-    session
-        .diagnostic_runs
-        .iter()
-        .take(MAX_SCENARIOS)
-        .map(|run| {
-            let decisions = run
-                .events
-                .iter()
-                .filter(|event| event.phase == "reasoning")
-                .map(|event| event.message.clone())
-                .collect::<Vec<_>>();
-            FixtureScenario {
-                status: if run.status == "completed" {
-                    "passe"
-                } else {
-                    "bloque"
-                },
-                request_count: 1,
-                reasoning_event_count: decisions.len(),
-                decisions,
-            }
-        })
-        .collect()
-}
-
-fn unavailable() -> String {
+pub(super) fn unavailable() -> String {
     "Rapport de fixture indisponible".to_string()
 }
 

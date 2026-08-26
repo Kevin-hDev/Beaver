@@ -160,7 +160,7 @@ fn trim_message(message: &ChatMessage, max_tokens: usize) -> ChatMessage {
     trimmed.tool_calls = None;
     trimmed.display_thinking = None;
     trimmed.continuation = None;
-    trimmed.legacy_tool_loop_reasoning = None;
+    trimmed.tool_loop_reasoning = None;
     trimmed
 }
 

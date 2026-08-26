@@ -157,7 +157,7 @@ mod tests {
     #[test]
     fn codex_request_excludes_reasoning_that_is_not_replayed() {
         let mut message = msg("assistant", "answer");
-        message.legacy_tool_loop_reasoning = Some("hidden reasoning".repeat(100));
+        message.tool_loop_reasoning = Some("hidden reasoning".repeat(100));
         let messages = [message];
 
         assert!(

@@ -207,7 +207,7 @@ describe("useAgentStream", () => {
     expect(mocks.invoke.mock.calls[1]?.[1]).not.toHaveProperty("messages");
   });
 
-  it("borne et diffère un second envoi pendant l'admission Rust", async () => {
+  it("refuse un second envoi pendant l'admission Rust sans perdre le brouillon", async () => {
     let resolveAdmission = (_value: typeof ADMISSION) => {};
     mocks.invoke.mockImplementationOnce(() => new Promise<typeof ADMISSION>((resolve) => {
       resolveAdmission = resolve;
@@ -230,16 +230,14 @@ describe("useAgentStream", () => {
       resolveAdmission(ADMISSION);
       await starting;
     });
-    expect(queuedDuringAdmission).toBe("queued");
-    expect(mocks.invoke).toHaveBeenCalledTimes(2);
-    expect(mocks.queueUserMessage).toHaveBeenCalledWith("session-1", queued);
+    expect(queuedDuringAdmission).toBe("unavailable");
+    expect(mocks.invoke).toHaveBeenCalledTimes(1);
+    expect(mocks.queueUserMessage).not.toHaveBeenCalled();
 
     await act(async () => {
       await Promise.resolve();
     });
-    expect(mocks.invoke).toHaveBeenLastCalledWith("queue_agent_message", {
-      sessionId: "session-1", generation: 42, input: input("Suite"),
-    });
+    expect(mocks.invoke).toHaveBeenLastCalledWith("chat_stream", expect.anything());
   });
 
   it("ne mélange jamais le staging de deux sessions", async () => {
@@ -300,14 +298,13 @@ describe("useAgentStream", () => {
       await vi.waitFor(() => expect(mocks.invoke).toHaveBeenCalledTimes(2));
       expect(await result.current.queueStreamMessage(
         "session-b", input("B2"), userMessage("B2", "queued-b"),
-      )).toBe("queued");
+      )).toBe("unavailable");
       resolveAdmissionB(admissionB);
       await startingB;
     });
 
-    expect(mocks.invoke).toHaveBeenLastCalledWith("queue_agent_message", {
-      sessionId: "session-b", generation: 84, input: input("B2"),
-    });
+    expect(mocks.invoke.mock.calls.filter(([command]) => command === "queue_agent_message"))
+      .toEqual([]);
   });
 
   it("préserve l'admission globale au démontage sans relancer un stream", async () => {
@@ -328,9 +325,7 @@ describe("useAgentStream", () => {
       );
       unmount();
     });
-    expect(mocks.removeQueuedUserMessage).toHaveBeenCalledWith(
-      "session-1", "queued-unmount",
-    );
+    expect(mocks.removeQueuedUserMessage).not.toHaveBeenCalled();
     resolveAdmission(ADMISSION);
     await starting;
     expect(mocks.invoke.mock.calls.filter(([command]) => command === "chat_stream")).toHaveLength(1);

@@ -4,6 +4,7 @@ use std::path::{Component, Path, PathBuf};
 use hmac::{Hmac, Mac};
 use serde::Serialize;
 use sha2::Sha256;
+use subtle::ConstantTimeEq;
 use zeroize::Zeroize;
 
 pub const MAX_ATTACHMENTS: usize = crate::models::agent_turn_contract::MAX_TURN_ATTACHMENTS;
@@ -28,6 +29,10 @@ pub struct RegisteredAttachment {
 pub(crate) fn attachment_key() -> Result<zeroize::Zeroizing<Vec<u8>>, String> {
     crate::services::api_keys::get_or_create_random_raw(HMAC_VAULT_KEY, 32)
         .map_err(|_| ERROR_CODE.to_string())
+}
+
+pub(crate) fn ensure_attachment_key() -> Result<(), String> {
+    attachment_key().map(|_| ())
 }
 
 pub fn register_paths<F>(
@@ -121,11 +126,7 @@ fn compute_mac(canonical: &str, key: &[u8]) -> Result<[u8; 32], String> {
 }
 
 fn constant_time_32(left: &[u8; 32], right: &[u8; 32]) -> bool {
-    let mut different = 0_u8;
-    for index in 0..32 {
-        different |= left[index] ^ right[index];
-    }
-    different == 0
+    left.ct_eq(right).into()
 }
 
 fn validate_raw_path(raw: &str) -> Result<&Path, String> {

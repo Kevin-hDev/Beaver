@@ -120,6 +120,30 @@ fn kimi_reasoning_fixture_payload_places_opaque_reasoning_on_the_same_assistant_
 }
 
 #[test]
+fn required_chat_replay_ignores_legacy_assistants_before_the_barrier() {
+    let target = target();
+    let old = ChatMessage::assistant("legacy answer".into(), None, None, None, None);
+    let mut current = ChatMessage::user("continue".into());
+    current.continuity_barrier_before = true;
+    let messages = [old, current];
+    let cfg = RequestConfig {
+        provider_id: "moonshot",
+        model: "kimi-k2.7-code",
+        messages: &messages,
+        tools: &[],
+        think: true,
+        reasoning_mode: Some("auto"),
+        max_tokens: None,
+        purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
+        session_id: None,
+        fast_mode: FastModeRequest::Unsupported,
+        continuation_target: Some(&target),
+    };
+
+    assert!(build_chat_payload(&cfg, &route::resolve("moonshot").unwrap(), None).is_ok());
+}
+
+#[test]
 fn deepseek_reasoning_tool_continuation_uses_the_tool_contract_even_when_admission_started_as_user()
 {
     let target = fixture_target(replay_target(
@@ -189,9 +213,9 @@ fn deepseek_user_continuation_replays_native_reasoning() {
     ];
 
     let payload = payload("deepseek", "deepseek-v4-flash", &messages, &target, "high")
-        .expect("required user payload");
+        .expect("forbidden user replay remains a regular payload");
 
-    assert_eq!(payload["messages"][0]["reasoning_content"], "opaque-user");
+    assert!(payload["messages"][0].get("reasoning_content").is_none());
 }
 
 #[tokio::test]
@@ -398,7 +422,7 @@ fn kimi_keeps_an_empty_native_reasoning_field_and_legacy_text_is_never_a_fallbac
     ));
     let replay = target.replay().unwrap();
     let mut legacy = ChatMessage::assistant("legacy".into(), None, None, None, None);
-    legacy.legacy_tool_loop_reasoning = Some("flat-legacy-text".into());
+    legacy.tool_loop_reasoning = Some("flat-legacy-text".into());
     let messages = [
         ChatMessage::assistant(
             "native".into(),
@@ -520,17 +544,17 @@ fn first_required_request_without_an_assistant_remains_allowed() {
 #[test]
 fn fixture_candidate_bypasses_only_activation_and_never_the_provenance_contract() {
     let replay = replay_target(
-        RouteId::Moonshot,
-        "kimi-k2.7-code",
+        RouteId::Cerebras,
+        "zai-glm-4.7",
         ReasoningModeId::Auto,
         ContinuationUse::UserContinuation,
     );
     let envelope = envelope(
         &replay,
-        ContractId::KimiChatV1,
+        ContractId::CerebrasChatV1,
         CompletionState::Complete,
-        ContinuationState::ChatReasoning {
-            reasoning_content: "opaque".into(),
+        ContinuationState::CerebrasReasoning {
+            reasoning: "opaque".into(),
         },
     );
     let messages = [
@@ -540,8 +564,8 @@ fn fixture_candidate_bypasses_only_activation_and_never_the_provenance_contract(
     let production = ContinuationTarget::Replay(replay.clone());
     let fixture = ContinuationTarget::FixtureCandidate(replay);
 
-    assert!(payload("moonshot", "kimi-k2.7-code", &messages, &production, "auto").is_err());
-    assert!(payload("moonshot", "kimi-k2.7-code", &messages, &fixture, "auto").is_ok());
+    assert!(payload("cerebras", "zai-glm-4.7", &messages, &production, "auto").is_err());
+    assert!(payload("cerebras", "zai-glm-4.7", &messages, &fixture, "auto").is_ok());
 }
 
 #[test]
@@ -552,7 +576,7 @@ fn groq_reasoning_is_forbidden() {
         reasoning_mode: ReasoningModeId::High,
     });
     let mut assistant = ChatMessage::assistant("prior".into(), None, None, None, None);
-    assistant.legacy_tool_loop_reasoning = Some("must-not-forward".into());
+    assistant.tool_loop_reasoning = Some("must-not-forward".into());
     let messages = [assistant, ChatMessage::user("continue".into())];
 
     let payload = payload("groq", "openai/gpt-oss-120b", &messages, &target, "high")

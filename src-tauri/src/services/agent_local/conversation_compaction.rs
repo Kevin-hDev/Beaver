@@ -9,7 +9,9 @@ pub enum CompactionError {
 
 #[derive(Debug, Clone)]
 pub struct CompactionOutcome {
+    #[cfg_attr(not(test), allow(dead_code, reason = "audit count asserted by compaction tests"))]
     pub removed_turns: usize,
+    #[cfg_attr(not(test), allow(dead_code, reason = "removed envelopes are asserted by compaction tests"))]
     pub replaced_envelopes: Vec<ReasoningEnvelope>,
 }
 
@@ -46,7 +48,7 @@ pub fn compact_complete_turns(
     Ok(CompactionOutcome { removed_turns: remove_count, replaced_envelopes })
 }
 
-fn turn_ranges(messages: &[AgentMessage]) -> Vec<std::ops::Range<usize>> {
+pub(super) fn turn_ranges(messages: &[AgentMessage]) -> Vec<std::ops::Range<usize>> {
     let mut ranges = Vec::new();
     let mut start = 0usize;
     while start < messages.len() {
@@ -68,6 +70,20 @@ fn is_open_tool_chain(turn: &[AgentMessage]) -> bool {
     })
 }
 
-fn is_terminal_turn(turn: &[AgentMessage]) -> bool {
+pub(super) fn is_terminal_turn(turn: &[AgentMessage]) -> bool {
     turn.last().is_some_and(|message| message.role == "assistant" && message.tool_calls.is_none())
+}
+
+/// Renvoie une frontière exclusive qui ne coupe jamais un tour. Un clone
+/// demandé sur un message utilisateur repart donc du dernier tour terminé.
+pub(super) fn terminal_prefix_end(messages: &[AgentMessage], message_index: usize) -> usize {
+    turn_ranges(messages)
+        .into_iter()
+        .filter(|range| {
+            range.end.saturating_sub(1) <= message_index
+                && is_terminal_turn(&messages[range.clone()])
+        })
+        .map(|range| range.end)
+        .max()
+        .unwrap_or(0)
 }

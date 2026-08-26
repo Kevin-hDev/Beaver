@@ -67,10 +67,11 @@ pub(crate) fn target_for_request(
     };
     if !matches!(
         replay.route_id,
-        RouteId::OpenAi | RouteId::XaiOauth | RouteId::CodexOauth
+        RouteId::OpenAi | RouteId::Xai | RouteId::XaiOauth | RouteId::CodexOauth
     ) {
         return Ok(None);
     }
+    let messages = super::replay::messages_after_barrier(messages);
     let replay = replay_with_use(replay, messages);
     let target = preserve_target_kind(target, replay);
     let policy = crate::services::reasoning_continuity::registry::replay_policy(
@@ -89,7 +90,7 @@ pub(crate) fn target_for_request(
             .ok_or(super::replay::ReplayApplyError::Blocked)?;
         super::replay::approval_for_target(&target, envelope)?;
     }
-    if policy.requirement == ReplayRequirement::Required
+    if policy.requirement() == ReplayRequirement::Required
         && messages.iter().any(|message| message.role == "assistant")
         && !messages
             .iter()
@@ -121,7 +122,11 @@ pub(crate) fn items_for_message(
     if message.role != "assistant" || items.is_empty() {
         return Err(super::replay::ReplayApplyError::PayloadMismatch);
     }
-    super::replay::apply_responses_continuity(&[message.clone()], &approval, &mut Vec::new())?;
+    super::replay::apply_responses_continuity(
+        std::slice::from_ref(message),
+        &approval,
+        &mut Vec::new(),
+    )?;
     Ok(Some(items.clone()))
 }
 

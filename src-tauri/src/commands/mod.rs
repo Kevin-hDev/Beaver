@@ -96,6 +96,8 @@ pub mod personality;
 pub mod projects;
 #[cfg(debug_assertions)]
 pub mod reasoning_fixture;
+#[cfg(debug_assertions)]
+pub(crate) mod reasoning_fixture_live_tests;
 pub mod registry;
 pub mod search;
 #[cfg(test)]

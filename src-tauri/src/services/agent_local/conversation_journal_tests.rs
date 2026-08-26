@@ -112,4 +112,47 @@ async fn assistant_envelope_persists_without_a_duplicate_replay_source() {
     session_store::delete_one(&session.id).await.expect("delete session");
 }
 
+#[tokio::test]
+async fn commit_write_failure_leaves_the_durable_turn_uncommitted_and_retryable() {
+    let session = session_store::create_full("Journal failure", "model", "groq", false, None)
+        .await
+        .expect("create session");
+    let mut journal = ConversationJournal::new(
+        session.id.clone(),
+        uuid::Uuid::new_v4().to_string(),
+        uuid::Uuid::new_v4().to_string(),
+        uuid::Uuid::new_v4().to_string(),
+        uuid::Uuid::new_v4().to_string(),
+    )
+    .expect("create journal");
+    journal
+        .persist_assistant_step(&ChatMessage::assistant(
+            "complete step".into(),
+            None,
+            None,
+            None,
+            None,
+        ))
+        .await
+        .expect("persist assistant");
+
+    assert!(journal
+        .commit_turn_with_injected_write_failure()
+        .await
+        .is_err());
+    let reloaded = session_store::get(&session.id).await.expect("reload session");
+    assert_eq!(
+        reloaded.messages.last().and_then(|message| message.stream_part.as_deref()),
+        Some("checkpoint")
+    );
+
+    journal.commit_turn().await.expect("retry commit");
+    let committed = session_store::get(&session.id).await.expect("reload committed");
+    assert_eq!(
+        committed.messages.last().and_then(|message| message.stream_part.as_deref()),
+        Some("final")
+    );
+    session_store::delete_one(&session.id).await.expect("delete session");
+}
+
 fn tool(id: &str) -> ChatMessage { ChatMessage::tool("result".into(), Some(id.into()), Some("bash".into())) }

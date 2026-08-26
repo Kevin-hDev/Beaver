@@ -1,4 +1,4 @@
-use super::isolated_toolset_in;
+use super::{isolated_toolset_in, purge_stale_runtime_in};
 use serde_json::json;
 
 #[tokio::test]
@@ -62,6 +62,28 @@ async fn fixture_directory_is_removed_when_the_toolset_is_dropped_after_a_failur
     };
 
     assert!(!path.exists());
+}
+
+#[test]
+fn startup_cleanup_removes_only_bounded_fixture_directories() {
+    let runtime = tempfile::tempdir().expect("runtime");
+    let stale = runtime.path().join("fixture-stale");
+    std::fs::create_dir(&stale).expect("stale fixture");
+    std::fs::write(stale.join("fixture-note.txt"), b"stale").expect("stale note");
+
+    purge_stale_runtime_in(runtime.path()).expect("purge stale fixture");
+
+    assert!(!stale.exists());
+}
+
+#[test]
+fn startup_cleanup_fails_closed_on_unrelated_entries() {
+    let runtime = tempfile::tempdir().expect("runtime");
+    let unrelated = runtime.path().join("keep-me");
+    std::fs::create_dir(&unrelated).expect("unrelated directory");
+
+    assert!(purge_stale_runtime_in(runtime.path()).is_err());
+    assert!(unrelated.exists());
 }
 
 #[cfg(unix)]

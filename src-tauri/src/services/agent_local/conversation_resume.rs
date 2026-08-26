@@ -3,12 +3,15 @@ use std::collections::HashSet;
 use uuid::Uuid;
 
 use crate::models::agent_turn_contract::ResumeTurnInput;
-use crate::services::reasoning_continuity::contract::{ContinuationTarget, ReplayTarget};
+use crate::services::reasoning_continuity::contract::ContinuationTarget;
+#[cfg(test)]
+use crate::services::reasoning_continuity::contract::ReplayTarget;
 
 use super::conversation_admission::{error, unique_uuid, AdmittedTurn, ConversationAdmissionError};
 use super::conversation_history::ProviderRole;
 use super::conversation_history_resolve::AttachmentKeySource;
 
+#[cfg(test)]
 pub async fn resume(
     session_id: &str,
     input: ResumeTurnInput,
@@ -17,6 +20,7 @@ pub async fn resume(
     resume_for_continuation(session_id, input, ContinuationTarget::Replay(target)).await
 }
 
+#[cfg(test)]
 pub async fn resume_for_continuation(
     session_id: &str,
     input: ResumeTurnInput,
@@ -26,6 +30,7 @@ pub async fn resume_for_continuation(
     resume_with_lease(&lease, input, target).await
 }
 
+#[cfg(test)]
 pub(crate) async fn resume_with_lease(
     lease: &super::session_locks::AdmissionLease,
     input: ResumeTurnInput,
@@ -72,15 +77,11 @@ async fn resume_inner(
         Some(update) => update.apply(&mut session).map_err(|_| error())?,
         None => false,
     };
-    let expected_source = target.replay().map(
-        crate::services::reasoning_continuity::envelope::ReasoningSource::from_target,
-    );
+    let expected_source = super::conversation_admission_replay::source_for_admission(&target);
     let source_changed = {
         let message = session.messages.last_mut().ok_or_else(error)?;
         if message.id != input.message_id
             || message.role != "user"
-            || !message.files.is_empty()
-            || message.skill_names.as_ref().is_some_and(|names| !names.is_empty())
         {
             return Err(error());
         }

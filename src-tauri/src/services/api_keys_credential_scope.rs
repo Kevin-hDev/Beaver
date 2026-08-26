@@ -1,7 +1,6 @@
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use rand::RngCore;
 
-#[allow(dead_code, reason = "consumed by the session owner from Task 5")]
 pub fn credential_scope(route: RouteId) -> Result<CredentialScope, String> {
     if route == RouteId::Ollama {
         return Ok(CredentialScope::local_uncredentialed());
@@ -65,7 +64,6 @@ fn credential_scope_vault_key(route: RouteId) -> Option<String> {
     api_provider_for_route(route).map(|provider| format!("reasoning_scope:{provider}"))
 }
 
-#[allow(dead_code, reason = "supports credential_scope before Task 5 adopts it")]
 fn scope_from_map<V>(map: &HashMap<String, V>, route: RouteId) -> Result<CredentialScope, String>
 where
     V: AsRef<str>,
@@ -149,10 +147,9 @@ fn migrate_api_scope(
         return;
     };
     if let Some(existing) = map.get(&physical) {
-        if CredentialScope::authenticated(existing.clone()).is_err() {
-            report.blocked.push(route);
+        if CredentialScope::authenticated(existing.clone()).is_ok() {
+            return;
         }
-        return;
     }
     match generate_credential_scope() {
         Ok(scope) => {
@@ -182,7 +179,6 @@ fn api_provider_for_route(route: RouteId) -> Option<&'static str> {
     API_ROUTES.contains(&route).then(|| route.provider_id())
 }
 
-#[allow(dead_code, reason = "supports credential_scope before Task 5 adopts it")]
 fn oauth_vault_key(route: RouteId) -> Option<&'static str> {
     match route {
         RouteId::XaiOauth => Some(LLM_OAUTH_XAI_KEY),

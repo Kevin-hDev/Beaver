@@ -1,5 +1,7 @@
 #[path = "conversation_journal_record.rs"]
 mod record;
+#[path = "conversation_journal_store.rs"]
+mod store;
 
 use chrono::Utc;
 use std::collections::HashSet;
@@ -135,23 +137,6 @@ impl ConversationJournal {
         Ok(())
     }
 
-    pub(crate) async fn commit_turn(&mut self) -> Result<(), String> {
-        if self.committed || self.partial || self.assistant_steps == 0 || !self.expected_tool_ids.is_empty() { return Err(error()); }
-        let run_id = self.request_id.clone();
-        self.update(move |session| {
-            let mut found = false;
-            for message in &mut session.messages {
-                if message.stream_run_id.as_deref() == Some(&run_id) {
-                    message.stream_part = Some("final".to_string());
-                    found = true;
-                }
-            }
-            found.then_some(()).ok_or_else(error)
-        }).await?;
-        self.committed = true;
-        Ok(())
-    }
-
     async fn append(&self, records: Vec<super::types_message::AgentMessage>) -> Result<(), String> {
         if records.is_empty() { return Err(error()); }
         self.update(move |session| {
@@ -163,36 +148,6 @@ impl ConversationJournal {
         }).await
     }
 
-    async fn update<F>(&self, update: F) -> Result<(), String>
-    where F: FnOnce(&mut super::types_session::AgentSession) -> Result<(), String> {
-        self.verify_subagent_owner().await?;
-        let lock = super::session_store::lock_session(&self.session_id).await;
-        let _guard = lock.lock().await;
-        let mut session = super::session_store::get(&self.session_id).await.map_err(|_| error())?;
-        if self
-            .subagent_owner
-            .as_ref()
-            .is_some_and(|owner| session.subagent_run_id.as_deref() != Some(&owner.run_id))
-        {
-            return Err(error());
-        }
-        update(&mut session)?;
-        super::session_store::save(&session).await.map_err(|_| error())
-    }
-
-    async fn verify_subagent_owner(&self) -> Result<(), String> {
-        let Some(owner) = &self.subagent_owner else {
-            return Ok(());
-        };
-        super::subagent_registry::owns_execution(
-            &self.session_id,
-            &owner.run_id,
-            &owner.execution_id,
-        )
-        .await
-        .then_some(())
-        .ok_or_else(error)
-    }
 }
 
 pub(crate) fn validate_tool_results(messages: &[ChatMessage], expected: &[String]) -> Result<(), String> {

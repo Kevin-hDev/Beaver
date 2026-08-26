@@ -98,13 +98,11 @@ pub(super) const OPENROUTER: &[ModelPolicy] = &[
 ];
 
 pub(super) const DEEPSEEK: &[ModelPolicy] = &[
-    live(
+    disabled(
         "deepseek-v4-flash",
         ReasoningModeId::High,
         ContinuationUse::UserContinuation,
-        ReplayRequirement::Required,
-        "deepseek-api-deepseek-v4-flash-france-2026-08-26",
-        "2026-08-26",
+        ReplayRequirement::Forbidden,
     ),
     live(
         "deepseek-v4-flash",

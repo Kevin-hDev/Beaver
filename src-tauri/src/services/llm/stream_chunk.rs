@@ -42,7 +42,7 @@ pub fn parse_value_with_context(chunk: &Value, context: UsageContext<'_>) -> Vec
     if let Some(choice) = chunk["choices"].as_array().and_then(|a| a.first()) {
         parse_delta(&choice["delta"], &mut out);
     }
-    if let Some(usage) = parse_usage(&chunk, context) {
+    if let Some(usage) = parse_usage(chunk, context) {
         out.push(ParsedChunk::Usage(usage));
     }
     let completion_seconds = chunk

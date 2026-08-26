@@ -1,12 +1,12 @@
-#![allow(dead_code, reason = "provider adapters adopt the canonical history in Tasks 9 and 18-23")]
-
 use std::fmt;
 
-use crate::services::reasoning_continuity::contract::{ContinuationTarget, ReplayTarget};
+use crate::services::reasoning_continuity::contract::ContinuationTarget;
+#[cfg(test)]
+use crate::services::reasoning_continuity::contract::ReplayTarget;
 use crate::services::reasoning_continuity::envelope::ReasoningEnvelope;
 
 use super::conversation_attachments::ResolvedImage;
-use super::types_message::{FileAttachment, ToolCallRequest};
+use super::types_message::ToolCallRequest;
 
 pub const PUBLIC_ERROR_CODE: &str = "conversation_admission_failed";
 pub const SKILL_INSTRUCTION_PREFIX: &str =
@@ -31,7 +31,6 @@ pub enum ProviderRole {
 }
 
 #[derive(Debug)]
-#[allow(dead_code, reason = "provider adapters adopt every field in Tasks 9 and 18-23")]
 pub struct ProviderMessage {
     /// Absent seulement pour une instruction de skill éphémère du tour courant.
     pub message_id: Option<String>,
@@ -39,15 +38,12 @@ pub struct ProviderMessage {
     pub role: ProviderRole,
     pub content: String,
     pub images: Vec<ResolvedImage>,
-    pub files: Vec<FileAttachment>,
     pub tool_calls: Option<Vec<ToolCallRequest>>,
     pub tool_name: Option<String>,
     pub tool_call_id: Option<String>,
     pub display_thinking: Option<String>,
     pub continuation: Option<ReasoningEnvelope>,
-    pub legacy_tool_loop_reasoning: Option<String>,
-    pub skill_id: Option<String>,
-    pub skill_name: Option<String>,
+    pub tool_loop_reasoning: Option<String>,
     pub continuity_barrier_before: bool,
 }
 
@@ -114,15 +110,12 @@ impl ConversationHistory {
             role: ProviderRole::User,
             content: format!("{SKILL_INSTRUCTION_PREFIX}\n\n{}", skill.content),
             images: Vec::new(),
-            files: Vec::new(),
             tool_calls: None,
             tool_name: None,
             tool_call_id: None,
             display_thinking: None,
             continuation: None,
-            legacy_tool_loop_reasoning: None,
-            skill_id: Some(skill.id),
-            skill_name: Some(skill.name),
+            tool_loop_reasoning: None,
             continuity_barrier_before: false,
         });
         let count = skill_messages.len();
@@ -137,6 +130,7 @@ impl ConversationHistory {
     }
 }
 
+#[cfg(test)]
 pub async fn load_for_target(
     session_id: &str,
     target: &ReplayTarget,
@@ -175,23 +169,6 @@ pub(crate) async fn load_for_target_with_key(
     .await
 }
 
-pub(super) async fn load_for_admission(
-    session_id: &str,
-    target: &ReplayTarget,
-    current_user_id: &str,
-    current: super::conversation_input::ResolvedTurnInput,
-    key_source: super::conversation_history_resolve::AttachmentKeySource,
-) -> Result<ConversationHistory, ConversationHistoryError> {
-    load_for_admission_continuation(
-        session_id,
-        &ContinuationTarget::Replay(target.clone()),
-        current_user_id,
-        current,
-        key_source,
-    )
-    .await
-}
-
 pub(super) async fn load_for_admission_continuation(
     session_id: &str,
     target: &ContinuationTarget,
@@ -211,11 +188,4 @@ pub(super) async fn load_for_admission_continuation(
     .await?;
     history.overlay_current_input(current_user_id, current)?;
     Ok(history)
-}
-
-pub(crate) fn from_session(
-    session: &super::types_session::AgentSession,
-    target: &ReplayTarget,
-) -> Result<ConversationHistory, ConversationHistoryError> {
-    super::conversation_history_build::from_session(session, target)
 }

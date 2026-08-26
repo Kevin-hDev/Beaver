@@ -2,6 +2,7 @@ use crate::services::agent_local::types_session::{AgentSession, AgentSessionMeta
 pub use super::session_id::validate_session_id;
 pub(crate) use super::session_locks::lock_session;
 pub use super::session_locks::remove_session_lock;
+#[cfg(test)]
 pub use super::session_store_messages::add_messages;
 #[cfg(test)]
 pub use super::session_store_messages::add_messages_with_context;
@@ -59,6 +60,7 @@ async fn update_index(meta: AgentSessionMeta) {
     }
 }
 
+#[cfg(test)]
 pub(super) async fn save_prepared(
     prepared: super::session_store_document::PreparedSessionDocument,
 ) -> Result<(), String> {
@@ -97,14 +99,8 @@ pub async fn rename(id: &str, name: &str) -> Result<(), String> {
 
 pub(crate) async fn delete_one(id: &str) -> Result<(), String> {
     validate_session_id(id)?;
-    let directory = crate::services::paths::data_dir().join("agent-sessions");
-    tokio::task::spawn_blocking({
-        let directory = directory.clone();
-        let id = id.to_string();
-        move || super::session_artifacts::remove_all_in(&directory, &id)
-    })
-    .await
-    .map_err(|_| "Suppression de session impossible".to_string())??;
+    // Les projections et magasins secondaires partent d'abord. Le document principal,
+    // seule autorité permettant une reprise, est supprimé en dernier.
     crate::services::agent_local::session_index::remove_entry(id)
         .await
         .map_err(|_| "Suppression de session impossible".to_string())?;
@@ -117,9 +113,20 @@ pub(crate) async fn delete_one(id: &str) -> Result<(), String> {
     super::session_permission_state::remove(id)
         .await
         .map_err(|_| "Suppression de session impossible".to_string())?;
-    crate::services::reasoning_fixture_store::remove_for_session(id)
+    if crate::services::reasoning_fixture_store::remove_for_session(id)
         .await
-        .map_err(|_| "Suppression de session impossible".to_string())?;
+        .is_err()
+    {
+        log::warn!("reasoning_fixture_session_cleanup_failed");
+    }
+    let directory = crate::services::paths::data_dir().join("agent-sessions");
+    tokio::task::spawn_blocking({
+        let directory = directory.clone();
+        let id = id.to_string();
+        move || super::session_artifacts::remove_all_in(&directory, &id)
+    })
+    .await
+    .map_err(|_| "Suppression de session impossible".to_string())??;
     // Nettoie aussi le WriteGuard persistant de la session.
     crate::services::agent_local::write_guard_registry::remove(id);
     Ok(())

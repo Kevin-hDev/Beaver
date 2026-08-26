@@ -14,13 +14,13 @@ use super::types_session::{
     AgentMessage, ToolActivityRecord, ToolCallRequest, ToolCallRequestFunction,
 };
 
-const CAPTURE_DATE: &str = "2026-08-25";
 const WRITER_COMMIT: &str = "2848a17e87fa641bff067dc4b5c9a2398bae6540";
-const V1_FIXTURE: &[u8] = include_bytes!("../../../test-fixtures/agent-session-v1-real.json");
+const V1_FIXTURE: &[u8] = include_bytes!("../../../test-fixtures/agent-session-v1-synthetic.json");
+const CAPTURED_TOOL_CHAIN: &[u8] =
+    include_bytes!("../../../test-fixtures/agent-session-v1-captured-tool-chain.json");
 
 #[test]
-fn real_v1_fixture_keeps_visible_thinking_without_promoting_continuation() {
-    assert_eq!(CAPTURE_DATE, "2026-08-25");
+fn synthetic_v1_fixture_keeps_visible_thinking_without_promoting_continuation() {
     assert_eq!(WRITER_COMMIT.len(), 40);
 
     let loaded = super::session_migration::read(V1_FIXTURE, PathBuf::from("fixture.json"))
@@ -29,6 +29,21 @@ fn real_v1_fixture_keeps_visible_thinking_without_promoting_continuation() {
     assert_eq!(loaded.session().schema_version, 2);
     assert_eq!(loaded.session().messages[1].thinking.as_deref(), Some("fixture-visible-thinking"));
     assert!(loaded.session().messages[1].continuation.is_none());
+}
+
+#[test]
+fn anonymized_captured_v1_tool_chain_migrates_without_promoting_codex_sidecars() {
+    let loaded = super::session_migration::read(
+        CAPTURED_TOOL_CHAIN,
+        PathBuf::from("captured-tool-chain.json"),
+    )
+    .expect("load anonymized captured v1 fixture");
+    let session = loaded.session();
+
+    assert_eq!(session.schema_version, 2);
+    assert!(session.messages.iter().any(|message| message.role == "tool"));
+    assert!(session.messages.iter().all(|message| message.continuation.is_none()));
+    assert!(session.messages.iter().all(|message| message.replay_source.is_none()));
 }
 
 #[tokio::test]
@@ -275,7 +290,7 @@ async fn writer_redacts_visible_text_without_mutating_opaque_state_or_provider_i
     );
     assert_eq!(
         restored.messages[1].tool_calls.as_ref().unwrap()[0].extra_content,
-        Some(tool_extra)
+        Some(serde_json::json!({ "google": tool_extra["google"].clone() }))
     );
     assert_eq!(restored.messages[1].continuation, Some(opaque));
     let arguments = &restored.messages[1].tool_calls.as_ref().unwrap()[0]

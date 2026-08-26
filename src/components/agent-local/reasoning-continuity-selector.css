@@ -1,5 +1,6 @@
 .rcs-root {
   min-width: 0;
+  min-height: 48px;
   margin: 0;
   padding: 0;
   border: 0;
@@ -41,6 +42,20 @@
   outline-offset: 2px;
 }
 
+.rcs-option input {
+  width: 12px;
+  height: 12px;
+  margin: 0;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  appearance: none;
+}
+
+.rcs-option input:checked {
+  box-shadow: inset 0 0 0 3px var(--select-bg);
+  background: currentColor;
+}
+
 .rcs-option:has(input:disabled) {
   cursor: not-allowed;
   opacity: 0.72;
@@ -50,4 +65,13 @@
   margin: var(--space-2xs) 0 0;
   color: var(--ink-muted);
   font-size: var(--text-xs);
+}
+
+.rcs-root-locked {
+  display: flex;
+  align-items: center;
+}
+
+.rcs-explanation-locked {
+  margin-top: 0;
 }

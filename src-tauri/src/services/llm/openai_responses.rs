@@ -6,6 +6,7 @@ use tokio_util::sync::CancellationToken;
 
 use super::stream_http::{RequestConfig, RequestError};
 
+#[cfg(test)]
 pub(super) fn build_request(config: &RequestConfig<'_>) -> serde_json::Value {
     try_build_request(config).expect("a request without a continuation target cannot be rejected")
 }
@@ -91,7 +92,6 @@ pub(super) async fn stream_chat(
         config.model,
         config.tools,
         reasoning_capture,
-        false,
         measurement,
     )
     .await

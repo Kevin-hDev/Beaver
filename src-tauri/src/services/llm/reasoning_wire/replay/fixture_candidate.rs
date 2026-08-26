@@ -15,7 +15,7 @@ pub(crate) fn approved<'a>(
     if eligibility::decide_fixture_candidate(envelope, target) != ReplayDecision::Allowed {
         return Err(ReplayApplyError::Blocked);
     }
-    let (Some(contract_id), Some(adapter)) = (policy.contract_id, policy.adapter) else {
+    let Some((contract_id, adapter)) = policy.fixture_adapter() else {
         return Err(ReplayApplyError::Blocked);
     };
     if contract_id != envelope.contract_id || !envelope.source.matches_target(target) {

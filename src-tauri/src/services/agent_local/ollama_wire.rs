@@ -41,12 +41,8 @@ pub fn messages_value(messages: &[ChatMessage]) -> Value {
     Value::Array(messages.iter().map(message_value).collect())
 }
 
-/// Réservé au contrat natif `/api/chat`; `chat_request` conserve encore le
-/// champ legacy jusqu'à la bascule atomique de Task 19.
-#[allow(
-    dead_code,
-    reason = "Task 19 connects this only after a live-validated native policy"
-)]
+/// Réservé au contrat natif `/api/chat` et appelé seulement après l'autorisation
+/// exacte du registre.
 pub(crate) fn apply_continuity(
     messages: &[ChatMessage],
     approval: &crate::services::llm::reasoning_wire::replay::ReplayApproval<'_>,
@@ -64,14 +60,12 @@ fn apply_live_continuity(
     target: &crate::services::reasoning_continuity::contract::ReplayTarget,
     payload_messages: &mut [Value],
 ) -> Result<(), crate::services::llm::reasoning_wire::replay::ReplayApplyError> {
-    let policy = crate::services::reasoning_continuity::registry::replay_policy(target)
-        .ok_or(crate::services::llm::reasoning_wire::replay::ReplayApplyError::Blocked)?;
+    let continuation =
+        crate::services::reasoning_continuity::contract::ContinuationTarget::Replay(target.clone());
     for envelope in messages.iter().filter_map(|message| message.continuation.as_ref()) {
-        let approval = crate::services::llm::reasoning_wire::replay::approved(
-            crate::services::reasoning_continuity::eligibility::decide(envelope, target),
-            policy,
+        let approval = crate::services::llm::reasoning_wire::replay::approval_for_target(
+            &continuation,
             envelope,
-            target,
         )?;
         apply_continuity(messages, &approval, payload_messages)?;
     }
@@ -84,11 +78,14 @@ fn apply_fixture_continuity(
     target: &crate::services::reasoning_continuity::contract::ReplayTarget,
     payload_messages: &mut [Value],
 ) -> Result<(), crate::services::llm::reasoning_wire::replay::ReplayApplyError> {
-    let policy = crate::services::reasoning_continuity::registry::replay_policy(target)
-        .ok_or(crate::services::llm::reasoning_wire::replay::ReplayApplyError::Blocked)?;
+    let continuation =
+        crate::services::reasoning_continuity::contract::ContinuationTarget::FixtureCandidate(
+            target.clone(),
+        );
     for envelope in messages.iter().filter_map(|message| message.continuation.as_ref()) {
-        let approval = crate::services::llm::reasoning_wire::replay::fixture_candidate::approved(
-            policy, envelope, target,
+        let approval = crate::services::llm::reasoning_wire::replay::approval_for_target(
+            &continuation,
+            envelope,
         )?;
         apply_continuity(messages, &approval, payload_messages)?;
     }
@@ -105,7 +102,7 @@ fn message_value(message: &ChatMessage) -> Value {
     insert_optional(
         &mut value,
         "thinking",
-        message.legacy_tool_loop_reasoning.as_ref(),
+        message.tool_loop_reasoning.as_ref(),
     );
     Value::Object(value)
 }

@@ -1,12 +1,13 @@
 use crate::commands::agent_chat_task::{run_stream_task, StreamCapabilityHints, StreamTaskParams};
-use crate::models::agent_turn_contract::NewUserTurnInput;
+use crate::models::agent_turn_contract::{NewUserTurnInput, TurnStart};
 use crate::models::ScheduledWakeup;
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::types_ollama::ChatMessage;
+use crate::services::agent_local::types_ollama::StreamEvent;
+#[cfg(test)]
 use crate::services::agent_local::{conversation_admission, conversation_input};
-use tauri::AppHandle;
+use tauri::{AppHandle, Manager};
 use tokio_util::sync::CancellationToken;
-use uuid::Uuid;
 
 pub struct ScheduledAgentResult {
     pub tokens: u32,
@@ -27,19 +28,77 @@ pub async fn run(
         None,
     )
     .await?;
-    let admitted =
-        admit_wakeup_turn(session_id, &wakeup.prompt, target.continuation.clone()).await?;
+    let stream = crate::commands::agent_chat_admission::admit_background(app, session_id).await?;
+    let streams = app.state::<crate::ActiveStreams>();
+    let turn = crate::commands::agent_chat_turn::prepare(TurnStart::New(NewUserTurnInput {
+        content: wakeup.prompt.clone(),
+        files: Vec::new(),
+        skills: Vec::new(),
+    }))
+    .await?;
+    let admitted = match crate::commands::agent_chat_turn::admit_current(
+        &streams,
+        session_id,
+        stream.generation,
+        turn,
+        target.continuation.clone(),
+        target.session_reasoning.clone(),
+    )
+    .await
+    {
+        Ok(admitted) => admitted,
+        Err(error) => {
+            crate::commands::agent_chat_streams::finish_active_stream(
+                &streams,
+                session_id,
+                stream.generation,
+            )
+            .await;
+            return Err(error);
+        }
+    };
+    let admission_rollback = admitted.rollback();
     // A projectless workspace needs the durable first user message as its label.
     let resolved_dir =
-        crate::commands::agent_working_dir::resolve_for_session(session_id, None).await?;
-    let emitter = AgentEventEmitter::new(app.clone(), session_id.to_string());
-    let completed = run_stream_task(StreamTaskParams {
+        match crate::commands::agent_working_dir::resolve_for_session(session_id, None).await {
+            Ok(directory) => directory,
+            Err(error) => {
+                let _ = crate::commands::agent_chat_turn::rollback_current(
+                    &streams,
+                    session_id,
+                    stream.generation,
+                    &admission_rollback,
+                )
+                .await;
+                crate::commands::agent_chat_streams::finish_active_stream(
+                    &streams,
+                    session_id,
+                    stream.generation,
+                )
+                .await;
+                return Err(error);
+            }
+        };
+    let emitter =
+        AgentEventEmitter::with_generation(app.clone(), session_id.to_string(), stream.generation);
+    let _ = emitter.send(StreamEvent::TurnAdmitted {
+        turn_id: admitted.turn.turn_id.clone(),
+        user_message_id: admitted.turn.user_message_id.clone(),
+        assistant_message_id: admitted.turn.assistant_message_id.clone(),
+    });
+    let run_cancel = stream.cancel.clone();
+    let linked_cancel = run_cancel.clone();
+    let cancel_link = tokio::spawn(async move {
+        cancel.cancelled().await;
+        linked_cancel.cancel();
+    });
+    let outcome = run_stream_task(StreamTaskParams {
         on_event: emitter.clone(),
         session_id: session_id.to_string(),
-        request_id: Uuid::new_v4().to_string(),
+        request_id: stream.request_id.clone(),
         model: wakeup.model.clone(),
         conversation: Some(
-            crate::commands::agent_chat_task::StreamConversation::canonical(admitted),
+            crate::commands::agent_chat_task::StreamConversation::canonical(admitted.turn),
         ),
         continuation_target: Some(target.continuation),
         reasoning_profile: Some(target.reasoning.clone()),
@@ -57,9 +116,38 @@ pub async fn run(
         plan_mode: Some(false),
         #[cfg(debug_assertions)]
         fixture_run: None,
-        cancel,
+        cancel: run_cancel,
     })
-    .await?;
+    .await;
+    cancel_link.abort();
+    let completed = match outcome {
+        Ok(completed) => completed,
+        Err(error) => {
+            let _ = crate::commands::agent_chat_turn::rollback_current(
+                &streams,
+                session_id,
+                stream.generation,
+                &admission_rollback,
+            )
+            .await;
+            crate::commands::agent_chat_streams::finish_active_stream(
+                &streams,
+                session_id,
+                stream.generation,
+            )
+            .await;
+            return Err(error);
+        }
+    };
+    if !crate::commands::agent_chat_streams::finish_active_stream(
+        &streams,
+        session_id,
+        stream.generation,
+    )
+    .await
+    {
+        return Err(crate::commands::agent_chat_streams::STREAM_REPLACED.to_string());
+    }
     let has_text_result = completed
         .messages()
         .iter()
@@ -72,6 +160,7 @@ pub async fn run(
     })
 }
 
+#[cfg(test)]
 pub(crate) async fn admit_wakeup_turn(
     session_id: &str,
     prompt: &str,

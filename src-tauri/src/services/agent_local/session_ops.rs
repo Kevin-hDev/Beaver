@@ -3,15 +3,6 @@ use super::session_store::{get, list, validate_session_id};
 use super::session_store::{lock_session, save};
 
 pub use super::session_mutations::{apply_metadata_patch, edit_user_message};
-/// Interface canonique réservée au chemin chat de la Task 9, qui possède le target exact.
-#[allow(dead_code, reason = "adopted by the Rust chat boundary in Task 9")]
-pub async fn edit_user_message_for_history(
-    id: &str,
-    input: crate::models::agent_session_contract::EditUserMessageInput,
-    target: &crate::services::reasoning_continuity::contract::ReplayTarget,
-) -> Result<super::conversation_history::ConversationHistory, super::conversation_admission::ConversationAdmissionError> {
-    super::conversation_edit::edit_user_message(id, input, target).await
-}
 
 pub async fn export_markdown(id: &str) -> Result<String, String> {
     validate_session_id(id)?;

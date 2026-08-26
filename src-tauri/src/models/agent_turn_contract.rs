@@ -11,7 +11,6 @@ pub const MAX_ATTACHMENT_GRANT_BYTES: usize = 128;
 pub const MAX_ATTACHMENT_THUMBNAIL_BYTES: usize = MAX_TURN_IMAGE_BYTES.div_ceil(3) * 4 + 96;
 pub const MAX_SKILL_ID_BYTES: usize = 768;
 pub const MAX_SKILL_NAME_BYTES: usize = 480;
-#[allow(dead_code, reason = "adopted by resume admission in Task 8")]
 pub const MAX_RESUME_MESSAGE_ID_BYTES: usize = 64;
 
 #[derive(Debug, Clone, Serialize)]
@@ -49,7 +48,6 @@ pub struct NewUserTurnInput {
 
 #[derive(Debug, Clone, Serialize)]
 #[cfg_attr(test, derive(ts_rs::TS))]
-#[allow(dead_code, reason = "adopted by resume admission in Task 8")]
 pub struct ResumeTurnInput {
     pub message_id: String,
 }

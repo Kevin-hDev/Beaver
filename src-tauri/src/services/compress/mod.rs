@@ -6,7 +6,8 @@ pub mod engine;
 pub mod prompt;
 pub mod realtime_budget;
 pub mod state;
-mod state_recent;
+pub(crate) mod state_recent;
+#[cfg(test)]
 mod state_select;
 #[cfg(test)]
 mod state_tests;

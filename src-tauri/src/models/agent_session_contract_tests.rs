@@ -1,7 +1,7 @@
 use serde_json::json;
 
 use super::agent_session_contract::{
-    typescript_bindings, EditUserMessageInput, SessionMetadataPatch, VisibleMessageInput,
+    typescript_bindings, EditUserMessageInput, SessionMetadataPatch,
 };
 
 #[test]
@@ -34,28 +34,6 @@ fn edit_input_exposes_only_the_target_and_new_content() {
         "segments": []
     }))
     .is_err());
-}
-
-#[test]
-fn legacy_visible_message_input_rejects_opaque_fields_at_every_level() {
-    let base = json!({
-        "id": "00000000-0000-4000-8000-000000000001",
-        "role": "assistant",
-        "content": "Texte visible",
-        "files": [],
-        "timestamp": "2026-08-25T10:00:00Z"
-    });
-    let mut top_level = base.clone();
-    top_level["continuation"] = json!({"encrypted_content": "opaque"});
-    assert!(serde_json::from_value::<VisibleMessageInput>(top_level).is_err());
-
-    let mut nested = base;
-    nested["tool_calls"] = json!([{
-        "id": "call-visible",
-        "function": {"name": "inspect", "arguments": {}},
-        "extra_content": {"thoughtSignature": "opaque"}
-    }]);
-    assert!(serde_json::from_value::<VisibleMessageInput>(nested).is_err());
 }
 
 #[test]

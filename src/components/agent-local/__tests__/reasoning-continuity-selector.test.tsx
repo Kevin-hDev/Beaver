@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ReasoningContinuitySelector } from "../reasoning-continuity-selector";
+import type { ContinuityCapability } from "@/types/agent-session.generated";
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -9,15 +10,7 @@ vi.mock("react-i18next", () => ({
 
 afterEach(cleanup);
 
-type Capability = {
-  requirement: "optional" | "required" | "forbidden";
-  local_available: boolean;
-  remote_available: boolean;
-  state: "disabled" | "available" | "locked";
-  explanation_key: string;
-};
-
-const optional: Capability = {
+const optional: ContinuityCapability = {
   requirement: "optional",
   local_available: true,
   remote_available: false,
@@ -36,7 +29,7 @@ function agentLocalTranslations(value: unknown): Record<string, string> {
   return agentLocal as Record<string, string>;
 }
 
-function renderSelector(capability: Capability | undefined, setting = "off") {
+function renderSelector(capability: ContinuityCapability | undefined, setting = "off") {
   const onChange = vi.fn();
   const view = render(
     <ReasoningContinuitySelector
@@ -81,8 +74,7 @@ describe("ReasoningContinuitySelector", () => {
 
     expect(screen.getByText("agentLocal.continuityRequired")).toBeTruthy();
     expect(screen.queryByRole("radio", { name: "agentLocal.continuityOff" })).toBeNull();
-    expect(screen.getByRole("radio", { name: "agentLocal.continuityLocal" })).toBeDisabled();
-    expect(screen.getByRole("radio", { name: "agentLocal.continuityRemote" })).toBeDisabled();
+    expect(screen.queryByRole("radiogroup")).toBeNull();
   });
 
   it("réévalue la capacité et affiche une barrière après un changement de compte ou modèle", () => {
@@ -91,7 +83,7 @@ describe("ReasoningContinuitySelector", () => {
 
     rerender(
       <ReasoningContinuitySelector
-        capability={{ ...optional, state: "disabled", local_available: false }}
+        capability={undefined}
         setting="off"
         onChange={vi.fn()}
       />,

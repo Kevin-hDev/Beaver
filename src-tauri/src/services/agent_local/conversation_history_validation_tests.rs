@@ -30,7 +30,7 @@ async fn valid_multi_tool_chain_preserves_order_and_provider_ids() {
     assert!(history
         .messages
         .iter()
-        .all(|message| message.legacy_tool_loop_reasoning.is_none()));
+        .all(|message| message.tool_loop_reasoning.is_none()));
     cleanup(&session.id).await;
 }
 
@@ -79,7 +79,7 @@ async fn rejects_unknown_roles_duplicate_ids_and_broken_tool_chains() {
 }
 
 #[tokio::test]
-async fn rejects_unbounded_provider_fields_and_incoherent_private_skill_ids() {
+async fn rejects_unbounded_provider_fields() {
     let mut cases = Vec::new();
     let mut content = message("content", "turn-content", "user", "ok");
     content.content = "x".repeat(crate::models::agent_turn_contract::MAX_TURN_CONTENT_BYTES + 1);
@@ -97,16 +97,6 @@ async fn rejects_unbounded_provider_fields_and_incoherent_private_skill_ids() {
         user.files.push(invalid);
         cases.push(vec![user]);
     }
-
-    let mut skills = message("skills", "turn-skills", "user", "ok");
-    skills.skill_names = Some(vec!["Historical".into()]);
-    skills.skill_ids = Some(vec!["../forged".into()]);
-    cases.push(vec![skills]);
-
-    let mut duplicate_skills = message("duplicate-skills", "turn-duplicate-skills", "user", "ok");
-    duplicate_skills.skill_names = Some(vec!["One".into(), "Two".into()]);
-    duplicate_skills.skill_ids = Some(vec!["local:same".into(), "local:same".into()]);
-    cases.push(vec![duplicate_skills]);
 
     let mut tool = multi_tool_turn("deep-json");
     tool[1].tool_calls.as_mut().unwrap()[0].function.arguments = deeply_nested_json(40);

@@ -19,12 +19,14 @@ pub(crate) fn recompute_accumulated_tokens(session: &mut AgentSession) {
     session.context_tokens = None;
 }
 
+#[cfg(test)]
 pub(super) fn validate_legacy_ipc_message(message: &AgentMessage) -> Result<(), String> {
     (message.continuation.is_none() && message.replay_source.is_none())
         .then_some(())
         .ok_or_else(|| "Message de session invalide".to_string())
 }
 
+#[cfg(test)]
 pub async fn add_messages(
     id: &str,
     new_messages: Vec<AgentMessage>,
@@ -33,6 +35,7 @@ pub async fn add_messages(
     add_messages_with_context(id, new_messages, tokens, None, None).await
 }
 
+#[cfg(test)]
 pub async fn add_messages_with_context(
     id: &str,
     mut new_messages: Vec<AgentMessage>,
@@ -69,52 +72,7 @@ pub async fn add_messages_with_context(
     result
 }
 
-/// Shim IPC strictement visible, supprimé par la Task 9 Step 4 quand
-/// l'admission Rust possède entièrement le tour et sa persistance.
-pub async fn add_visible_messages_with_context(
-    id: &str,
-    inputs: Vec<crate::models::agent_session_contract::VisibleMessageInput>,
-    tokens: u32,
-    context_tokens: Option<u32>,
-    context_limit: Option<u32>,
-) -> Result<(), String> {
-    super::session_store::validate_session_id(id)?;
-    if inputs.is_empty() || inputs.len() > super::session_visible_input::MAX_VISIBLE_MESSAGE_BATCH {
-        return Err("Message de session invalide".to_string());
-    }
-    let lock = super::session_store::lock_session(id).await;
-    let _guard = lock.lock().await;
-    let mut session = super::session_store::get(id).await?;
-    let mut active_turn = session.messages.last().map(|message| message.turn_id.clone());
-    let mut messages = Vec::with_capacity(inputs.len());
-    for input in inputs {
-        if input.role == "user" || active_turn.is_none() {
-            active_turn = Some(super::types_message::AgentMessage::new_turn_id());
-        }
-        messages.push(super::session_visible_input::into_message(
-            input,
-            active_turn.clone().expect("active turn allocated"),
-        )?);
-    }
-    let has_user_message = messages.iter().any(|message| message.role == "user");
-    let todo_housekeeping =
-        super::session_store_todos::apply_user_turn(&mut session, has_user_message);
-    if tokens > 0 {
-        if let Some(last) = messages.last_mut() {
-            last.tokens = tokens;
-        }
-    }
-    append_bounded(&mut session, messages);
-    session.updated_at = Some(chrono::Utc::now());
-    recompute_accumulated_tokens(&mut session);
-    session.context_tokens = validated_context_tokens(context_tokens, context_limit);
-    let result = super::session_store::save(&session).await;
-    if result.is_ok() && todo_housekeeping.should_emit_empty_update {
-        super::tool_todo::emit_update(id, Vec::new());
-    }
-    result
-}
-
+#[cfg(test)]
 fn validated_context_tokens(value: Option<u32>, limit: Option<u32>) -> Option<u32> {
     let limit = limit
         .filter(|limit| *limit > 0)?

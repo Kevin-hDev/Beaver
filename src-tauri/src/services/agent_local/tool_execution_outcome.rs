@@ -1,6 +1,8 @@
 use super::types_ollama::ChatMessage;
 use super::types_tools::ToolFollowUp;
 
+const MAX_FOLLOW_UP_BYTES: usize = 16 * 1024;
+
 #[derive(Default)]
 pub struct ToolExecutionOutcome {
     pub compressed: bool,
@@ -26,22 +28,45 @@ impl ToolExecutionOutcome {
         self.follow_ups.extend(other.follow_ups);
     }
 
-    pub fn apply_follow_ups(self, messages: &mut Vec<ChatMessage>) -> bool {
+    pub fn apply_follow_ups(self, messages: &mut [ChatMessage]) -> Result<bool, String> {
         let mut stop = false;
         for follow_up in self.follow_ups {
             match follow_up {
                 ToolFollowUp::None => {}
                 ToolFollowUp::UserMessage(content) => {
-                    messages.push(ChatMessage::user(content));
+                    append_to_tool(messages, "User follow-up", &content)?;
                 }
                 ToolFollowUp::SystemMessage(content) => {
-                    messages.push(ChatMessage::system(content));
+                    append_to_tool(messages, "System follow-up", &content)?;
                 }
                 ToolFollowUp::Stop => stop = true,
             }
         }
-        stop
+        Ok(stop)
     }
+}
+
+fn append_to_tool(messages: &mut [ChatMessage], label: &str, content: &str) -> Result<(), String> {
+    let tool = messages
+        .iter_mut()
+        .rev()
+        .find(|message| message.role == "tool")
+        .ok_or_else(generic_error)?;
+    if content.is_empty()
+        || content.len() > MAX_FOLLOW_UP_BYTES
+        || tool.content.len().saturating_add(content.len()) > MAX_FOLLOW_UP_BYTES
+    {
+        return Err(generic_error());
+    }
+    tool.content.push_str("\n\n");
+    tool.content.push_str(label);
+    tool.content.push_str(":\n");
+    tool.content.push_str(content);
+    Ok(())
+}
+
+fn generic_error() -> String {
+    "conversation_admission_failed".to_string()
 }
 
 #[cfg(test)]
@@ -55,14 +80,10 @@ mod tests {
         outcome.record(ToolFollowUp::SystemMessage("Backend state".into()));
         let mut messages = vec![ChatMessage::tool("Receipt".into(), None, None)];
 
-        assert!(!outcome.apply_follow_ups(&mut messages));
-        assert_eq!(
-            messages
-                .iter()
-                .map(|message| message.role.as_str())
-                .collect::<Vec<_>>(),
-            ["tool", "user", "system"]
-        );
+        assert!(!outcome.apply_follow_ups(&mut messages).unwrap());
+        assert_eq!(messages.len(), 1);
+        assert!(messages[0].content.contains("User answer"));
+        assert!(messages[0].content.contains("Backend state"));
     }
 
     #[test]
@@ -71,7 +92,7 @@ mod tests {
         outcome.record(ToolFollowUp::Stop);
         let mut messages = Vec::new();
 
-        assert!(outcome.apply_follow_ups(&mut messages));
+        assert!(outcome.apply_follow_ups(&mut messages).unwrap());
         assert!(messages.is_empty());
     }
 }

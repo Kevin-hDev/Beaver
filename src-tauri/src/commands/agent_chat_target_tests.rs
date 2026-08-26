@@ -372,10 +372,7 @@ async fn api_mode_is_identical_from_resolution_through_payload_and_provenance() 
         .await
         .unwrap();
     assert_eq!(stored.reasoning_mode.as_deref(), Some("high"));
-    assert!(matches!(
-        target.continuation,
-        ContinuationTarget::Forbidden(_)
-    ));
+    assert!(matches!(target.continuation, ContinuationTarget::Replay(_)));
     assert!(stored.messages[0].replay_source.is_none());
     assert_eq!(payload["thinking"]["type"], "enabled");
     assert_eq!(payload["reasoning_effort"], "high");

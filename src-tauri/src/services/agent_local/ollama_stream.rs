@@ -125,7 +125,10 @@ async fn stream_chat_inner(
                         if let Err(e) = process_chunk(
                             &text, on_event, &mut token_count,
                             &mut result, options.tool_tx.as_ref(), &mut think_filter,
-                            options.buffer_content, reasoning_capture.as_mut(),
+                            super::ollama_stream_process::ProcessChunkOptions {
+                                buffer_content: options.buffer_content,
+                                reasoning_capture: reasoning_capture.as_mut(),
+                            },
                         ) {
                             // Bug Ollama #16383 : crash du parser tool-call en plein
                             // stream. Si aucun contenu final n'a encore été émis (on

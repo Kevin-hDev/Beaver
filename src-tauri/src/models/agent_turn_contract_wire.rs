@@ -122,7 +122,6 @@ where
     })
 }
 
-#[allow(dead_code, reason = "adopted by resume admission in Task 8")]
 pub(super) fn resume<'de, D>(deserializer: D) -> Result<ResumeTurnInput, D::Error>
 where
     D: Deserializer<'de>,

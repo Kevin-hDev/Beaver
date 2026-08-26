@@ -71,7 +71,11 @@ export async function persistAgentMessage(options: PersistAgentMessageOptions) {
   );
   if (queueResult === "queued") return true;
   if (queueResult === "stopping") {
-    showToast(i18n.t("errors.admission.serviceShuttingDown"), "error");
+    showToast(i18n.t("errors.streamStopping"), "info");
+    return false;
+  }
+  if (queueResult === "unavailable") {
+    showToast(i18n.t("errors.admission.queueUnavailable"), "error");
     return false;
   }
   await options.doStream(

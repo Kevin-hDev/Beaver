@@ -5,10 +5,6 @@ pub(crate) mod chat_text;
 mod gemini;
 mod mistral;
 mod openrouter;
-#[allow(
-    dead_code,
-    reason = "Task 18 prepares adapters; Task 19 alone connects live-validated routes"
-)]
 pub(crate) mod replay;
 pub(crate) mod responses;
 mod tool_link_capture;
@@ -110,7 +106,7 @@ impl ReasoningCapture {
     }
 
     fn append_chat(&mut self, event: &Value, cerebras: bool) -> Result<(), LimitError> {
-        for fragment in chat_text::fragments(event) {
+        for fragment in chat_text::fragments(event, self.contract_id) {
             self.append_text(fragment, cerebras)?;
         }
         Ok(())

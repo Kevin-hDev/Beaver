@@ -43,6 +43,13 @@ impl ReasoningCapture {
         if self.partial || !self.provider_complete {
             return None;
         }
+        if matches!(
+            self.continuation.as_ref(),
+            Some(crate::services::reasoning_continuity::envelope::ContinuationState::MistralChunks { chunks })
+                if chunks.is_empty()
+        ) {
+            return None;
+        }
         let envelope = ReasoningEnvelope::new(
             self.contract_id,
             self.context.source(),

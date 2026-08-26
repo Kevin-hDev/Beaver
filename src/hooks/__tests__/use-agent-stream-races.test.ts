@@ -545,7 +545,7 @@ describe("useAgentStream admission races", () => {
       ]);
   });
 
-  it("purge l'intention optimiste quand un stop différé réussit", async () => {
+  it("refuse un second envoi tant que l'admission Rust est en attente", async () => {
     const pending = deferred<ChatStreamAdmission>();
     mocks.invoke.mockImplementation((command: string) => {
       if (command === "chat_stream") return pending.promise;
@@ -562,9 +562,9 @@ describe("useAgentStream admission races", () => {
         "same-session",
         { content: "queued", files: [], skills: [] },
         message("queued"),
-      )).toBe("queued");
+      )).toBe("unavailable");
       expect(agentStreamManager.getSnapshot("same-session")?.queuedUserMessages)
-        .toHaveLength(1);
+        .toHaveLength(0);
       expect(await result.current.stopStream("same-session")).toBe("stopping");
       pending.resolve(admission(93));
       await running;
@@ -575,7 +575,7 @@ describe("useAgentStream admission races", () => {
       .toEqual([]);
   });
 
-  it("ne purge pas la file du run suivant quand un stop différé se termine", async () => {
+  it("ne fabrique pas de file pendant l'admission du run suivant", async () => {
     const firstAdmission = deferred<ChatStreamAdmission>();
     const secondAdmission = deferred<ChatStreamAdmission>();
     const firstCancel = deferred<void>();
@@ -605,13 +605,13 @@ describe("useAgentStream admission races", () => {
         "same-session",
         { content: "queued-b", files: [], skills: [] },
         message("queued-b"),
-      )).toBe("queued");
+      )).toBe("unavailable");
       firstCancel.resolve();
       await firstRun;
     });
 
     expect(agentStreamManager.getSnapshot("same-session")?.queuedUserMessages)
-      .toEqual([expect.objectContaining({ id: "optimistic-queued-b" })]);
+      .toEqual([]);
     secondAdmission.reject(new Error("test cleanup"));
     await act(async () => { await secondRun; });
   });

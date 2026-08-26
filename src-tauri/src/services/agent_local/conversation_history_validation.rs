@@ -4,7 +4,7 @@ use std::ops::Range;
 use super::conversation_history::ConversationHistoryError;
 use super::types_message::AgentMessage;
 
-pub(super) fn validate(messages: &[AgentMessage]) -> Result<Vec<Range<usize>>, ConversationHistoryError> {
+pub(crate) fn validate(messages: &[AgentMessage]) -> Result<Vec<Range<usize>>, ConversationHistoryError> {
     if messages.len() > super::session_limits::MAX_MESSAGES_PER_SESSION {
         return Err(ConversationHistoryError);
     }

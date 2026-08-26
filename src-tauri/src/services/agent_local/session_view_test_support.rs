@@ -9,7 +9,7 @@ use crate::services::reasoning_continuity::envelope::{
     CompletionState, ContinuationState, ReasoningEnvelope, ReasoningSource,
 };
 
-const V1_FIXTURE: &[u8] = include_bytes!("../../../test-fixtures/agent-session-v1-real.json");
+const V1_FIXTURE: &[u8] = include_bytes!("../../../test-fixtures/agent-session-v1-synthetic.json");
 
 pub(super) fn fixture_session() -> super::types_session::AgentSession {
     super::session_migration::read(V1_FIXTURE, PathBuf::from("fixture.json"))

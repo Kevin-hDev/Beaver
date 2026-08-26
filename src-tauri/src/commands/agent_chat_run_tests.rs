@@ -120,9 +120,14 @@ async fn projectless_main_chat_rolls_back_the_durable_turn_when_workspace_resolu
             .await
             .is_err()
     );
-    super::agent_chat_turn::rollback_current(&streams, &session.id, stream.generation, &admitted)
-        .await
-        .expect("failed working-directory setup rolls back the admitted turn");
+    super::agent_chat_turn::rollback_current(
+        &streams,
+        &session.id,
+        stream.generation,
+        &admitted.rollback(),
+    )
+    .await
+    .expect("failed working-directory setup rolls back the admitted turn");
 
     let stored = crate::services::agent_local::session_store::get(&session.id)
         .await

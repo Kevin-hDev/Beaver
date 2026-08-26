@@ -1,6 +1,4 @@
-use crate::models::agent_session_contract::{
-    EditUserMessageInput, SessionMetadataPatch, VisibleMessageInput,
-};
+use crate::models::agent_session_contract::{EditUserMessageInput, SessionMetadataPatch};
 use crate::services::agent_local::session_store;
 use crate::services::agent_local::types_session::{AgentSessionMeta, PreserveReasoningSetting};
 
@@ -83,25 +81,6 @@ pub async fn resolve_missing_session_directory(
 }
 
 #[tauri::command]
-pub async fn add_messages_to_session(
-    id: String,
-    messages: Vec<VisibleMessageInput>,
-    tokens: u32,
-    context_tokens: Option<u32>,
-    context_limit: Option<u32>,
-) -> Result<(), String> {
-    crate::services::agent_local::session_user_write::ensure_allowed(&id).await?;
-    crate::services::agent_local::session_store_messages::add_visible_messages_with_context(
-        &id,
-        messages,
-        tokens,
-        context_tokens,
-        context_limit,
-    )
-    .await
-}
-
-#[tauri::command]
 pub async fn update_session_metadata(
     id: String,
     patch: SessionMetadataPatch,
@@ -155,7 +134,10 @@ pub async fn update_session_continuity(id: String, setting: String) -> Result<()
     let capability = crate::services::agent_local::session_view::continuity_capability(&session)
         .ok_or_else(invalid_continuity_update)?;
     let allowed = match setting {
-        PreserveReasoningSetting::Off => capability.requirement == "optional",
+        PreserveReasoningSetting::Off => {
+            capability.requirement
+                == crate::models::agent_session_contract::ContinuityRequirement::Optional
+        }
         PreserveReasoningSetting::Local => capability.local_available,
         PreserveReasoningSetting::Remote => capability.remote_available,
     };

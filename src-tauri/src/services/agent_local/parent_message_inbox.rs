@@ -1,8 +1,12 @@
+#[cfg(test)]
 use crate::models::agent_turn_contract::NewUserTurnInput;
+#[cfg(test)]
 use std::collections::VecDeque;
+#[cfg(test)]
 use std::future::Future;
 use tokio::sync::{watch, Mutex};
 
+#[cfg(test)]
 pub const MAX_QUEUED_INTENTIONS: usize = 8;
 
 pub struct ParentMessageInbox {
@@ -12,6 +16,7 @@ pub struct ParentMessageInbox {
 
 struct InboxState {
     accepting: bool,
+    #[cfg(test)]
     intentions: VecDeque<NewUserTurnInput>,
 }
 
@@ -21,12 +26,14 @@ impl ParentMessageInbox {
         Self {
             state: Mutex::new(InboxState {
                 accepting: true,
+                #[cfg(test)]
                 intentions: VecDeque::new(),
             }),
             signal,
         }
     }
 
+    #[cfg(test)]
     pub async fn enqueue(&self, input: NewUserTurnInput) -> Result<bool, String> {
         super::conversation_input::validate_intention(&input).map_err(|_| generic_error())?;
         let mut state = self.state.lock().await;
@@ -41,7 +48,7 @@ impl ParentMessageInbox {
         Ok(true)
     }
 
-    #[allow(dead_code, reason = "Task 10 calls this only after its durable turn commit")]
+    #[cfg(test)]
     pub async fn admit_one_after_commit<F, Fut, T>(&self, admit: F) -> Result<Option<T>, String>
     where
         F: FnOnce(NewUserTurnInput) -> Fut,
@@ -60,7 +67,7 @@ impl ParentMessageInbox {
         Ok(Some(admitted))
     }
 
-    #[allow(dead_code, reason = "queue observability is consumed by Task 10 and tests")]
+    #[cfg(test)]
     pub async fn len(&self) -> usize {
         self.state.lock().await.intentions.len()
     }
@@ -74,6 +81,7 @@ impl ParentMessageInbox {
     }
 }
 
+#[cfg(test)]
 fn generic_error() -> String {
     "conversation_admission_failed".to_string()
 }

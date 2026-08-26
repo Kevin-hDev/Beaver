@@ -43,12 +43,12 @@ fn policy(
     adapter: AdapterId,
     activation: ActivationState,
 ) -> ReplayPolicy {
-    ReplayPolicy {
-        contract_id: Some(contract_id),
-        adapter: Some(adapter),
-        requirement: ReplayRequirement::Required,
+    ReplayPolicy::for_test(
+        Some(contract_id),
+        Some(adapter),
+        ReplayRequirement::Required,
         activation,
-    }
+    )
 }
 
 fn assistant(envelope: ReasoningEnvelope, with_tool: bool) -> ChatMessage {
@@ -130,6 +130,39 @@ fn deepseek_replay_requires_the_tool_chain() {
     apply_chat_continuity(&messages, &approval, &mut payload).unwrap();
 
     assert_eq!(payload[0]["reasoning_content"], "opaque");
+}
+
+#[test]
+fn deepseek_keeps_an_empty_reasoning_field_in_the_tool_chain() {
+    let target = target(
+        RouteId::DeepSeek,
+        "deepseek-v4-flash",
+        ContinuationUse::ToolContinuation,
+    );
+    let envelope = envelope(
+        &target,
+        ContractId::DeepSeekChatV1,
+        ContinuationState::ChatReasoning {
+            reasoning_content: String::new(),
+        },
+    );
+    let approval = approved(
+        ReplayDecision::Allowed,
+        policy(
+            ContractId::DeepSeekChatV1,
+            AdapterId::ChatReasoning,
+            ActivationState::LiveValidated,
+        ),
+        &envelope,
+        &target,
+    )
+    .unwrap();
+    let messages = [assistant(envelope.clone(), true)];
+    let mut payload = vec![json!({"role": "assistant", "tool_calls": []})];
+
+    apply_chat_continuity(&messages, &approval, &mut payload).unwrap();
+
+    assert_eq!(payload[0]["reasoning_content"], "");
 }
 
 #[test]

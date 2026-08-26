@@ -70,8 +70,13 @@ impl StreamConversation {
                 system_prompt,
                 subagent_owner,
             } => {
-                let journal = if let Some((run_id, execution_id)) = subagent_owner {
-                    crate::services::agent_local::conversation_journal::ConversationJournal::new_for_subagent(
+                let is_compress_command = admitted.history.messages.last().is_some_and(|message| {
+                    message.role == ProviderRole::User && message.content.trim() == "/compress"
+                });
+                let journal = if is_compress_command {
+                    None
+                } else if let Some((run_id, execution_id)) = subagent_owner {
+                    Some(crate::services::agent_local::conversation_journal::ConversationJournal::new_for_subagent(
                         session_id,
                         admitted.turn_id.clone(),
                         admitted.user_message_id.clone(),
@@ -79,15 +84,15 @@ impl StreamConversation {
                         request_id,
                         run_id,
                         execution_id,
-                    )?
+                    )?)
                 } else {
-                    crate::services::agent_local::conversation_journal::ConversationJournal::new(
+                    Some(crate::services::agent_local::conversation_journal::ConversationJournal::new(
                         session_id,
                         admitted.turn_id.clone(),
                         admitted.user_message_id.clone(),
                         admitted.assistant_message_id.clone(),
                         request_id,
-                    )?
+                    )?)
                 };
                 Ok((
                     Self::Canonical {
@@ -96,7 +101,7 @@ impl StreamConversation {
                         subagent_owner: None,
                     }
                     .into_messages()?,
-                    Some(journal),
+                    journal,
                 ))
             }
         }
@@ -129,10 +134,11 @@ fn convert(message: ProviderMessage) -> Result<ChatMessage, String> {
             })
             .collect()
     });
-    if message.legacy_tool_loop_reasoning.is_some() {
+    if message.tool_loop_reasoning.is_some() {
         return Err(generic_error());
     }
     Ok(ChatMessage {
+        continuity_barrier_before: message.continuity_barrier_before,
         role: role.to_string(),
         content: message.content,
         images,
@@ -141,7 +147,7 @@ fn convert(message: ProviderMessage) -> Result<ChatMessage, String> {
         tool_call_id: message.tool_call_id,
         display_thinking: message.display_thinking,
         continuation: message.continuation,
-        legacy_tool_loop_reasoning: None,
+        tool_loop_reasoning: None,
     })
 }
 

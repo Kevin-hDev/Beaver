@@ -1,4 +1,4 @@
-use super::ollama_stream_process::{done_generation_duration, process_chunk};
+use super::ollama_stream_process::{done_generation_duration, process_chunk, ProcessChunkOptions};
 use crate::services::agent_local::agent_loop_support::build_assistant_message;
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::types_ollama::StreamResult;
@@ -37,8 +37,7 @@ fn disabled_capture_does_not_create_a_continuation_envelope() {
         &mut result,
         None,
         &mut filter,
-        true,
-        None,
+        ProcessChunkOptions { buffer_content: true, reasoning_capture: None },
     )
     .unwrap();
     process_chunk(
@@ -48,8 +47,7 @@ fn disabled_capture_does_not_create_a_continuation_envelope() {
         &mut result,
         None,
         &mut filter,
-        true,
-        None,
+        ProcessChunkOptions { buffer_content: true, reasoning_capture: None },
     )
     .unwrap();
 
@@ -74,8 +72,7 @@ fn native_ollama_tool_calls_receive_unique_local_ids_aligned_with_the_journal() 
         &mut result,
         None,
         &mut filter,
-        true,
-        None,
+        ProcessChunkOptions { buffer_content: true, reasoning_capture: None },
     )
     .unwrap();
 
@@ -115,8 +112,7 @@ fn native_ollama_capture_links_local_tool_ids_for_next_turn_admission() {
         &mut result,
         None,
         &mut filter,
-        true,
-        Some(&mut capture),
+        ProcessChunkOptions { buffer_content: true, reasoning_capture: Some(&mut capture) },
     )
     .expect("tool chunk");
     process_chunk(
@@ -126,8 +122,7 @@ fn native_ollama_capture_links_local_tool_ids_for_next_turn_admission() {
         &mut result,
         None,
         &mut filter,
-        true,
-        Some(&mut capture),
+        ProcessChunkOptions { buffer_content: true, reasoning_capture: Some(&mut capture) },
     )
     .expect("done chunk");
 

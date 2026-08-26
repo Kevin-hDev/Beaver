@@ -36,16 +36,33 @@ async fn scheduler_conversation_adoption_persists_the_canonical_turn_once() {
 
 #[test]
 fn every_internal_entry_point_adopts_a_canonical_conversation() {
-    let scheduler = include_str!("../scheduler/agentic.rs");
-    let gateway = include_str!("../gateway/agent_bridge.rs");
-    let subagent = include_str!("subagent_task_stream.rs");
-    let chat = include_str!("../../commands/agent_chat_run_spawn.rs");
-
-    for source in [scheduler, gateway, subagent, chat] {
-        assert!(source.contains("StreamConversation::canonical"));
-        assert!(!source.contains("internal_legacy"));
-        assert!(!source.contains("session_store::add_messages"));
+    const MAX_SOURCE_FILES: usize = 4_096;
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+    let mut pending = vec![root];
+    let mut stream_entry_points = Vec::new();
+    let mut inspected = 0;
+    while let Some(directory) = pending.pop() {
+        for entry in std::fs::read_dir(directory).expect("read source directory") {
+            assert!(inspected < MAX_SOURCE_FILES, "source scan exceeded its bound");
+            inspected += 1;
+            let entry = entry.expect("source entry");
+            if entry.file_type().expect("source type").is_dir() {
+                pending.push(entry.path());
+                continue;
+            }
+            if entry.path().extension().and_then(|value| value.to_str()) != Some("rs") {
+                continue;
+            }
+            let source = std::fs::read_to_string(entry.path()).expect("read Rust source");
+            if source.contains("run_stream_task(") && !source.contains("fn run_stream_task(") {
+                assert!(source.contains("StreamConversation::canonical"));
+                assert!(!source.contains("internal_legacy"));
+                assert!(!source.contains("session_store::add_messages"));
+                stream_entry_points.push(entry.path());
+            }
+        }
     }
+    assert_eq!(stream_entry_points.len(), 4, "new stream entry point needs canonical adoption");
     assert!(!include_str!("../../commands/agent_chat_task/conversation.rs")
         .contains("InternalLegacy"));
 }

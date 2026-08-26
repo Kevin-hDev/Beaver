@@ -40,7 +40,7 @@ fn canonical_adapter_preserves_native_fields_without_rebuilding_reasoning() {
     assert_eq!(converted.tool_call_id.as_deref(), Some("call-parent"));
     assert_eq!(converted.display_thinking.as_deref(), Some("visible only"));
     assert_eq!(converted.continuation, Some(continuation));
-    assert!(converted.legacy_tool_loop_reasoning.is_none());
+    assert!(converted.tool_loop_reasoning.is_none());
 }
 
 #[test]
@@ -58,7 +58,6 @@ fn message(continuation: Option<ReasoningEnvelope>, legacy: Option<String>) -> P
             mime_type: "image/png".into(),
             base64: "image-base64".into(),
         }],
-        files: Vec::new(),
         tool_calls: Some(vec![ToolCallRequest {
             id: "call-provider-1".into(),
             extra_content: Some(serde_json::json!({"signature": "opaque"})),
@@ -71,9 +70,7 @@ fn message(continuation: Option<ReasoningEnvelope>, legacy: Option<String>) -> P
         tool_call_id: Some("call-parent".into()),
         display_thinking: Some("visible only".into()),
         continuation,
-        legacy_tool_loop_reasoning: legacy,
-        skill_id: None,
-        skill_name: None,
+        tool_loop_reasoning: legacy,
         continuity_barrier_before: false,
     }
 }

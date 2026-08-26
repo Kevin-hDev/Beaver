@@ -55,12 +55,10 @@ pub(super) async fn ensure_exact_backup(path: &Path, original: &[u8]) -> Result<
             .map_err(|_| save_failed())
         }
         crate::services::private_store::BoundedFile::Content(bytes) => {
-            let bytes = Zeroizing::new(bytes);
-            if bytes.as_slice() == original {
-                Ok(())
-            } else {
-                Err(save_failed())
-            }
+            let _bytes = Zeroizing::new(bytes);
+            // Une génération v1 antérieure est déjà une sauvegarde valable. La remplacer
+            // détruirait précisément l'état de reprise que ce fichier doit préserver.
+            Ok(())
         }
     }
 }

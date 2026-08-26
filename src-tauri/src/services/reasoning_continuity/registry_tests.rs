@@ -16,6 +16,53 @@ fn inventory_has_exactly_eleven_contracts_and_fourteen_closed_routes() {
 }
 
 #[test]
+fn every_live_activation_has_one_checked_in_capture_and_replay_proof() {
+    let root =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("test-fixtures/reasoning-reports");
+    let expected = active_routes()
+        .iter()
+        .flat_map(|route| route.models)
+        .filter(|policy| policy.activation == ActivationState::LiveValidated)
+        .map(|policy| {
+            let fixture_id = policy.fixture_id.expect("live fixture id");
+            assert!(fixture_id.ends_with(policy.fixture_date.expect("live fixture date")));
+            fixture_id.to_string()
+        })
+        .collect::<std::collections::BTreeSet<_>>();
+    let actual = std::fs::read_dir(&root)
+        .expect("checked-in reasoning fixture reports")
+        .map(|entry| {
+            entry
+                .expect("fixture report entry")
+                .file_name()
+                .to_str()
+                .and_then(|name| name.strip_suffix(".json"))
+                .map(str::to_owned)
+                .expect("canonical fixture report name")
+        })
+        .collect::<std::collections::BTreeSet<_>>();
+    assert_eq!(
+        actual, expected,
+        "activation and checked-in proofs diverged"
+    );
+
+    for fixture_id in expected {
+        let bytes =
+            std::fs::read(root.join(format!("{fixture_id}.json"))).expect("read fixture proof");
+        assert!(bytes.len() <= 256 * 1024);
+        let report: serde_json::Value =
+            serde_json::from_slice(&bytes).expect("parse fixture proof");
+        assert_eq!(report["fixture_id"], fixture_id);
+        let scenarios = report["scenarios"].as_array().expect("fixture scenarios");
+        for requirement in ["capture_and_persist", "replay_and_continue"] {
+            assert!(scenarios.iter().any(|scenario| {
+                scenario["requirement"] == requirement && scenario["status"] == "passe"
+            }));
+        }
+    }
+}
+
+#[test]
 fn closed_identifiers_serialize_to_the_exact_normative_wire_values() {
     let contracts = [
         "ollama-native-v1",
@@ -107,11 +154,11 @@ fn r01_unknown_model_and_excluded_route_fail_closed() {
         continuation_use: ContinuationUse::UserContinuation,
     };
     assert_eq!(
-        replay_policy(&groq).unwrap().requirement,
+        replay_policy(&groq).unwrap().requirement(),
         ReplayRequirement::Forbidden
     );
     assert_eq!(
-        replay_policy(&groq).unwrap().activation,
+        replay_policy(&groq).unwrap().activation(),
         super::registry::ActivationState::Disabled
     );
 }
@@ -189,16 +236,16 @@ fn exact_mode_and_continuation_use_are_independent_policy_dimensions() {
         &target(ReasoningModeId::High, ContinuationUse::UserContinuation),
     )
     .unwrap();
-    assert_eq!(user.requirement, ReplayRequirement::Required);
-    assert_eq!(user.activation, ActivationState::LiveValidated);
+    assert_eq!(user.requirement(), ReplayRequirement::Required);
+    assert_eq!(user.activation(), ActivationState::LiveValidated);
 
     let tool = replay_policy_from_routes(
         ROUTES,
         &target(ReasoningModeId::High, ContinuationUse::ToolContinuation),
     )
     .unwrap();
-    assert_eq!(tool.requirement, ReplayRequirement::Required);
-    assert_eq!(tool.activation, ActivationState::Disabled);
+    assert_eq!(tool.requirement(), ReplayRequirement::Required);
+    assert_eq!(tool.activation(), ActivationState::Disabled);
 
     assert!(replay_policy_from_routes(
         ROUTES,
@@ -213,7 +260,7 @@ fn exact_mode_and_continuation_use_are_independent_policy_dimensions() {
 }
 
 #[test]
-fn deepseek_user_and_tool_continuations_are_both_required() {
+fn deepseek_user_replay_is_forbidden_while_tool_replay_is_required() {
     let scope = CredentialScope::authenticated("fixture-scope").unwrap();
     let target = |continuation_use| ReplayTarget {
         route_id: RouteId::DeepSeek,
@@ -226,13 +273,13 @@ fn deepseek_user_and_tool_continuations_are_both_required() {
     assert_eq!(
         replay_policy(&target(ContinuationUse::UserContinuation))
             .unwrap()
-            .requirement,
-        ReplayRequirement::Required
+            .requirement(),
+        ReplayRequirement::Forbidden
     );
     assert_eq!(
         replay_policy(&target(ContinuationUse::ToolContinuation))
             .unwrap()
-            .requirement,
+            .requirement(),
         ReplayRequirement::Required
     );
     assert!(replay_policy(&ReplayTarget {
@@ -329,18 +376,18 @@ fn only_exact_live_fixture_pairs_are_activated() {
             "google-api-gemini-3-5-flash-france-2026-08-26",
         ),
         (
-            RouteId::Mistral,
-            "mistral-small-2603",
-            ReasoningModeId::High,
-            ReplayRequirement::Required,
-            "mistral-api-mistral-small-2603-france-2026-08-26",
-        ),
-        (
             RouteId::Cerebras,
             "gpt-oss-120b",
             ReasoningModeId::High,
             ReplayRequirement::Required,
             "cerebras-api-gpt-oss-120b-france-2026-08-26",
+        ),
+        (
+            RouteId::Mistral,
+            "mistral-small-2603",
+            ReasoningModeId::High,
+            ReplayRequirement::Required,
+            "mistral-api-mistral-small-2603-france-2026-08-26",
         ),
         (
             RouteId::OpenRouter,
@@ -399,19 +446,45 @@ fn only_exact_live_fixture_pairs_are_activated() {
             "zai-api-glm-4-5-flash-local-2026-08-26",
         ),
     ];
-    assert_eq!(live.len(), expected.len() * 2);
-    for (route, model) in live {
+    let expected_count = expected.len() * 2 - 1;
+    assert_eq!(live.len(), expected_count);
+    for (route, model) in &live {
         assert!(expected.iter().any(|entry| {
-            route == entry.0
+            *route == entry.0
                 && model.model_id == entry.1
                 && model.reasoning_mode == entry.2
                 && model.requirement == entry.3
                 && model.fixture_id == Some(entry.4)
         }));
-        assert!(matches!(
-            model.continuation_use,
-            ContinuationUse::UserContinuation | ContinuationUse::ToolContinuation
-        ));
+        if *route == RouteId::DeepSeek {
+            assert_eq!(model.continuation_use, ContinuationUse::ToolContinuation);
+        } else {
+            assert!(matches!(
+                model.continuation_use,
+                ContinuationUse::UserContinuation | ContinuationUse::ToolContinuation
+            ));
+        }
         assert_eq!(model.fixture_date, Some("2026-08-26"));
+    }
+    for entry in expected {
+        for continuation_use in [
+            ContinuationUse::UserContinuation,
+            ContinuationUse::ToolContinuation,
+        ] {
+            let expected_occurrences = usize::from(
+                entry.0 != RouteId::DeepSeek
+                    || continuation_use == ContinuationUse::ToolContinuation,
+            );
+            assert_eq!(
+                live.iter()
+                    .filter(|(route, model)| {
+                        *route == entry.0
+                            && model.model_id == entry.1
+                            && model.continuation_use == continuation_use
+                    })
+                    .count(),
+                expected_occurrences
+            );
+        }
     }
 }

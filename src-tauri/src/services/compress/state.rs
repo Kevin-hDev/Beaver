@@ -28,6 +28,8 @@ pub async fn apply_and_save(
     working_dir: &Path,
     mode: CompressionMode,
 ) -> Result<u32, String> {
+    let lock = session_store::lock_session(session_id).await;
+    let _guard = lock.lock().await;
     let mut session = session_store::get(session_id).await?;
     let context = context_capsules_disk::compression_context_message(
         runtime_messages,
@@ -36,8 +38,7 @@ pub async fn apply_and_save(
         mode,
     )
     .await;
-    let (runtime_recent, session_recent) =
-        super::state_recent::recent_messages(&session.messages, runtime_messages);
+    let runtime_recent = current_runtime_turn(runtime_messages);
 
     replace_runtime_messages(
         runtime_messages,
@@ -46,7 +47,17 @@ pub async fn apply_and_save(
         context.clone(),
         runtime_recent,
     );
-    session.messages = build_session_messages(summary, suppress_follow_up, context, session_recent);
+    session
+        .messages
+        .retain(|message| !(message.role == "user" && message.content.trim() == "/compress"));
+    crate::services::agent_local::conversation_compaction::compact_complete_turns(
+        &mut session.messages,
+        0,
+    )
+    .map_err(|_| "Compression impossible".to_string())?;
+    let mut compacted = build_summary_turn(summary, suppress_follow_up, context);
+    compacted.append(&mut session.messages);
+    session.messages = compacted;
     crate::services::agent_local::session_store_messages::recompute_accumulated_tokens(
         &mut session,
     );
@@ -81,33 +92,70 @@ fn replace_runtime_messages(
         summary,
         suppress_follow_up,
     ));
+    next.push(ChatMessage::assistant(
+        engine::BOUNDARY_CONTENT.to_string(),
+        None,
+        None,
+        None,
+        None,
+    ));
     if let Some(context) = context {
-        next.push(context);
+        if let Some(summary_message) = next.iter_mut().rev().find(|message| message.role == "user")
+        {
+            summary_message.content.push_str("\n\n");
+            summary_message.content.push_str(&context.content);
+        }
     }
+    let boundary_index = next.len();
     next.extend(recent);
+    if let Some(message) = next.get_mut(boundary_index) {
+        message.continuity_barrier_before = true;
+    }
     *messages = next;
 }
 
-fn build_session_messages(
+fn build_summary_turn(
     summary: &str,
     suppress_follow_up: bool,
     context: Option<ChatMessage>,
-    recent: Vec<AgentMessage>,
 ) -> Vec<AgentMessage> {
-    let mut messages = vec![summary_agent_message(summary, suppress_follow_up)];
+    let turn_id = AgentMessage::new_turn_id();
+    let mut user = summary_agent_message(summary, suppress_follow_up, turn_id.clone());
     if let Some(context) = context {
-        messages.push(super::state_recent::chat_to_agent_message(&context));
+        user.content.push_str("\n\n");
+        user.content.push_str(&context.content);
     }
-    messages.extend(recent);
-    messages
+    let assistant = AgentMessage {
+        id: uuid::Uuid::new_v4().to_string(),
+        turn_id,
+        role: "assistant".to_string(),
+        content: engine::BOUNDARY_CONTENT.to_string(),
+        thinking: None,
+        tool_calls: None,
+        tool_name: None,
+        tool_call_id: None,
+        continuation: None,
+        replay_source: None,
+        tool_activities: None,
+        segments: None,
+        files: Vec::new(),
+        timestamp: chrono::Utc::now(),
+        tokens: 0,
+        work_duration_ms: None,
+        skill_names: None,
+        skill_ids: None,
+        stream_run_id: None,
+        stream_part: None,
+    };
+    vec![user, assistant]
 }
 
-fn summary_agent_message(summary: &str, suppress_follow_up: bool) -> AgentMessage {
+fn summary_agent_message(summary: &str, suppress_follow_up: bool, turn_id: String) -> AgentMessage {
     let content = prompt::format_summary_message(summary, suppress_follow_up);
     let chat = ChatMessage::user(content.clone());
     AgentMessage {
         id: uuid::Uuid::new_v4().to_string(),
-        turn_id: AgentMessage::new_turn_id(),
+        turn_id,
         role: "user".to_string(),
         content,
         thinking: None,
@@ -127,4 +175,13 @@ fn summary_agent_message(summary: &str, suppress_follow_up: bool) -> AgentMessag
         stream_run_id: None,
         stream_part: None,
     }
+}
+
+fn current_runtime_turn(messages: &[ChatMessage]) -> Vec<ChatMessage> {
+    let start = request_start_index(messages);
+    messages[start..]
+        .iter()
+        .filter(|message| super::state_recent::include_chat_message(message))
+        .cloned()
+        .collect()
 }

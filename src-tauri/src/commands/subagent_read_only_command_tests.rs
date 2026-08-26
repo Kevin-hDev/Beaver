@@ -1,6 +1,5 @@
 use super::subagent_read_only_command_test_support::{
-    assert_rejected, child_session, cleanup, snapshot, user_message, visible_user_message,
-    SUBAGENT_READ_ONLY,
+    assert_rejected, child_session, cleanup, snapshot, user_message, SUBAGENT_READ_ONLY,
 };
 use crate::models::agent_session_contract::EditUserMessageInput;
 use crate::services::agent_local::session_permission_state;
@@ -32,26 +31,6 @@ async fn rename_agent_session_rejects_a_child_without_persisting_the_name() {
         &session,
         &before,
         super::agent_sessions::rename_agent_session(session.id.clone(), "User rename".to_string()),
-    )
-    .await;
-}
-
-#[tokio::test]
-async fn add_messages_to_session_rejects_a_child_without_persisting_history() {
-    let session = child_session("History").await;
-    let before = snapshot(&session.id).await;
-    let message = visible_user_message("Blocked history mutation");
-
-    assert_rejected(
-        &session,
-        &before,
-        super::agent_sessions::add_messages_to_session(
-            session.id.clone(),
-            vec![message],
-            1,
-            None,
-            None,
-        ),
     )
     .await;
 }

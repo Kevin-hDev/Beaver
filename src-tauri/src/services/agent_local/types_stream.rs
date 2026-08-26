@@ -42,7 +42,6 @@ pub enum StreamEvent {
         user_message_id: String,
         assistant_message_id: String,
     },
-    #[allow(dead_code, reason = "Task 10 emits only after its durable journal commit")]
     #[serde(rename_all = "camelCase")]
     TurnCommitted {
         turn_id: String,
