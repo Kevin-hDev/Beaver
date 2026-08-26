@@ -1,8 +1,8 @@
+use super::ollama_stream_filter::emit_filtered;
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::types_ollama::{StreamEvent, StreamResult};
-use crate::services::stream_utils::ThinkTagFilter;
 use crate::services::llm::reasoning_wire::ReasoningCapture;
-use super::ollama_stream_filter::emit_filtered;
+use crate::services::stream_utils::ThinkTagFilter;
 use tokio::sync::mpsc;
 
 pub(crate) use super::ollama_stream_filter::flush_filter;
@@ -43,13 +43,7 @@ pub fn process_chunk(
         if let Some(duration_ns) = done_generation_duration(&chunk) {
             result.generation.record_native_duration(duration_ns);
         }
-        flush_filter(
-            think_filter,
-            on_event,
-            token_count,
-            result,
-            buffer_content,
-        );
+        flush_filter(think_filter, on_event, token_count, result, buffer_content);
         result.continuation = reasoning_capture
             .as_deref_mut()
             .and_then(ReasoningCapture::finish_complete);
@@ -97,6 +91,10 @@ pub fn process_chunk(
             let name = func["name"].as_str().unwrap_or("").to_string();
             let args = func["arguments"].clone();
             let idx = result.tool_calls.len();
+            // Ollama n'émet pas d'ID natif. Le journal et les résultats d'outil
+            // exigent néanmoins une identité stable : elle reste locale et le
+            // wire Ollama la retire avant toute requête sortante.
+            let tool_call_id = uuid::Uuid::new_v4().to_string();
             super::stream_buffer::record_tool_call_generation(
                 on_event,
                 result,
@@ -105,11 +103,12 @@ pub fn process_chunk(
                 token_count,
             );
             result.tool_calls.push((name.clone(), args.clone()));
+            result.tool_call_ids.push(tool_call_id.clone());
             let _ = on_event.send(StreamEvent::ToolCall {
                 name: name.clone(),
                 arguments: args.clone(),
                 tool_call_index: idx,
-                tool_call_id: None,
+                tool_call_id: Some(tool_call_id),
                 domain: super::memory_tool::event_domain(&name, &args),
             });
             if let Some(tx) = tool_tx {

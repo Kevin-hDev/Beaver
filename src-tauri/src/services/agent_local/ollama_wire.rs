@@ -75,19 +75,17 @@ fn insert_optional<T: serde::Serialize>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::services::agent_local::types_ollama::{
-        ToolCallFunction, ToolCallOllama,
-    };
+    use crate::services::agent_local::types_ollama::{ToolCallFunction, ToolCallOllama};
 
     #[test]
-    fn native_payload_uses_ollama_thinking_and_strips_api_fields() {
+    fn native_payload_uses_ollama_thinking_and_strips_local_tool_ids() {
         let mut message = ChatMessage::assistant(
             String::new(),
             Some("raisonnement".into()),
             None,
             Some("raisonnement".into()),
             Some(vec![ToolCallOllama {
-                id: Some("call_1".into()),
+                id: Some("0f7a0a1a-0000-4000-8000-000000000001".into()),
                 extra_content: Some(json!({"provider": "api"})),
                 function: ToolCallFunction {
                     name: "search".into(),
@@ -95,7 +93,7 @@ mod tests {
                 },
             }]),
         );
-        message.tool_call_id = Some("call_1".into());
+        message.tool_call_id = Some("0f7a0a1a-0000-4000-8000-000000000002".into());
 
         let value = messages_value(&[message]);
         let serialized = value.to_string();
@@ -103,7 +101,8 @@ mod tests {
         assert!(!serialized.contains("reasoning_content"));
         assert!(!serialized.contains("tool_call_id"));
         assert!(!serialized.contains("extra_content"));
-        assert!(!serialized.contains("call_1"));
+        assert!(!serialized.contains("0f7a0a1a-0000-4000-8000-000000000001"));
+        assert!(!serialized.contains("0f7a0a1a-0000-4000-8000-000000000002"));
     }
 
     #[test]
