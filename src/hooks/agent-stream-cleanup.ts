@@ -7,9 +7,11 @@ const MAX_SESSIONS = 64;
 const MAX_SUBSCRIBERS_PER_SESSION = 32;
 export const MAX_CANCELLED_GENERATIONS = 16;
 
-export interface PendingAdmissionEvent {
+export interface PendingAdmissionBucket {
   generation: number;
-  event: StreamEvent;
+  events: StreamEvent[];
+  chars: number;
+  overflowed: boolean;
 }
 
 export interface StreamRecord {
@@ -21,11 +23,12 @@ export interface StreamRecord {
   started: boolean;
   activeGeneration: number | null;
   awaitingAdmission: boolean;
-  pendingAdmissionEvents: PendingAdmissionEvent[];
-  pendingAdmissionChars: number;
-  pendingAdmissionOverflowed: boolean;
+  pendingAdmissionBuckets: PendingAdmissionBucket[];
   cancelledGenerations: number[];
   cancelledWithoutGeneration: boolean;
+  runOwner: symbol | null;
+  runId: number;
+  stoppingGeneration: number | null;
 }
 
 export function enforceSessionLimit(records: Map<string, StreamRecord>) {

@@ -29,6 +29,14 @@ vi.mock("../agent-stream-manager", () => ({
     queueUserMessage: vi.fn(),
     removeQueuedUserMessage: vi.fn(),
     discardPendingAdmission: vi.fn(),
+    ownsRun: vi.fn().mockReturnValue(true),
+    ownsOwner: vi.fn().mockReturnValue(true),
+    getOwnedGeneration: vi.fn().mockReturnValue(null),
+    claimStop: vi.fn().mockReturnValue(null),
+    releaseStop: vi.fn(),
+    completeStop: vi.fn().mockReturnValue(false),
+    discardOwner: vi.fn(),
+    isOwnerStreaming: vi.fn().mockReturnValue(false),
   },
 }));
 
@@ -70,6 +78,7 @@ describe("useAgentStream compression", () => {
       123,
       "compression",
       true,
+      expect.anything(),
     );
   });
 
@@ -94,6 +103,7 @@ describe("useAgentStream compression", () => {
       123,
       "chat",
       true,
+      expect.anything(),
     );
   });
 });

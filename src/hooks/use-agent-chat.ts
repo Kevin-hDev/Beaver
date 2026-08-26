@@ -199,8 +199,9 @@ export function useAgentChat(
   }, [sessionId, state.messages, doStream, syncTokenCount]);
 
   const stop = useCallback(async () => {
-    if (sessionId) await stopStream(sessionId);
-    setState((s) => ({ ...s, isStreaming: false }));
+    if (sessionId && await stopStream(sessionId)) {
+      setState((s) => ({ ...s, isStreaming: false }));
+    }
   }, [sessionId, stopStream]);
 
   const clearInteractiveChoice = useCallback(() => setState(clearInteractiveChoiceState), []);

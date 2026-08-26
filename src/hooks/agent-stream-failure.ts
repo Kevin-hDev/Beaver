@@ -4,10 +4,12 @@ import { flushFrameNotify } from "./agent-stream-notify";
 import { notifyRecord, notifyRecordActivity } from "./agent-stream-notify-dispatch";
 import { getRecord, records } from "./agent-stream-records";
 import { markStreamCancelled } from "./agent-stream-generations";
+import { clearStreamRun } from "./agent-stream-run-ownership";
 
 export function failSession(sessionId: string, message = i18n.t("errors.streamStartFailed")) {
   const record = getRecord(sessionId);
   if (!record) return;
+  clearStreamRun(record);
   markStreamCancelled(record, record.activeGeneration);
   record.state = {
     ...record.state,

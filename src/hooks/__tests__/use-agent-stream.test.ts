@@ -16,7 +16,11 @@ const mocks = vi.hoisted(() => ({
   setSessionGeneration: vi.fn(), reconcileTurnAdmission: vi.fn(), subscribe: vi.fn(),
   getSnapshot: vi.fn(), isStreaming: vi.fn(), queueUserMessage: vi.fn(),
   removeQueuedUserMessage: vi.fn(), showToast: vi.fn(),
-  discardPendingAdmission: vi.fn(),
+  discardPendingAdmission: vi.fn(), ownsRun: vi.fn(), ownsOwner: vi.fn(),
+  getOwnedGeneration: vi.fn(), claimStop: vi.fn(), releaseStop: vi.fn(),
+  completeStop: vi.fn(), discardOwner: vi.fn(), isOwnerStreaming: vi.fn(),
+  runs: new Map<string, { owner: symbol; id: number }>(),
+  generations: new Map<string, number>(),
   awaitPendingReasoning: vi.fn(),
 }));
 
@@ -34,6 +38,11 @@ vi.mock("../agent-stream-manager", () => ({
     queueUserMessage: mocks.queueUserMessage,
     removeQueuedUserMessage: mocks.removeQueuedUserMessage,
     discardPendingAdmission: mocks.discardPendingAdmission,
+    ownsRun: mocks.ownsRun, ownsOwner: mocks.ownsOwner,
+    getOwnedGeneration: mocks.getOwnedGeneration,
+    claimStop: mocks.claimStop, releaseStop: mocks.releaseStop,
+    completeStop: mocks.completeStop, discardOwner: mocks.discardOwner,
+    isOwnerStreaming: mocks.isOwnerStreaming,
   },
 }));
 
@@ -54,8 +63,48 @@ describe("useAgentStream", () => {
     vi.clearAllMocks();
     mocks.invoke.mockReset().mockResolvedValue(ADMISSION);
     mocks.awaitPendingReasoning.mockResolvedValue(undefined);
-    mocks.startSession.mockResolvedValue(undefined);
-    mocks.setSessionGeneration.mockReturnValue("accepted");
+    mocks.runs.clear();
+    mocks.generations.clear();
+    mocks.startSession.mockImplementation((sessionId: string, ...args: unknown[]) => {
+      mocks.runs.set(sessionId, args[4] as { owner: symbol; id: number });
+      return Promise.resolve();
+    });
+    mocks.ownsRun.mockImplementation((
+      sessionId: string,
+      run: { owner: symbol; id: number },
+    ) => mocks.runs.get(sessionId) === run);
+    mocks.ownsOwner.mockImplementation(
+      (sessionId: string, owner: symbol) => mocks.runs.get(sessionId)?.owner === owner,
+    );
+    mocks.getOwnedGeneration.mockImplementation(
+      (sessionId: string, owner: symbol) => mocks.runs.get(sessionId)?.owner === owner
+        ? (mocks.generations.get(sessionId) ?? null) : null,
+    );
+    mocks.setSessionGeneration.mockImplementation((sessionId: string, generation: number) => {
+      mocks.generations.set(sessionId, generation);
+      return "accepted";
+    });
+    mocks.claimStop.mockImplementation(
+      (sessionId: string, owner: symbol) => mocks.runs.get(sessionId)?.owner === owner
+        ? (mocks.generations.get(sessionId) ?? null) : null,
+    );
+    mocks.completeStop.mockImplementation((
+      sessionId: string,
+      owner: symbol,
+      generation: number,
+    ) => {
+      if (mocks.runs.get(sessionId)?.owner !== owner
+          || mocks.generations.get(sessionId) !== generation) return false;
+      mocks.stopSession(sessionId, generation);
+      mocks.runs.delete(sessionId);
+      mocks.generations.delete(sessionId);
+      return true;
+    });
+    mocks.discardOwner.mockImplementation((owner: symbol) => {
+      for (const [sessionId, run] of mocks.runs) {
+        if (run.owner === owner) mocks.runs.delete(sessionId);
+      }
+    });
     mocks.queueUserMessage.mockReturnValue(true);
   });
 
@@ -287,7 +336,7 @@ describe("useAgentStream", () => {
     expect(mocks.stopSession).toHaveBeenCalledWith("session-1", 42);
   });
 
-  it("ignore un stop appartenant à une session remplacée", async () => {
+  it("arrête A avec sa génération même après le démarrage de B", async () => {
     const admissionB = { ...ADMISSION, generation: 84 };
     mocks.invoke.mockResolvedValueOnce(ADMISSION).mockResolvedValueOnce(admissionB);
     const { result } = renderHook(() => useAgentStream());
@@ -303,9 +352,9 @@ describe("useAgentStream", () => {
       await result.current.stopStream("session-a");
     });
 
-    expect(mocks.stopSession).not.toHaveBeenCalled();
-    expect(mocks.invoke).not.toHaveBeenCalledWith("cancel_agent_request", {
-      sessionId: "session-a", generation: 84,
+    expect(mocks.stopSession).toHaveBeenCalledWith("session-a", 42);
+    expect(mocks.invoke).toHaveBeenCalledWith("cancel_agent_request", {
+      sessionId: "session-a", generation: 42,
     });
   });
 

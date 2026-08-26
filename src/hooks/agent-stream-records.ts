@@ -7,6 +7,7 @@ import {
 import { clearCleanup, enforceSessionLimit, type StreamRecord } from "./agent-stream-cleanup";
 import type { StreamKind } from "./agent-chat-stream-types";
 import type { AgentMessage } from "@/types/agent";
+import { assignStreamRun, type StreamRun } from "./agent-stream-run-ownership";
 
 export interface StreamSnapshot extends ChatState {
   pendingPermissions: PermissionRequestState[];
@@ -34,11 +35,12 @@ export function getOrCreateRecord(sessionId: string): StreamRecord {
     started: false,
     activeGeneration: null,
     awaitingAdmission: false,
-    pendingAdmissionEvents: [],
-    pendingAdmissionChars: 0,
-    pendingAdmissionOverflowed: false,
+    pendingAdmissionBuckets: [],
     cancelledGenerations: [],
     cancelledWithoutGeneration: false,
+    runOwner: null,
+    runId: 0,
+    stoppingGeneration: null,
   };
   records.set(sessionId, record);
   enforceSessionLimit(records);
@@ -57,6 +59,7 @@ export function startStreamRecord(
   sessionTokenCount: number,
   streamKind: StreamKind,
   awaitingAdmission = false,
+  run?: StreamRun,
 ): StreamRecord {
   const record = getOrCreateRecord(sessionId);
   clearCleanup(record);
@@ -70,10 +73,9 @@ export function startStreamRecord(
   }
   record.activeGeneration = null;
   record.awaitingAdmission = awaitingAdmission;
-  record.pendingAdmissionEvents = [];
-  record.pendingAdmissionChars = 0;
-  record.pendingAdmissionOverflowed = false;
+  record.pendingAdmissionBuckets = [];
   record.cancelledWithoutGeneration = false;
+  assignStreamRun(record, run);
   touchSession(sessionId, record);
   return record;
 }

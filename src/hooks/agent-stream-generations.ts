@@ -4,6 +4,7 @@ import type { StreamEvent } from "@/types/agent";
 
 const MAX_PENDING_ADMISSION_EVENTS = 64;
 const MAX_PENDING_ADMISSION_CHARS = 512 * 1024;
+export const MAX_PENDING_ADMISSION_BUCKETS = 32;
 
 const STREAM_CONTINUATION_EVENTS = new Set<StreamEvent["event"]>([
   "token",
@@ -88,13 +89,18 @@ export function takePendingAdmission(
   record: StreamRecord,
   generation: number,
 ) {
-  const overflowed = record.pendingAdmissionOverflowed;
-  const events = record.pendingAdmissionEvents.filter(
+  const bucket = record.pendingAdmissionBuckets.find(
     (pending) => pending.generation === generation,
   );
+  const knownOrUnsaturated = bucket !== undefined
+    || record.pendingAdmissionBuckets.length < MAX_PENDING_ADMISSION_BUCKETS;
   clearPendingAdmission(record);
   record.awaitingAdmission = false;
-  return { events, overflowed, accepted: setStreamGeneration(record, generation) };
+  return {
+    events: (bucket?.events ?? []).map((event) => ({ generation, event })),
+    overflowed: bucket?.overflowed ?? false,
+    accepted: knownOrUnsaturated && setStreamGeneration(record, generation),
+  };
 }
 
 function stagePendingAdmission(
@@ -102,21 +108,34 @@ function stagePendingAdmission(
   generation: number,
   event: StreamEvent,
 ) {
-  if (record.pendingAdmissionOverflowed) return;
+  let bucket = record.pendingAdmissionBuckets.find(
+    (pending) => pending.generation === generation,
+  );
+  if (!bucket) {
+    if (record.pendingAdmissionBuckets.length >= MAX_PENDING_ADMISSION_BUCKETS) {
+      const disposable = record.pendingAdmissionBuckets.findIndex((item) => item.overflowed);
+      if (disposable >= 0) record.pendingAdmissionBuckets.splice(disposable, 1);
+      else {
+        quarantineGeneration(record, generation);
+        return;
+      }
+    }
+    bucket = { generation, events: [], chars: 0, overflowed: false };
+    record.pendingAdmissionBuckets.push(bucket);
+  }
+  if (bucket.overflowed) return;
   const chars = JSON.stringify(event).length;
-  if (record.pendingAdmissionEvents.length >= MAX_PENDING_ADMISSION_EVENTS
-      || record.pendingAdmissionChars + chars > MAX_PENDING_ADMISSION_CHARS) {
-    record.pendingAdmissionEvents = [];
-    record.pendingAdmissionChars = 0;
-    record.pendingAdmissionOverflowed = true;
+  if (bucket.events.length >= MAX_PENDING_ADMISSION_EVENTS
+      || bucket.chars + chars > MAX_PENDING_ADMISSION_CHARS) {
+    bucket.events = [];
+    bucket.chars = 0;
+    bucket.overflowed = true;
     return;
   }
-  record.pendingAdmissionEvents.push({ generation, event });
-  record.pendingAdmissionChars += chars;
+  bucket.events.push(event);
+  bucket.chars += chars;
 }
 
 export function clearPendingAdmission(record: StreamRecord) {
-  record.pendingAdmissionEvents = [];
-  record.pendingAdmissionChars = 0;
-  record.pendingAdmissionOverflowed = false;
+  record.pendingAdmissionBuckets = [];
 }

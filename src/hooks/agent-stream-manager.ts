@@ -2,7 +2,6 @@ import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import i18n from "@/i18n";
 import {
   applyStreamEvent,
-  finishPartialStream,
 } from "./agent-chat-stream-callbacks";
 import { scheduleCleanup, clearCleanup, trimSubscribers } from "./agent-stream-cleanup";
 import {
@@ -48,6 +47,18 @@ import {
   reconcileTurnCommitted,
   reconcileTurnEvent,
 } from "./agent-stream-turns";
+import type { StreamRun } from "./agent-stream-run-ownership";
+import {
+  claimStop,
+  completeStop,
+  discardOwner,
+  getOwnedGeneration,
+  isOwnerStreaming,
+  ownsOwner,
+  ownsRun,
+  releaseStop,
+} from "./agent-stream-manager-ownership";
+import { stopStreamRecord } from "./agent-stream-stop";
 
 export type { StreamSnapshot } from "./agent-stream-records";
 const EVENT_NAME = "agent-stream-event";
@@ -59,7 +70,8 @@ type Subscriber = (snapshot: StreamSnapshot) => void;
 let listenPromise: Promise<UnlistenFn> | null = null;
 
 export const agentStreamManager = { startSession, stopSession, failSession, setSessionGeneration,
-  discardPendingAdmission,
+  discardPendingAdmission, ownsRun, ownsOwner, getOwnedGeneration,
+  claimStop, releaseStop, completeStop, discardOwner, isOwnerStreaming,
   clearPermission: clearStreamPermission, getSnapshot, getActivity, isStreaming, subscribe,
   queueUserMessage, removeQueuedUserMessage, reconcileTurnAdmission,
   subscribeActivity: subscribeStreamActivity };
@@ -84,10 +96,11 @@ async function startSession(
   sessionTokenCount: number,
   streamKind: StreamKind = "chat",
   awaitingAdmission = false,
+  run?: StreamRun,
 ) {
   await ensureListener();
   const record = startStreamRecord(
-    sessionId, messages, sessionTokenCount, streamKind, awaitingAdmission,
+    sessionId, messages, sessionTokenCount, streamKind, awaitingAdmission, run,
   );
   flushFrameNotify(record, notify);
   notifyActivity(sessionId, record);
@@ -96,11 +109,7 @@ async function startSession(
 function stopSession(sessionId: string, generation?: number | null) {
   const record = getRecord(sessionId);
   if (!record) return;
-  markStreamCancelled(record, generation);
-  const result = finishPartialStream(record.state);
-  record.state = result.state;
-  flushFrameNotify(record, notify);
-  notifyActivity(sessionId, record);
+  stopStreamRecord(sessionId, record, generation);
 }
 
 function setSessionGeneration(sessionId: string, generation: number) {

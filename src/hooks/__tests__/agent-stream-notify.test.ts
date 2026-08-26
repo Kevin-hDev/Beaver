@@ -17,11 +17,12 @@ function makeRecord(): StreamRecord {
     started: true,
     activeGeneration: null,
     awaitingAdmission: false,
-    pendingAdmissionEvents: [],
-    pendingAdmissionChars: 0,
-    pendingAdmissionOverflowed: false,
+    pendingAdmissionBuckets: [],
     cancelledGenerations: [],
     cancelledWithoutGeneration: false,
+    runOwner: null,
+    runId: 0,
+    stoppingGeneration: null,
   };
 }
 

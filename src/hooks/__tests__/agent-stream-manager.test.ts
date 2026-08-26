@@ -338,8 +338,39 @@ describe("agentStreamManager", () => {
       event: "token", data: { content: "tardif", tokenCount: 1, tps: 1 },
     }, 94);
 
-    expect(records.get("discarded")?.pendingAdmissionEvents).toHaveLength(0);
+    expect(records.get("discarded")?.pendingAdmissionBuckets).toHaveLength(0);
     expect(agentStreamManager.getSnapshot("discarded")?.currentContent).toBe("");
+  });
+
+  it("borne les buffers précoces par génération sans évincer un bucket exploitable", async () => {
+    await agentStreamManager.startSession(
+      "bounded", [message("u1", "user", "Question")], 0, "chat", true,
+    );
+    for (let generation = 1; generation <= 40; generation += 1) {
+      emit("bounded", {
+        event: "token",
+        data: { content: `${generation}`, tokenCount: 1, tps: 1 },
+      }, generation);
+    }
+
+    expect(records.get("bounded")?.pendingAdmissionBuckets).toHaveLength(32);
+    agentStreamManager.discardPendingAdmission("bounded");
+    expect(records.get("bounded")?.pendingAdmissionBuckets).toHaveLength(0);
+  });
+
+  it("refuse une génération écartée même après rotation de la quarantaine", async () => {
+    await agentStreamManager.startSession(
+      "saturated", [message("u1", "user", "Question")], 0, "chat", true,
+    );
+    for (let generation = 1; generation <= 80; generation += 1) {
+      emit("saturated", {
+        event: "token",
+        data: { content: `${generation}`, tokenCount: 1, tps: 1 },
+      }, generation);
+    }
+
+    expect(agentStreamManager.setSessionGeneration("saturated", 33)).toBe("rejected");
+    expect(agentStreamManager.getSnapshot("saturated")?.currentContent).toBe("");
   });
 
   it("ignore les événements de la génération après un échec local", async () => {
@@ -356,5 +387,21 @@ describe("agentStreamManager", () => {
     const after = agentStreamManager.getSnapshot("failed");
     expect(after?.isStreaming).toBe(false);
     expect(after?.currentContent).toBe("");
+  });
+
+  it("purge tous les buckets précoces après un échec local", async () => {
+    await agentStreamManager.startSession(
+      "failed-buckets", [message("u1", "user", "Question")], 0, "chat", true,
+    );
+    emit("failed-buckets", {
+      event: "token", data: { content: "a", tokenCount: 1, tps: 1 },
+    }, 101);
+    emit("failed-buckets", {
+      event: "token", data: { content: "b", tokenCount: 1, tps: 1 },
+    }, 102);
+
+    agentStreamManager.failSession("failed-buckets", "échec générique");
+
+    expect(records.get("failed-buckets")?.pendingAdmissionBuckets).toHaveLength(0);
   });
 });
