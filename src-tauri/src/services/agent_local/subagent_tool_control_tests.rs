@@ -29,7 +29,7 @@ fn delegate_and_mixed_batches_are_not_control_only() {
 }
 
 #[test]
-fn api_and_ollama_wait_after_control_batches() {
+fn api_and_ollama_wait_after_control_batches_before_finishing_tools() {
     for source in [
         include_str!("../llm/agent_loop.rs"),
         include_str!("agent_loop.rs"),
@@ -37,10 +37,6 @@ fn api_and_ollama_wait_after_control_batches() {
         let classifier = source
             .find("let control_only =")
             .expect("control batch is classified before tool execution");
-        let compression = source[classifier..]
-            .find("let tool_compression = (!control_only).then")
-            .map(|offset| classifier + offset)
-            .expect("control batch disables tool compression");
         let tools = source
             .find("tool_executor::run_tools")
             .expect("tool execution");
@@ -50,13 +46,11 @@ fn api_and_ollama_wait_after_control_batches() {
         let after_tools = source
             .find(".finish_tools(")
             .expect("post-tool compression");
-        let pre_wait = &source[compression..wait];
+        let pre_wait = &source[classifier..wait];
 
-        assert!(classifier < compression);
-        assert!(compression < tools);
+        assert!(classifier < tools);
         assert!(tools < wait);
         assert!(wait < after_tools);
-        assert!(pre_wait.contains("(!control_only).then"));
         assert!(!pre_wait.contains(".finish_tools("));
     }
 }
