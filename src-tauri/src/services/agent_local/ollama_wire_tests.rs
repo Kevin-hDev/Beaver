@@ -25,7 +25,9 @@ fn message(target: &ReplayTarget, thinking: &str) -> ChatMessage {
             ContractId::OllamaNativeV1,
             ReasoningSource::from_target(target),
             CompletionState::Complete,
-            ContinuationState::OllamaNative { thinking: thinking.into() },
+            ContinuationState::OllamaNative {
+                thinking: thinking.into(),
+            },
             Vec::new(),
         )),
         None,
@@ -58,7 +60,10 @@ fn native_payload_uses_ollama_thinking_and_strips_local_tool_ids() {
         Some(vec![ToolCallOllama {
             id: Some("0f7a0a1a-0000-4000-8000-000000000001".into()),
             extra_content: Some(json!({"provider": "api"})),
-            function: ToolCallFunction { name: "search".into(), arguments: json!({"query": "test"}) },
+            function: ToolCallFunction {
+                name: "search".into(),
+                arguments: json!({"query": "test"}),
+            },
         }]),
     );
     message.tool_call_id = Some("0f7a0a1a-0000-4000-8000-000000000002".into());
@@ -81,14 +86,22 @@ fn chat_payload_disables_ollama_truncation() {
 }
 
 #[test]
-fn only_live_validated_qwen_replays_in_production() {
+fn only_live_validated_ollama_models_replay_in_production() {
+    for model in ["qwen3.5:4b", "gemma4:e2b-it-q4_K_M"] {
+        let target = target(model);
+        let messages = [message(&target, "opaque historic")];
+        let mut live = request();
+        live.live_replay_target = Some(target);
+        assert_eq!(
+            chat_request(&live, &messages).unwrap()["messages"][0]["thinking"],
+            "opaque historic"
+        );
+    }
+
     let qwen = target("qwen3.5:4b");
     let messages = [message(&qwen, "opaque historic")];
     let mut live = request();
-    live.live_replay_target = Some(qwen.clone());
-    assert_eq!(chat_request(&live, &messages).unwrap()["messages"][0]["thinking"], "opaque historic");
-
-    live.live_replay_target = Some(target("gemma4:e2b-it-q4_K_M"));
+    live.live_replay_target = Some(target("deepseek-r1:latest"));
     assert_eq!(
         chat_request(&live, &messages),
         Err(crate::services::llm::reasoning_wire::replay::ReplayApplyError::Blocked)
@@ -99,7 +112,10 @@ fn only_live_validated_qwen_replays_in_production() {
 #[test]
 fn fixture_candidate_replays_multiple_native_messages_while_normal_stays_closed() {
     let qwen = target("qwen3.5:4b");
-    let messages = [message(&qwen, "opaque historic"), message(&qwen, "opaque later")];
+    let messages = [
+        message(&qwen, "opaque historic"),
+        message(&qwen, "opaque later"),
+    ];
     let mut candidate = request();
     let normal = chat_request(&candidate, &messages).unwrap();
     assert!(normal["messages"][0].get("thinking").is_none());

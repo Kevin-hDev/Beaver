@@ -1,11 +1,11 @@
 use super::contract::{
     ContinuationUse, ContractId, CredentialScope, ReasoningModeId, ReplayTarget, RouteId,
 };
-use super::eligibility::{decide, BlockReason, ReplayDecision};
+use super::eligibility::{BlockReason, ReplayDecision, decide};
 use super::envelope::{CompletionState, ContinuationState, ReasoningEnvelope, ReasoningSource};
 use super::registry::{
-    active_routes, replay_policy, replay_policy_from_routes, route_contract, ActivationState,
-    AdapterId, ModelPolicy, ReplayRequirement, RouteContract,
+    ActivationState, AdapterId, ModelPolicy, ReplayRequirement, RouteContract, active_routes,
+    replay_policy, replay_policy_from_routes, route_contract,
 };
 
 #[test]
@@ -200,16 +200,20 @@ fn exact_mode_and_continuation_use_are_independent_policy_dimensions() {
     assert_eq!(tool.requirement, ReplayRequirement::Required);
     assert_eq!(tool.activation, ActivationState::Disabled);
 
-    assert!(replay_policy_from_routes(
-        ROUTES,
-        &target(ReasoningModeId::Low, ContinuationUse::UserContinuation)
-    )
-    .is_none());
-    assert!(replay_policy_from_routes(
-        ROUTES,
-        &target(ReasoningModeId::Off, ContinuationUse::UserContinuation)
-    )
-    .is_none());
+    assert!(
+        replay_policy_from_routes(
+            ROUTES,
+            &target(ReasoningModeId::Low, ContinuationUse::UserContinuation)
+        )
+        .is_none()
+    );
+    assert!(
+        replay_policy_from_routes(
+            ROUTES,
+            &target(ReasoningModeId::Off, ContinuationUse::UserContinuation)
+        )
+        .is_none()
+    );
 }
 
 #[test]
@@ -235,11 +239,13 @@ fn deepseek_user_and_tool_continuations_have_distinct_requirements() {
             .requirement,
         ReplayRequirement::Required
     );
-    assert!(replay_policy(&ReplayTarget {
-        reasoning_mode: ReasoningModeId::Off,
-        ..target(ContinuationUse::ToolContinuation)
-    })
-    .is_none());
+    assert!(
+        replay_policy(&ReplayTarget {
+            reasoning_mode: ReasoningModeId::Off,
+            ..target(ContinuationUse::ToolContinuation)
+        })
+        .is_none()
+    );
 
     let envelope = ReasoningEnvelope::new(
         ContractId::DeepSeekChatV1,
@@ -291,7 +297,7 @@ fn local_scope_is_valid_only_for_ollama() {
 }
 
 #[test]
-fn only_qwen_auto_user_and_tool_are_live_validated() {
+fn only_exact_validated_ollama_models_are_live_validated() {
     let mut live = Vec::new();
     for route in active_routes() {
         assert!(!route.models.is_empty());
@@ -306,16 +312,24 @@ fn only_qwen_auto_user_and_tool_are_live_validated() {
             }
         }
     }
-    assert_eq!(live.len(), 2);
+    let expected = [
+        (
+            "gemma4:e2b-it-q4_K_M",
+            "ollama-local-gemma4-e2b-it-q4-k-m-local-2026-08-26",
+        ),
+        ("qwen3.5:4b", "ollama-local-qwen3-5-4b-local-2026-08-26"),
+    ];
+    assert_eq!(live.len(), 4);
     for (route, model) in live {
         assert_eq!(route, RouteId::Ollama);
-        assert_eq!(model.model_id, "qwen3.5:4b");
+        assert!(expected.iter().any(|(model_id, fixture_id)| {
+            model.model_id == *model_id && model.fixture_id == Some(*fixture_id)
+        }));
         assert_eq!(model.reasoning_mode, ReasoningModeId::Auto);
         assert!(matches!(
             model.continuation_use,
             ContinuationUse::UserContinuation | ContinuationUse::ToolContinuation
         ));
-        assert_eq!(model.fixture_id, Some("ollama-local-qwen3-5-4b-local-2026-08-26"));
         assert_eq!(model.fixture_date, Some("2026-08-26"));
     }
 }

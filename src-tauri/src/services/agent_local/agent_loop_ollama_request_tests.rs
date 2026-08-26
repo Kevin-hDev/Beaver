@@ -14,28 +14,33 @@ fn target(model_id: &str, reasoning_mode: ReasoningModeId) -> ReplayTarget {
 }
 
 #[test]
-fn production_request_uses_tool_target_only_after_tool_result() {
-    let qwen = target("qwen3.5:4b", ReasoningModeId::Auto);
-    assert_eq!(
-        live_target_for_request(&qwen, false)
-            .unwrap()
-            .continuation_use,
-        ContinuationUse::UserContinuation
-    );
-    assert_eq!(
-        live_target_for_request(&qwen, true)
-            .unwrap()
-            .continuation_use,
-        ContinuationUse::ToolContinuation
-    );
+fn production_request_selects_exact_user_or_tool_target_for_each_validated_model() {
+    for model in ["qwen3.5:4b", "gemma4:e2b-it-q4_K_M"] {
+        let target = target(model, ReasoningModeId::Auto);
+        assert_eq!(
+            live_target_for_request(&target, false)
+                .unwrap()
+                .continuation_use,
+            ContinuationUse::UserContinuation
+        );
+        assert_eq!(
+            live_target_for_request(&target, true)
+                .unwrap()
+                .continuation_use,
+            ContinuationUse::ToolContinuation
+        );
+    }
 }
 
 #[test]
-fn production_tool_target_blocks_neighbor_and_off_mode() {
-    assert!(live_target_for_request(
-        &target("gemma4:e2b-it-q4_K_M", ReasoningModeId::Auto),
-        true,
-    )
-    .is_err());
+fn production_target_blocks_neighbor_and_off_mode() {
+    assert!(
+        live_target_for_request(&target("deepseek-r1:latest", ReasoningModeId::Auto), true,)
+            .is_err()
+    );
     assert!(live_target_for_request(&target("qwen3.5:4b", ReasoningModeId::Off), true).is_err());
+    assert!(
+        live_target_for_request(&target("gemma4:e2b-it-q4_K_M", ReasoningModeId::Off), false,)
+            .is_err()
+    );
 }

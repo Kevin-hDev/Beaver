@@ -65,10 +65,34 @@ const fn live(
 }
 
 const OLLAMA: &[ModelPolicy] = &[
-    user("gemma4:e2b-it-q4_K_M", ReasoningModeId::Auto, Optional),
-    tool("gemma4:e2b-it-q4_K_M", ReasoningModeId::Auto, Optional),
-    live("qwen3.5:4b", ReasoningModeId::Auto, ContinuationUse::UserContinuation, "ollama-local-qwen3-5-4b-local-2026-08-26", "2026-08-26"),
-    live("qwen3.5:4b", ReasoningModeId::Auto, ContinuationUse::ToolContinuation, "ollama-local-qwen3-5-4b-local-2026-08-26", "2026-08-26"),
+    live(
+        "gemma4:e2b-it-q4_K_M",
+        ReasoningModeId::Auto,
+        ContinuationUse::UserContinuation,
+        "ollama-local-gemma4-e2b-it-q4-k-m-local-2026-08-26",
+        "2026-08-26",
+    ),
+    live(
+        "gemma4:e2b-it-q4_K_M",
+        ReasoningModeId::Auto,
+        ContinuationUse::ToolContinuation,
+        "ollama-local-gemma4-e2b-it-q4-k-m-local-2026-08-26",
+        "2026-08-26",
+    ),
+    live(
+        "qwen3.5:4b",
+        ReasoningModeId::Auto,
+        ContinuationUse::UserContinuation,
+        "ollama-local-qwen3-5-4b-local-2026-08-26",
+        "2026-08-26",
+    ),
+    live(
+        "qwen3.5:4b",
+        ReasoningModeId::Auto,
+        ContinuationUse::ToolContinuation,
+        "ollama-local-qwen3-5-4b-local-2026-08-26",
+        "2026-08-26",
+    ),
     user("deepseek-r1:latest", ReasoningModeId::Auto, Optional),
     tool("deepseek-r1:latest", ReasoningModeId::Auto, Optional),
 ];
