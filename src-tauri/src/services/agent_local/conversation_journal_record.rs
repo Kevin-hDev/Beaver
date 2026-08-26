@@ -11,7 +11,7 @@ pub(super) fn from_message(message: &ChatMessage, id: String, turn_id: &str, req
     let continuation = message.continuation.clone();
     Ok(AgentMessage {
         id, turn_id: turn_id.to_string(), role: message.role.clone(), content: message.content.clone(), thinking: message.display_thinking.clone(), tool_calls,
-        tool_name: message.tool_name.clone(), tool_call_id: message.tool_call_id.clone(), continuation: continuation.clone(), replay_source: continuation.map(|value| value.source),
+        tool_name: message.tool_name.clone(), tool_call_id: message.tool_call_id.clone(), continuation, replay_source: None,
         tool_activities: None, segments: None, files: Vec::new(), timestamp: Utc::now(), tokens: 0, work_duration_ms: None, skill_names: None, skill_ids: None,
         stream_run_id: Some(request_id.to_string()), stream_part: Some("checkpoint".to_string()),
     })
