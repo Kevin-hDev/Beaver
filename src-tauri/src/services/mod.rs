@@ -62,6 +62,8 @@ pub mod provider_usage;
 pub mod reasoning;
 pub mod reasoning_continuity;
 mod reasoning_effort;
+#[cfg(debug_assertions)]
+pub mod reasoning_fixture_run;
 pub mod reasoning_fixture_store;
 #[cfg(debug_assertions)]
 pub mod reasoning_fixture_tools;

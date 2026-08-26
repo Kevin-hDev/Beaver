@@ -75,14 +75,13 @@ async fn run_fixture_operations(
     if operations.is_empty() || operations.len() > MAX_FIXTURE_OPERATIONS {
         return Err(unavailable());
     }
-    let mut tools = crate::services::reasoning_fixture_tools::isolated_toolset()
+    let mut run = crate::services::reasoning_fixture_run::FixtureRunContext::start()
         .await
         .map_err(|_| unavailable())?;
     let mut results = Vec::with_capacity(operations.len());
     for operation in operations {
         results.push(
-            tools
-                .execute(&operation.tool_id, &operation.arguments)
+            run.dispatch(&operation.tool_id, &operation.arguments)
                 .await
                 .map_err(|_| unavailable())?,
         );
