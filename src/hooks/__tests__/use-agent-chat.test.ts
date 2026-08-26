@@ -3,7 +3,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { useAgentChat } from "../use-agent-chat";
 import { showToast } from "@/lib/toast-emitter";
+import { EMPTY_CHAT_STATE } from "../agent-chat-stream-callbacks";
 import type { AgentMessage, AgentSession, FileAttachment } from "@/types/agent";
+import type { StreamSnapshot } from "../agent-stream-manager";
 import type { TurnStart } from "@/types/agent-turn.generated";
 
 type StartStreamMock = (
@@ -14,10 +16,14 @@ type StartStreamMock = (
   think: boolean,
   startState: { displayMessages: AgentMessage[] },
 ) => void | Promise<void>;
+type SubscribeMock = (
+  sessionId: string,
+  callback: (snapshot: StreamSnapshot) => void,
+) => () => void;
 
 const startStream = vi.fn<StartStreamMock>();
 const stopStream = vi.fn();
-const subscribeToStream = vi.fn(() => () => {});
+const subscribeToStream = vi.fn<SubscribeMock>(() => () => {});
 const getStreamSnapshot = vi.fn(() => null);
 
 interface TruncatePayload {
@@ -78,6 +84,7 @@ describe("useAgentChat", () => {
     lastStreamMessages = null;
     lastTruncatePayload = null;
     prepareResult = { status: "ready" };
+    stopStream.mockResolvedValue("ignored");
     startStream.mockImplementation((_sessionId, _model, _provider, _turn, _think, startState) => {
       lastStreamMessages = startState.displayMessages;
     });
@@ -265,4 +272,60 @@ describe("useAgentChat", () => {
 
     expect(result.current.error).toBeUndefined();
   });
+
+  it("laisse uniquement les notifications manager terminer l'état après Stop", async () => {
+    const pendingStop = deferred<string>();
+    let listener: ((snapshot: StreamSnapshot) => void) | null = null;
+    subscribeToStream.mockImplementation((
+      _sessionId: string,
+      callback: (snapshot: StreamSnapshot) => void,
+    ) => {
+      listener = callback;
+      return () => {};
+    });
+    stopStream.mockReturnValue(pendingStop.promise);
+    const { result } = renderHook(() => useAgentChat("session-1", "llama3", "ollama"));
+    await waitFor(() => expect(result.current.sessionLoading).toBe(false));
+    const streaming = {
+      ...EMPTY_CHAT_STATE,
+      messages: session.messages,
+      isStreaming: true,
+      pendingPermissions: [],
+      completed: false,
+    };
+    act(() => listener?.(streaming));
+    expect(result.current.isStreaming).toBe(true);
+
+    let stopping!: Promise<void>;
+    await act(async () => {
+      stopping = result.current.stop();
+      pendingStop.resolve("stopped");
+      await stopping;
+    });
+    expect(result.current.isStreaming).toBe(true);
+
+    act(() => listener?.({ ...streaming, isStreaming: false, completed: true }));
+    expect(result.current.isStreaming).toBe(false);
+  });
+
+  it("laisse une promesse Stop finir après démontage sans callback React local", async () => {
+    const pendingStop = deferred<string>();
+    stopStream.mockReturnValue(pendingStop.promise);
+    const mounted = renderHook(() => useAgentChat("session-1", "llama3", "ollama"));
+    await waitFor(() => expect(mounted.result.current.sessionLoading).toBe(false));
+    let stopping!: Promise<void>;
+    act(() => { stopping = mounted.result.current.stop(); });
+    mounted.unmount();
+
+    await act(async () => {
+      pendingStop.resolve("stopped");
+      await expect(stopping).resolves.toBeUndefined();
+    });
+  });
 });
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((yes) => { resolve = yes; });
+  return { promise, resolve };
+}

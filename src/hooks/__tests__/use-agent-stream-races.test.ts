@@ -468,4 +468,151 @@ describe("useAgentStream admission races", () => {
       sessionId: "same-session", generation: 81,
     });
   });
+
+  it("libère un stop admis rejeté après démontage puis permet de le reprendre", async () => {
+    const firstCancel = deferred<void>();
+    let cancelCalls = 0;
+    mocks.invoke.mockImplementation((command: string) => {
+      if (command === "chat_stream") return Promise.resolve(admission(91));
+      if (command === "cancel_agent_request") {
+        cancelCalls += 1;
+        return cancelCalls === 1 ? firstCancel.promise : Promise.resolve(undefined);
+      }
+      return Promise.resolve(undefined);
+    });
+    const mounted = renderHook(() => useAgentStream());
+    await act(async () => { await start(mounted.result, "admitted-stop-reject"); });
+
+    let rejectedStop!: Promise<string>;
+    await act(async () => {
+      rejectedStop = mounted.result.current.stopStream("same-session");
+      await vi.waitFor(() => expect(cancelCalls).toBe(1));
+    });
+    mounted.unmount();
+    await act(async () => {
+      firstCancel.reject(new Error("internal"));
+      expect(await rejectedStop).toBe("ignored");
+    });
+
+    const remounted = renderHook(() => useAgentStream());
+    await act(async () => {
+      expect(await remounted.result.current.stopStream("same-session")).toBe("stopped");
+    });
+    expect(mocks.invoke.mock.calls.filter(([command]) => command === "cancel_agent_request"))
+      .toEqual([
+        ["cancel_agent_request", { sessionId: "same-session", generation: 91 }],
+        ["cancel_agent_request", { sessionId: "same-session", generation: 91 }],
+      ]);
+  });
+
+  it("libère un stop différé rejeté après démontage puis permet de le reprendre", async () => {
+    const admissionPending = deferred<ChatStreamAdmission>();
+    const firstCancel = deferred<void>();
+    let cancelCalls = 0;
+    mocks.invoke.mockImplementation((command: string) => {
+      if (command === "chat_stream") return admissionPending.promise;
+      if (command === "cancel_agent_request") {
+        cancelCalls += 1;
+        return cancelCalls === 1 ? firstCancel.promise : Promise.resolve(undefined);
+      }
+      return Promise.resolve(undefined);
+    });
+    const mounted = renderHook(() => useAgentStream());
+    let running!: Promise<void>;
+    await act(async () => {
+      running = start(mounted.result, "deferred-stop-reject");
+      await vi.waitFor(() => expect(mocks.invoke).toHaveBeenCalledWith(
+        "chat_stream", expect.anything(),
+      ));
+      expect(await mounted.result.current.stopStream("same-session")).toBe("stopping");
+    });
+    mounted.unmount();
+    await act(async () => {
+      admissionPending.resolve(admission(92));
+      await vi.waitFor(() => expect(cancelCalls).toBe(1));
+      firstCancel.reject(new Error("internal"));
+      await running;
+    });
+
+    const remounted = renderHook(() => useAgentStream());
+    await act(async () => {
+      expect(await remounted.result.current.stopStream("same-session")).toBe("stopped");
+    });
+    expect(mocks.invoke.mock.calls.filter(([command]) => command === "cancel_agent_request"))
+      .toEqual([
+        ["cancel_agent_request", { sessionId: "same-session", generation: 92 }],
+        ["cancel_agent_request", { sessionId: "same-session", generation: 92 }],
+      ]);
+  });
+
+  it("purge l'intention optimiste quand un stop différé réussit", async () => {
+    const pending = deferred<ChatStreamAdmission>();
+    mocks.invoke.mockImplementation((command: string) => {
+      if (command === "chat_stream") return pending.promise;
+      return Promise.resolve(command === "queue_agent_message");
+    });
+    const { result } = renderHook(() => useAgentStream());
+    let running!: Promise<void>;
+    await act(async () => {
+      running = start(result, "deferred-with-queue");
+      await vi.waitFor(() => expect(mocks.invoke).toHaveBeenCalledWith(
+        "chat_stream", expect.anything(),
+      ));
+      expect(await result.current.queueStreamMessage(
+        "same-session",
+        { content: "queued", files: [], skills: [] },
+        message("queued"),
+      )).toBe(true);
+      expect(agentStreamManager.getSnapshot("same-session")?.queuedUserMessages)
+        .toHaveLength(1);
+      expect(await result.current.stopStream("same-session")).toBe("stopping");
+      pending.resolve(admission(93));
+      await running;
+    });
+
+    expect(agentStreamManager.getSnapshot("same-session")?.queuedUserMessages).toEqual([]);
+    expect(mocks.invoke.mock.calls.filter(([command]) => command === "queue_agent_message"))
+      .toEqual([]);
+  });
+
+  it("ne purge pas la file du run suivant quand un stop différé se termine", async () => {
+    const firstAdmission = deferred<ChatStreamAdmission>();
+    const secondAdmission = deferred<ChatStreamAdmission>();
+    const firstCancel = deferred<void>();
+    let chatCalls = 0;
+    mocks.invoke.mockImplementation((command: string) => {
+      if (command === "chat_stream") {
+        chatCalls += 1;
+        return chatCalls === 1 ? firstAdmission.promise : secondAdmission.promise;
+      }
+      if (command === "cancel_agent_request") return firstCancel.promise;
+      return Promise.resolve(undefined);
+    });
+    const { result } = renderHook(() => useAgentStream());
+    let firstRun!: Promise<void>;
+    let secondRun!: Promise<void>;
+    await act(async () => {
+      firstRun = start(result, "run-a");
+      await vi.waitFor(() => expect(chatCalls).toBe(1));
+      expect(await result.current.stopStream("same-session")).toBe("stopping");
+      firstAdmission.resolve(admission(94));
+      await vi.waitFor(() => expect(mocks.invoke).toHaveBeenCalledWith(
+        "cancel_agent_request", { sessionId: "same-session", generation: 94 },
+      ));
+      secondRun = start(result, "run-b");
+      await vi.waitFor(() => expect(chatCalls).toBe(2));
+      expect(await result.current.queueStreamMessage(
+        "same-session",
+        { content: "queued-b", files: [], skills: [] },
+        message("queued-b"),
+      )).toBe(true);
+      firstCancel.resolve();
+      await firstRun;
+    });
+
+    expect(agentStreamManager.getSnapshot("same-session")?.queuedUserMessages)
+      .toEqual([expect.objectContaining({ id: "optimistic-queued-b" })]);
+    secondAdmission.reject(new Error("test cleanup"));
+    await act(async () => { await secondRun; });
+  });
 });

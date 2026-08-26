@@ -17,9 +17,9 @@ const mocks = vi.hoisted(() => ({
   getSnapshot: vi.fn(), isStreaming: vi.fn(), queueUserMessage: vi.fn(),
   removeQueuedUserMessage: vi.fn(), showToast: vi.fn(),
   discardPendingAdmission: vi.fn(), ownsRun: vi.fn(), ownsOwner: vi.fn(),
-  matchesRun: vi.fn(), isStopRequested: vi.fn(), adoptOwner: vi.fn(),
-  getOwnedGeneration: vi.fn(), claimStop: vi.fn(), releaseStop: vi.fn(),
-  completeStop: vi.fn(), completeDeferredStop: vi.fn(), releaseDeferredStop: vi.fn(),
+  matchesRun: vi.fn(), getDeferredStop: vi.fn(), adoptOwner: vi.fn(),
+  getOwnedGeneration: vi.fn(), getOwnedRunId: vi.fn(),
+  claimStop: vi.fn(), releaseStop: vi.fn(), completeStop: vi.fn(),
   releaseOwner: vi.fn(), isOwnerStreaming: vi.fn(),
   runs: new Map<string, { owner: symbol; id: number }>(),
   generations: new Map<string, number>(),
@@ -41,12 +41,11 @@ vi.mock("../agent-stream-manager", () => ({
     removeQueuedUserMessage: mocks.removeQueuedUserMessage,
     discardPendingAdmission: mocks.discardPendingAdmission,
     ownsRun: mocks.ownsRun, matchesRun: mocks.matchesRun,
-    isStopRequested: mocks.isStopRequested,
+    getDeferredStop: mocks.getDeferredStop,
     ownsOwner: mocks.ownsOwner, adoptOwner: mocks.adoptOwner,
-    getOwnedGeneration: mocks.getOwnedGeneration,
+    getOwnedGeneration: mocks.getOwnedGeneration, getOwnedRunId: mocks.getOwnedRunId,
     claimStop: mocks.claimStop, releaseStop: mocks.releaseStop,
-    completeStop: mocks.completeStop, completeDeferredStop: mocks.completeDeferredStop,
-    releaseDeferredStop: mocks.releaseDeferredStop, releaseOwner: mocks.releaseOwner,
+    completeStop: mocks.completeStop, releaseOwner: mocks.releaseOwner,
     isOwnerStreaming: mocks.isOwnerStreaming,
   },
 }));
@@ -82,7 +81,7 @@ describe("useAgentStream", () => {
       sessionId: string,
       run: { owner: symbol; id: number },
     ) => mocks.runs.get(sessionId) === run);
-    mocks.isStopRequested.mockReturnValue(false);
+    mocks.getDeferredStop.mockReturnValue(null);
     mocks.ownsOwner.mockImplementation(
       (sessionId: string, owner: symbol) => mocks.runs.get(sessionId)?.owner === owner,
     );
@@ -93,6 +92,10 @@ describe("useAgentStream", () => {
       (sessionId: string, owner: symbol) => mocks.runs.get(sessionId)?.owner === owner
         ? (mocks.generations.get(sessionId) ?? null) : null,
     );
+    mocks.getOwnedRunId.mockImplementation(
+      (sessionId: string, owner: symbol) => mocks.runs.get(sessionId)?.owner === owner
+        ? (mocks.runs.get(sessionId)?.id ?? null) : null,
+    );
     mocks.setSessionGeneration.mockImplementation((sessionId: string, generation: number) => {
       mocks.generations.set(sessionId, generation);
       return "accepted";
@@ -100,16 +103,19 @@ describe("useAgentStream", () => {
     mocks.claimStop.mockImplementation(
       (sessionId: string, owner: symbol) => mocks.runs.get(sessionId)?.owner === owner
         && mocks.generations.has(sessionId)
-        ? { kind: "ready", generation: mocks.generations.get(sessionId) } : null,
+        ? {
+          kind: "ready", token: Symbol("test-stop"),
+          runId: mocks.runs.get(sessionId)?.id,
+          generation: mocks.generations.get(sessionId),
+        } : null,
     );
     mocks.completeStop.mockImplementation((
       sessionId: string,
-      owner: symbol,
-      generation: number,
+      claim: { runId: number; generation: number },
     ) => {
-      if (mocks.runs.get(sessionId)?.owner !== owner
-          || mocks.generations.get(sessionId) !== generation) return false;
-      mocks.stopSession(sessionId, generation);
+      if (mocks.runs.get(sessionId)?.id !== claim.runId
+          || mocks.generations.get(sessionId) !== claim.generation) return false;
+      mocks.stopSession(sessionId, claim.generation);
       mocks.runs.delete(sessionId);
       mocks.generations.delete(sessionId);
       return true;

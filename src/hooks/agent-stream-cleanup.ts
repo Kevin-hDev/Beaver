@@ -14,6 +14,11 @@ export interface PendingAdmissionBucket {
   overflowed: boolean;
 }
 
+export interface StreamStopClaimState {
+  token: symbol;
+  generation: number | null;
+}
+
 export interface StreamRecord {
   state: ManagedStreamState;
   subscribers: Map<number, (snapshot: unknown) => void>;
@@ -29,8 +34,7 @@ export interface StreamRecord {
   runOwner: symbol | null;
   runOrigin: symbol | null;
   runId: number;
-  stopRequested: boolean;
-  stoppingGeneration: number | null;
+  stopClaim: StreamStopClaimState | null;
 }
 
 export function enforceSessionLimit(records: Map<string, StreamRecord>) {

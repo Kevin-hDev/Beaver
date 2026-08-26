@@ -13,19 +13,17 @@ import { admissionErrorMessage } from "@/lib/admission-error";
 import { showToast } from "@/lib/toast-emitter";
 import { awaitPendingReasoning } from "./session-reasoning-mutation";
 import type { StreamRun } from "./agent-stream-run-ownership";
+import {
+  MAX_PENDING_ADMISSION,
+  takePendingForSession,
+  type PendingAdmission,
+} from "./agent-stream-pending-intents";
 
 interface StreamStartState {
   displayMessages: AgentMessage[];
   baseTokenCount: number;
 }
 
-interface PendingAdmission {
-  sessionId: string;
-  input: NewUserTurnInput;
-  displayMessage: AgentMessage;
-}
-
-const MAX_PENDING_ADMISSION = 8;
 export type StopStreamResult = "ignored" | "stopping" | "stopped";
 
 function resolveStreamKind(turn: TurnStart): StreamKind {
@@ -34,11 +32,10 @@ function resolveStreamKind(turn: TurnStart): StreamKind {
     : "chat";
 }
 
-function takePendingForSession(items: PendingAdmission[], sessionId: string) {
-  const selected = items.filter((item) => item.sessionId === sessionId);
-  const retained = items.filter((item) => item.sessionId !== sessionId);
-  items.splice(0, items.length, ...retained);
-  return selected;
+function removePending(items: PendingAdmission[], sessionId: string, runId?: number) {
+  for (const item of takePendingForSession(items, sessionId, runId)) {
+    agentStreamManager.removeQueuedUserMessage(item.sessionId, item.displayMessage.id);
+  }
 }
 
 export function useAgentStream() {
@@ -69,9 +66,7 @@ export function useAgentStream() {
     planMode?: boolean,
     optimisticUserMessageId?: string,
   ) => {
-    for (const item of takePendingForSession(pendingAdmissionRef.current, sessionId)) {
-      agentStreamManager.removeQueuedUserMessage(item.sessionId, item.displayMessage.id);
-    }
+    removePending(pendingAdmissionRef.current, sessionId);
     const run: StreamRun = { owner: ownerRef.current, id: ++runRef.current };
     await agentStreamManager.startSession(
       sessionId,
@@ -92,13 +87,18 @@ export function useAgentStream() {
           planMode: planMode ?? null,
         },
       });
-      if (agentStreamManager.isStopRequested(sessionId, run)) {
+      const stopClaim = agentStreamManager.getDeferredStop(
+        sessionId, run, admission.generation,
+      );
+      if (stopClaim) {
         try {
           await invoke("cancel_agent_request", { sessionId, generation: admission.generation });
-          agentStreamManager.completeDeferredStop(sessionId, run, admission.generation);
+          if (agentStreamManager.completeStop(sessionId, stopClaim)) {
+            removePending(pendingAdmissionRef.current, sessionId, stopClaim.runId);
+          }
           return;
         } catch {
-          if (!agentStreamManager.releaseDeferredStop(sessionId, run)) return;
+          if (!agentStreamManager.releaseStop(sessionId, stopClaim)) return;
         }
       }
       if (!agentStreamManager.ownsRun(sessionId, run)) {
@@ -116,9 +116,7 @@ export function useAgentStream() {
       const adoption = agentStreamManager.setSessionGeneration(sessionId, admission.generation);
       if (adoption !== "accepted") {
         if (adoption === "rejected") agentStreamManager.failSession(sessionId);
-        for (const item of takePendingForSession(pendingAdmissionRef.current, sessionId)) {
-          agentStreamManager.removeQueuedUserMessage(item.sessionId, item.displayMessage.id);
-        }
+        removePending(pendingAdmissionRef.current, sessionId, run.id);
         await invoke("cancel_agent_request", {
           sessionId,
           generation: admission.generation,
@@ -143,9 +141,7 @@ export function useAgentStream() {
         sessionId,
         admissionErrorMessage(error, i18n.t, "errors.streamStartFailed"),
       );
-      for (const item of takePendingForSession(pendingAdmissionRef.current, sessionId)) {
-        agentStreamManager.removeQueuedUserMessage(item.sessionId, item.displayMessage.id);
-      }
+      removePending(pendingAdmissionRef.current, sessionId, run.id);
     }
   }, []);
 
@@ -156,13 +152,15 @@ export function useAgentStream() {
   ): Promise<boolean> => {
     if (!agentStreamManager.ownsOwner(sessionId, ownerRef.current)
         && !agentStreamManager.adoptOwner(sessionId, ownerRef.current)) return false;
+    const runId = agentStreamManager.getOwnedRunId(sessionId, ownerRef.current);
+    if (runId === null) return false;
     const generation = agentStreamManager.getOwnedGeneration(sessionId, ownerRef.current);
     if (generation === null) {
       if (pendingAdmissionRef.current.length >= MAX_PENDING_ADMISSION
         || !agentStreamManager.queueUserMessage(sessionId, displayMessage)) {
         return false;
       }
-      pendingAdmissionRef.current.push({ sessionId, input, displayMessage });
+      pendingAdmissionRef.current.push({ sessionId, runId, input, displayMessage });
       return true;
     }
     if (!agentStreamManager.queueUserMessage(sessionId, displayMessage)) {
@@ -190,14 +188,12 @@ export function useAgentStream() {
     try {
       await invoke("cancel_agent_request", { sessionId, generation });
     } catch {
-      agentStreamManager.releaseStop(sessionId, ownerRef.current, generation);
+      agentStreamManager.releaseStop(sessionId, claim);
       return "ignored";
     }
-    const stopped = agentStreamManager.completeStop(sessionId, ownerRef.current, generation);
+    const stopped = agentStreamManager.completeStop(sessionId, claim);
     if (!stopped) return "ignored";
-    for (const item of takePendingForSession(pendingAdmissionRef.current, sessionId)) {
-      agentStreamManager.removeQueuedUserMessage(item.sessionId, item.displayMessage.id);
-    }
+    removePending(pendingAdmissionRef.current, sessionId, claim.runId);
     return "stopped";
   }, []);
 

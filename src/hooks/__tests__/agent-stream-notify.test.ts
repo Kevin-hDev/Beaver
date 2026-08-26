@@ -23,8 +23,7 @@ function makeRecord(): StreamRecord {
     runOwner: null,
     runOrigin: null,
     runId: 0,
-    stopRequested: false,
-    stoppingGeneration: null,
+    stopClaim: null,
   };
 }
 

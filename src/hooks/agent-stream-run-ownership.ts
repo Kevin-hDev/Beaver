@@ -6,22 +6,20 @@ export interface StreamRun {
 }
 
 export type StopClaim =
-  | { kind: "pending" }
-  | { kind: "ready"; generation: number };
+  | { kind: "pending"; token: symbol; runId: number }
+  | { kind: "ready"; token: symbol; runId: number; generation: number };
 
 export function assignStreamRun(record: StreamRecord, run?: StreamRun) {
   record.runOwner = run?.owner ?? null;
   record.runOrigin = run?.owner ?? null;
   record.runId = run?.id ?? 0;
-  record.stopRequested = false;
-  record.stoppingGeneration = null;
+  record.stopClaim = null;
 }
 
 export function ownsStreamRun(record: StreamRecord, run: StreamRun): boolean {
   return record.runOrigin === run.owner
     && record.runId === run.id
-    && !record.stopRequested
-    && record.stoppingGeneration === null;
+    && record.stopClaim === null;
 }
 
 export function matchesStreamRun(record: StreamRecord, run: StreamRun): boolean {
@@ -36,34 +34,46 @@ export function adoptStreamOwner(record: StreamRecord, owner: symbol): boolean {
 
 export function ownedGeneration(record: StreamRecord, owner: symbol): number | null {
   if (record.runOwner !== owner
-      || record.stopRequested
-      || record.stoppingGeneration !== null) return null;
+      || record.stopClaim !== null) return null;
   return record.activeGeneration;
 }
 
 export function claimOwnedStop(record: StreamRecord, owner: symbol): StopClaim | null {
   if (!record.state.isStreaming
-      || record.stopRequested
+      || record.stopClaim !== null
       || !adoptStreamOwner(record, owner)) return null;
-  record.stopRequested = true;
+  const token = Symbol("stream-stop-claim");
   const generation = record.activeGeneration;
-  if (generation === null) return { kind: "pending" };
-  record.stoppingGeneration = generation;
-  return { kind: "ready", generation };
+  record.stopClaim = { token, generation };
+  return generation === null
+    ? { kind: "pending", token, runId: record.runId }
+    : { kind: "ready", token, runId: record.runId, generation };
 }
 
-export function releaseOwnedStop(record: StreamRecord, owner: symbol, generation: number) {
-  if (record.runOwner === owner && record.stoppingGeneration === generation) {
-    record.stopRequested = false;
-    record.stoppingGeneration = null;
-  }
+export function bindDeferredStop(
+  record: StreamRecord,
+  run: StreamRun,
+  generation: number,
+): StopClaim | null {
+  if (!matchesStreamRun(record, run)
+      || !record.stopClaim
+      || record.stopClaim.generation !== null) return null;
+  record.stopClaim.generation = generation;
+  return { kind: "ready", token: record.stopClaim.token, runId: run.id, generation };
 }
 
-export function consumeOwnedStop(record: StreamRecord, owner: symbol, generation: number) {
-  if (record.runOwner !== owner
-      || record.activeGeneration !== generation
-      || !record.stopRequested
-      || record.stoppingGeneration !== generation) return false;
+export function releaseStopClaim(record: StreamRecord, claim: StopClaim) {
+  if (record.stopClaim?.token !== claim.token) return false;
+  record.stopClaim = null;
+  return true;
+}
+
+export function consumeStopClaim(record: StreamRecord, claim: StopClaim) {
+  if (claim.kind !== "ready"
+      || record.stopClaim?.token !== claim.token
+      || record.stopClaim.generation !== claim.generation
+      || (record.activeGeneration !== null
+        && record.activeGeneration !== claim.generation)) return false;
   clearStreamRun(record);
   return true;
 }
@@ -72,6 +82,5 @@ export function clearStreamRun(record: StreamRecord) {
   record.runOwner = null;
   record.runOrigin = null;
   record.runId = 0;
-  record.stopRequested = false;
-  record.stoppingGeneration = null;
+  record.stopClaim = null;
 }
