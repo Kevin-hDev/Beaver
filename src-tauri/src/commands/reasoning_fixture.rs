@@ -86,15 +86,19 @@ pub async fn run_reasoning_fixture_tools(
 pub async fn run_reasoning_fixture_agent_local(
     app: tauri::AppHandle,
     streams: tauri::State<'_, crate::ActiveStreams>,
+    run_id: String,
     request: ChatStreamRequestInput,
 ) -> Result<ChatStreamAdmission, String> {
-    crate::commands::agent_chat_run::start_fixture(
-        app,
-        crate::commands::agent_chat_run::ChatStreamRequest::from_input(request),
-        &streams,
-    )
+    crate::services::reasoning_fixture_run_dedup::start_once(&run_id, || async {
+        crate::commands::agent_chat_run::start_fixture(
+            app,
+            crate::commands::agent_chat_run::ChatStreamRequest::from_input(request),
+            &streams,
+        )
+        .await
+        .map_err(|_| unavailable())
+    })
     .await
-    .map_err(|_| unavailable())
 }
 
 async fn run_fixture_operations(
