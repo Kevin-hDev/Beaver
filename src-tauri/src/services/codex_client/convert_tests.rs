@@ -59,7 +59,7 @@ fn convert_splits_tool_calls_into_separate_items() {
 }
 
 #[test]
-fn convert_ignores_legacy_codex_output_items_in_tool_extra_content() {
+fn convert_replays_codex_output_items_without_rebuilding_them() {
     let reasoning = serde_json::json!({
         "type": "reasoning",
         "id": "rs_1",
@@ -91,10 +91,7 @@ fn convert_ignores_legacy_codex_output_items_in_tool_extra_content() {
 
     let (_, input) = convert_messages(&msgs);
 
-    assert_ne!(input, vec![reasoning, function]);
-    assert!(input
-        .iter()
-        .all(|item| item.get("encrypted_content").is_none()));
+    assert_eq!(input, vec![reasoning, function]);
 }
 
 #[test]

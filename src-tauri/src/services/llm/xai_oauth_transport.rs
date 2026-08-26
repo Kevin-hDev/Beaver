@@ -66,6 +66,7 @@ pub(super) async fn stream_chat(
                 request.model,
                 request.tools,
                 reasoning_capture,
+                false,
                 measurement,
             )
             .await

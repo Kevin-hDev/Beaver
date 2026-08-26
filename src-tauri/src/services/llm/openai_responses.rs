@@ -90,6 +90,7 @@ pub(super) async fn stream_chat(
         config.model,
         config.tools,
         reasoning_capture,
+        false,
         measurement,
     )
     .await
