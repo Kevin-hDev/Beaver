@@ -69,6 +69,22 @@ pub fn convert_messages_with_tools(
     (instructions, input)
 }
 
+/// Les transports Responses (Codex, OpenAI API et xAI OAuth) réutiliseront
+/// cette conversion unique lorsqu'une politique sera validée réel.
+#[allow(
+    dead_code,
+    reason = "Task 19 connects this only after a live-validated Responses policy"
+)]
+pub(crate) fn convert_continuity(
+    messages: &[ChatMessage],
+    approval: &crate::services::llm::reasoning_wire::replay::ReplayApproval<'_>,
+    input: &mut Vec<serde_json::Value>,
+) -> Result<(), crate::services::llm::reasoning_wire::replay::ReplayApplyError> {
+    crate::services::llm::reasoning_wire::replay::apply_responses_continuity(
+        messages, approval, input,
+    )
+}
+
 fn alias_replay_tool_names(
     items: &mut [serde_json::Value],
     tool_names: &crate::services::llm::tool_schema::ToolNameMap,

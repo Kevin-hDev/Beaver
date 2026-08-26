@@ -53,6 +53,15 @@ pub struct ReplayPolicy {
     pub activation: ActivationState,
 }
 
+impl ReplayPolicy {
+    /// La bascule reste centralisée dans le registre : aucun adaptateur ne peut
+    /// sérialiser une enveloppe tant que son couple exact n'est pas validé réel.
+    pub(crate) fn live_adapter(self) -> Option<(ContractId, AdapterId)> {
+        (self.activation == ActivationState::LiveValidated)
+            .then_some((self.contract_id?, self.adapter?))
+    }
+}
+
 pub fn active_routes() -> &'static [RouteContract] {
     ACTIVE_ROUTES
 }

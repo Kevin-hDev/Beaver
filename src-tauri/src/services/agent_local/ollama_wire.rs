@@ -18,6 +18,24 @@ pub fn messages_value(messages: &[ChatMessage]) -> Value {
     Value::Array(messages.iter().map(message_value).collect())
 }
 
+/// Réservé au contrat natif `/api/chat`; `chat_request` conserve encore le
+/// champ legacy jusqu'à la bascule atomique de Task 19.
+#[allow(
+    dead_code,
+    reason = "Task 19 connects this only after a live-validated native policy"
+)]
+pub(crate) fn apply_continuity(
+    messages: &[ChatMessage],
+    approval: &crate::services::llm::reasoning_wire::replay::ReplayApproval<'_>,
+    payload_messages: &mut [Value],
+) -> Result<(), crate::services::llm::reasoning_wire::replay::ReplayApplyError> {
+    crate::services::llm::reasoning_wire::replay::apply_ollama_continuity(
+        messages,
+        approval,
+        payload_messages,
+    )
+}
+
 fn message_value(message: &ChatMessage) -> Value {
     let mut value = Map::new();
     value.insert("role".into(), json!(message.role));

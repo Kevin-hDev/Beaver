@@ -98,6 +98,20 @@ pub fn messages_to_openai_with_tools(
         .collect()
 }
 
+/// Prépare le raccordement futur sans modifier le chemin historique tant que
+/// les politiques du registre restent désactivées.
+#[allow(
+    dead_code,
+    reason = "Task 19 connects this only after a live-validated chat policy"
+)]
+pub(crate) fn apply_continuity(
+    messages: &[ChatMessage],
+    approval: &super::reasoning_wire::replay::ReplayApproval<'_>,
+    payload_messages: &mut [Value],
+) -> Result<(), super::reasoning_wire::replay::ReplayApplyError> {
+    super::reasoning_wire::replay::apply_chat_continuity(messages, approval, payload_messages)
+}
+
 #[cfg(test)]
 #[path = "stream_convert_tests.rs"]
 mod tests;

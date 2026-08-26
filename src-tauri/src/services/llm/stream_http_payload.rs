@@ -55,3 +55,16 @@ fn apply_tools(payload: &mut serde_json::Value, cfg: &RequestConfig<'_>, provide
         payload["tool_stream"] = true.into();
     }
 }
+
+/// Le futur raccordement des routes chat passe par le même constructeur de
+/// payload ; aucune seconde branche de transport n'est créée.
+#[allow(
+    dead_code,
+    reason = "Task 19 connects this only after a live-validated chat policy"
+)]
+pub(crate) fn apply_continuity(
+    approval: &super::reasoning_wire::replay::ReplayApproval<'_>,
+    payload: &mut serde_json::Value,
+) -> Result<(), super::reasoning_wire::replay::ReplayApplyError> {
+    super::reasoning_wire::replay::apply_chat_payload_continuity(approval, payload)
+}

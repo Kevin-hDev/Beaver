@@ -3,6 +3,11 @@ mod chat_text;
 mod gemini;
 mod mistral;
 mod openrouter;
+#[allow(
+    dead_code,
+    reason = "Task 18 prepares adapters; Task 19 alone connects live-validated routes"
+)]
+pub(crate) mod replay;
 
 use crate::services::reasoning_continuity::bounded_json::serialized_len_bounded_from;
 use crate::services::reasoning_continuity::capture_budget::CaptureBudget;

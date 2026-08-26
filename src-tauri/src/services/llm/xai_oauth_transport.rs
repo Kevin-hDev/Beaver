@@ -5,6 +5,8 @@ use crate::services::llm_oauth::{XaiBackend, XaiCatalogModel};
 use crate::services::secure_http::{read_bounded, AuthenticatedClient, PROVIDER_ERROR_LIMIT};
 use tokio_util::sync::CancellationToken;
 
+pub(super) use super::xai_oauth_transport_status::classify_status;
+
 pub(super) struct StreamContext<'a> {
     pub on_event: &'a AgentEventEmitter,
     pub request: super::stream_http::RequestConfig<'a>,
@@ -161,6 +163,20 @@ pub(super) fn build_responses_payload(
     payload
 }
 
+/// xAI OAuth réutilisera le transport Responses déjà en place lorsque son
+/// couple exact sera live-validé ; la route API xAI ne reçoit aucun dispatch.
+#[allow(
+    dead_code,
+    reason = "Task 19 connects this only after a live-validated xAI OAuth policy"
+)]
+pub(crate) fn apply_continuity(
+    messages: &[ChatMessage],
+    approval: &super::reasoning_wire::replay::ReplayApproval<'_>,
+    input: &mut Vec<serde_json::Value>,
+) -> Result<(), super::reasoning_wire::replay::ReplayApplyError> {
+    crate::services::codex_client::convert::convert_continuity(messages, approval, input)
+}
+
 async fn post_responses(
     model: &XaiCatalogModel,
     payload: &serde_json::Value,
@@ -209,23 +225,5 @@ pub(super) const fn backend_path(backend: XaiBackend) -> &'static str {
     match backend {
         XaiBackend::ChatCompletions => "/chat/completions",
         XaiBackend::Responses => "/responses",
-    }
-}
-
-pub(super) fn classify_status(status: u16, body: &str, has_retry_after: bool) -> &'static str {
-    match status {
-        401 => "oauth_reauthentication_required",
-        403 => "provider_access_unavailable",
-        429 if !has_retry_after
-            && crate::services::llm::provider_error::safe_details(body)
-                .error_code
-                .as_deref()
-                == Some("resource-exhausted") =>
-        {
-            "provider_quota_exhausted"
-        }
-        429 => "rate_limit",
-        500..=599 => "provider_temporarily_unavailable",
-        _ => "provider_request_rejected",
     }
 }

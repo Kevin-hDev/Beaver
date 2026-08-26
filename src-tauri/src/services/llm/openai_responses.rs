@@ -47,6 +47,20 @@ pub(super) fn build_request(config: &RequestConfig<'_>) -> serde_json::Value {
     body
 }
 
+/// Point de raccordement unique du transport Responses existant, volontairement
+/// inactif tant que le registre ne délivre aucune approbation live.
+#[allow(
+    dead_code,
+    reason = "Task 19 connects this only after a live-validated OpenAI policy"
+)]
+pub(crate) fn apply_continuity(
+    messages: &[crate::services::agent_local::types_ollama::ChatMessage],
+    approval: &super::reasoning_wire::replay::ReplayApproval<'_>,
+    input: &mut Vec<serde_json::Value>,
+) -> Result<(), super::reasoning_wire::replay::ReplayApplyError> {
+    crate::services::codex_client::convert::convert_continuity(messages, approval, input)
+}
+
 fn requested_effort(config: &RequestConfig<'_>) -> Option<&'static str> {
     if config.think || config.reasoning_mode == Some("off") {
         return crate::services::reasoning::openai_effort(config.reasoning_mode);
