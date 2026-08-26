@@ -5,10 +5,14 @@ use crate::models::agent_session_contract::{
     SubagentLastActivityView,
 };
 use crate::services::reasoning_continuity::contract::{ContinuationUse, ReasoningModeId, RouteId};
-use crate::services::reasoning_continuity::registry::{ActivationState, ReplayRequirement};
 use crate::services::reasoning_continuity::envelope::{CompletionState, ReasoningEnvelope};
+use crate::services::reasoning_continuity::registry::{ActivationState, ReplayRequirement};
 
 use super::types_session::{AgentSession, CloneMode};
+
+// Remote attend une preuve dédiée `previous_response_id`; les fixtures locales
+// d'items Responses ne prouvent pas cette continuité côté fournisseur.
+pub const REMOTE_PREVIOUS_RESPONSE_CONTINUATION_AVAILABLE: bool = false;
 
 pub fn from_session(session: &AgentSession) -> Result<AgentSessionView, String> {
     Ok(AgentSessionView {
@@ -84,7 +88,9 @@ pub fn from_session(session: &AgentSession) -> Result<AgentSessionView, String> 
     })
 }
 
-fn effective_preserve_reasoning(session: &AgentSession) -> super::types_session::PreserveReasoningSetting {
+fn effective_preserve_reasoning(
+    session: &AgentSession,
+) -> super::types_session::PreserveReasoningSetting {
     let Some(capability) = continuity_capability(session) else {
         return session.preserve_reasoning;
     };
@@ -93,6 +99,12 @@ fn effective_preserve_reasoning(session: &AgentSession) -> super::types_session:
     {
         // Une route qui exige la continuité ne peut jamais exposer une option
         // sélectionnée mais interdite : Local est la valeur déterministe.
+        super::types_session::PreserveReasoningSetting::Local
+    } else if session.preserve_reasoning == super::types_session::PreserveReasoningSetting::Remote
+        && !capability.remote_available
+    {
+        // Une ancienne préférence Remote ne doit jamais laisser l'interface
+        // afficher un choix devenu indisponible.
         super::types_session::PreserveReasoningSetting::Local
     } else {
         session.preserve_reasoning
@@ -117,13 +129,23 @@ pub fn continuity_capability(session: &AgentSession) -> Option<ContinuityCapabil
             )
         })
         .collect::<Vec<_>>();
-    if policies.is_empty() || policies.iter().any(|policy| policy.activation != ActivationState::LiveValidated) {
+    if policies.is_empty()
+        || policies
+            .iter()
+            .any(|policy| policy.activation != ActivationState::LiveValidated)
+    {
         return None;
     }
 
-    let requirement = if policies.iter().any(|policy| policy.requirement == ReplayRequirement::Required) {
+    let requirement = if policies
+        .iter()
+        .any(|policy| policy.requirement == ReplayRequirement::Required)
+    {
         ReplayRequirement::Required
-    } else if policies.iter().any(|policy| policy.requirement == ReplayRequirement::Optional) {
+    } else if policies
+        .iter()
+        .any(|policy| policy.requirement == ReplayRequirement::Optional)
+    {
         ReplayRequirement::Optional
     } else {
         ReplayRequirement::Forbidden
@@ -131,20 +153,13 @@ pub fn continuity_capability(session: &AgentSession) -> Option<ContinuityCapabil
     if requirement == ReplayRequirement::Forbidden {
         return None;
     }
-    let remote_available = policies.iter().all(|policy| {
-        policy.fixture_id.is_some() && policy.fixture_date.is_some()
-    });
+    let remote_available = REMOTE_PREVIOUS_RESPONSE_CONTINUATION_AVAILABLE
+        && policies
+            .iter()
+            .all(|policy| policy.fixture_id.is_some() && policy.fixture_date.is_some());
     let (requirement, state, explanation_key) = match requirement {
-        ReplayRequirement::Required => (
-            "required",
-            "locked",
-            "agentLocal.continuityRequired",
-        ),
-        ReplayRequirement::Optional => (
-            "optional",
-            "available",
-            "agentLocal.continuityOptional",
-        ),
+        ReplayRequirement::Required => ("required", "locked", "agentLocal.continuityRequired"),
+        ReplayRequirement::Optional => ("optional", "available", "agentLocal.continuityOptional"),
         ReplayRequirement::Forbidden => return None,
     };
     Some(ContinuityCapability {
@@ -175,7 +190,9 @@ pub(super) fn replay_status(envelope: Option<&ReasoningEnvelope>) -> ReasoningRe
             ReasoningReplayStatus::Compacted
         }
         CompletionState::Compacted => ReasoningReplayStatus::Unavailable,
-        CompletionState::Complete if envelope.validate().is_ok() => ReasoningReplayStatus::Preserved,
+        CompletionState::Complete if envelope.validate().is_ok() => {
+            ReasoningReplayStatus::Preserved
+        }
         CompletionState::Complete => ReasoningReplayStatus::Unavailable,
     }
 }

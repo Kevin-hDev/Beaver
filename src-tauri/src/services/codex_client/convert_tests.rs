@@ -16,7 +16,7 @@ fn convert_extracts_system_as_instructions() {
 #[test]
 fn convert_user_images_to_responses_parts() {
     let msgs = vec![
-        ChatMessage::user("Decris cette image".into()).with_images(vec!["iVBORw0KGgo=".into()])
+        ChatMessage::user("Decris cette image".into()).with_images(vec!["iVBORw0KGgo=".into()]),
     ];
     let (_, input) = convert_messages(&msgs);
     assert_eq!(input[0]["role"], "user");
@@ -59,7 +59,7 @@ fn convert_splits_tool_calls_into_separate_items() {
 }
 
 #[test]
-fn convert_replays_codex_output_items_without_rebuilding_them() {
+fn codex_opaque_legacy_items_never_bypass_a_forbidden_target() {
     let reasoning = serde_json::json!({
         "type": "reasoning",
         "id": "rs_1",
@@ -89,9 +89,22 @@ fn convert_replays_codex_output_items_without_rebuilding_them() {
         }]),
     )];
 
-    let (_, input) = convert_messages(&msgs);
+    let target = crate::services::reasoning_continuity::contract::ContinuationTarget::Forbidden(
+        crate::services::reasoning_continuity::contract::NonReplayTarget {
+            route_id: crate::services::reasoning_continuity::contract::RouteId::CodexOauth,
+            model_id: "gpt-5.6-sol".into(),
+            reasoning_mode: crate::services::reasoning_continuity::contract::ReasoningModeId::High,
+        },
+    );
+    let (_, input) = convert_messages_with_tools_and_continuity(&msgs, &[], Some(&target)).unwrap();
 
-    assert_eq!(input, vec![reasoning, function]);
+    assert!(
+        !input
+            .iter()
+            .any(|item| item == &reasoning || item == &function)
+    );
+    assert_eq!(input[0]["role"], "assistant");
+    assert_eq!(input[1]["type"], "function_call");
 }
 
 #[test]

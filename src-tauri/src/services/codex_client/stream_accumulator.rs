@@ -3,7 +3,7 @@ use crate::services::agent_local::types_ollama::{StreamOutcome, StreamResult};
 use crate::services::compress::realtime_budget::RealtimeBudget;
 
 use super::limits::MAX_STREAM_TEXT_BYTES;
-use super::{replay::ReplayCollector, stream_protocol, stream_tool::StreamTool};
+use super::{stream_protocol, stream_tool::StreamTool};
 
 pub(super) struct StreamAccumulator<'a> {
     result: StreamResult,
@@ -11,8 +11,6 @@ pub(super) struct StreamAccumulator<'a> {
     text_bytes: usize,
     tool: StreamTool<'a>,
     reasoning_capture: Option<crate::services::llm::reasoning_wire::ReasoningCapture>,
-    legacy_replay: Option<ReplayCollector>,
-    tools: &'a [serde_json::Value],
     buffer_content: bool,
     realtime_budget: Option<RealtimeBudget>,
     usage_context: crate::services::provider_usage::UsageContext<'a>,
@@ -33,7 +31,6 @@ impl<'a> StreamAccumulator<'a> {
             buffer_content,
             realtime_budget,
             None,
-            false,
         )
     }
 
@@ -44,17 +41,13 @@ impl<'a> StreamAccumulator<'a> {
         buffer_content: bool,
         realtime_budget: Option<RealtimeBudget>,
         reasoning_capture: Option<crate::services::llm::reasoning_wire::ReasoningCapture>,
-        legacy_codex_replay: bool,
     ) -> Self {
-        let use_legacy_replay = legacy_codex_replay && reasoning_capture.is_none();
         Self {
             result: StreamResult::default(),
             token_count: 0,
             text_bytes: 0,
             tool: StreamTool::new(tools),
             reasoning_capture,
-            legacy_replay: use_legacy_replay.then(ReplayCollector::default),
-            tools,
             buffer_content,
             realtime_budget,
             usage_context: crate::services::provider_usage::UsageContext::responses(
@@ -154,13 +147,6 @@ impl<'a> StreamAccumulator<'a> {
         let item = event
             .get("item")
             .ok_or_else(|| "provider_request_rejected".to_string())?;
-        if let Some(replay) = self.legacy_replay.as_mut() {
-            let mut replay_item = item.clone();
-            super::replay::restore_tool_name(&mut replay_item, self.tools);
-            replay
-                .capture(&replay_item)
-                .map_err(|_| "provider_payload_too_large".to_string())?;
-        }
         if item["type"].as_str() != Some("function_call") {
             return Ok(());
         }
@@ -195,9 +181,6 @@ impl<'a> StreamAccumulator<'a> {
                 .observe_persisted_tool_links(&self.result.tool_calls, &self.result.tool_call_ids);
             capture.finish_complete()
         });
-        if let Some(replay) = self.legacy_replay.take() {
-            replay.attach(&mut self.result);
-        }
     }
 
     fn attach_partial_continuity(&mut self) {
@@ -205,9 +188,6 @@ impl<'a> StreamAccumulator<'a> {
             .reasoning_capture
             .take()
             .and_then(|mut capture| capture.finish_partial());
-        if let Some(replay) = self.legacy_replay.take() {
-            replay.attach(&mut self.result);
-        }
     }
 
     fn record_text_size(&mut self, delta: &str) -> Result<(), String> {

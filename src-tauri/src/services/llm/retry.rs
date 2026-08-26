@@ -112,13 +112,23 @@ pub async fn retry_stream(
         .await
         {
             Ok(result) => return Ok(result),
-            Err(e) if is_retryable_error(&e) && attempt < policy.max_retries => {
+            Err(e)
+                if is_retryable_error(&e)
+                    && automatic_retry_allowed(tools)
+                    && attempt < policy.max_retries =>
+            {
                 attempt += 1;
                 continue;
             }
             Err(e) => return Err(e),
         }
     }
+}
+
+fn automatic_retry_allowed(_tools: &[serde_json::Value]) -> bool {
+    // Aucun transport provider ne transmet encore de clé d'idempotence : une
+    // erreur réseau peut cacher une facturation ou l'exécution d'un outil.
+    false
 }
 
 fn take_attempt(next_attempt: &mut u32) -> u32 {
@@ -156,7 +166,8 @@ async fn wait_for_retry(
 #[cfg(test)]
 mod tests {
     use super::{
-        is_retryable_error, retry_delay, retry_policy, take_attempt, wait_for_retry, CODEX_POLICY,
+        CODEX_POLICY, automatic_retry_allowed, is_retryable_error, retry_delay, retry_policy,
+        take_attempt, wait_for_retry,
     };
     use tokio_util::sync::CancellationToken;
 
@@ -171,6 +182,14 @@ mod tests {
         assert!(!is_retryable_error("service_tier_unavailable"));
         assert!(!is_retryable_error("Codex: Invalid request."));
         assert!(!is_retryable_error("SSE: private transport details"));
+    }
+
+    #[test]
+    fn provider_requests_never_retry_without_an_idempotency_key() {
+        assert!(!automatic_retry_allowed(&[]));
+        assert!(!automatic_retry_allowed(&[
+            serde_json::json!({"type": "function"})
+        ]));
     }
 
     #[test]

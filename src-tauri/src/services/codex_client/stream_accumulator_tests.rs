@@ -122,7 +122,6 @@ fn completed_responses_stream_persists_native_items_without_tool_extra_content()
         false,
         None,
         Some(capture),
-        true,
     );
     accumulator
         .apply(
@@ -194,12 +193,7 @@ fn completed_responses_stream_persists_native_items_without_tool_extra_content()
 }
 
 #[test]
-fn legacy_codex_replay_is_used_only_without_an_active_native_capture() {
-    use crate::services::llm::reasoning_wire::{ReasoningCapture, ReasoningCaptureContext};
-    use crate::services::reasoning_continuity::contract::{
-        CredentialScope, ReasoningModeId, RouteId,
-    };
-
+fn opaque_codex_items_without_native_capture_are_not_persisted_for_replay() {
     let start_event = serde_json::json!({
         "type": "response.output_item.added",
         "item": {"type": "function_call", "call_id": "call_1", "name": "lookup"}
@@ -214,7 +208,7 @@ fn legacy_codex_replay_is_used_only_without_an_active_native_capture() {
         }
     });
     let mut legacy =
-        StreamAccumulator::new_with_capture("openai", "gpt-5.6-luna", &[], false, None, None, true);
+        StreamAccumulator::new_with_capture("openai", "gpt-5.6-luna", &[], false, None, None);
     legacy.apply(&NoopSink, &start_event).unwrap();
     legacy.apply(&NoopSink, &tool_event).unwrap();
     let legacy = legacy
@@ -225,36 +219,8 @@ fn legacy_codex_replay_is_used_only_without_an_active_native_capture() {
         .unwrap()
         .unwrap()
         .into_result();
-    assert!(legacy.tool_call_extra_content[0].is_some());
-
-    let capture = ReasoningCapture::new(ReasoningCaptureContext {
-        route_id: RouteId::CodexOauth,
-        model_id: "gpt-5.6-luna".into(),
-        credential_scope: CredentialScope::authenticated("fixture-scope").unwrap(),
-        reasoning_mode: ReasoningModeId::Medium,
-    })
-    .unwrap();
-    let mut native = StreamAccumulator::new_with_capture(
-        "openai",
-        "gpt-5.6-luna",
-        &[],
-        false,
-        None,
-        Some(capture),
-        true,
-    );
-    native.apply(&NoopSink, &start_event).unwrap();
-    native.apply(&NoopSink, &tool_event).unwrap();
-    let native = native
-        .apply(
-            &NoopSink,
-            &serde_json::json!({"type": "response.completed"}),
-        )
-        .unwrap()
-        .unwrap()
-        .into_result();
-    assert!(native.tool_call_extra_content.is_empty());
-    assert!(native.continuation.is_some());
+    assert!(legacy.tool_call_extra_content.is_empty());
+    assert!(legacy.continuation.is_none());
 }
 
 #[test]
