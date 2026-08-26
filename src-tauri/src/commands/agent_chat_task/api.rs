@@ -176,6 +176,13 @@ pub(crate) async fn finish_turn(
     if let Some(journal) = journal.as_mut() {
         journal.commit_turn().await?;
         let (turn_id, user_message_id, assistant_message_id) = journal.turn_ids();
+        super::reasoning_diagnostics::record_persisted(
+            &params.session_id,
+            &params.request_id,
+            turn_id,
+            assistant_message_id,
+        )
+        .await;
         let _ = params.on_event.send(
             crate::services::agent_local::types_ollama::StreamEvent::TurnCommitted {
                 turn_id: turn_id.to_string(),

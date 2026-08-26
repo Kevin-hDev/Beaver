@@ -132,7 +132,16 @@ macro_rules! generate {
 
 macro_rules! for_build {
     () => {{
-        #[cfg(feature = "e2e")]
+        #[cfg(all(feature = "e2e", debug_assertions))]
+        {
+            crate::invoke_handler::generate![
+                crate::commands::e2e_request_exit,
+                crate::commands::e2e_native_webviews,
+                crate::commands::e2e_verify_child_chat_stream_read_only,
+                crate::commands::export_reasoning_fixture_report
+            ]
+        }
+        #[cfg(all(feature = "e2e", not(debug_assertions)))]
         {
             crate::invoke_handler::generate![
                 crate::commands::e2e_request_exit,
@@ -140,7 +149,11 @@ macro_rules! for_build {
                 crate::commands::e2e_verify_child_chat_stream_read_only
             ]
         }
-        #[cfg(not(feature = "e2e"))]
+        #[cfg(all(not(feature = "e2e"), debug_assertions))]
+        {
+            crate::invoke_handler::generate![crate::commands::export_reasoning_fixture_report]
+        }
+        #[cfg(all(not(feature = "e2e"), not(debug_assertions)))]
         {
             crate::invoke_handler::generate![]
         }

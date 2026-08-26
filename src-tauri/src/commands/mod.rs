@@ -92,6 +92,8 @@ pub mod ollama_updates;
 pub mod ollama_version;
 pub mod personality;
 pub mod projects;
+#[cfg(debug_assertions)]
+pub mod reasoning_fixture;
 pub mod registry;
 pub mod search;
 #[cfg(test)]
@@ -167,6 +169,8 @@ pub use ollama_updates::*;
 pub use ollama_version::*;
 pub use personality::*;
 pub use projects::*;
+#[cfg(debug_assertions)]
+pub use reasoning_fixture::*;
 pub use registry::*;
 pub use search::*;
 pub use subagents::*;

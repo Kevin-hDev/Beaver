@@ -49,6 +49,15 @@ pub async fn mark_phase(session_id: &str, request_id: &str, phase: &str, message
     .await;
 }
 
+pub async fn record_reasoning(session_id: &str, request_id: &str, message: &str) {
+    let _ = support::update_run(session_id, request_id, |_session, run| {
+        run.phase = "reasoning".to_string();
+        run.safe_summary = Some(support::clip(message));
+        support::push_event(run, "reasoning", message, None, None);
+    })
+    .await;
+}
+
 pub async fn record_retry(session_id: &str, request_id: &str, message: &str) {
     let _ = support::update_run(session_id, request_id, |_session, run| {
         run.phase = "retrying".to_string();

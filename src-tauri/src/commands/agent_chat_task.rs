@@ -11,6 +11,7 @@ mod ollama;
 mod ollama_thinking;
 mod params;
 mod prompt_settings;
+mod reasoning_diagnostics;
 mod session_events;
 pub(crate) mod tool_policy;
 mod workspace_prompt;

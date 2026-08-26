@@ -73,6 +73,13 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
         params.think.clone(),
     );
     request.capture_reasoning = params.capture_reasoning;
+    if !request.capture_reasoning {
+        crate::services::reasoning_continuity::diagnostics::record_blocked(
+            params.session_id,
+            params.request_id,
+        )
+        .await;
+    }
     super::stream_diagnostics_model::record_model_request(
         params.session_id,
         params.request_id,
