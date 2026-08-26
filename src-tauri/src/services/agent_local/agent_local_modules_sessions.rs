@@ -18,6 +18,9 @@ mod conversation_history_validation;
 pub mod conversation_input;
 pub(crate) mod conversation_resume;
 pub(crate) mod conversation_reasoning_state;
+pub(crate) mod conversation_journal;
+#[cfg(test)]
+mod conversation_journal_tests;
 #[cfg(test)]
 mod conversation_input_tests;
 #[cfg(test)]

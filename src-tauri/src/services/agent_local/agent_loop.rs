@@ -24,7 +24,8 @@ pub async fn run_agent_loop(
     permission_mode: &str,
     plan_mode_active: bool,
     context_usage_seed: ContextUsageSeed,
-) -> Result<u32, String> {
+    mut journal: Option<&mut super::conversation_journal::ConversationJournal>,
+) -> Result<super::agent_loop_finish::CompletedStreamTurn, String> {
     let (mut total_eval, mut total_prompt) = (Some(0), Some(0));
     let (mut last_prompt, mut last_eval) = (None, None);
     let mut generation = super::generation_metrics::GenerationAggregate::default();
@@ -72,6 +73,11 @@ pub async fn run_agent_loop(
         let input_tokens = request_output.input_tokens;
         let result = request_output.result;
         if interrupted {
+            if let Some(journal) = journal.as_deref_mut() {
+                journal
+                    .persist_partial(agent_loop_support::build_assistant_message(&result))
+                    .await?;
+            }
             super::stream_buffer::finalize_interrupted_content(on_event, &result, plan_active);
             context_usage_runtime::emit_result(on_event, input_tokens, &result, configured_context);
             eager_handle.abort();
@@ -116,7 +122,11 @@ pub async fn run_agent_loop(
             .finalize_content_phase(on_event, &result, plan_active)
             .await;
         context_usage_runtime::emit_result(on_event, input_tokens, &result, configured_context);
-        messages.push(agent_loop_support::build_for_plan(&result, plan_active));
+        let assistant = agent_loop_support::build_for_plan(&result, plan_active);
+        if let Some(journal) = journal.as_deref_mut() {
+            journal.persist_assistant_step(&assistant).await?;
+        }
+        messages.push(assistant);
         compression
             .try_run_and_reset(messages, &mut last_prompt, &mut last_eval, cancel.clone())
             .await;
@@ -146,12 +156,7 @@ pub async fn run_agent_loop(
         }
         let control_only = super::subagent_tool_control::is_control_only(&result.tool_calls);
         let eager_results = eager_handle.await.unwrap_or_default();
-        let tool_compression = (!control_only).then(|| {
-            compression.tool_compression(
-                token_counting::sum_real_counts(last_prompt, last_eval),
-                cancel.clone(),
-            )
-        });
+        let tool_start = messages.len();
         let tool_outcome = tool_executor::run_tools_with_eager(
             on_event,
             messages,
@@ -165,11 +170,14 @@ pub async fn run_agent_loop(
             plan_active,
             Some(eager_results),
             &[],
-            tool_compression.as_ref(),
+            None,
         )
         .await;
         let compressed_during_tools = tool_outcome.compressed;
         let stop_after_tools = tool_outcome.apply_follow_ups(messages);
+        if let Some(journal) = journal.as_deref_mut() {
+            journal.persist_tool_results(&messages[tool_start..]).await?;
+        }
         super::extension_tool_set::refresh_and_record(&mut tools, &session_id, &request_id).await?;
         subagents
             .wait_after_tool_batch(control_only, messages, cancel.clone())
@@ -183,7 +191,6 @@ pub async fn run_agent_loop(
         }
     }
     Ok(super::agent_loop_finish::finish(
-        on_event,
         (total_eval, total_prompt, last_prompt, last_eval),
         generation,
         (&session_id, &request_id),

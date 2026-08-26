@@ -59,11 +59,12 @@ async fn run_stream_task_inner(mut params: StreamTaskParams) -> Result<Vec<ChatM
         params.on_event = params.on_event.with_permission_emitter(permission_emitter);
     }
     validate_canonical_target(&params)?;
-    let messages = params
+    let conversation = params
         .conversation
         .take()
-        .ok_or_else(|| "conversation_admission_failed".to_string())?
-        .into_messages()?;
+        .ok_or_else(|| "conversation_admission_failed".to_string())?;
+    let (messages, mut journal) = conversation
+        .into_messages_and_journal(params.session_id.clone(), params.request_id.clone())?;
     if compress::is_compress_command(&messages) {
         let working_dir = common::resolve_working_dir(&params.working_dir)?;
         common::update_working_dir(&params.session_id, &working_dir).await?;
@@ -86,9 +87,9 @@ async fn run_stream_task_inner(mut params: StreamTaskParams) -> Result<Vec<ChatM
     session_events::emit_started(&params.session_id, &mode.mode);
 
     if chat_engine(&params.provider) == ChatEngine::Ollama {
-        ollama::run(params, messages, mode, response_language).await
+        ollama::run(params, messages, mode, response_language, &mut journal).await
     } else {
-        api::run(params, messages, mode, response_language).await
+        api::run(params, messages, mode, response_language, &mut journal).await
     }
 }
 

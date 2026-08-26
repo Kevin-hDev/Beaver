@@ -1,11 +1,20 @@
 use super::agent_loop_completion;
 use super::agent_loop_support;
 use super::generation_metrics::GenerationAggregate;
-use super::stream_diagnostics;
 use super::stream_events::AgentEventEmitter;
 use super::types_ollama::StreamEvent;
 
 pub type CompletionCounts = (Option<u32>, Option<u32>, Option<u32>, Option<u32>);
+
+pub struct CompletedStreamTurn {
+    event: StreamEvent,
+}
+
+impl CompletedStreamTurn {
+    pub fn emit_done(self, on_event: &AgentEventEmitter) {
+        let _ = on_event.send(self.event);
+    }
+}
 
 pub fn emit_turn_end(on_event: &AgentEventEmitter, compressed_after_tools: bool) {
     if !compressed_after_tools {
@@ -14,18 +23,17 @@ pub fn emit_turn_end(on_event: &AgentEventEmitter, compressed_after_tools: bool)
 }
 
 pub async fn finish(
-    on_event: &AgentEventEmitter,
     counts: CompletionCounts,
     generation: GenerationAggregate,
     request: (&str, &str),
     ollama_model: Option<&str>,
-) -> u32 {
-    let token_total = agent_loop_completion::emit_done(
-        on_event, counts.0, counts.1, counts.2, counts.3, generation,
+) -> CompletedStreamTurn {
+    let (event, _) = agent_loop_completion::done_event(
+        counts.0, counts.1, counts.2, counts.3, generation,
     );
-    stream_diagnostics::record_completed(request.0, request.1).await;
     if let Some(model) = ollama_model {
         agent_loop_support::decharge_gpu(model).await;
     }
-    token_total
+    let _ = request;
+    CompletedStreamTurn { event }
 }

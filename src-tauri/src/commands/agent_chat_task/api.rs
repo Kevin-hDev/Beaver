@@ -9,6 +9,7 @@ pub(crate) async fn run(
     mut messages: Vec<ChatMessage>,
     mode: StreamMode,
     response_language: String,
+    journal: &mut Option<crate::services::agent_local::conversation_journal::ConversationJournal>,
 ) -> Result<Vec<ChatMessage>, String> {
     let canonical_provider = llm::route::canonical_provider_id(&params.provider);
     let fast_mode =
@@ -136,7 +137,7 @@ pub(crate) async fn run(
             )
         }
     };
-    llm::agent_loop::run_agent_loop(
+    let completed = llm::agent_loop::run_agent_loop(
         &params.on_event,
         &params.provider,
         fast_mode,
@@ -149,15 +150,42 @@ pub(crate) async fn run(
         params.session_id.clone(),
         params.request_id.clone(),
         params.parent_message_inbox.clone(),
-        params.cancel,
+        params.cancel.clone(),
         ctx.native,
         ctx.configured,
         &mode.mode,
         plan_mode_active,
         context_usage_seed,
+        journal.as_mut(),
     )
     .await?;
+    finish_turn(&params, journal, completed).await?;
     Ok(messages)
+}
+
+pub(crate) async fn finish_turn(
+    params: &StreamTaskParams,
+    journal: &mut Option<crate::services::agent_local::conversation_journal::ConversationJournal>,
+    completed: crate::services::agent_local::agent_loop_finish::CompletedStreamTurn,
+) -> Result<(), String> {
+    if let Some(journal) = journal.as_mut() {
+        journal.commit_turn().await?;
+        let (turn_id, user_message_id, assistant_message_id) = journal.turn_ids();
+        let _ = params.on_event.send(
+            crate::services::agent_local::types_ollama::StreamEvent::TurnCommitted {
+                turn_id: turn_id.to_string(),
+                user_message_id: user_message_id.to_string(),
+                assistant_message_id: assistant_message_id.to_string(),
+            },
+        );
+    }
+    crate::services::agent_local::stream_diagnostics::record_completed(
+        &params.session_id,
+        &params.request_id,
+    )
+    .await;
+    completed.emit_done(&params.on_event);
+    Ok(())
 }
 
 async fn resolve_plan_mode(params: &StreamTaskParams) -> bool {

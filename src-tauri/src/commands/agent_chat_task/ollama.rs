@@ -11,6 +11,7 @@ pub(crate) async fn run(
     mut messages: Vec<ChatMessage>,
     mode: StreamMode,
     response_language: String,
+    journal: &mut Option<crate::services::agent_local::conversation_journal::ConversationJournal>,
 ) -> Result<Vec<ChatMessage>, String> {
     let ctx = crate::services::compress::context_resolve::resolve_ollama(&params.model).await;
     let settings = crate::services::agent_local::agent_settings::load().await;
@@ -140,7 +141,7 @@ pub(crate) async fn run(
         .await;
     }
 
-    agent_loop::run_agent_loop(
+    let completed = agent_loop::run_agent_loop(
         &params.on_event,
         &mut messages,
         &params.model,
@@ -150,14 +151,16 @@ pub(crate) async fn run(
         params.session_id.clone(),
         params.request_id.clone(),
         params.parent_message_inbox.clone(),
-        params.cancel,
+        params.cancel.clone(),
         ctx.native,
         ctx.configured,
         &mode.mode,
         plan_mode_active,
         context_usage_seed,
+        journal.as_mut(),
     )
     .await?;
+    super::api::finish_turn(&params, journal, completed).await?;
     Ok(messages)
 }
 

@@ -27,6 +27,34 @@ impl StreamConversation {
             Self::InternalLegacy(messages) => Ok(messages),
         }
     }
+
+    pub(crate) fn into_messages_and_journal(
+        self,
+        session_id: String,
+        request_id: String,
+    ) -> Result<
+        (
+            Vec<ChatMessage>,
+            Option<crate::services::agent_local::conversation_journal::ConversationJournal>,
+        ),
+        String,
+    > {
+        match self {
+            Self::Canonical(admitted) => {
+                let journal =
+                    crate::services::agent_local::conversation_journal::ConversationJournal::new(
+                        session_id,
+                        admitted.turn_id.clone(),
+                        admitted.user_message_id.clone(),
+                        admitted.assistant_message_id.clone(),
+                        request_id,
+                    )?;
+                Ok((Self::Canonical(admitted).into_messages()?, Some(journal)))
+            }
+            #[allow(deprecated)]
+            Self::InternalLegacy(messages) => Ok((messages, None)),
+        }
+    }
 }
 
 fn convert(message: ProviderMessage) -> Result<ChatMessage, String> {

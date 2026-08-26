@@ -35,7 +35,10 @@ pub async fn run_agent_loop(
     permission_mode: &str,
     plan_mode_active: bool,
     context_usage_seed: ContextUsageSeed,
-) -> Result<u32, String> {
+    mut journal: Option<
+        &mut crate::services::agent_local::conversation_journal::ConversationJournal,
+    >,
+) -> Result<crate::services::agent_local::agent_loop_finish::CompletedStreamTurn, String> {
     let (mut total_eval, mut total_prompt) = (Some(0), Some(0));
     let (mut last_prompt, mut last_eval) = (None, None);
     let mut generation = GenerationAggregate::default();
@@ -88,6 +91,11 @@ pub async fn run_agent_loop(
         let input_tokens = request_output.input_tokens;
         let result = request_output.result;
         if interrupted {
+            if let Some(journal) = journal.as_deref_mut() {
+                journal
+                    .persist_partial(super::agent_loop_message::build_assistant_message(&result))
+                    .await?;
+            }
             crate::services::agent_local::stream_buffer::finalize_interrupted_content(
                 on_event,
                 &result,
@@ -130,10 +138,11 @@ pub async fn run_agent_loop(
             .finalize_content_phase(on_event, &result, plan_active)
             .await;
         context_usage_runtime::emit_result(on_event, input_tokens, &result, configured_context);
-        messages.push(super::agent_loop_message::build_for_plan(
-            &result,
-            plan_active,
-        ));
+        let assistant = super::agent_loop_message::build_for_plan(&result, plan_active);
+        if let Some(journal) = journal.as_deref_mut() {
+            journal.persist_assistant_step(&assistant).await?;
+        }
+        messages.push(assistant);
         compression
             .try_run_and_reset(messages, &mut last_prompt, &mut last_eval, cancel.clone())
             .await;
@@ -153,12 +162,7 @@ pub async fn run_agent_loop(
         }
         let control_only =
             agent_loop_tools::prepare_tool_batch(&result.tool_calls, turn, &mut breaker).await?;
-        let tool_compression = (!control_only).then(|| {
-            compression.tool_compression(
-                token_counting::sum_real_counts(last_prompt, last_eval),
-                cancel.clone(),
-            )
-        });
+        let tool_start = messages.len();
         let tool_outcome = tool_executor::run_tools(
             on_event,
             messages,
@@ -171,11 +175,16 @@ pub async fn run_agent_loop(
             &mut write_guard,
             plan_active,
             &result.tool_call_ids,
-            tool_compression.as_ref(),
+            None,
         )
         .await;
         let compressed_during_tools = tool_outcome.compressed;
         let stop_after_tools = tool_outcome.apply_follow_ups(messages);
+        if let Some(journal) = journal.as_deref_mut() {
+            journal
+                .persist_tool_results(&messages[tool_start..])
+                .await?;
+        }
         extension_tool_set::refresh_and_record(&mut tools, &session_id, &request_id).await?;
         subagents
             .wait_after_tool_batch(control_only, messages, cancel.clone())
@@ -189,7 +198,6 @@ pub async fn run_agent_loop(
         }
     }
     Ok(agent_loop_finish::finish(
-        on_event,
         (total_eval, total_prompt, last_prompt, last_eval),
         generation,
         (&session_id, &request_id),

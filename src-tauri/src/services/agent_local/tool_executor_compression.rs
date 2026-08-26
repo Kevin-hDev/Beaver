@@ -4,6 +4,7 @@ use std::path::Path;
 use tokio_util::sync::CancellationToken;
 
 pub enum ToolCompressionProvider<'a> {
+    #[allow(dead_code, reason = "journal commits tool results before compression can resume")]
     Ollama {
         model: &'a str,
     },
