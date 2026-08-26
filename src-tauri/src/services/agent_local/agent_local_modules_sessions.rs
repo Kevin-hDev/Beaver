@@ -15,6 +15,8 @@ mod conversation_history_build;
 mod conversation_history_field_validation;
 mod conversation_history_resolve;
 mod conversation_history_validation;
+pub mod conversation_transition;
+pub mod conversation_compaction;
 pub mod conversation_input;
 pub(crate) mod conversation_resume;
 pub(crate) mod conversation_reasoning_state;
@@ -27,6 +29,8 @@ mod conversation_adoption_tests;
 mod conversation_input_tests;
 #[cfg(test)]
 mod conversation_history_tests;
+#[cfg(test)]
+mod conversation_transition_tests;
 pub mod conversation_skills;
 mod skill_limits;
 mod skill_manifest_read;
