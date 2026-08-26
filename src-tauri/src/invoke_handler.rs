@@ -79,6 +79,7 @@ macro_rules! generate {
             crate::commands::rename_agent_session,
             crate::commands::update_session_model,
             crate::commands::update_session_reasoning,
+            crate::commands::update_session_continuity,
             crate::commands::set_session_plan_mode,
             crate::commands::delete_agent_session,
             crate::commands::archive_agent_session,

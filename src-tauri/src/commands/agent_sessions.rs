@@ -2,7 +2,7 @@ use crate::models::agent_session_contract::{
     EditUserMessageInput, SessionMetadataPatch, VisibleMessageInput,
 };
 use crate::services::agent_local::session_store;
-use crate::services::agent_local::types_session::AgentSessionMeta;
+use crate::services::agent_local::types_session::{AgentSessionMeta, PreserveReasoningSetting};
 
 #[tauri::command]
 pub async fn list_agent_sessions() -> Result<Vec<AgentSessionMeta>, String> {
@@ -145,6 +145,37 @@ pub async fn update_session_reasoning(
 ) -> Result<(), String> {
     crate::services::agent_local::session_user_write::ensure_allowed(&id).await?;
     session_store::update_reasoning(&id, reasoning_mode, supports_thinking).await
+}
+
+#[tauri::command]
+pub async fn update_session_continuity(id: String, setting: String) -> Result<(), String> {
+    crate::services::agent_local::session_user_write::ensure_allowed(&id).await?;
+    let setting = parse_continuity_setting(&setting)?;
+    let session = session_store::get(&id).await?;
+    let capability = crate::services::agent_local::session_view::continuity_capability(&session)
+        .ok_or_else(invalid_continuity_update)?;
+    let allowed = match setting {
+        PreserveReasoningSetting::Off => capability.requirement == "optional",
+        PreserveReasoningSetting::Local => capability.local_available,
+        PreserveReasoningSetting::Remote => capability.remote_available,
+    };
+    if !allowed {
+        return Err(invalid_continuity_update());
+    }
+    crate::services::agent_local::session_continuity::update(&id, setting).await
+}
+
+fn invalid_continuity_update() -> String {
+    "Modification de session impossible".to_string()
+}
+
+fn parse_continuity_setting(value: &str) -> Result<PreserveReasoningSetting, String> {
+    match value {
+        "off" => Ok(PreserveReasoningSetting::Off),
+        "local" => Ok(PreserveReasoningSetting::Local),
+        "remote" => Ok(PreserveReasoningSetting::Remote),
+        _ => Err(invalid_continuity_update()),
+    }
 }
 
 #[tauri::command]

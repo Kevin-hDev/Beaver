@@ -167,6 +167,18 @@ export function useAgentSessions() {
     [refresh],
   );
 
+  const updateContinuity = useCallback(
+    async (id: string, setting: "off" | "local" | "remote") => {
+      try {
+        await invoke("update_session_continuity", { id, setting });
+        await refresh();
+      } catch (error) {
+        showToast(admissionErrorMessage(error, i18n.t, "errors.sessionSaveFailed"), "error");
+      }
+    },
+    [refresh],
+  );
+
   return {
     sessions,
     loading,
@@ -181,5 +193,6 @@ export function useAgentSessions() {
     togglePin,
     updateModel,
     updateReasoning,
+    updateContinuity,
   };
 }

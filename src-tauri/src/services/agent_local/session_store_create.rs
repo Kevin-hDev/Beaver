@@ -68,6 +68,7 @@ async fn create_full_with_fast_mode(
         thinking_enabled: crate::services::reasoning::enabled(reasoning_mode.as_deref(), false),
         fast_mode_enabled,
         reasoning_mode,
+        preserve_reasoning: Default::default(),
         accumulated_tokens: 0,
         context_tokens: None,
         messages: Vec::new(),

@@ -8,6 +8,7 @@ import type { SkillReference } from "@/types/agent-turn.generated";
 
 export interface ChatInputProps {
   draftKey: string;
+  sessionId?: string;
   modelName: string;
   providerName: string;
   isStreaming: boolean;

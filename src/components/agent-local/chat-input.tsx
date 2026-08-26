@@ -23,7 +23,7 @@ const K_ENTER = "Enter";
 const K_ESC = "Escape";
 
 export function ChatInput({
-  draftKey,
+  draftKey, sessionId,
   modelName, providerName, isStreaming, reasoningMode, fastModeEnabled, fastModePending, files,
   contextUsed, contextMax, contextBreakdown, retryIndicator,
   interactiveRequest, onInteractiveResolved,
@@ -186,6 +186,7 @@ export function ChatInput({
           )}
           <ChatInputActionsRow
             inputBubbleRef={bubbleRef}
+            sessionId={sessionId}
             modelName={modelName}
             providerName={providerName}
             reasoningMode={reasoningMode}

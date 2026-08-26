@@ -37,6 +37,17 @@ pub enum CloneMode {
     Summary,
 }
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[serde(rename_all = "snake_case")]
+#[cfg_attr(test, ts(rename_all = "snake_case"))]
+pub enum PreserveReasoningSetting {
+    #[default]
+    Off,
+    Local,
+    Remote,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AgentSession {
     pub schema_version: u16,
@@ -60,6 +71,8 @@ pub struct AgentSession {
     pub fast_mode_enabled: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reasoning_mode: Option<String>,
+    #[serde(default)]
+    pub preserve_reasoning: PreserveReasoningSetting,
     pub accumulated_tokens: u32,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub context_tokens: Option<u32>,

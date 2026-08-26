@@ -42,6 +42,11 @@ pub async fn update_model(
         );
         session.thinking_enabled =
             crate::services::reasoning::enabled(session.reasoning_mode.as_deref(), false);
+        // Un changement de route ou de modèle invalide toute autorisation de
+        // continuité précédente : seule la vue Rust peut la réautoriser.
+        if super::session_view::continuity_capability(session).is_none() {
+            session.preserve_reasoning = Default::default();
+        }
         session.context_tokens = None;
     })
     .await

@@ -2,6 +2,17 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 use super::AgentMessageView;
+use crate::services::agent_local::types_session::PreserveReasoningSetting;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+pub struct ContinuityCapability {
+    pub requirement: String,
+    pub local_available: bool,
+    pub remote_available: bool,
+    pub state: String,
+    pub explanation_key: String,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(test, derive(ts_rs::TS))]
@@ -53,6 +64,10 @@ pub struct AgentSessionView {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[cfg_attr(test, ts(optional))]
     pub reasoning_mode: Option<String>,
+    pub preserve_reasoning: PreserveReasoningSetting,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(test, ts(optional))]
+    pub continuity_capability: Option<ContinuityCapability>,
     pub accumulated_tokens: u32,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[cfg_attr(test, ts(optional))]

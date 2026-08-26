@@ -1,9 +1,11 @@
 use serde::Serialize;
 
 use crate::models::agent_session_contract::{
-    AgentSessionView, AgentStreamFailureView, ReasoningReplayStatus,
+    AgentSessionView, AgentStreamFailureView, ContinuityCapability, ReasoningReplayStatus,
     SubagentLastActivityView,
 };
+use crate::services::reasoning_continuity::contract::{ContinuationUse, ReasoningModeId, RouteId};
+use crate::services::reasoning_continuity::registry::{ActivationState, ReplayRequirement};
 use crate::services::reasoning_continuity::envelope::{CompletionState, ReasoningEnvelope};
 
 use super::types_session::{AgentSession, CloneMode};
@@ -21,6 +23,8 @@ pub fn from_session(session: &AgentSession) -> Result<AgentSessionView, String> 
         thinking_enabled: session.thinking_enabled,
         fast_mode_enabled: session.fast_mode_enabled,
         reasoning_mode: session.reasoning_mode.clone(),
+        preserve_reasoning: session.preserve_reasoning,
+        continuity_capability: continuity_capability(session),
         accumulated_tokens: session.accumulated_tokens,
         context_tokens: session.context_tokens,
         messages: session
@@ -77,6 +81,63 @@ pub fn from_session(session: &AgentSession) -> Result<AgentSessionView, String> 
         }),
         clone_root_session_id: session.clone_root_session_id.clone(),
         git_branch: session.git_branch.clone(),
+    })
+}
+
+/// Le registre est l'autorité des capacités : le client ne reconstruit jamais
+/// ce choix depuis le fournisseur affiché ou `supports_thinking`.
+pub fn continuity_capability(session: &AgentSession) -> Option<ContinuityCapability> {
+    let route = RouteId::from_provider_id(&session.provider)?;
+    let mode = ReasoningModeId::from_name(session.reasoning_mode.as_deref())?;
+    let policies = crate::services::reasoning_continuity::registry::active_routes()
+        .iter()
+        .find(|entry| entry.route_id == route)?
+        .models
+        .iter()
+        .filter(|policy| policy.model_id == session.model && policy.reasoning_mode == mode)
+        .filter(|policy| {
+            matches!(
+                policy.continuation_use,
+                ContinuationUse::UserContinuation | ContinuationUse::ToolContinuation
+            )
+        })
+        .collect::<Vec<_>>();
+    if policies.is_empty() || policies.iter().any(|policy| policy.activation != ActivationState::LiveValidated) {
+        return None;
+    }
+
+    let requirement = if policies.iter().any(|policy| policy.requirement == ReplayRequirement::Required) {
+        ReplayRequirement::Required
+    } else if policies.iter().any(|policy| policy.requirement == ReplayRequirement::Optional) {
+        ReplayRequirement::Optional
+    } else {
+        ReplayRequirement::Forbidden
+    };
+    if requirement == ReplayRequirement::Forbidden {
+        return None;
+    }
+    let remote_available = policies.iter().all(|policy| {
+        policy.fixture_id.is_some() && policy.fixture_date.is_some()
+    });
+    let (requirement, state, explanation_key) = match requirement {
+        ReplayRequirement::Required => (
+            "required",
+            "locked",
+            "agentLocal.continuityRequired",
+        ),
+        ReplayRequirement::Optional => (
+            "optional",
+            "available",
+            "agentLocal.continuityOptional",
+        ),
+        ReplayRequirement::Forbidden => return None,
+    };
+    Some(ContinuityCapability {
+        requirement: requirement.to_string(),
+        local_available: true,
+        remote_available,
+        state: state.to_string(),
+        explanation_key: explanation_key.to_string(),
     })
 }
 

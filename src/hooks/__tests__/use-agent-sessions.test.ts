@@ -251,6 +251,24 @@ describe("useAgentSessions", () => {
     expect(result.current.sessions[0].reasoning_mode).toBe("high");
   });
 
+  it("updateContinuity persiste un choix distinct de l'effort puis refresh", async () => {
+    vi.mocked(invoke)
+      .mockResolvedValueOnce([mockSession])
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce([mockSession]);
+    const { result } = renderHook(() => useAgentSessions());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => {
+      await result.current.updateContinuity("session-1", "local");
+    });
+
+    expect(invoke).toHaveBeenCalledWith("update_session_continuity", {
+      id: "session-1",
+      setting: "local",
+    });
+  });
+
   it("refresh recharge les sessions depuis le backend", async () => {
     const updated: AgentSessionMeta = { ...mockSession, name: "Après refresh" };
 

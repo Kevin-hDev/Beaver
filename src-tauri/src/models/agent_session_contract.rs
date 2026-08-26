@@ -12,7 +12,9 @@ pub use message::{
     ToolCallFunctionView, ToolCallRequestView, ToolFileChangeView,
 };
 pub use message_input::VisibleMessageInput;
-pub use session::{AgentSessionView, AgentStreamFailureView, SubagentLastActivityView};
+pub use session::{
+    AgentSessionView, AgentStreamFailureView, ContinuityCapability, SubagentLastActivityView,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(test, derive(ts_rs::TS))]
@@ -57,6 +59,7 @@ pub(crate) fn typescript_bindings() -> String {
 
     let config = Config::default();
     let declarations = [
+        crate::services::agent_local::types_session::PreserveReasoningSetting::decl(&config),
         ReasoningReplayStatus::decl(&config),
         message::FileAttachmentView::decl(&config),
         message::ToolCallFunctionView::decl(&config),
@@ -68,6 +71,7 @@ pub(crate) fn typescript_bindings() -> String {
         message_input::VisibleMessageInput::decl(&config),
         session::SubagentLastActivityView::decl(&config),
         session::AgentStreamFailureView::decl(&config),
+        session::ContinuityCapability::decl(&config),
         session::AgentSessionView::decl(&config),
         SessionMetadataPatch::decl(&config),
         EditUserMessageInput::decl(&config),

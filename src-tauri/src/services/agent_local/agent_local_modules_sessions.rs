@@ -64,6 +64,7 @@ pub(crate) mod session_store_messages;
 pub mod session_store_todos;
 pub mod session_store_updates;
 mod session_store_update_gate;
+pub mod session_continuity;
 pub mod session_view;
 mod session_view_message;
 mod session_visible_input;

@@ -92,6 +92,7 @@ fn session() -> AgentSession {
         thinking_enabled: false,
         fast_mode_enabled: false,
         reasoning_mode: None,
+        preserve_reasoning: Default::default(),
         accumulated_tokens: 0,
         context_tokens: None,
         messages: Vec::<AgentMessage>::new(),

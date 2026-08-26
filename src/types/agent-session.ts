@@ -16,9 +16,12 @@ export interface Project {
   created_at: string;
 }
 
-export type AgentSession = Omit<AgentSessionView, "messages" | "subagent_status"> & {
+export type AgentSession = Omit<AgentSessionView, "messages" | "subagent_status" | "preserve_reasoning"> & {
   messages: AgentMessage[];
   subagent_status?: SubagentStatus;
+  /* Les fixtures et sessions chargées avant Task 17 restent lisibles ; Rust
+     pose explicitement Off au chargement et à toute nouvelle écriture. */
+  preserve_reasoning?: AgentSessionView["preserve_reasoning"];
 };
 
 export interface AgentSessionMeta {
