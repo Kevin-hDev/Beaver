@@ -37,7 +37,7 @@ pub(super) async fn publish(
         .map_err(|_| save_failed())
 }
 
-pub(super) async fn acknowledge(path: &Path) -> Result<(), String> {
+pub(super) async fn acknowledge(path: &Path, can_remove: bool) -> Result<(), String> {
     let backup = backup_path(path)?;
     let Some(file) = crate::services::private_store::open_regular_single_link(&backup)
         .map_err(|_| save_failed())?
@@ -45,6 +45,10 @@ pub(super) async fn acknowledge(path: &Path) -> Result<(), String> {
         return Ok(());
     };
     drop(file);
+    if !can_remove {
+        log::warn!("session_migration_backup_retained_empty_v2");
+        return Ok(());
+    }
     tokio::fs::remove_file(backup)
         .await
         .map_err(|_| save_failed())

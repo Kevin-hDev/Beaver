@@ -1,5 +1,5 @@
 use super::xai_oauth_transport::{
-    backend_path, catalog_reasoning_mode, classify_status, prepare_chat_request,
+    backend_path, catalog_reasoning_mode, classify_status, prepare_chat_request, validate_backend,
 };
 use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::llm::request_purpose::RequestPurpose;
@@ -117,8 +117,11 @@ fn required_continuity_cannot_use_the_chat_completions_backend() {
         continuation_target: Some(&target),
     };
 
-    assert!(super::xai_oauth_transport_status::requires_responses_backend(&request));
-    assert_ne!(XaiBackend::ChatCompletions, XaiBackend::Responses);
+    assert_eq!(
+        validate_backend(XaiBackend::ChatCompletions, &request),
+        Err("reasoning_continuity_invalid".to_string())
+    );
+    assert_eq!(validate_backend(XaiBackend::Responses, &request), Ok(()));
 }
 
 #[test]

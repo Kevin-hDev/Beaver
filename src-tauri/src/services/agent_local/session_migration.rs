@@ -106,7 +106,10 @@ pub(super) async fn commit_v2_fail_before_rename(loaded: &LoadedSession) -> Resu
 
 pub(super) async fn acknowledge_v2(loaded: &LoadedSession) -> Result<(), String> {
     if loaded.version == LoadedVersion::V2
-        && super::session_migration_backup::acknowledge(&loaded.path)
+        && super::session_migration_backup::acknowledge(
+            &loaded.path,
+            !loaded.session.messages.is_empty(),
+        )
             .await
             .is_err()
     {

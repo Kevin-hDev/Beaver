@@ -62,13 +62,15 @@ async fn run_spec(app: &tauri::App, spec: &LiveSpec) -> Result<(), String> {
             "Call fixture.write_note with value fixture, then confirm briefly.",
         )
         .await?;
-        run_turn(
-            app,
-            spec,
-            &session.id,
-            "Call fixture.read_note, then report its value briefly.",
-        )
-        .await?;
+        if spec.provider != "deepseek" {
+            run_turn(
+                app,
+                spec,
+                &session.id,
+                "Call fixture.read_note, then report its value briefly.",
+            )
+            .await?;
+        }
         super::reasoning_fixture::export_reasoning_fixture_report(
             session.id.clone(),
             spec.region.to_string(),

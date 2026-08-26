@@ -37,8 +37,11 @@ pub(super) fn validate_session(
             .iter()
             .any(|event| event.phase == "provider_payload")
     });
-    (users >= 2
-        && session.diagnostic_runs.len() >= 2
+    // DeepSeek rejoue uniquement dans la chaîne d'outil : un seul tour complet
+    // prouve capture, rejeu réseau et persistance sans inventer un rejeu utilisateur.
+    let minimum_turns = if session.provider == "deepseek" { 1 } else { 2 };
+    (users >= minimum_turns
+        && session.diagnostic_runs.len() >= minimum_turns
         && has_tool
         && has_model_result
         && has_payload

@@ -6,6 +6,8 @@ use std::path::Path;
 
 pub use context_capsules_disk::CompressionMode;
 
+// Deux tours doivent survivre : le plus récent peut encore appartenir au journal
+// ouvert, qui doit retrouver son assistant après la compression pour se fermer.
 const RECENT_COMPLETE_TURNS: usize = 2;
 
 pub fn context_used_for_compression(

@@ -32,11 +32,7 @@ pub(super) async fn stream_chat(
         request_id,
     } = context;
     let catalog_model = crate::services::llm_oauth::xai_catalog_model(request.model).await?;
-    if catalog_model.backend != XaiBackend::Responses
-        && super::xai_oauth_transport_status::requires_responses_backend(&request)
-    {
-        return Err("reasoning_continuity_invalid".to_string());
-    }
+    validate_backend(catalog_model.backend, &request)?;
     match catalog_model.backend {
         XaiBackend::ChatCompletions => {
             let request = prepare_chat_request(request, &catalog_model);
@@ -89,6 +85,18 @@ pub(super) async fn stream_chat(
             .await
         }
     }
+}
+
+pub(super) fn validate_backend(
+    backend: XaiBackend,
+    request: &super::stream_http::RequestConfig<'_>,
+) -> Result<(), String> {
+    if backend != XaiBackend::Responses
+        && super::xai_oauth_transport_status::requires_responses_backend(request)
+    {
+        return Err("reasoning_continuity_invalid".to_string());
+    }
+    Ok(())
 }
 
 pub(super) fn catalog_reasoning_mode<'a>(

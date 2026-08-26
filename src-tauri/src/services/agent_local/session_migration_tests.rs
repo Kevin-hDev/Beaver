@@ -72,6 +72,59 @@ fn v1_migration_discards_an_invalid_leading_assistant_but_keeps_valid_turns() {
     assert_eq!(loaded.session().messages.first().unwrap().role, "user");
 }
 
+#[test]
+fn v1_incomplete_tool_chain_keeps_history_and_closes_every_missing_result() {
+    let bytes = v1_with_incomplete_tool_chain();
+    let loaded = super::session_migration::read(
+        &bytes,
+        PathBuf::from("incomplete-tool-chain-v1.json"),
+    )
+    .expect("repair interrupted v1 tool chain");
+    let messages = &loaded.session().messages;
+
+    assert!(!messages.is_empty());
+    super::conversation_history_validation::validate(messages).unwrap();
+    let call_message = messages
+        .iter()
+        .find(|message| message.tool_calls.is_some())
+        .expect("preserved tool call");
+    let calls = call_message.tool_calls.as_ref().unwrap();
+    for call in calls {
+        let result = messages
+            .iter()
+            .find(|message| message.tool_call_id.as_deref() == Some(call.id.as_str()))
+            .expect("synthetic interrupted result");
+        assert_eq!(result.role, "tool");
+        assert_eq!(result.tool_name.as_deref(), Some(call.function.name.as_str()));
+        assert_eq!(
+            result.content,
+            r#"{"status":"cancelled","error":"tool_interrupted"}"#
+        );
+    }
+    assert_eq!(messages.last().unwrap().role, "assistant");
+    assert!(messages.last().unwrap().tool_calls.is_none());
+}
+
+#[tokio::test]
+async fn empty_v2_never_acknowledges_a_nonempty_v1_backup() {
+    let root = tempfile::tempdir().expect("tempdir");
+    let path = root.path().join("00000000-0000-4000-8000-000000000010.json");
+    let backup = super::session_migration::backup_path(&path).unwrap();
+    let mut empty_v2 = base_session();
+    empty_v2.messages.clear();
+    let empty_bytes = serde_json::to_vec_pretty(&empty_v2).unwrap();
+    let interrupted_v1 = v1_with_incomplete_tool_chain();
+    crate::services::private_store::atomic_write(&path, &empty_bytes).unwrap();
+    crate::services::private_store::atomic_write(&backup, &interrupted_v1).unwrap();
+
+    let restored = super::session_store_document::read_from_path(path)
+        .await
+        .expect("empty v2 remains readable");
+
+    assert!(restored.messages.is_empty());
+    assert_eq!(std::fs::read(backup).unwrap(), interrupted_v1);
+}
+
 #[tokio::test]
 async fn migrated_v1_history_builds_a_required_moonshot_payload_after_admission() {
     use crate::services::llm::fast_mode::FastModeRequest;
@@ -655,6 +708,19 @@ fn v1_with_tool_chain() -> Vec<u8> {
         "timestamp": "2026-08-25T10:00:00Z",
         "tokens": 0
     }));
+    serde_json::to_vec_pretty(&value).unwrap()
+}
+
+fn v1_with_incomplete_tool_chain() -> Vec<u8> {
+    let mut value: serde_json::Value = serde_json::from_slice(&v1_with_tool_chain()).unwrap();
+    let messages = value["messages"].as_array_mut().unwrap();
+    messages.pop();
+    messages.last_mut().unwrap()["tool_calls"]
+        .as_array_mut()
+        .unwrap()
+        .push(json!({
+            "function": {"name":"read_file","arguments":{"path":"second-fixture.txt"}}
+        }));
     serde_json::to_vec_pretty(&value).unwrap()
 }
 
