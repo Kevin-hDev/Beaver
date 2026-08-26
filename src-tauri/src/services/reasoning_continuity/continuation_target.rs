@@ -1,5 +1,5 @@
 use super::contract::{ReasoningModeId, ReplayTarget, RouteId};
-use super::limits::{validate_model_id, LimitError};
+use super::limits::{LimitError, validate_model_id};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NonReplayTarget {
@@ -17,6 +17,11 @@ impl NonReplayTarget {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ContinuationTarget {
     Replay(ReplayTarget),
+    /// N'existe que dans le binaire debug et ne peut être obtenu que par la
+    /// commande de fixture. Il autorise la preuve locale avant la bascule du
+    /// registre, sans élargir le chat de production.
+    #[cfg(debug_assertions)]
+    FixtureCandidate(ReplayTarget),
     Forbidden(NonReplayTarget),
 }
 
@@ -24,13 +29,22 @@ impl ContinuationTarget {
     pub fn replay(&self) -> Option<&ReplayTarget> {
         match self {
             Self::Replay(target) => Some(target),
+            #[cfg(debug_assertions)]
+            Self::FixtureCandidate(target) => Some(target),
             Self::Forbidden(_) => None,
         }
+    }
+
+    #[cfg(debug_assertions)]
+    pub const fn is_fixture_candidate(&self) -> bool {
+        matches!(self, Self::FixtureCandidate(_))
     }
 
     pub fn route_id(&self) -> RouteId {
         match self {
             Self::Replay(target) => target.route_id,
+            #[cfg(debug_assertions)]
+            Self::FixtureCandidate(target) => target.route_id,
             Self::Forbidden(target) => target.route_id,
         }
     }
@@ -38,6 +52,8 @@ impl ContinuationTarget {
     pub fn model_id(&self) -> &str {
         match self {
             Self::Replay(target) => &target.model_id,
+            #[cfg(debug_assertions)]
+            Self::FixtureCandidate(target) => &target.model_id,
             Self::Forbidden(target) => &target.model_id,
         }
     }
@@ -45,6 +61,8 @@ impl ContinuationTarget {
     pub fn reasoning_mode(&self) -> ReasoningModeId {
         match self {
             Self::Replay(target) => target.reasoning_mode,
+            #[cfg(debug_assertions)]
+            Self::FixtureCandidate(target) => target.reasoning_mode,
             Self::Forbidden(target) => target.reasoning_mode,
         }
     }
@@ -52,6 +70,8 @@ impl ContinuationTarget {
     pub fn validate(&self) -> Result<(), LimitError> {
         match self {
             Self::Replay(target) => target.validate(),
+            #[cfg(debug_assertions)]
+            Self::FixtureCandidate(target) => target.validate(),
             Self::Forbidden(target) => target.validate(),
         }
     }

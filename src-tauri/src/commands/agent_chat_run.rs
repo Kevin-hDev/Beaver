@@ -1,11 +1,11 @@
 use super::agent_chat_task::{
-    run_stream_task, StreamCapabilityHints, StreamConversation, StreamTaskParams,
+    StreamCapabilityHints, StreamConversation, StreamTaskParams, run_stream_task,
 };
+use crate::ActiveStreams;
 use crate::models::agent_turn_contract::{ChatStreamAdmission, TurnStart};
 use crate::services::agent_local::agent_work_supervision::AgentWorkServices;
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::types_ollama::StreamEvent;
-use crate::ActiveStreams;
 use tauri::Manager;
 
 pub(crate) struct ChatStreamRequest {
@@ -74,21 +74,55 @@ pub(crate) async fn start(
             return Err(error);
         }
     };
-    let target = match super::agent_chat_target::resolve(
+    #[cfg(debug_assertions)]
+    let target_result = match request.fixture_run.as_ref() {
+        Some(fixture_run) => {
+            super::agent_chat_fixture_candidate::resolve(
+                &request.session_id,
+                &request.provider,
+                &request.model,
+                request.reasoning_mode.as_deref(),
+                request.capability_hints.supports_thinking,
+                fixture_run,
+            )
+            .await
+        }
+        None => {
+            super::agent_chat_target::resolve(
+                &request.session_id,
+                &request.provider,
+                &request.model,
+                request.reasoning_mode.as_deref(),
+                request.capability_hints.supports_thinking,
+            )
+            .await
+        }
+    };
+    #[cfg(not(debug_assertions))]
+    let target_result = super::agent_chat_target::resolve(
         &request.session_id,
         &request.provider,
         &request.model,
         request.reasoning_mode.as_deref(),
         request.capability_hints.supports_thinking,
     )
-    .await
-    {
+    .await;
+    let target = match target_result {
         Ok(target) => target,
         Err(error) => {
             rollback(streams, &request.session_id, &stream).await;
             return Err(error);
         }
     };
+    #[cfg(debug_assertions)]
+    if target.continuation.is_fixture_candidate() {
+        crate::services::agent_local::stream_diagnostics::record_reasoning(
+            &request.session_id,
+            &stream.request_id,
+            "reasoning validation_candidate=true activation=disabled",
+        )
+        .await;
+    }
     request.think = target.reasoning.active;
     request.reasoning_mode = target.reasoning.mode_name.clone();
     request.capability_hints = StreamCapabilityHints::default();

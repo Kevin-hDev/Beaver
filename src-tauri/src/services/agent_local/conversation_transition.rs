@@ -1,4 +1,4 @@
-use crate::services::reasoning_continuity::contract::ReplayTarget;
+use crate::services::reasoning_continuity::contract::{ContinuationTarget, ReplayTarget};
 use crate::services::reasoning_continuity::envelope::{CompletionState, ReasoningSource};
 
 use super::types_session::AgentSession;
@@ -6,7 +6,10 @@ use super::types_session::AgentSession;
 /// A boundary is recorded instead of trying to translate native provider state.
 /// The previous visible conversation remains available, but replay begins after it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[allow(dead_code, reason = "fallback and durable compaction adopt this closed barrier in later provider tasks")]
+#[allow(
+    dead_code,
+    reason = "fallback and durable compaction adopt this closed barrier in later provider tasks"
+)]
 pub enum ContinuityBarrier {
     Model,
     Route,
@@ -24,10 +27,17 @@ pub struct Transition {
 }
 
 pub fn for_target(session: &AgentSession, target: &ReplayTarget) -> Transition {
+    for_continuation(session, &ContinuationTarget::Replay(target.clone()))
+}
+
+pub fn for_continuation(session: &AgentSession, target: &ContinuationTarget) -> Transition {
     let mut result = Transition {
         barrier: None,
         compatible_suffix_start: 0,
         replayable_message_indexes: Vec::new(),
+    };
+    let Some(replay_target) = target.replay() else {
+        return result;
     };
     let mut turn_start = 0usize;
     while turn_start < session.messages.len() {
@@ -43,7 +53,7 @@ pub fn for_target(session: &AgentSession, target: &ReplayTarget) -> Transition {
                     .as_ref()
                     .map(|envelope| &envelope.source)
                     .or(message.replay_source.as_ref())
-                    .and_then(|source| barrier_for(source, target))
+                    .and_then(|source| barrier_for(source, replay_target))
             });
         if let Some(barrier) = barrier {
             result.barrier = Some(barrier);
@@ -54,8 +64,7 @@ pub fn for_target(session: &AgentSession, target: &ReplayTarget) -> Transition {
             for (offset, message) in session.messages[turn_start..turn_end].iter().enumerate() {
                 if message.continuation.as_ref().is_some_and(|envelope| {
                     envelope.completion == CompletionState::Complete
-                        && crate::services::reasoning_continuity::eligibility::decide(envelope, target)
-                            == crate::services::reasoning_continuity::eligibility::ReplayDecision::Allowed
+                        && allows_replay(target, envelope)
                 }) {
                     result.replayable_message_indexes.push(turn_start + offset);
                 }
@@ -64,6 +73,24 @@ pub fn for_target(session: &AgentSession, target: &ReplayTarget) -> Transition {
         turn_start = turn_end;
     }
     result
+}
+
+fn allows_replay(
+    target: &ContinuationTarget,
+    envelope: &crate::services::reasoning_continuity::envelope::ReasoningEnvelope,
+) -> bool {
+    let Some(replay_target) = target.replay() else {
+        return false;
+    };
+    #[cfg(debug_assertions)]
+    if target.is_fixture_candidate() {
+        return crate::services::reasoning_continuity::eligibility::decide_fixture_candidate(
+            envelope,
+            replay_target,
+        ) == crate::services::reasoning_continuity::eligibility::ReplayDecision::Allowed;
+    }
+    crate::services::reasoning_continuity::eligibility::decide(envelope, replay_target)
+        == crate::services::reasoning_continuity::eligibility::ReplayDecision::Allowed
 }
 
 fn barrier_for(source: &ReasoningSource, target: &ReplayTarget) -> Option<ContinuityBarrier> {

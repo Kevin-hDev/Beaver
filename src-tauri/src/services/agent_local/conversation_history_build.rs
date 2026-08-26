@@ -20,10 +20,10 @@ pub(super) fn from_continuation(
     validate_target(session, target)?;
     super::conversation_history_validation::validate(&session.messages)?;
     validate_envelopes(&session.messages)?;
-    let suffix = target.replay().map_or(session.messages.len(), |replay| {
+    let suffix = target.replay().map_or(session.messages.len(), |_| {
         // La transition est l'autorité unique des barrières route/modèle/scope.
         // Elle recule toujours au début du tour concerné, jamais au milieu.
-        super::conversation_transition::for_target(session, replay).compatible_suffix_start
+        super::conversation_transition::for_continuation(session, target).compatible_suffix_start
     });
     let mut messages = session
         .messages
@@ -61,7 +61,10 @@ fn validate_target(
 }
 
 fn validate_envelopes(messages: &[AgentMessage]) -> Result<(), ConversationHistoryError> {
-    for envelope in messages.iter().filter_map(|message| message.continuation.as_ref()) {
+    for envelope in messages
+        .iter()
+        .filter_map(|message| message.continuation.as_ref())
+    {
         if envelope.validate().is_err()
             || !crate::services::reasoning_continuity::eligibility::state_matches_contract(
                 envelope.contract_id,

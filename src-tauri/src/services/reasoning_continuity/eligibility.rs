@@ -24,6 +24,25 @@ pub enum ReplayDecision {
 }
 
 pub fn decide(envelope: &ReasoningEnvelope, target: &ReplayTarget) -> ReplayDecision {
+    decide_with_activation(envelope, target, false)
+}
+
+/// Réservé aux fixtures debug : toutes les vérifications sauf l'état
+/// `LiveValidated` restent obligatoires afin de prouver un couple exact avant
+/// de l'activer. Ce point ne fait pas partie du binaire de production.
+#[cfg(debug_assertions)]
+pub(crate) fn decide_fixture_candidate(
+    envelope: &ReasoningEnvelope,
+    target: &ReplayTarget,
+) -> ReplayDecision {
+    decide_with_activation(envelope, target, true)
+}
+
+fn decide_with_activation(
+    envelope: &ReasoningEnvelope,
+    target: &ReplayTarget,
+    allow_fixture_candidate: bool,
+) -> ReplayDecision {
     if target.validate().is_err() {
         return ReplayDecision::Blocked(BlockReason::UnknownTarget);
     }
@@ -53,7 +72,7 @@ pub fn decide(envelope: &ReasoningEnvelope, target: &ReplayTarget) -> ReplayDeci
     if envelope.validate().is_err() {
         return ReplayDecision::Blocked(BlockReason::InvalidEnvelope);
     }
-    if policy.activation != ActivationState::LiveValidated {
+    if policy.activation != ActivationState::LiveValidated && !allow_fixture_candidate {
         return ReplayDecision::Blocked(BlockReason::NotLiveValidated);
     }
     ReplayDecision::Allowed
@@ -97,4 +116,74 @@ pub(crate) fn state_matches_contract(contract: ContractId, state: &ContinuationS
             ContinuationState::ResponsesLocal { .. }
         )
     )
+}
+
+#[cfg(all(test, debug_assertions))]
+mod tests {
+    use super::*;
+    use crate::services::reasoning_continuity::contract::{
+        ContinuationUse, CredentialScope, ReasoningModeId, RouteId,
+    };
+    use crate::services::reasoning_continuity::envelope::{ReasoningEnvelope, ReasoningSource};
+
+    fn fixture_target(model_id: &str) -> ReplayTarget {
+        ReplayTarget {
+            route_id: RouteId::Ollama,
+            model_id: model_id.into(),
+            credential_scope: CredentialScope::local_uncredentialed(),
+            reasoning_mode: ReasoningModeId::Auto,
+            continuation_use: ContinuationUse::UserContinuation,
+        }
+    }
+
+    fn fixture_envelope(target: &ReplayTarget) -> ReasoningEnvelope {
+        ReasoningEnvelope::new(
+            ContractId::OllamaNativeV1,
+            ReasoningSource::from_target(target),
+            CompletionState::Complete,
+            ContinuationState::OllamaNative {
+                thinking: "opaque fixture".into(),
+            },
+            Vec::new(),
+        )
+    }
+
+    #[test]
+    fn fixture_candidate_bypasses_only_activation_for_an_exact_non_forbidden_policy() {
+        let target = fixture_target("qwen3.5:4b");
+        let envelope = fixture_envelope(&target);
+        assert_eq!(
+            decide(&envelope, &target),
+            ReplayDecision::Blocked(BlockReason::NotLiveValidated)
+        );
+        assert_eq!(
+            decide_fixture_candidate(&envelope, &target),
+            ReplayDecision::Allowed
+        );
+
+        let unknown = fixture_target("unknown-model");
+        assert_eq!(
+            decide_fixture_candidate(&fixture_envelope(&unknown), &unknown),
+            ReplayDecision::Blocked(BlockReason::UnknownTarget)
+        );
+
+        let forbidden = ReplayTarget {
+            route_id: RouteId::Xai,
+            model_id: "grok-4.6".into(),
+            credential_scope: CredentialScope::authenticated("fixture-scope").unwrap(),
+            reasoning_mode: ReasoningModeId::High,
+            continuation_use: ContinuationUse::UserContinuation,
+        };
+        let forbidden_envelope = ReasoningEnvelope::new(
+            ContractId::XaiResponsesV1,
+            ReasoningSource::from_target(&forbidden),
+            CompletionState::Complete,
+            ContinuationState::ResponsesLocal { items: Vec::new() },
+            Vec::new(),
+        );
+        assert_eq!(
+            decide_fixture_candidate(&forbidden_envelope, &forbidden),
+            ReplayDecision::Blocked(BlockReason::Forbidden)
+        );
+    }
 }
