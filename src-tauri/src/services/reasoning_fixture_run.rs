@@ -52,7 +52,7 @@ impl FixtureRunContext {
     }
 
     #[cfg(test)]
-    fn root_for_test(&self) -> std::path::PathBuf {
+    pub(crate) fn root_for_test(&self) -> std::path::PathBuf {
         self.tools.root_for_test()
     }
 }
