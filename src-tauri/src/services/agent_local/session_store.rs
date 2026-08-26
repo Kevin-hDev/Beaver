@@ -109,6 +109,7 @@ pub(crate) async fn delete_one(id: &str) -> Result<(), String> {
     let _ = super::subagent_change_store::remove(id).await;
     super::extension_session_state::remove(id).await;
     super::session_permission_state::remove(id).await;
+    let _ = crate::services::reasoning_fixture_store::remove_for_session(id).await;
     // Nettoie aussi le WriteGuard persistant de la session.
     crate::services::agent_local::write_guard_registry::remove(id);
     Ok(())

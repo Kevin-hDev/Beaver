@@ -39,6 +39,7 @@
     "contracts:check": "cd src-tauri && cargo test models::provider_contract_tests::checked_in_typescript_matches_the_rust_contract -- --exact && cargo test services::agent_local::types_diagnostics_contract_tests::checked_in_typescript_matches_the_rust_diagnostics_contract -- --exact && cargo test models::agent_session_contract_tests::checked_in_agent_session_types_match_rust -- --exact",
     "forecast:lock-runtimes": "bash scripts/forecast/lock-runtimes.sh",
     "test:watch": "vitest"
+    ,"reasoning:fixtures:validate": "node scripts/reasoning/validate-fixture-report.mjs"
   },
   "dependencies": {
     "@codemirror/commands": "^6.10.4",
