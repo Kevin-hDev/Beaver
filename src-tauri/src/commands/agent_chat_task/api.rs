@@ -10,7 +10,7 @@ pub(crate) async fn run(
     mode: StreamMode,
     response_language: String,
     journal: &mut Option<crate::services::agent_local::conversation_journal::ConversationJournal>,
-) -> Result<Vec<ChatMessage>, String> {
+) -> Result<crate::services::agent_local::agent_loop_finish::CompletedStreamTurn, String> {
     let canonical_provider = llm::route::canonical_provider_id(&params.provider);
     let fast_mode =
         llm::fast_mode::for_session(&params.session_id, &params.provider, &params.model).await?;
@@ -159,15 +159,15 @@ pub(crate) async fn run(
         journal.as_mut(),
     )
     .await?;
-    finish_turn(&params, journal, completed).await?;
-    Ok(messages)
+    finish_turn(&params, journal, completed, messages).await
 }
 
 pub(crate) async fn finish_turn(
     params: &StreamTaskParams,
     journal: &mut Option<crate::services::agent_local::conversation_journal::ConversationJournal>,
     completed: crate::services::agent_local::agent_loop_finish::CompletedStreamTurn,
-) -> Result<(), String> {
+    messages: Vec<ChatMessage>,
+) -> Result<crate::services::agent_local::agent_loop_finish::CompletedStreamTurn, String> {
     if let Some(journal) = journal.as_mut() {
         journal.commit_turn().await?;
         let (turn_id, user_message_id, assistant_message_id) = journal.turn_ids();
@@ -184,8 +184,7 @@ pub(crate) async fn finish_turn(
         &params.request_id,
     )
     .await;
-    completed.emit_done(&params.on_event);
-    Ok(())
+    Ok(completed.with_messages(messages))
 }
 
 async fn resolve_plan_mode(params: &StreamTaskParams) -> bool {

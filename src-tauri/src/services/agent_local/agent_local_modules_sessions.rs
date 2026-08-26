@@ -22,6 +22,8 @@ pub(crate) mod conversation_journal;
 #[cfg(test)]
 mod conversation_journal_tests;
 #[cfg(test)]
+mod conversation_adoption_tests;
+#[cfg(test)]
 mod conversation_input_tests;
 #[cfg(test)]
 mod conversation_history_tests;

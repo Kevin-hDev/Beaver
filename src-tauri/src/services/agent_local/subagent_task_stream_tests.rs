@@ -32,7 +32,7 @@ async fn cancellation_without_snapshot_keeps_durable_history() {
     let cancel = CancellationToken::new();
     cancel.cancel();
     let (success, status, summary) =
-        finalize_stream_result(Err("Annulé".into()), &child.id, "request", cancel)
+        finalize_stream_result(Err("Annulé".into()), &child.id, "request", cancel, None)
             .await
             .expect("cancel outcome");
 

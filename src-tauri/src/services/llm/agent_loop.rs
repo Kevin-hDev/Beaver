@@ -179,12 +179,13 @@ pub async fn run_agent_loop(
         )
         .await;
         let compressed_during_tools = tool_outcome.compressed;
-        let stop_after_tools = tool_outcome.apply_follow_ups(messages);
+        let tool_end = messages.len();
         if let Some(journal) = journal.as_deref_mut() {
             journal
-                .persist_tool_results(&messages[tool_start..])
+                .persist_tool_results(&messages[tool_start..tool_end])
                 .await?;
         }
+        let stop_after_tools = tool_outcome.apply_follow_ups(messages);
         extension_tool_set::refresh_and_record(&mut tools, &session_id, &request_id).await?;
         subagents
             .wait_after_tool_batch(control_only, messages, cancel.clone())

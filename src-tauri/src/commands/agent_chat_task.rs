@@ -18,7 +18,7 @@ mod workspace_prompt;
 pub(crate) use conversation::StreamConversation;
 pub(crate) use params::{StreamCapabilityHints, StreamPermissionMode, StreamTaskParams};
 
-use crate::services::agent_local::types_ollama::ChatMessage;
+use crate::services::agent_local::agent_loop_finish::CompletedStreamTurn;
 use crate::services::mascot::MascotSessionOutcome;
 use std::future::Future;
 use std::pin::Pin;
@@ -40,7 +40,7 @@ fn chat_engine(provider: &str) -> ChatEngine {
 }
 
 pub(crate) type SpawnedStreamTask =
-    Pin<Box<dyn Future<Output = Result<Vec<ChatMessage>, String>> + Send + 'static>>;
+    Pin<Box<dyn Future<Output = Result<CompletedStreamTurn, String>> + Send + 'static>>;
 
 pub(crate) fn run_stream_task(params: StreamTaskParams) -> SpawnedStreamTask {
     let mascot_session = params.on_event.start_mascot_session();
@@ -54,7 +54,9 @@ pub(crate) fn run_stream_task(params: StreamTaskParams) -> SpawnedStreamTask {
     })
 }
 
-async fn run_stream_task_inner(mut params: StreamTaskParams) -> Result<Vec<ChatMessage>, String> {
+async fn run_stream_task_inner(
+    mut params: StreamTaskParams,
+) -> Result<CompletedStreamTurn, String> {
     if let Some(permission_emitter) = params.permission_emitter.take() {
         params.on_event = params.on_event.with_permission_emitter(permission_emitter);
     }
@@ -79,7 +81,7 @@ async fn run_stream_task_inner(mut params: StreamTaskParams) -> Result<Vec<ChatM
             params.cancel.clone(),
         )
         .await?;
-        return Ok(messages);
+        return Ok(CompletedStreamTurn::compression(messages));
     }
 
     let mode = common::resolve_permission_mode(&params.permission_mode).await;
@@ -144,7 +146,7 @@ pub(crate) fn validate_target_profile(
     Ok(())
 }
 
-fn mascot_outcome(result: &Result<Vec<ChatMessage>, String>) -> MascotSessionOutcome {
+fn mascot_outcome(result: &Result<CompletedStreamTurn, String>) -> MascotSessionOutcome {
     match result {
         Ok(_) => MascotSessionOutcome::Success,
         Err(message) if message == "Annulé" => MascotSessionOutcome::Cancelled,
@@ -167,7 +169,7 @@ mod tests {
     #[test]
     fn mascot_outcome_covers_every_terminal_path() {
         assert_eq!(
-            mascot_outcome(&Ok(Vec::new())),
+            mascot_outcome(&Ok(CompletedStreamTurn::compression(Vec::new()))),
             MascotSessionOutcome::Success
         );
         assert_eq!(

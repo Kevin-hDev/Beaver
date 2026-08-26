@@ -12,7 +12,7 @@ pub(crate) async fn run(
     mode: StreamMode,
     response_language: String,
     journal: &mut Option<crate::services::agent_local::conversation_journal::ConversationJournal>,
-) -> Result<Vec<ChatMessage>, String> {
+) -> Result<crate::services::agent_local::agent_loop_finish::CompletedStreamTurn, String> {
     let ctx = crate::services::compress::context_resolve::resolve_ollama(&params.model).await;
     let settings = crate::services::agent_local::agent_settings::load().await;
     let final_tools = resolve_tools(&params, &mode, &settings);
@@ -160,8 +160,7 @@ pub(crate) async fn run(
         journal.as_mut(),
     )
     .await?;
-    super::api::finish_turn(&params, journal, completed).await?;
-    Ok(messages)
+    super::api::finish_turn(&params, journal, completed, messages).await
 }
 
 async fn resolve_plan_mode(params: &StreamTaskParams) -> bool {

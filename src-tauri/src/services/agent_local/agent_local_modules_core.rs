@@ -138,7 +138,6 @@ mod subagent_completion_boundary_tests;
 mod subagent_completion_capacity_tests;
 #[cfg(test)]
 mod subagent_completion_tests;
-pub mod subagent_context;
 #[cfg(test)]
 mod subagent_correction_capacity_tests;
 #[cfg(test)]

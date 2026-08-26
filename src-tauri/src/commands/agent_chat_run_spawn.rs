@@ -57,8 +57,13 @@ async fn spawn(
             .await;
             run_inbox.close().await;
             let is_current = cleanup_current(&task_app, &task_session, generation).await;
-            if let Err(message) = outcome {
-                emit_failure(is_current, &emitter, &task_session, &stream_request_id, message).await;
+            match outcome {
+                Ok(completed) if is_current => completed.emit_done(&emitter),
+                Ok(_) => {}
+                Err(message) => {
+                    emit_failure(is_current, &emitter, &task_session, &stream_request_id, message)
+                        .await;
+                }
             }
         }),
     );

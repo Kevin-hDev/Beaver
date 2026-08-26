@@ -196,6 +196,9 @@ impl ConversationJournal {
 }
 
 pub(crate) fn validate_tool_results(messages: &[ChatMessage], expected: &[String]) -> Result<(), String> {
+    if messages.iter().any(|message| message.role != "tool") {
+        return Err(error());
+    }
     let actual = messages.iter().filter(|message| message.role == "tool").map(|message| message.tool_call_id.clone().ok_or_else(error)).collect::<Result<Vec<_>, _>>()?;
     if actual != expected || actual.iter().collect::<HashSet<_>>().len() != actual.len() { return Err(error()); }
     Ok(())

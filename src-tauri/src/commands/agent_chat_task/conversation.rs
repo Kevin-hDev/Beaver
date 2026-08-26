@@ -8,8 +8,6 @@ pub(crate) enum StreamConversation {
         system_prompt: Option<String>,
         subagent_owner: Option<(String, String)>,
     },
-    #[deprecated(note = "Tasks 11-13 migrate remaining internal producers")]
-    InternalLegacy(Vec<ChatMessage>),
 }
 
 impl StreamConversation {
@@ -34,11 +32,6 @@ impl StreamConversation {
         }
     }
 
-    #[allow(deprecated, reason = "Tasks 11-13 migrate non-IPC internal producers")]
-    pub(crate) fn internal_legacy(messages: Vec<ChatMessage>) -> Self {
-        Self::InternalLegacy(messages)
-    }
-
     pub(crate) fn into_messages(self) -> Result<Vec<ChatMessage>, String> {
         match self {
             Self::Canonical {
@@ -57,8 +50,6 @@ impl StreamConversation {
                 }
                 Ok(messages)
             }
-            #[allow(deprecated)]
-            Self::InternalLegacy(messages) => Ok(messages),
         }
     }
 
@@ -108,8 +99,6 @@ impl StreamConversation {
                     Some(journal),
                 ))
             }
-            #[allow(deprecated)]
-            Self::InternalLegacy(messages) => Ok((messages, None)),
         }
     }
 }

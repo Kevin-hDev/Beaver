@@ -11,6 +11,14 @@ fn journal_rejects_missing_duplicate_and_reordered_tool_results() {
     assert!(validate_tool_results(&[tool("call-b"), tool("call-a")], &expected).is_err());
 }
 
+#[test]
+fn journal_rejects_non_tool_messages_in_a_tool_result_batch() {
+    let expected = vec!["call-a".to_string()];
+    let mixed = vec![tool("call-a"), ChatMessage::user("follow-up".to_string())];
+
+    assert!(validate_tool_results(&mixed, &expected).is_err());
+}
+
 #[tokio::test]
 async fn partial_checkpoint_never_commits_a_turn_as_final() {
     let session = session_store::create_full("Partial journal", "model", "groq", false, None)

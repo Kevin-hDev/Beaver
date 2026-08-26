@@ -134,8 +134,8 @@ impl GatewayAgentBridge {
             generation,
         )
         .await;
-        let final_messages = match run_stream_task(StreamTaskParams {
-            on_event: emitter,
+        let completed = match run_stream_task(StreamTaskParams {
+            on_event: emitter.clone(),
             session_id: session_id.clone(),
             request_id: request_id.clone(),
             model,
@@ -162,7 +162,7 @@ impl GatewayAgentBridge {
         })
         .await
         {
-            Ok(messages) => messages,
+            Ok(completed) => completed,
             Err(e) => {
                 crate::services::agent_local::stream_diagnostics::record_failure(
                     &session_id,
@@ -179,7 +179,8 @@ impl GatewayAgentBridge {
 
         emit_session_updated(&app, &session_id);
 
-        send_final_reply(&msg, adapter.as_ref(), &final_messages).await?;
+        send_final_reply(&msg, adapter.as_ref(), completed.messages()).await?;
+        completed.emit_done(&emitter);
         Ok(())
     }
 }

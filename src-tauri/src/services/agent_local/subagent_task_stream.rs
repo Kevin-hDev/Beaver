@@ -77,7 +77,7 @@ pub(super) async fn run_inner(
     }
 
     let result = run_stream_task(StreamTaskParams {
-        on_event: emitter,
+        on_event: emitter.clone(),
         session_id: child_session_id.clone(),
         request_id: request_id.clone(),
         model,
@@ -109,14 +109,15 @@ pub(super) async fn run_inner(
     })
     .await;
 
-    finalize_stream_result(result, &child_session_id, &request_id, cancel).await
+    finalize_stream_result(result, &child_session_id, &request_id, cancel, Some(&emitter)).await
 }
 
 async fn finalize_stream_result(
-    result: Result<Vec<super::types_ollama::ChatMessage>, String>,
+    result: Result<crate::services::agent_local::agent_loop_finish::CompletedStreamTurn, String>,
     child_session_id: &str,
     request_id: &str,
     cancel: CancellationToken,
+    emitter: Option<&AgentEventEmitter>,
 ) -> Result<
     (
         bool,
@@ -127,13 +128,16 @@ async fn finalize_stream_result(
 > {
     let was_cancelled = cancel.is_cancelled();
     match result {
-        Ok(final_msgs) => {
-            let summary = super::subagent_summary::extract_summary_from_messages(&final_msgs);
+        Ok(completed) => {
+            let summary = super::subagent_summary::extract_summary_from_messages(completed.messages());
             let status = if was_cancelled {
                 super::subagent_status::CANCELLED
             } else {
                 super::subagent_status::COMPLETED
             };
+            if let Some(emitter) = emitter {
+                completed.emit_done(emitter);
+            }
             Ok((!was_cancelled, status.to_string(), summary))
         }
         Err(e) if was_cancelled || e == "Annulé" => Ok((
