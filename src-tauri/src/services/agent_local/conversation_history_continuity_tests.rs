@@ -5,7 +5,13 @@ use super::support::{cleanup, complete_turn, create_session, envelope, message, 
 use crate::models::agent_session_contract::EditUserMessageInput;
 use crate::models::agent_turn_contract::ResumeTurnInput;
 use crate::services::reasoning_continuity::contract::RouteId;
-use crate::services::reasoning_continuity::envelope::{ContinuationState, ReasoningEnvelope};
+use crate::services::reasoning_continuity::contract::{
+    ContinuationTarget, ContinuationUse, ContractId, CredentialScope, ReasoningModeId, ReplayTarget,
+};
+use crate::services::reasoning_continuity::envelope::{
+    CompletionState, ContinuationState, ReasoningEnvelope, ReasoningSource,
+};
+use crate::services::reasoning_continuity::tool_links::ToolLink;
 
 #[tokio::test]
 async fn display_thinking_never_becomes_continuation_and_opaque_is_exact() {
@@ -38,6 +44,96 @@ async fn display_thinking_never_becomes_continuation_and_opaque_is_exact() {
         .await
         .expect("load display only");
     assert!(display_only.messages[1].continuation.is_none());
+    cleanup(&session.id).await;
+}
+
+#[cfg(debug_assertions)]
+#[tokio::test]
+async fn fixture_candidate_reloads_canonical_tool_links_after_restart() {
+    let scope = CredentialScope::authenticated("fixture-scope").unwrap();
+    let target = ReplayTarget {
+        route_id: RouteId::OpenAi,
+        model_id: "gpt-5.6-luna".into(),
+        credential_scope: scope.clone(),
+        reasoning_mode: ReasoningModeId::Medium,
+        continuation_use: ContinuationUse::UserContinuation,
+    };
+    let source = ReasoningSource::from_target(&target);
+    let mut session = super::super::session_store::create_full(
+        "fixture restart",
+        "gpt-5.6-luna",
+        "openai",
+        false,
+        None,
+    )
+    .await
+    .unwrap();
+    session.reasoning_mode = Some("medium".into());
+    session.thinking_enabled = true;
+    let turn_id = "00000000-0000-4000-8000-000000000010";
+    let mut user = message(
+        "00000000-0000-4000-8000-000000000011",
+        turn_id,
+        "user",
+        "use tool",
+    );
+    user.replay_source = Some(source.clone());
+    let mut assistant = message(
+        "00000000-0000-4000-8000-000000000012",
+        turn_id,
+        "assistant",
+        "",
+    );
+    assistant.tool_calls = Some(vec![super::super::types_message::ToolCallRequest {
+        id: "call-1".into(),
+        extra_content: None,
+        function: super::super::types_message::ToolCallRequestFunction {
+            name: "fixture.write_note".into(),
+            arguments: serde_json::json!({"value":"fixture"}),
+        },
+    }]);
+    assistant.continuation = Some(ReasoningEnvelope::new(
+        ContractId::OpenAiResponsesV1,
+        source,
+        CompletionState::Complete,
+        ContinuationState::ResponsesLocal {
+            items: vec![serde_json::json!({
+                "type":"function_call", "call_id":"call-1", "name":"fixture_write_note"
+            })],
+        },
+        vec![ToolLink {
+            provider_call_id: "call-1".into(),
+            tool_name: "fixture.write_note".into(),
+        }],
+    ));
+    let tool = super::support::tool_result(
+        "00000000-0000-4000-8000-000000000013",
+        turn_id,
+        "call-1",
+        "fixture.write_note",
+        "ok",
+    );
+    let final_assistant = message(
+        "00000000-0000-4000-8000-000000000014",
+        turn_id,
+        "assistant",
+        "done",
+    );
+    session.messages = vec![user, assistant, tool, final_assistant];
+    super::super::session_store::save(&session).await.unwrap();
+
+    let reloaded = super::super::session_store::get(&session.id).await.unwrap();
+    let history = super::super::conversation_history_build::from_continuation(
+        &reloaded,
+        &ContinuationTarget::FixtureCandidate(target),
+    )
+    .expect("canonical fixture history after restart");
+    let envelope = history.messages[1].continuation.as_ref().unwrap();
+    assert_eq!(envelope.tool_links[0].tool_name, "fixture.write_note");
+    let ContinuationState::ResponsesLocal { items } = &envelope.continuation else {
+        panic!("responses continuation");
+    };
+    assert_eq!(items[0]["name"], "fixture_write_note");
     cleanup(&session.id).await;
 }
 

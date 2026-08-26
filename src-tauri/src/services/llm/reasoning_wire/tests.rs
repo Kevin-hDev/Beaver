@@ -119,24 +119,47 @@ fn r07_first_limit_excess_releases_native_state_and_cannot_recover() {
 }
 
 #[test]
-fn response_tool_link_limit_stops_capture_before_the_65th_link_is_stored() {
+fn persisted_tool_link_limit_stops_capture_before_the_65th_link_is_stored() {
     let mut capture = ReasoningCapture::new(context(RouteId::OpenAi, "gpt-5.6-luna")).unwrap();
-    for index in 0..MAX_TOOL_CALLS {
-        capture.observe_json(&json!({
-            "type": "response.output_item.done",
-            "item": {"type":"function_call", "call_id":format!("call-{index}"), "name":"fixture"}
-        }));
-    }
+    let calls = (0..MAX_TOOL_CALLS)
+        .map(|index| ("fixture.write_note".into(), json!({ "index": index })))
+        .collect::<Vec<_>>();
+    let ids = (0..MAX_TOOL_CALLS)
+        .map(|index| format!("call-{index}"))
+        .collect::<Vec<_>>();
+    capture.observe_persisted_tool_links(&calls, &ids);
     assert_eq!(capture.response_tool_links.len(), MAX_TOOL_CALLS);
-    capture.observe_json(&json!({
-        "type": "response.output_item.done",
-        "item": {"type":"function_call", "call_id":"call-overflow", "name":"fixture"}
-    }));
+    capture.observe_persisted_tool_links(
+        &[("fixture.read_note".into(), json!({}))],
+        &["call-overflow".into()],
+    );
     assert!(capture.is_partial());
     assert_eq!(capture.response_tool_links.len(), MAX_TOOL_CALLS);
+    capture.observe_persisted_tool_links(
+        &[("fixture.read_note".into(), json!({}))],
+        &["call-after-stop".into()],
+    );
+    assert_eq!(capture.response_tool_links.len(), MAX_TOOL_CALLS);
+}
+
+#[test]
+fn persisted_tool_links_use_canonical_names_without_changing_native_items() {
+    let mut capture = ReasoningCapture::new(context(RouteId::OpenAi, "gpt-5.6-luna")).unwrap();
     capture.observe_json(&json!({
         "type": "response.output_item.done",
-        "item": {"type":"function_call", "call_id":"call-after-stop", "name":"fixture"}
+        "item": {"type":"function_call", "call_id":"call-1", "name":"fixture_write_note"}
     }));
-    assert_eq!(capture.response_tool_links.len(), MAX_TOOL_CALLS);
+    capture.observe_persisted_tool_links(
+        &[("fixture.write_note".into(), json!({"value":"fixture"}))],
+        &["call-1".into()],
+    );
+    capture.observe_done(&json!({"type":"response.completed"}));
+
+    let envelope = capture.finish_complete().expect("complete envelope");
+    assert_eq!(envelope.tool_links[0].provider_call_id, "call-1");
+    assert_eq!(envelope.tool_links[0].tool_name, "fixture.write_note");
+    let ContinuationState::ResponsesLocal { items } = envelope.continuation else {
+        panic!("responses envelope");
+    };
+    assert_eq!(items[0]["name"], "fixture_write_note");
 }

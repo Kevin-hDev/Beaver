@@ -19,9 +19,7 @@ use crate::services::reasoning_continuity::contract::{
 use crate::services::reasoning_continuity::envelope::{
     CompletionState, ContinuationState, ReasoningEnvelope, ReasoningSource,
 };
-use crate::services::reasoning_continuity::limits::{
-    checked_tool_calls, LimitError, MAX_ENVELOPE_BYTES,
-};
+use crate::services::reasoning_continuity::limits::{LimitError, MAX_ENVELOPE_BYTES};
 use capture::{contract_for, empty_continuation, has_native_items};
 use serde_json::Value;
 
@@ -244,12 +242,8 @@ impl ReasoningCapture {
     }
 
     fn append_response_item(&mut self, item: Value) -> Result<(), LimitError> {
-        let link = responses::tool_link(&item).map_err(|_| LimitError::CaptureSkeleton)?;
+        responses::tool_link(&item).map_err(|_| LimitError::CaptureSkeleton)?;
         self.append_items(vec![item])?;
-        if let Some(link) = link {
-            checked_tool_calls(self.response_tool_links.len(), 1)?;
-            self.response_tool_links.push(link);
-        }
         Ok(())
     }
 

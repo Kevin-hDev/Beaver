@@ -111,11 +111,14 @@ pub(super) async fn consume_stream(
             .tool_call_extra_content
             .push(extra_content.get(index).cloned().flatten());
     }
-    result.continuation = if interrupted {
-        reasoning_capture.and_then(|mut capture| capture.finish_partial())
-    } else {
-        reasoning_capture.and_then(|mut capture| capture.finish_complete())
-    };
+    result.continuation = reasoning_capture.and_then(|mut capture| {
+        if interrupted {
+            capture.finish_partial()
+        } else {
+            capture.observe_persisted_tool_links(&result.tool_calls, &result.tool_call_ids);
+            capture.finish_complete()
+        }
+    });
 
     Ok(if interrupted {
         StreamOutcome::InterruptedForCompression(result)
