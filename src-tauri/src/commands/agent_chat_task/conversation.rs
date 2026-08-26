@@ -3,14 +3,35 @@ use crate::services::agent_local::conversation_history::{ProviderMessage, Provid
 use crate::services::agent_local::types_ollama::{ChatMessage, ToolCallFunction, ToolCallOllama};
 
 pub(crate) enum StreamConversation {
-    Canonical(AdmittedTurn),
+    Canonical {
+        admitted: AdmittedTurn,
+        system_prompt: Option<String>,
+        subagent_owner: Option<(String, String)>,
+    },
     #[deprecated(note = "Tasks 11-13 migrate remaining internal producers")]
     InternalLegacy(Vec<ChatMessage>),
 }
 
 impl StreamConversation {
     pub(crate) fn canonical(admitted: AdmittedTurn) -> Self {
-        Self::Canonical(admitted)
+        Self::Canonical {
+            admitted,
+            system_prompt: None,
+            subagent_owner: None,
+        }
+    }
+
+    pub(crate) fn canonical_for_subagent(
+        admitted: AdmittedTurn,
+        system_prompt: String,
+        run_id: String,
+        execution_id: String,
+    ) -> Self {
+        Self::Canonical {
+            admitted,
+            system_prompt: Some(system_prompt),
+            subagent_owner: Some((run_id, execution_id)),
+        }
     }
 
     #[allow(deprecated, reason = "Tasks 11-13 migrate non-IPC internal producers")]
@@ -20,8 +41,21 @@ impl StreamConversation {
 
     pub(crate) fn into_messages(self) -> Result<Vec<ChatMessage>, String> {
         match self {
-            Self::Canonical(admitted) => {
-                admitted.history.messages.into_iter().map(convert).collect()
+            Self::Canonical {
+                admitted,
+                system_prompt,
+                ..
+            } => {
+                let mut messages = admitted
+                    .history
+                    .messages
+                    .into_iter()
+                    .map(convert)
+                    .collect::<Result<Vec<_>, _>>()?;
+                if let Some(system_prompt) = system_prompt {
+                    messages.insert(0, ChatMessage::system(system_prompt));
+                }
+                Ok(messages)
             }
             #[allow(deprecated)]
             Self::InternalLegacy(messages) => Ok(messages),
@@ -40,16 +74,39 @@ impl StreamConversation {
         String,
     > {
         match self {
-            Self::Canonical(admitted) => {
-                let journal =
+            Self::Canonical {
+                admitted,
+                system_prompt,
+                subagent_owner,
+            } => {
+                let journal = if let Some((run_id, execution_id)) = subagent_owner {
+                    crate::services::agent_local::conversation_journal::ConversationJournal::new_for_subagent(
+                        session_id,
+                        admitted.turn_id.clone(),
+                        admitted.user_message_id.clone(),
+                        admitted.assistant_message_id.clone(),
+                        request_id,
+                        run_id,
+                        execution_id,
+                    )?
+                } else {
                     crate::services::agent_local::conversation_journal::ConversationJournal::new(
                         session_id,
                         admitted.turn_id.clone(),
                         admitted.user_message_id.clone(),
                         admitted.assistant_message_id.clone(),
                         request_id,
-                    )?;
-                Ok((Self::Canonical(admitted).into_messages()?, Some(journal)))
+                    )?
+                };
+                Ok((
+                    Self::Canonical {
+                        admitted,
+                        system_prompt,
+                        subagent_owner: None,
+                    }
+                    .into_messages()?,
+                    Some(journal),
+                ))
             }
             #[allow(deprecated)]
             Self::InternalLegacy(messages) => Ok((messages, None)),
@@ -104,84 +161,5 @@ fn generic_error() -> String {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::services::agent_local::conversation_attachments::ResolvedImage;
-    use crate::services::agent_local::types_message::{ToolCallRequest, ToolCallRequestFunction};
-    use crate::services::reasoning_continuity::contract::{
-        ContractId, CredentialScope, ReasoningModeId, RouteId,
-    };
-    use crate::services::reasoning_continuity::envelope::{
-        CompletionState, ContinuationState, ReasoningEnvelope, ReasoningSource,
-    };
-
-    #[test]
-    fn canonical_adapter_preserves_native_fields_without_rebuilding_reasoning() {
-        let continuation = ReasoningEnvelope::new(
-            ContractId::OllamaNativeV1,
-            ReasoningSource {
-                route_id: RouteId::Ollama,
-                model_id: "qwen3.5:4b".into(),
-                credential_scope: CredentialScope::local_uncredentialed(),
-                reasoning_mode: ReasoningModeId::High,
-            },
-            CompletionState::Complete,
-            ContinuationState::OllamaNative {
-                thinking: "opaque-native".into(),
-            },
-            Vec::new(),
-        );
-        let converted = convert(message(Some(continuation.clone()), None)).unwrap();
-
-        assert_eq!(
-            converted.images.as_deref(),
-            Some(&["image-base64".to_string()][..])
-        );
-        let call = &converted.tool_calls.as_ref().unwrap()[0];
-        assert_eq!(call.id.as_deref(), Some("call-provider-1"));
-        assert_eq!(
-            call.extra_content,
-            Some(serde_json::json!({"signature": "opaque"}))
-        );
-        assert_eq!(call.function.name, "bash");
-        assert_eq!(converted.tool_call_id.as_deref(), Some("call-parent"));
-        assert_eq!(converted.display_thinking.as_deref(), Some("visible only"));
-        assert_eq!(converted.continuation, Some(continuation));
-        assert!(converted.legacy_tool_loop_reasoning.is_none());
-    }
-
-    #[test]
-    fn canonical_adapter_fails_closed_on_legacy_reasoning() {
-        assert!(convert(message(None, Some("forged legacy".into()))).is_err());
-    }
-
-    fn message(continuation: Option<ReasoningEnvelope>, legacy: Option<String>) -> ProviderMessage {
-        ProviderMessage {
-            message_id: Some("message-1".into()),
-            turn_id: "turn-1".into(),
-            role: ProviderRole::Assistant,
-            content: "visible answer".into(),
-            images: vec![ResolvedImage {
-                mime_type: "image/png".into(),
-                base64: "image-base64".into(),
-            }],
-            files: Vec::new(),
-            tool_calls: Some(vec![ToolCallRequest {
-                id: "call-provider-1".into(),
-                extra_content: Some(serde_json::json!({"signature": "opaque"})),
-                function: ToolCallRequestFunction {
-                    name: "bash".into(),
-                    arguments: serde_json::json!({"cmd": "pwd"}),
-                },
-            }]),
-            tool_name: Some("bash".into()),
-            tool_call_id: Some("call-parent".into()),
-            display_thinking: Some("visible only".into()),
-            continuation,
-            legacy_tool_loop_reasoning: legacy,
-            skill_id: None,
-            skill_name: None,
-            continuity_barrier_before: false,
-        }
-    }
-}
+#[path = "conversation_tests.rs"]
+mod tests;
