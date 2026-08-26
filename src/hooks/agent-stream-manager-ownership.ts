@@ -1,7 +1,9 @@
 import { getRecord, records } from "./agent-stream-records";
 import {
+  adoptStreamOwner,
   claimOwnedStop,
   consumeOwnedStop,
+  matchesStreamRun,
   ownedGeneration,
   ownsStreamRun,
   releaseOwnedStop,
@@ -15,7 +17,23 @@ export function ownsRun(sessionId: string, run: StreamRun) {
 }
 
 export function ownsOwner(sessionId: string, owner: symbol) {
-  return getRecord(sessionId)?.runOwner === owner;
+  const record = getRecord(sessionId);
+  return record?.runOwner === owner && !record.stopRequested;
+}
+
+export function adoptOwner(sessionId: string, owner: symbol) {
+  const record = getRecord(sessionId);
+  return record ? adoptStreamOwner(record, owner) : false;
+}
+
+export function matchesRun(sessionId: string, run: StreamRun) {
+  const record = getRecord(sessionId);
+  return record ? matchesStreamRun(record, run) : false;
+}
+
+export function isStopRequested(sessionId: string, run: StreamRun) {
+  const record = getRecord(sessionId);
+  return record ? matchesStreamRun(record, run) && record.stopRequested : false;
 }
 
 export function isOwnerStreaming(owner: symbol) {
@@ -47,9 +65,24 @@ export function completeStop(sessionId: string, owner: symbol, generation: numbe
   return true;
 }
 
-export function discardOwner(owner: symbol) {
-  for (const [sessionId, record] of records) {
+export function completeDeferredStop(sessionId: string, run: StreamRun, generation: number) {
+  const record = getRecord(sessionId);
+  if (!record || !matchesStreamRun(record, run) || !record.stopRequested) return false;
+  stopStreamRecord(sessionId, record, generation);
+  return true;
+}
+
+export function releaseDeferredStop(sessionId: string, run: StreamRun) {
+  const record = getRecord(sessionId);
+  if (!record || !matchesStreamRun(record, run) || !record.stopRequested) return false;
+  record.stopRequested = false;
+  record.stoppingGeneration = null;
+  return true;
+}
+
+export function releaseOwner(owner: symbol) {
+  for (const record of records.values()) {
     if (record.runOwner !== owner) continue;
-    stopStreamRecord(sessionId, record, record.activeGeneration);
+    if (!record.stopRequested) record.runOwner = null;
   }
 }

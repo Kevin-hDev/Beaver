@@ -21,7 +21,9 @@ function makeRecord(): StreamRecord {
     cancelledGenerations: [],
     cancelledWithoutGeneration: false,
     runOwner: null,
+    runOrigin: null,
     runId: 0,
+    stopRequested: false,
     stoppingGeneration: null,
   };
 }

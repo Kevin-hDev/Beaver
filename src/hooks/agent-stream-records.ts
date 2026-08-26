@@ -39,7 +39,9 @@ export function getOrCreateRecord(sessionId: string): StreamRecord {
     cancelledGenerations: [],
     cancelledWithoutGeneration: false,
     runOwner: null,
+    runOrigin: null,
     runId: 0,
+    stopRequested: false,
     stoppingGeneration: null,
   };
   records.set(sessionId, record);

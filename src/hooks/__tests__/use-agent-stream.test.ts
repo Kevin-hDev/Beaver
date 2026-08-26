@@ -17,8 +17,10 @@ const mocks = vi.hoisted(() => ({
   getSnapshot: vi.fn(), isStreaming: vi.fn(), queueUserMessage: vi.fn(),
   removeQueuedUserMessage: vi.fn(), showToast: vi.fn(),
   discardPendingAdmission: vi.fn(), ownsRun: vi.fn(), ownsOwner: vi.fn(),
+  matchesRun: vi.fn(), isStopRequested: vi.fn(), adoptOwner: vi.fn(),
   getOwnedGeneration: vi.fn(), claimStop: vi.fn(), releaseStop: vi.fn(),
-  completeStop: vi.fn(), discardOwner: vi.fn(), isOwnerStreaming: vi.fn(),
+  completeStop: vi.fn(), completeDeferredStop: vi.fn(), releaseDeferredStop: vi.fn(),
+  releaseOwner: vi.fn(), isOwnerStreaming: vi.fn(),
   runs: new Map<string, { owner: symbol; id: number }>(),
   generations: new Map<string, number>(),
   awaitPendingReasoning: vi.fn(),
@@ -38,10 +40,13 @@ vi.mock("../agent-stream-manager", () => ({
     queueUserMessage: mocks.queueUserMessage,
     removeQueuedUserMessage: mocks.removeQueuedUserMessage,
     discardPendingAdmission: mocks.discardPendingAdmission,
-    ownsRun: mocks.ownsRun, ownsOwner: mocks.ownsOwner,
+    ownsRun: mocks.ownsRun, matchesRun: mocks.matchesRun,
+    isStopRequested: mocks.isStopRequested,
+    ownsOwner: mocks.ownsOwner, adoptOwner: mocks.adoptOwner,
     getOwnedGeneration: mocks.getOwnedGeneration,
     claimStop: mocks.claimStop, releaseStop: mocks.releaseStop,
-    completeStop: mocks.completeStop, discardOwner: mocks.discardOwner,
+    completeStop: mocks.completeStop, completeDeferredStop: mocks.completeDeferredStop,
+    releaseDeferredStop: mocks.releaseDeferredStop, releaseOwner: mocks.releaseOwner,
     isOwnerStreaming: mocks.isOwnerStreaming,
   },
 }));
@@ -73,8 +78,16 @@ describe("useAgentStream", () => {
       sessionId: string,
       run: { owner: symbol; id: number },
     ) => mocks.runs.get(sessionId) === run);
+    mocks.matchesRun.mockImplementation((
+      sessionId: string,
+      run: { owner: symbol; id: number },
+    ) => mocks.runs.get(sessionId) === run);
+    mocks.isStopRequested.mockReturnValue(false);
     mocks.ownsOwner.mockImplementation(
       (sessionId: string, owner: symbol) => mocks.runs.get(sessionId)?.owner === owner,
+    );
+    mocks.adoptOwner.mockImplementation(
+      (sessionId: string) => mocks.runs.has(sessionId),
     );
     mocks.getOwnedGeneration.mockImplementation(
       (sessionId: string, owner: symbol) => mocks.runs.get(sessionId)?.owner === owner
@@ -86,7 +99,8 @@ describe("useAgentStream", () => {
     });
     mocks.claimStop.mockImplementation(
       (sessionId: string, owner: symbol) => mocks.runs.get(sessionId)?.owner === owner
-        ? (mocks.generations.get(sessionId) ?? null) : null,
+        && mocks.generations.has(sessionId)
+        ? { kind: "ready", generation: mocks.generations.get(sessionId) } : null,
     );
     mocks.completeStop.mockImplementation((
       sessionId: string,
@@ -100,11 +114,7 @@ describe("useAgentStream", () => {
       mocks.generations.delete(sessionId);
       return true;
     });
-    mocks.discardOwner.mockImplementation((owner: symbol) => {
-      for (const [sessionId, run] of mocks.runs) {
-        if (run.owner === owner) mocks.runs.delete(sessionId);
-      }
-    });
+    mocks.releaseOwner.mockImplementation(() => undefined);
     mocks.queueUserMessage.mockReturnValue(true);
   });
 
@@ -294,7 +304,7 @@ describe("useAgentStream", () => {
     });
   });
 
-  it("retire le staging transitoire au démontage sans relancer un stream", async () => {
+  it("préserve l'admission globale au démontage sans relancer un stream", async () => {
     let resolveAdmission = (_value: typeof ADMISSION) => {};
     mocks.invoke.mockImplementationOnce(() => new Promise<typeof ADMISSION>((resolve) => {
       resolveAdmission = resolve;
@@ -318,9 +328,8 @@ describe("useAgentStream", () => {
     resolveAdmission(ADMISSION);
     await starting;
     expect(mocks.invoke.mock.calls.filter(([command]) => command === "chat_stream")).toHaveLength(1);
-    expect(mocks.invoke).toHaveBeenCalledWith("cancel_agent_request", {
-      sessionId: "session-1", generation: 42,
-    });
+    expect(mocks.invoke.mock.calls.filter(([command]) => command === "cancel_agent_request"))
+      .toEqual([]);
   });
 
   it("annule avec la génération Rust active", async () => {

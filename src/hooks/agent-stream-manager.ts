@@ -50,12 +50,17 @@ import {
 import type { StreamRun } from "./agent-stream-run-ownership";
 import {
   claimStop,
+  completeDeferredStop,
   completeStop,
-  discardOwner,
+  adoptOwner,
   getOwnedGeneration,
   isOwnerStreaming,
+  isStopRequested,
+  matchesRun,
   ownsOwner,
   ownsRun,
+  releaseDeferredStop,
+  releaseOwner,
   releaseStop,
 } from "./agent-stream-manager-ownership";
 import { stopStreamRecord } from "./agent-stream-stop";
@@ -70,8 +75,9 @@ type Subscriber = (snapshot: StreamSnapshot) => void;
 let listenPromise: Promise<UnlistenFn> | null = null;
 
 export const agentStreamManager = { startSession, stopSession, failSession, setSessionGeneration,
-  discardPendingAdmission, ownsRun, ownsOwner, getOwnedGeneration,
-  claimStop, releaseStop, completeStop, discardOwner, isOwnerStreaming,
+  discardPendingAdmission, ownsRun, matchesRun, isStopRequested, ownsOwner, adoptOwner,
+  getOwnedGeneration, claimStop, releaseStop, completeStop, completeDeferredStop,
+  releaseDeferredStop, releaseOwner, isOwnerStreaming,
   clearPermission: clearStreamPermission, getSnapshot, getActivity, isStreaming, subscribe,
   queueUserMessage, removeQueuedUserMessage, reconcileTurnAdmission,
   subscribeActivity: subscribeStreamActivity };

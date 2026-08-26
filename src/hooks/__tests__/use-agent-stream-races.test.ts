@@ -223,12 +223,12 @@ describe("useAgentStream admission races", () => {
       });
     });
 
-    let stopped = false;
+    let stopped = "ignored";
     await act(async () => {
       stopped = await result.current.stopStream("session-a");
     });
 
-    expect(stopped).toBe(true);
+    expect(stopped).toBe("stopped");
     expect(mocks.invoke).toHaveBeenCalledWith("cancel_agent_request", {
       sessionId: "session-a", generation: 11,
     });
@@ -239,7 +239,7 @@ describe("useAgentStream admission races", () => {
     await act(async () => {
       stopped = await result.current.stopStream("unknown-session");
     });
-    expect(stopped).toBe(false);
+    expect(stopped).toBe("ignored");
     expect(agentStreamManager.getSnapshot("session-b")?.currentContent).toBe("B");
   });
 
@@ -308,18 +308,18 @@ describe("useAgentStream admission races", () => {
       });
     });
 
-    let stopped = true;
+    let stopped = "stopped";
     await act(async () => {
       stopped = await result.current.stopStream("same-session");
     });
 
-    expect(stopped).toBe(false);
+    expect(stopped).toBe("ignored");
     expect(agentStreamManager.getSnapshot("same-session")?.isStreaming).toBe(true);
     expect(agentStreamManager.getSnapshot("same-session")?.currentContent)
       .toBe("encore visible");
   });
 
-  it("purge les buckets précoces au démontage du propriétaire", async () => {
+  it("préserve les buckets précoces au démontage du propriétaire", async () => {
     const pending = deferred<ChatStreamAdmission>();
     mocks.invoke.mockImplementation((command: string) => {
       if (command === "chat_stream") return pending.promise;
@@ -338,6 +338,134 @@ describe("useAgentStream admission races", () => {
 
     unmount();
 
+    expect(records.get("same-session")?.pendingAdmissionBuckets).toHaveLength(1);
+  });
+
+  it("mémorise un stop pendant l'admission puis annule sa génération exacte", async () => {
+    const first = deferred<ChatStreamAdmission>();
+    let chatCalls = 0;
+    mocks.invoke.mockImplementation((command: string) => {
+      if (command === "chat_stream") {
+        chatCalls += 1;
+        return chatCalls === 1 ? first.promise : Promise.resolve(admission(62));
+      }
+      return Promise.resolve(undefined);
+    });
+    const { result } = renderHook(() => useAgentStream());
+    let firstRun!: Promise<void>;
+
+    await act(async () => {
+      firstRun = start(result, "stopped-before-admission");
+      await vi.waitFor(() => expect(chatCalls).toBe(1));
+      expect(await result.current.stopStream("same-session")).toBe("stopping");
+      emit("same-session", 61, {
+        event: "token",
+        data: { content: "never replayed", tokenCount: 1, tps: 1 },
+      });
+      first.resolve(admission(61));
+      await firstRun;
+    });
+
+    expect(mocks.invoke.mock.calls.filter(([command]) => command === "cancel_agent_request"))
+      .toEqual([["cancel_agent_request", { sessionId: "same-session", generation: 61 }]]);
+    expect(agentStreamManager.getSnapshot("same-session")?.currentContent).toBe("");
+    expect(agentStreamManager.getSnapshot("same-session")?.isStreaming).toBe(false);
+
+    await act(async () => {
+      await start(result, "next-run");
+      emit("same-session", 62, {
+        event: "token", data: { content: "B", tokenCount: 1, tps: 1 },
+      });
+    });
+    expect(agentStreamManager.getSnapshot("same-session")?.currentContent).toBe("B");
+  });
+
+  it("nettoie un stop en attente quand l'admission est refusée", async () => {
+    const pending = deferred<ChatStreamAdmission>();
+    mocks.invoke.mockImplementation((command: string) => {
+      if (command === "chat_stream") return pending.promise;
+      return Promise.resolve(undefined);
+    });
+    const { result } = renderHook(() => useAgentStream());
+    let running!: Promise<void>;
+    await act(async () => {
+      running = start(result, "rejected-after-stop");
+      await vi.waitFor(() => expect(mocks.invoke).toHaveBeenCalledWith(
+        "chat_stream", expect.anything(),
+      ));
+      expect(await result.current.stopStream("same-session")).toBe("stopping");
+      pending.reject(new Error("internal"));
+      await running;
+    });
+
+    const snapshot = agentStreamManager.getSnapshot("same-session");
+    expect(snapshot?.completed).toBe(true);
+    expect(snapshot?.error).toBeTruthy();
     expect(records.get("same-session")?.pendingAdmissionBuckets).toHaveLength(0);
+    expect(mocks.invoke.mock.calls.filter(([command]) => command === "cancel_agent_request"))
+      .toEqual([]);
+  });
+
+  it("laisse un stream admis adoptable après un démontage puis l'arrête exactement", async () => {
+    mocks.invoke.mockImplementation((command: string) => {
+      if (command === "chat_stream") return Promise.resolve(admission(71));
+      return Promise.resolve(undefined);
+    });
+    const firstHook = renderHook(() => useAgentStream());
+    await act(async () => {
+      await start(firstHook.result, "admitted-before-unmount");
+      emit("same-session", 71, {
+        event: "token", data: { content: "continues", tokenCount: 1, tps: 1 },
+      });
+    });
+
+    firstHook.unmount();
+    expect(agentStreamManager.getSnapshot("same-session")?.isStreaming).toBe(true);
+    expect(agentStreamManager.getSnapshot("same-session")?.currentContent).toBe("continues");
+
+    const remounted = renderHook(() => useAgentStream());
+    await act(async () => {
+      expect(await remounted.result.current.stopStream("same-session")).toBe("stopped");
+    });
+    expect(mocks.invoke).toHaveBeenCalledWith("cancel_agent_request", {
+      sessionId: "same-session", generation: 71,
+    });
+  });
+
+  it("termine une admission globale après démontage et la rend adoptable", async () => {
+    const pending = deferred<ChatStreamAdmission>();
+    mocks.invoke.mockImplementation((command: string) => {
+      if (command === "chat_stream") return pending.promise;
+      return Promise.resolve(undefined);
+    });
+    const firstHook = renderHook(() => useAgentStream());
+    let running!: Promise<void>;
+    await act(async () => {
+      running = start(firstHook.result, "pending-unmount");
+      await vi.waitFor(() => expect(mocks.invoke).toHaveBeenCalledWith(
+        "chat_stream", expect.anything(),
+      ));
+      emit("same-session", 81, {
+        event: "token", data: { content: "early survives", tokenCount: 1, tps: 1 },
+      });
+    });
+    firstHook.unmount();
+
+    await act(async () => {
+      pending.resolve(admission(81));
+      await running;
+    });
+    expect(agentStreamManager.getSnapshot("same-session")?.isStreaming).toBe(true);
+    expect(agentStreamManager.getSnapshot("same-session")?.currentContent).toBe("early survives");
+    expect(mocks.invoke.mock.calls.filter(([command]) => command === "cancel_agent_request"))
+      .toEqual([]);
+
+    const remounted = renderHook(() => useAgentStream());
+    await act(async () => {
+      expect(await remounted.result.current.stopStream("same-session")).toBe("stopped");
+    });
+    expect(mocks.invoke).toHaveBeenCalledWith("cancel_agent_request", {
+      sessionId: "same-session", generation: 81,
+    });
   });
 });

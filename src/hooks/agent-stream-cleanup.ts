@@ -27,7 +27,9 @@ export interface StreamRecord {
   cancelledGenerations: number[];
   cancelledWithoutGeneration: boolean;
   runOwner: symbol | null;
+  runOrigin: symbol | null;
   runId: number;
+  stopRequested: boolean;
   stoppingGeneration: number | null;
 }
 
