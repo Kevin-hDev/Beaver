@@ -18,10 +18,6 @@ pub fn build_chat_messages(session: &AgentSession) -> Result<Vec<ChatMessage>, S
     Ok(messages)
 }
 
-pub fn new_user_message(content: &str) -> ChatMessage {
-    ChatMessage::user(content.to_string())
-}
-
 pub fn chat_to_agent_message(m: &ChatMessage) -> Option<AgentMessage> {
     if m.role == "system" {
         return None;
