@@ -5,6 +5,8 @@ use super::stream_events::AgentEventEmitter;
 use super::subagent_orchestration::ParentSubagentOrchestrator;
 use super::types_ollama::{ChatMessage, OllamaThink, StreamResult};
 use crate::services::compress::realtime_budget::RealtimeBudget;
+use crate::services::reasoning_continuity::contract::{ContinuationUse, ReplayTarget};
+use crate::services::reasoning_continuity::registry::{ActivationState, ReplayRequirement};
 use std::path::Path;
 use tokio_util::sync::CancellationToken;
 
@@ -78,7 +80,10 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
         params.think.clone(),
     );
     request.capture_reasoning = params.capture_reasoning;
-    request.live_replay_target = params.live_replay_target.cloned();
+    request.live_replay_target = params
+        .live_replay_target
+        .map(|target| live_target_for_request(target, follows_tool_result(params.messages)))
+        .transpose()?;
     #[cfg(debug_assertions)]
     {
         request.fixture_candidate = params.fixture_candidate.cloned();
@@ -177,3 +182,31 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
         generation,
     })
 }
+
+fn follows_tool_result(messages: &[ChatMessage]) -> bool {
+    messages.last().is_some_and(|message| message.role == "tool")
+}
+
+fn live_target_for_request(
+    target: &ReplayTarget,
+    follows_tool_result: bool,
+) -> Result<ReplayTarget, String> {
+    let mut target = target.clone();
+    target.continuation_use = if follows_tool_result {
+        ContinuationUse::ToolContinuation
+    } else {
+        ContinuationUse::UserContinuation
+    };
+    let allowed = crate::services::reasoning_continuity::registry::replay_policy(&target)
+        .is_some_and(|policy| {
+            policy.activation == ActivationState::LiveValidated
+                && policy.requirement != ReplayRequirement::Forbidden
+        });
+    allowed
+        .then_some(target)
+        .ok_or_else(|| "reasoning_continuity_invalid".to_string())
+}
+
+#[cfg(test)]
+#[path = "agent_loop_ollama_request_tests.rs"]
+mod tests;

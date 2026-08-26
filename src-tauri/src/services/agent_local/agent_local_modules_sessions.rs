@@ -75,6 +75,8 @@ mod session_view_mutation_tests;
 #[cfg(test)]
 mod session_view_test_support;
 #[cfg(test)]
+mod session_view_continuity_tests;
+#[cfg(test)]
 mod session_fast_mode_tests;
 pub mod session_subagents;
 pub mod session_tabs;
