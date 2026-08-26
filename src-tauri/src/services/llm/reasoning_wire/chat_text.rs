@@ -25,8 +25,8 @@ fn from_message(message: &Value) -> Vec<&str> {
 }
 
 /// Applique une enveloppe native au message assistant exact. Les politiques
-/// optionnelles restent silencieuses hors activation ; les politiques required
-/// ferment l'appel avant réseau dès que l'enveloppe manque ou est invalide.
+/// optionnelles tolèrent seulement l'absence d'enveloppe ; toute provenance
+/// présente mais invalide ferme l'appel avant réseau.
 pub(crate) fn apply_continuity(
     messages: &[ChatMessage],
     target: Option<&ContinuationTarget>,
@@ -44,7 +44,7 @@ pub(crate) fn apply_continuity(
     let Some(policy) =
         crate::services::reasoning_continuity::registry::replay_policy(replay_target)
     else {
-        return Ok(());
+        return Err(super::replay::ReplayApplyError::Blocked);
     };
     if policy.requirement == ReplayRequirement::Forbidden {
         return Ok(());
@@ -68,11 +68,7 @@ pub(crate) fn apply_continuity(
                 }
                 continue;
             };
-            let approval = match super::replay::approval_for_target(&target, envelope) {
-                Ok(approval) => approval,
-                Err(_error) if policy.requirement == ReplayRequirement::Optional => continue,
-                Err(error) => return Err(error),
-            };
+            let approval = super::replay::approval_for_target(&target, envelope)?;
             super::replay::apply_chat_continuity_at(
                 message,
                 &approval,

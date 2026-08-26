@@ -336,6 +336,59 @@ fn required_rejects_partial_and_provenance_mismatch_before_serialization() {
 }
 
 #[test]
+fn optional_present_invalid_envelope_blocks_before_serialization() {
+    let target = fixture_target(replay_target(
+        RouteId::Cerebras,
+        "zai-glm-4.7",
+        ReasoningModeId::Auto,
+        ContinuationUse::UserContinuation,
+    ));
+    let replay = target.replay().unwrap();
+    let messages = [
+        ChatMessage::assistant(
+            "prior".into(),
+            None,
+            Some(envelope(
+                replay,
+                ContractId::CerebrasChatV1,
+                CompletionState::Partial,
+                ContinuationState::CerebrasReasoning {
+                    reasoning: "partial".into(),
+                },
+            )),
+            None,
+            None,
+        ),
+        ChatMessage::user("continue".into()),
+    ];
+
+    assert!(payload("cerebras", "zai-glm-4.7", &messages, &target, "auto").is_err());
+}
+
+#[test]
+fn replay_target_without_a_registered_policy_blocks_chat_payload() {
+    let target = ContinuationTarget::Replay(replay_target(
+        RouteId::Moonshot,
+        "unregistered-kimi-model",
+        ReasoningModeId::Auto,
+        ContinuationUse::UserContinuation,
+    ));
+    let messages = [
+        ChatMessage::assistant("prior".into(), None, None, None, None),
+        ChatMessage::user("continue".into()),
+    ];
+
+    assert!(payload(
+        "moonshot",
+        "unregistered-kimi-model",
+        &messages,
+        &target,
+        "auto"
+    )
+    .is_err());
+}
+
+#[test]
 fn kimi_keeps_an_empty_native_reasoning_field_and_legacy_text_is_never_a_fallback() {
     let target = fixture_target(replay_target(
         RouteId::Moonshot,

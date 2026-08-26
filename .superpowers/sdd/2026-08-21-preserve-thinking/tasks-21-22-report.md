@@ -37,3 +37,13 @@ user continuation never serializes reasoning.
   empty fields, partial state, model/scope/mode mismatch, first requests,
   fixture-only activation, and Groq exclusion.
 - No live provider call, fixture activation, or registry activation was made.
+
+## Follow-up correction
+
+- Production admission now creates a replay target only when at least one
+  non-forbidden User or Tool policy is `LiveValidated`. Disabled required
+  routes, including the current DeepSeek tool contract, remain forbidden in
+  normal chat; fixture candidates remain the debug-only proof path.
+- Optional policies now tolerate only a missing envelope. A present envelope
+  that is partial, compacted, or fails provenance blocks before serialization;
+  a replay target without a registered policy blocks as well.

@@ -1,5 +1,19 @@
 use super::*;
 
+fn build_with_scope(
+    model: &str,
+    persisted_mode: Option<&str>,
+    route_id: RouteId,
+    credential_scope: CredentialScope,
+) -> Result<ReplayTarget, String> {
+    let reasoning_mode = ReasoningModeId::from_name(persisted_mode).ok_or_else(generic_error)?;
+    build_with_mode(model, route_id, credential_scope, reasoning_mode)
+}
+
+fn reasoning_mode_id(mode: Option<&str>) -> Result<ReasoningModeId, String> {
+    ReasoningModeId::from_name(mode).ok_or_else(generic_error)
+}
+
 #[test]
 fn api_and_oauth_routes_keep_distinct_scopes_without_exposing_them() {
     let api = build_with_scope(
@@ -125,6 +139,36 @@ async fn groq_resolves_as_explicit_non_replay_without_a_credential_scope() {
     assert!(stored.messages[0].replay_source.is_none());
     assert!(stored.messages[0].continuation.is_none());
     cleanup(&session.id).await;
+}
+
+#[tokio::test]
+async fn disabled_required_route_resolves_as_forbidden_until_live_validated() {
+    let mut session = crate::services::agent_local::session_store::create_full(
+        "Disabled required route",
+        "gemini-3.7-flash",
+        "google",
+        true,
+        None,
+    )
+    .await
+    .unwrap();
+    session.reasoning_mode = Some("medium".into());
+    session.thinking_enabled = true;
+    let session_id = session.id.clone();
+    let target = resolve_session(
+        session,
+        RouteId::Google,
+        None,
+        Some(true),
+        Some(CredentialScope::authenticated("test-scope").unwrap()),
+    )
+    .unwrap();
+
+    assert!(matches!(
+        target.continuation,
+        ContinuationTarget::Forbidden(_)
+    ));
+    cleanup(&session_id).await;
 }
 
 #[tokio::test]
@@ -328,19 +372,18 @@ async fn api_mode_is_identical_from_resolution_through_payload_and_provenance() 
         .await
         .unwrap();
     assert_eq!(stored.reasoning_mode.as_deref(), Some("high"));
-    let source = stored.messages[0]
-        .replay_source
-        .as_ref()
-        .expect("DeepSeek keeps the authenticated scope for a possible required tool turn");
-    assert_eq!(source.route_id, RouteId::DeepSeek);
-    assert_eq!(source.reasoning_mode, ReasoningModeId::High);
+    assert!(matches!(
+        target.continuation,
+        ContinuationTarget::Forbidden(_)
+    ));
+    assert!(stored.messages[0].replay_source.is_none());
     assert_eq!(payload["thinking"]["type"], "enabled");
     assert_eq!(payload["reasoning_effort"], "high");
     cleanup(&session.id).await;
 }
 
 #[tokio::test]
-async fn resume_replaces_stale_mode_and_scope_before_future_suffix_matching() {
+async fn disabled_deepseek_resume_does_not_store_replay_provenance() {
     let mut session = crate::services::agent_local::session_store::create_full(
         "Resume provenance",
         "deepseek-v4-flash",
@@ -406,15 +449,7 @@ async fn resume_replaces_stale_mode_and_scope_before_future_suffix_matching() {
     let stored = crate::services::agent_local::session_store::get(&session_id)
         .await
         .unwrap();
-    let source = stored
-        .messages
-        .last()
-        .unwrap()
-        .replay_source
-        .as_ref()
-        .unwrap();
-    assert_eq!(source.credential_scope.as_str(), "new-scope");
-    assert_eq!(source.reasoning_mode, ReasoningModeId::High);
+    assert!(stored.messages.last().unwrap().replay_source.is_none());
     assert_eq!(stored.messages.last().unwrap().content, "edited retry");
     cleanup(&session_id).await;
 }

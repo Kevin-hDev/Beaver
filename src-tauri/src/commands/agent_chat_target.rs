@@ -2,7 +2,7 @@ use crate::services::reasoning_continuity::contract::{
     ContinuationTarget, ContinuationUse, CredentialScope, NonReplayTarget, ReasoningModeId,
     ReplayTarget, RouteId,
 };
-use crate::services::reasoning_continuity::registry::ReplayRequirement;
+use crate::services::reasoning_continuity::registry::{ActivationState, ReplayRequirement};
 
 pub(crate) struct ResolvedChatTarget {
     pub continuation: ContinuationTarget,
@@ -129,16 +129,22 @@ fn continuation_for_session(
         crate::services::reasoning_continuity::registry::replay_policy(&tool_target),
     ];
     let required = policies
-        .into_iter()
+        .iter()
         .flatten()
         .any(|policy| policy.requirement == ReplayRequirement::Required);
+    let has_live_replay_policy = policies.iter().flatten().any(|policy| {
+        policy.activation == ActivationState::LiveValidated
+            && policy.requirement != ReplayRequirement::Forbidden
+    });
     // La capture garde le scope initial jusqu'au tour outil : une politique
-    // user forbidden ne doit jamais effacer la politique tool required.
-    let enabled = required
-        || (!matches!(
-            session.preserve_reasoning,
-            crate::services::agent_local::types_session::PreserveReasoningSetting::Off
-        ) && crate::services::reasoning_continuity::registry::replay_policy(&target).is_some());
+    // user forbidden ne doit jamais effacer une politique tool live required.
+    let enabled = has_live_replay_policy
+        && (required
+            || (!matches!(
+                session.preserve_reasoning,
+                crate::services::agent_local::types_session::PreserveReasoningSetting::Off
+            ) && crate::services::reasoning_continuity::registry::replay_policy(&target)
+                .is_some()));
     enabled
         .then_some(ContinuationTarget::Replay(target))
         .map_or_else(blocked, Ok)
@@ -188,17 +194,6 @@ async fn resolve_with_api_capability(
     resolve_session(session, route_id, None, Some(supports_thinking), scope)
 }
 
-#[cfg(test)]
-fn build_with_scope(
-    model: &str,
-    persisted_mode: Option<&str>,
-    route_id: RouteId,
-    credential_scope: CredentialScope,
-) -> Result<ReplayTarget, String> {
-    let mode = reasoning_mode_id(persisted_mode)?;
-    build_with_mode(model, route_id, credential_scope, mode)
-}
-
 fn build_with_mode(
     model: &str,
     route_id: RouteId,
@@ -214,11 +209,6 @@ fn build_with_mode(
     };
     target.validate().map_err(|_| generic_error())?;
     Ok(target)
-}
-
-#[cfg(test)]
-fn reasoning_mode_id(mode: Option<&str>) -> Result<ReasoningModeId, String> {
-    ReasoningModeId::from_name(mode).ok_or_else(generic_error)
 }
 
 fn generic_error() -> String {
