@@ -92,18 +92,6 @@ pub(crate) async fn start(
     request.think = target.reasoning.active;
     request.reasoning_mode = target.reasoning.mode_name.clone();
     request.capability_hints = StreamCapabilityHints::default();
-    let resolved_dir = match super::agent_working_dir::resolve_for_session(
-        &request.session_id,
-        request.working_dir.as_deref(),
-    )
-    .await
-    {
-        Ok(directory) => directory,
-        Err(_) => {
-            rollback(streams, &request.session_id, &stream).await;
-            return Err(generic_error());
-        }
-    };
     let turn = match super::agent_chat_turn::prepare(request.turn.take().ok_or_else(generic_error)?)
         .await
     {
@@ -129,11 +117,30 @@ pub(crate) async fn start(
             return Err(error);
         }
     };
+    let resolved_dir = match super::agent_working_dir::resolve_for_session(
+        &request.session_id,
+        request.working_dir.as_deref(),
+    )
+    .await
+    {
+        Ok(directory) => directory,
+        Err(_) => {
+            let rollback_result = super::agent_chat_turn::rollback_current(
+                streams,
+                &request.session_id,
+                stream.generation,
+                &admitted,
+            )
+            .await;
+            rollback(streams, &request.session_id, &stream).await;
+            return rollback_result.and(Err(generic_error()));
+        }
+    };
     let result = ChatStreamAdmission {
         generation: stream.generation,
-        turn_id: admitted.turn_id.clone(),
-        user_message_id: admitted.user_message_id.clone(),
-        assistant_message_id: admitted.assistant_message_id.clone(),
+        turn_id: admitted.turn.turn_id.clone(),
+        user_message_id: admitted.turn.user_message_id.clone(),
+        assistant_message_id: admitted.turn.assistant_message_id.clone(),
     };
     spawn(
         app,
@@ -141,7 +148,7 @@ pub(crate) async fn start(
         streams,
         stream,
         work,
-        admitted,
+        admitted.turn,
         target,
         resolved_dir,
         result.clone(),

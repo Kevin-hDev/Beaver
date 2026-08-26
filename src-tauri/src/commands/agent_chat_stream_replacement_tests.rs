@@ -46,13 +46,20 @@ fn capacity_precedes_resolution_and_durable_admission_precedes_spawn() {
     let target = source.find("agent_chat_target::resolve").unwrap();
     let resolution = source.find("agent_chat_turn::prepare").unwrap();
     let durable = source.find("agent_chat_turn::admit").unwrap();
+    let working_dir = source
+        .find("agent_working_dir::resolve_for_session")
+        .unwrap();
     let spawn = source.find("spawn(").unwrap();
 
     assert!(capacity < target);
     assert!(target < resolution);
     assert!(resolution < durable);
     assert!(
-        durable < spawn,
+        durable < working_dir,
+        "le répertoire de travail ne peut pas précéder l'admission durable"
+    );
+    assert!(
+        working_dir < spawn,
         "provider work can start before the user is durable"
     );
 }
