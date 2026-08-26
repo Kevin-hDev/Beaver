@@ -72,6 +72,22 @@ async fn resume_inner(
         Some(update) => update.apply(&mut session).map_err(|_| error())?,
         None => false,
     };
+    let expected_source = target.replay().map(
+        crate::services::reasoning_continuity::envelope::ReasoningSource::from_target,
+    );
+    let source_changed = {
+        let message = session.messages.last_mut().ok_or_else(error)?;
+        if message.id != input.message_id
+            || message.role != "user"
+            || !message.files.is_empty()
+            || message.skill_names.as_ref().is_some_and(|names| !names.is_empty())
+        {
+            return Err(error());
+        }
+        let changed = message.replay_source != expected_source;
+        message.replay_source = expected_source;
+        changed
+    };
     let history = super::conversation_history_resolve::from_session_for_continuation(
         &session,
         &target,
@@ -82,12 +98,7 @@ async fn resume_inner(
     .map_err(|_| error())?;
     let message = session.messages.last().ok_or_else(error)?;
     let provider = history.messages.last().ok_or_else(error)?;
-    if message.id != input.message_id
-        || message.role != "user"
-        || provider.role != ProviderRole::User
-        || !message.files.is_empty()
-        || message.skill_names.as_ref().is_some_and(|names| !names.is_empty())
-    {
+    if provider.role != ProviderRole::User {
         return Err(error());
     }
     let mut used = session
@@ -96,7 +107,7 @@ async fn resume_inner(
         .flat_map(|message| [message.id.clone(), message.turn_id.clone()])
         .collect::<HashSet<_>>();
     let assistant_message_id = unique_uuid(&mut used, &mut || Uuid::new_v4().to_string())?;
-    if reasoning_changed {
+    if reasoning_changed || source_changed {
         super::session_store::save(&session)
             .await
             .map_err(|_| error())?;

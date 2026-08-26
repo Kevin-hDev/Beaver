@@ -346,7 +346,168 @@ async fn api_mode_is_identical_from_resolution_through_payload_and_provenance() 
     cleanup(&session.id).await;
 }
 
-async fn admit_resolved(session_id: &str, target: &ResolvedChatTarget) {
+#[tokio::test]
+async fn resume_replaces_stale_mode_and_scope_before_future_suffix_matching() {
+    let mut session = crate::services::agent_local::session_store::create_full(
+        "Resume provenance",
+        "deepseek-v4-flash",
+        "deepseek",
+        true,
+        None,
+    )
+    .await
+    .unwrap();
+    session.reasoning_mode = Some("low".into());
+    session.thinking_enabled = true;
+    let session_id = session.id.clone();
+    crate::services::agent_local::session_store::save(&session)
+        .await
+        .unwrap();
+    let old = resolve_session(
+        session,
+        RouteId::DeepSeek,
+        None,
+        Some(true),
+        Some(CredentialScope::authenticated("old-scope").unwrap()),
+    )
+    .unwrap();
+    let admitted = admit_resolved(&session_id, &old).await;
+
+    crate::services::agent_local::session_ops::edit_user_message(
+        &session_id,
+        crate::models::agent_session_contract::EditUserMessageInput {
+            message_id: admitted.user_message_id.clone(),
+            new_content: "edited retry".into(),
+        },
+    )
+    .await
+    .unwrap();
+    let mut changed = crate::services::agent_local::session_store::get(&session_id)
+        .await
+        .unwrap();
+    changed.reasoning_mode = Some("high".into());
+    crate::services::agent_local::session_store::save(&changed)
+        .await
+        .unwrap();
+    let current = resolve_session(
+        changed,
+        RouteId::DeepSeek,
+        None,
+        Some(true),
+        Some(CredentialScope::authenticated("new-scope").unwrap()),
+    )
+    .unwrap();
+    let replay = current.continuation.replay().unwrap().clone();
+    let lease =
+        crate::services::agent_local::session_locks::acquire_admission_lease(&session_id).await;
+    crate::services::agent_local::conversation_resume::resume_with_lease_and_reasoning(
+        &lease,
+        crate::models::agent_turn_contract::ResumeTurnInput {
+            message_id: admitted.user_message_id.clone(),
+        },
+        current.continuation,
+        &current.session_reasoning,
+    )
+    .await
+    .unwrap();
+
+    let mut stored = crate::services::agent_local::session_store::get(&session_id)
+        .await
+        .unwrap();
+    let source = stored
+        .messages
+        .last()
+        .unwrap()
+        .replay_source
+        .as_ref()
+        .unwrap();
+    assert_eq!(source.reasoning_mode, ReasoningModeId::High);
+    assert_eq!(source.credential_scope.as_str(), "new-scope");
+    assert_eq!(stored.messages.last().unwrap().content, "edited retry");
+    stored.messages.push(assistant_with_continuation(
+        &admitted,
+        crate::services::reasoning_continuity::envelope::ReasoningEnvelope::new(
+            crate::services::reasoning_continuity::contract::ContractId::DeepSeekChatV1,
+            crate::services::reasoning_continuity::envelope::ReasoningSource::from_target(&replay),
+            crate::services::reasoning_continuity::envelope::CompletionState::Complete,
+            crate::services::reasoning_continuity::envelope::ContinuationState::ChatReasoning {
+                reasoning_content: "opaque".into(),
+            },
+            Vec::new(),
+        ),
+    ));
+    crate::services::agent_local::session_store::save(&stored)
+        .await
+        .unwrap();
+    let future =
+        crate::services::agent_local::conversation_history::load_for_target(&session_id, &replay)
+            .await
+            .unwrap();
+    assert_eq!(future.compatible_suffix_start, 0);
+    assert!(future.messages.last().unwrap().continuation.is_some());
+    cleanup(&session_id).await;
+}
+
+#[tokio::test]
+async fn forbidden_resume_erases_stale_replay_source() {
+    let mut session = crate::services::agent_local::session_store::create_full(
+        "Forbidden resume",
+        "deepseek-v4-flash",
+        "deepseek",
+        true,
+        None,
+    )
+    .await
+    .unwrap();
+    session.reasoning_mode = Some("high".into());
+    session.thinking_enabled = true;
+    let session_id = session.id.clone();
+    crate::services::agent_local::session_store::save(&session)
+        .await
+        .unwrap();
+    let replay = resolve_session(
+        session,
+        RouteId::DeepSeek,
+        None,
+        Some(true),
+        Some(CredentialScope::authenticated("old-scope").unwrap()),
+    )
+    .unwrap();
+    let admitted = admit_resolved(&session_id, &replay).await;
+    let mut changed = crate::services::agent_local::session_store::get(&session_id)
+        .await
+        .unwrap();
+    changed.provider = "groq".into();
+    changed.model = "openai/gpt-oss-120b".into();
+    changed.reasoning_mode = Some("medium".into());
+    crate::services::agent_local::session_store::save(&changed)
+        .await
+        .unwrap();
+    let forbidden = resolve_session(changed, RouteId::Groq, None, Some(true), None).unwrap();
+    let lease =
+        crate::services::agent_local::session_locks::acquire_admission_lease(&session_id).await;
+    crate::services::agent_local::conversation_resume::resume_with_lease_and_reasoning(
+        &lease,
+        crate::models::agent_turn_contract::ResumeTurnInput {
+            message_id: admitted.user_message_id,
+        },
+        forbidden.continuation,
+        &forbidden.session_reasoning,
+    )
+    .await
+    .unwrap();
+
+    let stored = crate::services::agent_local::session_store::get(&session_id)
+        .await
+        .unwrap();
+    assert!(stored.messages.last().unwrap().replay_source.is_none());
+    cleanup(&session_id).await;
+}
+
+async fn admit_resolved(
+    session_id: &str,
+    target: &ResolvedChatTarget,
+) -> crate::services::agent_local::conversation_admission::AdmittedTurn {
     let input = crate::services::agent_local::conversation_input::resolve_with_key(
         crate::models::agent_turn_contract::NewUserTurnInput {
             content: "continue".into(),
@@ -366,7 +527,35 @@ async fn admit_resolved(session_id: &str, target: &ResolvedChatTarget) {
         &target.session_reasoning,
     )
     .await
-    .unwrap();
+    .unwrap()
+}
+
+fn assistant_with_continuation(
+    admitted: &crate::services::agent_local::conversation_admission::AdmittedTurn,
+    continuation: crate::services::reasoning_continuity::envelope::ReasoningEnvelope,
+) -> crate::services::agent_local::types_message::AgentMessage {
+    crate::services::agent_local::types_message::AgentMessage {
+        id: admitted.assistant_message_id.clone(),
+        turn_id: admitted.turn_id.clone(),
+        role: "assistant".into(),
+        content: "answer".into(),
+        thinking: None,
+        tool_calls: None,
+        tool_name: None,
+        tool_call_id: None,
+        continuation: Some(continuation),
+        replay_source: None,
+        tool_activities: None,
+        segments: None,
+        files: Vec::new(),
+        timestamp: chrono::Utc::now(),
+        tokens: 0,
+        work_duration_ms: None,
+        skill_names: None,
+        skill_ids: None,
+        stream_run_id: None,
+        stream_part: None,
+    }
 }
 
 async fn cleanup(session_id: &str) {

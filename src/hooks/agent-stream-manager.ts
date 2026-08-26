@@ -105,14 +105,15 @@ function stopSession(sessionId: string, generation?: number | null) {
 
 function setSessionGeneration(sessionId: string, generation: number) {
   const pending = adoptSessionGeneration(sessionId, generation);
-  if (!pending || !pending.accepted) return;
+  if (!pending || !pending.accepted) return "rejected" as const;
   if (pending.overflowed) {
     failSession(sessionId);
-    return;
+    return "overflowed" as const;
   }
   for (const item of pending.events) {
     handleStreamEvent(sessionId, item.event, item.generation);
   }
+  return "accepted" as const;
 }
 
 function discardPendingAdmission(sessionId: string) {

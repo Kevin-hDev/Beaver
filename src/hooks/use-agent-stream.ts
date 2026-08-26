@@ -96,7 +96,6 @@ export function useAgentStream() {
         },
       });
       if (runRef.current !== run || activeSessionRef.current !== sessionId || stoppingRef.current) {
-        agentStreamManager.stopSession(sessionId, admission.generation);
         await invoke("cancel_agent_request", {
           sessionId,
           generation: admission.generation,
@@ -109,7 +108,20 @@ export function useAgentStream() {
         admission,
         optimisticUserMessageId,
       );
-      agentStreamManager.setSessionGeneration(sessionId, admission.generation);
+      const adoption = agentStreamManager.setSessionGeneration(sessionId, admission.generation);
+      if (adoption === "overflowed") {
+        generationRef.current = null;
+        streamingRef.current = false;
+        activeSessionRef.current = null;
+        for (const item of pendingAdmissionRef.current.splice(0)) {
+          agentStreamManager.removeQueuedUserMessage(item.sessionId, item.displayMessage.id);
+        }
+        await invoke("cancel_agent_request", {
+          sessionId,
+          generation: admission.generation,
+        }).catch(() => {});
+        return;
+      }
       const pending = pendingAdmissionRef.current.splice(0);
       for (const item of pending) {
         try {
@@ -170,7 +182,7 @@ export function useAgentStream() {
   }, []);
 
   const stopStream = useCallback(async (sessionId: string) => {
-    if (stoppingRef.current) return;
+    if (stoppingRef.current || activeSessionRef.current !== sessionId) return;
     stoppingRef.current = true;
     runRef.current += 1;
     const gen = generationRef.current;

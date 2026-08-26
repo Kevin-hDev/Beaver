@@ -55,6 +55,7 @@ describe("useAgentStream", () => {
     mocks.invoke.mockReset().mockResolvedValue(ADMISSION);
     mocks.awaitPendingReasoning.mockResolvedValue(undefined);
     mocks.startSession.mockResolvedValue(undefined);
+    mocks.setSessionGeneration.mockReturnValue("accepted");
     mocks.queueUserMessage.mockReturnValue(true);
   });
 
@@ -284,6 +285,28 @@ describe("useAgentStream", () => {
       await result.current.stopStream("session-1");
     });
     expect(mocks.stopSession).toHaveBeenCalledWith("session-1", 42);
+  });
+
+  it("ignore un stop appartenant à une session remplacée", async () => {
+    const admissionB = { ...ADMISSION, generation: 84 };
+    mocks.invoke.mockResolvedValueOnce(ADMISSION).mockResolvedValueOnce(admissionB);
+    const { result } = renderHook(() => useAgentStream());
+    await act(async () => {
+      await result.current.startStream(
+        "session-a", "model", "provider", turn("A"), false,
+        { displayMessages: [userMessage("A")], baseTokenCount: 0 },
+      );
+      await result.current.startStream(
+        "session-b", "model", "provider", turn("B"), false,
+        { displayMessages: [userMessage("B")], baseTokenCount: 0 },
+      );
+      await result.current.stopStream("session-a");
+    });
+
+    expect(mocks.stopSession).not.toHaveBeenCalled();
+    expect(mocks.invoke).not.toHaveBeenCalledWith("cancel_agent_request", {
+      sessionId: "session-a", generation: 84,
+    });
   });
 
   it("traduit un refus de démarrage", async () => {
