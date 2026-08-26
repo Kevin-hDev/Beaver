@@ -41,6 +41,11 @@ export function useAgentStream() {
   const pendingAdmissionRef = useRef<PendingAdmission[]>([]);
 
   useEffect(() => () => {
+    runRef.current += 1;
+    streamingRef.current = false;
+    const sessionId = activeSessionRef.current;
+    activeSessionRef.current = null;
+    if (sessionId) agentStreamManager.discardPendingAdmission(sessionId);
     for (const item of pendingAdmissionRef.current.splice(0)) {
       agentStreamManager.removeQueuedUserMessage(item.sessionId, item.displayMessage.id);
     }
@@ -99,12 +104,12 @@ export function useAgentStream() {
         return;
       }
       generationRef.current = admission.generation;
-      agentStreamManager.setSessionGeneration(sessionId, admission.generation);
       agentStreamManager.reconcileTurnAdmission(
         sessionId,
         admission,
         optimisticUserMessageId,
       );
+      agentStreamManager.setSessionGeneration(sessionId, admission.generation);
       const pending = pendingAdmissionRef.current.splice(0);
       for (const item of pending) {
         try {

@@ -236,4 +236,125 @@ describe("agentStreamManager", () => {
       expect.objectContaining({ id: "u2", content: "Suite" }),
     ]);
   });
+
+  it("rejoue dans l'ordre les événements arrivés avant la résolution IPC", async () => {
+    const turn = {
+      turnId: "00000000-0000-4000-8000-000000000021",
+      userMessageId: "00000000-0000-4000-8000-000000000022",
+      assistantMessageId: "00000000-0000-4000-8000-000000000023",
+    };
+    await agentStreamManager.startSession(
+      "early", [message("optimistic", "user", "Question")], 0, "chat", true,
+    );
+
+    emit("early", { event: "turnAdmitted", data: turn }, 91);
+    emit("early", {
+      event: "token", data: { content: "précoce", tokenCount: 1, tps: 1 },
+    }, 91);
+    emit("early", {
+      event: "done",
+      data: {
+        evalCount: 1, evalDurationNs: 0, finalTps: 1,
+        promptTokens: 1, contextTokens: 2,
+      },
+    }, 91);
+
+    expect(agentStreamManager.getSnapshot("early")?.currentContent).toBe("");
+    agentStreamManager.reconcileTurnAdmission(
+      "early", { generation: 91, ...turn }, "optimistic",
+    );
+    agentStreamManager.setSessionGeneration("early", 91);
+
+    const after = agentStreamManager.getSnapshot("early");
+    expect(after?.completed).toBe(true);
+    expect(after?.messages[0]?.id).toBe(turn.userMessageId);
+    const messages = after?.messages ?? [];
+    expect(messages[messages.length - 1]?.content).toBe("précoce");
+  });
+
+  it("rejoue une erreur précoce sans exposer son contenu brut", async () => {
+    await agentStreamManager.startSession(
+      "early-error", [message("u1", "user", "Question")], 0, "chat", true,
+    );
+    emit("early-error", {
+      event: "error",
+      data: { message: "/private/provider/secret", isConnection: false },
+    }, 92);
+
+    agentStreamManager.setSessionGeneration("early-error", 92);
+
+    const after = agentStreamManager.getSnapshot("early-error");
+    expect(after?.completed).toBe(true);
+    expect(after?.error).toBeTruthy();
+    expect(after?.error).not.toContain("/private/provider/secret");
+  });
+
+  it("échoue proprement quand le buffer d'admission borné déborde", async () => {
+    await agentStreamManager.startSession(
+      "early-overflow", [message("u1", "user", "Question")], 0, "chat", true,
+    );
+    for (let index = 0; index < 65; index += 1) {
+      emit("early-overflow", {
+        event: "token",
+        data: { content: `${index}`, tokenCount: 1, tps: 1 },
+      }, 93);
+    }
+
+    agentStreamManager.setSessionGeneration("early-overflow", 93);
+
+    const after = agentStreamManager.getSnapshot("early-overflow");
+    expect(after?.completed).toBe(true);
+    expect(after?.error).toBeTruthy();
+    expect(after?.messages).toHaveLength(1);
+  });
+
+  it("ne rejoue jamais l'ancienne génération mise en quarantaine", async () => {
+    await agentStreamManager.startSession(
+      "renew", [message("u1", "user", "Première")], 0,
+    );
+    agentStreamManager.setSessionGeneration("renew", 7);
+    await agentStreamManager.startSession(
+      "renew", [message("u2", "user", "Seconde")], 0, "chat", true,
+    );
+    emit("renew", {
+      event: "token", data: { content: "ancienne", tokenCount: 1, tps: 1 },
+    }, 7);
+    emit("renew", {
+      event: "token", data: { content: "nouvelle", tokenCount: 1, tps: 1 },
+    }, 8);
+
+    agentStreamManager.setSessionGeneration("renew", 8);
+
+    expect(agentStreamManager.getSnapshot("renew")?.currentContent).toBe("nouvelle");
+  });
+
+  it("ne remplit plus le buffer après le démontage de l'admission", async () => {
+    await agentStreamManager.startSession(
+      "discarded", [message("u1", "user", "Question")], 0, "chat", true,
+    );
+    agentStreamManager.discardPendingAdmission("discarded");
+
+    emit("discarded", {
+      event: "token", data: { content: "tardif", tokenCount: 1, tps: 1 },
+    }, 94);
+
+    expect(records.get("discarded")?.pendingAdmissionEvents).toHaveLength(0);
+    expect(agentStreamManager.getSnapshot("discarded")?.currentContent).toBe("");
+  });
+
+  it("ignore les événements de la génération après un échec local", async () => {
+    await agentStreamManager.startSession(
+      "failed", [message("u1", "user", "Question")], 0,
+    );
+    agentStreamManager.setSessionGeneration("failed", 95);
+    agentStreamManager.failSession("failed", "échec générique");
+
+    emit("failed", {
+      event: "token", data: { content: "tardif", tokenCount: 1, tps: 1 },
+    }, 95);
+
+    const after = agentStreamManager.getSnapshot("failed");
+    expect(after?.isStreaming).toBe(false);
+    expect(after?.currentContent).toBe("");
+  });
 });

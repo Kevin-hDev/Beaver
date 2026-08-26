@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
   setSessionGeneration: vi.fn(), reconcileTurnAdmission: vi.fn(), subscribe: vi.fn(),
   getSnapshot: vi.fn(), isStreaming: vi.fn(), queueUserMessage: vi.fn(),
   removeQueuedUserMessage: vi.fn(), showToast: vi.fn(),
+  discardPendingAdmission: vi.fn(),
   awaitPendingReasoning: vi.fn(),
 }));
 
@@ -32,6 +33,7 @@ vi.mock("../agent-stream-manager", () => ({
     getSnapshot: mocks.getSnapshot, isStreaming: mocks.isStreaming,
     queueUserMessage: mocks.queueUserMessage,
     removeQueuedUserMessage: mocks.removeQueuedUserMessage,
+    discardPendingAdmission: mocks.discardPendingAdmission,
   },
 }));
 
@@ -265,7 +267,10 @@ describe("useAgentStream", () => {
     );
     resolveAdmission(ADMISSION);
     await starting;
-    expect(mocks.invoke).toHaveBeenCalledTimes(1);
+    expect(mocks.invoke.mock.calls.filter(([command]) => command === "chat_stream")).toHaveLength(1);
+    expect(mocks.invoke).toHaveBeenCalledWith("cancel_agent_request", {
+      sessionId: "session-1", generation: 42,
+    });
   });
 
   it("annule avec la génération Rust active", async () => {

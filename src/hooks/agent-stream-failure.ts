@@ -3,11 +3,12 @@ import { scheduleCleanup } from "./agent-stream-cleanup";
 import { flushFrameNotify } from "./agent-stream-notify";
 import { notifyRecord, notifyRecordActivity } from "./agent-stream-notify-dispatch";
 import { getRecord, records } from "./agent-stream-records";
+import { markStreamCancelled } from "./agent-stream-generations";
 
 export function failSession(sessionId: string, message = i18n.t("errors.streamStartFailed")) {
   const record = getRecord(sessionId);
   if (!record) return;
-  record.activeGeneration = null;
+  markStreamCancelled(record, record.activeGeneration);
   record.state = {
     ...record.state,
     isStreaming: false,

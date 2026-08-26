@@ -121,15 +121,21 @@ pub(crate) async fn run(
     }
     super::gemma4_thinking_guard::apply(&mut messages, canonical_provider, &params.model);
 
-    let effective_reasoning_mode = crate::services::reasoning::normalize_for_model(
-        canonical_provider,
-        &params.model,
-        params.reasoning_mode.as_deref(),
-        caps.thinking,
-    );
-    let think_active =
-        crate::services::reasoning::enabled(effective_reasoning_mode.as_deref(), params.think)
-            && caps.thinking;
+    let (think_active, effective_reasoning_mode) = match params.reasoning_profile.as_ref() {
+        Some(profile) => (profile.active, profile.mode_name.clone()),
+        None => {
+            let mode = crate::services::reasoning::normalize_for_model(
+                canonical_provider,
+                &params.model,
+                params.reasoning_mode.as_deref(),
+                caps.thinking,
+            );
+            (
+                crate::services::reasoning::enabled(mode.as_deref(), params.think) && caps.thinking,
+                mode,
+            )
+        }
+    };
     llm::agent_loop::run_agent_loop(
         &params.on_event,
         &params.provider,

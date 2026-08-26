@@ -1,10 +1,16 @@
 import type { ManagedStreamState } from "./agent-chat-stream-callbacks";
+import type { StreamEvent } from "@/types/agent";
 
 const CLEANUP_DELAY_MS = 5 * 60 * 1000;
 
 const MAX_SESSIONS = 64;
 const MAX_SUBSCRIBERS_PER_SESSION = 32;
 export const MAX_CANCELLED_GENERATIONS = 16;
+
+export interface PendingAdmissionEvent {
+  generation: number;
+  event: StreamEvent;
+}
 
 export interface StreamRecord {
   state: ManagedStreamState;
@@ -15,6 +21,9 @@ export interface StreamRecord {
   started: boolean;
   activeGeneration: number | null;
   awaitingAdmission: boolean;
+  pendingAdmissionEvents: PendingAdmissionEvent[];
+  pendingAdmissionChars: number;
+  pendingAdmissionOverflowed: boolean;
   cancelledGenerations: number[];
   cancelledWithoutGeneration: boolean;
 }

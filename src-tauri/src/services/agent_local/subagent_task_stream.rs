@@ -73,7 +73,7 @@ pub(super) async fn run_inner(
             crate::commands::agent_chat_task::StreamConversation::internal_legacy(messages),
         ),
         continuation_target: None,
-        ollama_reasoning: None,
+        reasoning_profile: None,
         tools,
         think: runtime_context.think,
         provider,

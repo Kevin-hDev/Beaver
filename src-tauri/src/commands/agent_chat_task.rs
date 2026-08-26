@@ -1,5 +1,5 @@
 mod api;
-mod api_capabilities;
+pub(crate) mod api_capabilities;
 mod api_images;
 mod api_tools;
 pub(crate) mod common;
@@ -96,25 +96,47 @@ fn validate_canonical_target(params: &StreamTaskParams) -> Result<(), String> {
     let Some(target) = params.continuation_target.as_ref() else {
         return Ok(());
     };
-    let route = crate::services::reasoning_continuity::contract::RouteId::from_provider_id(
+    let Some(profile) = params.reasoning_profile.as_ref() else {
+        return Err("conversation_admission_failed".to_string());
+    };
+    validate_target_profile(
         &params.provider,
-    );
+        &params.model,
+        target,
+        profile,
+        params.think,
+        params.reasoning_mode.as_deref(),
+    )
+}
+
+pub(crate) fn validate_target_profile(
+    provider: &str,
+    model: &str,
+    target: &crate::services::reasoning_continuity::contract::ContinuationTarget,
+    profile: &crate::services::reasoning_profile::EffectiveReasoningProfile,
+    think: bool,
+    reasoning_mode: Option<&str>,
+) -> Result<(), String> {
+    let route =
+        crate::services::reasoning_continuity::contract::RouteId::from_provider_id(provider);
     let mode = serde_json::to_value(target.reasoning_mode())
         .ok()
         .and_then(|value| value.as_str().map(str::to_owned));
-    let ollama_reasoning_matches = match (target.route_id(), params.ollama_reasoning.as_ref()) {
-        (crate::services::reasoning_continuity::contract::RouteId::Ollama, Some(reasoning)) => {
-            reasoning.mode == target.reasoning_mode()
-        }
-        (crate::services::reasoning_continuity::contract::RouteId::Ollama, None) => false,
-        (_, None) => true,
-        (_, Some(_)) => false,
-    };
+    let payload_matches =
+        if target.route_id() == crate::services::reasoning_continuity::contract::RouteId::Ollama {
+            profile.ollama_payload.is_some()
+        } else {
+            profile.ollama_payload.is_none()
+        };
+    let profile_matches = profile.mode == target.reasoning_mode()
+        && profile.active == think
+        && profile.mode_name.as_deref() == reasoning_mode
+        && payload_matches;
     if target.validate().is_err()
         || route != Some(target.route_id())
-        || target.model_id() != params.model
-        || mode.as_deref() != Some(params.reasoning_mode.as_deref().unwrap_or("off"))
-        || !ollama_reasoning_matches
+        || target.model_id() != model
+        || mode.as_deref() != Some(reasoning_mode.unwrap_or("off"))
+        || !profile_matches
     {
         return Err("conversation_admission_failed".to_string());
     }

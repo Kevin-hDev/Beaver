@@ -1,13 +1,13 @@
 use super::params::StreamCapabilityHints;
 use crate::services::llm::{self, provider_model_lookup, tool_capable};
 
-pub(super) struct ApiCapabilities {
+pub(crate) struct ApiCapabilities {
     pub tools: bool,
     pub thinking: bool,
     pub vision: bool,
 }
 
-pub(super) async fn resolve(
+pub(crate) async fn resolve(
     provider: &str,
     model: &str,
     _hints: &StreamCapabilityHints,

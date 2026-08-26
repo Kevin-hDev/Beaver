@@ -35,6 +35,23 @@ pub(crate) async fn resume_with_lease(
         lease.session_id(),
         input,
         target,
+        None,
+        AttachmentKeySource::Vault,
+    )
+    .await
+}
+
+pub(crate) async fn resume_with_lease_and_reasoning(
+    lease: &super::session_locks::AdmissionLease,
+    input: ResumeTurnInput,
+    target: ContinuationTarget,
+    reasoning: &super::conversation_reasoning_state::SessionReasoningUpdate,
+) -> Result<AdmittedTurn, ConversationAdmissionError> {
+    resume_inner(
+        lease.session_id(),
+        input,
+        target,
+        Some(reasoning),
         AttachmentKeySource::Vault,
     )
     .await
@@ -44,12 +61,17 @@ async fn resume_inner(
     session_id: &str,
     input: ResumeTurnInput,
     target: ContinuationTarget,
+    reasoning: Option<&super::conversation_reasoning_state::SessionReasoningUpdate>,
     key_source: AttachmentKeySource,
 ) -> Result<AdmittedTurn, ConversationAdmissionError> {
     super::session_store::validate_session_id(session_id).map_err(|_| error())?;
-    let session = super::session_store::get(session_id)
+    let mut session = super::session_store::get(session_id)
         .await
         .map_err(|_| error())?;
+    let reasoning_changed = match reasoning {
+        Some(update) => update.apply(&mut session).map_err(|_| error())?,
+        None => false,
+    };
     let history = super::conversation_history_resolve::from_session_for_continuation(
         &session,
         &target,
@@ -74,6 +96,11 @@ async fn resume_inner(
         .flat_map(|message| [message.id.clone(), message.turn_id.clone()])
         .collect::<HashSet<_>>();
     let assistant_message_id = unique_uuid(&mut used, &mut || Uuid::new_v4().to_string())?;
+    if reasoning_changed {
+        super::session_store::save(&session)
+            .await
+            .map_err(|_| error())?;
+    }
     Ok(AdmittedTurn {
         turn_id: message.turn_id.clone(),
         user_message_id: message.id.clone(),
@@ -94,6 +121,7 @@ pub(crate) async fn resume_with_key(
         lease.session_id(),
         input,
         ContinuationTarget::Replay(target),
+        None,
         AttachmentKeySource::Fixed(key.try_into().map_err(|_| error())?),
     )
     .await

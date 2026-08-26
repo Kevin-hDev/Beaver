@@ -298,6 +298,20 @@ async fn replacement_before_admission_linearization_never_persists_the_old_user(
             )
             .await
             .unwrap();
+            let stored = crate::services::agent_local::session_store::get(&session_id)
+                .await
+                .unwrap();
+            let reasoning = crate::services::reasoning_profile::EffectiveReasoningProfile::ollama(
+                "qwen3.5:4b",
+                Some("off"),
+                false,
+                Some(&["thinking".into()]),
+            )
+            .unwrap();
+            let reasoning = crate::services::agent_local::conversation_reasoning_state::SessionReasoningUpdate::new(
+                &stored,
+                &reasoning,
+            );
             super::agent_chat_turn::admit_current(
                 &streams,
                 &session_id,
@@ -312,6 +326,7 @@ async fn replacement_before_admission_linearization_never_persists_the_old_user(
                         continuation_use: crate::services::reasoning_continuity::contract::ContinuationUse::UserContinuation,
                     },
                 ),
+                reasoning,
             )
             .await
         })

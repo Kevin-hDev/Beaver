@@ -26,6 +26,7 @@ pub(crate) async fn admit_current(
     generation: u64,
     turn: PreparedTurn,
     target: ContinuationTarget,
+    reasoning: crate::services::agent_local::conversation_reasoning_state::SessionReasoningUpdate,
 ) -> Result<AdmittedTurn, String> {
     let lease =
         crate::services::agent_local::session_locks::acquire_admission_lease(session_id).await;
@@ -38,14 +39,14 @@ pub(crate) async fn admit_current(
     }
     match turn {
         PreparedTurn::New(input) => {
-            crate::services::agent_local::conversation_admission::new_turn_with_lease(
-                &lease, input, target,
+            crate::services::agent_local::conversation_admission::new_turn_with_lease_and_reasoning(
+                &lease, input, target, &reasoning,
             )
             .await
         }
         PreparedTurn::Resume(input) => {
-            crate::services::agent_local::conversation_resume::resume_with_lease(
-                &lease, input, target,
+            crate::services::agent_local::conversation_resume::resume_with_lease_and_reasoning(
+                &lease, input, target, &reasoning,
             )
             .await
         }

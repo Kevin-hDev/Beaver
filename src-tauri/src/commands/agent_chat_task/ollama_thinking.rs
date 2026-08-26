@@ -4,9 +4,9 @@ use crate::services::agent_local::types_ollama::OllamaThink;
 pub(super) async fn resolve(params: &StreamTaskParams) -> Result<OllamaThink, String> {
     if params.continuation_target.is_some() {
         return params
-            .ollama_reasoning
+            .reasoning_profile
             .as_ref()
-            .map(|effective| effective.payload.clone())
+            .and_then(|effective| effective.ollama_payload.clone())
             .ok_or_else(|| "conversation_admission_failed".to_string());
     }
     let info = crate::services::agent_local::ollama_client::OllamaClient::from_global()?

@@ -59,7 +59,7 @@ mod stream_http_send;
 mod stream_http_send_tests;
 mod stream_max_tokens;
 mod stream_metrics;
-mod stream_reasoning;
+pub(crate) mod stream_reasoning;
 #[cfg(test)]
 mod stream_reasoning_tests;
 mod stream_silent;

@@ -34,6 +34,9 @@ export function getOrCreateRecord(sessionId: string): StreamRecord {
     started: false,
     activeGeneration: null,
     awaitingAdmission: false,
+    pendingAdmissionEvents: [],
+    pendingAdmissionChars: 0,
+    pendingAdmissionOverflowed: false,
     cancelledGenerations: [],
     cancelledWithoutGeneration: false,
   };
@@ -67,6 +70,9 @@ export function startStreamRecord(
   }
   record.activeGeneration = null;
   record.awaitingAdmission = awaitingAdmission;
+  record.pendingAdmissionEvents = [];
+  record.pendingAdmissionChars = 0;
+  record.pendingAdmissionOverflowed = false;
   record.cancelledWithoutGeneration = false;
   touchSession(sessionId, record);
   return record;

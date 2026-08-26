@@ -17,6 +17,9 @@ function makeRecord(): StreamRecord {
     started: true,
     activeGeneration: null,
     awaitingAdmission: false,
+    pendingAdmissionEvents: [],
+    pendingAdmissionChars: 0,
+    pendingAdmissionOverflowed: false,
     cancelledGenerations: [],
     cancelledWithoutGeneration: false,
   };

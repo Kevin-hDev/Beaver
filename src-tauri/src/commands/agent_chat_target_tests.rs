@@ -58,7 +58,7 @@ async fn forged_frontend_hints_cannot_change_persisted_reasoning_mode() {
     .unwrap();
     assert_eq!(target.continuation.reasoning_mode(), ReasoningModeId::Auto);
     assert_eq!(
-        target.ollama_reasoning.as_ref().map(|value| &value.payload),
+        target.reasoning.ollama_payload.as_ref(),
         Some(&crate::services::agent_local::types_ollama::OllamaThink::Bool(true))
     );
     assert!(resolve(
@@ -128,6 +128,37 @@ async fn groq_resolves_as_explicit_non_replay_without_a_credential_scope() {
 }
 
 #[tokio::test]
+async fn api_legacy_thinking_never_resolves_off_before_admission() {
+    let mut session = crate::services::agent_local::session_store::create_full(
+        "API legacy thinking",
+        "openai/gpt-oss-120b",
+        "groq",
+        true,
+        None,
+    )
+    .await
+    .unwrap();
+    session.thinking_enabled = true;
+    session.reasoning_mode = None;
+    crate::services::agent_local::session_store::save(&session)
+        .await
+        .unwrap();
+
+    let target = resolve(&session.id, "groq", "openai/gpt-oss-120b", None, None)
+        .await
+        .unwrap();
+
+    assert!(target.reasoning.active);
+    assert_ne!(target.continuation.reasoning_mode(), ReasoningModeId::Off);
+    assert_eq!(
+        target.reasoning.mode_name.as_deref(),
+        Some("medium"),
+        "la cible et le runtime doivent partager le défaut canonique"
+    );
+    cleanup(&session.id).await;
+}
+
+#[tokio::test]
 async fn legacy_thinking_enabled_without_mode_keeps_implicit_runtime_mode() {
     let mut session = crate::services::agent_local::session_store::create_full(
         "Legacy thinking",
@@ -154,11 +185,11 @@ async fn legacy_thinking_enabled_without_mode_keeps_implicit_runtime_mode() {
     )
     .await
     .unwrap();
-    assert!(target.think);
-    assert_eq!(target.reasoning_mode.as_deref(), Some("auto"));
+    assert!(target.reasoning.active);
+    assert_eq!(target.reasoning.mode_name.as_deref(), Some("auto"));
     assert_eq!(target.continuation.reasoning_mode(), ReasoningModeId::Auto);
     assert_eq!(
-        target.ollama_reasoning.as_ref().map(|value| &value.payload),
+        target.reasoning.ollama_payload.as_ref(),
         Some(&crate::services::agent_local::types_ollama::OllamaThink::Bool(true))
     );
     cleanup(&session.id).await;
@@ -191,17 +222,151 @@ async fn legacy_gpt_oss_uses_medium_for_provenance_and_transport() {
     )
     .await
     .unwrap();
-    let effective = target.ollama_reasoning.as_ref().unwrap();
+    let effective = &target.reasoning;
     assert_eq!(
         target.continuation.reasoning_mode(),
         ReasoningModeId::Medium
     );
     assert_eq!(effective.mode, ReasoningModeId::Medium);
     assert_eq!(
-        effective.payload,
-        crate::services::agent_local::types_ollama::OllamaThink::Level("medium".into())
+        effective.ollama_payload,
+        Some(crate::services::agent_local::types_ollama::OllamaThink::Level("medium".into()))
     );
     cleanup(&session.id).await;
+}
+
+#[tokio::test]
+async fn ollama_mode_is_identical_from_resolution_through_durable_admission() {
+    let mut session = crate::services::agent_local::session_store::create_full(
+        "Ollama canonical flow",
+        "qwen3.5:4b",
+        "ollama",
+        true,
+        None,
+    )
+    .await
+    .unwrap();
+    session.reasoning_mode = Some("high".into());
+    session.thinking_enabled = true;
+    crate::services::agent_local::session_store::save(&session)
+        .await
+        .unwrap();
+    let target = resolve_with_ollama_capabilities(
+        &session.id,
+        "ollama",
+        "qwen3.5:4b",
+        None,
+        None,
+        &["completion".into(), "thinking".into()],
+    )
+    .await
+    .unwrap();
+
+    crate::commands::agent_chat_task::validate_target_profile(
+        "ollama",
+        "qwen3.5:4b",
+        &target.continuation,
+        &target.reasoning,
+        target.reasoning.active,
+        target.reasoning.mode_name.as_deref(),
+    )
+    .unwrap();
+    admit_resolved(&session.id, &target).await;
+
+    let stored = crate::services::agent_local::session_store::get(&session.id)
+        .await
+        .unwrap();
+    assert_eq!(stored.reasoning_mode.as_deref(), Some("auto"));
+    assert_eq!(
+        stored.messages[0]
+            .replay_source
+            .as_ref()
+            .map(|source| source.reasoning_mode),
+        Some(ReasoningModeId::Auto)
+    );
+    assert_eq!(
+        target.reasoning.ollama_payload,
+        Some(crate::services::agent_local::types_ollama::OllamaThink::Bool(true))
+    );
+    cleanup(&session.id).await;
+}
+
+#[tokio::test]
+async fn api_mode_is_identical_from_resolution_through_payload_and_provenance() {
+    let mut session = crate::services::agent_local::session_store::create_full(
+        "API canonical flow",
+        "deepseek-v4-flash",
+        "deepseek",
+        true,
+        None,
+    )
+    .await
+    .unwrap();
+    session.reasoning_mode = None;
+    session.thinking_enabled = true;
+    crate::services::agent_local::session_store::save(&session)
+        .await
+        .unwrap();
+    let target = resolve_with_api_capability(&session.id, "deepseek", "deepseek-v4-flash", true)
+        .await
+        .unwrap();
+
+    crate::commands::agent_chat_task::validate_target_profile(
+        "deepseek",
+        "deepseek-v4-flash",
+        &target.continuation,
+        &target.reasoning,
+        target.reasoning.active,
+        target.reasoning.mode_name.as_deref(),
+    )
+    .unwrap();
+    admit_resolved(&session.id, &target).await;
+    let mut payload = serde_json::json!({});
+    crate::services::llm::stream_reasoning::apply(
+        &mut payload,
+        "deepseek",
+        "deepseek-v4-flash",
+        target.reasoning.active,
+        target.reasoning.mode_name.as_deref(),
+    );
+
+    let stored = crate::services::agent_local::session_store::get(&session.id)
+        .await
+        .unwrap();
+    assert_eq!(stored.reasoning_mode.as_deref(), Some("high"));
+    assert_eq!(
+        stored.messages[0]
+            .replay_source
+            .as_ref()
+            .map(|source| source.reasoning_mode),
+        Some(ReasoningModeId::High)
+    );
+    assert_eq!(payload["thinking"]["type"], "enabled");
+    assert_eq!(payload["reasoning_effort"], "high");
+    cleanup(&session.id).await;
+}
+
+async fn admit_resolved(session_id: &str, target: &ResolvedChatTarget) {
+    let input = crate::services::agent_local::conversation_input::resolve_with_key(
+        crate::models::agent_turn_contract::NewUserTurnInput {
+            content: "continue".into(),
+            files: Vec::new(),
+            skills: Vec::new(),
+        },
+        &[],
+    )
+    .await
+    .unwrap();
+    let lease =
+        crate::services::agent_local::session_locks::acquire_admission_lease(session_id).await;
+    crate::services::agent_local::conversation_admission::new_turn_with_lease_and_reasoning(
+        &lease,
+        input,
+        target.continuation.clone(),
+        &target.session_reasoning,
+    )
+    .await
+    .unwrap();
 }
 
 async fn cleanup(session_id: &str) {

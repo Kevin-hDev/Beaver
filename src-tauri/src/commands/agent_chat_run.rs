@@ -51,8 +51,8 @@ pub(crate) async fn start(
             return Err(error);
         }
     };
-    request.think = target.think;
-    request.reasoning_mode = target.reasoning_mode.clone();
+    request.think = target.reasoning.active;
+    request.reasoning_mode = target.reasoning.mode_name.clone();
     request.capability_hints = StreamCapabilityHints::default();
     let resolved_dir = match super::agent_working_dir::resolve_for_session(
         &request.session_id,
@@ -81,6 +81,7 @@ pub(crate) async fn start(
         stream.generation,
         turn,
         target.continuation.clone(),
+        target.session_reasoning.clone(),
     )
     .await
     {

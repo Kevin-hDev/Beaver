@@ -28,6 +28,7 @@ vi.mock("../agent-stream-manager", () => ({
     isStreaming: vi.fn(),
     queueUserMessage: vi.fn(),
     removeQueuedUserMessage: vi.fn(),
+    discardPendingAdmission: vi.fn(),
   },
 }));
 

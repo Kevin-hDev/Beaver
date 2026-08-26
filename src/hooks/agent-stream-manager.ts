@@ -24,7 +24,12 @@ import {
   type StreamSnapshot,
 } from "./agent-stream-records";
 import { subscribeStreamActivity } from "./agent-stream-activity";
-import { getActivity, getSnapshot, isStreaming, setSessionGeneration } from "./agent-stream-access";
+import {
+  getActivity,
+  getSnapshot,
+  isStreaming,
+  setSessionGeneration as adoptSessionGeneration,
+} from "./agent-stream-access";
 import { handleCompressionComplete } from "./agent-stream-compression-complete";
 import { applySessionSnapshot } from "./agent-stream-snapshot";
 import {
@@ -54,6 +59,7 @@ type Subscriber = (snapshot: StreamSnapshot) => void;
 let listenPromise: Promise<UnlistenFn> | null = null;
 
 export const agentStreamManager = { startSession, stopSession, failSession, setSessionGeneration,
+  discardPendingAdmission,
   clearPermission: clearStreamPermission, getSnapshot, getActivity, isStreaming, subscribe,
   queueUserMessage, removeQueuedUserMessage, reconcileTurnAdmission,
   subscribeActivity: subscribeStreamActivity };
@@ -95,6 +101,24 @@ function stopSession(sessionId: string, generation?: number | null) {
   record.state = result.state;
   flushFrameNotify(record, notify);
   notifyActivity(sessionId, record);
+}
+
+function setSessionGeneration(sessionId: string, generation: number) {
+  const pending = adoptSessionGeneration(sessionId, generation);
+  if (!pending || !pending.accepted) return;
+  if (pending.overflowed) {
+    failSession(sessionId);
+    return;
+  }
+  for (const item of pending.events) {
+    handleStreamEvent(sessionId, item.event, item.generation);
+  }
+}
+
+function discardPendingAdmission(sessionId: string) {
+  const record = getRecord(sessionId);
+  if (!record?.awaitingAdmission) return;
+  markStreamCancelled(record);
 }
 
 function subscribe(sessionId: string, subscriber: Subscriber): () => void {

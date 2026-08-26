@@ -1,12 +1,11 @@
 import { getRecord, snapshot, type StreamSnapshot } from "./agent-stream-records";
-import { setStreamGeneration } from "./agent-stream-generations";
+import { takePendingAdmission } from "./agent-stream-generations";
 import { toStreamActivity } from "./agent-stream-activity";
 
 export function setSessionGeneration(sessionId: string, generation: number) {
   const record = getRecord(sessionId);
-  if (!record) return;
-  record.awaitingAdmission = false;
-  setStreamGeneration(record, generation);
+  if (!record) return null;
+  return takePendingAdmission(record, generation);
 }
 
 export function getSnapshot(sessionId: string): StreamSnapshot | null {

@@ -37,7 +37,7 @@ async fn spawn(
                 model: request.model,
                 conversation: Some(StreamConversation::canonical(admitted)),
                 continuation_target: Some(target.continuation),
-                ollama_reasoning: target.ollama_reasoning,
+                reasoning_profile: Some(target.reasoning),
                 tools: request.tools,
                 think: request.think,
                 provider: request.provider,

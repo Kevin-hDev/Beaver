@@ -86,6 +86,26 @@ pub(crate) async fn new_turn_with_lease(
         lease.session_id(),
         input,
         target,
+        None,
+        super::conversation_history_resolve::AttachmentKeySource::Vault,
+        || async {},
+        |session| async move { super::session_store::save(&session).await },
+        || async {},
+    )
+    .await
+}
+
+pub(crate) async fn new_turn_with_lease_and_reasoning(
+    lease: &super::session_locks::AdmissionLease,
+    input: ResolvedTurnInput,
+    target: ContinuationTarget,
+    reasoning: &super::conversation_reasoning_state::SessionReasoningUpdate,
+) -> Result<AdmittedTurn, ConversationAdmissionError> {
+    new_turn_inner(
+        lease.session_id(),
+        input,
+        target,
+        Some(reasoning),
         super::conversation_history_resolve::AttachmentKeySource::Vault,
         || async {},
         |session| async move { super::session_store::save(&session).await },
@@ -102,6 +122,7 @@ async fn new_turn_inner<A, AFut, W, WFut, P, PFut>(
     session_id: &str,
     input: ResolvedTurnInput,
     target: ContinuationTarget,
+    reasoning: Option<&super::conversation_reasoning_state::SessionReasoningUpdate>,
     key_source: super::conversation_history_resolve::AttachmentKeySource,
     after_load: A,
     writer: W,
@@ -119,6 +140,9 @@ where
     let mut session = super::session_store::get(session_id)
         .await
         .map_err(|_| error())?;
+    if let Some(update) = reasoning {
+        update.apply(&mut session).map_err(|_| error())?;
+    }
     after_load().await;
     let history = super::conversation_history_resolve::from_session_for_continuation(
         &session,
