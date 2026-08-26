@@ -3,7 +3,7 @@
     reason = "the closed domain is adopted incrementally by Tasks 4 through 23"
 )]
 
-mod bounded_json;
+pub(crate) mod bounded_json;
 pub mod capture_budget;
 mod continuation_target;
 pub mod contract;

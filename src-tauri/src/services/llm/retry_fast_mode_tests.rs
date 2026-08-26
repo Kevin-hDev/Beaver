@@ -46,6 +46,7 @@ async fn temporary_retry_keeps_fast_after_the_session_changes() {
         CancellationToken::new(),
         false,
         None,
+        None,
     );
     let change_preference = async {
         scenario.wait_for_payloads(1).await;
@@ -85,6 +86,7 @@ async fn temporary_retry_keeps_fast_after_the_session_changes() {
         None,
         CancellationToken::new(),
         false,
+        None,
         None,
     )
     .await
@@ -139,6 +141,7 @@ async fn structured_service_tier_refusal_is_sent_once_even_with_tools() {
         None,
         CancellationToken::new(),
         false,
+        None,
         None,
     )
     .await

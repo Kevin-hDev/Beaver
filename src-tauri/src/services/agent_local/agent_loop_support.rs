@@ -72,7 +72,7 @@ pub fn build_assistant_message(result: &StreamResult) -> ChatMessage {
     ChatMessage::assistant(
         result.content.clone(),
         reasoning.clone(),
-        None,
+        result.continuation.clone(),
         reasoning,
         tool_calls,
     )

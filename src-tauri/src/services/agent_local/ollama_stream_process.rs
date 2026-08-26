@@ -1,6 +1,7 @@
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::types_ollama::{StreamEvent, StreamResult};
 use crate::services::stream_utils::ThinkTagFilter;
+use crate::services::llm::reasoning_wire::ReasoningCapture;
 use super::ollama_stream_filter::emit_filtered;
 use tokio::sync::mpsc;
 
@@ -14,9 +15,12 @@ pub fn process_chunk(
     tool_tx: Option<&mpsc::UnboundedSender<(usize, String, serde_json::Value)>>,
     think_filter: &mut ThinkTagFilter,
     buffer_content: bool,
+    reasoning_capture: &mut ReasoningCapture,
 ) -> Result<(), String> {
     let chunk: serde_json::Value =
         serde_json::from_str(text).map_err(|e| format!("JSON invalide: {e}"))?;
+    reasoning_capture.observe_json(&chunk);
+    reasoning_capture.observe_done(&chunk);
 
     result.total_chunks = result.total_chunks.saturating_add(1);
 
@@ -44,6 +48,7 @@ pub fn process_chunk(
             result,
             buffer_content,
         );
+        result.continuation = reasoning_capture.finish_complete();
         return Ok(());
     }
 

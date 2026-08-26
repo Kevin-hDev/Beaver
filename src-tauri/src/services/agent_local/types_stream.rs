@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use crate::services::reasoning_continuity::envelope::ReasoningEnvelope;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -184,6 +185,8 @@ pub struct StreamResult {
     pub content: String,
     pub content_chunks: Vec<String>,
     pub thinking: String,
+    /// État natif privé, distinct du texte de réflexion visible.
+    pub continuation: Option<ReasoningEnvelope>,
     pub(crate) generated_units: usize,
     pub tool_calls: Vec<(String, serde_json::Value)>,
     /// IDs OpenAI-compat alignés avec `tool_calls` (vide pour Ollama).

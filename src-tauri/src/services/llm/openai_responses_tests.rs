@@ -129,6 +129,7 @@ async fn runtime_dispatch_cannot_fall_back_to_chat_completions() {
         tokio_util::sync::CancellationToken::new(),
         false,
         None,
+        None,
     )
     .await
     .expect("Responses stream completes");

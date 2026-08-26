@@ -53,6 +53,7 @@ pub async fn retry_stream(
     cancel: CancellationToken,
     buffer_content: bool,
     realtime_budget: Option<RealtimeBudget>,
+    capture_context: Option<&super::reasoning_wire::ReasoningCaptureContext>,
 ) -> Result<StreamOutcome, String> {
     let policy = retry_policy(provider_id);
     let mut attempt = 0_usize;
@@ -93,6 +94,11 @@ pub async fn retry_stream(
             cancel.clone(),
             buffer_content,
             realtime_budget.clone(),
+            capture_context
+                .cloned()
+                .map(super::reasoning_wire::ReasoningCapture::new)
+                .transpose()
+                .map_err(|_| "provider_configuration_invalid".to_string())?,
         )
         .await
         {

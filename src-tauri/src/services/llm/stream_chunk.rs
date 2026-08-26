@@ -21,6 +21,10 @@ pub fn parse_with_context(data: &str, context: UsageContext<'_>) -> Vec<ParsedCh
         Ok(v) => v,
         Err(_) => return Vec::new(),
     };
+    parse_value_with_context(&chunk, context)
+}
+
+pub fn parse_value_with_context(chunk: &Value, context: UsageContext<'_>) -> Vec<ParsedChunk> {
     if chunk.get("error").is_some()
         || chunk
             .pointer("/choices/0/finish_reason")
@@ -86,15 +90,15 @@ fn parse_delta(delta: &Value, out: &mut Vec<ParsedChunk>) {
     push_string(out, ParsedChunk::Thinking, &delta["reasoning"]);
     push_string(out, ParsedChunk::Thinking, &delta["thought"]);
     push_string(out, ParsedChunk::Thinking, &delta["thought_summary"]);
-    parse_reasoning_details(&delta["reasoning_details"], out);
-    parse_google_extra_content(&delta["extra_content"], out);
+    append_openrouter_display(&delta["reasoning_details"], out);
+    append_google_display(&delta["extra_content"], out);
     parse_content(&delta["content"], out);
     if let Some(tcs) = delta["tool_calls"].as_array() {
         out.push(ParsedChunk::ToolCalls(tcs.clone()));
     }
 }
 
-fn parse_reasoning_details(value: &Value, out: &mut Vec<ParsedChunk>) {
+fn append_openrouter_display(value: &Value, out: &mut Vec<ParsedChunk>) {
     let Some(items) = value.as_array() else {
         return;
     };
@@ -105,7 +109,7 @@ fn parse_reasoning_details(value: &Value, out: &mut Vec<ParsedChunk>) {
     }
 }
 
-fn parse_google_extra_content(value: &Value, out: &mut Vec<ParsedChunk>) {
+fn append_google_display(value: &Value, out: &mut Vec<ParsedChunk>) {
     let google = &value["google"];
     for key in ["thought", "thought_summary", "thinking"] {
         push_string(out, ParsedChunk::Thinking, &google[key]);

@@ -26,6 +26,7 @@ pub async fn stream_chat_no_done(
     cancel: CancellationToken,
     buffer_content: bool,
     realtime_budget: Option<RealtimeBudget>,
+    reasoning_capture: Option<super::reasoning_wire::ReasoningCapture>,
 ) -> Result<StreamOutcome, String> {
     let mut measurement = super::stream_metrics::start(
         provider_id,
@@ -125,6 +126,7 @@ pub async fn stream_chat_no_done(
                         super::route::canonical_provider_id(provider_id),
                         model,
                     ),
+                    reasoning_capture,
                     measurement.as_mut(),
                 )
                 .await

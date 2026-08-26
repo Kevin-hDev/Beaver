@@ -22,6 +22,7 @@ pub(super) async fn consume_stream(
     mut realtime_budget: Option<crate::services::compress::realtime_budget::RealtimeBudget>,
     tools: &[serde_json::Value],
     usage_context: crate::services::provider_usage::UsageContext<'_>,
+    mut reasoning_capture: Option<super::reasoning_wire::ReasoningCapture>,
     mut measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
 ) -> Result<StreamOutcome, String> {
     let mut stream = resp.bytes_stream().eventsource();
@@ -50,8 +51,12 @@ pub(super) async fn consume_stream(
                     measurement.mark_first_event();
                     measurement.observe_response_metadata(&value);
                 }
+                if let Some(capture) = reasoning_capture.as_mut() {
+                    capture.observe_json(&value);
+                    capture.observe_done(&value);
+                }
                 let useful = process_chunk(
-                    &event.data, on_event, &mut token_count, &mut result,
+                    &value, on_event, &mut token_count, &mut result,
                     &mut acc, &mut think_filter, buffer_content, usage_context,
                 )?;
                 if useful {
@@ -106,6 +111,11 @@ pub(super) async fn consume_stream(
             .tool_call_extra_content
             .push(extra_content.get(index).cloned().flatten());
     }
+    result.continuation = if interrupted {
+        reasoning_capture.and_then(|mut capture| capture.finish_partial())
+    } else {
+        reasoning_capture.and_then(|mut capture| capture.finish_complete())
+    };
 
     Ok(if interrupted {
         StreamOutcome::InterruptedForCompression(result)
@@ -115,7 +125,7 @@ pub(super) async fn consume_stream(
 }
 
 fn process_chunk(
-    data: &str,
+    value: &serde_json::Value,
     on_event: &AgentEventEmitter,
     token_count: &mut u32,
     result: &mut StreamResult,
@@ -125,7 +135,7 @@ fn process_chunk(
     usage_context: crate::services::provider_usage::UsageContext<'_>,
 ) -> Result<bool, String> {
     let mut useful = false;
-    for chunk in stream_chunk::parse_with_context(data, usage_context) {
+    for chunk in stream_chunk::parse_value_with_context(value, usage_context) {
         match chunk {
             ParsedChunk::Thinking(thinking) => {
                 useful = true;

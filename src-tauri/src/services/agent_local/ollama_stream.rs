@@ -11,6 +11,8 @@ use crate::services::agent_local::types_ollama::{
     ChatRequest, StreamEvent, StreamOutcome, StreamResult,
 };
 use crate::services::compress::realtime_budget::RealtimeBudget;
+use crate::services::llm::reasoning_wire::{ReasoningCapture, ReasoningCaptureContext};
+use crate::services::reasoning_continuity::contract::{CredentialScope, ReasoningModeId, RouteId};
 use crate::services::stream_utils::ThinkTagFilter;
 use futures_util::StreamExt;
 use tokio::io::{AsyncBufReadExt, BufReader};
@@ -113,6 +115,13 @@ async fn stream_chat_inner(
 
     let mut token_count: u32 = 0;
     let mut result = StreamResult::default();
+    let mut reasoning_capture = ReasoningCapture::new(ReasoningCaptureContext {
+        route_id: RouteId::Ollama,
+        model_id: request.model.clone(),
+        credential_scope: CredentialScope::local_uncredentialed(),
+        reasoning_mode: ollama_reasoning_mode(request),
+    })
+    .map_err(|_| "provider_configuration_invalid".to_string())?;
     let mut think_filter = ThinkTagFilter::new();
     let mut interrupted = false;
 
@@ -132,7 +141,7 @@ async fn stream_chat_inner(
                         if let Err(e) = process_chunk(
                             &text, on_event, &mut token_count,
                             &mut result, options.tool_tx.as_ref(), &mut think_filter,
-                            options.buffer_content,
+                            options.buffer_content, &mut reasoning_capture,
                         ) {
                             // Bug Ollama #16383 : crash du parser tool-call en plein
                             // stream. Si aucun contenu final n'a encore été émis (on
@@ -194,6 +203,7 @@ async fn stream_chat_inner(
         }
     }
     if interrupted {
+        reasoning_capture.finish_partial();
         flush_filter(
             &mut think_filter,
             on_event,
@@ -207,6 +217,15 @@ async fn stream_chat_inner(
     } else {
         StreamOutcome::Completed(result)
     })
+}
+
+fn ollama_reasoning_mode(request: &ChatRequest) -> ReasoningModeId {
+    match request.think.as_ref() {
+        Some(super::types_ollama::OllamaThink::Level(level)) =>
+            ReasoningModeId::from_name(Some(level)).unwrap_or(ReasoningModeId::Auto),
+        Some(super::types_ollama::OllamaThink::Bool(true)) => ReasoningModeId::Auto,
+        Some(super::types_ollama::OllamaThink::Bool(false)) | None => ReasoningModeId::Off,
+    }
 }
 
 fn should_interrupt(

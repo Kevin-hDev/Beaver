@@ -156,6 +156,11 @@ pub(crate) async fn run(
         &mode.mode,
         plan_mode_active,
         context_usage_seed,
+        params
+            .continuation_target
+            .as_ref()
+            .and_then(crate::services::reasoning_continuity::contract::ContinuationTarget::replay)
+            .map(crate::services::llm::reasoning_wire::ReasoningCaptureContext::from_target),
         journal.as_mut(),
     )
     .await?;

@@ -40,6 +40,7 @@ pub(crate) mod provider_model_registry;
 mod provider_model_registry_sources;
 mod provider_model_registry_validation;
 pub(crate) mod providers;
+pub(crate) mod reasoning_wire;
 pub(crate) mod request_purpose;
 mod retry;
 pub mod route;

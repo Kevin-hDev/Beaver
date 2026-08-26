@@ -1,0 +1,1 @@
+{"events":[{"candidates":[{"content":{"parts":[{"text":"visible","thought":true}]}}]},{"candidates":[{"content":{"parts":[{"thoughtSignature":"opaque-signature"}]}}]},{"choices":[{"finish_reason":"stop"}]}],"expected_native":[{"text":"visible","thought":true},{"thoughtSignature":"opaque-signature"}]}

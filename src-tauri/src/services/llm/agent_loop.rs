@@ -35,6 +35,7 @@ pub async fn run_agent_loop(
     permission_mode: &str,
     plan_mode_active: bool,
     context_usage_seed: ContextUsageSeed,
+    capture_context: Option<super::reasoning_wire::ReasoningCaptureContext>,
     mut journal: Option<
         &mut crate::services::agent_local::conversation_journal::ConversationJournal,
     >,
@@ -83,6 +84,7 @@ pub async fn run_agent_loop(
             turn,
             subagents: &mut subagents,
             context_usage_seed,
+            capture_context: capture_context.clone(),
         })
         .await?;
         generation.merge(request_output.generation);
