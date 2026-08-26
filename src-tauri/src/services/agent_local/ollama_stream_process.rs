@@ -104,6 +104,9 @@ pub fn process_chunk(
             );
             result.tool_calls.push((name.clone(), args.clone()));
             result.tool_call_ids.push(tool_call_id.clone());
+            if let Some(reasoning_capture) = reasoning_capture.as_deref_mut() {
+                reasoning_capture.observe_native_tool_link(tool_call_id.clone(), name.clone());
+            }
             let _ = on_event.send(StreamEvent::ToolCall {
                 name: name.clone(),
                 arguments: args.clone(),

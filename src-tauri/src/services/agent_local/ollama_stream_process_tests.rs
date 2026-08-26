@@ -2,6 +2,10 @@ use super::ollama_stream_process::{done_generation_duration, process_chunk};
 use crate::services::agent_local::agent_loop_support::build_assistant_message;
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::types_ollama::StreamResult;
+use crate::services::llm::reasoning_wire::{ReasoningCapture, ReasoningCaptureContext};
+use crate::services::reasoning_continuity::contract::{
+    CredentialScope, ReasoningModeId, RouteId,
+};
 use crate::services::stream_utils::ThinkTagFilter;
 
 #[test]
@@ -88,4 +92,47 @@ fn native_ollama_tool_calls_receive_unique_local_ids_aligned_with_the_journal() 
     for (call, id) in calls.iter().zip(&result.tool_call_ids) {
         assert_eq!(call.id.as_deref(), Some(id.as_str()));
     }
+}
+
+#[test]
+fn native_ollama_capture_links_local_tool_ids_for_next_turn_admission() {
+    let mut result = StreamResult::default();
+    let mut token_count = 0;
+    let mut filter = ThinkTagFilter::new();
+    let emitter = AgentEventEmitter::test("session".into());
+    let mut capture = ReasoningCapture::new(ReasoningCaptureContext {
+        route_id: RouteId::Ollama,
+        model_id: "qwen3.5:4b".into(),
+        credential_scope: CredentialScope::local_uncredentialed(),
+        reasoning_mode: ReasoningModeId::Auto,
+    })
+    .expect("capture");
+
+    process_chunk(
+        r#"{"message":{"thinking":"opaque","tool_calls":[{"function":{"name":"fixture.write_note","arguments":{}}}]},"done":false}"#,
+        &emitter,
+        &mut token_count,
+        &mut result,
+        None,
+        &mut filter,
+        true,
+        Some(&mut capture),
+    )
+    .expect("tool chunk");
+    process_chunk(
+        r#"{"done":true,"done_reason":"stop"}"#,
+        &emitter,
+        &mut token_count,
+        &mut result,
+        None,
+        &mut filter,
+        true,
+        Some(&mut capture),
+    )
+    .expect("done chunk");
+
+    let envelope = result.continuation.expect("persisted continuation");
+    assert_eq!(envelope.tool_links.len(), 1);
+    assert_eq!(envelope.tool_links[0].provider_call_id, result.tool_call_ids[0]);
+    assert_eq!(envelope.tool_links[0].tool_name, result.tool_calls[0].0);
 }

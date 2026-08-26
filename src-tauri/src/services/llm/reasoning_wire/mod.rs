@@ -9,6 +9,7 @@ mod openrouter;
 )]
 pub(crate) mod replay;
 mod responses;
+mod tool_link_capture;
 
 use crate::services::reasoning_continuity::bounded_json::serialized_len_bounded_from;
 use crate::services::reasoning_continuity::capture_budget::CaptureBudget;
