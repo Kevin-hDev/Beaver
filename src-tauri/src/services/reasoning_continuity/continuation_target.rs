@@ -1,5 +1,5 @@
-use super::contract::{ReasoningModeId, ReplayTarget, RouteId};
-use super::limits::{LimitError, validate_model_id};
+use super::contract::{ContinuationUse, ReasoningModeId, ReplayTarget, RouteId};
+use super::limits::{validate_model_id, LimitError};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NonReplayTarget {
@@ -32,6 +32,22 @@ impl ContinuationTarget {
             #[cfg(debug_assertions)]
             Self::FixtureCandidate(target) => Some(target),
             Self::Forbidden(_) => None,
+        }
+    }
+
+    /// La provenance d'admission reste inchangée ; seul le type du tour est
+    /// déterminé juste avant l'appel provider, après les éventuels outils.
+    pub fn for_continuation_use(&self, continuation_use: ContinuationUse) -> Self {
+        let replay = |target: &ReplayTarget| {
+            let mut target = target.clone();
+            target.continuation_use = continuation_use;
+            target
+        };
+        match self {
+            Self::Replay(target) => Self::Replay(replay(target)),
+            #[cfg(debug_assertions)]
+            Self::FixtureCandidate(target) => Self::FixtureCandidate(replay(target)),
+            Self::Forbidden(target) => Self::Forbidden(target.clone()),
         }
     }
 

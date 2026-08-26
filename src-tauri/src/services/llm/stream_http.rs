@@ -72,7 +72,8 @@ pub(super) async fn post_chat_request_with_timeout_measured(
     )
     .await
     .map_err(request_error_for_limit)?;
-    let payload = build_chat_payload(cfg, &route, max_tokens);
+    let payload = build_chat_payload(cfg, &route, max_tokens)
+        .map_err(|_| RequestError::Fatal("reasoning_continuity_invalid".to_string()))?;
     #[cfg(test)]
     if let Some(response) = super::stream_test_transport::dispatch(cfg, &payload).await {
         return response;

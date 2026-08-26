@@ -34,9 +34,6 @@ fn message_to_openai_with_names(
                 "role": "assistant",
                 "content": content,
             });
-            if let Some(rc) = &msg.legacy_tool_loop_reasoning {
-                obj["reasoning_content"] = json!(rc);
-            }
             if let Some(tcs) = &msg.tool_calls {
                 let mut tc_arr: Vec<Value> = tcs
                     .iter()
@@ -96,20 +93,6 @@ pub fn messages_to_openai_with_tools(
         .iter()
         .map(|message| message_to_openai_with_names(message, provider_id, &names))
         .collect()
-}
-
-/// Prépare le raccordement futur sans modifier le chemin historique tant que
-/// les politiques du registre restent désactivées.
-#[allow(
-    dead_code,
-    reason = "Task 19 connects this only after a live-validated chat policy"
-)]
-pub(crate) fn apply_continuity(
-    messages: &[ChatMessage],
-    approval: &super::reasoning_wire::replay::ReplayApproval<'_>,
-    payload_messages: &mut [Value],
-) -> Result<(), super::reasoning_wire::replay::ReplayApplyError> {
-    super::reasoning_wire::replay::apply_chat_continuity(messages, approval, payload_messages)
 }
 
 #[cfg(test)]

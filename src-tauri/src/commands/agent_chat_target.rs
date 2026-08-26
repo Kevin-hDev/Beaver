@@ -2,7 +2,7 @@ use crate::services::reasoning_continuity::contract::{
     ContinuationTarget, ContinuationUse, CredentialScope, NonReplayTarget, ReasoningModeId,
     ReplayTarget, RouteId,
 };
-use crate::services::reasoning_continuity::registry::{ActivationState, ReplayRequirement};
+use crate::services::reasoning_continuity::registry::ReplayRequirement;
 
 pub(crate) struct ResolvedChatTarget {
     pub continuation: ContinuationTarget,
@@ -122,16 +122,23 @@ fn continuation_for_session(
         credential_scope.ok_or_else(generic_error)?,
         reasoning_mode,
     )?;
-    let enabled = crate::services::reasoning_continuity::registry::replay_policy(&target)
-        .is_some_and(|policy| {
-            policy.activation == ActivationState::LiveValidated
-                && policy.requirement != ReplayRequirement::Forbidden
-                && (policy.requirement == ReplayRequirement::Required
-                    || !matches!(
-                        session.preserve_reasoning,
-                        crate::services::agent_local::types_session::PreserveReasoningSetting::Off
-                    ))
-        });
+    let mut tool_target = target.clone();
+    tool_target.continuation_use = ContinuationUse::ToolContinuation;
+    let policies = [
+        crate::services::reasoning_continuity::registry::replay_policy(&target),
+        crate::services::reasoning_continuity::registry::replay_policy(&tool_target),
+    ];
+    let required = policies
+        .into_iter()
+        .flatten()
+        .any(|policy| policy.requirement == ReplayRequirement::Required);
+    // La capture garde le scope initial jusqu'au tour outil : une politique
+    // user forbidden ne doit jamais effacer la politique tool required.
+    let enabled = required
+        || (!matches!(
+            session.preserve_reasoning,
+            crate::services::agent_local::types_session::PreserveReasoningSetting::Off
+        ) && crate::services::reasoning_continuity::registry::replay_policy(&target).is_some());
     enabled
         .then_some(ContinuationTarget::Replay(target))
         .map_or_else(blocked, Ok)

@@ -5,7 +5,7 @@ pub(super) fn build_chat_payload(
     cfg: &RequestConfig<'_>,
     route: &LlmRoute,
     max_tokens: Option<u32>,
-) -> serde_json::Value {
+) -> Result<serde_json::Value, super::reasoning_wire::replay::ReplayApplyError> {
     let provider_id = route.canonical_provider_id;
     let mut payload = serde_json::json!({
         "model": cfg.model,
@@ -41,7 +41,12 @@ pub(super) fn build_chat_payload(
         });
     }
     super::prompt_cache_policy::apply_payload(&mut payload, route, cfg.model, cfg.session_id);
-    payload
+    super::reasoning_wire::chat_text::apply_continuity(
+        cfg.messages,
+        cfg.continuation_target,
+        &mut payload,
+    )?;
+    Ok(payload)
 }
 
 fn apply_tools(payload: &mut serde_json::Value, cfg: &RequestConfig<'_>, provider_id: &str) {
@@ -56,15 +61,10 @@ fn apply_tools(payload: &mut serde_json::Value, cfg: &RequestConfig<'_>, provide
     }
 }
 
-/// Le futur raccordement des routes chat passe par le même constructeur de
-/// payload ; aucune seconde branche de transport n'est créée.
-#[allow(
-    dead_code,
-    reason = "Task 19 connects this only after a live-validated chat policy"
-)]
-pub(crate) fn apply_continuity(
-    approval: &super::reasoning_wire::replay::ReplayApproval<'_>,
-    payload: &mut serde_json::Value,
-) -> Result<(), super::reasoning_wire::replay::ReplayApplyError> {
-    super::reasoning_wire::replay::apply_chat_payload_continuity(approval, payload)
-}
+#[cfg(test)]
+#[path = "reasoning_wire/chat_contract_tests.rs"]
+mod chat_contract_tests;
+
+#[cfg(test)]
+#[path = "reasoning_wire/structured_contract_tests.rs"]
+mod structured_contract_tests;

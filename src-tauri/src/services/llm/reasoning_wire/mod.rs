@@ -1,5 +1,6 @@
 mod capture;
-mod chat_text;
+mod capture_context;
+pub(crate) mod chat_text;
 mod gemini;
 mod mistral;
 mod openrouter;
@@ -13,46 +14,15 @@ mod tool_link_capture;
 
 use crate::services::reasoning_continuity::bounded_json::serialized_len_bounded_from;
 use crate::services::reasoning_continuity::capture_budget::CaptureBudget;
-use crate::services::reasoning_continuity::contract::{
-    ContractId, CredentialScope, ReasoningModeId, RouteId,
-};
+use crate::services::reasoning_continuity::contract::ContractId;
 use crate::services::reasoning_continuity::envelope::{
-    CompletionState, ContinuationState, ReasoningEnvelope, ReasoningSource,
+    CompletionState, ContinuationState, ReasoningEnvelope,
 };
 use crate::services::reasoning_continuity::limits::{LimitError, MAX_ENVELOPE_BYTES};
 use capture::{contract_for, empty_continuation, has_native_items};
 use serde_json::Value;
 
-/// Provenance fixée avant lecture du premier événement provider.
-#[derive(Debug, Clone)]
-pub(crate) struct ReasoningCaptureContext {
-    pub route_id: RouteId,
-    pub model_id: String,
-    pub credential_scope: CredentialScope,
-    pub reasoning_mode: ReasoningModeId,
-}
-
-impl ReasoningCaptureContext {
-    pub(crate) fn from_target(
-        target: &crate::services::reasoning_continuity::contract::ReplayTarget,
-    ) -> Self {
-        Self {
-            route_id: target.route_id,
-            model_id: target.model_id.clone(),
-            credential_scope: target.credential_scope.clone(),
-            reasoning_mode: target.reasoning_mode,
-        }
-    }
-
-    fn source(&self) -> ReasoningSource {
-        ReasoningSource {
-            route_id: self.route_id,
-            model_id: self.model_id.clone(),
-            credential_scope: self.credential_scope.clone(),
-            reasoning_mode: self.reasoning_mode,
-        }
-    }
-}
+pub(crate) use capture_context::ReasoningCaptureContext;
 
 /// Capture native bornée : le premier dépassement ferme définitivement le rejeu.
 pub(crate) struct ReasoningCapture {

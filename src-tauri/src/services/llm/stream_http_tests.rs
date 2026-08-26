@@ -79,7 +79,7 @@ fn legacy_openai_chat_payload_never_reintroduces_flat_reasoning() {
     };
 
     let route = route::resolve("openai").unwrap();
-    let payload = build_chat_payload(&cfg, &route, Some(32_000));
+    let payload = build_chat_payload(&cfg, &route, Some(32_000)).expect("standard payload");
 
     assert_eq!(payload["max_completion_tokens"], 32_000);
     assert!(payload.get("max_tokens").is_none());
@@ -104,7 +104,7 @@ fn openrouter_gpt_56_uses_max_completion_tokens() {
     };
 
     let route = route::resolve("openrouter").unwrap();
-    let payload = build_chat_payload(&cfg, &route, Some(32_000));
+    let payload = build_chat_payload(&cfg, &route, Some(32_000)).expect("standard payload");
 
     assert_eq!(payload["max_completion_tokens"], 32_000);
     assert!(payload.get("max_tokens").is_none());
@@ -148,7 +148,7 @@ fn chat_payload_respects_each_route_cache_and_usage_contract() {
             continuation_target: None,
         };
 
-        let payload = build_chat_payload(&cfg, &route, None);
+        let payload = build_chat_payload(&cfg, &route, None).expect("standard payload");
 
         assert_eq!(payload.get("stream_options").is_some(), usage, "{provider}");
         if let Some(field) = cache_field {
@@ -191,7 +191,7 @@ fn streaming_output_limit_field_matches_model_family() {
             continuation_target: None,
         };
         let route = route::resolve(provider).unwrap();
-        let payload = build_chat_payload(&cfg, &route, Some(8_000));
+        let payload = build_chat_payload(&cfg, &route, Some(8_000)).expect("standard payload");
 
         assert_eq!(payload[expected], 8_000, "{provider}/{model}");
         assert!(payload.get(absent).is_none(), "{provider}/{model}");
@@ -229,7 +229,7 @@ async fn groq_and_cerebras_payloads_omit_automatic_limits() {
             continuation_target: None,
         };
 
-        let payload = build_chat_payload(&cfg, &route, resolved);
+        let payload = build_chat_payload(&cfg, &route, resolved).expect("standard payload");
 
         assert!(payload.get("max_tokens").is_none());
         assert!(payload.get("max_completion_tokens").is_none());
@@ -351,7 +351,7 @@ fn chat_payload_emits_only_the_closed_api_fast_tiers() {
             continuation_target: None,
         };
         let route = route::resolve(provider_id).expect("known provider");
-        let payload = build_chat_payload(&cfg, &route, None);
+        let payload = build_chat_payload(&cfg, &route, None).expect("standard payload");
 
         assert_eq!(
             payload.get("service_tier").and_then(|value| value.as_str()),

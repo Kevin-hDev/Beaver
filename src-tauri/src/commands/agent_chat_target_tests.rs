@@ -328,7 +328,12 @@ async fn api_mode_is_identical_from_resolution_through_payload_and_provenance() 
         .await
         .unwrap();
     assert_eq!(stored.reasoning_mode.as_deref(), Some("high"));
-    assert!(stored.messages[0].replay_source.is_none());
+    let source = stored.messages[0]
+        .replay_source
+        .as_ref()
+        .expect("DeepSeek keeps the authenticated scope for a possible required tool turn");
+    assert_eq!(source.route_id, RouteId::DeepSeek);
+    assert_eq!(source.reasoning_mode, ReasoningModeId::High);
     assert_eq!(payload["thinking"]["type"], "enabled");
     assert_eq!(payload["reasoning_effort"], "high");
     cleanup(&session.id).await;
@@ -401,7 +406,15 @@ async fn resume_replaces_stale_mode_and_scope_before_future_suffix_matching() {
     let stored = crate::services::agent_local::session_store::get(&session_id)
         .await
         .unwrap();
-    assert!(stored.messages.last().unwrap().replay_source.is_none());
+    let source = stored
+        .messages
+        .last()
+        .unwrap()
+        .replay_source
+        .as_ref()
+        .unwrap();
+    assert_eq!(source.credential_scope.as_str(), "new-scope");
+    assert_eq!(source.reasoning_mode, ReasoningModeId::High);
     assert_eq!(stored.messages.last().unwrap().content, "edited retry");
     cleanup(&session_id).await;
 }
