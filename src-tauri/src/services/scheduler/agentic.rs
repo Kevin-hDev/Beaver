@@ -19,8 +19,6 @@ pub async fn run(
     session_id: &str,
     cancel: CancellationToken,
 ) -> Result<ScheduledAgentResult, String> {
-    let resolved_dir =
-        crate::commands::agent_working_dir::resolve_for_session(session_id, None).await?;
     let target = crate::commands::agent_chat_target::resolve(
         session_id,
         &wakeup.provider,
@@ -31,6 +29,9 @@ pub async fn run(
     .await?;
     let admitted =
         admit_wakeup_turn(session_id, &wakeup.prompt, target.continuation.clone()).await?;
+    // A projectless workspace needs the durable first user message as its label.
+    let resolved_dir =
+        crate::commands::agent_working_dir::resolve_for_session(session_id, None).await?;
     let emitter = AgentEventEmitter::new(app.clone(), session_id.to_string());
     let completed = run_stream_task(StreamTaskParams {
         on_event: emitter.clone(),

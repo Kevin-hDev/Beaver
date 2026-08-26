@@ -1,6 +1,9 @@
 use super::create_heartbeat_session;
 use crate::models::{ScheduledWakeup, WakeupSchedule};
 use crate::services::agent_local::session_store;
+use crate::services::reasoning_continuity::contract::{
+    ContinuationTarget, NonReplayTarget, ReasoningModeId, RouteId,
+};
 
 fn wakeup(project_id: Option<String>) -> ScheduledWakeup {
     ScheduledWakeup {
@@ -30,6 +33,18 @@ async fn heartbeat_session_defers_prompt_persistence_to_conversation_admission()
         .expect("reload heartbeat session");
 
     assert!(session.messages.is_empty());
+
+    crate::services::scheduler::admit_wakeup_turn(
+        &session_id,
+        "Inspecte le projet",
+        ContinuationTarget::Forbidden(NonReplayTarget {
+            route_id: RouteId::Ollama,
+            model_id: "test-model".into(),
+            reasoning_mode: ReasoningModeId::Off,
+        }),
+    )
+    .await
+    .expect("persist prompt through admission");
 
     let resolved = crate::commands::agent_working_dir::resolve_for_session(&session_id, None)
         .await

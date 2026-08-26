@@ -48,6 +48,37 @@ fn credential_and_mode_changes_are_explicit_barriers() {
 }
 
 #[test]
+fn incompatible_provenance_discards_its_entire_user_assistant_tool_turn() {
+    for source_index in 0..4 {
+        let mut session = fixture_session();
+        session.messages = complete_turn(
+            "old-a",
+            "old A",
+            Some(envelope(RouteId::Ollama, "model-a", "opaque-old-a")),
+        );
+        let mut incompatible_turn = vec![
+            message("user-b", "turn-b", "user", "question B"),
+            message("assistant-tool-b", "turn-b", "assistant", "calling tool"),
+            message("tool-b", "turn-b", "tool", "tool result"),
+            message("assistant-b", "turn-b", "assistant", "answer B"),
+        ];
+        incompatible_turn[source_index].replay_source =
+            Some(envelope(RouteId::Ollama, "model-b", "unused").source);
+        session.messages.extend(incompatible_turn);
+        session.messages.extend(complete_turn(
+            "new-a",
+            "new A",
+            Some(envelope(RouteId::Ollama, "model-a", "opaque-new-a")),
+        ));
+
+        let result = conversation_transition::for_target(&session, &target("model-a"));
+
+        assert_eq!(result.barrier, Some(ContinuityBarrier::Model));
+        assert_eq!(result.compatible_suffix_start, 6);
+    }
+}
+
+#[test]
 fn compacting_only_removes_complete_turns_and_marks_replaced_envelopes() {
     let mut session = fixture_session();
     session.messages = complete_turn(

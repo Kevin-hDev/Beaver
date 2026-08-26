@@ -30,32 +30,38 @@ pub fn for_target(session: &AgentSession, target: &ReplayTarget) -> Transition {
         replayable_message_indexes: Vec::new(),
     };
     let mut turn_start = 0usize;
-    let mut current_turn = None::<&str>;
-    for (index, message) in session.messages.iter().enumerate() {
-        if current_turn != Some(message.turn_id.as_str()) {
-            current_turn = Some(&message.turn_id);
-            turn_start = index;
-        }
-        let source = message
-            .continuation
-            .as_ref()
-            .map(|envelope| &envelope.source)
-            .or(message.replay_source.as_ref());
-        if let Some(source) = source {
-            if let Some(barrier) = barrier_for(source, target) {
-                result.barrier = Some(barrier);
-                result.compatible_suffix_start = index.saturating_add(1).max(turn_start);
-                result.replayable_message_indexes.clear();
-                continue;
+    while turn_start < session.messages.len() {
+        let turn_end = session.messages[turn_start..]
+            .iter()
+            .position(|message| message.turn_id != session.messages[turn_start].turn_id)
+            .map_or(session.messages.len(), |offset| turn_start + offset);
+        let barrier = session.messages[turn_start..turn_end]
+            .iter()
+            .find_map(|message| {
+                message
+                    .continuation
+                    .as_ref()
+                    .map(|envelope| &envelope.source)
+                    .or(message.replay_source.as_ref())
+                    .and_then(|source| barrier_for(source, target))
+            });
+        if let Some(barrier) = barrier {
+            result.barrier = Some(barrier);
+            // A provider state cannot be split from the visible user/assistant/tool turn it belongs to.
+            result.compatible_suffix_start = turn_end;
+            result.replayable_message_indexes.clear();
+        } else {
+            for (offset, message) in session.messages[turn_start..turn_end].iter().enumerate() {
+                if message.continuation.as_ref().is_some_and(|envelope| {
+                    envelope.completion == CompletionState::Complete
+                        && crate::services::reasoning_continuity::eligibility::decide(envelope, target)
+                            == crate::services::reasoning_continuity::eligibility::ReplayDecision::Allowed
+                }) {
+                    result.replayable_message_indexes.push(turn_start + offset);
+                }
             }
         }
-        if message.continuation.as_ref().is_some_and(|envelope| {
-            envelope.completion == CompletionState::Complete
-                && crate::services::reasoning_continuity::eligibility::decide(envelope, target)
-                    == crate::services::reasoning_continuity::eligibility::ReplayDecision::Allowed
-        }) {
-            result.replayable_message_indexes.push(index);
-        }
+        turn_start = turn_end;
     }
     result
 }
