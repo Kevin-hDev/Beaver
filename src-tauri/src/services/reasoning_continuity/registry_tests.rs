@@ -291,14 +291,27 @@ fn local_scope_is_valid_only_for_ollama() {
 }
 
 #[test]
-fn every_declared_model_is_disabled_and_none_is_live_validated() {
+fn only_qwen_user_auto_is_live_validated() {
+    let mut live = Vec::new();
     for route in active_routes() {
         assert!(!route.models.is_empty());
         for model in route.models {
-            assert_eq!(model.activation, super::registry::ActivationState::Disabled);
             assert_ne!(model.reasoning_mode, ReasoningModeId::Off);
-            assert!(model.fixture_id.is_none());
-            assert!(model.fixture_date.is_none());
+            if model.activation == ActivationState::LiveValidated {
+                live.push((route.route_id, model));
+            } else {
+                assert_eq!(model.activation, ActivationState::Disabled);
+                assert!(model.fixture_id.is_none());
+                assert!(model.fixture_date.is_none());
+            }
         }
     }
+    assert_eq!(live.len(), 1);
+    let (route, model) = live[0];
+    assert_eq!(route, RouteId::Ollama);
+    assert_eq!(model.model_id, "qwen3.5:4b");
+    assert_eq!(model.reasoning_mode, ReasoningModeId::Auto);
+    assert_eq!(model.continuation_use, ContinuationUse::UserContinuation);
+    assert_eq!(model.fixture_id, Some("ollama-local-qwen3-5-4b-local-2026-08-26"));
+    assert_eq!(model.fixture_date, Some("2026-08-26"));
 }

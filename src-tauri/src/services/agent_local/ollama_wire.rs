@@ -6,6 +6,15 @@ pub fn chat_request(
     messages: &[ChatMessage],
 ) -> Result<Value, crate::services::llm::reasoning_wire::replay::ReplayApplyError> {
     let mut payload_messages = messages_value(messages);
+    if let Some(target) = request.live_replay_target.as_ref() {
+        apply_live_continuity(
+            messages,
+            target,
+            payload_messages
+                .as_array_mut()
+                .ok_or(crate::services::llm::reasoning_wire::replay::ReplayApplyError::PayloadMismatch)?,
+        )?;
+    }
     #[cfg(debug_assertions)]
     if let Some(target) = request.fixture_candidate.as_ref() {
         apply_fixture_continuity(
@@ -48,6 +57,25 @@ pub(crate) fn apply_continuity(
         approval,
         payload_messages,
     )
+}
+
+fn apply_live_continuity(
+    messages: &[ChatMessage],
+    target: &crate::services::reasoning_continuity::contract::ReplayTarget,
+    payload_messages: &mut [Value],
+) -> Result<(), crate::services::llm::reasoning_wire::replay::ReplayApplyError> {
+    let policy = crate::services::reasoning_continuity::registry::replay_policy(target)
+        .ok_or(crate::services::llm::reasoning_wire::replay::ReplayApplyError::Blocked)?;
+    for envelope in messages.iter().filter_map(|message| message.continuation.as_ref()) {
+        let approval = crate::services::llm::reasoning_wire::replay::approved(
+            crate::services::reasoning_continuity::eligibility::decide(envelope, target),
+            policy,
+            envelope,
+            target,
+        )?;
+        apply_continuity(messages, &approval, payload_messages)?;
+    }
+    Ok(())
 }
 
 #[cfg(debug_assertions)]
@@ -104,104 +132,5 @@ fn insert_optional<T: serde::Serialize>(
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::services::agent_local::types_ollama::{ToolCallFunction, ToolCallOllama};
-
-    #[test]
-    fn native_payload_uses_ollama_thinking_and_strips_local_tool_ids() {
-        let mut message = ChatMessage::assistant(
-            String::new(),
-            Some("raisonnement".into()),
-            None,
-            Some("raisonnement".into()),
-            Some(vec![ToolCallOllama {
-                id: Some("0f7a0a1a-0000-4000-8000-000000000001".into()),
-                extra_content: Some(json!({"provider": "api"})),
-                function: ToolCallFunction {
-                    name: "search".into(),
-                    arguments: json!({"query": "test"}),
-                },
-            }]),
-        );
-        message.tool_call_id = Some("0f7a0a1a-0000-4000-8000-000000000002".into());
-
-        let value = messages_value(&[message]);
-        let serialized = value.to_string();
-        assert_eq!(value[0]["thinking"], "raisonnement");
-        assert!(!serialized.contains("reasoning_content"));
-        assert!(!serialized.contains("tool_call_id"));
-        assert!(!serialized.contains("extra_content"));
-        assert!(!serialized.contains("0f7a0a1a-0000-4000-8000-000000000001"));
-        assert!(!serialized.contains("0f7a0a1a-0000-4000-8000-000000000002"));
-    }
-
-    #[test]
-    fn chat_payload_disables_ollama_truncation() {
-        let request = ChatRequest {
-            model: "gemma4:e2b".into(),
-            messages: Vec::new(),
-            stream: true,
-            tools: None,
-            options: None,
-            keep_alive: None,
-            think: None,
-            capture_reasoning: false,
-            fixture_candidate: None,
-        };
-        let value = chat_request(&request, &[]).unwrap();
-
-        assert_eq!(value["truncate"], false);
-        assert!(value.get("think").is_none());
-    }
-
-    #[cfg(debug_assertions)]
-    #[test]
-    fn fixture_candidate_replays_native_thinking_while_normal_disabled_stays_closed() {
-        use crate::services::reasoning_continuity::contract::{
-            ContinuationUse, ContractId, CredentialScope, ReasoningModeId, ReplayTarget, RouteId,
-        };
-        use crate::services::reasoning_continuity::envelope::{
-            CompletionState, ContinuationState, ReasoningEnvelope, ReasoningSource,
-        };
-
-        let target = ReplayTarget {
-            route_id: RouteId::Ollama,
-            model_id: "qwen3.5:4b".into(),
-            credential_scope: CredentialScope::local_uncredentialed(),
-            reasoning_mode: ReasoningModeId::Auto,
-            continuation_use: ContinuationUse::UserContinuation,
-        };
-        let continuation = ReasoningEnvelope::new(
-            ContractId::OllamaNativeV1,
-            ReasoningSource::from_target(&target),
-            CompletionState::Complete,
-            ContinuationState::OllamaNative { thinking: "opaque historic".into() },
-            Vec::new(),
-        );
-        let later = ReasoningEnvelope::new(
-            ContractId::OllamaNativeV1,
-            ReasoningSource::from_target(&target),
-            CompletionState::Complete,
-            ContinuationState::OllamaNative { thinking: "opaque later".into() },
-            Vec::new(),
-        );
-        let messages = [
-            ChatMessage::assistant("answer".into(), None, Some(continuation), None, None),
-            ChatMessage::assistant("later answer".into(), None, Some(later), None, None),
-        ];
-        let mut request = ChatRequest {
-            model: target.model_id.clone(), messages: Vec::new(), stream: true, tools: None,
-            options: None, keep_alive: None, think: None, capture_reasoning: true,
-            fixture_candidate: None,
-        };
-
-        let normal = chat_request(&request, &messages).unwrap();
-        assert!(normal["messages"][0].get("thinking").is_none());
-        assert!(normal["messages"][1].get("thinking").is_none());
-        request.fixture_candidate = Some(target);
-        let replay = chat_request(&request, &messages).unwrap();
-        assert_eq!(replay["messages"][0]["thinking"], "opaque historic");
-        assert_eq!(replay["messages"][1]["thinking"], "opaque later");
-    }
-}
+#[path = "ollama_wire_tests.rs"]
+mod tests;

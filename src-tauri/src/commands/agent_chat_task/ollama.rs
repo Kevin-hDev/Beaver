@@ -164,6 +164,12 @@ pub(crate) async fn run(
 
     #[cfg(debug_assertions)]
     let mut fixture_run = params.fixture_run.take();
+    let live_replay_target = match params.continuation_target.as_ref() {
+        Some(crate::services::reasoning_continuity::contract::ContinuationTarget::Replay(target)) => {
+            Some(target.clone())
+        }
+        _ => None,
+    };
     #[cfg(debug_assertions)]
     let fixture_candidate = params
         .continuation_target
@@ -192,6 +198,7 @@ pub(crate) async fn run(
             .as_ref()
             .and_then(crate::services::reasoning_continuity::contract::ContinuationTarget::replay)
             .is_some(),
+        live_replay_target,
         #[cfg(debug_assertions)]
         fixture_candidate,
         #[cfg(debug_assertions)]

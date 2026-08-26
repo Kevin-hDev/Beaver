@@ -46,10 +46,27 @@ const fn disabled(
     }
 }
 
+const fn live_user(
+    model_id: &'static str,
+    reasoning_mode: ReasoningModeId,
+    fixture_id: &'static str,
+    fixture_date: &'static str,
+) -> ModelPolicy {
+    ModelPolicy {
+        model_id,
+        reasoning_mode,
+        continuation_use: ContinuationUse::UserContinuation,
+        requirement: Optional,
+        activation: ActivationState::LiveValidated,
+        fixture_id: Some(fixture_id),
+        fixture_date: Some(fixture_date),
+    }
+}
+
 const OLLAMA: &[ModelPolicy] = &[
     user("gemma4:e2b-it-q4_K_M", ReasoningModeId::Auto, Optional),
     tool("gemma4:e2b-it-q4_K_M", ReasoningModeId::Auto, Optional),
-    user("qwen3.5:4b", ReasoningModeId::Auto, Optional),
+    live_user("qwen3.5:4b", ReasoningModeId::Auto, "ollama-local-qwen3-5-4b-local-2026-08-26", "2026-08-26"),
     tool("qwen3.5:4b", ReasoningModeId::Auto, Optional),
     user("deepseek-r1:latest", ReasoningModeId::Auto, Optional),
     tool("deepseek-r1:latest", ReasoningModeId::Auto, Optional),

@@ -25,6 +25,7 @@ pub async fn run_agent_loop(
     plan_mode_active: bool,
     context_usage_seed: ContextUsageSeed,
     capture_reasoning: bool,
+    live_replay_target: Option<crate::services::reasoning_continuity::contract::ReplayTarget>,
     #[cfg(debug_assertions)]
     fixture_candidate: Option<crate::services::reasoning_continuity::contract::ReplayTarget>,
     #[cfg(debug_assertions)] mut fixture_run: Option<&mut crate::services::reasoning_fixture_run::FixtureRunContext>,
@@ -71,6 +72,7 @@ pub async fn run_agent_loop(
             subagents: &mut subagents,
             context_usage_seed,
             capture_reasoning,
+            live_replay_target: live_replay_target.as_ref(),
             #[cfg(debug_assertions)]
             fixture_candidate: fixture_candidate.as_ref(),
             enable_eager_tools: {
