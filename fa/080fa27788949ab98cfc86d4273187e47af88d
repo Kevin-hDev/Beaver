@@ -1,0 +1,13 @@
+Preserve-thinking review correction (2026-08-26).
+
+Source review: /private/tmp/claude-501/-Users-kevinh-Projects-Beaver/4c17e5d6-b3a4-4b3a-b2cf-443dd99f914e/scratchpad/review/RAPPORT-CONSOLIDE.md
+
+Closed the seven blocking families: canonical compression and legacy migration; rollback/retry/clone continuity; legacy required-route compatibility; xAI Responses replay; activation-to-proof gate; honest no-consumer queue preserving UI drafts; forbidden add_messages_to_session IPC removal. Also closed the P1 security, lifecycle, credential-scope, xAI OAuth backend, DeepSeek/Cerebras, file-size, i18n and internal-artifact findings.
+
+Checked-in live capture+persist+replay proofs: Cerebras gpt-oss-120b; Codex OAuth GPT-5.6 Luna; DeepSeek V4 Flash; Gemini 3.5 Flash; Mistral Small 2603; Moonshot Kimi K2.7 Code; Ollama Gemma4 and Qwen3.5; OpenAI GPT-5.6 Luna; OpenRouter Kimi K2.5; xAI API and OAuth Grok 4.6; Z.AI GLM 4.5 Flash. DeepSeek tool-chain proof includes its required empty reasoning_content replay behavior.
+
+Intentionally not live-enabled: moonshot-oauth (quota unavailable; implementation retained), Groq (scheduled removal), Ollama deepseek-r1:latest (no validated reasoning output).
+
+Fresh verification before commit: cargo test = 4187 passed, 0 failed, 7 ignored plus 1 integration test passed; npm test = 476 files / 2577 Vitest tests plus build, CI, CEF, E2E, extensions and reasoning-fixture suites all exit 0; cargo clippy --all-targets -- -D warnings exit 0; cargo fmt --all -- --check exit 0; npm run lint exit 0; npx tsc --noEmit exit 0; git diff --check exit 0; graphify update completed for code.
+
+MERGE REQUIREMENT: squash the implementation range 2848a17e..fa080fa2 when integrating. The original 67 implementation commits split the atomic activation/closure boundary (review B10); this correction intentionally does not rewrite shared history. The branch currently contains 68 commits after 2848a17e.
