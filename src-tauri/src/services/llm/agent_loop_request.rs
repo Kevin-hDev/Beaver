@@ -78,6 +78,7 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
         params.turn,
         params.provider_id,
         params.messages,
+        params.continuation_target.as_ref(),
     )
     .await;
     crate::services::agent_local::stream_diagnostics::mark_phase(
