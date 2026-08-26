@@ -107,10 +107,18 @@ fn completed_responses_stream_persists_native_items_without_tool_extra_content()
         reasoning_mode: ReasoningModeId::Medium,
     })
     .unwrap();
+    let tools = [serde_json::json!({
+        "type": "function",
+        "function": {
+            "name": "fixture.write_note",
+            "description": "fixture",
+            "parameters": {"type": "object"}
+        }
+    })];
     let mut accumulator = StreamAccumulator::new_with_capture(
         "openai",
         "gpt-5.6-luna",
-        &[],
+        &tools,
         false,
         None,
         Some(capture),
@@ -122,6 +130,33 @@ fn completed_responses_stream_persists_native_items_without_tool_extra_content()
             &serde_json::json!({
                 "type": "response.output_item.done",
                 "item": {"type": "reasoning", "encrypted_content": "opaque"}
+            }),
+        )
+        .unwrap();
+    accumulator
+        .apply(
+            &NoopSink,
+            &serde_json::json!({
+                "type": "response.output_item.added",
+                "item": {
+                    "type": "function_call",
+                    "call_id": "call_1",
+                    "name": "fixture_write_note"
+                }
+            }),
+        )
+        .unwrap();
+    accumulator
+        .apply(
+            &NoopSink,
+            &serde_json::json!({
+                "type": "response.output_item.done",
+                "item": {
+                    "type": "function_call",
+                    "call_id": "call_1",
+                    "name": "fixture_write_note",
+                    "arguments": "{}"
+                }
             }),
         )
         .unwrap();
@@ -148,10 +183,13 @@ fn completed_responses_stream_persists_native_items_without_tool_extra_content()
     let Some(continuation) = result.continuation else {
         panic!("native continuation expected");
     };
+    assert_eq!(continuation.tool_links.len(), 1);
+    assert_eq!(continuation.tool_links[0].provider_call_id, "call_1");
+    assert_eq!(continuation.tool_links[0].tool_name, "fixture.write_note");
     let ContinuationState::ResponsesLocal { items } = continuation.continuation else {
         panic!("Responses continuation expected");
     };
-    assert_eq!(items.len(), 2);
+    assert_eq!(items.len(), 3);
     assert!(result.tool_call_extra_content.is_empty());
 }
 

@@ -190,10 +190,11 @@ impl<'a> StreamAccumulator<'a> {
     }
 
     fn attach_complete_continuity(&mut self) {
-        self.result.continuation = self
-            .reasoning_capture
-            .take()
-            .and_then(|mut capture| capture.finish_complete());
+        self.result.continuation = self.reasoning_capture.take().and_then(|mut capture| {
+            capture
+                .observe_persisted_tool_links(&self.result.tool_calls, &self.result.tool_call_ids);
+            capture.finish_complete()
+        });
         if let Some(replay) = self.legacy_replay.take() {
             replay.attach(&mut self.result);
         }
