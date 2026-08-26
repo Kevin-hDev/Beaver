@@ -12,6 +12,7 @@ import { FileThumbnail } from "./file-thumbnail";
 import { useStopConfirmation } from "./use-stop-confirmation";
 import type { ChatInputProps } from "./chat-input-types";
 import { useComposerDraft } from "@/hooks/use-composer-draft";
+import { sameChatFiles } from "./chat-input-snapshot";
 import "./chat.css";
 import "./chat-input-textarea.css";
 import "./chat-input-responsive.css";
@@ -37,7 +38,7 @@ export function ChatInput({
     skills: draftSkills,
     setText,
     rememberSkill,
-    clear: clearDraft,
+    consume: consumeDraft,
   } = useComposerDraft(draftKey);
   const slash = useSlashCommands();
   const skills = useActiveSkills(
@@ -48,6 +49,10 @@ export function ChatInput({
     rememberSkill,
   );
   const bubbleRef = useRef<HTMLDivElement>(null);
+  const sendingRef = useRef(false);
+  const filesRef = useRef(files);
+  // eslint-disable-next-line react-hooks/refs -- latest props guard async snapshot cleanup
+  filesRef.current = files;
   const { isConfirmingStop, requestStop, stopNow } = useStopConfirmation(isStreaming, onStop);
 
   const interactivePending = !!interactiveRequest;
@@ -60,14 +65,21 @@ export function ChatInput({
   const hasContent = hasText || hasFiles;
 
   const handleSend = useCallback(async () => {
-    if (!hasContent || interactivePending) return;
-    const accepted = await onSend(
-      text.trim(), hasFiles ? files : undefined, skills.getSkillsPayload(),
-    );
-    if (accepted === false) return;
-    clearDraft();
-    onClearFiles?.();
-  }, [text, hasContent, hasFiles, files, skills, interactivePending, onSend, onClearFiles, clearDraft]);
+    if (!hasContent || interactivePending || sendingRef.current) return;
+    const sentDraft = { text, skills: [...draftSkills] };
+    const sentFiles = files?.map((file) => ({ ...file }));
+    sendingRef.current = true;
+    try {
+      const accepted = await onSend(
+        text.trim(), hasFiles ? files : undefined, skills.getSkillsPayload(),
+      );
+      if (accepted === false) return;
+      consumeDraft(sentDraft);
+      if (sameChatFiles(filesRef.current, sentFiles)) onClearFiles?.();
+    } finally {
+      sendingRef.current = false;
+    }
+  }, [text, draftSkills, hasContent, hasFiles, files, skills, interactivePending, onSend, onClearFiles, consumeDraft]);
 
   const handleChange = useCallback((value: string, cursorPos: number) => {
     setText(value);
