@@ -69,7 +69,6 @@ async fn terminal_event_boundary_precedes_registry_release_and_redeployment() {
         super::tool_delegate_child::persist_delegate_prompt(
             &restart_child,
             "Nouvelle mission",
-            true,
         )
         .await
         .expect("persist restart");

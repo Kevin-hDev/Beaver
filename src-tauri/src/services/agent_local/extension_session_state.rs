@@ -79,12 +79,14 @@ pub async fn mutate<T>(
     Ok(result)
 }
 
-pub async fn remove(session_id: &str) {
-    if super::session_store::validate_session_id(session_id).is_err() {
-        return;
-    }
+pub async fn remove(session_id: &str) -> Result<(), String> {
+    super::session_store::validate_session_id(session_id)?;
     let _guard = STORE_LOCK.lock().await;
-    let _ = tokio::fs::remove_file(path(session_id)).await;
+    match tokio::fs::remove_file(path(session_id)).await {
+        Ok(()) => Ok(()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(_) => Err("Suppression de l'état d'extensions impossible".into()),
+    }
 }
 
 fn same_key(left: &DiscoveryEpoch, right: &DiscoveryEpoch) -> bool {

@@ -20,23 +20,6 @@ use tokio::sync::mpsc;
 use tokio_util::io::StreamReader;
 use tokio_util::sync::CancellationToken;
 
-pub async fn collect_chat_with_timeout_and_limit(
-    model: &str,
-    messages: Vec<crate::services::agent_local::types_ollama::ChatMessage>,
-    timeout: std::time::Duration,
-    num_predict: Option<u32>,
-) -> Result<(String, u32), String> {
-    let client = OllamaClient::from_global()?;
-    crate::services::agent_local::ollama_collect::collect_chat_with_timeout_and_limit(
-        &client,
-        model,
-        messages,
-        timeout,
-        num_predict,
-    )
-    .await
-}
-
 /// Variante avec eager dispatch : les tool calls sont envoyés via `tool_tx` dès réception.
 pub async fn stream_chat_with_tool_notify(
     on_event: &AgentEventEmitter,
@@ -115,12 +98,13 @@ async fn stream_chat_inner(
 
     let mut token_count: u32 = 0;
     let mut result = StreamResult::default();
-    let mut reasoning_capture = ReasoningCapture::new(ReasoningCaptureContext {
+    let mut reasoning_capture = request.capture_reasoning.then(|| ReasoningCapture::new(ReasoningCaptureContext {
         route_id: RouteId::Ollama,
         model_id: request.model.clone(),
         credential_scope: CredentialScope::local_uncredentialed(),
         reasoning_mode: ollama_reasoning_mode(request),
-    })
+    }))
+    .transpose()
     .map_err(|_| "provider_configuration_invalid".to_string())?;
     let mut think_filter = ThinkTagFilter::new();
     let mut interrupted = false;
@@ -141,7 +125,7 @@ async fn stream_chat_inner(
                         if let Err(e) = process_chunk(
                             &text, on_event, &mut token_count,
                             &mut result, options.tool_tx.as_ref(), &mut think_filter,
-                            options.buffer_content, &mut reasoning_capture,
+                            options.buffer_content, reasoning_capture.as_mut(),
                         ) {
                             // Bug Ollama #16383 : crash du parser tool-call en plein
                             // stream. Si aucun contenu final n'a encore été émis (on
@@ -203,7 +187,9 @@ async fn stream_chat_inner(
         }
     }
     if interrupted {
-        reasoning_capture.finish_partial();
+        if let Some(capture) = reasoning_capture.as_mut() {
+            capture.finish_partial();
+        }
         flush_filter(
             &mut think_filter,
             on_event,

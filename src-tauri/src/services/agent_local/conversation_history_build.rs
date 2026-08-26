@@ -1,5 +1,3 @@
-use std::ops::Range;
-
 use crate::services::reasoning_continuity::contract::{ContinuationTarget, ReplayTarget};
 use crate::services::reasoning_continuity::envelope::{CompletionState, ReasoningEnvelope};
 
@@ -20,10 +18,12 @@ pub(super) fn from_continuation(
     target: &ContinuationTarget,
 ) -> Result<ConversationHistory, ConversationHistoryError> {
     validate_target(session, target)?;
-    let turns = super::conversation_history_validation::validate(&session.messages)?;
+    super::conversation_history_validation::validate(&session.messages)?;
     validate_envelopes(&session.messages)?;
     let suffix = target.replay().map_or(session.messages.len(), |replay| {
-        compatible_suffix(&session.messages, &turns, replay)
+        // La transition est l'autorité unique des barrières route/modèle/scope.
+        // Elle recule toujours au début du tour concerné, jamais au milieu.
+        super::conversation_transition::for_target(session, replay).compatible_suffix_start
     });
     let mut messages = session
         .messages
@@ -72,29 +72,6 @@ fn validate_envelopes(messages: &[AgentMessage]) -> Result<(), ConversationHisto
         }
     }
     Ok(())
-}
-
-fn compatible_suffix(
-    messages: &[AgentMessage],
-    turns: &[Range<usize>],
-    target: &ReplayTarget,
-) -> usize {
-    turns.iter().fold(0, |suffix, turn| {
-        let user = &messages[turn.start];
-        let envelope_source_matches = messages[turn.clone()]
-            .iter()
-            .filter_map(|message| message.continuation.as_ref())
-            .any(|envelope| envelope.source.matches_target(target));
-        let turn_source_matches = user
-            .replay_source
-            .as_ref()
-            .map_or(envelope_source_matches, |source| source.matches_target(target));
-        let incompatible_envelope = messages[turn.clone()]
-            .iter()
-            .filter_map(|message| message.continuation.as_ref())
-            .any(|envelope| !matches_target(envelope, target));
-        if !turn_source_matches || incompatible_envelope { turn.end } else { suffix }
-    })
 }
 
 fn matches_target(envelope: &ReasoningEnvelope, target: &ReplayTarget) -> bool {

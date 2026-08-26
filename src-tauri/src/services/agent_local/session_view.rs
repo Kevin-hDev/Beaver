@@ -23,7 +23,7 @@ pub fn from_session(session: &AgentSession) -> Result<AgentSessionView, String> 
         thinking_enabled: session.thinking_enabled,
         fast_mode_enabled: session.fast_mode_enabled,
         reasoning_mode: session.reasoning_mode.clone(),
-        preserve_reasoning: session.preserve_reasoning,
+        preserve_reasoning: effective_preserve_reasoning(session),
         continuity_capability: continuity_capability(session),
         accumulated_tokens: session.accumulated_tokens,
         context_tokens: session.context_tokens,
@@ -82,6 +82,21 @@ pub fn from_session(session: &AgentSession) -> Result<AgentSessionView, String> 
         clone_root_session_id: session.clone_root_session_id.clone(),
         git_branch: session.git_branch.clone(),
     })
+}
+
+fn effective_preserve_reasoning(session: &AgentSession) -> super::types_session::PreserveReasoningSetting {
+    let Some(capability) = continuity_capability(session) else {
+        return session.preserve_reasoning;
+    };
+    if capability.requirement == "required"
+        && session.preserve_reasoning == super::types_session::PreserveReasoningSetting::Off
+    {
+        // Une route qui exige la continuité ne peut jamais exposer une option
+        // sélectionnée mais interdite : Local est la valeur déterministe.
+        super::types_session::PreserveReasoningSetting::Local
+    } else {
+        session.preserve_reasoning
+    }
 }
 
 /// Le registre est l'autorité des capacités : le client ne reconstruit jamais

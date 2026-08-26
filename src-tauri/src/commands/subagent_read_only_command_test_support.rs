@@ -37,7 +37,9 @@ pub(super) async fn assert_rejected<T>(
 }
 
 pub(super) async fn cleanup(session: &AgentSession) {
-    session_permission_state::remove(&session.id).await;
+    session_permission_state::remove(&session.id)
+        .await
+        .expect("remove permission state");
     session_store::delete_one(&session.id)
         .await
         .expect("cleanup session");

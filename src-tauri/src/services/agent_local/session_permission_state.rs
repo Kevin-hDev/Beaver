@@ -118,9 +118,12 @@ pub async fn merge_into_serialized(session_id: &str, value: &mut serde_json::Val
     value["permission_mode"] = serde_json::to_value(state.permission_mode).unwrap_or_default();
 }
 
-pub async fn remove(session_id: &str) {
-    if let Ok(path) = sidecar_path(session_id) {
-        let _ = tokio::fs::remove_file(path).await;
+pub async fn remove(session_id: &str) -> Result<(), String> {
+    let path = sidecar_path(session_id)?;
+    match tokio::fs::remove_file(path).await {
+        Ok(()) => Ok(()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(_) => Err(generic_error()),
     }
 }
 

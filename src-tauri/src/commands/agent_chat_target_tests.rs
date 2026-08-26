@@ -277,13 +277,7 @@ async fn ollama_mode_is_identical_from_resolution_through_durable_admission() {
         .await
         .unwrap();
     assert_eq!(stored.reasoning_mode.as_deref(), Some("auto"));
-    assert_eq!(
-        stored.messages[0]
-            .replay_source
-            .as_ref()
-            .map(|source| source.reasoning_mode),
-        Some(ReasoningModeId::Auto)
-    );
+    assert!(stored.messages[0].replay_source.is_none());
     assert_eq!(
         target.reasoning.ollama_payload,
         Some(crate::services::agent_local::types_ollama::OllamaThink::Bool(true))
@@ -334,13 +328,7 @@ async fn api_mode_is_identical_from_resolution_through_payload_and_provenance() 
         .await
         .unwrap();
     assert_eq!(stored.reasoning_mode.as_deref(), Some("high"));
-    assert_eq!(
-        stored.messages[0]
-            .replay_source
-            .as_ref()
-            .map(|source| source.reasoning_mode),
-        Some(ReasoningModeId::High)
-    );
+    assert!(stored.messages[0].replay_source.is_none());
     assert_eq!(payload["thinking"]["type"], "enabled");
     assert_eq!(payload["reasoning_effort"], "high");
     cleanup(&session.id).await;
@@ -397,7 +385,6 @@ async fn resume_replaces_stale_mode_and_scope_before_future_suffix_matching() {
         Some(CredentialScope::authenticated("new-scope").unwrap()),
     )
     .unwrap();
-    let replay = current.continuation.replay().unwrap().clone();
     let lease =
         crate::services::agent_local::session_locks::acquire_admission_lease(&session_id).await;
     crate::services::agent_local::conversation_resume::resume_with_lease_and_reasoning(
@@ -411,40 +398,11 @@ async fn resume_replaces_stale_mode_and_scope_before_future_suffix_matching() {
     .await
     .unwrap();
 
-    let mut stored = crate::services::agent_local::session_store::get(&session_id)
+    let stored = crate::services::agent_local::session_store::get(&session_id)
         .await
         .unwrap();
-    let source = stored
-        .messages
-        .last()
-        .unwrap()
-        .replay_source
-        .as_ref()
-        .unwrap();
-    assert_eq!(source.reasoning_mode, ReasoningModeId::High);
-    assert_eq!(source.credential_scope.as_str(), "new-scope");
+    assert!(stored.messages.last().unwrap().replay_source.is_none());
     assert_eq!(stored.messages.last().unwrap().content, "edited retry");
-    stored.messages.push(assistant_with_continuation(
-        &admitted,
-        crate::services::reasoning_continuity::envelope::ReasoningEnvelope::new(
-            crate::services::reasoning_continuity::contract::ContractId::DeepSeekChatV1,
-            crate::services::reasoning_continuity::envelope::ReasoningSource::from_target(&replay),
-            crate::services::reasoning_continuity::envelope::CompletionState::Complete,
-            crate::services::reasoning_continuity::envelope::ContinuationState::ChatReasoning {
-                reasoning_content: "opaque".into(),
-            },
-            Vec::new(),
-        ),
-    ));
-    crate::services::agent_local::session_store::save(&stored)
-        .await
-        .unwrap();
-    let future =
-        crate::services::agent_local::conversation_history::load_for_target(&session_id, &replay)
-            .await
-            .unwrap();
-    assert_eq!(future.compatible_suffix_start, 0);
-    assert!(future.messages.last().unwrap().continuation.is_some());
     cleanup(&session_id).await;
 }
 
@@ -528,34 +486,6 @@ async fn admit_resolved(
     )
     .await
     .unwrap()
-}
-
-fn assistant_with_continuation(
-    admitted: &crate::services::agent_local::conversation_admission::AdmittedTurn,
-    continuation: crate::services::reasoning_continuity::envelope::ReasoningEnvelope,
-) -> crate::services::agent_local::types_message::AgentMessage {
-    crate::services::agent_local::types_message::AgentMessage {
-        id: admitted.assistant_message_id.clone(),
-        turn_id: admitted.turn_id.clone(),
-        role: "assistant".into(),
-        content: "answer".into(),
-        thinking: None,
-        tool_calls: None,
-        tool_name: None,
-        tool_call_id: None,
-        continuation: Some(continuation),
-        replay_source: None,
-        tool_activities: None,
-        segments: None,
-        files: Vec::new(),
-        timestamp: chrono::Utc::now(),
-        tokens: 0,
-        work_duration_ms: None,
-        skill_names: None,
-        skill_ids: None,
-        stream_run_id: None,
-        stream_part: None,
-    }
 }
 
 async fn cleanup(session_id: &str) {

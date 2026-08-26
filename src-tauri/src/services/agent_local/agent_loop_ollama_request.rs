@@ -24,6 +24,7 @@ pub(super) struct OllamaRequestParams<'a> {
     pub turn: usize,
     pub subagents: &'a mut ParentSubagentOrchestrator,
     pub context_usage_seed: ContextUsageSeed,
+    pub capture_reasoning: bool,
 }
 
 pub(super) struct OllamaRequestOutput {
@@ -65,12 +66,13 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
         RealtimeBudget::from_estimate(params.configured_context, report.estimated_tokens);
     let plan_active =
         super::agent_loop_plan::active(params.session_id, params.plan_mode_active).await;
-    let request = super::agent_loop_support::build_request(
+    let mut request = super::agent_loop_support::build_request(
         params.model,
         params.messages,
         params.tools,
         params.think.clone(),
     );
+    request.capture_reasoning = params.capture_reasoning;
     super::stream_diagnostics_model::record_model_request(
         params.session_id,
         params.request_id,

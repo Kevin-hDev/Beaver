@@ -52,18 +52,14 @@ async fn failed_run_keeps_correction_until_explicit_redeployment() {
     )
     .await
     .expect("prepare explicit redeployment");
-    let persisted = tool_delegate_child::persist_delegate_prompt(
-        &child.id,
-        "correction durable",
-        true,
-    )
-    .await
-    .expect("reuse queued correction");
+    tool_delegate_child::persist_delegate_prompt(&child.id, "correction durable")
+        .await
+        .expect("preflight redeployment");
     let registered = subagent_registry::register_execution_with_initial_prompt(
         &parent.id,
         &child.id,
         CancellationToken::new(),
-        persisted.initial_prompt(),
+        None,
     )
     .await
     .expect("register redeployment");

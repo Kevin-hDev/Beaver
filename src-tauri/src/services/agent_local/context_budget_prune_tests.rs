@@ -30,3 +30,46 @@ fn wide_characters_and_a_tiny_budget_cannot_overflow() {
         );
     }
 }
+
+#[test]
+fn oversized_continuation_fails_closed_instead_of_dropping_opaque_state() {
+    use crate::services::reasoning_continuity::contract::{
+        ContractId, CredentialScope, ReasoningModeId, RouteId,
+    };
+    use crate::services::reasoning_continuity::envelope::{
+        CompletionState, ContinuationState, ReasoningEnvelope, ReasoningSource,
+    };
+
+    let envelope = ReasoningEnvelope::new(
+        ContractId::OllamaNativeV1,
+        ReasoningSource {
+            route_id: RouteId::Ollama,
+            model_id: "qwen3.5:4b".into(),
+            credential_scope: CredentialScope::local_uncredentialed(),
+            reasoning_mode: ReasoningModeId::Auto,
+        },
+        CompletionState::Complete,
+        ContinuationState::OllamaNative {
+            thinking: "opaque".repeat(8_000),
+        },
+        Vec::new(),
+    );
+    let mut messages = vec![ChatMessage::assistant(
+        "visible".repeat(8_000),
+        None,
+        Some(envelope),
+        None,
+        None,
+    )];
+
+    let error = super::super::context_budget::prepare_for_request(
+        &mut messages,
+        8_000,
+        &[],
+        "ollama",
+    )
+    .expect_err("opaque continuation cannot be partially trimmed");
+
+    assert_eq!(error, "context_capacity_exceeded");
+    assert!(messages[0].continuation.is_some());
+}

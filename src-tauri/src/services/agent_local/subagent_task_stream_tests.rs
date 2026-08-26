@@ -67,6 +67,11 @@ async fn subagent_conversation_adoption_reloads_the_canonical_history() {
     .expect("register child");
     child.subagent_run_id = Some(registered.run_id.clone());
     session_store::save(&child).await.expect("save child");
+    super::super::tool_delegate_child::persist_delegate_prompt(&child.id, "mission durable")
+        .await
+        .expect("preflight prompt");
+    let before_admission = session_store::get(&child.id).await.expect("reload before admission");
+    assert!(before_admission.messages.is_empty());
     let target = ContinuationTarget::Forbidden(NonReplayTarget {
         route_id: RouteId::Groq,
         model_id: "model".into(),

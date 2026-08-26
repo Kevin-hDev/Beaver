@@ -115,6 +115,9 @@ pub struct ChatRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub keep_alive: Option<String>,
     pub think: Option<OllamaThink>,
+    /// Décision canonique d'admission, jamais sérialisée au provider.
+    #[serde(skip)]
+    pub capture_reasoning: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

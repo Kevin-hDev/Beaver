@@ -105,11 +105,21 @@ pub(crate) async fn delete_one(id: &str) -> Result<(), String> {
     })
     .await
     .map_err(|_| "Suppression de session impossible".to_string())??;
-    let _ = crate::services::agent_local::session_index::remove_entry(id).await;
-    let _ = super::subagent_change_store::remove(id).await;
-    super::extension_session_state::remove(id).await;
-    super::session_permission_state::remove(id).await;
-    let _ = crate::services::reasoning_fixture_store::remove_for_session(id).await;
+    crate::services::agent_local::session_index::remove_entry(id)
+        .await
+        .map_err(|_| "Suppression de session impossible".to_string())?;
+    super::subagent_change_store::remove(id)
+        .await
+        .map_err(|_| "Suppression de session impossible".to_string())?;
+    super::extension_session_state::remove(id)
+        .await
+        .map_err(|_| "Suppression de session impossible".to_string())?;
+    super::session_permission_state::remove(id)
+        .await
+        .map_err(|_| "Suppression de session impossible".to_string())?;
+    crate::services::reasoning_fixture_store::remove_for_session(id)
+        .await
+        .map_err(|_| "Suppression de session impossible".to_string())?;
     // Nettoie aussi le WriteGuard persistant de la session.
     crate::services::agent_local::write_guard_registry::remove(id);
     Ok(())

@@ -2,6 +2,7 @@ use crate::services::reasoning_continuity::contract::{
     ContinuationTarget, ContinuationUse, CredentialScope, NonReplayTarget, ReasoningModeId,
     ReplayTarget, RouteId,
 };
+use crate::services::reasoning_continuity::registry::{ActivationState, ReplayRequirement};
 
 pub(crate) struct ResolvedChatTarget {
     pub continuation: ContinuationTarget,
@@ -84,23 +85,8 @@ fn resolve_session(
         )
     }
     .map_err(|_| generic_error())?;
-    let continuation = if route_id == RouteId::Groq {
-        let target = NonReplayTarget {
-            route_id,
-            model_id: session.model.clone(),
-            reasoning_mode: reasoning.mode,
-        };
-        target.validate().map_err(|_| generic_error())?;
-        ContinuationTarget::Forbidden(target)
-    } else {
-        let scope = credential_scope.ok_or_else(generic_error)?;
-        ContinuationTarget::Replay(build_with_mode(
-            &session.model,
-            route_id,
-            scope,
-            reasoning.mode,
-        )?)
-    };
+    let continuation =
+        continuation_for_session(&session, route_id, credential_scope, reasoning.mode)?;
     let session_reasoning =
         crate::services::agent_local::conversation_reasoning_state::SessionReasoningUpdate::new(
             &session, &reasoning,
@@ -110,6 +96,45 @@ fn resolve_session(
         reasoning,
         session_reasoning,
     })
+}
+
+fn continuation_for_session(
+    session: &crate::services::agent_local::types_session::AgentSession,
+    route_id: RouteId,
+    credential_scope: Option<CredentialScope>,
+    reasoning_mode: ReasoningModeId,
+) -> Result<ContinuationTarget, String> {
+    let blocked = || {
+        let target = NonReplayTarget {
+            route_id,
+            model_id: session.model.clone(),
+            reasoning_mode,
+        };
+        target.validate().map_err(|_| generic_error())?;
+        Ok(ContinuationTarget::Forbidden(target))
+    };
+    if route_id == RouteId::Groq {
+        return blocked();
+    }
+    let target = build_with_mode(
+        &session.model,
+        route_id,
+        credential_scope.ok_or_else(generic_error)?,
+        reasoning_mode,
+    )?;
+    let enabled = crate::services::reasoning_continuity::registry::replay_policy(&target)
+        .is_some_and(|policy| {
+            policy.activation == ActivationState::LiveValidated
+                && policy.requirement != ReplayRequirement::Forbidden
+                && (policy.requirement == ReplayRequirement::Required
+                    || !matches!(
+                        session.preserve_reasoning,
+                        crate::services::agent_local::types_session::PreserveReasoningSetting::Off
+                    ))
+        });
+    enabled
+        .then_some(ContinuationTarget::Replay(target))
+        .map_or_else(blocked, Ok)
 }
 
 #[cfg(test)]

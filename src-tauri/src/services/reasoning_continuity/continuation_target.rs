@@ -10,9 +10,6 @@ pub struct NonReplayTarget {
 
 impl NonReplayTarget {
     pub fn validate(&self) -> Result<(), LimitError> {
-        if self.route_id != RouteId::Groq {
-            return Err(LimitError::CredentialScope);
-        }
         validate_model_id(&self.model_id)
     }
 }

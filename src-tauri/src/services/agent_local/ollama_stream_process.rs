@@ -15,12 +15,14 @@ pub fn process_chunk(
     tool_tx: Option<&mpsc::UnboundedSender<(usize, String, serde_json::Value)>>,
     think_filter: &mut ThinkTagFilter,
     buffer_content: bool,
-    reasoning_capture: &mut ReasoningCapture,
+    mut reasoning_capture: Option<&mut ReasoningCapture>,
 ) -> Result<(), String> {
     let chunk: serde_json::Value =
         serde_json::from_str(text).map_err(|e| format!("JSON invalide: {e}"))?;
-    reasoning_capture.observe_json(&chunk);
-    reasoning_capture.observe_done(&chunk);
+    if let Some(reasoning_capture) = reasoning_capture.as_deref_mut() {
+        reasoning_capture.observe_json(&chunk);
+        reasoning_capture.observe_done(&chunk);
+    }
 
     result.total_chunks = result.total_chunks.saturating_add(1);
 
@@ -48,7 +50,9 @@ pub fn process_chunk(
             result,
             buffer_content,
         );
-        result.continuation = reasoning_capture.finish_complete();
+        result.continuation = reasoning_capture
+            .as_deref_mut()
+            .and_then(ReasoningCapture::finish_complete);
         return Ok(());
     }
 

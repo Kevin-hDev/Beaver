@@ -1,5 +1,4 @@
 #![expect(clippy::too_many_arguments, reason = "orchestration boundary keeps related runtime context explicit")]
-use crate::services::agent_local::ollama_stream;
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::types_ollama::{ChatMessage, StreamEvent};
 use crate::services::compress::{engine, prompt, state, summary_budget, token_estimate};
@@ -55,7 +54,7 @@ pub async fn try_auto_compress(
     ::log::info!(
         "[compress] auto ollama start session={session_id} input_tokens={estimated} output_limit={output_limit}"
     );
-    let compression = ollama_stream::collect_chat_with_timeout_and_limit(
+    let compression = super::ollama_collect::collect_chat_with_timeout_and_limit_global(
         model,
         compress_msgs,
         crate::services::compress::timeouts::compression_request_timeout(),

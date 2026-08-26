@@ -41,6 +41,7 @@ pub fn build_request(
         options: None,
         keep_alive: Some(keep_alive),
         think: Some(think),
+        capture_reasoning: false,
     }
 }
 

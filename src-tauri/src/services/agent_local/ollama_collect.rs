@@ -4,6 +4,16 @@ use crate::services::agent_local::ollama_wire;
 use crate::services::agent_local::types_ollama::ChatMessage;
 use std::time::Duration;
 
+pub async fn collect_chat_with_timeout_and_limit_global(
+    model: &str,
+    messages: Vec<ChatMessage>,
+    timeout: Duration,
+    num_predict: Option<u32>,
+) -> Result<(String, u32), String> {
+    let client = OllamaClient::from_global()?;
+    collect_chat_with_timeout_and_limit(&client, model, messages, timeout, num_predict).await
+}
+
 pub async fn collect_chat_with_timeout_and_limit(
     ollama: &OllamaClient,
     model: &str,

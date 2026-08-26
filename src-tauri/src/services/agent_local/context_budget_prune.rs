@@ -67,7 +67,7 @@ pub(super) fn prepare_with_limit(
         .iter()
         .filter(|message| message.role != "system" && !is_required_report(message))
         .collect();
-    append_recent_tail(&mut next, candidates, remaining, params.provider_id);
+    append_recent_tail(&mut next, candidates, remaining, params.provider_id)?;
     next.extend(required_reports);
     *messages = next;
 
@@ -79,7 +79,7 @@ fn append_recent_tail<'a>(
     candidates: Vec<&'a ChatMessage>,
     mut remaining: usize,
     provider_id: &str,
-) {
+) -> Result<(), String> {
     let mut selected: Vec<Vec<&'a ChatMessage>> = Vec::new();
     let mut trimmed = None;
     for unit in super::context_budget_history::atomic_units(candidates)
@@ -97,6 +97,12 @@ fn append_recent_tail<'a>(
             selected.push(unit.messages);
             remaining -= tokens;
         } else if selected.is_empty() && !unit.is_tool_chain {
+            // Une enveloppe opaque doit rester atomique avec le message qui la
+            // porte. La tronquer champ par champ ferait croire à une reprise
+            // valide après avoir effacé sa continuation.
+            if unit.messages[0].continuation.is_some() {
+                return Err("context_capacity_exceeded".to_string());
+            }
             trimmed = Some(trim_message(unit.messages[0], remaining));
             break;
         } else {
@@ -106,10 +112,11 @@ fn append_recent_tail<'a>(
     }
     if let Some(message) = trimmed {
         next.push(message);
-        return;
+        return Ok(());
     }
     selected.reverse();
     next.extend(selected.into_iter().flatten().cloned());
+    Ok(())
 }
 
 fn estimate_refs(provider_id: &str, messages: &[&ChatMessage]) -> usize {

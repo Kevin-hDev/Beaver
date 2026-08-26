@@ -116,6 +116,7 @@ mod tests {
             options: None,
             keep_alive: None,
             think: None,
+            capture_reasoning: false,
         };
         let value = chat_request(&request, &[]);
 

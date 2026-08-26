@@ -24,6 +24,7 @@ pub async fn run_agent_loop(
     permission_mode: &str,
     plan_mode_active: bool,
     context_usage_seed: ContextUsageSeed,
+    capture_reasoning: bool,
     mut journal: Option<&mut super::conversation_journal::ConversationJournal>,
 ) -> Result<super::agent_loop_finish::CompletedStreamTurn, String> {
     let (mut total_eval, mut total_prompt) = (Some(0), Some(0));
@@ -64,6 +65,7 @@ pub async fn run_agent_loop(
             turn,
             subagents: &mut subagents,
             context_usage_seed,
+            capture_reasoning,
         })
         .await?;
         generation.merge(request_output.generation);

@@ -108,7 +108,7 @@ async fn collect_summary(
     let timeout = crate::services::compress::timeouts::compression_request_timeout();
     if provider == "ollama" {
         let compression =
-            crate::services::agent_local::ollama_stream::collect_chat_with_timeout_and_limit(
+            crate::services::agent_local::ollama_collect::collect_chat_with_timeout_and_limit_global(
                 model,
                 messages,
                 timeout,

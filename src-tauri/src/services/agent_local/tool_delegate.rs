@@ -129,27 +129,20 @@ pub async fn prepare_delegate(
 
     let child_id = child.id.clone();
 
-    let persisted_prompt = match super::tool_delegate_child::persist_delegate_prompt(
-        &child_id,
-        &prompt,
-        existing_child_id.is_some(),
-    )
-    .await
-    {
-        Ok(persisted) => persisted,
+    match super::tool_delegate_child::persist_delegate_prompt(&child_id, &prompt).await {
+        Ok(()) => {}
         Err(result) => {
             subagent_registry::release_run_claim(&parent_session_id, &run_id).await;
             return Err(result);
         }
-    };
+    }
 
     let cancel = CancellationToken::new();
-    let initial_prompt = persisted_prompt.initial_prompt();
     let registered = match subagent_registry::register_execution_for_parent_stream(
         &parent_session_id,
         &child_id,
         cancel.clone(),
-        initial_prompt,
+        None,
         &parent_cancel,
     )
     .await
