@@ -1,11 +1,11 @@
 use super::agent_chat_task::{
-    StreamCapabilityHints, StreamConversation, StreamTaskParams, run_stream_task,
+    run_stream_task, StreamCapabilityHints, StreamConversation, StreamTaskParams,
 };
-use crate::ActiveStreams;
 use crate::models::agent_turn_contract::{ChatStreamAdmission, TurnStart};
 use crate::services::agent_local::agent_work_supervision::AgentWorkServices;
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::types_ollama::StreamEvent;
+use crate::ActiveStreams;
 use tauri::Manager;
 
 pub(crate) struct ChatStreamRequest {

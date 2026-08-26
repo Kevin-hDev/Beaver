@@ -52,3 +52,25 @@ fn assistant_tool_call_preserves_extra_content() {
         serde_json::json!({ "google": { "thought_signature": "sig-a" } })
     );
 }
+
+#[test]
+fn deepseek_tool_call_keeps_non_null_assistant_content() {
+    let msg = ChatMessage::assistant(
+        String::new(),
+        None,
+        None,
+        None,
+        Some(vec![ToolCallOllama {
+            id: Some("call-1".into()),
+            extra_content: None,
+            function: ToolCallFunction {
+                name: "lookup".into(),
+                arguments: serde_json::json!({}),
+            },
+        }]),
+    );
+
+    let out = message_to_openai(&msg, "deepseek");
+
+    assert_eq!(out["content"], "");
+}

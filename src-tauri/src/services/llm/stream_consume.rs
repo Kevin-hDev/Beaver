@@ -45,7 +45,12 @@ pub(super) async fn consume_stream(
                     return Err("provider_connection_failed".to_string());
                 };
                 let event = event.map_err(|_| "provider_connection_failed".to_string())?;
-                if is_done_marker(&event.data) { break; }
+                if is_done_marker(&event.data) {
+                    if let Some(capture) = reasoning_capture.as_mut() {
+                        capture.observe_transport_complete();
+                    }
+                    break;
+                }
                 let value = super::stream_sse::parse_json(&event.data)?;
                 if let Some(measurement) = measurement.as_mut() {
                     measurement.mark_first_event();

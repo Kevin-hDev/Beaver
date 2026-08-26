@@ -55,7 +55,10 @@ fn apply_tools(payload: &mut serde_json::Value, cfg: &RequestConfig<'_>, provide
     }
     let tools = super::tool_schema::tools_for_provider(provider_id, cfg.model, cfg.tools);
     payload["tools"] = serde_json::Value::Array(tools);
-    payload["tool_choice"] = "auto".into();
+    if provider_id != "deepseek" {
+        // DeepSeek V4 choisit lui-même ses outils en mode thinking et rejette ce champ.
+        payload["tool_choice"] = "auto".into();
+    }
     if provider_id == "zai" {
         payload["tool_stream"] = true.into();
     }

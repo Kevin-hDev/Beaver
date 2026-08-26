@@ -1,4 +1,4 @@
-use super::{ReplayApproval, ReplayApplyError};
+use super::{ReplayApplyError, ReplayApproval};
 use crate::services::reasoning_continuity::contract::ReplayTarget;
 use crate::services::reasoning_continuity::eligibility::{self, ReplayDecision};
 use crate::services::reasoning_continuity::envelope::ReasoningEnvelope;

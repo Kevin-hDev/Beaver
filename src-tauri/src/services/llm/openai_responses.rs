@@ -27,14 +27,14 @@ pub(super) fn try_build_request(
         "stream": true,
         "store": false,
         "tools": crate::services::codex_client::convert::convert_tools_to_responses_api(
-            "openai",
+            config.provider_id,
             config.model,
             config.tools,
         ),
         "tool_choice": "auto",
         "parallel_tool_calls": false,
         "prompt_cache_key": super::prompt_cache_policy::routing_key(
-            "openai",
+            config.provider_id,
             config.model,
             config.session_id,
         ),
@@ -57,6 +57,12 @@ pub(super) fn try_build_request(
 }
 
 fn requested_effort(config: &RequestConfig<'_>) -> Option<&'static str> {
+    if config.provider_id == "xai" {
+        return crate::services::llm::providers::xai::reasoning_effort(
+            config.model,
+            config.reasoning_mode,
+        );
+    }
     if config.think || config.reasoning_mode == Some("off") {
         return crate::services::reasoning::openai_effort(config.reasoning_mode);
     }
@@ -81,7 +87,7 @@ pub(super) async fn stream_chat(
         cancel,
         buffer_content,
         realtime_budget,
-        "openai",
+        config.provider_id,
         config.model,
         config.tools,
         reasoning_capture,
@@ -103,7 +109,7 @@ pub(super) async fn collect_silent(
         response,
         cancel,
         config.max_tokens,
-        "openai",
+        config.provider_id,
         config.model,
         measurement,
     )
@@ -114,7 +120,8 @@ pub(super) async fn post(
     config: &RequestConfig<'_>,
     mut measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
 ) -> Result<reqwest::Response, RequestError> {
-    let route = super::route::resolve("openai").ok_or(RequestError::InvalidConfiguration)?;
+    let route =
+        super::route::resolve(config.provider_id).ok_or(RequestError::InvalidConfiguration)?;
     let body = try_build_request(config)?;
     #[cfg(test)]
     if let Some(response) = super::stream_test_transport::dispatch(config, &body).await {
@@ -122,7 +129,7 @@ pub(super) async fn post(
     }
     let client = AuthenticatedClient::new_streaming(
         super::timeouts::connect_timeout(),
-        super::timeouts::idle_timeout_for("openai"),
+        super::timeouts::idle_timeout_for(config.provider_id),
     )
     .map_err(|_| RequestError::InvalidConfiguration)?;
     let url = format!("{}/responses", route.base_url);
@@ -130,7 +137,8 @@ pub(super) async fn post(
         .map(zeroize::Zeroizing::new)
         .map_err(|_| RequestError::InvalidConfiguration)?
         .len();
-    let usage_generation = crate::services::provider_usage::credential_generation("openai");
+    let usage_generation =
+        crate::services::provider_usage::credential_generation(config.provider_id);
     let response = super::stream_http_send::send_json_request(
         &client,
         &route,
@@ -145,7 +153,7 @@ pub(super) async fn post(
         measurement.mark_headers();
     }
     crate::services::provider_usage::capture_headers(
-        "openai",
+        config.provider_id,
         usage_generation,
         response.headers(),
     )
@@ -161,15 +169,19 @@ pub(super) async fn post(
         .unwrap_or_default();
     let details = super::provider_error::safe_details(&error_body);
     super::provider_diagnostics::record_http_failure(
-        "openai",
+        config.provider_id,
         config.model,
         status.as_u16(),
         details,
         request_bytes,
         config.tools.len(),
     );
-    let log_code = super::provider_error::safe_log_code("openai", status.as_u16(), &error_body);
-    ::log::warn!("[openai responses] HTTP {status} code={log_code}");
+    let log_code =
+        super::provider_error::safe_log_code(config.provider_id, status.as_u16(), &error_body);
+    ::log::warn!(
+        "[{} responses] HTTP {status} code={log_code}",
+        config.provider_id
+    );
     Err(super::stream_http::classify_error(
         status.as_u16(),
         &error_body,

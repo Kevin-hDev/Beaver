@@ -166,8 +166,8 @@ async fn wait_for_retry(
 #[cfg(test)]
 mod tests {
     use super::{
-        CODEX_POLICY, automatic_retry_allowed, is_retryable_error, retry_delay, retry_policy,
-        take_attempt, wait_for_retry,
+        automatic_retry_allowed, is_retryable_error, retry_delay, retry_policy, take_attempt,
+        wait_for_retry, CODEX_POLICY,
     };
     use tokio_util::sync::CancellationToken;
 

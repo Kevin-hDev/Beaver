@@ -83,6 +83,23 @@ fn chat_and_ollama_complete_only_on_their_native_terminal_signal() {
 }
 
 #[test]
+fn chat_capture_accepts_the_native_done_marker_without_a_finish_reason() {
+    let mut capture = ReasoningCapture::new(context(RouteId::Moonshot, "kimi-k2.7-code")).unwrap();
+    capture.observe_json(&json!({
+        "choices": [{"delta": {"reasoning_content": "opaque"}}]
+    }));
+    capture.observe_transport_complete();
+
+    let envelope = capture.finish_complete().expect("complete envelope");
+    assert_eq!(
+        envelope.continuation,
+        ContinuationState::ChatReasoning {
+            reasoning_content: "opaque".into()
+        }
+    );
+}
+
+#[test]
 fn r07_first_limit_excess_releases_native_state_and_cannot_recover() {
     let mut capture =
         ReasoningCapture::new(context(RouteId::OpenRouter, "moonshotai/kimi-k2.5")).unwrap();

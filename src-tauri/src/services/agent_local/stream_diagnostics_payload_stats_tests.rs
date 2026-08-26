@@ -112,3 +112,24 @@ fn chat_payload_counts_replayed_native_field() {
     assert_eq!(stats.reasoning_fields, 1);
     assert_eq!(stats.reasoning_chars, 6);
 }
+
+#[test]
+fn openrouter_diagnostics_builds_a_bare_provider_object_without_panicking() {
+    let (target, assistant) = fixture(
+        RouteId::OpenRouter,
+        "moonshotai/kimi-k2.5",
+        ReasoningModeId::Medium,
+        ContractId::OpenRouterDetailsV1,
+        ContinuationState::OpenRouterDetails {
+            details: vec![json!({"type":"reasoning.encrypted","data":"opaque"})],
+        },
+    );
+    let stats = chat_payload_stats(
+        "openrouter",
+        &[assistant, ChatMessage::user("next".into())],
+        Some(&target),
+    );
+
+    assert_eq!(stats.reasoning_fields, 1);
+    assert!(stats.reasoning_chars > 0);
+}

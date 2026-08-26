@@ -70,14 +70,12 @@ mod tests {
         })
         .await
         .unwrap();
-        assert!(
-            start_once(&id, || async {
-                calls.fetch_add(1, Ordering::Relaxed);
-                Ok(())
-            })
-            .await
-            .is_err()
-        );
+        assert!(start_once(&id, || async {
+            calls.fetch_add(1, Ordering::Relaxed);
+            Ok(())
+        })
+        .await
+        .is_err());
         start_once(&run_id(2), || async {
             calls.fetch_add(1, Ordering::Relaxed);
             Ok(())

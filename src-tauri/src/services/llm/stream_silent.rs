@@ -46,7 +46,7 @@ pub async fn collect_chat_silent_for_compression(
             measurement.as_mut(),
         )
         .await
-    } else if provider_id == super::providers::openai::PROVIDER_ID {
+    } else if matches!(provider_id, "openai" | "xai") {
         let config = request_config(
             provider_id,
             fast_mode,

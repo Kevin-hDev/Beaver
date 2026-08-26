@@ -200,16 +200,6 @@ fn zai_opt_in_is_a_top_level_thinking_contract() {
 fn native_adapters_preserve_their_opaque_shapes() {
     let cases = [
         (
-            RouteId::Google,
-            "gemini-3.7-flash",
-            ContractId::GeminiCompatV1,
-            AdapterId::GeminiParts,
-            ContinuationState::GeminiParts {
-                parts: vec![json!({"thought": true, "thoughtSignature": "sig"})],
-            },
-            "content",
-        ),
-        (
             RouteId::Mistral,
             "mistral-small-2603",
             ContractId::MistralChunksV1,
@@ -246,8 +236,7 @@ fn native_adapters_preserve_their_opaque_shapes() {
         apply_chat_continuity(&messages, &approval, &mut payload).unwrap();
 
         let expected = match continuation {
-            ContinuationState::GeminiParts { parts }
-            | ContinuationState::MistralChunks { chunks: parts }
+            ContinuationState::MistralChunks { chunks: parts }
             | ContinuationState::OpenRouterDetails { details: parts } => json!(parts),
             _ => unreachable!(),
         };

@@ -129,7 +129,10 @@ fn validate_session(
         .iter()
         .filter(|message| message.role == "user")
         .count();
-    let has_tool = session.messages.iter().any(|message| message.role == "tool")
+    let has_tool = session
+        .messages
+        .iter()
+        .any(|message| message.role == "tool")
         || session
             .diagnostic_runs
             .iter()

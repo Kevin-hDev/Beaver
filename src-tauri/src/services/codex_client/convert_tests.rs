@@ -16,7 +16,7 @@ fn convert_extracts_system_as_instructions() {
 #[test]
 fn convert_user_images_to_responses_parts() {
     let msgs = vec![
-        ChatMessage::user("Decris cette image".into()).with_images(vec!["iVBORw0KGgo=".into()]),
+        ChatMessage::user("Decris cette image".into()).with_images(vec!["iVBORw0KGgo=".into()])
     ];
     let (_, input) = convert_messages(&msgs);
     assert_eq!(input[0]["role"], "user");
@@ -98,11 +98,9 @@ fn codex_opaque_legacy_items_never_bypass_a_forbidden_target() {
     );
     let (_, input) = convert_messages_with_tools_and_continuity(&msgs, &[], Some(&target)).unwrap();
 
-    assert!(
-        !input
-            .iter()
-            .any(|item| item == &reasoning || item == &function)
-    );
+    assert!(!input
+        .iter()
+        .any(|item| item == &reasoning || item == &function));
     assert_eq!(input[0]["role"], "assistant");
     assert_eq!(input[1]["type"], "function_call");
 }

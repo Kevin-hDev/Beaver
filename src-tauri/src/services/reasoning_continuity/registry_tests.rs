@@ -1,11 +1,11 @@
 use super::contract::{
     ContinuationUse, ContractId, CredentialScope, ReasoningModeId, ReplayTarget, RouteId,
 };
-use super::eligibility::{BlockReason, ReplayDecision, decide};
+use super::eligibility::{decide, BlockReason, ReplayDecision};
 use super::envelope::{CompletionState, ContinuationState, ReasoningEnvelope, ReasoningSource};
 use super::registry::{
-    ActivationState, AdapterId, ModelPolicy, ReplayRequirement, RouteContract, active_routes,
-    replay_policy, replay_policy_from_routes, route_contract,
+    active_routes, replay_policy, replay_policy_from_routes, route_contract, ActivationState,
+    AdapterId, ModelPolicy, ReplayRequirement, RouteContract,
 };
 
 #[test]
@@ -200,24 +200,20 @@ fn exact_mode_and_continuation_use_are_independent_policy_dimensions() {
     assert_eq!(tool.requirement, ReplayRequirement::Required);
     assert_eq!(tool.activation, ActivationState::Disabled);
 
-    assert!(
-        replay_policy_from_routes(
-            ROUTES,
-            &target(ReasoningModeId::Low, ContinuationUse::UserContinuation)
-        )
-        .is_none()
-    );
-    assert!(
-        replay_policy_from_routes(
-            ROUTES,
-            &target(ReasoningModeId::Off, ContinuationUse::UserContinuation)
-        )
-        .is_none()
-    );
+    assert!(replay_policy_from_routes(
+        ROUTES,
+        &target(ReasoningModeId::Low, ContinuationUse::UserContinuation)
+    )
+    .is_none());
+    assert!(replay_policy_from_routes(
+        ROUTES,
+        &target(ReasoningModeId::Off, ContinuationUse::UserContinuation)
+    )
+    .is_none());
 }
 
 #[test]
-fn deepseek_user_and_tool_continuations_have_distinct_requirements() {
+fn deepseek_user_and_tool_continuations_are_both_required() {
     let scope = CredentialScope::authenticated("fixture-scope").unwrap();
     let target = |continuation_use| ReplayTarget {
         route_id: RouteId::DeepSeek,
@@ -231,7 +227,7 @@ fn deepseek_user_and_tool_continuations_have_distinct_requirements() {
         replay_policy(&target(ContinuationUse::UserContinuation))
             .unwrap()
             .requirement,
-        ReplayRequirement::Forbidden
+        ReplayRequirement::Required
     );
     assert_eq!(
         replay_policy(&target(ContinuationUse::ToolContinuation))
@@ -239,13 +235,11 @@ fn deepseek_user_and_tool_continuations_have_distinct_requirements() {
             .requirement,
         ReplayRequirement::Required
     );
-    assert!(
-        replay_policy(&ReplayTarget {
-            reasoning_mode: ReasoningModeId::Off,
-            ..target(ContinuationUse::ToolContinuation)
-        })
-        .is_none()
-    );
+    assert!(replay_policy(&ReplayTarget {
+        reasoning_mode: ReasoningModeId::Off,
+        ..target(ContinuationUse::ToolContinuation)
+    })
+    .is_none());
 
     let envelope = ReasoningEnvelope::new(
         ContractId::DeepSeekChatV1,
@@ -328,6 +322,55 @@ fn only_exact_live_fixture_pairs_are_activated() {
             "ollama-local-qwen3-5-4b-local-2026-08-26",
         ),
         (
+            RouteId::Google,
+            "gemini-3.5-flash",
+            ReasoningModeId::Medium,
+            ReplayRequirement::Required,
+            "google-api-gemini-3-5-flash-france-2026-08-26",
+        ),
+        (
+            RouteId::Mistral,
+            "mistral-small-2603",
+            ReasoningModeId::High,
+            ReplayRequirement::Required,
+            "mistral-api-mistral-small-2603-france-2026-08-26",
+        ),
+        (
+            RouteId::Cerebras,
+            "gpt-oss-120b",
+            ReasoningModeId::High,
+            ReplayRequirement::Required,
+            "cerebras-api-gpt-oss-120b-france-2026-08-26",
+        ),
+        (
+            RouteId::OpenRouter,
+            "moonshotai/kimi-k2.5",
+            ReasoningModeId::Medium,
+            ReplayRequirement::Required,
+            "openrouter-api-moonshotai-kimi-k2-5-france-2026-08-26",
+        ),
+        (
+            RouteId::OpenAi,
+            "gpt-5.6-luna",
+            ReasoningModeId::Medium,
+            ReplayRequirement::Required,
+            "openai-api-gpt-5-6-luna-france-2026-08-26",
+        ),
+        (
+            RouteId::DeepSeek,
+            "deepseek-v4-flash",
+            ReasoningModeId::High,
+            ReplayRequirement::Required,
+            "deepseek-api-deepseek-v4-flash-france-2026-08-26",
+        ),
+        (
+            RouteId::Xai,
+            "grok-4.6",
+            ReasoningModeId::High,
+            ReplayRequirement::Required,
+            "xai-api-grok-4-6-france-2026-08-26",
+        ),
+        (
             RouteId::CodexOauth,
             "gpt-5.6-luna",
             ReasoningModeId::Medium,
@@ -340,6 +383,13 @@ fn only_exact_live_fixture_pairs_are_activated() {
             ReasoningModeId::High,
             ReplayRequirement::Required,
             "xai-oauth-grok-4-6-local-2026-08-26",
+        ),
+        (
+            RouteId::Moonshot,
+            "kimi-k2.7-code",
+            ReasoningModeId::Auto,
+            ReplayRequirement::Required,
+            "moonshot-api-kimi-k2-7-code-france-2026-08-26",
         ),
         (
             RouteId::Zai,

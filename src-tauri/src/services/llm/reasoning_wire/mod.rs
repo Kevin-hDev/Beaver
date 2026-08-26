@@ -1,4 +1,5 @@
 mod capture;
+mod capture_completion;
 mod capture_context;
 pub(crate) mod chat_text;
 mod gemini;
@@ -91,43 +92,6 @@ impl ReasoningCapture {
         }
     }
 
-    pub(crate) fn observe_done(&mut self, event: &Value) {
-        if self.partial {
-            return;
-        }
-        self.provider_complete = match self.contract_id {
-            ContractId::OllamaNativeV1 => event.get("done").and_then(Value::as_bool) == Some(true),
-            ContractId::OpenAiResponsesV1
-            | ContractId::XaiResponsesV1
-            | ContractId::CodexResponsesV1 => {
-                event.get("type").and_then(Value::as_str) == Some("response.completed")
-            }
-            _ => event
-                .pointer("/choices/0/finish_reason")
-                .and_then(Value::as_str)
-                .is_some_and(|reason| !reason.is_empty() && reason != "error"),
-        };
-    }
-
-    pub(crate) fn finish_complete(&mut self) -> Option<ReasoningEnvelope> {
-        if self.partial || !self.provider_complete {
-            return None;
-        }
-        let envelope = ReasoningEnvelope::new(
-            self.contract_id,
-            self.context.source(),
-            CompletionState::Complete,
-            self.continuation.take()?,
-            std::mem::take(&mut self.response_tool_links),
-        );
-        envelope.validate().ok().map(|_| envelope)
-    }
-
-    pub(crate) fn finish_partial(&mut self) -> Option<ReasoningEnvelope> {
-        self.mark_partial();
-        None
-    }
-
     #[cfg(test)]
     pub(crate) const fn is_partial(&self) -> bool {
         self.partial
@@ -215,13 +179,6 @@ impl ReasoningCapture {
         responses::tool_link(&item).map_err(|_| LimitError::CaptureSkeleton)?;
         self.append_items(vec![item])?;
         Ok(())
-    }
-
-    fn mark_partial(&mut self) {
-        self.partial = true;
-        self.failure_code = Some("capture_limit_exceeded");
-        self.continuation = None;
-        self.budget = None;
     }
 }
 

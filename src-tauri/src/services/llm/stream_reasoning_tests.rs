@@ -150,6 +150,14 @@ fn mistral_adjustable_uses_reasoning_effort() {
 }
 
 #[test]
+fn cerebras_gpt_oss_uses_reasoning_effort_without_an_invented_thinking_object() {
+    let payload = payload("cerebras", "gpt-oss-120b", Some("high"));
+
+    assert_eq!(payload["reasoning_effort"], "high");
+    assert!(payload.get("thinking").is_none());
+}
+
+#[test]
 fn openrouter_gpt_56_keeps_nested_reasoning_shape() {
     let payload = payload("openrouter", "openai/gpt-5.6-terra", Some("max"));
 

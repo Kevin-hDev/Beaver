@@ -162,7 +162,7 @@ fn deepseek_reasoning_tool_continuation_uses_the_tool_contract_even_when_admissi
 }
 
 #[test]
-fn deepseek_user_continuation_forbidden_never_forwards_reasoning() {
+fn deepseek_user_continuation_replays_native_reasoning() {
     let target = fixture_target(replay_target(
         RouteId::DeepSeek,
         "deepseek-v4-flash",
@@ -179,7 +179,7 @@ fn deepseek_user_continuation_forbidden_never_forwards_reasoning() {
                 ContractId::DeepSeekChatV1,
                 CompletionState::Complete,
                 ContinuationState::ChatReasoning {
-                    reasoning_content: "must-not-leak".into(),
+                    reasoning_content: "opaque-user".into(),
                 },
             )),
             None,
@@ -189,9 +189,9 @@ fn deepseek_user_continuation_forbidden_never_forwards_reasoning() {
     ];
 
     let payload = payload("deepseek", "deepseek-v4-flash", &messages, &target, "high")
-        .expect("forbidden user payload stays usable");
+        .expect("required user payload");
 
-    assert!(payload["messages"][0].get("reasoning_content").is_none());
+    assert_eq!(payload["messages"][0]["reasoning_content"], "opaque-user");
 }
 
 #[tokio::test]
@@ -429,7 +429,7 @@ fn kimi_keeps_an_empty_native_reasoning_field_and_legacy_text_is_never_a_fallbac
 }
 
 #[test]
-fn zai_reasoning_and_cerebras_reasoning_apply_clear_thinking_only_through_their_native_contracts() {
+fn zai_and_cerebras_apply_their_distinct_native_contracts() {
     let zai_target = fixture_target(replay_target(
         RouteId::Zai,
         "glm-5.3",
@@ -493,8 +493,12 @@ fn zai_reasoning_and_cerebras_reasoning_apply_clear_thinking_only_through_their_
     let clear = serde_json::json!({"type": "enabled", "clear_thinking": false});
     assert_eq!(zai["messages"][0]["reasoning_content"], "zai-opaque");
     assert_eq!(zai["thinking"], clear);
-    assert_eq!(cerebras["messages"][0]["reasoning"], "cerebras-opaque");
-    assert_eq!(cerebras["thinking"], clear);
+    assert_eq!(
+        cerebras["messages"][0]["content"],
+        "<think>cerebras-opaque</think>answer"
+    );
+    assert!(cerebras["messages"][0].get("reasoning").is_none());
+    assert!(cerebras.get("thinking").is_none());
 }
 
 #[test]

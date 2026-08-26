@@ -16,10 +16,20 @@ pub fn apply(
         "deepseek" => apply_deepseek(payload, reasoning_mode),
         "groq" => apply_groq(payload, model, think, reasoning_mode),
         "mistral" => apply_mistral(payload, think, reasoning_mode),
+        "cerebras" => apply_cerebras(payload, think, reasoning_mode),
         "moonshot" => apply_moonshot(payload, model, think, reasoning_mode),
         "google" => apply_google(payload, model, think, reasoning_mode),
         "xai" => apply_xai(payload, model, reasoning_mode),
         _ => {}
+    }
+}
+
+fn apply_cerebras(payload: &mut Value, think: bool, reasoning_mode: Option<&str>) {
+    if !think {
+        return;
+    }
+    if let Some(effort) = crate::services::reasoning::simple_effort(reasoning_mode) {
+        payload["reasoning_effort"] = effort.into();
     }
 }
 

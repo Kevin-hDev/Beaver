@@ -25,7 +25,10 @@ fn message_to_openai_with_names(
             obj
         }
         "assistant" => {
-            let content = if msg.content.is_empty() && msg.tool_calls.is_some() {
+            let content = if msg.content.is_empty()
+                && msg.tool_calls.is_some()
+                && provider_id != "deepseek"
+            {
                 Value::Null
             } else {
                 json!(msg.content)

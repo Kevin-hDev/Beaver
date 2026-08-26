@@ -1,8 +1,9 @@
 use super::contract::{ContinuationUse, ContractId, ReasoningModeId, RouteId};
 use super::registry::{ActivationState, AdapterId, ModelPolicy, ReplayRequirement, RouteContract};
-use super::registry_validated_cloud::{CODEX, OLLAMA, XAI_OAUTH, ZAI};
+use super::registry_validated_cloud::{CODEX, MISTRAL, OLLAMA, OPENAI, XAI_OAUTH, ZAI};
+use super::registry_validated_reasoning::{CEREBRAS, DEEPSEEK, GOOGLE, MOONSHOT, OPENROUTER, XAI};
 
-use ReplayRequirement::{Forbidden, Optional, Required};
+use ReplayRequirement::Required;
 
 const fn user(
     model_id: &'static str,
@@ -66,44 +67,6 @@ pub(super) const fn live(
     }
 }
 
-const GOOGLE: &[ModelPolicy] = &[
-    user("gemini-3.7-flash", ReasoningModeId::Medium, Required),
-    tool("gemini-3.7-flash", ReasoningModeId::Medium, Required),
-    user("gemini-3.5-flash", ReasoningModeId::Medium, Required),
-    tool("gemini-3.5-flash", ReasoningModeId::Medium, Required),
-    user("gemini-3.5-flash-lite", ReasoningModeId::Medium, Required),
-    tool("gemini-3.5-flash-lite", ReasoningModeId::Medium, Required),
-];
-const MISTRAL: &[ModelPolicy] = &[
-    user("mistral-small-2603", ReasoningModeId::High, Required),
-    tool("mistral-small-2603", ReasoningModeId::High, Required),
-];
-const CEREBRAS: &[ModelPolicy] = &[
-    user("zai-glm-4.7", ReasoningModeId::Auto, Optional),
-    tool("zai-glm-4.7", ReasoningModeId::Auto, Optional),
-];
-const OPENROUTER: &[ModelPolicy] = &[
-    user("moonshotai/kimi-k2.5", ReasoningModeId::Medium, Required),
-    tool("moonshotai/kimi-k2.5", ReasoningModeId::Medium, Required),
-];
-const OPENAI: &[ModelPolicy] = &[
-    user("gpt-5.6-luna", ReasoningModeId::Medium, Required),
-    tool("gpt-5.6-luna", ReasoningModeId::Medium, Required),
-    user("gpt-5.6-terra", ReasoningModeId::Medium, Required),
-    tool("gpt-5.6-terra", ReasoningModeId::Medium, Required),
-];
-const DEEPSEEK: &[ModelPolicy] = &[
-    user("deepseek-v4-flash", ReasoningModeId::High, Forbidden),
-    tool("deepseek-v4-flash", ReasoningModeId::High, Required),
-];
-const XAI: &[ModelPolicy] = &[
-    user("grok-4.6", ReasoningModeId::High, Forbidden),
-    tool("grok-4.6", ReasoningModeId::High, Forbidden),
-];
-const MOONSHOT: &[ModelPolicy] = &[
-    user("kimi-k2.7-code", ReasoningModeId::Auto, Required),
-    tool("kimi-k2.7-code", ReasoningModeId::Auto, Required),
-];
 const MOONSHOT_OAUTH: &[ModelPolicy] = &[
     user("kimi-for-coding", ReasoningModeId::Auto, Required),
     tool("kimi-for-coding", ReasoningModeId::Auto, Required),

@@ -168,10 +168,10 @@ mod tests {
         );
 
         let forbidden = ReplayTarget {
-            route_id: RouteId::Xai,
-            model_id: "grok-4.6".into(),
+            route_id: RouteId::Groq,
+            model_id: "any".into(),
             credential_scope: CredentialScope::authenticated("fixture-scope").unwrap(),
-            reasoning_mode: ReasoningModeId::High,
+            reasoning_mode: ReasoningModeId::Auto,
             continuation_use: ContinuationUse::UserContinuation,
         };
         let forbidden_envelope = ReasoningEnvelope::new(

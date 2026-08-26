@@ -64,9 +64,8 @@ fn gemini_reasoning_fixture_payload_keeps_parts_and_late_signature_in_order() {
     let target = target();
     let replay = target.replay().unwrap().clone();
     let parts = vec![
-        json!({"thought": true, "text": "first"}),
-        json!({"functionCall": {"name": "lookup", "args": {}}}),
-        json!({"thoughtSignature": "late-signature"}),
+        json!({"tool_call": {"index": 0, "extra_content": {"google": {"thought_signature": "tool-signature"}}}}),
+        json!({"extra_content": {"google": {"thought_signature": "late-signature"}}}),
     ];
     let envelope = ReasoningEnvelope::new(
         ContractId::GeminiCompatV1,
@@ -81,7 +80,22 @@ fn gemini_reasoning_fixture_payload_keeps_parts_and_late_signature_in_order() {
         serde_json::from_slice(&serde_json::to_vec(&envelope).expect("persisted Gemini envelope"))
             .expect("reloaded Gemini envelope");
     let messages = [
-        ChatMessage::assistant("answer".into(), None, Some(reloaded), None, None),
+        ChatMessage::assistant(
+            "answer".into(),
+            None,
+            Some(reloaded),
+            None,
+            Some(vec![
+                crate::services::agent_local::types_ollama::ToolCallOllama {
+                    id: Some("call-1".into()),
+                    extra_content: None,
+                    function: crate::services::agent_local::types_ollama::ToolCallFunction {
+                        name: "lookup".into(),
+                        arguments: json!({}),
+                    },
+                },
+            ]),
+        ),
         ChatMessage::user("continue".into()),
     ];
     let cfg = RequestConfig {
@@ -101,7 +115,15 @@ fn gemini_reasoning_fixture_payload_keeps_parts_and_late_signature_in_order() {
     let payload = build_chat_payload(&cfg, &route::resolve("google").unwrap(), None)
         .expect("fixture payload");
 
-    assert_eq!(payload["messages"][0]["content"], json!(parts));
+    assert_eq!(
+        payload["messages"][0]["tool_calls"][0]["extra_content"],
+        json!({"google": {"thought_signature": "tool-signature"}})
+    );
+    assert_eq!(
+        payload["messages"][0]["extra_content"],
+        json!({"google": {"thought_signature": "late-signature"}})
+    );
+    assert_eq!(payload["messages"][0]["content"], "answer");
 }
 
 #[test]

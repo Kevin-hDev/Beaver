@@ -59,7 +59,7 @@ pub async fn stream_chat_no_done(
             measurement.as_mut(),
         )
         .await
-    } else if provider_id == super::providers::openai::PROVIDER_ID {
+    } else if matches!(provider_id, "openai" | "xai") {
         let config = RequestConfig {
             provider_id,
             model,
@@ -73,7 +73,7 @@ pub async fn stream_chat_no_done(
             fast_mode,
             continuation_target,
         };
-        // OpenAI API partage le contrat Responses avec Codex, mais jamais ses jetons OAuth.
+        // Les API publiques OpenAI et xAI utilisent Responses avec leur propre authentification.
         super::openai_responses::stream_chat(
             on_event,
             &config,

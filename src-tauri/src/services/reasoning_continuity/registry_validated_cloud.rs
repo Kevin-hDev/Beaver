@@ -2,6 +2,56 @@ use super::contract::{ContinuationUse, ReasoningModeId};
 use super::registry::{ModelPolicy, ReplayRequirement};
 use super::registry_inventory::{disabled, live};
 
+pub(super) const MISTRAL: &[ModelPolicy] = &[
+    live(
+        "mistral-small-2603",
+        ReasoningModeId::High,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Required,
+        "mistral-api-mistral-small-2603-france-2026-08-26",
+        "2026-08-26",
+    ),
+    live(
+        "mistral-small-2603",
+        ReasoningModeId::High,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Required,
+        "mistral-api-mistral-small-2603-france-2026-08-26",
+        "2026-08-26",
+    ),
+];
+
+pub(super) const OPENAI: &[ModelPolicy] = &[
+    live(
+        "gpt-5.6-luna",
+        ReasoningModeId::Medium,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Required,
+        "openai-api-gpt-5-6-luna-france-2026-08-26",
+        "2026-08-26",
+    ),
+    live(
+        "gpt-5.6-luna",
+        ReasoningModeId::Medium,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Required,
+        "openai-api-gpt-5-6-luna-france-2026-08-26",
+        "2026-08-26",
+    ),
+    disabled(
+        "gpt-5.6-terra",
+        ReasoningModeId::Medium,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Required,
+    ),
+    disabled(
+        "gpt-5.6-terra",
+        ReasoningModeId::Medium,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Required,
+    ),
+];
+
 pub(super) const OLLAMA: &[ModelPolicy] = &[
     live(
         "gemma4:e2b-it-q4_K_M",

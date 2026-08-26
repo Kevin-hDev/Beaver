@@ -25,6 +25,25 @@ fn request<'a>(
     }
 }
 
+fn xai_request<'a>(
+    messages: &'a [ChatMessage],
+    tools: &'a [serde_json::Value],
+) -> RequestConfig<'a> {
+    RequestConfig {
+        provider_id: "xai",
+        model: "grok-4.6",
+        messages,
+        tools,
+        think: true,
+        reasoning_mode: Some("high"),
+        max_tokens: None,
+        purpose: RequestPurpose::ManualChat,
+        session_id: Some("xai-fixture"),
+        fast_mode: FastModeRequest::Unsupported,
+        continuation_target: None,
+    }
+}
+
 fn fixture_target(
     scope: &str,
 ) -> crate::services::reasoning_continuity::contract::ContinuationTarget {
@@ -82,6 +101,21 @@ fn api_request_uses_responses_reasoning_and_fast_contract() {
     assert_eq!(body["stream"], true);
     assert_eq!(body["store"], false);
     assert!(body.get("reasoning_effort").is_none());
+    assert!(body.get("messages").is_none());
+}
+
+#[test]
+fn xai_api_request_uses_responses_and_encrypted_reasoning() {
+    let messages = [ChatMessage::user("bonjour".into())];
+    let body = build_request(&xai_request(&messages, &[]));
+
+    assert_eq!(body["model"], "grok-4.6");
+    assert_eq!(body["reasoning"]["effort"], "high");
+    assert_eq!(
+        body["include"],
+        serde_json::json!(["reasoning.encrypted_content"])
+    );
+    assert_eq!(body["store"], false);
     assert!(body.get("messages").is_none());
 }
 
@@ -220,5 +254,47 @@ async fn runtime_dispatch_cannot_fall_back_to_chat_completions() {
     assert_eq!(payloads[0]["reasoning"]["effort"], "medium");
     assert_eq!(payloads[0]["service_tier"], "fast");
     assert!(payloads[0].get("reasoning_effort").is_none());
+    assert!(payloads[0].get("messages").is_none());
+}
+
+#[tokio::test]
+async fn xai_runtime_dispatch_cannot_fall_back_to_chat_completions() {
+    let session_id = "xai-responses-runtime";
+    let scenario = crate::services::llm::stream_test_transport::StreamScenario::start(
+        session_id,
+        [crate::services::llm::stream_test_transport::ScriptedResponse::Success],
+    )
+    .await;
+    let emitter = crate::services::agent_local::stream_events::AgentEventEmitter::test(
+        session_id.to_string(),
+    );
+    let messages = [ChatMessage::user("bonjour".into())];
+
+    crate::services::llm::stream::stream_chat_no_done(
+        &emitter,
+        session_id,
+        "request-xai-responses-runtime",
+        0,
+        1,
+        "xai",
+        FastModeRequest::Unsupported,
+        RequestPurpose::ManualChat,
+        "grok-4.6",
+        &messages,
+        &[],
+        true,
+        Some("high"),
+        tokio_util::sync::CancellationToken::new(),
+        false,
+        None,
+        None,
+        None,
+    )
+    .await
+    .expect("xAI Responses stream completes");
+
+    let payloads = scenario.payloads();
+    assert_eq!(payloads.len(), 1);
+    assert_eq!(payloads[0]["reasoning"]["effort"], "high");
     assert!(payloads[0].get("messages").is_none());
 }
