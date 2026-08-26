@@ -25,6 +25,7 @@ pub(super) struct OllamaRequestParams<'a> {
     pub subagents: &'a mut ParentSubagentOrchestrator,
     pub context_usage_seed: ContextUsageSeed,
     pub capture_reasoning: bool,
+    pub enable_eager_tools: bool,
 }
 
 pub(super) struct OllamaRequestOutput {
@@ -95,14 +96,15 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
     )
     .await;
     let (tool_tx, tool_rx) = tokio::sync::mpsc::unbounded_channel();
-    let mut eager_handle = tokio::spawn(super::eager_dispatch::collect_eager_results(
+    let mut eager_handle = super::agent_loop_thinking_retry::spawn_eager_handle(
         tool_rx,
         params.working_dir.to_path_buf(),
         params.session_id.to_string(),
         params.request_id.to_string(),
         params.chat_mode,
         params.cancel.clone(),
-    ));
+        params.enable_eager_tools,
+    );
     super::stream_diagnostics::mark_phase(
         params.session_id,
         params.request_id,
@@ -143,6 +145,7 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
             plan_active,
             chat_mode: params.chat_mode,
             realtime_budget,
+            enable_eager_tools: params.enable_eager_tools,
         })
         .await?;
         result = retry.result;

@@ -36,6 +36,10 @@ pub(crate) struct StreamTaskParams {
     pub subagent_profile:
         Option<crate::services::agent_local::subagent_tool_profile::SubagentToolProfile>,
     pub plan_mode: Option<bool>,
+    /// Présent uniquement pour une fixture debug : le contexte reste propriétaire
+    /// de son TempDir jusqu'à la fin exacte de cette exécution de boucle.
+    #[cfg(debug_assertions)]
+    pub fixture_run: Option<crate::services::reasoning_fixture_run::FixtureRunContext>,
     pub cancel: CancellationToken,
 }
 

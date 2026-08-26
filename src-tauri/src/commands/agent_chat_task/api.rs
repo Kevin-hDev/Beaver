@@ -11,6 +11,8 @@ pub(crate) async fn run(
     response_language: String,
     journal: &mut Option<crate::services::agent_local::conversation_journal::ConversationJournal>,
 ) -> Result<crate::services::agent_local::agent_loop_finish::CompletedStreamTurn, String> {
+    #[cfg(debug_assertions)]
+    let mut params = params;
     let canonical_provider = llm::route::canonical_provider_id(&params.provider);
     let fast_mode =
         llm::fast_mode::for_session(&params.session_id, &params.provider, &params.model).await?;
@@ -21,9 +23,27 @@ pub(crate) async fn run(
         super::api_capabilities::resolve(&params.provider, &params.model, &params.capability_hints)
             .await;
     let settings = crate::services::agent_local::agent_settings::load().await;
-    let final_tools =
-        super::api_tools::resolve(&params, &mode, caps.tools, &settings, canonical_provider);
-    let extension_tools = if mode.is_chat {
+    #[cfg(debug_assertions)]
+    let fixture_mode = params.fixture_run.is_some();
+    #[cfg(not(debug_assertions))]
+    let fixture_mode = false;
+    let final_tools = if fixture_mode {
+        #[cfg(debug_assertions)]
+        {
+            params
+                .fixture_run
+                .as_ref()
+                .map(|run| run.definitions().to_vec())
+                .unwrap_or_default()
+        }
+        #[cfg(not(debug_assertions))]
+        {
+            Vec::new()
+        }
+    } else {
+        super::api_tools::resolve(&params, &mode, caps.tools, &settings, canonical_provider)
+    };
+    let extension_tools = if fixture_mode || mode.is_chat {
         crate::services::agent_local::extension_tool_set::ExtensionToolSet::passthrough(final_tools)
     } else {
         crate::services::agent_local::extension_tool_set::ExtensionToolSet::prepare(
@@ -137,6 +157,8 @@ pub(crate) async fn run(
             )
         }
     };
+    #[cfg(debug_assertions)]
+    let mut fixture_run = params.fixture_run.take();
     let completed = llm::agent_loop::run_agent_loop(
         &params.on_event,
         &params.provider,
@@ -161,6 +183,8 @@ pub(crate) async fn run(
             .as_ref()
             .and_then(crate::services::reasoning_continuity::contract::ContinuationTarget::replay)
             .map(crate::services::llm::reasoning_wire::ReasoningCaptureContext::from_target),
+        #[cfg(debug_assertions)]
+        fixture_run.as_mut(),
         journal.as_mut(),
     )
     .await?;

@@ -13,10 +13,31 @@ pub(crate) async fn run(
     response_language: String,
     journal: &mut Option<crate::services::agent_local::conversation_journal::ConversationJournal>,
 ) -> Result<crate::services::agent_local::agent_loop_finish::CompletedStreamTurn, String> {
+    #[cfg(debug_assertions)]
+    let mut params = params;
     let ctx = crate::services::compress::context_resolve::resolve_ollama(&params.model).await;
     let settings = crate::services::agent_local::agent_settings::load().await;
-    let final_tools = resolve_tools(&params, &mode, &settings);
-    let extension_tools = if mode.is_chat {
+    #[cfg(debug_assertions)]
+    let fixture_mode = params.fixture_run.is_some();
+    #[cfg(not(debug_assertions))]
+    let fixture_mode = false;
+    let final_tools = if fixture_mode {
+        #[cfg(debug_assertions)]
+        {
+            params
+                .fixture_run
+                .as_ref()
+                .map(|run| run.definitions().to_vec())
+                .unwrap_or_default()
+        }
+        #[cfg(not(debug_assertions))]
+        {
+            Vec::new()
+        }
+    } else {
+        resolve_tools(&params, &mode, &settings)
+    };
+    let extension_tools = if fixture_mode || mode.is_chat {
         crate::services::agent_local::extension_tool_set::ExtensionToolSet::passthrough(final_tools)
     } else {
         crate::services::agent_local::extension_tool_set::ExtensionToolSet::prepare(
@@ -141,6 +162,8 @@ pub(crate) async fn run(
         .await;
     }
 
+    #[cfg(debug_assertions)]
+    let mut fixture_run = params.fixture_run.take();
     let completed = agent_loop::run_agent_loop(
         &params.on_event,
         &mut messages,
@@ -162,6 +185,8 @@ pub(crate) async fn run(
             .as_ref()
             .and_then(crate::services::reasoning_continuity::contract::ContinuationTarget::replay)
             .is_some(),
+        #[cfg(debug_assertions)]
+        fixture_run.as_mut(),
         journal.as_mut(),
     )
     .await?;

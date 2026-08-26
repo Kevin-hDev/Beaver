@@ -25,6 +25,7 @@ pub async fn run_agent_loop(
     plan_mode_active: bool,
     context_usage_seed: ContextUsageSeed,
     capture_reasoning: bool,
+    #[cfg(debug_assertions)] mut fixture_run: Option<&mut crate::services::reasoning_fixture_run::FixtureRunContext>,
     mut journal: Option<&mut super::conversation_journal::ConversationJournal>,
 ) -> Result<super::agent_loop_finish::CompletedStreamTurn, String> {
     let (mut total_eval, mut total_prompt) = (Some(0), Some(0));
@@ -34,6 +35,8 @@ pub async fn run_agent_loop(
     let write_guard_arc = write_guard_registry::lock(&session_id).await;
     let mut write_guard = write_guard_arc.lock().await;
     let mut plan_repairs = 0;
+    #[cfg(debug_assertions)]
+    let fixture_mode = fixture_run.is_some();
     let mut subagents =
         agent_loop_support::prepare_subagents(&session_id, parent_message_inbox).await;
     let compression = LoopCompression {
@@ -66,6 +69,16 @@ pub async fn run_agent_loop(
             subagents: &mut subagents,
             context_usage_seed,
             capture_reasoning,
+            enable_eager_tools: {
+                #[cfg(debug_assertions)]
+                {
+                    !fixture_mode
+                }
+                #[cfg(not(debug_assertions))]
+                {
+                    true
+                }
+            },
         })
         .await?;
         generation.merge(request_output.generation);
@@ -157,8 +170,52 @@ pub async fn run_agent_loop(
             return Err(msg);
         }
         let control_only = super::subagent_tool_control::is_control_only(&result.tool_calls);
+        #[cfg(debug_assertions)]
+        if fixture_mode {
+            eager_handle.abort();
+        }
+        #[cfg(debug_assertions)]
+        let eager_results = if fixture_mode {
+            Default::default()
+        } else {
+            eager_handle.await.unwrap_or_default()
+        };
+        #[cfg(not(debug_assertions))]
         let eager_results = eager_handle.await.unwrap_or_default();
         let tool_start = messages.len();
+        #[cfg(debug_assertions)]
+        let tool_outcome = match fixture_run.as_deref_mut() {
+            Some(run) => {
+                super::fixture_tool_executor::execute(
+                    on_event,
+                    messages,
+                    &result.tool_calls,
+                    &result.tool_call_ids,
+                    run,
+                    &cancel,
+                )
+                .await
+            }
+            None => {
+                tool_executor::run_tools_with_eager(
+                    on_event,
+                    messages,
+                    &result.tool_calls,
+                    &working_dir,
+                    permission_mode,
+                    &session_id,
+                    &request_id,
+                    cancel.clone(),
+                    &mut write_guard,
+                    plan_active,
+                    Some(eager_results),
+                    &result.tool_call_ids,
+                    None,
+                )
+                .await
+            }
+        };
+        #[cfg(not(debug_assertions))]
         let tool_outcome = tool_executor::run_tools_with_eager(
             on_event,
             messages,
@@ -183,6 +240,12 @@ pub async fn run_agent_loop(
                 .await?;
         }
         let stop_after_tools = tool_outcome.apply_follow_ups(messages);
+        #[cfg(debug_assertions)]
+        if !fixture_mode {
+            super::extension_tool_set::refresh_and_record(&mut tools, &session_id, &request_id)
+                .await?;
+        }
+        #[cfg(not(debug_assertions))]
         super::extension_tool_set::refresh_and_record(&mut tools, &session_id, &request_id).await?;
         subagents
             .wait_after_tool_batch(control_only, messages, cancel.clone())

@@ -20,6 +20,44 @@ pub(crate) struct ChatStreamRequest {
     pub reasoning_mode: Option<String>,
     pub permission_mode: Option<String>,
     pub plan_mode: Option<bool>,
+    #[cfg(debug_assertions)]
+    pub fixture_run: Option<crate::services::reasoning_fixture_run::FixtureRunContext>,
+}
+
+impl ChatStreamRequest {
+    pub(crate) fn from_input(
+        input: crate::models::agent_turn_contract::ChatStreamRequestInput,
+    ) -> Self {
+        Self {
+            session_id: input.session_id,
+            model: input.model,
+            turn: Some(input.turn),
+            tools: Vec::new(),
+            think: false,
+            provider: input.provider,
+            working_dir: input.working_dir,
+            capability_hints: StreamCapabilityHints::default(),
+            reasoning_mode: None,
+            permission_mode: input.permission_mode,
+            plan_mode: input.plan_mode,
+            #[cfg(debug_assertions)]
+            fixture_run: None,
+        }
+    }
+}
+
+#[cfg(debug_assertions)]
+pub(crate) async fn start_fixture(
+    app: tauri::AppHandle,
+    mut request: ChatStreamRequest,
+    streams: &ActiveStreams,
+) -> Result<ChatStreamAdmission, String> {
+    request.fixture_run = Some(
+        crate::services::reasoning_fixture_run::FixtureRunContext::start()
+            .await
+            .map_err(|_| generic_error())?,
+    );
+    start(app, request, streams).await
 }
 
 pub(crate) async fn start(

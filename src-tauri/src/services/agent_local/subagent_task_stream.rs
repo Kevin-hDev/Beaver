@@ -105,6 +105,8 @@ pub(super) async fn run_inner(
         parent_message_inbox: None,
         subagent_profile: Some(profile),
         plan_mode: Some(false),
+        #[cfg(debug_assertions)]
+        fixture_run: None,
         cancel: cancel.clone(),
     })
     .await;

@@ -1,3 +1,4 @@
+use crate::models::agent_turn_contract::{ChatStreamAdmission, ChatStreamRequestInput};
 use serde::{Deserialize, Serialize};
 
 const MAX_SCENARIOS: usize = 64;
@@ -67,6 +68,23 @@ pub async fn run_reasoning_fixture_tools(
     operations: Vec<FixtureOperation>,
 ) -> Result<Vec<serde_json::Value>, String> {
     run_fixture_operations(operations).await
+}
+
+/// Lance une conversation Agent Local réservée aux fixtures debug. Son contexte
+/// d'outils est créé ici et ne peut donc jamais être activé par le chat normal.
+#[tauri::command]
+pub async fn run_reasoning_fixture_agent_local(
+    app: tauri::AppHandle,
+    streams: tauri::State<'_, crate::ActiveStreams>,
+    request: ChatStreamRequestInput,
+) -> Result<ChatStreamAdmission, String> {
+    crate::commands::agent_chat_run::start_fixture(
+        app,
+        crate::commands::agent_chat_run::ChatStreamRequest::from_input(request),
+        &streams,
+    )
+    .await
+    .map_err(|_| unavailable())
 }
 
 async fn run_fixture_operations(

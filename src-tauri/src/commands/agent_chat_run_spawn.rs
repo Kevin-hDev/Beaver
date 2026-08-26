@@ -52,6 +52,8 @@ async fn spawn(
                 parent_message_inbox: Some(run_inbox.clone()),
                 subagent_profile: None,
                 plan_mode: request.plan_mode,
+                #[cfg(debug_assertions)]
+                fixture_run: request.fixture_run,
                 cancel: task_cancel,
             })
             .await;

@@ -54,6 +54,8 @@ pub async fn run(
         parent_message_inbox: None,
         subagent_profile: None,
         plan_mode: Some(false),
+        #[cfg(debug_assertions)]
+        fixture_run: None,
         cancel,
     })
     .await?;
