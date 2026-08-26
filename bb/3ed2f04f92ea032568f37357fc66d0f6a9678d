@@ -1,0 +1,19 @@
+Preserve-thinking correction review follow-up (2026-08-27).
+
+Source review: /private/tmp/claude-501/-Users-kevinh-Projects-Beaver/4c17e5d6-b3a4-4b3a-b2cf-443dd99f914e/scratchpad/review-fix/RAPPORT-CORRECTIONS.md
+
+Closed the four remaining blockers: legacy conversations now receive a real compatibility barrier automatically; compression preserves the two latest complete turns and no longer reports a successful turn as failed; replay evidence is emitted from the actual outbound payload builders rather than reconstructed afterward; automatic compression remains commit-compatible with an open conversation journal.
+
+Also closed the remaining review points: honest synthetic migration fixture naming; tolerant v1 repair followed by strict validation; unique corruption backups preserving v1 backups; UTF-8-safe bounded tool follow-up; explicit v2 writer validation; xAI API/OAuth scope guards; Cerebras-off coverage; fail-closed key diagnostics; bounded fixture run IDs; blocked model validation; dead pending-intent frontend code removal; and a closed lifecycle-only parent inbox.
+
+Fresh live proofs observed at outbound serialization: Moonshot API kimi-k2.7-code, xAI API grok-4.6, Ollama gemma4:e2b-it-q4_K_M and qwen3.5:4b. Checked-in reports contain run_id plus observed replay/capture/persist evidence. The harness process was launched once and kept open for the whole run.
+
+Fresh verification on bb3ed2f0: cargo fmt --check and cargo clippy --all-targets -- -D warnings exit 0; cargo test = 4190 passed, 0 failed, 7 ignored plus 1 integration test passed; npx tsc --noEmit and npm run lint exit 0; npm test = 476 files / 2578 Vitest tests plus build, CI, CEF, E2E, extension-host and reasoning-fixture suites all exit 0; git diff --check exit 0; graphify update completed.
+
+Ignored documentation updated outside this commit: docs/providers/reasoning/SPEC.md now reflects xAI Responses local encrypted replay, and docs/providers/reasoning/deepseek.md distinguishes the live tool-chain proof from the unit-only empty-field proof.
+
+Product decision retained: while a stream is active, a new user message is refused with a clear message and the draft is preserved. The durable mid-stream queue is intentionally deferred.
+
+Intentionally not live-enabled: moonshot-oauth (quota unavailable; implementation retained), Groq (scheduled removal), and Ollama deepseek-r1:latest (no validated reasoning output).
+
+MERGE REQUIREMENT: squash the full implementation range 2848a17e..bb3ed2f0 when integrating. The branch contains 69 commits after 2848a17e and historical activation/closure was not atomic. Copy these exclusions and the active-stream decision into the squash commit message because git notes do not survive a squash.
