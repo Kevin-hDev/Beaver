@@ -6,6 +6,8 @@ use std::path::Path;
 
 pub use context_capsules_disk::CompressionMode;
 
+const RECENT_COMPLETE_TURNS: usize = 2;
+
 pub fn context_used_for_compression(
     last_context_tokens: Option<u32>,
     estimated_tokens: usize,
@@ -52,7 +54,7 @@ pub async fn apply_and_save(
         .retain(|message| !(message.role == "user" && message.content.trim() == "/compress"));
     crate::services::agent_local::conversation_compaction::compact_complete_turns(
         &mut session.messages,
-        0,
+        RECENT_COMPLETE_TURNS,
     )
     .map_err(|_| "Compression impossible".to_string())?;
     let mut compacted = build_summary_turn(summary, suppress_follow_up, context);

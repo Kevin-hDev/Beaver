@@ -1,4 +1,4 @@
-use super::{build_request, try_build_request};
+use super::{build_request, try_build_request, try_build_request_with_evidence};
 use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::llm::fast_mode::FastModeRequest;
 use crate::services::llm::request_purpose::RequestPurpose;
@@ -224,12 +224,14 @@ fn responses_continuity_replays_native_items_at_the_assistant_position_without_t
     let mut config = request(&messages, &[], Some("medium"), FastModeRequest::Standard);
     config.continuation_target = Some(&target);
 
-    let body = try_build_request(&config).unwrap();
+    let prepared = try_build_request_with_evidence(&config).unwrap();
+    let body = prepared.body;
 
     assert_eq!(body["input"][0]["type"], "reasoning");
     assert_eq!(body["input"][0]["encrypted_content"], "opaque");
     assert_eq!(body["input"][1]["type"], "message");
     assert_eq!(body["input"][2]["role"], "user");
+    assert_eq!(prepared.replayed.len(), 1);
 }
 
 #[test]
@@ -276,10 +278,33 @@ fn xai_responses_continuity_replays_native_items() {
     let mut config = xai_request(&messages, &[]);
     config.continuation_target = Some(&target);
 
-    let body = try_build_request(&config).expect("xAI native replay");
+    let prepared = try_build_request_with_evidence(&config).expect("xAI native replay");
+    let body = prepared.body;
 
     assert_eq!(body["input"][0]["type"], "reasoning");
     assert_eq!(body["input"][0]["encrypted_content"], "opaque-xai");
+    assert_eq!(prepared.replayed.len(), 1);
+}
+
+#[test]
+fn xai_responses_blocks_wrong_scope_and_required_missing_state() {
+    let target = xai_fixture_target("xai-scope");
+    let messages = [
+        xai_native_assistant(&target),
+        ChatMessage::user("continue".into()),
+    ];
+    let wrong = xai_fixture_target("other-xai-scope");
+    let mut config = xai_request(&messages, &[]);
+    config.continuation_target = Some(&wrong);
+    assert!(try_build_request(&config).is_err());
+
+    let missing = [
+        ChatMessage::assistant("visible".into(), None, None, None, None),
+        ChatMessage::user("continue".into()),
+    ];
+    let mut config = xai_request(&missing, &[]);
+    config.continuation_target = Some(&target);
+    assert!(try_build_request(&config).is_err());
 }
 
 #[tokio::test]

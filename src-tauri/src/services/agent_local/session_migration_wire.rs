@@ -53,7 +53,10 @@ pub(super) fn parse_v1(bytes: &[u8]) -> Result<AgentSession, String> {
     validate_v1_shape(&wire)?;
     let mut value: Value = serde_json::from_slice(bytes).map_err(|_| invalid())?;
     super::session_migration_ids::migrate_value(&mut value)?;
-    parse_v2_value(value)
+    let mut session = parse_v2_value(value)?;
+    super::session_migration_legacy_history::repair(&mut session);
+    super::conversation_history_validation::validate(&session.messages).map_err(|_| invalid())?;
+    Ok(session)
 }
 
 pub(super) fn parse_v2(bytes: &[u8]) -> Result<AgentSession, String> {

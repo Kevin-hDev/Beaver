@@ -20,7 +20,9 @@ pub struct RequestConfig<'a> {
         Option<&'a crate::services::reasoning_continuity::contract::ContinuationTarget>,
 }
 
+#[cfg(test)]
 use super::stream_http_payload::build_chat_payload;
+use super::stream_http_payload::build_chat_payload_with_evidence;
 
 async fn read_provider_error(response: reqwest::Response) -> zeroize::Zeroizing<String> {
     match read_bounded(response, PROVIDER_ERROR_LIMIT).await {
@@ -32,11 +34,13 @@ async fn read_provider_error(response: reqwest::Response) -> zeroize::Zeroizing<
 pub(super) async fn post_chat_request_measured(
     cfg: &RequestConfig<'_>,
     measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
+    request_id: Option<&str>,
 ) -> Result<reqwest::Response, RequestError> {
     post_chat_request_with_timeout_measured(
         cfg,
         super::timeouts::request_timeout_for(cfg.provider_id),
         measurement,
+        request_id,
     )
     .await
 }
@@ -46,13 +50,14 @@ pub async fn post_chat_request_with_timeout(
     cfg: &RequestConfig<'_>,
     timeout: std::time::Duration,
 ) -> Result<reqwest::Response, RequestError> {
-    post_chat_request_with_timeout_measured(cfg, timeout, None).await
+    post_chat_request_with_timeout_measured(cfg, timeout, None, None).await
 }
 
 pub(super) async fn post_chat_request_with_timeout_measured(
     cfg: &RequestConfig<'_>,
     timeout: std::time::Duration,
     mut measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
+    request_id: Option<&str>,
 ) -> Result<reqwest::Response, RequestError> {
     if cfg.model.len() > 128 {
         return Err(RequestError::Fatal("nom de modèle trop long".into()));
@@ -72,8 +77,11 @@ pub(super) async fn post_chat_request_with_timeout_measured(
     )
     .await
     .map_err(request_error_for_limit)?;
-    let payload = build_chat_payload(cfg, &route, max_tokens)
+    let prepared = build_chat_payload_with_evidence(cfg, &route, max_tokens)
         .map_err(|_| RequestError::Fatal("reasoning_continuity_invalid".to_string()))?;
+    let payload = prepared.payload;
+    super::reasoning_wire::replay::record_evidence(cfg.session_id, request_id, &prepared.replayed)
+        .await;
     #[cfg(test)]
     if let Some(response) = super::stream_test_transport::dispatch(cfg, &payload).await {
         return response;

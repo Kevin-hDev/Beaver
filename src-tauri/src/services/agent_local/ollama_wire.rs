@@ -5,25 +5,38 @@ pub fn chat_request(
     request: &ChatRequest,
     messages: &[ChatMessage],
 ) -> Result<Value, crate::services::llm::reasoning_wire::replay::ReplayApplyError> {
+    chat_request_with_evidence(request, messages).map(|prepared| prepared.payload)
+}
+
+pub(crate) struct PreparedOllamaPayload {
+    pub payload: Value,
+    pub replayed: Vec<crate::services::llm::reasoning_wire::replay::ReplayEvidence>,
+}
+
+pub(crate) fn chat_request_with_evidence(
+    request: &ChatRequest,
+    messages: &[ChatMessage],
+) -> Result<PreparedOllamaPayload, crate::services::llm::reasoning_wire::replay::ReplayApplyError> {
     let mut payload_messages = messages_value(messages);
+    let mut replayed = Vec::new();
     if let Some(target) = request.live_replay_target.as_ref() {
-        apply_live_continuity(
+        replayed.extend(apply_live_continuity(
             messages,
             target,
             payload_messages
                 .as_array_mut()
                 .ok_or(crate::services::llm::reasoning_wire::replay::ReplayApplyError::PayloadMismatch)?,
-        )?;
+        )?);
     }
     #[cfg(debug_assertions)]
     if let Some(target) = request.fixture_candidate.as_ref() {
-        apply_fixture_continuity(
+        replayed.extend(apply_fixture_continuity(
             messages,
             target,
             payload_messages
                 .as_array_mut()
                 .ok_or(crate::services::llm::reasoning_wire::replay::ReplayApplyError::PayloadMismatch)?,
-        )?;
+        )?);
     }
     let mut body = Map::new();
     body.insert("model".into(), json!(request.model));
@@ -34,7 +47,10 @@ pub fn chat_request(
     insert_optional(&mut body, "options", request.options.as_ref());
     insert_optional(&mut body, "keep_alive", request.keep_alive.as_ref());
     insert_optional(&mut body, "think", request.think.as_ref());
-    Ok(Value::Object(body))
+    Ok(PreparedOllamaPayload {
+        payload: Value::Object(body),
+        replayed,
+    })
 }
 
 pub fn messages_value(messages: &[ChatMessage]) -> Value {
@@ -59,17 +75,23 @@ fn apply_live_continuity(
     messages: &[ChatMessage],
     target: &crate::services::reasoning_continuity::contract::ReplayTarget,
     payload_messages: &mut [Value],
-) -> Result<(), crate::services::llm::reasoning_wire::replay::ReplayApplyError> {
+) -> Result<
+    Vec<crate::services::llm::reasoning_wire::replay::ReplayEvidence>,
+    crate::services::llm::reasoning_wire::replay::ReplayApplyError,
+> {
     let continuation =
         crate::services::reasoning_continuity::contract::ContinuationTarget::Replay(target.clone());
-    for envelope in messages.iter().filter_map(|message| message.continuation.as_ref()) {
+    let mut replayed = Vec::new();
+    for message in messages.iter().filter(|message| message.continuation.is_some()) {
+        let envelope = message.continuation.as_ref().expect("filtered continuation");
         let approval = crate::services::llm::reasoning_wire::replay::approval_for_target(
             &continuation,
             envelope,
         )?;
         apply_continuity(messages, &approval, payload_messages)?;
+        replayed.push(crate::services::llm::reasoning_wire::replay::ReplayEvidence::from_message(message)?);
     }
-    Ok(())
+    Ok(replayed)
 }
 
 #[cfg(debug_assertions)]
@@ -77,19 +99,22 @@ fn apply_fixture_continuity(
     messages: &[ChatMessage],
     target: &crate::services::reasoning_continuity::contract::ReplayTarget,
     payload_messages: &mut [Value],
-) -> Result<(), crate::services::llm::reasoning_wire::replay::ReplayApplyError> {
+) -> Result<Vec<crate::services::llm::reasoning_wire::replay::ReplayEvidence>, crate::services::llm::reasoning_wire::replay::ReplayApplyError> {
     let continuation =
         crate::services::reasoning_continuity::contract::ContinuationTarget::FixtureCandidate(
             target.clone(),
         );
-    for envelope in messages.iter().filter_map(|message| message.continuation.as_ref()) {
+    let mut replayed = Vec::new();
+    for message in messages.iter().filter(|message| message.continuation.is_some()) {
+        let envelope = message.continuation.as_ref().expect("filtered continuation");
         let approval = crate::services::llm::reasoning_wire::replay::approval_for_target(
             &continuation,
             envelope,
         )?;
         apply_continuity(messages, &approval, payload_messages)?;
+        replayed.push(crate::services::llm::reasoning_wire::replay::ReplayEvidence::from_message(message)?);
     }
-    Ok(())
+    Ok(replayed)
 }
 
 fn message_value(message: &ChatMessage) -> Value {

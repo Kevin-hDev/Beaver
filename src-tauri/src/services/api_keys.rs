@@ -80,9 +80,12 @@ pub fn init() -> Result<(), String> {
         .map_err(|_| "coffre indisponible".to_string())?;
     *state = Some(VaultState { master_key, keys });
     drop(state);
-    crate::services::attachment_access::ensure_attachment_key()?;
-    crate::services::reasoning_continuity::fingerprint::ensure_fingerprint_key()
-        .map_err(|_| "coffre indisponible".to_string())?;
+    if crate::services::attachment_access::ensure_attachment_key().is_err() {
+        log::warn!("attachment_access_key_unavailable");
+    }
+    if crate::services::reasoning_continuity::fingerprint::ensure_fingerprint_key().is_err() {
+        log::warn!("reasoning_diagnostic_key_unavailable");
+    }
     Ok(())
 }
 

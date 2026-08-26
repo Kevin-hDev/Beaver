@@ -16,15 +16,15 @@ use super::types_session::{
 
 const WRITER_COMMIT: &str = "2848a17e87fa641bff067dc4b5c9a2398bae6540";
 const V1_FIXTURE: &[u8] = include_bytes!("../../../test-fixtures/agent-session-v1-synthetic.json");
-const CAPTURED_TOOL_CHAIN: &[u8] =
-    include_bytes!("../../../test-fixtures/agent-session-v1-captured-tool-chain.json");
+const SYNTHETIC_TOOL_CHAIN: &[u8] =
+    include_bytes!("../../../test-fixtures/agent-session-v1-synthetic-tool-chain.json");
 
 #[test]
 fn synthetic_v1_fixture_keeps_visible_thinking_without_promoting_continuation() {
     assert_eq!(WRITER_COMMIT.len(), 40);
 
     let loaded = super::session_migration::read(V1_FIXTURE, PathBuf::from("fixture.json"))
-        .expect("load captured v1 fixture");
+        .expect("load synthetic v1 fixture");
 
     assert_eq!(loaded.session().schema_version, 2);
     assert_eq!(loaded.session().messages[1].thinking.as_deref(), Some("fixture-visible-thinking"));
@@ -32,18 +32,115 @@ fn synthetic_v1_fixture_keeps_visible_thinking_without_promoting_continuation() 
 }
 
 #[test]
-fn anonymized_captured_v1_tool_chain_migrates_without_promoting_codex_sidecars() {
+fn synthetic_v1_tool_chain_migrates_without_promoting_codex_sidecars() {
     let loaded = super::session_migration::read(
-        CAPTURED_TOOL_CHAIN,
-        PathBuf::from("captured-tool-chain.json"),
+        SYNTHETIC_TOOL_CHAIN,
+        PathBuf::from("synthetic-tool-chain.json"),
     )
-    .expect("load anonymized captured v1 fixture");
+    .expect("load synthetic v1 fixture");
     let session = loaded.session();
 
     assert_eq!(session.schema_version, 2);
     assert!(session.messages.iter().any(|message| message.role == "tool"));
     assert!(session.messages.iter().all(|message| message.continuation.is_none()));
     assert!(session.messages.iter().all(|message| message.replay_source.is_none()));
+}
+
+#[test]
+fn v1_migration_merges_consecutive_users_and_keeps_a_valid_history() {
+    let mut value: serde_json::Value = serde_json::from_slice(V1_FIXTURE).unwrap();
+    let messages = value["messages"].as_array_mut().unwrap();
+    messages.insert(1, messages[0].clone());
+    let bytes = serde_json::to_vec(&value).unwrap();
+
+    let loaded = super::session_migration::read(&bytes, PathBuf::from("users-v1.json")).unwrap();
+
+    super::conversation_history_validation::validate(&loaded.session().messages).unwrap();
+    assert_ne!(loaded.session().messages[0].role, loaded.session().messages[1].role);
+}
+
+#[test]
+fn v1_migration_discards_an_invalid_leading_assistant_but_keeps_valid_turns() {
+    let mut value: serde_json::Value = serde_json::from_slice(V1_FIXTURE).unwrap();
+    let messages = value["messages"].as_array_mut().unwrap();
+    messages.insert(0, messages[1].clone());
+    let bytes = serde_json::to_vec(&value).unwrap();
+
+    let loaded = super::session_migration::read(&bytes, PathBuf::from("leading-v1.json")).unwrap();
+
+    super::conversation_history_validation::validate(&loaded.session().messages).unwrap();
+    assert_eq!(loaded.session().messages.first().unwrap().role, "user");
+}
+
+#[tokio::test]
+async fn migrated_v1_history_builds_a_required_moonshot_payload_after_admission() {
+    use crate::services::llm::fast_mode::FastModeRequest;
+    use crate::services::reasoning_continuity::contract::{
+        ContinuationTarget, ContinuationUse, ReplayTarget,
+    };
+
+    let loaded = super::session_migration::read(
+        SYNTHETIC_TOOL_CHAIN,
+        PathBuf::from("migration-payload-v1.json"),
+    )
+    .unwrap();
+    let mut session = loaded.into_session();
+    session.id = uuid::Uuid::new_v4().to_string();
+    session.provider = "moonshot".into();
+    session.model = "kimi-k2.7-code".into();
+    session.reasoning_mode = Some("auto".into());
+    session.thinking_enabled = true;
+    super::session_store::save(&session).await.unwrap();
+    let replay = ReplayTarget {
+        route_id: RouteId::Moonshot,
+        model_id: session.model.clone(),
+        credential_scope: CredentialScope::authenticated("migration-fixture-scope").unwrap(),
+        reasoning_mode: ReasoningModeId::Auto,
+        continuation_use: ContinuationUse::UserContinuation,
+    };
+    let target = ContinuationTarget::Replay(replay);
+    let admitted = super::conversation_admission::new_turn_for_continuation(
+        &session.id,
+        super::conversation_input::ResolvedTurnInput {
+            user_content: "continue".into(),
+            provider_content: "continue".into(),
+            files: Vec::new(),
+            images: Vec::new(),
+            skills: Vec::new(),
+        },
+        target.clone(),
+    )
+    .await
+    .unwrap();
+    let messages = admitted
+        .history
+        .messages
+        .into_iter()
+        .map(crate::commands::agent_chat_task::convert_provider_message_for_test)
+        .collect::<Result<Vec<_>, _>>()
+        .unwrap();
+    let config = crate::services::llm::RequestConfigForTest {
+        provider_id: "moonshot",
+        model: "kimi-k2.7-code",
+        messages: &messages,
+        tools: &[],
+        think: true,
+        reasoning_mode: Some("auto"),
+        max_tokens: None,
+        purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
+        session_id: Some(&session.id),
+        fast_mode: FastModeRequest::Unsupported,
+        continuation_target: Some(&target),
+    };
+
+    let payload = crate::services::llm::build_chat_payload_for_test(
+        &config,
+        &crate::services::llm::route::resolve("moonshot").unwrap(),
+        None,
+    );
+    super::session_store::delete_one(&session.id).await.unwrap();
+
+    assert!(payload.is_ok());
 }
 
 #[tokio::test]
@@ -115,12 +212,21 @@ async fn legacy_tool_ids_are_local_linked_and_stable_after_commit() {
     let bytes = v1_with_tool_chain();
     crate::services::private_store::atomic_write(&path, &bytes).expect("seed v1");
     let loaded = super::session_migration::read(&bytes, path.clone()).expect("load v1");
-    let call_id = loaded.session().messages[2].tool_calls.as_ref().unwrap()[0]
-        .id
-        .clone();
+    let call_message = loaded
+        .session()
+        .messages
+        .iter()
+        .find(|message| message.tool_calls.is_some())
+        .expect("migrated tool call");
+    let call_id = call_message.tool_calls.as_ref().unwrap()[0].id.clone();
     assert!(super::session_migration::is_legacy_local_id(&call_id));
     assert_eq!(
-        loaded.session().messages[3].tool_call_id.as_deref(),
+        loaded
+            .session()
+            .messages
+            .iter()
+            .find(|message| message.role == "tool")
+            .and_then(|message| message.tool_call_id.as_deref()),
         Some(call_id.as_str())
     );
 
@@ -133,7 +239,15 @@ async fn legacy_tool_ids_are_local_linked_and_stable_after_commit() {
         .await
         .expect("reload v2");
     assert_eq!(
-        persisted.messages[2].tool_calls.as_ref().unwrap()[0].id,
+        persisted
+            .messages
+            .iter()
+            .find(|message| message.tool_calls.is_some())
+            .unwrap()
+            .tool_calls
+            .as_ref()
+            .unwrap()[0]
+            .id,
         call_id
     );
     assert!(!backup.exists());
@@ -147,15 +261,21 @@ async fn legacy_messages_share_one_turn_until_the_next_user_message() {
     crate::services::private_store::atomic_write(&path, &bytes).expect("seed v1");
     let loaded = super::session_migration::read(&bytes, path.clone()).expect("load v1");
     let first_turn = loaded.session().messages[0].turn_id.clone();
-    let second_turn = loaded.session().messages[4].turn_id.clone();
+    let second_start = loaded
+        .session()
+        .messages
+        .iter()
+        .position(|message| message.content == "fixture-second-user")
+        .unwrap();
+    let second_turn = loaded.session().messages[second_start].turn_id.clone();
 
     assert!(super::session_migration::is_legacy_local_id(&first_turn));
     assert!(super::session_migration::is_legacy_local_id(&second_turn));
     assert_ne!(first_turn, second_turn);
-    assert!(loaded.session().messages[..4]
+    assert!(loaded.session().messages[..second_start]
         .iter()
         .all(|message| message.turn_id == first_turn));
-    assert!(loaded.session().messages[4..]
+    assert!(loaded.session().messages[second_start..]
         .iter()
         .all(|message| message.turn_id == second_turn));
 
@@ -165,10 +285,10 @@ async fn legacy_messages_share_one_turn_until_the_next_user_message() {
     let restored = super::session_store_document::read_from_path(path)
         .await
         .expect("reload v2");
-    assert!(restored.messages[..4]
+    assert!(restored.messages[..second_start]
         .iter()
         .all(|message| message.turn_id == first_turn));
-    assert!(restored.messages[4..]
+    assert!(restored.messages[second_start..]
         .iter()
         .all(|message| message.turn_id == second_turn));
 }

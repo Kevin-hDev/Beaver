@@ -13,9 +13,10 @@ impl<'a> std::ops::Deref for CatalogChatRequest<'a> {
 pub(super) async fn post(
     request: &CatalogChatRequest<'_>,
     measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
+    request_id: Option<&str>,
 ) -> Result<reqwest::Response, super::stream_http::RequestError> {
     // Ce type fermé empêche le chemin OAuth d'envoyer une requête chat non restreinte.
-    super::stream_http::post_chat_request_measured(request, measurement).await
+    super::stream_http::post_chat_request_measured(request, measurement, request_id).await
 }
 
 pub(super) fn prepare<'request, 'catalog>(

@@ -1,6 +1,5 @@
 use super::xai_oauth_transport::{
     backend_path, catalog_reasoning_mode, classify_status, prepare_chat_request,
-    try_build_responses_payload,
 };
 use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::llm::request_purpose::RequestPurpose;
@@ -47,7 +46,7 @@ fn backend_paths_are_pinned_to_the_subscription_proxy() {
 
 #[test]
 fn responses_payload_uses_catalog_reasoning_and_never_a_remote_route() {
-    let payload = try_build_responses_payload(
+    let prepared = super::xai_oauth_payload::build_with_evidence(
         &catalog_model(),
         &[ChatMessage::user("bonjour".into())],
         &[],
@@ -56,6 +55,7 @@ fn responses_payload_uses_catalog_reasoning_and_never_a_remote_route() {
         None,
     )
     .unwrap();
+    let payload = prepared.payload;
     assert_eq!(payload["model"], "grok-4.6");
     assert_eq!(payload["reasoning"]["effort"], "xhigh");
     assert_eq!(payload["stream"], true);
@@ -100,6 +100,28 @@ fn chat_request_uses_the_subscription_catalog_restriction() {
 }
 
 #[test]
+fn required_continuity_cannot_use_the_chat_completions_backend() {
+    let messages = [ChatMessage::user("continue".into())];
+    let target = fixture_target("xai-oauth-scope");
+    let request = RequestConfig {
+        provider_id: "xai-oauth",
+        model: "grok-4.6",
+        messages: &messages,
+        tools: &[],
+        think: true,
+        reasoning_mode: Some("high"),
+        max_tokens: None,
+        purpose: RequestPurpose::ManualChat,
+        session_id: Some("session-fixture"),
+        fast_mode: crate::services::llm::fast_mode::FastModeRequest::Unsupported,
+        continuation_target: Some(&target),
+    };
+
+    assert!(super::xai_oauth_transport_status::requires_responses_backend(&request));
+    assert_ne!(XaiBackend::ChatCompletions, XaiBackend::Responses);
+}
+
+#[test]
 fn resource_exhausted_without_retry_after_is_not_a_retryable_rate_limit() {
     assert_eq!(
         classify_status(429, r#"{"code":"resource-exhausted"}"#, false),
@@ -139,7 +161,7 @@ fn oauth_responses_replays_local_items_without_exposing_a_public_xai_route() {
         None,
         None,
     );
-    let payload = try_build_responses_payload(
+    let prepared = super::xai_oauth_payload::build_with_evidence(
         &catalog_model(),
         &[assistant, ChatMessage::user("continue".into())],
         &[],
@@ -148,9 +170,11 @@ fn oauth_responses_replays_local_items_without_exposing_a_public_xai_route() {
         Some(&target),
     )
     .unwrap();
+    let payload = prepared.payload;
 
     assert_eq!(payload["input"][0]["type"], "reasoning");
     assert_eq!(payload["input"][1]["type"], "message");
     assert_eq!(payload["input"][2]["role"], "user");
     assert!(payload.get("base_url").is_none());
+    assert_eq!(prepared.replayed.len(), 1);
 }

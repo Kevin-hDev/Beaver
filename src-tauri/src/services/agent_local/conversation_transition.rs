@@ -17,6 +17,7 @@ pub enum ContinuityBarrier {
     Mode,
     Fallback,
     Compaction,
+    Legacy,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -59,8 +60,17 @@ pub fn for_continuation(session: &AgentSession, target: &ContinuationTarget) -> 
                     .or(message.replay_source.as_ref())
                     .and_then(|source| barrier_for(source, replay_target))
             });
+        let has_provenance = session.messages[turn_start..turn_end]
+            .iter()
+            .any(|message| message.continuation.is_some() || message.replay_source.is_some());
         if compaction_boundary {
             result.barrier = Some(ContinuityBarrier::Compaction);
+            result.compatible_suffix_start = turn_end;
+            result.replayable_message_indexes.clear();
+        } else if !has_provenance {
+            // Les tours antérieurs au format v2 restent visibles, mais ne peuvent
+            // pas satisfaire un contrat de rejeu natif qu'ils ne connaissaient pas.
+            result.barrier = Some(ContinuityBarrier::Legacy);
             result.compatible_suffix_start = turn_end;
             result.replayable_message_indexes.clear();
         } else if let Some(barrier) = barrier {

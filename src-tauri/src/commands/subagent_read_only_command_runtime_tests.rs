@@ -42,7 +42,7 @@ async fn queue_agent_message_rejects_a_child_without_changing_the_active_inbox()
     )
     .await;
     let after_session = snapshot(&session.id).await;
-    let queued_intentions = sentinel_inbox.len().await;
+    let inbox_closed = sentinel_inbox.is_closed();
 
     {
         let streams = app.state::<ActiveStreams>();
@@ -62,7 +62,7 @@ async fn queue_agent_message_rejects_a_child_without_changing_the_active_inbox()
         Some(SUBAGENT_READ_ONLY)
     );
     assert_eq!(after_session, before_session);
-    assert_eq!(queued_intentions, 0);
+    assert!(!inbox_closed);
 }
 
 #[tokio::test]
@@ -151,7 +151,7 @@ async fn agent_chat_queue_rejects_a_stale_generation_without_mutation() {
     .await;
 
     assert_eq!(result, Ok(false));
-    assert_eq!(inbox.len().await, 0);
+    assert!(!inbox.is_closed());
     crate::services::agent_local::session_store::delete_one(&session.id)
         .await
         .unwrap();

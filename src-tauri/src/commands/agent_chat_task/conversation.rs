@@ -108,7 +108,7 @@ impl StreamConversation {
     }
 }
 
-fn convert(message: ProviderMessage) -> Result<ChatMessage, String> {
+pub(crate) fn convert(message: ProviderMessage) -> Result<ChatMessage, String> {
     let images = (!message.images.is_empty()).then(|| {
         message
             .images

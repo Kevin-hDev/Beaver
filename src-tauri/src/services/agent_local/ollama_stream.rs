@@ -1,7 +1,7 @@
 use crate::services::agent_local::ollama_client::OllamaClient;
 use crate::services::agent_local::ollama_stream_process::{flush_filter, process_chunk};
 use crate::services::agent_local::ollama_stream_request::{
-    open_chat_response, OpenChatResponse, RetryCounts, StreamChatOptions,
+    open_chat_response, OpenChatResponse, ReplayDiagnosticContext, RetryCounts, StreamChatOptions,
 };
 use crate::services::agent_local::ollama_tool_parse_retry::{
     is_tool_parse_crash, MAX_PARSER_RETRIES,
@@ -12,7 +12,7 @@ use crate::services::agent_local::types_ollama::{
 };
 use crate::services::compress::realtime_budget::RealtimeBudget;
 use crate::services::llm::reasoning_wire::{ReasoningCapture, ReasoningCaptureContext};
-use crate::services::reasoning_continuity::contract::{CredentialScope, ReasoningModeId, RouteId};
+use crate::services::reasoning_continuity::contract::{CredentialScope, RouteId};
 use crate::services::stream_utils::ThinkTagFilter;
 use futures_util::StreamExt;
 use tokio::io::{AsyncBufReadExt, BufReader};
@@ -28,6 +28,7 @@ pub async fn stream_chat_with_tool_notify(
     tool_tx: mpsc::UnboundedSender<(usize, String, serde_json::Value)>,
     buffer_content: bool,
     realtime_budget: Option<RealtimeBudget>,
+    diagnostics: ReplayDiagnosticContext<'_>,
 ) -> Result<StreamOutcome, String> {
     let ollama = OllamaClient::from_global()?;
     stream_chat_inner(
@@ -35,6 +36,7 @@ pub async fn stream_chat_with_tool_notify(
         on_event,
         request,
         cancel,
+        diagnostics,
         StreamChatOptions {
             tool_tx: Some(tool_tx),
             buffer_content,
@@ -53,6 +55,7 @@ async fn stream_chat_inner(
     on_event: &AgentEventEmitter,
     request: &ChatRequest,
     cancel: CancellationToken,
+    diagnostics: ReplayDiagnosticContext<'_>,
     mut options: StreamChatOptions,
 ) -> Result<StreamOutcome, String> {
     let resp = match open_chat_response(
@@ -62,6 +65,7 @@ async fn stream_chat_inner(
         &cancel,
         options.retry_counts,
         !options.buffer_content,
+        diagnostics,
     )
     .await?
     {
@@ -72,6 +76,7 @@ async fn stream_chat_inner(
                 on_event,
                 &request,
                 cancel,
+                diagnostics,
                 StreamChatOptions {
                     retry_counts: counts,
                     ..options
@@ -102,7 +107,7 @@ async fn stream_chat_inner(
         route_id: RouteId::Ollama,
         model_id: request.model.clone(),
         credential_scope: CredentialScope::local_uncredentialed(),
-        reasoning_mode: ollama_reasoning_mode(request),
+        reasoning_mode: super::ollama_stream_policy::reasoning_mode(request),
     }))
     .transpose()
     .map_err(|_| "provider_configuration_invalid".to_string())?;
@@ -155,6 +160,7 @@ async fn stream_chat_inner(
                                     on_event,
                                     request,
                                     cancel,
+                                    diagnostics,
                                     StreamChatOptions {
                                         tool_tx: options.tool_tx,
                                         buffer_content: options.buffer_content,
@@ -170,7 +176,11 @@ async fn stream_chat_inner(
                             let _ = on_event.send(StreamEvent::Error { message: e.clone(), is_connection: false, context_capacity: None, diagnostic: None });
                             return Err(e);
                         }
-                        if should_interrupt(&mut options.realtime_budget, token_count, !result.tool_calls.is_empty()) {
+                        if super::ollama_stream_policy::should_interrupt(
+                            &mut options.realtime_budget,
+                            token_count,
+                            !result.tool_calls.is_empty(),
+                        ) {
                             interrupted = true;
                             break;
                         }
@@ -206,24 +216,4 @@ async fn stream_chat_inner(
     } else {
         StreamOutcome::Completed(result)
     })
-}
-
-fn ollama_reasoning_mode(request: &ChatRequest) -> ReasoningModeId {
-    match request.think.as_ref() {
-        Some(super::types_ollama::OllamaThink::Level(level)) =>
-            ReasoningModeId::from_name(Some(level)).unwrap_or(ReasoningModeId::Auto),
-        Some(super::types_ollama::OllamaThink::Bool(true)) => ReasoningModeId::Auto,
-        Some(super::types_ollama::OllamaThink::Bool(false)) | None => ReasoningModeId::Off,
-    }
-}
-
-fn should_interrupt(
-    budget: &mut Option<RealtimeBudget>,
-    token_count: u32,
-    has_tool_call: bool,
-) -> bool {
-    !has_tool_call
-        && budget
-            .as_mut()
-            .is_some_and(|budget| budget.should_interrupt(token_count))
 }

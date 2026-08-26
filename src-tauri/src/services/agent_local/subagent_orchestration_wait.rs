@@ -42,10 +42,18 @@ impl ParentSubagentOrchestrator {
                 .ok_or_else(|| subagent_completion::SUBAGENT_COMPLETION_ERROR.to_string())?;
             if let Some(inbox) = &self.parent_message_inbox {
                 let mut input = inbox.subscribe();
+                if *input.borrow() {
+                    return Err("Annulé".to_string());
+                }
                 tokio::select! {
                     _ = cancel.cancelled() => return Err("Annulé".to_string()),
                     changed = signal.changed() => changed.map_err(|_| generic_error())?,
-                    changed = input.changed() => changed.map_err(|_| generic_input_error())?,
+                    changed = input.changed() => {
+                        changed.map_err(|_| generic_input_error())?;
+                        if *input.borrow() {
+                            return Err("Annulé".to_string());
+                        }
+                    },
                 }
             } else {
                 tokio::select! {

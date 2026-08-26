@@ -92,10 +92,9 @@ fn only_live_validated_ollama_models_replay_in_production() {
         let messages = [message(&target, "opaque historic")];
         let mut live = request();
         live.live_replay_target = Some(target);
-        assert_eq!(
-            chat_request(&live, &messages).unwrap()["messages"][0]["thinking"],
-            "opaque historic"
-        );
+        let prepared = chat_request_with_evidence(&live, &messages).unwrap();
+        assert_eq!(prepared.payload["messages"][0]["thinking"], "opaque historic");
+        assert_eq!(prepared.replayed.len(), 1);
     }
 
     let qwen = target("qwen3.5:4b");

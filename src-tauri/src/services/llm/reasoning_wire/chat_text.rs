@@ -33,16 +33,16 @@ pub(crate) fn apply_continuity(
     messages: &[ChatMessage],
     target: Option<&ContinuationTarget>,
     payload: &mut Value,
-) -> Result<(), super::replay::ReplayApplyError> {
+) -> Result<Vec<super::replay::ReplayEvidence>, super::replay::ReplayApplyError> {
     let replay_messages = super::replay::messages_after_barrier(messages);
     let Some(target) = super::replay::target_for_request(replay_messages, target) else {
-        return Ok(());
+        return Ok(Vec::new());
     };
     let Some(replay_target) = target.replay() else {
-        return Ok(());
+        return Ok(Vec::new());
     };
     if !is_chat_route(replay_target.route_id) {
-        return Ok(());
+        return Ok(Vec::new());
     }
     let Some(policy) =
         crate::services::reasoning_continuity::registry::replay_policy(replay_target)
@@ -50,9 +50,9 @@ pub(crate) fn apply_continuity(
         return Err(super::replay::ReplayApplyError::Blocked);
     };
     if policy.requirement() == ReplayRequirement::Forbidden {
-        return Ok(());
+        return Ok(Vec::new());
     }
-    let mut applied_index = None;
+    let mut applied_indexes = Vec::new();
     {
         let payload_messages = payload
             .get_mut("messages")
@@ -80,10 +80,10 @@ pub(crate) fn apply_continuity(
                 &approval,
                 &mut payload_messages[index],
             )?;
-            applied_index = Some(index);
+            applied_indexes.push(index);
         }
     }
-    if let Some(index) = applied_index {
+    if let Some(index) = applied_indexes.last().copied() {
         let envelope = messages[index]
             .continuation
             .as_ref()
@@ -91,7 +91,10 @@ pub(crate) fn apply_continuity(
         let approval = super::replay::approval_for_target(&target, envelope)?;
         super::replay::apply_chat_payload_continuity(&approval, payload)?;
     }
-    Ok(())
+    applied_indexes
+        .into_iter()
+        .map(|index| super::replay::ReplayEvidence::from_message(&messages[index]))
+        .collect()
 }
 
 fn is_chat_route(route: RouteId) -> bool {

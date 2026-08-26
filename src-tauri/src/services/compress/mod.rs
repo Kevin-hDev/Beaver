@@ -8,8 +8,6 @@ pub mod realtime_budget;
 pub mod state;
 pub(crate) mod state_recent;
 #[cfg(test)]
-mod state_select;
-#[cfg(test)]
 mod state_tests;
 pub mod summary_budget;
 pub mod timeouts;

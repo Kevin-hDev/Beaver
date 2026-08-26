@@ -106,6 +106,7 @@ pub mod ollama_stream_process;
 mod ollama_stream_process_tests;
 pub mod ollama_stream_request;
 pub mod ollama_stream_retry;
+mod ollama_stream_policy;
 pub mod ollama_thinking_retry;
 pub mod ollama_tool_parse_retry;
 pub mod ollama_tool_role;
@@ -113,10 +114,6 @@ pub mod ollama_tool_role;
 mod ollama_tool_role_tests;
 pub mod ollama_wire;
 pub(crate) mod parent_message_inbox;
-#[cfg(test)]
-mod parent_message_inbox_tests;
-#[cfg(test)]
-mod parent_message_wakeup_tests;
 mod permission_allow_cache;
 pub mod permission_bash;
 pub mod permission_gate;

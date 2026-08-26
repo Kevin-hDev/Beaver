@@ -5,6 +5,7 @@ const MAX_SCENARIOS: usize = 64;
 #[derive(Debug, Serialize)]
 pub(super) struct FixtureScenario {
     pub(super) requirement: &'static str,
+    run_id: String,
     status: &'static str,
     request_count: usize,
     reasoning_event_count: usize,
@@ -73,6 +74,7 @@ pub(super) fn collect(
             if capture {
                 scenarios.push(FixtureScenario {
                     requirement: "capture_and_persist",
+                    run_id: run.request_id.clone(),
                     status: if completed { "passe" } else { "bloque" },
                     request_count,
                     reasoning_event_count: decisions.len(),
@@ -82,6 +84,7 @@ pub(super) fn collect(
             if replay {
                 scenarios.push(FixtureScenario {
                     requirement: "replay_and_continue",
+                    run_id: run.request_id.clone(),
                     status: if completed && capture {
                         "passe"
                     } else {

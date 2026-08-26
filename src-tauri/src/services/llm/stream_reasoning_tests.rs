@@ -151,10 +151,14 @@ fn mistral_adjustable_uses_reasoning_effort() {
 
 #[test]
 fn cerebras_gpt_oss_uses_reasoning_effort_without_an_invented_thinking_object() {
-    let payload = payload("cerebras", "gpt-oss-120b", Some("high"));
+    let body = payload("cerebras", "gpt-oss-120b", Some("high"));
 
-    assert_eq!(payload["reasoning_effort"], "high");
-    assert!(payload.get("thinking").is_none());
+    assert_eq!(body["reasoning_effort"], "high");
+    assert!(body.get("thinking").is_none());
+    assert_eq!(
+        payload("cerebras", "gpt-oss-120b", Some("off"))["reasoning_effort"],
+        "none"
+    );
 }
 
 #[test]

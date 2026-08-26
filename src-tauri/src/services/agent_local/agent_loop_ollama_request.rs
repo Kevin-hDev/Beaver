@@ -133,6 +133,10 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
         tool_tx,
         plan_active,
         realtime_budget.clone(),
+        super::ollama_stream_request::ReplayDiagnosticContext {
+            session_id: params.session_id,
+            request_id: params.request_id,
+        },
     )
     .await?;
     let mut interrupted = outcome.is_interrupted();

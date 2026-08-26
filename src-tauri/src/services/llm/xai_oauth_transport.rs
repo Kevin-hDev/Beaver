@@ -1,5 +1,5 @@
 use crate::services::agent_local::stream_events::AgentEventEmitter;
-use crate::services::agent_local::types_ollama::{ChatMessage, StreamOutcome};
+use crate::services::agent_local::types_ollama::StreamOutcome;
 use crate::services::compress::realtime_budget::RealtimeBudget;
 use crate::services::llm_oauth::{XaiBackend, XaiCatalogModel};
 use crate::services::secure_http::{read_bounded, AuthenticatedClient, PROVIDER_ERROR_LIMIT};
@@ -15,6 +15,7 @@ pub(super) struct StreamContext<'a> {
     pub buffer_content: bool,
     pub realtime_budget: Option<RealtimeBudget>,
     pub reasoning_capture: Option<super::reasoning_wire::ReasoningCapture>,
+    pub request_id: &'a str,
 }
 
 pub(super) async fn stream_chat(
@@ -28,6 +29,7 @@ pub(super) async fn stream_chat(
         buffer_content,
         realtime_budget,
         reasoning_capture,
+        request_id,
     } = context;
     let catalog_model = crate::services::llm_oauth::xai_catalog_model(request.model).await?;
     if catalog_model.backend != XaiBackend::Responses
@@ -38,7 +40,9 @@ pub(super) async fn stream_chat(
     match catalog_model.backend {
         XaiBackend::ChatCompletions => {
             let request = prepare_chat_request(request, &catalog_model);
-            let response = super::xai_oauth_chat::post(&request, measurement.as_deref_mut()).await;
+            let response =
+                super::xai_oauth_chat::post(&request, measurement.as_deref_mut(), Some(request_id))
+                    .await;
             let response = response.map_err(|error| error.to_string())?;
             super::stream_consume::consume_stream(
                 on_event,
@@ -54,7 +58,7 @@ pub(super) async fn stream_chat(
             .await
         }
         XaiBackend::Responses => {
-            let payload = try_build_responses_payload(
+            let prepared = super::xai_oauth_payload::build_with_evidence(
                 &catalog_model,
                 request.messages,
                 request.tools,
@@ -62,7 +66,14 @@ pub(super) async fn stream_chat(
                 request.session_id,
                 request.continuation_target,
             )?;
-            let response = post_responses(&catalog_model, &payload, request.purpose).await?;
+            crate::services::llm::reasoning_wire::replay::record_evidence(
+                request.session_id,
+                Some(request_id),
+                &prepared.replayed,
+            )
+            .await;
+            let response =
+                post_responses(&catalog_model, &prepared.payload, request.purpose).await?;
             crate::services::codex_client::stream::consume_external_responses_sse(
                 on_event,
                 response,
@@ -99,47 +110,6 @@ pub(super) fn catalog_reasoning_mode<'a>(
                     .any(|candidate| candidate == mode)
             })
         })
-}
-
-pub(super) fn try_build_responses_payload(
-    model: &XaiCatalogModel,
-    messages: &[ChatMessage],
-    tools: &[serde_json::Value],
-    requested_mode: Option<&str>,
-    session_id: Option<&str>,
-    continuation_target: Option<
-        &crate::services::reasoning_continuity::contract::ContinuationTarget,
-    >,
-) -> Result<serde_json::Value, String> {
-    let (instructions, input) =
-        crate::services::codex_client::convert::convert_messages_with_tools_and_continuity(
-            messages,
-            tools,
-            continuation_target,
-        )
-        .map_err(|_| "reasoning_continuity_invalid".to_string())?;
-    let effort = catalog_reasoning_mode(model, requested_mode);
-    let tools = crate::services::codex_client::convert::convert_tools_to_responses_api(
-        "xai", &model.id, tools,
-    );
-    let mut payload = serde_json::json!({
-        "model": model.id,
-        "instructions": instructions,
-        "input": input,
-        "stream": true,
-        "store": false,
-        "tools": tools,
-        "tool_choice": "auto",
-        "parallel_tool_calls": false,
-        "prompt_cache_key": super::prompt_cache_policy::routing_key(
-            "xai-oauth", &model.id, session_id,
-        ),
-        "include": ["reasoning.encrypted_content"],
-    });
-    if let Some(effort) = effort {
-        payload["reasoning"] = serde_json::json!({"effort": effort});
-    }
-    Ok(payload)
 }
 
 async fn post_responses(

@@ -11,16 +11,30 @@ pub(super) fn build_request(config: &RequestConfig<'_>) -> serde_json::Value {
     try_build_request(config).expect("a request without a continuation target cannot be rejected")
 }
 
+#[cfg(test)]
 pub(super) fn try_build_request(
     config: &RequestConfig<'_>,
 ) -> Result<serde_json::Value, RequestError> {
-    let (instructions, input) =
-        crate::services::codex_client::convert::convert_messages_with_tools_and_continuity(
+    try_build_request_with_evidence(config).map(|prepared| prepared.body)
+}
+
+struct PreparedResponseRequest {
+    body: serde_json::Value,
+    replayed: Vec<super::reasoning_wire::replay::ReplayEvidence>,
+}
+
+fn try_build_request_with_evidence(
+    config: &RequestConfig<'_>,
+) -> Result<PreparedResponseRequest, RequestError> {
+    let converted =
+        crate::services::codex_client::convert::convert_messages_with_tools_and_continuity_evidence(
             config.messages,
             config.tools,
             config.continuation_target,
         )
         .map_err(|_| RequestError::InvalidConfiguration)?;
+    let instructions = converted.instructions;
+    let input = converted.input;
     let mut body = serde_json::json!({
         "model": config.model,
         "instructions": instructions,
@@ -47,51 +61,46 @@ pub(super) fn try_build_request(
     if let Some(limit) = config.max_tokens {
         body["max_output_tokens"] = limit.into();
     }
-    if let Some(effort) = requested_effort(config) {
+    if let Some(effort) = super::openai_responses_reasoning::requested_effort(config) {
         body["reasoning"] = if effort == "none" {
             serde_json::json!({"effort": effort})
         } else {
             serde_json::json!({"effort": effort, "summary": "auto"})
         };
     }
-    Ok(body)
+    Ok(PreparedResponseRequest {
+        body,
+        replayed: converted.replayed,
+    })
 }
 
-fn requested_effort(config: &RequestConfig<'_>) -> Option<&'static str> {
-    if config.provider_id == "xai" {
-        return crate::services::llm::providers::xai::reasoning_effort(
-            config.model,
-            config.reasoning_mode,
-        );
-    }
-    if config.think || config.reasoning_mode == Some("off") {
-        return crate::services::reasoning::openai_effort(config.reasoning_mode);
-    }
-    None
+pub(super) struct ResponseStreamOptions<'a> {
+    pub buffer_content: bool,
+    pub realtime_budget: Option<RealtimeBudget>,
+    pub reasoning_capture: Option<super::reasoning_wire::ReasoningCapture>,
+    pub request_id: &'a str,
 }
 
 pub(super) async fn stream_chat(
     on_event: &crate::services::agent_local::stream_events::AgentEventEmitter,
     config: &RequestConfig<'_>,
     cancel: CancellationToken,
-    buffer_content: bool,
-    realtime_budget: Option<RealtimeBudget>,
-    reasoning_capture: Option<super::reasoning_wire::ReasoningCapture>,
+    options: ResponseStreamOptions<'_>,
     mut measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
 ) -> Result<StreamOutcome, String> {
-    let response = post(config, measurement.as_deref_mut())
+    let response = post(config, measurement.as_deref_mut(), Some(options.request_id))
         .await
         .map_err(request_error)?;
     crate::services::codex_client::stream::consume_external_responses_sse(
         on_event,
         response,
         cancel,
-        buffer_content,
-        realtime_budget,
+        options.buffer_content,
+        options.realtime_budget,
         config.provider_id,
         config.model,
         config.tools,
-        reasoning_capture,
+        options.reasoning_capture,
         measurement,
     )
     .await
@@ -102,7 +111,7 @@ pub(super) async fn collect_silent(
     cancel: CancellationToken,
     mut measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
 ) -> Result<StreamResult, String> {
-    let response = post(config, measurement.as_deref_mut())
+    let response = post(config, measurement.as_deref_mut(), None)
         .await
         .map_err(request_error)?;
     crate::services::codex_client::stream_silent::consume_external_responses_sse_silent(
@@ -119,10 +128,18 @@ pub(super) async fn collect_silent(
 pub(super) async fn post(
     config: &RequestConfig<'_>,
     mut measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
+    request_id: Option<&str>,
 ) -> Result<reqwest::Response, RequestError> {
     let route =
         super::route::resolve(config.provider_id).ok_or(RequestError::InvalidConfiguration)?;
-    let body = try_build_request(config)?;
+    let prepared = try_build_request_with_evidence(config)?;
+    let body = prepared.body;
+    super::reasoning_wire::replay::record_evidence(
+        config.session_id,
+        request_id,
+        &prepared.replayed,
+    )
+    .await;
     #[cfg(test)]
     if let Some(response) = super::stream_test_transport::dispatch(config, &body).await {
         return response;

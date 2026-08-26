@@ -28,6 +28,18 @@ fn model_change_keeps_visible_history_but_blocks_native_envelopes() {
 }
 
 #[test]
+fn legacy_turn_without_provenance_becomes_a_replay_boundary() {
+    let mut session = fixture_session();
+    session.messages = complete_turn("legacy", "visible legacy answer", None);
+
+    let result = conversation_transition::for_target(&session, &target("model-a"));
+
+    assert!(result.barrier.is_some());
+    assert_eq!(result.compatible_suffix_start, 2);
+    assert!(result.replayable_message_indexes.is_empty());
+}
+
+#[test]
 fn credential_and_mode_changes_are_explicit_barriers() {
     let mut session = fixture_session();
     session.messages = complete_turn(

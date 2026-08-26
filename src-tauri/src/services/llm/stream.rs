@@ -78,9 +78,12 @@ pub async fn stream_chat_no_done(
             on_event,
             &config,
             cancel,
-            buffer_content,
-            realtime_budget,
-            reasoning_capture,
+            super::openai_responses::ResponseStreamOptions {
+                buffer_content,
+                realtime_budget,
+                reasoning_capture,
+                request_id,
+            },
             measurement.as_mut(),
         )
         .await
@@ -105,6 +108,7 @@ pub async fn stream_chat_no_done(
                 buffer_content,
                 realtime_budget,
                 reasoning_capture,
+                request_id,
             },
             measurement.as_mut(),
         )
@@ -123,7 +127,13 @@ pub async fn stream_chat_no_done(
             fast_mode,
             continuation_target,
         };
-        match super::stream_http::post_chat_request_measured(&cfg, measurement.as_mut()).await {
+        match super::stream_http::post_chat_request_measured(
+            &cfg,
+            measurement.as_mut(),
+            Some(request_id),
+        )
+        .await
+        {
             Ok(resp) => {
                 consume_stream(
                     on_event,

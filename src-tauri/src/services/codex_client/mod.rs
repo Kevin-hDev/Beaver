@@ -6,6 +6,7 @@ mod model_catalog_fallback;
 mod model_catalog_fast;
 mod model_catalog_wire;
 pub mod request;
+mod request_build;
 mod request_http;
 mod routing_hint;
 pub mod stream;

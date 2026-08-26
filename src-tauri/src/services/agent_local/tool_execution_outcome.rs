@@ -34,10 +34,10 @@ impl ToolExecutionOutcome {
             match follow_up {
                 ToolFollowUp::None => {}
                 ToolFollowUp::UserMessage(content) => {
-                    append_to_tool(messages, "User follow-up", &content)?;
+                    append_to_tool(messages, "User follow-up", &content);
                 }
                 ToolFollowUp::SystemMessage(content) => {
-                    append_to_tool(messages, "System follow-up", &content)?;
+                    append_to_tool(messages, "System follow-up", &content);
                 }
                 ToolFollowUp::Stop => stop = true,
             }
@@ -46,27 +46,36 @@ impl ToolExecutionOutcome {
     }
 }
 
-fn append_to_tool(messages: &mut [ChatMessage], label: &str, content: &str) -> Result<(), String> {
-    let tool = messages
+fn append_to_tool(messages: &mut [ChatMessage], label: &str, content: &str) {
+    let Some(tool) = messages
         .iter_mut()
         .rev()
         .find(|message| message.role == "tool")
-        .ok_or_else(generic_error)?;
-    if content.is_empty()
-        || content.len() > MAX_FOLLOW_UP_BYTES
-        || tool.content.len().saturating_add(content.len()) > MAX_FOLLOW_UP_BYTES
-    {
-        return Err(generic_error());
+    else {
+        log::warn!("tool_follow_up_without_tool_message");
+        return;
+    };
+    if content.is_empty() {
+        return;
     }
+    let content = bounded_prefix(content, MAX_FOLLOW_UP_BYTES);
     tool.content.push_str("\n\n");
     tool.content.push_str(label);
     tool.content.push_str(":\n");
     tool.content.push_str(content);
-    Ok(())
 }
 
-fn generic_error() -> String {
-    "conversation_admission_failed".to_string()
+fn bounded_prefix(value: &str, max_bytes: usize) -> &str {
+    if value.len() <= max_bytes {
+        return value;
+    }
+    let end = value
+        .char_indices()
+        .map(|(index, _)| index)
+        .take_while(|index| *index <= max_bytes)
+        .last()
+        .unwrap_or(0);
+    &value[..end]
 }
 
 #[cfg(test)]
@@ -94,5 +103,24 @@ mod tests {
 
         assert!(outcome.apply_follow_ups(&mut messages).unwrap());
         assert!(messages.is_empty());
+    }
+
+    #[test]
+    fn oversized_follow_up_is_bounded_without_failing_a_large_tool_result() {
+        let mut outcome = ToolExecutionOutcome::default();
+        outcome.record(ToolFollowUp::UserMessage("é".repeat(MAX_FOLLOW_UP_BYTES)));
+        let mut messages = vec![ChatMessage::tool("x".repeat(MAX_FOLLOW_UP_BYTES * 2), None, None)];
+
+        assert!(!outcome.apply_follow_ups(&mut messages).unwrap());
+        assert!(messages[0].content.ends_with('é'));
+        assert!(messages[0].content.len() <= MAX_FOLLOW_UP_BYTES * 3 + 32);
+    }
+
+    #[test]
+    fn follow_up_without_tool_is_ignored_without_failing_the_turn() {
+        let mut outcome = ToolExecutionOutcome::default();
+        outcome.record(ToolFollowUp::UserMessage("answer".into()));
+
+        assert!(!outcome.apply_follow_ups(&mut []).unwrap());
     }
 }

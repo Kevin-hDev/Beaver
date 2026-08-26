@@ -32,7 +32,7 @@ async fn rollback_terminalizes_the_current_request_exactly_once() {
 
     assert!(streams.0.lock().await.is_empty());
     assert!(stream.cancel.is_cancelled());
-    assert!(!stream.parent_message_inbox.enqueue(turn()).await.unwrap());
+    assert!(stream.parent_message_inbox.is_closed());
     assert_terminal(&session.id, "failed", 1).await;
     cleanup(&session.id).await;
 }
@@ -173,14 +173,6 @@ fn entry(
         stream.request_id.clone(),
         Arc::clone(&stream.parent_message_inbox),
     )
-}
-
-fn turn() -> crate::models::agent_turn_contract::NewUserTurnInput {
-    crate::models::agent_turn_contract::NewUserTurnInput {
-        content: "late".into(),
-        files: Vec::new(),
-        skills: Vec::new(),
-    }
 }
 
 async fn prepared_turn(content: &str) -> super::agent_chat_turn::PreparedTurn {

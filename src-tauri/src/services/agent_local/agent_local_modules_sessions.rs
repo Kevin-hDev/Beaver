@@ -48,6 +48,7 @@ pub mod session_limits;
 pub mod session_migration;
 mod session_migration_backup;
 mod session_migration_ids;
+mod session_migration_legacy_history;
 mod session_migration_wire;
 #[cfg(test)]
 mod session_migration_tests;

@@ -67,8 +67,13 @@ pub async fn collect_chat_silent_for_compression(
             purpose,
             Some(session_id),
         );
-        match post_chat_request_with_timeout_measured(&cfg, request_timeout, measurement.as_mut())
-            .await
+        match post_chat_request_with_timeout_measured(
+            &cfg,
+            request_timeout,
+            measurement.as_mut(),
+            None,
+        )
+        .await
         {
             Ok(resp) => {
                 super::stream_silent_consume::consume_silent(

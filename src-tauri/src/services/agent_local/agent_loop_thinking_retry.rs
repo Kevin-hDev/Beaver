@@ -86,6 +86,10 @@ pub async fn retry_if_needed(
         retry_tx,
         params.plan_active,
         params.realtime_budget,
+        super::ollama_stream_request::ReplayDiagnosticContext {
+            session_id: &params.session_id,
+            request_id: &params.request_id,
+        },
     )
     .await?;
     let (result, interrupted) = split_retry_outcome(retry_outcome);

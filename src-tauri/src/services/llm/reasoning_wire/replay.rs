@@ -30,6 +30,59 @@ pub(crate) enum ReplayApplyError {
     PayloadMismatch,
 }
 
+/// Observation produite uniquement après écriture effective dans le payload.
+#[derive(Debug, Clone)]
+pub(crate) struct ReplayEvidence {
+    pub envelope: ReasoningEnvelope,
+}
+
+impl ReplayEvidence {
+    pub(crate) fn from_message(message: &ChatMessage) -> Result<Self, ReplayApplyError> {
+        Ok(Self {
+            envelope: message
+                .continuation
+                .clone()
+                .ok_or(ReplayApplyError::PayloadMismatch)?,
+        })
+    }
+}
+
+pub(crate) async fn record_evidence(
+    session_id: Option<&str>,
+    request_id: Option<&str>,
+    evidence: &[ReplayEvidence],
+) {
+    let (Some(session_id), Some(request_id)) = (session_id, request_id) else {
+        return;
+    };
+    let Ok(session) = crate::services::agent_local::session_store::get(session_id).await else {
+        return;
+    };
+    let mut consumed = vec![false; session.messages.len()];
+    for replay in evidence {
+        let Some((index, message)) =
+            session
+                .messages
+                .iter()
+                .enumerate()
+                .find(|(index, message)| {
+                    !consumed[*index] && message.continuation.as_ref() == Some(&replay.envelope)
+                })
+        else {
+            continue;
+        };
+        consumed[index] = true;
+        crate::services::reasoning_continuity::diagnostics::record_envelope(
+            session_id,
+            request_id,
+            &message.turn_id,
+            crate::services::reasoning_continuity::diagnostics::ReasoningDecision::Replayed,
+            &replay.envelope,
+        )
+        .await;
+    }
+}
+
 /// Preuve locale produite après la décision centrale. Elle ne sait pas calculer
 /// une route, un modèle ou un scope : elle transporte seulement ce qui a été
 /// autorisé par le registre.

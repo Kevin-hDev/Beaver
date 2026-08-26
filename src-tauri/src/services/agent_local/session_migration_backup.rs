@@ -13,6 +13,18 @@ pub(super) fn backup_path(path: &Path) -> Result<PathBuf, String> {
     Ok(path.with_file_name(format!("{name}.v1.bak")))
 }
 
+pub(super) fn corrupt_backup_path(path: &Path) -> Result<PathBuf, String> {
+    let name = path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .filter(|name| name.ends_with(".json"))
+        .ok_or_else(save_failed)?;
+    Ok(path.with_file_name(format!(
+        "{name}.corrupt.{}.bak",
+        uuid::Uuid::new_v4()
+    )))
+}
+
 pub(super) async fn publish(
     path: &Path,
     original: &[u8],
@@ -58,6 +70,7 @@ pub(super) async fn ensure_exact_backup(path: &Path, original: &[u8]) -> Result<
             let _bytes = Zeroizing::new(bytes);
             // Une génération v1 antérieure est déjà une sauvegarde valable. La remplacer
             // détruirait précisément l'état de reprise que ce fichier doit préserver.
+            log::warn!("session_migration_backup_already_exists");
             Ok(())
         }
     }

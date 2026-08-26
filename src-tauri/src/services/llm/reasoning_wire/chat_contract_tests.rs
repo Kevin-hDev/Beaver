@@ -1,4 +1,4 @@
-use super::build_chat_payload;
+use super::{build_chat_payload, build_chat_payload_with_evidence};
 use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::agent_local::types_ollama::{ToolCallFunction, ToolCallOllama};
 use crate::services::llm::fast_mode::FastModeRequest;
@@ -186,7 +186,7 @@ fn deepseek_reasoning_tool_continuation_uses_the_tool_contract_even_when_admissi
 }
 
 #[test]
-fn deepseek_user_continuation_replays_native_reasoning() {
+fn deepseek_user_continuation_emits_neither_reasoning_nor_replay_evidence() {
     let target = fixture_target(replay_target(
         RouteId::DeepSeek,
         "deepseek-v4-flash",
@@ -212,10 +212,27 @@ fn deepseek_user_continuation_replays_native_reasoning() {
         ChatMessage::user("follow up".into()),
     ];
 
-    let payload = payload("deepseek", "deepseek-v4-flash", &messages, &target, "high")
-        .expect("forbidden user replay remains a regular payload");
+    let cfg = RequestConfig {
+        provider_id: "deepseek",
+        model: "deepseek-v4-flash",
+        messages: &messages,
+        tools: &[],
+        think: true,
+        reasoning_mode: Some("high"),
+        max_tokens: None,
+        purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
+        session_id: None,
+        fast_mode: FastModeRequest::Unsupported,
+        continuation_target: Some(&target),
+    };
+    let prepared =
+        build_chat_payload_with_evidence(&cfg, &route::resolve("deepseek").unwrap(), None)
+            .expect("forbidden user replay remains a regular payload");
 
-    assert!(payload["messages"][0].get("reasoning_content").is_none());
+    assert!(prepared.payload["messages"][0]
+        .get("reasoning_content")
+        .is_none());
+    assert!(prepared.replayed.is_empty());
 }
 
 #[tokio::test]

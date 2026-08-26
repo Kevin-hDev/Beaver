@@ -25,6 +25,10 @@ pub fn apply(
 }
 
 fn apply_cerebras(payload: &mut Value, think: bool, reasoning_mode: Option<&str>) {
+    if reasoning_mode == Some("off") {
+        payload["reasoning_effort"] = "none".into();
+        return;
+    }
     if !think {
         return;
     }

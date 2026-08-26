@@ -201,7 +201,6 @@ pub(crate) async fn finish_turn(
             &params.request_id,
             turn_id,
             assistant_message_id,
-            params.continuation_target.as_ref(),
         )
         .await;
         let _ = params.on_event.send(

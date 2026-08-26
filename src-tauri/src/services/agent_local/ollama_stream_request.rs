@@ -27,6 +27,12 @@ pub(super) struct StreamChatOptions {
     pub(super) retry_counts: RetryCounts,
 }
 
+#[derive(Clone, Copy)]
+pub struct ReplayDiagnosticContext<'a> {
+    pub session_id: &'a str,
+    pub request_id: &'a str,
+}
+
 pub enum OpenChatResponse {
     Ready(reqwest::Response),
     Retry {
@@ -42,10 +48,18 @@ pub async fn open_chat_response(
     cancel: &CancellationToken,
     counts: RetryCounts,
     emit_retry_indicator: bool,
+    diagnostics: ReplayDiagnosticContext<'_>,
 ) -> Result<OpenChatResponse, String> {
     let wire_messages = wrap_tool_results(&request.messages);
-    let wire_request = ollama_wire::chat_request(request, &wire_messages)
+    let prepared = ollama_wire::chat_request_with_evidence(request, &wire_messages)
         .map_err(|_| "reasoning_continuity_invalid".to_string())?;
+    crate::services::llm::reasoning_wire::replay::record_evidence(
+        Some(diagnostics.session_id),
+        Some(diagnostics.request_id),
+        &prepared.replayed,
+    )
+    .await;
+    let wire_request = prepared.payload;
 
     let client = reqwest::Client::new();
     let base_url = ollama.base_url().await?;

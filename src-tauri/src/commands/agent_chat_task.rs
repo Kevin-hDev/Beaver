@@ -17,6 +17,8 @@ mod session_events;
 pub(crate) mod tool_policy;
 mod workspace_prompt;
 
+#[cfg(test)]
+pub(crate) use conversation::convert as convert_provider_message_for_test;
 pub(crate) use conversation::StreamConversation;
 pub(crate) use params::{StreamCapabilityHints, StreamPermissionMode, StreamTaskParams};
 

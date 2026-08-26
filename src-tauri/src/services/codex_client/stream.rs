@@ -91,6 +91,7 @@ pub async fn stream_chat_with_budget(
         fast_mode,
         &cancel,
         continuation_target,
+        Some(request_id),
     )
     .await?;
     measurement.mark_headers();

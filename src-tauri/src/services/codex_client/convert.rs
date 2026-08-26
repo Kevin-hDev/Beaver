@@ -23,10 +23,26 @@ pub(crate) fn convert_messages_with_tools_and_continuity(
     (String, Vec<serde_json::Value>),
     crate::services::llm::reasoning_wire::replay::ReplayApplyError,
 > {
+    convert_messages_with_tools_and_continuity_evidence(messages, tools, target)
+        .map(|converted| (converted.instructions, converted.input))
+}
+
+pub(crate) struct ConvertedMessages {
+    pub instructions: String,
+    pub input: Vec<serde_json::Value>,
+    pub replayed: Vec<crate::services::llm::reasoning_wire::replay::ReplayEvidence>,
+}
+
+pub(crate) fn convert_messages_with_tools_and_continuity_evidence(
+    messages: &[ChatMessage],
+    tools: &[serde_json::Value],
+    target: Option<&crate::services::reasoning_continuity::contract::ContinuationTarget>,
+) -> Result<ConvertedMessages, crate::services::llm::reasoning_wire::replay::ReplayApplyError> {
     let target =
         crate::services::llm::reasoning_wire::responses::target_for_request(messages, target)?;
     let mut instructions = String::new();
     let mut input = Vec::new();
+    let mut replayed = Vec::new();
     let tool_names = crate::services::llm::tool_schema::ToolNameMap::new(tools);
 
     for msg in messages {
@@ -44,6 +60,11 @@ pub(crate) fn convert_messages_with_tools_and_continuity(
                 target.as_ref(),
             )? {
                 input.extend(items);
+                replayed.push(
+                    crate::services::llm::reasoning_wire::replay::ReplayEvidence::from_message(
+                        msg,
+                    )?,
+                );
                 continue;
             }
             if !msg.content.is_empty() {
@@ -83,7 +104,11 @@ pub(crate) fn convert_messages_with_tools_and_continuity(
             input.push(serde_json::json!({"role": msg.role, "content": msg.content}));
         }
     }
-    Ok((instructions, input))
+    Ok(ConvertedMessages {
+        instructions,
+        input,
+        replayed,
+    })
 }
 
 /// Les transports Responses (Codex, OpenAI API et xAI OAuth) réutiliseront

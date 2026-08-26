@@ -66,3 +66,46 @@ fn every_internal_entry_point_adopts_a_canonical_conversation() {
     assert!(!include_str!("../../commands/agent_chat_task/conversation.rs")
         .contains("InternalLegacy"));
 }
+
+#[test]
+fn production_session_message_writes_stay_behind_canonical_owners() {
+    const MAX_SOURCE_FILES: usize = 4_096;
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+    let mut pending = vec![root];
+    let mut inspected = 0;
+    let mut writers = Vec::new();
+    while let Some(directory) = pending.pop() {
+        for entry in std::fs::read_dir(directory).expect("read source directory") {
+            assert!(inspected < MAX_SOURCE_FILES, "source scan exceeded its bound");
+            inspected += 1;
+            let entry = entry.expect("source entry");
+            if entry.file_type().expect("source type").is_dir() {
+                pending.push(entry.path());
+                continue;
+            }
+            let path = entry.path();
+            let name = path.file_name().and_then(|value| value.to_str()).unwrap_or_default();
+            if path.extension().and_then(|value| value.to_str()) != Some("rs")
+                || name.contains("test")
+            {
+                continue;
+            }
+            let source = std::fs::read_to_string(&path).expect("read Rust source");
+            if source.contains("session.messages =") || source.contains("session.messages.push(") {
+                writers.push(name.to_string());
+            }
+        }
+    }
+    writers.sort();
+    // Admission and compression own live writes. Migration repairs legacy data,
+    // while session_ops owns the explicit retry/clone rewrite boundary.
+    assert_eq!(
+        writers,
+        [
+            "conversation_admission.rs",
+            "session_migration_legacy_history.rs",
+            "session_ops.rs",
+            "state.rs",
+        ]
+    );
+}

@@ -104,6 +104,8 @@ fn continuation_for_session(
     credential_scope: Option<CredentialScope>,
     reasoning_mode: ReasoningModeId,
 ) -> Result<ContinuationTarget, String> {
+    crate::services::reasoning_continuity::limits::validate_model_id(&session.model)
+        .map_err(|_| generic_error())?;
     let blocked = || {
         Ok(ContinuationTarget::Forbidden(NonReplayTarget {
             route_id,
