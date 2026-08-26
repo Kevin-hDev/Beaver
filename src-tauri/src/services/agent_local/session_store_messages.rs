@@ -20,9 +20,7 @@ pub(crate) fn recompute_accumulated_tokens(session: &mut AgentSession) {
 }
 
 pub(super) fn validate_legacy_ipc_message(message: &AgentMessage) -> Result<(), String> {
-    message
-        .continuation
-        .is_none()
+    (message.continuation.is_none() && message.replay_source.is_none())
         .then_some(())
         .ok_or_else(|| "Message de session invalide".to_string())
 }

@@ -45,6 +45,9 @@ async fn persists_user_before_return_and_reserves_three_uuid_v4_ids() {
     assert_eq!(persisted.messages[0].id, admitted.user_message_id);
     assert_eq!(persisted.messages[0].turn_id, admitted.turn_id);
     assert_eq!(persisted.messages[0].files.len(), 1);
+    let source = persisted.messages[0].replay_source.as_ref().expect("durable turn provenance");
+    assert_eq!(source.model_id, "model-a");
+    assert_eq!(source.route_id, crate::services::reasoning_continuity::contract::RouteId::Ollama);
     assert_eq!(
         persisted.messages[0].skill_names.as_deref(),
         Some(&["Skill local".to_string()][..])
@@ -57,6 +60,10 @@ async fn persists_user_before_return_and_reserves_three_uuid_v4_ids() {
         admitted.history.messages.last().unwrap().message_id,
         Some(admitted.user_message_id)
     );
+    let visible = serde_json::to_value(
+        super::super::session_view::from_session(&persisted).unwrap(),
+    ).unwrap();
+    assert!(visible["messages"][0].get("replay_source").is_none());
     cleanup(&session.id).await;
 }
 

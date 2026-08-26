@@ -9,6 +9,17 @@ pub(super) enum SessionReadError {
     Invalid,
 }
 
+pub(crate) struct PreparedSessionDocument {
+    session: AgentSession,
+    data: Vec<u8>,
+}
+
+impl PreparedSessionDocument {
+    pub(super) fn session(&self) -> &AgentSession {
+        &self.session
+    }
+}
+
 impl SessionReadError {
     pub(super) const fn message(self) -> &'static str {
         match self {
@@ -49,6 +60,11 @@ pub(super) async fn write_to_dir(dir: &Path, session: &AgentSession) -> Result<(
 }
 
 pub(super) async fn write_to_path(path: PathBuf, session: &AgentSession) -> Result<(), String> {
+    let prepared = prepare(session).await?;
+    write_prepared_to_path(path, prepared).await
+}
+
+pub(super) async fn prepare(session: &AgentSession) -> Result<PreparedSessionDocument, String> {
     super::session_migration_wire::validate_v2(session)
         .map_err(|_| super::session_limits::save_failed())?;
     let mut value = serde_json::to_value(session)
@@ -59,6 +75,16 @@ pub(super) async fn write_to_path(path: PathBuf, session: &AgentSession) -> Resu
     let data = serde_json::to_vec_pretty(&value)
         .map_err(|_| "Sauvegarde de session impossible".to_string())?;
     super::session_limits::validate_serialized_size(data.len())?;
+    let session = super::session_migration_wire::parse_v2(&data)
+        .map_err(|_| super::session_limits::save_failed())?;
+    Ok(PreparedSessionDocument { session, data })
+}
+
+pub(super) async fn write_prepared_to_path(
+    path: PathBuf,
+    prepared: PreparedSessionDocument,
+) -> Result<(), String> {
+    let data = prepared.data;
     match crate::services::private_store::read_bounded_regular_async(
         path.clone(),
         MAX_SESSION_FILE_BYTES,

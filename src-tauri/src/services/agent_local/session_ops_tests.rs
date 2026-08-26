@@ -100,6 +100,7 @@ fn message(
         tool_name: None,
         tool_call_id: None,
         continuation,
+        replay_source: None,
         tool_activities: None,
         segments: None,
         files: Vec::new(),

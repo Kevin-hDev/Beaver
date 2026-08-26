@@ -54,7 +54,17 @@ fn keeps_regular_source_code_in_user_messages() {
 fn sanitizes_serialized_sessions_without_dropping_fields() {
     let mut value = json!({
         "messages": [
-            {"role": "user", "content": "let password = config.value;", "tokens": 4},
+            {
+                "role": "user",
+                "content": "let password = config.value;",
+                "tokens": 4,
+                "replay_source": {
+                    "route_id": "deepseek",
+                    "model_id": "deepseek-v4-flash",
+                    "credential_scope": "scope-1234567890abcdef",
+                    "reasoning_mode": "auto"
+                }
+            },
             {"role": "tool", "content": "token=old-secret", "tokens": 2}
         ],
         "provider": "ollama",
@@ -63,6 +73,10 @@ fn sanitizes_serialized_sessions_without_dropping_fields() {
     sanitize_session_value(&mut value);
     assert_eq!(value["messages"].as_array().unwrap().len(), 2);
     assert_eq!(value["messages"][0]["tokens"], 4);
+    assert_eq!(
+        value["messages"][0]["replay_source"]["credential_scope"],
+        "scope-1234567890abcdef"
+    );
     assert_eq!(value["provider"], "ollama");
     assert_eq!(value["custom"], json!([1, 2, 3]));
     assert_eq!(

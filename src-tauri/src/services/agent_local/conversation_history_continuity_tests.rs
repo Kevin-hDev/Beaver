@@ -82,6 +82,38 @@ async fn provenance_barrier_exposes_only_a_new_compatible_suffix() {
 }
 
 #[tokio::test]
+async fn durable_turn_provenance_blocks_a_to_b_without_envelope_then_a_after_reload() {
+    let old_a = envelope(RouteId::Ollama, "model-a", "opaque-old-a");
+    let b_source = envelope(RouteId::Ollama, "model-b", "unused").source;
+    let new_a = envelope(RouteId::Ollama, "model-a", "opaque-new-a");
+    let mut session = create_session().await;
+    session.messages = complete_turn("old-a-source", "old A", Some(old_a.clone()));
+    session.messages.extend(complete_turn("middle-b-source", "middle B", None));
+    session.messages.extend(complete_turn("new-a-source", "new A", Some(new_a.clone())));
+    let mut value = serde_json::to_value(&session).unwrap();
+    let messages = value["messages"].as_array_mut().unwrap();
+    messages[0]["replay_source"] = serde_json::to_value(old_a.source).unwrap();
+    messages[2]["replay_source"] = serde_json::to_value(b_source).unwrap();
+    messages[4]["replay_source"] = serde_json::to_value(new_a.source).unwrap();
+    crate::services::private_store::atomic_write_async(
+        super::support::session_path(&session.id),
+        serde_json::to_vec(&value).unwrap(),
+    )
+    .await
+    .unwrap();
+
+    let history = conversation_history::load_for_target(&session.id, &target("model-a"))
+        .await
+        .expect("reload durable turn provenance");
+
+    assert_eq!(history.compatible_suffix_start, 4);
+    assert!(history.messages[1].continuation.is_none());
+    assert!(history.messages[4].continuity_barrier_before);
+    assert_eq!(history.messages[5].continuation.as_ref().and_then(ollama_thinking), Some("opaque-new-a"));
+    cleanup(&session.id).await;
+}
+
+#[tokio::test]
 async fn resume_accepts_only_last_terminal_user_without_mutating_history() {
     let mut session = create_session().await;
     session.messages = complete_turn("old", "done", None);
@@ -199,6 +231,29 @@ async fn failed_edit_write_is_generic_and_preserves_previous_bytes() {
 
     assert_eq!(error.to_string(), ERROR);
     assert_eq!(std::fs::read(path).unwrap(), before);
+    cleanup(&session.id).await;
+}
+
+#[tokio::test]
+async fn successful_edit_returns_the_exact_sanitized_document_history() {
+    let mut session = create_session().await;
+    session.messages = complete_turn("edit-sanitized", "answer", None);
+    super::super::session_store::save(&session).await.unwrap();
+
+    let history = conversation_admission::edit_user_message(
+        &session.id,
+        EditUserMessageInput {
+            message_id: "user-edit-sanitized".into(),
+            new_content: "use gsk_1234567890abcdefghijkl".into(),
+        },
+        &target("model-a"),
+    )
+    .await
+    .expect("edit canonical prepared document");
+
+    let persisted = super::super::session_store::get(&session.id).await.unwrap();
+    assert_eq!(history.messages.last().unwrap().content, persisted.messages[0].content);
+    assert!(!persisted.messages[0].content.contains("gsk_1234567890abcdefghijkl"));
     cleanup(&session.id).await;
 }
 

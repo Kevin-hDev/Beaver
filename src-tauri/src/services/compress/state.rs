@@ -115,6 +115,7 @@ fn summary_agent_message(summary: &str, suppress_follow_up: bool) -> AgentMessag
         tool_name: None,
         tool_call_id: None,
         continuation: None,
+        replay_source: None,
         tool_activities: None,
         segments: None,
         files: vec![],

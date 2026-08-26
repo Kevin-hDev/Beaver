@@ -77,6 +77,7 @@ async fn message_between_terminal_save_and_registry_completion_is_never_stranded
                 tool_name: None,
                 tool_call_id: None,
                 continuation: None,
+                replay_source: None,
                 tool_activities: None,
                 segments: None,
                 files: vec![],

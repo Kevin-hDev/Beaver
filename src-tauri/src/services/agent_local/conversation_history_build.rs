@@ -71,20 +71,26 @@ fn compatible_suffix(
     target: &ReplayTarget,
 ) -> usize {
     turns.iter().fold(0, |suffix, turn| {
-        let incompatible = messages[turn.clone()]
+        let user = &messages[turn.start];
+        let envelope_source_matches = messages[turn.clone()]
+            .iter()
+            .filter_map(|message| message.continuation.as_ref())
+            .any(|envelope| envelope.source.matches_target(target));
+        let turn_source_matches = user
+            .replay_source
+            .as_ref()
+            .map_or(envelope_source_matches, |source| source.matches_target(target));
+        let incompatible_envelope = messages[turn.clone()]
             .iter()
             .filter_map(|message| message.continuation.as_ref())
             .any(|envelope| !matches_target(envelope, target));
-        if incompatible { turn.end } else { suffix }
+        if !turn_source_matches || incompatible_envelope { turn.end } else { suffix }
     })
 }
 
 fn matches_target(envelope: &ReasoningEnvelope, target: &ReplayTarget) -> bool {
     envelope.completion == CompletionState::Complete
-        && envelope.source.route_id == target.route_id
-        && envelope.source.model_id == target.model_id
-        && envelope.source.credential_scope == target.credential_scope
-        && envelope.source.reasoning_mode == target.reasoning_mode
+        && envelope.source.matches_target(target)
         && crate::services::reasoning_continuity::registry::route_contract(target.route_id)
             == Some(envelope.contract_id)
 }

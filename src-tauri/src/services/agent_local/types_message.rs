@@ -28,6 +28,10 @@ pub struct AgentMessage {
         deserialize_with = "super::types_message_continuation::deserialize"
     )]
     pub continuation: Option<crate::services::reasoning_continuity::envelope::ReasoningEnvelope>,
+    /// Provenance privée du tour, durable même si aucune enveloppe n'est capturée.
+    /// Elle ne fait volontairement pas partie des contrats IPC visibles.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub replay_source: Option<crate::services::reasoning_continuity::envelope::ReasoningSource>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tool_activities: Option<Vec<ToolActivityRecord>>,
     #[serde(skip_serializing_if = "Option::is_none")]

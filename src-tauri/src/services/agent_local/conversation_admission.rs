@@ -16,7 +16,12 @@ use super::types_session::AgentSession;
 
 pub const PUBLIC_ERROR_CODE: &str = super::conversation_history::PUBLIC_ERROR_CODE;
 #[cfg(test)]
-pub(crate) use super::conversation_edit::{edit_user_message, edit_user_message_with_writer};
+pub(crate) use super::conversation_edit::{
+    edit_user_message, edit_user_message_after_preflight_with_key_and_writer,
+    edit_user_message_with_writer,
+};
+#[cfg(test)]
+pub(crate) use super::conversation_resume::resume_with_key;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ConversationAdmissionError;
@@ -35,6 +40,14 @@ pub struct AdmittedTurn {
     pub user_message_id: String,
     pub assistant_message_id: String,
     pub history: ConversationHistory,
+}
+
+pub async fn resume(
+    session_id: &str,
+    input: ResumeTurnInput,
+    target: ReplayTarget,
+) -> Result<AdmittedTurn, ConversationAdmissionError> {
+    super::conversation_resume::resume(session_id, input, target).await
 }
 
 pub async fn new_turn(
@@ -113,6 +126,9 @@ where
         tool_name: None,
         tool_call_id: None,
         continuation: None,
+        replay_source: Some(
+            crate::services::reasoning_continuity::envelope::ReasoningSource::from_target(&target),
+        ),
         tool_activities: None,
         segments: None,
         files: input.files.clone(),
@@ -151,44 +167,7 @@ where
     })
 }
 
-pub async fn resume(
-    session_id: &str,
-    input: ResumeTurnInput,
-    target: ReplayTarget,
-) -> Result<AdmittedTurn, ConversationAdmissionError> {
-    super::session_store::validate_session_id(session_id).map_err(|_| error())?;
-    let lock = super::session_store::lock_session(session_id).await;
-    let _guard = lock.lock().await;
-    let session = super::session_store::get(session_id)
-        .await
-        .map_err(|_| error())?;
-    let history = super::conversation_history::from_session(&session, &target)
-        .map_err(|_| error())?;
-    let message = session.messages.last().ok_or_else(error)?;
-    let provider = history.messages.last().ok_or_else(error)?;
-    if message.id != input.message_id
-        || message.role != "user"
-        || provider.role != ProviderRole::User
-        || !message.files.is_empty()
-        || message.skill_names.as_ref().is_some_and(|names| !names.is_empty())
-    {
-        return Err(error());
-    }
-    let mut used = session
-        .messages
-        .iter()
-        .flat_map(|message| [message.id.clone(), message.turn_id.clone()])
-        .collect::<HashSet<_>>();
-    let assistant_message_id = unique_uuid(&mut used, &mut || Uuid::new_v4().to_string())?;
-    Ok(AdmittedTurn {
-        turn_id: message.turn_id.clone(),
-        user_message_id: message.id.clone(),
-        assistant_message_id,
-        history,
-    })
-}
-
-fn unique_uuid<F>(
+pub(super) fn unique_uuid<F>(
     used: &mut HashSet<String>,
     generator: &mut F,
 ) -> Result<String, ConversationAdmissionError>

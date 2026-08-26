@@ -3,6 +3,8 @@ use crate::services::agent_local::types_ollama::{ChatMessage, ToolCallFunction, 
 use crate::services::agent_local::types_session::{
     AgentMessage, FileAttachment, ToolActivityRecord,
 };
+use crate::services::reasoning_continuity::contract::{CredentialScope, ReasoningModeId, RouteId};
+use crate::services::reasoning_continuity::envelope::ReasoningSource;
 
 fn chat(role: &str, content: &str) -> ChatMessage {
     match role {
@@ -25,6 +27,7 @@ fn agent(role: &str, content: &str) -> AgentMessage {
         tool_name: None,
         tool_call_id: None,
         continuation: None,
+        replay_source: None,
         tool_activities: None,
         segments: None,
         files: vec![],
@@ -105,6 +108,13 @@ fn keeps_two_recent_users_and_assistants() {
 
 #[test]
 fn keeps_rich_fields_from_persisted_recent_messages() {
+    let mut user = agent("user", "u");
+    user.replay_source = Some(ReasoningSource {
+        route_id: RouteId::Ollama,
+        model_id: "fixture-model".to_string(),
+        credential_scope: CredentialScope::local_uncredentialed(),
+        reasoning_mode: ReasoningModeId::Auto,
+    });
     let mut rich = agent("assistant", "answer");
     rich.thinking = Some("reasoning".to_string());
     rich.tool_activities = Some(vec![ToolActivityRecord {
@@ -133,9 +143,11 @@ fn keeps_rich_fields_from_persisted_recent_messages() {
     }];
     rich.skill_names = Some(vec!["rust".to_string()]);
 
-    let (_, recent) = state_recent::recent_messages(&[agent("user", "u"), rich], &[]);
+    let (_, recent) = state_recent::recent_messages(&[user, rich], &[]);
+    let saved_user = recent.iter().find(|m| m.role == "user").unwrap();
     let saved = recent.iter().find(|m| m.role == "assistant").unwrap();
 
+    assert!(saved_user.replay_source.is_some());
     assert_eq!(saved.thinking.as_deref(), Some("reasoning"));
     assert!(saved.tool_activities.is_some());
     assert_eq!(saved.files.len(), 1);

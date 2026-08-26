@@ -94,7 +94,7 @@ fn sanitize_message(value: &mut serde_json::Value) {
     for (key, item) in message {
         match key.as_str() {
             "id" | "turn_id" | "tool_call_id" | "stream_run_id" | "continuation"
-            | "skill_ids" => {}
+            | "replay_source" | "skill_ids" => {}
             "tool_calls" => sanitize_tool_calls(item),
             "tool_activities" => redact_json_preserving_shape(item),
             "segments" => sanitize_segments(item),

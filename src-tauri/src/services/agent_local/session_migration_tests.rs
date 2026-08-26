@@ -55,6 +55,45 @@ async fn v2_writer_rejects_invalid_private_skill_links_but_accepts_legacy_names(
 }
 
 #[tokio::test]
+async fn v2_writer_validates_private_turn_provenance_and_keeps_legacy_absence() {
+    let root = tempfile::tempdir().unwrap();
+    let valid_source = ReasoningSource {
+        route_id: RouteId::Ollama,
+        model_id: "fixture-model".into(),
+        credential_scope: CredentialScope::local_uncredentialed(),
+        reasoning_mode: ReasoningModeId::Auto,
+    };
+    let mut valid = base_session();
+    valid.messages[0].replay_source = Some(valid_source.clone());
+    let valid_path = root.path().join("valid-source.json");
+    super::session_store_document::write_to_path(valid_path.clone(), &valid).await.unwrap();
+    let restored = super::session_store_document::read_from_path(valid_path).await.unwrap();
+    assert_eq!(restored.messages[0].replay_source, Some(valid_source));
+
+    let mut wrong_role = base_session();
+    wrong_role.messages[1].replay_source = Some(responses_envelope(Vec::new()).source);
+    assert!(super::session_store_document::write_to_path(
+        root.path().join("assistant-source.json"), &wrong_role,
+    ).await.is_err());
+
+    let mut wrong_scope = base_session();
+    wrong_scope.messages[0].replay_source = Some(ReasoningSource {
+        route_id: RouteId::Ollama,
+        model_id: "fixture-model".into(),
+        credential_scope: CredentialScope::authenticated("remote-scope").unwrap(),
+        reasoning_mode: ReasoningModeId::Auto,
+    });
+    assert!(super::session_store_document::write_to_path(
+        root.path().join("wrong-scope.json"), &wrong_scope,
+    ).await.is_err());
+
+    let legacy = base_session();
+    assert!(legacy.messages.iter().all(|message| message.replay_source.is_none()));
+    super::session_store_document::write_to_path(root.path().join("legacy-none.json"), &legacy)
+        .await.unwrap();
+}
+
+#[tokio::test]
 async fn legacy_tool_ids_are_local_linked_and_stable_after_commit() {
     let root = tempfile::tempdir().expect("tempdir");
     let path = root.path().join("00000000-0000-4000-8000-000000000002.json");
@@ -268,6 +307,12 @@ async fn future_session_is_visible_without_continuity_or_rewrite() {
     let path = root.path().join("future.json");
     let mut session = base_session();
     session.messages[1].continuation = Some(responses_envelope(vec![json!({"opaque":1})]));
+    session.messages[0].replay_source = Some(ReasoningSource {
+        route_id: RouteId::Ollama,
+        model_id: "fixture-model".into(),
+        credential_scope: CredentialScope::local_uncredentialed(),
+        reasoning_mode: ReasoningModeId::Auto,
+    });
     let mut value = serde_json::to_value(&session).unwrap();
     value["schema_version"] = json!(99);
     let bytes = serde_json::to_vec_pretty(&value).unwrap();
@@ -279,6 +324,7 @@ async fn future_session_is_visible_without_continuity_or_rewrite() {
     assert_eq!(visible.schema_version, 99);
     assert_eq!(visible.messages[1].content, "fixture-assistant-content");
     assert!(visible.messages[1].continuation.is_none());
+    assert!(visible.messages[0].replay_source.is_none());
     assert_eq!(std::fs::read(path).unwrap(), bytes);
 }
 

@@ -15,6 +15,7 @@ mod conversation_history_field_validation;
 mod conversation_history_resolve;
 mod conversation_history_validation;
 pub mod conversation_input;
+mod conversation_resume;
 #[cfg(test)]
 mod conversation_input_tests;
 #[cfg(test)]

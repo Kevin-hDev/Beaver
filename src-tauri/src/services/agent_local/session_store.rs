@@ -41,7 +41,11 @@ pub async fn save(session: &AgentSession) -> Result<(), String> {
     .await
     .map_err(|_| "Sauvegarde de session impossible".to_string())?;
     super::session_store_document::write_to_path(path, session).await?;
-    let meta = crate::services::agent_local::session_index::meta_from_session(session);
+    update_index(crate::services::agent_local::session_index::meta_from_session(session)).await;
+    Ok(())
+}
+
+async fn update_index(meta: AgentSessionMeta) {
     if crate::services::agent_local::session_index::upsert_entry(meta)
         .await
         .is_err()
@@ -53,6 +57,21 @@ pub async fn save(session: &AgentSession) -> Result<(), String> {
         // à reconstruire la projection sans annoncer à tort que sa sauvegarde a échoué.
         crate::services::agent_local::session_index::invalidate_reconcile_fingerprint().await;
     }
+}
+
+pub(super) async fn save_prepared(
+    prepared: super::session_store_document::PreparedSessionDocument,
+) -> Result<(), String> {
+    validate_session_id(&prepared.session().id)?;
+    let path = crate::services::paths::data_file_for_write(
+        "agent-sessions",
+        &format!("{}.json", prepared.session().id),
+    )
+    .await
+    .map_err(|_| "Sauvegarde de session impossible".to_string())?;
+    let meta = crate::services::agent_local::session_index::meta_from_session(prepared.session());
+    super::session_store_document::write_prepared_to_path(path, prepared).await?;
+    update_index(meta).await;
     Ok(())
 }
 

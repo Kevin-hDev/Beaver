@@ -115,7 +115,9 @@ fn user_shape(message: &AgentMessage) -> bool {
 }
 
 fn assistant_shape(message: &AgentMessage) -> bool {
-    message.tool_name.is_none() && message.tool_call_id.is_none()
+    message.tool_name.is_none()
+        && message.tool_call_id.is_none()
+        && message.replay_source.is_none()
 }
 
 fn tool_shape(message: &AgentMessage) -> bool {
@@ -123,6 +125,7 @@ fn tool_shape(message: &AgentMessage) -> bool {
         && message.continuation.is_none()
         && message.thinking.is_none()
         && message.files.is_empty()
+        && message.replay_source.is_none()
 }
 
 fn validate_tool_links(

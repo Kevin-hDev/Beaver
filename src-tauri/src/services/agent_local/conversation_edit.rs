@@ -10,21 +10,30 @@ pub async fn edit_user_message(
     input: EditUserMessageInput,
     target: &ReplayTarget,
 ) -> Result<ConversationHistory, ConversationAdmissionError> {
-    edit_inner(session_id, input, target, |session| async move {
-        super::session_store::save(&session).await
-    })
+    edit_inner(
+        session_id,
+        input,
+        target,
+        super::conversation_history_resolve::AttachmentKeySource::Vault,
+        || async {},
+        |prepared| async move { super::session_store::save_prepared(prepared).await },
+    )
     .await
 }
 
-async fn edit_inner<W, Fut>(
+async fn edit_inner<A, AFut, W, WFut>(
     session_id: &str,
     input: EditUserMessageInput,
     target: &ReplayTarget,
+    key_source: super::conversation_history_resolve::AttachmentKeySource,
+    after_preflight: A,
     writer: W,
 ) -> Result<ConversationHistory, ConversationAdmissionError>
 where
-    W: FnOnce(AgentSession) -> Fut,
-    Fut: std::future::Future<Output = Result<(), String>>,
+    A: FnOnce() -> AFut,
+    AFut: std::future::Future<Output = ()>,
+    W: FnOnce(super::session_store_document::PreparedSessionDocument) -> WFut,
+    WFut: std::future::Future<Output = Result<(), String>>,
 {
     super::session_store::validate_session_id(session_id).map_err(|_| error())?;
     let lock = super::session_store::lock_session(session_id).await;
@@ -37,16 +46,29 @@ where
     super::conversation_history_resolve::from_session(
         &session,
         target,
-        super::conversation_history_resolve::AttachmentKeySource::Vault,
+        key_source,
         None,
     )
     .await
     .map_err(|_| error())?;
+    after_preflight().await;
     apply_to_session(&mut session, input).map_err(|_| error())?;
-    writer(session).await.map_err(|_| error())?;
-    super::conversation_history::load_for_target(session_id, target)
+    session.messages.last_mut().ok_or_else(error)?.replay_source = Some(
+        crate::services::reasoning_continuity::envelope::ReasoningSource::from_target(target),
+    );
+    let prepared = super::session_store_document::prepare(&session)
         .await
-        .map_err(|_| error())
+        .map_err(|_| error())?;
+    let history = super::conversation_history_resolve::from_session(
+        prepared.session(),
+        target,
+        key_source,
+        None,
+    )
+    .await
+    .map_err(|_| error())?;
+    writer(prepared).await.map_err(|_| error())?;
+    Ok(history)
 }
 
 pub(super) fn apply_to_session(
@@ -79,8 +101,44 @@ pub(crate) async fn edit_user_message_with_writer<W, Fut>(
     writer: W,
 ) -> Result<ConversationHistory, ConversationAdmissionError>
 where
-    W: FnOnce(AgentSession) -> Fut,
+    W: FnOnce(super::session_store_document::PreparedSessionDocument) -> Fut,
     Fut: std::future::Future<Output = Result<(), String>>,
 {
-    edit_inner(session_id, input, target, writer).await
+    edit_inner(
+        session_id,
+        input,
+        target,
+        super::conversation_history_resolve::AttachmentKeySource::Vault,
+        || async {},
+        writer,
+    )
+    .await
+}
+
+#[cfg(test)]
+pub(crate) async fn edit_user_message_after_preflight_with_key_and_writer<A, AFut, W, WFut>(
+    session_id: &str,
+    input: EditUserMessageInput,
+    target: &ReplayTarget,
+    key: &[u8],
+    after_preflight: A,
+    writer: W,
+) -> Result<ConversationHistory, ConversationAdmissionError>
+where
+    A: FnOnce() -> AFut,
+    AFut: std::future::Future<Output = ()>,
+    W: FnOnce(super::session_store_document::PreparedSessionDocument) -> WFut,
+    WFut: std::future::Future<Output = Result<(), String>>,
+{
+    edit_inner(
+        session_id,
+        input,
+        target,
+        super::conversation_history_resolve::AttachmentKeySource::Fixed(
+            key.try_into().map_err(|_| error())?,
+        ),
+        after_preflight,
+        writer,
+    )
+    .await
 }

@@ -56,6 +56,7 @@ pub fn chat_to_agent_message(message: &ChatMessage) -> AgentMessage {
         tool_name: message.tool_name.clone(),
         tool_call_id: message.tool_call_id.clone(),
         continuation: message.continuation.clone(),
+        replay_source: None,
         tool_activities: None,
         segments: None,
         files: vec![],

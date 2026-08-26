@@ -1,4 +1,6 @@
 use std::fs;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 
 use crate::models::agent_turn_contract::{NewUserTurnInput, SkillReference, TurnAttachmentInput};
 
@@ -170,6 +172,83 @@ async fn unavailable_context_blocks_edit_before_mutating_the_session() {
     .expect_err("unavailable context blocks edit before its write");
 
     assert_eq!(error.to_string(), ERROR);
+    assert_eq!(fs::read(path).unwrap(), before);
+    fixture.cleanup();
+    cleanup(&session.id).await;
+}
+
+#[tokio::test]
+async fn resume_rebuilds_prior_context_before_accepting_a_simple_terminal_user() {
+    let session = create_session().await;
+    let fixture = install_context_fixture("resume-history");
+    let first = conversation_input::resolve_with_key(fixture.input("first"), &KEY).await.unwrap();
+    let admitted = conversation_admission::new_turn_with_key(
+        &session.id, first, target("model-a"), &KEY,
+    ).await.unwrap();
+    let mut durable = super::super::session_store::get(&session.id).await.unwrap();
+    durable.messages.push(message(
+        "00000000-0000-4000-8000-000000000097", &admitted.turn_id, "assistant", "answer",
+    ));
+    let terminal = message(
+        "00000000-0000-4000-8000-000000000096", "terminal-simple", "user", "retry",
+    );
+    durable.messages.push(terminal.clone());
+    super::super::session_store::save(&durable).await.unwrap();
+
+    let resumed = conversation_admission::resume_with_key(
+        &session.id,
+        crate::models::agent_turn_contract::ResumeTurnInput { message_id: terminal.id },
+        target("model-a"),
+        &KEY,
+    )
+    .await
+    .expect("resume rebuilds all prior Rust context");
+
+    let prior = resumed.history.messages.iter()
+        .find(|item| item.message_id.as_deref() == Some(admitted.user_message_id.as_str()))
+        .expect("prior durable user");
+    assert!(prior.content.contains("historical text exact"));
+    assert_eq!(prior.images.len(), 1);
+    assert!(resumed.history.messages.iter().any(|item| {
+        item.skill_id.as_deref() == Some(fixture.skill_id.as_str())
+    }));
+    fixture.cleanup();
+    cleanup(&session.id).await;
+}
+
+#[tokio::test]
+async fn edit_race_after_preflight_fails_before_writer_and_preserves_exact_bytes() {
+    let session = create_session().await;
+    let fixture = install_context_fixture("edit-race");
+    let first = conversation_input::resolve_with_key(fixture.input("first"), &KEY).await.unwrap();
+    let admitted = conversation_admission::new_turn_with_key(
+        &session.id, first, target("model-a"), &KEY,
+    ).await.unwrap();
+    let path = super::support::session_path(&session.id);
+    let before = fs::read(&path).unwrap();
+    let remove = fixture.text_path.clone();
+    let writer_called = Arc::new(AtomicBool::new(false));
+    let observed = writer_called.clone();
+
+    let error = conversation_admission::edit_user_message_after_preflight_with_key_and_writer(
+        &session.id,
+        crate::models::agent_session_contract::EditUserMessageInput {
+            message_id: admitted.user_message_id,
+            new_content: "edited".into(),
+        },
+        &target("model-a"),
+        &KEY,
+        move || async move { fs::remove_file(remove).unwrap(); },
+        move |_| async move {
+            observed.store(true, Ordering::SeqCst);
+            Ok(())
+        },
+    )
+    .await
+    .expect_err("post-preflight race must fail before the writer");
+
+    assert_eq!(error.to_string(), ERROR);
+    assert!(!writer_called.load(Ordering::SeqCst));
     assert_eq!(fs::read(path).unwrap(), before);
     fixture.cleanup();
     cleanup(&session.id).await;

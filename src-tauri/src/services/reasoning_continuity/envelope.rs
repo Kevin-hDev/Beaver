@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use super::bounded_json::serialized_len_bounded;
-use super::contract::{ContractId, CredentialScope, ReasoningModeId, RouteId};
+use super::contract::{ContractId, CredentialScope, ReasoningModeId, ReplayTarget, RouteId};
 use super::limits::{
     validate_json_depth, validate_model_id, validate_remote_response_id, LimitError,
     MAX_ENVELOPE_BYTES, MAX_NATIVE_ITEMS,
@@ -28,7 +28,23 @@ pub struct ReasoningSource {
 }
 
 impl ReasoningSource {
-    fn validate(&self) -> Result<(), LimitError> {
+    pub(crate) fn from_target(target: &ReplayTarget) -> Self {
+        Self {
+            route_id: target.route_id,
+            model_id: target.model_id.clone(),
+            credential_scope: target.credential_scope.clone(),
+            reasoning_mode: target.reasoning_mode,
+        }
+    }
+
+    pub(crate) fn matches_target(&self, target: &ReplayTarget) -> bool {
+        self.route_id == target.route_id
+            && self.model_id == target.model_id
+            && self.credential_scope == target.credential_scope
+            && self.reasoning_mode == target.reasoning_mode
+    }
+
+    pub(crate) fn validate(&self) -> Result<(), LimitError> {
         validate_model_id(&self.model_id)?;
         super::limits::validate_credential_scope(self.credential_scope.as_str())?;
         self.credential_scope.validate_for_route(self.route_id)

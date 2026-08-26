@@ -123,6 +123,7 @@ mod tests {
             tool_name: None,
             tool_call_id: None,
             continuation: None,
+            replay_source: None,
             tool_activities: None,
             segments: None,
             files: vec![],
@@ -207,7 +208,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn append_from_legacy_frontend_cannot_erase_existing_continuation() {
+    async fn legacy_frontend_cannot_erase_or_inject_private_continuity_state() {
         use crate::services::reasoning_continuity::contract::{
             ContractId, CredentialScope, ReasoningModeId, RouteId,
         };
@@ -248,6 +249,7 @@ mod tests {
             tool_name: None,
             tool_call_id: None,
             continuation: Some(envelope.clone()),
+            replay_source: None,
             tool_activities: None,
             segments: None,
             files: vec![],
@@ -270,6 +272,7 @@ mod tests {
             tool_name: None,
             tool_call_id: None,
             continuation: None,
+            replay_source: None,
             tool_activities: None,
             segments: None,
             files: vec![],
@@ -286,6 +289,26 @@ mod tests {
             .expect("append visible message");
         let restored = super::super::get(&session.id).await.expect("reload");
         assert_eq!(restored.messages[0].continuation, Some(envelope));
+        let mut forged = restored.messages[1].clone();
+        forged.id = uuid::Uuid::new_v4().to_string();
+        forged.turn_id = crate::services::agent_local::types_session::AgentMessage::new_turn_id();
+        forged.replay_source = Some(ReasoningSource {
+            route_id: RouteId::Ollama,
+            model_id: "fixture-model".into(),
+            credential_scope: CredentialScope::local_uncredentialed(),
+            reasoning_mode: ReasoningModeId::Auto,
+        });
+        assert!(super::super::add_messages(&session.id, vec![forged], 0)
+            .await
+            .is_err());
+        assert_eq!(
+            super::super::get(&session.id)
+                .await
+                .expect("reload after rejected injection")
+                .messages
+                .len(),
+            2
+        );
         super::super::delete_one(&session.id).await.expect("cleanup");
     }
 }

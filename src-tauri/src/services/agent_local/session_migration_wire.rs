@@ -71,6 +71,7 @@ pub(super) fn parse_future(bytes: &[u8], version: u16) -> Result<AgentSession, S
     session.schema_version = version;
     for message in &mut session.messages {
         message.continuation = None;
+        message.replay_source = None;
     }
     Ok(session)
 }
@@ -83,6 +84,11 @@ pub(super) fn validate_v2(session: &AgentSession) -> Result<(), String> {
     }
     for message in &session.messages {
         super::session_migration_ids::validate_id(&message.turn_id)?;
+        if message.replay_source.as_ref().is_some_and(|source| {
+            message.role != "user" || source.validate().is_err()
+        }) {
+            return Err(invalid());
+        }
         super::conversation_skills::validate_persisted_references(
             message.skill_ids.as_deref(),
             message.skill_names.as_deref(),

@@ -25,6 +25,7 @@ pub(super) fn into_message(input: VisibleMessageInput, turn_id: String) -> Resul
             }
         }).collect()),
         tool_name: input.tool_name, tool_call_id: input.tool_call_id, continuation: None,
+        replay_source: None,
         tool_activities: input.tool_activities.map(|items| {
             items.into_iter().map(activity_input).collect::<Result<Vec<_>, _>>()
         }).transpose()?,

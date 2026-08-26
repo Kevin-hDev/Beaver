@@ -11,6 +11,7 @@ pub(super) fn validate(message: &AgentMessage) -> Result<(), ConversationHistory
         || message.files.iter().any(|file| {
             super::conversation_attachment_format::validate_persisted(file).is_err()
         })
+        || message.replay_source.as_ref().is_some_and(|source| source.validate().is_err())
     {
         return Err(ConversationHistoryError);
     }

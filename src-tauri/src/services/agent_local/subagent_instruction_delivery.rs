@@ -168,6 +168,7 @@ pub(super) fn agent_message(prompt: &str) -> AgentMessage {
         tool_name: None,
         tool_call_id: None,
         continuation: None,
+        replay_source: None,
         tool_activities: None,
         segments: None,
         files: Vec::new(),

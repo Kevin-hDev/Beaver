@@ -76,6 +76,7 @@ fn agent_estimate_counts_tool_payload_once() {
         tool_name: None,
         tool_call_id: None,
         continuation: None,
+        replay_source: None,
         tool_activities: Some(vec![activity]),
         segments: None,
         files: vec![],

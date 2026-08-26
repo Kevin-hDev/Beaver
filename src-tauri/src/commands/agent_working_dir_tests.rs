@@ -216,6 +216,7 @@ fn user_message(content: &str) -> crate::services::agent_local::types_session::A
         tool_name: None,
         tool_call_id: None,
         continuation: None,
+        replay_source: None,
         tool_activities: None,
         segments: None,
         files: Vec::new(),
