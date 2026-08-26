@@ -53,8 +53,7 @@ import {
   completeStop,
   adoptOwner,
   getDeferredStop,
-  getOwnedGeneration,
-  getOwnedRunId,
+  getOwnedRunState,
   isOwnerStreaming,
   matchesRun,
   ownsOwner,
@@ -75,7 +74,7 @@ let listenPromise: Promise<UnlistenFn> | null = null;
 
 export const agentStreamManager = { startSession, stopSession, failSession, setSessionGeneration,
   discardPendingAdmission, ownsRun, matchesRun, ownsOwner, adoptOwner,
-  getDeferredStop, getOwnedGeneration, getOwnedRunId, claimStop, releaseStop, completeStop,
+  getDeferredStop, getOwnedRunState, claimStop, releaseStop, completeStop,
   releaseOwner, isOwnerStreaming,
   clearPermission: clearStreamPermission, getSnapshot, getActivity, isStreaming, subscribe,
   queueUserMessage, removeQueuedUserMessage, reconcileTurnAdmission,

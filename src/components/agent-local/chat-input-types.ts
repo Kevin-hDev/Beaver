@@ -33,7 +33,7 @@ export interface ChatInputProps {
     text: string,
     files?: DroppedFile[],
     skills?: SkillReference[],
-  ) => void;
+  ) => boolean | void | Promise<boolean | void>;
   onStop: () => void;
   onFileImport: () => void;
   onModelChange: (model: string, provider: string) => void;

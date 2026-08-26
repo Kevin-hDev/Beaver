@@ -59,9 +59,12 @@ export function ChatInput({
   const hasFiles = files != null && files.length > 0;
   const hasContent = hasText || hasFiles;
 
-  const handleSend = useCallback(() => {
+  const handleSend = useCallback(async () => {
     if (!hasContent || interactivePending) return;
-    onSend(text.trim(), hasFiles ? files : undefined, skills.getSkillsPayload());
+    const accepted = await onSend(
+      text.trim(), hasFiles ? files : undefined, skills.getSkillsPayload(),
+    );
+    if (accepted === false) return;
     clearDraft();
     onClearFiles?.();
   }, [text, hasContent, hasFiles, files, skills, interactivePending, onSend, onClearFiles, clearDraft]);
@@ -79,7 +82,7 @@ export function ChatInput({
       if (selected) void skills.handleSelectSkill(selected);
       return true;
     }
-    handleSend();
+    void handleSend();
     return true;
   }, [handleSend, slash.showDropdown, slash.skills, slash.activeIndex, skills]);
 
@@ -193,7 +196,7 @@ export function ChatInput({
             onModelChange={onModelChange}
             onReasoningModeChange={onReasoningModeChange}
             onFastModeChange={onFastModeChange}
-            onSend={handleSend}
+            onSend={() => { void handleSend(); }}
             onStop={stopNow}
           />
         </>

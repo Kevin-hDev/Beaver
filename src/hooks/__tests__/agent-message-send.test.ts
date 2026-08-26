@@ -16,7 +16,7 @@ describe("persistAgentMessage", () => {
 
   it("met en file une seule intention et ne relance pas le stream", async () => {
     const doStream = vi.fn();
-    const queueStreamMessage = vi.fn().mockResolvedValue(true);
+    const queueStreamMessage = vi.fn().mockResolvedValue("queued");
     await persistAgentMessage({
       sessionId: "session-1", messages: [], text: "Compare",
       skills: [{ id: "local:review", name: "review" }],
@@ -30,6 +30,21 @@ describe("persistAgentMessage", () => {
     );
     expect(doStream).not.toHaveBeenCalled();
     expect(invoke).not.toHaveBeenCalled();
+  });
+
+  it("refuse génériquement l'envoi pendant un arrêt sans créer d'optimiste", async () => {
+    const doStream = vi.fn();
+    const queueStreamMessage = vi.fn().mockResolvedValue("stopping");
+    const accepted = await persistAgentMessage({
+      sessionId: "session-1", messages: [], text: "Conserve-moi",
+      doStream, queueStreamMessage,
+    });
+
+    expect(accepted).toBe(false);
+    expect(doStream).not.toHaveBeenCalled();
+    expect(showToast).toHaveBeenCalledWith(
+      "errors.admission.serviceShuttingDown", "error",
+    );
   });
 
   it("démarre avec TurnStart sans persistance frontend ni contenu de skill", async () => {

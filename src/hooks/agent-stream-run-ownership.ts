@@ -9,6 +9,14 @@ export type StopClaim =
   | { kind: "pending"; token: symbol; runId: number }
   | { kind: "ready"; token: symbol; runId: number; generation: number };
 
+export type OwnedRunState =
+  | { kind: "pendingAdmission"; runId: number }
+  | { kind: "active"; runId: number; generation: number }
+  | { kind: "stopping"; runId: number; generation: number | null }
+  | { kind: "terminal" };
+
+export type QueueStreamResult = "queued" | "start-new" | "stopping";
+
 export function assignStreamRun(record: StreamRecord, run?: StreamRun) {
   record.runOwner = run?.owner ?? null;
   record.runOrigin = run?.owner ?? null;
@@ -32,10 +40,20 @@ export function adoptStreamOwner(record: StreamRecord, owner: symbol): boolean {
   return true;
 }
 
-export function ownedGeneration(record: StreamRecord, owner: symbol): number | null {
-  if (record.runOwner !== owner
-      || record.stopClaim !== null) return null;
-  return record.activeGeneration;
+export function ownedRunState(record: StreamRecord, owner: symbol): OwnedRunState {
+  if (record.runOwner !== owner || !record.state.isStreaming) return { kind: "terminal" };
+  if (record.stopClaim) {
+    return {
+      kind: "stopping", runId: record.runId,
+      generation: record.stopClaim.generation,
+    };
+  }
+  if (record.awaitingAdmission && record.activeGeneration === null) {
+    return { kind: "pendingAdmission", runId: record.runId };
+  }
+  return record.activeGeneration === null
+    ? { kind: "terminal" }
+    : { kind: "active", runId: record.runId, generation: record.activeGeneration };
 }
 
 export function claimOwnedStop(record: StreamRecord, owner: symbol): StopClaim | null {

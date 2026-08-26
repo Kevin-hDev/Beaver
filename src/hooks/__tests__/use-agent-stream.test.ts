@@ -18,7 +18,7 @@ const mocks = vi.hoisted(() => ({
   removeQueuedUserMessage: vi.fn(), showToast: vi.fn(),
   discardPendingAdmission: vi.fn(), ownsRun: vi.fn(), ownsOwner: vi.fn(),
   matchesRun: vi.fn(), getDeferredStop: vi.fn(), adoptOwner: vi.fn(),
-  getOwnedGeneration: vi.fn(), getOwnedRunId: vi.fn(),
+  getOwnedRunState: vi.fn(),
   claimStop: vi.fn(), releaseStop: vi.fn(), completeStop: vi.fn(),
   releaseOwner: vi.fn(), isOwnerStreaming: vi.fn(),
   runs: new Map<string, { owner: symbol; id: number }>(),
@@ -43,7 +43,7 @@ vi.mock("../agent-stream-manager", () => ({
     ownsRun: mocks.ownsRun, matchesRun: mocks.matchesRun,
     getDeferredStop: mocks.getDeferredStop,
     ownsOwner: mocks.ownsOwner, adoptOwner: mocks.adoptOwner,
-    getOwnedGeneration: mocks.getOwnedGeneration, getOwnedRunId: mocks.getOwnedRunId,
+    getOwnedRunState: mocks.getOwnedRunState,
     claimStop: mocks.claimStop, releaseStop: mocks.releaseStop,
     completeStop: mocks.completeStop, releaseOwner: mocks.releaseOwner,
     isOwnerStreaming: mocks.isOwnerStreaming,
@@ -88,14 +88,14 @@ describe("useAgentStream", () => {
     mocks.adoptOwner.mockImplementation(
       (sessionId: string) => mocks.runs.has(sessionId),
     );
-    mocks.getOwnedGeneration.mockImplementation(
-      (sessionId: string, owner: symbol) => mocks.runs.get(sessionId)?.owner === owner
-        ? (mocks.generations.get(sessionId) ?? null) : null,
-    );
-    mocks.getOwnedRunId.mockImplementation(
-      (sessionId: string, owner: symbol) => mocks.runs.get(sessionId)?.owner === owner
-        ? (mocks.runs.get(sessionId)?.id ?? null) : null,
-    );
+    mocks.getOwnedRunState.mockImplementation((sessionId: string, owner: symbol) => {
+      const run = mocks.runs.get(sessionId);
+      if (run?.owner !== owner) return { kind: "terminal" };
+      const generation = mocks.generations.get(sessionId);
+      return generation === undefined
+        ? { kind: "pendingAdmission", runId: run.id }
+        : { kind: "active", runId: run.id, generation };
+    });
     mocks.setSessionGeneration.mockImplementation((sessionId: string, generation: number) => {
       mocks.generations.set(sessionId, generation);
       return "accepted";
@@ -217,7 +217,7 @@ describe("useAgentStream", () => {
     const { result } = renderHook(() => useAgentStream());
 
     let starting!: Promise<void>;
-    let queuedDuringAdmission = false;
+    let queuedDuringAdmission = "start-new";
     await act(async () => {
       starting = result.current.startStream(
         "session-1", "model", "provider", turn("Question"), false,
@@ -230,7 +230,7 @@ describe("useAgentStream", () => {
       resolveAdmission(ADMISSION);
       await starting;
     });
-    expect(queuedDuringAdmission).toBe(true);
+    expect(queuedDuringAdmission).toBe("queued");
     expect(mocks.invoke).toHaveBeenCalledTimes(2);
     expect(mocks.queueUserMessage).toHaveBeenCalledWith("session-1", queued);
 
@@ -249,7 +249,7 @@ describe("useAgentStream", () => {
     }));
     const { result } = renderHook(() => useAgentStream());
     let starting!: Promise<void>;
-    let crossSession = true;
+    let crossSession = "queued";
     await act(async () => {
       starting = result.current.startStream(
         "session-1", "model", "provider", turn("Question"), false,
@@ -263,7 +263,7 @@ describe("useAgentStream", () => {
       await starting;
     });
 
-    expect(crossSession).toBe(false);
+    expect(crossSession).toBe("start-new");
     expect(mocks.queueUserMessage).not.toHaveBeenCalled();
     expect(mocks.invoke).toHaveBeenCalledTimes(1);
   });
@@ -300,7 +300,7 @@ describe("useAgentStream", () => {
       await vi.waitFor(() => expect(mocks.invoke).toHaveBeenCalledTimes(2));
       expect(await result.current.queueStreamMessage(
         "session-b", input("B2"), userMessage("B2", "queued-b"),
-      )).toBe(true);
+      )).toBe("queued");
       resolveAdmissionB(admissionB);
       await startingB;
     });

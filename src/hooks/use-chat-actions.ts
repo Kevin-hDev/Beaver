@@ -7,7 +7,7 @@ interface ChatActionsOptions {
   readOnly: boolean;
   chat: {
     messages: { role: string; id: string }[];
-    sendMessage: (text: string, files?: DroppedFile[], workingDir?: string, projectId?: string, skills?: SkillReference[]) => Promise<void>;
+    sendMessage: (text: string, files?: DroppedFile[], workingDir?: string, projectId?: string, skills?: SkillReference[]) => Promise<boolean>;
     reload: (id: string) => Promise<void>;
     isStreaming: boolean;
   };
@@ -41,26 +41,28 @@ export function useChatActions({
       const workingDir = initialWorkingDir ?? selectedProjectPath;
       const files = initialFiles?.map((file) => ({ ...file }));
       void chat.sendMessage(initialMessage || "", files, workingDir, selectedProjectId, initialSkills)
-        .then(() => onInitialMessageSent?.());
+        .then((accepted) => { if (accepted) onInitialMessageSent?.(); });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time send on mount
   }, [initialMessage, readOnly]);
 
-  const handleSend = useCallback((
+  const handleSend = useCallback(async (
     text: string,
     sentFiles?: DroppedFile[],
     skills?: SkillReference[],
   ) => {
-    if (readOnly) return;
+    if (readOnly) return false;
     const isFirst = chat.messages.length < 1;
-    void chat.sendMessage(text, sentFiles, selectedProjectPath, selectedProjectId, skills)
-      .then(() => {
-        if (selectedProjectId) onSessionsRefresh?.();
-        if (isFirst && text.trim()) {
-          const autoName = text.slice(0, 40).trim();
-          if (autoName) onAutoRename?.(sessionId, autoName);
-        }
-      });
+    const accepted = await chat.sendMessage(
+      text, sentFiles, selectedProjectPath, selectedProjectId, skills,
+    );
+    if (!accepted) return false;
+    if (selectedProjectId) onSessionsRefresh?.();
+    if (isFirst && text.trim()) {
+      const autoName = text.slice(0, 40).trim();
+      if (autoName) onAutoRename?.(sessionId, autoName);
+    }
+    return true;
   }, [chat, selectedProjectPath, selectedProjectId, onSessionsRefresh, onAutoRename, readOnly, sessionId]);
 
   const handleFileImport = useCallback(() => {

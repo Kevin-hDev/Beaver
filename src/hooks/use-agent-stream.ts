@@ -12,7 +12,10 @@ import i18n from "@/i18n";
 import { admissionErrorMessage } from "@/lib/admission-error";
 import { showToast } from "@/lib/toast-emitter";
 import { awaitPendingReasoning } from "./session-reasoning-mutation";
-import type { StreamRun } from "./agent-stream-run-ownership";
+import type {
+  QueueStreamResult,
+  StreamRun,
+} from "./agent-stream-run-ownership";
 import {
   MAX_PENDING_ADMISSION,
   takePendingForSession,
@@ -149,35 +152,36 @@ export function useAgentStream() {
     sessionId: string,
     input: NewUserTurnInput,
     displayMessage: AgentMessage,
-  ): Promise<boolean> => {
+  ): Promise<QueueStreamResult> => {
     if (!agentStreamManager.ownsOwner(sessionId, ownerRef.current)
-        && !agentStreamManager.adoptOwner(sessionId, ownerRef.current)) return false;
-    const runId = agentStreamManager.getOwnedRunId(sessionId, ownerRef.current);
-    if (runId === null) return false;
-    const generation = agentStreamManager.getOwnedGeneration(sessionId, ownerRef.current);
-    if (generation === null) {
+        && !agentStreamManager.adoptOwner(sessionId, ownerRef.current)) return "start-new";
+    const runState = agentStreamManager.getOwnedRunState(sessionId, ownerRef.current);
+    if (runState.kind === "terminal") return "start-new";
+    if (runState.kind === "stopping") return "stopping";
+    if (runState.kind === "pendingAdmission") {
       if (pendingAdmissionRef.current.length >= MAX_PENDING_ADMISSION
         || !agentStreamManager.queueUserMessage(sessionId, displayMessage)) {
-        return false;
+        return "start-new";
       }
-      pendingAdmissionRef.current.push({ sessionId, runId, input, displayMessage });
-      return true;
+      pendingAdmissionRef.current.push({
+        sessionId, runId: runState.runId, input, displayMessage,
+      });
+      return "queued";
     }
     if (!agentStreamManager.queueUserMessage(sessionId, displayMessage)) {
-      return false;
+      return "start-new";
     }
     try {
       const queued = await invoke<boolean>("queue_agent_message", {
-        sessionId,
-        generation,
+        sessionId, generation: runState.generation,
         input,
       });
-      if (queued) return true;
+      if (queued) return "queued";
     } catch (error) {
       showToast(admissionErrorMessage(error, i18n.t), "error");
     }
     agentStreamManager.removeQueuedUserMessage(sessionId, displayMessage.id);
-    return false;
+    return "start-new";
   }, []);
 
   const stopStream = useCallback(async (sessionId: string): Promise<StopStreamResult> => {

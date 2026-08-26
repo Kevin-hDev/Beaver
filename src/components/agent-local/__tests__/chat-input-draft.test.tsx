@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ChatInput } from "../chat-input";
 import type { PermissionMode } from "@/hooks/use-permission-mode";
@@ -107,6 +107,31 @@ describe("ChatInput drafts", () => {
     expect(screen.getByRole("textbox", { name: "composer" })).toHaveValue(
       "Premier brouillon",
     );
+  });
+
+  it("préserve le texte et les pièces jointes quand l'envoi est refusé", async () => {
+    const onClearFiles = vi.fn();
+    const onSend = vi.fn().mockResolvedValue(false);
+    render(
+      <ChatInput
+        {...baseProps}
+        draftKey="session:one"
+        files={[{
+          name: "note.txt", path: "/tmp/note.txt", size: 4, type: "text/plain",
+        }]}
+        onSend={onSend}
+        onClearFiles={onClearFiles}
+      />,
+    );
+    fireEvent.change(screen.getByRole("textbox", { name: "composer" }), {
+      target: { value: "Texte à conserver" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "send" }));
+
+    await waitFor(() => expect(onSend).toHaveBeenCalledOnce());
+    expect(screen.getByRole("textbox", { name: "composer" }))
+      .toHaveValue("Texte à conserver");
+    expect(onClearFiles).not.toHaveBeenCalled();
   });
 
   it("evicts the oldest draft when the bounded cache is full", () => {

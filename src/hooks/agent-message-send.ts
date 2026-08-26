@@ -13,6 +13,7 @@ import type {
   SkillReference,
   TurnStart,
 } from "@/types/agent-turn.generated";
+import type { QueueStreamResult } from "./agent-stream-run-ownership";
 
 export interface AgentSendPayload {
   text: string;
@@ -39,7 +40,7 @@ interface PersistAgentMessageOptions extends AgentSendPayload {
     sessionId: string,
     input: NewUserTurnInput,
     displayMessage: AgentMessage,
-  ) => Promise<boolean>;
+  ) => Promise<QueueStreamResult>;
 }
 
 export async function persistAgentMessage(options: PersistAgentMessageOptions) {
@@ -51,7 +52,7 @@ export async function persistAgentMessage(options: PersistAgentMessageOptions) {
       });
     } catch (error) {
       showToast(admissionErrorMessage(error, i18n.t, "errors.sessionSaveFailed"), "error");
-      return;
+      return false;
     }
   }
   const files = pendingFilesToAttachments(options.sentFiles);
@@ -63,11 +64,16 @@ export async function persistAgentMessage(options: PersistAgentMessageOptions) {
     files,
     skills: options.skills ?? [],
   };
-  if (await options.queueStreamMessage?.(
+  const queueResult = await options.queueStreamMessage?.(
     options.sessionId,
     input,
     userMessage,
-  )) return;
+  );
+  if (queueResult === "queued") return true;
+  if (queueResult === "stopping") {
+    showToast(i18n.t("errors.admission.serviceShuttingDown"), "error");
+    return false;
+  }
   await options.doStream(
     { type: "new", input },
     displayMessages,
@@ -77,4 +83,5 @@ export async function persistAgentMessage(options: PersistAgentMessageOptions) {
     options.permissionMode,
     userMessage.id,
   );
+  return true;
 }

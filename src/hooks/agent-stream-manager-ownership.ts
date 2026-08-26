@@ -5,7 +5,7 @@ import {
   claimOwnedStop,
   consumeStopClaim,
   matchesStreamRun,
-  ownedGeneration,
+  ownedRunState,
   ownsStreamRun,
   releaseStopClaim,
   type StopClaim,
@@ -45,14 +45,9 @@ export function isOwnerStreaming(owner: symbol) {
   return false;
 }
 
-export function getOwnedGeneration(sessionId: string, owner: symbol) {
+export function getOwnedRunState(sessionId: string, owner: symbol) {
   const record = getRecord(sessionId);
-  return record ? ownedGeneration(record, owner) : null;
-}
-
-export function getOwnedRunId(sessionId: string, owner: symbol) {
-  const record = getRecord(sessionId);
-  return record?.runOwner === owner ? record.runId : null;
+  return record ? ownedRunState(record, owner) : { kind: "terminal" as const };
 }
 
 export function claimStop(sessionId: string, owner: symbol) {
