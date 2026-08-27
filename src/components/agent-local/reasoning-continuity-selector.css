@@ -66,12 +66,3 @@
   color: var(--ink-muted);
   font-size: var(--text-xs);
 }
-
-.rcs-root-locked {
-  display: flex;
-  align-items: center;
-}
-
-.rcs-explanation-locked {
-  margin-top: 0;
-}

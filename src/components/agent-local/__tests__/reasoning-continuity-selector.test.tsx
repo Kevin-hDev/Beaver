@@ -63,8 +63,8 @@ describe("ReasoningContinuitySelector", () => {
     expect(screen.getByRole("radio", { name: "agentLocal.continuityRemote" })).toBeTruthy();
   });
 
-  it("verrouille une continuité required sans offrir de désactivation", () => {
-    renderSelector({
+  it("masque une continuité obligatoire qui ne propose aucune action", () => {
+    const { container } = renderSelector({
       requirement: "required",
       local_available: true,
       remote_available: true,
@@ -72,9 +72,7 @@ describe("ReasoningContinuitySelector", () => {
       explanation_key: "agentLocal.continuityRequired",
     }, "local");
 
-    expect(screen.getByText("agentLocal.continuityRequired")).toBeTruthy();
-    expect(screen.queryByRole("radio", { name: "agentLocal.continuityOff" })).toBeNull();
-    expect(screen.queryByRole("radiogroup")).toBeNull();
+    expect(container.firstChild).toBeNull();
   });
 
   it("réévalue la capacité et affiche une barrière après un changement de compte ou modèle", () => {
