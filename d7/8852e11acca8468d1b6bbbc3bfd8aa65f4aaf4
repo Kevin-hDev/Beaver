@@ -1,0 +1,5 @@
+Reason: the Windows-only private_store harness includes private_store.rs outside the application module tree, so it must stub the debug-only reasoning fixture cleanup that is covered by its own production test suite.
+
+Verification: cargo fmt --manifest-path tests/windows-private-store/Cargo.toml -- --check; cargo test --manifest-path tests/windows-private-store/Cargo.toml --no-run; git diff --check. The real Windows execution is delegated to CI.
+
+Integration: squash the full preserve-thinking branch; retain this rationale in the squash commit message because git notes do not survive the squash.
