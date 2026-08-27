@@ -36,7 +36,8 @@ impl OllamaManager {
             }
         };
         request.manifest = Some(manifest);
-        self.run_prepared_update(request, guard, original_bundle).await
+        self.run_prepared_update(request, guard, original_bundle)
+            .await
     }
 
     async fn run_admitted_update(

@@ -8,7 +8,7 @@ export const EXPECTED_INTERNAL_REFERENCE_COUNTS = Object.freeze({
   "CL-GO": 38,
   CLGO: 32,
   "cl-go-dash": 254,
-  clgo: 106,
+  clgo: 113,
   "cl-go": 72,
   cl_go_dash: 46,
 });
