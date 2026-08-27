@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::fs::File;
 use std::path::{Component, Path, PathBuf};
 
 use hmac::{Hmac, Mac};
@@ -26,6 +27,13 @@ pub struct RegisteredAttachment {
     pub access_grant: String,
 }
 
+struct ValidatedFile {
+    canonical: PathBuf,
+    size: u64,
+    identity: super::attachment_access_identity::FileIdentity,
+    file: File,
+}
+
 pub(crate) fn attachment_key() -> Result<zeroize::Zeroizing<Vec<u8>>, String> {
     crate::services::api_keys::get_or_create_random_raw(HMAC_VAULT_KEY, 32)
         .map_err(|_| ERROR_CODE.to_string())
@@ -51,7 +59,9 @@ where
     let mut registered = Vec::with_capacity(paths.len());
     for raw in paths {
         let raw_path = validate_raw_path(raw)?;
-        let (canonical, size, _) = validate_file(raw_path, MAX_ATTACHMENT_SIZE)?;
+        let validated = validate_file(raw_path, MAX_ATTACHMENT_SIZE)?;
+        let canonical = validated.canonical;
+        let size = validated.size;
         if !is_allowed(raw_path) && !is_allowed(&canonical) {
             return Err(ERROR_CODE.into());
         }
@@ -69,19 +79,27 @@ where
 }
 
 pub fn verify_access_grant(raw: &str, access_grant: &str, key: &[u8]) -> Result<PathBuf, String> {
-    verify_access_grant_with_identity(raw, access_grant, key).map(|(path, _)| path)
+    verify_access_grant_with_identity(raw, access_grant, key).map(|(path, _, _)| path)
 }
 
 pub(super) fn verify_access_grant_with_identity(
     raw: &str,
     access_grant: &str,
     key: &[u8],
-) -> Result<(PathBuf, super::attachment_access_identity::FileIdentity), String> {
+) -> Result<
+    (
+        PathBuf,
+        super::attachment_access_identity::FileIdentity,
+        File,
+    ),
+    String,
+> {
     if key.len() != 32 {
         return Err(ERROR_CODE.into());
     }
     let raw_path = validate_raw_path(raw)?;
-    let (canonical, _, identity) = validate_file(raw_path, MAX_ATTACHMENT_SIZE)?;
+    let validated = validate_file(raw_path, MAX_ATTACHMENT_SIZE)?;
+    let canonical = validated.canonical;
     let canonical_text = canonical.to_str().ok_or(ERROR_CODE)?;
     let encoded = access_grant.strip_prefix(GRANT_PREFIX).ok_or(ERROR_CODE)?;
     if encoded.len() != 64 {
@@ -96,7 +114,7 @@ pub(super) fn verify_access_grant_with_identity(
     if !valid {
         return Err(ERROR_CODE.into());
     }
-    Ok((canonical, identity))
+    Ok((canonical, validated.identity, validated.file))
 }
 
 pub fn selected_file<F>(raw: &str, max_size: u64, is_allowed: F) -> Result<PathBuf, String>
@@ -104,7 +122,7 @@ where
     F: Fn(&Path) -> bool,
 {
     let raw_path = validate_raw_path(raw)?;
-    let (canonical, _, _) = validate_file(raw_path, max_size)?;
+    let canonical = validate_file(raw_path, max_size)?.canonical;
     if !is_allowed(raw_path) && !is_allowed(&canonical) {
         return Err(ERROR_CODE.into());
     }
@@ -136,17 +154,7 @@ fn validate_raw_path(raw: &str) -> Result<&Path, String> {
     Ok(path)
 }
 
-fn validate_file(
-    path: &Path,
-    max_size: u64,
-) -> Result<
-    (
-        PathBuf,
-        u64,
-        super::attachment_access_identity::FileIdentity,
-    ),
-    String,
-> {
+fn validate_file(path: &Path, max_size: u64) -> Result<ValidatedFile, String> {
     let source = path
         .symlink_metadata()
         .map_err(|_| ERROR_CODE.to_string())?;
@@ -163,7 +171,12 @@ fn validate_file(
         return Err(ERROR_CODE.into());
     }
     let identity = super::attachment_access_identity::from_file(&file).ok_or(ERROR_CODE)?;
-    Ok((canonical, metadata.len(), identity))
+    Ok(ValidatedFile {
+        canonical,
+        size: metadata.len(),
+        identity,
+        file,
+    })
 }
 
 fn validate_canonical_path(path: &Path) -> Result<(), String> {

@@ -35,9 +35,10 @@ where
     if max_bytes > super::attachment_access::MAX_ATTACHMENT_SIZE {
         return Err(VerifiedAttachmentError::Limit);
     }
-    let (canonical_path, expected_identity) =
+    let (canonical_path, expected_identity, original_file) =
         super::attachment_access::verify_access_grant_with_identity(raw, access_grant, key)
             .map_err(|_| VerifiedAttachmentError::Access)?;
+    // Keep this handle open so the OS cannot recycle its identity during the path check.
     after_grant();
     let mut file = super::private_store::open_regular_single_link(&canonical_path)
         .map_err(|_| VerifiedAttachmentError::Access)?
@@ -50,6 +51,7 @@ where
     if !metadata.is_file() || opened_identity != expected_identity {
         return Err(VerifiedAttachmentError::Access);
     }
+    drop(original_file);
     if metadata.len() > max_bytes {
         return Err(VerifiedAttachmentError::Limit);
     }
