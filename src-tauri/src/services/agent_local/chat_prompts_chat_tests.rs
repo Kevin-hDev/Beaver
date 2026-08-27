@@ -2,15 +2,7 @@ use crate::services::agent_local::chat_prompts::*;
 use crate::services::agent_local::types_ollama::ChatMessage;
 
 fn make_user_msg(text: &str) -> ChatMessage {
-    ChatMessage {
-        role: "user".to_string(),
-        content: text.to_string(),
-        images: None,
-        tool_calls: None,
-        tool_name: None,
-        tool_call_id: None,
-        reasoning_content: None,
-    }
+    ChatMessage::user(text.to_string())
 }
 
 const TEST_MODEL_SMALL: &str = "gemma-4-e4b";

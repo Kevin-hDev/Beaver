@@ -46,6 +46,7 @@ fn stream_failures_are_bounded_and_sanitized() {
 
 fn test_session() -> AgentSession {
     AgentSession {
+        schema_version: super::session_limits::CURRENT_SESSION_SCHEMA_VERSION,
         id: "abc-123".into(),
         name: "Test".into(),
         created_at: Utc::now(),
@@ -57,6 +58,7 @@ fn test_session() -> AgentSession {
         thinking_enabled: false,
         fast_mode_enabled: false,
         reasoning_mode: None,
+        preserve_reasoning: Default::default(),
         accumulated_tokens: 0,
         context_tokens: None,
         messages: vec![],
@@ -97,4 +99,38 @@ fn test_session() -> AgentSession {
         clone_root_session_id: None,
         git_branch: None,
     }
+}
+
+#[tokio::test]
+async fn a_started_request_accepts_exactly_one_terminal_transition() {
+    let session =
+        super::session_store::create_full("Terminal once", "qwen3.5:4b", "ollama", false, None)
+            .await
+            .unwrap();
+    let request_id = super::stream_diagnostics::start_request(&session.id, 1).await;
+    super::stream_diagnostics::record_cancelled(&session.id, &request_id).await;
+    super::stream_diagnostics::record_failure(
+        &session.id,
+        Some(&request_id),
+        "conversation_admission_failed",
+        false,
+    )
+    .await;
+
+    let stored = super::session_store::get(&session.id).await.unwrap();
+    let run = stored
+        .diagnostic_runs
+        .iter()
+        .find(|run| run.request_id == request_id)
+        .unwrap();
+    assert_eq!(run.status, "cancelled");
+    assert_eq!(
+        run.events
+            .iter()
+            .filter(|event| event.phase == "failed")
+            .count(),
+        1
+    );
+    assert!(stored.stream_failures.is_empty());
+    super::session_store::delete_one(&session.id).await.unwrap();
 }

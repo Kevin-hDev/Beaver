@@ -5,7 +5,6 @@ use tauri_plugin_fs::FsExt;
 
 use crate::services::attachment_access::{self, RegisteredAttachment};
 
-const HMAC_VAULT_KEY: &str = "attachments.hmac.v1";
 const ERROR_CODE: &str = "attachment_access_denied";
 
 #[tauri::command]
@@ -13,7 +12,7 @@ pub fn register_attachment_paths(
     window: WebviewWindow,
     paths: Vec<String>,
 ) -> Result<Vec<RegisteredAttachment>, String> {
-    let key = attachment_key()?;
+    let key = attachment_access::attachment_key()?;
     let scope = window.fs_scope();
     let registered =
         attachment_access::register_paths(&paths, &key, |path| scope.is_allowed(path))?;
@@ -31,7 +30,7 @@ pub fn restore_attachment_access(
     path: String,
     access_grant: String,
 ) -> Result<(), String> {
-    let key = attachment_key()?;
+    let key = attachment_access::attachment_key()?;
     let canonical = attachment_access::verify_access_grant(&path, &access_grant, &key)?;
     window
         .fs_scope()
@@ -46,9 +45,4 @@ pub(crate) fn require_selected_file(
 ) -> Result<PathBuf, String> {
     let scope = window.fs_scope();
     attachment_access::selected_file(path, max_size, |candidate| scope.is_allowed(candidate))
-}
-
-fn attachment_key() -> Result<zeroize::Zeroizing<Vec<u8>>, String> {
-    crate::services::api_keys::get_or_create_random_raw(HMAC_VAULT_KEY, 32)
-        .map_err(|_| ERROR_CODE.to_string())
 }

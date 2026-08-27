@@ -2,6 +2,7 @@ use super::agent_chat_streams::StreamEntry;
 use crate::ActiveStreams;
 use std::future::Future;
 use std::sync::Arc;
+use tauri::Manager;
 use tokio_util::sync::CancellationToken;
 
 pub(crate) struct AgentChatAdmission {
@@ -11,6 +12,41 @@ pub(crate) struct AgentChatAdmission {
         Arc<crate::services::agent_local::parent_message_inbox::ParentMessageInbox>,
     pub permission_mode: String,
     pub request_id: String,
+}
+
+pub(crate) async fn admit_background(
+    app: &tauri::AppHandle,
+    session_id: &str,
+) -> Result<AgentChatAdmission, String> {
+    let streams = app.state::<ActiveStreams>();
+    let cancelled_session = session_id.to_string();
+    let diagnostic_session = session_id.to_string();
+    admit(
+        session_id,
+        Some("auto"),
+        &streams,
+        move |(token, _, request_id, inbox)| async move {
+            inbox.close().await;
+            crate::services::agent_local::session_locks::cancel_with_lock(
+                &cancelled_session,
+                &token,
+            )
+            .await;
+            crate::services::agent_local::stream_diagnostics::record_cancelled(
+                &cancelled_session,
+                &request_id,
+            )
+            .await;
+        },
+        move |generation| async move {
+            crate::services::agent_local::stream_diagnostics::start_request(
+                &diagnostic_session,
+                generation,
+            )
+            .await
+        },
+    )
+    .await
 }
 
 pub(crate) async fn admit<Cancel, CancelFuture, Start, StartFuture>(

@@ -9,6 +9,8 @@ use uuid::Uuid;
 fn session(id: &str, status: &str, parent: bool, offset_secs: i64) -> AgentSession {
     let created_at = Utc::now() + Duration::seconds(offset_secs);
     AgentSession {
+        schema_version:
+            crate::services::agent_local::session_limits::CURRENT_SESSION_SCHEMA_VERSION,
         id: id.to_string(),
         name: id.to_string(),
         created_at,
@@ -20,6 +22,7 @@ fn session(id: &str, status: &str, parent: bool, offset_secs: i64) -> AgentSessi
         thinking_enabled: false,
         fast_mode_enabled: false,
         reasoning_mode: None,
+        preserve_reasoning: Default::default(),
         accumulated_tokens: 0,
         context_tokens: None,
         messages: vec![],

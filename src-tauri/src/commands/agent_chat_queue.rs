@@ -1,27 +1,30 @@
-use crate::services::agent_local::types_ollama::ChatMessage;
+use crate::models::agent_turn_contract::NewUserTurnInput;
 use crate::ActiveStreams;
 
 #[tauri::command]
 pub async fn queue_agent_message(
     session_id: String,
     generation: u64,
-    messages: Vec<ChatMessage>,
+    input: NewUserTurnInput,
     streams: tauri::State<'_, ActiveStreams>,
 ) -> Result<bool, String> {
     crate::services::agent_local::session_store::validate_session_id(&session_id)
         .map_err(|_| generic_error())?;
     crate::services::agent_local::session_user_write::ensure_allowed(&session_id).await?;
-    let inbox = {
-        let map = streams.0.lock().await;
-        let Some((_, active_generation, _, inbox)) = map.get(&session_id) else {
-            return Ok(false);
-        };
-        if generation != *active_generation {
-            return Ok(false);
-        }
-        inbox.clone()
-    };
-    inbox.enqueue(messages).await.map_err(|_| generic_error())
+    crate::services::agent_local::conversation_input::validate_intention(&input)
+        .map_err(|_| generic_error())?;
+    let map = streams.0.lock().await;
+    let current = matches!(
+        map.get(&session_id),
+        Some((_, active_generation, _, _)) if generation == *active_generation
+    );
+    drop(map);
+    if !current {
+        return Ok(false);
+    }
+    // Aucun consommateur durable n'est encore branché : refuser honnêtement
+    // conserve le brouillon côté UI au lieu de promettre une file fantôme.
+    Ok(false)
 }
 
 fn generic_error() -> String {

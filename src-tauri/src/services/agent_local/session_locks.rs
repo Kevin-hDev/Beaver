@@ -18,6 +18,17 @@ struct SessionLockState {
 static SESSION_LOCKS: LazyLock<Mutex<SessionLockState>> =
     LazyLock::new(|| Mutex::new(SessionLockState::default()));
 
+pub(crate) struct AdmissionLease {
+    session_id: String,
+    _guard: tokio::sync::OwnedMutexGuard<()>,
+}
+
+impl AdmissionLease {
+    pub(crate) fn session_id(&self) -> &str {
+        &self.session_id
+    }
+}
+
 pub(crate) async fn lock_session(id: &str) -> Arc<Mutex<()>> {
     let mut state = SESSION_LOCKS.lock().await;
     state.next_tick = state.next_tick.saturating_add(1);
@@ -34,6 +45,14 @@ pub(crate) async fn lock_session(id: &str) -> Arc<Mutex<()>> {
         .clone();
     evict_unused_locks(&mut state);
     lock
+}
+
+pub(crate) async fn acquire_admission_lease(id: &str) -> AdmissionLease {
+    let guard = lock_session(id).await.lock_owned().await;
+    AdmissionLease {
+        session_id: id.to_string(),
+        _guard: guard,
+    }
 }
 
 pub async fn remove_session_lock(id: &str) {
@@ -88,5 +107,15 @@ mod tests {
         drop(lock);
         remove_session_lock(&id).await;
         assert!(!has_session_lock_for_test(&id).await);
+    }
+
+    #[tokio::test]
+    async fn admission_lease_owns_the_guard_and_exact_session_identity() {
+        let id = Uuid::new_v4().to_string();
+
+        let lease = acquire_admission_lease(&id).await;
+
+        assert_eq!(lease.session_id(), id);
+        assert!(has_session_lock_for_test(&id).await);
     }
 }

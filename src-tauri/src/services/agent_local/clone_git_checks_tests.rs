@@ -7,6 +7,8 @@ const INTERMEDIATE_ID: &str = "clone-bbbbbbbb-2222-2222-2222-222222222222";
 
 fn clone_session(id: &str, parent_id: &str, root_id: Option<&str>) -> AgentSession {
     AgentSession {
+        schema_version:
+            crate::services::agent_local::session_limits::CURRENT_SESSION_SCHEMA_VERSION,
         id: id.into(),
         name: "Clone".into(),
         created_at: Utc::now(),
@@ -18,6 +20,7 @@ fn clone_session(id: &str, parent_id: &str, root_id: Option<&str>) -> AgentSessi
         thinking_enabled: false,
         fast_mode_enabled: false,
         reasoning_mode: None,
+        preserve_reasoning: Default::default(),
         accumulated_tokens: 0,
         context_tokens: None,
         messages: vec![],

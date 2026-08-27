@@ -1,25 +1,29 @@
-use super::{state, state_recent};
+use super::state;
 use crate::services::agent_local::types_ollama::{ChatMessage, ToolCallFunction, ToolCallOllama};
-use crate::services::agent_local::types_session::{
-    AgentMessage, FileAttachment, ToolActivityRecord,
-};
+use crate::services::agent_local::types_session::AgentMessage;
 
 fn chat(role: &str, content: &str) -> ChatMessage {
-    ChatMessage {
-        role: role.to_string(),
-        content: content.to_string(),
-        ..Default::default()
+    match role {
+        "system" => ChatMessage::system(content.to_string()),
+        "user" => ChatMessage::user(content.to_string()),
+        "assistant" => ChatMessage::assistant(content.to_string(), None, None, None, None),
+        "tool" => ChatMessage::tool(content.to_string(), None, None),
+        other => panic!("unsupported chat role in test/setup: {other}"),
     }
 }
 
 fn agent(role: &str, content: &str) -> AgentMessage {
     AgentMessage {
         id: uuid::Uuid::new_v4().to_string(),
+        turn_id: AgentMessage::new_turn_id(),
         role: role.to_string(),
         content: content.to_string(),
         thinking: None,
         tool_calls: None,
         tool_name: None,
+        tool_call_id: None,
+        continuation: None,
+        replay_source: None,
         tool_activities: None,
         segments: None,
         files: vec![],
@@ -27,9 +31,18 @@ fn agent(role: &str, content: &str) -> AgentMessage {
         tokens: 0,
         work_duration_ms: None,
         skill_names: None,
+        skill_ids: None,
         stream_run_id: None,
         stream_part: None,
     }
+}
+
+fn complete_turn(turn_id: &str, user: &str, assistant: &str) -> Vec<AgentMessage> {
+    let mut user_message = agent("user", user);
+    let mut assistant_message = agent("assistant", assistant);
+    user_message.turn_id = turn_id.to_string();
+    assistant_message.turn_id = turn_id.to_string();
+    vec![user_message, assistant_message]
 }
 
 #[test]
@@ -72,81 +85,122 @@ fn open_tool_chain_is_not_safe_to_compress() {
     assert!(!state::is_safe_to_compress(&[assistant.clone()]));
     assert!(state::is_safe_to_compress(&[
         assistant,
-        ChatMessage {
-            role: "tool".to_string(),
-            content: "ok".to_string(),
-            tool_name: Some("read_file".to_string()),
-            tool_call_id: Some("call-1".to_string()),
-            ..Default::default()
-        },
+        ChatMessage::tool(
+            "ok".to_string(),
+            Some("call-1".to_string()),
+            Some("read_file".to_string())
+        ),
     ]));
 }
 
-#[test]
-fn keeps_two_recent_users_and_assistants() {
-    let session = vec![
-        agent("user", "u1"),
-        agent("assistant", "a1"),
-        agent("user", "u2"),
-        agent("assistant", "a2"),
-        agent("user", "u3"),
-        agent("assistant", "a3"),
+#[tokio::test]
+async fn apply_and_save_keeps_the_two_recent_complete_turns() {
+    let mut session = crate::services::agent_local::session_store::create_full(
+        "Compression recent turns",
+        "model",
+        "groq",
+        false,
+        None,
+    )
+    .await
+    .unwrap();
+    session.messages = [
+        complete_turn("turn-1", "u1", "a1"),
+        complete_turn("turn-2", "u2", "a2"),
+        complete_turn("turn-3", "u3", "a3"),
+    ]
+    .concat();
+    crate::services::agent_local::session_store::save(&session)
+        .await
+        .unwrap();
+    let mut runtime = vec![chat("user", "u3"), chat("assistant", "a3")];
+    let working = tempfile::tempdir().unwrap();
+
+    state::apply_and_save(
+        &session.id,
+        &mut runtime,
+        "summary",
+        16_000,
+        false,
+        working.path(),
+        state::CompressionMode::Manual,
+    )
+    .await
+    .unwrap();
+
+    let reloaded = crate::services::agent_local::session_store::get(&session.id)
+        .await
+        .unwrap();
+    let tail = reloaded
+        .messages
+        .iter()
+        .rev()
+        .take(4)
+        .map(|message| message.content.as_str())
+        .collect::<Vec<_>>();
+    assert_eq!(tail, vec!["a3", "u3", "a2", "u2"]);
+    crate::services::agent_local::session_store::delete_one(&session.id)
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
+async fn compression_keeps_a_checkpoint_available_for_commit() {
+    let mut session = crate::services::agent_local::session_store::create_full(
+        "Compression open journal",
+        "model",
+        "groq",
+        false,
+        None,
+    )
+    .await
+    .unwrap();
+    let turn_id = uuid::Uuid::new_v4().to_string();
+    let user_id = uuid::Uuid::new_v4().to_string();
+    let assistant_id = uuid::Uuid::new_v4().to_string();
+    let request_id = uuid::Uuid::new_v4().to_string();
+    let mut user = agent("user", "current question");
+    user.id = user_id.clone();
+    user.turn_id = turn_id.clone();
+    session.messages = complete_turn("older-turn", "older question", "older answer");
+    session.messages.push(user);
+    crate::services::agent_local::session_store::save(&session)
+        .await
+        .unwrap();
+    let mut journal = crate::services::agent_local::conversation_journal::ConversationJournal::new(
+        session.id.clone(),
+        turn_id,
+        user_id,
+        assistant_id,
+        request_id,
+    )
+    .unwrap();
+    journal
+        .persist_assistant_step(&chat("assistant", "current answer"))
+        .await
+        .unwrap();
+    let mut runtime = vec![
+        chat("user", "current question"),
+        chat("assistant", "current answer"),
     ];
+    let working = tempfile::tempdir().unwrap();
 
-    let (_, recent) = state_recent::recent_messages(&session, &[]);
-    let contents: Vec<_> = recent.iter().map(|m| m.content.as_str()).collect();
+    state::apply_and_save(
+        &session.id,
+        &mut runtime,
+        "summary",
+        16_000,
+        false,
+        working.path(),
+        state::CompressionMode::Auto {
+            request_start_index: 0,
+        },
+    )
+    .await
+    .unwrap();
 
-    assert_eq!(contents, vec!["u2", "a2", "u3", "a3"]);
-}
-
-#[test]
-fn keeps_rich_fields_from_persisted_recent_messages() {
-    let mut rich = agent("assistant", "answer");
-    rich.thinking = Some("reasoning".to_string());
-    rich.tool_activities = Some(vec![ToolActivityRecord {
-        name: "bash".to_string(),
-        summary: "ran tests".to_string(),
-        domain: None,
-        resolved_path: None,
-        args: Some(serde_json::json!({ "cmd": "cargo test" })),
-        result: Some("ok".to_string()),
-        is_error: Some(false),
-        result_meta: None,
-        content: None,
-        old_text: None,
-        new_text: None,
-        start_line: None,
-        affected_paths: Vec::new(),
-        file_changes: Vec::new(),
-    }]);
-    rich.files = vec![FileAttachment {
-        name: "a.png".to_string(),
-        path: "/tmp/a.png".to_string(),
-        mime_type: "image/png".to_string(),
-        size: 10,
-        thumbnail: None,
-        access_grant: None,
-    }];
-    rich.skill_names = Some(vec!["rust".to_string()]);
-
-    let (_, recent) = state_recent::recent_messages(&[agent("user", "u"), rich], &[]);
-    let saved = recent.iter().find(|m| m.role == "assistant").unwrap();
-
-    assert_eq!(saved.thinking.as_deref(), Some("reasoning"));
-    assert!(saved.tool_activities.is_some());
-    assert_eq!(saved.files.len(), 1);
-    assert_eq!(
-        saved.skill_names.as_ref().unwrap(),
-        &vec!["rust".to_string()]
-    );
-}
-
-#[test]
-fn runtime_assistant_not_yet_persisted_is_kept_for_session() {
-    let session = vec![agent("user", "u1")];
-    let runtime = vec![chat("user", "u1"), chat("assistant", "fresh answer")];
-
-    let (_, recent) = state_recent::recent_messages(&session, &runtime);
-
-    assert!(recent.iter().any(|m| m.content == "fresh answer"));
+    journal.commit_turn().await.unwrap();
+    crate::services::agent_local::session_store::delete_one(&session.id)
+        .await
+        .unwrap();
 }

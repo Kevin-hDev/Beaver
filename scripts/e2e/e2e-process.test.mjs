@@ -285,8 +285,8 @@ test("the native WebView journey observes classified pids before coordinated exi
 
 test("the coordinated exit command is compiled only into the E2E handler", () => {
   assert.match(commandsSource, /#\[cfg\(feature = "e2e"\)\][\s\S]*mod e2e/u);
-  assert.match(invokeSource, /#\[cfg\(feature = "e2e"\)\][\s\S]*e2e_request_exit/u);
-  assert.match(invokeSource, /#\[cfg\(not\(feature = "e2e"\)\)\]/u);
+  assert.match(invokeSource, /#\[cfg\((?:all\()?feature = "e2e"[\s\S]*e2e_request_exit/u);
+  assert.match(invokeSource, /#\[cfg\((?:all\()?not\(feature = "e2e"\)/u);
 });
 
 test("the native smoke releases WebDriver before Beaver performs its coordinated exit", () => {

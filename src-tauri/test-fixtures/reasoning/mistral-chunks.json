@@ -1,0 +1,1 @@
+{"events":[{"choices":[{"delta":{"content":[{"type":"think","content":"private"},{"type":"text","content":"visible"}]}}]},{"choices":[{"finish_reason":"stop"}]}],"expected_native":[{"type":"think","content":"private"},{"type":"text","content":"visible"}]}

@@ -99,14 +99,10 @@ impl ParentSubagentOrchestrator {
             self.ensure_no_followup_at_turn_limit().await?;
             return Ok(false);
         }
-        let should_continue = self.drain_parent_messages(messages).await > 0
-            || super::subagent_instruction_delivery::drain(
-            &self.parent_session_id,
-            messages,
-        )
-        .await?
-            > 0
-            || self.after_no_tool_turn(messages, cancel).await?;
+        let should_continue =
+            super::subagent_instruction_delivery::drain(&self.parent_session_id, messages).await?
+                > 0
+                || self.after_no_tool_turn(messages, cancel).await?;
         if should_continue {
             let _ = on_event.send(StreamEvent::TurnEnd {});
         }
@@ -126,9 +122,6 @@ impl ParentSubagentOrchestrator {
         messages: &mut Vec<ChatMessage>,
         cancel: CancellationToken,
     ) -> Result<(), String> {
-        if self.drain_parent_messages(messages).await > 0 {
-            return Ok(());
-        }
         if control_only {
             let _ = self.after_no_tool_turn(messages, cancel).await?;
         }
@@ -137,20 +130,6 @@ impl ParentSubagentOrchestrator {
 
     async fn current_turn_active_ids(&self) -> Vec<String> {
         current_turn_active_ids(&self.parent_session_id).await
-    }
-
-    async fn drain_parent_messages(&self, messages: &mut Vec<ChatMessage>) -> usize {
-        match &self.parent_message_inbox {
-            Some(inbox) => inbox.drain_into(messages).await,
-            None => 0,
-        }
-    }
-
-    async fn finish_parent_messages(&self, messages: &mut Vec<ChatMessage>) -> bool {
-        match &self.parent_message_inbox {
-            Some(inbox) => inbox.finish_or_drain(messages).await,
-            None => false,
-        }
     }
 }
 

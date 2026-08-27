@@ -68,7 +68,8 @@ where
     FS: FnOnce() -> FSFut,
     FSFut: std::future::Future<Output = ()>,
 {
-    let Some(expected_run) = super::subagent_registry::active_run_for_child(session_id).await else {
+    let Some(expected_run) = super::subagent_registry::active_run_for_child(session_id).await
+    else {
         let session = super::session_store::get(session_id)
             .await
             .map_err(|_| delivery_error())?;
@@ -114,11 +115,11 @@ where
     )
     .await
     .map_err(|_| delivery_error())?;
-    messages.extend(prompts.iter().map(|prompt| ChatMessage {
-        role: "user".to_string(),
-        content: prompt.clone(),
-        ..Default::default()
-    }));
+    messages.extend(
+        prompts
+            .iter()
+            .map(|prompt| ChatMessage::user(prompt.clone())),
+    );
     Ok(prompts.len())
 }
 
@@ -164,11 +165,15 @@ async fn ensure_current_run(
 pub(super) fn agent_message(prompt: &str) -> AgentMessage {
     AgentMessage {
         id: uuid::Uuid::new_v4().to_string(),
+        turn_id: AgentMessage::new_turn_id(),
         role: "user".to_string(),
         content: prompt.to_string(),
         thinking: None,
         tool_calls: None,
         tool_name: None,
+        tool_call_id: None,
+        continuation: None,
+        replay_source: None,
         tool_activities: None,
         segments: None,
         files: Vec::new(),
@@ -176,6 +181,7 @@ pub(super) fn agent_message(prompt: &str) -> AgentMessage {
         tokens: 0,
         work_duration_ms: None,
         skill_names: None,
+        skill_ids: None,
         stream_run_id: None,
         stream_part: None,
     }

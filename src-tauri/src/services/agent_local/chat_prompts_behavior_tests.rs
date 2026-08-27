@@ -13,11 +13,7 @@ fn enabled_tool_names() -> Vec<String> {
 
 #[test]
 fn custom_prompt_replaces_beaver_instructions_but_keeps_dynamic_context() {
-    let mut messages = vec![ChatMessage {
-        role: "user".into(),
-        content: "hello".into(),
-        ..Default::default()
-    }];
+    let mut messages = vec![ChatMessage::user("hello".into())];
     let context = [
         "AGENTS.md context",
         "identity.md context",
@@ -71,11 +67,7 @@ fn custom_prompt_replaces_beaver_instructions_but_keeps_dynamic_context() {
 
 #[test]
 fn custom_chat_prompt_replaces_static_chatbot_instructions() {
-    let mut messages = vec![ChatMessage {
-        role: "user".into(),
-        content: "hello".into(),
-        ..Default::default()
-    }];
+    let mut messages = vec![ChatMessage::user("hello".into())];
     let enabled = enabled_tool_names();
 
     let instructions = SystemPromptView {
@@ -109,11 +101,7 @@ fn custom_chat_prompt_replaces_static_chatbot_instructions() {
 
 #[test]
 fn empty_custom_prompt_keeps_only_dynamic_system_context() {
-    let mut messages = vec![ChatMessage {
-        role: "user".into(),
-        content: "hello".into(),
-        ..Default::default()
-    }];
+    let mut messages = vec![ChatMessage::user("hello".into())];
     let enabled = enabled_tool_names();
     let instructions = SystemPromptView {
         content: String::new(),

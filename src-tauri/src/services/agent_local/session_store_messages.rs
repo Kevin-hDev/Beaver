@@ -1,6 +1,6 @@
 use super::types_session::{AgentMessage, AgentSession};
 
-const MAX_MESSAGES_PER_SESSION: usize = 2_000;
+use super::session_limits::MAX_MESSAGES_PER_SESSION;
 
 pub(super) fn append_bounded(
     session: &mut AgentSession,
@@ -19,6 +19,14 @@ pub(crate) fn recompute_accumulated_tokens(session: &mut AgentSession) {
     session.context_tokens = None;
 }
 
+#[cfg(test)]
+pub(super) fn validate_legacy_ipc_message(message: &AgentMessage) -> Result<(), String> {
+    (message.continuation.is_none() && message.replay_source.is_none())
+        .then_some(())
+        .ok_or_else(|| "Message de session invalide".to_string())
+}
+
+#[cfg(test)]
 pub async fn add_messages(
     id: &str,
     new_messages: Vec<AgentMessage>,
@@ -27,6 +35,7 @@ pub async fn add_messages(
     add_messages_with_context(id, new_messages, tokens, None, None).await
 }
 
+#[cfg(test)]
 pub async fn add_messages_with_context(
     id: &str,
     mut new_messages: Vec<AgentMessage>,
@@ -35,6 +44,9 @@ pub async fn add_messages_with_context(
     context_limit: Option<u32>,
 ) -> Result<(), String> {
     super::session_store::validate_session_id(id)?;
+    for message in &new_messages {
+        validate_legacy_ipc_message(message)?;
+    }
     for message in &new_messages {
         message.validate_stream_metadata()?;
     }
@@ -60,11 +72,14 @@ pub async fn add_messages_with_context(
     result
 }
 
+#[cfg(test)]
 fn validated_context_tokens(value: Option<u32>, limit: Option<u32>) -> Option<u32> {
     let limit = limit
         .filter(|limit| *limit > 0)?
         .min(super::session_security::MAX_CONTEXT_SNAPSHOT_TOKENS);
-    value.filter(|tokens| *tokens > 0).map(|tokens| tokens.min(limit))
+    value
+        .filter(|tokens| *tokens > 0)
+        .map(|tokens| tokens.min(limit))
 }
 
 #[cfg(test)]

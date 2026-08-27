@@ -1,19 +1,20 @@
 use super::subagent_read_only_command_test_support::{
     assert_rejected, child_session, cleanup, snapshot, user_message, SUBAGENT_READ_ONLY,
 };
+use crate::models::agent_session_contract::EditUserMessageInput;
 use crate::services::agent_local::session_permission_state;
 use crate::services::agent_local::session_store;
 use crate::services::agent_local::tool_plan;
 
 #[tokio::test]
-async fn assign_session_project_rejects_a_child_without_persisting_the_project() {
+async fn update_session_project_rejects_a_child_without_persisting_the_project() {
     let session = child_session("Save").await;
     let before = snapshot(&session.id).await;
 
     assert_rejected(
         &session,
         &before,
-        super::agent_sessions::assign_session_project(
+        super::agent_sessions::update_session_project(
             session.id.clone(),
             "blocked-project".to_string(),
         ),
@@ -35,26 +36,6 @@ async fn rename_agent_session_rejects_a_child_without_persisting_the_name() {
 }
 
 #[tokio::test]
-async fn add_messages_to_session_rejects_a_child_without_persisting_history() {
-    let session = child_session("History").await;
-    let before = snapshot(&session.id).await;
-    let message = user_message("Blocked history mutation");
-
-    assert_rejected(
-        &session,
-        &before,
-        super::agent_sessions::add_messages_to_session(
-            session.id.clone(),
-            vec![message],
-            1,
-            None,
-            None,
-        ),
-    )
-    .await;
-}
-
-#[tokio::test]
 async fn truncate_and_replace_at_rejects_a_child_without_changing_history() {
     let mut session = child_session("Retry").await;
     let existing = user_message("Original message");
@@ -68,8 +49,10 @@ async fn truncate_and_replace_at_rejects_a_child_without_changing_history() {
         &before,
         super::agent_sessions::truncate_and_replace_at(
             session.id.clone(),
-            message_id,
-            Some(user_message("Replacement message")),
+            EditUserMessageInput {
+                message_id,
+                new_content: "Replacement message".to_string(),
+            },
         ),
     )
     .await;

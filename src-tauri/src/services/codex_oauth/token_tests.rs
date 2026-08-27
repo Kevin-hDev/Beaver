@@ -60,5 +60,8 @@ fn tokens_expiring_at(expires_at: i64) -> CodexTokens {
         expires_at,
         refresh_not_before: 0,
         account_hint: Zeroizing::new("account".to_string()),
+        credential_scope: Some(
+            crate::services::api_keys::generate_credential_scope().expect("scope"),
+        ),
     }
 }

@@ -3,7 +3,7 @@
 #[test]
 fn child_guard_runs_before_stream_replacement_and_permission_mutation() {
     let source = include_str!("agent_chat_admission.rs");
-    let command = command_body(source, "pub(crate) async fn admit");
+    let command = command_body(source, "pub(crate) async fn admit<");
     let guard = command
         .find("session_user_write::ensure_allowed")
         .expect("admit doit appeler session_user_write::ensure_allowed");
@@ -32,17 +32,13 @@ fn child_guard_runs_before_each_user_session_mutation() {
     let source = include_str!("agent_sessions.rs");
     for (command, boundary) in [
         (
-            "pub async fn assign_session_project",
+            "pub async fn update_session_project",
             "directory_access::project_path",
         ),
         ("pub async fn rename_agent_session", "session_store::rename"),
         (
             "pub async fn set_session_permission_mode",
             "PermissionMode::parse",
-        ),
-        (
-            "pub async fn add_messages_to_session",
-            "add_messages_with_context",
         ),
         (
             "pub async fn update_session_model",
@@ -58,7 +54,7 @@ fn child_guard_runs_before_each_user_session_mutation() {
         ),
         (
             "pub async fn truncate_and_replace_at",
-            "session_store::truncate_and_replace",
+            "session_ops::edit_user_message",
         ),
     ] {
         assert_guard_precedes(command_body(source, command), boundary);

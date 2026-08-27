@@ -1,10 +1,23 @@
 import type { ManagedStreamState } from "./agent-chat-stream-callbacks";
+import type { StreamEvent } from "@/types/agent";
 
 const CLEANUP_DELAY_MS = 5 * 60 * 1000;
 
 const MAX_SESSIONS = 64;
 const MAX_SUBSCRIBERS_PER_SESSION = 32;
 export const MAX_CANCELLED_GENERATIONS = 16;
+
+export interface PendingAdmissionBucket {
+  generation: number;
+  events: StreamEvent[];
+  chars: number;
+  overflowed: boolean;
+}
+
+export interface StreamStopClaimState {
+  token: symbol;
+  generation: number | null;
+}
 
 export interface StreamRecord {
   state: ManagedStreamState;
@@ -13,13 +26,15 @@ export interface StreamRecord {
   cleanupTimer: ReturnType<typeof setTimeout> | null;
   notifyHandle: { cancel: () => void } | null;
   started: boolean;
-  backendOwnsPersistence: boolean;
-  isSubagentBackendStream: boolean;
   activeGeneration: number | null;
+  awaitingAdmission: boolean;
+  pendingAdmissionBuckets: PendingAdmissionBucket[];
   cancelledGenerations: number[];
   cancelledWithoutGeneration: boolean;
-  persistenceQueue: Promise<void>;
-  persistencePending: boolean;
+  runOwner: symbol | null;
+  runOrigin: symbol | null;
+  runId: number;
+  stopClaim: StreamStopClaimState | null;
 }
 
 export function enforceSessionLimit(records: Map<string, StreamRecord>) {

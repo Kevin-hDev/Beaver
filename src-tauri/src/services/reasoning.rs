@@ -99,6 +99,8 @@ fn fallback_supported_modes(provider: &str, model: &str) -> &'static [&'static s
             &["off", "high"]
         }
         "mistral" => &[],
+        "cerebras" if is_gpt_oss(model) => &["off", "low", "medium", "high"],
+        "cerebras" => &["off", "auto"],
         "moonshot" if crate::services::llm::providers::moonshot::is_k3(&lower(model)) => {
             &["low", "high", "max"]
         }
@@ -126,7 +128,8 @@ pub fn provider_model_supports_thinking(provider: &str, model: &str) -> bool {
             let model = model.to_lowercase();
             model.starts_with("o3") || model.starts_with("o4") || model.starts_with("gpt-5")
         }
-        "deepseek" | "groq" | "google" | "openrouter" | "mistral" | "xai" | "moonshot" | "zai" => {
+        "deepseek" | "groq" | "google" | "openrouter" | "mistral" | "cerebras" | "xai"
+        | "moonshot" | "zai" => {
             crate::services::llm::tool_capable::supports_thinking(provider, model)
         }
         _ => false,

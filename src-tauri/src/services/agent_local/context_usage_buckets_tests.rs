@@ -2,10 +2,12 @@ use super::*;
 use crate::services::agent_local::types_ollama::{ToolCallFunction, ToolCallOllama};
 
 fn message(role: &str, content: &str) -> ChatMessage {
-    ChatMessage {
-        role: role.into(),
-        content: content.into(),
-        ..Default::default()
+    match role {
+        "system" => ChatMessage::system(content.into()),
+        "user" => ChatMessage::user(content.into()),
+        "assistant" => ChatMessage::assistant(content.into(), None, None, None, None),
+        "tool" => ChatMessage::tool(content.into(), None, None),
+        other => panic!("unsupported chat role in test/setup: {other}"),
     }
 }
 
@@ -43,10 +45,9 @@ fn partitions_the_prepared_request_without_changing_its_total() {
     };
 
     let usage = RequestContextUsage::from_request("ollama", &messages, &tools, seed);
-    let expected = crate::services::compress::token_estimate::estimate_request_tokens(
-        &messages,
-        &tools,
-    ) as u32;
+    let expected =
+        crate::services::compress::token_estimate::estimate_request_tokens(&messages, &tools)
+            as u32;
 
     assert_eq!(total(usage), expected);
     assert_eq!(usage.skills, 10);
@@ -60,7 +61,7 @@ fn partitions_the_prepared_request_without_changing_its_total() {
 #[test]
 fn codex_omits_reasoning_that_is_not_replayed() {
     let mut assistant = message("assistant", &"a".repeat(40));
-    assistant.reasoning_content = Some("r".repeat(400));
+    assistant.tool_loop_reasoning = Some("r".repeat(400));
 
     let codex = RequestContextUsage::from_request(
         crate::services::codex_client::PROVIDER_ID,
@@ -68,12 +69,8 @@ fn codex_omits_reasoning_that_is_not_replayed() {
         &[],
         ContextUsageSeed::default(),
     );
-    let ollama = RequestContextUsage::from_request(
-        "ollama",
-        &[assistant],
-        &[],
-        ContextUsageSeed::default(),
-    );
+    let ollama =
+        RequestContextUsage::from_request("ollama", &[assistant], &[], ContextUsageSeed::default());
 
     assert!(!codex.reasoning_included);
     assert!(ollama.reasoning_included);

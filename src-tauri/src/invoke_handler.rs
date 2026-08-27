@@ -67,17 +67,18 @@ macro_rules! generate {
             crate::commands::reorder_agent_sessions,
             crate::commands::reorder_pinned_agent_sessions,
             crate::commands::get_agent_session,
-            crate::commands::assign_session_project,
+            crate::commands::update_session_project,
             crate::commands::get_session_permission_state,
             crate::commands::set_session_permission_mode,
             crate::commands::prepare_agent_send,
             crate::commands::resolve_missing_session_directory,
-            crate::commands::add_messages_to_session,
             crate::commands::create_agent_session,
+            crate::commands::update_session_metadata,
             crate::commands::set_session_fast_mode,
             crate::commands::rename_agent_session,
             crate::commands::update_session_model,
             crate::commands::update_session_reasoning,
+            crate::commands::update_session_continuity,
             crate::commands::set_session_plan_mode,
             crate::commands::delete_agent_session,
             crate::commands::archive_agent_session,
@@ -130,7 +131,18 @@ macro_rules! generate {
 
 macro_rules! for_build {
     () => {{
-        #[cfg(feature = "e2e")]
+        #[cfg(all(feature = "e2e", debug_assertions))]
+        {
+            crate::invoke_handler::generate![
+                crate::commands::e2e_request_exit,
+                crate::commands::e2e_native_webviews,
+                crate::commands::e2e_verify_child_chat_stream_read_only,
+                crate::commands::export_reasoning_fixture_report,
+                crate::commands::run_reasoning_fixture_tools,
+                crate::commands::run_reasoning_fixture_agent_local
+            ]
+        }
+        #[cfg(all(feature = "e2e", not(debug_assertions)))]
         {
             crate::invoke_handler::generate![
                 crate::commands::e2e_request_exit,
@@ -138,7 +150,15 @@ macro_rules! for_build {
                 crate::commands::e2e_verify_child_chat_stream_read_only
             ]
         }
-        #[cfg(not(feature = "e2e"))]
+        #[cfg(all(not(feature = "e2e"), debug_assertions))]
+        {
+            crate::invoke_handler::generate![
+                crate::commands::export_reasoning_fixture_report,
+                crate::commands::run_reasoning_fixture_tools,
+                crate::commands::run_reasoning_fixture_agent_local
+            ]
+        }
+        #[cfg(all(not(feature = "e2e"), not(debug_assertions)))]
         {
             crate::invoke_handler::generate![]
         }

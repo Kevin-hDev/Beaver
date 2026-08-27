@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef } from "react";
 import { open as openFileDialog } from "@tauri-apps/plugin-dialog";
 import type { DroppedFile } from "@/hooks/use-file-drop";
+import type { SkillReference } from "@/types/agent-turn.generated";
 
 interface ChatActionsOptions {
   readOnly: boolean;
   chat: {
     messages: { role: string; id: string }[];
-    sendMessage: (text: string, files?: DroppedFile[], workingDir?: string, projectId?: string, skills?: { name: string; content: string }[]) => Promise<void>;
+    sendMessage: (text: string, files?: DroppedFile[], workingDir?: string, projectId?: string, skills?: SkillReference[]) => Promise<boolean>;
     reload: (id: string) => Promise<void>;
     isStreaming: boolean;
   };
@@ -17,7 +18,7 @@ interface ChatActionsOptions {
   sessionId: string;
   initialMessage?: string;
   initialWorkingDir?: string;
-  initialSkills?: { name: string; content: string }[];
+  initialSkills?: SkillReference[];
   initialFiles?: DroppedFile[];
   onInitialMessageSent?: () => void;
   fileDrop: { addByPaths: (paths: string[]) => Promise<void> };
@@ -40,26 +41,28 @@ export function useChatActions({
       const workingDir = initialWorkingDir ?? selectedProjectPath;
       const files = initialFiles?.map((file) => ({ ...file }));
       void chat.sendMessage(initialMessage || "", files, workingDir, selectedProjectId, initialSkills)
-        .then(() => onInitialMessageSent?.());
+        .then((accepted) => { if (accepted) onInitialMessageSent?.(); });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time send on mount
   }, [initialMessage, readOnly]);
 
-  const handleSend = useCallback((
+  const handleSend = useCallback(async (
     text: string,
     sentFiles?: DroppedFile[],
-    skills?: { name: string; content: string }[],
+    skills?: SkillReference[],
   ) => {
-    if (readOnly) return;
+    if (readOnly) return false;
     const isFirst = chat.messages.length < 1;
-    void chat.sendMessage(text, sentFiles, selectedProjectPath, selectedProjectId, skills)
-      .then(() => {
-        if (selectedProjectId) onSessionsRefresh?.();
-        if (isFirst && text.trim()) {
-          const autoName = text.slice(0, 40).trim();
-          if (autoName) onAutoRename?.(sessionId, autoName);
-        }
-      });
+    const accepted = await chat.sendMessage(
+      text, sentFiles, selectedProjectPath, selectedProjectId, skills,
+    );
+    if (!accepted) return false;
+    if (selectedProjectId) onSessionsRefresh?.();
+    if (isFirst && text.trim()) {
+      const autoName = text.slice(0, 40).trim();
+      if (autoName) onAutoRename?.(sessionId, autoName);
+    }
+    return true;
   }, [chat, selectedProjectPath, selectedProjectId, onSessionsRefresh, onAutoRename, readOnly, sessionId]);
 
   const handleFileImport = useCallback(() => {

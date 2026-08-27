@@ -1,8 +1,11 @@
 use crate::services::agent_local::stream_events::AgentEventEmitter;
-use crate::services::agent_local::types_ollama::ChatMessage;
 use tokio_util::sync::CancellationToken;
 
 #[derive(Debug, Clone, Default)]
+#[allow(
+    dead_code,
+    reason = "legacy internal producers cannot govern canonical chat"
+)]
 pub(crate) struct StreamCapabilityHints {
     pub supports_tools: Option<bool>,
     pub supports_thinking: Option<bool>,
@@ -14,7 +17,10 @@ pub(crate) struct StreamTaskParams {
     pub session_id: String,
     pub request_id: String,
     pub model: String,
-    pub messages: Vec<ChatMessage>,
+    pub conversation: Option<super::conversation::StreamConversation>,
+    pub continuation_target:
+        Option<crate::services::reasoning_continuity::contract::ContinuationTarget>,
+    pub reasoning_profile: Option<crate::services::reasoning_profile::EffectiveReasoningProfile>,
     pub tools: Vec<serde_json::Value>,
     pub think: bool,
     pub provider: String,
@@ -30,6 +36,10 @@ pub(crate) struct StreamTaskParams {
     pub subagent_profile:
         Option<crate::services::agent_local::subagent_tool_profile::SubagentToolProfile>,
     pub plan_mode: Option<bool>,
+    /// Présent uniquement pour une fixture debug : le contexte reste propriétaire
+    /// de son TempDir jusqu'à la fin exacte de cette exécution de boucle.
+    #[cfg(debug_assertions)]
+    pub fixture_run: Option<crate::services::reasoning_fixture_run::FixtureRunContext>,
     pub cancel: CancellationToken,
 }
 

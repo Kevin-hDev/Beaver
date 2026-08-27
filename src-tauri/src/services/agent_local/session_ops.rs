@@ -1,4 +1,8 @@
-use super::session_store::{get, list, lock_session, save, validate_session_id};
+use super::session_store::{get, list, validate_session_id};
+#[cfg(test)]
+use super::session_store::{lock_session, save};
+
+pub use super::session_mutations::{apply_metadata_patch, edit_user_message};
 
 pub async fn export_markdown(id: &str) -> Result<String, String> {
     validate_session_id(id)?;
@@ -16,12 +20,16 @@ pub async fn export_markdown(id: &str) -> Result<String, String> {
     Ok(md)
 }
 
+#[cfg(test)]
 pub async fn truncate_and_replace(
     session_id: &str,
     message_id: &str,
     replacement: Option<crate::services::agent_local::types_session::AgentMessage>,
 ) -> Result<(), String> {
     validate_session_id(session_id)?;
+    if let Some(message) = replacement.as_ref() {
+        super::session_store_messages::validate_legacy_ipc_message(message)?;
+    }
     let lock = lock_session(session_id).await;
     let _guard = lock.lock().await;
     let mut session = get(session_id).await?;

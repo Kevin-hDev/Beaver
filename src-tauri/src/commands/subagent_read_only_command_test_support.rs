@@ -36,7 +36,9 @@ pub(super) async fn assert_rejected<T>(
 }
 
 pub(super) async fn cleanup(session: &AgentSession) {
-    session_permission_state::remove(&session.id).await;
+    session_permission_state::remove(&session.id)
+        .await
+        .expect("remove permission state");
     session_store::delete_one(&session.id)
         .await
         .expect("cleanup session");
@@ -45,11 +47,15 @@ pub(super) async fn cleanup(session: &AgentSession) {
 pub(super) fn user_message(content: &str) -> AgentMessage {
     AgentMessage {
         id: uuid::Uuid::new_v4().to_string(),
+        turn_id: AgentMessage::new_turn_id(),
         role: "user".to_string(),
         content: content.to_string(),
         thinking: None,
         tool_calls: None,
         tool_name: None,
+        tool_call_id: None,
+        continuation: None,
+        replay_source: None,
         tool_activities: None,
         segments: None,
         files: Vec::new(),
@@ -57,6 +63,7 @@ pub(super) fn user_message(content: &str) -> AgentMessage {
         tokens: 0,
         work_duration_ms: None,
         skill_names: None,
+        skill_ids: None,
         stream_run_id: None,
         stream_part: None,
     }

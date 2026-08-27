@@ -6,6 +6,8 @@ function session(): AgentSession {
   return {
     id: "session-fixture", name: "Fixture", created_at: "2026-08-22T12:00:00Z",
     model: "grok-4.6", provider: "xai-oauth", thinking_enabled: true, fast_mode_enabled: false,
+    plan_mode_enabled: false, plan_workflow_status: "needs_context",
+    is_heartbeat: false, is_gateway: false, working_dir: "", working_dir_managed: false,
     accumulated_tokens: 0,
     messages: [{
       id: "user-1", role: "user", content: "Bonjour", files: [],

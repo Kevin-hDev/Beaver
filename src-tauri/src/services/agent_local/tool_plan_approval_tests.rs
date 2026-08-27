@@ -80,6 +80,8 @@ fn adjustments_and_dismissal_keep_plan_mode_without_preview() {
 fn session() -> AgentSession {
     let now = Utc::now();
     AgentSession {
+        schema_version:
+            crate::services::agent_local::session_limits::CURRENT_SESSION_SCHEMA_VERSION,
         id: "abc-123".into(),
         name: "Test".into(),
         created_at: now,
@@ -91,6 +93,7 @@ fn session() -> AgentSession {
         thinking_enabled: false,
         fast_mode_enabled: false,
         reasoning_mode: None,
+        preserve_reasoning: Default::default(),
         accumulated_tokens: 0,
         context_tokens: None,
         messages: Vec::<AgentMessage>::new(),

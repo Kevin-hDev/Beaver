@@ -83,6 +83,7 @@ fn token_bundle(
         refresh: Zeroizing::new(refresh),
         expires_at: chrono::Utc::now().timestamp().saturating_add(expires_in),
         user_id: None,
+        credential_scope: None,
     })
 }
 

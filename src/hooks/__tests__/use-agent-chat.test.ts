@@ -3,24 +3,32 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { useAgentChat } from "../use-agent-chat";
 import { showToast } from "@/lib/toast-emitter";
+import { EMPTY_CHAT_STATE } from "../agent-chat-stream-callbacks";
 import type { AgentMessage, AgentSession, FileAttachment } from "@/types/agent";
+import type { StreamSnapshot } from "../agent-stream-manager";
+import type { TurnStart } from "@/types/agent-turn.generated";
 
 type StartStreamMock = (
   sessionId: string,
   model: string,
   provider: string,
-  messages: AgentMessage[],
+  turn: TurnStart,
+  think: boolean,
+  startState: { displayMessages: AgentMessage[] },
 ) => void | Promise<void>;
+type SubscribeMock = (
+  sessionId: string,
+  callback: (snapshot: StreamSnapshot) => void,
+) => () => void;
 
 const startStream = vi.fn<StartStreamMock>();
 const stopStream = vi.fn();
-const subscribeToStream = vi.fn(() => () => {});
+const subscribeToStream = vi.fn<SubscribeMock>(() => () => {});
 const getStreamSnapshot = vi.fn(() => null);
 
 interface TruncatePayload {
   sessionId: string;
-  messageId: string;
-  replacement: AgentMessage | null;
+  input: { message_id: string; new_content: string };
 }
 
 let lastStreamMessages: AgentMessage[] | null = null;
@@ -56,6 +64,12 @@ const session: AgentSession = {
   provider: "ollama",
   thinking_enabled: false,
   fast_mode_enabled: false,
+  plan_mode_enabled: false,
+  plan_workflow_status: "needs_context",
+  is_heartbeat: false,
+  is_gateway: false,
+  working_dir: "",
+  working_dir_managed: false,
   messages: [
     { id: "m1", role: "user", content: "Salut", files: [], timestamp: "2026-06-24T10:00:00Z" },
     { id: "m2", role: "assistant", content: "Bonjour", files: [], timestamp: "2026-06-24T10:00:01Z" },
@@ -70,8 +84,9 @@ describe("useAgentChat", () => {
     lastStreamMessages = null;
     lastTruncatePayload = null;
     prepareResult = { status: "ready" };
-    startStream.mockImplementation((_sessionId, _model, _provider, messages) => {
-      lastStreamMessages = messages;
+    stopStream.mockResolvedValue("ignored");
+    startStream.mockImplementation((_sessionId, _model, _provider, _turn, _think, startState) => {
+      lastStreamMessages = startState.displayMessages;
     });
     mockSessionInvoke(session);
   });
@@ -86,8 +101,7 @@ describe("useAgentChat", () => {
 
     expect(invoke).toHaveBeenCalledWith("truncate_and_replace_at", {
       sessionId: "session-1",
-      messageId: "m2",
-      replacement: null,
+      input: { message_id: "m1", new_content: "Salut" },
     });
     expect(invoke).not.toHaveBeenCalledWith("truncate_session_at", expect.anything());
     expect(startStream).toHaveBeenCalled();
@@ -135,7 +149,7 @@ describe("useAgentChat", () => {
       "session-1",
       "google/gemma-4-31b-it",
       "openrouter",
-      expect.any(Array),
+      expect.objectContaining({ type: "new" }),
       true,
       expect.any(Object),
       undefined,
@@ -145,6 +159,7 @@ describe("useAgentChat", () => {
       "auto",
       undefined,
       false,
+      expect.any(String),
     );
   });
 
@@ -183,10 +198,10 @@ describe("useAgentChat", () => {
     });
 
     expect(lastTruncatePayload?.sessionId).toBe("session-1");
-    expect(lastTruncatePayload?.messageId).toBe("m1");
-    expect(lastTruncatePayload?.replacement?.role).toBe("user");
-    expect(lastTruncatePayload?.replacement?.content).toBe("Décris mieux cette image");
-    expect(lastTruncatePayload?.replacement?.files).toEqual([imageFile]);
+    expect(lastTruncatePayload?.input).toEqual({
+      message_id: "m1",
+      new_content: "Décris mieux cette image",
+    });
     expect(lastStreamMessages?.[0]?.files).toEqual([imageFile]);
   });
 
@@ -204,13 +219,11 @@ describe("useAgentChat", () => {
     });
     expect(result.current.missingDirectory?.missing_path).toBe("/tmp/gone/project");
     expect(startStream).not.toHaveBeenCalled();
-    expect(vi.mocked(invoke).mock.calls.filter(([command]) => command === "add_messages_to_session")).toHaveLength(0);
 
     await act(async () => {
       await result.current.resolveMissingDirectory("switch");
     });
     expect(startStream).toHaveBeenCalledTimes(1);
-    expect(vi.mocked(invoke).mock.calls.filter(([command]) => command === "add_messages_to_session")).toHaveLength(1);
   });
 
   it("restaure l'erreur persistee sans message assistant ni diagnostic brut", async () => {
@@ -259,4 +272,60 @@ describe("useAgentChat", () => {
 
     expect(result.current.error).toBeUndefined();
   });
+
+  it("laisse uniquement les notifications manager terminer l'état après Stop", async () => {
+    const pendingStop = deferred<string>();
+    let listener: ((snapshot: StreamSnapshot) => void) | null = null;
+    subscribeToStream.mockImplementation((
+      _sessionId: string,
+      callback: (snapshot: StreamSnapshot) => void,
+    ) => {
+      listener = callback;
+      return () => {};
+    });
+    stopStream.mockReturnValue(pendingStop.promise);
+    const { result } = renderHook(() => useAgentChat("session-1", "llama3", "ollama"));
+    await waitFor(() => expect(result.current.sessionLoading).toBe(false));
+    const streaming = {
+      ...EMPTY_CHAT_STATE,
+      messages: session.messages,
+      isStreaming: true,
+      pendingPermissions: [],
+      completed: false,
+    };
+    act(() => listener?.(streaming));
+    expect(result.current.isStreaming).toBe(true);
+
+    let stopping!: Promise<void>;
+    await act(async () => {
+      stopping = result.current.stop();
+      pendingStop.resolve("stopped");
+      await stopping;
+    });
+    expect(result.current.isStreaming).toBe(true);
+
+    act(() => listener?.({ ...streaming, isStreaming: false, completed: true }));
+    expect(result.current.isStreaming).toBe(false);
+  });
+
+  it("laisse une promesse Stop finir après démontage sans callback React local", async () => {
+    const pendingStop = deferred<string>();
+    stopStream.mockReturnValue(pendingStop.promise);
+    const mounted = renderHook(() => useAgentChat("session-1", "llama3", "ollama"));
+    await waitFor(() => expect(mounted.result.current.sessionLoading).toBe(false));
+    let stopping!: Promise<void>;
+    act(() => { stopping = mounted.result.current.stop(); });
+    mounted.unmount();
+
+    await act(async () => {
+      pendingStop.resolve("stopped");
+      await expect(stopping).resolves.toBeUndefined();
+    });
+  });
 });
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((yes) => { resolve = yes; });
+  return { promise, resolve };
+}

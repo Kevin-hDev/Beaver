@@ -5,8 +5,8 @@ pub mod model_catalog;
 mod model_catalog_fallback;
 mod model_catalog_fast;
 mod model_catalog_wire;
-mod replay;
 pub mod request;
+mod request_build;
 mod request_http;
 mod routing_hint;
 pub mod stream;
@@ -24,6 +24,9 @@ mod websocket_url;
 #[path = "test_transport.rs"]
 pub(crate) mod test_transport;
 
+#[cfg(test)]
+#[path = "reasoning_continuity_tests.rs"]
+mod reasoning_continuity_tests;
 #[cfg(test)]
 #[path = "transport_orchestration_tests.rs"]
 mod transport_orchestration_tests;

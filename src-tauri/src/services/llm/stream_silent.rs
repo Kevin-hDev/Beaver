@@ -46,7 +46,7 @@ pub async fn collect_chat_silent_for_compression(
             measurement.as_mut(),
         )
         .await
-    } else if provider_id == super::providers::openai::PROVIDER_ID {
+    } else if matches!(provider_id, "openai" | "xai") {
         let config = request_config(
             provider_id,
             fast_mode,
@@ -67,8 +67,13 @@ pub async fn collect_chat_silent_for_compression(
             purpose,
             Some(session_id),
         );
-        match post_chat_request_with_timeout_measured(&cfg, request_timeout, measurement.as_mut())
-            .await
+        match post_chat_request_with_timeout_measured(
+            &cfg,
+            request_timeout,
+            measurement.as_mut(),
+            None,
+        )
+        .await
         {
             Ok(resp) => {
                 super::stream_silent_consume::consume_silent(
@@ -110,5 +115,6 @@ fn request_config<'a>(
         max_tokens,
         purpose,
         session_id,
+        continuation_target: None,
     }
 }

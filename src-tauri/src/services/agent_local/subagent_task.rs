@@ -1,4 +1,7 @@
-#![expect(clippy::too_many_arguments, reason = "orchestration boundary keeps related runtime context explicit")]
+#![expect(
+    clippy::too_many_arguments,
+    reason = "orchestration boundary keeps related runtime context explicit"
+)]
 use crate::services::agent_local::session_store;
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::subagent_registry;
@@ -54,7 +57,6 @@ pub(super) async fn run(
     let working_dir = prepared.path().to_string_lossy().to_string();
     let project_path = prepared.project_path().to_path_buf();
     let mut retain_branch = false;
-    let mut prior_messages = None;
     loop {
         let Some(active) = subagent_registry::active_run_for_child(&child_session_id).await else {
             break;
@@ -89,13 +91,10 @@ pub(super) async fn run(
             cancel.clone(),
             project_id.clone(),
             working_dir.clone(),
-            prior_messages.take(),
         )
         .await;
-        let (mut success, mut status, mut summary, completed_messages) = match result {
-            Ok((success, status, summary, messages)) => {
-                (success, status, summary, messages)
-            }
+        let (mut success, mut status, mut summary) = match result {
+            Ok((success, status, summary)) => (success, status, summary),
             Err(error) if super::subagent_instruction_delivery::is_delivery_error(&error) => {
                 let reported = super::subagent_completion_events::persist_instruction_failure(
                     &parent_session_id,
@@ -118,28 +117,9 @@ pub(super) async fn run(
                     false,
                     super::subagent_status::FAILED.to_string(),
                     "Le sous-agent n'a pas pu terminer correctement.".to_string(),
-                    None,
                 )
             }
         };
-        if let Some(messages) = completed_messages {
-            match super::subagent_history::persist_for_execution(
-                &child_session_id,
-                &run_id,
-                &execution_id,
-                &messages,
-            )
-            .await
-            {
-                Ok(true) => prior_messages = Some(messages),
-                Ok(false) => break,
-                Err(_) => {
-                    success = false;
-                    status = super::subagent_status::FAILED.to_string();
-                    summary = super::subagent_completion::SUBAGENT_COMPLETION_ERROR.to_string();
-                }
-            }
-        }
         if !is_explorer {
             match super::subagent_task_change::capture(
                 &project_path,
@@ -191,7 +171,8 @@ pub(super) async fn run(
         &execution_id,
         prepared.worktree_path(),
         is_explorer || retain_branch,
-    ).await;
+    )
+    .await;
     session_store::remove_session_lock(&child_session_id).await;
 }
 

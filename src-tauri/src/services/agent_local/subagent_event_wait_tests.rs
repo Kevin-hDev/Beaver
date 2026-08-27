@@ -1,5 +1,5 @@
-use super::{session_store, subagent_orchestration::ParentSubagentOrchestrator};
 use super::subagent_terminal_wait_test_support::lock;
+use super::{session_store, subagent_orchestration::ParentSubagentOrchestrator};
 use serde_json::json;
 use std::time::Duration;
 use tokio_util::sync::CancellationToken;
@@ -7,15 +7,9 @@ use tokio_util::sync::CancellationToken;
 #[tokio::test(start_paused = true)]
 async fn parent_waiter_does_not_wake_without_a_terminal_event() {
     let _guard = lock().await;
-    let parent = session_store::create_full(
-        "Parent event wait",
-        "llama3",
-        "ollama",
-        false,
-        None,
-    )
-    .await
-    .expect("create parent");
+    let parent = session_store::create_full("Parent event wait", "llama3", "ollama", false, None)
+        .await
+        .expect("create parent");
     let mut orchestrator = ParentSubagentOrchestrator::new(&parent.id).await;
     let child_id = uuid::Uuid::new_v4().to_string();
     super::subagent_registry::register(&parent.id, &child_id, CancellationToken::new())
@@ -47,15 +41,10 @@ async fn parent_waiter_does_not_wake_without_a_terminal_event() {
 #[tokio::test]
 async fn replacement_stream_adopts_an_existing_active_child() {
     let _guard = lock().await;
-    let parent = session_store::create_full(
-        "Replacement event wait",
-        "llama3",
-        "ollama",
-        false,
-        None,
-    )
-    .await
-    .expect("create parent");
+    let parent =
+        session_store::create_full("Replacement event wait", "llama3", "ollama", false, None)
+            .await
+            .expect("create parent");
     let child_id = uuid::Uuid::new_v4().to_string();
     super::subagent_registry::register(&parent.id, &child_id, CancellationToken::new())
         .await
@@ -83,15 +72,9 @@ async fn replacement_stream_adopts_an_existing_active_child() {
 #[tokio::test]
 async fn control_only_batch_waits_but_mixed_batch_continues() {
     let _guard = lock().await;
-    let parent = session_store::create_full(
-        "Parent control wait",
-        "llama3",
-        "ollama",
-        false,
-        None,
-    )
-    .await
-    .expect("create parent");
+    let parent = session_store::create_full("Parent control wait", "llama3", "ollama", false, None)
+        .await
+        .expect("create parent");
     let mut orchestrator = ParentSubagentOrchestrator::new(&parent.id).await;
     let child_id = uuid::Uuid::new_v4().to_string();
     super::subagent_registry::register(&parent.id, &child_id, CancellationToken::new())
@@ -145,7 +128,11 @@ fn orchestrator_contains_no_temporal_wakeup() {
 
 #[test]
 fn replacement_cancels_only_parent_while_stop_keeps_owned_child_cancellation() {
-    let replacement = include_str!("../../commands/agent_chat.rs");
+    let replacement = [
+        include_str!("../../commands/agent_chat.rs"),
+        include_str!("../../commands/agent_chat_run.rs"),
+    ]
+    .concat();
     let cancel_command = include_str!("../../commands/agent_chat_cancel.rs");
 
     assert!(replacement.contains("cancel_with_lock"));

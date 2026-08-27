@@ -11,21 +11,9 @@ use tokio_util::sync::CancellationToken;
 
 fn runtime_messages() -> Vec<ChatMessage> {
     vec![
-        ChatMessage {
-            role: "system".into(),
-            content: "rules".into(),
-            ..Default::default()
-        },
-        ChatMessage {
-            role: "user".into(),
-            content: "question".into(),
-            ..Default::default()
-        },
-        ChatMessage {
-            role: "assistant".into(),
-            content: "answer".into(),
-            ..Default::default()
-        },
+        ChatMessage::system("rules".into()),
+        ChatMessage::user("question".into()),
+        ChatMessage::assistant("answer".into(), None, None, None, None),
     ]
 }
 

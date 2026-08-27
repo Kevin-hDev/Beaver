@@ -37,6 +37,11 @@ function session(projectId: string | undefined, workingDir: string): AgentSessio
     created_at: "2026-07-12T00:00:00Z",
     project_id: projectId,
     working_dir: workingDir,
+    working_dir_managed: false,
+    plan_mode_enabled: false,
+    plan_workflow_status: "needs_context",
+    is_heartbeat: false,
+    is_gateway: false,
   };
 }
 

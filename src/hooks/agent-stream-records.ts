@@ -1,4 +1,3 @@
-import { invoke } from "@tauri-apps/api/core";
 import {
   createManagedStreamState,
   toChatState,
@@ -6,10 +5,9 @@ import {
   type PermissionRequestState,
 } from "./agent-chat-stream-callbacks";
 import { clearCleanup, enforceSessionLimit, type StreamRecord } from "./agent-stream-cleanup";
-import { flushFrameNotify } from "./agent-stream-notify";
-import { startUiPersistence } from "./agent-stream-persistence-owner";
 import type { StreamKind } from "./agent-chat-stream-types";
 import type { AgentMessage } from "@/types/agent";
+import { assignStreamRun, type StreamRun } from "./agent-stream-run-ownership";
 
 export interface StreamSnapshot extends ChatState {
   pendingPermissions: PermissionRequestState[];
@@ -35,13 +33,15 @@ export function getOrCreateRecord(sessionId: string): StreamRecord {
     cleanupTimer: null,
     notifyHandle: null,
     started: false,
-    backendOwnsPersistence: false,
-    isSubagentBackendStream: false,
     activeGeneration: null,
+    awaitingAdmission: false,
+    pendingAdmissionBuckets: [],
     cancelledGenerations: [],
     cancelledWithoutGeneration: false,
-    persistenceQueue: Promise.resolve(),
-    persistencePending: false,
+    runOwner: null,
+    runOrigin: null,
+    runId: 0,
+    stopClaim: null,
   };
   records.set(sessionId, record);
   enforceSessionLimit(records);
@@ -59,14 +59,24 @@ export function startStreamRecord(
   messages: AgentMessage[],
   sessionTokenCount: number,
   streamKind: StreamKind,
+  awaitingAdmission = false,
+  run?: StreamRun,
 ): StreamRecord {
   const record = getOrCreateRecord(sessionId);
   clearCleanup(record);
   record.state = createManagedStreamState(messages, sessionTokenCount, streamKind);
   record.started = true;
-  startUiPersistence(record);
+  if (awaitingAdmission && record.activeGeneration !== null) {
+    record.cancelledGenerations = [
+      ...record.cancelledGenerations,
+      record.activeGeneration,
+    ].slice(-16);
+  }
   record.activeGeneration = null;
+  record.awaitingAdmission = awaitingAdmission;
+  record.pendingAdmissionBuckets = [];
   record.cancelledWithoutGeneration = false;
+  assignStreamRun(record, run);
   touchSession(sessionId, record);
   return record;
 }
@@ -78,34 +88,4 @@ export function snapshot(state: StreamRecord["state"]): StreamSnapshot {
     isConnectionError: state.isConnectionError,
     diagnosticSummary: state.diagnosticSummary,
   };
-}
-
-export function persistMessages(
-  sessionId: string,
-  record: StreamRecord,
-  messages: AgentMessage[],
-  tokens: number,
-  final: boolean,
-  notify: (record: StreamRecord) => void,
-) {
-  if (final) record.state = { ...record.state, persisted: true };
-  const run = () => Promise.resolve(invoke("add_messages_to_session", {
-    id: sessionId, messages, tokens,
-    contextTokens: final && record.state.hasContextUsageSnapshot
-      ? record.state.sessionTokenCount
-      : null,
-    contextLimit: record.state.contextLimitTokens || null,
-  })).then(() => undefined).catch(() => {
-    console.warn("Session persistence failed.");
-    if (final) record.state = { ...record.state, persisted: false };
-    flushFrameNotify(record, notify);
-  });
-  const persistence = record.persistencePending
-    ? record.persistenceQueue.catch(() => undefined).then(run)
-    : run();
-  record.persistencePending = true;
-  record.persistenceQueue = persistence;
-  void persistence.finally(() => {
-    if (record.persistenceQueue === persistence) record.persistencePending = false;
-  });
 }

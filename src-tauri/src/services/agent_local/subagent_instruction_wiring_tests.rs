@@ -7,7 +7,9 @@ fn api_and_ollama_drain_before_each_request_and_again_before_no_tool_exit() {
         assert!(request.contains(".prepare_for_model_request(params.messages)"));
     }
     let boundary = include_str!("subagent_orchestration.rs");
-    let prepare = boundary.find("pub async fn prepare_for_model_request").unwrap();
+    let prepare = boundary
+        .find("pub async fn prepare_for_model_request")
+        .unwrap();
     let first_drain = boundary[prepare..]
         .find("subagent_instruction_delivery::drain")
         .map(|offset| prepare + offset)
@@ -30,17 +32,30 @@ fn api_and_ollama_drain_before_each_request_and_again_before_no_tool_exit() {
 
 #[test]
 fn correction_arriving_with_tool_calls_cannot_skip_tool_execution() {
-    for source in [
-        include_str!("../llm/agent_loop.rs"),
-        include_str!("agent_loop.rs"),
+    for (request_source, execution_source, runner, executor) in [
+        (
+            include_str!("../llm/agent_loop.rs"),
+            include_str!("../llm/agent_loop.rs"),
+            "agent_loop_tools::execute_tool_batch",
+            "agent_loop_tools::execute_tool_batch",
+        ),
+        (
+            include_str!("agent_loop.rs"),
+            include_str!("agent_loop_tool_turn.rs"),
+            "agent_loop_tool_turn::run",
+            "agent_loop_tool_batch::execute",
+        ),
     ] {
-        let request = source.find("let request_output").expect("model request");
-        let no_tool = source
+        let request = request_source
+            .find("let request_output")
+            .expect("model request");
+        let no_tool = request_source
             .find("if result.tool_calls.is_empty()")
             .expect("no-tool branch");
-        let before_no_tool = &source[request..no_tool];
+        let before_no_tool = &request_source[request..no_tool];
 
         assert!(!before_no_tool.contains("subagent_instruction_delivery::drain"));
-        assert!(source[no_tool..].contains("tool_executor::run_tools"));
+        assert!(request_source[no_tool..].contains(runner));
+        assert!(execution_source.contains(executor));
     }
 }

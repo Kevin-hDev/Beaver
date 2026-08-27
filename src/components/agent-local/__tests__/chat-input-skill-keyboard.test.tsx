@@ -216,7 +216,7 @@ describe("navigation clavier des skills", () => {
     fireEvent.keyDown(editorView(second.container).contentDOM, { key: "Enter" });
 
     expect(onSend).toHaveBeenCalledWith("/beta-skill", undefined, [
-      { name: "beta-skill", content: "# Skill" },
+      { id: "local:skill:beta", name: "beta-skill" },
     ]);
   });
 });

@@ -1,5 +1,7 @@
 use zeroize::Zeroizing;
 
+use crate::services::reasoning_continuity::contract::{CredentialScope, RouteId};
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LlmOAuthProvider {
     Xai,
@@ -23,8 +25,15 @@ impl LlmOAuthProvider {
 
     pub const fn vault_key(self) -> &'static str {
         match self {
-            Self::Xai => "_llm_oauth_xai",
-            Self::Kimi => "_llm_oauth_kimi",
+            Self::Xai => crate::services::api_keys::LLM_OAUTH_XAI_KEY,
+            Self::Kimi => crate::services::api_keys::LLM_OAUTH_KIMI_KEY,
+        }
+    }
+
+    pub const fn reasoning_route(self) -> RouteId {
+        match self {
+            Self::Xai => RouteId::XaiOauth,
+            Self::Kimi => RouteId::MoonshotOauth,
         }
     }
 }
@@ -34,11 +43,29 @@ pub struct TokenBundle {
     pub refresh: Zeroizing<String>,
     pub expires_at: i64,
     pub user_id: Option<Zeroizing<String>>,
+    pub credential_scope: Option<CredentialScope>,
 }
 
 impl TokenBundle {
     pub fn is_fresh(&self) -> bool {
         chrono::Utc::now().timestamp() < self.expires_at.saturating_sub(60)
+    }
+
+    pub(crate) fn assign_new_credential_scope(&mut self) -> Result<(), String> {
+        self.credential_scope = Some(crate::services::api_keys::generate_credential_scope()?);
+        Ok(())
+    }
+
+    pub(crate) fn ensure_credential_scope_for_persistence(&mut self) -> Result<(), String> {
+        if self.credential_scope.is_none() {
+            self.credential_scope = Some(crate::services::api_keys::generate_credential_scope()?);
+        }
+        Ok(())
+    }
+
+    pub(crate) fn preserve_credential_scope_from(&mut self, current: &Self) -> Result<(), String> {
+        self.credential_scope = current.credential_scope.clone();
+        self.ensure_credential_scope_for_persistence()
     }
 }
 

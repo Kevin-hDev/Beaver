@@ -10,11 +10,12 @@ export interface ComposerDraftSkill {
   content: string;
 }
 
-interface ComposerDraft {
+export interface ComposerDraftSnapshot {
   text: string;
   skills: ComposerDraftSkill[];
 }
 
+type ComposerDraft = ComposerDraftSnapshot;
 const EMPTY_DRAFT: ComposerDraft = { text: "", skills: [] };
 
 export const WELCOME_COMPOSER_DRAFT_KEY = "welcome";
@@ -54,8 +55,26 @@ export function useComposerDraft(draftKey: string) {
   const clear = useCallback(() => {
     clearComposerDraft(draftKey);
   }, [draftKey]);
+  const consume = useCallback((expected: ComposerDraftSnapshot) => {
+    consumeComposerDraft(draftKey, expected);
+  }, [draftKey]);
 
-  return { ...draft, setText, rememberSkill, clear };
+  return { ...draft, setText, rememberSkill, clear, consume };
+}
+
+function consumeComposerDraft(draftKey: string, expected: ComposerDraftSnapshot) {
+  updateComposerDraft(draftKey, (current) => {
+    const sameText = current.text === expected.text;
+    const sameSkills = current.skills.length === expected.skills.length
+      && current.skills.every((entry, index) => {
+        const sent = expected.skills[index];
+        return sent?.info.id === entry.info.id && sent.content === entry.content;
+      });
+    return {
+      text: sameText ? "" : current.text,
+      skills: sameSkills ? [] : current.skills,
+    };
+  });
 }
 
 export function clearComposerDraft(draftKey: string) {

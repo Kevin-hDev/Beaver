@@ -54,6 +54,13 @@ export type {
   SubagentInfo,
 } from "./agent-session";
 export type {
+  AgentMessageView,
+  AgentSessionView,
+  EditUserMessageInput,
+  ReasoningReplayStatus,
+  SessionMetadataPatch,
+} from "./agent-session.generated";
+export type {
   AgentTodoItem,
   AgentTodoRun,
 } from "./agent-todo";

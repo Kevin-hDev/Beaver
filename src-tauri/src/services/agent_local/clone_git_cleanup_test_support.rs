@@ -19,12 +19,10 @@ pub(super) fn init_repo_with_commit() -> tempfile::TempDir {
     tmp
 }
 
-pub(super) fn session(
-    id: &str,
-    parent: Option<&str>,
-    git_branch: Option<&str>,
-) -> AgentSession {
+pub(super) fn session(id: &str, parent: Option<&str>, git_branch: Option<&str>) -> AgentSession {
     AgentSession {
+        schema_version:
+            crate::services::agent_local::session_limits::CURRENT_SESSION_SCHEMA_VERSION,
         id: id.into(),
         name: id.into(),
         created_at: Utc::now(),
@@ -36,6 +34,7 @@ pub(super) fn session(
         thinking_enabled: false,
         fast_mode_enabled: false,
         reasoning_mode: None,
+        preserve_reasoning: Default::default(),
         accumulated_tokens: 0,
         context_tokens: None,
         messages: vec![],

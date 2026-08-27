@@ -20,11 +20,11 @@ export function useDirectoryAccessGuard() {
 
   const request = useCallback(async (
     path: string,
-    onAllowed: () => void | Promise<void>,
-  ) => {
+    onAllowed: () => boolean | void | Promise<boolean | void>,
+  ): Promise<boolean> => {
     if (!path || path.length > MAX_PATH_CHARS) {
       showToast(i18n.t("directoryAccess.error"), "error");
-      return;
+      return false;
     }
     let decision: DirectoryAccessDecision;
     try {
@@ -33,15 +33,16 @@ export function useDirectoryAccessGuard() {
     } catch (validationError) {
       void validationError;
       showToast(i18n.t("directoryAccess.error"), "error");
-      return;
+      return false;
     }
     if (!decision.allowed) {
       setBlocked({ allowedPaths: decision.allowed_paths });
-      return;
+      return false;
     }
     setBlocked(null);
     try {
-      await onAllowed();
+      const accepted = await onAllowed();
+      return accepted !== false;
     } catch (error) {
       try {
         const retry = parseDirectoryAccessDecision(
@@ -49,13 +50,14 @@ export function useDirectoryAccessGuard() {
         );
         if (!retry.allowed) {
           setBlocked({ allowedPaths: retry.allowed_paths });
-          return;
+          return false;
         }
       } catch (retryError) {
         void retryError;
         // L’erreur visible reste générique et ne révèle aucun détail du backend.
       }
       showToast(localStoreErrorMessage(error, i18n.t), "error");
+      return false;
     }
   }, []);
 

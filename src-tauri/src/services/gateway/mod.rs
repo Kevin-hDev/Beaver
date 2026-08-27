@@ -1,9 +1,9 @@
 pub mod agent_bridge;
+mod agent_bridge_run;
 pub mod agent_bridge_support;
 pub mod channels;
 pub mod config_validation;
 mod conversation_locks;
-pub mod message_convert;
 mod reconnect_policy;
 mod refusal_audit;
 pub mod security;

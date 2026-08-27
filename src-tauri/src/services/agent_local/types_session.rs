@@ -19,6 +19,8 @@ pub struct SubagentHiddenReport {
     pub status: String,
     pub summary: String,
     pub created_at: DateTime<Utc>,
+    #[serde(default)]
+    pub delivered: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -37,8 +39,20 @@ pub enum CloneMode {
     Summary,
 }
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[serde(rename_all = "snake_case")]
+#[cfg_attr(test, ts(rename_all = "snake_case"))]
+pub enum PreserveReasoningSetting {
+    #[default]
+    Off,
+    Local,
+    Remote,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AgentSession {
+    pub schema_version: u16,
     pub id: String,
     pub name: String,
     pub created_at: DateTime<Utc>,
@@ -47,7 +61,7 @@ pub struct AgentSession {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub archived_at: Option<DateTime<Utc>>,
     /* Date d'épinglage dans la barre latérale. Absent = non épinglée. Vit ici
-       comme `archived_at` : un état de la session, dont l'index est reconstruit. */
+    comme `archived_at` : un état de la session, dont l'index est reconstruit. */
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pinned_at: Option<DateTime<Utc>>,
     pub model: String,
@@ -59,6 +73,8 @@ pub struct AgentSession {
     pub fast_mode_enabled: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reasoning_mode: Option<String>,
+    #[serde(default)]
+    pub preserve_reasoning: PreserveReasoningSetting,
     pub accumulated_tokens: u32,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub context_tokens: Option<u32>,
@@ -152,7 +168,7 @@ pub struct AgentSessionMeta {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub archived_at: Option<DateTime<Utc>>,
     /* Recopiée depuis la session : l'index n'est jamais l'autorité, il se
-       reconstruit à partir des fichiers de session. */
+    reconstruit à partir des fichiers de session. */
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pinned_at: Option<DateTime<Utc>>,
     pub model: String,

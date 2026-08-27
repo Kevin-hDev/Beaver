@@ -5,6 +5,8 @@ pub mod app_log;
 #[cfg(test)]
 mod app_log_tests;
 pub mod attachment_access;
+mod attachment_access_identity;
+mod attachment_access_read;
 #[cfg(test)]
 mod attachment_access_tests;
 pub mod autostart_migration;
@@ -58,8 +60,18 @@ pub mod process_identity;
 pub mod process_tree;
 pub mod provider_usage;
 pub mod reasoning;
+pub mod reasoning_continuity;
 mod reasoning_effort;
+#[cfg(debug_assertions)]
+pub mod reasoning_fixture_run;
+#[cfg(debug_assertions)]
+pub mod reasoning_fixture_run_dedup;
+pub mod reasoning_fixture_store;
+#[cfg(debug_assertions)]
+pub mod reasoning_fixture_tools;
 mod reasoning_google;
+pub(crate) mod reasoning_ollama;
+pub(crate) mod reasoning_profile;
 #[cfg(test)]
 mod reasoning_tests;
 pub mod runtime_background;
@@ -70,9 +82,13 @@ pub mod search;
 pub mod searxng;
 pub mod secure_http;
 pub mod security_cleanup;
+mod security_cleanup_sessions;
 mod shutdown_completion;
 #[cfg(test)]
 mod shutdown_completion_tests;
+pub(crate) mod skill_manifest_policy;
+#[cfg(test)]
+mod skill_manifest_policy_tests;
 pub mod stream_utils;
 // This resolver trusts Windows' SystemRoot and has no caller on other platforms.
 #[cfg(windows)]

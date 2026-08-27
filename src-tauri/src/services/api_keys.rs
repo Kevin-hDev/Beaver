@@ -9,6 +9,9 @@ pub(crate) mod validate {
 include!("api_keys_state.rs");
 include!("api_keys_registry.rs");
 include!("api_keys_transactions.rs");
+include!("api_keys_credential_scope_wire.rs");
+include!("api_keys_credential_scope.rs");
+include!("api_keys_credential_scope_migration.rs");
 
 #[cfg(not(feature = "e2e"))]
 fn migrate_raw_prefix(
@@ -57,6 +60,15 @@ pub fn init() -> Result<(), String> {
         crate::services::private_store::atomic_write(&marker, b"ok")?;
     }
     migrate_raw_prefix(&master_key, &mut raw_map.0)?;
+    let migration = commit_credential_scope_migration_with(&mut raw_map.0, |candidate| {
+        vault::write_vault(&master_key, candidate)
+    });
+    for route in migration.blocked {
+        ::log::warn!(
+            "route={} decision=blocked reason=scope_migration_failed",
+            credential_scope_route_label(route)
+        );
+    }
     write_registry(&provider_ids(raw_map.0.keys().map(String::as_str)))?;
     let keys = raw_map
         .0
@@ -67,6 +79,13 @@ pub fn init() -> Result<(), String> {
         .lock()
         .map_err(|_| "coffre indisponible".to_string())?;
     *state = Some(VaultState { master_key, keys });
+    drop(state);
+    if crate::services::attachment_access::ensure_attachment_key().is_err() {
+        log::warn!("attachment_access_key_unavailable");
+    }
+    if crate::services::reasoning_continuity::fingerprint::ensure_fingerprint_key().is_err() {
+        log::warn!("reasoning_diagnostic_key_unavailable");
+    }
     Ok(())
 }
 
@@ -109,20 +128,16 @@ pub fn get_key(provider_id: &str) -> Result<Zeroizing<String>, String> {
 
 pub fn set_key(provider_id: &str, key: &str) -> Result<(), String> {
     validate::validate_key_input(provider_id, key)?;
-    transaction(|candidate| {
-        candidate.insert(provider_id.to_string(), key.to_string());
-        Ok(())
-    })?;
+    let route = api_route_for_provider(provider_id);
+    let scope = route.map(|_| generate_credential_scope()).transpose()?;
+    transaction(|candidate| stage_api_key(candidate, provider_id, Some(key), scope.as_ref()))?;
     sync_registry_cache();
     Ok(())
 }
 
 pub fn delete_key(provider_id: &str) -> Result<(), String> {
     validate::validate_provider(provider_id)?;
-    transaction(|candidate| {
-        candidate.remove(provider_id);
-        Ok(())
-    })?;
+    transaction(|candidate| stage_api_key(candidate, provider_id, None, None))?;
     sync_registry_cache();
     Ok(())
 }
@@ -143,6 +158,10 @@ mod mcp_tests;
 #[cfg(test)]
 #[path = "api_keys_transaction_tests.rs"]
 mod transaction_tests;
+
+#[cfg(test)]
+#[path = "api_keys_credential_scope_tests.rs"]
+mod credential_scope_tests;
 
 #[cfg(all(test, feature = "e2e"))]
 #[path = "api_keys_e2e_tests.rs"]

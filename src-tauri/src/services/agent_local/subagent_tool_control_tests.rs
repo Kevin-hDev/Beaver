@@ -29,34 +29,34 @@ fn delegate_and_mixed_batches_are_not_control_only() {
 }
 
 #[test]
-fn api_and_ollama_wait_after_control_batches() {
-    for source in [
-        include_str!("../llm/agent_loop.rs"),
-        include_str!("agent_loop.rs"),
+fn api_and_ollama_wait_after_control_batches_before_finishing_tools() {
+    for (source, classifier_marker, tool_marker) in [
+        (
+            include_str!("../llm/agent_loop.rs"),
+            "agent_loop_tools::prepare_tool_batch",
+            "agent_loop_tools::execute_tool_batch",
+        ),
+        (
+            include_str!("agent_loop_tool_turn.rs"),
+            "agent_loop_tool_batch::prepare",
+            "agent_loop_tool_batch::execute",
+        ),
     ] {
         let classifier = source
-            .find("let control_only =")
+            .find(classifier_marker)
             .expect("control batch is classified before tool execution");
-        let compression = source[classifier..]
-            .find("let tool_compression = (!control_only).then")
-            .map(|offset| classifier + offset)
-            .expect("control batch disables tool compression");
-        let tools = source
-            .find("tool_executor::run_tools")
-            .expect("tool execution");
+        let tools = source.find(tool_marker).expect("tool execution");
         let wait = source
             .find(".wait_after_tool_batch(")
             .expect("shared control wait");
         let after_tools = source
             .find(".finish_tools(")
             .expect("post-tool compression");
-        let pre_wait = &source[compression..wait];
+        let pre_wait = &source[classifier..wait];
 
-        assert!(classifier < compression);
-        assert!(compression < tools);
+        assert!(classifier < tools);
         assert!(tools < wait);
         assert!(wait < after_tools);
-        assert!(pre_wait.contains("(!control_only).then"));
         assert!(!pre_wait.contains(".finish_tools("));
     }
 }
@@ -66,6 +66,7 @@ fn runtime_never_invokes_message_or_cancel_automatically() {
     for source in [
         include_str!("../llm/agent_loop.rs"),
         include_str!("agent_loop.rs"),
+        include_str!("agent_loop_tool_turn.rs"),
         include_str!("subagent_orchestration.rs"),
     ] {
         assert!(!source.contains("message_subagent"));

@@ -28,6 +28,7 @@ pub struct ThinkingRetryParams<'a> {
     pub plan_active: bool,
     pub chat_mode: bool,
     pub realtime_budget: Option<RealtimeBudget>,
+    pub enable_eager_tools: bool,
 }
 
 pub struct ThinkingRetryOutput {
@@ -69,14 +70,15 @@ pub async fn retry_if_needed(
 
     params.eager_handle.abort();
     let (retry_tx, retry_rx) = tokio::sync::mpsc::unbounded_channel();
-    let eager_handle = tokio::spawn(eager_dispatch::collect_eager_results(
+    let eager_handle = spawn_eager_handle(
         retry_rx,
         params.working_dir,
         params.session_id.clone(),
         params.request_id.clone(),
         params.chat_mode,
         params.cancel.clone(),
-    ));
+        params.enable_eager_tools,
+    );
     let retry_outcome = super::ollama_stream::stream_chat_with_tool_notify(
         params.on_event,
         &retry_req,
@@ -84,6 +86,10 @@ pub async fn retry_if_needed(
         retry_tx,
         params.plan_active,
         params.realtime_budget,
+        super::ollama_stream_request::ReplayDiagnosticContext {
+            session_id: &params.session_id,
+            request_id: &params.request_id,
+        },
     )
     .await?;
     let (result, interrupted) = split_retry_outcome(retry_outcome);
@@ -97,6 +103,39 @@ pub async fn retry_if_needed(
         interrupted,
         generation,
     })
+}
+
+pub fn spawn_eager_handle(
+    receiver: tokio::sync::mpsc::UnboundedReceiver<(usize, String, serde_json::Value)>,
+    working_dir: PathBuf,
+    session_id: String,
+    request_id: String,
+    chat_mode: bool,
+    cancel: CancellationToken,
+    enabled: bool,
+) -> EagerHandle {
+    tokio::spawn(async move {
+        if enabled {
+            eager_dispatch::collect_eager_results(
+                receiver,
+                working_dir,
+                session_id,
+                request_id,
+                chat_mode,
+                cancel,
+            )
+            .await
+        } else {
+            drain_eager_calls(receiver).await;
+            HashMap::new()
+        }
+    })
+}
+
+async fn drain_eager_calls(
+    mut receiver: tokio::sync::mpsc::UnboundedReceiver<(usize, String, serde_json::Value)>,
+) {
+    while receiver.recv().await.is_some() {}
 }
 
 fn split_retry_outcome(outcome: StreamOutcome) -> (StreamResult, bool) {

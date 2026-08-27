@@ -3,22 +3,15 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio_util::sync::CancellationToken;
 
-use crate::commands::agent_chat_task::{run_stream_task, StreamCapabilityHints, StreamTaskParams};
 use crate::models::GatewayConfig;
-use crate::services::agent_local::session_store;
-use crate::services::agent_local::stream_events::{self, AgentEventEmitter};
 use crate::services::gateway::agent_bridge_support::{
-    audit_msg, block, build_external_key, emit_session_updated, find_account_config,
-    find_or_create_session, resolve_provider_model, send_final_reply, sync_session_model,
-    validate_inbound,
+    audit_msg, block, build_external_key, find_account_config, find_or_create_session,
+    resolve_provider_model, sync_session_model, validate_inbound,
 };
 use crate::services::gateway::channels::{ChannelAdapter, InboundMessage};
 use crate::services::gateway::conversation_locks::ConversationLocks;
-use crate::services::gateway::message_convert;
 use crate::services::gateway::security::{
-    allowlist::Allowlist,
-    audit::{self, AuditAction},
-    rate_state::GatewayRateLimiters,
+    allowlist::Allowlist, audit::AuditAction, rate_state::GatewayRateLimiters,
 };
 
 #[derive(Debug)]
@@ -110,92 +103,19 @@ impl GatewayAgentBridge {
         .await?;
 
         sync_session_model(&session_id, &provider, &model).await;
-
-        let session = session_store::get(&session_id)
-            .await
-            .map_err(BridgeError::SessionError)?;
-        let mut messages = message_convert::build_chat_messages(&session);
-        let history_len = messages.len();
-        messages.push(message_convert::new_user_message(&msg.content));
-        session_store::add_messages(
-            &session_id,
-            vec![message_convert::new_user_agent_message(&msg.content)],
-            0,
-        )
-        .await
-        .map_err(BridgeError::SessionError)?;
-        emit_session_updated(&app, &session_id);
-        let resolved_working_dir =
-            crate::commands::agent_working_dir::resolve_for_session(&session_id, None)
-                .await
-                .map_err(BridgeError::SessionError)?;
-        let working_dir = resolved_working_dir.path;
-        let outputs_dir = resolved_working_dir.outputs_dir;
-
-        let generation = stream_events::next_generation();
-        let emitter =
-            AgentEventEmitter::with_generation(app.clone(), session_id.clone(), generation);
-        let request_id = crate::services::agent_local::stream_diagnostics::start_request(
-            &session_id,
-            generation,
-        )
-        .await;
-        let final_messages = match run_stream_task(StreamTaskParams {
-            on_event: emitter,
-            session_id: session_id.clone(),
-            request_id: request_id.clone(),
-            model,
-            messages,
-            tools: vec![],
-            think: false,
-            provider,
-            working_dir,
-            outputs_dir,
-            capability_hints: StreamCapabilityHints::default(),
-            reasoning_mode: None,
-            permission_mode: crate::commands::agent_chat_task::StreamPermissionMode::Bounded(Some(
-                "auto".to_string(),
-            )),
-            permission_emitter: None,
-            parent_message_inbox: None,
-            subagent_profile: None,
-            plan_mode: Some(false),
+        super::agent_bridge_run::run(
+            app,
+            &msg,
+            adapter.as_ref(),
             cancel,
-        })
+            session_id,
+            provider,
+            model,
+        )
         .await
-        {
-            Ok(messages) => messages,
-            Err(e) => {
-                crate::services::agent_local::stream_diagnostics::record_failure(
-                    &session_id,
-                    Some(&request_id),
-                    &e,
-                    false,
-                )
-                .await;
-                let safe = audit::sanitize_error(&e);
-                audit_msg(&msg, AuditAction::AgentError, None, Some(&safe))?;
-                return Err(BridgeError::AgentError(safe));
-            }
-        };
-
-        let new_assistant_messages: Vec<_> = {
-            let mut non_system = final_messages.iter().filter(|m| m.role != "system");
-            for _ in 0..history_len {
-                non_system.next();
-            }
-            non_system.next();
-            non_system
-                .filter_map(message_convert::chat_to_agent_message)
-                .collect()
-        };
-
-        session_store::add_messages(&session_id, new_assistant_messages, 0)
-            .await
-            .map_err(BridgeError::SessionError)?;
-        emit_session_updated(&app, &session_id);
-
-        send_final_reply(&msg, adapter.as_ref(), &final_messages).await?;
-        Ok(())
     }
 }
+
+#[cfg(test)]
+#[path = "agent_bridge_tests.rs"]
+mod tests;

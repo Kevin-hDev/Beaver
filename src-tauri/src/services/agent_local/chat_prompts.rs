@@ -1,23 +1,18 @@
-#![expect(clippy::too_many_arguments, reason = "orchestration boundary keeps related runtime context explicit")]
-use crate::services::agent_local::types_ollama::ChatMessage;
+#![expect(
+    clippy::too_many_arguments,
+    reason = "orchestration boundary keeps related runtime context explicit"
+)]
 use super::chat_prompt_sections::{response_language_instruction, skills_listing_section};
-use super::system_prompt_types::{PromptSource, SystemPromptView};
 #[cfg(test)]
 use super::system_prompt_types::{PromptMode, PromptSelection};
+use super::system_prompt_types::{PromptSource, SystemPromptView};
 #[cfg(test)]
 use crate::services::agent_local::model_size;
+use crate::services::agent_local::types_ollama::ChatMessage;
 use std::path::Path;
 
 fn build_system_message(content: String) -> ChatMessage {
-    ChatMessage {
-        role: "system".to_string(),
-        content,
-        images: None,
-        tool_calls: None,
-        tool_name: None,
-        tool_call_id: None,
-        reasoning_content: None,
-    }
+    ChatMessage::system(content)
 }
 
 pub(crate) fn compose_instructions_with_runtime(

@@ -107,7 +107,12 @@ async fn cancellation_after_stream_completion_keeps_unacknowledged_report() {
         .complete_model_request(true, &cancel, &messages)
         .await
         .is_err());
-    assert_eq!(subagent_hidden_reports::peek_reports(&parent.id).await.len(), 1);
+    assert_eq!(
+        subagent_hidden_reports::peek_reports(&parent.id)
+            .await
+            .len(),
+        1
+    );
     session_store::delete_one(&parent.id)
         .await
         .expect("delete parent");
@@ -123,16 +128,21 @@ async fn missing_report_from_real_payload_blocks_acknowledgement() {
     let mut messages = Vec::new();
     assert!(orchestrator.inject_pending_reports(&mut messages).await);
     messages.retain(|message| {
-        !message.content.starts_with(
-            super::subagent_report_context::SUBAGENT_REPORT_CONTEXT_PREFIX,
-        )
+        !message
+            .content
+            .starts_with(super::subagent_report_context::SUBAGENT_REPORT_CONTEXT_PREFIX)
     });
 
     assert!(orchestrator
         .complete_model_request(true, &CancellationToken::new(), &messages)
         .await
         .is_err());
-    assert_eq!(subagent_hidden_reports::peek_reports(&parent.id).await.len(), 1);
+    assert_eq!(
+        subagent_hidden_reports::peek_reports(&parent.id)
+            .await
+            .len(),
+        1
+    );
     session_store::delete_one(&parent.id)
         .await
         .expect("delete parent");
@@ -145,11 +155,7 @@ async fn report_policy_and_body_match_api_and_ollama_payloads() {
         .await
         .expect("append report");
     let mut orchestrator = ParentSubagentOrchestrator::new(&parent.id).await;
-    let mut messages = vec![super::types_ollama::ChatMessage {
-        role: "user".into(),
-        content: "Question".into(),
-        ..Default::default()
-    }];
+    let mut messages = vec![super::types_ollama::ChatMessage::user("Question".into())];
     orchestrator
         .prepare_for_model_request(&mut messages)
         .await
@@ -168,20 +174,22 @@ async fn report_policy_and_body_match_api_and_ollama_payloads() {
         .content
         .starts_with(super::subagent_report_context::SUBAGENT_REPORT_POLICY_PREFIX));
     assert_eq!(api[0]["role"], "system");
-    assert!(api[0]["content"]
-        .as_str()
-        .is_some_and(|content| content.starts_with(
-            super::subagent_report_context::SUBAGENT_REPORT_POLICY_PREFIX
-        )));
+    assert!(api[0]["content"].as_str().is_some_and(|content| content
+        .starts_with(super::subagent_report_context::SUBAGENT_REPORT_POLICY_PREFIX)));
     let expected = messages
         .iter()
-        .find(|message| message.content.starts_with(
-            super::subagent_report_context::SUBAGENT_REPORT_CONTEXT_PREFIX,
-        ))
+        .find(|message| {
+            message
+                .content
+                .starts_with(super::subagent_report_context::SUBAGENT_REPORT_CONTEXT_PREFIX)
+        })
         .expect("report payload")
         .content
         .as_str();
-    assert!(ollama.messages.iter().any(|message| message.content == expected));
+    assert!(ollama
+        .messages
+        .iter()
+        .any(|message| message.content == expected));
     assert!(api.iter().any(|message| message["content"] == expected));
     session_store::delete_one(&parent.id)
         .await

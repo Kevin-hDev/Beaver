@@ -5,6 +5,7 @@ import type { DroppedFile } from "@/hooks/use-file-drop";
 import { showToast } from "@/lib/toast-emitter";
 import { useDirectoryAccessGuard } from "./use-directory-access-guard";
 import { addProjectDirectory } from "./project-directory-selection";
+import type { SkillReference } from "@/types/agent-turn.generated";
 
 interface ProjectsHookRef {
   projects: Project[];
@@ -54,7 +55,7 @@ export function useSessionActions(deps: SessionActionsDeps) {
 
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const [pendingWorkingDir, setPendingWorkingDir] = useState<string | undefined>(undefined);
-  const [pendingSkills, setPendingSkills] = useState<{ name: string; content: string }[] | undefined>(undefined);
+  const [pendingSkills, setPendingSkills] = useState<SkillReference[] | undefined>(undefined);
   const [pendingFiles, setPendingFiles] = useState<DroppedFile[] | undefined>(undefined);
 
   const handleCreate = useCallback(() => {
@@ -71,7 +72,7 @@ export function useSessionActions(deps: SessionActionsDeps) {
   );
 
   const handleWelcomeSend = useCallback(
-    async (text: string, files?: DroppedFile[], projectId?: string, skills?: { name: string; content: string }[]) => {
+    async (text: string, files?: DroppedFile[], projectId?: string, skills?: SkillReference[]) => {
       const name = text.slice(0, 40).trim() || t("agentLocal.newSession");
       const m = welcomeModel ?? { model: defaultModel, provider: defaultProvider };
       const project = projectId ? projectsHook.projects.find((p) => p.id === projectId) : undefined;

@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::services::reasoning_continuity::envelope::ReasoningEnvelope;
+
 pub use super::types_stream::{StreamEvent, StreamOutcome, StreamResult};
 
 #[derive(Debug, Clone, Serialize)]
@@ -113,6 +115,18 @@ pub struct ChatRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub keep_alive: Option<String>,
     pub think: Option<OllamaThink>,
+    /// Décision canonique d'admission, jamais sérialisée au provider.
+    #[serde(skip)]
+    pub capture_reasoning: bool,
+    /// Cible de rejeu autorisée par le registre de production, jamais dérivée
+    /// du texte ni sérialisée au provider.
+    #[serde(skip)]
+    pub live_replay_target: Option<crate::services::reasoning_continuity::contract::ReplayTarget>,
+    /// Cible temporaire réservée à la fixture debug : elle ne peut jamais
+    /// exister dans un binaire de production ni dans un chat normal.
+    #[cfg(debug_assertions)]
+    #[serde(skip)]
+    pub fixture_candidate: Option<crate::services::reasoning_continuity::contract::ReplayTarget>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -121,8 +135,12 @@ pub struct ChatOptions {
     pub num_ctx: Option<u32>,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChatMessage {
+    /// Coupe la vérification de continuité : les assistants placés avant cette
+    /// frontière appartiennent à un historique antérieur au contrat courant.
+    #[serde(skip)]
+    pub continuity_barrier_before: bool,
     #[serde(default)]
     pub role: String,
     pub content: String,
@@ -135,9 +153,15 @@ pub struct ChatMessage {
     /// Requis par OpenAI-compat pour les messages `role: "tool"` — ignoré par Ollama.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub tool_call_id: Option<String>,
-    /// Contenu thinking/reasoning renvoyé au provider pour continuité multi-tour.
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub reasoning_content: Option<String>,
+    /// Vue lisible uniquement ; elle n'est jamais une source de rejeu provider.
+    #[serde(skip)]
+    pub display_thinking: Option<String>,
+    /// État natif opaque ; seuls les adaptateurs autorisés peuvent le sérialiser.
+    #[serde(skip)]
+    pub continuation: Option<ReasoningEnvelope>,
+    /// Texte aplati interdit sur le wire ; seule l'enveloppe native fait autorité.
+    #[serde(skip)]
+    pub tool_loop_reasoning: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

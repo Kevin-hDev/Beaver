@@ -26,6 +26,10 @@ pub async fn stream_chat_no_done(
     cancel: CancellationToken,
     buffer_content: bool,
     realtime_budget: Option<RealtimeBudget>,
+    reasoning_capture: Option<super::reasoning_wire::ReasoningCapture>,
+    continuation_target: Option<
+        &crate::services::reasoning_continuity::contract::ContinuationTarget,
+    >,
 ) -> Result<StreamOutcome, String> {
     let mut measurement = super::stream_metrics::start(
         provider_id,
@@ -50,10 +54,12 @@ pub async fn stream_chat_no_done(
             cancel,
             buffer_content,
             realtime_budget,
+            reasoning_capture,
+            continuation_target,
             measurement.as_mut(),
         )
         .await
-    } else if provider_id == super::providers::openai::PROVIDER_ID {
+    } else if matches!(provider_id, "openai" | "xai") {
         let config = RequestConfig {
             provider_id,
             model,
@@ -65,14 +71,19 @@ pub async fn stream_chat_no_done(
             purpose,
             session_id: Some(session_id),
             fast_mode,
+            continuation_target,
         };
-        // OpenAI API partage le contrat Responses avec Codex, mais jamais ses jetons OAuth.
+        // Les API publiques OpenAI et xAI utilisent Responses avec leur propre authentification.
         super::openai_responses::stream_chat(
             on_event,
             &config,
             cancel,
-            buffer_content,
-            realtime_budget,
+            super::openai_responses::ResponseStreamOptions {
+                buffer_content,
+                realtime_budget,
+                reasoning_capture,
+                request_id,
+            },
             measurement.as_mut(),
         )
         .await
@@ -91,10 +102,13 @@ pub async fn stream_chat_no_done(
                     purpose,
                     session_id: Some(session_id),
                     fast_mode,
+                    continuation_target,
                 },
                 cancel,
                 buffer_content,
                 realtime_budget,
+                reasoning_capture,
+                request_id,
             },
             measurement.as_mut(),
         )
@@ -111,8 +125,15 @@ pub async fn stream_chat_no_done(
             purpose,
             session_id: Some(session_id),
             fast_mode,
+            continuation_target,
         };
-        match super::stream_http::post_chat_request_measured(&cfg, measurement.as_mut()).await {
+        match super::stream_http::post_chat_request_measured(
+            &cfg,
+            measurement.as_mut(),
+            Some(request_id),
+        )
+        .await
+        {
             Ok(resp) => {
                 consume_stream(
                     on_event,
@@ -125,6 +146,7 @@ pub async fn stream_chat_no_done(
                         super::route::canonical_provider_id(provider_id),
                         model,
                     ),
+                    reasoning_capture,
                     measurement.as_mut(),
                 )
                 .await

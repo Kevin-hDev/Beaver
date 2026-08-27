@@ -7,7 +7,10 @@ pub fn append(messages: &mut [ChatMessage], enabled_tool_names: &[String]) {
     {
         return;
     }
-    let Some(system) = messages.first_mut().filter(|message| message.role == "system") else {
+    let Some(system) = messages
+        .first_mut()
+        .filter(|message| message.role == "system")
+    else {
         return;
     };
     system.content.push_str(
@@ -23,11 +26,7 @@ mod tests {
 
     #[test]
     fn only_mentions_discovery_when_the_tool_is_available() {
-        let mut messages = vec![ChatMessage {
-            role: "system".to_string(),
-            content: "Base".to_string(),
-            ..Default::default()
-        }];
+        let mut messages = vec![ChatMessage::system("Base".to_string())];
 
         append(&mut messages, &[]);
         assert_eq!(messages[0].content, "Base");

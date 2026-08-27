@@ -117,6 +117,8 @@ async fn fallback_to_http_keeps_the_original_fast_capture() {
             false,
             None,
             None,
+            None,
+            None,
         ))
         .await;
     scenario.wait_for_websocket_captures(1).await;
@@ -172,6 +174,8 @@ async fn structured_service_tier_rejection_never_reconnects_or_falls_back() {
             FastModeRequest::Fast,
             CancellationToken::new(),
             false,
+            None,
+            None,
             None,
             None,
         ))

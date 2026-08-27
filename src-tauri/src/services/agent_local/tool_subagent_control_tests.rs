@@ -38,11 +38,7 @@ fn enqueue_prompt_deduplicates_spacing_without_changing_original() {
     let original = "  corrige ceci\n\n```rust\n  let x = 1;\n```  ";
 
     assert!(enqueue_prompt(&mut child, original).is_ok());
-    assert!(enqueue_prompt(
-        &mut child,
-        "corrige   ceci ```rust let x = 1; ```",
-    )
-    .is_ok());
+    assert!(enqueue_prompt(&mut child, "corrige   ceci ```rust let x = 1; ```",).is_ok());
 
     assert_eq!(child.subagent_queued_prompts, vec![original]);
 }
@@ -96,6 +92,8 @@ fn archive_subagent_requires_parent_ownership() {
 
 fn child(status: &str) -> AgentSession {
     AgentSession {
+        schema_version:
+            crate::services::agent_local::session_limits::CURRENT_SESSION_SCHEMA_VERSION,
         id: uuid::Uuid::new_v4().to_string(),
         name: "Geminitor".into(),
         created_at: Utc::now(),
@@ -107,6 +105,7 @@ fn child(status: &str) -> AgentSession {
         thinking_enabled: false,
         fast_mode_enabled: false,
         reasoning_mode: None,
+        preserve_reasoning: Default::default(),
         accumulated_tokens: 0,
         context_tokens: None,
         messages: Vec::new(),
