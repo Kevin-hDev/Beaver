@@ -1,0 +1,22 @@
+Update reliability follow-up
+
+Reason:
+- Bind cancellation to the command already running instead of polling for the next admitted operation, so a late click cannot cancel later work.
+- Capture the previous Ollama bundle atomically during admission, before publishing TransactionPending.
+- Keep cancellation feedback visible only while real work remains and clear stale indicators after late no-op cancellation.
+- Resolve Ollama releases through the official latest-release redirect and retain one validated last-known release locally so transient GitHub quota or network failures do not erase a known update.
+
+Behavior:
+- Ollama and Beaver cancellation removes partial download artifacts.
+- Ollama update discovery remains visible during active work and survives transient lookup failures.
+- Update rows keep their action aligned with the exact product and notification close control is reduced.
+
+Validation:
+- cargo test: 4212 passed, 7 ignored, 0 failed.
+- Ollama manager suite: 341 passed, 1 ignored, 0 failed.
+- npm test: 2627 Vitest tests passed plus build, CI, CEF, E2E runner, extension-host, and reasoning fixture suites.
+- npm run lint, npx tsc --noEmit, and cargo clippy --all-targets -- -D warnings passed.
+- graphify update . completed.
+
+Scope:
+- Website mockups and fast-mode images remain intentionally uncommitted.
