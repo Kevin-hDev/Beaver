@@ -133,7 +133,7 @@ impl Drop for SpawnedUpdateHelper {
 
 fn check_cancelled(cancellation: &ServiceWorkCancellation) -> Result<(), String> {
     if cancellation.is_cancelled() {
-        Err(download_error())
+        Err("update-download-cancelled".to_string())
     } else {
         Ok(())
     }

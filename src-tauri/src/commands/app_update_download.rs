@@ -15,7 +15,7 @@ where
 {
     tokio::select! {
         biased;
-        _ = cancellation.cancelled() => Err(download_error()),
+        _ = cancellation.cancelled() => Err(cancelled_error()),
         output = work => Ok(output),
     }
 }
@@ -70,7 +70,7 @@ where
     loop {
         let next = tokio::select! {
             biased;
-            _ = cancellation.cancelled() => return Err(download_error()),
+            _ = cancellation.cancelled() => return Err(cancelled_error()),
             next = stream.next() => next,
         };
         let Some(chunk) = next else {
@@ -83,7 +83,7 @@ where
         hasher.update(bytes);
         tokio::select! {
             biased;
-            _ = cancellation.cancelled() => return Err(download_error()),
+            _ = cancellation.cancelled() => return Err(cancelled_error()),
             result = file.write_all(bytes) => result.map_err(|_| write_error())?,
         }
         downloaded = next;
@@ -116,7 +116,7 @@ where
 
 fn check_cancelled(cancellation: &ServiceWorkCancellation) -> Result<(), String> {
     if cancellation.is_cancelled() {
-        Err(download_error())
+        Err(cancelled_error())
     } else {
         Ok(())
     }
@@ -124,6 +124,10 @@ fn check_cancelled(cancellation: &ServiceWorkCancellation) -> Result<(), String>
 
 fn download_error() -> String {
     "update-download-error".to_string()
+}
+
+fn cancelled_error() -> String {
+    "update-download-cancelled".to_string()
 }
 
 fn write_error() -> String {

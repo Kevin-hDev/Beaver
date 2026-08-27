@@ -173,4 +173,5 @@ impl OllamaManager {
     }
 }
 
+include!("manager_cancellation.rs");
 include!("manager_runtime.rs");

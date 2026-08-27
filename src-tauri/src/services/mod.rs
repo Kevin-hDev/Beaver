@@ -99,6 +99,9 @@ pub(crate) mod test_runtime;
 pub mod token_counting;
 pub mod update_handoff;
 pub mod update_health;
+pub mod update_notifications;
+#[cfg(test)]
+mod update_notifications_tests;
 pub mod vault;
 pub mod work_registry;
 #[cfg(test)]

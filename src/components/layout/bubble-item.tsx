@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
-import { ThemedIcon } from "@/components/ui/themed-icon";
-import { CaretDown } from "@/components/ui/icons";
-import type { PullingState } from "@/hooks/use-update-checker";
+import { OllamaBrandIcon } from "@/components/ui/ollama-brand-icon";
+import { UpdateProgressAction } from "@/components/updates/update-progress-action";
+import { BeaverBrandIcon } from "@/components/ui/beaver-brand-icon";
+import { CaretDown, X } from "@/components/ui/icons";
+import type { DismissedUpdate, PullingState } from "@/hooks/use-update-checker";
 import { selectReleaseNotes, type ReleaseNotesByLocale } from "./update-release-notes";
 import logoIcon from "@/assets/logo.png";
-import ollamaDark from "@/assets/ollama.png";
-import ollamaLight from "@/assets/ollama-light.png";
 import { openForecastDevSource } from "./forecast-dev-source";
 
 export interface ItemData {
@@ -21,6 +21,7 @@ export interface ItemData {
   fullName?: string;
   assetUrl?: string;
   sourceUrl?: string;
+  dismissUpdate?: DismissedUpdate;
 }
 
 interface BubbleItemProps {
@@ -36,6 +37,13 @@ interface BubbleItemProps {
   onPullModel: (fullName: string) => void;
   onDownloadApp: (dmgUrl: string) => void;
   onUpdateOllamaBinary: () => void;
+  onDismissUpdate: (update: DismissedUpdate) => void;
+  onCancelApp: () => void;
+  onCancelOllamaBinary: () => void;
+  onCancelModel: () => void;
+  appCancelling: boolean;
+  ollamaBinaryCancelling: boolean;
+  modelCancelling: boolean;
   t: (kk: string, opts?: Record<string, string>) => string;
 }
 
@@ -43,7 +51,9 @@ export function BubbleItem({
   item, index, closing, totalCount,
   pulling, ollamaBinaryUpdating, ollamaBinaryPercent,
   appDownloading, appPercent,
-  onPullModel, onDownloadApp, onUpdateOllamaBinary, t,
+  onPullModel, onDownloadApp, onUpdateOllamaBinary, onDismissUpdate,
+  onCancelApp, onCancelOllamaBinary, onCancelModel,
+  appCancelling, ollamaBinaryCancelling, modelCancelling, t,
 }: BubbleItemProps) {
   const [expanded, setExpanded] = useState(false);
   const delay = closing
@@ -68,6 +78,17 @@ export function BubbleItem({
     item.type === "app" ? appPercent
     : item.type === "ollama-binary" ? ollamaBinaryPercent
     : (pulling?.percent ?? 0);
+
+  const cancelling =
+    item.type === "app" ? appCancelling
+    : item.type === "ollama-binary" ? ollamaBinaryCancelling
+    : modelCancelling;
+
+  const handleCancel = () => {
+    if (item.type === "app") onCancelApp();
+    else if (item.type === "ollama-binary") onCancelOllamaBinary();
+    else onCancelModel();
+  };
 
   const buttonLabel =
     item.type === "app" ? t("updates.appUpdate")
@@ -97,16 +118,23 @@ export function BubbleItem({
       className={`update-bubble ${expanded ? "update-bubble-expanded" : ""} ${closing ? "bubble-closing" : ""}`}
       style={{ animationDelay: `${delay}ms` }}
     >
+      {!showProgress && item.dismissUpdate && (
+        <button
+          type="button"
+          className="update-bubble-dismiss"
+          aria-label={t("updates.dismiss")}
+          onClick={() => onDismissUpdate(item.dismissUpdate!)}
+        >
+          <X size="var(--icon-xs)" />
+        </button>
+      )}
       <div className="update-bubble-main">
-        {item.type === "app" || item.type === "forecast-dev" ? (
+        {item.type === "app" ? (
+          <BeaverBrandIcon size={32} />
+        ) : item.type === "forecast-dev" ? (
           <img src={logoIcon} alt="" className="update-bubble-icon" />
         ) : (
-          <ThemedIcon
-            darkSrc={ollamaDark}
-            lightSrc={ollamaLight}
-            size={32}
-            style={{ borderRadius: 8 }}
-          />
+          <OllamaBrandIcon size={32} />
         )}
 
         <div className="update-bubble-info">
@@ -115,15 +143,14 @@ export function BubbleItem({
         </div>
 
         {showProgress ? (
-          <div className="update-bubble-progress">
-            <div className="update-bubble-progress-bar">
-              <div
-                className="update-bubble-progress-fill"
-                style={{ width: `${percent}%` }}
-              />
-            </div>
-            <span className="update-bubble-progress-text">{percent}%</span>
-          </div>
+          <UpdateProgressAction
+            compact
+            percent={percent}
+            cancelling={cancelling}
+            cancelLabel={t("common.cancel")}
+            cancellingLabel={t("updates.cancelling")}
+            onCancel={handleCancel}
+          />
         ) : (
           <div className="update-bubble-actions">
             <button className="btn btn-sm btn-primary update-bubble-btn" onClick={handleClick}>

@@ -85,31 +85,3 @@
 .update-release-section li + li {
   margin-top: 4px;
 }
-
-.update-bubble-progress {
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-  min-width: 100px;
-}
-
-.update-bubble-progress-bar {
-  width: 100px;
-  height: 5px;
-  background: var(--edge);
-  border-radius: var(--radius-xs);
-  overflow: hidden;
-}
-
-.update-bubble-progress-fill {
-  height: 100%;
-  background: var(--pulse);
-  transition: width 200ms ease-out;
-}
-
-.update-bubble-progress-text {
-  font-size: 10px;
-  color: var(--ink-faint);
-}

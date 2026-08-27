@@ -116,6 +116,7 @@ pub mod subagents_tests;
 pub(crate) mod subagents_validation;
 pub mod system_prompts;
 pub mod terminal;
+pub mod update_notifications;
 
 pub use agent_chat::*;
 pub use agent_chat_cancel::*;
@@ -180,3 +181,4 @@ pub use search::*;
 pub use subagents::*;
 pub use system_prompts::*;
 pub use terminal::*;
+pub use update_notifications::*;

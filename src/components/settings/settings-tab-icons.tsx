@@ -148,3 +148,11 @@ export function AboutIcon(props: SettingsTabIconProps) {
     </TabIcon>
   );
 }
+
+export function UpdatesIcon(props: SettingsTabIconProps) {
+  return (
+    <TabIcon {...props} viewBox="0 0 24 24">
+      <path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.6" d="M20 12a8 8 0 0 1-14.8 4.2M4 12A8 8 0 0 1 18.8 7.8M5 20v-3.8h3.8M19 4v3.8h-3.8M12 8v8m-3-3l3 3l3-3" />
+    </TabIcon>
+  );
+}

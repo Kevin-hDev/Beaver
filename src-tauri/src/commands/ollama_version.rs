@@ -64,3 +64,17 @@ pub async fn check_ollama_binary_update(
         latest_version: latest,
     }))
 }
+
+#[tauri::command]
+pub async fn get_ollama_installed_version(
+    ollama: tauri::State<'_, OllamaClient>,
+) -> Result<Option<String>, String> {
+    if let Ok(version) = fetch_installed_version(&ollama).await {
+        return Ok(Some(version));
+    }
+    Ok(ollama
+        .manager()
+        .installed_version()
+        .await
+        .map(|version| version.to_string()))
+}

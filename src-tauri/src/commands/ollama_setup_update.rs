@@ -14,16 +14,10 @@ pub async fn update_ollama_binary(
 ) -> Result<(), String> {
     let version = OllamaVersion::parse(version.trim_start_matches('v'))
         .map_err(|_| "ollama-version-invalid")?;
-    let manifest = crate::services::ollama_manager::release_source::fetch_manifest(
-        version.clone(),
-        &crate::services::ollama_manager::release_source::archive_names_for_platform(),
-    )
-    .await
-    .map_err(|code| code.as_str().to_string())?;
     let request = UpdateRequest {
         paths: crate::services::paths::ollama_paths(&crate::services::paths::data_dir()),
         version,
-        manifest: Some(manifest),
+        manifest: None,
         inherited_environment: std::env::vars_os().collect::<Vec<(OsString, OsString)>>(),
         inherited_cwd: std::env::current_dir().map_err(|_| "ollama-storage-unavailable")?,
         cancellation: CancellationToken::new(),
@@ -32,7 +26,7 @@ pub async fn update_ollama_binary(
         progress: Some(channel_progress_reporter(&on_progress)),
     };
     let outcome = manager
-        .update(request)
+        .update_from_release(request)
         .await
         .map_err(|code| code.as_str().to_string())?;
     match outcome {

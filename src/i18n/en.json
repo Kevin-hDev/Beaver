@@ -872,8 +872,17 @@
       "archivedChats": "Archived chats",
       "advanced": "Advanced",
       "shortcuts": "Keyboard Shortcuts",
+      "updates": "Updates",
       "about": "About",
       "channels": "Channels"
+    },
+    "updates": {
+      "title": "Updates",
+      "description": "Check and install new versions of Beaver and Ollama.",
+      "check": "Check for updates",
+      "checking": "Checking…",
+      "installedTitle": "Installed",
+      "availableTitle": "Available updates"
     },
     "mascot": {
       "previewTitle": "Mascot preview",
@@ -1263,7 +1272,11 @@
     "forecastDevReview": "Review",
     "releaseNotesTitle": "Version {{version}} release notes",
     "showDetails": "Show details",
-    "hideDetails": "Hide details"
+    "hideDetails": "Hide details",
+    "dismiss": "Hide this notification",
+    "dismissFailed": "The notification could not be hidden.",
+    "cancelling": "Cancelling…",
+    "cancelled": "Download cancelled and temporary files removed."
   },
   "units": {
     "gb": "GB"

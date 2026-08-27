@@ -867,9 +867,11 @@
       "archivedChats": "已归档聊天",
       "advanced": "高级",
       "shortcuts": "键盘快捷键",
+      "updates": "更新",
       "about": "关于",
       "channels": "频道"
     },
+    "updates": { "title": "更新", "description": "检查并安装 Beaver 和 Ollama 的新版本。", "check": "检查更新", "checking": "正在检查…", "installedTitle": "已安装", "availableTitle": "可用更新" },
     "mascot": {
       "previewTitle": "吉祥物预览",
       "beaverName": "Beaver",
@@ -1258,7 +1260,7 @@
     "forecastDevReview": "检查",
     "releaseNotesTitle": "{{version}} 版本说明",
     "showDetails": "显示详情",
-    "hideDetails": "隐藏详情"
+    "hideDetails": "隐藏详情", "dismiss": "隐藏此通知", "dismissFailed": "无法隐藏通知。", "cancelling": "正在取消…", "cancelled": "下载已取消，临时文件已删除。"
   },
   "units": {
     "gb": "GB"

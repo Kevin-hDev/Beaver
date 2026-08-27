@@ -867,9 +867,11 @@
       "archivedChats": "アーカイブ済みチャット",
       "advanced": "詳細設定",
       "shortcuts": "キーボードショートカット",
+      "updates": "アップデート",
       "about": "このアプリについて",
       "channels": "チャンネル"
     },
+    "updates": { "title": "アップデート", "description": "Beaver と Ollama の新しいバージョンを確認してインストールします。", "check": "アップデートを確認", "checking": "確認中…", "installedTitle": "インストール済み", "availableTitle": "利用可能なアップデート" },
     "mascot": {
       "previewTitle": "マスコットのプレビュー",
       "beaverName": "Beaver",
@@ -1258,7 +1260,7 @@
     "forecastDevReview": "確認",
     "releaseNotesTitle": "バージョン {{version}} のリリースノート",
     "showDetails": "詳細を表示",
-    "hideDetails": "詳細を非表示"
+    "hideDetails": "詳細を非表示", "dismiss": "この通知を隠す", "dismissFailed": "通知を隠せませんでした。", "cancelling": "キャンセル中…", "cancelled": "ダウンロードをキャンセルし、一時ファイルを削除しました。"
   },
   "units": {
     "gb": "GB"

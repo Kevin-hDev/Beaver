@@ -1,0 +1,31 @@
+.bbi-root {
+  position: relative;
+  display: inline-block;
+  flex: 0 0 auto;
+  --bbi-surface: var(--void);
+  --bbi-mark: var(--ink);
+}
+
+[data-theme="dark"] .bbi-root {
+  --bbi-surface: var(--ink);
+  --bbi-mark: var(--void);
+}
+
+.bbi-root > span {
+  position: absolute;
+  inset: 0;
+  mask: center / contain no-repeat;
+  -webkit-mask: center / contain no-repeat;
+}
+
+.bbi-surface {
+  background: var(--bbi-surface);
+  mask-image: url("/castor-surface.svg") !important;
+  -webkit-mask-image: url("/castor-surface.svg") !important;
+}
+
+.bbi-mark {
+  background: var(--bbi-mark);
+  mask-image: url("/castor-encre.svg") !important;
+  -webkit-mask-image: url("/castor-encre.svg") !important;
+}

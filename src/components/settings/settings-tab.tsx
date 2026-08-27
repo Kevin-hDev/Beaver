@@ -12,6 +12,7 @@ import { ForecastSettings } from "./forecast-settings";
 import { ArchivedChatsSettings } from "./archived-chats-settings";
 import { ShortcutsSettings } from "./shortcuts-settings";
 import { AboutSettings } from "./about-settings";
+import { UpdatesSettings } from "./updates-settings";
 import { MascotSettings } from "./mascot-settings";
 import { LlmExplorer } from "./llm-explorer";
 import { SETTINGS_TAB_IDS } from "./settings-sections";
@@ -111,6 +112,7 @@ export const SettingsTab = memo(function SettingsTab({
       );
     }
     if (subTab === "shortcuts") return <ShortcutsSettings />;
+    if (subTab === "updates") return <UpdatesSettings />;
     if (subTab === "about") return <AboutSettings />;
     return null;
   }, [activeSessionId, handleAdvancedFocusTarget, navState, onNavChange, onNavReplace, onThemeChange, settings, subTab, themeChoice]);

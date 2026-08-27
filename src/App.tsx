@@ -21,6 +21,7 @@ import { ExtensionsProvider } from "@/hooks/use-extensions";
 import { usePlatformBodyClass } from "@/hooks/use-platform-body-class";
 import { AppNavigationActionsProvider } from "@/hooks/use-app-navigation-actions";
 import { useBrowserRecoveryNotice } from "@/hooks/use-browser-recovery-notice";
+import { UpdateProvider } from "@/hooks/update-context";
 import type { TabId } from "@/components/layout/nav-items";
 import "./App.css";
 import {
@@ -148,8 +149,9 @@ function MainApp() {
 
   return (
     <ExtensionsProvider>
-      {vaultError && <VaultErrorBanner onDismiss={() => setVaultError(false)} />}
-      <AppNavigationActionsProvider openFileAccessSettings={openFileAccessSettings}>
+      <UpdateProvider>
+        {vaultError && <VaultErrorBanner onDismiss={() => setVaultError(false)} />}
+        <AppNavigationActionsProvider openFileAccessSettings={openFileAccessSettings}>
         <AppLayout
           activeTab={activeTab}
           onTabChange={(t) => pushNav({ tab: t })}
@@ -195,7 +197,8 @@ function MainApp() {
             />
           )}
         </AppLayout>
-      </AppNavigationActionsProvider>
+        </AppNavigationActionsProvider>
+      </UpdateProvider>
     </ExtensionsProvider>
   );
 }

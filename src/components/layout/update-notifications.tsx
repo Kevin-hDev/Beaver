@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import type { AppUpdate, OllamaModelUpdate, OllamaBinaryUpdate, PullingState } from "@/hooks/use-update-checker";
+import type { AppUpdate, DismissedUpdate, OllamaModelUpdate, OllamaBinaryUpdate, PullingState } from "@/hooks/use-update-checker";
 import type { ForecastDevUpdate } from "@/hooks/use-forecast-dev-updates";
 import { BRAND } from "@/lib/brand";
 import { BubbleItem, type ItemData } from "./bubble-item";
@@ -22,6 +22,13 @@ interface UpdateNotificationsProps {
   onPullModel: (fullName: string) => void;
   onDownloadApp: (dmgUrl: string) => void;
   onUpdateOllamaBinary: () => void;
+  onDismissUpdate: (update: DismissedUpdate) => void;
+  onCancelApp: () => void;
+  onCancelOllamaBinary: () => void;
+  onCancelModel: () => void;
+  appCancelling: boolean;
+  ollamaBinaryCancelling: boolean;
+  modelCancelling: boolean;
   anchorLeft: number;
 }
 
@@ -30,7 +37,9 @@ export function UpdateNotifications({
   appUpdate, ollamaBinaryUpdate, ollamaUpdates, forecastDevUpdates,
   pulling, ollamaBinaryUpdating, ollamaBinaryPercent,
   appDownloading, appPercent,
-  onPullModel, onDownloadApp, onUpdateOllamaBinary,
+  onPullModel, onDownloadApp, onUpdateOllamaBinary, onDismissUpdate,
+  onCancelApp, onCancelOllamaBinary, onCancelModel,
+  appCancelling, ollamaBinaryCancelling, modelCancelling,
   anchorLeft,
 }: UpdateNotificationsProps) {
   const { t, i18n } = useTranslation();
@@ -81,6 +90,13 @@ export function UpdateNotifications({
             onPullModel={onPullModel}
             onDownloadApp={onDownloadApp}
             onUpdateOllamaBinary={onUpdateOllamaBinary}
+            onDismissUpdate={onDismissUpdate}
+            onCancelApp={onCancelApp}
+            onCancelOllamaBinary={onCancelOllamaBinary}
+            onCancelModel={onCancelModel}
+            appCancelling={appCancelling}
+            ollamaBinaryCancelling={ollamaBinaryCancelling}
+            modelCancelling={modelCancelling}
             t={t}
           />
         ))}
@@ -110,6 +126,7 @@ function buildItems(
       notesByLocale: app.notesByLocale,
       language,
       assetUrl: app.assetUrl,
+      dismissUpdate: { kind: "app", subject: "beaver", version: app.version },
     });
   }
   if (binary) {
@@ -118,6 +135,7 @@ function buildItems(
       type: "ollama-binary",
       name: "Ollama",
       sub: `v${binary.currentVersion} → v${binary.latestVersion}`,
+      dismissUpdate: { kind: "ollama_binary", subject: "ollama", version: binary.latestVersion },
     });
   }
   for (const m of models) {
@@ -127,6 +145,7 @@ function buildItems(
       name: m.fullName,
       sub: m.family,
       fullName: m.fullName,
+      dismissUpdate: { kind: "ollama_model", subject: m.fullName, version: m.latestDigest },
     });
   }
   for (const update of forecastUpdates) {

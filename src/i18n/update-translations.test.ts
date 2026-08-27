@@ -15,6 +15,10 @@ describe("update translations", () => {
     for (const [language, locale] of Object.entries(locales)) {
       expect(locale.errors.updatePrepareFailed, language).toBeTruthy();
       expect(locale.errors.updateInstallFailed, language).toBeTruthy();
+      expect(locale.updates.dismiss, language).toBeTruthy();
+      expect(locale.updates.cancelled, language).toBeTruthy();
+      expect(locale.settings.tabs.updates, language).toBeTruthy();
+      expect(locale.settings.updates.availableTitle, language).toBeTruthy();
     }
   });
 });

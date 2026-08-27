@@ -115,7 +115,10 @@ pub(super) fn progress_status(stage: OllamaProgressStage) -> &'static str {
 
 #[tauri::command]
 pub async fn cancel_ollama_setup(manager: tauri::State<'_, OllamaManager>) -> Result<(), String> {
-    match manager.cancel_operation().await {
+    match manager
+        .cancel_operation_when_admitted(std::time::Duration::from_secs(1))
+        .await
+    {
         crate::services::ollama_manager::CancelOutcome::RejectedDuringShutdown => {
             Err(OllamaErrorCode::OllamaClosing.as_str().into())
         }

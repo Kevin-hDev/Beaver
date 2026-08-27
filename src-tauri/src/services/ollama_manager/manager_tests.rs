@@ -188,6 +188,52 @@ async fn cancellation_marks_cancelling_and_releases_admission() {
 }
 
 #[tokio::test]
+async fn cancellation_waits_for_an_imminent_operation_admission() {
+    let (_coordinator, manager) = manager();
+    let cancelling_manager = manager.clone();
+    let cancellation = tokio_util::sync::CancellationToken::new();
+    let registered_cancellation = cancellation.clone();
+    let cancel_task = tokio::spawn(async move {
+        cancelling_manager
+            .cancel_operation_when_admitted(Duration::from_millis(250))
+            .await
+    });
+
+    tokio::time::sleep(Duration::from_millis(20)).await;
+    let operation = manager
+        .begin_operation(OperationState::Updating)
+        .await
+        .expect("operation admission");
+    manager.set_operation_cancellation(registered_cancellation);
+
+    assert_eq!(
+        cancel_task.await.expect("cancel task"),
+        super::types::CancelOutcome::Cancelled
+    );
+    assert!(cancellation.is_cancelled());
+    drop(operation);
+}
+
+#[tokio::test]
+async fn a_token_registered_after_cancelling_is_cancelled_immediately() {
+    let (_coordinator, manager) = manager();
+    let operation = manager
+        .begin_operation(OperationState::Updating)
+        .await
+        .expect("operation admission");
+
+    assert_eq!(
+        manager.cancel_operation().await,
+        super::types::CancelOutcome::Cancelled
+    );
+    let cancellation = tokio_util::sync::CancellationToken::new();
+    manager.set_operation_cancellation(cancellation.clone());
+
+    assert!(cancellation.is_cancelled());
+    drop(operation);
+}
+
+#[tokio::test]
 async fn an_error_releases_the_admission() {
     let (_coordinator, manager) = manager();
     let operation = manager

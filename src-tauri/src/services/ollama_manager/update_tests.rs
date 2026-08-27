@@ -20,3 +20,20 @@ async fn manager_exposes_update_entrypoint() {
         .await;
     assert_ne!(result, Err(OllamaErrorCode::OllamaInternal));
 }
+
+#[tokio::test]
+async fn cancelled_release_update_never_waits_for_manifest_fetch() {
+    let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
+    let manager = OllamaManager::new(coordinator.work_supervisor());
+    let root = tempfile::tempdir().expect("temporary root");
+    let request = UpdateRequest::for_test(root.path().to_path_buf());
+    request.cancellation.cancel();
+
+    let result = manager.update_from_release(request).await;
+
+    assert_eq!(result, Err(OllamaErrorCode::OllamaOperationCancelled));
+    assert!(matches!(
+        manager.status().await.operation,
+        super::types::OperationState::Idle
+    ));
+}

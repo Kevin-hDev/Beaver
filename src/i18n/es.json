@@ -867,9 +867,11 @@
       "archivedChats": "Chats archivados",
       "advanced": "Avanzado",
       "shortcuts": "Atajos de teclado",
+      "updates": "Actualizaciones",
       "about": "Acerca de",
       "channels": "Canales"
     },
+    "updates": { "title": "Actualizaciones", "description": "Busca e instala nuevas versiones de Beaver y Ollama.", "check": "Buscar actualizaciones", "checking": "Buscando…", "installedTitle": "Instalado", "availableTitle": "Actualizaciones disponibles" },
     "mascot": {
       "previewTitle": "Vista previa de la mascota",
       "beaverName": "Beaver",
@@ -1258,7 +1260,7 @@
     "forecastDevReview": "Revisar",
     "releaseNotesTitle": "Notas de la versión {{version}}",
     "showDetails": "Mostrar detalles",
-    "hideDetails": "Ocultar detalles"
+    "hideDetails": "Ocultar detalles", "dismiss": "Ocultar esta notificación", "dismissFailed": "No se pudo ocultar la notificación.", "cancelling": "Cancelando…", "cancelled": "Descarga cancelada y archivos temporales eliminados."
   },
   "units": {
     "gb": "GB"
