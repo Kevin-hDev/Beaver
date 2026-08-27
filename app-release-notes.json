@@ -1,4 +1,48 @@
 {
+  "1.1.6": {
+    "de": [
+      "Unterstützte Modelle behalten jetzt ihr natives Denken über Nachrichten und Werkzeugaufrufe hinweg bei.",
+      "Bestehende Unterhaltungen werden sicher aktualisiert und bleiben nach Unterbrechungen oder Komprimierung nutzbar.",
+      "Denkdaten bleiben privat, begrenzt und an den passenden Anbieter, das Modell und das Konto gebunden.",
+      "Nicht validierte Modelle bleiben deaktiviert, damit niemals ein unbewiesenes Denkformat wiederverwendet wird."
+    ],
+    "en": [
+      "Supported models now preserve their native reasoning across messages and tool calls.",
+      "Existing conversations upgrade safely and remain usable after interruptions or context compression.",
+      "Reasoning data stays private, bounded, and bound to the matching provider, model, and account.",
+      "Unvalidated models remain disabled so Beaver never replays an unproven reasoning format."
+    ],
+    "es": [
+      "Los modelos compatibles conservan ahora su razonamiento nativo entre mensajes y llamadas a herramientas.",
+      "Las conversaciones existentes se actualizan de forma segura y siguen funcionando tras interrupciones o compresión del contexto.",
+      "Los datos de razonamiento permanecen privados, limitados y vinculados al proveedor, modelo y cuenta correspondientes.",
+      "Los modelos no validados siguen desactivados para que Beaver nunca reutilice un formato de razonamiento no probado."
+    ],
+    "fr": [
+      "Les modèles compatibles conservent maintenant leur raisonnement natif entre les messages et les appels d’outils.",
+      "Les conversations existantes sont mises à niveau sûrement et restent utilisables après une interruption ou une compression.",
+      "Les données de raisonnement restent privées, limitées et liées au bon fournisseur, modèle et compte.",
+      "Les modèles non validés restent désactivés afin que Beaver ne rejoue jamais un format de raisonnement non prouvé."
+    ],
+    "it": [
+      "I modelli compatibili conservano ora il ragionamento nativo tra messaggi e chiamate agli strumenti.",
+      "Le conversazioni esistenti vengono aggiornate in sicurezza e restano utilizzabili dopo interruzioni o compressioni del contesto.",
+      "I dati di ragionamento restano privati, limitati e associati al provider, al modello e all’account corretti.",
+      "I modelli non convalidati restano disattivati, così Beaver non riutilizza mai un formato di ragionamento non verificato."
+    ],
+    "ja": [
+      "対応モデルで、メッセージやツール呼び出しをまたいでネイティブ推論が保持されるようになりました。",
+      "既存の会話は安全に更新され、中断やコンテキスト圧縮の後も引き続き使用できます。",
+      "推論データは非公開かつ制限付きで、対応するプロバイダー、モデル、アカウントに結び付けられます。",
+      "未検証のモデルは無効のまま維持され、実証されていない推論形式が再利用されることはありません。"
+    ],
+    "zh": [
+      "受支持的模型现在会在多条消息和工具调用之间保留原生推理数据。",
+      "现有会话会安全升级，并在中断或上下文压缩后继续正常使用。",
+      "推理数据保持私密和有界，并绑定到匹配的提供商、模型和账户。",
+      "未经验证的模型仍保持禁用，Beaver 不会重放未经证明的推理格式。"
+    ]
+  },
   "1.1.5": {
     "de": [
       "Geplante Ausführungen nutzen jetzt den vollständigen Agent-Local-Kontext und bewahren ihren gesamten Verlauf zuverlässig auf.",
