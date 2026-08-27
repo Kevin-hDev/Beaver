@@ -4,6 +4,36 @@
 
 ---
 
+## v1.1.6
+
+### Reasoning continuity
+
+- **Preserved reasoning between turns** — for supported and validated route/model pairs, Beaver now keeps the provider's native reasoning state and reuses it on later user messages and tool continuations, instead of retaining reasoning only for display and silently dropping it from the next request.
+- **Provider-native replay** — continuity follows each validated transport's real protocol, including Responses state, Gemini signed parts, Mistral thinking chunks, OpenRouter reasoning details, native chat reasoning, and Ollama thinking data. Opaque provider state is never reconstructed from visible text.
+- **Live-validated coverage** — replay is enabled only for the exact tested route, model, reasoning mode, and continuation type: OpenAI API and ChatGPT OAuth with GPT-5.6 Luna; xAI API and OAuth with Grok 4.6; Google Gemini 3.5 Flash; Mistral Small 2603; Cerebras GPT-OSS 120B; OpenRouter Kimi K2.5; Moonshot API Kimi K2.7 Code; Z.AI GLM-4.5 Flash; DeepSeek V4 Flash tool chains; and local Gemma 4 and Qwen 3.5 Ollama models.
+- **Consistent agent paths** — regular chats, tool loops, gateways, subagents, scheduled wakeups, retries, attachments, cloning, and context compression now rebuild provider history from the same durable Rust-owned conversation state.
+
+### Session durability and recovery
+
+- **Versioned conversation storage** — Agent Local sessions now use a strict versioned schema that keeps provider continuation data private, bounded, and atomically persisted alongside the assistant message it belongs to.
+- **Safe upgrades for existing conversations** — legacy sessions remain usable after the update, incomplete tool chains are closed with generic cancelled results, and migration backups are retained until a non-empty migrated session is confirmed.
+- **Compression without broken conversations** — context compression preserves the recent complete turns needed to finish an active journal and continue the conversation without losing reasoning continuity.
+- **Crash-safe turn admission** — user messages and resolved inputs are durably admitted before provider work starts, while interrupted or cancelled turns remain readable and recoverable.
+
+### Security and validation
+
+- **Fail-closed replay policy** — reasoning state is reused only when its provider route, model, account scope, reasoning mode, contract, and intended use all match; unknown, stale, partial, oversized, or incompatible state is blocked instead of being forwarded or downgraded silently.
+- **Credential-bound continuity** — changing an API key or OAuth account rotates the local credential scope atomically, preventing reasoning captured under one account from being replayed through another.
+- **Private bounded storage and diagnostics** — native reasoning envelopes and fixture reports use Beaver's protected atomic storage, progressive size limits, content-free logs, and session-scoped keyed fingerprints without exposing opaque reasoning data to the frontend.
+- **Proof-gated activation** — every enabled route/model pair is tied to a checked-in live capture-and-replay report, and automated validation prevents an activation from shipping without its matching proof.
+
+### Deliberate compatibility limits
+
+- **Unvalidated routes stay closed** — Moonshot OAuth remains implemented but disabled until quota permits a real validation; Groq continuity stays disabled ahead of provider removal; Ollama `deepseek-r1:latest` remains disabled because its reasoning output was not validated; and neighboring untested models do not inherit another model's proof.
+- **No silent message loss during an active stream** — a second send is refused with a clear message while the current response is running, and the draft remains available; durable mid-stream queuing is intentionally deferred.
+
+---
+
 ## v1.1.5
 
 ### Scheduled wakeups
