@@ -3,6 +3,7 @@ import { useState, useCallback, useEffect, useMemo } from "react";
 export const FONT_SIZE_MIN = 10;
 export const FONT_SIZE_MAX = 24;
 const FONT_SIZE_DEFAULT = 18;
+const FONT_SIZE_CHANGED_EVENT = "beaver-font-size-changed";
 export type FontSize = number;
 
 const LEGACY_FONT_SIZE_PX: Record<string, FontSize> = {
@@ -74,6 +75,16 @@ function applyFontSize(fontSize: FontSize) {
   const next = clampFontSizePx(fontSize);
   document.documentElement.style.fontSize = `${next}px`;
   localStorage.setItem("clgo-font-size", String(next));
+  // Keep an open Settings view synchronized with shortcuts handled outside it.
+  window.dispatchEvent(new CustomEvent(FONT_SIZE_CHANGED_EVENT, { detail: next }));
+}
+
+export function changeStoredFontSize(delta: number) {
+  applyFontSize(loadFontSize() + delta);
+}
+
+export function resetStoredFontSize() {
+  applyFontSize(FONT_SIZE_DEFAULT);
 }
 
 function applyFontFamily(fontFamilyId: FontFamilyId) {
@@ -99,6 +110,15 @@ export function useSettings() {
   const [codeThemeId, setCodeThemeIdState] = useState<CodeThemeId>(loadCodeTheme);
 
   const fontFamily = FONT_FAMILIES.find((f) => f.id === fontFamilyId)!;
+
+  useEffect(() => {
+    const syncFontSize = (event: Event) => {
+      if (!(event instanceof CustomEvent) || typeof event.detail !== "number") return;
+      setFontSizeState(clampFontSizePx(event.detail));
+    };
+    window.addEventListener(FONT_SIZE_CHANGED_EVENT, syncFontSize);
+    return () => window.removeEventListener(FONT_SIZE_CHANGED_EVENT, syncFontSize);
+  }, []);
 
   useEffect(() => {
     applyFontSize(fontSize);

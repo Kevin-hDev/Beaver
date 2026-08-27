@@ -79,6 +79,7 @@ export function AppLayout({
   const closeSearch = useCallback(() => setSearchOpen(false), []);
   const toggleSearch = useCallback(() => setSearchOpen((o) => !o), []);
   const toggleSidebar = useCallback(() => setAgentSidebar(toggleAgentSidebar), []);
+  const openSettings = useCallback(() => onTabChange("settings"), [onTabChange]);
   const toggleUpdates = useCallback(() => setUpdatesOpen((o) => !o), []);
   const closeUpdates = useCallback(() => setUpdatesOpen(false), []);
   const handleAutoSidebarHide = useCallback(() => setAgentSidebar(autoHideAgentSidebar), []);
@@ -86,7 +87,14 @@ export function AppLayout({
     setAgentSidebar((state) => setAgentPanelsTight(state, tight));
   }, []);
 
-  useAppLayoutShortcuts({ onBack, onForward, onNewSession, toggleSearch, toggleSidebar });
+  useAppLayoutShortcuts({
+    onBack,
+    onForward,
+    onNewSession,
+    onOpenSettings: openSettings,
+    toggleSearch,
+    toggleSidebar,
+  });
   useAgentPanelsAutoSidebar(
     agentSidebar.sidebarOpen,
     agentSidebar.manualReveal,

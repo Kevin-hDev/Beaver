@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { matchesAppShortcut } from "@/lib/app-shortcuts";
 import {
   USER_MESSAGE_EDIT_MIN_LINES,
   USER_MESSAGE_MAX_LINES,
@@ -84,12 +85,12 @@ export function EditMessage({ initialContent, onSave, onCancel }: EditMessagePro
   }, [measureHeight]);
 
   const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
-    if (event.key === "Escape") {
+    if (matchesAppShortcut(event.nativeEvent, "cancelEdit")) {
       event.preventDefault();
       onCancel();
       return;
     }
-    if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+    if (matchesAppShortcut(event.nativeEvent, "submitEdit")) {
       event.preventDefault();
       onSave(content);
     }

@@ -1,4 +1,4 @@
-import { Fragment, memo } from "react";
+import { memo } from "react";
 import { UserMessage } from "./user-message";
 import { AssistantMessage } from "./assistant-message";
 import { SavedToolTimeline, StreamToolTimeline } from "./message-tool-timeline";
@@ -49,6 +49,7 @@ interface MessageListProps {
   knownSubagents?: SubagentInfo[];
   onOpenSubagent?: (sessionId: string) => void;
   planPreview?: AgentPlanPreview | null;
+  activeSearchMessageId?: string | null;
 }
 
 export function MessageList({
@@ -57,6 +58,7 @@ export function MessageList({
   currentTools, activeStreamItem = null, isStreaming, tps, tpsEstimated = false, totalElapsedMs, segmentStartedAt,
   isCompressing, liveTokenCount, onReload, onEdit, onCloneMessage, onFileClick, onFilePreview, onFileReview,
   projectPath, knownSubagents = [], onOpenSubagent, planPreview, streamRunId = "",
+  activeSearchMessageId,
 }: MessageListProps) {
   const displayMessages = normalizeSavedToolHistory(messages);
   const lastAssistantIdx = displayMessages.map((message) => message.role).lastIndexOf("assistant");
@@ -84,7 +86,11 @@ export function MessageList({
         if (isCompressionContextOnlyMessage(msg)) return null;
         if (msg.role === "user") {
           return (
-            <Fragment key={msg.id}>
+            <div
+              key={msg.id}
+              data-message-id={msg.id}
+              className={`cfs-message-target${activeSearchMessageId === msg.id ? " cfs-match-active" : ""}`}
+            >
               <UserMessage
                 content={msg.content} files={msg.files}
                 skillNames={msg.skill_names} isStreaming={isStreaming}
@@ -94,13 +100,17 @@ export function MessageList({
                 onFileClick={onFileClick}
               />
               {artifactsAfter(msg.id)}
-            </Fragment>
+            </div>
           );
         }
         if (msg.role === "assistant") {
           const isLast = idx === lastAssistantIdx && !isStreaming;
           return (
-            <Fragment key={msg.id}>
+            <div
+              key={msg.id}
+              data-message-id={msg.id}
+              className={`cfs-message-target${activeSearchMessageId === msg.id ? " cfs-match-active" : ""}`}
+            >
               <SegmentedAssistantMessage
                 msg={msg} onReload={onReload}
                 onClone={onCloneMessage}
@@ -115,7 +125,7 @@ export function MessageList({
                 )}
               />
               {artifactsAfter(msg.id)}
-            </Fragment>
+            </div>
           );
         }
         return null;

@@ -13,13 +13,13 @@ import { useStopConfirmation } from "./use-stop-confirmation";
 import type { ChatInputProps } from "./chat-input-types";
 import { useComposerDraft } from "@/hooks/use-composer-draft";
 import { sameChatFiles } from "./chat-input-snapshot";
+import { matchesAppShortcut } from "@/lib/app-shortcuts";
 import "./chat.css";
 import "./chat-input-textarea.css";
 import "./chat-input-responsive.css";
 
 const K_UP = "ArrowUp";
 const K_DOWN = "ArrowDown";
-const K_ENTER = "Enter";
 const K_ESC = "Escape";
 
 export function ChatInput({
@@ -103,17 +103,17 @@ export function ChatInput({
     if (slash.showDropdown) {
       if (pressed === K_UP) { event.preventDefault(); slash.moveUp(); return true; }
       if (pressed === K_DOWN) { event.preventDefault(); slash.moveDown(); return true; }
-      if (pressed === K_ENTER && !event.shiftKey) {
+      if (matchesAppShortcut(event, "sendMessage")) {
         event.preventDefault();
         return handleEnter();
       }
       if (pressed === K_ESC) { event.preventDefault(); slash.close(); return true; }
     }
-    if (pressed === K_ENTER && !event.shiftKey) {
+    if (matchesAppShortcut(event, "sendMessage")) {
       event.preventDefault();
       return handleEnter();
     }
-    if (pressed === K_ESC && isStreaming) {
+    if (matchesAppShortcut(event, "stopResponse") && isStreaming) {
       event.preventDefault();
       event.stopPropagation();
       requestStop();

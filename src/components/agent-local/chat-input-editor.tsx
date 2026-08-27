@@ -5,9 +5,10 @@
  * so it can implement Enter (send), Escape (stop) and slash-dropdown navigation.
  */
 
-import { memo } from "react";
+import { memo, useEffect } from "react";
 import { useCodemirrorChat } from "@/hooks/use-codemirror-chat";
 import { activeSkillsInText } from "@/lib/skill-text";
+import { matchesAppShortcut } from "@/lib/app-shortcuts";
 import type { SkillInfo } from "@/types/agent";
 import type { SkillChipConfig } from "./skill-chip-extension";
 
@@ -36,7 +37,7 @@ function ChatInputEditorImpl({
     builtInNames: BUILT_IN_NAMES,
   };
 
-  const { hostRef } = useCodemirrorChat({
+  const { hostRef, focus } = useCodemirrorChat({
     value,
     placeholder,
     readOnly,
@@ -44,6 +45,16 @@ function ChatInputEditorImpl({
     onChange: onTextChange,
     onKeyEvent: onKeyEvent,
   });
+
+  useEffect(() => {
+    const handler = (event: KeyboardEvent) => {
+      if (!matchesAppShortcut(event, "focusComposer")) return;
+      event.preventDefault();
+      focus();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [focus]);
 
   return (
     <div className="chat-textarea-shell">

@@ -1,12 +1,13 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { ChatView } from "../chat-view";
 import type { ChatViewProps } from "../chat-view-types";
+import type { AgentMessage } from "@/types/agent";
 
 const state = vi.hoisted(() => ({
   chat: {
-    messages: [], sessionTokenCount: 0, contextLimitTokens: 0, planModeEnabled: false,
+    messages: [] as AgentMessage[], sessionTokenCount: 0, contextLimitTokens: 0, planModeEnabled: false,
     completedSegments: [], currentTools: [], currentContent: "", currentContentPhase: undefined,
     currentThinking: "", isStreaming: false, planPreview: null, sessionLoading: false,
     contextUsageVisible: false, forbiddenAllowedPaths: [], dismissForbiddenDirectory: vi.fn(),
@@ -22,7 +23,21 @@ const state = vi.hoisted(() => ({
   isAtBottom: false,
 }));
 
-vi.mock("../chat-message-panel", () => ({ ChatMessagePanel: () => <div data-testid="message-panel" /> }));
+vi.mock("../chat-message-panel", () => ({
+  ChatMessagePanel: ({ activeSearchMessageId }: { activeSearchMessageId?: string | null }) => (
+    <div data-testid="message-panel">
+      {state.chat.messages.map((message) => (
+        <div
+          key={message.id}
+          data-message-id={message.id}
+          className={activeSearchMessageId === message.id ? "cfs-match-active" : ""}
+        >
+          {message.content}
+        </div>
+      ))}
+    </div>
+  ),
+}));
 vi.mock("../chat-input", () => ({ ChatInput: () => <div data-testid="chat-input" /> }));
 vi.mock("../chat-input-footer", () => ({ ChatInputFooter: () => <div data-testid="chat-input-footer" /> }));
 vi.mock("../scroll-bottom-button", () => ({ ScrollBottomButton: () => <div data-testid="scroll-bottom" /> }));
@@ -83,13 +98,71 @@ vi.mock("@/hooks/use-chat-view-runtime", () => ({
 vi.mock("@/hooks/use-preflight-directory-access-prompt", () => ({ usePreflightDirectoryAccessPrompt: () => undefined }));
 vi.mock("@/hooks/use-composer-handoff", () => ({ useComposerHandoff: vi.fn() }));
 vi.mock("@/lib/composer-handoff", () => ({ hasComposerPosition: () => true }));
+vi.mock("react-i18next", () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 
 const props = {
   sessionId: "parent", model: "model", provider: "provider", projects: [], git: {},
   onAddProject: vi.fn(), onReasoningModeChange: vi.fn(), terminalState: {},
 } as unknown as ChatViewProps;
+const originalScrollIntoView = Object.getOwnPropertyDescriptor(
+  Element.prototype,
+  "scrollIntoView",
+);
+
+afterEach(() => {
+  state.chat.messages = [];
+  state.isAtBottom = false;
+  if (originalScrollIntoView) {
+    Object.defineProperty(Element.prototype, "scrollIntoView", originalScrollIntoView);
+  } else {
+    Reflect.deleteProperty(Element.prototype, "scrollIntoView");
+  }
+});
 
 describe("ChatView child read-only mode", () => {
+  it.each([
+    ["Ctrl", { code: "KeyF", key: "f", ctrlKey: true }],
+    ["Cmd", { code: "KeyF", key: "f", metaKey: true }],
+  ])("ouvre la recherche dans la conversation avec %s + F", (_label, keyboard) => {
+    render(<ChatView {...props} isSubagent={false} />);
+
+    fireEvent.keyDown(window, keyboard);
+
+    expect(screen.getByRole("searchbox")).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
+  });
+
+  it("parcourt les messages correspondants avec Entrée et Maj + Entrée", () => {
+    state.chat.messages = [
+      message("first", "Première aiguille"),
+      message("middle", "Sans correspondance"),
+      message("last", "Deuxième AIGUILLE"),
+    ];
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(Element.prototype, "scrollIntoView", {
+      configurable: true,
+      value: scrollIntoView,
+    });
+    render(<ChatView {...props} isSubagent={false} />);
+    fireEvent.keyDown(window, { code: "KeyF", key: "f", ctrlKey: true });
+
+    const input = screen.getByRole("searchbox");
+    fireEvent.change(input, { target: { value: "aiguille" } });
+
+    expect(screen.getByText("1 / 2")).toBeInTheDocument();
+    expect(document.querySelector("[data-message-id='first']")).toHaveClass("cfs-match-active");
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(screen.getByText("2 / 2")).toBeInTheDocument();
+    expect(document.querySelector("[data-message-id='last']")).toHaveClass("cfs-match-active");
+
+    fireEvent.keyDown(input, { key: "Enter", shiftKey: true });
+    expect(screen.getByText("1 / 2")).toBeInTheDocument();
+    expect(document.querySelector("[data-message-id='first']")).toHaveClass("cfs-match-active");
+  });
+
   it("removes write surfaces when rerendered from a parent without unmounting", () => {
     const { rerender } = render(<ChatView {...props} isSubagent={false} />);
 
@@ -133,3 +206,13 @@ describe("ChatView child read-only mode", () => {
     expect(screen.queryByTestId("scroll-bottom")).not.toBeInTheDocument();
   });
 });
+
+function message(id: string, content: string): AgentMessage {
+  return {
+    id,
+    role: "user",
+    content,
+    files: [],
+    timestamp: "2026-08-27T00:00:00Z",
+  };
+}

@@ -4,6 +4,7 @@ import { useFsEvent } from "@/hooks/use-fs-event";
 import { admissionErrorMessage } from "@/lib/admission-error";
 import { showToast } from "@/lib/toast-emitter";
 import i18n from "@/i18n";
+import { matchesAppShortcut } from "@/lib/app-shortcuts";
 
 export type PermissionMode = "auto" | "manual" | "chat";
 export type PermissionFamily = "chat" | "tools";
@@ -92,7 +93,7 @@ export function usePermissionMode(sessionId?: string, enabled = true) {
   useEffect(() => {
     if (!enabled || !loaded) return;
     const onKey = (event: KeyboardEvent) => {
-      if (!event.shiftKey || !event.key.startsWith("Tab")) return;
+      if (!matchesAppShortcut(event, "changePermissions")) return;
       const target = event.target as HTMLElement | null;
       const tag = target?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || target?.isContentEditable) return;

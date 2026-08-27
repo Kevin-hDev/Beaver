@@ -1,4 +1,4 @@
-import { act, renderHook, waitFor } from "@testing-library/react";
+import { act, fireEvent, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { useSessionTabs } from "../use-session-tabs";
@@ -181,6 +181,30 @@ describe("useSessionTabs", () => {
     expect(invoke).toHaveBeenCalledWith("save_session_tabs", {
       sessionId: "root",
       tabs: { ...rootTabs, main_checkpoint_branch: "main" },
+    });
+  });
+
+  it.each([
+    ["Ctrl", { code: "Digit2", key: "2", ctrlKey: true }],
+    ["Cmd", { code: "Digit2", key: "2", metaKey: true }],
+  ])("sélectionne le deuxième onglet avec %s + 2", async (_label, keyboard) => {
+    const tabsWithMainActive = { ...cloneTabs, active_tab_id: "main" };
+    vi.mocked(invoke).mockImplementation((command: string, args?: unknown) => {
+      if (command === "list_session_tabs") return Promise.resolve(tabsWithMainActive);
+      if (command === "save_session_tabs") {
+        return Promise.resolve((args as { tabs: SessionTabs }).tabs);
+      }
+      return Promise.resolve(rootTabs);
+    });
+    const { result } = renderHook(() => useSessionTabs("root"));
+    await waitFor(() => expect(result.current.tabs).toEqual(tabsWithMainActive));
+
+    fireEvent.keyDown(window, keyboard);
+
+    await waitFor(() => expect(result.current.tabs?.active_tab_id).toBe("branch-1"));
+    expect(invoke).toHaveBeenCalledWith("save_session_tabs", {
+      sessionId: "root",
+      tabs: { ...tabsWithMainActive, active_tab_id: "branch-1" },
     });
   });
 });

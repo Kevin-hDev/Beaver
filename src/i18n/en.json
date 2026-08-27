@@ -1047,7 +1047,20 @@
       "goForward": "Go forward",
       "newSession": "New session",
       "searchDialog": "Search conversations",
-      "togglePreview": "Toggle file preview panel"
+      "togglePreview": "Toggle file preview panel",
+      "openSettings": "Open settings",
+      "searchConversation": "Search within conversation",
+      "focusComposer": "Focus the chat input",
+      "selectSessionTab": "Switch session tab",
+      "changePermissions": "Change permissions",
+      "sendMessage": "Send message",
+      "newLine": "Insert a new line",
+      "stopResponse": "Stop response",
+      "submitEdit": "Submit and rerun edited message",
+      "cancelEdit": "Cancel message editing",
+      "zoomIn": "Increase interface size",
+      "zoomOut": "Decrease interface size",
+      "resetZoom": "Reset interface size"
     },
     "confirm": {
       "deleteModel": "Confirm?"
@@ -1073,6 +1086,12 @@
     "recent": "Recent conversations",
     "results": "Results",
     "empty": "No conversation found"
+  },
+  "conversationSearch": {
+    "label": "Search within conversation",
+    "placeholder": "Search messages…",
+    "previous": "Previous result",
+    "next": "Next result"
   },
   "about": {
     "version": "Version",

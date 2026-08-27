@@ -170,6 +170,21 @@ describe("navigation clavier des skills", () => {
     );
   });
 
+  it.each([
+    ["Ctrl", { code: "KeyL", key: "l", ctrlKey: true }],
+    ["Cmd", { code: "KeyL", key: "l", metaKey: true }],
+  ])("place le curseur dans le champ avec %s + L", async (_label, keyboard) => {
+    const { container } = render(<ChatInput {...baseProps} />);
+    const view = editorView(container);
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith("list_skills"));
+    expect(view.hasFocus).toBe(false);
+
+    fireEvent.keyDown(window, keyboard);
+
+    expect(view.hasFocus).toBe(true);
+  });
+
   it("ferme la liste avec Échap sans modifier le texte", async () => {
     const { container } = render(<ChatInput {...baseProps} />);
     const view = editorView(container);

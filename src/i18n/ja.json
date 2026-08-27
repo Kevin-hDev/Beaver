@@ -1042,7 +1042,20 @@
       "goForward": "進む",
       "newSession": "新しいセッション",
       "searchDialog": "会話を検索",
-      "togglePreview": "ファイルプレビューパネルの表示/非表示"
+      "togglePreview": "ファイルプレビューパネルの表示/非表示",
+      "openSettings": "設定を開く",
+      "searchConversation": "会話内を検索",
+      "focusComposer": "チャット入力欄にフォーカス",
+      "selectSessionTab": "セッションタブを切り替える",
+      "changePermissions": "権限を変更",
+      "sendMessage": "メッセージを送信",
+      "newLine": "改行を挿入",
+      "stopResponse": "応答を停止",
+      "submitEdit": "編集したメッセージを確定して再実行",
+      "cancelEdit": "メッセージの編集をキャンセル",
+      "zoomIn": "インターフェースを拡大",
+      "zoomOut": "インターフェースを縮小",
+      "resetZoom": "インターフェースのサイズをリセット"
     },
     "confirm": {
       "deleteModel": "確認しますか？"
@@ -1068,6 +1081,12 @@
     "recent": "最近の会話",
     "results": "結果",
     "empty": "会話が見つかりません"
+  },
+  "conversationSearch": {
+    "label": "会話内を検索",
+    "placeholder": "メッセージを検索…",
+    "previous": "前の結果",
+    "next": "次の結果"
   },
   "about": {
     "version": "バージョン",

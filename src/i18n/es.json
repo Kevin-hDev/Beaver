@@ -1042,7 +1042,20 @@
       "goForward": "Ir adelante",
       "newSession": "Nueva sesión",
       "searchDialog": "Buscar conversaciones",
-      "togglePreview": "Mostrar/ocultar panel de vista previa"
+      "togglePreview": "Mostrar/ocultar panel de vista previa",
+      "openSettings": "Abrir ajustes",
+      "searchConversation": "Buscar en la conversación",
+      "focusComposer": "Enfocar el campo de chat",
+      "selectSessionTab": "Cambiar pestaña de sesión",
+      "changePermissions": "Cambiar permisos",
+      "sendMessage": "Enviar mensaje",
+      "newLine": "Insertar una nueva línea",
+      "stopResponse": "Detener la respuesta",
+      "submitEdit": "Validar y relanzar el mensaje editado",
+      "cancelEdit": "Cancelar la edición del mensaje",
+      "zoomIn": "Aumentar el tamaño de la interfaz",
+      "zoomOut": "Reducir el tamaño de la interfaz",
+      "resetZoom": "Restablecer el tamaño de la interfaz"
     },
     "confirm": {
       "deleteModel": "¿Confirmar?"
@@ -1068,6 +1081,12 @@
     "recent": "Conversaciones recientes",
     "results": "Resultados",
     "empty": "Ninguna conversación encontrada"
+  },
+  "conversationSearch": {
+    "label": "Buscar en la conversación",
+    "placeholder": "Buscar en los mensajes…",
+    "previous": "Resultado anterior",
+    "next": "Resultado siguiente"
   },
   "about": {
     "version": "Versión",
