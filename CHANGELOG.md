@@ -4,6 +4,14 @@
 
 ---
 
+## v1.1.7
+
+### Agent Local composer
+
+- **Clean reasoning continuity controls** — required reasoning continuity now stays automatic and invisible instead of showing an internal status sentence that compressed the model and send controls.
+
+---
+
 ## v1.1.6
 
 ### Reasoning continuity

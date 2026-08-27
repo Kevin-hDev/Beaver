@@ -1,4 +1,27 @@
 {
+  "1.1.7": {
+    "de": [
+      "Die erforderliche Denkfortsetzung bleibt jetzt unsichtbar und nimmt im Nachrichtenfeld keinen Platz mehr ein."
+    ],
+    "en": [
+      "Required reasoning continuity now stays invisible and no longer crowds the message composer."
+    ],
+    "es": [
+      "La continuidad obligatoria del razonamiento ahora permanece invisible y ya no ocupa espacio en el campo de mensaje."
+    ],
+    "fr": [
+      "La continuité obligatoire du raisonnement reste désormais invisible et n’encombre plus la zone de saisie."
+    ],
+    "it": [
+      "La continuità obbligatoria del ragionamento ora resta invisibile e non ingombra più il campo del messaggio."
+    ],
+    "ja": [
+      "必須の推論継続は非表示になり、メッセージ入力欄を圧迫しなくなりました。"
+    ],
+    "zh": [
+      "必需的推理连续性现在保持隐藏，不再挤占消息输入区域。"
+    ]
+  },
   "1.1.6": {
     "de": [
       "Unterstützte Modelle behalten jetzt ihr natives Denken über Nachrichten und Werkzeugaufrufe hinweg bei.",
