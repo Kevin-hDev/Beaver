@@ -362,7 +362,12 @@ fn install_context_fixture(label: &str) -> ContextFixture {
     let skill_id = super::super::skill_catalog::entries()
         .unwrap()
         .into_iter()
-        .find(|entry| entry.bundle_root == canonical)
+        .find(|entry| {
+            entry
+                .bundle_root
+                .canonicalize()
+                .is_ok_and(|root| root == canonical)
+        })
         .expect("installed skill")
         .info
         .id;
