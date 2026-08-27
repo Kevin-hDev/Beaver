@@ -12,6 +12,8 @@
     "cef-supervision",
     "chronos-sidecar.pid",
     "ollama-sidecar.pid",
+    "reasoning-fixture-reports",
+    "reasoning-fixture-runtime",
     "searxng-sidecar.pid",
     "update-health"
   ],
@@ -62,6 +64,20 @@
         {
           "file": "src-tauri/src/services/codex_oauth/store.rs",
           "snippets": ["const VAULT_KEY: &str = \"_codex_oauth\";"]
+        },
+        {
+          "file": "src-tauri/src/services/api_keys_credential_scope_wire.rs",
+          "scope": "migration",
+          "snippets": [
+            "const LLM_OAUTH_XAI_KEY: &str = \"_llm_oauth_xai\";",
+            "const LLM_OAUTH_KIMI_KEY: &str = \"_llm_oauth_kimi\";",
+            "const CODEX_OAUTH_KEY: &str = \"_codex_oauth\";"
+          ],
+          "replaces": [
+            "\"_llm_oauth_xai\"",
+            "\"_llm_oauth_kimi\"",
+            "const VAULT_KEY: &str = \"_codex_oauth\";"
+          ]
         }
       ],
       "evidence": [

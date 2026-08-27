@@ -82,7 +82,12 @@ test("le profil couvre exactement les 25 domaines du plan", () => {
     contractCount += domain.contracts.length;
     for (const contract of domain.contracts) {
       assert.ok(["baseline", "migration"].includes(contract.scope ?? "baseline"));
-      snippetCount += contract.snippets.length;
+      const replacements = contract.replaces ?? [];
+      assert.ok(Array.isArray(replacements) && replacements.length <= 16);
+      if ((contract.scope ?? "baseline") === "baseline") {
+        assert.equal(replacements.length, 0);
+      }
+      snippetCount += contract.snippets.length + replacements.length;
     }
     assert.ok(contractCount <= MAX_CONTRACTS);
     assert.ok(snippetCount <= MAX_SNIPPETS);
@@ -121,11 +126,18 @@ test("tous les contrats courants existent réellement dans les sources", () => {
       const source = boundedRead(path, MAX_SOURCE_BYTES);
       assert.ok(contract.snippets.length > 0 && contract.snippets.length <= 16);
       for (const snippet of contract.snippets) {
-        const migrated = scope === "baseline" && domain.contracts.some((candidate) => (
-          candidate.scope === "migration"
-          && candidate.snippets.includes(snippet)
-          && boundedRead(safeRelativePath(candidate.file), MAX_SOURCE_BYTES).includes(snippet)
-        ));
+        const migrated = scope === "baseline" && domain.contracts.some((candidate) => {
+          if (candidate.scope !== "migration") return false;
+          const candidateSource = boundedRead(
+            safeRelativePath(candidate.file),
+            MAX_SOURCE_BYTES,
+          );
+          if (candidate.snippets.includes(snippet)) {
+            return candidateSource.includes(snippet);
+          }
+          return (candidate.replaces ?? []).includes(snippet)
+            && candidate.snippets.every((current) => candidateSource.includes(current));
+        });
         assert.ok(
           source.includes(snippet) || migrated,
           `${domain.id}: contrat absent dans ${contract.file}: ${snippet}`,
