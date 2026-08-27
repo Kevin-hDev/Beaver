@@ -76,7 +76,8 @@ mod tests {
 
     fn test_session() -> AgentSession {
         AgentSession {
-            schema_version: crate::services::agent_local::session_limits::CURRENT_SESSION_SCHEMA_VERSION,
+            schema_version:
+                crate::services::agent_local::session_limits::CURRENT_SESSION_SCHEMA_VERSION,
             id: "abc-123".into(),
             name: "Test".into(),
             created_at: Utc::now(),

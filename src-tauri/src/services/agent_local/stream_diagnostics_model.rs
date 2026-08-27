@@ -81,9 +81,7 @@ fn request_stats(messages: &[ChatMessage]) -> ModelRequestStats {
                         _ => None,
                     }
                 });
-                if let Some(reasoning) = native_reasoning
-                    .or(message.tool_loop_reasoning.as_ref())
-                {
+                if let Some(reasoning) = native_reasoning.or(message.tool_loop_reasoning.as_ref()) {
                     if !reasoning.is_empty() {
                         stats.assistant_reasoning_messages += 1;
                         stats.assistant_reasoning_chars += char_count(reasoning);
@@ -116,14 +114,20 @@ mod tests {
     #[test]
     fn request_stats_counts_reasoning_without_content() {
         let messages = vec![
-            ChatMessage::assistant("".to_string(), Some("réflexion".to_string()), None, Some("réflexion".to_string()), Some(vec![ToolCallOllama {
+            ChatMessage::assistant(
+                "".to_string(),
+                Some("réflexion".to_string()),
+                None,
+                Some("réflexion".to_string()),
+                Some(vec![ToolCallOllama {
                     id: Some("call_1".to_string()),
                     extra_content: None,
                     function: ToolCallFunction {
                         name: "grep".to_string(),
                         arguments: json!({"pattern": "x"}),
                     },
-                }])),
+                }]),
+            ),
             ChatMessage::tool("ok".to_string(), Some("call_1".to_string()), None),
         ];
 

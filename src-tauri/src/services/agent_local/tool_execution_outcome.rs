@@ -109,7 +109,11 @@ mod tests {
     fn oversized_follow_up_is_bounded_without_failing_a_large_tool_result() {
         let mut outcome = ToolExecutionOutcome::default();
         outcome.record(ToolFollowUp::UserMessage("é".repeat(MAX_FOLLOW_UP_BYTES)));
-        let mut messages = vec![ChatMessage::tool("x".repeat(MAX_FOLLOW_UP_BYTES * 2), None, None)];
+        let mut messages = vec![ChatMessage::tool(
+            "x".repeat(MAX_FOLLOW_UP_BYTES * 2),
+            None,
+            None,
+        )];
 
         assert!(!outcome.apply_follow_ups(&mut messages).unwrap());
         assert!(messages[0].content.ends_with('é'));

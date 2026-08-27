@@ -96,12 +96,9 @@ pub async fn has_pending_except(session_id: &str, ignored_child_ids: &BTreeSet<S
     super::session_store::get(session_id)
         .await
         .map(|session| {
-            session
-                .subagent_hidden_reports
-                .iter()
-                .any(|report| {
-                    !report.delivered && !ignored_child_ids.contains(&report.child_session_id)
-                })
+            session.subagent_hidden_reports.iter().any(|report| {
+                !report.delivered && !ignored_child_ids.contains(&report.child_session_id)
+            })
         })
         .unwrap_or(false)
 }

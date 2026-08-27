@@ -35,9 +35,11 @@ async fn working_dir_update_cannot_overwrite_a_concurrent_correction() {
         .await
     });
     let mut correction = Box::pin(correction);
-    assert!(tokio::time::timeout(std::time::Duration::from_millis(30), &mut correction)
-        .await
-        .is_err());
+    assert!(
+        tokio::time::timeout(std::time::Duration::from_millis(30), &mut correction)
+            .await
+            .is_err()
+    );
 
     let _ = release_tx.send(());
     update
@@ -50,7 +52,10 @@ async fn working_dir_update_cannot_overwrite_a_concurrent_correction() {
         .expect("persist correction");
     let saved = session_store::get(&session.id).await.expect("load session");
     assert_eq!(saved.working_dir, expected);
-    assert_eq!(saved.subagent_queued_prompts, vec!["correction concurrente"]);
+    assert_eq!(
+        saved.subagent_queued_prompts,
+        vec!["correction concurrente"]
+    );
     session_store::delete_one(&session.id)
         .await
         .expect("delete session");
@@ -69,12 +74,9 @@ async fn runtime_refresh_keeps_an_automatic_workspace_hidden() {
     )
     .await
     .expect("set managed directory");
-    session_store_updates::refresh_working_dir(
-        &session.id,
-        root.path().to_string_lossy().as_ref(),
-    )
-    .await
-    .expect("refresh managed directory");
+    session_store_updates::refresh_working_dir(&session.id, root.path().to_string_lossy().as_ref())
+        .await
+        .expect("refresh managed directory");
 
     let saved = session_store::get(&session.id).await.expect("load session");
     assert!(saved.working_dir_managed);
@@ -97,12 +99,9 @@ async fn selecting_a_directory_makes_it_visible_again() {
     )
     .await
     .expect("set managed directory");
-    session_store_updates::update_working_dir(
-        &session.id,
-        root.path().to_string_lossy().as_ref(),
-    )
-    .await
-    .expect("select directory");
+    session_store_updates::update_working_dir(&session.id, root.path().to_string_lossy().as_ref())
+        .await
+        .expect("select directory");
 
     let saved = session_store::get(&session.id).await.expect("load session");
     assert!(!saved.working_dir_managed);
@@ -136,12 +135,17 @@ async fn fast_mode_update_and_rename_keep_both_mutations() {
     let rename_id = session.id.clone();
     let rename = tokio::spawn(async move { session_store::rename(&rename_id, "After").await });
     let mut rename = Box::pin(rename);
-    assert!(tokio::time::timeout(std::time::Duration::from_millis(30), &mut rename)
-        .await
-        .is_err());
+    assert!(
+        tokio::time::timeout(std::time::Duration::from_millis(30), &mut rename)
+            .await
+            .is_err()
+    );
 
     let _ = release_tx.send(());
-    update.await.expect("join update").expect("update fast mode");
+    update
+        .await
+        .expect("join update")
+        .expect("update fast mode");
     rename.await.expect("join rename").expect("rename session");
     let saved = session_store::get(&session.id).await.expect("load session");
     assert!(saved.fast_mode_enabled);
@@ -183,9 +187,11 @@ async fn project_assignment_and_rename_keep_both_mutations() {
     let rename_id = session.id.clone();
     let rename = tokio::spawn(async move { session_store::rename(&rename_id, "After").await });
     let mut rename = Box::pin(rename);
-    assert!(tokio::time::timeout(std::time::Duration::from_millis(30), &mut rename)
-        .await
-        .is_err());
+    assert!(
+        tokio::time::timeout(std::time::Duration::from_millis(30), &mut rename)
+            .await
+            .is_err()
+    );
 
     let _ = release_tx.send(());
     assert!(update.await.expect("join assignment").expect("assignment"));
@@ -193,7 +199,9 @@ async fn project_assignment_and_rename_keep_both_mutations() {
     let saved = session_store::get(&session.id).await.expect("load session");
     assert_eq!(saved.project_id.as_deref(), Some("project-new"));
     assert_eq!(saved.name, "After");
-    session_store::delete_one(&session.id).await.expect("cleanup");
+    session_store::delete_one(&session.id)
+        .await
+        .expect("cleanup");
 }
 
 #[tokio::test]
@@ -211,21 +219,27 @@ async fn project_assignment_and_model_update_keep_both_mutations() {
     loaded_rx.await.expect("project assignment loaded session");
     let model_id = session.id.clone();
     let model = tokio::spawn(async move {
-        session_store_updates::update_model(&model_id, "llama3", "ollama", None, Some(false))
-            .await
+        session_store_updates::update_model(&model_id, "llama3", "ollama", None, Some(false)).await
     });
     let mut model = Box::pin(model);
-    assert!(tokio::time::timeout(std::time::Duration::from_millis(30), &mut model)
-        .await
-        .is_err());
+    assert!(
+        tokio::time::timeout(std::time::Duration::from_millis(30), &mut model)
+            .await
+            .is_err()
+    );
 
     let _ = release_tx.send(());
     assert!(update.await.expect("join assignment").expect("assignment"));
     model.await.expect("join model").expect("update model");
     let saved = session_store::get(&session.id).await.expect("load session");
     assert_eq!(saved.project_id.as_deref(), Some("project-new"));
-    assert_eq!((saved.model.as_str(), saved.provider.as_str()), ("llama3", "ollama"));
-    session_store::delete_one(&session.id).await.expect("cleanup");
+    assert_eq!(
+        (saved.model.as_str(), saved.provider.as_str()),
+        ("llama3", "ollama")
+    );
+    session_store::delete_one(&session.id)
+        .await
+        .expect("cleanup");
 }
 
 #[tokio::test]
@@ -243,17 +257,15 @@ async fn project_assignment_and_reasoning_update_keep_both_mutations() {
     loaded_rx.await.expect("project assignment loaded session");
     let reasoning_id = session.id.clone();
     let reasoning = tokio::spawn(async move {
-        session_store_updates::update_reasoning(
-            &reasoning_id,
-            Some("high".to_string()),
-            Some(true),
-        )
-        .await
+        session_store_updates::update_reasoning(&reasoning_id, Some("high".to_string()), Some(true))
+            .await
     });
     let mut reasoning = Box::pin(reasoning);
-    assert!(tokio::time::timeout(std::time::Duration::from_millis(30), &mut reasoning)
-        .await
-        .is_err());
+    assert!(
+        tokio::time::timeout(std::time::Duration::from_millis(30), &mut reasoning)
+            .await
+            .is_err()
+    );
 
     let _ = release_tx.send(());
     assert!(update.await.expect("join assignment").expect("assignment"));
@@ -264,7 +276,9 @@ async fn project_assignment_and_reasoning_update_keep_both_mutations() {
     let saved = session_store::get(&session.id).await.expect("load session");
     assert_eq!(saved.project_id.as_deref(), Some("project-new"));
     assert_eq!(saved.reasoning_mode.as_deref(), Some("high"));
-    session_store::delete_one(&session.id).await.expect("cleanup");
+    session_store::delete_one(&session.id)
+        .await
+        .expect("cleanup");
 }
 
 #[test]
@@ -283,7 +297,10 @@ fn user_session_writers_are_routed_through_the_shared_lock_gate() {
     assert_eq!(updates.matches("update_locked(id, |session|").count(), 3);
     assert!(store.contains("session_store_updates::update_locked(id, |session|"));
     assert!(commands.contains("session_ops::apply_metadata_patch"));
-    assert_eq!(clone_git.matches("lock_session(clone_session_id)").count(), 2);
+    assert_eq!(
+        clone_git.matches("lock_session(clone_session_id)").count(),
+        2
+    );
     assert!(clone_git_link.contains("lock_session(clone_session_id)"));
     assert!(clone_git_cleanup.contains("lock_session(session_id)"));
     assert!(tabs_git.contains("lock_session(&tab.session_id)"));

@@ -43,6 +43,10 @@ async fn failed_child() -> (
 
 async fn cleanup(parent_id: &str, child_id: &str) {
     subagent_registry::unregister(child_id).await;
-    session_store::delete_one(child_id).await.expect("delete child");
-    session_store::delete_one(parent_id).await.expect("delete parent");
+    session_store::delete_one(child_id)
+        .await
+        .expect("delete child");
+    session_store::delete_one(parent_id)
+        .await
+        .expect("delete parent");
 }

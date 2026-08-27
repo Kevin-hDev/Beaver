@@ -80,9 +80,7 @@ async fn resume_inner(
     let expected_source = super::conversation_admission_replay::source_for_admission(&target);
     let source_changed = {
         let message = session.messages.last_mut().ok_or_else(error)?;
-        if message.id != input.message_id
-            || message.role != "user"
-        {
+        if message.id != input.message_id || message.role != "user" {
             return Err(error());
         }
         let changed = message.replay_source != expected_source;
@@ -90,10 +88,7 @@ async fn resume_inner(
         changed
     };
     let history = super::conversation_history_resolve::from_session_for_continuation(
-        &session,
-        &target,
-        key_source,
-        None,
+        &session, &target, key_source, None,
     )
     .await
     .map_err(|_| error())?;

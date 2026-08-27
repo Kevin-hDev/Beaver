@@ -61,7 +61,7 @@ pub struct AgentSession {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub archived_at: Option<DateTime<Utc>>,
     /* Date d'épinglage dans la barre latérale. Absent = non épinglée. Vit ici
-       comme `archived_at` : un état de la session, dont l'index est reconstruit. */
+    comme `archived_at` : un état de la session, dont l'index est reconstruit. */
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pinned_at: Option<DateTime<Utc>>,
     pub model: String,
@@ -168,7 +168,7 @@ pub struct AgentSessionMeta {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub archived_at: Option<DateTime<Utc>>,
     /* Recopiée depuis la session : l'index n'est jamais l'autorité, il se
-       reconstruit à partir des fichiers de session. */
+    reconstruit à partir des fichiers de session. */
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pinned_at: Option<DateTime<Utc>>,
     pub model: String,

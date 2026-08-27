@@ -1,5 +1,5 @@
-use super::session_store::validate_session_id;
 use super::session_limits::MAX_SESSION_FILE_BYTES;
+use super::session_store::validate_session_id;
 use super::types_session::AgentSession;
 use std::path::{Path, PathBuf};
 
@@ -49,8 +49,8 @@ pub(super) async fn read_from_path(path: PathBuf) -> Result<AgentSession, Sessio
         }
         crate::services::private_store::BoundedFile::Content(data) => data,
     };
-    let loaded = super::session_migration::read(&data, path)
-        .map_err(|_| SessionReadError::Invalid)?;
+    let loaded =
+        super::session_migration::read(&data, path).map_err(|_| SessionReadError::Invalid)?;
     super::session_migration::acknowledge_v2(&loaded)
         .await
         .map_err(|_| SessionReadError::Unavailable)?;
@@ -116,8 +116,7 @@ pub(super) async fn write_prepared_to_path(
                 Ok(loaded) => loaded,
                 Err(_) => {
                     let backup = super::session_migration_backup::corrupt_backup_path(&path)?;
-                    super::session_migration_backup::ensure_exact_backup(&backup, &current)
-                        .await?;
+                    super::session_migration_backup::ensure_exact_backup(&backup, &current).await?;
                     return crate::services::private_store::atomic_write_async(path, data)
                         .await
                         .map_err(|_| super::session_limits::save_failed());
@@ -147,8 +146,8 @@ fn path_in(dir: &Path, id: &str) -> Result<PathBuf, String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{prepare, read_from_path, write_prepared_to_path};
     use super::super::session_limits::MAX_SESSION_FILE_BYTES;
+    use super::{prepare, read_from_path, write_prepared_to_path};
 
     #[tokio::test]
     async fn rejects_an_oversized_session_before_allocating_it() {

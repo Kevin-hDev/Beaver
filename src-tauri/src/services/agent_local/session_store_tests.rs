@@ -46,12 +46,10 @@ mod tests {
     #[tokio::test]
     async fn invalid_session_file_can_still_be_deleted() {
         let id = uuid::Uuid::new_v4().to_string();
-        let path = crate::services::paths::data_file_for_write(
-            "agent-sessions",
-            &format!("{id}.json"),
-        )
-        .await
-        .expect("session path");
+        let path =
+            crate::services::paths::data_file_for_write("agent-sessions", &format!("{id}.json"))
+                .await
+                .expect("session path");
         tokio::fs::write(&path, b"{invalid")
             .await
             .expect("write invalid session");
@@ -103,15 +101,10 @@ mod tests {
 
     #[tokio::test]
     async fn persists_the_latest_context_snapshot() {
-        let session = super::super::create_full(
-            "context snapshot",
-            "model",
-            "provider",
-            false,
-            None,
-        )
-        .await
-        .expect("create session");
+        let session =
+            super::super::create_full("context snapshot", "model", "provider", false, None)
+                .await
+                .expect("create session");
         let message_id = uuid::Uuid::new_v4().to_string();
         let message = crate::services::agent_local::types_session::AgentMessage {
             id: message_id.clone(),
@@ -130,8 +123,8 @@ mod tests {
             timestamp: chrono::Utc::now(),
             tokens: 0,
             work_duration_ms: None,
-        skill_names: None,
-        skill_ids: None,
+            skill_names: None,
+            skill_ids: None,
             stream_run_id: None,
             stream_part: None,
         };
@@ -145,21 +138,19 @@ mod tests {
         )
         .await
         .expect("save context snapshot");
-        let saved = super::super::get(&session.id).await.expect("reload session");
+        let saved = super::super::get(&session.id)
+            .await
+            .expect("reload session");
 
         assert_eq!(saved.accumulated_tokens, 2);
         assert_eq!(saved.context_tokens, Some(4_000));
 
-        super::super::add_messages_with_context(
-            &session.id,
-            vec![],
-            0,
-            Some(3_000),
-            None,
-        )
-        .await
-        .expect("ignore snapshot without limit");
-        let unbounded = super::super::get(&session.id).await.expect("reload unbounded");
+        super::super::add_messages_with_context(&session.id, vec![], 0, Some(3_000), None)
+            .await
+            .expect("ignore snapshot without limit");
+        let unbounded = super::super::get(&session.id)
+            .await
+            .expect("reload unbounded");
         assert_eq!(unbounded.context_tokens, None);
 
         crate::services::agent_local::session_ops::truncate_and_replace(
@@ -167,8 +158,8 @@ mod tests {
             &message_id,
             None,
         )
-            .await
-            .expect("edit session history");
+        .await
+        .expect("edit session history");
         let edited = super::super::get(&session.id).await.expect("reload edit");
         assert_eq!(edited.accumulated_tokens, 2);
         assert_eq!(edited.context_tokens, None);
@@ -179,15 +170,10 @@ mod tests {
 
     #[tokio::test]
     async fn delete_removes_backup_and_known_atomic_temps() {
-        let session = super::super::create_full(
-            "artifact cleanup",
-            "model",
-            "provider",
-            false,
-            None,
-        )
-        .await
-        .expect("create session");
+        let session =
+            super::super::create_full("artifact cleanup", "model", "provider", false, None)
+                .await
+                .expect("create session");
         let directory = crate::services::paths::data_dir().join("agent-sessions");
         let main = directory.join(format!("{}.json", session.id));
         let backup = directory.join(format!("{}.json.v1.bak", session.id));
@@ -216,15 +202,10 @@ mod tests {
             CompletionState, ContinuationState, ReasoningEnvelope, ReasoningSource,
         };
 
-        let mut session = super::super::create_full(
-            "continuation guard",
-            "fixture-model",
-            "ollama",
-            false,
-            None,
-        )
-        .await
-        .expect("create session");
+        let mut session =
+            super::super::create_full("continuation guard", "fixture-model", "ollama", false, None)
+                .await
+                .expect("create session");
         let envelope = ReasoningEnvelope::new(
             ContractId::OllamaNativeV1,
             ReasoningSource {
@@ -239,29 +220,33 @@ mod tests {
             },
             Vec::new(),
         );
-        session.messages.push(crate::services::agent_local::types_session::AgentMessage {
-            id: uuid::Uuid::new_v4().to_string(),
-            turn_id: "turn-preserved".into(),
-            role: "assistant".into(),
-            content: "visible".into(),
-            thinking: None,
-            tool_calls: None,
-            tool_name: None,
-            tool_call_id: None,
-            continuation: Some(envelope.clone()),
-            replay_source: None,
-            tool_activities: None,
-            segments: None,
-            files: vec![],
-            timestamp: chrono::Utc::now(),
-            tokens: 0,
-            work_duration_ms: None,
-        skill_names: None,
-        skill_ids: None,
-            stream_run_id: None,
-            stream_part: None,
-        });
-        super::super::save(&session).await.expect("seed continuation");
+        session
+            .messages
+            .push(crate::services::agent_local::types_session::AgentMessage {
+                id: uuid::Uuid::new_v4().to_string(),
+                turn_id: "turn-preserved".into(),
+                role: "assistant".into(),
+                content: "visible".into(),
+                thinking: None,
+                tool_calls: None,
+                tool_name: None,
+                tool_call_id: None,
+                continuation: Some(envelope.clone()),
+                replay_source: None,
+                tool_activities: None,
+                segments: None,
+                files: vec![],
+                timestamp: chrono::Utc::now(),
+                tokens: 0,
+                work_duration_ms: None,
+                skill_names: None,
+                skill_ids: None,
+                stream_run_id: None,
+                stream_part: None,
+            });
+        super::super::save(&session)
+            .await
+            .expect("seed continuation");
         let appended = crate::services::agent_local::types_session::AgentMessage {
             id: uuid::Uuid::new_v4().to_string(),
             turn_id: "turn-appended".into(),
@@ -279,8 +264,8 @@ mod tests {
             timestamp: chrono::Utc::now(),
             tokens: 0,
             work_duration_ms: None,
-        skill_names: None,
-        skill_ids: None,
+            skill_names: None,
+            skill_ids: None,
             stream_run_id: None,
             stream_part: None,
         };
@@ -309,6 +294,8 @@ mod tests {
                 .len(),
             2
         );
-        super::super::delete_one(&session.id).await.expect("cleanup");
+        super::super::delete_one(&session.id)
+            .await
+            .expect("cleanup");
     }
 }

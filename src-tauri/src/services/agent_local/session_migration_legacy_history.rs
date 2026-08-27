@@ -95,7 +95,11 @@ fn close_interrupted_tool_turn(session: &mut AgentSession) {
         .filter(|call| !completed.contains(call.id.as_str()))
         .collect::<Vec<_>>();
     if missing.is_empty()
-        || session.messages.len().saturating_add(missing.len()).saturating_add(1)
+        || session
+            .messages
+            .len()
+            .saturating_add(missing.len())
+            .saturating_add(1)
             > super::session_limits::MAX_MESSAGES_PER_SESSION
     {
         return;
@@ -153,7 +157,10 @@ fn close_completed_tool_turns(session: &mut AgentSession) {
         index += 1;
     }
     if session.messages.len() < super::session_limits::MAX_MESSAGES_PER_SESSION
-        && session.messages.last().is_some_and(|message| message.role == "tool")
+        && session
+            .messages
+            .last()
+            .is_some_and(|message| message.role == "tool")
     {
         let boundary = terminal_assistant(session.messages.last().expect("checked last message"));
         session.messages.push(boundary);

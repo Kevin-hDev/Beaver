@@ -81,7 +81,9 @@ async fn assistant_envelope_persists_without_a_duplicate_replay_source() {
         crate::services::reasoning_continuity::contract::ContractId::OllamaNativeV1,
         ReasoningSource::from_target(&target),
         CompletionState::Complete,
-        ContinuationState::OllamaNative { thinking: "opaque native thinking".into() },
+        ContinuationState::OllamaNative {
+            thinking: "opaque native thinking".into(),
+        },
         Vec::new(),
     );
     let expected_source = envelope.source.clone();
@@ -105,11 +107,18 @@ async fn assistant_envelope_persists_without_a_duplicate_replay_source() {
         .expect("persist assistant");
     journal.commit_turn().await.expect("commit turn");
 
-    let reloaded = session_store::get(&session.id).await.expect("reload session");
+    let reloaded = session_store::get(&session.id)
+        .await
+        .expect("reload session");
     let assistant = reloaded.messages.last().expect("assistant record");
     assert!(assistant.replay_source.is_none());
-    assert_eq!(assistant.continuation.as_ref().map(|value| &value.source), Some(&expected_source));
-    session_store::delete_one(&session.id).await.expect("delete session");
+    assert_eq!(
+        assistant.continuation.as_ref().map(|value| &value.source),
+        Some(&expected_source)
+    );
+    session_store::delete_one(&session.id)
+        .await
+        .expect("delete session");
 }
 
 #[tokio::test]
@@ -140,19 +149,33 @@ async fn commit_write_failure_leaves_the_durable_turn_uncommitted_and_retryable(
         .commit_turn_with_injected_write_failure()
         .await
         .is_err());
-    let reloaded = session_store::get(&session.id).await.expect("reload session");
+    let reloaded = session_store::get(&session.id)
+        .await
+        .expect("reload session");
     assert_eq!(
-        reloaded.messages.last().and_then(|message| message.stream_part.as_deref()),
+        reloaded
+            .messages
+            .last()
+            .and_then(|message| message.stream_part.as_deref()),
         Some("checkpoint")
     );
 
     journal.commit_turn().await.expect("retry commit");
-    let committed = session_store::get(&session.id).await.expect("reload committed");
+    let committed = session_store::get(&session.id)
+        .await
+        .expect("reload committed");
     assert_eq!(
-        committed.messages.last().and_then(|message| message.stream_part.as_deref()),
+        committed
+            .messages
+            .last()
+            .and_then(|message| message.stream_part.as_deref()),
         Some("final")
     );
-    session_store::delete_one(&session.id).await.expect("delete session");
+    session_store::delete_one(&session.id)
+        .await
+        .expect("delete session");
 }
 
-fn tool(id: &str) -> ChatMessage { ChatMessage::tool("result".into(), Some(id.into()), Some("bash".into())) }
+fn tool(id: &str) -> ChatMessage {
+    ChatMessage::tool("result".into(), Some(id.into()), Some("bash".into()))
+}

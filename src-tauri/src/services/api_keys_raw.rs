@@ -40,7 +40,9 @@ pub fn get_raw(key: &str) -> Result<Zeroizing<String>, String> {
 
 pub fn has_raw(key: &str) -> Result<bool, String> {
     let prefixed = prefixed_raw_key(key)?;
-    let state = STATE.lock().map_err(|_| "coffre indisponible".to_string())?;
+    let state = STATE
+        .lock()
+        .map_err(|_| "coffre indisponible".to_string())?;
     let current = state
         .as_ref()
         .ok_or_else(|| "coffre indisponible".to_string())?;
@@ -62,7 +64,9 @@ pub fn get_or_create_random_raw(key: &str, byte_len: usize) -> Result<Zeroizing<
         return Err("clé du coffre invalide".to_string());
     }
     let prefixed = format!("{RAW_PREFIX}{key}");
-    let mut state = STATE.lock().map_err(|_| "coffre indisponible".to_string())?;
+    let mut state = STATE
+        .lock()
+        .map_err(|_| "coffre indisponible".to_string())?;
     let current = state
         .as_mut()
         .ok_or_else(|| "coffre indisponible".to_string())?;
@@ -98,7 +102,10 @@ pub fn delete_raw(key: &str) -> Result<(), String> {
 
 pub fn delete_raw_batch(keys: &[&str]) -> Result<(), String> {
     validate_raw_keys(keys)?;
-    let prefixed: Vec<String> = keys.iter().map(|key| format!("{RAW_PREFIX}{key}")).collect();
+    let prefixed: Vec<String> = keys
+        .iter()
+        .map(|key| format!("{RAW_PREFIX}{key}"))
+        .collect();
     transaction(|candidate| {
         for key in &prefixed {
             candidate.remove(key);

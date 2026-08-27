@@ -4,8 +4,9 @@ use crate::services::reasoning_continuity::contract::ReasoningModeId;
 
 pub(super) fn reasoning_mode(request: &ChatRequest) -> ReasoningModeId {
     match request.think.as_ref() {
-        Some(OllamaThink::Level(level)) =>
-            ReasoningModeId::from_name(Some(level)).unwrap_or(ReasoningModeId::Auto),
+        Some(OllamaThink::Level(level)) => {
+            ReasoningModeId::from_name(Some(level)).unwrap_or(ReasoningModeId::Auto)
+        }
         Some(OllamaThink::Bool(true)) => ReasoningModeId::Auto,
         Some(OllamaThink::Bool(false)) | None => ReasoningModeId::Off,
     }

@@ -82,7 +82,10 @@ async fn model_editor_data_uses_the_authoritative_parameter_summary() {
     assert_eq!(parameters[1].value, "Assistant: ");
     assert_eq!(data.parameter_error, None);
     assert!(data.modelfile.starts_with("FROM x\n"));
-    assert_eq!(data.prompt_tier, super::system_prompt_types::PromptTier::Compact);
+    assert_eq!(
+        data.prompt_tier,
+        super::system_prompt_types::PromptTier::Compact
+    );
 }
 
 #[tokio::test]
@@ -260,7 +263,11 @@ async fn show_model_rejects_an_oversized_body_before_json_parsing() {
 async fn show_model_rejects_the_raw_capability_collection_before_filtering() {
     for capabilities in [
         serde_json::json!((0..33)
-            .map(|index| if index == 0 { "thinking".into() } else { format!("cap-{index}") })
+            .map(|index| if index == 0 {
+                "thinking".into()
+            } else {
+                format!("cap-{index}")
+            })
             .collect::<Vec<String>>()),
         serde_json::json!(["thinking", 7]),
         serde_json::json!(["thinking", "bad capability"]),

@@ -1,6 +1,6 @@
-use std::collections::HashSet;
 use serde::Deserialize;
 use serde_json::Value;
+use std::collections::HashSet;
 
 use super::session_limits::{self, CURRENT_SESSION_SCHEMA_VERSION};
 use super::types_session::AgentSession;
@@ -93,9 +93,11 @@ fn validate_v2_readable(session: &AgentSession) -> Result<(), String> {
     }
     for message in &session.messages {
         super::session_migration_ids::validate_id(&message.turn_id)?;
-        if message.replay_source.as_ref().is_some_and(|source| {
-            message.role != "user" || source.validate().is_err()
-        }) {
+        if message
+            .replay_source
+            .as_ref()
+            .is_some_and(|source| message.role != "user" || source.validate().is_err())
+        {
             return Err(invalid());
         }
         super::conversation_skills::validate_persisted_references(

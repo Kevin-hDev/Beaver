@@ -19,17 +19,10 @@ pub(super) fn corrupt_backup_path(path: &Path) -> Result<PathBuf, String> {
         .and_then(|name| name.to_str())
         .filter(|name| name.ends_with(".json"))
         .ok_or_else(save_failed)?;
-    Ok(path.with_file_name(format!(
-        "{name}.corrupt.{}.bak",
-        uuid::Uuid::new_v4()
-    )))
+    Ok(path.with_file_name(format!("{name}.corrupt.{}.bak", uuid::Uuid::new_v4())))
 }
 
-pub(super) async fn publish(
-    path: &Path,
-    original: &[u8],
-    v2_bytes: Vec<u8>,
-) -> Result<(), String> {
+pub(super) async fn publish(path: &Path, original: &[u8], v2_bytes: Vec<u8>) -> Result<(), String> {
     let backup = backup_path(path)?;
     ensure_exact_backup(&backup, original).await?;
     crate::services::private_store::atomic_write_async(path.to_path_buf(), v2_bytes)

@@ -45,7 +45,11 @@ pub async fn configure(
         return Err("État d'extensions invalide.".to_string());
     }
     mutate(session_id, |state| {
-        if state.epoch.as_ref().is_none_or(|current| !same_key(current, &epoch)) {
+        if state
+            .epoch
+            .as_ref()
+            .is_none_or(|current| !same_key(current, &epoch))
+        {
             state.epoch = Some(DiscoveryEpoch {
                 masked: computed_mask,
                 ..epoch

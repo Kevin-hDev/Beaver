@@ -58,7 +58,9 @@ fn chat_stream_transfers_and_cancels_parent_stream_ownership() {
     let adopt = replacement
         .find("adopt_children_for_parent_stream")
         .expect("replacement adopts children");
-    let insert = replacement.find("map.insert").expect("replacement inserts winner");
+    let insert = replacement
+        .find("map.insert")
+        .expect("replacement inserts winner");
     let cancel = replacement
         .find("cancel_previous(old_stream).await")
         .expect("replacement cancels loser");

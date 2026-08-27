@@ -78,12 +78,11 @@ pub(super) fn validate_persisted_references(
         return Ok(()); // Legacy v2 : aucun ID ni corps n'est déduit du nom visible.
     };
     if names.iter().any(|name| {
-            name.is_empty()
-                || name.len() > MAX_SKILL_NAME_BYTES
-                || name.chars().count() > MAX_REFERENCE_NAME_CHARS
-                || name.chars().any(char::is_control)
-        })
-    {
+        name.is_empty()
+            || name.len() > MAX_SKILL_NAME_BYTES
+            || name.chars().count() > MAX_REFERENCE_NAME_CHARS
+            || name.chars().any(char::is_control)
+    }) {
         return Err(error(ConversationInputErrorKind::Invalid));
     }
     if ids.is_empty() || ids.len() != names.len() || ids.len() > MAX_SKILLS_PER_TURN {

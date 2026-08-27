@@ -103,14 +103,18 @@ async fn stream_chat_inner(
 
     let mut token_count: u32 = 0;
     let mut result = StreamResult::default();
-    let mut reasoning_capture = request.capture_reasoning.then(|| ReasoningCapture::new(ReasoningCaptureContext {
-        route_id: RouteId::Ollama,
-        model_id: request.model.clone(),
-        credential_scope: CredentialScope::local_uncredentialed(),
-        reasoning_mode: super::ollama_stream_policy::reasoning_mode(request),
-    }))
-    .transpose()
-    .map_err(|_| "provider_configuration_invalid".to_string())?;
+    let mut reasoning_capture = request
+        .capture_reasoning
+        .then(|| {
+            ReasoningCapture::new(ReasoningCaptureContext {
+                route_id: RouteId::Ollama,
+                model_id: request.model.clone(),
+                credential_scope: CredentialScope::local_uncredentialed(),
+                reasoning_mode: super::ollama_stream_policy::reasoning_mode(request),
+            })
+        })
+        .transpose()
+        .map_err(|_| "provider_configuration_invalid".to_string())?;
     let mut think_filter = ThinkTagFilter::new();
     let mut interrupted = false;
 

@@ -77,7 +77,9 @@ fn validated_context_tokens(value: Option<u32>, limit: Option<u32>) -> Option<u3
     let limit = limit
         .filter(|limit| *limit > 0)?
         .min(super::session_security::MAX_CONTEXT_SNAPSHOT_TOKENS);
-    value.filter(|tokens| *tokens > 0).map(|tokens| tokens.min(limit))
+    value
+        .filter(|tokens| *tokens > 0)
+        .map(|tokens| tokens.min(limit))
 }
 
 #[cfg(test)]

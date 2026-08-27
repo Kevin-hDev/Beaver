@@ -105,9 +105,7 @@ pub(crate) fn parse_show_response(
 }
 
 fn parse_capabilities(json: &serde_json::Value) -> Result<Vec<String>, &'static str> {
-    let raw = json["capabilities"]
-        .as_array()
-        .ok_or("ollama-show-error")?;
+    let raw = json["capabilities"].as_array().ok_or("ollama-show-error")?;
     if raw.is_empty() || raw.len() > MAX_SHOW_CAPABILITIES {
         return Err("ollama-show-error");
     }
@@ -116,9 +114,9 @@ fn parse_capabilities(json: &serde_json::Value) -> Result<Vec<String>, &'static 
             let value = value.as_str().ok_or("ollama-show-error")?;
             if value.is_empty()
                 || value.len() > MAX_SHOW_CAPABILITY_BYTES
-                || !value
-                    .bytes()
-                    .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || b"-_".contains(&byte))
+                || !value.bytes().all(|byte| {
+                    byte.is_ascii_lowercase() || byte.is_ascii_digit() || b"-_".contains(&byte)
+                })
             {
                 return Err("ollama-show-error");
             }

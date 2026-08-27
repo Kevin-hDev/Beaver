@@ -27,7 +27,10 @@ fn synthetic_v1_fixture_keeps_visible_thinking_without_promoting_continuation() 
         .expect("load synthetic v1 fixture");
 
     assert_eq!(loaded.session().schema_version, 2);
-    assert_eq!(loaded.session().messages[1].thinking.as_deref(), Some("fixture-visible-thinking"));
+    assert_eq!(
+        loaded.session().messages[1].thinking.as_deref(),
+        Some("fixture-visible-thinking")
+    );
     assert!(loaded.session().messages[1].continuation.is_none());
 }
 
@@ -41,9 +44,18 @@ fn synthetic_v1_tool_chain_migrates_without_promoting_codex_sidecars() {
     let session = loaded.session();
 
     assert_eq!(session.schema_version, 2);
-    assert!(session.messages.iter().any(|message| message.role == "tool"));
-    assert!(session.messages.iter().all(|message| message.continuation.is_none()));
-    assert!(session.messages.iter().all(|message| message.replay_source.is_none()));
+    assert!(session
+        .messages
+        .iter()
+        .any(|message| message.role == "tool"));
+    assert!(session
+        .messages
+        .iter()
+        .all(|message| message.continuation.is_none()));
+    assert!(session
+        .messages
+        .iter()
+        .all(|message| message.replay_source.is_none()));
 }
 
 #[test]
@@ -56,7 +68,10 @@ fn v1_migration_merges_consecutive_users_and_keeps_a_valid_history() {
     let loaded = super::session_migration::read(&bytes, PathBuf::from("users-v1.json")).unwrap();
 
     super::conversation_history_validation::validate(&loaded.session().messages).unwrap();
-    assert_ne!(loaded.session().messages[0].role, loaded.session().messages[1].role);
+    assert_ne!(
+        loaded.session().messages[0].role,
+        loaded.session().messages[1].role
+    );
 }
 
 #[test]
@@ -75,11 +90,9 @@ fn v1_migration_discards_an_invalid_leading_assistant_but_keeps_valid_turns() {
 #[test]
 fn v1_incomplete_tool_chain_keeps_history_and_closes_every_missing_result() {
     let bytes = v1_with_incomplete_tool_chain();
-    let loaded = super::session_migration::read(
-        &bytes,
-        PathBuf::from("incomplete-tool-chain-v1.json"),
-    )
-    .expect("repair interrupted v1 tool chain");
+    let loaded =
+        super::session_migration::read(&bytes, PathBuf::from("incomplete-tool-chain-v1.json"))
+            .expect("repair interrupted v1 tool chain");
     let messages = &loaded.session().messages;
 
     assert!(!messages.is_empty());
@@ -95,7 +108,10 @@ fn v1_incomplete_tool_chain_keeps_history_and_closes_every_missing_result() {
             .find(|message| message.tool_call_id.as_deref() == Some(call.id.as_str()))
             .expect("synthetic interrupted result");
         assert_eq!(result.role, "tool");
-        assert_eq!(result.tool_name.as_deref(), Some(call.function.name.as_str()));
+        assert_eq!(
+            result.tool_name.as_deref(),
+            Some(call.function.name.as_str())
+        );
         assert_eq!(
             result.content,
             r#"{"status":"cancelled","error":"tool_interrupted"}"#
@@ -108,7 +124,9 @@ fn v1_incomplete_tool_chain_keeps_history_and_closes_every_missing_result() {
 #[tokio::test]
 async fn empty_v2_never_acknowledges_a_nonempty_v1_backup() {
     let root = tempfile::tempdir().expect("tempdir");
-    let path = root.path().join("00000000-0000-4000-8000-000000000010.json");
+    let path = root
+        .path()
+        .join("00000000-0000-4000-8000-000000000010.json");
     let backup = super::session_migration::backup_path(&path).unwrap();
     let mut empty_v2 = base_session();
     empty_v2.messages.clear();
@@ -209,14 +227,17 @@ async fn v2_writer_rejects_invalid_private_skill_links_but_accepts_legacy_names(
         session.messages[0].skill_ids = Some(ids.into_iter().map(str::to_string).collect());
         session.messages[0].skill_names = Some(names.into_iter().map(str::to_string).collect());
         let path = root.path().join(format!("invalid-{index}.json"));
-        assert!(super::session_store_document::write_to_path(path, &session).await.is_err());
+        assert!(super::session_store_document::write_to_path(path, &session)
+            .await
+            .is_err());
     }
 
     let mut legacy = base_session();
     legacy.messages[0].skill_names = Some(vec![String::new(), "../legacy-visible".into()]);
     legacy.messages[0].skill_ids = None;
     super::session_store_document::write_to_path(root.path().join("legacy.json"), &legacy)
-        .await.expect("legacy names remain writable");
+        .await
+        .expect("legacy names remain writable");
 }
 
 #[tokio::test]
@@ -231,15 +252,22 @@ async fn v2_writer_validates_private_turn_provenance_and_keeps_legacy_absence() 
     let mut valid = base_session();
     valid.messages[0].replay_source = Some(valid_source.clone());
     let valid_path = root.path().join("valid-source.json");
-    super::session_store_document::write_to_path(valid_path.clone(), &valid).await.unwrap();
-    let restored = super::session_store_document::read_from_path(valid_path).await.unwrap();
+    super::session_store_document::write_to_path(valid_path.clone(), &valid)
+        .await
+        .unwrap();
+    let restored = super::session_store_document::read_from_path(valid_path)
+        .await
+        .unwrap();
     assert_eq!(restored.messages[0].replay_source, Some(valid_source));
 
     let mut wrong_role = base_session();
     wrong_role.messages[1].replay_source = Some(responses_envelope(Vec::new()).source);
     assert!(super::session_store_document::write_to_path(
-        root.path().join("assistant-source.json"), &wrong_role,
-    ).await.is_err());
+        root.path().join("assistant-source.json"),
+        &wrong_role,
+    )
+    .await
+    .is_err());
 
     let mut wrong_scope = base_session();
     wrong_scope.messages[0].replay_source = Some(ReasoningSource {
@@ -249,19 +277,28 @@ async fn v2_writer_validates_private_turn_provenance_and_keeps_legacy_absence() 
         reasoning_mode: ReasoningModeId::Auto,
     });
     assert!(super::session_store_document::write_to_path(
-        root.path().join("wrong-scope.json"), &wrong_scope,
-    ).await.is_err());
+        root.path().join("wrong-scope.json"),
+        &wrong_scope,
+    )
+    .await
+    .is_err());
 
     let legacy = base_session();
-    assert!(legacy.messages.iter().all(|message| message.replay_source.is_none()));
+    assert!(legacy
+        .messages
+        .iter()
+        .all(|message| message.replay_source.is_none()));
     super::session_store_document::write_to_path(root.path().join("legacy-none.json"), &legacy)
-        .await.unwrap();
+        .await
+        .unwrap();
 }
 
 #[tokio::test]
 async fn legacy_tool_ids_are_local_linked_and_stable_after_commit() {
     let root = tempfile::tempdir().expect("tempdir");
-    let path = root.path().join("00000000-0000-4000-8000-000000000002.json");
+    let path = root
+        .path()
+        .join("00000000-0000-4000-8000-000000000002.json");
     let bytes = v1_with_tool_chain();
     crate::services::private_store::atomic_write(&path, &bytes).expect("seed v1");
     let loaded = super::session_migration::read(&bytes, path.clone()).expect("load v1");
@@ -309,7 +346,9 @@ async fn legacy_tool_ids_are_local_linked_and_stable_after_commit() {
 #[tokio::test]
 async fn legacy_messages_share_one_turn_until_the_next_user_message() {
     let root = tempfile::tempdir().expect("tempdir");
-    let path = root.path().join("00000000-0000-4000-8000-000000000008.json");
+    let path = root
+        .path()
+        .join("00000000-0000-4000-8000-000000000008.json");
     let bytes = v1_with_two_turns();
     crate::services::private_store::atomic_write(&path, &bytes).expect("seed v1");
     let loaded = super::session_migration::read(&bytes, path.clone()).expect("load v1");
@@ -370,7 +409,10 @@ async fn v2_round_trip_keeps_order_tool_ids_and_opaque_envelope() {
 
     let mut value: serde_json::Value =
         serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
-    value.as_object_mut().unwrap().insert("future_root".into(), json!(true));
+    value
+        .as_object_mut()
+        .unwrap()
+        .insert("future_root".into(), json!(true));
     value["messages"][1]
         .as_object_mut()
         .unwrap()
@@ -520,16 +562,17 @@ async fn future_session_is_visible_without_continuity_or_rewrite() {
 fn invalid_envelope_is_dropped_without_hiding_visible_message() {
     let session = base_session();
     let mut value = serde_json::to_value(&session).unwrap();
-    value["messages"][1]["continuation"] = serde_json::to_value(responses_envelope(vec![
-        json!({"opaque":"fixture"}),
-    ]))
-    .unwrap();
+    value["messages"][1]["continuation"] =
+        serde_json::to_value(responses_envelope(vec![json!({"opaque":"fixture"})])).unwrap();
     value["messages"][1]["continuation"]["schema_version"] = json!(77);
     let bytes = serde_json::to_vec(&value).unwrap();
 
     let loaded = super::session_migration::read(&bytes, PathBuf::from("invalid.json"))
         .expect("visible v2 remains readable");
-    assert_eq!(loaded.session().messages[1].content, "fixture-assistant-content");
+    assert_eq!(
+        loaded.session().messages[1].content,
+        "fixture-assistant-content"
+    );
     assert!(loaded.session().messages[1].continuation.is_none());
 }
 
@@ -561,19 +604,25 @@ fn v2_rejects_missing_turn_and_tool_call_ids() {
 #[tokio::test]
 async fn injected_failure_before_rename_keeps_v1_and_exact_backup() {
     let root = tempfile::tempdir().expect("tempdir");
-    let path = root.path().join("00000000-0000-4000-8000-000000000002.json");
+    let path = root
+        .path()
+        .join("00000000-0000-4000-8000-000000000002.json");
     crate::services::private_store::atomic_write(&path, V1_FIXTURE).expect("seed v1");
     let loaded = super::session_migration::read(V1_FIXTURE, path.clone()).expect("load v1");
 
-    assert!(super::session_migration::commit_v2_fail_before_rename(&loaded)
-        .await
-        .is_err());
+    assert!(
+        super::session_migration::commit_v2_fail_before_rename(&loaded)
+            .await
+            .is_err()
+    );
     let backup = super::session_migration::backup_path(&path).unwrap();
     assert_eq!(std::fs::read(&path).unwrap(), V1_FIXTURE);
     assert_eq!(std::fs::read(&backup).unwrap(), V1_FIXTURE);
-    assert!(std::fs::read_dir(root.path())
+    assert!(std::fs::read_dir(root.path()).unwrap().all(|entry| !entry
         .unwrap()
-        .all(|entry| !entry.unwrap().file_name().to_string_lossy().ends_with(".tmp")));
+        .file_name()
+        .to_string_lossy()
+        .ends_with(".tmp")));
 }
 
 #[cfg(unix)]
@@ -589,9 +638,18 @@ async fn migrated_session_backup_and_directory_are_private() {
     super::session_migration::commit_v2(&loaded).await.unwrap();
     let backup = super::session_migration::backup_path(&path).unwrap();
 
-    assert_eq!(std::fs::metadata(&private).unwrap().permissions().mode() & 0o777, 0o700);
-    assert_eq!(std::fs::metadata(&path).unwrap().permissions().mode() & 0o777, 0o600);
-    assert_eq!(std::fs::metadata(&backup).unwrap().permissions().mode() & 0o777, 0o600);
+    assert_eq!(
+        std::fs::metadata(&private).unwrap().permissions().mode() & 0o777,
+        0o700
+    );
+    assert_eq!(
+        std::fs::metadata(&path).unwrap().permissions().mode() & 0o777,
+        0o600
+    );
+    assert_eq!(
+        std::fs::metadata(&backup).unwrap().permissions().mode() & 0o777,
+        0o600
+    );
 }
 
 #[tokio::test]
@@ -601,9 +659,11 @@ async fn writer_rejects_32_mib_plus_one_before_creating_a_temp() {
     let mut session = base_session();
     session.name = "x".repeat(MAX_SESSION_FILE_BYTES as usize + 1);
 
-    assert!(super::session_store_document::write_to_path(path.clone(), &session)
-        .await
-        .is_err());
+    assert!(
+        super::session_store_document::write_to_path(path.clone(), &session)
+            .await
+            .is_err()
+    );
     assert!(!path.exists());
     assert_eq!(std::fs::read_dir(root.path()).unwrap().count(), 0);
 }

@@ -91,7 +91,9 @@ fn transaction<Mutate>(mutate: Mutate) -> Result<(), String>
 where
     Mutate: FnOnce(&mut HashMap<String, String>) -> Result<(), String>,
 {
-    let mut state = STATE.lock().map_err(|_| "coffre indisponible".to_string())?;
+    let mut state = STATE
+        .lock()
+        .map_err(|_| "coffre indisponible".to_string())?;
     let current = state
         .as_mut()
         .ok_or_else(|| "coffre indisponible".to_string())?;

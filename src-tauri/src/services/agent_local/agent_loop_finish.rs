@@ -52,9 +52,8 @@ pub async fn finish(
     request: (&str, &str),
     ollama_model: Option<&str>,
 ) -> CompletedStreamTurn {
-    let (event, _) = agent_loop_completion::done_event(
-        counts.0, counts.1, counts.2, counts.3, generation,
-    );
+    let (event, _) =
+        agent_loop_completion::done_event(counts.0, counts.1, counts.2, counts.3, generation);
     if let Some(model) = ollama_model {
         agent_loop_support::decharge_gpu(model).await;
     }

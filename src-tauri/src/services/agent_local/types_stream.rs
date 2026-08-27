@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use crate::services::reasoning_continuity::envelope::ReasoningEnvelope;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]

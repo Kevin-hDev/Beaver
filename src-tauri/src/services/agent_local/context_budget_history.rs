@@ -26,9 +26,7 @@ pub fn repair_invalid_history(messages: &mut Vec<ChatMessage>) -> HistoryRepairR
         let expected = expected_results(&message);
         if message.role == "assistant" && expected > 0 {
             let mut chain = vec![message];
-            while chain.len() <= expected
-                && input.peek().is_some_and(|next| next.role == "tool")
-            {
+            while chain.len() <= expected && input.peek().is_some_and(|next| next.role == "tool") {
                 let Some(result) = input.next() else {
                     break;
                 };
@@ -89,8 +87,7 @@ pub fn atomic_units(messages: Vec<&ChatMessage>) -> Vec<HistoryUnit<'_>> {
         let expected = expected_results(message);
         if message.role == "assistant" && expected > 0 {
             let mut chain = vec![message];
-            while chain.len() <= expected
-                && messages.peek().is_some_and(|next| next.role == "tool")
+            while chain.len() <= expected && messages.peek().is_some_and(|next| next.role == "tool")
             {
                 let Some(result) = messages.next() else {
                     break;
@@ -98,8 +95,8 @@ pub fn atomic_units(messages: Vec<&ChatMessage>) -> Vec<HistoryUnit<'_>> {
                 chain.push(result);
             }
             let calls = message.tool_calls.as_deref().unwrap_or_default();
-            let valid = chain.len() == expected + 1
-                && matching_tool_result_refs(calls, &chain[1..]);
+            let valid =
+                chain.len() == expected + 1 && matching_tool_result_refs(calls, &chain[1..]);
             units.push(HistoryUnit {
                 messages: chain,
                 is_tool_chain: true,
@@ -130,9 +127,9 @@ fn matching_tool_results(
 ) -> bool {
     call_ids_are_unambiguous(calls)
         && calls
-        .iter()
-        .zip(results)
-        .all(|(call, result)| tool_result_matches(call, result))
+            .iter()
+            .zip(results)
+            .all(|(call, result)| tool_result_matches(call, result))
 }
 
 fn matching_tool_result_refs(
@@ -141,9 +138,9 @@ fn matching_tool_result_refs(
 ) -> bool {
     call_ids_are_unambiguous(calls)
         && calls
-        .iter()
-        .zip(results)
-        .all(|(call, result)| tool_result_matches(call, result))
+            .iter()
+            .zip(results)
+            .all(|(call, result)| tool_result_matches(call, result))
 }
 
 fn call_ids_are_unambiguous(calls: &[super::types_ollama::ToolCallOllama]) -> bool {
@@ -155,23 +152,21 @@ fn call_ids_are_unambiguous(calls: &[super::types_ollama::ToolCallOllama]) -> bo
         && calls.iter().all(|call| {
             !call.function.name.is_empty()
                 && call.function.name.chars().count() <= MAX_HISTORY_TOOL_NAME_CHARS
-                && call.id.as_ref().is_none_or(|id| {
-                    id.chars().count() <= MAX_HISTORY_TOOL_ID_CHARS
-                })
+                && call
+                    .id
+                    .as_ref()
+                    .is_none_or(|id| id.chars().count() <= MAX_HISTORY_TOOL_ID_CHARS)
         })
         && calls.iter().enumerate().all(|(index, call)| {
             normalized_id(call.id.as_ref()).is_none_or(|id| {
-                calls[..index].iter().all(|previous| {
-                    normalized_id(previous.id.as_ref()) != Some(id)
-                })
+                calls[..index]
+                    .iter()
+                    .all(|previous| normalized_id(previous.id.as_ref()) != Some(id))
             })
         })
 }
 
-fn tool_result_matches(
-    call: &super::types_ollama::ToolCallOllama,
-    result: &ChatMessage,
-) -> bool {
+fn tool_result_matches(call: &super::types_ollama::ToolCallOllama, result: &ChatMessage) -> bool {
     let id_matches = match (
         normalized_id(call.id.as_ref()),
         normalized_id(result.tool_call_id.as_ref()),

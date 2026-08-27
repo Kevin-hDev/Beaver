@@ -77,12 +77,7 @@ pub fn complete_turn(
 ) -> Vec<AgentMessage> {
     let turn_id = format!("turn-{suffix}");
     vec![
-        message(
-            &format!("user-{suffix}"),
-            &turn_id,
-            "user",
-            "question",
-        ),
+        message(&format!("user-{suffix}"), &turn_id, "user", "question"),
         AgentMessage {
             continuation,
             ..message(

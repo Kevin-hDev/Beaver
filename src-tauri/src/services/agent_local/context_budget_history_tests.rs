@@ -72,10 +72,16 @@ fn empty_ids_are_normalized_but_empty_tool_names_are_rejected() {
     let mut result = tool_result("call-1");
     result.tool_call_id = Some(String::new());
     let mut valid_messages = vec![assistant, result];
-    assert_eq!(repair_invalid_history(&mut valid_messages), HistoryRepairReport::default());
+    assert_eq!(
+        repair_invalid_history(&mut valid_messages),
+        HistoryRepairReport::default()
+    );
 
     let mut assistant = assistant_call("call-1", "kept text");
-    assistant.tool_calls.as_mut().unwrap()[0].function.name.clear();
+    assistant.tool_calls.as_mut().unwrap()[0]
+        .function
+        .name
+        .clear();
     let mut invalid_messages = vec![assistant, tool_result("call-1")];
     let report = repair_invalid_history(&mut invalid_messages);
 
@@ -85,14 +91,20 @@ fn empty_ids_are_normalized_but_empty_tool_names_are_rejected() {
 }
 
 fn assistant_call(id: &str, content: &str) -> ChatMessage {
-    ChatMessage::assistant(content.into(), None, None, None, Some(vec![ToolCallOllama {
+    ChatMessage::assistant(
+        content.into(),
+        None,
+        None,
+        None,
+        Some(vec![ToolCallOllama {
             id: Some(id.into()),
             extra_content: None,
             function: ToolCallFunction {
                 name: "grep".into(),
                 arguments: serde_json::json!({}),
             },
-        }]))
+        }]),
+    )
 }
 
 fn tool_result(id: &str) -> ChatMessage {

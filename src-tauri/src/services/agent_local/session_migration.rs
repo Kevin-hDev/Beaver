@@ -23,7 +23,10 @@ pub struct LoadedSession {
 }
 
 impl LoadedSession {
-    #[allow(dead_code, reason = "public migration API consumed by staged session owners")]
+    #[allow(
+        dead_code,
+        reason = "public migration API consumed by staged session owners"
+    )]
     pub fn session(&self) -> &AgentSession {
         &self.session
     }
@@ -63,16 +66,16 @@ pub fn read(bytes: &[u8], path: PathBuf) -> Result<LoadedSession, String> {
     })
 }
 
-#[allow(dead_code, reason = "public migration API consumed by staged session owners")]
+#[allow(
+    dead_code,
+    reason = "public migration API consumed by staged session owners"
+)]
 pub async fn commit_v2(loaded: &LoadedSession) -> Result<(), String> {
     let bytes = serialize_v2(loaded.session())?;
     commit_v2_bytes(loaded, bytes).await
 }
 
-pub(super) async fn commit_v2_bytes(
-    loaded: &LoadedSession,
-    bytes: Vec<u8>,
-) -> Result<(), String> {
+pub(super) async fn commit_v2_bytes(loaded: &LoadedSession, bytes: Vec<u8>) -> Result<(), String> {
     if loaded.version != LoadedVersion::V1 {
         return Err(session_limits::save_failed());
     }
@@ -110,8 +113,8 @@ pub(super) async fn acknowledge_v2(loaded: &LoadedSession) -> Result<(), String>
             &loaded.path,
             !loaded.session.messages.is_empty(),
         )
-            .await
-            .is_err()
+        .await
+        .is_err()
     {
         log::warn!("session_migration_backup_cleanup_failed");
     }
@@ -123,7 +126,10 @@ pub(super) fn backup_path(path: &Path) -> Result<PathBuf, String> {
     super::session_migration_backup::backup_path(path)
 }
 
-#[allow(dead_code, reason = "shared serializer for the staged public migration API")]
+#[allow(
+    dead_code,
+    reason = "shared serializer for the staged public migration API"
+)]
 pub(super) fn serialize_v2(session: &AgentSession) -> Result<Vec<u8>, String> {
     if session.schema_version != CURRENT_SESSION_SCHEMA_VERSION {
         return Err(session_limits::save_failed());

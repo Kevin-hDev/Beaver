@@ -4,7 +4,9 @@ use std::ops::Range;
 use super::conversation_history::ConversationHistoryError;
 use super::types_message::AgentMessage;
 
-pub(crate) fn validate(messages: &[AgentMessage]) -> Result<Vec<Range<usize>>, ConversationHistoryError> {
+pub(crate) fn validate(
+    messages: &[AgentMessage],
+) -> Result<Vec<Range<usize>>, ConversationHistoryError> {
     if messages.len() > super::session_limits::MAX_MESSAGES_PER_SESSION {
         return Err(ConversationHistoryError);
     }
@@ -70,8 +72,14 @@ pub(crate) fn validate(messages: &[AgentMessage]) -> Result<Vec<Range<usize>>, C
                 let Phase::ToolsPending(pending) = &mut state.phase else {
                     return Err(ConversationHistoryError);
                 };
-                let call_id = message.tool_call_id.as_deref().ok_or(ConversationHistoryError)?;
-                let name = message.tool_name.as_deref().ok_or(ConversationHistoryError)?;
+                let call_id = message
+                    .tool_call_id
+                    .as_deref()
+                    .ok_or(ConversationHistoryError)?;
+                let name = message
+                    .tool_name
+                    .as_deref()
+                    .ok_or(ConversationHistoryError)?;
                 if pending.remove(call_id) != Some(name) {
                     return Err(ConversationHistoryError);
                 }
@@ -98,9 +106,7 @@ fn validate_common(
     super::session_migration_ids::validate_id(&message.id).map_err(|_| ConversationHistoryError)?;
     super::session_migration_ids::validate_id(&message.turn_id)
         .map_err(|_| ConversationHistoryError)?;
-    if !ids.insert(message.id.clone())
-        || message.validate_stream_metadata().is_err()
-    {
+    if !ids.insert(message.id.clone()) || message.validate_stream_metadata().is_err() {
         return Err(ConversationHistoryError);
     }
     super::conversation_history_field_validation::validate(message)
@@ -115,9 +121,7 @@ fn user_shape(message: &AgentMessage) -> bool {
 }
 
 fn assistant_shape(message: &AgentMessage) -> bool {
-    message.tool_name.is_none()
-        && message.tool_call_id.is_none()
-        && message.replay_source.is_none()
+    message.tool_name.is_none() && message.tool_call_id.is_none() && message.replay_source.is_none()
 }
 
 fn tool_shape(message: &AgentMessage) -> bool {
@@ -155,7 +159,11 @@ struct TurnState<'a> {
 
 impl<'a> TurnState<'a> {
     fn new(start: usize, turn_id: &'a str) -> Self {
-        Self { start, turn_id, phase: Phase::User }
+        Self {
+            start,
+            turn_id,
+            phase: Phase::User,
+        }
     }
 }
 

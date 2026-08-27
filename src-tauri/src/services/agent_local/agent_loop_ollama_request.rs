@@ -30,7 +30,8 @@ pub(super) struct OllamaRequestParams<'a> {
     pub live_replay_target:
         Option<&'a crate::services::reasoning_continuity::contract::ReplayTarget>,
     #[cfg(debug_assertions)]
-    pub fixture_candidate: Option<&'a crate::services::reasoning_continuity::contract::ReplayTarget>,
+    pub fixture_candidate:
+        Option<&'a crate::services::reasoning_continuity::contract::ReplayTarget>,
     pub enable_eager_tools: bool,
 }
 
@@ -188,7 +189,9 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
 }
 
 fn follows_tool_result(messages: &[ChatMessage]) -> bool {
-    messages.last().is_some_and(|message| message.role == "tool")
+    messages
+        .last()
+        .is_some_and(|message| message.role == "tool")
 }
 
 fn live_target_for_request(

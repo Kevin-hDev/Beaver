@@ -86,14 +86,24 @@ async fn rejects_unbounded_provider_fields() {
     cases.push(vec![content]);
 
     let mut file = message("file", "turn-file", "user", "ok");
-    file.files.push(super::super::types_message::FileAttachment {
-        name: "../bad.txt".into(), path: "/tmp/bad.txt".into(), mime_type: "text/plain\n".into(),
-        size: 1, thumbnail: None, access_grant: Some("grant".into()),
-    });
+    file.files
+        .push(super::super::types_message::FileAttachment {
+            name: "../bad.txt".into(),
+            path: "/tmp/bad.txt".into(),
+            mime_type: "text/plain\n".into(),
+            size: 1,
+            thumbnail: None,
+            access_grant: Some("grant".into()),
+        });
     cases.push(vec![file]);
 
     for (index, invalid) in invalid_file_fields().into_iter().enumerate() {
-        let mut user = message(&format!("file-{index}"), &format!("turn-file-{index}"), "user", "ok");
+        let mut user = message(
+            &format!("file-{index}"),
+            &format!("turn-file-{index}"),
+            "user",
+            "ok",
+        );
         user.files.push(invalid);
         cases.push(vec![user]);
     }
@@ -108,9 +118,12 @@ async fn rejects_unbounded_provider_fields() {
         crate::services::private_store::atomic_write_async(
             session_path(&session.id),
             serde_json::to_vec(&session).unwrap(),
-        ).await.unwrap();
+        )
+        .await
+        .unwrap();
         let error = conversation_history::load_for_target(&session.id, &target("model-a"))
-            .await.expect_err("persisted provider field must be validated");
+            .await
+            .expect_err("persisted provider field must be validated");
         assert_eq!(error.to_string(), ERROR);
         cleanup(&session.id).await;
     }
@@ -122,14 +135,23 @@ fn invalid_file_fields() -> Vec<super::super::types_message::FileAttachment> {
         MAX_ATTACHMENT_PATH_BYTES,
     };
     let file = || super::super::types_message::FileAttachment {
-        name: "image.png".into(), path: String::new(), mime_type: "image/png".into(),
-        size: 12, thumbnail: Some("data:image/png;base64,iVBORw0KGgoAAAAA".into()), access_grant: None,
+        name: "image.png".into(),
+        path: String::new(),
+        mime_type: "image/png".into(),
+        size: 12,
+        thumbnail: Some("data:image/png;base64,iVBORw0KGgoAAAAA".into()),
+        access_grant: None,
     };
-    let mut name = file(); name.name = "n".repeat(MAX_ATTACHMENT_NAME_BYTES + 1);
-    let mut path = file(); path.path = "p".repeat(MAX_ATTACHMENT_PATH_BYTES + 1);
-    let mut mime = file(); mime.mime_type = "m".repeat(MAX_ATTACHMENT_MIME_BYTES + 1);
-    let mut grant = file(); grant.path = "/tmp/image.png".into();
-    grant.thumbnail = None; grant.access_grant = Some("g".repeat(MAX_ATTACHMENT_GRANT_BYTES + 1));
+    let mut name = file();
+    name.name = "n".repeat(MAX_ATTACHMENT_NAME_BYTES + 1);
+    let mut path = file();
+    path.path = "p".repeat(MAX_ATTACHMENT_PATH_BYTES + 1);
+    let mut mime = file();
+    mime.mime_type = "m".repeat(MAX_ATTACHMENT_MIME_BYTES + 1);
+    let mut grant = file();
+    grant.path = "/tmp/image.png".into();
+    grant.thumbnail = None;
+    grant.access_grant = Some("g".repeat(MAX_ATTACHMENT_GRANT_BYTES + 1));
     vec![name, path, mime, grant]
 }
 
@@ -144,11 +166,17 @@ async fn assistant_output_above_user_input_limit_remains_readable() {
     super::super::session_store::save(&session).await.unwrap();
 
     let history = conversation_history::load_for_target(&session.id, &target("model-a"))
-        .await.expect("assistant output follows global session bound");
-    assert_eq!(history.messages[1].content.len(), crate::models::agent_turn_contract::MAX_TURN_CONTENT_BYTES + 1);
+        .await
+        .expect("assistant output follows global session bound");
+    assert_eq!(
+        history.messages[1].content.len(),
+        crate::models::agent_turn_contract::MAX_TURN_CONTENT_BYTES + 1
+    );
     cleanup(&session.id).await;
 }
 
 fn deeply_nested_json(depth: usize) -> serde_json::Value {
-    (0..depth).fold(serde_json::Value::Null, |value, _| serde_json::json!([value]))
+    (0..depth).fold(serde_json::Value::Null, |value, _| {
+        serde_json::json!([value])
+    })
 }

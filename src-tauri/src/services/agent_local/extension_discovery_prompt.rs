@@ -7,7 +7,10 @@ pub fn append(messages: &mut [ChatMessage], enabled_tool_names: &[String]) {
     {
         return;
     }
-    let Some(system) = messages.first_mut().filter(|message| message.role == "system") else {
+    let Some(system) = messages
+        .first_mut()
+        .filter(|message| message.role == "system")
+    else {
         return;
     };
     system.content.push_str(

@@ -29,12 +29,22 @@ pub(crate) fn from_message(message: &AgentMessage) -> Result<AgentMessageView, S
         tool_activities: message
             .tool_activities
             .as_ref()
-            .map(|items| items.iter().map(activity_view).collect::<Result<Vec<_>, _>>())
+            .map(|items| {
+                items
+                    .iter()
+                    .map(activity_view)
+                    .collect::<Result<Vec<_>, _>>()
+            })
             .transpose()?,
         segments: message
             .segments
             .as_ref()
-            .map(|items| items.iter().map(segment_view).collect::<Result<Vec<_>, _>>())
+            .map(|items| {
+                items
+                    .iter()
+                    .map(segment_view)
+                    .collect::<Result<Vec<_>, _>>()
+            })
             .transpose()?,
         files: message.files.iter().map(file_view).collect(),
         timestamp: message.timestamp,
@@ -49,15 +59,23 @@ pub(crate) fn from_message(message: &AgentMessage) -> Result<AgentMessageView, S
 
 fn file_view(file: &FileAttachment) -> FileAttachmentView {
     FileAttachmentView {
-        name: file.name.clone(), path: file.path.clone(), mime_type: file.mime_type.clone(),
-        size: file.size, thumbnail: file.thumbnail.clone(), access_grant: file.access_grant.clone(),
+        name: file.name.clone(),
+        path: file.path.clone(),
+        mime_type: file.mime_type.clone(),
+        size: file.size,
+        thumbnail: file.thumbnail.clone(),
+        access_grant: file.access_grant.clone(),
     }
 }
 
 fn segment_view(segment: &SavedSegment) -> Result<SavedSegmentView, String> {
     Ok(SavedSegmentView {
         thinking: segment.thinking.clone(),
-        tools: segment.tools.iter().map(activity_view).collect::<Result<Vec<_>, _>>()?,
+        tools: segment
+            .tools
+            .iter()
+            .map(activity_view)
+            .collect::<Result<Vec<_>, _>>()?,
         content: segment.content.clone(),
         phase: segment.phase.as_ref().map(|phase| match phase {
             super::types_stream::TokenPhase::Work => "work".to_string(),
@@ -68,28 +86,50 @@ fn segment_view(segment: &SavedSegment) -> Result<SavedSegmentView, String> {
 
 fn activity_view(record: &ToolActivityRecord) -> Result<ToolActivityRecordView, String> {
     Ok(ToolActivityRecordView {
-        name: record.name.clone(), summary: record.summary.clone(), domain: record.domain.clone(),
-        resolved_path: record.resolved_path.clone(), args: record.args.clone(),
-        result: record.result.clone(), is_error: record.is_error,
-        result_meta: record.result_meta.as_ref().map(serde_json::to_value).transpose()
+        name: record.name.clone(),
+        summary: record.summary.clone(),
+        domain: record.domain.clone(),
+        resolved_path: record.resolved_path.clone(),
+        args: record.args.clone(),
+        result: record.result.clone(),
+        is_error: record.is_error,
+        result_meta: record
+            .result_meta
+            .as_ref()
+            .map(serde_json::to_value)
+            .transpose()
             .map_err(|_| "Session indisponible".to_string())?,
-        content: record.content.clone(), old_text: record.old_text.clone(),
-        new_text: record.new_text.clone(), start_line: record.start_line,
+        content: record.content.clone(),
+        old_text: record.old_text.clone(),
+        new_text: record.new_text.clone(),
+        start_line: record.start_line,
         affected_paths: record.affected_paths.clone(),
-        file_changes: record.file_changes.iter().map(file_change_view).collect::<Result<Vec<_>, _>>()?,
+        file_changes: record
+            .file_changes
+            .iter()
+            .map(file_change_view)
+            .collect::<Result<Vec<_>, _>>()?,
     })
 }
 
-fn file_change_view(change: &super::types_tools::ToolFileChange) -> Result<ToolFileChangeView, String> {
+fn file_change_view(
+    change: &super::types_tools::ToolFileChange,
+) -> Result<ToolFileChangeView, String> {
     Ok(ToolFileChangeView {
         path: change.path.clone(),
         status: match change.status {
             super::types_tools::ToolFileChangeStatus::Added => "added",
             super::types_tools::ToolFileChangeStatus::Modified => "modified",
             super::types_tools::ToolFileChangeStatus::Deleted => "deleted",
-        }.to_string(),
-        additions: change.additions, deletions: change.deletions,
-        diff: change.diff.as_ref().map(serde_json::to_value).transpose()
+        }
+        .to_string(),
+        additions: change.additions,
+        deletions: change.deletions,
+        diff: change
+            .diff
+            .as_ref()
+            .map(serde_json::to_value)
+            .transpose()
             .map_err(|_| "Session indisponible".to_string())?,
     })
 }

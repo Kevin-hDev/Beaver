@@ -3,10 +3,7 @@ use crate::models::agent_session_contract::{EditUserMessageInput, SessionMetadat
 const MAX_SESSION_NAME_BYTES: usize = 512;
 const MAX_PROVIDER_ID_BYTES: usize = 64;
 
-pub async fn apply_metadata_patch(
-    id: &str,
-    patch: SessionMetadataPatch,
-) -> Result<(), String> {
+pub async fn apply_metadata_patch(id: &str, patch: SessionMetadataPatch) -> Result<(), String> {
     validate_patch(&patch)?;
     super::session_store_updates::update_locked(id, move |session| {
         if let Some(name) = patch.name {
@@ -53,28 +50,18 @@ fn validate_patch(patch: &SessionMetadataPatch) -> Result<(), String> {
             return Err(invalid_mutation());
         }
     }
-    if patch
-        .model
+    if patch.model.as_deref().is_some_and(|model| {
+        crate::services::reasoning_continuity::limits::validate_model_id(model).is_err()
+    }) || patch
+        .provider
         .as_deref()
-        .is_some_and(|model| {
-            crate::services::reasoning_continuity::limits::validate_model_id(model).is_err()
+        .is_some_and(|provider| !valid_provider(provider))
+        || patch.reasoning_mode.as_ref().is_some_and(|mode| {
+            crate::services::reasoning::sanitize_mode(Some(mode.clone())).as_ref() != Some(mode)
         })
-        || patch
-            .provider
-            .as_deref()
-            .is_some_and(|provider| !valid_provider(provider))
-        || patch
-            .reasoning_mode
-            .as_ref()
-            .is_some_and(|mode| {
-                crate::services::reasoning::sanitize_mode(Some(mode.clone())).as_ref() != Some(mode)
-            })
-        || patch
-            .project_id
-            .as_deref()
-            .is_some_and(|project_id| {
-                super::session_migration_ids::validate_id(project_id).is_err()
-            })
+        || patch.project_id.as_deref().is_some_and(|project_id| {
+            super::session_migration_ids::validate_id(project_id).is_err()
+        })
     {
         return Err(invalid_mutation());
     }

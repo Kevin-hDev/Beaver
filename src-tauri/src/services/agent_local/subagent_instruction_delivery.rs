@@ -68,7 +68,8 @@ where
     FS: FnOnce() -> FSFut,
     FSFut: std::future::Future<Output = ()>,
 {
-    let Some(expected_run) = super::subagent_registry::active_run_for_child(session_id).await else {
+    let Some(expected_run) = super::subagent_registry::active_run_for_child(session_id).await
+    else {
         let session = super::session_store::get(session_id)
             .await
             .map_err(|_| delivery_error())?;
@@ -114,7 +115,11 @@ where
     )
     .await
     .map_err(|_| delivery_error())?;
-    messages.extend(prompts.iter().map(|prompt| ChatMessage::user(prompt.clone())));
+    messages.extend(
+        prompts
+            .iter()
+            .map(|prompt| ChatMessage::user(prompt.clone())),
+    );
     Ok(prompts.len())
 }
 

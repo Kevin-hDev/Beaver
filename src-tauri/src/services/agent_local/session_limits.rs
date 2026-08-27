@@ -17,9 +17,7 @@ pub fn validate_continuity(session: &AgentSession) -> Result<(), String> {
         .iter()
         .filter_map(|message| message.continuation.as_ref())
     {
-        continuation
-            .validate()
-            .map_err(|_| invalid_session())?;
+        continuation.validate().map_err(|_| invalid_session())?;
         continuation
             .serialize(&mut serde_json::Serializer::new(&mut writer))
             .map_err(|_| invalid_session())?;

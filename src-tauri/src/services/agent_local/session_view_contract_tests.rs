@@ -31,11 +31,22 @@ fn response_items_never_cross_the_visible_session_boundary() {
     let assistant_view = &view.messages[1];
     let serialized = serde_json::to_string(&view).expect("serialize visible view");
 
-    assert_eq!(assistant_view.content, "Le nom encrypted_content reste lisible.");
-    assert_eq!(assistant_view.reasoning_replay_status, ReasoningReplayStatus::Preserved);
-    assert_eq!(assistant_view.tool_calls.as_ref().unwrap()[0].id, "provider-call-42");
     assert_eq!(
-        assistant_view.tool_calls.as_ref().unwrap()[0].function.arguments,
+        assistant_view.content,
+        "Le nom encrypted_content reste lisible."
+    );
+    assert_eq!(
+        assistant_view.reasoning_replay_status,
+        ReasoningReplayStatus::Preserved
+    );
+    assert_eq!(
+        assistant_view.tool_calls.as_ref().unwrap()[0].id,
+        "provider-call-42"
+    );
+    assert_eq!(
+        assistant_view.tool_calls.as_ref().unwrap()[0]
+            .function
+            .arguments,
         json!({
             "encrypted_content": "argument visible",
             "previous_response_id": "texte contrôlé"
@@ -45,7 +56,9 @@ fn response_items_never_cross_the_visible_session_boundary() {
     assert!(!serialized.contains("opaque-secret"));
     let value = serde_json::to_value(view).expect("serialize visible structure");
     assert!(value.pointer("/messages/1/continuation").is_none());
-    assert!(value.pointer("/messages/1/tool_calls/0/extra_content").is_none());
+    assert!(value
+        .pointer("/messages/1/tool_calls/0/extra_content")
+        .is_none());
 }
 
 #[test]
@@ -54,18 +67,27 @@ fn replay_status_comes_from_the_envelope_not_display_thinking() {
     session.messages[1].thinking = Some("visible mais non rejouable".into());
     session.messages[1].continuation = None;
     assert_eq!(
-        super::session_view::from_session(&session).unwrap().messages[1].reasoning_replay_status,
+        super::session_view::from_session(&session)
+            .unwrap()
+            .messages[1]
+            .reasoning_replay_status,
         ReasoningReplayStatus::Unavailable
     );
 
     session.messages[1].continuation = Some(responses_envelope(CompletionState::Partial));
     assert_eq!(
-        super::session_view::from_session(&session).unwrap().messages[1].reasoning_replay_status,
+        super::session_view::from_session(&session)
+            .unwrap()
+            .messages[1]
+            .reasoning_replay_status,
         ReasoningReplayStatus::Partial
     );
     session.messages[1].continuation = Some(responses_envelope(CompletionState::Compacted));
     assert_eq!(
-        super::session_view::from_session(&session).unwrap().messages[1].reasoning_replay_status,
+        super::session_view::from_session(&session)
+            .unwrap()
+            .messages[1]
+            .reasoning_replay_status,
         ReasoningReplayStatus::Compacted
     );
 
@@ -73,7 +95,10 @@ fn replay_status_comes_from_the_envelope_not_display_thinking() {
     invalid.schema_version = u16::MAX;
     session.messages[1].continuation = Some(invalid);
     assert_eq!(
-        super::session_view::from_session(&session).unwrap().messages[1].reasoning_replay_status,
+        super::session_view::from_session(&session)
+            .unwrap()
+            .messages[1]
+            .reasoning_replay_status,
         ReasoningReplayStatus::Unavailable
     );
 }
@@ -121,6 +146,12 @@ fn visible_messages_keep_turn_order_and_provider_tool_ids() {
             ("user", "turn-two"),
         ]
     );
-    assert_eq!(view.messages[1].tool_calls.as_ref().unwrap()[0].id, "provider-call-one");
-    assert_eq!(view.messages[2].tool_call_id.as_deref(), Some("provider-call-one"));
+    assert_eq!(
+        view.messages[1].tool_calls.as_ref().unwrap()[0].id,
+        "provider-call-one"
+    );
+    assert_eq!(
+        view.messages[2].tool_call_id.as_deref(),
+        Some("provider-call-one")
+    );
 }

@@ -7,7 +7,9 @@ use super::super::conversation_admission;
 use super::super::conversation_attachments::ResolvedImage;
 use super::super::conversation_input::ResolvedTurnInput;
 use super::super::conversation_skills::ResolvedSkill;
-use super::support::{cleanup, complete_turn, create_session, resolved, session_path, target, ERROR};
+use super::support::{
+    cleanup, complete_turn, create_session, resolved, session_path, target, ERROR,
+};
 
 #[tokio::test]
 async fn persists_user_before_return_and_reserves_three_uuid_v4_ids() {
@@ -49,9 +51,15 @@ async fn persists_user_before_return_and_reserves_three_uuid_v4_ids() {
     assert_eq!(persisted.messages[0].id, admitted.user_message_id);
     assert_eq!(persisted.messages[0].turn_id, admitted.turn_id);
     assert_eq!(persisted.messages[0].files.len(), 1);
-    let source = persisted.messages[0].replay_source.as_ref().expect("durable turn provenance");
+    let source = persisted.messages[0]
+        .replay_source
+        .as_ref()
+        .expect("durable turn provenance");
     assert_eq!(source.model_id, "qwen3.5:4b");
-    assert_eq!(source.route_id, crate::services::reasoning_continuity::contract::RouteId::Ollama);
+    assert_eq!(
+        source.route_id,
+        crate::services::reasoning_continuity::contract::RouteId::Ollama
+    );
     assert_eq!(
         persisted.messages[0].skill_names.as_deref(),
         Some(&["Skill local".to_string()][..])
@@ -64,9 +72,9 @@ async fn persists_user_before_return_and_reserves_three_uuid_v4_ids() {
         admitted.history.messages.last().unwrap().message_id,
         Some(admitted.user_message_id)
     );
-    let visible = serde_json::to_value(
-        super::super::session_view::from_session(&persisted).unwrap(),
-    ).unwrap();
+    let visible =
+        serde_json::to_value(super::super::session_view::from_session(&persisted).unwrap())
+            .unwrap();
     assert!(visible["messages"][0].get("replay_source").is_none());
     cleanup(&session.id).await;
 }
@@ -139,13 +147,10 @@ async fn limit_refuses_admission_without_draining_a_turn_fragment() {
         .expect("seed limit");
     let before = std::fs::read(session_path(&session.id)).expect("before");
 
-    let error = conversation_admission::new_turn(
-        &session.id,
-        resolved("overflow"),
-        target("model-a"),
-    )
-    .await
-    .expect_err("must not drain");
+    let error =
+        conversation_admission::new_turn(&session.id, resolved("overflow"), target("model-a"))
+            .await
+            .expect_err("must not drain");
     assert_eq!(error.to_string(), ERROR);
     assert_eq!(std::fs::read(session_path(&session.id)).unwrap(), before);
     cleanup(&session.id).await;
@@ -203,12 +208,10 @@ async fn current_provider_snapshot_keeps_resolved_content_images_and_ordered_ski
     assert!(!raw.contains("resolved exact"));
     assert!(!raw.contains("first exact body"));
     assert!(!raw.contains("exact-image-base64"));
-    let error = super::super::conversation_history::load_for_target(
-        &session.id,
-        &target("model-a"),
-    )
-    .await
-    .expect_err("unavailable durable skill ids must fail closed");
+    let error =
+        super::super::conversation_history::load_for_target(&session.id, &target("model-a"))
+            .await
+            .expect_err("unavailable durable skill ids must fail closed");
     assert_eq!(error.to_string(), ERROR);
     cleanup(&session.id).await;
 }

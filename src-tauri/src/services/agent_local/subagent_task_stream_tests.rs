@@ -17,16 +17,15 @@ async fn cancellation_without_snapshot_keeps_durable_history() {
     child.parent_session_id = Some(parent.id.clone());
     child.subagent_type = Some("explorer".into());
     child.subagent_status = Some(subagent_status::RUNNING.into());
-    child.messages.push(super::super::subagent_instruction_delivery::agent_message(
-        "mission durable",
-    ));
-    let registered = subagent_registry::register_execution(
-        &parent.id,
-        &child.id,
-        CancellationToken::new(),
-    )
-    .await
-    .expect("register child");
+    child
+        .messages
+        .push(super::super::subagent_instruction_delivery::agent_message(
+            "mission durable",
+        ));
+    let registered =
+        subagent_registry::register_execution(&parent.id, &child.id, CancellationToken::new())
+            .await
+            .expect("register child");
     child.subagent_run_id = Some(registered.run_id.clone());
     session_store::save(&child).await.expect("save child");
     let cancel = CancellationToken::new();
@@ -43,8 +42,12 @@ async fn cancellation_without_snapshot_keeps_durable_history() {
     assert_eq!(saved.messages.len(), 1);
     assert_eq!(saved.messages[0].content, "mission durable");
     subagent_registry::unregister(&child.id).await;
-    session_store::delete_one(&child.id).await.expect("delete child");
-    session_store::delete_one(&parent.id).await.expect("delete parent");
+    session_store::delete_one(&child.id)
+        .await
+        .expect("delete child");
+    session_store::delete_one(&parent.id)
+        .await
+        .expect("delete parent");
 }
 
 #[tokio::test]
@@ -58,19 +61,18 @@ async fn subagent_conversation_adoption_reloads_the_canonical_history() {
     child.parent_session_id = Some(parent.id.clone());
     child.subagent_type = Some("explorer".into());
     child.subagent_status = Some(subagent_status::RUNNING.into());
-    let registered = subagent_registry::register_execution(
-        &parent.id,
-        &child.id,
-        CancellationToken::new(),
-    )
-    .await
-    .expect("register child");
+    let registered =
+        subagent_registry::register_execution(&parent.id, &child.id, CancellationToken::new())
+            .await
+            .expect("register child");
     child.subagent_run_id = Some(registered.run_id.clone());
     session_store::save(&child).await.expect("save child");
     super::super::tool_delegate_child::persist_delegate_prompt(&child.id, "mission durable")
         .await
         .expect("preflight prompt");
-    let before_admission = session_store::get(&child.id).await.expect("reload before admission");
+    let before_admission = session_store::get(&child.id)
+        .await
+        .expect("reload before admission");
     assert!(before_admission.messages.is_empty());
     let target = ContinuationTarget::Forbidden(NonReplayTarget {
         route_id: RouteId::Groq,
@@ -121,6 +123,10 @@ async fn subagent_conversation_adoption_reloads_the_canonical_history() {
         .all(|message| message.continuation.is_none()));
 
     subagent_registry::unregister(&child.id).await;
-    session_store::delete_one(&child.id).await.expect("delete child");
-    session_store::delete_one(&parent.id).await.expect("delete parent");
+    session_store::delete_one(&child.id)
+        .await
+        .expect("delete child");
+    session_store::delete_one(&parent.id)
+        .await
+        .expect("delete parent");
 }

@@ -1,6 +1,6 @@
 use super::ParentSubagentOrchestrator;
-use crate::services::agent_local::{subagent_completion, subagent_registry};
 use crate::services::agent_local::types_ollama::ChatMessage;
+use crate::services::agent_local::{subagent_completion, subagent_registry};
 use tokio_util::sync::CancellationToken;
 
 impl ParentSubagentOrchestrator {

@@ -1,4 +1,7 @@
-#![expect(clippy::too_many_arguments, reason = "orchestration boundary keeps related runtime context explicit")]
+#![expect(
+    clippy::too_many_arguments,
+    reason = "orchestration boundary keeps related runtime context explicit"
+)]
 use crate::commands::agent_chat_task::{run_stream_task, StreamCapabilityHints, StreamTaskParams};
 use crate::models::agent_turn_contract::NewUserTurnInput;
 use crate::services::agent_local::session_store;
@@ -19,17 +22,9 @@ pub(super) async fn run_inner(
     cancel: CancellationToken,
     _project_id: Option<String>,
     working_dir: String,
-) -> Result<
-    (
-        bool,
-        String,
-        String,
-    ),
-    String,
-> {
-    let profile = super::subagent_tool_profile::SubagentToolProfile::from_session_type(Some(
-        &subagent_type,
-    ))?;
+) -> Result<(bool, String, String), String> {
+    let profile =
+        super::subagent_tool_profile::SubagentToolProfile::from_session_type(Some(&subagent_type))?;
     let skills_enabled = super::agent_settings::is_tool_enabled("load_skill").await;
     let tools = profile.definitions(skills_enabled);
     let response_language = crate::commands::agent_chat_task::common::response_language();
@@ -62,10 +57,8 @@ pub(super) async fn run_inner(
     )
     .await?;
     let generation = stream_events::next_generation();
-    let emitter =
-        AgentEventEmitter::with_generation(app, child_session_id.clone(), generation);
-    let request_id =
-        super::stream_diagnostics::start_request(&child_session_id, generation).await;
+    let emitter = AgentEventEmitter::with_generation(app, child_session_id.clone(), generation);
+    let request_id = super::stream_diagnostics::start_request(&child_session_id, generation).await;
     super::subagent_activity::record_status(&child_session_id, "Démarré", None).await;
     if let Ok(child_session) = session_store::get(&child_session_id).await {
         if let Ok(messages) = super::session_view::messages(&child_session.messages) {
@@ -111,7 +104,14 @@ pub(super) async fn run_inner(
     })
     .await;
 
-    finalize_stream_result(result, &child_session_id, &request_id, cancel, Some(&emitter)).await
+    finalize_stream_result(
+        result,
+        &child_session_id,
+        &request_id,
+        cancel,
+        Some(&emitter),
+    )
+    .await
 }
 
 async fn finalize_stream_result(
@@ -120,18 +120,12 @@ async fn finalize_stream_result(
     request_id: &str,
     cancel: CancellationToken,
     emitter: Option<&AgentEventEmitter>,
-) -> Result<
-    (
-        bool,
-        String,
-        String,
-    ),
-    String,
-> {
+) -> Result<(bool, String, String), String> {
     let was_cancelled = cancel.is_cancelled();
     match result {
         Ok(completed) => {
-            let summary = super::subagent_summary::extract_summary_from_messages(completed.messages());
+            let summary =
+                super::subagent_summary::extract_summary_from_messages(completed.messages());
             let status = if was_cancelled {
                 super::subagent_status::CANCELLED
             } else {

@@ -22,14 +22,18 @@ pub async fn prepare_delegate(
     let subagent_type = match args["subagent_type"].as_str() {
         Some("explorer") => "explorer",
         Some("coder") => "coder",
-        Some(_) => return Err(ToolResult::validation(
-            "subagent_type_invalid",
-            "Type de sous-agent invalide.",
-        )),
-        None => return Err(ToolResult::validation(
-            "subagent_type_required",
-            "Paramètre 'subagent_type' manquant",
-        )),
+        Some(_) => {
+            return Err(ToolResult::validation(
+                "subagent_type_invalid",
+                "Type de sous-agent invalide.",
+            ))
+        }
+        None => {
+            return Err(ToolResult::validation(
+                "subagent_type_required",
+                "Paramètre 'subagent_type' manquant",
+            ))
+        }
     };
     let parent = match session_store::get(&parent_session_id).await {
         Ok(s) => s,
@@ -149,18 +153,15 @@ pub async fn prepare_delegate(
     {
         Ok(registered) => registered,
         Err(error) => {
-            let _ = super::session_subagents::mark_status(
-                &child_id,
-                super::subagent_status::FAILED,
-            )
-            .await;
+            let _ =
+                super::session_subagents::mark_status(&child_id, super::subagent_status::FAILED)
+                    .await;
             subagent_registry::release_run_claim(&parent_session_id, &run_id).await;
-            return Err(ToolResult::internal(
-                "subagent_registration_failed",
-                error,
-                false,
-            )
-            .with_error_hint("Inspecter le sous-agent créé avant de relancer la délégation."));
+            return Err(
+                ToolResult::internal("subagent_registration_failed", error, false).with_error_hint(
+                    "Inspecter le sous-agent créé avant de relancer la délégation.",
+                ),
+            );
         }
     };
     let run_id = registered.run_id;

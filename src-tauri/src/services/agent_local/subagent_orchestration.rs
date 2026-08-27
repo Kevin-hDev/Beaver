@@ -99,13 +99,10 @@ impl ParentSubagentOrchestrator {
             self.ensure_no_followup_at_turn_limit().await?;
             return Ok(false);
         }
-        let should_continue = super::subagent_instruction_delivery::drain(
-            &self.parent_session_id,
-            messages,
-        )
-        .await?
-            > 0
-            || self.after_no_tool_turn(messages, cancel).await?;
+        let should_continue =
+            super::subagent_instruction_delivery::drain(&self.parent_session_id, messages).await?
+                > 0
+                || self.after_no_tool_turn(messages, cancel).await?;
         if should_continue {
             let _ = on_event.send(StreamEvent::TurnEnd {});
         }
@@ -134,7 +131,6 @@ impl ParentSubagentOrchestrator {
     async fn current_turn_active_ids(&self) -> Vec<String> {
         current_turn_active_ids(&self.parent_session_id).await
     }
-
 }
 
 #[path = "subagent_orchestration_wait.rs"]

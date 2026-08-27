@@ -145,7 +145,10 @@ impl LoopCompression<'_> {
         *last_eval = None;
     }
 
-    #[allow(dead_code, reason = "journal commits tool results before compression can resume")]
+    #[allow(
+        dead_code,
+        reason = "journal commits tool results before compression can resume"
+    )]
     pub fn tool_compression<'a>(
         &'a self,
         last_context_tokens: Option<u32>,

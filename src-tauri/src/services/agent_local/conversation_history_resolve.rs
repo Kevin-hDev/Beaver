@@ -42,10 +42,16 @@ pub(super) async fn from_session_for_continuation(
             && message.files.iter().any(|file| !file.path.is_empty())
     });
     let key = needs_key.then(|| load_key(key_source)).transpose()?;
-    for message in session.messages.iter().rev().filter(|message| {
-        message.role == "user" && Some(message.id.as_str()) != skip_user_id
-    }) {
-        let has_skill_ids = message.skill_ids.as_ref().is_some_and(|ids| !ids.is_empty());
+    for message in session
+        .messages
+        .iter()
+        .rev()
+        .filter(|message| message.role == "user" && Some(message.id.as_str()) != skip_user_id)
+    {
+        let has_skill_ids = message
+            .skill_ids
+            .as_ref()
+            .is_some_and(|ids| !ids.is_empty());
         if message.files.is_empty() && !has_skill_ids {
             continue;
         }
@@ -84,13 +90,21 @@ fn persisted_input(message: &AgentMessage) -> Result<NewUserTurnInput, Conversat
         (None, _) => Vec::new(),
         _ => return Err(ConversationHistoryError),
     };
-    let files = message.files.iter().map(|file| TurnAttachmentInput {
-        name: file.name.clone(),
-        path: file.path.clone(),
-        mime_type: file.mime_type.clone(),
-        size: file.size,
-        thumbnail: file.thumbnail.clone(),
-        access_grant: file.access_grant.clone(),
-    }).collect();
-    Ok(NewUserTurnInput { content: message.content.clone(), files, skills })
+    let files = message
+        .files
+        .iter()
+        .map(|file| TurnAttachmentInput {
+            name: file.name.clone(),
+            path: file.path.clone(),
+            mime_type: file.mime_type.clone(),
+            size: file.size,
+            thumbnail: file.thumbnail.clone(),
+            access_grant: file.access_grant.clone(),
+        })
+        .collect();
+    Ok(NewUserTurnInput {
+        content: message.content.clone(),
+        files,
+        skills,
+    })
 }

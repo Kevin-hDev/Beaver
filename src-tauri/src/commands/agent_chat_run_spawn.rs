@@ -1,4 +1,7 @@
-#[allow(clippy::too_many_arguments, reason = "validated stream ownership is explicit")]
+#[allow(
+    clippy::too_many_arguments,
+    reason = "validated stream ownership is explicit"
+)]
 async fn spawn(
     app: tauri::AppHandle,
     request: ChatStreamRequest,
@@ -75,8 +78,14 @@ async fn spawn(
                 Ok(completed) if is_current => completed.emit_done(&emitter),
                 Ok(_) => {}
                 Err(message) => {
-                    emit_failure(is_current, &emitter, &task_session, &stream_request_id, message)
-                        .await;
+                    emit_failure(
+                        is_current,
+                        &emitter,
+                        &task_session,
+                        &stream_request_id,
+                        message,
+                    )
+                    .await;
                 }
             }
         }),

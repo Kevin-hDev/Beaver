@@ -68,11 +68,7 @@ fn extract_files_uses_tool_traces() {
 
 #[test]
 fn serialize_adds_truncated_marker_at_limit() {
-    let mut msg = message_with_tool(tool_record(
-        "read_file",
-        "src/main.rs",
-        Some("ok".into()),
-    ));
+    let mut msg = message_with_tool(tool_record("read_file", "src/main.rs", Some("ok".into())));
     msg.content = "a".repeat(MAX_SUMMARY_INPUT_CHARS);
     let serialized = serialize_messages(&[msg]);
     assert!(serialized.ends_with("[Truncated]"));

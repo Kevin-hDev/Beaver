@@ -18,9 +18,7 @@ pub fn read_skill_metadata(
     }
     let file = std::fs::File::open(path).ok()?;
     let mut bytes = Vec::with_capacity(MAX_METADATA_BYTES as usize);
-    file.take(MAX_METADATA_BYTES)
-        .read_to_end(&mut bytes)
-        .ok()?;
+    file.take(MAX_METADATA_BYTES).read_to_end(&mut bytes).ok()?;
     let prefix = String::from_utf8_lossy(&bytes);
     let (name, description, _) = parse_skill_content(&prefix, fallback_name);
     Some((name, description))

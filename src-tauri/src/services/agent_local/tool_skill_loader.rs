@@ -75,9 +75,7 @@ pub async fn load_skill_with_metadata(skill_id: &str) -> Result<LoadedSkill, Ski
             &content,
             &entry.info.name,
         );
-        let enriched = format!(
-            "Skill source: {source}\nSkill directory: {directory}\n\n{body}"
-        );
+        let enriched = format!("Skill source: {source}\nSkill directory: {directory}\n\n{body}");
         if enriched.len() > super::skill_limits::MAX_RESOLVED_SKILL_BYTES {
             return Err(SkillLoadError::Unavailable);
         }

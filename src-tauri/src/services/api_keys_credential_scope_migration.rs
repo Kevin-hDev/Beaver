@@ -42,10 +42,7 @@ fn migrate_llm_oauth_scope(
     }
 }
 
-fn migrate_codex_oauth_scope(
-    map: &mut HashMap<String, String>,
-    report: &mut ScopeMigrationReport,
-) {
+fn migrate_codex_oauth_scope(map: &mut HashMap<String, String>, report: &mut ScopeMigrationReport) {
     let route = RouteId::CodexOauth;
     let Ok(physical_key) = prefixed_raw_key(CODEX_OAUTH_KEY) else {
         report.blocked.push(route);

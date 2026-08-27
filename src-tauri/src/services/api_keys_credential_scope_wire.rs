@@ -95,13 +95,15 @@ pub(crate) fn decode_llm_oauth_record(
 ) -> Result<LlmOAuthCredentialRecord, String> {
     let record: LlmOAuthCredentialRecord =
         serde_json::from_str(json).map_err(|_| credential_error())?;
-    validate_record_version(record.schema_version, record.credential_scope.as_ref(), route)?;
+    validate_record_version(
+        record.schema_version,
+        record.credential_scope.as_ref(),
+        route,
+    )?;
     Ok(record)
 }
 
-pub(crate) fn decode_codex_oauth_record(
-    json: &str,
-) -> Result<CodexOAuthCredentialRecord, String> {
+pub(crate) fn decode_codex_oauth_record(json: &str) -> Result<CodexOAuthCredentialRecord, String> {
     let record: CodexOAuthCredentialRecord =
         serde_json::from_str(json).map_err(|_| credential_error())?;
     validate_record_version(
@@ -116,7 +118,11 @@ pub(crate) fn encode_llm_oauth_record(
     record: &LlmOAuthCredentialRecord,
     route: RouteId,
 ) -> Result<Zeroizing<String>, String> {
-    validate_current_record(record.schema_version, record.credential_scope.as_ref(), route)?;
+    validate_current_record(
+        record.schema_version,
+        record.credential_scope.as_ref(),
+        route,
+    )?;
     serde_json::to_string(record)
         .map(Zeroizing::new)
         .map_err(|_| credential_error())

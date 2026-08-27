@@ -41,7 +41,9 @@ async fn project_cleanup_revalidates_the_selected_project_under_lock() {
 
     let saved = session_store::get(&session.id).await.expect("reload");
     assert_eq!(saved.project_id.as_deref(), Some("replacement-project"));
-    session_store::delete_one(&session.id).await.expect("cleanup session");
+    session_store::delete_one(&session.id)
+        .await
+        .expect("cleanup session");
 }
 
 #[tokio::test]
@@ -82,7 +84,9 @@ async fn truncate_rejects_a_continuation_from_the_legacy_ipc_boundary() {
     assert_eq!(restored.messages.len(), 1);
     assert_eq!(restored.messages[0].id, "target-message");
     assert_eq!(restored.messages[0].content, "visible original");
-    session_store::delete_one(&session.id).await.expect("cleanup");
+    session_store::delete_one(&session.id)
+        .await
+        .expect("cleanup");
 }
 
 fn message(

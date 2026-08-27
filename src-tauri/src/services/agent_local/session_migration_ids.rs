@@ -142,7 +142,10 @@ fn merge_consecutive_users(messages: &mut Vec<Value>) -> Result<(), String> {
 fn merge_user_message(target: &mut Value, source: Value) -> Result<(), String> {
     let target = target.as_object_mut().ok_or_else(invalid)?;
     let source = source.as_object().ok_or_else(invalid)?;
-    let extra = source.get("content").and_then(Value::as_str).unwrap_or_default();
+    let extra = source
+        .get("content")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
     if !extra.is_empty() {
         let content = target
             .entry("content")
@@ -179,8 +182,8 @@ fn assign_turn_id(
         .then(|| object.get("turn_id").and_then(Value::as_str))
         .flatten()
         .map(str::to_string);
-    let starts_turn = object.get("role").and_then(Value::as_str) == Some("user")
-        || active_turn.is_none();
+    let starts_turn =
+        object.get("role").and_then(Value::as_str) == Some("user") || active_turn.is_none();
     if starts_turn {
         *active_turn = Some(existing.clone().unwrap_or_else(|| legacy_id("turn")));
     }

@@ -29,7 +29,8 @@ fn message(id: &str, role: &str, content: &str) -> AgentMessage {
 
 fn session() -> AgentSession {
     AgentSession {
-        schema_version: crate::services::agent_local::session_limits::CURRENT_SESSION_SCHEMA_VERSION,
+        schema_version:
+            crate::services::agent_local::session_limits::CURRENT_SESSION_SCHEMA_VERSION,
         id: "550e8400-e29b-41d4-a716-446655440000".into(),
         name: "Main".into(),
         created_at: Utc::now(),

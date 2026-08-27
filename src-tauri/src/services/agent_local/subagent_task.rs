@@ -1,4 +1,7 @@
-#![expect(clippy::too_many_arguments, reason = "orchestration boundary keeps related runtime context explicit")]
+#![expect(
+    clippy::too_many_arguments,
+    reason = "orchestration boundary keeps related runtime context explicit"
+)]
 use crate::services::agent_local::session_store;
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::subagent_registry;
@@ -168,7 +171,8 @@ pub(super) async fn run(
         &execution_id,
         prepared.worktree_path(),
         is_explorer || retain_branch,
-    ).await;
+    )
+    .await;
     session_store::remove_session_lock(&child_session_id).await;
 }
 

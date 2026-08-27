@@ -98,10 +98,13 @@ fn compacting_only_removes_complete_turns_and_marks_replaced_envelopes() {
         "answer",
         Some(envelope(RouteId::Ollama, "model-a", "opaque-native")),
     );
-    session.messages.push(message("user-open", "turn-open", "user", "unfinished"));
+    session
+        .messages
+        .push(message("user-open", "turn-open", "user", "unfinished"));
 
-    let compacted = super::conversation_compaction::compact_complete_turns(&mut session.messages, 0)
-        .expect("only the completed turn is compacted");
+    let compacted =
+        super::conversation_compaction::compact_complete_turns(&mut session.messages, 0)
+            .expect("only the completed turn is compacted");
 
     assert_eq!(compacted.removed_turns, 1);
     assert_eq!(compacted.replaced_envelopes.len(), 1);
@@ -125,13 +128,19 @@ fn compaction_refuses_an_open_tool_chain() {
             arguments: serde_json::json!({"path": "a"}),
         },
     }]);
-    session.messages = vec![message("user-open", "turn-open", "user", "question"), assistant];
+    session.messages = vec![
+        message("user-open", "turn-open", "user", "question"),
+        assistant,
+    ];
     let before = serde_json::to_vec(&session.messages).unwrap();
 
     let error = super::conversation_compaction::compact_complete_turns(&mut session.messages, 1)
         .expect_err("open chains cannot be compacted");
 
-    assert_eq!(error, super::conversation_compaction::CompactionError::OpenTurn);
+    assert_eq!(
+        error,
+        super::conversation_compaction::CompactionError::OpenTurn
+    );
     assert_eq!(serde_json::to_vec(&session.messages).unwrap(), before);
 }
 
@@ -160,10 +169,27 @@ fn target(model: &str) -> ReplayTarget {
     }
 }
 
-fn complete_turn(suffix: &str, answer: &str, continuation: Option<ReasoningEnvelope>) -> Vec<AgentMessage> {
+fn complete_turn(
+    suffix: &str,
+    answer: &str,
+    continuation: Option<ReasoningEnvelope>,
+) -> Vec<AgentMessage> {
     vec![
-        message(&format!("user-{suffix}"), &format!("turn-{suffix}"), "user", "question"),
-        AgentMessage { continuation, ..message(&format!("assistant-{suffix}"), &format!("turn-{suffix}"), "assistant", answer) },
+        message(
+            &format!("user-{suffix}"),
+            &format!("turn-{suffix}"),
+            "user",
+            "question",
+        ),
+        AgentMessage {
+            continuation,
+            ..message(
+                &format!("assistant-{suffix}"),
+                &format!("turn-{suffix}"),
+                "assistant",
+                answer,
+            )
+        },
     ]
 }
 
@@ -177,17 +203,34 @@ fn envelope(route: RouteId, model: &str, thinking: &str) -> ReasoningEnvelope {
             reasoning_mode: ReasoningModeId::Auto,
         },
         CompletionState::Complete,
-        ContinuationState::OllamaNative { thinking: thinking.into() },
+        ContinuationState::OllamaNative {
+            thinking: thinking.into(),
+        },
         Vec::new(),
     )
 }
 
 fn message(id: &str, turn_id: &str, role: &str, content: &str) -> AgentMessage {
     AgentMessage {
-        id: id.into(), turn_id: turn_id.into(), role: role.into(), content: content.into(),
-        thinking: None, tool_calls: None, tool_name: None, tool_call_id: None,
-        continuation: None, replay_source: None, tool_activities: None, segments: None,
-        files: Vec::new(), timestamp: Utc::now(), tokens: 0, work_duration_ms: None,
-        skill_names: None, skill_ids: None, stream_run_id: None, stream_part: None,
+        id: id.into(),
+        turn_id: turn_id.into(),
+        role: role.into(),
+        content: content.into(),
+        thinking: None,
+        tool_calls: None,
+        tool_name: None,
+        tool_call_id: None,
+        continuation: None,
+        replay_source: None,
+        tool_activities: None,
+        segments: None,
+        files: Vec::new(),
+        timestamp: Utc::now(),
+        tokens: 0,
+        work_duration_ms: None,
+        skill_names: None,
+        skill_ids: None,
+        stream_run_id: None,
+        stream_part: None,
     }
 }

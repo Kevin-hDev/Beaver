@@ -37,10 +37,7 @@ fn assistant_requires_reasoning_and_tool_calls_at_construction() {
     assert_eq!(message.role, "assistant");
     assert_eq!(message.display_thinking.as_deref(), Some("reasoning"));
     assert!(message.continuation.is_none());
-    assert_eq!(
-        message.tool_loop_reasoning.as_deref(),
-        Some("reasoning")
-    );
+    assert_eq!(message.tool_loop_reasoning.as_deref(), Some("reasoning"));
     assert_eq!(message.tool_calls.unwrap()[0].id.as_deref(), Some("call-1"));
 }
 

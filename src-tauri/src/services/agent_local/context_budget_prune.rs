@@ -57,7 +57,10 @@ pub(super) fn prepare_with_limit(
         });
     context_capsules::insert_after_system(&mut next, capsule);
     let remaining = message_limit
-        .saturating_sub(super::context_budget::estimate_messages(params.provider_id, &next))
+        .saturating_sub(super::context_budget::estimate_messages(
+            params.provider_id,
+            &next,
+        ))
         .saturating_sub(super::context_budget::estimate_messages(
             params.provider_id,
             &required_reports,
@@ -71,7 +74,11 @@ pub(super) fn prepare_with_limit(
     next.extend(required_reports);
     *messages = next;
 
-    Ok(final_report(estimate_total(messages, &params), messages.len(), &params))
+    Ok(final_report(
+        estimate_total(messages, &params),
+        messages.len(),
+        &params,
+    ))
 }
 
 fn append_recent_tail<'a>(
@@ -183,9 +190,8 @@ fn prefix_within_units(input: &str, max_units: usize) -> String {
         .chars()
         .take_while(|character| {
             let mut encoded = [0u8; 4];
-            let units = crate::services::token_counting::text_units(
-                character.encode_utf8(&mut encoded),
-            );
+            let units =
+                crate::services::token_counting::text_units(character.encode_utf8(&mut encoded));
             let fits = used.saturating_add(units) <= max_units;
             if fits {
                 used += units;

@@ -15,14 +15,13 @@ async fn scheduler_conversation_adoption_persists_the_canonical_turn_once() {
         reasoning_mode: ReasoningModeId::Off,
     });
 
-    let admitted = crate::services::scheduler::admit_wakeup_turn(
-        &session.id,
-        "Inspecte le projet",
-        target,
-    )
-    .await
-    .expect("admit wakeup");
-    let saved = session_store::get(&session.id).await.expect("reload session");
+    let admitted =
+        crate::services::scheduler::admit_wakeup_turn(&session.id, "Inspecte le projet", target)
+            .await
+            .expect("admit wakeup");
+    let saved = session_store::get(&session.id)
+        .await
+        .expect("reload session");
 
     assert_eq!(saved.messages.len(), 1);
     assert_eq!(saved.messages[0].id, admitted.user_message_id);
@@ -31,7 +30,9 @@ async fn scheduler_conversation_adoption_persists_the_canonical_turn_once() {
     assert_eq!(admitted.history.messages[0].role, ProviderRole::User);
     assert_eq!(admitted.history.messages[0].content, "Inspecte le projet");
 
-    session_store::delete_one(&session.id).await.expect("delete session");
+    session_store::delete_one(&session.id)
+        .await
+        .expect("delete session");
 }
 
 #[test]
@@ -43,7 +44,10 @@ fn every_internal_entry_point_adopts_a_canonical_conversation() {
     let mut inspected = 0;
     while let Some(directory) = pending.pop() {
         for entry in std::fs::read_dir(directory).expect("read source directory") {
-            assert!(inspected < MAX_SOURCE_FILES, "source scan exceeded its bound");
+            assert!(
+                inspected < MAX_SOURCE_FILES,
+                "source scan exceeded its bound"
+            );
             inspected += 1;
             let entry = entry.expect("source entry");
             if entry.file_type().expect("source type").is_dir() {
@@ -62,9 +66,14 @@ fn every_internal_entry_point_adopts_a_canonical_conversation() {
             }
         }
     }
-    assert_eq!(stream_entry_points.len(), 4, "new stream entry point needs canonical adoption");
-    assert!(!include_str!("../../commands/agent_chat_task/conversation.rs")
-        .contains("InternalLegacy"));
+    assert_eq!(
+        stream_entry_points.len(),
+        4,
+        "new stream entry point needs canonical adoption"
+    );
+    assert!(
+        !include_str!("../../commands/agent_chat_task/conversation.rs").contains("InternalLegacy")
+    );
 }
 
 #[test]
@@ -76,7 +85,10 @@ fn production_session_message_writes_stay_behind_canonical_owners() {
     let mut writers = Vec::new();
     while let Some(directory) = pending.pop() {
         for entry in std::fs::read_dir(directory).expect("read source directory") {
-            assert!(inspected < MAX_SOURCE_FILES, "source scan exceeded its bound");
+            assert!(
+                inspected < MAX_SOURCE_FILES,
+                "source scan exceeded its bound"
+            );
             inspected += 1;
             let entry = entry.expect("source entry");
             if entry.file_type().expect("source type").is_dir() {
@@ -84,7 +96,10 @@ fn production_session_message_writes_stay_behind_canonical_owners() {
                 continue;
             }
             let path = entry.path();
-            let name = path.file_name().and_then(|value| value.to_str()).unwrap_or_default();
+            let name = path
+                .file_name()
+                .and_then(|value| value.to_str())
+                .unwrap_or_default();
             if path.extension().and_then(|value| value.to_str()) != Some("rs")
                 || name.contains("test")
             {

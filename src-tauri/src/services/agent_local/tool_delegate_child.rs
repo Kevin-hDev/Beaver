@@ -1,4 +1,7 @@
-#![expect(clippy::too_many_arguments, reason = "orchestration boundary keeps related runtime context explicit")]
+#![expect(
+    clippy::too_many_arguments,
+    reason = "orchestration boundary keeps related runtime context explicit"
+)]
 use crate::services::agent_local::session_store;
 use crate::services::agent_local::types_session::AgentSession;
 use crate::services::agent_local::types_tools::ToolResult;
@@ -12,9 +15,8 @@ pub(super) async fn persist_delegate_prompt(
     child_id: &str,
     prompt: &str,
 ) -> Result<(), ToolResult> {
-    super::session_store::validate_session_id(child_id).map_err(|_| {
-        ToolResult::validation("subagent_id_invalid", "Sous-agent introuvable.")
-    })?;
+    super::session_store::validate_session_id(child_id)
+        .map_err(|_| ToolResult::validation("subagent_id_invalid", "Sous-agent introuvable."))?;
     if prompt.trim().is_empty()
         || prompt.chars().count() > super::subagent_instruction_delivery::MAX_PROMPT_SIZE
     {
@@ -63,13 +65,24 @@ pub(super) async fn prepare_existing_child(
     let _guard = lock.lock().await;
     let mut child = match session_store::get(child_id).await {
         Ok(session) => session,
-        Err(_) => return Err(ToolResult::not_found("subagent_not_found", "Sous-agent introuvable.")),
+        Err(_) => {
+            return Err(ToolResult::not_found(
+                "subagent_not_found",
+                "Sous-agent introuvable.",
+            ))
+        }
     };
     if child.parent_session_id.as_deref() != Some(parent_session_id) {
-        return Err(ToolResult::not_found("subagent_not_found", "Sous-agent introuvable."));
+        return Err(ToolResult::not_found(
+            "subagent_not_found",
+            "Sous-agent introuvable.",
+        ));
     }
     if child.archived_at.is_some() {
-        return Err(ToolResult::conflict("subagent_archived", "Sous-agent archivé."));
+        return Err(ToolResult::conflict(
+            "subagent_archived",
+            "Sous-agent archivé.",
+        ));
     }
     if super::subagent_live_state::has_pending_work(&child).await {
         return Err(ToolResult::conflict(
@@ -85,16 +98,14 @@ pub(super) async fn prepare_existing_child(
     child.subagent_description = Some(description.to_string());
     child.subagent_color_key = Some(color_key.to_string());
     child.subagent_summary = None;
-    session_store::save(&child)
-        .await
-        .map_err(|_| {
-            ToolResult::internal(
-                "subagent_prepare_save_failed",
-                "Erreur interne lors de la préparation du sous-agent",
-                false,
-            )
-            .with_error_hint("Inspecter le sous-agent avant de reprendre sa préparation.")
-        })?;
+    session_store::save(&child).await.map_err(|_| {
+        ToolResult::internal(
+            "subagent_prepare_save_failed",
+            "Erreur interne lors de la préparation du sous-agent",
+            false,
+        )
+        .with_error_hint("Inspecter le sous-agent avant de reprendre sa préparation.")
+    })?;
     Ok(child)
 }
 
@@ -135,16 +146,14 @@ pub(super) async fn create_child(
     child.preserve_reasoning = parent.preserve_reasoning;
     child.working_dir = parent.working_dir.clone();
     child.working_dir_managed = parent.working_dir_managed;
-    session_store::save(&child)
-        .await
-        .map_err(|_| {
-            ToolResult::internal(
-                "subagent_create_save_failed",
-                "Erreur interne lors de la création du sous-agent",
-                false,
-            )
-            .with_error_hint("Inspecter les sous-agents existants avant de relancer la création.")
-        })?;
+    session_store::save(&child).await.map_err(|_| {
+        ToolResult::internal(
+            "subagent_create_save_failed",
+            "Erreur interne lors de la création du sous-agent",
+            false,
+        )
+        .with_error_hint("Inspecter les sous-agents existants avant de relancer la création.")
+    })?;
     Ok(child)
 }
 

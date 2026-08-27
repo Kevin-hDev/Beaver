@@ -23,9 +23,9 @@ pub(crate) fn chat_request_with_evidence(
         replayed.extend(apply_live_continuity(
             messages,
             target,
-            payload_messages
-                .as_array_mut()
-                .ok_or(crate::services::llm::reasoning_wire::replay::ReplayApplyError::PayloadMismatch)?,
+            payload_messages.as_array_mut().ok_or(
+                crate::services::llm::reasoning_wire::replay::ReplayApplyError::PayloadMismatch,
+            )?,
         )?);
     }
     #[cfg(debug_assertions)]
@@ -33,9 +33,9 @@ pub(crate) fn chat_request_with_evidence(
         replayed.extend(apply_fixture_continuity(
             messages,
             target,
-            payload_messages
-                .as_array_mut()
-                .ok_or(crate::services::llm::reasoning_wire::replay::ReplayApplyError::PayloadMismatch)?,
+            payload_messages.as_array_mut().ok_or(
+                crate::services::llm::reasoning_wire::replay::ReplayApplyError::PayloadMismatch,
+            )?,
         )?);
     }
     let mut body = Map::new();
@@ -82,14 +82,22 @@ fn apply_live_continuity(
     let continuation =
         crate::services::reasoning_continuity::contract::ContinuationTarget::Replay(target.clone());
     let mut replayed = Vec::new();
-    for message in messages.iter().filter(|message| message.continuation.is_some()) {
-        let envelope = message.continuation.as_ref().expect("filtered continuation");
+    for message in messages
+        .iter()
+        .filter(|message| message.continuation.is_some())
+    {
+        let envelope = message
+            .continuation
+            .as_ref()
+            .expect("filtered continuation");
         let approval = crate::services::llm::reasoning_wire::replay::approval_for_target(
             &continuation,
             envelope,
         )?;
         apply_continuity(messages, &approval, payload_messages)?;
-        replayed.push(crate::services::llm::reasoning_wire::replay::ReplayEvidence::from_message(message)?);
+        replayed.push(
+            crate::services::llm::reasoning_wire::replay::ReplayEvidence::from_message(message)?,
+        );
     }
     Ok(replayed)
 }
@@ -99,20 +107,31 @@ fn apply_fixture_continuity(
     messages: &[ChatMessage],
     target: &crate::services::reasoning_continuity::contract::ReplayTarget,
     payload_messages: &mut [Value],
-) -> Result<Vec<crate::services::llm::reasoning_wire::replay::ReplayEvidence>, crate::services::llm::reasoning_wire::replay::ReplayApplyError> {
+) -> Result<
+    Vec<crate::services::llm::reasoning_wire::replay::ReplayEvidence>,
+    crate::services::llm::reasoning_wire::replay::ReplayApplyError,
+> {
     let continuation =
         crate::services::reasoning_continuity::contract::ContinuationTarget::FixtureCandidate(
             target.clone(),
         );
     let mut replayed = Vec::new();
-    for message in messages.iter().filter(|message| message.continuation.is_some()) {
-        let envelope = message.continuation.as_ref().expect("filtered continuation");
+    for message in messages
+        .iter()
+        .filter(|message| message.continuation.is_some())
+    {
+        let envelope = message
+            .continuation
+            .as_ref()
+            .expect("filtered continuation");
         let approval = crate::services::llm::reasoning_wire::replay::approval_for_target(
             &continuation,
             envelope,
         )?;
         apply_continuity(messages, &approval, payload_messages)?;
-        replayed.push(crate::services::llm::reasoning_wire::replay::ReplayEvidence::from_message(message)?);
+        replayed.push(
+            crate::services::llm::reasoning_wire::replay::ReplayEvidence::from_message(message)?,
+        );
     }
     Ok(replayed)
 }
@@ -124,11 +143,7 @@ fn message_value(message: &ChatMessage) -> Value {
     insert_optional(&mut value, "images", message.images.as_ref());
     insert_tool_calls(&mut value, message);
     insert_optional(&mut value, "tool_name", message.tool_name.as_ref());
-    insert_optional(
-        &mut value,
-        "thinking",
-        message.tool_loop_reasoning.as_ref(),
-    );
+    insert_optional(&mut value, "thinking", message.tool_loop_reasoning.as_ref());
     Value::Object(value)
 }
 

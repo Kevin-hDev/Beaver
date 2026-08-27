@@ -25,9 +25,7 @@ fn wide_characters_and_a_tiny_budget_cannot_overflow() {
 
     for budget in [0, 1, 10, 100] {
         let trimmed = trim_message(&message, budget);
-        assert!(
-            crate::services::token_counting::estimate_chat_message_tokens(&trimmed) <= budget
-        );
+        assert!(crate::services::token_counting::estimate_chat_message_tokens(&trimmed) <= budget);
     }
 }
 
@@ -62,13 +60,9 @@ fn oversized_continuation_fails_closed_instead_of_dropping_opaque_state() {
         None,
     )];
 
-    let error = super::super::context_budget::prepare_for_request(
-        &mut messages,
-        8_000,
-        &[],
-        "ollama",
-    )
-    .expect_err("opaque continuation cannot be partially trimmed");
+    let error =
+        super::super::context_budget::prepare_for_request(&mut messages, 8_000, &[], "ollama")
+            .expect_err("opaque continuation cannot be partially trimmed");
 
     assert_eq!(error, "context_capacity_exceeded");
     assert!(messages[0].continuation.is_some());

@@ -48,19 +48,13 @@ where
         .map_err(|_| error())?;
     // Resolve every local authority before the durable mutation. Otherwise a
     // missing historical grant/file/skill would be discovered only after save.
-    super::conversation_history_resolve::from_session(
-        &session,
-        target,
-        key_source,
-        None,
-    )
-    .await
-    .map_err(|_| error())?;
+    super::conversation_history_resolve::from_session(&session, target, key_source, None)
+        .await
+        .map_err(|_| error())?;
     after_preflight().await;
     apply_to_session(&mut session, input).map_err(|_| error())?;
-    session.messages.last_mut().ok_or_else(error)?.replay_source = Some(
-        crate::services::reasoning_continuity::envelope::ReasoningSource::from_target(target),
-    );
+    session.messages.last_mut().ok_or_else(error)?.replay_source =
+        Some(crate::services::reasoning_continuity::envelope::ReasoningSource::from_target(target));
     let prepared = super::session_store_document::prepare(&session)
         .await
         .map_err(|_| error())?;

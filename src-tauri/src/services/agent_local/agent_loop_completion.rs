@@ -1,5 +1,5 @@
-use super::types_ollama::StreamEvent;
 use super::generation_metrics::GenerationAggregate;
+use super::types_ollama::StreamEvent;
 use crate::services::token_counting;
 
 pub fn done_event(
@@ -18,5 +18,8 @@ pub fn done_event(
         prompt_tokens: total_prompt,
         context_tokens: token_counting::sum_real_counts(last_prompt, last_eval),
     };
-    (event, token_counting::sum_real_counts(total_eval, total_prompt).unwrap_or(0))
+    (
+        event,
+        token_counting::sum_real_counts(total_eval, total_prompt).unwrap_or(0),
+    )
 }

@@ -28,10 +28,7 @@ pub async fn record_api_payload(
         &crate::services::reasoning_continuity::contract::ContinuationTarget,
     >,
 ) {
-    let (kind, stats) = if matches!(
-        provider_id,
-        "openai" | "codex-oauth" | "xai" | "xai-oauth"
-    ) {
+    let (kind, stats) = if matches!(provider_id, "openai" | "codex-oauth" | "xai" | "xai-oauth") {
         (
             "responses",
             responses_payload_stats(messages, continuation_target),

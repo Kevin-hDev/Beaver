@@ -51,8 +51,7 @@ fn local_entries() -> Result<Vec<SkillCatalogEntry>, String> {
         let Some(manifest) = find_skill_file(&bundle) else {
             continue;
         };
-        let Some((name, description)) = metadata(&manifest, &fallback.to_string_lossy())
-        else {
+        let Some((name, description)) = metadata(&manifest, &fallback.to_string_lossy()) else {
             continue;
         };
         let id = catalog_id("local", &bundle);

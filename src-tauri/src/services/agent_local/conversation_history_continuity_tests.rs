@@ -1,7 +1,9 @@
 use uuid::Uuid;
 
 use super::super::{conversation_admission, conversation_history};
-use super::support::{cleanup, complete_turn, create_session, envelope, message, multi_tool_turn, target, ERROR};
+use super::support::{
+    cleanup, complete_turn, create_session, envelope, message, multi_tool_turn, target, ERROR,
+};
 use crate::models::agent_session_contract::EditUserMessageInput;
 use crate::models::agent_turn_contract::ResumeTurnInput;
 use crate::services::reasoning_continuity::contract::RouteId;
@@ -184,8 +186,12 @@ async fn durable_turn_provenance_blocks_a_to_b_without_envelope_then_a_after_rel
     let new_a = envelope(RouteId::Ollama, "model-a", "opaque-new-a");
     let mut session = create_session().await;
     session.messages = complete_turn("old-a-source", "old A", Some(old_a.clone()));
-    session.messages.extend(complete_turn("middle-b-source", "middle B", None));
-    session.messages.extend(complete_turn("new-a-source", "new A", Some(new_a.clone())));
+    session
+        .messages
+        .extend(complete_turn("middle-b-source", "middle B", None));
+    session
+        .messages
+        .extend(complete_turn("new-a-source", "new A", Some(new_a.clone())));
     let mut value = serde_json::to_value(&session).unwrap();
     let messages = value["messages"].as_array_mut().unwrap();
     messages[0]["replay_source"] = serde_json::to_value(old_a.source).unwrap();
@@ -205,7 +211,13 @@ async fn durable_turn_provenance_blocks_a_to_b_without_envelope_then_a_after_rel
     assert_eq!(history.compatible_suffix_start, 4);
     assert!(history.messages[1].continuation.is_none());
     assert!(history.messages[4].continuity_barrier_before);
-    assert_eq!(history.messages[5].continuation.as_ref().and_then(ollama_thinking), Some("opaque-new-a"));
+    assert_eq!(
+        history.messages[5]
+            .continuation
+            .as_ref()
+            .and_then(ollama_thinking),
+        Some("opaque-new-a")
+    );
     cleanup(&session.id).await;
 }
 
@@ -299,7 +311,10 @@ async fn edit_truncates_turns_keeps_prior_opaque_and_makes_user_terminal() {
     assert_eq!(persisted.messages[2].id, edited_id);
     assert_eq!(persisted.messages[2].turn_id, edited_turn);
     assert_eq!(persisted.messages[2].content, "edited durable");
-    assert_eq!(serde_json::to_vec(&persisted.messages[..2]).unwrap(), prior_turn);
+    assert_eq!(
+        serde_json::to_vec(&persisted.messages[..2]).unwrap(),
+        prior_turn
+    );
     assert_eq!(
         serde_json::to_vec(persisted.messages[1].continuation.as_ref().unwrap()).unwrap(),
         expected
@@ -318,7 +333,10 @@ async fn failed_edit_write_is_generic_and_preserves_previous_bytes() {
 
     let error = conversation_admission::edit_user_message_with_writer(
         &session.id,
-        EditUserMessageInput { message_id: "user-edit-fail".into(), new_content: "changed".into() },
+        EditUserMessageInput {
+            message_id: "user-edit-fail".into(),
+            new_content: "changed".into(),
+        },
         &target("model-a"),
         |_| async { Err("technical /private/path".to_string()) },
     )
@@ -348,8 +366,13 @@ async fn successful_edit_returns_the_exact_sanitized_document_history() {
     .expect("edit canonical prepared document");
 
     let persisted = super::super::session_store::get(&session.id).await.unwrap();
-    assert_eq!(history.messages.last().unwrap().content, persisted.messages[0].content);
-    assert!(!persisted.messages[0].content.contains("gsk_1234567890abcdefghijkl"));
+    assert_eq!(
+        history.messages.last().unwrap().content,
+        persisted.messages[0].content
+    );
+    assert!(!persisted.messages[0]
+        .content
+        .contains("gsk_1234567890abcdefghijkl"));
     cleanup(&session.id).await;
 }
 
@@ -373,7 +396,10 @@ async fn resume_keeps_legacy_skill_names_without_inventing_private_context() {
     .await
     .expect("legacy names remain readable without private skill ids");
 
-    assert_eq!(admitted.history.messages.last().unwrap().content, "question");
+    assert_eq!(
+        admitted.history.messages.last().unwrap().content,
+        "question"
+    );
     cleanup(&session.id).await;
 }
 

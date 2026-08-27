@@ -1,8 +1,7 @@
 use super::session_store::{get, save, validate_session_id};
 #[cfg(test)]
 pub(super) use super::session_store_update_gate::{
-    assign_project_with_after_load, update_fast_mode_with_after_load,
-    update_fast_mode_with_writer,
+    assign_project_with_after_load, update_fast_mode_with_after_load, update_fast_mode_with_writer,
 };
 
 pub(super) async fn update_locked<R>(

@@ -47,8 +47,15 @@ pub fn process_chunk(
         if let Some(duration_ns) = done_generation_duration(&chunk) {
             result.generation.record_native_duration(duration_ns);
         }
-        flush_filter(think_filter, on_event, token_count, result, options.buffer_content);
-        result.continuation = options.reasoning_capture
+        flush_filter(
+            think_filter,
+            on_event,
+            token_count,
+            result,
+            options.buffer_content,
+        );
+        result.continuation = options
+            .reasoning_capture
             .as_deref_mut()
             .and_then(ReasoningCapture::finish_complete);
         return Ok(());

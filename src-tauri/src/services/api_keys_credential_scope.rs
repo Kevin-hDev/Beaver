@@ -78,12 +78,10 @@ where
     let physical = prefixed_raw_key(logical)?;
     let json = map.get(&physical).ok_or_else(scope_unavailable)?.as_ref();
     match route {
-        RouteId::XaiOauth | RouteId::MoonshotOauth => {
-            decode_llm_oauth_record(json, route)?
-                .credential_scope
-                .clone()
-                .ok_or_else(scope_unavailable)
-        }
+        RouteId::XaiOauth | RouteId::MoonshotOauth => decode_llm_oauth_record(json, route)?
+            .credential_scope
+            .clone()
+            .ok_or_else(scope_unavailable),
         RouteId::CodexOauth => decode_codex_oauth_record(json)?
             .credential_scope
             .clone()

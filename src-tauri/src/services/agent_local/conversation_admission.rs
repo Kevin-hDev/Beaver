@@ -10,12 +10,12 @@ use crate::services::reasoning_continuity::contract::ContinuationTarget;
 #[cfg(test)]
 use crate::services::reasoning_continuity::contract::ReplayTarget;
 
+use super::conversation_admission_ids::allocate_ids;
+pub(super) use super::conversation_admission_ids::unique_uuid;
 use super::conversation_history::{ConversationHistory, ProviderRole};
 use super::conversation_input::ResolvedTurnInput;
 use super::types_message::AgentMessage;
 use super::types_session::AgentSession;
-use super::conversation_admission_ids::allocate_ids;
-pub(super) use super::conversation_admission_ids::unique_uuid;
 
 pub const PUBLIC_ERROR_CODE: &str = super::conversation_history::PUBLIC_ERROR_CODE;
 #[cfg(test)]
@@ -140,14 +140,14 @@ where
     }
     after_load().await;
     let history = super::conversation_history_resolve::from_session_for_continuation(
-        &session,
-        &target,
-        key_source,
-        None,
+        &session, &target, key_source, None,
     )
     .await
     .map_err(|_| error())?;
-    if history.messages.last().is_some_and(|message| message.role == ProviderRole::User)
+    if history
+        .messages
+        .last()
+        .is_some_and(|message| message.role == ProviderRole::User)
         || session.messages.len() >= super::session_limits::MAX_MESSAGES_PER_SESSION
     {
         return Err(error());
@@ -160,8 +160,13 @@ where
         .collect::<HashSet<_>>();
     let (turn_id, user_message_id, assistant_message_id) =
         allocate_ids(&mut used, || Uuid::new_v4().to_string())?;
-    let skill_names = (!input.skills.is_empty())
-        .then(|| input.skills.iter().map(|skill| skill.name.clone()).collect());
+    let skill_names = (!input.skills.is_empty()).then(|| {
+        input
+            .skills
+            .iter()
+            .map(|skill| skill.name.clone())
+            .collect()
+    });
     let skill_ids = (!input.skills.is_empty())
         .then(|| input.skills.iter().map(|skill| skill.id.clone()).collect());
     let message = AgentMessage {

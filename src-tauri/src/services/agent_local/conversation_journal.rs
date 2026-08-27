@@ -2,11 +2,14 @@
 mod record;
 #[path = "conversation_journal_store.rs"]
 mod store;
+#[path = "conversation_journal_validation.rs"]
+mod validation;
 
 use chrono::Utc;
-use std::collections::HashSet;
 
 use super::types_ollama::ChatMessage;
+pub(crate) use validation::validate_tool_results;
+use validation::{assistant_tool_ids, error};
 
 /// Unique owner of durable provider checkpoints for one admitted turn.
 pub(crate) struct ConversationJournal {
@@ -29,7 +32,11 @@ struct SubagentOwner {
 
 impl ConversationJournal {
     pub(crate) fn turn_ids(&self) -> (&str, &str, &str) {
-        (&self.turn_id, &self.user_message_id, &self.assistant_message_id)
+        (
+            &self.turn_id,
+            &self.user_message_id,
+            &self.assistant_message_id,
+        )
     }
 
     pub(crate) fn new(
@@ -83,7 +90,12 @@ impl ConversationJournal {
         subagent_owner: Option<SubagentOwner>,
     ) -> Result<Self, String> {
         super::session_store::validate_session_id(&session_id)?;
-        for id in [&turn_id, &user_message_id, &assistant_message_id, &request_id] {
+        for id in [
+            &turn_id,
+            &user_message_id,
+            &assistant_message_id,
+            &request_id,
+        ] {
             uuid::Uuid::parse_str(id).map_err(|_| error())?;
         }
         Ok(Self {
@@ -100,20 +112,50 @@ impl ConversationJournal {
         })
     }
 
-    pub(crate) async fn persist_assistant_step(&mut self, message: &ChatMessage) -> Result<(), String> {
-        if self.committed || self.partial || message.role != "assistant" { return Err(error()); }
+    pub(crate) async fn persist_assistant_step(
+        &mut self,
+        message: &ChatMessage,
+    ) -> Result<(), String> {
+        if self.committed || self.partial || message.role != "assistant" {
+            return Err(error());
+        }
         let ids = assistant_tool_ids(message)?;
-        let message_id = if self.assistant_steps == 0 { self.assistant_message_id.clone() } else { uuid::Uuid::new_v4().to_string() };
-        self.append(vec![record::from_message(message, message_id, &self.turn_id, &self.request_id)?]).await?;
+        let message_id = if self.assistant_steps == 0 {
+            self.assistant_message_id.clone()
+        } else {
+            uuid::Uuid::new_v4().to_string()
+        };
+        self.append(vec![record::from_message(
+            message,
+            message_id,
+            &self.turn_id,
+            &self.request_id,
+        )?])
+        .await?;
         self.expected_tool_ids = ids;
         self.assistant_steps += 1;
         Ok(())
     }
 
-    pub(crate) async fn persist_tool_results(&mut self, messages: &[ChatMessage]) -> Result<(), String> {
-        if self.committed || self.partial || self.expected_tool_ids.is_empty() { return Err(error()); }
+    pub(crate) async fn persist_tool_results(
+        &mut self,
+        messages: &[ChatMessage],
+    ) -> Result<(), String> {
+        if self.committed || self.partial || self.expected_tool_ids.is_empty() {
+            return Err(error());
+        }
         validate_tool_results(messages, &self.expected_tool_ids)?;
-        let records = messages.iter().map(|message| record::from_message(message, uuid::Uuid::new_v4().to_string(), &self.turn_id, &self.request_id)).collect::<Result<Vec<_>, _>>()?;
+        let records = messages
+            .iter()
+            .map(|message| {
+                record::from_message(
+                    message,
+                    uuid::Uuid::new_v4().to_string(),
+                    &self.turn_id,
+                    &self.request_id,
+                )
+            })
+            .collect::<Result<Vec<_>, _>>()?;
         self.append(records).await?;
         self.expected_tool_ids.clear();
         Ok(())
@@ -124,7 +166,8 @@ impl ConversationJournal {
             return Err(error());
         }
         if let Some(envelope) = &mut message.continuation {
-            envelope.completion = crate::services::reasoning_continuity::envelope::CompletionState::Partial;
+            envelope.completion =
+                crate::services::reasoning_continuity::envelope::CompletionState::Partial;
         }
         self.append(vec![record::from_message(
             &message,
@@ -138,30 +181,20 @@ impl ConversationJournal {
     }
 
     async fn append(&self, records: Vec<super::types_message::AgentMessage>) -> Result<(), String> {
-        if records.is_empty() { return Err(error()); }
+        if records.is_empty() {
+            return Err(error());
+        }
         self.update(move |session| {
-            if session.messages.len().saturating_add(records.len()) > super::session_limits::MAX_MESSAGES_PER_SESSION { return Err(error()); }
+            if session.messages.len().saturating_add(records.len())
+                > super::session_limits::MAX_MESSAGES_PER_SESSION
+            {
+                return Err(error());
+            }
             session.messages.extend(records);
             session.updated_at = Some(Utc::now());
             super::session_store_messages::recompute_accumulated_tokens(session);
             Ok(())
-        }).await
+        })
+        .await
     }
-
 }
-
-pub(crate) fn validate_tool_results(messages: &[ChatMessage], expected: &[String]) -> Result<(), String> {
-    if messages.iter().any(|message| message.role != "tool") {
-        return Err(error());
-    }
-    let actual = messages.iter().filter(|message| message.role == "tool").map(|message| message.tool_call_id.clone().ok_or_else(error)).collect::<Result<Vec<_>, _>>()?;
-    if actual != expected || actual.iter().collect::<HashSet<_>>().len() != actual.len() { return Err(error()); }
-    Ok(())
-}
-
-fn assistant_tool_ids(message: &ChatMessage) -> Result<Vec<String>, String> {
-    let ids = message.tool_calls.as_deref().unwrap_or_default().iter().map(|call| call.id.clone().ok_or_else(error)).collect::<Result<Vec<_>, _>>()?;
-    (ids.iter().collect::<HashSet<_>>().len() == ids.len()).then_some(ids).ok_or_else(error)
-}
-
-fn error() -> String { "conversation_journal_failed".to_string() }
