@@ -59,7 +59,7 @@ impl FixtureToolset {
         self.directory.path().to_path_buf()
     }
 
-    #[cfg(test)]
+    #[cfg(all(test, unix))]
     pub(crate) fn note_path_for_test(&self) -> PathBuf {
         self.note_path()
     }
