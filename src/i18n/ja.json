@@ -1260,7 +1260,7 @@
     "forecastDevReview": "確認",
     "releaseNotesTitle": "バージョン {{version}} のリリースノート",
     "showDetails": "詳細を表示",
-    "hideDetails": "詳細を非表示", "dismiss": "この通知を隠す", "dismissFailed": "通知を隠せませんでした。", "cancelling": "キャンセル中…", "cancelled": "ダウンロードをキャンセルし、一時ファイルを削除しました。"
+    "hideDetails": "詳細を非表示", "dismiss": "この通知を隠す", "dismissFailed": "通知を隠せませんでした。", "checkFailed": "更新の確認に失敗しました。しばらくしてからもう一度お試しください。", "cancelling": "キャンセル中…", "cancelled": "ダウンロードをキャンセルし、一時ファイルを削除しました。"
   },
   "units": {
     "gb": "GB"

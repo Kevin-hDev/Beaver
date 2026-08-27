@@ -5,33 +5,57 @@ use super::release_source::{
     OllamaReleaseManifest, ValidatedHttpsUrl,
 };
 use super::{error::OllamaErrorCode, fingerprint::OllamaVersion};
+use reqwest::header::LOCATION;
 
-const OLLAMA_GITHUB_REPO: &str = "ollama/ollama";
+const OLLAMA_LATEST_RELEASE_URL: &str = "https://github.com/ollama/ollama/releases/latest";
+const OLLAMA_RELEASE_TAG_PREFIX: &str = "/ollama/ollama/releases/tag/v";
 
 pub(crate) async fn fetch_latest_version() -> Result<OllamaVersion, OllamaErrorCode> {
-    let url = format!("https://api.github.com/repos/{OLLAMA_GITHUB_REPO}/releases/latest");
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(10))
+        .redirect(reqwest::redirect::Policy::none())
         .build()
         .map_err(|_| OllamaErrorCode::OllamaDownloadFailed)?;
     let response = client
-        .get(url)
+        .get(OLLAMA_LATEST_RELEASE_URL)
         .header("User-Agent", crate::services::brand::user_agent())
-        .header("Accept", "application/vnd.github+json")
         .send()
         .await
         .map_err(|_| OllamaErrorCode::OllamaDownloadFailed)?;
-    if !response.status().is_success() {
+    let status = response.status();
+    let location = response
+        .headers()
+        .get(LOCATION)
+        .and_then(|value| value.to_str().ok());
+    let version = version_from_latest_redirect(status, location);
+    if let Err(code) = version.as_ref() {
+        log::warn!(
+            "[ollama-update-check] stage=latest-release status={} code={}",
+            status.as_u16(),
+            code.as_str()
+        );
+    }
+    version
+}
+
+pub(crate) fn version_from_latest_redirect(
+    status: reqwest::StatusCode,
+    location: Option<&str>,
+) -> Result<OllamaVersion, OllamaErrorCode> {
+    if !status.is_redirection() {
         return Err(OllamaErrorCode::OllamaDownloadFailed);
     }
-    let json: serde_json::Value = response
-        .json()
-        .await
-        .map_err(|_| OllamaErrorCode::OllamaDownloadFailed)?;
-    let tag = json["tag_name"]
-        .as_str()
-        .ok_or(OllamaErrorCode::OllamaBundleInvalid)?;
+    let location = location.ok_or(OllamaErrorCode::OllamaDownloadFailed)?;
+    let url =
+        ValidatedHttpsUrl::parse(location).map_err(|_| OllamaErrorCode::OllamaDownloadFailed)?;
+    let tag = url
+        .as_url()
+        .path()
+        .strip_prefix(OLLAMA_RELEASE_TAG_PREFIX)
+        .filter(|tag| !tag.is_empty() && !tag.contains('/'))
+        .ok_or(OllamaErrorCode::OllamaDownloadFailed)?;
     super::release_source::normalize_remote_version(tag)
+        .map_err(|_| OllamaErrorCode::OllamaDownloadFailed)
 }
 
 pub(crate) async fn fetch_manifest(

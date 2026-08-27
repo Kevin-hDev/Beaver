@@ -125,7 +125,7 @@ export function BubbleItem({
           aria-label={t("updates.dismiss")}
           onClick={() => onDismissUpdate(item.dismissUpdate!)}
         >
-          <X size="var(--icon-xs)" />
+          <X size="var(--icon-2xs)" />
         </button>
       )}
       <div className="update-bubble-main">

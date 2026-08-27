@@ -1260,7 +1260,7 @@
     "forecastDevReview": "Prüfen",
     "releaseNotesTitle": "Versionshinweise {{version}}",
     "showDetails": "Details anzeigen",
-    "hideDetails": "Details ausblenden", "dismiss": "Diese Benachrichtigung ausblenden", "dismissFailed": "Die Benachrichtigung konnte nicht ausgeblendet werden.", "cancelling": "Wird abgebrochen…", "cancelled": "Download abgebrochen und temporäre Dateien gelöscht."
+    "hideDetails": "Details ausblenden", "dismiss": "Diese Benachrichtigung ausblenden", "dismissFailed": "Die Benachrichtigung konnte nicht ausgeblendet werden.", "checkFailed": "Die Suche nach Updates ist fehlgeschlagen. Versuche es gleich noch einmal.", "cancelling": "Wird abgebrochen…", "cancelled": "Download abgebrochen und temporäre Dateien gelöscht."
   },
   "units": {
     "gb": "GB"

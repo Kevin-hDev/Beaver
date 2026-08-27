@@ -1260,7 +1260,7 @@
     "forecastDevReview": "Esamina",
     "releaseNotesTitle": "Note della versione {{version}}",
     "showDetails": "Mostra dettagli",
-    "hideDetails": "Nascondi dettagli", "dismiss": "Nascondi questa notifica", "dismissFailed": "Non è stato possibile nascondere la notifica.", "cancelling": "Annullamento…", "cancelled": "Download annullato e file temporanei eliminati."
+    "hideDetails": "Nascondi dettagli", "dismiss": "Nascondi questa notifica", "dismissFailed": "Non è stato possibile nascondere la notifica.", "checkFailed": "La ricerca degli aggiornamenti non è riuscita. Riprova tra poco.", "cancelling": "Annullamento…", "cancelled": "Download annullato e file temporanei eliminati."
   },
   "units": {
     "gb": "GB"

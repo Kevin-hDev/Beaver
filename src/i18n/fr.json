@@ -1323,6 +1323,7 @@
     "hideDetails": "Masquer les détails",
     "dismiss": "Masquer cette notification",
     "dismissFailed": "La notification n’a pas pu être masquée.",
+    "checkFailed": "La recherche des mises à jour a échoué. Réessaie dans un instant.",
     "cancelling": "Annulation…",
     "cancelled": "Téléchargement annulé et fichiers temporaires supprimés."
   },

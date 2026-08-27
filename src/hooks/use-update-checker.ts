@@ -68,26 +68,46 @@ export function useUpdateChecker() {
   const [ollamaBinaryCancelling, setOllamaBinaryCancelling] = useState(false);
   const [modelCancellingId, setModelCancellingId] = useState<string | null>(null);
   const binaryBusy = useRef(false);
+  const checkInFlight = useRef<Promise<void> | null>(null);
+  const notifyCheckFailure = useRef(false);
 
-  const checkAll = useCallback(async () => {
+  const checkAll = useCallback((notifyFailure = false) => {
+    notifyCheckFailure.current ||= notifyFailure;
+    if (checkInFlight.current) return checkInFlight.current;
     setChecking(true);
-    const results = await Promise.allSettled([
+    const request = Promise.allSettled([
       invoke<AppUpdate | null>("check_app_update"),
       invoke<OllamaModelUpdate[]>("check_ollama_updates"),
       invoke<OllamaBinaryUpdate | null>("check_ollama_binary_update"),
       getVersion(),
       invoke<string | null>("get_ollama_installed_version"),
-    ]);
-    if (results[0].status === "fulfilled") setAppUpdate(results[0].value);
-    if (results[1].status === "fulfilled") setOllamaUpdates(results[1].value);
-    if (results[2].status === "fulfilled") setOllamaBinaryUpdate(results[2].value);
-    if (results[3].status === "fulfilled") setInstalledAppVersion(results[3].value);
-    if (results[4].status === "fulfilled") setInstalledOllamaVersion(results[4].value);
-    setChecking(false);
+    ])
+      .then((results) => {
+        if (results[0].status === "fulfilled") {
+          const discovered = results[0].value;
+          setAppUpdate((known) => binaryBusy.current ? known : discovered);
+        }
+        if (results[1].status === "fulfilled") setOllamaUpdates(results[1].value);
+        if (results[2].status === "fulfilled") {
+          const discovered = results[2].value;
+          setOllamaBinaryUpdate((known) => binaryBusy.current ? known : discovered);
+        }
+        if (results[3].status === "fulfilled") setInstalledAppVersion(results[3].value);
+        if (results[4].status === "fulfilled") setInstalledOllamaVersion(results[4].value);
+        if (notifyCheckFailure.current && results[2].status === "rejected") {
+          showToast(i18n.t("updates.checkFailed"), "error");
+        }
+      })
+      .finally(() => {
+        checkInFlight.current = null;
+        notifyCheckFailure.current = false;
+        setChecking(false);
+      });
+    checkInFlight.current = request;
+    return request;
   }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- checkAll only updates after awaited IPC calls
     void checkAll();
     const timer = setInterval(() => void checkAll(), CHECK_INTERVAL_MS);
     const unlisten = listen("ollama-models-changed", () => {
@@ -102,6 +122,7 @@ export function useUpdateChecker() {
   const downloadAppUpdate = useCallback(async (assetUrl: string) => {
     if (binaryBusy.current) return;
     binaryBusy.current = true;
+    setAppCancelling(false);
     setAppDownloading(true);
     setAppPercent(0);
     const channel = new Channel<DownloadProgress>();
@@ -122,6 +143,7 @@ export function useUpdateChecker() {
   const updateOllamaBinary = useCallback(async () => {
     if (!ollamaBinaryUpdate || binaryBusy.current) return;
     binaryBusy.current = true;
+    setOllamaBinaryCancelling(false);
     setOllamaBinaryUpdating(true);
     setOllamaBinaryPercent(0);
     const channel = new Channel<DownloadProgress>();
@@ -150,11 +172,25 @@ export function useUpdateChecker() {
 
   const cancelAppUpdate = useCallback(async () => {
     setAppCancelling(true);
-    await invoke("cancel_app_update_download").catch(() => setAppCancelling(false));
+    try {
+      await invoke("cancel_app_update_download");
+    } catch {
+      // Le téléchargement reste affiché et peut être annulé à nouveau.
+      setAppCancelling(false);
+      return;
+    }
+    if (!binaryBusy.current) setAppCancelling(false);
   }, []);
   const cancelOllamaBinary = useCallback(async () => {
     setOllamaBinaryCancelling(true);
-    await invoke("cancel_ollama_setup").catch(() => setOllamaBinaryCancelling(false));
+    try {
+      await invoke("cancel_ollama_setup");
+    } catch {
+      // Le téléchargement reste affiché et peut être annulé à nouveau.
+      setOllamaBinaryCancelling(false);
+      return;
+    }
+    if (!binaryBusy.current) setOllamaBinaryCancelling(false);
   }, []);
   const cancelModelUpdate = useCallback(async () => {
     if (!activeDownload || activeDownload.kind !== "ollama") return;

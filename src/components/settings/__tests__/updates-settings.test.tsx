@@ -54,6 +54,28 @@ describe("UpdatesSettings", () => {
     expect(updateOllamaBinary).toHaveBeenCalledOnce();
   });
 
+  it("associe chaque bouton à son produit sur la même ligne", () => {
+    controller.appUpdate = { version: "1.1.8", assetUrl: "https://example.invalid/beaver.dmg" };
+    controller.ollamaBinaryUpdate = { currentVersion: "0.32.15", latestVersion: "0.33.1" };
+    render(<UpdatesSettings />);
+
+    const beaverRow = screen.getByText("updates.appUpdate").closest(".ups-row");
+    const ollamaRow = screen.getByText("updates.ollamaBinaryUpdate").closest(".ups-row");
+
+    expect(beaverRow).toHaveTextContent("Beaverupdates.appUpdatev1.1.8");
+    expect(ollamaRow).toHaveTextContent("Ollamaupdates.ollamaBinaryUpdatev0.33.1");
+    expect(Array.from(beaverRow!.children).map((child) => child.className)).toEqual([
+      "ups-product",
+      "ups-action",
+      "ups-version",
+    ]);
+    expect(Array.from(ollamaRow!.children).map((child) => child.className)).toEqual([
+      "ups-product",
+      "ups-action",
+      "ups-version",
+    ]);
+  });
+
   it("permet de relancer la recherche depuis cet onglet", () => {
     render(<UpdatesSettings />);
     fireEvent.click(screen.getByText("settings.updates.check"));

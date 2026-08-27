@@ -188,30 +188,70 @@ async fn cancellation_marks_cancelling_and_releases_admission() {
 }
 
 #[tokio::test]
-async fn cancellation_waits_for_an_imminent_operation_admission() {
+async fn closing_cancels_the_active_operation_token() {
     let (_coordinator, manager) = manager();
-    let cancelling_manager = manager.clone();
-    let cancellation = tokio_util::sync::CancellationToken::new();
-    let registered_cancellation = cancellation.clone();
-    let cancel_task = tokio::spawn(async move {
-        cancelling_manager
-            .cancel_operation_when_admitted(Duration::from_millis(250))
-            .await
-    });
-
-    tokio::time::sleep(Duration::from_millis(20)).await;
     let operation = manager
         .begin_operation(OperationState::Updating)
         .await
         .expect("operation admission");
-    manager.set_operation_cancellation(registered_cancellation);
+    let cancellation = tokio_util::sync::CancellationToken::new();
+    manager.set_operation_cancellation(cancellation.clone());
+
+    manager.begin_closing();
+
+    assert!(cancellation.is_cancelled());
+    drop(operation);
+}
+
+#[tokio::test]
+async fn cancellation_reaches_the_registered_command_before_operation_admission() {
+    let (_coordinator, manager) = manager();
+    let cancellation = tokio_util::sync::CancellationToken::new();
+    manager.set_operation_cancellation(cancellation.clone());
 
     assert_eq!(
-        cancel_task.await.expect("cancel task"),
+        manager.cancel_operation().await,
         super::types::CancelOutcome::Cancelled
     );
     assert!(cancellation.is_cancelled());
-    drop(operation);
+    assert_eq!(manager.status().await.operation, OperationState::Idle);
+}
+
+#[tokio::test]
+async fn cancellation_while_idle_does_not_cancel_the_next_operation() {
+    let (_coordinator, manager) = manager();
+
+    assert_eq!(
+        manager.cancel_operation().await,
+        super::types::CancelOutcome::AlreadyIdle
+    );
+
+    let cancellation = tokio_util::sync::CancellationToken::new();
+    manager.set_operation_cancellation(cancellation.clone());
+
+    assert!(!cancellation.is_cancelled());
+}
+
+#[tokio::test]
+async fn operation_admission_captures_the_bundle_before_marking_it_pending() {
+    let (_coordinator, manager) = manager();
+    let initial = manager
+        .begin_operation(OperationState::Updating)
+        .await
+        .expect("initial operation admission");
+    initial.succeed(BundleState::Ready);
+    wait_for_no_active_work(&manager).await;
+
+    let operation = manager
+        .begin_operation(OperationState::Updating)
+        .await
+        .expect("operation admission");
+
+    assert_eq!(operation.previous_bundle(), BundleState::Ready);
+    assert_eq!(
+        manager.status().await.bundle,
+        BundleState::TransactionPending
+    );
 }
 
 #[tokio::test]

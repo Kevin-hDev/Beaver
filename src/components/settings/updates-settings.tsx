@@ -19,7 +19,7 @@ export function UpdatesSettings() {
             <h2 className="ups-title">{t("settings.updates.title")}</h2>
             <p className="ups-description">{t("settings.updates.description")}</p>
           </div>
-          <button type="button" className="btn btn-sm btn-secondary" disabled={updates.checking} onClick={() => void updates.checkAll()}>
+          <button type="button" className="btn btn-sm btn-secondary" disabled={updates.checking} onClick={() => void updates.checkAll(true)}>
             {updates.checking ? t("settings.updates.checking") : t("settings.updates.check")}
           </button>
         </header>
@@ -66,13 +66,13 @@ export function UpdatesSettings() {
 
 function UpdateRow({ product, version, action }: { product: "beaver" | "ollama"; version: string | null; action?: React.ReactNode }) {
   return (
-    <div className="ups-row">
+    <div className={`ups-row ${action ? "ups-row-has-action" : ""}`}>
       <div className="ups-product">
         {product === "beaver" ? <BeaverBrandIcon size={34} /> : <OllamaBrandIcon size={34} />}
         <span className="ups-name">{product === "beaver" ? "Beaver" : "Ollama"}</span>
       </div>
-      <span className="ups-version">{version ? `v${version.replace(/^v/, "")}` : "—"}</span>
       {action && <div className="ups-action">{action}</div>}
+      <span className="ups-version">{version ? `v${version.replace(/^v/, "")}` : "—"}</span>
     </div>
   );
 }

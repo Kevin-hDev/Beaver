@@ -1275,6 +1275,7 @@
     "hideDetails": "Hide details",
     "dismiss": "Hide this notification",
     "dismissFailed": "The notification could not be hidden.",
+    "checkFailed": "The update check failed. Try again shortly.",
     "cancelling": "Cancelling…",
     "cancelled": "Download cancelled and temporary files removed."
   },

@@ -3,6 +3,10 @@ impl<'a> OllamaOperationGuard<'a> {
         self.generation
     }
 
+    pub(super) fn previous_bundle(&self) -> super::types::BundleState {
+        self.previous_bundle.clone()
+    }
+
     #[cfg(test)]
     pub(crate) fn generation_for_test(&self) -> u64 {
         self.generation()

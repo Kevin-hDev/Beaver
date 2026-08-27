@@ -68,14 +68,29 @@
   height: 40px;
   display: grid;
   place-items: center;
-  border: 1px solid var(--edge);
-  border-radius: 50%;
-  background: var(--surface-raised);
+  border: 0;
+  background: transparent;
   color: var(--ink-muted);
   cursor: pointer;
   opacity: 0;
   transform: translate(-38%, -38%);
-  transition: opacity var(--ease-fast), color var(--ease-fast), background var(--ease-fast);
+  transition: opacity var(--ease-fast), color var(--ease-fast);
+}
+
+.update-bubble-dismiss::before {
+  content: "";
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-full);
+  background: var(--surface-raised);
+  transition: background var(--ease-fast);
+}
+
+.update-bubble-dismiss svg {
+  position: relative;
+  z-index: 1;
 }
 
 .update-bubble:hover .update-bubble-dismiss,
@@ -85,6 +100,9 @@
 
 .update-bubble-dismiss:hover {
   color: var(--ink);
+}
+
+.update-bubble-dismiss:hover::before {
   background: var(--surface-hover);
 }
 

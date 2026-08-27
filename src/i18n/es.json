@@ -1260,7 +1260,7 @@
     "forecastDevReview": "Revisar",
     "releaseNotesTitle": "Notas de la versión {{version}}",
     "showDetails": "Mostrar detalles",
-    "hideDetails": "Ocultar detalles", "dismiss": "Ocultar esta notificación", "dismissFailed": "No se pudo ocultar la notificación.", "cancelling": "Cancelando…", "cancelled": "Descarga cancelada y archivos temporales eliminados."
+    "hideDetails": "Ocultar detalles", "dismiss": "Ocultar esta notificación", "dismissFailed": "No se pudo ocultar la notificación.", "checkFailed": "La búsqueda de actualizaciones ha fallado. Inténtalo de nuevo en unos instantes.", "cancelling": "Cancelando…", "cancelled": "Descarga cancelada y archivos temporales eliminados."
   },
   "units": {
     "gb": "GB"

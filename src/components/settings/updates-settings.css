@@ -55,6 +55,10 @@
   min-height: 52px;
 }
 
+.ups-row-has-action {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
 .ups-product {
   display: flex;
   align-items: center;
@@ -88,11 +92,7 @@
     flex-direction: column;
   }
 
-  .ups-row {
-    grid-template-columns: 1fr auto;
-  }
-
-  .ups-action {
-    grid-column: 1 / -1;
+  .ups-row-has-action {
+    gap: var(--space-sm);
   }
 }

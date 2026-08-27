@@ -1,7 +1,5 @@
 use super::types::CancelOutcome;
 
-const CANCELLATION_ADMISSION_POLL: Duration = Duration::from_millis(25);
-
 impl OllamaManager {
     fn set_active_cancellation(&self, cancellation: tokio_util::sync::CancellationToken) {
         // The state lock orders admission and token registration so a click can
@@ -21,7 +19,7 @@ impl OllamaManager {
         }
     }
 
-    fn cancel_active_operation(&self) {
+    pub(super) fn cancel_active_operation(&self) {
         if let Ok(active) = self.inner().active_cancellation.lock() {
             if let Some(cancellation) = active.as_ref() {
                 cancellation.cancel();
@@ -36,7 +34,17 @@ impl OllamaManager {
         let outcome = {
             let mut state = self.inner().lock_state();
             if matches!(state.status.operation, OperationState::Idle) {
-                return CancelOutcome::AlreadyIdle;
+                let active = self.inner().active_cancellation.lock();
+                return match active {
+                    Ok(active) => match active.as_ref() {
+                        Some(cancellation) => {
+                            cancellation.cancel();
+                            CancelOutcome::Cancelled
+                        }
+                        None => CancelOutcome::AlreadyIdle,
+                    },
+                    Err(_) => CancelOutcome::Cancelled,
+                };
             }
             state.status.operation = OperationState::Cancelling;
             state.status.last_error = Some(OllamaErrorCode::OllamaOperationCancelled);
@@ -44,17 +52,6 @@ impl OllamaManager {
         };
         self.cancel_active_operation();
         outcome
-    }
-
-    pub async fn cancel_operation_when_admitted(&self, max_wait: Duration) -> CancelOutcome {
-        let deadline = Instant::now() + max_wait;
-        loop {
-            let outcome = self.cancel_operation().await;
-            if !matches!(outcome, CancelOutcome::AlreadyIdle) || Instant::now() >= deadline {
-                return outcome;
-            }
-            tokio::time::sleep(CANCELLATION_ADMISSION_POLL).await;
-        }
     }
 
     pub(crate) fn set_operation_cancellation(

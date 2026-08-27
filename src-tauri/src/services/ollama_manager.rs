@@ -3,6 +3,7 @@ mod blocking;
 mod bundle_evidence;
 mod bundle_install;
 mod bundle_receipt;
+mod cancel_cleanup;
 mod canonical_executable;
 mod cleanup;
 mod cleanup_inspection;
@@ -62,6 +63,7 @@ mod recovery_entry;
 mod recovery_helpers;
 mod recovery_probe;
 mod recovery_types;
+mod release_cache;
 mod release_fetch;
 mod release_redirect;
 pub(crate) mod release_source;
@@ -90,6 +92,8 @@ mod adoption;
 mod adoption_tests;
 #[cfg(test)]
 mod blocking_tests;
+#[cfg(test)]
+mod cancel_cleanup_tests;
 #[cfg(test)]
 mod cleanup_tests;
 #[cfg(test)]
@@ -170,7 +174,6 @@ mod windows_path_identity_tests;
 mod windows_spawn_gate_tests;
 #[cfg(all(test, windows))]
 mod windows_tree_job_tests;
-
 #[allow(unused_imports)]
 pub use bundle_receipt::{BundlePlatform, BundleReceipt};
 #[cfg(windows)]
@@ -179,7 +182,6 @@ pub(crate) use canonical_executable::windows_image_identity_from_path;
 pub(crate) use canonical_executable::{CanonicalExecutable, NativeFileIdentity};
 #[allow(unused_imports)]
 pub use download::{download_archive, download_archives, verify_sha256};
-#[allow(unused_imports)]
 pub use error::OllamaErrorCode;
 #[allow(unused_imports)]
 pub use extract::{extract_archive, extract_archive_overlay};

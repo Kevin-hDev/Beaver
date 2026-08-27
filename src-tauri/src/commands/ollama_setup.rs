@@ -42,7 +42,9 @@ pub async fn download_ollama(
     manager: tauri::State<'_, OllamaManager>,
 ) -> Result<(), String> {
     let cancel = CancellationToken::new();
+    manager.set_operation_cancellation(cancel.clone());
     let result = run_download_ollama(manager.inner(), &on_progress, &cancel).await;
+    manager.clear_operation_cancellation();
     result
 }
 
@@ -56,11 +58,16 @@ pub(crate) async fn run_download_ollama(
     }
     let paths = crate::services::paths::ollama_paths(&crate::services::paths::data_dir());
     let version = resolve_install_version().await;
-    let manifest = crate::services::ollama_manager::release_source::fetch_manifest(
-        version.clone(),
-        &crate::services::ollama_manager::release_source::archive_names_for_platform(),
-    )
-    .await
+    let archive_names =
+        crate::services::ollama_manager::release_source::archive_names_for_platform();
+    let manifest = tokio::select! {
+        biased;
+        _ = cancel.cancelled() => Err(OllamaErrorCode::OllamaOperationCancelled),
+        result = crate::services::ollama_manager::release_source::fetch_manifest(
+            version.clone(),
+            &archive_names,
+        ) => result,
+    }
     .map_err(|code| code.as_str().to_string())?;
     let request = InstallRequest {
         paths,
@@ -115,10 +122,7 @@ pub(super) fn progress_status(stage: OllamaProgressStage) -> &'static str {
 
 #[tauri::command]
 pub async fn cancel_ollama_setup(manager: tauri::State<'_, OllamaManager>) -> Result<(), String> {
-    match manager
-        .cancel_operation_when_admitted(std::time::Duration::from_secs(1))
-        .await
-    {
+    match manager.cancel_operation().await {
         crate::services::ollama_manager::CancelOutcome::RejectedDuringShutdown => {
             Err(OllamaErrorCode::OllamaClosing.as_str().into())
         }
