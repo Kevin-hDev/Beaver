@@ -155,11 +155,14 @@ fn validate_file(
     }
     let canonical = path.canonicalize().map_err(|_| ERROR_CODE.to_string())?;
     validate_canonical_path(&canonical)?;
-    let metadata = canonical.metadata().map_err(|_| ERROR_CODE.to_string())?;
+    let file = super::private_store::open_regular_single_link(&canonical)
+        .map_err(|_| ERROR_CODE.to_string())?
+        .ok_or(ERROR_CODE)?;
+    let metadata = file.metadata().map_err(|_| ERROR_CODE.to_string())?;
     if !metadata.is_file() || metadata.len() > max_size {
         return Err(ERROR_CODE.into());
     }
-    let identity = super::attachment_access_identity::from_metadata(&metadata).ok_or(ERROR_CODE)?;
+    let identity = super::attachment_access_identity::from_file(&file).ok_or(ERROR_CODE)?;
     Ok((canonical, metadata.len(), identity))
 }
 

@@ -45,7 +45,7 @@ where
     let metadata = file
         .metadata()
         .map_err(|_| VerifiedAttachmentError::Unavailable)?;
-    let opened_identity = super::attachment_access_identity::from_metadata(&metadata)
+    let opened_identity = super::attachment_access_identity::from_file(&file)
         .ok_or(VerifiedAttachmentError::Access)?;
     if !metadata.is_file() || opened_identity != expected_identity {
         return Err(VerifiedAttachmentError::Access);
