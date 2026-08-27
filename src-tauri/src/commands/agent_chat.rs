@@ -20,6 +20,19 @@ pub(crate) fn decode_chat_stream_request(
         .map_err(|_| "conversation_admission_failed".to_string())
 }
 
+pub(crate) async fn chat_stream_from_input(
+    app: tauri::AppHandle,
+    request: ChatStreamRequestInput,
+    streams: &ActiveStreams,
+) -> Result<ChatStreamAdmission, String> {
+    super::agent_chat_run::start(
+        app,
+        super::agent_chat_run::ChatStreamRequest::from_input(request),
+        streams,
+    )
+    .await
+}
+
 #[tauri::command]
 pub async fn chat_stream(
     app: tauri::AppHandle,
@@ -27,10 +40,5 @@ pub async fn chat_stream(
     streams: tauri::State<'_, ActiveStreams>,
 ) -> Result<ChatStreamAdmission, String> {
     let request = decode_chat_stream_request(ipc_request.body())?;
-    super::agent_chat_run::start(
-        app,
-        super::agent_chat_run::ChatStreamRequest::from_input(request),
-        &streams,
-    )
-    .await
+    chat_stream_from_input(app, request, &streams).await
 }

@@ -1,9 +1,11 @@
+#[cfg(any(not(feature = "e2e"), test))]
 #[derive(Default)]
 struct ScopeMigrationReport {
     changed: Vec<RouteId>,
     blocked: Vec<RouteId>,
 }
 
+#[cfg(any(not(feature = "e2e"), test))]
 fn migrate_llm_oauth_scope(
     map: &mut HashMap<String, String>,
     route: RouteId,
@@ -42,6 +44,7 @@ fn migrate_llm_oauth_scope(
     }
 }
 
+#[cfg(any(not(feature = "e2e"), test))]
 fn migrate_codex_oauth_scope(map: &mut HashMap<String, String>, report: &mut ScopeMigrationReport) {
     let route = RouteId::CodexOauth;
     let Ok(physical_key) = prefixed_raw_key(CODEX_OAUTH_KEY) else {

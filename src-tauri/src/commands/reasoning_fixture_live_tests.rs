@@ -11,7 +11,8 @@ use support::{LiveSpec, LIVE_SPECS};
 pub(crate) async fn refresh_live_reasoning_fixture_matrix_once(
     app: &tauri::App,
 ) -> Result<(), String> {
-    crate::services::api_keys::init().expect("initialize configured credentials");
+    crate::services::api_keys::init_for_runtime()
+        .expect("initialize configured credentials for this runtime");
     let selected = std::env::var("BEAVER_FIXTURE_ROUTES").ok();
     if selected
         .as_deref()

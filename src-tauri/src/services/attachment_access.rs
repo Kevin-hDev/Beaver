@@ -31,6 +31,7 @@ pub(crate) fn attachment_key() -> Result<zeroize::Zeroizing<Vec<u8>>, String> {
         .map_err(|_| ERROR_CODE.to_string())
 }
 
+#[cfg(not(feature = "e2e"))]
 pub(crate) fn ensure_attachment_key() -> Result<(), String> {
     attachment_key().map(|_| ())
 }

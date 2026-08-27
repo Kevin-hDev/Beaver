@@ -90,6 +90,7 @@ where
     }
 }
 
+#[cfg(any(not(feature = "e2e"), test))]
 fn commit_credential_scope_migration_with<P>(
     map: &mut HashMap<String, String>,
     persist: P,
@@ -114,6 +115,7 @@ where
     report
 }
 
+#[cfg(any(not(feature = "e2e"), test))]
 fn prepare_credential_scope_migration(map: &mut HashMap<String, String>) -> ScopeMigrationReport {
     let mut report = ScopeMigrationReport::default();
     for route in API_ROUTES {
@@ -125,6 +127,7 @@ fn prepare_credential_scope_migration(map: &mut HashMap<String, String>) -> Scop
     report
 }
 
+#[cfg(any(not(feature = "e2e"), test))]
 fn migrate_api_scope(
     map: &mut HashMap<String, String>,
     route: RouteId,
@@ -186,6 +189,7 @@ fn oauth_vault_key(route: RouteId) -> Option<&'static str> {
     }
 }
 
+#[cfg(not(feature = "e2e"))]
 fn credential_scope_route_label(route: RouteId) -> &'static str {
     route.provider_id()
 }

@@ -47,7 +47,7 @@ pub async fn e2e_verify_child_chat_stream_read_only(
     let before_session = serialized_session(&session);
     let before_request_starts = request_start_count(&session);
     let absent_before = !streams.0.lock().await.contains_key(&session.id);
-    let result = super::chat_stream(
+    let result = super::agent_chat::chat_stream_from_input(
         app.clone(),
         ChatStreamRequestInput {
             session_id: session.id.clone(),
@@ -62,7 +62,7 @@ pub async fn e2e_verify_child_chat_stream_read_only(
             permission_mode: None,
             plan_mode: None,
         },
-        streams,
+        &streams,
     )
     .await;
     let after_session = session_store::get(&session.id).await;

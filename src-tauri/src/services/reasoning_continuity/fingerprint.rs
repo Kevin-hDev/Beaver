@@ -26,6 +26,7 @@ pub fn opaque_hmac(
     Ok(opaque_hmac_with_key(&key, context, opaque))
 }
 
+#[cfg(not(feature = "e2e"))]
 pub(crate) fn ensure_fingerprint_key() -> Result<(), FingerprintError> {
     crate::services::api_keys::get_or_create_random_raw(VAULT_KEY, 32)
         .map(|_| ())
