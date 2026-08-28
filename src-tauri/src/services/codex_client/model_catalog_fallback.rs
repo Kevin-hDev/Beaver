@@ -59,3 +59,14 @@ pub(super) fn models() -> Vec<ModelInfo> {
     })
     .collect()
 }
+
+pub(super) fn compatible_default_reasoning_mode(
+    model_id: &str,
+    remote_modes: &[String],
+) -> Option<String> {
+    models()
+        .into_iter()
+        .find(|model| model.id == model_id)
+        .and_then(|model| model.default_reasoning_mode)
+        .filter(|mode| remote_modes.contains(mode))
+}
