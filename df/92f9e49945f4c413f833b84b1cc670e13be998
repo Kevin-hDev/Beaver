@@ -1,0 +1,24 @@
+Correction du job Backend Rust de la PR #40, étape E2E profile tests and lint.
+
+Cause racine :
+- La migration de nettoyage Groq est un code de démarrage du coffre désactivé sous la feature e2e.
+- Son fichier restait néanmoins inclus dans la bibliothèque E2E hors tests. Les fonctions de production devenaient alors inaccessibles et Clippy les rejetait avec -D dead-code.
+
+Décision :
+- Conditionner inclusion du fichier à la production normale ou à compilation des tests : cfg(any(not(feature = e2e), test)).
+- Ne pas ajouter de allow/expect dead_code : le profil E2E ne compile plus un module dont il ne peut pas exécuter le comportement.
+- Les tests continuent de compiler la migration, y compris avec la feature e2e.
+
+Preuve rouge :
+- cargo clippy --all-targets --features e2e -- -D warnings reproduisait localement les six erreurs dead-code vues en CI.
+
+Validation verte :
+- cargo clippy --all-targets --features e2e -- -D warnings
+- cargo test --all --features e2e : 4243 réussis, 0 échec, 7 ignorés, plus 1 test intégration réussi
+- cargo fmt --all -- --check
+- cargo clippy --all-targets -- -D warnings
+- cargo test : 4238 réussis, 0 échec, 7 ignorés, plus 1 test intégration réussi
+- contrôle rustfmt CI des sources incluses
+- contrat de marque : 14/14
+- git diff --check
+- graphify update .
