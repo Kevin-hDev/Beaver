@@ -1,0 +1,24 @@
+Correction des deux échecs déterministes observés sur la CI de la PR #40.
+
+Causes racines :
+- Le contrôle CI formate chaque source Rust modifiée séparément avec skip_children=true. Sept fichiers chargés par include! n'étaient pas parcourus par cargo fmt et conservaient donc une mise en forme non canonique.
+- Le nettoyage du provider Groq répétait en dur le nom historique du service keyring. Cette seconde autorité augmentait le compteur du contrat de marque et pouvait diverger de celle utilisée par le coffre.
+
+Décisions :
+- Appliquer rustfmt aux sept sources incluses signalées par l'inventaire complet du contrôle CI, sans changement de comportement.
+- Exposer la constante du service keyring uniquement à l'échelle du crate et la réutiliser pour supprimer l'ancien secret Groq. Le seuil du contrat de marque reste inchangé : aucune nouvelle copie de l'identifiant historique n'est acceptée.
+- Ne modifier ni affaiblir les contrôles CI.
+
+Validation locale :
+- RUSTFMT_BASE_SHA=3277fad80fbf76564d1798c4027a454063abc83a node scripts/build/check-rust-format.mjs
+- npm run test:brand-boundaries : 14/14
+- cargo fmt --all -- --check
+- cargo clippy --all-targets -- -D warnings
+- cargo test : 4238 réussis, 0 échec, 7 ignorés, plus 1 test d'intégration réussi
+- npm run lint
+- npx tsc --noEmit
+- NO_COLOR=1 npm test : 483 fichiers et 2614 tests frontend réussis, toutes les suites de scripts réussies
+- git diff --check
+- graphify update .
+
+Aucune relance de l'application et aucun appel provider n'étaient nécessaires : les corrections portent uniquement sur une autorité interne et le formatage.
