@@ -63,6 +63,7 @@ export function validateAllowlist(value) {
 
 export function compareDecisionCounts(report, allowlist) {
   const byPath = new Map(allowlist.map((entry) => [entry.path, entry]));
+  const reportedPaths = new Set(report.map((entry) => entry.path));
   const failures = [];
   for (const item of report) {
     const allowed = byPath.get(item.path);
@@ -70,6 +71,13 @@ export function compareDecisionCounts(report, allowlist) {
       failures.push(`${item.path}: ${item.decisions} décision(s) sans propriétaire`);
     } else if (item.decisions > allowed.max_decisions) {
       failures.push(`${item.path}: ${item.decisions} > ${allowed.max_decisions}`);
+    } else if (item.decisions < allowed.max_decisions) {
+      failures.push(`${item.path}: borne obsolète ${allowed.max_decisions}, valeur ${item.decisions}`);
+    }
+  }
+  for (const entry of allowlist) {
+    if (entry.max_decisions > 0 && !reportedPaths.has(entry.path)) {
+      failures.push(`${entry.path}: autorisation périmée`);
     }
   }
   return failures;

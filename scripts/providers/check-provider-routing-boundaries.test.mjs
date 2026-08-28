@@ -45,6 +45,13 @@ test("valide une exception documentée mais refuse une hausse silencieuse", () =
     path: allowlist[0].path,
     decisions: count(allowlist[0].path, 'provider_id == "openai" || provider_id == "xai"'),
   }], allowlist), ["src-tauri/src/owned.rs: 2 > 1"]);
+  assert.deepEqual(compareDecisionCounts([], allowlist), [
+    "src-tauri/src/owned.rs: autorisation périmée",
+  ]);
+  assert.deepEqual(compareDecisionCounts([{
+    path: allowlist[0].path,
+    decisions: 0,
+  }], allowlist), ["src-tauri/src/owned.rs: borne obsolète 1, valeur 0"]);
 });
 
 test("refuse les entrées sans propriétaire, motif ou borne valide", () => {
