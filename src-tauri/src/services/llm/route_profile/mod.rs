@@ -13,11 +13,11 @@ mod types;
 pub(super) use catalog::{all, find_id};
 pub(super) use catalog::{find, public_api};
 pub(crate) use policy_types::{
-    CachePolicy, ExtensionToolPolicy, ResolvedCachePolicy, ResolvedPayloadPolicy,
+    AuthProbePolicy, CachePolicy, ExtensionToolPolicy, ResolvedCachePolicy, ResolvedPayloadPolicy,
     ResolvedToolPolicy, SchemaPolicy,
 };
 pub(super) use types::*;
-pub(crate) use types::{ImageFormat, MessageWirePolicy, ToolResultPlacement};
+pub(crate) use types::{ApiKeyHeader, ImageFormat, MessageWirePolicy, ToolResultPlacement};
 
 pub(crate) fn tool_policy(provider_id: &str, model: &str) -> Option<ResolvedToolPolicy> {
     let profile = find(provider_id)?;

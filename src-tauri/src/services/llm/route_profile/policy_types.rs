@@ -66,7 +66,7 @@ pub(in crate::services::llm) enum ErrorPolicy {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[allow(dead_code, reason = "missing probes are explicit in candidate tests")]
-pub(in crate::services::llm) enum AuthProbePolicy {
+pub(crate) enum AuthProbePolicy {
     ModelsGet,
     ChatPing,
     OAuthCatalog,

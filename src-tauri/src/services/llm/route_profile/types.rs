@@ -117,7 +117,7 @@ pub(in crate::services::llm) struct WireContract {
     dead_code,
     reason = "native API-key headers are reserved for candidate routes"
 )]
-pub(in crate::services::llm) enum ApiKeyHeader {
+pub(crate) enum ApiKeyHeader {
     Bearer,
     XApiKey,
 }

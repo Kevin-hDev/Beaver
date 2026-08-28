@@ -11,6 +11,9 @@ mod agent_loop_request;
 mod agent_loop_request_types;
 pub(crate) mod agent_loop_tools;
 mod agent_loop_turn;
+pub(crate) mod api_key_probe;
+#[cfg(test)]
+mod api_key_probe_tests;
 pub mod catalog;
 pub mod compress_hook;
 mod endpoint_policy;
