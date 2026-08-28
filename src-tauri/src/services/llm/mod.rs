@@ -13,6 +13,9 @@ pub(crate) mod agent_loop_tools;
 mod agent_loop_turn;
 pub mod catalog;
 pub mod compress_hook;
+mod endpoint_policy;
+#[cfg(test)]
+mod endpoint_policy_tests;
 pub mod fast_mode;
 mod kimi_models;
 #[cfg(test)]
