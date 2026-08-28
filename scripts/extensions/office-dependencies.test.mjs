@@ -8,7 +8,7 @@ import { pathToFileURL } from "node:url";
 import { hostDirectory, root } from "./office-test-helpers.mjs";
 
 const expectedDependencies = {
-  "@napi-rs/canvas": "1.0.7",
+  "@napi-rs/canvas": "1.0.8",
   "@cantoo/pdf-lib": "2.9.1",
   "@xlsx/xlsx-populate": "0.2.0",
   docx: "9.7.1",

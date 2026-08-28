@@ -4,7 +4,7 @@ The bundled Office plugins use the following open-source packages:
 
 - `docx` 9.7.1 — MIT — <https://github.com/dolanmiu/docx>
 - `@cantoo/pdf-lib` 2.9.1 — MIT — <https://github.com/cantoo-scribe/pdf-lib>
-- `@napi-rs/canvas` 1.0.7 — MIT — <https://github.com/Brooooooklyn/canvas>
+- `@napi-rs/canvas` 1.0.8 — MIT — <https://github.com/Brooooooklyn/canvas>
 - `fontkit` 2.0.4 — MIT — <https://github.com/foliojs/fontkit>
 - `pdfjs-dist` 6.2.108 — Apache-2.0 — <https://github.com/mozilla/pdf.js>
 - `@xlsx/xlsx-populate` 0.2.0 — MIT — <https://github.com/weirongxu/xlsx-populate>
