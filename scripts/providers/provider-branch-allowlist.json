@@ -17,6 +17,7 @@
   { "path": "src-tauri/src/services/llm/openai_compat_models.rs", "owner": "model_catalog", "reason": "Adaptation du catalogue OpenAI-compatible.", "max_decisions": 2 },
   { "path": "src-tauri/src/services/llm/openai_responses_reasoning.rs", "owner": "openai_responses_client", "reason": "Interne légitime du client Responses.", "max_decisions": 1 },
   { "path": "src-tauri/src/services/llm/route_profile/cache_policies.rs", "owner": "route_profile", "reason": "Résolution fermée de la politique de cache du profil.", "max_decisions": 1 },
+  { "path": "src-tauri/src/services/llm/route_profile/payload_policies.rs", "owner": "route_profile", "reason": "Résolution fermée des paramètres de payload du profil.", "max_decisions": 1 },
   { "path": "src-tauri/src/services/llm/prompt_cache_policy.rs", "owner": "route_profile", "reason": "Cache de prompt à migrer vers le profil.", "max_decisions": 1, "remove_after_task": "task-4" },
   { "path": "src-tauri/src/services/llm/provider_error.rs", "owner": "route_profile", "reason": "Règles d'erreur à migrer vers le profil.", "max_decisions": 2, "remove_after_task": "task-5" },
   { "path": "src-tauri/src/services/llm/providers/mistral.rs", "owner": "mistral_client", "reason": "Interne légitime du client Mistral.", "max_decisions": 1 },

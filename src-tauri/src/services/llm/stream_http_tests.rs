@@ -81,7 +81,7 @@ fn legacy_openai_chat_payload_never_reintroduces_flat_reasoning() {
     let route = route::resolve("openai").unwrap();
     let payload = build_chat_payload(&cfg, &route, Some(32_000)).expect("standard payload");
 
-    assert_eq!(payload["max_completion_tokens"], 32_000);
+    assert_eq!(payload["max_output_tokens"], 32_000);
     assert!(payload.get("max_tokens").is_none());
     assert!(payload.get("reasoning_effort").is_none());
     assert!(payload.get("reasoning").is_none());
@@ -165,8 +165,18 @@ fn chat_payload_respects_each_route_cache_and_usage_contract() {
 #[test]
 fn streaming_output_limit_field_matches_model_family() {
     for (provider, model, expected, absent) in [
-        ("openai", "o3", "max_completion_tokens", "max_tokens"),
-        ("openai", "gpt-4o", "max_tokens", "max_completion_tokens"),
+        (
+            "openrouter",
+            "openai/o3",
+            "max_completion_tokens",
+            "max_tokens",
+        ),
+        (
+            "openrouter",
+            "openai/gpt-4o",
+            "max_tokens",
+            "max_completion_tokens",
+        ),
         ("moonshot", "kimi-k3", "max_completion_tokens", "max_tokens"),
         (
             "moonshot",
@@ -174,7 +184,6 @@ fn streaming_output_limit_field_matches_model_family() {
             "max_tokens",
             "max_completion_tokens",
         ),
-        ("xai", "grok-4.5", "max_tokens", "max_completion_tokens"),
     ] {
         let cfg = RequestConfig {
             provider_id: provider,
@@ -195,6 +204,20 @@ fn streaming_output_limit_field_matches_model_family() {
         assert_eq!(payload[expected], 8_000, "{provider}/{model}");
         assert!(payload.get(absent).is_none(), "{provider}/{model}");
     }
+}
+
+#[test]
+fn payload_parameters_are_resolved_before_serialization() {
+    let deepseek =
+        super::super::route_profile::payload_policy("deepseek", "deepseek-v4-flash").unwrap();
+    let zai = super::super::route_profile::payload_policy("zai", "glm-4.7").unwrap();
+    let openrouter =
+        super::super::route_profile::payload_policy("openrouter", "openai/gpt-5.6-luna").unwrap();
+
+    assert!(!deepseek.emit_tool_choice);
+    assert!(zai.tool_stream);
+    assert!(openrouter.upstream_routing);
+    assert_eq!(openrouter.output_limit_field, "max_completion_tokens");
 }
 
 #[tokio::test]

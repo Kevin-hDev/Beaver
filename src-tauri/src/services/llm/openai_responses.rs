@@ -26,6 +26,8 @@ struct PreparedResponseRequest {
 fn try_build_request_with_evidence(
     config: &RequestConfig<'_>,
 ) -> Result<PreparedResponseRequest, RequestError> {
+    let payload_policy = super::route_profile::payload_policy(config.provider_id, config.model)
+        .ok_or(RequestError::InvalidConfiguration)?;
     let converted =
         crate::services::codex_client::convert::convert_messages_with_tools_and_continuity_evidence(
             config.messages,
@@ -59,7 +61,7 @@ fn try_build_request_with_evidence(
         body["service_tier"] = tier.into();
     }
     if let Some(limit) = config.max_tokens {
-        body["max_output_tokens"] = limit.into();
+        body[payload_policy.output_limit_field] = limit.into();
     }
     if let Some(effort) = super::openai_responses_reasoning::requested_effort(config) {
         body["reasoning"] = if effort == "none" {

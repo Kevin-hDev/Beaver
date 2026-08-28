@@ -129,6 +129,7 @@ pub(super) const OPENAI_RESPONSES_PUBLIC: RoutePolicies = RoutePolicies {
 };
 pub(super) const DEEPSEEK: RoutePolicies = RoutePolicies {
     include_usage: true,
+    tool_choice: ToolChoicePolicy::ProviderNative,
     ..policy(
         SchemaPolicy::Generic,
         CachePolicy::None,

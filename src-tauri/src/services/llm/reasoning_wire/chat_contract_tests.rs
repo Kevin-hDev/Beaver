@@ -462,11 +462,14 @@ fn kimi_keeps_an_empty_native_reasoning_field_and_legacy_text_is_never_a_fallbac
         .expect("empty native continuation remains valid");
 
     assert_eq!(payload["messages"][0]["reasoning_content"], "");
-    assert!(
-        crate::services::llm::stream_convert::message_to_openai(&legacy, "moonshot")
-            .get("reasoning_content")
-            .is_none()
-    );
+    assert!(crate::services::llm::stream_convert::message_to_openai(
+        &legacy,
+        crate::services::llm::route_profile::payload_policy("moonshot", "kimi-k2.7-code")
+            .unwrap()
+            .message,
+    )
+    .get("reasoning_content")
+    .is_none());
 }
 
 #[test]

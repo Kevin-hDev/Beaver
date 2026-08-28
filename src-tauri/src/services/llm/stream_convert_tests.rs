@@ -5,9 +5,15 @@ fn user_with_png() -> ChatMessage {
     ChatMessage::user("Regarde".into()).with_images(vec!["iVBORw0KGgo=".into()])
 }
 
+fn policy(provider: &str, model: &str) -> super::super::route_profile::MessageWirePolicy {
+    super::super::route_profile::payload_policy(provider, model)
+        .unwrap()
+        .message
+}
+
 #[test]
 fn openai_style_image_uses_object_url() {
-    let out = message_to_openai(&user_with_png(), "openai");
+    let out = message_to_openai(&user_with_png(), policy("google", "gemini-3.5-flash"));
     assert_eq!(out["role"], "user");
     assert_eq!(out["content"][0]["type"], "text");
     assert_eq!(out["content"][1]["type"], "image_url");
@@ -19,7 +25,7 @@ fn openai_style_image_uses_object_url() {
 
 #[test]
 fn mistral_image_uses_string_url() {
-    let out = message_to_openai(&user_with_png(), "mistral");
+    let out = message_to_openai(&user_with_png(), policy("mistral", "mistral-large"));
     assert_eq!(out["content"][1]["type"], "image_url");
     assert_eq!(
         out["content"][1]["image_url"],
@@ -46,7 +52,7 @@ fn assistant_tool_call_preserves_extra_content() {
         }]),
     );
 
-    let out = message_to_openai(&msg, "google");
+    let out = message_to_openai(&msg, policy("google", "gemini-3.5-flash"));
     assert_eq!(
         out["tool_calls"][0]["extra_content"],
         serde_json::json!({ "google": { "thought_signature": "sig-a" } })
@@ -70,7 +76,7 @@ fn deepseek_tool_call_keeps_non_null_assistant_content() {
         }]),
     );
 
-    let out = message_to_openai(&msg, "deepseek");
+    let out = message_to_openai(&msg, policy("deepseek", "deepseek-v4-flash"));
 
     assert_eq!(out["content"], "");
 }

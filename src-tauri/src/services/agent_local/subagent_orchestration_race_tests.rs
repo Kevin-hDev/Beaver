@@ -168,7 +168,10 @@ async fn report_policy_and_body_match_api_and_ollama_payloads() {
         &[],
         super::types_ollama::OllamaThink::Bool(false),
     );
-    let api = crate::services::llm::stream_convert::messages_to_openai(&messages, "openai");
+    let policy = crate::services::llm::route_profile::payload_policy("openai", "gpt-5.6-luna")
+        .unwrap();
+    let api =
+        crate::services::llm::stream_convert::messages_to_openai(&messages, policy.message);
 
     assert!(ollama.messages[0]
         .content

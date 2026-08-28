@@ -84,7 +84,8 @@ fn wire_contract_places_tool_results_without_losing_ids_or_opaque_reasoning() {
     assert_eq!(anthropic[0]["content"][1]["id"], CALL_ID);
     assert_eq!(anthropic[1]["content"][0]["tool_use_id"], CALL_ID);
 
-    let openai = super::stream_convert::messages_to_openai(&messages, "google");
+    let policy = super::route_profile::payload_policy("google", "gemini-3.5-flash").unwrap();
+    let openai = super::stream_convert::messages_to_openai(&messages, policy.message);
     assert_eq!(openai[1]["role"], "tool");
     assert_eq!(openai[1]["tool_call_id"], CALL_ID);
 
@@ -98,4 +99,17 @@ fn wire_contract_places_tool_results_without_losing_ids_or_opaque_reasoning() {
     let ollama = crate::services::agent_local::ollama_tool_role::wrap_tool_results(&messages);
     assert_eq!(ollama[1].role, "user");
     assert!(ollama[1].content.contains("<tool_response>"));
+}
+
+#[test]
+fn anthropic_candidate_requires_max_tokens_and_omits_deprecated_sampling_fields() {
+    assert_eq!(
+        super::route_profile::anthropic_fixture(None),
+        Err("provider_max_tokens_required")
+    );
+    let payload = super::route_profile::anthropic_fixture(Some(4_096)).unwrap();
+    assert_eq!(payload["max_tokens"], 4_096);
+    for field in ["temperature", "top_k", "top_p"] {
+        assert!(payload.get(field).is_none(), "{field}");
+    }
 }

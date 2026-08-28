@@ -87,12 +87,19 @@ pub(in crate::services::llm) enum ToolResultPlacement {
     dead_code,
     reason = "candidate routes must declare explicit image refusal"
 )]
-pub(in crate::services::llm) enum ImageFormat {
+pub(crate) enum ImageFormat {
     OpenAiNested,
     MistralFlat,
     ResponsesInput,
     OllamaNative,
     Unsupported,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct MessageWirePolicy {
+    pub images: ImageFormat,
+    pub null_empty_tool_assistant: bool,
+    pub preserve_all_extra_content: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

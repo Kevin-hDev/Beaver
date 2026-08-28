@@ -23,11 +23,13 @@ pub(super) fn build_chat_payload_with_evidence(
     let provider_id = route.canonical_provider_id;
     let cache_policy = super::route_profile::cache_policy(route.chat_provider_id, cfg.model)
         .expect("LlmRoute is constructed from a route profile");
+    let payload_policy = super::route_profile::payload_policy(route.chat_provider_id, cfg.model)
+        .expect("LlmRoute is constructed from a route profile");
     let mut payload = serde_json::json!({
         "model": cfg.model,
         "messages": super::stream_convert::messages_to_openai_with_tools(
             cfg.messages,
-            provider_id,
+            payload_policy.message,
             cfg.tools,
         ),
         "stream": true,
@@ -39,8 +41,7 @@ pub(super) fn build_chat_payload_with_evidence(
         payload["service_tier"] = value.into();
     }
     if let Some(max) = max_tokens {
-        let field = super::model_metadata::request_output_limit_field(provider_id, cfg.model);
-        payload[field] = max.into();
+        payload[payload_policy.output_limit_field] = max.into();
     }
     super::stream_reasoning::apply(
         &mut payload,
@@ -49,8 +50,8 @@ pub(super) fn build_chat_payload_with_evidence(
         cfg.think,
         cfg.reasoning_mode,
     );
-    apply_tools(&mut payload, cfg, provider_id);
-    if provider_id == "openrouter" {
+    apply_tools(&mut payload, cfg, provider_id, payload_policy);
+    if payload_policy.upstream_routing {
         payload["provider"] = serde_json::json!({
             "require_parameters": true,
             "allow_fallbacks": true,
@@ -65,7 +66,12 @@ pub(super) fn build_chat_payload_with_evidence(
     Ok(PreparedChatPayload { payload, replayed })
 }
 
-fn apply_tools(payload: &mut serde_json::Value, cfg: &RequestConfig<'_>, provider_id: &str) {
+fn apply_tools(
+    payload: &mut serde_json::Value,
+    cfg: &RequestConfig<'_>,
+    provider_id: &str,
+    payload_policy: super::route_profile::ResolvedPayloadPolicy,
+) {
     if cfg.tools.is_empty() {
         return;
     }
@@ -73,11 +79,10 @@ fn apply_tools(payload: &mut serde_json::Value, cfg: &RequestConfig<'_>, provide
         .expect("LlmRoute is constructed from a route profile");
     let tools = super::tool_schema::tools_for_policy(policy.schema, policy.strict, cfg.tools);
     payload["tools"] = serde_json::Value::Array(tools);
-    if provider_id != "deepseek" {
-        // DeepSeek V4 choisit lui-même ses outils en mode thinking et rejette ce champ.
+    if payload_policy.emit_tool_choice {
         payload["tool_choice"] = "auto".into();
     }
-    if provider_id == "zai" {
+    if payload_policy.tool_stream {
         payload["tool_stream"] = true.into();
     }
 }

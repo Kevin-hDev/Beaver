@@ -51,6 +51,8 @@ pub(in crate::services::llm) enum ParameterPolicy {
     Xai,
     Zai,
     Ollama,
+    #[allow(dead_code, reason = "Anthropic remains a compile-time candidate")]
+    Anthropic,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -101,4 +103,13 @@ pub(crate) struct ResolvedCachePolicy<'a> {
     pub model: &'a str,
     pub kind: CachePolicy,
     pub include_usage: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct ResolvedPayloadPolicy {
+    pub message: super::types::MessageWirePolicy,
+    pub emit_tool_choice: bool,
+    pub tool_stream: bool,
+    pub upstream_routing: bool,
+    pub output_limit_field: &'static str,
 }

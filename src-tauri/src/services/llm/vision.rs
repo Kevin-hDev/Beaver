@@ -45,16 +45,32 @@ pub fn sanitize_messages(
     report
 }
 
-pub fn openai_image_part(base64_data: &str, provider_id: &str) -> Value {
+pub(crate) fn image_part(
+    base64_data: &str,
+    format: super::route_profile::ImageFormat,
+) -> Result<Value, &'static str> {
     let data_url = data_url(base64_data);
-    match provider_id {
-        "mistral" => json!({ "type": "image_url", "image_url": data_url }),
-        _ => json!({ "type": "image_url", "image_url": { "url": data_url } }),
+    match format {
+        super::route_profile::ImageFormat::OpenAiNested => {
+            Ok(json!({ "type": "image_url", "image_url": { "url": data_url } }))
+        }
+        super::route_profile::ImageFormat::MistralFlat => {
+            Ok(json!({ "type": "image_url", "image_url": data_url }))
+        }
+        super::route_profile::ImageFormat::ResponsesInput => {
+            Ok(json!({ "type": "input_image", "image_url": data_url }))
+        }
+        super::route_profile::ImageFormat::OllamaNative
+        | super::route_profile::ImageFormat::Unsupported => Err("vision_wire_unsupported"),
     }
 }
 
 pub fn responses_image_part(base64_data: &str) -> Value {
-    json!({ "type": "input_image", "image_url": data_url(base64_data) })
+    image_part(
+        base64_data,
+        super::route_profile::ImageFormat::ResponsesInput,
+    )
+    .expect("Responses supports input images")
 }
 
 pub fn data_url(base64_data: &str) -> String {

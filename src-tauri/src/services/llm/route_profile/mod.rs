@@ -3,6 +3,7 @@ mod catalog;
 mod catalog_api;
 mod catalog_local;
 mod catalog_oauth;
+mod payload_policies;
 mod policies;
 mod policy_types;
 mod tool_policies;
@@ -12,9 +13,11 @@ mod types;
 pub(super) use catalog::{all, find_id};
 pub(super) use catalog::{find, public_api};
 pub(crate) use policy_types::{
-    CachePolicy, ExtensionToolPolicy, ResolvedCachePolicy, ResolvedToolPolicy, SchemaPolicy,
+    CachePolicy, ExtensionToolPolicy, ResolvedCachePolicy, ResolvedPayloadPolicy,
+    ResolvedToolPolicy, SchemaPolicy,
 };
 pub(super) use types::*;
+pub(crate) use types::{ImageFormat, MessageWirePolicy};
 
 pub(crate) fn tool_policy(provider_id: &str, model: &str) -> Option<ResolvedToolPolicy> {
     let profile = find(provider_id)?;
@@ -27,6 +30,18 @@ pub(crate) fn cache_policy<'a>(
 ) -> Option<ResolvedCachePolicy<'a>> {
     let profile = find(provider_id)?;
     Some(cache_policies::resolve(profile, model))
+}
+
+pub(crate) fn payload_policy(provider_id: &str, model: &str) -> Option<ResolvedPayloadPolicy> {
+    let profile = find(provider_id)?;
+    Some(payload_policies::resolve(profile, model))
+}
+
+#[cfg(test)]
+pub(super) fn anthropic_fixture(
+    max_tokens: Option<u32>,
+) -> Result<serde_json::Value, &'static str> {
+    payload_policies::anthropic_fixture(max_tokens)
 }
 
 #[cfg(test)]
