@@ -114,28 +114,45 @@ async fn resolve_ollama_context(
     ollama: &crate::services::agent_local::ollama_client::OllamaClient,
     model_id: &str,
 ) -> Result<u64, String> {
-    if let Some(loaded) = ollama.loaded_context_length(model_id).await? {
-        if loaded > 0 {
-            return Ok(loaded);
-        }
+    let loaded = ollama.loaded_context_length(model_id).await?;
+    if loaded.is_some_and(|value| value > 0) {
+        return Ok(select_ollama_context(loaded, None, 0, 0));
     }
     let info = ollama.show_model(model_id).await?;
     let parsed = crate::services::agent_local::modelfile_parser::parse_modelfile(&info.modelfile);
-    if let Some(configured) = parsed
+    let configured = parsed
         .parameters
         .get("num_ctx")
-        .and_then(|value| value.as_u64())
-    {
-        if configured > 0 {
-            return Ok(configured);
-        }
+        .and_then(|value| value.as_u64());
+    if configured.is_some_and(|value| value > 0) {
+        return Ok(select_ollama_context(loaded, configured, 0, 0));
     }
     let effective = u64::from(crate::services::gpu_detect::compute_default_num_ctx());
-    Ok(match (info.context_length, effective) {
+    Ok(select_ollama_context(
+        loaded,
+        configured,
+        info.context_length,
+        effective,
+    ))
+}
+
+fn select_ollama_context(
+    loaded: Option<u64>,
+    configured: Option<u64>,
+    model: u64,
+    effective: u64,
+) -> u64 {
+    if let Some(value) = loaded.filter(|value| *value > 0) {
+        return value;
+    }
+    if let Some(value) = configured.filter(|value| *value > 0) {
+        return value;
+    }
+    match (model, effective) {
         (model, configured) if model > 0 && configured > 0 => model.min(configured),
         (model, _) if model > 0 => model,
         (_, configured) => configured,
-    })
+    }
 }
 
 #[tauri::command]
@@ -161,21 +178,5 @@ pub async fn get_provider_usage(
 }
 
 #[cfg(test)]
-mod tests {
-    #[tokio::test]
-    async fn openrouter_model_keeps_upstream_tool_capability() {
-        assert!(super::supports_tool_use("openrouter".to_string(), "openai/o3".to_string()).await);
-    }
-
-    #[tokio::test]
-    async fn model_context_comes_from_the_registered_route_metadata() {
-        assert_eq!(
-            crate::services::llm::model_context_length("openai", "gpt-5.6-sol").await,
-            Some(1_050_000)
-        );
-        assert_eq!(
-            crate::services::llm::model_context_length("openai", "unknown-model").await,
-            None
-        );
-    }
-}
+#[path = "llm_tests.rs"]
+mod tests;

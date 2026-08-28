@@ -11,6 +11,68 @@ use crate::services::provider_usage::{
     RequestMeasurement, RequestMeasurementContext, UsageApiFormat, UsageWorkload,
 };
 
+async fn consume_text_fixture(
+    body: &str,
+    mode: crate::services::llm::route_profile::FragmentMode,
+) -> String {
+    let server = MockServer::start().await;
+    Mock::given(any())
+        .respond_with(
+            ResponseTemplate::new(200)
+                .insert_header("content-type", "text/event-stream")
+                .set_body_string(body),
+        )
+        .mount(&server)
+        .await;
+    let client =
+        crate::services::secure_http::AuthenticatedClient::new_loopback(Duration::from_secs(2))
+            .unwrap();
+    let response = client.send(client.get(server.uri())).await.unwrap();
+
+    consume_stream(
+        &AgentEventEmitter::test("fragment-fixture".into()),
+        response,
+        CancellationToken::new(),
+        true,
+        None,
+        &[],
+        crate::services::provider_usage::UsageContext::chat("openai", "fixture"),
+        mode,
+        crate::services::llm::route_profile::ErrorPolicy::Responses,
+        None,
+        None,
+    )
+    .await
+    .unwrap()
+    .into_result()
+    .content
+}
+
+#[tokio::test]
+async fn interactive_sse_reader_preserves_differential_and_cumulative_text() {
+    let differential = consume_text_fixture(
+        concat!(
+            "data: {\"choices\":[{\"delta\":{\"content\":\"Bon\"}}]}\n\n",
+            "data: {\"choices\":[{\"delta\":{\"content\":\"jour\"}}]}\n\n",
+            "data: [DONE]\n\n",
+        ),
+        crate::services::llm::route_profile::FragmentMode::DifferentialFragments,
+    )
+    .await;
+    let cumulative = consume_text_fixture(
+        concat!(
+            "data: {\"choices\":[{\"delta\":{\"content\":\"Bon\"}}]}\n\n",
+            "data: {\"choices\":[{\"delta\":{\"content\":\"Bonjour\"}}]}\n\n",
+            "data: [DONE]\n\n",
+        ),
+        crate::services::llm::route_profile::FragmentMode::CumulativeFragments,
+    )
+    .await;
+
+    assert_eq!(differential, "Bonjour");
+    assert_eq!(cumulative, differential);
+}
+
 #[tokio::test]
 async fn chat_sse_consumer_observes_the_served_tier() {
     let server = MockServer::start().await;

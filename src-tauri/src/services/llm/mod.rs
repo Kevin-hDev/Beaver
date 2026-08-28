@@ -43,6 +43,8 @@ mod prompt_cache_policy_tests;
 pub(crate) mod provider_diagnostics;
 pub mod provider_error;
 mod provider_model_capabilities;
+#[cfg(test)]
+mod provider_model_capabilities_tests;
 pub(crate) mod provider_model_lookup;
 pub(crate) mod provider_model_registry;
 mod provider_model_registry_sources;

@@ -184,3 +184,24 @@ fn xai_only_sends_configurable_effort_for_supported_models() {
         .get("reasoning_effort")
         .is_none());
 }
+
+#[test]
+fn declared_xai_and_moonshot_effort_modes_reach_the_payload_adapter() {
+    for provider in ["xai", "moonshot"] {
+        for model in super::provider_model_registry::list(provider) {
+            for mode in model
+                .reasoning_modes
+                .iter()
+                .filter(|mode| !matches!(mode.as_str(), "off" | "auto"))
+            {
+                assert!(
+                    payload(provider, &model.id, Some(mode))
+                        .get("reasoning_effort")
+                        .is_some(),
+                    "{provider}/{} declares {mode} but its payload adapter drops it",
+                    model.id
+                );
+            }
+        }
+    }
+}

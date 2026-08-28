@@ -20,6 +20,41 @@ test("refuse les nouvelles décisions Rust par identifiant de route", () => {
   assert.equal(count("src-tauri/src/new.rs", 'connection_id == "codex-oauth"'), 1);
 });
 
+test("continue le scan après un item cfg test sans compter un module de tests", () => {
+  const source = `
+#[cfg(test)]
+pub fn parse_fixture() {}
+
+#[cfg(test)]
+mod tests {
+  fn ignored() {
+    let _json = r#"{"provider_id":"inside-test"}"#;
+    if provider_id == "inside-test" {}
+  }
+}
+
+pub fn production() { if provider_id == "openai" {} }
+`;
+
+  assert.equal(count("src-tauri/src/new.rs", source), 1);
+});
+
+test("refuse les décisions portées par les identités de route du chat", () => {
+  assert.equal(count("src-tauri/src/new.rs", 'route.chat_provider_id == "xai-oauth"'), 1);
+  assert.equal(count("src/new.ts", 'route.chatProviderId === "xai-oauth"'), 1);
+});
+
+test("refuse les comparaisons Rust avec une constante provider nommée", () => {
+  assert.equal(
+    count(
+      "src-tauri/src/new.rs",
+      "provider_id == crate::services::codex_client::PROVIDER_ID",
+    ),
+    1,
+  );
+  assert.equal(count("src-tauri/src/new.rs", "PROVIDER_ID != route_id"), 1);
+});
+
 test("refuse un prédicat de capacité nommé hors de son propriétaire", () => {
   assert.equal(count("src-tauri/src/new.rs", "if is_gpt_56(model) {}"), 1);
 });

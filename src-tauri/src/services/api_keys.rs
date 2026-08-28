@@ -9,6 +9,7 @@ pub(crate) mod validate {
 include!("api_keys_state.rs");
 include!("api_keys_registry.rs");
 include!("api_keys_transactions.rs");
+include!("api_keys_retired.rs");
 include!("api_keys_credential_scope_wire.rs");
 include!("api_keys_credential_scope.rs");
 include!("api_keys_credential_scope_migration.rs");
@@ -69,6 +70,7 @@ pub fn init() -> Result<(), String> {
             credential_scope_route_label(route)
         );
     }
+    let remove_retired_backup = prepare_retired_provider_cleanup(&master_key, &mut raw_map.0)?;
     write_registry(&provider_ids(raw_map.0.keys().map(String::as_str)))?;
     let keys = raw_map
         .0
@@ -86,6 +88,7 @@ pub fn init() -> Result<(), String> {
     if crate::services::reasoning_continuity::fingerprint::ensure_fingerprint_key().is_err() {
         log::warn!("reasoning_diagnostic_key_unavailable");
     }
+    finish_retired_provider_cleanup(remove_retired_backup)?;
     Ok(())
 }
 
@@ -158,6 +161,10 @@ mod mcp_tests;
 #[cfg(test)]
 #[path = "api_keys_transaction_tests.rs"]
 mod transaction_tests;
+
+#[cfg(test)]
+#[path = "api_keys_retired_tests.rs"]
+mod retired_tests;
 
 #[cfg(test)]
 #[path = "api_keys_credential_scope_tests.rs"]

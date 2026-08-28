@@ -30,6 +30,50 @@ async fn streaming_response(body: &str) -> (MockServer, reqwest::Response) {
     (server, response)
 }
 
+async fn consume_text_fixture(
+    body: &str,
+    mode: crate::services::llm::route_profile::FragmentMode,
+) -> String {
+    let (_server, response) = streaming_response(body).await;
+    consume_silent(
+        response,
+        CancellationToken::new(),
+        Duration::from_secs(2),
+        crate::services::provider_usage::UsageContext::chat("openai", "fixture"),
+        mode,
+        crate::services::llm::route_profile::ErrorPolicy::Responses,
+        None,
+    )
+    .await
+    .unwrap()
+    .content
+}
+
+#[tokio::test]
+async fn silent_sse_reader_preserves_differential_and_cumulative_text() {
+    let differential = consume_text_fixture(
+        concat!(
+            "data: {\"choices\":[{\"delta\":{\"content\":\"Bon\"}}]}\n\n",
+            "data: {\"choices\":[{\"delta\":{\"content\":\"jour\"}}]}\n\n",
+            "data: [DONE]\n\n",
+        ),
+        crate::services::llm::route_profile::FragmentMode::DifferentialFragments,
+    )
+    .await;
+    let cumulative = consume_text_fixture(
+        concat!(
+            "data: {\"choices\":[{\"delta\":{\"content\":\"Bon\"}}]}\n\n",
+            "data: {\"choices\":[{\"delta\":{\"content\":\"Bonjour\"}}]}\n\n",
+            "data: [DONE]\n\n",
+        ),
+        crate::services::llm::route_profile::FragmentMode::CumulativeFragments,
+    )
+    .await;
+
+    assert_eq!(differential, "Bonjour");
+    assert_eq!(cumulative, differential);
+}
+
 #[tokio::test]
 async fn eof_before_done_is_rejected_as_truncated() {
     let (_server, response) =

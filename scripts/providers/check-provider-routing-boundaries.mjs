@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import ts from "typescript";
+import { scanRust } from "./check-provider-routing-rust.mjs";
 
 const ROOTS = ["src", "src-tauri/src"];
 const MAX_SOURCE_FILES = 10_000;
@@ -11,6 +12,8 @@ const ROUTING_NAMES = new Set([
   "provider",
   "providerId",
   "provider_id",
+  "chatProviderId",
+  "chat_provider_id",
   "canonicalProviderId",
   "canonical_provider_id",
   "connectionId",
@@ -90,27 +93,6 @@ export function scanSource({ path: filePath, source }) {
     : scanTypeScript(filePath, source);
 }
 
-function scanRust(source) {
-  const inlineTests = source.search(/#\[cfg\((?:all\()?test\b/);
-  if (inlineTests >= 0) source = source.slice(0, inlineTests);
-  const decisions = [];
-  const comparison = /\b(?:provider(?:_id)?|canonical_provider_id|connection_id|route_id)\b\s*(?:==|!=)\s*"[^"]+"|"[^"]+"\s*(?:==|!=)\s*\b(?:provider(?:_id)?|canonical_provider_id|connection_id|route_id)\b/g;
-  const routeMatch = /\bmatch\s+(?:&\s*)?(?:provider(?:_id)?|canonical_provider_id|connection_id|route_id)\b/g;
-  const matchesMacro = /\bmatches!\s*\(\s*(?:&\s*)?(?:provider(?:_id)?|canonical_provider_id|connection_id|route_id)\b/g;
-  const namedCapability = /(?<!fn\s)\bis_[a-zA-Z0-9_]+\s*\(\s*&?\s*model(?:_id)?\b/g;
-  for (const [kind, expression] of [
-    ["comparison", comparison],
-    ["match", routeMatch],
-    ["matches", matchesMacro],
-    ["named_predicate", namedCapability],
-  ]) {
-    for (const match of source.matchAll(expression)) {
-      decisions.push({ kind, line: lineOf(source, match.index ?? 0) });
-    }
-  }
-  return decisions.sort((left, right) => left.line - right.line);
-}
-
 function scanTypeScript(filePath, source) {
   const scriptKind = filePath.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
   const root = ts.createSourceFile(filePath, source, ts.ScriptTarget.Latest, true, scriptKind);
@@ -155,14 +137,6 @@ function isNamedModelPredicate(node) {
       : "";
   return name.startsWith("is")
     && node.arguments.some((argument) => ts.isIdentifier(argument) && /^(?:model|modelId|model_id)$/.test(argument.text));
-}
-
-function lineOf(source, index) {
-  let line = 1;
-  for (let cursor = 0; cursor < index; cursor += 1) {
-    if (source.charCodeAt(cursor) === 10) line += 1;
-  }
-  return line;
 }
 
 function productionFiles(rootDirectory) {

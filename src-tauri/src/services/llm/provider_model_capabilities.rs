@@ -22,6 +22,9 @@ pub struct ResolvedModelCapabilities {
 
 pub fn resolve_local(provider_id: &str, model_id: &str) -> Option<ResolvedModelCapabilities> {
     if provider_id == crate::services::codex_client::PROVIDER_ID {
+        if let Some(model) = super::runtime_models::lookup(provider_id, model_id) {
+            return Some(from_runtime(model));
+        }
         let model = crate::services::codex_client::model_catalog::fallback_models()
             .into_iter()
             .find(|model| model.id == model_id)?;
