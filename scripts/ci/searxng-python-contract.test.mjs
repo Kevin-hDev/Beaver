@@ -17,7 +17,7 @@ test("la CI exécute les tests Python SearXNG avec la version supportée", () =>
 
   assert.ok(setup, "installation du Python de test manquante");
   assert.ok(tests, "tests Python SearXNG manquants");
-  assert.equal(setup.uses, "actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1");
+  assert.equal(setup.uses, "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97");
   assert.equal(setup.with["python-version-file"], "scripts/build/searxng-python-version.txt");
   assert.equal(tests.run, "npm run test:searxng-scripts");
   assert.ok(checkoutIndex < nodeIndex && nodeIndex < setupIndex && setupIndex < testsIndex);
@@ -38,7 +38,7 @@ test("Windows exécute la recette uv puis vérifie Python dans un nouveau shell"
   assert.ok(verify);
   assert.equal(
     setupUv.uses,
-    "astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9",
+    "astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d",
   );
   assert.equal(setupUv.with.version, "latest");
   assert.equal(setupUv.with["enable-cache"], false);
