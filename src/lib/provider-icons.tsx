@@ -1,4 +1,3 @@
-import groqSvg from "@/assets/groq.svg";
 import geminiPng from "@/assets/GEMINI.png";
 import mistralSvg from "@/assets/mistral-color.svg";
 import cerebrasSvg from "@/assets/cerebras-color.svg";
@@ -17,7 +16,6 @@ interface ImgEntry { kind: "img"; src: string; mono?: boolean }
 type ProviderIconEntry = ImgEntry;
 
 const ICONS: Record<string, ProviderIconEntry> = {
-  groq:       { kind: "img", src: groqSvg, mono: true },
   google:     { kind: "img", src: geminiPng },
   mistral:    { kind: "img", src: mistralSvg },
   cerebras:   { kind: "img", src: cerebrasSvg },

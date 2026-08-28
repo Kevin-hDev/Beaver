@@ -67,8 +67,7 @@ pub(super) fn request_headers(
 pub(super) fn include_usage(route: &LlmRoute) -> bool {
     matches!(
         route.chat_provider_id,
-        "groq"
-            | "google"
+        "google"
             | "cerebras"
             | "openai"
             | "deepseek"

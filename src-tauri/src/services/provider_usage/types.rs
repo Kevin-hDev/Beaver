@@ -8,7 +8,6 @@ const MIN_RESET_TIMESTAMP: i64 = 946_684_800;
 const MAX_RESET_HORIZON_SECONDS: i64 = 366 * 24 * 60 * 60;
 
 const CONNECTIONS: &[&str] = &[
-    "groq",
     "google",
     "mistral",
     "cerebras",

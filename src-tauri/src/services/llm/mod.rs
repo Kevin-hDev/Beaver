@@ -1,6 +1,6 @@
 //! Module LLM multi-provider — abstraction unifiée OpenAI-compat.
 //!
-//! Tous les providers retenus (Groq, Gemini, Mistral, Cerebras, OpenRouter, OpenAI, DeepSeek)
+//! Tous les providers retenus (Gemini, Mistral, Cerebras, OpenRouter, OpenAI, DeepSeek)
 //! exposent une API OpenAI-compatible. Un seul client (`openai_compat.rs`) les couvre tous
 //! en changeant `base_url` et `api_key`.
 

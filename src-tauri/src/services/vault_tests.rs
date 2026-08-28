@@ -12,7 +12,7 @@ fn test_key() -> Vec<u8> {
 #[test]
 fn round_trip_recovers_exact_plaintext() {
     let key = test_key();
-    let plaintext = br#"{"groq":"sk-test-123456789"}"#;
+    let plaintext = br#"{"openai":"sk-test-123456789"}"#;
 
     let encrypted = encrypt(&key, plaintext).expect("encrypt should succeed");
     let decrypted = decrypt(&key, &encrypted).expect("decrypt should succeed");

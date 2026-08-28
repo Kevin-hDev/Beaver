@@ -71,12 +71,6 @@ describe("reasoning modes", () => {
     expect(modes("openrouter", "x-ai/grok-4.5")).toEqual(["low", "medium", "high"]);
   });
 
-  it("adapte Groq selon la famille reasoning", () => {
-    expect(modes("groq", "openai/gpt-oss-20b")).toEqual(["low", "medium", "high"]);
-    expect(modes("groq", "qwen/qwen3-32b")).toEqual(["off", "auto"]);
-    expect(modes("groq", "openai/gpt-oss-safeguard-20b")).toEqual(["auto"]);
-  });
-
   it("adapte DeepSeek, Mistral et Moonshot", () => {
     expect(modes("deepseek", "deepseek-v4-pro")).toEqual(["off", "high", "xhigh"]);
     expect(modes("mistral", "mistral-small-latest")).toEqual(["off", "high"]);
@@ -127,7 +121,7 @@ describe("reasoning modes", () => {
   });
 
   it("active le thinking en AUTO par défaut pour un modèle commutable", () => {
-    const options = reasoningModeOptions(model("groq", "qwen/qwen3-32b"));
+    const options = reasoningModeOptions(model("ollama", "qwen3.5:4b"));
     expect(normalizeReasoningMode(null, options)).toBe("auto");
   });
 

@@ -161,7 +161,7 @@ fn embedded_provider_errors_keep_only_a_safe_status() {
 }
 
 #[test]
-fn parses_groq_native_completion_time() {
+fn parses_native_completion_time() {
     let chunks = parse(json!({
         "usage": {
             "prompt_tokens": 2,
@@ -211,29 +211,6 @@ fn parses_kimi_usage_nested_in_the_last_choice() {
     assert!(chunks.iter().any(|chunk| matches!(
         chunk,
         ParsedChunk::Usage(usage) if usage.cached_input_tokens == Some(256)
-    )));
-}
-
-#[test]
-fn parses_groq_native_usage_fallback() {
-    let context =
-        crate::services::provider_usage::UsageContext::chat("groq", "openai/gpt-oss-120b");
-    let chunks = stream_chunk::parse_with_context(
-        &json!({
-            "usage": null,
-            "x_groq": { "usage": {
-                "prompt_tokens": 200,
-                "completion_tokens": 10,
-                "prompt_tokens_details": { "cached_tokens": 128 }
-            }}
-        })
-        .to_string(),
-        context,
-    );
-
-    assert!(chunks.iter().any(|chunk| matches!(
-        chunk,
-        ParsedChunk::Usage(usage) if usage.cached_input_tokens == Some(128)
     )));
 }
 

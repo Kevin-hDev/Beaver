@@ -31,7 +31,7 @@ pub(crate) async fn resolve(
         .await
         .map_err(|_| error())?;
     let route_id = RouteId::from_provider_id(provider).ok_or_else(error)?;
-    if session.provider != provider || session.model != model || route_id == RouteId::Groq {
+    if session.provider != provider || session.model != model {
         return Ok(resolved);
     }
     let target = ReplayTarget {

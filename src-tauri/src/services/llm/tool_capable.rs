@@ -14,19 +14,6 @@ fn strip_org_prefix(model_id: &str) -> &str {
 pub fn supports_tools(provider_id: &str, model_id: &str) -> bool {
     let model = strip_org_prefix(model_id).to_lowercase();
     match provider_id {
-        "groq" => {
-            model.starts_with("llama-3.3")
-                || model.starts_with("llama-3.1")
-                || model.starts_with("llama-4")
-                || model.starts_with("mixtral")
-                || model.starts_with("deepseek")
-                || model.starts_with("gemma")
-                || model.starts_with("qwen")
-                || model.starts_with("mistral")
-                || model.starts_with("gpt-oss") && !model.contains("safeguard")
-                || model.starts_with("compound")
-                || model.starts_with("minimax")
-        }
         "google" => {
             let has_gemini = model.contains("gemini");
             let is_pro = model.contains("pro");
@@ -67,7 +54,6 @@ pub fn supports_thinking(provider_id: &str, model_id: &str) -> bool {
     let model = strip_org_prefix(model_id).to_lowercase();
     match provider_id {
         "deepseek" => super::providers::deepseek::supports_thinking(&model),
-        "groq" => super::providers::groq::supports_thinking(&model),
         "openai" => {
             model.starts_with("o3") || model.starts_with("o4") || model.starts_with("gpt-5")
         }
@@ -90,7 +76,6 @@ pub fn supports_thinking(provider_id: &str, model_id: &str) -> bool {
 pub fn supports_vision(provider_id: &str, model_id: &str) -> bool {
     let model = strip_org_prefix(model_id).to_lowercase();
     match provider_id {
-        "groq" => model.starts_with("llama-4") || model.contains("vision"),
         "google" => model.contains("gemini") || is_gemma4_vision_model(&model),
         "mistral" => {
             model.starts_with("mistral-large")

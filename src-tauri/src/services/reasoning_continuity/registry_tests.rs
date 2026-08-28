@@ -9,9 +9,9 @@ use super::registry::{
 };
 
 #[test]
-fn inventory_has_exactly_eleven_contracts_and_fourteen_closed_routes() {
+fn inventory_has_exactly_eleven_contracts_and_thirteen_closed_routes() {
     assert_eq!(ContractId::ALL.len(), 11);
-    assert_eq!(RouteId::ALL.len(), 14);
+    assert_eq!(RouteId::ALL.len(), 13);
     assert_eq!(active_routes().len(), 13);
 }
 
@@ -91,7 +91,6 @@ fn closed_identifiers_serialize_to_the_exact_normative_wire_values() {
         "moonshot-oauth",
         "zai",
         "codex-oauth",
-        "groq",
     ];
 
     for (value, expected) in ContractId::ALL.iter().zip(contracts) {
@@ -108,6 +107,7 @@ fn provider_route_mapping_has_one_exhaustive_round_trip() {
         assert_eq!(RouteId::from_provider_id(route.provider_id()), Some(route));
     }
     assert_eq!(RouteId::from_provider_id("forged"), None);
+    assert_eq!(RouteId::from_provider_id("groq"), None);
 }
 
 #[test]
@@ -131,11 +131,10 @@ fn every_scoped_route_maps_to_the_normative_contract() {
     for (route, contract) in expected {
         assert_eq!(route_contract(route), Some(contract));
     }
-    assert_eq!(route_contract(RouteId::Groq), None);
 }
 
 #[test]
-fn r01_unknown_model_and_excluded_route_fail_closed() {
+fn r01_unknown_model_fails_closed() {
     let scope = CredentialScope::authenticated("fixture-scope").unwrap();
     let unknown_model = ReplayTarget {
         route_id: RouteId::OpenRouter,
@@ -145,22 +144,6 @@ fn r01_unknown_model_and_excluded_route_fail_closed() {
         continuation_use: ContinuationUse::UserContinuation,
     };
     assert!(replay_policy(&unknown_model).is_none());
-
-    let groq = ReplayTarget {
-        route_id: RouteId::Groq,
-        model_id: "any".into(),
-        credential_scope: scope,
-        reasoning_mode: ReasoningModeId::Auto,
-        continuation_use: ContinuationUse::UserContinuation,
-    };
-    assert_eq!(
-        replay_policy(&groq).unwrap().requirement(),
-        ReplayRequirement::Forbidden
-    );
-    assert_eq!(
-        replay_policy(&groq).unwrap().activation(),
-        super::registry::ActivationState::Disabled
-    );
 }
 
 #[test]

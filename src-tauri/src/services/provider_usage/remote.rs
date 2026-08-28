@@ -58,7 +58,7 @@ async fn fetch(connection_id: &str) -> Result<RemoteData, ()> {
         "moonshot" => fetch_api(connection_id, "https://api.moonshot.ai/v1/users/me/balance").await,
         "codex-oauth" => fetch_codex().await,
         "moonshot-oauth" => fetch_kimi().await,
-        "groq" | "cerebras" => Ok(recent_headers(connection_id).await),
+        "cerebras" => Ok(recent_headers(connection_id).await),
         _ => Ok(local_only(connection_id)),
     }
 }

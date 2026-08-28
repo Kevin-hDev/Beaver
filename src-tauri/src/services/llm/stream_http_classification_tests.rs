@@ -76,7 +76,7 @@ fn xai_resource_exhausted_without_retry_hint_is_terminal() {
 
 #[test]
 fn payload_too_large_has_a_distinct_stable_code() {
-    let error = classify_error(413, "", "Groq", "groq", false, false);
+    let error = classify_error(413, "", "Cerebras", "cerebras", false, false);
 
     assert!(matches!(error, RequestError::PayloadTooLarge));
     assert_eq!(error.to_string(), "provider_payload_too_large");

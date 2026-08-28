@@ -32,7 +32,7 @@ describe("SettingsTab slots", () => {
     ["ollama", "settings.tabs.ollama", "llama3.2:latest"],
     ["connectors", "settings.tabs.connectors", "Canva"],
     ["channels", "settings.tabs.channels", "test-telegram"],
-    ["providers", "settings.tabs.providers", "Groq"],
+    ["providers", "settings.tabs.providers", "OpenAI"],
     ["forecast", "forecast.title", "Chronos Bolt Small"],
     ["system-prompt", "settings.tabs.systemPrompt", "Beaver instructions"],
   ] as Array<[SettingsSubTab, string, string]>)("ouvre %s sans crash ni boucle", async (_subTab, label, expectedContent) => {

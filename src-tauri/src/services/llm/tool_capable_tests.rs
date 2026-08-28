@@ -1,17 +1,6 @@
 use super::*;
 
 #[test]
-fn groq_tool_capable() {
-    assert!(supports_tools("groq", "llama-3.3-70b-versatile"));
-    assert!(supports_tools("groq", "llama-4-scout-17b-16e-instruct"));
-    assert!(supports_tools("groq", "groq/compound"));
-    assert!(supports_tools("groq", "compound-mini"));
-    assert!(supports_tools("groq", "openai/gpt-oss-120b"));
-    assert!(!supports_tools("groq", "openai/gpt-oss-safeguard-20b"));
-    assert!(!supports_tools("groq", "whisper-large-v3"));
-}
-
-#[test]
 fn gemini_tool_capable() {
     assert!(supports_tools("google", "gemini-2.5-pro"));
     assert!(supports_tools("google", "gemini-3.5-flash"));
@@ -58,20 +47,6 @@ fn openai_tool_capable() {
     assert!(supports_vision("openai", "gpt-5.6-luna"));
     assert!(supports_tools("openai", "o4-mini"));
     assert!(!supports_tools("openai", "text-embedding-3-small"));
-}
-
-#[test]
-fn org_prefixed_model_ids() {
-    assert!(supports_tools(
-        "groq",
-        "meta-llama/llama-4-scout-17b-16e-instruct"
-    ));
-    assert!(supports_tools("groq", "qwen/qwen3-32b"));
-    assert!(supports_tools(
-        "groq",
-        "deepseek/deepseek-r1-distill-llama-70b"
-    ));
-    assert!(!supports_tools("groq", "unknown-org/whisper-large-v3"));
 }
 
 #[test]

@@ -42,15 +42,6 @@ function isGptOss(model: AvailableModel | null): boolean {
   return modelName(model).includes("gpt-oss");
 }
 
-function isGroqGptOssEffort(model: AvailableModel | null): boolean {
-  const name = modelName(model);
-  return name.includes("gpt-oss-20b") || name.includes("gpt-oss-120b");
-}
-
-function isGroqQwenSwitchable(model: AvailableModel | null): boolean {
-  return modelName(model).includes("qwen3-32b");
-}
-
 function isMistralNative(model: AvailableModel | null): boolean {
   const name = modelName(model);
   return name.startsWith("magistral-small") || name.startsWith("magistral-medium");
@@ -135,10 +126,6 @@ export function reasoningModeOptions(model: AvailableModel | null): ReasoningMod
       return isGeminiForcedReasoning(model)
         ? options(["low", "medium", "high"])
         : options(["off", "low", "medium", "high"]);
-    case "groq":
-      if (isGroqGptOssEffort(model)) return options(["low", "medium", "high"]);
-      if (isGroqQwenSwitchable(model)) return options(["off", "auto"]);
-      return options(["auto"]);
     case "deepseek":
       return options(["off", "high", "xhigh"]);
     case "xai":

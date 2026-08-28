@@ -19,7 +19,7 @@ pub struct ProviderSpec {
     pub models_endpoint: &'static str, // chemin relatif à base_url
     pub signup_url: &'static str,
     /// Active l'ajout automatique d'un plafond quand l'appelant n'en fournit pas.
-    /// Désactivé chez Groq/Cerebras : un plafond élevé réserve inutilement leur TPM.
+    /// Désactivé chez Cerebras : un plafond élevé réserve inutilement son TPM.
     pub auto_max_tokens: bool,
     /// Dernier repli si le registre Beaver, l'endpoint `/models` et LiteLLM
     /// ne publient aucune limite fiable. Il sera borné au contexte restant.
@@ -32,16 +32,6 @@ pub fn find(provider_id: &str) -> Option<&'static ProviderSpec> {
 }
 
 pub const LLM_PROVIDERS: &[ProviderSpec] = &[
-    ProviderSpec {
-        id: "groq",
-        display_name: "Groq",
-        category: "llm",
-        base_url: "https://api.groq.com/openai/v1",
-        models_endpoint: "/models",
-        signup_url: "https://console.groq.com/keys",
-        auto_max_tokens: false,
-        fallback_max_tokens: None,
-    },
     ProviderSpec {
         id: "google",
         display_name: "Google Gemini",

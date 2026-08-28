@@ -10,7 +10,6 @@ const MAX_DESCRIPTION_LEN: usize = 300;
 
 const ALLOWED_PROVIDERS: &[&str] = &[
     "ollama",
-    "groq",
     "google",
     "mistral",
     "cerebras",
@@ -173,6 +172,14 @@ mod tests {
                 validate_input(provider, "Test", "model", "Ping", "", &schedule, true).is_err()
             );
         }
+    }
+
+    #[test]
+    fn rejects_removed_groq_provider() {
+        let schedule = WakeupSchedule::Daily {
+            time: "08:00".into(),
+        };
+        assert!(validate_input("groq", "Test", "model", "Ping", "", &schedule, true).is_err());
     }
 
     #[test]

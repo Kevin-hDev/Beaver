@@ -33,7 +33,6 @@
   },
   "apiKeys": {
     "providers": {
-      "groq": { "description": "独自 LPU による Llama / GPT-OSS の超高速推論。", "freeTier": "上限付きの無料プラン。組織設定で利用可否が変わる場合があります。" },
       "google": { "description": "Gemini 3.7 Flash — マルチモーダル、ツール、推論。", "freeTier": "一部モデルに無料枠があり、アカウントと上限により異なります。" },
       "mistral": { "description": "フランス発のオープンウェイトモデル — 無料の Experiment プラン。", "freeTier": "無料モードと有料プランがあり、利用可否はアカウントによります。" },
       "cerebras": { "description": "ウェハースケールチップで最大 3,000 tok/s のオープンウェイトモデル。", "freeTier": "無料枠とクォータはプロジェクトとアカウントによります。" },
@@ -53,7 +52,7 @@
     },
     "empty": {
       "title": "プロバイダーが設定されていません",
-      "subtitle": "API キーを追加してリモート LLM（Groq、Gemini、Mistral…）やウェブ検索サービス（Brave、Exa、Firecrawl）にアクセスしましょう。"
+      "subtitle": "API キーを追加してリモート LLM（OpenAI、Gemini、Mistral…）やウェブ検索サービス（Brave、Exa、Firecrawl）にアクセスしましょう。"
     },
     "details": {
       "connected": "接続済み",
@@ -325,7 +324,7 @@
       "connection": "再接続中...",
       "button": "再試行"
     },
-    "groqExtensionsUnavailable": "Groq ではプラグインを利用できません。",
+    "groqExtensionsUnavailable": "OpenRouter 経由の Groq モデルではプラグインを利用できません。",
     "contextCompressed": "コンテキストを圧縮済み",
     "searchBarPlaceholder": "検索…",
     "resultCount_one": "{{count}} 件",

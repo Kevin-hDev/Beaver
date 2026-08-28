@@ -24,7 +24,6 @@ Beaver est un espace de travail agentique pour les modèles locaux via Ollama et
 
 | Type | Fournisseur | Connexion |
 |---|---|---|
-| LLM | [Groq](https://console.groq.com/keys) | Clé API |
 | LLM | [Google Gemini](https://aistudio.google.com/app/apikey) | Clé API |
 | LLM | [Mistral](https://console.mistral.ai/api-keys) | Clé API |
 | LLM | [Cerebras](https://cloud.cerebras.ai/) | Clé API |

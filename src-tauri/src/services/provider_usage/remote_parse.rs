@@ -5,7 +5,6 @@ pub fn parse_rate_headers(connection_id: &str, headers: &HeaderMap) -> Option<Re
     let mut windows = Vec::new();
     match connection_id {
         "cerebras" => push_cerebras(&mut windows, headers),
-        "groq" => push_groq(&mut windows, headers),
         _ => return None,
     }
     if windows.is_empty() {
@@ -34,25 +33,6 @@ fn push_cerebras(windows: &mut Vec<ProviderWindow>, headers: &HeaderMap) {
         "x-ratelimit-limit-tokens-minute",
         "x-ratelimit-remaining-tokens-minute",
         "x-ratelimit-reset-tokens-minute",
-    );
-}
-
-fn push_groq(windows: &mut Vec<ProviderWindow>, headers: &HeaderMap) {
-    push_window(
-        windows,
-        "requests_limit",
-        headers,
-        "x-ratelimit-limit-requests",
-        "x-ratelimit-remaining-requests",
-        "x-ratelimit-reset-requests",
-    );
-    push_window(
-        windows,
-        "tokens_limit",
-        headers,
-        "x-ratelimit-limit-tokens",
-        "x-ratelimit-remaining-tokens",
-        "x-ratelimit-reset-tokens",
     );
 }
 

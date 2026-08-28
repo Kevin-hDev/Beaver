@@ -37,7 +37,7 @@
 
 ### Deliberate compatibility limits
 
-- **Unvalidated routes stay closed** — Moonshot OAuth remains implemented but disabled until quota permits a real validation; Groq continuity stays disabled ahead of provider removal; Ollama `deepseek-r1:latest` remains disabled because its reasoning output was not validated; and neighboring untested models do not inherit another model's proof.
+- **Unvalidated routes stay closed** — Moonshot OAuth remains implemented but disabled until quota permits a real validation; the direct Groq route has been removed; Ollama `deepseek-r1:latest` remains disabled because its reasoning output was not validated; and neighboring untested models do not inherit another model's proof.
 - **No silent message loss during an active stream** — a second send is refused with a clear message while the current response is running, and the draft remains available; durable mid-stream queuing is intentionally deferred.
 
 ---

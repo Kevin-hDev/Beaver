@@ -34,7 +34,7 @@ fn reports_pending_tool_call_before_finalize() {
 }
 
 #[test]
-fn accumulates_complete_tool_call_groq_style() {
+fn accumulates_complete_tool_call_in_one_chunk() {
     let mut acc = ToolCallAccumulator::new();
     acc.ingest(&[json!({
         "index": 0, "id": "call_x", "type": "function",

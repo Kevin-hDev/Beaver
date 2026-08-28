@@ -33,8 +33,8 @@ beforeAll(async () => {
 
 describe("provider-copy", () => {
   it("rend la description dans la langue active", () => {
-    expect(providerDescription(i18n.t, { id: "groq", category: "llm" })).toBe(
-      "Inférence ultra-rapide Llama / GPT-OSS sur LPU custom.",
+    expect(providerDescription(i18n.t, { id: "google", category: "llm" })).toBe(
+      "Gemini 3.7 Flash — multimodal, tools et raisonnement.",
     );
     expect(providerFreeTier(i18n.t, { id: "firecrawl", category: "scraping" })).toBe(
       "Offre gratuite et crédits selon l’équipe et le forfait.",

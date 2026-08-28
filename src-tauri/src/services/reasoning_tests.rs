@@ -41,14 +41,6 @@ fn regular_ollama_uses_boolean_thinking() {
 #[test]
 fn provider_specific_modes_are_distinct() {
     assert_eq!(
-        supported_modes("groq", "openai/gpt-oss-20b", true),
-        &["low", "medium", "high"]
-    );
-    assert_eq!(
-        supported_modes("groq", "qwen/qwen3-32b", true),
-        &["off", "auto"]
-    );
-    assert_eq!(
         supported_modes("mistral", "mistral-medium-3", true),
         &["off", "high"]
     );
@@ -190,7 +182,7 @@ fn unsupported_model_clears_mode() {
 #[test]
 fn switchable_thinking_defaults_to_auto() {
     assert_eq!(
-        normalize_for_model("groq", "qwen/qwen3-32b", None, true).as_deref(),
+        normalize_for_model("ollama", "qwen3.5:4b", None, true).as_deref(),
         Some("auto")
     );
 }

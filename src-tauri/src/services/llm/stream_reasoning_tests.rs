@@ -8,22 +8,6 @@ fn payload(provider: &str, model: &str, mode: Option<&str>) -> serde_json::Value
 }
 
 #[test]
-fn groq_payloads_match_model_family() {
-    assert_eq!(
-        payload("groq", "qwen/qwen3-32b", Some("off"))["reasoning_effort"],
-        "none"
-    );
-    assert_eq!(
-        payload("groq", "qwen/qwen3-32b", Some("auto"))["reasoning_effort"],
-        "default"
-    );
-    assert_eq!(
-        payload("groq", "openai/gpt-oss-20b", Some("high"))["reasoning_effort"],
-        "high"
-    );
-}
-
-#[test]
 fn deepseek_payload_uses_thinking_and_effort() {
     let high = payload("deepseek", "deepseek-v4-pro", Some("high"));
     assert_eq!(high["thinking"], json!({ "type": "enabled" }));

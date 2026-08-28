@@ -193,7 +193,7 @@ fn codex_special_route_gets_an_isolated_routing_key() {
 
 #[test]
 fn automatic_providers_receive_no_cache_controls() {
-    for provider in ["groq", "google", "cerebras", "deepseek", "zai"] {
+    for provider in ["google", "cerebras", "deepseek", "zai"] {
         let route = route::resolve(provider).unwrap();
         let mut value = payload();
         apply_payload(&mut value, &route, "model", Some("session-1"));
@@ -255,7 +255,7 @@ fn usage_option_is_omitted_for_strict_or_self_reporting_routes() {
             "{provider}"
         );
     }
-    for provider in ["openai", "groq", "cerebras", "moonshot"] {
+    for provider in ["openai", "cerebras", "moonshot"] {
         assert!(
             include_usage(&route::resolve(provider).unwrap()),
             "{provider}"

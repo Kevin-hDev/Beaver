@@ -79,8 +79,7 @@ fn is_groq_compound(provider_id: &str, model: &str) -> bool {
 }
 
 fn is_groq_family(provider_id: &str, model: &str) -> bool {
-    provider_id == "groq"
-        || (provider_id == "openrouter" && model.to_ascii_lowercase().starts_with("groq/"))
+    provider_id == "openrouter" && model.to_ascii_lowercase().starts_with("groq/")
 }
 
 #[cfg(test)]
@@ -88,30 +87,33 @@ mod tests {
     use super::*;
 
     #[test]
-    fn only_groq_blocks_extension_tools() {
-        assert!(!allows_extension_tools("groq", "llama-3.3"));
+    fn openrouter_groq_models_block_extension_tools() {
         assert!(!allows_extension_tools("openrouter", "groq/llama-3.3-70b"));
         assert!(allows_extension_tools("openai", "gpt-5.6"));
         assert!(allows_extension_tools("moonshot", "kimi-k2.7"));
-        assert!(!keep_tool("groq", "llama-3.3", true));
-        assert!(keep_tool("groq", "llama-3.3", false));
-        assert!(is_groq_compound("groq", "groq/compound"));
+        assert!(!keep_tool("openrouter", "groq/llama-3.3", true));
+        assert!(keep_tool("openrouter", "groq/llama-3.3", false));
         assert!(is_groq_compound("openrouter", "groq/compound"));
-        assert!(is_groq_compound("groq", "compound-mini"));
-        assert!(!is_groq_compound("groq", "llama-3.3-70b-versatile"));
+        assert!(!is_groq_compound(
+            "openrouter",
+            "groq/llama-3.3-70b-versatile"
+        ));
     }
 
     #[test]
-    fn groq_keeps_core_tools_and_removes_complete_plugins() {
+    fn openrouter_groq_keeps_core_tools_and_removes_complete_plugins() {
         let tools = vec![
             serde_json::json!({"function": {"name": "read_file"}}),
             serde_json::json!({"function": {"name": "search_extension_tools"}}),
             serde_json::json!({"function": {"name": "beaver.office.documents.create"}}),
         ];
 
-        let policy = apply_with("groq", "llama-3.3-70b-versatile", tools, |name| {
-            name.starts_with("beaver.office.")
-        });
+        let policy = apply_with(
+            "openrouter",
+            "groq/llama-3.3-70b-versatile",
+            tools,
+            |name| name.starts_with("beaver.office."),
+        );
 
         assert!(policy.extensions_blocked);
         assert_eq!(policy.tools.len(), 1);
@@ -119,16 +121,16 @@ mod tests {
     }
 
     #[test]
-    fn groq_compound_receives_no_tools() {
+    fn openrouter_groq_compound_receives_no_tools() {
         let tools = vec![serde_json::json!({"function": {"name": "read_file"}})];
 
-        let policy = apply_with("groq", "groq/compound", tools, |_| false);
+        let policy = apply_with("openrouter", "groq/compound", tools, |_| false);
 
         assert!(policy.tools.is_empty());
     }
 
     #[test]
-    fn groq_restores_native_tools_hidden_by_plugin_replacements() {
+    fn openrouter_groq_restores_native_tools_hidden_by_plugin_replacements() {
         let tools = vec![serde_json::json!({
             "_beaverCoreFallback": {
                 "function": {"name": "read_file", "description": "native"}
@@ -136,7 +138,9 @@ mod tests {
             "function": {"name": "read_file", "description": "plugin"}
         })];
 
-        let policy = apply_with("groq", "llama-3.3-70b-versatile", tools, |_| true);
+        let policy = apply_with("openrouter", "groq/llama-3.3-70b-versatile", tools, |_| {
+            true
+        });
 
         assert_eq!(policy.tools.len(), 1);
         assert_eq!(policy.tools[0]["function"]["description"], "native");

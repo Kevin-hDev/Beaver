@@ -59,11 +59,10 @@ pub enum RouteId {
     MoonshotOauth,
     Zai,
     CodexOauth,
-    Groq,
 }
 
 impl RouteId {
-    pub const ALL: [Self; 14] = [
+    pub const ALL: [Self; 13] = [
         Self::Ollama,
         Self::Google,
         Self::Mistral,
@@ -77,7 +76,6 @@ impl RouteId {
         Self::MoonshotOauth,
         Self::Zai,
         Self::CodexOauth,
-        Self::Groq,
     ];
 
     pub fn from_provider_id(provider: &str) -> Option<Self> {
@@ -101,7 +99,6 @@ impl RouteId {
             Self::MoonshotOauth => "moonshot-oauth",
             Self::Zai => "zai",
             Self::CodexOauth => "codex-oauth",
-            Self::Groq => "groq",
         }
     }
 }

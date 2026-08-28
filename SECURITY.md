@@ -138,7 +138,7 @@ See the main README for the full file inventory.
 - **No code signing**: macOS builds are not signed. Gatekeeper may block the app when downloaded through a browser; use the provided `install.sh` script (which uses `curl`) or build from source.
 - **Ollama is bundled, not signed by upstream**: on Windows, "Controlled folder access" may block `ollama.exe` on first launch — click "Allow".
 - **The OS keyring is a single point of trust**: if the OS keyring is compromised, the vault master key is exposed. This is inherent to desktop secret storage.
-- **Cloud providers see your prompts**: anything sent to Groq, OpenAI, Gemini, etc. transits their servers. Use local Ollama models for sensitive content.
+- **Cloud providers see your prompts**: anything sent to OpenAI, Gemini, Mistral, etc. transits their servers. Use local Ollama models for sensitive content.
 
 ## License
 

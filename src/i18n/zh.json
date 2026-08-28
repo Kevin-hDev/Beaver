@@ -33,7 +33,6 @@
   },
   "apiKeys": {
     "providers": {
-      "groq": { "description": "自研 LPU 上的 Llama / GPT-OSS 超高速推理。", "freeTier": "提供有限制的免费套餐；访问可能取决于组织设置。" },
       "google": { "description": "Gemini 3.7 Flash — 多模态、工具调用与推理。", "freeTier": "部分模型提供免费层级，取决于账户和限制。" },
       "mistral": { "description": "法国开源权重模型 — 免费 Experiment 套餐。", "freeTier": "提供免费模式和付费套餐；可用性取决于账户。" },
       "cerebras": { "description": "晶圆级芯片上运行开源权重模型，最高 3 000 tok/s。", "freeTier": "免费层级和配额取决于项目与账户。" },
@@ -53,7 +52,7 @@
     },
     "empty": {
       "title": "暂无已配置的提供商",
-      "subtitle": "添加 API 密钥以访问远程 LLM（Groq、Gemini、Mistral…）或网络搜索服务（Brave、Exa、Firecrawl）。"
+      "subtitle": "添加 API 密钥以访问远程 LLM（OpenAI、Gemini、Mistral…）或网络搜索服务（Brave、Exa、Firecrawl）。"
     },
     "details": {
       "connected": "已连接",
@@ -325,7 +324,7 @@
       "connection": "正在重连...",
       "button": "重试"
     },
-    "groqExtensionsUnavailable": "Groq 无法使用插件。",
+    "groqExtensionsUnavailable": "通过 OpenRouter 使用 Groq 模型时无法使用插件。",
     "contextCompressed": "上下文已压缩",
     "searchBarPlaceholder": "搜索…",
     "resultCount_one": "{{count}} 条结果",

@@ -73,9 +73,9 @@ describe("api provider translations", () => {
 
   it("retrouve les providers des catalogues Rust", () => {
     const [apiKeys, forecast] = SECTIONS;
-    expect(apiKeys.ids).toContain("groq");
+    expect(apiKeys.ids).not.toContain("groq");
     expect(apiKeys.ids).toContain("firecrawl");
-    expect(apiKeys.ids.length).toBeGreaterThanOrEqual(13);
+    expect(apiKeys.ids.length).toBeGreaterThanOrEqual(12);
     expect(forecast.ids).toContain("nixtla");
     expect(forecast.ids.length).toBeGreaterThanOrEqual(10);
   });

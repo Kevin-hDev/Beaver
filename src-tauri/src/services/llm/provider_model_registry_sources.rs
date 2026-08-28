@@ -5,10 +5,6 @@ pub(super) struct EmbeddedProviderModels {
 
 pub(super) const SOURCES: &[EmbeddedProviderModels] = &[
     EmbeddedProviderModels {
-        provider_id: "groq",
-        json: include_str!("../../../resources/provider-models/groq.json"),
-    },
-    EmbeddedProviderModels {
         provider_id: "google",
         json: include_str!("../../../resources/provider-models/google.json"),
     },

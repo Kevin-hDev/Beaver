@@ -98,7 +98,7 @@ async fn apply_and_save_keeps_the_two_recent_complete_turns() {
     let mut session = crate::services::agent_local::session_store::create_full(
         "Compression recent turns",
         "model",
-        "groq",
+        "openai",
         false,
         None,
     )
@@ -149,7 +149,7 @@ async fn compression_keeps_a_checkpoint_available_for_commit() {
     let mut session = crate::services::agent_local::session_store::create_full(
         "Compression open journal",
         "model",
-        "groq",
+        "openai",
         false,
         None,
     )

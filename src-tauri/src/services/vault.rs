@@ -20,7 +20,6 @@ const VAULT_VERSION: u8 = 1;
 
 #[cfg(not(feature = "e2e"))]
 const KNOWN_PROVIDERS: &[&str] = &[
-    "groq",
     "google",
     "mistral",
     "cerebras",

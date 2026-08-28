@@ -103,14 +103,6 @@ pub fn replay_policy(target: &ReplayTarget) -> Option<ReplayPolicy> {
     if target.validate().is_err() {
         return None;
     }
-    if target.route_id == RouteId::Groq {
-        return Some(ReplayPolicy {
-            contract_id: None,
-            adapter: None,
-            requirement: ReplayRequirement::Forbidden,
-            activation: ActivationState::Disabled,
-        });
-    }
     find_policy(ACTIVE_ROUTES, target)
 }
 

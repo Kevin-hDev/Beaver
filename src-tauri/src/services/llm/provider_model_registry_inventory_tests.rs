@@ -10,7 +10,6 @@ fn ids(provider_id: &str) -> Vec<String> {
 #[test]
 fn canonical_inventory_sizes_match_the_official_catalogs() {
     for (provider, expected) in [
-        ("groq", 9),
         ("google", 14),
         ("mistral", 8),
         ("cerebras", 3),
@@ -23,6 +22,11 @@ fn canonical_inventory_sizes_match_the_official_catalogs() {
     ] {
         assert_eq!(list(provider).len(), expected, "{provider}");
     }
+}
+
+#[test]
+fn removed_groq_provider_has_no_embedded_models() {
+    assert!(list("groq").is_empty());
 }
 
 #[test]

@@ -46,11 +46,7 @@ pub(crate) async fn resolve(
                 .thinking,
         )
     };
-    let scope = if route_id == RouteId::Groq {
-        None
-    } else {
-        crate::services::api_keys::credential_scope(route_id).ok()
-    };
+    let scope = crate::services::api_keys::credential_scope(route_id).ok();
     resolve_session(
         session,
         route_id,
@@ -113,9 +109,6 @@ fn continuation_for_session(
             reasoning_mode,
         }))
     };
-    if route_id == RouteId::Groq {
-        return blocked();
-    }
     let Some(credential_scope) = credential_scope else {
         return blocked();
     };
@@ -189,9 +182,7 @@ async fn resolve_with_api_capability(
         return Err(generic_error());
     }
     let route_id = RouteId::from_provider_id(provider).ok_or_else(generic_error)?;
-    let scope = (route_id != RouteId::Groq)
-        .then(|| CredentialScope::authenticated("test-scope").map_err(|_| generic_error()))
-        .transpose()?;
+    let scope = Some(CredentialScope::authenticated("test-scope").map_err(|_| generic_error())?);
     resolve_session(session, route_id, None, Some(supports_thinking), scope)
 }
 

@@ -81,8 +81,7 @@ pub(super) fn valid_router_label(value: &str) -> bool {
 fn valid_provider(value: &str) -> bool {
     matches!(
         value,
-        "groq"
-            | "google"
+        "google"
             | "mistral"
             | "cerebras"
             | "openrouter"

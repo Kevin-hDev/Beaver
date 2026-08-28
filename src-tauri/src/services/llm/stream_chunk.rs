@@ -70,19 +70,11 @@ fn parse_usage(chunk: &Value, context: UsageContext<'_>) -> Option<RequestUsage>
     let choice_usage = (context.canonical_provider_id == "moonshot")
         .then(|| chunk.pointer("/choices/0/usage"))
         .flatten();
-    let groq_usage = (context.canonical_provider_id == "groq")
-        .then(|| chunk.pointer("/x_groq/usage"))
-        .flatten();
-    [
-        chunk.get("usage"),
-        chunk.get("usageMetadata"),
-        choice_usage,
-        groq_usage,
-    ]
-    .into_iter()
-    .flatten()
-    .filter(|value| !value.is_null())
-    .find_map(|value| RequestUsage::from_json_with_context(value, context))
+    [chunk.get("usage"), chunk.get("usageMetadata"), choice_usage]
+        .into_iter()
+        .flatten()
+        .filter(|value| !value.is_null())
+        .find_map(|value| RequestUsage::from_json_with_context(value, context))
 }
 
 fn parse_delta(delta: &Value, out: &mut Vec<ParsedChunk>) {

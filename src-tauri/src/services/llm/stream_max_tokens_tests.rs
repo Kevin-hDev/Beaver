@@ -109,7 +109,7 @@ fn unknown_model_uses_the_safe_available_fallback() {
 }
 
 #[test]
-fn groq_and_cerebras_omit_automatic_limits() {
+fn providers_can_omit_automatic_limits() {
     assert_eq!(resolved(None, Some(32_768), false, None), None);
     assert_eq!(resolved(None, Some(128_000), false, None), None);
 }

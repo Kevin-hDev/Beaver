@@ -113,7 +113,6 @@ fn openrouter_gpt_56_uses_max_completion_tokens() {
 #[test]
 fn chat_payload_respects_each_route_cache_and_usage_contract() {
     for (provider, model, usage, cache_field) in [
-        ("groq", "openai/gpt-oss-120b", true, None),
         ("google", "gemini-2.5-pro", true, None),
         ("cerebras", "gpt-oss-120b", true, None),
         ("deepseek", "deepseek-v4-flash", true, None),
@@ -199,11 +198,8 @@ fn streaming_output_limit_field_matches_model_family() {
 }
 
 #[tokio::test]
-async fn groq_and_cerebras_payloads_omit_automatic_limits() {
-    for (provider, model) in [
-        ("groq", "llama-3.3-70b-versatile"),
-        ("cerebras", "gpt-oss-120b"),
-    ] {
+async fn cerebras_payloads_omit_automatic_limits() {
+    for (provider, model) in [("cerebras", "gpt-oss-120b")] {
         let route = route::resolve(provider).unwrap();
         let resolved = super::super::stream_max_tokens::resolve(
             provider,

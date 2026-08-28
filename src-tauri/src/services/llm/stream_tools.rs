@@ -3,7 +3,7 @@
 //! **Quirks gérés** :
 //! - OpenAI / Mistral / DeepSeek / Cerebras / OpenRouter : `arguments` arrivent en fragments
 //!   JSON fragmentés. On concatène par `index`.
-//! - Groq : envoie chaque `tool_call` **complet** en un seul chunk. Même algo fonctionne.
+//! - Certains providers envoient chaque `tool_call` **complet** en un seul chunk.
 //! - Gemini OpenAI-compat : champ `index` absent — fallback via ordre d'arrivée des `id`.
 
 use serde_json::Value;

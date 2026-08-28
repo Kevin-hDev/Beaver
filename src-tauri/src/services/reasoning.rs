@@ -85,13 +85,6 @@ fn fallback_supported_modes(provider: &str, model: &str) -> &'static [&'static s
         "openrouter" if model.to_lowercase().ends_with("grok-4.5") => &["low", "medium", "high"],
         "openrouter" => &["off", "auto", "low", "medium", "high", "xhigh"],
         "google" => crate::services::reasoning_google::supported_modes(model),
-        "groq" if crate::services::llm::providers::groq::is_gpt_oss_effort(&lower(model)) => {
-            &["low", "medium", "high"]
-        }
-        "groq" if crate::services::llm::providers::groq::is_qwen_switchable(&lower(model)) => {
-            &["off", "auto"]
-        }
-        "groq" => &["auto"],
         "deepseek" => &["off", "high", "xhigh"],
         "mistral"
             if crate::services::llm::providers::mistral::is_adjustable_reasoning(&lower(model)) =>
@@ -128,10 +121,8 @@ pub fn provider_model_supports_thinking(provider: &str, model: &str) -> bool {
             let model = model.to_lowercase();
             model.starts_with("o3") || model.starts_with("o4") || model.starts_with("gpt-5")
         }
-        "deepseek" | "groq" | "google" | "openrouter" | "mistral" | "cerebras" | "xai"
-        | "moonshot" | "zai" => {
-            crate::services::llm::tool_capable::supports_thinking(provider, model)
-        }
+        "deepseek" | "google" | "openrouter" | "mistral" | "cerebras" | "xai" | "moonshot"
+        | "zai" => crate::services::llm::tool_capable::supports_thinking(provider, model),
         _ => false,
     }
 }

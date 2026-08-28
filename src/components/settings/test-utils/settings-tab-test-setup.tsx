@@ -101,7 +101,7 @@ vi.mock("@tauri-apps/api/core", async () => {
         });
       }
       if (cmd === "get_selected_forecast_model") return Promise.resolve("chronos-bolt-small");
-      if (cmd === "list_configured_providers") return Promise.resolve(["groq", "brave", "nixtla"]);
+      if (cmd === "list_configured_providers") return Promise.resolve(["openai", "brave", "nixtla"]);
       if (cmd === "list_oauth_provider_statuses") {
         const xaiConnected = globalThis.localStorage?.getItem("test:xai-connected") === "true";
         return Promise.resolve([
@@ -116,7 +116,7 @@ vi.mock("@tauri-apps/api/core", async () => {
       }
       if (cmd === "start_oauth_provider_login" || cmd === "disconnect_oauth_provider" || cmd === "cancel_oauth_provider_login") return Promise.resolve();
       if (cmd === "list_llm_providers_catalog") {
-        return Promise.resolve([data.provider("groq", "Groq", "llm"), data.provider("mistral", "Mistral", "llm")]);
+        return Promise.resolve([data.provider("openai", "OpenAI", "llm"), data.provider("mistral", "Mistral", "llm")]);
       }
       if (cmd === "list_search_providers_catalog") return Promise.resolve([data.provider("brave", "Brave", "search")]);
       if (cmd === "list_forecast_providers_catalog") return Promise.resolve([data.provider("nixtla", "Nixtla", "forecast")]);

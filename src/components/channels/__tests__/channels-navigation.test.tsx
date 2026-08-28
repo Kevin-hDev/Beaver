@@ -15,7 +15,7 @@ vi.mock("react-i18next", () => ({
 
 const config = {
   enabled: true,
-  default_provider: "groq",
+  default_provider: "openai",
   default_model: "llama",
   channels: {
     telegram: [{
@@ -23,7 +23,7 @@ const config = {
       enabled: true,
       allowlist: [],
       require_mention: true,
-      provider: "groq",
+      provider: "openai",
       model: "llama",
     }],
   },

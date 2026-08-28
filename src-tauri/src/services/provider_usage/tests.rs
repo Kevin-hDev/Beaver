@@ -244,7 +244,7 @@ fn moonshot_calculates_misses_only_from_an_explicit_valid_cache_count() {
 
 #[test]
 fn standard_chat_cache_paths_are_provider_aware_and_bounded() {
-    for provider in ["groq", "cerebras", "zai"] {
+    for provider in ["openai", "cerebras", "zai"] {
         let usage = RequestUsage::from_json_with_context(
             &json!({
                 "prompt_tokens": 128,
@@ -263,7 +263,7 @@ fn standard_chat_cache_paths_are_provider_aware_and_bounded() {
             "prompt_tokens": 128,
             "prompt_tokens_details": { "cached_tokens": 0 }
         }),
-        UsageContext::chat("groq", "openai/gpt-oss-120b"),
+        UsageContext::chat("openai", "gpt-5.6-luna"),
     )
     .unwrap();
     assert_eq!(zero.cached_input_tokens, Some(0));
@@ -271,7 +271,7 @@ fn standard_chat_cache_paths_are_provider_aware_and_bounded() {
 
     let absent = RequestUsage::from_json_with_context(
         &json!({ "prompt_tokens": 128 }),
-        UsageContext::chat("groq", "openai/gpt-oss-120b"),
+        UsageContext::chat("openai", "gpt-5.6-luna"),
     )
     .unwrap();
     assert_eq!(absent.cached_input_tokens, None);
@@ -283,7 +283,7 @@ fn standard_chat_cache_paths_are_provider_aware_and_bounded() {
                 "prompt_tokens": 128,
                 "prompt_tokens_details": { "cached_tokens": cached }
             }),
-            UsageContext::chat("groq", "openai/gpt-oss-120b"),
+            UsageContext::chat("openai", "gpt-5.6-luna"),
         )
         .unwrap();
         assert_eq!(usage.cached_input_tokens, None);
