@@ -8,8 +8,8 @@ import { pathToFileURL } from "node:url";
 import { hostDirectory, root } from "./office-test-helpers.mjs";
 
 const expectedDependencies = {
-  "@napi-rs/canvas": "1.0.2",
-  "@cantoo/pdf-lib": "2.7.4",
+  "@napi-rs/canvas": "1.0.7",
+  "@cantoo/pdf-lib": "2.9.1",
   "@xlsx/xlsx-populate": "0.2.0",
   docx: "9.7.1",
   fflate: "0.8.3",
@@ -87,7 +87,7 @@ test("format libraries are isolated behind Beaver adapters", async () => {
   }
 });
 
-test("the PDF fork confines crypto-js imports to its encryption module", async () => {
+test("the PDF fork does not restore the discontinued crypto-js dependency", async () => {
   const sourceRoot = join(
     hostDirectory,
     "node_modules/@cantoo/pdf-lib/src",
@@ -97,10 +97,7 @@ test("the PDF fork confines crypto-js imports to its encryption module", async (
   for (const file of files) {
     if ((await readFile(file, "utf8")).includes("crypto-js")) imports.push(file);
   }
-  assert.deepEqual(
-    imports.map((file) => relative(sourceRoot, file)),
-    [join("core", "security", "PDFSecurity.ts")],
-  );
+  assert.deepEqual(imports, []);
 });
 
 test("bundled Unicode fonts match their pinned upstream bytes", async () => {
