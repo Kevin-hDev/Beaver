@@ -104,8 +104,8 @@ umya-spreadsheet = "3"
 # Image metadata
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp"] }
 
-# Base64
-base64 = "0.22"
+# Base64 — Beaver uses the scalar engine; do not compile the optional unsafe SIMD backend.
+base64 = { version = "0.23", default-features = false, features = ["std"] }
 
 # Keyring (1 seule entrée master key)
 keyring = { version = "3.6", features = ["apple-native", "windows-native", "sync-secret-service"] }
