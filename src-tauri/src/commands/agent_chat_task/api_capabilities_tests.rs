@@ -1,12 +1,14 @@
-use super::{capability, resolve};
+use super::resolve;
 use crate::commands::agent_chat_task::StreamCapabilityHints;
 use crate::services::llm::route;
 
-#[test]
-fn local_false_is_authoritative() {
-    assert!(!capability(true, false, true, true));
-    assert!(capability(true, true, false, false));
-    assert!(capability(false, false, true, false));
+#[tokio::test]
+async fn embedded_false_is_authoritative_over_the_legacy_name() {
+    let capabilities = resolve("openai", "o3-mini", &Default::default()).await;
+
+    assert!(capabilities.tools);
+    assert!(capabilities.thinking);
+    assert!(!capabilities.vision);
 }
 
 #[tokio::test]

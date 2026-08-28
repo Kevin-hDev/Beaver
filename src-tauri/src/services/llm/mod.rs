@@ -23,6 +23,7 @@ pub mod fast_mode;
 mod kimi_models;
 #[cfg(test)]
 mod kimi_models_tests;
+mod legacy_capability_fallback;
 pub mod litellm_catalog;
 mod litellm_catalog_lookup;
 mod litellm_catalog_refresh;
@@ -42,6 +43,7 @@ pub(crate) mod prompt_cache_policy;
 mod prompt_cache_policy_tests;
 pub(crate) mod provider_diagnostics;
 pub mod provider_error;
+mod provider_model_capabilities;
 pub(crate) mod provider_model_lookup;
 pub(crate) mod provider_model_registry;
 mod provider_model_registry_sources;

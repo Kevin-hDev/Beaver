@@ -47,8 +47,8 @@ async fn aliases_keep_their_canonical_configuration() {
         limits("xai", "grok-4.20-0309-reasoning").await
     );
     assert_eq!(
-        capabilities("mistral", "mistral-small-latest").await,
-        capabilities("mistral", "mistral-small-2603").await
+        local_capabilities("mistral", "mistral-small-latest"),
+        local_capabilities("mistral", "mistral-small-2603")
     );
 }
 
@@ -63,7 +63,7 @@ async fn openrouter_inherits_beavers_upstream_model_configuration() {
         })
     );
     assert_eq!(
-        capabilities("openrouter", "google/gemini-3.6-flash").await,
+        local_capabilities("openrouter", "google/gemini-3.6-flash"),
         Some(ModelCapabilities {
             supports_tools: true,
             supports_vision: true,
@@ -96,4 +96,27 @@ async fn kimi_k3_keeps_its_documented_default_separate_from_its_maximum() {
             default_output_tokens: Some(131_072),
         })
     );
+}
+
+#[test]
+fn capability_resolution_reports_its_provenance() {
+    let embedded = resolve_local_or_legacy("openai", "gpt-5.6-luna").unwrap();
+    assert_eq!(embedded.provenance, CapabilityProvenance::EmbeddedRegistry);
+    assert!(embedded.supports_tools);
+    assert_eq!(embedded.reasoning_modes.len(), 6);
+
+    let codex = resolve_local_or_legacy("codex-oauth", "gpt-5.6-luna").unwrap();
+    assert_eq!(codex.provenance, CapabilityProvenance::ValidatedRuntime);
+    assert!(codex.supports_tools);
+
+    let before = legacy_fallback_count();
+    let fallback = resolve_local_or_legacy("google", "gemini-unregistered-pro").unwrap();
+    assert_eq!(
+        fallback.provenance,
+        CapabilityProvenance::LegacyNameFallback
+    );
+    assert!(fallback.supports_tools);
+    assert_eq!(legacy_fallback_count(), before + 1);
+
+    assert!(resolve_local_or_legacy("unknown", "model").is_none());
 }

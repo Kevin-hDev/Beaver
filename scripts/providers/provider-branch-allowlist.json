@@ -13,6 +13,7 @@
   { "path": "src-tauri/src/services/compress/context_resolve.rs", "owner": "route_profile", "reason": "Résolution de contexte à dériver de la route.", "max_decisions": 1, "remove_after_task": "task-3" },
   { "path": "src-tauri/src/services/compress/token_estimate.rs", "owner": "compression", "reason": "Décisions de comptage réservées au chantier compression séparé.", "max_decisions": 0, "remove_after_task": "chantier-3-compression" },
   { "path": "src-tauri/src/services/llm/litellm_catalog_lookup.rs", "owner": "model_catalog", "reason": "Normalisation propre aux catalogues externes.", "max_decisions": 3 },
+  { "path": "src-tauri/src/services/llm/legacy_capability_fallback.rs", "owner": "capability_resolver", "reason": "Quarantaine mesurée du repli historique avant suppression dans cette tâche.", "max_decisions": 9, "remove_after_task": "task-6" },
   { "path": "src-tauri/src/services/llm/model_metadata.rs", "owner": "capability_resolver", "reason": "Métadonnées à migrer vers la résolution de capacités.", "max_decisions": 2, "remove_after_task": "task-6" },
   { "path": "src-tauri/src/services/llm/openai_compat_models.rs", "owner": "model_catalog", "reason": "Adaptation du catalogue OpenAI-compatible.", "max_decisions": 2 },
   { "path": "src-tauri/src/services/llm/openai_responses_reasoning.rs", "owner": "openai_responses_client", "reason": "Interne légitime du client Responses.", "max_decisions": 1 },

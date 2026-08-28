@@ -1,5 +1,12 @@
 use super::provider_model_registry::{self, ProviderModelConfig};
 
+#[cfg(test)]
+pub use super::provider_model_capabilities::{legacy_fallback_count, CapabilityProvenance};
+pub use super::provider_model_capabilities::{
+    resolve, resolve_local_or_legacy, resolve_reasoning_modes, resolve_remote_list_defaults,
+    ResolvedModelCapabilities,
+};
+
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct ModelCapabilities {
     pub supports_tools: bool,
@@ -18,19 +25,6 @@ pub struct ModelLimits {
 pub struct ModelReasoning {
     pub modes: Vec<String>,
     pub default_mode: Option<String>,
-}
-
-pub async fn capabilities(provider_id: &str, model_id: &str) -> Option<ModelCapabilities> {
-    if let Some(capabilities) = local_capabilities(provider_id, model_id) {
-        return Some(capabilities);
-    }
-    super::litellm_catalog_lookup::capabilities(provider_id, model_id)
-        .await
-        .map(|capabilities| ModelCapabilities {
-            supports_tools: capabilities.supports_tools,
-            supports_vision: capabilities.supports_vision,
-            supports_thinking: capabilities.supports_thinking,
-        })
 }
 
 pub async fn limits(provider_id: &str, model_id: &str) -> Option<ModelLimits> {
@@ -90,11 +84,11 @@ pub fn local_capabilities(provider_id: &str, model_id: &str) -> Option<ModelCapa
     found.then_some(result)
 }
 
-fn local_entry(provider_id: &str, model_id: &str) -> Option<ProviderModelConfig> {
+pub(super) fn local_entry(provider_id: &str, model_id: &str) -> Option<ProviderModelConfig> {
     direct_entry(provider_id, model_id).or_else(|| upstream_entry(provider_id, model_id))
 }
 
-fn direct_entry(provider_id: &str, model_id: &str) -> Option<ProviderModelConfig> {
+pub(super) fn direct_entry(provider_id: &str, model_id: &str) -> Option<ProviderModelConfig> {
     provider_model_registry::lookup(provider_id, model_id).or_else(|| {
         let (owner, stripped) = model_id.split_once('/')?;
         (canonical_owner(owner) == provider_id)

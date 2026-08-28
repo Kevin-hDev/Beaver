@@ -1,14 +1,13 @@
-use super::{provider_model_lookup, route, tool_capable};
+use super::{provider_model_lookup, route};
 use crate::services::reasoning;
 
 fn resolved_capabilities(provider: &str, model: &str) -> provider_model_lookup::ModelCapabilities {
-    provider_model_lookup::local_capabilities(provider, model).unwrap_or(
-        provider_model_lookup::ModelCapabilities {
-            supports_tools: tool_capable::supports_tools(provider, model),
-            supports_vision: tool_capable::supports_vision(provider, model),
-            supports_thinking: tool_capable::supports_thinking(provider, model),
-        },
-    )
+    let resolved = provider_model_lookup::resolve_local_or_legacy(provider, model).unwrap();
+    provider_model_lookup::ModelCapabilities {
+        supports_tools: resolved.supports_tools,
+        supports_vision: resolved.supports_vision,
+        supports_thinking: resolved.supports_thinking,
+    }
 }
 
 struct ExpectedCapabilities {
