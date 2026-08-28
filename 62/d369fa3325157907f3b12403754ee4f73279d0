@@ -1,0 +1,87 @@
+# Handoff reviewer — retrait Groq et refactor des transports providers
+
+Date de clôture : 2026-08-28
+Branche : codex/provider-transport-refactor
+Base auditée : 3277fad80fbf76564d1798c4027a454063abc83a
+Commit final : 62d369fa3325157907f3b12403754ee4f73279d0
+Plage de comparaison : 3277fad80fbf76564d1798c4027a454063abc83a..62d369fa3325157907f3b12403754ee4f73279d0
+Plage inclusive : e01a56c1749a2c6d835636aba40db7db88e6eee0^..62d369fa3325157907f3b12403754ee4f73279d0
+Volume : 23 commits, 220 fichiers, 4 947 insertions, 2 840 suppressions.
+
+## Objectif livré
+
+Retirer la route Groq directe, puis remplacer les décisions provider dispersées par un profil de route fermé et typé, sans activer les providers candidats. Le résultat doit conserver les capacités existantes, le rejeu natif du raisonnement, les outils, les images, les métriques, la compression et les chemins de fond.
+
+Verdict : GO. Les treize conditions d’arrêt de la SPEC sont vraies sur le commit final.
+
+## Décisions structurantes
+
+1. Groq direct est retiré avant le refactor dans e01a56c1. La règle `openrouter + groq/...` reste une politique de famille amont OpenRouter, testée et distincte d’une route Groq.
+2. Les treize routes actives construisent un `RouteProfile` fermé. Le profil est l’autorité pour le transport, l’authentification, les endpoints, les métriques, les usages interactif/silencieux/planifié, les outils, les images, le cache, les paramètres, les limites et les politiques d’erreur.
+3. Les clients et sous-protocoles restent privés. Les appelants sélectionnent uniquement une route ou une famille de fil déclarée par le profil.
+4. Rust reste propriétaire de l’historique canonique. `reasoning_continuity` reste l’unique autorité du rejeu opaque et du placement des résultats d’outils ; le frontend ne reconstruit pas les enveloppes provider.
+5. Aucune capacité tools/vision/thinking n’est déduite du nom du modèle. Les capacités viennent du registre embarqué, d’un catalogue runtime validé ou d’une source explicite. Un modèle inconnu n’est pas silencieusement limité au chat simple.
+6. Les limites du registre embarqué et du registre runtime sont séparées. Le registre embarqué ne perd plus ses capacités au-delà de l’ancienne borne commune ; le runtime reste borné avec éviction testée.
+7. Le frontend reçoit les métadonnées nécessaires depuis Rust et ne décide plus du transport, des modes de raisonnement, des liens d’usage ou du calcul de contexte à partir de `provider_id`.
+8. Le garde `scripts/providers/check-provider-routing-boundaries.mjs` est un cliquet, pas une preuve de complétude. Il refuse aussi bien la croissance que la diminution non déclarée. L’allowlist finale contient 36 fichiers, dont 35 exceptions positives avec propriétaire, motif et compte exact, plus `compress/token_estimate.rs` attribué au chantier 3 avec budget nul.
+9. Aucun candidat n’est activé : Anthropic, NVIDIA NIM, Ollama Cloud, Xiaomi, Qwen, Hugging Face et Meta/Llama restent documentaires.
+10. Le dernier découpage déplace uniquement la construction des requêtes Codex vers `codex_client/request_build.rs` afin de respecter la borne de 230 lignes ; aucun comportement de transport n’est modifié.
+
+## Carte de lecture recommandée
+
+- Profils et politiques : `src-tauri/src/services/llm/route_profile/`.
+- Dispatch unifié : `src-tauri/src/services/llm/stream_http_payload.rs`, `stream_silent.rs` et les dispatchers Agent Local.
+- Rejeu natif : `src-tauri/src/services/reasoning_continuity/` et `src-tauri/src/services/llm/reasoning_wire/`.
+- Catalogues et capacités : `provider_model_registry*`, `runtime_models.rs` et les sources JSON embarquées.
+- Frontières d’architecture : `scripts/providers/provider-branch-allowlist.json` et `scripts/providers/check-provider-routing-boundaries.mjs`.
+- Métadonnées UI : types/provider usage/OAuth côté Rust, puis hooks et composants providers côté TypeScript.
+- Construction Codex : `src-tauri/src/services/codex_client/request.rs` et `request_build.rs`.
+
+## Points de revue prioritaires
+
+- Vérifier que chaque route active a exactement un profil complet et aucun repli générique silencieux.
+- Vérifier le placement provider-spécifique des résultats d’outils, notamment le contrat préparant Anthropic.
+- Vérifier que xAI OAuth échoue avant création du payload pour les usages de fond interdits.
+- Vérifier les bornes des fragments de flux, collections externes, reprises HTTP et registres runtime.
+- Vérifier que les cinq décisions TypeScript historiques sont devenues des métadonnées backend.
+- Vérifier que les exceptions du cliquet sont des frontières légitimes et que leurs comptes exacts ne masquent aucune nouvelle dispersion.
+- Vérifier que les candidats documentés n’apparaissent dans aucune route, clé API, entrée d’onboarding ou source de catalogue active.
+
+## Validations exécutées sur le commit final
+
+- `npm run lint:provider-boundaries` : vert, 36 fichiers autorisés.
+- `npm run lint` : vert.
+- `npx tsc --noEmit` : vert.
+- `NO_COLOR=1 npm test` : vert ; 483 fichiers Vitest et 2 614 tests, scripts build 56/56, scripts CI 16/16, CEF 45 passés et 1 Windows ignoré, E2E runner 70/70, extensions host 53/53, validation reasoning 7/7.
+- `npm run build` : vert ; avertissement attendu de taille de chunks uniquement.
+- `cargo fmt --all -- --check` : vert.
+- `cargo check` : vert.
+- `cargo clippy --all-targets -- -D warnings` : vert.
+- `cargo test` : vert ; 4 225 passés, 0 échec, 7 ignorés, plus le test d’intégration passé.
+- Recherche `tool_capable|LegacyNameFallback` : aucune occurrence.
+- Garde de taille : aucun fichier de production modifié au-dessus de 230 lignes.
+- Graphify : graphe AST actualisé après les changements de code.
+
+## Validation réelle dans Beaver
+
+Une seule commande `npm run tauri dev` a été conservée, sans redémarrage manuel ni nouvelle validation du trousseau. Tauri a recompilé/rechargé automatiquement le backend après le dernier découpage Rust.
+
+En thèmes sombre et clair : listes API/OAuth, détail OAuth, limites et consommation provider, sélecteur de modèles, modes de raisonnement et progression de contexte ont été observés. Le thème sombre initial a été restauré.
+
+Avec `codex-oauth` et `gpt-5.6-luna`, trois petites requêtes ont validé une continuité textuelle sur deux tours puis un appel terminal réel retournant `OK`. Aucun appel Moonshot OAuth n’a été lancé. Quatre réponses provider HTTP 500 transitoires sont apparues dans le journal avant les réussites finales ; les reprises sont restées bornées et aucune requête utilisateur n’a terminé en échec. Le warning `searxng_runtime_unavailable` est distinct du transport LLM.
+
+Le réglage `preserve_reasoning` était désactivé dans cette session : le smoke test manuel ne prouve donc pas le rejeu opaque. La preuve d’acceptation de ce rejeu est portée par R02/R03 et les fixtures déterministes, toutes vertes.
+
+## Documents locaux de référence
+
+Les documents sont ignorés par Git et vivent dans le dépôt principal, pas dans le worktree :
+
+- `/Users/kevinh/Projects/Beaver/docs/providers/refactor/SPEC.md`
+- `/Users/kevinh/Projects/Beaver/docs/providers/refactor/implementation-baseline.md`
+- `/Users/kevinh/Projects/Beaver/docs/providers/refactor/capability-snapshot.json`
+- `/Users/kevinh/Projects/Beaver/docs/providers/refactor/capability-snapshot-final.json`
+- `/Users/kevinh/Projects/Beaver/docs/providers/refactor/capability-gaps.md`
+
+## État de livraison
+
+Le worktree de la branche est propre. La branche et la note ne sont pas poussées et la branche n’est pas fusionnée dans `main` au moment de cette note.
