@@ -5,9 +5,9 @@ import { PDFDocument } from "@cantoo/pdf-lib";
 import { PDF_FONT_SPECS } from "../../src-tauri/resources/extension-host/builtin-plugins/common/fonts/catalog.mjs";
 import { fontkit } from "../../src-tauri/resources/extension-host/builtin-plugins/common/formats/pdf.mjs";
 
-test("pdf-lib still consumes Beaver's fontkit encodeStream adapter", async () => {
+test("pdf-lib consumes fontkit 2's native subset encoder", async () => {
   const bytes = await readFile(PDF_FONT_SPECS.base.url);
-  let encodeStreamCalls = 0;
+  let encodeCalls = 0;
   const monitoredFontkit = {
     ...fontkit,
     create(...arguments_) {
@@ -15,10 +15,10 @@ test("pdf-lib still consumes Beaver's fontkit encodeStream adapter", async () =>
       const createSubset = font.createSubset.bind(font);
       font.createSubset = () => {
         const subset = createSubset();
-        const encodeStream = subset.encodeStream.bind(subset);
-        subset.encodeStream = () => {
-          encodeStreamCalls += 1;
-          return encodeStream();
+        const encode = subset.encode.bind(subset);
+        subset.encode = () => {
+          encodeCalls += 1;
+          return encode();
         };
         return subset;
       };
@@ -32,7 +32,7 @@ test("pdf-lib still consumes Beaver's fontkit encodeStream adapter", async () =>
     document.addPage().drawText("Beaver", { font: embedded });
     const output = await document.save();
     assert.ok(output.length > 0);
-    assert.ok(encodeStreamCalls > 0);
+    assert.ok(encodeCalls > 0);
     output.fill(0);
   } finally {
     bytes.fill(0);
