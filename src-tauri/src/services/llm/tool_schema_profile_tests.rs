@@ -12,7 +12,7 @@ fn tool(name: &str, parameters: Value) -> Value {
 }
 
 #[test]
-fn sets_explicit_non_strict_mode_where_supported() {
+fn tool_schema_profile_sets_explicit_non_strict_mode_where_supported() {
     let tools = vec![tool(
         "read_file",
         json!({"type": "object", "properties": {}}),

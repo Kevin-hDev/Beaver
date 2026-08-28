@@ -45,6 +45,8 @@ pub(crate) mod reasoning_wire;
 pub(crate) mod request_purpose;
 mod retry;
 pub mod route;
+#[cfg(test)]
+mod route_behavior_baseline_tests;
 pub mod runtime_models;
 pub mod stream;
 mod stream_chunk;
@@ -60,6 +62,8 @@ mod stream_http_error;
 mod stream_http_payload;
 #[cfg(test)]
 pub(crate) use stream_http_payload::build_chat_payload as build_chat_payload_for_test;
+#[cfg(test)]
+mod legacy_capability_matrix_tests;
 mod stream_http_send;
 #[cfg(test)]
 mod stream_http_send_tests;

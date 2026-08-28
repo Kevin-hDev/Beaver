@@ -32,3 +32,16 @@ fn builds_data_url_from_base64() {
         "data:image/png;base64,iVBORw0KGgo="
     );
 }
+
+#[test]
+fn vision_wire_formats_stay_distinct() {
+    let message = user(vec!["iVBORw0KGgo="]);
+    let openai = crate::services::llm::stream_convert::message_to_openai(&message, "openai");
+    let mistral = crate::services::llm::stream_convert::message_to_openai(&message, "mistral");
+
+    assert_eq!(
+        openai["content"][1]["image_url"]["url"],
+        data_url("iVBORw0KGgo=")
+    );
+    assert_eq!(mistral["content"][1]["image_url"], data_url("iVBORw0KGgo="));
+}

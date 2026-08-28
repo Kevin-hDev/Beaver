@@ -14,7 +14,7 @@ fn convert_extracts_system_as_instructions() {
 }
 
 #[test]
-fn convert_user_images_to_responses_parts() {
+fn vision_converts_user_images_to_responses_parts() {
     let msgs = vec![
         ChatMessage::user("Decris cette image".into()).with_images(vec!["iVBORw0KGgo=".into()])
     ];
