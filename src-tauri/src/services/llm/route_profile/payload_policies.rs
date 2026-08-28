@@ -9,6 +9,7 @@ pub(super) fn resolve(profile: &RouteProfile, model: &str) -> ResolvedPayloadPol
             null_empty_tool_assistant: profile.policies.parameters != ParameterPolicy::DeepSeek,
             preserve_all_extra_content: profile.client == ClientSelector::Codex,
         },
+        parameters: profile.policies.parameters,
         emit_tool_choice: profile.policies.tool_choice == ToolChoicePolicy::Default,
         tool_stream: profile.policies.parameters == ParameterPolicy::Zai,
         upstream_routing: profile.policies.schema == super::SchemaPolicy::Upstream,

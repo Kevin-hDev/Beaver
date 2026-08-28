@@ -3,7 +3,6 @@ use std::time::Duration;
 pub(crate) const LLM_IDLE_TIMEOUT_SECS: u64 = 180;
 pub(crate) const LLM_REQUEST_TIMEOUT_SECS: u64 = 180;
 const LLM_CONNECT_TIMEOUT_SECS: u64 = 10;
-const DEEPSEEK_WAIT_TIMEOUT_SECS: u64 = 600;
 
 pub(crate) fn idle_timeout_for(provider_id: &str) -> Duration {
     duration_for(provider_id, LLM_IDLE_TIMEOUT_SECS)
@@ -18,11 +17,9 @@ pub(crate) const fn connect_timeout() -> Duration {
 }
 
 fn duration_for(provider_id: &str, default_seconds: u64) -> Duration {
-    Duration::from_secs(if provider_id == "deepseek" {
-        DEEPSEEK_WAIT_TIMEOUT_SECS
-    } else {
-        default_seconds
-    })
+    Duration::from_secs(
+        crate::services::llm::route_profile::request_timeout_seconds(provider_id, default_seconds),
+    )
 }
 
 #[cfg(test)]

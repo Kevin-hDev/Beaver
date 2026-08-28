@@ -28,16 +28,12 @@ pub async fn record_api_payload(
         &crate::services::reasoning_continuity::contract::ContinuationTarget,
     >,
 ) {
-    let (kind, stats) = if matches!(provider_id, "openai" | "codex-oauth" | "xai" | "xai-oauth") {
-        (
-            "responses",
-            responses_payload_stats(messages, continuation_target),
-        )
+    let kind = crate::services::llm::route_profile::diagnostic_payload_kind(provider_id)
+        .unwrap_or("chat_completions");
+    let stats = if kind == "responses" {
+        responses_payload_stats(messages, continuation_target)
     } else {
-        (
-            "chat_completions",
-            chat_payload_stats(provider_id, messages, continuation_target),
-        )
+        chat_payload_stats(provider_id, messages, continuation_target)
     };
     record_payload(session_id, request_id, turn, provider_id, kind, stats).await;
 }

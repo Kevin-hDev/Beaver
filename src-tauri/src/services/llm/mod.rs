@@ -122,3 +122,26 @@ pub(crate) fn sanitize_log_body(body: &str) -> String {
 pub(crate) fn context_usage_includes_reasoning(provider_id: &str) -> Option<bool> {
     route_profile::find(provider_id).map(|profile| profile.context_usage_includes_reasoning())
 }
+
+pub(crate) async fn model_context_length(provider_id: &str, model_id: &str) -> Option<u64> {
+    let profile = route_profile::find(provider_id)?;
+    if profile.client == route_profile::ClientSelector::Codex {
+        let context = crate::services::codex_client::model_catalog::context_length(model_id).await;
+        return (context > 0).then_some(context);
+    }
+    let canonical = profile.canonical_provider.as_str();
+    if let Some(context) = provider_model_lookup::local_limits(canonical, model_id)
+        .and_then(|limits| limits.context_window)
+    {
+        return Some(u64::from(context));
+    }
+    if let Some(context) =
+        runtime_models::lookup(canonical, model_id).and_then(|model| model.context_length)
+    {
+        return Some(u64::from(context));
+    }
+    provider_model_lookup::limits(canonical, model_id)
+        .await
+        .and_then(|limits| limits.context_window)
+        .map(u64::from)
+}

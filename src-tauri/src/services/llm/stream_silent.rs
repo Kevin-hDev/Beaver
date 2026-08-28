@@ -102,8 +102,23 @@ pub async fn collect_chat_silent_for_compression(
                 Err(error) => Err(error.to_string()),
             }
         }
-        super::stream_dispatch::ClientKind::XaiOauth(_)
-        | super::stream_dispatch::ClientKind::OllamaLocal => {
+        super::stream_dispatch::ClientKind::OllamaLocal => {
+            let compression = crate::services::agent_local::ollama_collect::collect_chat_with_timeout_and_limit_global(
+                model,
+                messages.to_vec(),
+                request_timeout,
+                Some(max_tokens),
+            );
+            tokio::select! {
+                _ = cancel.cancelled() => Err("Annulé".to_string()),
+                result = compression => result.map(|(content, eval_count)| StreamResult {
+                    content,
+                    eval_count: Some(eval_count),
+                    ..StreamResult::default()
+                }),
+            }
+        }
+        super::stream_dispatch::ClientKind::XaiOauth(_) => {
             Err("provider_configuration_invalid".to_string())
         }
     };

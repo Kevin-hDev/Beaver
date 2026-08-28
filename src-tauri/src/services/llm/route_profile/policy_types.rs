@@ -40,12 +40,13 @@ pub(in crate::services::llm) enum ToolChoicePolicy {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(in crate::services::llm) enum ParameterPolicy {
+pub(crate) enum ParameterPolicy {
     Default,
     Responses,
     Google,
     Mistral,
     Cerebras,
+    OpenRouter,
     DeepSeek,
     Moonshot,
     Xai,
@@ -125,6 +126,7 @@ pub(in crate::services::llm) struct RoutePolicies {
     pub auth_probe: AuthProbePolicy,
     pub tool_limits: ToolLimitPolicy,
     pub include_usage: bool,
+    pub gemma4_thinking_guard: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -138,6 +140,7 @@ pub(crate) struct ResolvedCachePolicy<'a> {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct ResolvedPayloadPolicy {
     pub message: super::types::MessageWirePolicy,
+    pub parameters: ParameterPolicy,
     pub emit_tool_choice: bool,
     pub tool_stream: bool,
     pub upstream_routing: bool,

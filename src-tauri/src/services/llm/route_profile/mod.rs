@@ -14,9 +14,9 @@ mod types;
 pub(super) use catalog::{all, find_id};
 pub(super) use catalog::{find, public_api};
 pub(crate) use policy_types::{
-    AuthProbePolicy, CachePolicy, ErrorPolicy, ExtensionToolPolicy, ResolvedCachePolicy,
-    ResolvedPayloadPolicy, ResolvedToolLimitPolicy, ResolvedToolPolicy, SchemaPolicy,
-    ToolLimitPolicy, UpstreamToolFamily,
+    AuthProbePolicy, CachePolicy, ErrorPolicy, ExtensionToolPolicy, ParameterPolicy,
+    ResolvedCachePolicy, ResolvedPayloadPolicy, ResolvedToolLimitPolicy, ResolvedToolPolicy,
+    SchemaPolicy, ToolLimitPolicy, UpstreamToolFamily,
 };
 pub(super) use types::*;
 pub(crate) use types::{ApiKeyHeader, ImageFormat, MessageWirePolicy, ToolResultPlacement};
@@ -46,6 +46,45 @@ pub(crate) fn tool_limit_policy(provider_id: &str, model: &str) -> Option<Resolv
 
 pub(crate) fn error_policy(provider_id: &str) -> Option<ErrorPolicy> {
     Some(find(provider_id)?.policies.errors)
+}
+
+pub(crate) fn is_local(provider_id: &str) -> bool {
+    find(provider_id).is_some_and(|profile| profile.client == ClientSelector::OllamaLocal)
+}
+
+pub(crate) fn diagnostic_payload_kind(provider_id: &str) -> Option<&'static str> {
+    let family = find(provider_id)?.wire.family;
+    Some(match family {
+        WireFamily::OpenAiResponses => "responses",
+        WireFamily::OpenAiChatCompletions
+        | WireFamily::OllamaNative
+        | WireFamily::AnthropicMessages => "chat_completions",
+    })
+}
+
+pub(crate) fn request_timeout_seconds(provider_id: &str, fallback: u64) -> u64 {
+    find(provider_id).map_or(fallback, |profile| {
+        if profile.id == crate::services::reasoning_continuity::contract::RouteId::DeepSeek {
+            600
+        } else {
+            fallback
+        }
+    })
+}
+
+pub(crate) fn requires_gemma4_thinking_guard(provider_id: &str, model: &str) -> bool {
+    let Some(profile) = find(provider_id) else {
+        return false;
+    };
+    if !profile.policies.gemma4_thinking_guard {
+        return false;
+    }
+    let compact: String = model
+        .chars()
+        .filter(|ch| ch.is_ascii_alphanumeric())
+        .flat_map(|ch| ch.to_lowercase())
+        .collect();
+    compact.contains("gemma4")
 }
 
 #[cfg(test)]

@@ -39,7 +39,13 @@ pub(super) fn validate_session(
     });
     // DeepSeek rejoue uniquement dans la chaîne d'outil : un seul tour complet
     // prouve capture, rejeu réseau et persistance sans inventer un rejeu utilisateur.
-    let minimum_turns = if session.provider == "deepseek" { 1 } else { 2 };
+    let tool_only_contract =
+        crate::services::reasoning_continuity::contract::RouteId::from_provider_id(
+            &session.provider,
+        )
+        .and_then(crate::services::reasoning_continuity::registry::route_contract)
+            == Some(crate::services::reasoning_continuity::contract::ContractId::DeepSeekChatV1);
+    let minimum_turns = if tool_only_contract { 1 } else { 2 };
     (users >= minimum_turns
         && session.diagnostic_runs.len() >= minimum_turns
         && has_tool

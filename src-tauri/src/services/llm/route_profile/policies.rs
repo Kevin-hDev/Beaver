@@ -73,6 +73,7 @@ const fn policy(
         auth_probe,
         tool_limits,
         include_usage: false,
+        gemma4_thinking_guard: false,
     }
 }
 
@@ -86,6 +87,7 @@ pub(super) const OPENAI_CHAT_DEFAULT: RoutePolicies = policy(
 );
 pub(super) const GOOGLE: RoutePolicies = RoutePolicies {
     include_usage: true,
+    gemma4_thinking_guard: true,
     ..policy(
         SchemaPolicy::Google,
         CachePolicy::Google,
@@ -108,14 +110,17 @@ pub(super) const CEREBRAS: RoutePolicies = RoutePolicies {
     include_usage: true,
     ..OPENAI_CHAT_DEFAULT
 };
-pub(super) const OPENROUTER: RoutePolicies = policy(
-    SchemaPolicy::Upstream,
-    CachePolicy::OpenRouter,
-    ParameterPolicy::Default,
-    ErrorPolicy::OpenAiCompatible,
-    AuthProbePolicy::ModelsGet,
-    ToolLimitPolicy::OpenRouterUpstream,
-);
+pub(super) const OPENROUTER: RoutePolicies = RoutePolicies {
+    gemma4_thinking_guard: true,
+    ..policy(
+        SchemaPolicy::Upstream,
+        CachePolicy::OpenRouter,
+        ParameterPolicy::OpenRouter,
+        ErrorPolicy::OpenAiCompatible,
+        AuthProbePolicy::ModelsGet,
+        ToolLimitPolicy::OpenRouterUpstream,
+    )
+};
 pub(super) const OPENAI_RESPONSES_PUBLIC: RoutePolicies = RoutePolicies {
     include_usage: true,
     ..policy(

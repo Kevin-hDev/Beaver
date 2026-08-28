@@ -107,16 +107,7 @@ pub async fn get_model_context(
     if route == RouteId::Ollama {
         return resolve_ollama_context(&ollama, &model_id).await.map(Some);
     }
-    Ok(registered_model_context(&route_id, &model_id))
-}
-
-fn registered_model_context(route_id: &str, model_id: &str) -> Option<u64> {
-    let canonical = crate::services::llm::route::canonical_provider_id(route_id);
-    let runtime = crate::services::llm::runtime_models::lookup(canonical, model_id)
-        .and_then(|model| model.context_length);
-    let embedded = provider_model_lookup::local_limits(canonical, model_id)
-        .and_then(|limits| limits.context_window);
-    runtime.or(embedded).map(u64::from)
+    Ok(crate::services::llm::model_context_length(&route_id, &model_id).await)
 }
 
 async fn resolve_ollama_context(
@@ -176,14 +167,14 @@ mod tests {
         assert!(super::supports_tool_use("openrouter".to_string(), "openai/o3".to_string()).await);
     }
 
-    #[test]
-    fn model_context_comes_from_the_registered_route_metadata() {
+    #[tokio::test]
+    async fn model_context_comes_from_the_registered_route_metadata() {
         assert_eq!(
-            super::registered_model_context("openai", "gpt-5.6-sol"),
+            crate::services::llm::model_context_length("openai", "gpt-5.6-sol").await,
             Some(1_050_000)
         );
         assert_eq!(
-            super::registered_model_context("openai", "unknown-model"),
+            crate::services::llm::model_context_length("openai", "unknown-model").await,
             None
         );
     }

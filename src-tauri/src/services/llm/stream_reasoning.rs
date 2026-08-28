@@ -2,7 +2,7 @@ use serde_json::Value;
 
 pub fn apply(
     payload: &mut Value,
-    provider_id: &str,
+    policy: super::route_profile::ParameterPolicy,
     model: &str,
     think: bool,
     reasoning_mode: Option<&str>,
@@ -10,16 +10,20 @@ pub fn apply(
     if reasoning_mode.is_none() && !think {
         return;
     }
-    match provider_id {
-        "zai" => apply_zai(payload, model, reasoning_mode),
-        "openrouter" => apply_openrouter(payload, model, think, reasoning_mode),
-        "deepseek" => apply_deepseek(payload, reasoning_mode),
-        "mistral" => apply_mistral(payload, think, reasoning_mode),
-        "cerebras" => apply_cerebras(payload, think, reasoning_mode),
-        "moonshot" => apply_moonshot(payload, model, think, reasoning_mode),
-        "google" => apply_google(payload, model, think, reasoning_mode),
-        "xai" => apply_xai(payload, model, reasoning_mode),
-        _ => {}
+    use super::route_profile::ParameterPolicy;
+    match policy {
+        ParameterPolicy::Zai => apply_zai(payload, model, reasoning_mode),
+        ParameterPolicy::DeepSeek => apply_deepseek(payload, reasoning_mode),
+        ParameterPolicy::Mistral => apply_mistral(payload, think, reasoning_mode),
+        ParameterPolicy::Cerebras => apply_cerebras(payload, think, reasoning_mode),
+        ParameterPolicy::OpenRouter => apply_openrouter(payload, model, think, reasoning_mode),
+        ParameterPolicy::Moonshot => apply_moonshot(payload, model, think, reasoning_mode),
+        ParameterPolicy::Google => apply_google(payload, model, think, reasoning_mode),
+        ParameterPolicy::Xai => apply_xai(payload, model, reasoning_mode),
+        ParameterPolicy::Default
+        | ParameterPolicy::Responses
+        | ParameterPolicy::Ollama
+        | ParameterPolicy::Anthropic => {}
     }
 }
 

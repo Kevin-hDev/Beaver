@@ -45,7 +45,7 @@ pub(super) fn build_chat_payload_with_evidence(
     }
     super::stream_reasoning::apply(
         &mut payload,
-        provider_id,
+        payload_policy.parameters,
         cfg.model,
         cfg.think,
         cfg.reasoning_mode,

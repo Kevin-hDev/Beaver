@@ -3,7 +3,14 @@ use serde_json::json;
 
 fn payload(provider: &str, model: &str, mode: Option<&str>) -> serde_json::Value {
     let mut payload = json!({});
-    stream_reasoning::apply(&mut payload, provider, model, mode != Some("off"), mode);
+    let policy = super::route_profile::payload_policy(provider, model).unwrap();
+    stream_reasoning::apply(
+        &mut payload,
+        policy.parameters,
+        model,
+        mode != Some("off"),
+        mode,
+    );
     payload
 }
 

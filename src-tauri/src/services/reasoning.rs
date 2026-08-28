@@ -17,7 +17,7 @@ pub fn supported_modes(provider: &str, model: &str, supports_thinking: bool) -> 
         return Vec::new();
     }
     let provider = crate::services::llm::route::canonical_provider_id(provider);
-    if provider == "ollama" {
+    if crate::services::llm::route_profile::is_local(provider) {
         return super::reasoning_ollama::supported_modes(model);
     }
     crate::services::llm::provider_model_lookup::resolve_reasoning_modes(

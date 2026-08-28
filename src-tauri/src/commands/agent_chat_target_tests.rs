@@ -308,7 +308,9 @@ async fn api_mode_is_identical_from_resolution_through_payload_and_provenance() 
     let mut payload = serde_json::json!({});
     crate::services::llm::stream_reasoning::apply(
         &mut payload,
-        "deepseek",
+        crate::services::llm::route_profile::payload_policy("deepseek", "deepseek-v4-flash")
+            .unwrap()
+            .parameters,
         "deepseek-v4-flash",
         target.reasoning.active,
         target.reasoning.mode_name.as_deref(),
