@@ -28,13 +28,13 @@ fn codex_spark_defaults_to_high_reasoning() {
 
 #[test]
 fn gpt_oss_uses_string_effort() {
-    let think = ollama_think("gpt-oss:20b", Some("low"), false).unwrap();
+    let think = super::reasoning_ollama::payload("gpt-oss:20b", Some("low"), false);
     assert_eq!(think, OllamaThink::Level("low".to_string()));
 }
 
 #[test]
 fn regular_ollama_uses_boolean_thinking() {
-    let think = ollama_think("qwen3", Some("off"), true).unwrap();
+    let think = super::reasoning_ollama::payload("qwen3", Some("off"), true);
     assert_eq!(think, OllamaThink::Bool(false));
 }
 

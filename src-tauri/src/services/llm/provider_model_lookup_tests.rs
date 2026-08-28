@@ -100,23 +100,15 @@ async fn kimi_k3_keeps_its_documented_default_separate_from_its_maximum() {
 
 #[test]
 fn capability_resolution_reports_its_provenance() {
-    let embedded = resolve_local_or_legacy("openai", "gpt-5.6-luna").unwrap();
+    let embedded = resolve_local("openai", "gpt-5.6-luna").unwrap();
     assert_eq!(embedded.provenance, CapabilityProvenance::EmbeddedRegistry);
     assert!(embedded.supports_tools);
     assert_eq!(embedded.reasoning_modes.len(), 6);
 
-    let codex = resolve_local_or_legacy("codex-oauth", "gpt-5.6-luna").unwrap();
+    let codex = resolve_local("codex-oauth", "gpt-5.6-luna").unwrap();
     assert_eq!(codex.provenance, CapabilityProvenance::ValidatedRuntime);
     assert!(codex.supports_tools);
 
-    let before = legacy_fallback_count();
-    let fallback = resolve_local_or_legacy("google", "gemini-unregistered-pro").unwrap();
-    assert_eq!(
-        fallback.provenance,
-        CapabilityProvenance::LegacyNameFallback
-    );
-    assert!(fallback.supports_tools);
-    assert_eq!(legacy_fallback_count(), before + 1);
-
-    assert!(resolve_local_or_legacy("unknown", "model").is_none());
+    assert!(resolve_local("google", "gemini-unregistered-pro").is_none());
+    assert!(resolve_local("unknown", "model").is_none());
 }

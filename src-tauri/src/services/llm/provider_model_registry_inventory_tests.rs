@@ -142,13 +142,13 @@ fn snapshot_models_do_not_need_the_legacy_name_fallback() {
     let mut gaps = Vec::new();
     for source in SOURCES {
         for model in list(source.provider_id) {
-            let resolved = crate::services::llm::provider_model_lookup::resolve_local_or_legacy(
+            let resolved = crate::services::llm::provider_model_lookup::resolve_local(
                 source.provider_id,
                 &model.id,
             )
             .unwrap();
             if resolved.provenance
-                == crate::services::llm::provider_model_lookup::CapabilityProvenance::LegacyNameFallback
+                != crate::services::llm::provider_model_lookup::CapabilityProvenance::EmbeddedRegistry
             {
                 gaps.push(format!("{}/{}", source.provider_id, model.id));
             }

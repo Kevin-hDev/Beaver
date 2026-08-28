@@ -23,7 +23,6 @@ pub mod fast_mode;
 mod kimi_models;
 #[cfg(test)]
 mod kimi_models_tests;
-mod legacy_capability_fallback;
 pub mod litellm_catalog;
 mod litellm_catalog_lookup;
 mod litellm_catalog_refresh;
@@ -93,7 +92,6 @@ pub(crate) mod stream_sse;
 pub(crate) mod stream_test_transport;
 mod stream_tools;
 mod timeouts;
-pub mod tool_capable;
 pub(crate) mod tool_schema;
 mod tool_schema_names;
 mod tool_schema_profile;

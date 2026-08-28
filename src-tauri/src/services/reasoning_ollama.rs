@@ -11,6 +11,15 @@ pub(crate) struct EffectiveOllamaReasoning {
     pub payload: OllamaThink,
 }
 
+pub(crate) fn supported_modes(model: &str) -> Vec<String> {
+    let modes = if uses_effort_wire(model) {
+        &["low", "medium", "high"][..]
+    } else {
+        &["off", "auto"][..]
+    };
+    modes.iter().map(|mode| (*mode).to_string()).collect()
+}
+
 pub(crate) fn resolve(
     model: &str,
     requested_mode: Option<&str>,
@@ -34,15 +43,41 @@ pub(crate) fn resolve(
             payload: OllamaThink::Bool(false),
         });
     }
-    let mode_name =
-        super::reasoning::normalize_for_model("ollama", model, requested_mode, true).ok_or(())?;
+    let modes = supported_modes(model);
+    let mode_name = requested_mode
+        .filter(|requested| modes.iter().any(|mode| mode == requested))
+        .map(str::to_string)
+        .unwrap_or_else(|| {
+            if uses_effort_wire(model) {
+                "medium".to_string()
+            } else {
+                "auto".to_string()
+            }
+        });
     let mode = ReasoningModeId::from_name(Some(&mode_name)).ok_or(())?;
-    let payload = super::reasoning::ollama_think(model, Some(&mode_name), true).ok_or(())?;
+    let payload = payload(model, Some(&mode_name), true);
     Ok(EffectiveOllamaReasoning {
         mode,
         mode_name,
         payload,
     })
+}
+
+pub(crate) fn payload(model: &str, mode: Option<&str>, fallback: bool) -> OllamaThink {
+    if uses_effort_wire(model) {
+        let effort = match mode {
+            Some("low" | "medium" | "high") => mode.unwrap(),
+            Some("xhigh") => "high",
+            _ => "medium",
+        };
+        return OllamaThink::Level(effort.to_string());
+    }
+    OllamaThink::Bool(super::reasoning::enabled(mode, fallback))
+}
+
+// Ollama attend une chaîne d'effort pour cette famille et un booléen pour les autres.
+fn uses_effort_wire(model: &str) -> bool {
+    model.to_lowercase().contains("gpt-oss")
 }
 
 #[cfg(test)]

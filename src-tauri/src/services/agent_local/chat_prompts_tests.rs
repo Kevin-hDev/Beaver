@@ -42,7 +42,7 @@ fn agent_md_none_does_nothing() {
 // === prepare_messages tests (agent modes) ===
 
 #[test]
-fn prepare_tool_capable_injects_agent_md() {
+fn prepare_with_tools_injects_agent_md() {
     let mut msgs = vec![make_user_msg("hello")];
     let wd = std::path::Path::new("/tmp/project");
     let agent_md = Some("Tu réponds en français.".to_string());
@@ -65,7 +65,7 @@ fn prepare_tool_capable_injects_agent_md() {
 }
 
 #[test]
-fn prepare_tool_capable_injects_tool_prompt() {
+fn prepare_with_tools_injects_tool_prompt() {
     let mut msgs = vec![make_user_msg("hello")];
     let wd = std::path::Path::new("/tmp/project");
     let agent_md = Some("Use JSON output.".to_string());
@@ -87,7 +87,7 @@ fn prepare_tool_capable_injects_tool_prompt() {
 }
 
 #[test]
-fn prepare_tool_capable_injects_work_updates_guidance() {
+fn prepare_with_tools_injects_work_updates_guidance() {
     let mut msgs = vec![make_user_msg("hello")];
     let wd = std::path::Path::new("/tmp/project");
     prepare_messages(
@@ -112,7 +112,7 @@ fn prepare_tool_capable_injects_work_updates_guidance() {
 }
 
 #[test]
-fn prepare_not_tool_capable_no_agent_md() {
+fn prepare_without_tools_has_no_agent_md() {
     let mut msgs = vec![make_user_msg("hello")];
     let wd = std::path::Path::new("/tmp/project");
     prepare_messages(
@@ -132,7 +132,7 @@ fn prepare_not_tool_capable_no_agent_md() {
 }
 
 #[test]
-fn prepare_tool_capable_no_agent_md_file() {
+fn prepare_with_tools_and_no_agent_md_file() {
     let mut msgs = vec![make_user_msg("hello")];
     let wd = std::path::Path::new("/tmp/project");
     prepare_messages(

@@ -2,7 +2,7 @@ use super::{provider_model_lookup, route};
 use crate::services::reasoning;
 
 fn resolved_capabilities(provider: &str, model: &str) -> provider_model_lookup::ModelCapabilities {
-    let resolved = provider_model_lookup::resolve_local_or_legacy(provider, model).unwrap();
+    let resolved = provider_model_lookup::resolve_local(provider, model).unwrap();
     provider_model_lookup::ModelCapabilities {
         supports_tools: resolved.supports_tools,
         supports_vision: resolved.supports_vision,

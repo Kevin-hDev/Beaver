@@ -1,9 +1,9 @@
 use super::provider_model_registry::{self, ProviderModelConfig};
 
 #[cfg(test)]
-pub use super::provider_model_capabilities::{legacy_fallback_count, CapabilityProvenance};
+pub use super::provider_model_capabilities::CapabilityProvenance;
 pub use super::provider_model_capabilities::{
-    resolve, resolve_local_or_legacy, resolve_reasoning_modes, resolve_remote_list_defaults,
+    resolve, resolve_local, resolve_reasoning_modes, resolve_remote_list_defaults,
     ResolvedModelCapabilities,
 };
 

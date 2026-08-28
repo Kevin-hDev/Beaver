@@ -25,6 +25,9 @@ fn parse_model(value: &Value) -> Option<Result<ModelInfo, LlmError>> {
         Some(length) => length,
         None => return Some(Err(LlmError::Parse("catalogue Kimi invalide".to_string()))),
     };
+    let local_capabilities =
+        super::provider_model_lookup::local_capabilities("moonshot", &id).unwrap_or_default();
+    let local_reasoning = super::provider_model_lookup::local_reasoning("moonshot", &id);
     let thinking_type = value["supports_thinking_type"].as_str();
     let mut reasoning_modes = parse_efforts(&value["think_efforts"]);
     let supports_thinking = match thinking_type {
@@ -33,16 +36,16 @@ fn parse_model(value: &Value) -> Option<Result<ModelInfo, LlmError>> {
         _ => {
             declared_bool(value, "supports_reasoning", false)
                 || !reasoning_modes.is_empty()
-                || super::providers::moonshot::supports_thinking(&id)
+                || local_capabilities.supports_thinking
         }
     };
     if !supports_thinking {
         reasoning_modes.clear();
     } else if reasoning_modes.is_empty() {
-        reasoning_modes = crate::services::reasoning::supported_modes("moonshot", &id, true)
-            .iter()
-            .map(|mode| mode.to_string())
-            .collect();
+        reasoning_modes = local_reasoning
+            .as_ref()
+            .map(|reasoning| reasoning.modes.clone())
+            .unwrap_or_default();
     }
     if thinking_type == Some("only") {
         reasoning_modes.retain(|mode| mode != "off");
@@ -54,7 +57,7 @@ fn parse_model(value: &Value) -> Option<Result<ModelInfo, LlmError>> {
     }
     let default_reasoning_mode = parse_default_effort(&value["think_efforts"])
         .filter(|mode| reasoning_modes.contains(mode))
-        .or_else(|| super::providers::moonshot::default_reasoning_mode(&id).map(str::to_string));
+        .or_else(|| local_reasoning.and_then(|reasoning| reasoning.default_mode));
 
     Some(Ok(ModelInfo {
         display_name: safe_display_name(&value["display_name"])
@@ -65,12 +68,12 @@ fn parse_model(value: &Value) -> Option<Result<ModelInfo, LlmError>> {
         supports_tools: declared_bool(
             value,
             "supports_tool_use",
-            super::providers::moonshot::supports_tools(&id),
+            local_capabilities.supports_tools,
         ),
         supports_vision: declared_bool(
             value,
             "supports_image_in",
-            super::providers::moonshot::supports_vision(&id),
+            local_capabilities.supports_vision,
         ),
         supports_thinking,
         supports_fast_mode: false,

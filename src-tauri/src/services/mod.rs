@@ -69,7 +69,6 @@ pub mod reasoning_fixture_run_dedup;
 pub mod reasoning_fixture_store;
 #[cfg(debug_assertions)]
 pub mod reasoning_fixture_tools;
-mod reasoning_google;
 pub(crate) mod reasoning_ollama;
 pub(crate) mod reasoning_profile;
 #[cfg(test)]

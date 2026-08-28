@@ -1,5 +1,3 @@
-use crate::services::agent_local::types_ollama::OllamaThink;
-
 pub use super::reasoning_effort::{
     codex as codex_effort, openai as openai_effort, openrouter as openrouter_effort,
     simple as simple_effort, zai as zai_effort,
@@ -14,15 +12,14 @@ pub fn sanitize_mode(mode: Option<String>) -> Option<String> {
     })
 }
 
-fn is_gpt_oss(model: &str) -> bool {
-    model.to_lowercase().contains("gpt-oss")
-}
-
 pub fn supported_modes(provider: &str, model: &str, supports_thinking: bool) -> Vec<String> {
     if !supports_thinking {
         return Vec::new();
     }
     let provider = crate::services::llm::route::canonical_provider_id(provider);
+    if provider == "ollama" {
+        return super::reasoning_ollama::supported_modes(model);
+    }
     crate::services::llm::provider_model_lookup::resolve_reasoning_modes(
         provider,
         model,
@@ -45,7 +42,7 @@ pub(crate) fn restrict_to_dynamic_modes(
 
 pub fn provider_model_supports_thinking(provider: &str, model: &str) -> bool {
     let provider = crate::services::llm::route::canonical_provider_id(provider);
-    crate::services::llm::provider_model_lookup::resolve_local_or_legacy(provider, model)
+    crate::services::llm::provider_model_lookup::resolve_local(provider, model)
         .is_some_and(|resolved| resolved.supports_thinking)
 }
 
@@ -63,12 +60,8 @@ pub fn normalize_for_model(
     if let Some(mode) = requested.filter(|mode| modes.iter().any(|candidate| candidate == mode)) {
         return Some(mode.to_string());
     }
-    if provider == "codex-oauth" && model == "gpt-5.3-codex-spark" {
-        return Some("high".to_string());
-    }
-    let preferred =
-        crate::services::llm::provider_model_lookup::resolve_local_or_legacy(provider, model)
-            .and_then(|resolved| resolved.default_reasoning_mode);
+    let preferred = crate::services::llm::provider_model_lookup::resolve_local(provider, model)
+        .and_then(|resolved| resolved.default_reasoning_mode);
     if preferred
         .as_ref()
         .is_some_and(|mode| modes.iter().any(|candidate| candidate == mode))
@@ -102,16 +95,4 @@ pub fn enabled(mode: Option<&str>, fallback: bool) -> bool {
         Some(_) => true,
         None => fallback,
     }
-}
-
-pub fn ollama_think(model: &str, mode: Option<&str>, fallback: bool) -> Option<OllamaThink> {
-    if is_gpt_oss(model) {
-        let effort = match mode {
-            Some("low" | "medium" | "high") => mode.unwrap(),
-            Some("xhigh") => "high",
-            _ => "medium",
-        };
-        return Some(OllamaThink::Level(effort.to_string()));
-    }
-    Some(OllamaThink::Bool(enabled(mode, fallback)))
 }
