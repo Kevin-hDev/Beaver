@@ -1,0 +1,46 @@
+# Handoff reviewer — corrections de la review providers
+
+Date : 2026-08-28
+Branche : `codex/provider-transport-refactor`
+Plage complète : `3277fad80fbf76564d1798c4027a454063abc83a..85c1f207c6325baeee0ac6db9827768c7ab5d055` (24 commits)
+Commit correctif : `62d369fa3325157907f3b12403754ee4f73279d0..85c1f207c6325baeee0ac6db9827768c7ab5d055`
+Source : `docs/providers/refactor/review-implementation-2026-08-28.md`
+
+Cette note remplace le verdict GO 13/13 attaché à `62d369fa` pour toute review du HEAD courant.
+
+## Corrections appliquées
+
+1. C-1 Codex : `resolve_local` consulte maintenant le catalogue runtime validé avant le fallback embarqué. Un modèle distant nouveau conserve outils, vision, thinking et modes de raisonnement. Test dédié avec un modèle absent du fallback.
+2. C-2 cliquet anti-dispersion : le scanner Rust ne tronque plus le fichier au premier `cfg(test)` ; il retire seulement les modules de tests en conservant les numéros de ligne. Il couvre `chat_provider_id` / `chatProviderId` et les comparaisons avec constantes nommées. Baseline régénérée et chaque occurrence révélée possède un propriétaire et un budget exact ; `compress/token_estimate.rs` est explicitement compté à 2 jusqu'au chantier compression.
+3. C-3 Groq : migration unique au démarrage retirant la clé vault et le scope de raisonnement, puis tentative de suppression de l'ancien secret keyring. Avant réécriture, le coffre chiffré est sauvegardé de façon bornée et atomique ; la sauvegarde est conservée si le démarrage échoue et supprimée au démarrage réussi suivant. Les chemins liés sont refusés et aucun secret ne passe dans les logs.
+4. C-4 Ollama : la cascade contexte chargé, `num_ctx`, puis minimum modèle/GPU est isolée et testée, y compris les zéros et priorités. Le retour anticipé conserve le nombre de requêtes réseau antérieur.
+5. C-5 preuve documentaire : `docs/providers/refactor/capability-gaps.md` précise que les snapshots prouvent seulement `f0eba6e5..62d369fa` et que la phase antérieure est couverte par les tests des 64 lacunes et de l'inventaire embarqué. Ce document est ignoré par Git et reste volontairement dans le dépôt principal selon la contrainte documentaire du chantier ; il ne fait pas partie du commit code.
+6. C-6 xAI/Moonshot : test croisé registre vers adaptateur ; chaque mode déclaré hors `off/auto` doit produire `reasoning_effort`. Une mutation temporaire retirant `grok-4.6` a fait échouer ce test avec le diagnostic attendu, puis a été annulée.
+7. Mineur 10 / règle SPEC 7.8 : fixtures SSE bout en bout différentielles et cumulatives ajoutées aux lecteurs interactif et silencieux, résultat exact `Bonjour`.
+
+## Preuves TDD
+
+- C-1 rouge : le modèle Codex runtime seul retournait `None`, puis vert après consultation du registre runtime.
+- C-2 rouge : les trois nouveaux tests du scanner échouaient, puis 10/10 verts après correction.
+- C-3 rouge : fonctions de migration absentes, puis test de lien symbolique rouge, puis 4/4 verts.
+- C-4 rouge : fonction de sélection absente, puis 6/6 verts avec les tests existants.
+- C-6 mutation : suppression temporaire de `grok-4.6` dans l'adaptateur produisant `xai/grok-4.6 declares low but its payload adapter drops it`, puis restauration et vert.
+
+## Validation finale exécutée sur ce commit
+
+- `npm run lint` : vert ; cliquet provider vert avec 53 fichiers autorisés.
+- `npx tsc --noEmit` : vert.
+- `cargo fmt --all -- --check` : vert.
+- `cargo check` : vert.
+- `cargo clippy --all-targets -- -D warnings` : vert.
+- `cargo test` : 4 237 réussis, 0 échec, 7 ignorés ; test d'intégration prelogger 1/1.
+- `npm test` : 483 fichiers et 2 614 tests frontend réussis ; suites build/CI/CEF/E2E/extensions/reasoning vertes, avec un test Windows ignoré sur macOS.
+- `npm run build` : vert ; avertissements Vite connus sur tailles de chunks et externalisation navigateur de `crypto`, sans échec.
+- `git diff --check` : vert.
+- Graphify mis à jour dans le dépôt principal et le worktree ; sorties ignorées par Git. Le document `capability-gaps.md` n'est pas indexé dans le graphe actuel.
+
+Aucun redémarrage répétitif de l'application et aucun appel provider payant ne furent nécessaires pour ces correctifs unitaires. Le worktree est propre après le commit. Les modifications utilisateur présentes dans le dépôt principal sous `docs/beaver-site/` et les images locales ont été laissées intactes.
+
+## Décision de handoff
+
+Pour le reviewer, la plage autoritaire est désormais `3277fad80fbf76564d1798c4027a454063abc83a..85c1f207c6325baeee0ac6db9827768c7ab5d055`. Les six constats importants de la review sont corrigés sans élargissement architectural ; les autres mineurs restent des suivis non bloquants, sauf le trou SSE n°10 traité ici car il correspondait directement à une exigence de la SPEC.
