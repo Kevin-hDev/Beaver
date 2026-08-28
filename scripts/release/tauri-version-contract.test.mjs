@@ -12,12 +12,12 @@ const cargoToml = `
 tauri-build = { version = "=2.6.3", features = [] }
 
 [dependencies]
-tauri = { version = "=2.11.4", features = ["tray-icon"] }
+tauri = { version = "=2.11.5", features = ["tray-icon"] }
 `;
 const cargoLock = `
 [[package]]
 name = "tauri"
-version = "2.11.4"
+version = "2.11.5"
 
 [[package]]
 name = "tauri-build"
@@ -51,11 +51,11 @@ test("refuse une plage npm", () => {
 
 test("refuse une version Rust différente dans le manifeste ou le verrou", () => {
   assert.throws(
-    () => verify({ cargoToml: cargoToml.replace("=2.11.4", "2") }),
+    () => verify({ cargoToml: cargoToml.replace("=2.11.5", "2") }),
     /Tauri version contract failed/,
   );
   assert.throws(
-    () => verify({ cargoLock: cargoLock.replace("2.11.4", "2.11.5") }),
+    () => verify({ cargoLock: cargoLock.replace("2.11.5", "2.11.4") }),
     /Tauri version contract failed/,
   );
 });
