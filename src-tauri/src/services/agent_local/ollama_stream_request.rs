@@ -50,7 +50,11 @@ pub async fn open_chat_response(
     emit_retry_indicator: bool,
     diagnostics: ReplayDiagnosticContext<'_>,
 ) -> Result<OpenChatResponse, String> {
-    let wire_messages = wrap_tool_results(&request.messages);
+    let placement = crate::services::llm::route_profile::payload_policy("ollama", &request.model)
+        .expect("Ollama route profile")
+        .message
+        .tool_results;
+    let wire_messages = wrap_tool_results(&request.messages, placement);
     let prepared = ollama_wire::chat_request_with_evidence(request, &wire_messages)
         .map_err(|_| "reasoning_continuity_invalid".to_string())?;
     crate::services::llm::reasoning_wire::replay::record_evidence(

@@ -18,6 +18,11 @@ fn message_to_openai_with_names(
 ) -> Value {
     match msg.role.as_str() {
         "tool" => {
+            assert_eq!(
+                policy.tool_results,
+                super::route_profile::ToolResultPlacement::ToolRole,
+                "chat converter requires tool-role placement"
+            );
             let mut obj = json!({
                 "role": "tool",
                 "content": msg.content,

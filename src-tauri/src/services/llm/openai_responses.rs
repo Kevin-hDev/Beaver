@@ -33,10 +33,13 @@ fn try_build_request_with_evidence(
             config.messages,
             config.tools,
             config.continuation_target,
+            payload_policy.message.tool_results,
         )
         .map_err(|_| RequestError::InvalidConfiguration)?;
     let instructions = converted.instructions;
     let input = converted.input;
+    let tool_policy = super::route_profile::tool_policy(config.provider_id, config.model)
+        .ok_or(RequestError::InvalidConfiguration)?;
     let mut body = serde_json::json!({
         "model": config.model,
         "instructions": instructions,
@@ -44,8 +47,7 @@ fn try_build_request_with_evidence(
         "stream": true,
         "store": false,
         "tools": crate::services::codex_client::convert::convert_tools_to_responses_api(
-            config.provider_id,
-            config.model,
+            tool_policy,
             config.tools,
         ),
         "tool_choice": "auto",

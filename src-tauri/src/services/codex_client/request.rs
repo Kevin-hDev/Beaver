@@ -185,15 +185,21 @@ fn build_codex_request_with_continuity_evidence(
         &crate::services::reasoning_continuity::contract::ContinuationTarget,
     >,
 ) -> Result<PreparedCodexRequest, String> {
+    let payload_policy =
+        crate::services::llm::route_profile::payload_policy(super::PROVIDER_ID, model)
+            .ok_or_else(|| "provider_configuration_invalid".to_string())?;
+    let tool_policy = crate::services::llm::route_profile::tool_policy(super::PROVIDER_ID, model)
+        .ok_or_else(|| "provider_configuration_invalid".to_string())?;
     let converted = convert::convert_messages_with_tools_and_continuity_evidence(
         messages,
         tools,
         continuation_target,
+        payload_policy.message.tool_results,
     )
     .map_err(|_| "reasoning_continuity_invalid".to_string())?;
     let instructions = converted.instructions;
     let input = converted.input;
-    let converted_tools = convert::convert_tools_to_responses_api(super::PROVIDER_ID, model, tools);
+    let converted_tools = convert::convert_tools_to_responses_api(tool_policy, tools);
     let body = CodexRequest {
         model: model.to_string(),
         instructions,

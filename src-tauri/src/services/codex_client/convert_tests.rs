@@ -131,7 +131,9 @@ fn codex_aliases_extension_tool_names_in_definitions_and_history() {
         }]),
     )];
 
-    let converted_tools = convert_tools_to_responses_api("codex-oauth", "gpt-5.6-sol", &tools);
+    let policy =
+        crate::services::llm::route_profile::tool_policy("codex-oauth", "gpt-5.6-sol").unwrap();
+    let converted_tools = convert_tools_to_responses_api(policy, &tools);
     let (_, input) = convert_messages(&messages);
     let wire_name = converted_tools[0]["name"].as_str().unwrap();
 

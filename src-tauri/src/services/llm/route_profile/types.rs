@@ -75,7 +75,7 @@ pub(in crate::services::llm) enum FragmentMode {
     dead_code,
     reason = "candidate tool placements are required before route activation"
 )]
-pub(in crate::services::llm) enum ToolResultPlacement {
+pub(crate) enum ToolResultPlacement {
     ToolRole,
     ResponsesItem,
     UserToolResultBlock,
@@ -98,6 +98,7 @@ pub(crate) enum ImageFormat {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct MessageWirePolicy {
     pub images: ImageFormat,
+    pub tool_results: ToolResultPlacement,
     pub null_empty_tool_assistant: bool,
     pub preserve_all_extra_content: bool,
 }

@@ -5,6 +5,7 @@ pub(super) fn resolve(profile: &RouteProfile, model: &str) -> ResolvedPayloadPol
     ResolvedPayloadPolicy {
         message: MessageWirePolicy {
             images: profile.wire.images,
+            tool_results: profile.wire.tool_results,
             null_empty_tool_assistant: profile.policies.parameters != ParameterPolicy::DeepSeek,
             preserve_all_extra_content: profile.client == ClientSelector::Codex,
         },

@@ -22,7 +22,11 @@ pub async fn collect_chat_with_timeout_and_limit(
     num_predict: Option<u32>,
 ) -> Result<(String, u32), String> {
     // Conversion `role:"tool"` → `role:"user"` + `<tool_response>` (cf. ollama_tool_role).
-    let wire_messages = wrap_tool_results(&messages);
+    let placement = crate::services::llm::route_profile::payload_policy("ollama", model)
+        .expect("Ollama route profile")
+        .message
+        .tool_results;
+    let wire_messages = wrap_tool_results(&messages, placement);
     let mut body = serde_json::json!({
         "model": model,
         "messages": ollama_wire::messages_value(&wire_messages),

@@ -17,7 +17,7 @@ pub(crate) use policy_types::{
     ResolvedToolPolicy, SchemaPolicy,
 };
 pub(super) use types::*;
-pub(crate) use types::{ImageFormat, MessageWirePolicy};
+pub(crate) use types::{ImageFormat, MessageWirePolicy, ToolResultPlacement};
 
 pub(crate) fn tool_policy(provider_id: &str, model: &str) -> Option<ResolvedToolPolicy> {
     let profile = find(provider_id)?;

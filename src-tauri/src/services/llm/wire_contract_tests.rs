@@ -96,7 +96,12 @@ fn wire_contract_places_tool_results_without_losing_ids_or_opaque_reasoning() {
         .unwrap();
     assert_eq!(output["call_id"], CALL_ID);
 
-    let ollama = crate::services::agent_local::ollama_tool_role::wrap_tool_results(&messages);
+    let placement = super::route_profile::payload_policy("ollama", "gemma4:e2b")
+        .unwrap()
+        .message
+        .tool_results;
+    let ollama =
+        crate::services::agent_local::ollama_tool_role::wrap_tool_results(&messages, placement);
     assert_eq!(ollama[1].role, "user");
     assert!(ollama[1].content.contains("<tool_response>"));
 }
