@@ -41,7 +41,7 @@ pub(super) const RESPONSES_WIRE: WireContract = WireContract {
 
 pub(super) const OLLAMA_WIRE: WireContract = WireContract {
     family: WireFamily::OllamaNative,
-    fragments: FragmentMode::CumulativeFragments,
+    fragments: FragmentMode::DifferentialFragments,
     tool_results: ToolResultPlacement::OllamaNative,
     images: ImageFormat::OllamaNative,
     usage: UsageApiFormat::ChatCompletions,

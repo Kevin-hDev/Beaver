@@ -51,6 +51,7 @@ async fn chat_sse_consumer_observes_the_served_tier() {
         None,
         &[],
         crate::services::provider_usage::UsageContext::chat("openai", "gpt-5.6-sol"),
+        crate::services::llm::route_profile::FragmentMode::DifferentialFragments,
         None,
         Some(&mut measurement),
     )

@@ -15,12 +15,14 @@ pub(super) async fn consume_silent(
     cancel: CancellationToken,
     idle_timeout: Duration,
     usage_context: crate::services::provider_usage::UsageContext<'_>,
+    fragment_mode: super::route_profile::FragmentMode,
     mut measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
 ) -> Result<StreamResult, String> {
     let mut stream = resp.bytes_stream().eventsource();
     let mut result = StreamResult::default();
     let mut acc = ToolCallAccumulator::new();
     let mut think_filter = ThinkTagFilter::new();
+    let mut fragments = super::stream_fragments::StreamFragmentState::new(fragment_mode);
 
     loop {
         tokio::select! {
@@ -44,6 +46,7 @@ pub(super) async fn consume_silent(
                     &mut result,
                     &mut acc,
                     &mut think_filter,
+                    &mut fragments,
                     usage_context,
                 )?;
                 if useful {
@@ -64,12 +67,17 @@ fn process_chunk(
     result: &mut StreamResult,
     acc: &mut ToolCallAccumulator,
     think_filter: &mut ThinkTagFilter,
+    fragments: &mut super::stream_fragments::StreamFragmentState,
     usage_context: crate::services::provider_usage::UsageContext<'_>,
 ) -> Result<bool, String> {
     let mut useful = false;
     for chunk in stream_chunk::parse_with_context(data, usage_context) {
         match chunk {
             ParsedChunk::Content(content) => {
+                let content = fragments.content(&content)?;
+                if content.is_empty() {
+                    continue;
+                }
                 useful = true;
                 for filtered in think_filter.feed(&content) {
                     if let FilteredChunk::Content(content) = filtered {

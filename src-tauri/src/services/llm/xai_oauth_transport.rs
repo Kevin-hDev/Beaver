@@ -48,6 +48,7 @@ pub(super) async fn stream_chat(
                 realtime_budget,
                 request.tools,
                 crate::services::provider_usage::UsageContext::chat("xai", request.model),
+                super::route_profile::FragmentMode::DifferentialFragments,
                 reasoning_capture,
                 measurement,
             )

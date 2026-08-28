@@ -161,6 +161,7 @@ pub async fn stream_chat_no_done(
                         realtime_budget,
                         tools,
                         transport.usage_context(model),
+                        transport.fragment_mode,
                         reasoning_capture,
                         measurement.as_mut(),
                     )

@@ -1,5 +1,5 @@
 use super::request_purpose::RequestPurpose;
-use super::route_profile::{self, ClientSelector, RouteProfile};
+use super::route_profile::{self, ClientSelector, FragmentMode, RouteProfile};
 use crate::services::llm_oauth::{XaiBackend, XaiCatalogModel};
 use crate::services::provider_usage::{UsageApiFormat, UsageContext};
 
@@ -23,6 +23,7 @@ pub(super) struct ResolvedTransport {
     pub profile: &'static RouteProfile,
     pub client: ClientKind,
     pub usage_api_format: UsageApiFormat,
+    pub fragment_mode: FragmentMode,
     pub xai_catalog_model: Option<XaiCatalogModel>,
 }
 
@@ -107,11 +108,27 @@ fn resolve_checked(
     profile: &'static RouteProfile,
     xai_catalog_model: Option<XaiCatalogModel>,
 ) -> Result<ResolvedTransport, RouteSelectionError> {
-    let (client, usage_api_format) = match profile.client {
-        ClientSelector::OpenAiCompat => (ClientKind::ChatCompletions, profile.wire.usage),
-        ClientSelector::OpenAiResponses => (ClientKind::Responses, profile.wire.usage),
-        ClientSelector::Codex => (ClientKind::Codex, profile.wire.usage),
-        ClientSelector::OllamaLocal => (ClientKind::OllamaLocal, profile.wire.usage),
+    let (client, usage_api_format, fragment_mode) = match profile.client {
+        ClientSelector::OpenAiCompat => (
+            ClientKind::ChatCompletions,
+            profile.wire.usage,
+            profile.wire.fragments,
+        ),
+        ClientSelector::OpenAiResponses => (
+            ClientKind::Responses,
+            profile.wire.usage,
+            profile.wire.fragments,
+        ),
+        ClientSelector::Codex => (
+            ClientKind::Codex,
+            profile.wire.usage,
+            profile.wire.fragments,
+        ),
+        ClientSelector::OllamaLocal => (
+            ClientKind::OllamaLocal,
+            profile.wire.usage,
+            profile.wire.fragments,
+        ),
         ClientSelector::XaiOauth => {
             let backend = xai_catalog_model
                 .as_ref()
@@ -121,7 +138,11 @@ fn resolve_checked(
                 XaiBackend::ChatCompletions => UsageApiFormat::ChatCompletions,
                 XaiBackend::Responses => UsageApiFormat::Responses,
             };
-            (ClientKind::XaiOauth(backend), usage)
+            let fragments = match backend {
+                XaiBackend::ChatCompletions => FragmentMode::DifferentialFragments,
+                XaiBackend::Responses => FragmentMode::SemanticEvents,
+            };
+            (ClientKind::XaiOauth(backend), usage, fragments)
         }
         ClientSelector::Anthropic => return Err(RouteSelectionError::UnknownRoute),
     };
@@ -129,6 +150,7 @@ fn resolve_checked(
         profile,
         client,
         usage_api_format,
+        fragment_mode,
         xai_catalog_model,
     })
 }

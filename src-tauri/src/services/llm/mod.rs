@@ -65,6 +65,7 @@ pub mod stream_convert;
 pub(crate) mod stream_dispatch;
 #[cfg(test)]
 mod stream_dispatch_tests;
+pub(crate) mod stream_fragments;
 mod stream_http;
 #[cfg(test)]
 pub(crate) use stream_http::RequestConfig as RequestConfigForTest;

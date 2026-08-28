@@ -2,6 +2,7 @@ use super::request_purpose::RequestPurpose;
 use super::stream_dispatch::{
     is_available, resolve_transport_for_test, ClientKind, InvocationKind, RouteSelectionError,
 };
+use crate::services::llm::route_profile::FragmentMode;
 use crate::services::llm_oauth::{XaiBackend, XaiCatalogModel};
 use crate::services::provider_usage::UsageApiFormat;
 
@@ -54,9 +55,17 @@ fn stream_dispatch_and_stream_metrics_select_clients_and_formats_once() {
 
 #[test]
 fn stream_dispatch_uses_the_validated_xai_oauth_backend() {
-    for (backend, usage) in [
-        (XaiBackend::ChatCompletions, UsageApiFormat::ChatCompletions),
-        (XaiBackend::Responses, UsageApiFormat::Responses),
+    for (backend, usage, fragments) in [
+        (
+            XaiBackend::ChatCompletions,
+            UsageApiFormat::ChatCompletions,
+            FragmentMode::DifferentialFragments,
+        ),
+        (
+            XaiBackend::Responses,
+            UsageApiFormat::Responses,
+            FragmentMode::SemanticEvents,
+        ),
     ] {
         let resolved = resolve_transport_for_test(
             "xai-oauth",
@@ -67,6 +76,7 @@ fn stream_dispatch_uses_the_validated_xai_oauth_backend() {
         .unwrap();
         assert_eq!(resolved.client, ClientKind::XaiOauth(backend));
         assert_eq!(resolved.usage_api_format, usage);
+        assert_eq!(resolved.fragment_mode, fragments);
         assert_eq!(
             resolved.xai_catalog_model.as_ref().unwrap().backend,
             backend

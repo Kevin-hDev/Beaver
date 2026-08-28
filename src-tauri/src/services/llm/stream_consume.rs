@@ -1,7 +1,4 @@
-#![expect(
-    clippy::too_many_arguments,
-    reason = "orchestration boundary keeps related runtime context explicit"
-)]
+#![expect(clippy::too_many_arguments, reason = "explicit stream context")]
 use super::{
     stream_chunk::{self, ParsedChunk},
     stream_sse::is_done_marker,
@@ -22,6 +19,7 @@ pub(super) async fn consume_stream(
     mut realtime_budget: Option<crate::services::compress::realtime_budget::RealtimeBudget>,
     tools: &[serde_json::Value],
     usage_context: crate::services::provider_usage::UsageContext<'_>,
+    fragment_mode: super::route_profile::FragmentMode,
     mut reasoning_capture: Option<super::reasoning_wire::ReasoningCapture>,
     mut measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
 ) -> Result<StreamOutcome, String> {
@@ -31,6 +29,7 @@ pub(super) async fn consume_stream(
     let mut acc = ToolCallAccumulator::new();
     let mut think_filter = ThinkTagFilter::new();
     let mut interrupted = false;
+    let mut fragments = super::stream_fragments::StreamFragmentState::new(fragment_mode);
 
     loop {
         tokio::select! {
@@ -62,7 +61,7 @@ pub(super) async fn consume_stream(
                 }
                 let useful = process_chunk(
                     &value, on_event, &mut token_count, &mut result,
-                    &mut acc, &mut think_filter, buffer_content, usage_context,
+                    &mut acc, &mut think_filter, &mut fragments, buffer_content, usage_context,
                 )?;
                 if useful {
                     if let Some(measurement) = measurement.as_mut() {
@@ -139,6 +138,7 @@ fn process_chunk(
     result: &mut StreamResult,
     acc: &mut ToolCallAccumulator,
     think_filter: &mut ThinkTagFilter,
+    fragments: &mut super::stream_fragments::StreamFragmentState,
     buffer_content: bool,
     usage_context: crate::services::provider_usage::UsageContext<'_>,
 ) -> Result<bool, String> {
@@ -146,6 +146,10 @@ fn process_chunk(
     for chunk in stream_chunk::parse_value_with_context(value, usage_context) {
         match chunk {
             ParsedChunk::Thinking(thinking) => {
+                let thinking = fragments.thinking(&thinking)?;
+                if thinking.is_empty() {
+                    continue;
+                }
                 useful = true;
                 crate::services::agent_local::stream_buffer::record_thinking(
                     on_event,
@@ -155,6 +159,10 @@ fn process_chunk(
                 );
             }
             ParsedChunk::Content(content) => {
+                let content = fragments.content(&content)?;
+                if content.is_empty() {
+                    continue;
+                }
                 useful = true;
                 crate::services::agent_local::stream_buffer::record_generation_started(
                     on_event, result,

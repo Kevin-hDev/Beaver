@@ -116,6 +116,7 @@ async fn stream_chat_inner(
         .transpose()
         .map_err(|_| "provider_configuration_invalid".to_string())?;
     let mut think_filter = ThinkTagFilter::new();
+    let mut fragments = crate::services::llm::stream_fragments::StreamFragmentState::ollama();
     let mut interrupted = false;
 
     loop {
@@ -137,6 +138,7 @@ async fn stream_chat_inner(
                             super::ollama_stream_process::ProcessChunkOptions {
                                 buffer_content: options.buffer_content,
                                 reasoning_capture: reasoning_capture.as_mut(),
+                                fragments: &mut fragments,
                             },
                         ) {
                             // Bug Ollama #16383 : crash du parser tool-call en plein

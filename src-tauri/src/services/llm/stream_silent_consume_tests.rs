@@ -40,6 +40,7 @@ async fn eof_before_done_is_rejected_as_truncated() {
         CancellationToken::new(),
         Duration::from_secs(2),
         crate::services::provider_usage::UsageContext::chat("openai", "gpt-5.6-sol"),
+        crate::services::llm::route_profile::FragmentMode::DifferentialFragments,
         None,
     )
     .await;
@@ -73,6 +74,7 @@ async fn explicit_done_completes_the_stream() {
         CancellationToken::new(),
         Duration::from_secs(2),
         crate::services::provider_usage::UsageContext::chat("openai", "gpt-5.6-sol"),
+        crate::services::llm::route_profile::FragmentMode::DifferentialFragments,
         Some(&mut request_measurement),
     )
     .await
