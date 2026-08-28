@@ -9,6 +9,7 @@ pub(crate) mod validate {
 include!("api_keys_state.rs");
 include!("api_keys_registry.rs");
 include!("api_keys_transactions.rs");
+#[cfg(any(not(feature = "e2e"), test))]
 include!("api_keys_retired.rs");
 include!("api_keys_credential_scope_wire.rs");
 include!("api_keys_credential_scope.rs");
