@@ -14,8 +14,9 @@ mod types;
 pub(super) use catalog::{all, find_id};
 pub(super) use catalog::{find, public_api};
 pub(crate) use policy_types::{
-    AuthProbePolicy, CachePolicy, ExtensionToolPolicy, ResolvedCachePolicy, ResolvedPayloadPolicy,
-    ResolvedToolLimitPolicy, ResolvedToolPolicy, SchemaPolicy, ToolLimitPolicy, UpstreamToolFamily,
+    AuthProbePolicy, CachePolicy, ErrorPolicy, ExtensionToolPolicy, ResolvedCachePolicy,
+    ResolvedPayloadPolicy, ResolvedToolLimitPolicy, ResolvedToolPolicy, SchemaPolicy,
+    ToolLimitPolicy, UpstreamToolFamily,
 };
 pub(super) use types::*;
 pub(crate) use types::{ApiKeyHeader, ImageFormat, MessageWirePolicy, ToolResultPlacement};
@@ -41,6 +42,10 @@ pub(crate) fn payload_policy(provider_id: &str, model: &str) -> Option<ResolvedP
 pub(crate) fn tool_limit_policy(provider_id: &str, model: &str) -> Option<ResolvedToolLimitPolicy> {
     let profile = find(provider_id)?;
     Some(tool_limit_policies::resolve(profile, model))
+}
+
+pub(crate) fn error_policy(provider_id: &str) -> Option<ErrorPolicy> {
+    Some(find(provider_id)?.policies.errors)
 }
 
 #[cfg(test)]

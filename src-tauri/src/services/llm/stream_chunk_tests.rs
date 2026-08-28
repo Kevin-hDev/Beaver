@@ -1,4 +1,4 @@
-use super::stream_chunk::{self, ParsedChunk};
+use super::stream_chunk::{self, provider_error_code, ParsedChunk};
 use serde_json::json;
 
 fn parse(value: serde_json::Value) -> Vec<ParsedChunk> {
@@ -157,6 +157,24 @@ fn embedded_provider_errors_keep_only_a_safe_status() {
     assert_eq!(
         parse(json!({ "choices": [{ "finish_reason": "error", "delta": {} }] })),
         vec![ParsedChunk::ProviderError(None)],
+    );
+}
+
+#[test]
+fn embedded_error_classification_is_called_with_a_typed_policy() {
+    assert_eq!(
+        provider_error_code(
+            crate::services::llm::route_profile::ErrorPolicy::Responses,
+            Some(503),
+        ),
+        "provider_temporarily_unavailable"
+    );
+    assert_eq!(
+        provider_error_code(
+            crate::services::llm::route_profile::ErrorPolicy::OpenAiCompatible,
+            Some(400),
+        ),
+        "provider_request_rejected"
     );
 }
 

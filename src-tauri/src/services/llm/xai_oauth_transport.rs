@@ -49,6 +49,7 @@ pub(super) async fn stream_chat(
                 request.tools,
                 crate::services::provider_usage::UsageContext::chat("xai", request.model),
                 super::route_profile::FragmentMode::DifferentialFragments,
+                super::route_profile::ErrorPolicy::XaiOauth,
                 reasoning_capture,
                 measurement,
             )
@@ -162,7 +163,7 @@ async fn post_responses(
         .await
         .map(|bytes| String::from_utf8_lossy(&bytes).into_owned())
         .unwrap_or_default();
-    Err(classify_status(status, &body, has_retry_after).to_string())
+    Err(classify_status(route.error_policy, status, &body, has_retry_after).to_string())
 }
 
 pub(super) const fn backend_path(backend: XaiBackend) -> &'static str {

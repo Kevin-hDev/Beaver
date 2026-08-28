@@ -108,7 +108,7 @@ pub(super) async fn dispatch(
                 400,
                 r#"{"error":{"param":"service_tier","code":"invalid_request_error"}}"#,
                 "OpenAI",
-                "openai",
+                super::route_profile::ErrorPolicy::Responses,
                 false,
                 false,
             )))

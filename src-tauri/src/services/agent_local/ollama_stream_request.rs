@@ -1,6 +1,6 @@
 use super::ollama_client::OllamaClient;
 use super::ollama_retry_indicator::{
-    send_retry_indicator, server_retry_delay, should_retry_server_status, MAX_SERVER_RETRIES,
+    max_server_retries, send_retry_indicator, server_retry_delay, should_retry_server_status,
     REASON_FEATURE_DROPPED, REASON_PARSER_CRASH, REASON_SERVER,
 };
 use super::ollama_stream_retry::build_retry_request;
@@ -137,7 +137,7 @@ async fn handle_http_failure(
         });
     }
 
-    if should_retry_server_status(status) && counts.server_retries < MAX_SERVER_RETRIES {
+    if should_retry_server_status(status, counts.server_retries) {
         let attempt = counts.server_retries + 1;
         ::log::warn!("[ollama-stream] HTTP {status}, retry serveur #{attempt}");
         maybe_send_retry_indicator(
@@ -145,7 +145,7 @@ async fn handle_http_failure(
             emit_retry_indicator,
             REASON_SERVER,
             attempt,
-            MAX_SERVER_RETRIES,
+            max_server_retries(),
         );
         wait_retry_delay(cancel, attempt).await?;
         return Ok(OpenChatResponse::Retry {

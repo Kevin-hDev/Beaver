@@ -94,6 +94,7 @@ pub async fn collect_chat_silent_for_compression(
                         idle_timeout,
                         transport.usage_context(model),
                         transport.fragment_mode,
+                        transport.error_policy,
                         measurement.as_mut(),
                     )
                     .await

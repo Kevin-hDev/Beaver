@@ -58,7 +58,10 @@ pub fn parse_value_with_context(chunk: &Value, context: UsageContext<'_>) -> Vec
     out
 }
 
-pub(super) fn provider_error_code(status: Option<u16>) -> &'static str {
+pub(super) fn provider_error_code(
+    _policy: super::route_profile::ErrorPolicy,
+    status: Option<u16>,
+) -> &'static str {
     match status {
         Some(429) => "rate_limit",
         Some(408 | 500 | 502 | 503 | 504) => "provider_temporarily_unavailable",

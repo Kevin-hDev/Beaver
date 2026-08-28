@@ -6,7 +6,7 @@ use super::{
 };
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::types_ollama::{StreamEvent, StreamOutcome, StreamResult};
-use crate::services::stream_utils::{FilteredChunk, ThinkTagFilter};
+use crate::services::stream_utils::ThinkTagFilter;
 use eventsource_stream::Eventsource;
 use futures_util::StreamExt;
 use tokio_util::sync::CancellationToken;
@@ -20,6 +20,7 @@ pub(super) async fn consume_stream(
     tools: &[serde_json::Value],
     usage_context: crate::services::provider_usage::UsageContext<'_>,
     fragment_mode: super::route_profile::FragmentMode,
+    error_policy: super::route_profile::ErrorPolicy,
     mut reasoning_capture: Option<super::reasoning_wire::ReasoningCapture>,
     mut measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
 ) -> Result<StreamOutcome, String> {
@@ -62,6 +63,7 @@ pub(super) async fn consume_stream(
                 let useful = process_chunk(
                     &value, on_event, &mut token_count, &mut result,
                     &mut acc, &mut think_filter, &mut fragments, buffer_content, usage_context,
+                    error_policy,
                 )?;
                 if useful {
                     if let Some(measurement) = measurement.as_mut() {
@@ -81,7 +83,7 @@ pub(super) async fn consume_stream(
     }
 
     for chunk in think_filter.flush() {
-        record_filtered(
+        super::stream_consume_record::record_filtered(
             chunk,
             on_event,
             &mut result,
@@ -141,6 +143,7 @@ fn process_chunk(
     fragments: &mut super::stream_fragments::StreamFragmentState,
     buffer_content: bool,
     usage_context: crate::services::provider_usage::UsageContext<'_>,
+    error_policy: super::route_profile::ErrorPolicy,
 ) -> Result<bool, String> {
     let mut useful = false;
     for chunk in stream_chunk::parse_value_with_context(value, usage_context) {
@@ -168,7 +171,13 @@ fn process_chunk(
                     on_event, result,
                 );
                 for filtered in think_filter.feed(&content) {
-                    record_filtered(filtered, on_event, result, token_count, buffer_content);
+                    super::stream_consume_record::record_filtered(
+                        filtered,
+                        on_event,
+                        result,
+                        token_count,
+                        buffer_content,
+                    );
                 }
             }
             ParsedChunk::ToolCalls(tool_calls) => {
@@ -189,39 +198,11 @@ fn process_chunk(
                 result.generation.record_native_duration(duration_ns);
             }
             ParsedChunk::ProviderError(status) => {
-                return Err(stream_chunk::provider_error_code(status).to_string());
+                return Err(stream_chunk::provider_error_code(error_policy, status).to_string());
             }
         }
     }
     Ok(useful)
-}
-
-fn record_filtered(
-    chunk: FilteredChunk,
-    on_event: &AgentEventEmitter,
-    result: &mut StreamResult,
-    token_count: &mut u32,
-    buffer_content: bool,
-) {
-    match chunk {
-        FilteredChunk::Thinking(content) => {
-            crate::services::agent_local::stream_buffer::record_thinking(
-                on_event,
-                result,
-                content,
-                token_count,
-            );
-        }
-        FilteredChunk::Content(content) => {
-            crate::services::agent_local::stream_buffer::record_content(
-                on_event,
-                result,
-                content,
-                token_count,
-                buffer_content,
-            );
-        }
-    }
 }
 
 #[cfg(test)]

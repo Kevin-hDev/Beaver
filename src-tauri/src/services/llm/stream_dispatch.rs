@@ -24,6 +24,7 @@ pub(super) struct ResolvedTransport {
     pub client: ClientKind,
     pub usage_api_format: UsageApiFormat,
     pub fragment_mode: FragmentMode,
+    pub error_policy: super::route_profile::ErrorPolicy,
     pub xai_catalog_model: Option<XaiCatalogModel>,
 }
 
@@ -151,6 +152,7 @@ fn resolve_checked(
         client,
         usage_api_format,
         fragment_mode,
+        error_policy: profile.policies.errors,
         xai_catalog_model,
     })
 }

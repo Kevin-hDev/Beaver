@@ -8,7 +8,10 @@ pub(super) use super::openai_compat_model_parser::parse_models_list;
 
 /// Mappe un statut HTTP d'erreur vers un `LlmError` approprié.
 /// Le body fournisseur est lu de façon bornée puis remplacé par un code sûr dans les logs.
-pub async fn map_error_status(resp: Response, provider_id: &str) -> LlmError {
+pub async fn map_error_status(
+    resp: Response,
+    error_policy: super::route_profile::ErrorPolicy,
+) -> LlmError {
     let status = resp.status().as_u16();
     match status {
         401 | 403 => LlmError::Unauthorized,
@@ -27,8 +30,8 @@ pub async fn map_error_status(resp: Response, provider_id: &str) -> LlmError {
                     .map(|bytes| String::from_utf8_lossy(&bytes).into_owned())
                     .unwrap_or_default(),
             );
-            let code = super::provider_error::classify_http(provider_id, status, &body);
-            let log_code = super::provider_error::safe_log_code(provider_id, status, &body);
+            let code = super::provider_error::classify_http(error_policy, status, &body);
+            let log_code = super::provider_error::safe_log_code(error_policy, status, &body);
             ::log::warn!("[llm] HTTP {status} code={log_code}");
             if status == 402 {
                 return LlmError::KnownProvider(code);

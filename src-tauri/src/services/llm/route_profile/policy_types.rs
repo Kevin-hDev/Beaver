@@ -56,12 +56,27 @@ pub(in crate::services::llm) enum ParameterPolicy {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(in crate::services::llm) enum ErrorPolicy {
+pub(crate) enum ErrorPolicy {
     OpenAiCompatible,
     Responses,
+    Moonshot,
+    Xai,
     XaiOauth,
     Codex,
     Ollama,
+}
+
+impl ErrorPolicy {
+    pub(crate) const fn max_server_retries(self) -> u32 {
+        match self {
+            Self::Ollama => 10,
+            _ => 0,
+        }
+    }
+
+    pub(crate) const fn allows_server_retry(self, status: u16, retries: u32) -> bool {
+        matches!(status, 500 | 502 | 503 | 504) && retries < self.max_server_retries()
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

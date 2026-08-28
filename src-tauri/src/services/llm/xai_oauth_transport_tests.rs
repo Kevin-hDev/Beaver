@@ -127,16 +127,39 @@ fn required_continuity_cannot_use_the_chat_completions_backend() {
 #[test]
 fn resource_exhausted_without_retry_after_is_not_a_retryable_rate_limit() {
     assert_eq!(
-        classify_status(429, r#"{"code":"resource-exhausted"}"#, false),
+        classify_status(
+            crate::services::llm::route_profile::ErrorPolicy::XaiOauth,
+            429,
+            r#"{"code":"resource-exhausted"}"#,
+            false,
+        ),
         "provider_quota_exhausted"
     );
-    assert_eq!(classify_status(429, "{}", true), "rate_limit");
     assert_eq!(
-        classify_status(401, "", false),
+        classify_status(
+            crate::services::llm::route_profile::ErrorPolicy::XaiOauth,
+            429,
+            "{}",
+            true,
+        ),
+        "rate_limit"
+    );
+    assert_eq!(
+        classify_status(
+            crate::services::llm::route_profile::ErrorPolicy::XaiOauth,
+            401,
+            "",
+            false,
+        ),
         "oauth_reauthentication_required"
     );
     assert_eq!(
-        classify_status(403, "", false),
+        classify_status(
+            crate::services::llm::route_profile::ErrorPolicy::XaiOauth,
+            403,
+            "",
+            false,
+        ),
         "provider_access_unavailable"
     );
 }

@@ -198,7 +198,7 @@ pub(super) async fn post(
         config.tools.len(),
     );
     let log_code =
-        super::provider_error::safe_log_code(config.provider_id, status.as_u16(), &error_body);
+        super::provider_error::safe_log_code(route.error_policy, status.as_u16(), &error_body);
     ::log::warn!(
         "[{} responses] HTTP {status} code={log_code}",
         config.provider_id
@@ -207,7 +207,7 @@ pub(super) async fn post(
         status.as_u16(),
         &error_body,
         route.display_name,
-        route.chat_provider_id,
+        route.error_policy,
         false,
         has_retry_after,
     ))

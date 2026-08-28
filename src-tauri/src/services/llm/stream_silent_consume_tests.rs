@@ -41,6 +41,7 @@ async fn eof_before_done_is_rejected_as_truncated() {
         Duration::from_secs(2),
         crate::services::provider_usage::UsageContext::chat("openai", "gpt-5.6-sol"),
         crate::services::llm::route_profile::FragmentMode::DifferentialFragments,
+        crate::services::llm::route_profile::ErrorPolicy::Responses,
         None,
     )
     .await;
@@ -75,6 +76,7 @@ async fn explicit_done_completes_the_stream() {
         Duration::from_secs(2),
         crate::services::provider_usage::UsageContext::chat("openai", "gpt-5.6-sol"),
         crate::services::llm::route_profile::FragmentMode::DifferentialFragments,
+        crate::services::llm::route_profile::ErrorPolicy::Responses,
         Some(&mut request_measurement),
     )
     .await
@@ -85,4 +87,28 @@ async fn explicit_done_completes_the_stream() {
         request_measurement.fast_observation().1,
         crate::services::provider_usage::ServiceTierServed::Fast
     );
+}
+
+#[tokio::test]
+async fn embedded_provider_error_is_not_treated_as_a_valid_summary() {
+    let (_server, response) = streaming_response(concat!(
+        "data: {\"error\":{\"code\":503,\"message\":\"private\"}}\n\n",
+        "data: [DONE]\n\n",
+    ))
+    .await;
+
+    let error = consume_silent(
+        response,
+        CancellationToken::new(),
+        Duration::from_secs(2),
+        crate::services::provider_usage::UsageContext::chat("openai", "fixture"),
+        crate::services::llm::route_profile::FragmentMode::DifferentialFragments,
+        crate::services::llm::route_profile::ErrorPolicy::Responses,
+        None,
+    )
+    .await
+    .unwrap_err();
+
+    assert_eq!(error, "provider_temporarily_unavailable");
+    assert!(!error.contains("private"));
 }

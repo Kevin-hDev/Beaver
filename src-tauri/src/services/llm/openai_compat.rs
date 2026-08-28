@@ -40,7 +40,7 @@ impl OpenAiCompatProvider {
             })
             .await?;
         if !response.status().is_success() {
-            return Err(map_error_status(response, self.route.chat_provider_id).await);
+            return Err(map_error_status(response, self.route.error_policy).await);
         }
         let body = read_json(response).await?;
         if self.route.chat_provider_id == "moonshot-oauth" {
@@ -84,7 +84,7 @@ impl OpenAiCompatProvider {
         if response.status().is_success() {
             Ok(())
         } else {
-            Err(map_error_status(response, self.route.chat_provider_id).await)
+            Err(map_error_status(response, self.route.error_policy).await)
         }
     }
 
@@ -97,11 +97,9 @@ impl OpenAiCompatProvider {
         F: Fn(&str, reqwest::header::HeaderMap) -> reqwest::RequestBuilder,
     {
         let cache_policy = super::route_profile::cache_policy(self.route.chat_provider_id, "")
-            .ok_or_else(|| {
-                LlmError::KnownProvider(
-                    super::provider_error::ProviderErrorCode::ProviderConfigurationInvalid,
-                )
-            })?;
+            .ok_or(LlmError::KnownProvider(
+                super::provider_error::ProviderErrorCode::ProviderConfigurationInvalid,
+            ))?;
         let policy_headers =
             super::prompt_cache_policy::request_headers(cache_policy, None, purpose).map_err(
                 |_| {

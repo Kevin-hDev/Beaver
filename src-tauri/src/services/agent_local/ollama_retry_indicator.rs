@@ -3,8 +3,6 @@ use super::types_ollama::StreamEvent;
 use reqwest::StatusCode;
 use std::time::Duration;
 
-pub const MAX_SERVER_RETRIES: u32 = 10;
-
 pub const REASON_FEATURE_DROPPED: &str = "agentLocal.retry.featureDropped";
 pub const REASON_PARSER_CRASH: &str = "agentLocal.retry.parserCrash";
 pub const REASON_THINKING_ONLY: &str = "agentLocal.retry.thinkingOnly";
@@ -28,14 +26,15 @@ pub fn send_retry_indicator(
     let _ = on_event.send(retry_indicator(reason_key, attempt, max_attempts));
 }
 
-pub fn should_retry_server_status(status: StatusCode) -> bool {
-    matches!(
-        status,
-        StatusCode::INTERNAL_SERVER_ERROR
-            | StatusCode::BAD_GATEWAY
-            | StatusCode::SERVICE_UNAVAILABLE
-            | StatusCode::GATEWAY_TIMEOUT
-    )
+pub fn max_server_retries() -> u32 {
+    crate::services::llm::route_profile::error_policy("ollama")
+        .expect("the built-in Ollama route profile must exist")
+        .max_server_retries()
+}
+
+pub fn should_retry_server_status(status: StatusCode, retries: u32) -> bool {
+    crate::services::llm::route_profile::error_policy("ollama")
+        .is_some_and(|policy| policy.allows_server_retry(status.as_u16(), retries))
 }
 
 pub fn server_retry_delay(attempt: u32) -> Duration {
@@ -50,18 +49,23 @@ mod tests {
     #[test]
     fn retries_only_temporary_server_statuses() {
         assert!(should_retry_server_status(
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::INTERNAL_SERVER_ERROR,
+            0,
         ));
-        assert!(should_retry_server_status(StatusCode::BAD_GATEWAY));
-        assert!(should_retry_server_status(StatusCode::SERVICE_UNAVAILABLE));
-        assert!(should_retry_server_status(StatusCode::GATEWAY_TIMEOUT));
-        assert!(!should_retry_server_status(StatusCode::BAD_REQUEST));
-        assert!(!should_retry_server_status(StatusCode::NOT_FOUND));
+        assert!(should_retry_server_status(StatusCode::BAD_GATEWAY, 0));
+        assert!(should_retry_server_status(StatusCode::SERVICE_UNAVAILABLE, 0));
+        assert!(should_retry_server_status(StatusCode::GATEWAY_TIMEOUT, 0));
+        assert!(!should_retry_server_status(StatusCode::BAD_REQUEST, 0));
+        assert!(!should_retry_server_status(StatusCode::NOT_FOUND, 0));
+        assert!(!should_retry_server_status(
+            StatusCode::SERVICE_UNAVAILABLE,
+            max_server_retries(),
+        ));
     }
 
     #[test]
     fn serializes_retry_indicator_in_camel_case() {
-        let event = retry_indicator(REASON_SERVER, 2, MAX_SERVER_RETRIES);
+        let event = retry_indicator(REASON_SERVER, 2, max_server_retries());
         assert_eq!(
             serde_json::to_value(event).unwrap(),
             json!({

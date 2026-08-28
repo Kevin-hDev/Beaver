@@ -29,6 +29,7 @@ pub struct LlmRoute {
     pub auto_max_tokens: bool,
     pub fallback_max_tokens: Option<u32>,
     pub usage_scope: UsageScope,
+    pub(crate) error_policy: super::route_profile::ErrorPolicy,
     auth_source: AuthSource,
 }
 
@@ -173,6 +174,7 @@ pub fn resolve(provider_id: &str) -> Option<LlmRoute> {
         } else {
             UsageScope::InteractiveOnly
         },
+        error_policy: profile.policies.errors,
         auth_source,
     })
 }

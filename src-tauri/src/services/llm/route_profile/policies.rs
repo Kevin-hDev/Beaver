@@ -145,7 +145,7 @@ pub(super) const XAI_PUBLIC: RoutePolicies = RoutePolicies {
         SchemaPolicy::Xai,
         CachePolicy::XaiHeader,
         ParameterPolicy::Xai,
-        ErrorPolicy::Responses,
+        ErrorPolicy::Xai,
         AuthProbePolicy::ModelsGet,
         ToolLimitPolicy::Xai,
     )
@@ -156,7 +156,7 @@ pub(super) const MOONSHOT: RoutePolicies = RoutePolicies {
         SchemaPolicy::Kimi,
         CachePolicy::PromptKey,
         ParameterPolicy::Moonshot,
-        ErrorPolicy::OpenAiCompatible,
+        ErrorPolicy::Moonshot,
         AuthProbePolicy::ModelsGet,
         ToolLimitPolicy::Default,
     )

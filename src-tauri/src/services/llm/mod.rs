@@ -61,6 +61,7 @@ mod stream_chunk;
 mod stream_chunk_tests;
 mod stream_consume;
 mod stream_consume_budget;
+mod stream_consume_record;
 pub mod stream_convert;
 pub(crate) mod stream_dispatch;
 #[cfg(test)]

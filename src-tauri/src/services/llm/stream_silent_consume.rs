@@ -16,6 +16,7 @@ pub(super) async fn consume_silent(
     idle_timeout: Duration,
     usage_context: crate::services::provider_usage::UsageContext<'_>,
     fragment_mode: super::route_profile::FragmentMode,
+    error_policy: super::route_profile::ErrorPolicy,
     mut measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
 ) -> Result<StreamResult, String> {
     let mut stream = resp.bytes_stream().eventsource();
@@ -48,6 +49,7 @@ pub(super) async fn consume_silent(
                     &mut think_filter,
                     &mut fragments,
                     usage_context,
+                    error_policy,
                 )?;
                 if useful {
                     if let Some(measurement) = measurement.as_mut() {
@@ -69,6 +71,7 @@ fn process_chunk(
     think_filter: &mut ThinkTagFilter,
     fragments: &mut super::stream_fragments::StreamFragmentState,
     usage_context: crate::services::provider_usage::UsageContext<'_>,
+    error_policy: super::route_profile::ErrorPolicy,
 ) -> Result<bool, String> {
     let mut useful = false;
     for chunk in stream_chunk::parse_with_context(data, usage_context) {
@@ -97,7 +100,7 @@ fn process_chunk(
             }
             ParsedChunk::GenerationDuration(_) => {}
             ParsedChunk::ProviderError(status) => {
-                return Err(stream_chunk::provider_error_code(status).to_string());
+                return Err(stream_chunk::provider_error_code(error_policy, status).to_string());
             }
         }
     }
