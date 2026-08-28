@@ -70,12 +70,7 @@ pub fn process_chunk(
         let thinking = options.fragments.thinking(thinking)?;
         if !thinking.is_empty() {
             chunk_has_payload = true;
-            super::stream_buffer::record_thinking(
-                on_event,
-                result,
-                thinking,
-                token_count,
-            );
+            super::stream_buffer::record_thinking(on_event, result, thinking, token_count);
         }
     }
 

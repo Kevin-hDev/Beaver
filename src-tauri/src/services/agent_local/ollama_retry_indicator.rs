@@ -53,7 +53,10 @@ mod tests {
             0,
         ));
         assert!(should_retry_server_status(StatusCode::BAD_GATEWAY, 0));
-        assert!(should_retry_server_status(StatusCode::SERVICE_UNAVAILABLE, 0));
+        assert!(should_retry_server_status(
+            StatusCode::SERVICE_UNAVAILABLE,
+            0
+        ));
         assert!(should_retry_server_status(StatusCode::GATEWAY_TIMEOUT, 0));
         assert!(!should_retry_server_status(StatusCode::BAD_REQUEST, 0));
         assert!(!should_retry_server_status(StatusCode::NOT_FOUND, 0));

@@ -13,7 +13,7 @@ use zeroize::Zeroize;
 use zeroize::Zeroizing;
 
 #[cfg(not(feature = "e2e"))]
-const KEYRING_SERVICE: &str = "cl-go-dash";
+pub(crate) const KEYRING_SERVICE: &str = "cl-go-dash";
 #[cfg(not(feature = "e2e"))]
 const MASTER_KEY_USER: &str = "master-key";
 const VAULT_VERSION: u8 = 1;

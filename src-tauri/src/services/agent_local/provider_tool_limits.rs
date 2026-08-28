@@ -41,8 +41,8 @@ mod tests {
     #[test]
     fn provider_limits_are_stable_and_model_aware() {
         let limit = |provider, model| {
-            let policy = crate::services::llm::route_profile::tool_limit_policy(provider, model)
-                .unwrap();
+            let policy =
+                crate::services::llm::route_profile::tool_limit_policy(provider, model).unwrap();
             for_policy(policy)
         };
         assert_eq!(limit("mistral", "large"), 128);
@@ -50,10 +50,7 @@ mod tests {
         assert_eq!(limit("google", "gemini-3"), 512);
         assert_eq!(limit("openrouter", "google/gemini-3"), 512);
         assert_eq!(limit("deepseek", "deepseek-chat"), 128);
-        assert_eq!(
-            limit("openrouter", "deepseek/deepseek-v3"),
-            128
-        );
+        assert_eq!(limit("openrouter", "deepseek/deepseek-v3"), 128);
         assert_eq!(limit("openrouter", "unknown/model"), 128);
         assert_eq!(limit("ollama", "qwen3"), 256);
     }

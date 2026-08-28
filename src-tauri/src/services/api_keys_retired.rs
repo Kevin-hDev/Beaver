@@ -12,17 +12,13 @@ fn backup_vault_for_retired_cleanup(
     vault_path: &std::path::Path,
     backup_path: &std::path::Path,
 ) -> Result<(), String> {
-    match crate::services::private_store::read_bounded_regular(
-        backup_path,
-        MAX_VAULT_BACKUP_BYTES,
-    )? {
+    match crate::services::private_store::read_bounded_regular(backup_path, MAX_VAULT_BACKUP_BYTES)?
+    {
         crate::services::private_store::BoundedFile::Content(_) => return Ok(()),
         crate::services::private_store::BoundedFile::Missing => {}
     }
-    match crate::services::private_store::read_bounded_regular(
-        vault_path,
-        MAX_VAULT_BACKUP_BYTES,
-    )? {
+    match crate::services::private_store::read_bounded_regular(vault_path, MAX_VAULT_BACKUP_BYTES)?
+    {
         crate::services::private_store::BoundedFile::Missing => Ok(()),
         crate::services::private_store::BoundedFile::Content(bytes) => {
             crate::services::private_store::atomic_write(backup_path, &bytes)
@@ -66,7 +62,7 @@ fn prepare_retired_provider_cleanup(
 
 #[cfg(not(feature = "e2e"))]
 fn delete_retired_provider_keychain_entry() {
-    let Ok(entry) = keyring::Entry::new("cl-go-dash", RETIRED_PROVIDER_ID) else {
+    let Ok(entry) = keyring::Entry::new(vault::KEYRING_SERVICE, RETIRED_PROVIDER_ID) else {
         log::warn!("retired_provider_keychain_cleanup_unavailable");
         return;
     };

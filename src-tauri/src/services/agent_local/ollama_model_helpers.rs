@@ -42,7 +42,10 @@ pub(crate) fn build_model_from_tags(
         .take(12)
         .collect();
     let supports_thinking = info.as_ref().is_some_and(|model| {
-        model.capabilities.iter().any(|capability| capability == "thinking")
+        model
+            .capabilities
+            .iter()
+            .any(|capability| capability == "thinking")
     });
     let reasoning_modes = if supports_thinking {
         crate::services::reasoning_ollama::supported_modes(&name)
