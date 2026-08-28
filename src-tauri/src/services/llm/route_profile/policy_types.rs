@@ -1,10 +1,24 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(in crate::services::llm) enum SchemaPolicy {
+pub(crate) enum SchemaPolicy {
     Generic,
     Google,
     Kimi,
     Xai,
     Upstream,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum ExtensionToolPolicy {
+    All,
+    WithoutExtensions,
+    NoTools,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct ResolvedToolPolicy {
+    pub schema: SchemaPolicy,
+    pub strict: bool,
+    pub extensions: ExtensionToolPolicy,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -48,7 +48,12 @@ pub async fn estimate_context_hidden_usage(
         .filter(|provider_id| *provider_id != "ollama")
         .map(|provider_id| {
             let canonical = crate::services::llm::route::canonical_provider_id(provider_id);
-            super::agent_chat_task::tool_policy::apply(canonical, &model, defs.clone()).tools
+            crate::services::llm::route_profile::tool_policy(canonical, &model)
+                .map(|policy| {
+                    super::agent_chat_task::tool_policy::apply(policy.extensions, defs.clone())
+                        .tools
+                })
+                .unwrap_or_default()
         })
         .unwrap_or(defs);
     let enabled_tool_names = tool_catalog::tool_names(&defs);

@@ -47,7 +47,7 @@ mod retry;
 pub mod route;
 #[cfg(test)]
 mod route_behavior_baseline_tests;
-pub(super) mod route_profile;
+pub(crate) mod route_profile;
 pub mod runtime_models;
 pub mod stream;
 mod stream_chunk;
@@ -89,6 +89,8 @@ mod tool_schema_names;
 mod tool_schema_profile;
 pub mod types;
 pub mod vision;
+#[cfg(test)]
+mod wire_contract_tests;
 mod xai_oauth_chat;
 mod xai_oauth_payload;
 mod xai_oauth_transport;

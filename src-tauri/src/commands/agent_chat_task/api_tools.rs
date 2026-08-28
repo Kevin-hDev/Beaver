@@ -23,7 +23,12 @@ pub(super) fn resolve(
     };
     let filtered =
         tool_catalog::filter_tool_definitions(definitions, &settings.enabled_optional_tools);
-    let policy = super::tool_policy::apply(canonical_provider, &params.model, filtered);
+    let Some(route_policy) =
+        crate::services::llm::route_profile::tool_policy(canonical_provider, &params.model)
+    else {
+        return Vec::new();
+    };
+    let policy = super::tool_policy::apply(route_policy.extensions, filtered);
     if policy.extensions_blocked {
         let _ = params.on_event.send(StreamEvent::Notice {
             message_key: super::tool_policy::GROQ_EXTENSIONS_NOTICE.to_string(),

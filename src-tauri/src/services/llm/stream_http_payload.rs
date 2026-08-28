@@ -67,7 +67,9 @@ fn apply_tools(payload: &mut serde_json::Value, cfg: &RequestConfig<'_>, provide
     if cfg.tools.is_empty() {
         return;
     }
-    let tools = super::tool_schema::tools_for_provider(provider_id, cfg.model, cfg.tools);
+    let policy = super::route_profile::tool_policy(provider_id, cfg.model)
+        .expect("LlmRoute is constructed from a route profile");
+    let tools = super::tool_schema::tools_for_policy(policy.schema, policy.strict, cfg.tools);
     payload["tools"] = serde_json::Value::Array(tools);
     if provider_id != "deepseek" {
         // DeepSeek V4 choisit lui-même ses outils en mode thinking et rejette ce champ.

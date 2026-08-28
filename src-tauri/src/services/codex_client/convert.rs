@@ -171,7 +171,10 @@ pub fn convert_tools_to_responses_api(
     model: &str,
     tools: &[serde_json::Value],
 ) -> Vec<serde_json::Value> {
-    crate::services::llm::tool_schema::tools_for_provider(provider_id, model, tools)
+    let Some(policy) = crate::services::llm::route_profile::tool_policy(provider_id, model) else {
+        return Vec::new();
+    };
+    crate::services::llm::tool_schema::tools_for_policy(policy.schema, policy.strict, tools)
         .iter()
         .filter_map(|t| {
             let func = t.get("function")?;
