@@ -14,6 +14,8 @@ vi.mock("@tauri-apps/plugin-shell", () => ({ open: vi.fn(() => Promise.resolve()
 const moonshot: OAuthProviderStatus = {
   id: "moonshot",
   display_name: "Moonshot AI",
+  connection_id: "moonshot-oauth",
+  usage_url: "https://www.kimi.com/code/console",
   connected: false,
   account: null,
   experimental: true,

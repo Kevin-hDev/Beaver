@@ -118,3 +118,7 @@ pub(crate) fn sanitize_log_body(body: &str) -> String {
         .take(200)
         .collect()
 }
+
+pub(crate) fn context_usage_includes_reasoning(provider_id: &str) -> Option<bool> {
+    route_profile::find(provider_id).map(|profile| profile.context_usage_includes_reasoning())
+}

@@ -139,6 +139,7 @@ fn to_model_info(model: &XaiCatalogModel) -> ModelInfo {
             .default_reasoning_mode
             .clone()
             .or_else(|| local_reasoning.and_then(|reasoning| reasoning.default_mode)),
+        context_usage_includes_reasoning: true,
         is_free: false,
     }
 }

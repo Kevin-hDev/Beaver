@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import test from "node:test";
 
 import {
@@ -68,4 +69,18 @@ test("exclut tests, fixtures et fichiers générés du scan de production", () =
     assert.equal(isProductionSource(path), false, path);
   }
   assert.equal(isProductionSource("src-tauri/src/services/llm/route.rs"), true);
+});
+
+test("les cinq consommateurs frontend ne décident plus selon le provider", () => {
+  const files = [
+    "src/components/providers/usage/provider-usage-links.ts",
+    "src/hooks/oauth-models.ts",
+    "src/lib/reasoning-modes.ts",
+    "src/hooks/use-context-progress.ts",
+    "src/hooks/use-context-usage.ts",
+  ];
+  for (const path of files) {
+    const source = fs.existsSync(path) ? fs.readFileSync(path, "utf8") : "";
+    assert.equal(count(path, source), 0, path);
+  }
 });

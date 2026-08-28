@@ -41,6 +41,7 @@ fn to_model_info(
         supports_fast_mode: model.supports_fast_mode,
         reasoning_modes,
         default_reasoning_mode: model.default_reasoning_mode,
+        context_usage_includes_reasoning: true,
         is_free: model.is_free,
     }
 }

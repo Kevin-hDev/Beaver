@@ -221,3 +221,9 @@ pub(in crate::services::llm) struct RouteProfile {
     pub output_limits: OutputLimitPolicy,
     pub policies: RoutePolicies,
 }
+
+impl RouteProfile {
+    pub(in crate::services::llm) const fn context_usage_includes_reasoning(&self) -> bool {
+        !matches!(self.client, ClientSelector::Codex)
+    }
+}

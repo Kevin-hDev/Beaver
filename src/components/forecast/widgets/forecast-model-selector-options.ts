@@ -34,6 +34,7 @@ export function buildForecastSelectorGroups(
         is_local: !model.is_cloud,
         supports_tools: false,
         supports_vision: false,
+        context_usage_includes_reasoning: true,
         is_free: true,
         hint: disabled ? undefined : model.params,
         disabled,

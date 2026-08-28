@@ -32,6 +32,8 @@ function model(overrides: Partial<AvailableModel> = {}): AvailableModel {
     is_local: false,
     supports_tools: true,
     supports_thinking: true,
+    reasoning_modes: ["off", "low", "medium", "high"],
+    context_usage_includes_reasoning: true,
     ...overrides,
   };
 }

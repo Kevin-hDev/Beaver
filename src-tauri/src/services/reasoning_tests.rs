@@ -149,6 +149,7 @@ fn supported_modes_and_default_use_validated_runtime_restrictions() {
         supports_fast_mode: false,
         reasoning_modes: vec!["auto".into()],
         default_reasoning_mode: Some("auto".into()),
+        context_usage_includes_reasoning: true,
         is_free: false,
     };
     crate::services::llm::runtime_models::replace_provider("dynamic-fixture", &[model]);

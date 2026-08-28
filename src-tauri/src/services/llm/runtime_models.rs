@@ -93,6 +93,7 @@ mod tests {
             supports_fast_mode: false,
             reasoning_modes: vec!["auto".to_string()],
             default_reasoning_mode: Some("auto".to_string()),
+            context_usage_includes_reasoning: true,
             is_free: true,
         }
     }

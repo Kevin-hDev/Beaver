@@ -2,11 +2,37 @@ import { describe, expect, it } from "vitest";
 import { mapOAuthModels, mapOAuthResponse, withoutInteractiveOnlyModels } from "../use-available-models";
 
 describe("OAuth models", () => {
+  it("accepte un provider futur uniquement depuis ses métadonnées publiques", () => {
+    const groups = mapOAuthModels([{
+      id: "model-v1",
+      provider_id: "provider-fictif",
+      connection_id: "provider-fictif-oauth",
+      provider_display_name: "Provider fictif",
+      display_name: "Model V1",
+      context_length: 64000,
+      supports_tools: true,
+      supports_vision: false,
+      supports_thinking: true,
+      supports_fast_mode: false,
+      reasoning_modes: ["low", "high"],
+      default_reasoning_mode: "low",
+      context_usage_includes_reasoning: false,
+      interactive_only: false,
+    }]);
+
+    expect(groups.get("provider-fictif-oauth")?.[0]).toMatchObject({
+      provider_name: "Provider fictif · OAuth",
+      context_length: 64000,
+      reasoning_modes: ["low", "high"],
+      context_usage_includes_reasoning: false,
+    });
+  });
+
   it("utilise des ids et libellés distincts des providers API", () => {
     const groups = mapOAuthModels([
-      { id: "kimi-for-coding", provider_id: "moonshot", display_name: "Kimi", supports_tools: true, supports_vision: true, supports_thinking: true, supports_fast_mode: false, interactive_only: true },
-      { id: "grok-4.3", provider_id: "xai", display_name: "Grok 4.3", supports_tools: true, supports_vision: true, supports_thinking: true, supports_fast_mode: false, interactive_only: true },
-      { id: "gpt-5.6-sol", provider_id: "openai", display_name: "gpt-5.6-sol", context_length: 258400, supports_tools: true, supports_vision: true, supports_thinking: true, supports_fast_mode: true, interactive_only: false },
+      { id: "kimi-for-coding", provider_id: "moonshot", connection_id: "moonshot-oauth", provider_display_name: "Moonshot AI", display_name: "Kimi", supports_tools: true, supports_vision: true, supports_thinking: true, supports_fast_mode: false, context_usage_includes_reasoning: true, interactive_only: true },
+      { id: "grok-4.3", provider_id: "xai", connection_id: "xai-oauth", provider_display_name: "xAI", display_name: "Grok 4.3", supports_tools: true, supports_vision: true, supports_thinking: true, supports_fast_mode: false, context_usage_includes_reasoning: true, interactive_only: true },
+      { id: "gpt-5.6-sol", provider_id: "openai", connection_id: "codex-oauth", provider_display_name: "OpenAI", display_name: "gpt-5.6-sol", context_length: 258400, supports_tools: true, supports_vision: true, supports_thinking: true, supports_fast_mode: true, context_usage_includes_reasoning: false, interactive_only: false },
     ]);
 
     expect(groups.get("moonshot-oauth")?.[0].provider_name).toBe("Moonshot AI · OAuth");
@@ -39,12 +65,15 @@ describe("OAuth models", () => {
       id: "k3",
       display_name: "K3",
       provider_id: "moonshot",
+      connection_id: "moonshot-oauth",
+      provider_display_name: "Moonshot AI",
       supports_tools: true,
       supports_vision: true,
       supports_thinking: true,
       supports_fast_mode: false,
       reasoning_modes: ["low", "high", "max"],
       default_reasoning_mode: "max",
+      context_usage_includes_reasoning: true,
       interactive_only: true,
     }]);
 

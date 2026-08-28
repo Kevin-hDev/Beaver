@@ -60,3 +60,12 @@ fn route_profile_declares_anthropic_wire_without_activating_a_route() {
     );
     assert!(find("anthropic").is_none());
 }
+
+#[test]
+fn context_usage_reasoning_policy_is_owned_by_the_route_profile() {
+    assert!(!find("codex-oauth")
+        .unwrap()
+        .context_usage_includes_reasoning());
+    assert!(find("openai").unwrap().context_usage_includes_reasoning());
+    assert!(find("ollama").unwrap().context_usage_includes_reasoning());
+}

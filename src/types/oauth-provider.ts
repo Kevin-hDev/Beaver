@@ -3,6 +3,8 @@ export type OAuthProviderId = "openai" | "moonshot" | "xai";
 export interface OAuthProviderStatus {
   id: OAuthProviderId;
   display_name: string;
+  connection_id: string;
+  usage_url: string;
   connected: boolean;
   account: string | null;
   experimental: boolean;

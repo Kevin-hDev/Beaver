@@ -179,6 +179,7 @@ fn convert_model(wire: WireModel) -> Option<CatalogModel> {
             supports_fast_mode,
             reasoning_modes: modes,
             default_reasoning_mode: None,
+            context_usage_includes_reasoning: true,
             is_free: false,
         },
     })

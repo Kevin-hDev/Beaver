@@ -9,10 +9,17 @@ import { OAuthProviderDetail } from "../oauth-provider-detail";
 vi.mock("react-i18next", () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn(() => Promise.resolve()) }));
 vi.mock("@/hooks/oauth-models", () => ({ fetchOAuthModels: vi.fn() }));
+vi.mock("../usage/provider-usage-card", () => ({
+  ProviderUsageCard: ({ connectionId, siteUrl }: { connectionId: string; siteUrl: string }) => (
+    <div data-testid="usage-card" data-connection-id={connectionId} data-site-url={siteUrl} />
+  ),
+}));
 
 const moonshot: OAuthProviderStatus = {
   id: "moonshot",
   display_name: "Moonshot AI",
+  connection_id: "moonshot-oauth",
+  usage_url: "https://www.kimi.com/code/console",
   connected: true,
   account: null,
   experimental: true,
@@ -40,5 +47,22 @@ describe("OAuthProviderDetail", () => {
 
     await waitFor(() => expect(fetchOAuthModels).toHaveBeenLastCalledWith(true));
     expect(invoke).not.toHaveBeenCalledWith("start_oauth_provider_login", expect.anything());
+  });
+
+  it("utilise directement l’identité publique fournie par Rust", () => {
+    render(<OAuthProviderDetail provider={{
+      ...moonshot,
+      connection_id: "provider-fictif-oauth",
+      usage_url: "https://example.com/usage",
+    }} refresh={vi.fn(() => Promise.resolve([]))} />);
+
+    expect(screen.getByTestId("usage-card")).toHaveAttribute(
+      "data-connection-id",
+      "provider-fictif-oauth",
+    );
+    expect(screen.getByTestId("usage-card")).toHaveAttribute(
+      "data-site-url",
+      "https://example.com/usage",
+    );
   });
 });

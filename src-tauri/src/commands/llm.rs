@@ -38,6 +38,8 @@ pub async fn list_llm_models(provider_id: String) -> Result<Vec<ModelInfo>, Stri
     // Autorité dynamique brute : l'enrichissement ci-dessous sert uniquement à l'UI.
     let runtime_catalog = models.clone();
     for m in &mut models {
+        m.context_usage_includes_reasoning =
+            crate::services::llm::context_usage_includes_reasoning(&provider_id).unwrap_or(true);
         let remote_reasoning_modes = m.reasoning_modes.clone();
         let local = provider_model_lookup::local_capabilities(canonical_provider, &m.id).is_some();
         let resolved = provider_model_lookup::resolve(canonical_provider, &m.id).await;
@@ -91,6 +93,61 @@ pub async fn list_llm_models(provider_id: String) -> Result<Vec<ModelInfo>, Stri
 }
 
 #[tauri::command]
+pub async fn get_model_context(
+    route_id: String,
+    model_id: String,
+    ollama: tauri::State<'_, crate::services::agent_local::ollama_client::OllamaClient>,
+) -> Result<Option<u64>, String> {
+    use crate::services::reasoning_continuity::contract::RouteId;
+
+    crate::services::reasoning_continuity::limits::validate_model_id(&model_id)
+        .map_err(|_| "Modèle invalide".to_string())?;
+    let route =
+        RouteId::from_provider_id(&route_id).ok_or_else(|| "Fournisseur invalide".to_string())?;
+    if route == RouteId::Ollama {
+        return resolve_ollama_context(&ollama, &model_id).await.map(Some);
+    }
+    Ok(registered_model_context(&route_id, &model_id))
+}
+
+fn registered_model_context(route_id: &str, model_id: &str) -> Option<u64> {
+    let canonical = crate::services::llm::route::canonical_provider_id(route_id);
+    let runtime = crate::services::llm::runtime_models::lookup(canonical, model_id)
+        .and_then(|model| model.context_length);
+    let embedded = provider_model_lookup::local_limits(canonical, model_id)
+        .and_then(|limits| limits.context_window);
+    runtime.or(embedded).map(u64::from)
+}
+
+async fn resolve_ollama_context(
+    ollama: &crate::services::agent_local::ollama_client::OllamaClient,
+    model_id: &str,
+) -> Result<u64, String> {
+    if let Some(loaded) = ollama.loaded_context_length(model_id).await? {
+        if loaded > 0 {
+            return Ok(loaded);
+        }
+    }
+    let info = ollama.show_model(model_id).await?;
+    let parsed = crate::services::agent_local::modelfile_parser::parse_modelfile(&info.modelfile);
+    if let Some(configured) = parsed
+        .parameters
+        .get("num_ctx")
+        .and_then(|value| value.as_u64())
+    {
+        if configured > 0 {
+            return Ok(configured);
+        }
+    }
+    let effective = u64::from(crate::services::gpu_detect::compute_default_num_ctx());
+    Ok(match (info.context_length, effective) {
+        (model, configured) if model > 0 && configured > 0 => model.min(configured),
+        (model, _) if model > 0 => model,
+        (_, configured) => configured,
+    })
+}
+
+#[tauri::command]
 pub async fn test_llm_connection(provider_id: String) -> Result<(), String> {
     let provider = OpenAiCompatProvider::new(&provider_id).map_err(String::from)?;
     provider.test_connection().await.map_err(String::from)
@@ -117,5 +174,17 @@ mod tests {
     #[tokio::test]
     async fn openrouter_model_keeps_upstream_tool_capability() {
         assert!(super::supports_tool_use("openrouter".to_string(), "openai/o3".to_string()).await);
+    }
+
+    #[test]
+    fn model_context_comes_from_the_registered_route_metadata() {
+        assert_eq!(
+            super::registered_model_context("openai", "gpt-5.6-sol"),
+            Some(1_050_000)
+        );
+        assert_eq!(
+            super::registered_model_context("openai", "unknown-model"),
+            None
+        );
     }
 }

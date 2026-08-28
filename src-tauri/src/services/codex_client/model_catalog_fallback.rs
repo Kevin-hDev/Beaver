@@ -54,6 +54,7 @@ pub(super) fn models() -> Vec<ModelInfo> {
         supports_fast_mode: false,
         reasoning_modes: modes.iter().map(|mode| (*mode).to_string()).collect(),
         default_reasoning_mode: default_mode.map(str::to_string),
+        context_usage_includes_reasoning: true,
         is_free: false,
     })
     .collect()

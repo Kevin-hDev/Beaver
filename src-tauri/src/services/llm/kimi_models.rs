@@ -79,6 +79,7 @@ fn parse_model(value: &Value) -> Option<Result<ModelInfo, LlmError>> {
         supports_fast_mode: false,
         reasoning_modes,
         default_reasoning_mode,
+        context_usage_includes_reasoning: true,
         is_free: false,
         id,
     }))

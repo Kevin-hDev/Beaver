@@ -75,6 +75,7 @@ fn parse_model(model: &Value, provider_id: &str) -> Option<ModelInfo> {
         supports_fast_mode: false,
         reasoning_modes,
         default_reasoning_mode,
+        context_usage_includes_reasoning: true,
         // Un badge gratuit exige un tarif nul explicite pour toutes les unités facturées.
         is_free: has_zero_pricing(&model["pricing"]),
     })
