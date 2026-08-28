@@ -12,9 +12,14 @@
   --edge: rgba(255, 255, 255, 0.06);
   --tabbar-track: rgba(0, 0, 0, 0.35);
   --tabbar-active-bg: rgba(200, 200, 210, 0.10);
-  --ink: #c8c8ce;
+    /* 13,7 sur le fond. À #c8c8ce il n'était qu'à 11,2 quand les trois autres
+     thèmes sombres tenaient entre 13,5 et 15,9 : le plus utilisé était le plus
+     terne de la famille. */
+  --ink: #dcdce0;
   --ink-muted: #b0b0b8;
-  --ink-faint: #78788a;
+    /* 5,0 sur le panneau de verre. À #78788a il tombait à 3,9, sous le minimum
+     AA de 4,5 — et c'est ce token qui porte les libellés de section. */
+  --ink-faint: #8a8a99;
   --scrollbar-thumb: rgba(90, 90, 100, 0.35);
   --pulse: #ff8a4c;
   /* Les briques du logotype. Couleur de marque, pas couleur d'interface :

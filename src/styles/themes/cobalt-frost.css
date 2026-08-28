@@ -14,7 +14,9 @@
   --tabbar-active-bg: #ffffff;
   --ink: #101828;
   --ink-muted: #344054;
-  --ink-faint: #667085;
+    /* 5,0 sur le panneau ; #667085 y tombait à 4,4, sous le minimum AA.
+     Fond clair : ici on assombrit là où les thèmes sombres éclaircissent. */
+  --ink-faint: #5e677b;
   --scrollbar-thumb: rgba(75, 96, 124, 0.28);
   --pulse: #075dcc;
   /* Les briques du logotype. Couleur de marque, pas couleur d'interface :

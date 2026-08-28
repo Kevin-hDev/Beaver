@@ -14,7 +14,8 @@
   --tabbar-active-bg: rgba(228, 228, 231, 0.10);
   --ink: #e4e4e7;
   --ink-muted: #b4b4bb;
-  --ink-faint: #75757f;
+    /* 5,0 sur le panneau ; #75757f y tombait à 4,1, sous le minimum AA. */
+  --ink-faint: #84848d;
   --scrollbar-thumb: rgba(117, 117, 127, 0.38);
   --pulse: #ff3038;
   /* Les briques du logotype. Couleur de marque, pas couleur d'interface :
