@@ -1,0 +1,55 @@
+# Handoff reviewer — correction finale R-1 Codex
+
+Date : 2026-08-28
+Branche : `codex/provider-transport-refactor`
+Plage complète : `3277fad80fbf76564d1798c4027a454063abc83a..0ce347117abce7de02c6f08e863a9937378f2198` (25 commits)
+Commit R-1 : `85c1f207c6325baeee0ac6db9827768c7ab5d055..0ce347117abce7de02c6f08e863a9937378f2198`
+Source : `docs/providers/refactor/review-corrections-2026-08-28.md`
+
+Cette note remplace le verdict attaché à `85c1f207` pour la review du HEAD courant.
+
+## Décision
+
+Le défaut de raisonnement embarqué est fusionné à la frontière qui normalise le catalogue Codex distant, et non uniquement dans le résolveur backend. Cette position est nécessaire car le même `ModelInfo` alimente directement la réponse envoyée à l'interface puis le registre runtime.
+
+Le catalogue distant reste autoritaire pour les capacités et les modes. Un défaut embarqué est repris uniquement quand :
+
+1. le modèle distant porte exactement le même identifiant qu'une entrée fallback ;
+2. le catalogue distant ne fournit pas lui-même de défaut ;
+3. le niveau fallback figure encore dans les modes distants validés.
+
+Conséquences vérifiées :
+
+- `gpt-5.3-codex-spark` distant conserve `high` lorsque `high` est publié ;
+- Spark sans mode `high` ne reçoit aucun défaut incompatible ;
+- un modèle uniquement distant ne reçoit aucun défaut inventé ;
+- les autres champs distants restent inchangés ;
+- le modèle runtime absent du fallback conserve les capacités validées par C-1.
+
+## TDD et relecture de régression
+
+Le test `remote_catalog_uses_only_a_compatible_fallback_reasoning_default` exerce le vrai parseur avec trois réponses distantes contrôlées. La première commande de filtrage avait ciblé un mauvais chemin et exécuté zéro test ; elle a été rejetée comme preuve. La commande corrigée a exécuté exactement un test et échoué comme attendu : `left: None`, `right: Some("high")`. Après le correctif minimal, le même test est vert.
+
+La relecture a suivi le trajet complet : parseur distant vers `available_models`, réponse OAuth vers interface, `runtime_models`, puis résolution backend. Diff final : 3 fichiers, +37/-1. Fichiers de production : `model_catalog.rs` 225 lignes, `model_catalog_fallback.rs` 72 lignes.
+
+## Validation finale exécutée
+
+- test de régression R-1 : 1/1 vert après rouge confirmé ;
+- suite catalogue Codex : 6/6 verte ;
+- test historique Spark par défaut `high` : 1/1 vert ;
+- test C-1 du modèle runtime absent du fallback : 1/1 vert ;
+- `npm run lint` : vert, cliquet provider vert avec 53 fichiers autorisés ;
+- `npx tsc --noEmit` : vert ;
+- `cargo fmt --all -- --check` : vert ;
+- `cargo check` : vert ;
+- `cargo clippy --all-targets -- -D warnings` : vert ;
+- `cargo test` : 4 238 réussis, 0 échec, 7 ignorés ; intégration prelogger 1/1 ;
+- `NO_COLOR=1 npm test` : 483 fichiers et 2 614 tests frontend réussis, toutes les suites annexes vertes, un test Windows ignoré sur macOS ;
+- `git diff --check` : vert ;
+- `graphify update .` : vert, graphe du worktree mis à jour et ignoré par Git.
+
+L'avertissement linker macOS `__eh_frame section too large` et les messages jsdom `HTMLCanvasElement.getContext` sont préexistants et non bloquants. Aucune relance de l'application et aucun appel provider payant ne furent nécessaires.
+
+## Verdict de handoff
+
+R-1 est corrigé à la frontière commune de l'interface et du backend, avec test de non-régression sur les cas compatibles, incompatibles et inconnus. La plage à reviewer et fusionner est désormais `3277fad80fbf76564d1798c4027a454063abc83a..0ce347117abce7de02c6f08e863a9937378f2198`.
