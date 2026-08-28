@@ -75,7 +75,7 @@ pub(crate) enum AuthProbePolicy {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(in crate::services::llm) enum ToolLimitPolicy {
+pub(crate) enum ToolLimitPolicy {
     Default,
     Google,
     Mistral,
@@ -83,6 +83,21 @@ pub(in crate::services::llm) enum ToolLimitPolicy {
     Xai,
     OpenRouterUpstream,
     Ollama,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum UpstreamToolFamily {
+    Google,
+    Xai,
+    Mistral,
+    DeepSeek,
+    Other,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct ResolvedToolLimitPolicy {
+    pub policy: ToolLimitPolicy,
+    pub upstream: UpstreamToolFamily,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
