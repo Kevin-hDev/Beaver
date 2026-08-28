@@ -166,7 +166,7 @@ jobs:
           persist-credentials: false
 
       - name: Install SearXNG Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v6; SHA is enforced by the release workflow security contract
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0; SHA is enforced by the release workflow security contract
         with:
           python-version-file: scripts/build/searxng-python-version.txt
 
