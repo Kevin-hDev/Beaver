@@ -27,13 +27,15 @@ describe("settings CSS wiring", () => {
   });
 
   it("uses the colocated classes for the about view", async () => {
-    const { container, getByText } = render(<AboutSettings />);
+    const { container, getByText, getByRole } = render(<AboutSettings />);
 
     expect(container.querySelector(".as-root")).not.toBeNull();
     expect(container.querySelectorAll(".as-info-row")).toHaveLength(3);
     expect(container.querySelector(".as-github-btn")).not.toBeNull();
     expect(container.querySelector(".as-app-logo")).toBeInstanceOf(HTMLImageElement);
-    expect(getByText("Beaver")).not.toBeNull();
+    // Le nom n'est plus un texte mais un logotype dessiné : ce qui doit rester
+    // vrai, c'est qu'il est là et qu'il s'annonce sous le nom de l'application.
+    expect(getByRole("img", { name: "Beaver" })).toHaveClass("as-wordmark");
     await waitFor(() => expect(getByText("0.9.6")).not.toBeNull());
 
     fireEvent.click(getByText("about.viewOnGithub"));

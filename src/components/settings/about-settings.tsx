@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { getVersion, getTauriVersion } from "@tauri-apps/api/app";
 import { open } from "@tauri-apps/plugin-shell";
 import logo from "@/assets/logo.png";
+import { BeaverWordmark } from "@/components/ui/beaver-wordmark";
 import { ArrowSquareOut } from "@/components/ui/icons";
 import { IS_LINUX, IS_MAC, IS_WINDOWS } from "@/lib/platform";
 import { BRAND } from "@/lib/brand";
@@ -30,9 +31,7 @@ export function AboutSettings() {
       <div className="as-inner">
         <div className="as-hero">
           <img src={logo} alt="" className="as-app-logo" />
-          <h2 className="as-title">
-            {BRAND.displayName}
-          </h2>
+          <BeaverWordmark className="as-wordmark" />
           <span className="as-subtitle">
             {t("about.description")}
           </span>

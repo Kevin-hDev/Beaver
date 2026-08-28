@@ -17,6 +17,10 @@
   --ink-faint: #819a89;
   --scrollbar-thumb: rgba(129, 154, 137, 0.38);
   --pulse: #4ee07a;
+  /* Les briques du logotype. Couleur de marque, pas couleur d'interface :
+     elle ne suit pas l'accent du thème, seulement la clarté du fond —
+     l'orange clair ternit sur fond clair. */
+  --brique: #ff8a4c;
   --pulse-muted: rgba(78, 224, 122, 0.15);
   --ink-on-pulse: #062318;
   --ink-on-danger: #062318;

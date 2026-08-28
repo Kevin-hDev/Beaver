@@ -26,11 +26,11 @@
   object-fit: contain;
 }
 
-.as-title {
-  font-size: var(--text-xl);
-  font-weight: 700;
-  color: var(--ink);
-  margin: 0;
+/* Le logotype remplace le titre écrit, un peu plus large que ne l'était le mot.
+   La largeur est fixée ici et non dans la primitive : c'est l'écran qui décide
+   de la place qu'il lui donne. */
+.as-wordmark {
+  width: 11rem;
 }
 
 .as-subtitle {
