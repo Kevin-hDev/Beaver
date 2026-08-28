@@ -5,6 +5,7 @@ use tokio::sync::{Mutex as AsyncMutex, OwnedMutexGuard, Semaphore};
 
 const MAX_SCRIPTED_RESPONSES: usize = 16;
 const MAX_RECORDED_PAYLOADS: usize = 16;
+const MAX_SCRIPTED_FRAGMENTS: usize = 64;
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) enum ScriptedResponse {
@@ -19,6 +20,7 @@ struct State {
     active: bool,
     session_id: String,
     responses: VecDeque<ScriptedResponse>,
+    fragments: Vec<String>,
     payloads: Vec<serde_json::Value>,
 }
 
@@ -38,8 +40,18 @@ impl StreamScenario {
         responses: impl IntoIterator<Item = ScriptedResponse>,
     ) -> Self {
         let serial = SERIAL.clone().lock_owned().await;
-        replace_state(session_id, responses);
+        replace_state(session_id, responses, Vec::new());
         Self { _serial: serial }
+    }
+
+    pub(crate) async fn start_with_fragments(
+        session_id: &str,
+        fragments: Vec<String>,
+    ) -> Result<Self, &'static str> {
+        validate_fragments(&fragments)?;
+        let serial = SERIAL.clone().lock_owned().await;
+        replace_state(session_id, [ScriptedResponse::Success], fragments);
+        Ok(Self { _serial: serial })
     }
 
     pub(crate) async fn wait_for_payloads(&self, expected: usize) {
@@ -72,7 +84,7 @@ pub(super) async fn dispatch(
     cfg: &super::stream_http::RequestConfig<'_>,
     payload: &serde_json::Value,
 ) -> Option<Result<reqwest::Response, RequestError>> {
-    let response = {
+    let (response, fragments) = {
         let mut state = state();
         if !state.active || cfg.session_id != Some(state.session_id.as_str()) {
             return None;
@@ -81,7 +93,7 @@ pub(super) async fn dispatch(
             return Some(Err(RequestError::InvalidConfiguration));
         }
         state.payloads.push(payload.clone());
-        state.responses.pop_front()
+        (state.responses.pop_front(), state.fragments.clone())
     };
     RECORDED.notify_waiters();
     match response {
@@ -105,20 +117,26 @@ pub(super) async fn dispatch(
             wait_for_release().await;
             Some(Err(RequestError::PayloadTooLarge))
         }
-        Some(ScriptedResponse::Success) => {
-            Some(Ok(success_response(payload.get("input").is_some())))
-        }
+        Some(ScriptedResponse::Success) => Some(Ok(success_response(
+            payload.get("input").is_some(),
+            &fragments,
+        ))),
         None => Some(Err(RequestError::InvalidConfiguration)),
     }
 }
 
-fn replace_state(session_id: &str, responses: impl IntoIterator<Item = ScriptedResponse>) {
+fn replace_state(
+    session_id: &str,
+    responses: impl IntoIterator<Item = ScriptedResponse>,
+    fragments: Vec<String>,
+) {
     let responses = responses.into_iter().collect::<VecDeque<_>>();
     assert!(responses.len() <= MAX_SCRIPTED_RESPONSES);
     *state() = State {
         active: true,
         session_id: session_id.to_string(),
         responses,
+        fragments,
         payloads: Vec::new(),
     };
     drain_releases();
@@ -142,17 +160,26 @@ fn drain_releases() {
     }
 }
 
-fn success_response(responses_api: bool) -> reqwest::Response {
-    let body = if responses_api {
+fn success_response(responses_api: bool, fragments: &[String]) -> reqwest::Response {
+    let body = if !fragments.is_empty() {
+        let mut body = fragments
+            .iter()
+            .map(|fragment| format!("data: {fragment}\n\n"))
+            .collect::<String>();
+        body.push_str("data: [DONE]\n\n");
+        body
+    } else if responses_api {
         concat!(
             "data: {\"type\":\"response.output_text.delta\",\"delta\":\"ok\"}\n\n",
             "data: {\"type\":\"response.completed\",\"response\":{\"usage\":{\"input_tokens\":1,\"output_tokens\":1}}}\n\n",
         )
+        .to_string()
     } else {
         concat!(
             "data: {\"choices\":[{\"delta\":{\"content\":\"ok\"},\"finish_reason\":\"stop\"}]}\n\n",
             "data: [DONE]\n\n",
         )
+        .to_string()
     };
     let response = tauri::http::Response::builder()
         .status(200)
@@ -160,4 +187,18 @@ fn success_response(responses_api: bool) -> reqwest::Response {
         .body(body)
         .expect("valid scripted response");
     reqwest::Response::from(response)
+}
+
+fn validate_fragments(fragments: &[String]) -> Result<(), &'static str> {
+    if fragments.len() > MAX_SCRIPTED_FRAGMENTS {
+        return Err("too_many_scripted_fragments");
+    }
+    Ok(())
+}
+
+#[tokio::test]
+async fn scripted_fragment_list_is_bounded() {
+    let fragments = vec![String::new(); MAX_SCRIPTED_FRAGMENTS + 1];
+    let result = StreamScenario::start_with_fragments("bounded-fixture", fragments).await;
+    assert!(matches!(result, Err("too_many_scripted_fragments")));
 }
