@@ -267,6 +267,12 @@
     "selectModel": "Modell wählen",
     "selectModelHint": "Modell auswählen",
     "reasoningTitle": "Denken",
+    "continuityTitle": "Kontinuität des Denkens",
+    "continuityOff": "Aus",
+    "continuityLocal": "Lokal",
+    "continuityRemote": "Remote",
+    "continuityOptional": "Das erneute Einspielen früherer Überlegungen verbessert die Kontinuität, verbraucht aber zusätzlichen Kontext und Tokens.",
+    "continuityRequired": "Diese Kontinuität ist erforderlich, um die Werkzeugkette zu erhalten.",
     "fastMode": "Schnell",
     "reasoningOff": "Aus",
     "reasoningAuto": "Ein",
@@ -861,9 +867,11 @@
       "archivedChats": "Archivierte Chats",
       "advanced": "Erweitert",
       "shortcuts": "Tastenkürzel",
+      "updates": "Updates",
       "about": "Über",
       "channels": "Kanäle"
     },
+    "updates": { "title": "Updates", "description": "Neue Versionen von Beaver und Ollama suchen und installieren.", "check": "Nach Updates suchen", "checking": "Suche…", "installedTitle": "Installiert", "availableTitle": "Verfügbare Updates" },
     "mascot": {
       "previewTitle": "Maskottchen-Vorschau",
       "beaverName": "Beaver",
@@ -1036,7 +1044,20 @@
       "goForward": "Vorwärts",
       "newSession": "Neue Sitzung",
       "searchDialog": "Gespräche suchen",
-      "togglePreview": "Dateivorschau ein-/ausblenden"
+      "togglePreview": "Dateivorschau ein-/ausblenden",
+      "openSettings": "Einstellungen öffnen",
+      "searchConversation": "In der Unterhaltung suchen",
+      "focusComposer": "Chat-Eingabe fokussieren",
+      "selectSessionTab": "Sitzungstab wechseln",
+      "changePermissions": "Berechtigungen ändern",
+      "sendMessage": "Nachricht senden",
+      "newLine": "Neue Zeile einfügen",
+      "stopResponse": "Antwort stoppen",
+      "submitEdit": "Bearbeitete Nachricht bestätigen und neu starten",
+      "cancelEdit": "Nachrichtenbearbeitung abbrechen",
+      "zoomIn": "Benutzeroberfläche vergrößern",
+      "zoomOut": "Benutzeroberfläche verkleinern",
+      "resetZoom": "Größe der Benutzeroberfläche zurücksetzen"
     },
     "confirm": {
       "deleteModel": "Bestätigen?"
@@ -1062,6 +1083,12 @@
     "recent": "Letzte Gespräche",
     "results": "Ergebnisse",
     "empty": "Kein Gespräch gefunden"
+  },
+  "conversationSearch": {
+    "label": "In der Unterhaltung suchen",
+    "placeholder": "Nachrichten durchsuchen…",
+    "previous": "Vorheriges Ergebnis",
+    "next": "Nächstes Ergebnis"
   },
   "about": {
     "version": "Version",
@@ -1145,6 +1172,7 @@
       "appShuttingDown": "Beaver wird beendet. Versuche es nach dem Neustart der Anwendung erneut.",
       "appCapacity": "Beaver verarbeitet bereits zu viele Vorgänge. Versuche es gleich erneut.",
       "serviceShuttingDown": "Dieser Dienst wird beendet. Versuche es gleich erneut.",
+      "queueUnavailable": "Warte auf das Ende der aktuellen Antwort, bevor du diese Nachricht sendest. Dein Entwurf bleibt erhalten.",
       "serviceCapacity": "Es laufen bereits zu viele Vorgänge. Versuche es gleich erneut.",
       "gatewayShuttingDown": "Die Nachrichtenkanäle werden beendet. Versuche es gleich erneut.",
       "gatewayBusy": "Es werden bereits zu viele Nachrichten verarbeitet. Versuche es gleich erneut.",
@@ -1171,6 +1199,8 @@
     },
     "streamStartFailed": "Stream konnte nicht gestartet werden.",
     "streamInterrupted": "Stream wurde unterbrochen.",
+    "streamStopping": "Die aktuelle Antwort wird gestoppt… Dein Entwurf bleibt erhalten.",
+    "reasoningContinuityInvalid": "Die Kontinuität der Überlegungen ist nicht kompatibel. Wechsle das Modell oder starte eine neue Unterhaltung.",
     "contextCapacityExceededUnknownWindow": "Der erforderliche Kontext überschreitet das Reduktionsziel: System-Prompt {{systemTokens}} Token + aktive Tools {{toolTokens}} Token = {{requiredTokens}} Token, bei einem Ziel von {{maxInputTokens}} Token. Das tatsächliche Kontextfenster des Modells konnte nicht ermittelt werden.",
     "contextCapacityExceededUnknownWindowWithReports": "Der erforderliche Kontext überschreitet das Reduktionsziel: System-Prompt {{systemTokens}} Token + erforderliche Berichte {{reportTokens}} Token + aktive Tools {{toolTokens}} Token = {{requiredTokens}} Token, bei einem Ziel von {{maxInputTokens}} Token. Das tatsächliche Kontextfenster des Modells konnte nicht ermittelt werden.",
     "contextCapacityExceeded": "Der erforderliche Kontext überschreitet die Modellkapazität: System-Prompt {{systemTokens}} Token + aktive Tools {{toolTokens}} Token = {{requiredTokens}} Token, bei einem Eingabelimit von {{maxInputTokens}} Token in einem Kontextfenster mit {{contextWindow}} Token.",
@@ -1230,7 +1260,7 @@
     "forecastDevReview": "Prüfen",
     "releaseNotesTitle": "Versionshinweise {{version}}",
     "showDetails": "Details anzeigen",
-    "hideDetails": "Details ausblenden"
+    "hideDetails": "Details ausblenden", "dismiss": "Diese Benachrichtigung ausblenden", "dismissFailed": "Die Benachrichtigung konnte nicht ausgeblendet werden.", "checkFailed": "Die Suche nach Updates ist fehlgeschlagen. Versuche es gleich noch einmal.", "cancelling": "Wird abgebrochen…", "cancelled": "Download abgebrochen und temporäre Dateien gelöscht."
   },
   "units": {
     "gb": "GB"

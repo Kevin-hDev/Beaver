@@ -1,4 +1,3 @@
-import { buildSegmentedMessage, type StreamSegment } from "./agent-chat-utils";
 import { markUnconfirmedContentAsWork } from "./agent-chat-stream-partial";
 import { estimateAgentMessagesTokens } from "./agent-token-estimate";
 import { resolvePreparedContextBuckets } from "./context-usage-stream";
@@ -11,6 +10,8 @@ import type { AgentMessage, StreamEvent } from "@/types/agent";
 import { cancelledToolError } from "@/lib/tool-result-model";
 import type { ToolErrorInfo, ToolResultStatus } from "@/types/agent";
 import i18n from "@/i18n";
+import { visibleAssistant } from "./agent-stream-visible-assistant";
+import type { StreamSegment } from "./agent-chat-utils";
 
 type PendingToolOutcome = "cancelled" | "interrupted" | "missing";
 
@@ -47,15 +48,11 @@ export function finalizeStream(
   contextTokens: number | null,
   terminalResponse: boolean,
 ): StreamApplyResult {
-  const segments = streamSegments(state);
   const totalMs = state.streamStartedAt ? Date.now() - state.streamStartedAt : 0;
-  const assistantMessage = buildAssistant(
-    segments, totalMs, outputTokens, state.streamRunId, terminalResponse,
+  const assistantMessage = visibleAssistant(state, outputTokens, terminalResponse);
+  const allMessages = trimMessages(
+    assistantMessage ? [...state.messages, assistantMessage] : state.messages,
   );
-  const persistedMessages = assistantMessage
-    ? [assistantMessage, ...state.queuedUserMessages]
-    : [...state.queuedUserMessages];
-  const allMessages = trimMessages([...state.messages, ...persistedMessages]);
   const contextUsageBuckets = resolvePreparedContextBuckets(
     state,
     state.queuedUserMessages,
@@ -66,7 +63,6 @@ export function finalizeStream(
   const next: ManagedStreamState = {
     ...state,
     messages: allMessages,
-    queuedUserMessages: [],
     completedSegments: [], currentContent: "", currentThinking: "",
     currentContentPhase: undefined, currentTools: [], activeStreamItem: null,
     isStreaming: false, isCompressing: false, tps, tpsEstimated,
@@ -81,41 +77,12 @@ export function finalizeStream(
     pendingPermissions: [], interactiveChoice: undefined,
     completed: true, updatedAt: Date.now(),
   };
-  if (segments.length === 0 && persistedMessages.length === 0) return { state: next };
+  if (!assistantMessage) return { state: next };
   return {
     state: next,
     assistantMessage,
     assistantTokens: assistantMessage?.tokens ?? outputTokens ?? 0,
-    messagesToPersist: persistedMessages,
   };
-}
-
-function streamSegments(state: ManagedStreamState): StreamSegment[] {
-  if (!state.currentContent && !state.currentThinking && state.currentTools.length === 0) {
-    return state.completedSegments;
-  }
-  return [...state.completedSegments, {
-    thinking: state.currentThinking, tools: state.currentTools, content: state.currentContent,
-    phase: state.currentContentPhase,
-  }];
-}
-
-function buildAssistant(
-  segments: StreamSegment[], totalMs: number, outputTokens: number | null,
-  streamRunId: string, terminalResponse: boolean,
-): AgentMessage | undefined {
-  if (segments.length === 0) return undefined;
-  const built = buildSegmentedMessage(segments);
-  const message: AgentMessage = {
-    id: crypto.randomUUID(), role: "assistant", content: built.content,
-    thinking: built.thinking, tool_activities: built.toolRecords,
-    segments: built.segments, files: [], timestamp: new Date().toISOString(), tokens: 0,
-    work_duration_ms: totalMs > 0 ? totalMs : undefined,
-    stream_run_id: streamRunId,
-    stream_part: terminalResponse ? "final" : "checkpoint",
-  };
-  message.tokens = outputTokens ?? estimateAgentMessagesTokens([message]);
-  return message;
 }
 
 function resolvePendingTools(

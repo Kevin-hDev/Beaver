@@ -93,6 +93,137 @@ fn content_and_usage_are_accumulated_until_completion() {
 }
 
 #[test]
+fn completed_responses_stream_persists_native_items_without_tool_extra_content() {
+    use crate::services::llm::reasoning_wire::{ReasoningCapture, ReasoningCaptureContext};
+    use crate::services::reasoning_continuity::contract::{
+        CredentialScope, ReasoningModeId, RouteId,
+    };
+    use crate::services::reasoning_continuity::envelope::ContinuationState;
+
+    let capture = ReasoningCapture::new(ReasoningCaptureContext {
+        route_id: RouteId::OpenAi,
+        model_id: "gpt-5.6-luna".into(),
+        credential_scope: CredentialScope::authenticated("fixture-scope").unwrap(),
+        reasoning_mode: ReasoningModeId::Medium,
+    })
+    .unwrap();
+    let tools = [serde_json::json!({
+        "type": "function",
+        "function": {
+            "name": "fixture.write_note",
+            "description": "fixture",
+            "parameters": {"type": "object"}
+        }
+    })];
+    let mut accumulator = StreamAccumulator::new_with_capture(
+        "openai",
+        "gpt-5.6-luna",
+        &tools,
+        false,
+        None,
+        Some(capture),
+    );
+    accumulator
+        .apply(
+            &NoopSink,
+            &serde_json::json!({
+                "type": "response.output_item.done",
+                "item": {"type": "reasoning", "encrypted_content": "opaque"}
+            }),
+        )
+        .unwrap();
+    accumulator
+        .apply(
+            &NoopSink,
+            &serde_json::json!({
+                "type": "response.output_item.added",
+                "item": {
+                    "type": "function_call",
+                    "call_id": "call_1",
+                    "name": "fixture_write_note"
+                }
+            }),
+        )
+        .unwrap();
+    accumulator
+        .apply(
+            &NoopSink,
+            &serde_json::json!({
+                "type": "response.output_item.done",
+                "item": {
+                    "type": "function_call",
+                    "call_id": "call_1",
+                    "name": "fixture_write_note",
+                    "arguments": "{}"
+                }
+            }),
+        )
+        .unwrap();
+    let outcome = accumulator
+        .apply(
+            &NoopSink,
+            &serde_json::json!({
+                "type": "response.output_item.done",
+                "item": {"type": "message", "content": []}
+            }),
+        )
+        .unwrap();
+    assert!(outcome.is_none());
+    let outcome = accumulator
+        .apply(
+            &NoopSink,
+            &serde_json::json!({"type": "response.completed"}),
+        )
+        .unwrap()
+        .unwrap();
+    let StreamOutcome::Completed(result) = outcome else {
+        panic!("completion expected");
+    };
+    let Some(continuation) = result.continuation else {
+        panic!("native continuation expected");
+    };
+    assert_eq!(continuation.tool_links.len(), 1);
+    assert_eq!(continuation.tool_links[0].provider_call_id, "call_1");
+    assert_eq!(continuation.tool_links[0].tool_name, "fixture.write_note");
+    let ContinuationState::ResponsesLocal { items } = continuation.continuation else {
+        panic!("Responses continuation expected");
+    };
+    assert_eq!(items.len(), 3);
+    assert!(result.tool_call_extra_content.is_empty());
+}
+
+#[test]
+fn opaque_codex_items_without_native_capture_are_not_persisted_for_replay() {
+    let start_event = serde_json::json!({
+        "type": "response.output_item.added",
+        "item": {"type": "function_call", "call_id": "call_1", "name": "lookup"}
+    });
+    let tool_event = serde_json::json!({
+        "type": "response.output_item.done",
+        "item": {
+            "type": "function_call",
+            "call_id": "call_1",
+            "name": "lookup",
+            "arguments": "{}"
+        }
+    });
+    let mut legacy =
+        StreamAccumulator::new_with_capture("openai", "gpt-5.6-luna", &[], false, None, None);
+    legacy.apply(&NoopSink, &start_event).unwrap();
+    legacy.apply(&NoopSink, &tool_event).unwrap();
+    let legacy = legacy
+        .apply(
+            &NoopSink,
+            &serde_json::json!({"type": "response.completed"}),
+        )
+        .unwrap()
+        .unwrap()
+        .into_result();
+    assert!(legacy.tool_call_extra_content.is_empty());
+    assert!(legacy.continuation.is_none());
+}
+
+#[test]
 fn incomplete_failed_and_error_events_are_rejected() {
     for event in [
         serde_json::json!({"type": "response.incomplete"}),

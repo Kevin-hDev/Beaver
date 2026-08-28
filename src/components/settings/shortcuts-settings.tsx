@@ -1,48 +1,36 @@
 import { useTranslation } from "react-i18next";
 import { SettingsCard } from "./settings-card";
 import { MOD_LABEL, ALT_LABEL } from "@/lib/platform";
+import { APP_SHORTCUTS } from "@/lib/app-shortcuts";
 import "./shortcuts-settings.css";
 
-interface Shortcut {
-  i18n: string;
-  keys: string[];
+function displayKey(key: string): string {
+  if (key === "mod") return MOD_LABEL;
+  if (key === "alt") return ALT_LABEL;
+  if (key === "shift") return "Shift";
+  return key;
 }
-
-const SHORTCUTS: Shortcut[] = [
-  { i18n: "settings.shortcuts.toggleTerminal", keys: [MOD_LABEL, "J"] },
-  { i18n: "settings.shortcuts.toggleSidebar", keys: [MOD_LABEL, "B"] },
-  { i18n: "settings.shortcuts.goBack", keys: [MOD_LABEL, "◀"] },
-  { i18n: "settings.shortcuts.goForward", keys: [MOD_LABEL, "▶"] },
-  { i18n: "settings.shortcuts.newSession", keys: [ALT_LABEL, MOD_LABEL, "N"] },
-  { i18n: "settings.shortcuts.searchDialog", keys: [MOD_LABEL, "G"] },
-  { i18n: "settings.shortcuts.togglePreview", keys: [ALT_LABEL, MOD_LABEL, "J"] },
-];
 
 export function ShortcutsSettings() {
   const { t } = useTranslation();
 
   return (
-    <div style={{ padding: 24, overflowY: "auto", flex: 1 }}>
-      <div style={{ maxWidth: "var(--settings-content-max-width)", width: "100%", margin: "0 auto" }}>
-        <h2 style={{
-          fontSize: "var(--text-xl)",
-          fontWeight: 700,
-          color: "var(--ink)",
-          marginBottom: 28,
-        }}>
+    <div className="scs-root">
+      <div className="scs-content">
+        <h2 className="scs-title">
           {t("settings.tabs.shortcuts")}
         </h2>
 
         <SettingsCard>
-          {SHORTCUTS.map((shortcut) => (
-            <div key={shortcut.i18n} className="shortcut-row">
-              <span className="shortcut-label">{t(shortcut.i18n)}</span>
-              <span className="shortcut-keys">
+          {APP_SHORTCUTS.map((shortcut) => (
+            <div key={shortcut.id} className="scs-row">
+              <span className="scs-label">{t(shortcut.i18n)}</span>
+              <span className="scs-keys">
                 {shortcut.keys.map((key, i) => (
-                  <span key={i}>
-                    <kbd className="shortcut-key">{key}</kbd>
+                  <span key={`${key}-${i}`}>
+                    <kbd className="scs-key">{displayKey(key)}</kbd>
                     {i < shortcut.keys.length - 1 && (
-                      <span className="shortcut-plus">+</span>
+                      <span className="scs-plus">+</span>
                     )}
                   </span>
                 ))}

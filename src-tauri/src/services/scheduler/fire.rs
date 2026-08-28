@@ -1,6 +1,5 @@
 use crate::models::{ScheduledWakeup, WakeupSchedule};
 use crate::services::agent_local::session_store;
-use crate::services::gateway::message_convert;
 use crate::services::llm;
 use crate::services::scheduler::log;
 use chrono::{DateTime, Local};
@@ -11,9 +10,8 @@ pub(crate) use super::fire_once::{claim_once, run_wakeup_steps, WakeupStepOutcom
 #[cfg(test)]
 pub(crate) use super::fire_once::{claim_once_in, OnceClaimOutcome};
 
-/// Déclenche un wakeup : trouve/crée la conversation Heartbeat pour le modèle,
-/// envoie le prompt à Ollama, append les messages, log l'exécution et émet
-/// l'événement frontend. Un réveil ponctuel est revendiqué avant tout appel provider.
+/// Déclenche un wakeup durable : l'admission du moteur enregistre le prompt avant
+/// tout appel provider, puis le scheduler journalise l'exécution et l'événement frontend.
 pub async fn fire_wakeup(
     app: AppHandle,
     wakeup: ScheduledWakeup,
@@ -78,38 +76,26 @@ async fn dispatch(
     let session_id = create_heartbeat_session(wakeup).await?;
     // Le scheduler ne possède pas de second moteur : tout réveil utilise le
     // contexte et les outils de l'Agent Local en accès complet.
-    let result = super::agentic::run(app, wakeup, &session_id, cancel.clone()).await?;
-    let tokens = persist_agent_result(&session_id, result).await?;
-    Ok((session_id, tokens))
-}
-
-async fn persist_agent_result(
-    session_id: &str,
-    result: super::agentic::ScheduledAgentResult,
-) -> Result<u32, String> {
-    let mut messages = persisted_agent_messages(&result.messages);
-    if let Some(message) = messages
-        .iter_mut()
-        .rev()
-        .find(|message| message.role == "assistant")
-    {
-        message.tokens = result.tokens;
-    }
-    session_store::add_messages(session_id, messages, 0).await?;
+    let result = match super::agentic::run(app, wakeup, &session_id, cancel.clone()).await {
+        Ok(result) => result,
+        Err(error) => {
+            delete_empty_heartbeat(&session_id).await;
+            return Err(error);
+        }
+    };
     if !result.has_text_result {
         return Err("L'automatisation n'a produit aucun résultat.".to_string());
     }
-    Ok(result.tokens)
+    Ok((session_id, result.tokens))
 }
 
-fn persisted_agent_messages(
-    completed: &[crate::services::agent_local::types_ollama::ChatMessage],
-) -> Vec<crate::services::agent_local::types_session::AgentMessage> {
-    let mut non_system = completed.iter().filter(|message| message.role != "system");
-    non_system.next();
-    non_system
-        .filter_map(message_convert::chat_to_agent_message)
-        .collect()
+async fn delete_empty_heartbeat(session_id: &str) {
+    let Ok(session) = session_store::get(session_id).await else {
+        return;
+    };
+    if session.messages.is_empty() && session_store::delete_one(session_id).await.is_err() {
+        ::log::warn!("empty_heartbeat_cleanup_failed");
+    }
 }
 
 async fn create_heartbeat_session(wakeup: &ScheduledWakeup) -> Result<String, String> {
@@ -129,16 +115,6 @@ async fn create_heartbeat_session(wakeup: &ScheduledWakeup) -> Result<String, St
         wakeup.project_id.clone(),
     )
     .await?;
-    if let Err(error) = session_store::add_messages(
-        &session.id,
-        vec![message_convert::new_user_agent_message(&wakeup.prompt)],
-        0,
-    )
-    .await
-    {
-        let _ = session_store::delete_one(&session.id).await;
-        return Err(error);
-    }
     Ok(session.id)
 }
 

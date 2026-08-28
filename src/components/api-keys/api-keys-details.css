@@ -4,7 +4,6 @@
   margin-top: var(--space-lg);
 }
 
-
 .ak-confirm-delete {
   display: block;
   width: 100%;
@@ -31,11 +30,6 @@
   padding: 10px 20px;
   font-size: var(--text-sm);
 }
-
-.akd-row-border {
-  border-bottom: 1px solid var(--edge);
-}
-
 .akd-row-label {
   color: var(--ink-muted);
   font-size: var(--text-xs);

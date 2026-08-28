@@ -12,6 +12,8 @@
     "cef-supervision",
     "chronos-sidecar.pid",
     "ollama-sidecar.pid",
+    "reasoning-fixture-reports",
+    "reasoning-fixture-runtime",
     "searxng-sidecar.pid",
     "update-health"
   ],
@@ -62,6 +64,20 @@
         {
           "file": "src-tauri/src/services/codex_oauth/store.rs",
           "snippets": ["const VAULT_KEY: &str = \"_codex_oauth\";"]
+        },
+        {
+          "file": "src-tauri/src/services/api_keys_credential_scope_wire.rs",
+          "scope": "migration",
+          "snippets": [
+            "const LLM_OAUTH_XAI_KEY: &str = \"_llm_oauth_xai\";",
+            "const LLM_OAUTH_KIMI_KEY: &str = \"_llm_oauth_kimi\";",
+            "const CODEX_OAUTH_KEY: &str = \"_codex_oauth\";"
+          ],
+          "replaces": [
+            "\"_llm_oauth_xai\"",
+            "\"_llm_oauth_kimi\"",
+            "const VAULT_KEY: &str = \"_codex_oauth\";"
+          ]
         }
       ],
       "evidence": [
@@ -301,6 +317,7 @@
         "ollama-custom-models.json",
         "ollama-system-prompts.json",
         "ollama-native-system-prompts.json",
+        "ollama-release-cache.json",
         "system-prompt-settings.json"
       ],
       "contracts": [
@@ -328,12 +345,18 @@
           "scope": "migration",
           "file": "src-tauri/src/services/agent_local/ollama_native_prompts.rs",
           "snippets": [".join(\"ollama-native-system-prompts.json\")"]
+        },
+        {
+          "scope": "migration",
+          "file": "src-tauri/src/services/ollama_manager/release_cache.rs",
+          "snippets": ["data_dir().join(\"ollama-release-cache.json\")"]
         }
       ],
       "evidence": [
         "src-tauri/src/commands/ollama_audit_tests.rs",
         "src-tauri/src/services/agent_local/ollama_native_prompts_tests.rs",
-        "src-tauri/src/services/agent_local/system_prompt_settings_tests.rs"
+        "src-tauri/src/services/agent_local/system_prompt_settings_tests.rs",
+        "src-tauri/src/services/ollama_manager/release_source_tests.rs"
       ],
       "manualGates": ["Vérifie qu’aucun modèle Ollama réel n’est retéléchargé."]
     },
@@ -608,7 +631,7 @@
     },
     {
       "id": "theme-language",
-      "profilePaths": [],
+      "profilePaths": ["update-notifications.json"],
       "contracts": [
         {
           "file": "src/i18n/index.ts",
@@ -661,11 +684,17 @@
         {
           "file": "src/lib/ollama-setup-gate.ts",
           "snippets": ["\"ollama_setup_skipped\""]
+        },
+        {
+          "scope": "migration",
+          "file": "src-tauri/src/services/update_notifications.rs",
+          "snippets": ["data_dir().join(\"update-notifications.json\")"]
         }
       ],
       "evidence": [
         "src/hooks/__tests__/use-theme.test.ts",
-        "src/hooks/__tests__/use-settings.test.ts"
+        "src/hooks/__tests__/use-settings.test.ts",
+        "src-tauri/src/services/update_notifications_tests.rs"
       ],
       "manualGates": ["Vérifie le stockage WebView réel sur chaque OS."]
     },

@@ -174,6 +174,12 @@ function session(messages: AgentMessage[], id = "s1"): AgentSession {
     provider: "openai",
     thinking_enabled: false,
     fast_mode_enabled: false,
+    plan_mode_enabled: false,
+    plan_workflow_status: "needs_context",
+    is_heartbeat: false,
+    is_gateway: false,
+    working_dir: "",
+    working_dir_managed: false,
     accumulated_tokens: 0,
     messages,
   };

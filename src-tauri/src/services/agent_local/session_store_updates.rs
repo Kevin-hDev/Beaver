@@ -1,8 +1,7 @@
 use super::session_store::{get, save, validate_session_id};
 #[cfg(test)]
 pub(super) use super::session_store_update_gate::{
-    assign_project_with_after_load, update_fast_mode_with_after_load,
-    update_fast_mode_with_writer,
+    assign_project_with_after_load, update_fast_mode_with_after_load, update_fast_mode_with_writer,
 };
 
 pub(super) async fn update_locked<R>(
@@ -16,17 +15,6 @@ pub async fn update_fast_mode(id: &str, enabled: bool) -> Result<bool, String> {
     update_locked(id, |session| {
         session.fast_mode_enabled = enabled;
         session.fast_mode_enabled
-    })
-    .await
-}
-
-pub async fn assign_project_if_missing(id: &str, project_id: &str) -> Result<bool, String> {
-    update_locked(id, |session| {
-        if session.project_id.is_some() {
-            return false;
-        }
-        session.project_id = Some(project_id.to_string());
-        true
     })
     .await
 }
@@ -53,6 +41,11 @@ pub async fn update_model(
         );
         session.thinking_enabled =
             crate::services::reasoning::enabled(session.reasoning_mode.as_deref(), false);
+        // Un changement de route ou de modèle invalide toute autorisation de
+        // continuité précédente : seule la vue Rust peut la réautoriser.
+        if super::session_view::continuity_capability(session).is_none() {
+            session.preserve_reasoning = Default::default();
+        }
         session.context_tokens = None;
     })
     .await

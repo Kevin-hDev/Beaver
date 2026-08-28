@@ -103,7 +103,6 @@
   gap: var(--space-sm);
   min-height: 34px;
   padding: 7px 12px;
-  border-top: 1px solid var(--border-subtle);
   font-size: var(--text-sm);
 }
 

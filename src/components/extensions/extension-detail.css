@@ -30,11 +30,6 @@
 
 .extd-tool-row {
   padding: var(--space-sm) var(--space-md);
-  border-bottom: var(--line-thin) solid var(--edge);
-}
-
-.extd-tool-row:last-child {
-  border-bottom: 0;
 }
 
 .extd-tool-heading,

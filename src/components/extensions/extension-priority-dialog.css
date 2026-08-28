@@ -25,6 +25,8 @@
   color: var(--ink);
   cursor: pointer;
   font-size: var(--text-sm);
+  border-radius: var(--radius);
+  margin: 0 var(--list-gutter);
 }
 
 .extpd-row:hover {

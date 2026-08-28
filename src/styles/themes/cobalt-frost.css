@@ -36,9 +36,6 @@
   --signal-ok-border: rgba(21, 128, 61, 0.24);
   --context-ring-fill: #6f8097;
   --context-ring-track: rgba(111, 128, 151, 0.20);
-  --shadow-card: 0 1px 3px rgba(29, 50, 78, 0.08), 0 8px 24px rgba(29, 50, 78, 0.07);
-  --shadow-sm: 0 1px 4px rgba(29, 50, 78, 0.12);
-  --shadow-lg: 0 12px 36px rgba(29, 50, 78, 0.16);
   --dialog-backdrop: rgba(36, 55, 82, 0.20);
 
   /* Aliases — tokens référencés par les composants (spec phase 2 §2) */
@@ -55,7 +52,6 @@
   --edge-strong: #c0cde0;
   /* Boutons secondaires — recette « présence » (spec phase 2 §1.1) */
   --btn-secondary-bg: #ffffff;
-  --btn-inner-highlight: rgba(255, 255, 255, 0.6);
   --field-bg: #eef2f8;
 
   /* Surface variants */
@@ -63,18 +59,21 @@
   --surface-overlay: rgba(255, 255, 255, 0.86);
   --card-on-glass: rgba(255, 255, 255, 0.84);
   --chip-bg: rgba(16, 40, 82, 0.10);
-  --memory-topic-list-border: var(--edge);
-  --memory-topic-list-bg: var(--shell);
   /* Thème clair : le blanc est le sommet — l'élévation est portée par l'ombre */
   --surface-raised: var(--surface);
   --tooltip-bg: #ffffff;
   --tooltip-border: rgba(69, 91, 122, 0.18);
   --tooltip-text: var(--ink);
-  --tooltip-shadow: 0 4px 16px rgba(29, 50, 78, 0.14);
   --chat-composer-bg: rgba(255, 255, 255, 0.72);
   --chat-composer-border: rgba(69, 91, 122, 0.22);
-  --chat-composer-edge-highlight: rgba(255, 255, 255, 0.72);
-  --chat-composer-edge-shade: rgba(29, 50, 78, 0.12);
+  /* Relief — réglé sur docs/mokup/, voir src/styles/relief.css. Sur fond clair
+     le trait est de l'encre : il descend de 19,7 sous la luminance 250 du fond. */
+  --relief-stroke-rgb: 0, 0, 0;
+  --relief-stroke-top: 0.14;
+  --relief-stroke-bottom: 0.04;
+  --relief-shadow-y: 2px;
+  --relief-shadow-blur: 2px;
+  --relief-shadow-alpha: 0.25;
   --code-block-border: rgba(69, 91, 122, 0.18);
   --agent-trace-text: #69788d;
   --agent-trace-hover: #47566b;

@@ -14,6 +14,7 @@ export interface ChatMessagePanelProps {
   onFilePreviewPath?: (target: string | FileOperation) => void;
   onOpenSubagent?: (sessionId: string) => void;
   readOnly: boolean;
+  activeSearchMessageId?: string | null;
 }
 
 export function ChatMessagePanel({
@@ -26,6 +27,7 @@ export function ChatMessagePanel({
   onFilePreviewPath,
   onOpenSubagent,
   readOnly,
+  activeSearchMessageId,
 }: ChatMessagePanelProps) {
   return (
     <MessageList
@@ -55,6 +57,7 @@ export function ChatMessagePanel({
       onFileReview={onFilePreviewPath}
       knownSubagents={knownSubagents}
       onOpenSubagent={onOpenSubagent}
+      activeSearchMessageId={activeSearchMessageId}
     />
   );
 }

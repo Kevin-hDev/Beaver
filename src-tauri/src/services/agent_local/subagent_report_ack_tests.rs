@@ -103,7 +103,11 @@ async fn ack_queued_before_cancellation_commits_delivery() {
 
 #[test]
 fn parent_stream_cancellation_paths_use_the_delivery_lock() {
-    let source = include_str!("../../commands/agent_chat.rs");
+    let source = [
+        include_str!("../../commands/agent_chat.rs"),
+        include_str!("../../commands/agent_chat_run.rs"),
+    ]
+    .concat();
     let stop_source = include_str!("../../commands/agent_chat_cancel.rs");
 
     assert_eq!(

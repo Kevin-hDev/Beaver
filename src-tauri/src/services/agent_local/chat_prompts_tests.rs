@@ -2,15 +2,7 @@ use crate::services::agent_local::chat_prompts::*;
 use crate::services::agent_local::types_ollama::ChatMessage;
 
 fn make_user_msg(text: &str) -> ChatMessage {
-    ChatMessage {
-        role: "user".to_string(),
-        content: text.to_string(),
-        images: None,
-        tool_calls: None,
-        tool_name: None,
-        tool_call_id: None,
-        reasoning_content: None,
-    }
+    ChatMessage::user(text.to_string())
 }
 
 const TEST_MODEL_SMALL: &str = "gemma-4-e4b";
@@ -30,15 +22,7 @@ fn agent_md_prepended_before_system() {
 #[test]
 fn agent_md_appended_to_existing_system() {
     let mut msgs = vec![
-        ChatMessage {
-            role: "system".to_string(),
-            content: "Existing system prompt".to_string(),
-            images: None,
-            tool_calls: None,
-            tool_name: None,
-            tool_call_id: None,
-            reasoning_content: None,
-        },
+        ChatMessage::system("Existing system prompt".to_string()),
         make_user_msg("hello"),
     ];
     prepend_agent_md_context(&mut msgs, Some("Agent rules".to_string()));
@@ -171,15 +155,7 @@ fn prepare_tool_capable_no_agent_md_file() {
 #[test]
 fn prepare_existing_system_prompt_preserved() {
     let mut msgs = vec![
-        ChatMessage {
-            role: "system".to_string(),
-            content: "Custom system prompt from frontend".to_string(),
-            images: None,
-            tool_calls: None,
-            tool_name: None,
-            tool_call_id: None,
-            reasoning_content: None,
-        },
+        ChatMessage::system("Custom system prompt from frontend".to_string()),
         make_user_msg("hello"),
     ];
     let wd = std::path::Path::new("/tmp/project");

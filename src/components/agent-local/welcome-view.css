@@ -26,4 +26,10 @@
    réapparaissait ailleurs. */
 .welcome-input-wrap {
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  /* Le même écart que sous le champ d'une conversation, où il vaut le gap de la
+     colonne moins la marge de la rangée (chat.css). Sans lui, le sélecteur de
+     dossier touchait le bord du champ et son ombre lui tombait dessus. */
+  gap: var(--space-xs);
 }

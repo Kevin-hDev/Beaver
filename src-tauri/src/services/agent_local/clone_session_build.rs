@@ -1,5 +1,4 @@
-use super::clone_summary;
-use super::types_session::{AgentMessage, AgentSession, CloneMode};
+use super::types_session::{AgentSession, CloneMode};
 use chrono::Utc;
 use uuid::Uuid;
 
@@ -7,7 +6,7 @@ pub(super) fn build_clone(
     source: &AgentSession,
     message_id: &str,
     mode: CloneMode,
-    message_index: usize,
+    prefix_end: usize,
     root_session_id: &str,
 ) -> AgentSession {
     let now = Utc::now();
@@ -19,7 +18,7 @@ pub(super) fn build_clone(
     clone.archived_at = None;
     // Un clone est une nouvelle session : il ne reprend pas une préférence de coût/vitesse.
     clone.fast_mode_enabled = false;
-    clone.messages = source.messages[..=message_index].to_vec();
+    clone.messages = source.messages[..prefix_end].to_vec();
     super::session_store_messages::recompute_accumulated_tokens(&mut clone);
     clone.stream_failures.clear();
     clone.diagnostic_runs.clear();
@@ -43,24 +42,4 @@ pub(super) fn build_clone(
     clone.subagent_queued_prompts.clear();
     clone.subagent_hidden_reports.clear();
     clone
-}
-
-pub(super) fn hidden_context_message(summary: &str) -> AgentMessage {
-    AgentMessage {
-        id: Uuid::new_v4().to_string(),
-        role: "user".to_string(),
-        content: clone_summary::hidden_context_content(summary),
-        thinking: None,
-        tool_calls: None,
-        tool_name: None,
-        tool_activities: None,
-        segments: None,
-        files: vec![],
-        timestamp: Utc::now(),
-        tokens: 0,
-        work_duration_ms: None,
-        skill_names: None,
-        stream_run_id: None,
-        stream_part: None,
-    }
 }

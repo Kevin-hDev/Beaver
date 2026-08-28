@@ -8,11 +8,12 @@
   margin-top: var(--space-md);
 }
 
+/* Le contour reste visible en thème sombre, comme celui de la bulle des chats
+   archivés : c'est lui qui pose la carte sur la page. */
 [data-theme="dark"] .settings-card {
   background: var(--surface-glass);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-color: transparent;
 }
 
 .settings-card:has(.ss-wrap.open),
@@ -34,11 +35,6 @@
   justify-content: space-between;
   padding: 12px 20px;
   gap: 16px;
-  border-bottom: 1px solid var(--edge);
-}
-
-.settings-row:last-child {
-  border-bottom: none;
 }
 
 .settings-row-info {

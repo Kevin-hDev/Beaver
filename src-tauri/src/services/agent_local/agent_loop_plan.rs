@@ -56,24 +56,16 @@ mod tests {
     #[test]
     fn replaces_existing_plan_correction() {
         let mut messages = vec![
-            ChatMessage {
-                role: "system".into(),
-                content: "<plan_mode_backend_correction>old</plan_mode_backend_correction>".into(),
-                ..Default::default()
-            },
-            ChatMessage {
-                role: "user".into(),
-                content: "hello".into(),
-                ..Default::default()
-            },
+            ChatMessage::system(
+                "<plan_mode_backend_correction>old</plan_mode_backend_correction>".into(),
+            ),
+            ChatMessage::user("hello".into()),
         ];
         replace_correction(
             &mut messages,
-            ChatMessage {
-                role: "system".into(),
-                content: "<plan_mode_backend_correction>new</plan_mode_backend_correction>".into(),
-                ..Default::default()
-            },
+            ChatMessage::system(
+                "<plan_mode_backend_correction>new</plan_mode_backend_correction>".into(),
+            ),
         );
 
         assert_eq!(messages.len(), 2);

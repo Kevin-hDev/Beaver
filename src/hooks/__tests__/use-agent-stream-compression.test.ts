@@ -22,11 +22,24 @@ vi.mock("../agent-stream-manager", () => ({
     failSession: vi.fn(),
     stopSession: vi.fn(),
     setSessionGeneration: vi.fn(),
+    reconcileTurnAdmission: vi.fn(),
     subscribe: vi.fn(),
     getSnapshot: vi.fn(),
     isStreaming: vi.fn(),
     queueUserMessage: vi.fn(),
     removeQueuedUserMessage: vi.fn(),
+    discardPendingAdmission: vi.fn(),
+    ownsRun: vi.fn().mockReturnValue(true),
+    matchesRun: vi.fn().mockReturnValue(true),
+    getDeferredStop: vi.fn().mockReturnValue(null),
+    ownsOwner: vi.fn().mockReturnValue(true),
+    adoptOwner: vi.fn().mockReturnValue(true),
+    getOwnedRunState: vi.fn().mockReturnValue({ kind: "pendingAdmission", runId: 1 }),
+    claimStop: vi.fn().mockReturnValue(null),
+    releaseStop: vi.fn(),
+    completeStop: vi.fn().mockReturnValue(false),
+    releaseOwner: vi.fn(),
+    isOwnerStreaming: vi.fn().mockReturnValue(false),
   },
 }));
 
@@ -56,7 +69,7 @@ describe("useAgentStream compression", () => {
         "session-1",
         "model",
         "provider",
-        [command],
+        { type: "new", input: { content: command.content, files: [], skills: [] } },
         false,
         { displayMessages: [command], baseTokenCount: 123 },
       );
@@ -67,6 +80,8 @@ describe("useAgentStream compression", () => {
       [command],
       123,
       "compression",
+      true,
+      expect.anything(),
     );
   });
 
@@ -79,7 +94,7 @@ describe("useAgentStream compression", () => {
         "session-1",
         "model",
         "provider",
-        [message],
+        { type: "new", input: { content: message.content, files: [], skills: [] } },
         false,
         { displayMessages: [message], baseTokenCount: 123 },
       );
@@ -90,6 +105,8 @@ describe("useAgentStream compression", () => {
       [message],
       123,
       "chat",
+      true,
+      expect.anything(),
     );
   });
 });

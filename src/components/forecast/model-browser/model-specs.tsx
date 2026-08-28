@@ -88,10 +88,10 @@ export function ModelSpecs({ model, provider, onBack, onRefresh }: ModelSpecsPro
         {description && <div className="mp-description">{description}</div>}
 
         <SettingsCard>
-          {rows.map((row, index) => (
+          {rows.map((row) => (
             <div
               key={row.label}
-              className={`mp-spec-row${index < rows.length - 1 ? " mp-spec-row-border" : ""}`}
+              className="mp-spec-row"
             >
               <span className="mp-spec-label">{row.label}</span>
               <span className={row.mono ? "mp-spec-value-mono" : "mp-spec-value"}>

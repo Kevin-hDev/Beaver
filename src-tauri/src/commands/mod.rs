@@ -1,11 +1,20 @@
 pub mod agent_chat;
 pub(crate) mod agent_chat_admission;
 pub mod agent_chat_cancel;
+#[cfg(debug_assertions)]
+pub(crate) mod agent_chat_fixture_candidate;
 pub mod agent_chat_queue;
+#[cfg(test)]
+mod agent_chat_request_runtime_tests;
+pub(crate) mod agent_chat_run;
+#[cfg(test)]
+mod agent_chat_run_tests;
 #[cfg(test)]
 mod agent_chat_stream_replacement_tests;
 pub(crate) mod agent_chat_streams;
+pub(crate) mod agent_chat_target;
 pub(crate) mod agent_chat_task;
+pub(crate) mod agent_chat_turn;
 pub(crate) mod agent_chat_work;
 #[cfg(test)]
 mod agent_chat_work_tests;
@@ -13,6 +22,7 @@ pub mod agent_clone;
 pub mod agent_import;
 pub mod agent_md;
 pub mod agent_ollama;
+pub mod agent_session_views;
 pub mod agent_sessions;
 pub mod agent_settings;
 pub mod agent_tools;
@@ -84,6 +94,10 @@ pub mod ollama_updates;
 pub mod ollama_version;
 pub mod personality;
 pub mod projects;
+#[cfg(debug_assertions)]
+pub mod reasoning_fixture;
+#[cfg(debug_assertions)]
+pub(crate) mod reasoning_fixture_live_tests;
 pub mod registry;
 pub mod search;
 #[cfg(test)]
@@ -102,6 +116,7 @@ pub mod subagents_tests;
 pub(crate) mod subagents_validation;
 pub mod system_prompts;
 pub mod terminal;
+pub mod update_notifications;
 
 pub use agent_chat::*;
 pub use agent_chat_cancel::*;
@@ -110,6 +125,7 @@ pub use agent_clone::*;
 pub use agent_import::*;
 pub use agent_md::*;
 pub use agent_ollama::*;
+pub use agent_session_views::*;
 pub use agent_sessions::*;
 pub use agent_settings::*;
 pub use agent_tools::*;
@@ -158,8 +174,11 @@ pub use ollama_updates::*;
 pub use ollama_version::*;
 pub use personality::*;
 pub use projects::*;
+#[cfg(debug_assertions)]
+pub use reasoning_fixture::*;
 pub use registry::*;
 pub use search::*;
 pub use subagents::*;
 pub use system_prompts::*;
 pub use terminal::*;
+pub use update_notifications::*;

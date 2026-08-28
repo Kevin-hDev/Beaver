@@ -13,6 +13,7 @@ import {
   savePreviousActiveTab,
 } from "@/hooks/use-session-tabs-helpers";
 import type { CloneMode, CloneSessionResult, SessionTab, SessionTabs } from "@/types/agent";
+import { sessionTabIndexFromShortcut } from "@/lib/app-shortcuts";
 
 interface CloneMessageOptions {
   messageId: string;
@@ -156,6 +157,20 @@ export function useSessionTabs(
     });
     setTabs(next);
   }, [rootSessionId]);
+
+  useEffect(() => {
+    if (!tabs) return;
+    const handler = (event: KeyboardEvent) => {
+      const index = sessionTabIndexFromShortcut(event);
+      if (index === null) return;
+      const target = tabs.tabs[index];
+      if (!target) return;
+      event.preventDefault();
+      void selectTab(target.tab_id);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [selectTab, tabs]);
 
   return {
     tabs,

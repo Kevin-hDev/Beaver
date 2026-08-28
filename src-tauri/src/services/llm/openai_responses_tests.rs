@@ -1,4 +1,4 @@
-use super::build_request;
+use super::{build_request, try_build_request, try_build_request_with_evidence};
 use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::llm::fast_mode::FastModeRequest;
 use crate::services::llm::request_purpose::RequestPurpose;
@@ -21,16 +21,112 @@ fn request<'a>(
         purpose: RequestPurpose::ManualChat,
         session_id: Some("session-fixture"),
         fast_mode,
+        continuation_target: None,
     }
+}
+
+fn xai_request<'a>(
+    messages: &'a [ChatMessage],
+    tools: &'a [serde_json::Value],
+) -> RequestConfig<'a> {
+    RequestConfig {
+        provider_id: "xai",
+        model: "grok-4.6",
+        messages,
+        tools,
+        think: true,
+        reasoning_mode: Some("high"),
+        max_tokens: None,
+        purpose: RequestPurpose::ManualChat,
+        session_id: Some("xai-fixture"),
+        fast_mode: FastModeRequest::Unsupported,
+        continuation_target: None,
+    }
+}
+
+fn fixture_target(
+    scope: &str,
+) -> crate::services::reasoning_continuity::contract::ContinuationTarget {
+    use crate::services::reasoning_continuity::contract::{
+        ContinuationTarget, ContinuationUse, CredentialScope, ReasoningModeId, ReplayTarget,
+        RouteId,
+    };
+    ContinuationTarget::FixtureCandidate(ReplayTarget {
+        route_id: RouteId::OpenAi,
+        model_id: "gpt-5.6-luna".into(),
+        credential_scope: CredentialScope::authenticated(scope).unwrap(),
+        reasoning_mode: ReasoningModeId::Medium,
+        continuation_use: ContinuationUse::UserContinuation,
+    })
+}
+
+fn xai_fixture_target(
+    scope: &str,
+) -> crate::services::reasoning_continuity::contract::ContinuationTarget {
+    use crate::services::reasoning_continuity::contract::{
+        ContinuationTarget, ContinuationUse, CredentialScope, ReasoningModeId, ReplayTarget,
+        RouteId,
+    };
+    ContinuationTarget::FixtureCandidate(ReplayTarget {
+        route_id: RouteId::Xai,
+        model_id: "grok-4.6".into(),
+        credential_scope: CredentialScope::authenticated(scope).unwrap(),
+        reasoning_mode: ReasoningModeId::High,
+        continuation_use: ContinuationUse::UserContinuation,
+    })
+}
+
+fn native_assistant(
+    target: &crate::services::reasoning_continuity::contract::ContinuationTarget,
+) -> ChatMessage {
+    let replay = target.replay().unwrap();
+    ChatMessage::assistant(
+        "visible answer".into(),
+        None,
+        Some(crate::services::reasoning_continuity::envelope::ReasoningEnvelope::new(
+            crate::services::reasoning_continuity::contract::ContractId::OpenAiResponsesV1,
+            crate::services::reasoning_continuity::envelope::ReasoningSource::from_target(replay),
+            crate::services::reasoning_continuity::envelope::CompletionState::Complete,
+            crate::services::reasoning_continuity::envelope::ContinuationState::ResponsesLocal {
+                items: vec![
+                    serde_json::json!({"type":"reasoning","encrypted_content":"opaque"}),
+                    serde_json::json!({"type":"message","content":[]}),
+                ],
+            },
+            Vec::new(),
+        )),
+        None,
+        None,
+    )
+}
+
+fn xai_native_assistant(
+    target: &crate::services::reasoning_continuity::contract::ContinuationTarget,
+) -> ChatMessage {
+    let replay = target.replay().unwrap();
+    ChatMessage::assistant(
+        "visible answer".into(),
+        None,
+        Some(crate::services::reasoning_continuity::envelope::ReasoningEnvelope::new(
+            crate::services::reasoning_continuity::contract::ContractId::XaiResponsesV1,
+            crate::services::reasoning_continuity::envelope::ReasoningSource::from_target(replay),
+            crate::services::reasoning_continuity::envelope::CompletionState::Complete,
+            crate::services::reasoning_continuity::envelope::ContinuationState::ResponsesLocal {
+                items: vec![serde_json::json!({
+                    "type":"reasoning",
+                    "encrypted_content":"opaque-xai"
+                })],
+            },
+            Vec::new(),
+        )),
+        None,
+        None,
+    )
 }
 
 #[test]
 fn api_request_uses_responses_reasoning_and_fast_contract() {
-    let messages = [ChatMessage {
-        role: "user".into(),
-        content: "bonjour".into(),
-        ..Default::default()
-    }];
+    let messages = [ChatMessage::user("bonjour".into())];
     let body = build_request(&request(
         &messages,
         &[],
@@ -49,11 +145,29 @@ fn api_request_uses_responses_reasoning_and_fast_contract() {
 }
 
 #[test]
+fn xai_api_request_uses_responses_and_encrypted_reasoning() {
+    let messages = [ChatMessage::user("bonjour".into())];
+    let body = build_request(&xai_request(&messages, &[]));
+
+    assert_eq!(body["model"], "grok-4.6");
+    assert_eq!(body["reasoning"]["effort"], "high");
+    assert_eq!(
+        body["include"],
+        serde_json::json!(["reasoning.encrypted_content"])
+    );
+    assert_eq!(body["store"], false);
+    assert!(body.get("messages").is_none());
+}
+
+#[test]
 fn api_request_preserves_tool_continuation_in_responses_shape() {
     let messages = [
-        ChatMessage {
-            role: "assistant".into(),
-            tool_calls: Some(vec![
+        ChatMessage::assistant(
+            String::new(),
+            None,
+            None,
+            None,
+            Some(vec![
                 crate::services::agent_local::types_ollama::ToolCallOllama {
                     id: Some("call_1".into()),
                     function: crate::services::agent_local::types_ollama::ToolCallFunction {
@@ -63,14 +177,8 @@ fn api_request_preserves_tool_continuation_in_responses_shape() {
                     extra_content: None,
                 },
             ]),
-            ..Default::default()
-        },
-        ChatMessage {
-            role: "tool".into(),
-            content: "18 C".into(),
-            tool_call_id: Some("call_1".into()),
-            ..Default::default()
-        },
+        ),
+        ChatMessage::tool("18 C".into(), Some("call_1".into()), None),
     ];
     let tools = [serde_json::json!({
         "type": "function",
@@ -95,11 +203,7 @@ fn api_request_preserves_tool_continuation_in_responses_shape() {
 
 #[test]
 fn unsupported_fast_mode_omits_service_tier() {
-    let messages = [ChatMessage {
-        role: "user".into(),
-        content: "bonjour".into(),
-        ..Default::default()
-    }];
+    let messages = [ChatMessage::user("bonjour".into())];
     let body = build_request(&request(
         &messages,
         &[],
@@ -108,6 +212,99 @@ fn unsupported_fast_mode_omits_service_tier() {
     ));
 
     assert!(body.get("service_tier").is_none());
+}
+
+#[test]
+fn responses_continuity_replays_native_items_at_the_assistant_position_without_tools() {
+    let target = fixture_target("openai-scope");
+    let messages = [
+        native_assistant(&target),
+        ChatMessage::user("continue".into()),
+    ];
+    let mut config = request(&messages, &[], Some("medium"), FastModeRequest::Standard);
+    config.continuation_target = Some(&target);
+
+    let prepared = try_build_request_with_evidence(&config).unwrap();
+    let body = prepared.body;
+
+    assert_eq!(body["input"][0]["type"], "reasoning");
+    assert_eq!(body["input"][0]["encrypted_content"], "opaque");
+    assert_eq!(body["input"][1]["type"], "message");
+    assert_eq!(body["input"][2]["role"], "user");
+    assert_eq!(prepared.replayed.len(), 1);
+}
+
+#[test]
+fn responses_continuity_blocks_wrong_scope_and_required_missing_state() {
+    let target = fixture_target("openai-scope");
+    let messages = [
+        native_assistant(&target),
+        ChatMessage::user("continue".into()),
+    ];
+    let wrong = fixture_target("other-openai-scope");
+    let mut config = request(&messages, &[], Some("medium"), FastModeRequest::Standard);
+    config.continuation_target = Some(&wrong);
+    assert!(try_build_request(&config).is_err());
+
+    let missing = [
+        ChatMessage::assistant("visible".into(), None, None, None, None),
+        ChatMessage::user("continue".into()),
+    ];
+    let mut config = request(&missing, &[], Some("medium"), FastModeRequest::Standard);
+    config.continuation_target = Some(&target);
+    assert!(try_build_request(&config).is_err());
+}
+
+#[test]
+fn responses_continuity_ignores_required_state_before_a_migration_barrier() {
+    let target = fixture_target("openai-scope");
+    let old = ChatMessage::assistant("legacy answer".into(), None, None, None, None);
+    let mut current = ChatMessage::user("continue".into());
+    current.continuity_barrier_before = true;
+    let messages = [old, current];
+    let mut config = request(&messages, &[], Some("medium"), FastModeRequest::Standard);
+    config.continuation_target = Some(&target);
+
+    assert!(try_build_request(&config).is_ok());
+}
+
+#[test]
+fn xai_responses_continuity_replays_native_items() {
+    let target = xai_fixture_target("xai-scope");
+    let messages = [
+        xai_native_assistant(&target),
+        ChatMessage::user("continue".into()),
+    ];
+    let mut config = xai_request(&messages, &[]);
+    config.continuation_target = Some(&target);
+
+    let prepared = try_build_request_with_evidence(&config).expect("xAI native replay");
+    let body = prepared.body;
+
+    assert_eq!(body["input"][0]["type"], "reasoning");
+    assert_eq!(body["input"][0]["encrypted_content"], "opaque-xai");
+    assert_eq!(prepared.replayed.len(), 1);
+}
+
+#[test]
+fn xai_responses_blocks_wrong_scope_and_required_missing_state() {
+    let target = xai_fixture_target("xai-scope");
+    let messages = [
+        xai_native_assistant(&target),
+        ChatMessage::user("continue".into()),
+    ];
+    let wrong = xai_fixture_target("other-xai-scope");
+    let mut config = xai_request(&messages, &[]);
+    config.continuation_target = Some(&wrong);
+    assert!(try_build_request(&config).is_err());
+
+    let missing = [
+        ChatMessage::assistant("visible".into(), None, None, None, None),
+        ChatMessage::user("continue".into()),
+    ];
+    let mut config = xai_request(&missing, &[]);
+    config.continuation_target = Some(&target);
+    assert!(try_build_request(&config).is_err());
 }
 
 #[tokio::test]
@@ -121,11 +318,7 @@ async fn runtime_dispatch_cannot_fall_back_to_chat_completions() {
     let emitter = crate::services::agent_local::stream_events::AgentEventEmitter::test(
         session_id.to_string(),
     );
-    let messages = [ChatMessage {
-        role: "user".into(),
-        content: "bonjour".into(),
-        ..Default::default()
-    }];
+    let messages = [ChatMessage::user("bonjour".into())];
 
     crate::services::llm::stream::stream_chat_no_done(
         &emitter,
@@ -144,6 +337,8 @@ async fn runtime_dispatch_cannot_fall_back_to_chat_completions() {
         tokio_util::sync::CancellationToken::new(),
         false,
         None,
+        None,
+        None,
     )
     .await
     .expect("Responses stream completes");
@@ -153,5 +348,47 @@ async fn runtime_dispatch_cannot_fall_back_to_chat_completions() {
     assert_eq!(payloads[0]["reasoning"]["effort"], "medium");
     assert_eq!(payloads[0]["service_tier"], "fast");
     assert!(payloads[0].get("reasoning_effort").is_none());
+    assert!(payloads[0].get("messages").is_none());
+}
+
+#[tokio::test]
+async fn xai_runtime_dispatch_cannot_fall_back_to_chat_completions() {
+    let session_id = "xai-responses-runtime";
+    let scenario = crate::services::llm::stream_test_transport::StreamScenario::start(
+        session_id,
+        [crate::services::llm::stream_test_transport::ScriptedResponse::Success],
+    )
+    .await;
+    let emitter = crate::services::agent_local::stream_events::AgentEventEmitter::test(
+        session_id.to_string(),
+    );
+    let messages = [ChatMessage::user("bonjour".into())];
+
+    crate::services::llm::stream::stream_chat_no_done(
+        &emitter,
+        session_id,
+        "request-xai-responses-runtime",
+        0,
+        1,
+        "xai",
+        FastModeRequest::Unsupported,
+        RequestPurpose::ManualChat,
+        "grok-4.6",
+        &messages,
+        &[],
+        true,
+        Some("high"),
+        tokio_util::sync::CancellationToken::new(),
+        false,
+        None,
+        None,
+        None,
+    )
+    .await
+    .expect("xAI Responses stream completes");
+
+    let payloads = scenario.payloads();
+    assert_eq!(payloads.len(), 1);
+    assert_eq!(payloads[0]["reasoning"]["effort"], "high");
     assert!(payloads[0].get("messages").is_none());
 }

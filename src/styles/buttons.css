@@ -10,14 +10,16 @@
   align-items: center;
   justify-content: center;
   gap: var(--chrome-2);
-  border: var(--line-thin) solid transparent;
+  /* Le relief pose déjà `border: 0` sur les variantes qui portent un trait ;
+     sans cette ligne, `btn-ghost` récupérait la bordure grise du navigateur. */
+  border: 0;
   border-radius: var(--radius-sm);
   font-family: inherit;
   font-size: var(--text-sm);
   font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
-  transition: background var(--ease-smooth), color var(--ease-smooth), border-color var(--ease-smooth);
+  transition: background var(--ease-smooth), color var(--ease-smooth), box-shadow var(--ease-smooth);
 }
 
 .btn-sm {
@@ -28,16 +30,25 @@
 .btn-primary {
   background: var(--pulse);
   color: var(--ink-on-pulse);
+  box-shadow: var(--elev-rest);
 }
 
 .btn-primary:hover:not(:disabled) {
   background: color-mix(in srgb, var(--pulse) 90%, white);
 }
 
+/* Sur un aplat lumineux, le trait est une ombre et non une lumière. */
+.btn.btn-primary::before {
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, calc(var(--relief-top) * 0.6)),
+    rgba(0, 0, 0, calc(var(--relief-top) * 1.6))
+  );
+}
+
 .btn-secondary {
-  border-color: var(--edge-strong);
   background: var(--btn-secondary-bg);
-  box-shadow: inset 0 1px 0 var(--btn-inner-highlight);
+  box-shadow: var(--elev-rest);
   color: var(--ink-muted);
 }
 
@@ -51,6 +62,16 @@
 .btn-danger {
   background: var(--signal-error);
   color: var(--ink-on-danger);
+  box-shadow: var(--elev-rest);
+}
+
+/* Sur un aplat rouge, le trait part de la lumière et finit dans l'ombre. */
+.btn.btn-danger::before {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, calc(var(--relief-top) * 2)),
+    rgba(0, 0, 0, calc(var(--relief-top) * 1.2))
+  );
 }
 
 .btn-danger:hover:not(:disabled) {
@@ -60,16 +81,19 @@
 /* Action destructrice annoncée au survol : neutre au repos pour ne pas crier
    dans une barre d'actions, rouge dès qu'on la vise. */
 .btn-destructive {
-  border-color: var(--edge-strong);
   background: var(--btn-secondary-bg);
-  box-shadow: inset 0 1px 0 var(--btn-inner-highlight);
+  box-shadow: var(--elev-rest);
   color: var(--ink-muted);
 }
 
 .btn-destructive:hover:not(:disabled) {
-  border-color: var(--signal-error-border);
   background: var(--signal-error-bg);
   color: var(--signal-error);
+}
+
+/* Au survol, c'est le trait de l'objet qui passe au rouge. */
+.btn.btn-destructive:hover:not(:disabled)::before {
+  background: var(--signal-error-border);
 }
 
 /* Déclencheur de liste dépliante : un bouton secondaire dont le libellé reste
@@ -103,9 +127,24 @@
   color: var(--ink);
 }
 
+/* Enfoncé : l'objet redescend sur la page — l'ombre part, la lumière faiblit. */
+.btn:active:not(:disabled) {
+  box-shadow: none;
+}
+
+.btn:active:not(:disabled)::before {
+  opacity: 0.5;
+}
+
+/* Désactivé : l'objet ne se soulève plus. Il reste lisible. */
 .btn:disabled {
   opacity: 0.6;
+  box-shadow: none;
   cursor: default;
+}
+
+.btn:disabled::before {
+  opacity: 0.5;
 }
 
 /* Boutons à icône seule — même hauteur que les boutons texte pour qu'ils
@@ -146,9 +185,8 @@
 /* Variante encadrée, pour les icônes posées hors d'une carte où le bouton nu
    n'a aucun contour qui le distingue du fond. */
 .icon-btn-secondary {
-  border: var(--line-thin) solid var(--edge-strong);
   background: var(--btn-secondary-bg);
-  box-shadow: inset 0 1px 0 var(--btn-inner-highlight);
+  box-shadow: var(--elev-rest);
   color: var(--ink-muted);
 }
 
@@ -162,8 +200,8 @@
   color: var(--signal-error);
 }
 
-.icon-btn-secondary.icon-btn-destructive:hover:not(:disabled) {
-  border-color: var(--signal-error-border);
+.icon-btn-secondary.icon-btn-destructive:hover:not(:disabled)::before {
+  background: var(--signal-error-border);
 }
 
 .icon-btn:disabled {

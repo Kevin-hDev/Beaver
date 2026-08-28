@@ -48,6 +48,29 @@ pub use startup::{
     run, run_shell_sandbox_helper,
 };
 
+#[cfg(debug_assertions)]
+pub fn run_live_reasoning_fixtures() -> bool {
+    let coordinator = match app_exit::AppExitCoordinator::initialize() {
+        Ok(value) => value,
+        Err(_) => return false,
+    };
+    let runtime = runtime_state::services(&coordinator);
+    let app = match app_build::build(coordinator, runtime) {
+        Ok(value) => value,
+        Err(_) => return false,
+    };
+    services::agent_local::app_handle_global::init(app.handle().clone());
+    match tauri::async_runtime::block_on(
+        commands::reasoning_fixture_live_tests::refresh_live_reasoning_fixture_matrix_once(&app),
+    ) {
+        Ok(()) => true,
+        Err(error) => {
+            eprintln!("{error}");
+            false
+        }
+    }
+}
+
 pub(crate) fn run_inner(
     #[cfg(target_os = "macos")] browser_library: Option<BrowserLibraryGuard>,
 ) -> bool {

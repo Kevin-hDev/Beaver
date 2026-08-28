@@ -26,7 +26,7 @@ fn oversized_skill_is_reported_as_partial() {
     std::fs::create_dir_all(&skill).unwrap();
     std::fs::write(
         skill.join("SKILL.md"),
-        vec![b'x'; super::super::limits::MAX_MANIFEST_BYTES as usize + 1],
+        vec![b'x'; super::super::limits::MAX_MANIFEST_BYTES + 1],
     )
     .unwrap();
 

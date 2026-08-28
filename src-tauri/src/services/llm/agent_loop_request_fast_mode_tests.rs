@@ -8,10 +8,12 @@ use crate::services::llm::stream_test_transport::{ScriptedResponse, StreamScenar
 use tokio_util::sync::CancellationToken;
 
 fn message(role: &str, content: String) -> ChatMessage {
-    ChatMessage {
-        role: role.into(),
-        content,
-        ..Default::default()
+    match role {
+        "system" => ChatMessage::system(content),
+        "user" => ChatMessage::user(content),
+        "assistant" => ChatMessage::assistant(content, None, None, None, None),
+        "tool" => ChatMessage::tool(content, None, None),
+        other => panic!("unsupported chat role in test/setup: {other}"),
     }
 }
 
@@ -62,6 +64,7 @@ async fn payload_reduction_retry_keeps_the_generation_fast_capture() {
         turn: 0,
         subagents: &mut subagents,
         context_usage_seed: ContextUsageSeed::default(),
+        continuation_target: None,
     });
     let change_preference = async {
         scenario.wait_for_payloads(1).await;

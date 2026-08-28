@@ -30,6 +30,7 @@ const expectedTranslationKeys = [
   "appShuttingDown",
   "gatewayBusy",
   "gatewayShuttingDown",
+  "queueUnavailable",
   "serviceCapacity",
   "serviceShuttingDown",
   "streamReplaced",
@@ -59,10 +60,10 @@ describe("admission-error", () => {
     expect(ADMISSION_ERROR_CODES).toEqual(expected.map(([code]) => code));
   });
 
-  it.each(catalogs)("traduit les neuf codes en %s", (_language, catalog) => {
+  it.each(catalogs)("traduit les codes publics en %s", (_language, catalog) => {
     const admission = catalog.errors.admission;
     expect(Object.keys(admission).sort()).toEqual(expectedTranslationKeys);
-    expect(Object.values(admission)).toHaveLength(9);
+    expect(Object.values(admission)).toHaveLength(expectedTranslationKeys.length);
     expect(Object.values(admission).every((value) => value.trim().length > 0)).toBe(true);
   });
 });

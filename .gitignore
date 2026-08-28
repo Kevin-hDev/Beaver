@@ -41,6 +41,7 @@ repo/
 # Local agent/tooling artifacts
 .claude/
 .codex/
+.superpowers/
 .zcode/
 .playwright-mcp/
 .serena/

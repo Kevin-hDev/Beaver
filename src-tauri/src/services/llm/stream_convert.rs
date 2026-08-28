@@ -25,7 +25,10 @@ fn message_to_openai_with_names(
             obj
         }
         "assistant" => {
-            let content = if msg.content.is_empty() && msg.tool_calls.is_some() {
+            let content = if msg.content.is_empty()
+                && msg.tool_calls.is_some()
+                && provider_id != "deepseek"
+            {
                 Value::Null
             } else {
                 json!(msg.content)
@@ -34,9 +37,6 @@ fn message_to_openai_with_names(
                 "role": "assistant",
                 "content": content,
             });
-            if let Some(rc) = &msg.reasoning_content {
-                obj["reasoning_content"] = json!(rc);
-            }
             if let Some(tcs) = &msg.tool_calls {
                 let mut tc_arr: Vec<Value> = tcs
                     .iter()
@@ -57,7 +57,11 @@ fn message_to_openai_with_names(
                     .collect();
                 for (value, tc) in tc_arr.iter_mut().zip(tcs.iter()) {
                     if let Some(extra_content) = &tc.extra_content {
-                        value["extra_content"] = extra_content.clone();
+                        if let Some(extra_content) =
+                            extra_content_for_provider(extra_content, provider_id)
+                        {
+                            value["extra_content"] = extra_content;
+                        }
                     }
                 }
                 obj["tool_calls"] = json!(tc_arr);
@@ -80,6 +84,20 @@ fn message_to_openai_with_names(
             json!({ "role": msg.role, "content": msg.content })
         }
     }
+}
+
+fn extra_content_for_provider(extra: &Value, provider_id: &str) -> Option<Value> {
+    if provider_id == crate::services::codex_client::PROVIDER_ID {
+        return Some(extra.clone());
+    }
+    let mut filtered = extra.clone();
+    if let Some(object) = filtered.as_object_mut() {
+        object.remove("codex");
+        if object.is_empty() {
+            return None;
+        }
+    }
+    Some(filtered)
 }
 
 pub fn messages_to_openai(messages: &[ChatMessage], provider_id: &str) -> Vec<Value> {

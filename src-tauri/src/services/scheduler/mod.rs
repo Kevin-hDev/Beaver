@@ -1,4 +1,6 @@
 mod agentic;
+#[cfg(test)]
+pub(crate) use agentic::admit_wakeup_turn;
 pub mod due;
 pub mod fire;
 mod fire_once;

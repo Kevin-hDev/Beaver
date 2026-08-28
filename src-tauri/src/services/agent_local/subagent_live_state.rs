@@ -85,6 +85,8 @@ mod tests {
 
     fn child(id: &str, status: &str) -> AgentSession {
         AgentSession {
+            schema_version:
+                crate::services::agent_local::session_limits::CURRENT_SESSION_SCHEMA_VERSION,
             id: id.into(),
             name: "Geminitor".into(),
             created_at: Utc::now(),
@@ -96,6 +98,7 @@ mod tests {
             thinking_enabled: false,
             fast_mode_enabled: false,
             reasoning_mode: None,
+            preserve_reasoning: Default::default(),
             accumulated_tokens: 0,
             context_tokens: None,
             messages: Vec::new(),

@@ -10,6 +10,7 @@ impl OllamaManager {
             code: super::error::OllamaErrorCode::OllamaClosing,
         });
         self.inner().mark_closing();
+        self.cancel_active_operation();
         self.inner().work.begin_closing();
     }
 
@@ -173,4 +174,5 @@ impl OllamaManager {
     }
 }
 
+include!("manager_cancellation.rs");
 include!("manager_runtime.rs");

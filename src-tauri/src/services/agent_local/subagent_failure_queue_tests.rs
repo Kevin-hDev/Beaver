@@ -15,7 +15,9 @@ async fn failed_run_keeps_correction_until_explicit_redeployment() {
     child.parent_session_id = Some(parent.id.clone());
     child.subagent_type = Some("explorer".into());
     child.subagent_status = Some(subagent_status::RUNNING.into());
-    child.subagent_queued_prompts.push("correction durable".into());
+    child
+        .subagent_queued_prompts
+        .push("correction durable".into());
     session_store::save(&child).await.expect("save child");
     subagent_registry::register(&parent.id, &child.id, CancellationToken::new())
         .await
@@ -31,10 +33,20 @@ async fn failed_run_keeps_correction_until_explicit_redeployment() {
     .await
     .expect("persist failed completion");
 
-    let failed = session_store::get(&child.id).await.expect("load failed child");
+    let failed = session_store::get(&child.id)
+        .await
+        .expect("load failed child");
     assert_eq!(failed.subagent_queued_prompts, vec!["correction durable"]);
-    assert_eq!(failed.subagent_status.as_deref(), Some(subagent_status::FAILED));
-    assert_eq!(subagent_hidden_reports::peek_reports(&parent.id).await.len(), 1);
+    assert_eq!(
+        failed.subagent_status.as_deref(),
+        Some(subagent_status::FAILED)
+    );
+    assert_eq!(
+        subagent_hidden_reports::peek_reports(&parent.id)
+            .await
+            .len(),
+        1
+    );
     assert!(subagent_registry::active_children_for_parent(&parent.id)
         .await
         .is_empty());
@@ -52,18 +64,14 @@ async fn failed_run_keeps_correction_until_explicit_redeployment() {
     )
     .await
     .expect("prepare explicit redeployment");
-    let persisted = tool_delegate_child::persist_delegate_prompt(
-        &child.id,
-        "correction durable",
-        true,
-    )
-    .await
-    .expect("reuse queued correction");
+    tool_delegate_child::persist_delegate_prompt(&child.id, "correction durable")
+        .await
+        .expect("preflight redeployment");
     let registered = subagent_registry::register_execution_with_initial_prompt(
         &parent.id,
         &child.id,
         CancellationToken::new(),
-        persisted.initial_prompt(),
+        None,
     )
     .await
     .expect("register redeployment");
@@ -72,7 +80,9 @@ async fn failed_run_keeps_correction_until_explicit_redeployment() {
         .await
         .expect("deliver correction once");
 
-    let resumed = session_store::get(&child.id).await.expect("load resumed child");
+    let resumed = session_store::get(&child.id)
+        .await
+        .expect("load resumed child");
     assert!(resumed.subagent_queued_prompts.is_empty());
     assert_eq!(
         resumed
@@ -83,14 +93,20 @@ async fn failed_run_keeps_correction_until_explicit_redeployment() {
         1
     );
     assert_eq!(context.len(), 1);
-    assert!(subagent_registry::prompt_was_delivered(
-        &child.id,
-        &registered.execution_id,
-        "correction durable",
-    )
-    .await);
+    assert!(
+        subagent_registry::prompt_was_delivered(
+            &child.id,
+            &registered.execution_id,
+            "correction durable",
+        )
+        .await
+    );
 
     subagent_registry::unregister(&child.id).await;
-    session_store::delete_one(&child.id).await.expect("delete child");
-    session_store::delete_one(&parent.id).await.expect("delete parent");
+    session_store::delete_one(&child.id)
+        .await
+        .expect("delete child");
+    session_store::delete_one(&parent.id)
+        .await
+        .expect("delete parent");
 }

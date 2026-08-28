@@ -1,0 +1,107 @@
+{
+  "accumulated_tokens": 41,
+  "archived_at": "2026-08-25T10:00:00Z",
+  "context_tokens": 12253,
+  "created_at": "2026-08-25T10:00:00Z",
+  "diagnostic_runs": [
+    {
+      "ended_at": "2026-08-25T10:00:00Z",
+      "events": [
+        {
+          "at": "2026-08-25T10:00:00Z",
+          "message": "fixture-message",
+          "phase": "request_start"
+        },
+        {
+          "at": "2026-08-25T10:00:00Z",
+          "message": "fixture-message",
+          "phase": "model_request"
+        },
+        {
+          "at": "2026-08-25T10:00:00Z",
+          "message": "fixture-message",
+          "phase": "provider_payload"
+        },
+        {
+          "at": "2026-08-25T10:00:00Z",
+          "message": "fixture-message",
+          "phase": "model_stream"
+        },
+        {
+          "at": "2026-08-25T10:00:00Z",
+          "message": "fixture-message",
+          "phase": "model_result"
+        },
+        {
+          "at": "2026-08-25T10:00:00Z",
+          "message": "fixture-message",
+          "phase": "model_stream"
+        },
+        {
+          "at": "2026-08-25T10:00:00Z",
+          "message": "fixture-message",
+          "phase": "model_result"
+        },
+        {
+          "at": "2026-08-25T10:00:00Z",
+          "message": "fixture-message",
+          "phase": "completed"
+        }
+      ],
+      "generation": 1,
+      "phase": "completed",
+      "request_id": "00000000-0000-4000-8000-000000000001",
+      "safe_summary": "fixture-safe-summary",
+      "severity": "info",
+      "started_at": "2026-08-25T10:00:00Z",
+      "status": "completed",
+      "updated_at": "2026-08-25T10:00:00Z"
+    }
+  ],
+  "id": "00000000-0000-4000-8000-000000000002",
+  "is_gateway": false,
+  "is_heartbeat": false,
+  "messages": [
+    {
+      "content": "fixture-user-content",
+      "files": [],
+      "id": "00000000-0000-4000-8000-000000000003",
+      "role": "user",
+      "timestamp": "2026-08-25T10:00:00Z",
+      "tokens": 0
+    },
+    {
+      "content": "fixture-assistant-content",
+      "files": [],
+      "id": "00000000-0000-4000-8000-000000000004",
+      "role": "assistant",
+      "segments": [
+        {
+          "content": "fixture-assistant-content",
+          "phase": "final",
+          "thinking": "fixture-visible-thinking",
+          "tools": []
+        }
+      ],
+      "stream_part": "final",
+      "stream_run_id": "00000000-0000-4000-8000-000000000005",
+      "thinking": "fixture-visible-thinking",
+      "timestamp": "2026-08-25T10:00:00Z",
+      "tokens": 105,
+      "work_duration_ms": 4162
+    }
+  ],
+  "model": "fixture-model",
+  "name": "fixture-name",
+  "permission_family": "tools",
+  "permission_mode": "auto",
+  "plan_mode_enabled": false,
+  "plan_workflow_status": "needs_context",
+  "provider": "xai-oauth",
+  "reasoning_mode": "high",
+  "thinking_enabled": true,
+  "todo_neglect_count": 0,
+  "updated_at": "2026-08-25T10:00:00Z",
+  "working_dir": "/fixture/workspace",
+  "working_dir_managed": true
+}

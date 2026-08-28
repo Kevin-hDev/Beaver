@@ -19,18 +19,10 @@ pub fn build_summary_messages(serialized: &str, focus: Option<&str>) -> Vec<Chat
         .map(|value| format!("\n\n<focus>\n{value}\n</focus>"))
         .unwrap_or_default();
     vec![
-        ChatMessage {
-            role: "system".to_string(),
-            content: system_prompt(),
-            ..Default::default()
-        },
-        ChatMessage {
-            role: "user".to_string(),
-            content: format!(
+        ChatMessage::system(system_prompt()),
+        ChatMessage::user(format!(
                 "<context>\nThe user cloned a coding session from an earlier message. Summarize only the conversation that happened after that clone point. The summary will be injected as hidden context in the new branch.\n</context>{focus_block}\n\n<conversation_after_clone>\n{serialized}\n</conversation_after_clone>"
-            ),
-            ..Default::default()
-        },
+            )),
     ]
 }
 

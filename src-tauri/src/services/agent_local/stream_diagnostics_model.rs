@@ -1,5 +1,6 @@
 use super::stream_diagnostics_support as support;
 use super::types_ollama::{ChatMessage, StreamResult};
+use crate::services::reasoning_continuity::envelope::ContinuationState;
 
 #[derive(Debug, Default, PartialEq)]
 struct ModelRequestStats {
@@ -74,7 +75,13 @@ fn request_stats(messages: &[ChatMessage]) -> ModelRequestStats {
                 stats.assistant_messages += 1;
                 stats.assistant_content_chars += char_count(&message.content);
                 stats.assistant_tool_calls += message.tool_calls.as_ref().map_or(0, Vec::len);
-                if let Some(reasoning) = message.reasoning_content.as_ref() {
+                let native_reasoning = message.continuation.as_ref().and_then(|envelope| {
+                    match &envelope.continuation {
+                        ContinuationState::OllamaNative { thinking } => Some(thinking),
+                        _ => None,
+                    }
+                });
+                if let Some(reasoning) = native_reasoning.or(message.tool_loop_reasoning.as_ref()) {
                     if !reasoning.is_empty() {
                         stats.assistant_reasoning_messages += 1;
                         stats.assistant_reasoning_chars += char_count(reasoning);
@@ -107,11 +114,12 @@ mod tests {
     #[test]
     fn request_stats_counts_reasoning_without_content() {
         let messages = vec![
-            ChatMessage {
-                role: "assistant".to_string(),
-                content: "".to_string(),
-                reasoning_content: Some("réflexion".to_string()),
-                tool_calls: Some(vec![ToolCallOllama {
+            ChatMessage::assistant(
+                "".to_string(),
+                Some("réflexion".to_string()),
+                None,
+                Some("réflexion".to_string()),
+                Some(vec![ToolCallOllama {
                     id: Some("call_1".to_string()),
                     extra_content: None,
                     function: ToolCallFunction {
@@ -119,14 +127,8 @@ mod tests {
                         arguments: json!({"pattern": "x"}),
                     },
                 }]),
-                ..Default::default()
-            },
-            ChatMessage {
-                role: "tool".to_string(),
-                content: "ok".to_string(),
-                tool_call_id: Some("call_1".to_string()),
-                ..Default::default()
-            },
+            ),
+            ChatMessage::tool("ok".to_string(), Some("call_1".to_string()), None),
         ];
 
         assert_eq!(
@@ -146,5 +148,41 @@ mod tests {
     #[test]
     fn char_count_is_utf8_safe() {
         assert_eq!(char_count("é🙂x"), 3);
+    }
+
+    #[test]
+    fn request_stats_counts_persisted_ollama_continuity() {
+        use crate::services::reasoning_continuity::contract::{
+            ContractId, CredentialScope, ReasoningModeId, RouteId,
+        };
+        use crate::services::reasoning_continuity::envelope::{
+            CompletionState, ReasoningEnvelope, ReasoningSource,
+        };
+
+        let continuation = ReasoningEnvelope::new(
+            ContractId::OllamaNativeV1,
+            ReasoningSource {
+                route_id: RouteId::Ollama,
+                model_id: "qwen3.5:4b".into(),
+                credential_scope: CredentialScope::local_uncredentialed(),
+                reasoning_mode: ReasoningModeId::Auto,
+            },
+            CompletionState::Complete,
+            ContinuationState::OllamaNative {
+                thinking: "raisonnement durable".into(),
+            },
+            Vec::new(),
+        );
+        let messages = [ChatMessage::assistant(
+            "réponse".into(),
+            None,
+            Some(continuation),
+            None,
+            None,
+        )];
+
+        let stats = request_stats(&messages);
+        assert_eq!(stats.assistant_reasoning_messages, 1);
+        assert_eq!(stats.assistant_reasoning_chars, 20);
     }
 }

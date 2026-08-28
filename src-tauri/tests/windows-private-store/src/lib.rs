@@ -7,6 +7,14 @@ mod services {
             std::env::temp_dir().join("cl-go-private-store-integration")
         }
     }
+
+    // This isolated crate exercises the Windows ACL implementation only. The
+    // application-owned debug fixture cleanup is covered by its own test suite.
+    pub mod reasoning_fixture_tools {
+        pub fn purge_stale_runtime() -> Result<(), String> {
+            Ok(())
+        }
+    }
 }
 
 #[path = "../../../src/services/private_store.rs"]

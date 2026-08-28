@@ -219,6 +219,9 @@ fn credentials(access: &str) -> CodexTokens {
         expires_at: i64::MAX,
         refresh_not_before: 0,
         account_hint: Zeroizing::new("acct_test".to_string()),
+        credential_scope: Some(
+            crate::services::api_keys::generate_credential_scope().expect("scope"),
+        ),
     }
 }
 

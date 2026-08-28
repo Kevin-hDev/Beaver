@@ -4,11 +4,14 @@ pub mod agent_loop_completion;
 mod agent_loop_compression;
 pub mod agent_loop_errors;
 pub mod agent_loop_finish;
+mod agent_loop_interrupted;
 pub mod agent_loop_limits;
 mod agent_loop_ollama_request;
 pub mod agent_loop_plan;
 pub mod agent_loop_support;
 pub mod agent_loop_thinking_retry;
+mod agent_loop_tool_batch;
+mod agent_loop_tool_turn;
 pub mod agent_md;
 pub mod agent_resource_access;
 pub mod agent_settings;
@@ -16,6 +19,9 @@ pub mod agent_work_supervision;
 #[cfg(test)]
 mod agent_work_supervision_tests;
 pub mod app_handle_global;
+pub mod chat_message;
+#[cfg(test)]
+mod chat_message_tests;
 pub mod circuit_breaker;
 #[cfg(test)]
 pub mod circuit_breaker_tests;
@@ -30,11 +36,6 @@ pub mod clone_summary;
 pub mod clone_summary_ops;
 pub mod clone_summary_prompt;
 pub mod compress_hook;
-pub mod context_budget;
-mod context_budget_history;
-mod context_budget_prune;
-pub mod context_capacity_error;
-pub mod context_usage_buckets;
 pub mod diagnostic_args;
 #[cfg(test)]
 mod diagnostic_args_tests;
@@ -101,6 +102,7 @@ pub mod ollama_retry_indicator;
 pub mod ollama_runtime;
 pub mod ollama_stream;
 mod ollama_stream_filter;
+mod ollama_stream_policy;
 pub mod ollama_stream_process;
 #[cfg(test)]
 mod ollama_stream_process_tests;
@@ -113,10 +115,6 @@ pub mod ollama_tool_role;
 mod ollama_tool_role_tests;
 pub mod ollama_wire;
 pub(crate) mod parent_message_inbox;
-#[cfg(test)]
-mod parent_message_inbox_tests;
-#[cfg(test)]
-mod parent_message_wakeup_tests;
 mod permission_allow_cache;
 pub mod permission_bash;
 pub mod permission_gate;
@@ -140,7 +138,6 @@ mod subagent_completion_boundary_tests;
 mod subagent_completion_capacity_tests;
 #[cfg(test)]
 mod subagent_completion_tests;
-pub mod subagent_context;
 #[cfg(test)]
 mod subagent_correction_capacity_tests;
 #[cfg(test)]

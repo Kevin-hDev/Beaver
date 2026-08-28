@@ -7,11 +7,7 @@ use super::test_transport::{HttpCapture, WebSocketCapture};
 use crate::services::agent_local::types_ollama::ChatMessage;
 
 fn messages() -> Vec<ChatMessage> {
-    vec![ChatMessage {
-        role: "user".to_string(),
-        content: "bonjour".to_string(),
-        ..Default::default()
-    }]
+    vec![ChatMessage::user("bonjour".to_string())]
 }
 
 fn assert_http_capture(

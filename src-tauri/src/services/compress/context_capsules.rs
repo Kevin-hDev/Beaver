@@ -50,15 +50,7 @@ pub fn recent_file_context_message(
             content.push('\n');
         }
     }
-    Some(ChatMessage {
-        role: "user".to_string(),
-        content,
-        images: None,
-        tool_calls: None,
-        tool_name: None,
-        tool_call_id: None,
-        reasoning_content: None,
-    })
+    Some(ChatMessage::user(content))
 }
 
 pub fn insert_after_system(messages: &mut Vec<ChatMessage>, context: Option<ChatMessage>) {

@@ -1,7 +1,7 @@
 import {
   AboutIcon, AdvancedIcon, ArchivedChatsIcon, ChannelsIcon, ConnectorsIcon,
   ExtensionsIcon, GeneralIcon, LlmIcon, MascotIcon, MemoryIcon,
-  OllamaIcon, ProvidersIcon, ShortcutsIcon, SystemPromptIcon, ToolsIcon,
+  OllamaIcon, ProvidersIcon, ShortcutsIcon, SystemPromptIcon, ToolsIcon, UpdatesIcon,
 } from "./settings-tab-icons";
 import type { SettingsTabIconProps } from "./settings-tab-icons";
 import { ForecastIcon } from "@/components/ui/forecast-icon";
@@ -62,6 +62,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
   {
     i18n: "settings.sections.application",
     tabs: [
+      { id: "updates", i18n: "settings.tabs.updates", icon: UpdatesIcon },
       { id: "archived-chats", i18n: "settings.tabs.archivedChats", icon: ArchivedChatsIcon },
       { id: "about", i18n: "settings.tabs.about", icon: AboutIcon },
     ],

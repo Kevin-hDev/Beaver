@@ -66,9 +66,12 @@
   border-left-color: var(--ink);
 }
 
+/* La même sélection que partout ailleurs (global.css). Elle lisait le fond de
+   survol des boutons, qui doit rester discret : en thème Clair c'était du crème
+   sur du crème, et le texte sélectionné ne se distinguait pas. */
 .chat-cm-host .cm-selectionBackground,
 .chat-cm-host .cm-content ::selection {
-  background: var(--select-bg);
+  background: var(--text-selection-bg);
 }
 
 .chat-md-input-bullet {

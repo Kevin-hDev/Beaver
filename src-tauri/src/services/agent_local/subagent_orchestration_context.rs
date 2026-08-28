@@ -14,11 +14,7 @@ pub fn replace_gate_context(
     if active_count == 0 {
         return;
     }
-    let context = ChatMessage {
-        role: "system".to_string(),
-        content: build_gate_content(active_count, reports_injected),
-        ..Default::default()
-    };
+    let context = ChatMessage::system(build_gate_content(active_count, reports_injected));
     super::subagent_report_context::insert_leading_system_message(messages, context);
 }
 

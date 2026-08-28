@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { matchesAppShortcut } from "@/lib/app-shortcuts";
 
 interface AgentLocalShortcutsParams {
   activeSessionId?: string | null;
@@ -23,10 +24,8 @@ export function useAgentLocalShortcuts(params: AgentLocalShortcutsParams) {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      const onMac = navigator.userAgent.includes("Mac");
-      const mod = onMac ? event.metaKey : event.ctrlKey;
-      const toggleTerminal = mod && !event.altKey && event.code === "KeyJ";
-      const togglePreview = mod && event.altKey && event.code === "KeyB";
+      const toggleTerminal = matchesAppShortcut(event, "toggleTerminal");
+      const togglePreview = matchesAppShortcut(event, "togglePreview");
       if (!activeSessionId || isEditableTarget(event.target)) return;
       if (togglePreview) {
         event.preventDefault();

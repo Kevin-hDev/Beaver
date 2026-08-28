@@ -59,7 +59,10 @@ test("chaque racine Rust persistante est classée ou explicitement transitoire",
   const unknown = findings.filter(({ root }) => !allowed.has(root));
   assert.deepEqual(unknown, []);
   for (const root of MANIFEST.transientRoots) {
-    assert.match(root, /(?:\.pid$|^cef-supervision$|^update-health$)/u);
+    assert.match(
+      root,
+      /(?:\.pid$|^cef-supervision$|^reasoning-fixture-(?:reports|runtime)$|^update-health$)/u,
+    );
   }
 });
 

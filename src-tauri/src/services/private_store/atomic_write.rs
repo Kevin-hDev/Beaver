@@ -17,7 +17,7 @@ pub(super) enum AtomicWriteStage {
 /// directory synchronization fails after publication, the failure is traced
 /// but is not returned: retrying a read-modify-write could apply it twice.
 pub(crate) fn atomic_write(path: &Path, bytes: &[u8]) -> Result<(), String> {
-    write_with_hook(path, bytes, |_| {})
+    write_with_hook(path, bytes, None, |_| {})
 }
 
 #[cfg(test)]
@@ -26,12 +26,18 @@ pub(super) fn atomic_write_with_hook(
     bytes: &[u8],
     hook: impl FnMut(AtomicWriteStage),
 ) -> Result<(), String> {
-    write_with_hook(path, bytes, hook)
+    write_with_hook(path, bytes, None, hook)
+}
+
+#[cfg(test)]
+pub(crate) fn atomic_write_fail_before_replace(path: &Path, bytes: &[u8]) -> Result<(), String> {
+    write_with_hook(path, bytes, Some(AtomicWriteStage::FileSynced), |_| {})
 }
 
 fn write_with_hook(
     path: &Path,
     bytes: &[u8],
+    failure: Option<AtomicWriteStage>,
     mut hook: impl FnMut(AtomicWriteStage),
 ) -> Result<(), String> {
     let parent = path.parent().ok_or_else(super::private_store_error)?;
@@ -46,6 +52,9 @@ fn write_with_hook(
         hook(AtomicWriteStage::ContentWritten);
         file.sync_all().map_err(|_| super::private_store_error())?;
         hook(AtomicWriteStage::FileSynced);
+        if failure == Some(AtomicWriteStage::FileSynced) {
+            return Err(super::private_store_error());
+        }
         super::repair_path(&temp)?;
         hook(AtomicWriteStage::PermissionsRepaired);
         super::replace_file(&temp, path)?;

@@ -15,13 +15,15 @@ function makeRecord(): StreamRecord {
     cleanupTimer: null,
     notifyHandle: null,
     started: true,
-    backendOwnsPersistence: false,
-    isSubagentBackendStream: false,
     activeGeneration: null,
+    awaitingAdmission: false,
+    pendingAdmissionBuckets: [],
     cancelledGenerations: [],
     cancelledWithoutGeneration: false,
-    persistenceQueue: Promise.resolve(),
-    persistencePending: false,
+    runOwner: null,
+    runOrigin: null,
+    runId: 0,
+    stopClaim: null,
   };
 }
 

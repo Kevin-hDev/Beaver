@@ -118,11 +118,17 @@ describe("assets de marque", () => {
      elle prend --void et disparaît dans le fond. */
   it("échange découpe et encre entre les palettes claires et sombres", () => {
     const onboarding = readText("src/components/onboarding/onboarding.css");
+    const reusableIcon = readText("src/components/ui/beaver-brand-icon.css");
 
     expect(onboarding).toContain("--brand-surface: var(--void)");
     expect(onboarding).toContain("--brand-mark: var(--ink)");
     expect(onboarding).toMatch(
       /\[data-theme="dark"\] \.ob-brand-castor \{\s*--brand-surface: var\(--ink\);\s*--brand-mark: var\(--void\);/,
+    );
+    expect(reusableIcon).toContain("--bbi-surface: var(--void)");
+    expect(reusableIcon).toContain("--bbi-mark: var(--ink)");
+    expect(reusableIcon).toMatch(
+      /\[data-theme="dark"\] \.bbi-root \{\s*--bbi-surface: var\(--ink\);\s*--bbi-mark: var\(--void\);/,
     );
   });
 

@@ -12,17 +12,18 @@ import { FileThumbnail } from "./file-thumbnail";
 import { useStopConfirmation } from "./use-stop-confirmation";
 import type { ChatInputProps } from "./chat-input-types";
 import { useComposerDraft } from "@/hooks/use-composer-draft";
+import { sameChatFiles } from "./chat-input-snapshot";
+import { matchesAppShortcut } from "@/lib/app-shortcuts";
 import "./chat.css";
 import "./chat-input-textarea.css";
 import "./chat-input-responsive.css";
 
 const K_UP = "ArrowUp";
 const K_DOWN = "ArrowDown";
-const K_ENTER = "Enter";
 const K_ESC = "Escape";
 
 export function ChatInput({
-  draftKey,
+  draftKey, sessionId,
   modelName, providerName, isStreaming, reasoningMode, fastModeEnabled, fastModePending, files,
   contextUsed, contextMax, contextBreakdown, retryIndicator,
   interactiveRequest, onInteractiveResolved,
@@ -37,7 +38,7 @@ export function ChatInput({
     skills: draftSkills,
     setText,
     rememberSkill,
-    clear: clearDraft,
+    consume: consumeDraft,
   } = useComposerDraft(draftKey);
   const slash = useSlashCommands();
   const skills = useActiveSkills(
@@ -48,6 +49,10 @@ export function ChatInput({
     rememberSkill,
   );
   const bubbleRef = useRef<HTMLDivElement>(null);
+  const sendingRef = useRef(false);
+  const filesRef = useRef(files);
+  // eslint-disable-next-line react-hooks/refs -- latest props guard async snapshot cleanup
+  filesRef.current = files;
   const { isConfirmingStop, requestStop, stopNow } = useStopConfirmation(isStreaming, onStop);
 
   const interactivePending = !!interactiveRequest;
@@ -59,12 +64,22 @@ export function ChatInput({
   const hasFiles = files != null && files.length > 0;
   const hasContent = hasText || hasFiles;
 
-  const handleSend = useCallback(() => {
-    if (!hasContent || interactivePending) return;
-    onSend(text.trim(), hasFiles ? files : undefined, skills.getSkillsPayload());
-    clearDraft();
-    onClearFiles?.();
-  }, [text, hasContent, hasFiles, files, skills, interactivePending, onSend, onClearFiles, clearDraft]);
+  const handleSend = useCallback(async () => {
+    if (!hasContent || interactivePending || sendingRef.current) return;
+    const sentDraft = { text, skills: [...draftSkills] };
+    const sentFiles = files?.map((file) => ({ ...file }));
+    sendingRef.current = true;
+    try {
+      const accepted = await onSend(
+        text.trim(), hasFiles ? files : undefined, skills.getSkillsPayload(),
+      );
+      if (accepted === false) return;
+      consumeDraft(sentDraft);
+      if (sameChatFiles(filesRef.current, sentFiles)) onClearFiles?.();
+    } finally {
+      sendingRef.current = false;
+    }
+  }, [text, draftSkills, hasContent, hasFiles, files, skills, interactivePending, onSend, onClearFiles, consumeDraft]);
 
   const handleChange = useCallback((value: string, cursorPos: number) => {
     setText(value);
@@ -79,7 +94,7 @@ export function ChatInput({
       if (selected) void skills.handleSelectSkill(selected);
       return true;
     }
-    handleSend();
+    void handleSend();
     return true;
   }, [handleSend, slash.showDropdown, slash.skills, slash.activeIndex, skills]);
 
@@ -88,17 +103,17 @@ export function ChatInput({
     if (slash.showDropdown) {
       if (pressed === K_UP) { event.preventDefault(); slash.moveUp(); return true; }
       if (pressed === K_DOWN) { event.preventDefault(); slash.moveDown(); return true; }
-      if (pressed === K_ENTER && !event.shiftKey) {
+      if (matchesAppShortcut(event, "sendMessage")) {
         event.preventDefault();
         return handleEnter();
       }
       if (pressed === K_ESC) { event.preventDefault(); slash.close(); return true; }
     }
-    if (pressed === K_ENTER && !event.shiftKey) {
+    if (matchesAppShortcut(event, "sendMessage")) {
       event.preventDefault();
       return handleEnter();
     }
-    if (pressed === K_ESC && isStreaming) {
+    if (matchesAppShortcut(event, "stopResponse") && isStreaming) {
       event.preventDefault();
       event.stopPropagation();
       requestStop();
@@ -133,7 +148,7 @@ export function ChatInput({
   return (
     <>
       {interactiveFeedback.error && <ErrorBubble message={interactiveFeedback.error} />}
-      <div className={`chat-input-bubble${interactivePending ? " chat-input-bubble-interactive" : ""}`} ref={bubbleRef}>
+      <div className={`chat-input-bubble relief elev-float${interactivePending ? " chat-input-bubble-interactive" : ""}`} ref={bubbleRef}>
       {interactivePending ? (
         <InteractiveChoicePanel
           request={interactiveRequest ?? undefined}
@@ -171,6 +186,7 @@ export function ChatInput({
           )}
           <ChatInputActionsRow
             inputBubbleRef={bubbleRef}
+            sessionId={sessionId}
             modelName={modelName}
             providerName={providerName}
             reasoningMode={reasoningMode}
@@ -193,7 +209,7 @@ export function ChatInput({
             onModelChange={onModelChange}
             onReasoningModeChange={onReasoningModeChange}
             onFastModeChange={onFastModeChange}
-            onSend={handleSend}
+            onSend={() => { void handleSend(); }}
             onStop={stopNow}
           />
         </>

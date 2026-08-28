@@ -58,15 +58,11 @@ pub fn push_tool_message(
 ) -> ToolFollowUp {
     let follow_up = tr.take_follow_up();
     let content = super::tool_result_model::render(name, &tr);
-    messages.push(ChatMessage {
-        role: "tool".to_string(),
+    messages.push(ChatMessage::tool(
         content,
-        images: None,
-        tool_calls: None,
-        tool_name: Some(name.to_string()),
-        tool_call_id: tool_call_id.map(str::to_string),
-        reasoning_content: None,
-    });
+        tool_call_id.map(str::to_string),
+        Some(name.to_string()),
+    ));
     follow_up
 }
 
@@ -88,10 +84,7 @@ mod tests {
         assert_eq!(messages[0].role, "tool");
         assert_eq!(messages[0].content, "Interactive answer received.");
         assert_eq!(messages[0].tool_call_id.as_deref(), Some("call-1"));
-        assert_eq!(
-            follow_up,
-            ToolFollowUp::UserMessage("User answer".into())
-        );
+        assert_eq!(follow_up, ToolFollowUp::UserMessage("User answer".into()));
     }
 
     #[test]

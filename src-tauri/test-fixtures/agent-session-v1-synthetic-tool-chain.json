@@ -1,0 +1,82 @@
+{
+  "accumulated_tokens": 84,
+  "created_at": "2026-08-20T10:00:00Z",
+  "fast_mode_enabled": false,
+  "id": "00000000-0000-4000-8000-000000000010",
+  "is_gateway": false,
+  "is_heartbeat": false,
+  "messages": [
+    {
+      "content": "anonymized-user-request",
+      "files": [],
+      "id": "00000000-0000-4000-8000-000000000011",
+      "role": "user",
+      "timestamp": "2026-08-20T10:00:00Z",
+      "tokens": 8
+    },
+    {
+      "content": "",
+      "files": [],
+      "id": "00000000-0000-4000-8000-000000000012",
+      "role": "assistant",
+      "timestamp": "2026-08-20T10:00:01Z",
+      "tokens": 12,
+      "tool_calls": [
+        {
+          "extra_content": {
+            "codex": {
+              "output_items": [
+                {
+                  "content": [],
+                  "encrypted_content": "redacted-captured-value",
+                  "id": "rs_anonymized",
+                  "summary": [{"text": "anonymized summary", "type": "summary_text"}],
+                  "type": "reasoning"
+                },
+                {
+                  "arguments": "{\"path\":\".\"}",
+                  "call_id": "call_anonymized",
+                  "id": "fc_anonymized",
+                  "name": "list_dir",
+                  "status": "completed",
+                  "type": "function_call"
+                }
+              ]
+            }
+          },
+          "function": {"arguments": {"path": "."}, "name": "list_dir"}
+        }
+      ]
+    },
+    {
+      "content": "anonymized-tool-result",
+      "files": [],
+      "id": "00000000-0000-4000-8000-000000000013",
+      "role": "tool",
+      "timestamp": "2026-08-20T10:00:02Z",
+      "tokens": 16,
+      "tool_name": "list_dir"
+    },
+    {
+      "content": "anonymized-assistant-result",
+      "files": [],
+      "id": "00000000-0000-4000-8000-000000000014",
+      "role": "assistant",
+      "timestamp": "2026-08-20T10:00:03Z",
+      "tokens": 48
+    }
+  ],
+  "model": "gpt-5.6-luna",
+  "name": "anonymized-captured-session",
+  "permission_family": "tools",
+  "permission_mode": "auto",
+  "plan_mode_enabled": false,
+  "plan_workflow_status": "needs_context",
+  "provider": "codex-oauth",
+  "reasoning_mode": "medium",
+  "thinking_enabled": true,
+  "todo_neglect_count": 0,
+  "updated_at": "2026-08-20T10:00:03Z",
+  "working_dir": "/anonymized/workspace",
+  "working_dir_managed": true
+}

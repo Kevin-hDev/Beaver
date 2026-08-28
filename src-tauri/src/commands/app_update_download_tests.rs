@@ -4,7 +4,6 @@ use crate::commands::app_update_install_temp::create_unique_temp_file;
 use crate::services::update_handoff::AppUpdateRuntime;
 use futures_util::{stream, StreamExt};
 use sha2::{Digest, Sha256};
-use std::time::{Duration, Instant};
 
 fn expected_sha256(bytes: &[u8]) -> String {
     hex::encode(Sha256::digest(bytes))
@@ -71,12 +70,11 @@ async fn cancellation_removes_its_partial_and_releases_admission() {
     });
 
     observed.await.expect("one partial chunk written");
-    assert!(
-        runtime
-            .stop_and_wait(Instant::now() + Duration::from_secs(1))
-            .await
+    assert!(runtime.cancel_active_download());
+    assert_eq!(
+        running.await.unwrap().unwrap_err(),
+        "update-download-cancelled"
     );
-    assert_eq!(running.await.unwrap().unwrap_err(), "update-download-error");
     assert!(!path.exists());
     assert_eq!(runtime.diagnostics().active, 0);
 }

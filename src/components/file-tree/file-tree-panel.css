@@ -113,6 +113,8 @@
   color: var(--ink);
   padding-right: 12px;
   outline: none;
+  border-radius: var(--radius);
+  margin: 0 var(--list-gutter);
 }
 
 .ft-node:focus,

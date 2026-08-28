@@ -3,11 +3,7 @@ use crate::services::agent_local::types_ollama::ChatMessage;
 
 #[test]
 fn a_safe_outputs_directory_is_added_as_trusted_runtime_context() {
-    let mut messages = vec![ChatMessage {
-        role: "system".into(),
-        content: "Base".into(),
-        ..Default::default()
-    }];
+    let mut messages = vec![ChatMessage::system("Base".into())];
 
     append_outputs_directory(
         &mut messages,
@@ -20,11 +16,7 @@ fn a_safe_outputs_directory_is_added_as_trusted_runtime_context() {
 
 #[test]
 fn a_path_with_control_characters_never_enters_the_system_prompt() {
-    let mut messages = vec![ChatMessage {
-        role: "system".into(),
-        content: "Base".into(),
-        ..Default::default()
-    }];
+    let mut messages = vec![ChatMessage::system("Base".into())];
 
     append_outputs_directory(
         &mut messages,

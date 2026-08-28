@@ -16,6 +16,12 @@ impl ServiceWorkCancellation {
     pub fn is_cancelled(&self) -> bool {
         self.app.is_cancelled() || self.service.is_cancelled()
     }
+
+    pub(crate) fn cancel(&self) {
+        // Chaque admission reçoit un enfant distinct : l'annuler arrête ce
+        // travail sans fermer le service et sans toucher aux futurs travaux.
+        self.service.cancel();
+    }
 }
 
 impl<const CAPACITY: usize> ServiceWorkAdmission<CAPACITY> {

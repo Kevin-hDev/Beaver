@@ -9,6 +9,12 @@
   flex-direction: column;
 }
 
+/* Windows et Linux : la fenêtre n'a plus de décorations, le coin arrondi vient
+   du contenu. Sur macOS c'est le système qui le dessine. */
+[data-os="other"] .ob-shell {
+  border-radius: var(--radius-window);
+}
+
 /* Bande de déplacement de la fenêtre. Elle occupe sa place dans le flux au lieu
    de se poser par-dessus : posée par-dessus, elle recouvrirait les boutons
    d'en-tête de l'étape d'import — « rechercher à nouveau », « retour » — qui

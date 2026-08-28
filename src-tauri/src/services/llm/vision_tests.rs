@@ -1,12 +1,7 @@
 use super::*;
 
 fn user(images: Vec<&str>) -> ChatMessage {
-    ChatMessage {
-        role: "user".into(),
-        content: "image".into(),
-        images: Some(images.into_iter().map(str::to_string).collect()),
-        ..Default::default()
-    }
+    ChatMessage::user("image".into()).with_images(images.into_iter().map(str::to_string).collect())
 }
 
 #[test]

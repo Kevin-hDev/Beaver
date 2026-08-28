@@ -2,9 +2,14 @@
    aux autres actions destructrices qui n'annoncent leur danger qu'au survol.
    Elle vide la liste entière, sans sélection préalable. */
 .acs-delete-all {
-  border-color: var(--signal-error-border);
   background: var(--signal-error-bg);
   color: var(--signal-error);
+  box-shadow: var(--elev-rest);
+}
+
+/* Le trait de l'objet porte l'alerte. */
+.btn.acs-delete-all::before {
+  background: var(--signal-error-border);
 }
 
 .acs-delete-all:hover:not(:disabled) {

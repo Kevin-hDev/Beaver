@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { agentStreamManager } from "../agent-stream-manager";
 import { records } from "../agent-stream-records";
 import type { AgentMessage, StreamEvent } from "@/types/agent";
+import type { AgentMessageView } from "@/types/agent-session.generated";
 
 const mocks = vi.hoisted(() => ({ invoke: vi.fn(), listen: vi.fn() }));
 
@@ -12,8 +13,16 @@ let handler: ((event: {
 vi.mock("@tauri-apps/api/core", () => ({ invoke: mocks.invoke }));
 vi.mock("@tauri-apps/api/event", () => ({ listen: mocks.listen }));
 
-function message(id: string, role: AgentMessage["role"], content: string): AgentMessage {
-  return { id, role, content, timestamp: "2026-07-11T10:00:00Z", files: [] };
+function message(
+  id: string,
+  role: AgentMessage["role"],
+  content: string,
+): AgentMessage & AgentMessageView {
+  return {
+    id, turn_id: `turn-${id}`, role, content,
+    timestamp: "2026-07-11T10:00:00Z", files: [], tokens: 0,
+    reasoning_replay_status: "unavailable",
+  };
 }
 
 function emit(sessionId: string, generation: number, event: StreamEvent) {
@@ -88,6 +97,31 @@ describe("identité des runs backend", () => {
     expect(snapshot?.isStreaming).toBe(false);
     expect(snapshot?.currentContent).toBe("");
     expect(messages[messages.length - 1]?.content).toBe("UI-1UI-2");
+  });
+
+  it("n'adopte pas un ancien turnAdmitted pendant l'attente de la commande racine", async () => {
+    await agentStreamManager.startSession(
+      "shared",
+      [message("optimistic", "user", "Nouvelle question")],
+      0,
+      "chat",
+      true,
+    );
+    emit("shared", 7, {
+      event: "turnAdmitted",
+      data: {
+        turnId: "00000000-0000-4000-8000-000000000011",
+        userMessageId: "00000000-0000-4000-8000-000000000012",
+        assistantMessageId: "00000000-0000-4000-8000-000000000013",
+      },
+    });
+
+    expect(agentStreamManager.getSnapshot("shared")?.messages[0]?.id).toBe("optimistic");
+    agentStreamManager.setSessionGeneration("shared", 8);
+    emit("shared", 7, { event: "token", data: { content: "ancien", tokenCount: 1, tps: 1 } });
+    emit("shared", 8, { event: "token", data: { content: "nouveau", tokenCount: 1, tps: 1 } });
+
+    expect(agentStreamManager.getSnapshot("shared")?.currentContent).toBe("nouveau");
   });
 
   it("accepte le snapshot, les tokens et la fin d'un run subagent identifié", async () => {

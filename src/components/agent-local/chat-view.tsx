@@ -171,6 +171,7 @@ export function ChatView({
                 {!isAtBottom && <ScrollBottomButton onClick={scrollToBottom} />}
                 <ChatInput
                   draftKey={sessionComposerDraftKey(sessionId)}
+                  sessionId={sessionId}
                   modelName={model} providerName={provider} isStreaming={chat.isStreaming} reasoningMode={reasoningMode} fastModeEnabled={fastModeEnabled} fastModePending={fastModePending}
                   files={fileDrop.files} contextUsed={contextUsage.used}
                   contextMax={chat.contextUsageVisible ? contextMax : 0} contextBreakdown={contextUsage}

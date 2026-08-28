@@ -1,72 +1,35 @@
-import type { PersistedToolResultMeta } from "./agent-tool-result";
+import type {
+  AgentMessageView,
+  FileAttachmentView,
+  SavedSegmentView,
+  ToolActivityRecordView,
+  ToolCallRequestView,
+  ToolFileChangeView,
+} from "./agent-session.generated";
 
-export interface AgentMessage {
-  id: string;
-  role: "user" | "assistant" | "tool";
-  content: string;
-  thinking?: string;
-  tool_calls?: ToolCallRequest[];
-  tool_name?: string;
-  tool_activities?: ToolActivityRecord[];
-  segments?: SavedSegment[];
-  files: FileAttachment[];
-  timestamp: string;
-  skill_names?: string[];
+export interface AgentMessage extends Omit<
+  AgentMessageView,
+  "reasoning_replay_status" | "tokens" | "tool_calls" | "turn_id"
+> {
+  /** Absent only on messages still being built locally before Rust admission. */
+  turn_id?: string;
   tokens?: number;
-  work_duration_ms?: number;
-  stream_run_id?: string;
-  stream_part?: StreamMessagePart;
+  tool_calls?: ToolCallRequest[];
+  reasoning_replay_status?: AgentMessageView["reasoning_replay_status"];
   /** Marqueur frontend temporaire : ce bloc appartient encore au stream actif. */
   is_stream_checkpoint?: boolean;
 }
 
-export type StreamMessagePart = "checkpoint" | "input" | "final";
+export type StreamMessagePart = NonNullable<AgentMessageView["stream_part"]>;
+export type SavedSegment = SavedSegmentView;
+export type ToolActivityRecord = ToolActivityRecordView;
+export type ToolFileChangeRecord = ToolFileChangeView;
 
-export interface SavedSegment {
-  thinking?: string;
-  tools: ToolActivityRecord[];
-  content: string;
-  phase?: "work" | "final";
+export interface ToolCallRequest extends Omit<ToolCallRequestView, "id"> {
+  id?: string;
 }
 
-export interface ToolActivityRecord {
-  name: string;
-  summary: string;
-  domain?: "memory";
-  args?: Record<string, unknown>;
-  result?: string;
-  is_error?: boolean;
-  result_meta?: PersistedToolResultMeta;
-  content?: string;
-  old_text?: string;
-  new_text?: string;
-  start_line?: number;
-  resolved_path?: string;
-  affected_paths?: string[];
-  file_changes?: ToolFileChangeRecord[];
-}
-
-export interface ToolFileChangeRecord {
-  path: string;
-  status: "added" | "modified" | "deleted";
-  additions: number;
-  deletions: number;
-  diff?: GitDiffPreview;
-}
-
-export interface ToolCallRequest {
-  extra_content?: unknown;
-  function: { name: string; arguments: Record<string, unknown> };
-}
-
-export interface FileAttachment {
-  name: string;
-  path: string;
-  mime_type: string;
-  size: number;
-  thumbnail?: string;
-  access_grant?: string;
-}
+export type FileAttachment = FileAttachmentView;
 
 export interface SkillInfo {
   id: string;
@@ -77,4 +40,3 @@ export interface SkillInfo {
   source: string;
   source_name: string;
 }
-import type { GitDiffPreview } from "./file-preview";

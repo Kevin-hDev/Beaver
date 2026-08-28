@@ -49,12 +49,27 @@ pub async fn check_ollama_binary_update(
         },
     };
 
-    let latest = match crate::services::ollama_manager::release_source::fetch_latest_version().await
-    {
-        Ok(version) => version.to_string(),
-        Err(_) => return Ok(None),
-    };
+    let latest =
+        crate::services::ollama_manager::release_source::fetch_latest_version_for_update_check()
+            .await;
+    binary_update_from_versions(current, latest)
+}
 
+fn binary_update_from_versions(
+    current: String,
+    latest: Result<
+        crate::services::ollama_manager::OllamaVersion,
+        crate::services::ollama_manager::OllamaErrorCode,
+    >,
+) -> Result<Option<OllamaBinaryUpdate>, String> {
+    let latest = latest.map_err(|code| {
+        log::warn!(
+            "[ollama-update-check] stage=resolve-latest code={}",
+            code.as_str()
+        );
+        "ollama-update-check-failed".to_string()
+    })?;
+    let latest = latest.to_string();
     if !super::app_update::version_gt(&latest, &current) {
         return Ok(None);
     }
@@ -64,3 +79,21 @@ pub async fn check_ollama_binary_update(
         latest_version: latest,
     }))
 }
+
+#[tauri::command]
+pub async fn get_ollama_installed_version(
+    ollama: tauri::State<'_, OllamaClient>,
+) -> Result<Option<String>, String> {
+    if let Ok(version) = fetch_installed_version(&ollama).await {
+        return Ok(Some(version));
+    }
+    Ok(ollama
+        .manager()
+        .installed_version()
+        .await
+        .map(|version| version.to_string()))
+}
+
+#[cfg(test)]
+#[path = "ollama_version_tests.rs"]
+mod tests;

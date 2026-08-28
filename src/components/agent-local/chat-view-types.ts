@@ -5,6 +5,7 @@ import type { Project, SessionTab } from "@/types/agent";
 import type { FileOperation, FileOperationGroups } from "@/types/file-preview";
 import type { ReasoningMode } from "@/lib/reasoning-modes";
 import type { useGitBranch } from "@/hooks/use-git-branch";
+import type { SkillReference } from "@/types/agent-turn.generated";
 
 export interface ChatViewProps {
   sessionId: string;
@@ -20,7 +21,7 @@ export interface ChatViewProps {
   onAutoRename?: (id: string, name: string) => void;
   initialMessage?: string;
   initialWorkingDir?: string;
-  initialSkills?: { name: string; content: string }[];
+  initialSkills?: SkillReference[];
   initialFiles?: DroppedFile[];
   reasoningMode?: string | null;
   fastModeEnabled: boolean;

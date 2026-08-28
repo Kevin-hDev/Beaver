@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { cleanupTauriListener } from "@/lib/tauri-listen";
-import { IS_MAC } from "@/lib/platform";
+import { changeStoredFontSize, resetStoredFontSize } from "@/hooks/use-settings";
+import { matchesAppShortcut } from "@/lib/app-shortcuts";
 
 const SIDEBAR_HIDDEN_OFFSET_FALLBACK = 260;
 const SIDEBAR_HIDE_GUARD = 8;
@@ -10,6 +11,7 @@ interface ShortcutHandlers {
   onBack: () => void;
   onForward: () => void;
   onNewSession?: () => void;
+  onOpenSettings: () => void;
   toggleSearch: () => void;
   toggleSidebar: () => void;
 }
@@ -54,43 +56,44 @@ export function useAppLayoutShortcuts({
   onBack,
   onForward,
   onNewSession,
+  onOpenSettings,
   toggleSearch,
   toggleSidebar,
 }: ShortcutHandlers) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      const mod = IS_MAC ? e.metaKey : e.ctrlKey;
-      if (!mod) return;
-
-      switch (e.code) {
-        case "KeyB":
-          if (e.altKey) break;
-          e.preventDefault();
-          toggleSidebar();
-          break;
-        case "KeyG":
-          e.preventDefault();
-          toggleSearch();
-          break;
-        case "ArrowLeft":
-          e.preventDefault();
-          onBack();
-          break;
-        case "ArrowRight":
-          e.preventDefault();
-          onForward();
-          break;
-        case "KeyN":
-          if (e.altKey) {
-            e.preventDefault();
-            onNewSession?.();
-          }
-          break;
+      if (handleFontSizeShortcut(e)) {
+        e.preventDefault();
+        return;
       }
+      const action = layoutShortcutAction(e);
+      if (!action) return;
+      e.preventDefault();
+      if (action === "toggleSidebar") toggleSidebar();
+      if (action === "searchDialog") toggleSearch();
+      if (action === "goBack") onBack();
+      if (action === "goForward") onForward();
+      if (action === "newSession") onNewSession?.();
+      if (action === "openSettings") onOpenSettings();
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [toggleSidebar, toggleSearch, onBack, onForward, onNewSession]);
+  }, [toggleSidebar, toggleSearch, onBack, onForward, onNewSession, onOpenSettings]);
+}
+
+function handleFontSizeShortcut(event: KeyboardEvent): boolean {
+  if (matchesAppShortcut(event, "zoomIn")) changeStoredFontSize(1);
+  else if (matchesAppShortcut(event, "zoomOut")) changeStoredFontSize(-1);
+  else if (matchesAppShortcut(event, "resetZoom")) resetStoredFontSize();
+  else return false;
+  return true;
+}
+
+function layoutShortcutAction(event: KeyboardEvent) {
+  const ids = [
+    "toggleSidebar", "searchDialog", "goBack", "goForward", "newSession", "openSettings",
+  ] as const;
+  return ids.find((id) => matchesAppShortcut(event, id)) ?? null;
 }
 
 export function useSidebarHiddenOffset(sidebarOpen: boolean): number {

@@ -50,11 +50,7 @@ pub(crate) fn decide(
 }
 
 pub fn correction_message(content: &'static str) -> ChatMessage {
-    ChatMessage {
-        role: "system".to_string(),
-        content: content.to_string(),
-        ..Default::default()
-    }
+    ChatMessage::system(content.to_string())
 }
 
 fn decide_before_plan(result: &StreamResult, repair_count: usize) -> PlanModeDecision {

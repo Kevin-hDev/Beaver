@@ -42,11 +42,6 @@ impl StreamScenario {
         Self { _serial: serial }
     }
 
-    pub(crate) fn replace(&self, responses: impl IntoIterator<Item = ScriptedResponse>) {
-        let session_id = state().session_id.clone();
-        replace_state(&session_id, responses);
-    }
-
     pub(crate) async fn wait_for_payloads(&self, expected: usize) {
         loop {
             let notified = RECORDED.notified();

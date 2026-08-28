@@ -1,6 +1,7 @@
 pub mod types_diagnostics;
 pub mod types_interactive;
 pub mod types_message;
+mod types_message_validation;
 pub mod types_ollama;
 pub mod types_plan;
 pub mod types_session;

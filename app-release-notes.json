@@ -1,10 +1,77 @@
 {
+  "1.1.7": {
+    "de": [
+      "Die erforderliche Denkfortsetzung bleibt jetzt unsichtbar und nimmt im Nachrichtenfeld keinen Platz mehr ein."
+    ],
+    "en": [
+      "Required reasoning continuity now stays invisible and no longer crowds the message composer."
+    ],
+    "es": [
+      "La continuidad obligatoria del razonamiento ahora permanece invisible y ya no ocupa espacio en el campo de mensaje."
+    ],
+    "fr": [
+      "La continuité obligatoire du raisonnement reste désormais invisible et n’encombre plus la zone de saisie."
+    ],
+    "it": [
+      "La continuità obbligatoria del ragionamento ora resta invisibile e non ingombra più il campo del messaggio."
+    ],
+    "ja": [
+      "必須の推論継続は非表示になり、メッセージ入力欄を圧迫しなくなりました。"
+    ],
+    "zh": [
+      "必需的推理连续性现在保持隐藏，不再挤占消息输入区域。"
+    ]
+  },
+  "1.1.6": {
+    "de": [
+      "Unterstützte Modelle behalten jetzt ihr natives Denken über Nachrichten und Werkzeugaufrufe hinweg bei.",
+      "Bestehende Unterhaltungen werden sicher aktualisiert und bleiben nach Unterbrechungen oder Komprimierung nutzbar.",
+      "Denkdaten bleiben privat, begrenzt und an den passenden Anbieter, das Modell und das Konto gebunden.",
+      "Nicht validierte Modelle bleiben deaktiviert, damit niemals ein unbewiesenes Denkformat wiederverwendet wird."
+    ],
+    "en": [
+      "Supported models now preserve their native reasoning across messages and tool calls.",
+      "Existing conversations upgrade safely and remain usable after interruptions or context compression.",
+      "Reasoning data stays private, bounded, and bound to the matching provider, model, and account.",
+      "Unvalidated models remain disabled so Beaver never replays an unproven reasoning format."
+    ],
+    "es": [
+      "Los modelos compatibles conservan ahora su razonamiento nativo entre mensajes y llamadas a herramientas.",
+      "Las conversaciones existentes se actualizan de forma segura y siguen funcionando tras interrupciones o compresión del contexto.",
+      "Los datos de razonamiento permanecen privados, limitados y vinculados al proveedor, modelo y cuenta correspondientes.",
+      "Los modelos no validados siguen desactivados para que Beaver nunca reutilice un formato de razonamiento no probado."
+    ],
+    "fr": [
+      "Les modèles compatibles conservent maintenant leur raisonnement natif entre les messages et les appels d’outils.",
+      "Les conversations existantes sont mises à niveau sûrement et restent utilisables après une interruption ou une compression.",
+      "Les données de raisonnement restent privées, limitées et liées au bon fournisseur, modèle et compte.",
+      "Les modèles non validés restent désactivés afin que Beaver ne rejoue jamais un format de raisonnement non prouvé."
+    ],
+    "it": [
+      "I modelli compatibili conservano ora il ragionamento nativo tra messaggi e chiamate agli strumenti.",
+      "Le conversazioni esistenti vengono aggiornate in sicurezza e restano utilizzabili dopo interruzioni o compressioni del contesto.",
+      "I dati di ragionamento restano privati, limitati e associati al provider, al modello e all’account corretti.",
+      "I modelli non convalidati restano disattivati, così Beaver non riutilizza mai un formato di ragionamento non verificato."
+    ],
+    "ja": [
+      "対応モデルで、メッセージやツール呼び出しをまたいでネイティブ推論が保持されるようになりました。",
+      "既存の会話は安全に更新され、中断やコンテキスト圧縮の後も引き続き使用できます。",
+      "推論データは非公開かつ制限付きで、対応するプロバイダー、モデル、アカウントに結び付けられます。",
+      "未検証のモデルは無効のまま維持され、実証されていない推論形式が再利用されることはありません。"
+    ],
+    "zh": [
+      "受支持的模型现在会在多条消息和工具调用之间保留原生推理数据。",
+      "现有会话会安全升级，并在中断或上下文压缩后继续正常使用。",
+      "推理数据保持私密和有界，并绑定到匹配的提供商、模型和账户。",
+      "未经验证的模型仍保持禁用，Beaver 不会重放未经证明的推理格式。"
+    ]
+  },
   "1.1.5": {
     "de": [
       "Geplante Ausführungen nutzen jetzt den vollständigen Agent-Local-Kontext und bewahren ihren gesamten Verlauf zuverlässig auf.",
       "GLM-5.3, Grok 4.6 und Gemini 3.7 Flash sind jetzt verfügbar, mit sichererem OAuth-Routing für xAI.",
       "Unterstützte OpenAI-Modelle bieten einen dauerhaften Schnellmodus pro Unterhaltung, der auch mit Denkstufen funktioniert.",
-      "Beaver verwendet jetzt das neue abgerundete Symbol in der App, im Dock, in der Taskleiste und im Systembereich.",
+      "Beaver kombiniert jetzt sein neues abgerundetes Symbol mit einem einheitlicheren visuellen System, klareren Bedienelementen und abgerundeten Desktop-Fenstern.",
       "Unter Windows zeigt Beaver die Hardwareaktivität jetzt korrekt an und übernimmt CPU-, GPU- und Modellladeeinstellungen durch vollständige, zuverlässige Ollama-Neustarts.",
       "Autostart und verborgener Start nutzen jetzt exakte native Einträge; erweiterte Einstellungen und die Windows-Entwicklungsüberwachung sind zuverlässiger."
     ],
@@ -12,7 +79,7 @@
       "Scheduled runs now use the complete Agent Local context and preserve their full execution history reliably.",
       "GLM-5.3, Grok 4.6, and Gemini 3.7 Flash are now available, with safer OAuth routing for xAI.",
       "Supported OpenAI models now offer a persistent per-conversation Fast mode that works with reasoning levels.",
-      "Beaver now uses its new rounded icon across the app, Dock, taskbar, system tray, and packaged applications.",
+      "Beaver now combines its new rounded icon with a more consistent visual system, clearer controls, and rounded desktop windows.",
       "Windows now reports hardware activity accurately and applies CPU, GPU, and model-loading settings through complete, reliable Ollama restarts.",
       "Launch at login and hidden startup now use exact native entries, while advanced settings and Windows development watching save and run more reliably."
     ],
@@ -20,7 +87,7 @@
       "Las ejecuciones programadas usan ahora todo el contexto de Agent Local y conservan de forma fiable su historial completo.",
       "GLM-5.3, Grok 4.6 y Gemini 3.7 Flash ya están disponibles, con un enrutamiento OAuth más seguro para xAI.",
       "Los modelos OpenAI compatibles ofrecen ahora un modo Rápido persistente por conversación que funciona con los niveles de razonamiento.",
-      "Beaver usa ahora su nuevo icono redondeado en la aplicación, el Dock, la barra de tareas y la bandeja del sistema.",
+      "Beaver combina ahora su nuevo icono redondeado con un sistema visual más coherente, controles más claros y ventanas de escritorio redondeadas.",
       "Windows muestra ahora la actividad del hardware con precisión y aplica los ajustes de CPU, GPU y carga de modelos mediante reinicios completos y fiables de Ollama.",
       "El inicio de sesión y el arranque oculto usan entradas nativas exactas; los ajustes avanzados y la supervisión de desarrollo en Windows son más fiables."
     ],
@@ -28,7 +95,7 @@
       "Les exécutions programmées utilisent maintenant tout le contexte Agent Local et conservent fiablement leur historique complet.",
       "GLM-5.3, Grok 4.6 et Gemini 3.7 Flash sont maintenant disponibles, avec un routage OAuth xAI plus sûr.",
       "Les modèles OpenAI compatibles proposent maintenant un mode Rapide persistant par conversation qui fonctionne avec les niveaux de raisonnement.",
-      "Beaver utilise maintenant sa nouvelle icône arrondie dans l’application, le Dock, la barre des tâches et la zone de notification.",
+      "Beaver associe maintenant sa nouvelle icône arrondie à un style visuel plus cohérent, des contrôles plus clairs et des fenêtres arrondies.",
       "Windows affiche maintenant l’activité matérielle avec précision et applique les réglages CPU, GPU et de chargement des modèles grâce à des redémarrages Ollama complets et fiables.",
       "Le lancement à l’ouverture de session et le démarrage masqué utilisent des entrées natives exactes ; les réglages avancés et la surveillance Windows sont plus fiables."
     ],
@@ -36,7 +103,7 @@
       "Le esecuzioni pianificate usano ora tutto il contesto Agent Local e conservano in modo affidabile la cronologia completa.",
       "GLM-5.3, Grok 4.6 e Gemini 3.7 Flash sono ora disponibili, con un instradamento OAuth più sicuro per xAI.",
       "I modelli OpenAI compatibili offrono ora una modalità Rapida persistente per conversazione che funziona con i livelli di ragionamento.",
-      "Beaver usa ora la nuova icona arrotondata nell’app, nel Dock, nella barra delle applicazioni e nell’area di notifica.",
+      "Beaver abbina ora la nuova icona arrotondata a uno stile visivo più coerente, controlli più chiari e finestre desktop arrotondate.",
       "Windows mostra ora con precisione l’attività hardware e applica le impostazioni di CPU, GPU e caricamento dei modelli tramite riavvii completi e affidabili di Ollama.",
       "L’avvio all’accesso e l’avvio nascosto usano voci native esatte; le impostazioni avanzate e il monitoraggio dello sviluppo Windows sono più affidabili."
     ],
@@ -44,7 +111,7 @@
       "スケジュール実行で Agent Local の完全なコンテキストが使われ、実行履歴全体が確実に保存されるようになりました。",
       "GLM-5.3、Grok 4.6、Gemini 3.7 Flash が利用可能になり、xAI の OAuth ルーティングもより安全になりました。",
       "対応する OpenAI モデルで、推論レベルと併用できる会話ごとの永続的な高速モードが利用可能になりました。",
-      "Beaver の新しい角丸アイコンが、アプリ、Dock、タスクバー、システムトレイで統一して使われるようになりました。",
+      "Beaver の新しい角丸アイコンに加え、より統一されたデザイン、分かりやすい操作部品、角丸のデスクトップウィンドウが採用されました。",
       "Windows ではハードウェア使用状況が正確に表示され、CPU、GPU、モデル読み込みの設定が完全で安定した Ollama の再起動を通じて適用されるようになりました。",
       "ログイン時の起動と非表示起動で正確なネイティブ設定が使われ、詳細設定の保存と Windows 開発時の監視もより安定しました。"
     ],
@@ -52,7 +119,7 @@
       "计划任务现在会使用完整的 Agent Local 上下文，并可靠保存全部执行历史。",
       "GLM-5.3、Grok 4.6 和 Gemini 3.7 Flash 现已可用，同时 xAI 的 OAuth 路由更加安全。",
       "受支持的 OpenAI 模型现提供按会话持久保存的快速模式，并可与推理级别同时使用。",
-      "Beaver 现在在应用、Dock、任务栏和系统托盘中统一使用新的圆角图标。",
+      "Beaver 现在将新的圆角图标与更统一的视觉风格、更清晰的控件和圆角桌面窗口结合起来。",
       "Windows 现在会准确显示硬件活动，并通过完整可靠的 Ollama 重启应用 CPU、GPU 和模型加载设置。",
       "登录时启动和隐藏启动现在使用精确的原生配置，同时高级设置保存和 Windows 开发监视也更加可靠。"
     ]

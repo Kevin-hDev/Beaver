@@ -59,6 +59,15 @@ pub async fn download_app_update(
         .await
 }
 
+#[tauri::command]
+pub fn cancel_app_update_download(
+    updates: tauri::State<'_, crate::services::update_handoff::AppUpdateRuntime>,
+) -> Result<(), String> {
+    // Idempotent : un clic arrivé juste après la fin n'est pas une erreur.
+    updates.cancel_active_download();
+    Ok(())
+}
+
 async fn download_app_update_inner(
     app: tauri::AppHandle,
     asset_url: String,

@@ -2,6 +2,12 @@ use crate::services::agent_local::types_ollama::{
     ChatMessage, ChatRequest, OllamaThink, StreamResult, ToolCallFunction, ToolCallOllama,
 };
 
+pub fn ensure_not_cancelled(cancel: &tokio_util::sync::CancellationToken) -> Result<(), String> {
+    (!cancel.is_cancelled())
+        .then_some(())
+        .ok_or_else(|| "Annulé".to_string())
+}
+
 pub async fn prepare_subagents(
     session_id: &str,
     parent_message_inbox: Option<std::sync::Arc<super::parent_message_inbox::ParentMessageInbox>>,
@@ -41,6 +47,10 @@ pub fn build_request(
         options: None,
         keep_alive: Some(keep_alive),
         think: Some(think),
+        capture_reasoning: false,
+        live_replay_target: None,
+        #[cfg(debug_assertions)]
+        fixture_candidate: None,
     }
 }
 
@@ -69,13 +79,13 @@ pub fn build_assistant_message(result: &StreamResult) -> ChatMessage {
     } else {
         Some(result.thinking.clone())
     };
-    ChatMessage {
-        role: "assistant".to_string(),
-        content: result.content.clone(),
+    ChatMessage::assistant(
+        result.content.clone(),
+        reasoning.clone(),
+        result.continuation.clone(),
+        reasoning,
         tool_calls,
-        reasoning_content: reasoning,
-        ..Default::default()
-    }
+    )
 }
 
 pub fn build_for_plan(result: &StreamResult, plan_active: bool) -> ChatMessage {

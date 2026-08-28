@@ -6,3 +6,10 @@
   align-items: center;
   justify-content: center;
 }
+
+/* Même raison que le splash et l'onboarding : sans décorations natives, c'est
+   le contenu qui porte le coin de la fenêtre. */
+[data-os="other"] .app-startup-shell {
+  overflow: hidden;
+  border-radius: var(--radius-window);
+}

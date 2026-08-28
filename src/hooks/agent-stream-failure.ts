@@ -2,13 +2,15 @@ import i18n from "@/i18n";
 import { scheduleCleanup } from "./agent-stream-cleanup";
 import { flushFrameNotify } from "./agent-stream-notify";
 import { notifyRecord, notifyRecordActivity } from "./agent-stream-notify-dispatch";
-import { finishPersistenceRun } from "./agent-stream-persistence-owner";
 import { getRecord, records } from "./agent-stream-records";
+import { markStreamCancelled } from "./agent-stream-generations";
+import { clearStreamRun } from "./agent-stream-run-ownership";
 
 export function failSession(sessionId: string, message = i18n.t("errors.streamStartFailed")) {
   const record = getRecord(sessionId);
   if (!record) return;
-  record.activeGeneration = null;
+  clearStreamRun(record);
+  markStreamCancelled(record, record.activeGeneration);
   record.state = {
     ...record.state,
     isStreaming: false,
@@ -18,7 +20,6 @@ export function failSession(sessionId: string, message = i18n.t("errors.streamSt
     error: message,
     updatedAt: Date.now(),
   };
-  finishPersistenceRun(record);
   flushFrameNotify(record, notifyRecord);
   notifyRecordActivity(sessionId, record);
   scheduleCleanup(sessionId, record, records);

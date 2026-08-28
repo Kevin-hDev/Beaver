@@ -16,6 +16,7 @@ import type { PanelMode } from "@/hooks/use-forecast-panel";
 import type { ReasoningMode } from "@/lib/reasoning-modes";
 import type { useGitBranch } from "@/hooks/use-git-branch";
 import { useTranslation } from "react-i18next";
+import type { SkillReference } from "@/types/agent-turn.generated";
 
 interface AgentChatDetailProps {
   sessionId: string;
@@ -25,7 +26,7 @@ interface AgentChatDetailProps {
   activeProjectPath?: string;
   pendingMessage?: string | null;
   pendingWorkingDir?: string;
-  pendingSkills?: { name: string; content: string }[];
+  pendingSkills?: SkillReference[];
   pendingFiles?: DroppedFile[];
   reasoningMode?: string | null;
   fastModeEnabled: boolean;

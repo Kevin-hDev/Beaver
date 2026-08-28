@@ -23,7 +23,7 @@
 /*
  * In-bubble mode: the panel replaces the editor inside .chat-input-bubble,
  * which already provides the border, background and radius. We neutralize the
- * panel's own chrome and let its children breathe inside the 20px bubble.
+ * panel's own chrome and let its children breathe inside the bubble.
  */
 .chat-input-bubble-interactive .icp-panel {
   margin-bottom: 0;

@@ -33,9 +33,9 @@ export function AppLayoutOverlays({
       <UpdateNotifications
         isOpen={updatesOpen}
         onClose={onCloseUpdates}
-        appUpdate={updates.appUpdate}
-        ollamaBinaryUpdate={updates.ollamaBinaryUpdate}
-        ollamaUpdates={updates.ollamaUpdates}
+        appUpdate={updates.visibleAppUpdate}
+        ollamaBinaryUpdate={updates.visibleOllamaBinaryUpdate}
+        ollamaUpdates={updates.visibleOllamaUpdates}
         forecastDevUpdates={updates.forecastDevUpdates}
         pulling={updates.pulling}
         ollamaBinaryUpdating={updates.ollamaBinaryUpdating}
@@ -45,6 +45,13 @@ export function AppLayoutOverlays({
         onPullModel={(name) => void updates.pullModel(name)}
         onDownloadApp={(url) => void updates.downloadAppUpdate(url)}
         onUpdateOllamaBinary={() => void updates.updateOllamaBinary()}
+        onDismissUpdate={(update) => void updates.dismissUpdate(update)}
+        onCancelApp={() => void updates.cancelAppUpdate()}
+        onCancelOllamaBinary={() => void updates.cancelOllamaBinary()}
+        onCancelModel={() => void updates.cancelModelUpdate()}
+        appCancelling={updates.appCancelling}
+        ollamaBinaryCancelling={updates.ollamaBinaryCancelling}
+        modelCancelling={updates.modelCancelling}
         anchorLeft={IS_MAC ? UPDATES_ANCHOR_MAC : UPDATES_ANCHOR_OTHER}
       />
     </>
