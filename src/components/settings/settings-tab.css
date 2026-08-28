@@ -24,8 +24,9 @@
   color: var(--ink-faint);
   font-size: var(--text-2xs);
   font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  /* Bas de casse, capitale initiale : l'interlettrage large servait à aérer des
+     capitales, il déliterait un mot écrit normalement. */
+  letter-spacing: 0.01em;
   user-select: none;
 }
 
