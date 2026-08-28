@@ -7,7 +7,6 @@ use super::provider_model_registry_validation::{
     valid_date, valid_provider_id, valid_reasoning_contract, valid_source_url,
 };
 
-const MAX_PROVIDERS: usize = 16;
 const MAX_MODELS_PER_PROVIDER: usize = 500;
 const MAX_ALIASES_PER_MODEL: usize = 32;
 const MAX_SOURCE_URLS: usize = 16;
@@ -95,9 +94,9 @@ fn registry() -> Option<&'static ProviderModelRegistry> {
 }
 
 fn parse_sources(
-    sources: &[EmbeddedProviderModels],
+    sources: &[EmbeddedProviderModels<'_>],
 ) -> Result<ProviderModelRegistry, &'static str> {
-    if sources.is_empty() || sources.len() > MAX_PROVIDERS {
+    if sources.is_empty() {
         return Err("provider_count");
     }
     let mut providers = HashMap::with_capacity(sources.len());

@@ -1,9 +1,9 @@
-pub(super) struct EmbeddedProviderModels {
-    pub provider_id: &'static str,
-    pub json: &'static str,
+pub(super) struct EmbeddedProviderModels<'a> {
+    pub provider_id: &'a str,
+    pub json: &'a str,
 }
 
-pub(super) const SOURCES: &[EmbeddedProviderModels] = &[
+pub(super) const SOURCES: &[EmbeddedProviderModels<'static>] = &[
     EmbeddedProviderModels {
         provider_id: "google",
         json: include_str!("../../../resources/provider-models/google.json"),
