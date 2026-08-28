@@ -10,9 +10,9 @@ fn every_supported_provider_has_one_valid_local_file() {
 
     assert_eq!(
         registry.providers.len(),
-        crate::services::llm::catalog::LLM_PROVIDERS.len()
+        crate::services::llm::catalog::all().len()
     );
-    for provider in crate::services::llm::catalog::LLM_PROVIDERS {
+    for provider in crate::services::llm::catalog::all() {
         assert!(registry.providers.contains_key(provider.id));
     }
 }

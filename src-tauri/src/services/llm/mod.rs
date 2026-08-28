@@ -47,6 +47,7 @@ mod retry;
 pub mod route;
 #[cfg(test)]
 mod route_behavior_baseline_tests;
+pub(super) mod route_profile;
 pub mod runtime_models;
 pub mod stream;
 mod stream_chunk;

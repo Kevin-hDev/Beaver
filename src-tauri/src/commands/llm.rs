@@ -1,13 +1,13 @@
 use crate::models::provider_contract::{ProviderCatalogEntry, ProviderCategory};
 use crate::services::llm::{
-    catalog::LLM_PROVIDERS, openai_compat::OpenAiCompatProvider, provider_model_lookup,
-    tool_capable, types::ModelInfo,
+    catalog, openai_compat::OpenAiCompatProvider, provider_model_lookup, tool_capable,
+    types::ModelInfo,
 };
 
 #[tauri::command]
 pub fn list_llm_providers_catalog() -> Vec<ProviderCatalogEntry> {
-    LLM_PROVIDERS
-        .iter()
+    catalog::all()
+        .into_iter()
         .map(|provider| {
             ProviderCatalogEntry::new(
                 provider.id,
