@@ -3,7 +3,7 @@ use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 
 use super::request_purpose::RequestPurpose;
-use super::route::LlmRoute;
+use super::route_profile::{CachePolicy, ResolvedCachePolicy};
 
 const CACHE_KEY_PREFIX: &str = "bv1_";
 const CACHE_KEY_BYTES: usize = 16;
@@ -14,68 +14,47 @@ const MIN_EXPLICIT_PREFIX_ESTIMATED_TOKENS: usize = 1_280;
 
 pub(super) fn apply_payload(
     payload: &mut Value,
-    route: &LlmRoute,
-    model: &str,
+    policy: ResolvedCachePolicy,
     session_id: Option<&str>,
 ) {
-    let Some(key) = cache_key(route, model, session_id) else {
+    let Some(key) = cache_key(policy, session_id) else {
         return;
     };
-    match route.chat_provider_id {
-        "openai" if super::providers::openai::is_gpt_56(model) => {
-            apply_gpt_56(payload, key);
-        }
-        "openrouter" => {
-            payload["session_id"] = key.into();
-        }
-        "mistral" | "moonshot" | "moonshot-oauth" => {
-            payload["prompt_cache_key"] = key.into();
-        }
-        _ => {}
+    match policy.kind {
+        CachePolicy::OpenAi56 => apply_gpt_56(payload, key),
+        CachePolicy::OpenRouter => payload["session_id"] = key.into(),
+        CachePolicy::PromptKey => payload["prompt_cache_key"] = key.into(),
+        CachePolicy::None | CachePolicy::Google | CachePolicy::XaiHeader => {}
     }
 }
 
 pub(super) fn request_headers(
-    route: &LlmRoute,
-    model: Option<&str>,
+    policy: ResolvedCachePolicy,
     session_id: Option<&str>,
     purpose: RequestPurpose,
 ) -> Result<HeaderMap, String> {
     let mut headers = HeaderMap::new();
-    if route.chat_provider_id == "google" {
+    if policy.kind == CachePolicy::Google {
         headers.insert(
             "x-goog-api-client",
             HeaderValue::from_static(concat!("beaver-desktop/", env!("CARGO_PKG_VERSION"))),
         );
     }
-    if route.chat_provider_id == "openrouter"
-        && model.is_some()
-        && purpose != RequestPurpose::AccountMetadata
-    {
+    if policy.kind == CachePolicy::OpenRouter && purpose != RequestPurpose::AccountMetadata {
         headers.insert("x-openrouter-metadata", HeaderValue::from_static("enabled"));
     }
-    if route.chat_provider_id != "xai" {
+    if policy.kind != CachePolicy::XaiHeader {
         return Ok(headers);
     }
-    if let Some(key) = model.and_then(|model| cache_key(route, model, session_id)) {
+    if let Some(key) = cache_key(policy, session_id) {
         let value = HeaderValue::from_str(&key).map_err(|_| "provider_configuration_invalid")?;
         headers.insert("x-grok-conv-id", value);
     }
     Ok(headers)
 }
 
-pub(super) fn include_usage(route: &LlmRoute) -> bool {
-    matches!(
-        route.chat_provider_id,
-        "google"
-            | "cerebras"
-            | "openai"
-            | "deepseek"
-            | "xai"
-            | "xai-oauth"
-            | "moonshot"
-            | "moonshot-oauth"
-    )
+pub(super) const fn include_usage(policy: ResolvedCachePolicy) -> bool {
+    policy.include_usage
 }
 
 pub(crate) fn routing_key(
@@ -83,11 +62,7 @@ pub(crate) fn routing_key(
     model: &str,
     session_id: Option<&str>,
 ) -> Option<String> {
-    let route_id = if connection_id == crate::services::codex_client::PROVIDER_ID {
-        connection_id
-    } else {
-        super::route::resolve(connection_id)?.chat_provider_id
-    };
+    let route_id = super::route_profile::find(connection_id)?.id.provider_id();
     derive_cache_key(route_id, model, session_id)
 }
 
@@ -133,10 +108,6 @@ fn mark_stable_prefix(payload: &mut Value) -> bool {
     true
 }
 
-fn cache_key(route: &LlmRoute, model: &str, session_id: Option<&str>) -> Option<String> {
-    derive_cache_key(route.chat_provider_id, model, session_id)
-}
-
 fn derive_cache_key(route_id: &str, model: &str, session_id: Option<&str>) -> Option<String> {
     let session_id = session_id.filter(|value| valid_session_id(value))?;
     let mut hash = Sha256::new();
@@ -151,6 +122,10 @@ fn derive_cache_key(route_id: &str, model: &str, session_id: Option<&str>) -> Op
         "{CACHE_KEY_PREFIX}{}",
         hex::encode(&digest[..CACHE_KEY_BYTES])
     ))
+}
+
+fn cache_key(policy: ResolvedCachePolicy<'_>, session_id: Option<&str>) -> Option<String> {
+    derive_cache_key(policy.route_id, policy.model, session_id)
 }
 
 fn valid_session_id(value: &str) -> bool {

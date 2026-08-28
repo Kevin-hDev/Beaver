@@ -96,8 +96,14 @@ impl OpenAiCompatProvider {
     where
         F: Fn(&str, reqwest::header::HeaderMap) -> reqwest::RequestBuilder,
     {
+        let cache_policy = super::route_profile::cache_policy(self.route.chat_provider_id, "")
+            .ok_or_else(|| {
+                LlmError::KnownProvider(
+                    super::provider_error::ProviderErrorCode::ProviderConfigurationInvalid,
+                )
+            })?;
         let policy_headers =
-            super::prompt_cache_policy::request_headers(&self.route, None, None, purpose).map_err(
+            super::prompt_cache_policy::request_headers(cache_policy, None, purpose).map_err(
                 |_| {
                     LlmError::KnownProvider(
                         super::provider_error::ProviderErrorCode::ProviderConfigurationInvalid,

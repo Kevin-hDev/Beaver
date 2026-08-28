@@ -72,6 +72,7 @@ const fn policy(
         errors,
         auth_probe,
         tool_limits,
+        include_usage: false,
     }
 }
 
@@ -83,14 +84,17 @@ pub(super) const OPENAI_CHAT_DEFAULT: RoutePolicies = policy(
     AuthProbePolicy::ModelsGet,
     ToolLimitPolicy::Default,
 );
-pub(super) const GOOGLE: RoutePolicies = policy(
-    SchemaPolicy::Google,
-    CachePolicy::None,
-    ParameterPolicy::Google,
-    ErrorPolicy::OpenAiCompatible,
-    AuthProbePolicy::ModelsGet,
-    ToolLimitPolicy::Google,
-);
+pub(super) const GOOGLE: RoutePolicies = RoutePolicies {
+    include_usage: true,
+    ..policy(
+        SchemaPolicy::Google,
+        CachePolicy::Google,
+        ParameterPolicy::Google,
+        ErrorPolicy::OpenAiCompatible,
+        AuthProbePolicy::ModelsGet,
+        ToolLimitPolicy::Google,
+    )
+};
 pub(super) const MISTRAL: RoutePolicies = policy(
     SchemaPolicy::Generic,
     CachePolicy::PromptKey,
@@ -101,6 +105,7 @@ pub(super) const MISTRAL: RoutePolicies = policy(
 );
 pub(super) const CEREBRAS: RoutePolicies = RoutePolicies {
     parameters: ParameterPolicy::Cerebras,
+    include_usage: true,
     ..OPENAI_CHAT_DEFAULT
 };
 pub(super) const OPENROUTER: RoutePolicies = policy(
@@ -111,38 +116,50 @@ pub(super) const OPENROUTER: RoutePolicies = policy(
     AuthProbePolicy::ModelsGet,
     ToolLimitPolicy::OpenRouterUpstream,
 );
-pub(super) const OPENAI_RESPONSES_PUBLIC: RoutePolicies = policy(
-    SchemaPolicy::Generic,
-    CachePolicy::OpenAi56,
-    ParameterPolicy::Responses,
-    ErrorPolicy::Responses,
-    AuthProbePolicy::ModelsGet,
-    ToolLimitPolicy::Default,
-);
-pub(super) const DEEPSEEK: RoutePolicies = policy(
-    SchemaPolicy::Generic,
-    CachePolicy::None,
-    ParameterPolicy::DeepSeek,
-    ErrorPolicy::OpenAiCompatible,
-    AuthProbePolicy::ModelsGet,
-    ToolLimitPolicy::DeepSeek,
-);
-pub(super) const XAI_PUBLIC: RoutePolicies = policy(
-    SchemaPolicy::Xai,
-    CachePolicy::XaiHeader,
-    ParameterPolicy::Xai,
-    ErrorPolicy::Responses,
-    AuthProbePolicy::ModelsGet,
-    ToolLimitPolicy::Xai,
-);
-pub(super) const MOONSHOT: RoutePolicies = policy(
-    SchemaPolicy::Kimi,
-    CachePolicy::PromptKey,
-    ParameterPolicy::Moonshot,
-    ErrorPolicy::OpenAiCompatible,
-    AuthProbePolicy::ModelsGet,
-    ToolLimitPolicy::Default,
-);
+pub(super) const OPENAI_RESPONSES_PUBLIC: RoutePolicies = RoutePolicies {
+    include_usage: true,
+    ..policy(
+        SchemaPolicy::Generic,
+        CachePolicy::OpenAi56,
+        ParameterPolicy::Responses,
+        ErrorPolicy::Responses,
+        AuthProbePolicy::ModelsGet,
+        ToolLimitPolicy::Default,
+    )
+};
+pub(super) const DEEPSEEK: RoutePolicies = RoutePolicies {
+    include_usage: true,
+    ..policy(
+        SchemaPolicy::Generic,
+        CachePolicy::None,
+        ParameterPolicy::DeepSeek,
+        ErrorPolicy::OpenAiCompatible,
+        AuthProbePolicy::ModelsGet,
+        ToolLimitPolicy::DeepSeek,
+    )
+};
+pub(super) const XAI_PUBLIC: RoutePolicies = RoutePolicies {
+    include_usage: true,
+    ..policy(
+        SchemaPolicy::Xai,
+        CachePolicy::XaiHeader,
+        ParameterPolicy::Xai,
+        ErrorPolicy::Responses,
+        AuthProbePolicy::ModelsGet,
+        ToolLimitPolicy::Xai,
+    )
+};
+pub(super) const MOONSHOT: RoutePolicies = RoutePolicies {
+    include_usage: true,
+    ..policy(
+        SchemaPolicy::Kimi,
+        CachePolicy::PromptKey,
+        ParameterPolicy::Moonshot,
+        ErrorPolicy::OpenAiCompatible,
+        AuthProbePolicy::ModelsGet,
+        ToolLimitPolicy::Default,
+    )
+};
 pub(super) const ZAI: RoutePolicies = policy(
     SchemaPolicy::Generic,
     CachePolicy::None,
@@ -151,14 +168,17 @@ pub(super) const ZAI: RoutePolicies = policy(
     AuthProbePolicy::ChatPing,
     ToolLimitPolicy::Default,
 );
-pub(super) const XAI_OAUTH: RoutePolicies = policy(
-    SchemaPolicy::Xai,
-    CachePolicy::None,
-    ParameterPolicy::Xai,
-    ErrorPolicy::XaiOauth,
-    AuthProbePolicy::OAuthCatalog,
-    ToolLimitPolicy::Xai,
-);
+pub(super) const XAI_OAUTH: RoutePolicies = RoutePolicies {
+    include_usage: true,
+    ..policy(
+        SchemaPolicy::Xai,
+        CachePolicy::None,
+        ParameterPolicy::Xai,
+        ErrorPolicy::XaiOauth,
+        AuthProbePolicy::OAuthCatalog,
+        ToolLimitPolicy::Xai,
+    )
+};
 pub(super) const CODEX_OAUTH: RoutePolicies = policy(
     SchemaPolicy::Generic,
     CachePolicy::OpenAi56,

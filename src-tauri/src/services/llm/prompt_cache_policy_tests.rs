@@ -1,7 +1,37 @@
 use super::prompt_cache_policy::{apply_payload, include_usage, request_headers, routing_key};
 use super::request_purpose::RequestPurpose;
-use super::route;
 use serde_json::json;
+
+fn apply(provider: &str, model: &str, value: &mut serde_json::Value, session_id: Option<&str>) {
+    let policy = super::route_profile::cache_policy(provider, model).unwrap();
+    apply_payload(value, policy, session_id);
+}
+
+fn resolved_headers(
+    provider: &str,
+    model: &str,
+    session_id: Option<&str>,
+    purpose: RequestPurpose,
+) -> reqwest::header::HeaderMap {
+    let policy = super::route_profile::cache_policy(provider, model).unwrap();
+    request_headers(policy, session_id, purpose).unwrap()
+}
+
+fn uses_usage(provider: &str) -> bool {
+    include_usage(super::route_profile::cache_policy(provider, "model").unwrap())
+}
+
+#[test]
+fn cache_transformer_receives_a_resolved_policy() {
+    let policy = super::route_profile::cache_policy("openrouter", "google/gemini-3.5-pro")
+        .expect("known route");
+    let mut value = payload();
+
+    apply_payload(&mut value, policy, Some("session-1"));
+
+    assert!(value["session_id"].as_str().is_some());
+    assert_eq!(policy.route_id, "openrouter");
+}
 
 fn payload() -> serde_json::Value {
     json!({
@@ -23,9 +53,8 @@ fn long_stable_payload() -> serde_json::Value {
 
 #[test]
 fn openai_gpt_56_gets_only_its_explicit_contract() {
-    let route = route::resolve("openai").unwrap();
     let mut value = long_stable_payload();
-    apply_payload(&mut value, &route, "gpt-5.6-sol", Some("session-1"));
+    apply("openai", "gpt-5.6-sol", &mut value, Some("session-1"));
 
     assert!(value["prompt_cache_key"].as_str().is_some());
     assert_eq!(value["prompt_cache_options"]["mode"], "explicit");
@@ -39,9 +68,8 @@ fn openai_gpt_56_gets_only_its_explicit_contract() {
 
 #[test]
 fn short_openai_prefix_keeps_implicit_cache_enabled() {
-    let route = route::resolve("openai").unwrap();
     let mut value = payload();
-    apply_payload(&mut value, &route, "gpt-5.6-sol", Some("session-1"));
+    apply("openai", "gpt-5.6-sol", &mut value, Some("session-1"));
 
     assert!(value["prompt_cache_key"].as_str().is_some());
     assert!(value.get("prompt_cache_options").is_none());
@@ -50,7 +78,6 @@ fn short_openai_prefix_keeps_implicit_cache_enabled() {
 
 #[test]
 fn explicit_breakpoint_covers_the_entire_system_prompt() {
-    let route = route::resolve("openai").unwrap();
     let content = format!(
         "{}\n\n## Available skills\n- audit\n\nRespond in French.",
         "abcd".repeat(1_280)
@@ -62,7 +89,7 @@ fn explicit_breakpoint_covers_the_entire_system_prompt() {
         ]
     });
 
-    apply_payload(&mut value, &route, "gpt-5.6-sol", Some("session-1"));
+    apply("openai", "gpt-5.6-sol", &mut value, Some("session-1"));
 
     let blocks = value["messages"][0]["content"].as_array().unwrap();
     assert_eq!(blocks.len(), 1);
@@ -72,7 +99,6 @@ fn explicit_breakpoint_covers_the_entire_system_prompt() {
 
 #[test]
 fn the_entire_system_prompt_counts_toward_the_explicit_cache_threshold() {
-    let route = route::resolve("openai").unwrap();
     let content = format!("short instructions\n\n{}", "stable context ".repeat(2_000));
     let mut value = json!({
         "messages": [
@@ -81,7 +107,7 @@ fn the_entire_system_prompt_counts_toward_the_explicit_cache_threshold() {
         ]
     });
 
-    apply_payload(&mut value, &route, "gpt-5.6-sol", Some("session-1"));
+    apply("openai", "gpt-5.6-sol", &mut value, Some("session-1"));
 
     assert_eq!(value["prompt_cache_options"]["mode"], "explicit");
     let blocks = value["messages"][0]["content"].as_array().unwrap();
@@ -91,9 +117,8 @@ fn the_entire_system_prompt_counts_toward_the_explicit_cache_threshold() {
 
 #[test]
 fn older_openai_models_never_receive_gpt_56_fields() {
-    let route = route::resolve("openai").unwrap();
     let mut value = payload();
-    apply_payload(&mut value, &route, "gpt-4o", Some("session-1"));
+    apply("openai", "gpt-4o", &mut value, Some("session-1"));
 
     assert!(value.get("prompt_cache_key").is_none());
     assert!(value.get("prompt_cache_options").is_none());
@@ -102,12 +127,11 @@ fn older_openai_models_never_receive_gpt_56_fields() {
 
 #[test]
 fn openrouter_keeps_affinity_without_optional_explicit_cache_fields() {
-    let route = route::resolve("openrouter").unwrap();
     let mut compatible = payload();
-    apply_payload(
-        &mut compatible,
-        &route,
+    apply(
+        "openrouter",
         "openai/gpt-5.6-luna",
+        &mut compatible,
         Some("session-1"),
     );
     assert!(compatible["session_id"].as_str().is_some());
@@ -116,46 +140,42 @@ fn openrouter_keeps_affinity_without_optional_explicit_cache_fields() {
     assert!(compatible["messages"][0]["content"].is_string());
 
     let mut other = payload();
-    apply_payload(
-        &mut other,
-        &route,
+    apply(
+        "openrouter",
         "google/gemini-3.5-pro",
+        &mut other,
         Some("session-1"),
     );
     assert!(other["session_id"].as_str().is_some());
     assert!(other.get("prompt_cache_key").is_none());
 
-    let headers = request_headers(
-        &route,
-        Some("openai/gpt-5.6-luna"),
+    let headers = resolved_headers(
+        "openrouter",
+        "openai/gpt-5.6-luna",
         Some("session-1"),
         RequestPurpose::ManualChat,
-    )
-    .unwrap();
+    );
     assert_eq!(headers["x-openrouter-metadata"], "enabled");
-    assert!(request_headers(
-        &route,
-        Some("openai/gpt-5.6-luna"),
+    assert!(resolved_headers(
+        "openrouter",
+        "openai/gpt-5.6-luna",
         None,
         RequestPurpose::AccountMetadata,
     )
-    .unwrap()
     .is_empty());
 }
 
 #[test]
 fn route_keys_are_stable_but_isolated() {
-    let mistral = route::resolve("mistral").unwrap();
-    let moonshot = route::resolve("moonshot").unwrap();
     let mut first = payload();
     let mut second = payload();
     let mut other_route = payload();
-    apply_payload(&mut first, &mistral, "mistral-large", Some("session-1"));
-    apply_payload(&mut second, &mistral, "mistral-large", Some("session-1"));
-    apply_payload(
-        &mut other_route,
-        &moonshot,
+    apply("mistral", "mistral-large", &mut first, Some("session-1"));
+    apply("mistral", "mistral-large", &mut second, Some("session-1"));
+    apply(
+        "moonshot",
         "mistral-large",
+        &mut other_route,
         Some("session-1"),
     );
 
@@ -168,13 +188,16 @@ fn route_keys_are_stable_but_isolated() {
 
 #[test]
 fn moonshot_api_and_kimi_oauth_never_share_a_routing_key() {
-    let api = route::resolve("moonshot").unwrap();
-    let oauth = route::resolve("moonshot-oauth").unwrap();
     let mut api_payload = payload();
     let mut oauth_payload = payload();
 
-    apply_payload(&mut api_payload, &api, "kimi-k2.7", Some("session-1"));
-    apply_payload(&mut oauth_payload, &oauth, "kimi-k2.7", Some("session-1"));
+    apply("moonshot", "kimi-k2.7", &mut api_payload, Some("session-1"));
+    apply(
+        "moonshot-oauth",
+        "kimi-k2.7",
+        &mut oauth_payload,
+        Some("session-1"),
+    );
 
     assert_ne!(
         api_payload["prompt_cache_key"],
@@ -194,9 +217,8 @@ fn codex_special_route_gets_an_isolated_routing_key() {
 #[test]
 fn automatic_providers_receive_no_cache_controls() {
     for provider in ["google", "cerebras", "deepseek", "zai"] {
-        let route = route::resolve(provider).unwrap();
         let mut value = payload();
-        apply_payload(&mut value, &route, "model", Some("session-1"));
+        apply(provider, "model", &mut value, Some("session-1"));
 
         assert!(value.get("prompt_cache_key").is_none(), "{provider}");
         assert!(value.get("prompt_cache_options").is_none(), "{provider}");
@@ -206,39 +228,33 @@ fn automatic_providers_receive_no_cache_controls() {
 
 #[test]
 fn xai_header_is_api_key_only_and_never_leaks_the_session_id() {
-    let route = route::resolve("xai").unwrap();
-    let headers = request_headers(
-        &route,
-        Some("grok-4.5"),
+    let headers = resolved_headers(
+        "xai",
+        "grok-4.5",
         Some("private-session"),
         RequestPurpose::ManualChat,
-    )
-    .unwrap();
+    );
     let value = headers["x-grok-conv-id"].to_str().unwrap();
     assert!(value.starts_with("bv1_"));
     assert!(!value.contains("private-session"));
 
-    let oauth = route::resolve("xai-oauth").unwrap();
-    assert!(request_headers(
-        &oauth,
-        Some("grok-4.5"),
+    assert!(resolved_headers(
+        "xai-oauth",
+        "grok-4.5",
         Some("private-session"),
         RequestPurpose::ManualChat,
     )
-    .unwrap()
     .is_empty());
 }
 
 #[test]
 fn google_requests_identify_beaver_without_a_session_identifier() {
-    let route = route::resolve("google").unwrap();
-    let headers = request_headers(
-        &route,
-        Some("gemini-3.5-flash"),
+    let headers = resolved_headers(
+        "google",
+        "gemini-3.5-flash",
         Some("private-session"),
         RequestPurpose::ManualChat,
-    )
-    .unwrap();
+    );
 
     assert_eq!(
         headers["x-goog-api-client"].to_str().unwrap(),
@@ -250,15 +266,9 @@ fn google_requests_identify_beaver_without_a_session_identifier() {
 #[test]
 fn usage_option_is_omitted_for_strict_or_self_reporting_routes() {
     for provider in ["mistral", "openrouter", "zai"] {
-        assert!(
-            !include_usage(&route::resolve(provider).unwrap()),
-            "{provider}"
-        );
+        assert!(!uses_usage(provider), "{provider}");
     }
     for provider in ["openai", "cerebras", "moonshot"] {
-        assert!(
-            include_usage(&route::resolve(provider).unwrap()),
-            "{provider}"
-        );
+        assert!(uses_usage(provider), "{provider}");
     }
 }

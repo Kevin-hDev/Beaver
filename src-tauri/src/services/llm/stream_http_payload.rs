@@ -21,6 +21,8 @@ pub(super) fn build_chat_payload_with_evidence(
     max_tokens: Option<u32>,
 ) -> Result<PreparedChatPayload, super::reasoning_wire::replay::ReplayApplyError> {
     let provider_id = route.canonical_provider_id;
+    let cache_policy = super::route_profile::cache_policy(route.chat_provider_id, cfg.model)
+        .expect("LlmRoute is constructed from a route profile");
     let mut payload = serde_json::json!({
         "model": cfg.model,
         "messages": super::stream_convert::messages_to_openai_with_tools(
@@ -30,7 +32,7 @@ pub(super) fn build_chat_payload_with_evidence(
         ),
         "stream": true,
     });
-    if super::prompt_cache_policy::include_usage(route) {
+    if super::prompt_cache_policy::include_usage(cache_policy) {
         payload["stream_options"] = serde_json::json!({ "include_usage": true });
     }
     if let Some(value) = cfg.fast_mode.api_value() {
@@ -54,7 +56,7 @@ pub(super) fn build_chat_payload_with_evidence(
             "allow_fallbacks": true,
         });
     }
-    super::prompt_cache_policy::apply_payload(&mut payload, route, cfg.model, cfg.session_id);
+    super::prompt_cache_policy::apply_payload(&mut payload, cache_policy, cfg.session_id);
     let replayed = super::reasoning_wire::chat_text::apply_continuity(
         cfg.messages,
         cfg.continuation_target,

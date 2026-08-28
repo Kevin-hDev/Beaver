@@ -22,8 +22,9 @@ pub(crate) struct ResolvedToolPolicy {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(in crate::services::llm) enum CachePolicy {
+pub(crate) enum CachePolicy {
     None,
+    Google,
     OpenAi56,
     OpenRouter,
     PromptKey,
@@ -91,4 +92,13 @@ pub(in crate::services::llm) struct RoutePolicies {
     pub errors: ErrorPolicy,
     pub auth_probe: AuthProbePolicy,
     pub tool_limits: ToolLimitPolicy,
+    pub include_usage: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct ResolvedCachePolicy<'a> {
+    pub route_id: &'static str,
+    pub model: &'a str,
+    pub kind: CachePolicy,
+    pub include_usage: bool,
 }
