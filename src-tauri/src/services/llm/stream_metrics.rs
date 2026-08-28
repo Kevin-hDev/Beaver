@@ -4,11 +4,11 @@
 )]
 use crate::services::agent_local::types_ollama::{StreamOutcome, StreamResult};
 use crate::services::provider_usage::{
-    RequestMeasurement, RequestMeasurementContext, RequestMetricStatus, UsageApiFormat,
-    UsageWorkload,
+    RequestMeasurement, RequestMeasurementContext, RequestMetricStatus, UsageWorkload,
 };
 
 pub(super) fn start(
+    transport: &super::stream_dispatch::ResolvedTransport,
     connection_id: &str,
     model: &str,
     session_id: Option<&str>,
@@ -18,18 +18,10 @@ pub(super) fn start(
     workload: UsageWorkload,
     fast_mode: super::fast_mode::FastModeRequest,
 ) -> Option<RequestMeasurement> {
-    let (canonical_provider_id, api_format) = if connection_id == "codex-oauth" {
-        ("openai", UsageApiFormat::Responses)
-    } else {
-        (
-            super::route::canonical_provider_id(connection_id),
-            UsageApiFormat::ChatCompletions,
-        )
-    };
     RequestMeasurement::start(RequestMeasurementContext {
         connection_id,
-        canonical_provider_id,
-        api_format,
+        canonical_provider_id: transport.profile.canonical_provider.as_str(),
+        api_format: transport.usage_api_format,
         model,
         session_id,
         request_id,

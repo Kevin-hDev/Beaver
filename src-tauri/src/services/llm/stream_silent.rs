@@ -19,11 +19,20 @@ pub async fn collect_chat_silent_for_compression(
     request_id: Option<&str>,
     cancel: CancellationToken,
 ) -> Result<StreamResult, String> {
+    let transport = super::stream_dispatch::resolve_transport(
+        provider_id,
+        model,
+        super::stream_dispatch::InvocationKind::Silent,
+        purpose,
+    )
+    .await
+    .map_err(super::stream_dispatch::RouteSelectionError::code)?;
     let request_timeout = crate::services::compress::timeouts::compression_request_timeout();
     let idle_timeout = crate::services::compress::timeouts::compression_idle_timeout();
     let generated_request_id = uuid::Uuid::new_v4().to_string();
     let request_id = request_id.unwrap_or(&generated_request_id);
     let mut measurement = super::stream_metrics::start(
+        &transport,
         provider_id,
         model,
         Some(session_id),
@@ -33,62 +42,67 @@ pub async fn collect_chat_silent_for_compression(
         crate::services::provider_usage::UsageWorkload::Compression,
         fast_mode,
     );
-    let result = if provider_id == crate::services::codex_client::PROVIDER_ID {
-        crate::services::codex_client::stream::collect_chat_silent_for_compression(
-            model,
-            messages,
-            &[],
-            None,
-            fast_mode,
-            Some(max_tokens),
-            Some(session_id),
-            cancel,
-            measurement.as_mut(),
-        )
-        .await
-    } else if matches!(provider_id, "openai" | "xai") {
-        let config = request_config(
-            provider_id,
-            fast_mode,
-            model,
-            messages,
-            Some(max_tokens),
-            purpose,
-            Some(session_id),
-        );
-        super::openai_responses::collect_silent(&config, cancel, measurement.as_mut()).await
-    } else {
-        let cfg = request_config(
-            provider_id,
-            fast_mode,
-            model,
-            messages,
-            Some(max_tokens),
-            purpose,
-            Some(session_id),
-        );
-        match post_chat_request_with_timeout_measured(
-            &cfg,
-            request_timeout,
-            measurement.as_mut(),
-            None,
-        )
-        .await
-        {
-            Ok(resp) => {
-                super::stream_silent_consume::consume_silent(
-                    resp,
-                    cancel,
-                    idle_timeout,
-                    crate::services::provider_usage::UsageContext::chat(
-                        crate::services::llm::route::canonical_provider_id(provider_id),
-                        model,
-                    ),
-                    measurement.as_mut(),
-                )
-                .await
+    let result = match transport.client {
+        super::stream_dispatch::ClientKind::Codex => {
+            crate::services::codex_client::stream::collect_chat_silent_for_compression(
+                model,
+                messages,
+                &[],
+                None,
+                fast_mode,
+                Some(max_tokens),
+                Some(session_id),
+                cancel,
+                measurement.as_mut(),
+            )
+            .await
+        }
+        super::stream_dispatch::ClientKind::Responses => {
+            let config = request_config(
+                provider_id,
+                fast_mode,
+                model,
+                messages,
+                Some(max_tokens),
+                purpose,
+                Some(session_id),
+            );
+            super::openai_responses::collect_silent(&config, cancel, measurement.as_mut()).await
+        }
+        super::stream_dispatch::ClientKind::ChatCompletions => {
+            let cfg = request_config(
+                provider_id,
+                fast_mode,
+                model,
+                messages,
+                Some(max_tokens),
+                purpose,
+                Some(session_id),
+            );
+            match post_chat_request_with_timeout_measured(
+                &cfg,
+                request_timeout,
+                measurement.as_mut(),
+                None,
+            )
+            .await
+            {
+                Ok(resp) => {
+                    super::stream_silent_consume::consume_silent(
+                        resp,
+                        cancel,
+                        idle_timeout,
+                        transport.usage_context(model),
+                        measurement.as_mut(),
+                    )
+                    .await
+                }
+                Err(error) => Err(error.to_string()),
             }
-            Err(error) => Err(error.to_string()),
+        }
+        super::stream_dispatch::ClientKind::XaiOauth(_)
+        | super::stream_dispatch::ClientKind::OllamaLocal => {
+            Err("provider_configuration_invalid".to_string())
         }
     };
     super::stream_metrics::finish_silent(measurement, &result).await;

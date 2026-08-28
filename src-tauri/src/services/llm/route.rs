@@ -183,10 +183,6 @@ pub fn canonical_provider_id(provider_id: &str) -> &str {
         .unwrap_or(provider_id)
 }
 
-pub fn is_interactive_only(provider_id: &str) -> bool {
-    route_profile::find(provider_id).is_some_and(|profile| !profile.availability.silent)
-}
-
 #[cfg(test)]
 #[path = "route_test_support.rs"]
 mod test_support;

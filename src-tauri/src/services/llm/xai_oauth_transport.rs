@@ -20,6 +20,7 @@ pub(super) struct StreamContext<'a> {
 
 pub(super) async fn stream_chat(
     context: StreamContext<'_>,
+    catalog_model: &XaiCatalogModel,
     mut measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
 ) -> Result<StreamOutcome, String> {
     let StreamContext {
@@ -31,11 +32,10 @@ pub(super) async fn stream_chat(
         reasoning_capture,
         request_id,
     } = context;
-    let catalog_model = crate::services::llm_oauth::xai_catalog_model(request.model).await?;
     validate_backend(catalog_model.backend, &request)?;
     match catalog_model.backend {
         XaiBackend::ChatCompletions => {
-            let request = prepare_chat_request(request, &catalog_model);
+            let request = prepare_chat_request(request, catalog_model);
             let response =
                 super::xai_oauth_chat::post(&request, measurement.as_deref_mut(), Some(request_id))
                     .await;
@@ -55,7 +55,7 @@ pub(super) async fn stream_chat(
         }
         XaiBackend::Responses => {
             let prepared = super::xai_oauth_payload::build_with_evidence(
-                &catalog_model,
+                catalog_model,
                 request.messages,
                 request.tools,
                 request.reasoning_mode,
@@ -69,7 +69,7 @@ pub(super) async fn stream_chat(
             )
             .await;
             let response =
-                post_responses(&catalog_model, &prepared.payload, request.purpose).await?;
+                post_responses(catalog_model, &prepared.payload, request.purpose).await?;
             crate::services::codex_client::stream::consume_external_responses_sse(
                 on_event,
                 response,

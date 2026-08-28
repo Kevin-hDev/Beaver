@@ -17,7 +17,7 @@ type Locale = (typeof locales)[keyof typeof locales];
 // ajouté côté Rust sans ses traductions fait échouer ce test au lieu de sortir
 // une carte sans texte en production.
 const API_KEY_CATALOGS = [
-  "../../src-tauri/src/services/llm/catalog.rs",
+  "../../src-tauri/src/services/llm/route_profile/catalog_api.rs",
   "../../src-tauri/src/services/search/catalog.rs",
 ];
 
@@ -33,8 +33,8 @@ function catalogProviderIds(relativePaths: string[]): string[] {
   for (const relativePath of relativePaths) {
     // eslint-disable-next-line security/detect-non-literal-fs-filename -- chemins constants déclarés en tête de fichier, aucune entrée externe
     const source = readFileSync(new URL(relativePath, import.meta.url), "utf8");
-    for (const match of source.matchAll(/^\s+id: "([^"]+)",$/gmu)) {
-      ids.push(match[1]);
+    for (const match of source.matchAll(/(?:^\s+id: "([^"]+)",$|auth: api_key\("([^"]+)"\))/gmu)) {
+      ids.push(match[1] ?? match[2]);
     }
   }
   return ids;

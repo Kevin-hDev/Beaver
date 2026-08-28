@@ -32,13 +32,6 @@ fn oauth_aliases_resolve_to_their_canonical_provider() {
 }
 
 #[test]
-fn oauth_routes_are_interactive_only() {
-    assert!(is_interactive_only("xai-oauth"));
-    assert!(is_interactive_only("moonshot-oauth"));
-    assert!(!is_interactive_only("xai"));
-}
-
-#[test]
 fn rate_limited_providers_do_not_add_automatic_output_limits() {
     assert!(!resolve("cerebras").unwrap().auto_max_tokens);
     assert!(resolve("openai").unwrap().auto_max_tokens);
