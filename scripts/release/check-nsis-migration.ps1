@@ -13,7 +13,6 @@ $MaxUpdaterHelperBytes = 67108864
 $MaxExtensionHostBytes = 4194304
 $MaxNodeRuntimeBytes = 268435456
 $Root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot "../.."))
-$RootPrefix = $Root.TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
 
 function Stop-Validation {
     param(
@@ -21,10 +20,11 @@ function Stop-Validation {
         [ValidateSet(
             "source-read", "source-config", "source-resource", "source-icons",
             "source-hook-required", "source-hook-forbidden", "source-installer",
-            "source-installer-icon", "installed-legacy-registry", "installed-registry",
+            "source-installer-icon", "source-installer-icon-runtime",
+            "installed-legacy-registry", "installed-registry",
             "installed-location", "installed-binary", "installed-brand-input",
             "installed-brand-product", "installed-brand-version", "installed-brand-icon-reference",
-            "installed-brand-icon-extract", "installed-brand-icon-size",
+            "installed-brand-icon-extract", "installed-brand-icon-runtime",
             "installed-brand-icon-render", "installed-brand-icon-content",
             "installed-updater", "installed-extension-host", "installed-legacy-shortcuts",
             "installed-shortcuts"
@@ -39,15 +39,12 @@ function Stop-Validation {
 . (Join-Path $PSScriptRoot "windows-artifact-helpers.ps1")
 
 function Read-BoundedText([string]$RelativePath) {
-    $path = [IO.Path]::GetFullPath((Join-Path $Root $RelativePath))
-    if (-not $path.StartsWith($RootPrefix, [StringComparison]::OrdinalIgnoreCase)) {
+    try {
+        $path = [IO.Path]::GetFullPath((Join-Path $Root $RelativePath))
+        return Read-BoundedPackageText $path $MaxSourceBytes $Root
+    } catch {
         Stop-Validation "source-read"
     }
-    $item = Get-Item -LiteralPath $path
-    if (-not $item.PSIsContainer -and $item.Length -gt 0 -and $item.Length -le $MaxSourceBytes) {
-        return [IO.File]::ReadAllText($item.FullName)
-    }
-    Stop-Validation "source-read"
 }
 
 function Test-SourceContracts {
@@ -79,8 +76,8 @@ function Test-SourceContracts {
         if ($actualIcons[$index] -cne $expectedIcons[$index]) {
             Stop-Validation "source-icons"
         }
-        $icon = Get-Item -LiteralPath (Join-Path $Root "src-tauri/$($expectedIcons[$index])")
-        if ($icon.PSIsContainer -or $icon.Length -le 0 -or $icon.Length -gt $MaxIconBytes) {
+        $iconPath = Join-Path $Root "src-tauri/$($expectedIcons[$index])"
+        if (-not (Test-BoundedPackageFile $iconPath $MaxIconBytes $Root)) {
             Stop-Validation "source-icons"
         }
     }
@@ -118,19 +115,16 @@ function Test-SourceContracts {
     }
 
     if ($InstallerPath) {
-        $installer = Get-Item -LiteralPath $InstallerPath
         $expected = "Beaver_{0}_x64-setup.exe" -f $config.version
-        $isLink = ($installer.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0
-        if (
-            $installer.PSIsContainer -or
-            $isLink -or
-            $installer.Length -le 0 -or
-            $installer.Length -gt $MaxInstallerBytes -or
-            $installer.Name -cne $expected
-        ) {
+        try {
+            $installer = Get-BoundedPackageFile $InstallerPath $MaxInstallerBytes
+        } catch {
             Stop-Validation "source-installer"
         }
-        Test-AssociatedIcon $installer.FullName
+        if ($installer.Name -cne $expected) {
+            Stop-Validation "source-installer"
+        }
+        Test-AssociatedIcon $installer.FullName $MaxInstallerBytes
     }
 }
 
@@ -174,7 +168,8 @@ function Test-InstalledState {
     }
     $expectedVersion = [string](Read-BoundedText "src-tauri/tauri.conf.json" | ConvertFrom-Json).version
     $expectedIcon = Join-Path $Root "src-tauri/icons/icon.ico"
-    $brandFailure = Get-BeaverExecutableBrandFailure $binary $expectedVersion $expectedIcon
+    $brandFailure = Get-BeaverExecutableBrandFailure `
+        $binary $expectedVersion $expectedIcon $installDir
     if (-not [string]::IsNullOrEmpty($brandFailure)) {
         Stop-Validation $brandFailure
     }

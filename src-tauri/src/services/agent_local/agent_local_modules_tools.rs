@@ -5,6 +5,8 @@ pub mod subagent_working_dir;
 pub mod subagent_worktree;
 include!("agent_local_modules_shell.rs");
 pub mod extension_tool_set;
+#[cfg(debug_assertions)]
+pub mod fixture_tool_executor;
 pub mod tool_automation;
 #[cfg(test)]
 mod tool_automation_tests;

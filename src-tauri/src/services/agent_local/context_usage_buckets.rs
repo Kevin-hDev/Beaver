@@ -40,8 +40,8 @@ impl RequestContextUsage {
 
         for message in messages {
             if message.role == "system" {
-                system_tokens = system_tokens
-                    .saturating_add(message_tokens(message, reasoning_included));
+                system_tokens =
+                    system_tokens.saturating_add(message_tokens(message, reasoning_included));
             } else {
                 add_message(&mut classified, message, reasoning_included);
             }
@@ -82,7 +82,7 @@ fn add_message(target: &mut [usize; 4], message: &ChatMessage, include_reasoning
     if include_reasoning {
         units[MESSAGES] = units[MESSAGES].saturating_add(
             message
-                .reasoning_content
+                .tool_loop_reasoning
                 .as_deref()
                 .map(token_counting::text_units)
                 .unwrap_or(0),
@@ -92,7 +92,9 @@ fn add_message(target: &mut [usize; 4], message: &ChatMessage, include_reasoning
         let bucket = tool_bucket(&call.function.name);
         units[bucket] = units[bucket]
             .saturating_add(token_counting::text_units(&call.function.name))
-            .saturating_add(token_counting::text_units(&call.function.arguments.to_string()));
+            .saturating_add(token_counting::text_units(
+                &call.function.arguments.to_string(),
+            ));
     }
 
     let allocated = allocate_text_tokens(units);
@@ -106,7 +108,9 @@ fn add_message(target: &mut [usize; 4], message: &ChatMessage, include_reasoning
 }
 
 fn allocate_text_tokens(units: [usize; 4]) -> [usize; 4] {
-    let total_units = units.iter().fold(0usize, |sum, value| sum.saturating_add(*value));
+    let total_units = units
+        .iter()
+        .fold(0usize, |sum, value| sum.saturating_add(*value));
     if total_units == 0 {
         return [0; 4];
     }
@@ -139,7 +143,7 @@ fn message_tokens(message: &ChatMessage, include_reasoning: bool) -> usize {
     if include_reasoning {
         units = units.saturating_add(
             message
-                .reasoning_content
+                .tool_loop_reasoning
                 .as_deref()
                 .map(token_counting::text_units)
                 .unwrap_or(0),
@@ -148,17 +152,16 @@ fn message_tokens(message: &ChatMessage, include_reasoning: bool) -> usize {
     for call in message.tool_calls.iter().flatten() {
         units = units
             .saturating_add(token_counting::text_units(&call.function.name))
-            .saturating_add(token_counting::text_units(&call.function.arguments.to_string()));
+            .saturating_add(token_counting::text_units(
+                &call.function.arguments.to_string(),
+            ));
     }
     let images = message.images.as_ref().map(Vec::len).unwrap_or(0);
     token_counting::token_count_from_units(units)
         .saturating_add(images.saturating_mul(crate::services::llm::vision::IMAGE_TOKEN_ESTIMATE))
 }
 
-fn split_system_tokens(
-    total: usize,
-    seed: ContextUsageSeed,
-) -> (usize, usize, usize, usize) {
+fn split_system_tokens(total: usize, seed: ContextUsageSeed) -> (usize, usize, usize, usize) {
     let mut remaining = total;
     let skills = take(&mut remaining, seed.skill_context_tokens);
     let memory = take(&mut remaining, seed.memory_context_tokens);

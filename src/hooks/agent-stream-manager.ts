@@ -2,7 +2,6 @@ import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import i18n from "@/i18n";
 import {
   applyStreamEvent,
-  finishPartialStream,
 } from "./agent-chat-stream-callbacks";
 import { scheduleCleanup, clearCleanup, trimSubscribers } from "./agent-stream-cleanup";
 import {
@@ -17,7 +16,6 @@ import {
 import {
   getOrCreateRecord,
   getRecord,
-  persistMessages,
   records,
   snapshot,
   startStreamRecord,
@@ -25,13 +23,13 @@ import {
   type StreamSnapshot,
 } from "./agent-stream-records";
 import { subscribeStreamActivity } from "./agent-stream-activity";
-import { getActivity, getSnapshot, isStreaming, setSessionGeneration } from "./agent-stream-access";
-import { handleCompressionComplete } from "./agent-stream-compression-complete";
 import {
-  finishPersistenceRun,
-  frontendShouldPersist,
-  markIncomingBackendRun,
-} from "./agent-stream-persistence-owner";
+  getActivity,
+  getSnapshot,
+  isStreaming,
+  setSessionGeneration as adoptSessionGeneration,
+} from "./agent-stream-access";
+import { handleCompressionComplete } from "./agent-stream-compression-complete";
 import { applySessionSnapshot } from "./agent-stream-snapshot";
 import {
   notifyRecord as notify,
@@ -44,6 +42,25 @@ import { webToolErrorToastMessage } from "./web-tool-error-toast";
 import { queueUserMessage, removeQueuedUserMessage } from "./agent-stream-user-queue";
 import { failSession } from "./agent-stream-failure";
 import type { StreamKind } from "./agent-chat-stream-types";
+import {
+  reconcileTurnAdmission,
+  reconcileTurnCommitted,
+  reconcileTurnEvent,
+} from "./agent-stream-turns";
+import type { StreamRun } from "./agent-stream-run-ownership";
+import {
+  claimStop,
+  completeStop,
+  adoptOwner,
+  getDeferredStop,
+  getOwnedRunState,
+  matchesRun,
+  ownsOwner,
+  ownsRun,
+  releaseOwner,
+  releaseStop,
+} from "./agent-stream-manager-ownership";
+import { stopStreamRecord } from "./agent-stream-stop";
 
 export type { StreamSnapshot } from "./agent-stream-records";
 const EVENT_NAME = "agent-stream-event";
@@ -55,8 +72,12 @@ type Subscriber = (snapshot: StreamSnapshot) => void;
 let listenPromise: Promise<UnlistenFn> | null = null;
 
 export const agentStreamManager = { startSession, stopSession, failSession, setSessionGeneration,
+  ownsRun, matchesRun, ownsOwner, adoptOwner,
+  getDeferredStop, getOwnedRunState, claimStop, releaseStop, completeStop,
+  releaseOwner,
   clearPermission: clearStreamPermission, getSnapshot, getActivity, isStreaming, subscribe,
-  queueUserMessage, removeQueuedUserMessage, subscribeActivity: subscribeStreamActivity };
+  queueUserMessage, removeQueuedUserMessage, reconcileTurnAdmission,
+  subscribeActivity: subscribeStreamActivity };
 
 function ensureListener() {
   if (!listenPromise) {
@@ -77,9 +98,13 @@ async function startSession(
   messages: AgentMessage[],
   sessionTokenCount: number,
   streamKind: StreamKind = "chat",
+  awaitingAdmission = false,
+  run?: StreamRun,
 ) {
   await ensureListener();
-  const record = startStreamRecord(sessionId, messages, sessionTokenCount, streamKind);
+  const record = startStreamRecord(
+    sessionId, messages, sessionTokenCount, streamKind, awaitingAdmission, run,
+  );
   flushFrameNotify(record, notify);
   notifyActivity(sessionId, record);
 }
@@ -87,15 +112,20 @@ async function startSession(
 function stopSession(sessionId: string, generation?: number | null) {
   const record = getRecord(sessionId);
   if (!record) return;
-  markStreamCancelled(record, generation);
-  const result = finishPartialStream(record.state);
-  record.state = result.state;
-  flushFrameNotify(record, notify);
-  notifyActivity(sessionId, record);
-  if (result.messagesToPersist && !record.state.persisted && frontendShouldPersist(record)) {
-    persistMessages(sessionId, record, result.messagesToPersist, 0, true, notify);
+  stopStreamRecord(sessionId, record, generation);
+}
+
+function setSessionGeneration(sessionId: string, generation: number) {
+  const pending = adoptSessionGeneration(sessionId, generation);
+  if (!pending || !pending.accepted) return "rejected" as const;
+  if (pending.overflowed) {
+    failSession(sessionId);
+    return "overflowed" as const;
   }
-  finishPersistenceRun(record);
+  for (const item of pending.events) {
+    handleStreamEvent(sessionId, item.event, item.generation);
+  }
+  return "accepted" as const;
 }
 
 function subscribe(sessionId: string, subscriber: Subscriber): () => void {
@@ -118,7 +148,7 @@ function handleStreamEvent(sessionId: string, event: StreamEvent, generation: nu
   const record = getOrCreateRecord(sessionId);
   clearCleanup(record);
 
-  markIncomingBackendRun(record);
+  if (!record.started || record.state.completed) record.started = true;
 
   if (!acceptsStreamEvent(record, generation, event)) return;
 
@@ -145,8 +175,18 @@ function handleStreamEvent(sessionId: string, event: StreamEvent, generation: nu
     return;
   }
 
+  if (event.event === "turnAdmitted") {
+    reconcileTurnEvent(sessionId, event.data);
+    return;
+  }
+
+  if (event.event === "turnCommitted") {
+    reconcileTurnCommitted(sessionId, event.data);
+    return;
+  }
+
   if (!record.state.isStreaming && event.event !== "done" && event.event !== "error") {
-    record.state = { ...record.state, isStreaming: true, persisted: false, completed: false };
+    record.state = { ...record.state, isStreaming: true, completed: false };
   }
 
   const toastMessage = webToolErrorToastMessage(sessionId, event);
@@ -167,18 +207,6 @@ function handleStreamEvent(sessionId: string, event: StreamEvent, generation: nu
     flushFrameNotify(record, notify);
   }
   notifyActivity(sessionId, record);
-
-  if (result.messagesToPersist && !record.state.persisted && frontendShouldPersist(record)) {
-    persistMessages(
-      sessionId,
-      record,
-      result.messagesToPersist,
-      result.assistantTokens ?? 0,
-      record.state.completed,
-      notify,
-    );
-  }
-  if (record.state.completed) finishPersistenceRun(record);
 
   if (record.state.completed && record.subscribers.size === 0) {
     scheduleCleanup(sessionId, record, records);

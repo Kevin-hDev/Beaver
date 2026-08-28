@@ -1,0 +1,36 @@
+.upa-root {
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+}
+
+.upa-track {
+  height: 5px;
+  overflow: hidden;
+  border-radius: var(--radius-xs);
+  background: var(--edge);
+}
+
+.upa-fill {
+  height: 100%;
+  background: var(--pulse);
+  transition: width 200ms ease-out;
+}
+
+.upa-percent {
+  color: var(--ink-faint);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.upa-compact {
+  grid-template-columns: 100px auto;
+  width: auto;
+}
+
+.upa-compact .upa-cancel {
+  grid-column: 1 / -1;
+  justify-self: end;
+}

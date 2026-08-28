@@ -1,20 +1,18 @@
 #[tokio::test]
 async fn fresh_child_inherits_parent_model_and_reasoning() {
     let project = tempfile::tempdir().expect("project");
-    let mut parent = super::session_store::create_full(
-        "Parent",
-        "reasoning-model",
-        "provider-x",
-        false,
-        None,
-    )
-    .await
-    .expect("parent");
+    let mut parent =
+        super::session_store::create_full("Parent", "reasoning-model", "provider-x", false, None)
+            .await
+            .expect("parent");
     parent.thinking_enabled = true;
     parent.reasoning_mode = Some("high".into());
+    parent.preserve_reasoning = super::types_session::PreserveReasoningSetting::Local;
     parent.fast_mode_enabled = true;
     parent.working_dir = project.path().to_string_lossy().to_string();
-    super::session_store::save(&parent).await.expect("save parent");
+    super::session_store::save(&parent)
+        .await
+        .expect("save parent");
 
     let child = super::tool_delegate_child::create_child(
         &parent,
@@ -33,6 +31,7 @@ async fn fresh_child_inherits_parent_model_and_reasoning() {
     assert_eq!(child.provider, parent.provider);
     assert!(child.thinking_enabled);
     assert_eq!(child.reasoning_mode.as_deref(), Some("high"));
+    assert_eq!(child.preserve_reasoning, parent.preserve_reasoning);
     assert!(!child.fast_mode_enabled);
     assert_eq!(child.working_dir, parent.working_dir);
     super::session_store::delete_one(&child.id)

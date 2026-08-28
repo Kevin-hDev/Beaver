@@ -5,11 +5,15 @@ use chrono::Utc;
 fn message(id: &str, role: &str, content: &str) -> AgentMessage {
     AgentMessage {
         id: id.into(),
+        turn_id: format!("turn-{id}"),
         role: role.into(),
         content: content.into(),
         thinking: None,
         tool_calls: None,
         tool_name: None,
+        tool_call_id: None,
+        continuation: None,
+        replay_source: None,
         tool_activities: None,
         segments: None,
         files: vec![],
@@ -17,6 +21,7 @@ fn message(id: &str, role: &str, content: &str) -> AgentMessage {
         tokens: 0,
         work_duration_ms: None,
         skill_names: None,
+        skill_ids: None,
         stream_run_id: None,
         stream_part: None,
     }
@@ -24,6 +29,8 @@ fn message(id: &str, role: &str, content: &str) -> AgentMessage {
 
 fn session() -> AgentSession {
     AgentSession {
+        schema_version:
+            crate::services::agent_local::session_limits::CURRENT_SESSION_SCHEMA_VERSION,
         id: "550e8400-e29b-41d4-a716-446655440000".into(),
         name: "Main".into(),
         created_at: Utc::now(),
@@ -35,6 +42,7 @@ fn session() -> AgentSession {
         thinking_enabled: false,
         fast_mode_enabled: false,
         reasoning_mode: None,
+        preserve_reasoning: Default::default(),
         accumulated_tokens: 0,
         context_tokens: None,
         messages: vec![
@@ -84,7 +92,7 @@ fn session() -> AgentSession {
 #[test]
 fn build_clone_cuts_at_selected_message() {
     let source = session();
-    let clone = build_clone(&source, "m2", CloneMode::Cut, 1, &source.id);
+    let clone = build_clone(&source, "m2", CloneMode::Cut, 2, &source.id);
 
     assert_eq!(clone.messages.len(), 2);
     assert_eq!(clone.messages[1].id, "m2");
@@ -94,16 +102,6 @@ fn build_clone_cuts_at_selected_message() {
     assert!(clone.clone_summary.is_none());
     assert!(clone.stream_failures.is_empty());
     assert!(clone.diagnostic_runs.is_empty());
-}
-
-#[test]
-fn hidden_context_message_uses_clone_prefix() {
-    let hidden = hidden_context_message("Useful summary");
-
-    assert_eq!(hidden.role, "user");
-    assert!(hidden
-        .content
-        .starts_with(clone_summary::CLONE_SUMMARY_PREFIX));
 }
 
 /// Construit une session qui est elle-même un clone (parent immédiat + racine
@@ -122,7 +120,7 @@ fn build_clone_from_main_sets_root_to_main() {
     // Clone depuis la session principale : la racine du nouveau clone est
     // l'id de la session principale.
     let source = session();
-    let clone = build_clone(&source, "m2", CloneMode::Cut, 1, &source.id);
+    let clone = build_clone(&source, "m2", CloneMode::Cut, 2, &source.id);
 
     assert_eq!(
         clone.clone_root_session_id.as_deref(),
@@ -142,7 +140,7 @@ fn build_clone_from_clone_propagates_root_id() {
     let root_id = "root-11111111-1111-1111-1111-111111111111";
     let clone_intermediate_id = "clone-22222222-2222-2222-2222-222222222222";
     let source = clone_session_as_source(root_id, clone_intermediate_id);
-    let clone = build_clone(&source, "m2", CloneMode::Cut, 1, root_id);
+    let clone = build_clone(&source, "m2", CloneMode::Cut, 2, root_id);
 
     assert_eq!(clone.clone_root_session_id.as_deref(), Some(root_id));
     assert_eq!(
@@ -165,7 +163,7 @@ fn build_clone_does_not_inherit_git_branch() {
         &source,
         "m2",
         CloneMode::Cut,
-        1,
+        2,
         "root-11111111-1111-1111-1111-111111111111",
     );
 
@@ -177,7 +175,7 @@ fn build_clone_does_not_inherit_fast_mode() {
     let mut source = session();
     source.fast_mode_enabled = true;
 
-    let clone = build_clone(&source, "m2", CloneMode::Cut, 1, &source.id);
+    let clone = build_clone(&source, "m2", CloneMode::Cut, 2, &source.id);
 
     assert!(!clone.fast_mode_enabled);
 }
@@ -194,11 +192,7 @@ async fn clone_summary_sends_openai_default_even_for_a_fast_source_session() {
     .await
     .expect("create source session");
     let scenario = StreamScenario::start(&source.id, [ScriptedResponse::Success]).await;
-    let messages = vec![ChatMessage {
-        role: "user".into(),
-        content: "summarize this".into(),
-        ..Default::default()
-    }];
+    let messages = vec![ChatMessage::user("summarize this".into())];
 
     let summary = collect_summary(
         "openai",

@@ -9,7 +9,7 @@
   border: 1px solid var(--edge);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
-  padding: var(--space-xs);
+  padding: var(--space-xs) var(--list-gutter);
   z-index: var(--z-dropdown);
   backdrop-filter: var(--popover-backdrop-filter, none);
   -webkit-backdrop-filter: var(--popover-backdrop-filter, none);
@@ -83,7 +83,7 @@
   border: 1px solid var(--edge);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
-  padding: var(--space-xs);
+  padding: var(--space-xs) var(--list-gutter);
   z-index: calc(var(--z-dropdown) + 1); /* one step above the parent menu */
   backdrop-filter: var(--popover-backdrop-filter, none);
   -webkit-backdrop-filter: var(--popover-backdrop-filter, none);

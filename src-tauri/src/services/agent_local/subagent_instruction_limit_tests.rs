@@ -42,11 +42,15 @@ async fn drain_keeps_session_messages_bounded_at_two_thousand() {
 fn agent_message(content: &str) -> super::types_session::AgentMessage {
     super::types_session::AgentMessage {
         id: uuid::Uuid::new_v4().to_string(),
+        turn_id: super::types_session::AgentMessage::new_turn_id(),
         role: "assistant".into(),
         content: content.into(),
         thinking: None,
         tool_calls: None,
         tool_name: None,
+        tool_call_id: None,
+        continuation: None,
+        replay_source: None,
         tool_activities: None,
         segments: None,
         files: Vec::new(),
@@ -54,6 +58,7 @@ fn agent_message(content: &str) -> super::types_session::AgentMessage {
         tokens: 0,
         work_duration_ms: None,
         skill_names: None,
+        skill_ids: None,
         stream_run_id: None,
         stream_part: None,
     }

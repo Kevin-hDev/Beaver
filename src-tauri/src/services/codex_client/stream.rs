@@ -30,10 +30,16 @@ pub async fn stream_chat_with_budget(
     cancel: CancellationToken,
     buffer_content: bool,
     realtime_budget: Option<RealtimeBudget>,
+    reasoning_capture: Option<crate::services::llm::reasoning_wire::ReasoningCapture>,
+    continuation_target: Option<
+        &crate::services::reasoning_continuity::contract::ContinuationTarget,
+    >,
     measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
 ) -> Result<StreamOutcome, String> {
     let mut measurement = StreamMeasurement::new(measurement);
-    if websocket::should_attempt() {
+    // Le WebSocket ne fournit pas encore les items opaques nécessaires au rejeu.
+    // Dès qu'une capture est autorisée, HTTPS est le seul transport sûr.
+    if reasoning_capture.is_none() && websocket::should_attempt() {
         match websocket::stream_chat(
             on_event,
             session_id,
@@ -76,7 +82,7 @@ pub async fn stream_chat_with_budget(
             }
         }
     }
-    let resp = request::post_codex_stream(
+    let resp = request::post_codex_stream_with_continuity(
         model,
         messages,
         tools,
@@ -84,6 +90,8 @@ pub async fn stream_chat_with_budget(
         Some(session_id),
         fast_mode,
         &cancel,
+        continuation_target,
+        Some(request_id),
     )
     .await?;
     measurement.mark_headers();
@@ -95,6 +103,7 @@ pub async fn stream_chat_with_budget(
         realtime_budget,
         model,
         tools,
+        reasoning_capture,
         &mut measurement,
     )
     .await
@@ -108,6 +117,7 @@ async fn consume_sse(
     realtime_budget: Option<RealtimeBudget>,
     model: &str,
     tools: &[serde_json::Value],
+    reasoning_capture: Option<crate::services::llm::reasoning_wire::ReasoningCapture>,
     measurement: &mut StreamMeasurement<'_>,
 ) -> Result<StreamOutcome, String> {
     consume_sse_with_timeout(
@@ -119,6 +129,7 @@ async fn consume_sse(
         "openai",
         model,
         tools,
+        reasoning_capture,
         STREAM_STALL_TIMEOUT,
         measurement,
     )
@@ -134,6 +145,7 @@ pub(crate) async fn consume_external_responses_sse(
     provider: &str,
     model: &str,
     tools: &[serde_json::Value],
+    reasoning_capture: Option<crate::services::llm::reasoning_wire::ReasoningCapture>,
     measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
 ) -> Result<StreamOutcome, String> {
     let mut measurement = StreamMeasurement::new(measurement);
@@ -146,6 +158,7 @@ pub(crate) async fn consume_external_responses_sse(
         provider,
         model,
         tools,
+        reasoning_capture,
         STREAM_STALL_TIMEOUT,
         &mut measurement,
     )
@@ -161,12 +174,19 @@ async fn consume_sse_with_timeout(
     provider: &str,
     model: &str,
     tools: &[serde_json::Value],
+    reasoning_capture: Option<crate::services::llm::reasoning_wire::ReasoningCapture>,
     idle_timeout: std::time::Duration,
     measurement: &mut StreamMeasurement<'_>,
 ) -> Result<StreamOutcome, String> {
     let mut sse = resp.bytes_stream().eventsource();
-    let mut accumulator =
-        StreamAccumulator::new(provider, model, tools, buffer_content, realtime_budget);
+    let mut accumulator = StreamAccumulator::new_with_capture(
+        provider,
+        model,
+        tools,
+        buffer_content,
+        realtime_budget,
+        reasoning_capture,
+    );
     loop {
         let event = tokio::select! {
             _ = cancel.cancelled() => return Err("Annulé".to_string()),

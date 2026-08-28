@@ -33,11 +33,6 @@
   gap: var(--space-lg);
   padding: var(--space-md) var(--space-lg);
 }
-
-.pe-parameter-row + .pe-parameter-row {
-  border-top: 1px solid var(--edge);
-}
-
 .pe-parameter-info {
   min-width: 0;
 }

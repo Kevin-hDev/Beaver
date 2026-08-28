@@ -16,13 +16,30 @@
   --chrome-4: 16px;
   --chrome-5: 24px;
 
-  /* Radii stay in px: chrome must remain crisp whatever the font-size setting. */
-  --radius-xs: 6px;
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-panel: 16px; /* Shell panels (sidebar, detail) */
-  --radius-full: 50%;
-  --radius-md-bubble: 14px; /* Bubbles markdown/chat (code, tool-results) */
+  /* Un seul arrondi partout — décision de Kevin, 25 août 2026. Les cinq noms
+     restent parce que 300 endroits les lisent ; ce ne sont que des renvois.
+     En px : le cadre doit rester net quel que soit le réglage de police. */
+  --radius: 6px;
+  --radius-xs: var(--radius);
+  --radius-sm: var(--radius);
+  --radius-md: var(--radius);
+  --radius-panel: var(--radius);
+  --radius-md-bubble: var(--radius);
+  /* Le cadre de la fenêtre suit le coin arrondi de macOS, pas l'arrondi de
+     Beaver : les panneaux touchent le bord, et un coin plus serré que celui
+     du système laisse un liseré entre les deux. Il ne bouge pas avec --radius. */
+  --radius-window: 16px;
+  --radius-full: 50%; /* une forme, pas un arrondi */
+
+  /* Retrait du survol dans une liste : le conteneur le porte en marge interne,
+     la ligne y pose ses coins arrondis. Décidé avec Kevin le 25 août 2026 à
+     partir du menu des modes du champ de saisie. En px et non en rem : c'est un
+     détail de cadre, il ne grandit pas avec le texte. */
+  --list-gutter: 4px;
+
+  /* La sélection de texte prend l'accent du thème. Sans elle, la couleur venait
+     du système : sur le fond crème du thème Clair, elle ne se voyait pas. */
+  --text-selection-bg: color-mix(in srgb, var(--pulse) 32%, transparent);
 
   --ease-smooth: 200ms ease-out;
   --ease-gentle: 300ms ease-out;

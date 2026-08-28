@@ -1,31 +1,29 @@
 use super::{session_store, subagent_registry, subagent_status};
 
 #[test]
-fn existing_delegate_uses_atomic_redeployment_helper() {
+fn delegate_defers_prompt_writing_to_canonical_admission() {
     let delegate = include_str!("tool_delegate.rs");
     let child = include_str!("tool_delegate_child.rs");
     assert!(delegate.contains("tool_delegate_child::persist_delegate_prompt"));
-    assert!(delegate.contains("existing_child_id.is_some()"));
-    assert!(child.contains("persist_redeployment_prompt(child_id, prompt)"));
-    assert!(child.contains("unanswered_matching_prompt"));
-    assert!(child.contains("session_store::add_messages"));
+    assert!(delegate.contains("register_execution_for_parent_stream"));
+    assert!(child.contains("propriétaire unique de l'écriture du tour utilisateur"));
+    assert!(!child.contains("session_store::add_messages"));
 }
 
 #[tokio::test]
-async fn new_child_prompt_uses_message_history_not_redeployment_queue() {
+async fn new_child_prompt_waits_for_canonical_admission() {
     let (parent, child) = failed_child().await;
 
-    super::tool_delegate_child::persist_delegate_prompt(&child.id, "mission initiale", false)
+    super::tool_delegate_child::persist_delegate_prompt(&child.id, "mission initiale")
         .await
         .expect("persist new child prompt");
-    let saved = session_store::get(&child.id).await.expect("saved new child");
+    let saved = session_store::get(&child.id)
+        .await
+        .expect("saved new child");
 
     cleanup(&parent.id, &child.id).await;
     assert!(saved.subagent_queued_prompts.is_empty());
-    assert!(saved
-        .messages
-        .iter()
-        .any(|message| message.role == "user" && message.content == "mission initiale"));
+    assert!(saved.messages.is_empty());
 }
 
 #[tokio::test]
@@ -49,7 +47,9 @@ async fn redeploy_persists_queue_then_new_prompt_without_duplicate() {
         super::session_store_messages::add_redeployment_prompt(&child.id, prompt)
             .await
             .expect("persist redeployment atomically");
-        let queued = session_store::get(&child.id).await.expect("queued redeploy");
+        let queued = session_store::get(&child.id)
+            .await
+            .expect("queued redeploy");
         let run_id = subagent_registry::register(
             &parent.id,
             &child.id,
@@ -95,7 +95,9 @@ async fn redeploy_save_failure_keeps_queue_without_persisting_prompt() {
     let prompt = "correction durable";
     let (parent, mut child) = failed_child().await;
     child.subagent_queued_prompts.push(prompt.into());
-    session_store::save(&child).await.expect("save failed child");
+    session_store::save(&child)
+        .await
+        .expect("save failed child");
     let path = crate::services::paths::data_dir()
         .join("agent-sessions")
         .join(format!("{}.json", child.id));
@@ -136,9 +138,11 @@ async fn redeploy_save_failure_keeps_queue_without_persisting_prompt() {
 #[tokio::test]
 async fn register_failure_keeps_redeployment_queue_durable() {
     let (parent, mut child) = failed_child().await;
-    child.subagent_queued_prompts.push("ancienne correction".into());
+    child
+        .subagent_queued_prompts
+        .push("ancienne correction".into());
     session_store::save(&child).await.expect("save old queue");
-    super::tool_delegate_child::persist_delegate_prompt(&child.id, "nouvelle mission", true)
+    super::tool_delegate_child::persist_delegate_prompt(&child.id, "nouvelle mission")
         .await
         .expect("persist before register");
     let active_ids = (0..4)
@@ -167,10 +171,7 @@ async fn register_failure_keeps_redeployment_queue_durable() {
     }
     cleanup(&parent.id, &child.id).await;
     assert!(result.is_err());
-    assert_eq!(
-        saved.subagent_queued_prompts,
-        vec!["ancienne correction", "nouvelle mission"]
-    );
+    assert_eq!(saved.subagent_queued_prompts, vec!["ancienne correction"]);
 }
 
 async fn failed_child() -> (
@@ -192,6 +193,10 @@ async fn failed_child() -> (
 
 async fn cleanup(parent_id: &str, child_id: &str) {
     subagent_registry::unregister(child_id).await;
-    session_store::delete_one(child_id).await.expect("delete child");
-    session_store::delete_one(parent_id).await.expect("delete parent");
+    session_store::delete_one(child_id)
+        .await
+        .expect("delete child");
+    session_store::delete_one(parent_id)
+        .await
+        .expect("delete parent");
 }

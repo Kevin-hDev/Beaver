@@ -59,6 +59,8 @@
   padding: 10px 20px;
   cursor: pointer;
   transition: background 100ms ease-out;
+  border-radius: var(--radius);
+  margin: 0 var(--list-gutter);
 }
 
 .llm-model-row:hover {

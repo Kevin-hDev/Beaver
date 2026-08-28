@@ -9,6 +9,12 @@ import type {
 import type { ActiveStreamItem } from "./active-stream-item";
 import type { ContextTokenBuckets } from "./context-usage-buckets";
 
+export interface VisibleTurnIdentity {
+  turnId: string;
+  userMessageId: string;
+  assistantMessageId: string;
+}
+
 export const MAX_PENDING_PERMISSIONS = 32;
 export const MAX_MESSAGES_PER_SESSION = 2000;
 export const MAX_QUEUED_USER_MESSAGES = 8;
@@ -57,7 +63,8 @@ export interface PermissionRequestState {
 
 export interface ManagedStreamState extends ChatState {
   pendingPermissions: PermissionRequestState[];
-  completed: boolean; persisted: boolean; updatedAt: number; error?: string; isConnectionError?: boolean; diagnosticSummary?: string;
+  activeTurn?: VisibleTurnIdentity;
+  completed: boolean; updatedAt: number; error?: string; isConnectionError?: boolean; diagnosticSummary?: string;
 }
 
 export const EMPTY_CHAT_STATE: ChatState = {
@@ -78,7 +85,6 @@ export interface StreamApplyResult {
   state: ManagedStreamState;
   assistantMessage?: AgentMessage;
   assistantTokens?: number;
-  messagesToPersist?: AgentMessage[];
 }
 
 export function createManagedStreamState(
@@ -94,7 +100,7 @@ export function createManagedStreamState(
     isCompressing: streamKind === "compression",
     streamRunId: crypto.randomUUID(),
     streamStartedAt: now, segmentStartedAt: now,
-    pendingPermissions: [], completed: false, persisted: false,
+    pendingPermissions: [], completed: false,
     updatedAt: now,
   };
 }

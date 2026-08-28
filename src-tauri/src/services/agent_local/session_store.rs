@@ -1,11 +1,14 @@
-use crate::services::agent_local::types_session::{AgentSession, AgentSessionMeta};
 pub use super::session_id::validate_session_id;
 pub(crate) use super::session_locks::lock_session;
 pub use super::session_locks::remove_session_lock;
-pub use super::session_store_messages::{add_messages, add_messages_with_context};
 pub use super::session_store_create::{
     create_full, create_gateway, create_with_project, create_with_project_and_fast_mode,
 };
+#[cfg(test)]
+pub use super::session_store_messages::add_messages;
+#[cfg(test)]
+pub use super::session_store_messages::add_messages_with_context;
+use crate::services::agent_local::types_session::{AgentSession, AgentSessionMeta};
 
 pub async fn get(id: &str) -> Result<AgentSession, String> {
     validate_session_id(id)?;
@@ -39,7 +42,11 @@ pub async fn save(session: &AgentSession) -> Result<(), String> {
     .await
     .map_err(|_| "Sauvegarde de session impossible".to_string())?;
     super::session_store_document::write_to_path(path, session).await?;
-    let meta = crate::services::agent_local::session_index::meta_from_session(session);
+    update_index(crate::services::agent_local::session_index::meta_from_session(session)).await;
+    Ok(())
+}
+
+async fn update_index(meta: AgentSessionMeta) {
     if crate::services::agent_local::session_index::upsert_entry(meta)
         .await
         .is_err()
@@ -51,6 +58,22 @@ pub async fn save(session: &AgentSession) -> Result<(), String> {
         // à reconstruire la projection sans annoncer à tort que sa sauvegarde a échoué.
         crate::services::agent_local::session_index::invalidate_reconcile_fingerprint().await;
     }
+}
+
+#[cfg(test)]
+pub(super) async fn save_prepared(
+    prepared: super::session_store_document::PreparedSessionDocument,
+) -> Result<(), String> {
+    validate_session_id(&prepared.session().id)?;
+    let path = crate::services::paths::data_file_for_write(
+        "agent-sessions",
+        &format!("{}.json", prepared.session().id),
+    )
+    .await
+    .map_err(|_| "Sauvegarde de session impossible".to_string())?;
+    let meta = crate::services::agent_local::session_index::meta_from_session(prepared.session());
+    super::session_store_document::write_prepared_to_path(path, prepared).await?;
+    update_index(meta).await;
     Ok(())
 }
 
@@ -76,16 +99,34 @@ pub async fn rename(id: &str, name: &str) -> Result<(), String> {
 
 pub(crate) async fn delete_one(id: &str) -> Result<(), String> {
     validate_session_id(id)?;
-    let path = crate::services::paths::data_file_for_read("agent-sessions", &format!("{id}.json"))
-        .await
-        .map_err(|_| "Session introuvable".to_string())?;
-    tokio::fs::remove_file(&path)
+    // Les projections et magasins secondaires partent d'abord. Le document principal,
+    // seule autorité permettant une reprise, est supprimé en dernier.
+    crate::services::agent_local::session_index::remove_entry(id)
         .await
         .map_err(|_| "Suppression de session impossible".to_string())?;
-    let _ = crate::services::agent_local::session_index::remove_entry(id).await;
-    let _ = super::subagent_change_store::remove(id).await;
-    super::extension_session_state::remove(id).await;
-    super::session_permission_state::remove(id).await;
+    super::subagent_change_store::remove(id)
+        .await
+        .map_err(|_| "Suppression de session impossible".to_string())?;
+    super::extension_session_state::remove(id)
+        .await
+        .map_err(|_| "Suppression de session impossible".to_string())?;
+    super::session_permission_state::remove(id)
+        .await
+        .map_err(|_| "Suppression de session impossible".to_string())?;
+    if crate::services::reasoning_fixture_store::remove_for_session(id)
+        .await
+        .is_err()
+    {
+        log::warn!("reasoning_fixture_session_cleanup_failed");
+    }
+    let directory = crate::services::paths::data_dir().join("agent-sessions");
+    tokio::task::spawn_blocking({
+        let directory = directory.clone();
+        let id = id.to_string();
+        move || super::session_artifacts::remove_all_in(&directory, &id)
+    })
+    .await
+    .map_err(|_| "Suppression de session impossible".to_string())??;
     // Nettoie aussi le WriteGuard persistant de la session.
     crate::services::agent_local::write_guard_registry::remove(id);
     Ok(())
@@ -104,11 +145,10 @@ pub async fn restore(id: &str) -> Result<(), String> {
 }
 
 pub use super::session_archive::list_archived;
-pub use super::session_ops::{clear_project_id, export_markdown, truncate_and_replace};
+pub use super::session_ops::{clear_project_id, export_markdown};
 pub use super::session_store_updates::{
-    assign_project_if_missing, refresh_working_dir, set_managed_working_dir,
-    switch_working_dir_to_project, update_fast_mode, update_model, update_reasoning,
-    update_working_dir,
+    refresh_working_dir, set_managed_working_dir, switch_working_dir_to_project, update_fast_mode,
+    update_model, update_reasoning, update_working_dir,
 };
 
 #[path = "session_store_tests.rs"]

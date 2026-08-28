@@ -91,7 +91,7 @@ pub(crate) async fn handle_compress_command(
     )
     .await?;
 
-    send_compression_done(on_event);
+    send_compression_complete(on_event);
     ::log::info!("[compress] manual done session={session_id} context_tokens={current_tokens}");
     Ok(())
 }
@@ -108,7 +108,7 @@ async fn collect_summary(
     let timeout = crate::services::compress::timeouts::compression_request_timeout();
     if provider == "ollama" {
         let compression =
-            crate::services::agent_local::ollama_stream::collect_chat_with_timeout_and_limit(
+            crate::services::agent_local::ollama_collect::collect_chat_with_timeout_and_limit_global(
                 model,
                 messages,
                 timeout,
@@ -155,17 +155,9 @@ async fn resolve_context_window(provider: &str, model: &str) -> u64 {
     ctx.configured
 }
 
-fn send_compression_done(on_event: &AgentEventEmitter) {
+fn send_compression_complete(on_event: &AgentEventEmitter) {
     send_compressing_done(on_event);
     let _ = on_event.send(StreamEvent::CompressionComplete {});
-    let _ = on_event.send(StreamEvent::Done {
-        eval_count: None,
-        eval_duration_ns: 0,
-        final_tps: 0.0,
-        tps_estimated: true,
-        prompt_tokens: None,
-        context_tokens: None,
-    });
 }
 
 fn send_compressing_done(on_event: &AgentEventEmitter) {

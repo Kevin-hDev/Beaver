@@ -76,7 +76,7 @@ pub(crate) async fn recover_platform_at(
     executor.recover(reason).await
 }
 
-fn frozen_models_directory(
+pub(super) fn frozen_models_directory(
     paths: &crate::services::paths::OllamaPaths,
 ) -> Option<CanonicalDirectory> {
     let cwd = std::env::current_dir().ok()?;

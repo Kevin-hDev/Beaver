@@ -134,7 +134,7 @@ export function ModelProfile({
           {rows.map((r, i) => (
             <div
               key={i}
-              className={`mp-spec-row${i < rows.length - 1 ? " mp-spec-row-border" : ""}`}
+              className="mp-spec-row"
             >
               <span className="mp-spec-label">{r.label}</span>
               <span className={r.mono ? "mp-spec-value-mono" : "mp-spec-value"}>

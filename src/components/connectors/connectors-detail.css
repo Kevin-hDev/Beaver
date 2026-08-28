@@ -60,7 +60,6 @@
   padding: 10px 20px;
   font-size: var(--text-sm);
 }
-.ctd-row-border { border-bottom: 1px solid var(--edge); }
 .ctd-row-label { color: var(--ink-muted); font-size: var(--text-xs); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
 .ctd-row-value { color: var(--ink); }
 

@@ -214,7 +214,17 @@ impl OllamaClient {
                 ::log::warn!("[ollama] /api/show: {e}");
                 "ollama-show-error".to_string()
             })?;
-        let json: serde_json::Value = resp.json().await.map_err(|e| e.to_string())?;
-        Ok(parse_show_response(name, &json))
+        if !resp.status().is_success() {
+            return Err("ollama-show-error".to_string());
+        }
+        let body = crate::services::secure_http::read_bounded(
+            resp,
+            super::ollama_model_helpers::MAX_SHOW_RESPONSE_BYTES,
+        )
+        .await
+        .map_err(|_| "ollama-show-error".to_string())?;
+        let json: serde_json::Value =
+            serde_json::from_slice(&body).map_err(|_| "ollama-show-error".to_string())?;
+        parse_show_response(name, &json).map_err(str::to_string)
     }
 }

@@ -1,3 +1,4 @@
+use crate::services::reasoning_continuity::envelope::ReasoningEnvelope;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -35,6 +36,18 @@ pub enum StreamEvent {
         breakdown: Option<super::context_usage_buckets::RequestContextUsage>,
     },
     GenerationStarted {},
+    #[serde(rename_all = "camelCase")]
+    TurnAdmitted {
+        turn_id: String,
+        user_message_id: String,
+        assistant_message_id: String,
+    },
+    #[serde(rename_all = "camelCase")]
+    TurnCommitted {
+        turn_id: String,
+        user_message_id: String,
+        assistant_message_id: String,
+    },
     #[serde(rename_all = "camelCase")]
     ToolCall {
         name: String,
@@ -122,7 +135,7 @@ pub enum StreamEvent {
     CompressionComplete {},
     #[serde(rename_all = "camelCase")]
     SessionSnapshot {
-        messages: Vec<crate::services::agent_local::types_session::AgentMessage>,
+        messages: Vec<crate::models::agent_session_contract::AgentMessageView>,
         token_count: u32,
     },
     #[serde(rename_all = "camelCase")]
@@ -171,6 +184,8 @@ pub struct StreamResult {
     pub content: String,
     pub content_chunks: Vec<String>,
     pub thinking: String,
+    /// État natif privé, distinct du texte de réflexion visible.
+    pub continuation: Option<ReasoningEnvelope>,
     pub(crate) generated_units: usize,
     pub tool_calls: Vec<(String, serde_json::Value)>,
     /// IDs OpenAI-compat alignés avec `tool_calls` (vide pour Ollama).

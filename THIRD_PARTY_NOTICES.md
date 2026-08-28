@@ -2,6 +2,15 @@
 
 ## Icons
 
+### selfh.st Icons
+
+The Ollama light and dark icons (`src/assets/ollama-icon-light.svg` and
+`src/assets/ollama-icon-dark.svg`) are the `selfhst:ollama` variants from
+[selfh.st Icons](https://selfh.st/icons/), licensed under
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+
+Changes made: none; both supplied SVG files are distributed as received.
+
 ### Typicons
 
 Typicons — flash-outline

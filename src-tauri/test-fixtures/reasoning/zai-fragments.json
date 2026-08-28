@@ -1,0 +1,1 @@
+{"events":[{"choices":[{"delta":{"reasoning_content":"one"}}]},{"choices":[{"delta":{"reasoning_content":"two"}}]},{"choices":[{"finish_reason":"stop"}]}],"expected_native":"onetwo"}

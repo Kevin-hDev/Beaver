@@ -4,6 +4,8 @@ import {
   type ChatMessagePanelProps,
 } from "./chat-message-panel";
 import { ChatReadOnlyFooter } from "./chat-read-only-footer";
+import { ConversationSearch } from "./conversation-search";
+import { useConversationSearch } from "@/hooks/use-conversation-search";
 
 interface ChatTranscriptProps extends ChatMessagePanelProps {
   containerRef: RefObject<HTMLDivElement | null>;
@@ -18,11 +20,25 @@ export function ChatTranscript({
   ...messagePanelProps
 }: ChatTranscriptProps) {
   const { chat, readOnly, runtime } = messagePanelProps;
+  const search = useConversationSearch(chat.messages);
 
   return (
     <>
+      <ConversationSearch
+        open={search.open}
+        query={search.query}
+        activePosition={search.activePosition}
+        totalMatches={search.totalMatches}
+        focusRequest={search.focusRequest}
+        onQueryChange={search.setQuery}
+        onMove={search.move}
+        onClose={search.close}
+      />
       <div className="chat-messages" ref={containerRef}>
-        <ChatMessagePanel {...messagePanelProps} />
+        <ChatMessagePanel
+          {...messagePanelProps}
+          activeSearchMessageId={search.activeMessageId}
+        />
       </div>
       {readOnly && (
         <ChatReadOnlyFooter

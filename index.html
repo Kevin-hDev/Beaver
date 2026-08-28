@@ -29,6 +29,13 @@
         }
         document.documentElement.setAttribute("data-theme", colorScheme);
         document.documentElement.setAttribute("data-palette", choice);
+        /* Même détection que src/lib/platform.ts, écrite ici parce que le
+           splash s'affiche avant React. splash-window-corners.test.ts vérifie
+           que les deux disent la même chose. */
+        document.documentElement.setAttribute(
+          "data-os",
+          navigator.userAgent.includes("Mac") ? "mac" : "other"
+        );
       })();
     </script>
     <link rel="preload" href="/castor-surface.svg" as="image" type="image/svg+xml" />
@@ -41,6 +48,13 @@
         align-items: center;
         justify-content: center;
         z-index: 9999;
+      }
+      /* Windows et Linux : la fenêtre perd ses décorations au démarrage
+         (app_build.rs), c'est donc au contenu de dessiner le coin. La valeur
+         reprend --radius-window de tokens.css, que ce bloc ne peut pas lire —
+         il peint avant les feuilles de style. */
+      [data-os="other"] #splash {
+        border-radius: 16px;
       }
       /* Le castor est un dessin en aplats, donc deux couleurs : la découpe claire
          posée dessous, l'encre par-dessus. Les palettes sombres et claires les

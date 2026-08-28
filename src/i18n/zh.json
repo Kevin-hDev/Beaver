@@ -267,6 +267,12 @@
     "selectModel": "选择模型",
     "selectModelHint": "选择模型",
     "reasoningTitle": "推理",
+    "continuityTitle": "推理连续性",
+    "continuityOff": "关闭",
+    "continuityLocal": "本地",
+    "continuityRemote": "远程",
+    "continuityOptional": "重放之前的推理可改善连续性，但会消耗额外的上下文和令牌。",
+    "continuityRequired": "必须保持此连续性，才能保留工具链。",
     "fastMode": "快速",
     "reasoningOff": "关闭",
     "reasoningAuto": "开启",
@@ -861,9 +867,11 @@
       "archivedChats": "已归档聊天",
       "advanced": "高级",
       "shortcuts": "键盘快捷键",
+      "updates": "更新",
       "about": "关于",
       "channels": "频道"
     },
+    "updates": { "title": "更新", "description": "检查并安装 Beaver 和 Ollama 的新版本。", "check": "检查更新", "checking": "正在检查…", "installedTitle": "已安装", "availableTitle": "可用更新" },
     "mascot": {
       "previewTitle": "吉祥物预览",
       "beaverName": "Beaver",
@@ -1036,7 +1044,20 @@
       "goForward": "前进",
       "newSession": "新建会话",
       "searchDialog": "搜索对话",
-      "togglePreview": "打开/关闭文件预览面板"
+      "togglePreview": "打开/关闭文件预览面板",
+      "openSettings": "打开设置",
+      "searchConversation": "在对话中搜索",
+      "focusComposer": "聚焦聊天输入框",
+      "selectSessionTab": "切换会话标签页",
+      "changePermissions": "更改权限",
+      "sendMessage": "发送消息",
+      "newLine": "插入新行",
+      "stopResponse": "停止回复",
+      "submitEdit": "确认并重新运行已编辑的消息",
+      "cancelEdit": "取消编辑消息",
+      "zoomIn": "放大界面",
+      "zoomOut": "缩小界面",
+      "resetZoom": "重置界面大小"
     },
     "confirm": {
       "deleteModel": "确认删除？"
@@ -1062,6 +1083,12 @@
     "recent": "最近对话",
     "results": "结果",
     "empty": "未找到对话"
+  },
+  "conversationSearch": {
+    "label": "在对话中搜索",
+    "placeholder": "搜索消息…",
+    "previous": "上一个结果",
+    "next": "下一个结果"
   },
   "about": {
     "version": "版本",
@@ -1145,6 +1172,7 @@
       "appShuttingDown": "Beaver 正在关闭。请在重新启动应用后重试。",
       "appCapacity": "Beaver 正在处理过多操作，请稍后重试。",
       "serviceShuttingDown": "此服务正在停止，请稍后重试。",
+      "queueUnavailable": "请等待当前回复结束后再发送此消息。你的草稿已保留。",
       "serviceCapacity": "当前运行的操作过多，请稍后重试。",
       "gatewayShuttingDown": "消息通道正在停止，请稍后重试。",
       "gatewayBusy": "当前处理的消息过多，请稍后重试。",
@@ -1171,6 +1199,8 @@
     },
     "streamStartFailed": "流无法启动。",
     "streamInterrupted": "流传输被中断。",
+    "streamStopping": "正在停止当前回复…你的草稿会保留。",
+    "reasoningContinuityInvalid": "推理连续性不兼容。请更换模型或开始新对话。",
     "contextCapacityExceededUnknownWindow": "必需上下文超过缩减目标：系统提示词 {{systemTokens}} 个 token + 已启用工具 {{toolTokens}} 个 token = {{requiredTokens}} 个 token，目标为 {{maxInputTokens}} 个 token。无法确定模型的实际上下文窗口。",
     "contextCapacityExceededUnknownWindowWithReports": "必需上下文超过缩减目标：系统提示词 {{systemTokens}} 个 token + 必需报告 {{reportTokens}} 个 token + 已启用工具 {{toolTokens}} 个 token = {{requiredTokens}} 个 token，目标为 {{maxInputTokens}} 个 token。无法确定模型的实际上下文窗口。",
     "contextCapacityExceeded": "必需上下文超过模型容量：系统提示词 {{systemTokens}} 个 token + 已启用工具 {{toolTokens}} 个 token = {{requiredTokens}} 个 token；当前上下文窗口为 {{contextWindow}} 个 token，输入上限为 {{maxInputTokens}} 个 token。",
@@ -1230,7 +1260,7 @@
     "forecastDevReview": "检查",
     "releaseNotesTitle": "{{version}} 版本说明",
     "showDetails": "显示详情",
-    "hideDetails": "隐藏详情"
+    "hideDetails": "隐藏详情", "dismiss": "隐藏此通知", "dismissFailed": "无法隐藏通知。", "checkFailed": "检查更新失败。请稍后重试。", "cancelling": "正在取消…", "cancelled": "下载已取消，临时文件已删除。"
   },
   "units": {
     "gb": "GB"

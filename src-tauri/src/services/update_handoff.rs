@@ -3,6 +3,7 @@ use super::work_registry::{ServiceWorkAdmission, ServiceWorkCancellation, Servic
 use crate::app_exit::AppWorkSupervisor;
 use std::future::Future;
 use std::process::Child;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
@@ -16,6 +17,32 @@ type UpdateDownloadWork = ServiceWorkSupervisor<MAX_APP_UPDATE_DOWNLOADS>;
 pub struct AppUpdateRuntime {
     downloads: UpdateDownloadWork,
     handoff: UpdateHandoff,
+    active_download: Arc<Mutex<Option<ActiveDownload>>>,
+    next_download_id: Arc<AtomicU64>,
+}
+
+struct ActiveDownload {
+    id: u64,
+    cancellation: ServiceWorkCancellation,
+}
+
+struct ActiveDownloadRegistration {
+    id: u64,
+    active: Arc<Mutex<Option<ActiveDownload>>>,
+}
+
+impl Drop for ActiveDownloadRegistration {
+    fn drop(&mut self) {
+        let Ok(mut active) = self.active.lock() else {
+            return;
+        };
+        if active
+            .as_ref()
+            .is_some_and(|download| download.id == self.id)
+        {
+            active.take();
+        }
+    }
 }
 
 impl AppUpdateRuntime {
@@ -23,6 +50,8 @@ impl AppUpdateRuntime {
         Self {
             downloads: UpdateDownloadWork::new(app),
             handoff: UpdateHandoff::default(),
+            active_download: Arc::new(Mutex::new(None)),
+            next_download_id: Arc::new(AtomicU64::new(1)),
         }
     }
 
@@ -39,7 +68,30 @@ impl AppUpdateRuntime {
     {
         let admission = self.try_admit()?;
         let cancellation = admission.cancellation();
+        let id = self.next_download_id.fetch_add(1, Ordering::Relaxed);
+        let registration = ActiveDownloadRegistration {
+            id,
+            active: Arc::clone(&self.active_download),
+        };
+        *self.active_download.lock().map_err(|_| download_error())? = Some(ActiveDownload {
+            id,
+            cancellation: cancellation.clone(),
+        });
+        let _registration = registration;
         admission.run(work(cancellation)).await
+    }
+
+    pub fn cancel_active_download(&self) -> bool {
+        let cancellation = self.active_download.lock().ok().and_then(|active| {
+            active
+                .as_ref()
+                .map(|download| download.cancellation.clone())
+        });
+        let Some(cancellation) = cancellation else {
+            return false;
+        };
+        cancellation.cancel();
+        true
     }
 
     pub async fn stop_and_wait(&self, deadline: Instant) -> bool {

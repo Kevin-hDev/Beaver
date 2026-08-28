@@ -1,11 +1,7 @@
 use super::*;
 
 fn msg(content: &str) -> ChatMessage {
-    ChatMessage {
-        role: "user".to_string(),
-        content: content.to_string(),
-        ..Default::default()
-    }
+    ChatMessage::user(content.to_string())
 }
 
 #[test]
@@ -33,7 +29,7 @@ fn estimates_emoji_as_wide() {
 #[test]
 fn chat_estimate_counts_replayed_reasoning() {
     let mut message = msg("answer");
-    message.reasoning_content = Some("r".repeat(400));
+    message.tool_loop_reasoning = Some("r".repeat(400));
 
     assert_eq!(estimate_chat_tokens(&[message.clone()]), 102);
     assert_eq!(estimate_chat_tokens_without_reasoning(&[message]), 2);
@@ -72,11 +68,15 @@ fn agent_estimate_counts_tool_payload_once() {
     };
     let message = AgentMessage {
         id: uuid::Uuid::new_v4().to_string(),
+        turn_id: AgentMessage::new_turn_id(),
         role: "assistant".into(),
         content: String::new(),
         thinking: None,
         tool_calls: None,
         tool_name: None,
+        tool_call_id: None,
+        continuation: None,
+        replay_source: None,
         tool_activities: Some(vec![activity]),
         segments: None,
         files: vec![],
@@ -84,6 +84,7 @@ fn agent_estimate_counts_tool_payload_once() {
         tokens: 0,
         work_duration_ms: None,
         skill_names: None,
+        skill_ids: None,
         stream_run_id: None,
         stream_part: None,
     };

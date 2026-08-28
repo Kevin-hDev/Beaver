@@ -67,12 +67,21 @@ pub(crate) fn build_model_from_tags(
     }
 }
 
-pub(crate) fn parse_show_response(name: &str, json: &serde_json::Value) -> ModelInfo {
+pub(crate) const MAX_SHOW_RESPONSE_BYTES: usize = 8 * 1024 * 1024;
+const MAX_SHOW_CAPABILITIES: usize = 32;
+const MAX_SHOW_CAPABILITY_BYTES: usize = 64;
+
+pub(crate) fn parse_show_response(
+    name: &str,
+    json: &serde_json::Value,
+) -> Result<ModelInfo, &'static str> {
     let details = &json["details"];
     let mi = &json["model_info"];
     let arch = mi["general.architecture"].as_str().unwrap_or("");
+    let capabilities = parse_capabilities(json)?;
+    let has_audio = capabilities.iter().any(|value| value == "audio");
 
-    ModelInfo {
+    Ok(ModelInfo {
         name: name.to_string(),
         modelfile: s(json, "modelfile"),
         parameters: s(json, "parameters"),
@@ -89,23 +98,31 @@ pub(crate) fn parse_show_response(name: &str, json: &serde_json::Value) -> Model
         context_length: mi[format!("{arch}.context_length")]
             .as_u64()
             .unwrap_or(4096),
-        capabilities: parse_capabilities(json),
-        has_audio: json["capabilities"]
-            .as_array()
-            .is_some_and(|a| a.iter().any(|v| v.as_str() == Some("audio"))),
+        capabilities,
+        has_audio,
         license: s(json, "license"),
-    }
+    })
 }
 
-fn parse_capabilities(json: &serde_json::Value) -> Vec<String> {
-    json["capabilities"]
-        .as_array()
-        .map(|a| {
-            a.iter()
-                .filter_map(|v| v.as_str().map(String::from))
-                .collect()
+fn parse_capabilities(json: &serde_json::Value) -> Result<Vec<String>, &'static str> {
+    let raw = json["capabilities"].as_array().ok_or("ollama-show-error")?;
+    if raw.is_empty() || raw.len() > MAX_SHOW_CAPABILITIES {
+        return Err("ollama-show-error");
+    }
+    raw.iter()
+        .map(|value| {
+            let value = value.as_str().ok_or("ollama-show-error")?;
+            if value.is_empty()
+                || value.len() > MAX_SHOW_CAPABILITY_BYTES
+                || !value.bytes().all(|byte| {
+                    byte.is_ascii_lowercase() || byte.is_ascii_digit() || b"-_".contains(&byte)
+                })
+            {
+                return Err("ollama-show-error");
+            }
+            Ok(value.to_string())
         })
-        .unwrap_or_else(|| vec!["completion".to_string()])
+        .collect()
 }
 
 fn s(v: &serde_json::Value, key: &str) -> String {

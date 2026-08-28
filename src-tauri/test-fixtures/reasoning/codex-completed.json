@@ -1,0 +1,1 @@
+{"events":[{"type":"response.output_item.done","item":{"type":"reasoning","id":"rs_1","encrypted_content":"opaque"}},{"type":"response.completed","response":{"id":"resp_1"}}],"expected_native":[{"type":"reasoning","id":"rs_1","encrypted_content":"opaque"}]}

@@ -45,6 +45,7 @@ pub(crate) struct OllamaOperationGuard<'a> {
     #[allow(dead_code)]
     operation_lock: MutexGuard<'a, ()>,
     generation: u64,
+    previous_bundle: super::types::BundleState,
 }
 
 impl OllamaManager {
@@ -71,7 +72,7 @@ impl OllamaManager {
         operation: OperationState,
     ) -> Result<OllamaOperationGuard<'_>, OllamaErrorCode> {
         let operation_lock = self.inner().operation_lock.lock().await;
-        let generation = {
+        let (generation, previous_bundle) = {
             let mut state = self.inner().lock_state();
             if state.closing || admission.cancellation().is_cancelled() {
                 return Err(OllamaErrorCode::OllamaClosing);
@@ -80,6 +81,7 @@ impl OllamaManager {
                 .generation
                 .checked_add(1)
                 .ok_or(OllamaErrorCode::OllamaInternal)?;
+            let previous_bundle = state.status.bundle.clone();
             state.generation = generation;
             state.status.operation = operation;
             if matches!(
@@ -93,13 +95,14 @@ impl OllamaManager {
                     .then_some(super::types::OllamaProgressStage::Recovering);
             }
             state.status.last_error = None;
-            generation
+            (generation, previous_bundle)
         };
         Ok(OllamaOperationGuard {
             manager: self.inner(),
             admission,
             operation_lock,
             generation,
+            previous_bundle,
         })
     }
     #[cfg(test)]

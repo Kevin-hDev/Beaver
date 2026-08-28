@@ -183,7 +183,7 @@ export const AgentLocalTab = memo(function AgentLocalTab({
             provider={currentDefault.provider}
             projects={projectsHook.projects}
             onAddProject={projectsHook.add}
-            onSend={(...args) => void handleWelcomeSend(...args)}
+            onSend={handleWelcomeSend}
             onModelChange={(m, p) => setWelcomeModel({ model: m, provider: p })}
             reasoningMode={reasoningMode}
             onReasoningModeChange={setReasoningMode}

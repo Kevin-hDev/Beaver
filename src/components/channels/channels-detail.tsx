@@ -140,19 +140,19 @@ export function ChannelsDetail({
       </SettingsCard>
 
       <SettingsCard>
-        <div className="ctd-row ctd-row-border">
+        <div className="ctd-row">
           <span className="ctd-row-label">
             {t(channelId === "slack" ? "channels.detail.botToken" : "channels.detail.token")}
           </span>
           <span className="ctd-row-value">••••••••</span>
         </div>
         {channelId === "slack" && (
-          <div className="ctd-row ctd-row-border">
+          <div className="ctd-row">
             <span className="ctd-row-label">{t("channels.detail.appToken")}</span>
             <span className="ctd-row-value">••••••••</span>
           </div>
         )}
-        <div className="ctd-row ctd-row-border">
+        <div className="ctd-row">
           <span className="ctd-row-label">{t("channels.status.off")}</span>
           <span className="ctd-row-value">{t(`channels.status.${statusKey}`)}</span>
         </div>

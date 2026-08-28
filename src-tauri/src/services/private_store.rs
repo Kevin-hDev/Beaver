@@ -9,6 +9,8 @@ fn private_store_error() -> String {
 
 pub(crate) use cache::{CachedStore, StoreErrorCodes, StoreFailure, StoreLoad};
 pub(crate) use private_store_atomic::atomic_write;
+#[cfg(test)]
+pub(crate) use private_store_atomic::atomic_write_fail_before_replace;
 
 #[path = "private_store/cache.rs"]
 mod cache;
@@ -89,6 +91,8 @@ pub fn repair_app_storage() -> Result<(), String> {
     let root = crate::services::paths::data_dir();
     create_private_dirs(&root)?;
     temp_cleanup::purge_stale_atomic_temps_logged(&root);
+    #[cfg(debug_assertions)]
+    crate::services::reasoning_fixture_tools::purge_stale_runtime()?;
     for directory in [
         root.join("agent-sessions"),
         root.join("forecast-notes"),

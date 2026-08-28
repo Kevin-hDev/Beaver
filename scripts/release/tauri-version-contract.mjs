@@ -2,7 +2,7 @@ const ERROR_MESSAGE = "Tauri version contract failed";
 const MAX_FILE_BYTES = 2 * 1024 * 1024;
 const EXPECTED = Object.freeze({
   cli: "2.11.4",
-  tauri: "2.11.4",
+  tauri: "2.11.5",
   build: "2.6.3",
 });
 
@@ -30,7 +30,7 @@ function packageManifest(value) {
 
 function exactManifestVersions(cargoToml) {
   const buildPattern = /^tauri-build\s*=\s*\{\s*version\s*=\s*"=2\.6\.3"\s*,/mu;
-  const tauriPattern = /^tauri\s*=\s*\{\s*version\s*=\s*"=2\.11\.4"\s*,/mu;
+  const tauriPattern = /^tauri\s*=\s*\{\s*version\s*=\s*"=2\.11\.5"\s*,/mu;
   return buildPattern.test(cargoToml) && tauriPattern.test(cargoToml);
 }
 

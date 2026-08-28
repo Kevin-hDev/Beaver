@@ -30,6 +30,7 @@ mod openai_compat_parsing;
 #[cfg(test)]
 mod openai_compat_parsing_tests;
 mod openai_responses;
+mod openai_responses_reasoning;
 pub(crate) mod prompt_cache_policy;
 #[cfg(test)]
 mod prompt_cache_policy_tests;
@@ -40,6 +41,7 @@ pub(crate) mod provider_model_registry;
 mod provider_model_registry_sources;
 mod provider_model_registry_validation;
 pub(crate) mod providers;
+pub(crate) mod reasoning_wire;
 pub(crate) mod request_purpose;
 mod retry;
 pub mod route;
@@ -52,14 +54,18 @@ mod stream_consume;
 mod stream_consume_budget;
 pub mod stream_convert;
 mod stream_http;
+#[cfg(test)]
+pub(crate) use stream_http::RequestConfig as RequestConfigForTest;
 mod stream_http_error;
 mod stream_http_payload;
+#[cfg(test)]
+pub(crate) use stream_http_payload::build_chat_payload as build_chat_payload_for_test;
 mod stream_http_send;
 #[cfg(test)]
 mod stream_http_send_tests;
 mod stream_max_tokens;
 mod stream_metrics;
-mod stream_reasoning;
+pub(crate) mod stream_reasoning;
 #[cfg(test)]
 mod stream_reasoning_tests;
 mod stream_silent;
@@ -75,7 +81,10 @@ mod tool_schema_names;
 mod tool_schema_profile;
 pub mod types;
 pub mod vision;
+mod xai_oauth_chat;
+mod xai_oauth_payload;
 mod xai_oauth_transport;
+mod xai_oauth_transport_status;
 #[cfg(test)]
 mod xai_oauth_transport_tests;
 

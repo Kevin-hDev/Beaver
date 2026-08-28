@@ -1,20 +1,15 @@
-function Test-AssociatedIcon([string]$Path) {
-    Add-Type -AssemblyName System.Drawing
-    $icon = [Drawing.Icon]::ExtractAssociatedIcon($Path)
-    if ($null -eq $icon) {
-        Stop-Validation "source-installer-icon"
-    }
-    try {
-        if ($icon.Width -le 0 -or $icon.Height -le 0) {
-            Stop-Validation "source-installer-icon"
-        }
-    } finally {
-        $icon.Dispose()
-    }
-}
-
 # Branding has its own bounded failure contract so Windows handoffs identify the exact stage.
 . (Join-Path $PSScriptRoot "windows-brand-validation.ps1")
+
+function Test-AssociatedIcon([string]$Path, [long]$MaxBytes) {
+    $failure = Get-NativeIconResourceFailure $Path $MaxBytes
+    if ($failure -ceq "runtime") {
+        Stop-Validation "source-installer-icon-runtime"
+    }
+    if ($null -ne $failure) {
+        Stop-Validation "source-installer-icon"
+    }
+}
 
 function Test-ShortcutTarget([string]$Path, [string]$ExpectedTarget) {
     $shell = New-Object -ComObject WScript.Shell
@@ -97,19 +92,6 @@ function Test-BeaverShortcutState(
 }
 
 function Test-UpdaterHelper([string]$Path, [long]$MaxBytes) {
-    if (
-        [string]::IsNullOrWhiteSpace($Path) -or
-        $MaxBytes -le 0 -or
-        -not (Test-Path -LiteralPath $Path -PathType Leaf)
-    ) {
-        return $false
-    }
-    try {
-        $item = Get-Item -LiteralPath $Path -Force
-        $isLink = ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0
-        return -not $item.PSIsContainer -and -not $isLink -and
-            $item.Length -gt 0 -and $item.Length -le $MaxBytes
-    } catch {
-        return $false
-    }
+    # Package file validation has one owner; this name remains for existing callers.
+    return Test-BoundedPackageFile $Path $MaxBytes
 }

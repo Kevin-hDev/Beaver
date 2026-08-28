@@ -56,3 +56,30 @@ async fn shutdown_cancels_waits_and_permanently_refuses_update_downloads() {
         "update-download-error"
     );
 }
+
+#[tokio::test]
+async fn user_cancel_stops_only_the_current_download_and_keeps_runtime_open() {
+    let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
+    let runtime = AppUpdateRuntime::new(coordinator.work_supervisor());
+    let task_runtime = runtime.clone();
+    let running = tokio::spawn(async move {
+        task_runtime
+            .run_download(|cancel| async move {
+                cancel.cancelled().await;
+                Err::<(), _>("update-download-cancelled".to_string())
+            })
+            .await
+    });
+
+    tokio::task::yield_now().await;
+    assert!(runtime.cancel_active_download());
+    assert_eq!(
+        running.await.unwrap().unwrap_err(),
+        "update-download-cancelled"
+    );
+    assert!(!runtime.cancel_active_download());
+    runtime
+        .run_download(|_| async { Ok::<(), String>(()) })
+        .await
+        .expect("a user cancellation must not close the updater runtime");
+}

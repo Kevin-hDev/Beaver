@@ -1,16 +1,16 @@
 use super::params::StreamCapabilityHints;
 use crate::services::llm::{self, provider_model_lookup, tool_capable};
 
-pub(super) struct ApiCapabilities {
+pub(crate) struct ApiCapabilities {
     pub tools: bool,
     pub thinking: bool,
     pub vision: bool,
 }
 
-pub(super) async fn resolve(
+pub(crate) async fn resolve(
     provider: &str,
     model: &str,
-    hints: &StreamCapabilityHints,
+    _hints: &StreamCapabilityHints,
 ) -> ApiCapabilities {
     let capability_provider = crate::services::llm::route::canonical_provider_id(provider);
     let local = provider_model_lookup::local_capabilities(capability_provider, model);
@@ -22,7 +22,7 @@ pub(super) async fn resolve(
     let is_local = local.is_some();
 
     ApiCapabilities {
-        tools: tools_capability(provider, model, hints.supports_tools, {
+        tools: tools_capability(provider, model, {
             capability(
                 is_local,
                 registered.as_ref().is_some_and(|caps| caps.supports_tools),
@@ -30,39 +30,33 @@ pub(super) async fn resolve(
                 tool_capable::supports_tools(capability_provider, model),
             )
         }),
-        thinking: hints.supports_thinking.unwrap_or_else(|| {
-            provider == crate::services::codex_client::PROVIDER_ID
-                || capability(
-                    is_local,
-                    registered
-                        .as_ref()
-                        .is_some_and(|caps| caps.supports_thinking),
-                    runtime
-                        .as_ref()
-                        .is_some_and(|model| model.supports_thinking),
-                    tool_capable::supports_thinking(capability_provider, model),
-                )
-        }),
-        vision: hints.supports_vision.unwrap_or_else(|| {
-            provider == crate::services::codex_client::PROVIDER_ID
-                || capability(
-                    is_local,
-                    registered.as_ref().is_some_and(|caps| caps.supports_vision),
-                    runtime.as_ref().is_some_and(|model| model.supports_vision),
-                    tool_capable::supports_vision(capability_provider, model),
-                )
-        }),
+        thinking: provider == crate::services::codex_client::PROVIDER_ID
+            || capability(
+                is_local,
+                registered
+                    .as_ref()
+                    .is_some_and(|caps| caps.supports_thinking),
+                runtime
+                    .as_ref()
+                    .is_some_and(|model| model.supports_thinking),
+                tool_capable::supports_thinking(capability_provider, model),
+            ),
+        vision: provider == crate::services::codex_client::PROVIDER_ID
+            || capability(
+                is_local,
+                registered.as_ref().is_some_and(|caps| caps.supports_vision),
+                runtime.as_ref().is_some_and(|model| model.supports_vision),
+                tool_capable::supports_vision(capability_provider, model),
+            ),
     }
 }
 
-fn tools_capability(provider: &str, model: &str, hint: Option<bool>, detected: bool) -> bool {
-    hint.unwrap_or_else(|| {
-        if provider == crate::services::codex_client::PROVIDER_ID {
-            crate::services::codex_client::supports_tools(model)
-        } else {
-            detected
-        }
-    })
+fn tools_capability(provider: &str, model: &str, detected: bool) -> bool {
+    if provider == crate::services::codex_client::PROVIDER_ID {
+        crate::services::codex_client::supports_tools(model)
+    } else {
+        detected
+    }
 }
 
 fn capability(is_local: bool, registered: bool, runtime: bool, fallback: bool) -> bool {

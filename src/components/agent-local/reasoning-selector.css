@@ -70,7 +70,7 @@
   width: max-content;
   min-width: 150px;
   max-width: min(220px, calc(100vw - 24px));
-  padding: 6px;
+  padding: 6px var(--list-gutter);
   overflow: hidden;
   border: 1px solid var(--edge);
   border-radius: var(--radius-md);

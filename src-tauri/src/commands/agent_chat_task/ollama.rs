@@ -1,20 +1,41 @@
 use super::common::{self, StreamMode};
 use super::params::StreamTaskParams;
 use crate::services::agent_local::agent_loop;
-use crate::services::agent_local::agent_settings::AgentSettings;
 use crate::services::agent_local::tool_catalog;
-use crate::services::agent_local::tool_dispatcher;
-use crate::services::agent_local::types_ollama::{ChatMessage, OllamaThink, StreamEvent};
+use crate::services::agent_local::types_ollama::{ChatMessage, StreamEvent};
 
 pub(crate) async fn run(
     params: StreamTaskParams,
+    mut messages: Vec<ChatMessage>,
     mode: StreamMode,
     response_language: String,
-) -> Result<Vec<ChatMessage>, String> {
+    journal: &mut Option<crate::services::agent_local::conversation_journal::ConversationJournal>,
+) -> Result<crate::services::agent_local::agent_loop_finish::CompletedStreamTurn, String> {
+    #[cfg(debug_assertions)]
+    let mut params = params;
     let ctx = crate::services::compress::context_resolve::resolve_ollama(&params.model).await;
     let settings = crate::services::agent_local::agent_settings::load().await;
-    let final_tools = resolve_tools(&params, &mode, &settings);
-    let extension_tools = if mode.is_chat {
+    #[cfg(debug_assertions)]
+    let fixture_mode = params.fixture_run.is_some();
+    #[cfg(not(debug_assertions))]
+    let fixture_mode = false;
+    let final_tools = if fixture_mode {
+        #[cfg(debug_assertions)]
+        {
+            params
+                .fixture_run
+                .as_ref()
+                .map(|run| run.definitions().to_vec())
+                .unwrap_or_default()
+        }
+        #[cfg(not(debug_assertions))]
+        {
+            Vec::new()
+        }
+    } else {
+        super::ollama_setup::resolve_tools(&params, &mode, &settings)
+    };
+    let extension_tools = if fixture_mode || mode.is_chat {
         crate::services::agent_local::extension_tool_set::ExtensionToolSet::passthrough(final_tools)
     } else {
         crate::services::agent_local::extension_tool_set::ExtensionToolSet::prepare(
@@ -39,11 +60,11 @@ pub(crate) async fn run(
     .await;
     let working_dir = common::resolve_working_dir(&params.working_dir)?;
     common::update_working_dir(&params.session_id, &working_dir).await?;
-    let plan_mode_active =
-        resolve_plan_mode(&params).await && tool_catalog::has_plan_tools(&enabled_tool_names);
+    let plan_mode_active = super::ollama_setup::resolve_plan_mode(&params).await
+        && tool_catalog::has_plan_tools(&enabled_tool_names);
 
     let snap = common::collect_git_snapshot(&working_dir).await;
-    let ollama_think = resolve_ollama_think(&params);
+    let ollama_think = super::ollama_thinking::resolve(&params).await?;
     let prompt_mode =
         crate::services::agent_local::system_prompt_defaults::mode_for_permission(&mode.mode);
     let prompt_tier = ctx.prompt_tier.unwrap_or_else(|| {
@@ -81,7 +102,6 @@ pub(crate) async fn run(
                 )
             }
         };
-    let mut messages = params.messages;
     let prepared_memory = crate::services::agent_local::memory_context::prepare(
         &params.session_id,
         &messages,
@@ -132,7 +152,7 @@ pub(crate) async fn run(
         common::prepare_with_context(&mut messages, prompt_context);
         seed
     };
-    if todo_tools_enabled(&enabled_tool_names) {
+    if super::ollama_setup::todo_tools_enabled(&enabled_tool_names) {
         crate::services::agent_local::tool_todo::append_session_reminder(
             &mut messages,
             &params.session_id,
@@ -140,7 +160,22 @@ pub(crate) async fn run(
         .await;
     }
 
-    agent_loop::run_agent_loop(
+    #[cfg(debug_assertions)]
+    let mut fixture_run = params.fixture_run.take();
+    let live_replay_target = match params.continuation_target.as_ref() {
+        Some(crate::services::reasoning_continuity::contract::ContinuationTarget::Replay(
+            target,
+        )) => Some(target.clone()),
+        _ => None,
+    };
+    #[cfg(debug_assertions)]
+    let fixture_candidate = params
+        .continuation_target
+        .as_ref()
+        .filter(|target| target.is_fixture_candidate())
+        .and_then(|target| target.replay())
+        .cloned();
+    let completed = agent_loop::run_agent_loop(
         &params.on_event,
         &mut messages,
         &params.model,
@@ -150,76 +185,32 @@ pub(crate) async fn run(
         params.session_id.clone(),
         params.request_id.clone(),
         params.parent_message_inbox.clone(),
-        params.cancel,
+        params.cancel.clone(),
         ctx.native,
         ctx.configured,
         &mode.mode,
         plan_mode_active,
         context_usage_seed,
+        params
+            .continuation_target
+            .as_ref()
+            .and_then(crate::services::reasoning_continuity::contract::ContinuationTarget::replay)
+            .is_some(),
+        live_replay_target,
+        #[cfg(debug_assertions)]
+        fixture_candidate,
+        #[cfg(debug_assertions)]
+        fixture_run.as_mut(),
+        journal.as_mut(),
     )
     .await?;
-    Ok(messages)
+    super::api::finish_turn(&params, journal, completed, messages).await
 }
 
-async fn resolve_plan_mode(params: &StreamTaskParams) -> bool {
-    match params.plan_mode {
-        Some(value) => value,
-        None => crate::services::agent_local::tool_plan::is_enabled(&params.session_id).await,
-    }
-}
-
-fn resolve_tools(
-    params: &StreamTaskParams,
-    mode: &StreamMode,
-    settings: &AgentSettings,
-) -> Vec<serde_json::Value> {
-    let defs = definitions_for_mode(mode.is_chat, &params.tools);
-    tool_catalog::filter_tool_definitions(defs, &settings.enabled_optional_tools)
-}
-
-fn definitions_for_mode(is_chat: bool, requested: &[serde_json::Value]) -> Vec<serde_json::Value> {
-    if is_chat {
-        tool_dispatcher::get_chat_tool_definitions()
-    } else if !requested.is_empty() {
-        requested.to_vec()
-    } else {
-        tool_dispatcher::get_tool_definitions()
-    }
-}
-
-fn todo_tools_enabled(enabled_tool_names: &[String]) -> bool {
-    tool_catalog::has_any_tool(
-        enabled_tool_names,
-        &[
-            "todo_write",
-            "todo_history",
-            "todo_pause",
-            "todo_resume",
-            "todo_delete",
-        ],
-    )
-}
-
-fn resolve_ollama_think(params: &StreamTaskParams) -> OllamaThink {
-    let supports_thinking = params
-        .capability_hints
-        .supports_thinking
-        .unwrap_or_else(|| {
-            crate::services::reasoning::provider_model_supports_thinking("ollama", &params.model)
-        });
-    let effective_mode = crate::services::reasoning::normalize_for_model(
-        "ollama",
-        &params.model,
-        params.reasoning_mode.as_deref(),
-        supports_thinking,
-    );
-    crate::services::reasoning::ollama_think(
-        &params.model,
-        effective_mode.as_deref(),
-        params.think && supports_thinking,
-    )
-    .unwrap_or(OllamaThink::Bool(false))
-}
+#[cfg(test)]
+use super::ollama_setup::definitions_for_mode;
+#[cfg(test)]
+use super::ollama_thinking::canonical as canonical_ollama_think;
 
 #[cfg(test)]
 #[path = "ollama_tests.rs"]

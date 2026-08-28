@@ -15,6 +15,7 @@ import type { MissingSessionDirectory } from "@/hooks/use-agent-missing-director
 type ButtonState = "stop" | "confirmStop" | "send" | "hidden";
 
 interface ChatInputActionsRowProps {
+  sessionId?: string;
   modelName: string;
   providerName: string;
   reasoningMode?: string | null;
@@ -43,6 +44,7 @@ interface ChatInputActionsRowProps {
 }
 
 export function ChatInputActionsRow({
+  sessionId,
   modelName,
   providerName,
   reasoningMode,
@@ -97,6 +99,7 @@ export function ChatInputActionsRow({
       {planModeEnabled && <PlanModeBadge onDisable={() => onPlanModeChange?.(false)} />}
       <div className="chat-input-spacer" />
       <ModelControls
+        sessionId={sessionId}
         selectedModel={modelName}
         selectedProvider={providerName}
         onSelect={onModelChange}

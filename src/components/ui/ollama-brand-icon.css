@@ -1,0 +1,5 @@
+/* The supplied dark asset is monochrome black; inversion preserves its exact
+   drawing while giving it the contrast expected on every dark palette. */
+[data-theme="dark"] .obi-icon.themed-icon-dark {
+  filter: invert(1);
+}

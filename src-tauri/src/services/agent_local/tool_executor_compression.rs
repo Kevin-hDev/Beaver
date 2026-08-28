@@ -4,9 +4,11 @@ use std::path::Path;
 use tokio_util::sync::CancellationToken;
 
 pub enum ToolCompressionProvider<'a> {
-    Ollama {
-        model: &'a str,
-    },
+    #[allow(
+        dead_code,
+        reason = "journal commits tool results before compression can resume"
+    )]
+    Ollama { model: &'a str },
     Cloud {
         provider_id: &'a str,
         model: &'a str,
@@ -49,24 +51,22 @@ impl ToolCompression<'_> {
                 provider_id,
                 model,
                 fast_mode,
-            } => {
-                crate::services::llm::compress_hook::try_auto_compress(
-                    self.on_event,
-                    provider_id,
-                    fast_mode,
-                    model,
-                    messages,
-                    self.session_id,
-                    self.request_id,
-                    self.native_context,
-                    self.configured_context,
-                    self.last_context_tokens,
-                    self.working_dir,
-                    self.cancel.clone(),
-                )
-                .await
-                .is_some()
-            }
+            } => crate::services::llm::compress_hook::try_auto_compress(
+                self.on_event,
+                provider_id,
+                fast_mode,
+                model,
+                messages,
+                self.session_id,
+                self.request_id,
+                self.native_context,
+                self.configured_context,
+                self.last_context_tokens,
+                self.working_dir,
+                self.cancel.clone(),
+            )
+            .await
+            .is_some(),
         }
     }
 }

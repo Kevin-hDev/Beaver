@@ -10,6 +10,9 @@ fn tokens_with_expiry(expires_at: i64) -> CodexTokens {
         expires_at,
         refresh_not_before: 0,
         account_hint: Zeroizing::new("acct_123".to_string()),
+        credential_scope: Some(
+            crate::services::api_keys::generate_credential_scope().expect("scope"),
+        ),
     }
 }
 
@@ -79,7 +82,7 @@ fn an_expired_token_ignores_the_refresh_cooldown() {
 
 #[test]
 fn legacy_storage_defaults_the_refresh_cooldown_to_zero() {
-    let stored: super::Stored = serde_json::from_str(
+    let stored = crate::services::api_keys::decode_codex_oauth_record(
         r#"{"access":"a","refresh":"r","expires_at":1,"account_id":"acct_1"}"#,
     )
     .unwrap();
@@ -90,4 +93,44 @@ fn legacy_storage_defaults_the_refresh_cooldown_to_zero() {
 #[test]
 fn storage_failures_use_a_stable_public_error_code() {
     assert_eq!(super::unavailable(), "oauth_reauthentication_required");
+}
+
+#[test]
+fn repaired_legacy_record_rolls_back_when_persistence_fails() {
+    use subtle::ConstantTimeEq;
+
+    let legacy = Zeroizing::new(
+        r#"{"access":"a","refresh":"r","expires_at":9,"account_id":"acct_1"}"#.to_string(),
+    );
+    let mut map = std::collections::HashMap::from([(
+        crate::services::api_keys::prefixed_raw_key(crate::services::api_keys::CODEX_OAUTH_KEY)
+            .unwrap(),
+        legacy.to_string(),
+    )]);
+    let mut tokens = super::load_record(&legacy).unwrap();
+    tokens.credential_scope = Some(tokens.credential_scope_for_refresh().unwrap());
+    let result = super::save_record_with(&tokens, |key, json| {
+        let mut candidate = map.clone();
+        crate::services::api_keys::stage_raw_entries(&mut candidate, &[(key, json)])?;
+        Err("write refused".to_string())
+    });
+    assert!(result.is_err());
+    assert!(bool::from(
+        map.values()
+            .next()
+            .unwrap()
+            .as_bytes()
+            .ct_eq(legacy.as_bytes())
+    ));
+
+    super::save_record_with(&tokens, |key, json| {
+        crate::services::api_keys::stage_raw_entries(&mut map, &[(key, json)])
+    })
+    .unwrap();
+    let repaired = super::load_record(map.values().next().unwrap()).unwrap();
+    assert_eq!(repaired.credential_scope, tokens.credential_scope);
+    assert_eq!(
+        repaired.credential_scope_for_refresh().unwrap(),
+        tokens.credential_scope.unwrap()
+    );
 }

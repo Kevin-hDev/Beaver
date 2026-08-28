@@ -5,6 +5,8 @@ use super::stream_events::AgentEventEmitter;
 use super::subagent_orchestration::ParentSubagentOrchestrator;
 use super::types_ollama::{ChatMessage, OllamaThink, StreamResult};
 use crate::services::compress::realtime_budget::RealtimeBudget;
+use crate::services::reasoning_continuity::contract::{ContinuationUse, ReplayTarget};
+use crate::services::reasoning_continuity::registry::{ActivationState, ReplayRequirement};
 use std::path::Path;
 use tokio_util::sync::CancellationToken;
 
@@ -24,6 +26,13 @@ pub(super) struct OllamaRequestParams<'a> {
     pub turn: usize,
     pub subagents: &'a mut ParentSubagentOrchestrator,
     pub context_usage_seed: ContextUsageSeed,
+    pub capture_reasoning: bool,
+    pub live_replay_target:
+        Option<&'a crate::services::reasoning_continuity::contract::ReplayTarget>,
+    #[cfg(debug_assertions)]
+    pub fixture_candidate:
+        Option<&'a crate::services::reasoning_continuity::contract::ReplayTarget>,
+    pub enable_eager_tools: bool,
 }
 
 pub(super) struct OllamaRequestOutput {
@@ -65,12 +74,28 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
         RealtimeBudget::from_estimate(params.configured_context, report.estimated_tokens);
     let plan_active =
         super::agent_loop_plan::active(params.session_id, params.plan_mode_active).await;
-    let request = super::agent_loop_support::build_request(
+    let mut request = super::agent_loop_support::build_request(
         params.model,
         params.messages,
         params.tools,
         params.think.clone(),
     );
+    request.capture_reasoning = params.capture_reasoning;
+    request.live_replay_target = params
+        .live_replay_target
+        .map(|target| live_target_for_request(target, follows_tool_result(params.messages)))
+        .transpose()?;
+    #[cfg(debug_assertions)]
+    {
+        request.fixture_candidate = params.fixture_candidate.cloned();
+    }
+    if !request.capture_reasoning {
+        crate::services::reasoning_continuity::diagnostics::record_blocked(
+            params.session_id,
+            params.request_id,
+        )
+        .await;
+    }
     super::stream_diagnostics_model::record_model_request(
         params.session_id,
         params.request_id,
@@ -86,14 +111,15 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
     )
     .await;
     let (tool_tx, tool_rx) = tokio::sync::mpsc::unbounded_channel();
-    let mut eager_handle = tokio::spawn(super::eager_dispatch::collect_eager_results(
+    let mut eager_handle = super::agent_loop_thinking_retry::spawn_eager_handle(
         tool_rx,
         params.working_dir.to_path_buf(),
         params.session_id.to_string(),
         params.request_id.to_string(),
         params.chat_mode,
         params.cancel.clone(),
-    ));
+        params.enable_eager_tools,
+    );
     super::stream_diagnostics::mark_phase(
         params.session_id,
         params.request_id,
@@ -108,6 +134,10 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
         tool_tx,
         plan_active,
         realtime_budget.clone(),
+        super::ollama_stream_request::ReplayDiagnosticContext {
+            session_id: params.session_id,
+            request_id: params.request_id,
+        },
     )
     .await?;
     let mut interrupted = outcome.is_interrupted();
@@ -134,6 +164,7 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
             plan_active,
             chat_mode: params.chat_mode,
             realtime_budget,
+            enable_eager_tools: params.enable_eager_tools,
         })
         .await?;
         result = retry.result;
@@ -156,3 +187,33 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
         generation,
     })
 }
+
+fn follows_tool_result(messages: &[ChatMessage]) -> bool {
+    messages
+        .last()
+        .is_some_and(|message| message.role == "tool")
+}
+
+fn live_target_for_request(
+    target: &ReplayTarget,
+    follows_tool_result: bool,
+) -> Result<ReplayTarget, String> {
+    let mut target = target.clone();
+    target.continuation_use = if follows_tool_result {
+        ContinuationUse::ToolContinuation
+    } else {
+        ContinuationUse::UserContinuation
+    };
+    let allowed = crate::services::reasoning_continuity::registry::replay_policy(&target)
+        .is_some_and(|policy| {
+            policy.activation() == ActivationState::LiveValidated
+                && policy.requirement() != ReplayRequirement::Forbidden
+        });
+    allowed
+        .then_some(target)
+        .ok_or_else(|| "reasoning_continuity_invalid".to_string())
+}
+
+#[cfg(test)]
+#[path = "agent_loop_ollama_request_tests.rs"]
+mod tests;

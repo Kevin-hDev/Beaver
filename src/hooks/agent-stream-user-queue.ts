@@ -6,7 +6,10 @@ import type { AgentMessage } from "@/types/agent";
 
 export function queueUserMessage(sessionId: string, message: AgentMessage): boolean {
   const record = getRecord(sessionId);
-  if (!record?.state.isStreaming || record.activeGeneration === null) return false;
+  if (
+    !record?.state.isStreaming
+    || (record.activeGeneration === null && !record.awaitingAdmission)
+  ) return false;
   if (
     record.state.queuedUserMessages.length >= MAX_QUEUED_USER_MESSAGES
     || message.role !== "user"

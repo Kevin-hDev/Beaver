@@ -1,7 +1,7 @@
 .asp-mode-menu {
   position: fixed;
   min-width: 160px;
-  padding: 4px;
+  padding: 4px var(--list-gutter);
   border: 1px solid var(--edge);
   border-radius: var(--radius-md);
   background: var(--popover-bg, var(--shell-opaque));

@@ -4,7 +4,9 @@ import { extname, isAbsolute, resolve, sep } from "node:path";
 
 // Git inventory and text scanning have distinct caps so binary bundles cannot disable the audit.
 export const MAX_GIT_ENTRIES = 10_000;
-export const MAX_SCANNED_FILES = 5_000;
+// The reasoning domain legitimately raised the tracked text corpus above 5,000;
+// 6,000 keeps the audit bounded while restoring headroom for normal growth.
+export const MAX_SCANNED_FILES = 6_000;
 export const MAX_TEXT_FILE_BYTES = 2 * 1024 * 1024;
 
 const TEXT_EXTENSIONS = new Set([

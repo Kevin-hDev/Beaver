@@ -399,7 +399,7 @@ jobs:
         run: |
           node scripts/release/check-brand-artifacts.mjs release "$RELEASE_TAG" release-candidate
           NOTES_FILE="$RUNNER_TEMP/beaver-release-notes.md"
-          node scripts/app-release-notes.mjs "$RELEASE_TAG" > "$NOTES_FILE"
+          node scripts/app-release-notes.mjs "$RELEASE_TAG" --stdout > "$NOTES_FILE"
           printf 'path=%s\n' "$NOTES_FILE" >> "$GITHUB_OUTPUT"
 
       - name: Create or update Beaver public release

@@ -1,10 +1,16 @@
+use super::ollama_stream_filter::emit_filtered;
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::types_ollama::{StreamEvent, StreamResult};
+use crate::services::llm::reasoning_wire::ReasoningCapture;
 use crate::services::stream_utils::ThinkTagFilter;
-use super::ollama_stream_filter::emit_filtered;
 use tokio::sync::mpsc;
 
 pub(crate) use super::ollama_stream_filter::flush_filter;
+
+pub struct ProcessChunkOptions<'a> {
+    pub buffer_content: bool,
+    pub reasoning_capture: Option<&'a mut ReasoningCapture>,
+}
 
 pub fn process_chunk(
     text: &str,
@@ -13,10 +19,14 @@ pub fn process_chunk(
     result: &mut StreamResult,
     tool_tx: Option<&mpsc::UnboundedSender<(usize, String, serde_json::Value)>>,
     think_filter: &mut ThinkTagFilter,
-    buffer_content: bool,
+    mut options: ProcessChunkOptions<'_>,
 ) -> Result<(), String> {
     let chunk: serde_json::Value =
         serde_json::from_str(text).map_err(|e| format!("JSON invalide: {e}"))?;
+    if let Some(reasoning_capture) = options.reasoning_capture.as_deref_mut() {
+        reasoning_capture.observe_json(&chunk);
+        reasoning_capture.observe_done(&chunk);
+    }
 
     result.total_chunks = result.total_chunks.saturating_add(1);
 
@@ -42,8 +52,12 @@ pub fn process_chunk(
             on_event,
             token_count,
             result,
-            buffer_content,
+            options.buffer_content,
         );
+        result.continuation = options
+            .reasoning_capture
+            .as_deref_mut()
+            .and_then(ReasoningCapture::finish_complete);
         return Ok(());
     }
 
@@ -73,7 +87,7 @@ pub fn process_chunk(
                 on_event,
                 token_count,
                 result,
-                buffer_content,
+                options.buffer_content,
             );
         }
     }
@@ -88,6 +102,10 @@ pub fn process_chunk(
             let name = func["name"].as_str().unwrap_or("").to_string();
             let args = func["arguments"].clone();
             let idx = result.tool_calls.len();
+            // Ollama n'émet pas d'ID natif. Le journal et les résultats d'outil
+            // exigent néanmoins une identité stable : elle reste locale et le
+            // wire Ollama la retire avant toute requête sortante.
+            let tool_call_id = uuid::Uuid::new_v4().to_string();
             super::stream_buffer::record_tool_call_generation(
                 on_event,
                 result,
@@ -96,11 +114,15 @@ pub fn process_chunk(
                 token_count,
             );
             result.tool_calls.push((name.clone(), args.clone()));
+            result.tool_call_ids.push(tool_call_id.clone());
+            if let Some(reasoning_capture) = options.reasoning_capture.as_deref_mut() {
+                reasoning_capture.observe_native_tool_link(tool_call_id.clone(), name.clone());
+            }
             let _ = on_event.send(StreamEvent::ToolCall {
                 name: name.clone(),
                 arguments: args.clone(),
                 tool_call_index: idx,
-                tool_call_id: None,
+                tool_call_id: Some(tool_call_id),
                 domain: super::memory_tool::event_domain(&name, &args),
             });
             if let Some(tx) = tool_tx {

@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
 pub(super) const MAX_INDEX_FILE_BYTES: u64 = 4 * 1024 * 1024;
-pub(super) const MAX_INDEX_ENTRIES: usize = 4_096;
+pub(super) const MAX_INDEX_ENTRIES: usize = super::session_limits::MAX_SESSION_FILES;
 pub(super) const MAX_REBUILD_BUFFER_ENTRIES: usize = MAX_INDEX_ENTRIES * 2;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

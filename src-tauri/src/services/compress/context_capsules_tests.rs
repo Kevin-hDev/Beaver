@@ -2,10 +2,12 @@ use super::context_capsules::recent_file_context_message;
 use crate::services::agent_local::types_ollama::{ChatMessage, ToolCallFunction, ToolCallOllama};
 
 fn assistant(path: &str) -> ChatMessage {
-    ChatMessage {
-        role: "assistant".to_string(),
-        content: String::new(),
-        tool_calls: Some(vec![ToolCallOllama {
+    ChatMessage::assistant(
+        String::new(),
+        None,
+        None,
+        None,
+        Some(vec![ToolCallOllama {
             id: None,
             extra_content: None,
             function: ToolCallFunction {
@@ -13,16 +15,11 @@ fn assistant(path: &str) -> ChatMessage {
                 arguments: serde_json::json!({ "path": path }),
             },
         }]),
-        ..Default::default()
-    }
+    )
 }
 
 fn tool(content: &str) -> ChatMessage {
-    ChatMessage {
-        role: "tool".to_string(),
-        content: content.to_string(),
-        ..Default::default()
-    }
+    ChatMessage::tool(content.to_string(), None, None)
 }
 
 #[test]
@@ -46,18 +43,12 @@ fn keeps_three_recent_file_events() {
 #[test]
 fn keeps_recent_non_file_tool_events() {
     let messages = vec![
-        ChatMessage {
-            role: "tool".to_string(),
-            tool_name: Some("bash".to_string()),
-            content: "cargo test ok".to_string(),
-            ..Default::default()
-        },
-        ChatMessage {
-            role: "tool".to_string(),
-            tool_name: Some("web_fetch".to_string()),
-            content: "page summary".to_string(),
-            ..Default::default()
-        },
+        ChatMessage::tool("cargo test ok".to_string(), None, Some("bash".to_string())),
+        ChatMessage::tool(
+            "page summary".to_string(),
+            None,
+            Some("web_fetch".to_string()),
+        ),
     ];
     let msg = recent_file_context_message(&messages, 200_000).unwrap();
     assert!(msg.content.contains("Recent tool context"));

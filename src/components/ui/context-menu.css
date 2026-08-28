@@ -4,7 +4,7 @@
   border: 1px solid var(--edge);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-card);
-  padding: var(--space-xs);
+  padding: var(--space-xs) var(--list-gutter);
   z-index: var(--z-dropdown);
   min-width: 160px;
   backdrop-filter: var(--popover-backdrop-filter, none);

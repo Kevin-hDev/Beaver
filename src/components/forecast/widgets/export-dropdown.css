@@ -8,7 +8,7 @@
   bottom: calc(100% + 6px);
   right: 0;
   min-width: 170px;
-  padding: 4px;
+  padding: 4px var(--list-gutter);
   background: var(--popover-bg, var(--surface-glass));
   backdrop-filter: var(--popover-backdrop-filter, none);
   -webkit-backdrop-filter: var(--popover-backdrop-filter, none);

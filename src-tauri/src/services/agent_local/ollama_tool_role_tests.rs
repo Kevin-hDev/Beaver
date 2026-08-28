@@ -2,27 +2,11 @@ use super::ollama_tool_role::{wrap_tool_results, TOOL_RESPONSE_CLOSE, TOOL_RESPO
 use super::types_ollama::ChatMessage;
 
 fn tool_msg(name: Option<&str>, content: &str) -> ChatMessage {
-    ChatMessage {
-        role: "tool".to_string(),
-        content: content.to_string(),
-        images: None,
-        tool_calls: None,
-        tool_name: name.map(|s| s.to_string()),
-        tool_call_id: None,
-        reasoning_content: None,
-    }
+    ChatMessage::tool(content.to_string(), None, name.map(|s| s.to_string()))
 }
 
 fn user_msg(content: &str) -> ChatMessage {
-    ChatMessage {
-        role: "user".to_string(),
-        content: content.to_string(),
-        images: None,
-        tool_calls: None,
-        tool_name: None,
-        tool_call_id: None,
-        reasoning_content: None,
-    }
+    ChatMessage::user(content.to_string())
 }
 
 #[test]
@@ -49,15 +33,7 @@ fn wraps_tool_message_as_user_with_tool_response() {
 fn leaves_user_and_assistant_messages_untouched() {
     let msgs = vec![
         user_msg("Bonjour"),
-        ChatMessage {
-            role: "assistant".to_string(),
-            content: "Salut".to_string(),
-            images: None,
-            tool_calls: None,
-            tool_name: None,
-            tool_call_id: None,
-            reasoning_content: None,
-        },
+        ChatMessage::assistant("Salut".to_string(), None, None, None, None),
     ];
     let out = wrap_tool_results(&msgs);
     assert_eq!(out[0].role, "user");

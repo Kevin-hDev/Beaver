@@ -213,6 +213,7 @@ pub fn parse_sha256_manifest(
     Err(OllamaErrorCode::OllamaChecksumMismatch)
 }
 
+pub(crate) use super::release_cache::fetch_latest_version_for_update_check;
 pub(crate) use super::release_fetch::{fetch_latest_version, fetch_manifest};
 pub(crate) use super::release_redirect::allowlisted_redirect_policy;
 

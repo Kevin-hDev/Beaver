@@ -20,7 +20,7 @@
  * IME composition is tracked so Enter never fires mid-composition.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { EditorView, keymap, placeholder as cmPlaceholder } from "@codemirror/view";
 import {
   Annotation,
@@ -168,16 +168,13 @@ export function useCodemirrorChat({
     });
   }, [chipConfig, chipComp]);
 
-  return {
-    hostRef,
-    viewRef,
-    composingRef,
-    focus: () => {
-      const view = viewRef.current;
-      if (!view) return;
-      view.focus();
-      const end = view.state.doc.length;
-      view.dispatch({ selection: EditorSelection.cursor(end) });
-    },
-  };
+  const focus = useCallback(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    view.focus();
+    const end = view.state.doc.length;
+    view.dispatch({ selection: EditorSelection.cursor(end) });
+  }, []);
+
+  return { hostRef, viewRef, composingRef, focus };
 }

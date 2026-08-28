@@ -31,6 +31,13 @@ const baseProps = {
   onPullModel: vi.fn(),
   onDownloadApp: vi.fn(),
   onUpdateOllamaBinary: vi.fn(),
+  onDismissUpdate: vi.fn(),
+  onCancelApp: vi.fn(),
+  onCancelOllamaBinary: vi.fn(),
+  onCancelModel: vi.fn(),
+  appCancelling: false,
+  ollamaBinaryCancelling: false,
+  modelCancelling: false,
   anchorLeft: 0,
 };
 
@@ -44,7 +51,7 @@ describe("UpdateNotifications", () => {
     render(
       <UpdateNotifications
         {...baseProps}
-        ollamaUpdates={[{ fullName: "llama3:latest", family: "llama3", tag: "latest" }]}
+        ollamaUpdates={[{ fullName: "llama3:latest", family: "llama3", tag: "latest", latestDigest: "abc123" }]}
       />,
     );
 
@@ -130,5 +137,58 @@ describe("UpdateNotifications", () => {
     );
 
     expect(screen.getByText("updates.forecastDevRuntime · 0322393 → abcdef1")).toBeTruthy();
+  });
+
+  it("masque une version précise avec la croix au survol", () => {
+    const onDismissUpdate = vi.fn();
+    render(
+      <UpdateNotifications
+        {...baseProps}
+        onDismissUpdate={onDismissUpdate}
+        appUpdate={{ version: "0.9.4", assetUrl: "https://example.invalid/app.dmg" }}
+      />,
+    );
+
+    fireEvent.click(screen.getByLabelText("updates.dismiss"));
+    expect(onDismissUpdate).toHaveBeenCalledWith({
+      kind: "app",
+      subject: "beaver",
+      version: "0.9.4",
+    });
+  });
+
+  it("ne permet jamais de masquer les informations Forecast dev", () => {
+    render(
+      <UpdateNotifications
+        {...baseProps}
+        forecastDevUpdates={[{
+          id: "chronos",
+          displayName: "Chronos",
+          kind: "runtime",
+          current: "2.3.1",
+          latest: "2.4.0",
+          sourceUrl: "https://example.invalid/chronos",
+        }]}
+      />,
+    );
+
+    expect(screen.queryByLabelText("updates.dismiss")).toBeNull();
+  });
+
+  it("remplace la croix par Annuler pendant un téléchargement", () => {
+    const onCancelApp = vi.fn();
+    render(
+      <UpdateNotifications
+        {...baseProps}
+        appUpdate={{ version: "0.9.4", assetUrl: "https://example.invalid/app.dmg" }}
+        appDownloading
+        appPercent={42}
+        onCancelApp={onCancelApp}
+      />,
+    );
+
+    expect(screen.queryByLabelText("updates.dismiss")).toBeNull();
+    fireEvent.click(screen.getByText("common.cancel"));
+    expect(onCancelApp).toHaveBeenCalledOnce();
   });
 });

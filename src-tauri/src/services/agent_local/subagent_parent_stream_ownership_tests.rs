@@ -47,14 +47,20 @@ async fn replacement_adopts_existing_children_and_current_stop_cancels_them() {
 
 #[test]
 fn chat_stream_transfers_and_cancels_parent_stream_ownership() {
-    let command = include_str!("../../commands/agent_chat.rs");
+    let command = [
+        include_str!("../../commands/agent_chat.rs"),
+        include_str!("../../commands/agent_chat_run.rs"),
+    ]
+    .concat();
     let admission = include_str!("../../commands/agent_chat_admission.rs");
     let stop_command = include_str!("../../commands/agent_chat_cancel.rs");
     let replacement = include_str!("../../commands/agent_chat_streams.rs");
     let adopt = replacement
         .find("adopt_children_for_parent_stream")
         .expect("replacement adopts children");
-    let insert = replacement.find("map.insert").expect("replacement inserts winner");
+    let insert = replacement
+        .find("map.insert")
+        .expect("replacement inserts winner");
     let cancel = replacement
         .find("cancel_previous(old_stream).await")
         .expect("replacement cancels loser");

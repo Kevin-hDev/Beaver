@@ -4,7 +4,6 @@ import { getVersion, getTauriVersion } from "@tauri-apps/api/app";
 import { open } from "@tauri-apps/plugin-shell";
 import logo from "@/assets/logo.png";
 import { ArrowSquareOut } from "@/components/ui/icons";
-import { cn } from "@/lib/utils";
 import { IS_LINUX, IS_MAC, IS_WINDOWS } from "@/lib/platform";
 import { BRAND } from "@/lib/brand";
 import { SettingsCard } from "./settings-card";
@@ -42,7 +41,7 @@ export function AboutSettings() {
         <SettingsCard>
           <InfoRow label={t("about.version")} value={appVersion || "—"} />
           <InfoRow label={t("about.tauri")} value={tauriVersion || "—"} />
-          <InfoRow label={t("about.os")} value={platform} last />
+          <InfoRow label={t("about.os")} value={platform} />
         </SettingsCard>
 
         <div className="as-links">
@@ -59,9 +58,9 @@ export function AboutSettings() {
   );
 }
 
-function InfoRow({ label, value, last }: { label: string; value: string; last?: boolean }) {
+function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className={cn("as-info-row", !last && "as-info-row-border")}>
+    <div className="as-info-row">
       <span className="as-info-label">
         {label}
       </span>

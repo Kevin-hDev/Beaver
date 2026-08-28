@@ -5,8 +5,8 @@ import i18n from "@/i18n";
 
 type AccessRequest = (
   path: string,
-  onAllowed: () => void | Promise<void>,
-) => Promise<void>;
+  onAllowed: () => boolean | void | Promise<boolean | void>,
+) => Promise<boolean>;
 
 /* Choisir un dossier, en demander l'accès, puis l'enregistrer comme projet :
    autorité unique de cette séquence pour l'écran d'accueil, la conversation et

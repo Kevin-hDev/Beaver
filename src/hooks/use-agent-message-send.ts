@@ -20,9 +20,9 @@ export function useAgentMessageSend(params: Params) {
     sessionId, messages, permissionModeRef, savingRef, runOrDefer, doStream, queueStreamMessage,
   } = params;
   const persist = useCallback(async (payload: AgentSendPayload) => {
-    if (!sessionId) return;
+    if (!sessionId) return false;
     while (savingRef.current) await new Promise((resolve) => setTimeout(resolve, 50));
-    await persistAgentMessage({
+    return persistAgentMessage({
       ...payload,
       sessionId,
       messages,
@@ -39,11 +39,15 @@ export function useAgentMessageSend(params: Params) {
     projectId?: string,
     skills?: AgentSendPayload["skills"],
   ) => {
-    if (!text.trim() && !sentFiles?.length && !skills?.length) return;
+    if (!text.trim() && !sentFiles?.length && !skills?.length) return false;
     const payload = { text, sentFiles, workingDir, projectId, skills };
-    await runOrDefer(workingDir, (resolvedWorkingDir) => persist({
-      ...payload,
-      workingDir: resolvedWorkingDir ?? workingDir,
-    }));
+    let accepted = true;
+    await runOrDefer(workingDir, async (resolvedWorkingDir) => {
+      accepted = await persist({
+        ...payload,
+        workingDir: resolvedWorkingDir ?? workingDir,
+      });
+    });
+    return accepted;
   }, [persist, runOrDefer]);
 }

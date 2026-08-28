@@ -1,98 +1,48 @@
-#![expect(clippy::too_many_arguments, reason = "orchestration boundary keeps related runtime context explicit")]
+#![expect(
+    clippy::too_many_arguments,
+    reason = "orchestration boundary keeps related runtime context explicit"
+)]
 use crate::services::agent_local::session_store;
 use crate::services::agent_local::types_session::AgentSession;
 use crate::services::agent_local::types_tools::ToolResult;
-
-pub(super) enum DelegatePromptPersistence {
-    AlreadyDelivered(String),
-    Queued,
-}
 
 pub(super) fn has_coder_workspace(parent: &AgentSession) -> bool {
     parent.project_id.is_some()
         || !parent.working_dir.is_empty() && std::path::Path::new(&parent.working_dir).is_dir()
 }
 
-impl DelegatePromptPersistence {
-    pub(super) fn initial_prompt(&self) -> Option<&str> {
-        match self {
-            Self::AlreadyDelivered(prompt) => Some(prompt),
-            Self::Queued => None,
-        }
-    }
-}
-
-fn user_message(content: &str) -> super::types_session::AgentMessage {
-    super::types_session::AgentMessage {
-        id: uuid::Uuid::new_v4().to_string(),
-        role: "user".to_string(),
-        content: content.to_string(),
-        thinking: None,
-        tool_calls: None,
-        tool_name: None,
-        tool_activities: None,
-        segments: None,
-        files: Vec::new(),
-        timestamp: chrono::Utc::now(),
-        tokens: 0,
-        work_duration_ms: None,
-        skill_names: None,
-        stream_run_id: None,
-        stream_part: None,
-    }
-}
-
 pub(super) async fn persist_delegate_prompt(
     child_id: &str,
     prompt: &str,
-    is_redeployment: bool,
-) -> Result<DelegatePromptPersistence, ToolResult> {
-    let result = if !is_redeployment {
-        session_store::add_messages(child_id, vec![user_message(prompt)], 0)
-            .await
-            .map(|()| DelegatePromptPersistence::AlreadyDelivered(prompt.to_string()))
-    } else {
-        persist_redeployment_prompt(child_id, prompt).await
-    };
-    if let Ok(persisted) = result {
-        return Ok(persisted);
+) -> Result<(), ToolResult> {
+    super::session_store::validate_session_id(child_id)
+        .map_err(|_| ToolResult::validation("subagent_id_invalid", "Sous-agent introuvable."))?;
+    if prompt.trim().is_empty()
+        || prompt.chars().count() > super::subagent_instruction_delivery::MAX_PROMPT_SIZE
+    {
+        return Err(ToolResult::validation(
+            "subagent_prompt_invalid",
+            "Consigne sous-agent invalide.",
+        ));
     }
-    ::log::error!("[subagent] persistance prompt enfant {child_id}");
-    let _ = super::session_subagents::mark_status(child_id, super::subagent_status::FAILED).await;
-    Err(ToolResult::internal(
-        "subagent_prompt_save_failed",
-        "Erreur interne lors de la création du sous-agent",
-        false,
-    )
-    .with_error_hint("Inspecter le sous-agent avant de relancer la délégation."))
-}
-
-async fn persist_redeployment_prompt(
-    child_id: &str,
-    prompt: &str,
-) -> Result<DelegatePromptPersistence, String> {
-    super::session_store::validate_session_id(child_id)?;
-    let lock = super::session_store::lock_session(child_id).await;
-    let _guard = lock.lock().await;
-    let mut child = super::session_store::get(child_id).await?;
-    super::subagent_instruction_delivery::validate_persisted_queue(
-        &child.subagent_queued_prompts,
-    )?;
-    if let Some(existing) = unanswered_matching_prompt(&child, prompt) {
-        return Ok(DelegatePromptPersistence::AlreadyDelivered(existing));
-    }
-    super::subagent_instruction_delivery::enqueue(&mut child, prompt)
-        .map_err(|result| result.content)?;
-    super::session_store::save(&child).await?;
-    Ok(DelegatePromptPersistence::Queued)
-}
-
-fn unanswered_matching_prompt(child: &AgentSession, prompt: &str) -> Option<String> {
-    let last = child.messages.iter().rev().find(|message| message.role != "system")?;
-    (last.role == "user"
-        && super::subagent_instruction_delivery::normalized_prompt(&last.content)
-            == super::subagent_instruction_delivery::normalized_prompt(prompt))
-    .then(|| last.content.clone())
+    let child = session_store::get(child_id).await.map_err(|_| {
+        ToolResult::internal(
+            "subagent_prompt_save_failed",
+            "Erreur interne lors de la création du sous-agent",
+            false,
+        )
+    })?;
+    super::subagent_instruction_delivery::validate_persisted_queue(&child.subagent_queued_prompts)
+        .map_err(|_| {
+            ToolResult::internal(
+                "subagent_prompt_save_failed",
+                "Erreur interne lors de la création du sous-agent",
+                false,
+            )
+        })?;
+    // L'admission canonique dans `subagent_task_stream::run_inner` est le
+    // propriétaire unique de l'écriture du tour utilisateur.
+    Ok(())
 }
 
 pub(super) async fn prepare_existing_child(
@@ -115,13 +65,24 @@ pub(super) async fn prepare_existing_child(
     let _guard = lock.lock().await;
     let mut child = match session_store::get(child_id).await {
         Ok(session) => session,
-        Err(_) => return Err(ToolResult::not_found("subagent_not_found", "Sous-agent introuvable.")),
+        Err(_) => {
+            return Err(ToolResult::not_found(
+                "subagent_not_found",
+                "Sous-agent introuvable.",
+            ))
+        }
     };
     if child.parent_session_id.as_deref() != Some(parent_session_id) {
-        return Err(ToolResult::not_found("subagent_not_found", "Sous-agent introuvable."));
+        return Err(ToolResult::not_found(
+            "subagent_not_found",
+            "Sous-agent introuvable.",
+        ));
     }
     if child.archived_at.is_some() {
-        return Err(ToolResult::conflict("subagent_archived", "Sous-agent archivé."));
+        return Err(ToolResult::conflict(
+            "subagent_archived",
+            "Sous-agent archivé.",
+        ));
     }
     if super::subagent_live_state::has_pending_work(&child).await {
         return Err(ToolResult::conflict(
@@ -137,16 +98,14 @@ pub(super) async fn prepare_existing_child(
     child.subagent_description = Some(description.to_string());
     child.subagent_color_key = Some(color_key.to_string());
     child.subagent_summary = None;
-    session_store::save(&child)
-        .await
-        .map_err(|_| {
-            ToolResult::internal(
-                "subagent_prepare_save_failed",
-                "Erreur interne lors de la préparation du sous-agent",
-                false,
-            )
-            .with_error_hint("Inspecter le sous-agent avant de reprendre sa préparation.")
-        })?;
+    session_store::save(&child).await.map_err(|_| {
+        ToolResult::internal(
+            "subagent_prepare_save_failed",
+            "Erreur interne lors de la préparation du sous-agent",
+            false,
+        )
+        .with_error_hint("Inspecter le sous-agent avant de reprendre sa préparation.")
+    })?;
     Ok(child)
 }
 
@@ -184,18 +143,17 @@ pub(super) async fn create_child(
     child.subagent_color_key = Some(color_key.to_string());
     child.thinking_enabled = parent.thinking_enabled;
     child.reasoning_mode = parent.reasoning_mode.clone();
+    child.preserve_reasoning = parent.preserve_reasoning;
     child.working_dir = parent.working_dir.clone();
     child.working_dir_managed = parent.working_dir_managed;
-    session_store::save(&child)
-        .await
-        .map_err(|_| {
-            ToolResult::internal(
-                "subagent_create_save_failed",
-                "Erreur interne lors de la création du sous-agent",
-                false,
-            )
-            .with_error_hint("Inspecter les sous-agents existants avant de relancer la création.")
-        })?;
+    session_store::save(&child).await.map_err(|_| {
+        ToolResult::internal(
+            "subagent_create_save_failed",
+            "Erreur interne lors de la création du sous-agent",
+            false,
+        )
+        .with_error_hint("Inspecter les sous-agents existants avant de relancer la création.")
+    })?;
     Ok(child)
 }
 
@@ -210,6 +168,7 @@ pub(super) async fn inherit_parent_context(
     current.provider = parent.provider.clone();
     current.thinking_enabled = parent.thinking_enabled;
     current.reasoning_mode = parent.reasoning_mode.clone();
+    current.preserve_reasoning = parent.preserve_reasoning;
     current.working_dir = parent.working_dir.clone();
     current.working_dir_managed = parent.working_dir_managed;
     session_store::save(&current).await?;

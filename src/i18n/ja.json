@@ -267,6 +267,12 @@
     "selectModel": "モデルを選択",
     "selectModelHint": "モデルを選択",
     "reasoningTitle": "推論",
+    "continuityTitle": "推論の継続性",
+    "continuityOff": "オフ",
+    "continuityLocal": "ローカル",
+    "continuityRemote": "リモート",
+    "continuityOptional": "以前の推論を再利用すると継続性が向上しますが、追加のコンテキストとトークンを消費します。",
+    "continuityRequired": "ツールチェーンを維持するには、この継続性が必要です。",
     "fastMode": "高速",
     "reasoningOff": "オフ",
     "reasoningAuto": "オン",
@@ -861,9 +867,11 @@
       "archivedChats": "アーカイブ済みチャット",
       "advanced": "詳細設定",
       "shortcuts": "キーボードショートカット",
+      "updates": "アップデート",
       "about": "このアプリについて",
       "channels": "チャンネル"
     },
+    "updates": { "title": "アップデート", "description": "Beaver と Ollama の新しいバージョンを確認してインストールします。", "check": "アップデートを確認", "checking": "確認中…", "installedTitle": "インストール済み", "availableTitle": "利用可能なアップデート" },
     "mascot": {
       "previewTitle": "マスコットのプレビュー",
       "beaverName": "Beaver",
@@ -1036,7 +1044,20 @@
       "goForward": "進む",
       "newSession": "新しいセッション",
       "searchDialog": "会話を検索",
-      "togglePreview": "ファイルプレビューパネルの表示/非表示"
+      "togglePreview": "ファイルプレビューパネルの表示/非表示",
+      "openSettings": "設定を開く",
+      "searchConversation": "会話内を検索",
+      "focusComposer": "チャット入力欄にフォーカス",
+      "selectSessionTab": "セッションタブを切り替える",
+      "changePermissions": "権限を変更",
+      "sendMessage": "メッセージを送信",
+      "newLine": "改行を挿入",
+      "stopResponse": "応答を停止",
+      "submitEdit": "編集したメッセージを確定して再実行",
+      "cancelEdit": "メッセージの編集をキャンセル",
+      "zoomIn": "インターフェースを拡大",
+      "zoomOut": "インターフェースを縮小",
+      "resetZoom": "インターフェースのサイズをリセット"
     },
     "confirm": {
       "deleteModel": "確認しますか？"
@@ -1062,6 +1083,12 @@
     "recent": "最近の会話",
     "results": "結果",
     "empty": "会話が見つかりません"
+  },
+  "conversationSearch": {
+    "label": "会話内を検索",
+    "placeholder": "メッセージを検索…",
+    "previous": "前の結果",
+    "next": "次の結果"
   },
   "about": {
     "version": "バージョン",
@@ -1145,6 +1172,7 @@
       "appShuttingDown": "Beaver を終了しています。アプリを再起動してからもう一度お試しください。",
       "appCapacity": "Beaver で処理中の操作が多すぎます。しばらくしてからもう一度お試しください。",
       "serviceShuttingDown": "このサービスを停止しています。しばらくしてからもう一度お試しください。",
+      "queueUnavailable": "現在の応答が完了してからこのメッセージを送信してください。下書きは保持されています。",
       "serviceCapacity": "実行中の操作が多すぎます。しばらくしてからもう一度お試しください。",
       "gatewayShuttingDown": "メッセージチャンネルを停止しています。しばらくしてからもう一度お試しください。",
       "gatewayBusy": "処理中のメッセージが多すぎます。しばらくしてからもう一度お試しください。",
@@ -1171,6 +1199,8 @@
     },
     "streamStartFailed": "ストリームを開始できませんでした。",
     "streamInterrupted": "ストリームが中断されました。",
+    "streamStopping": "現在の応答を停止しています…下書きは保持されます。",
+    "reasoningContinuityInvalid": "推論の継続性に互換性がありません。モデルを変更するか、新しい会話を開始してください。",
     "contextCapacityExceededUnknownWindow": "必須コンテキストが縮小目標を超えています：システムプロンプト {{systemTokens}} トークン + 有効なツール {{toolTokens}} トークン = {{requiredTokens}} トークン。目標は {{maxInputTokens}} トークンです。モデルの実際のコンテキストウィンドウを特定できませんでした。",
     "contextCapacityExceededUnknownWindowWithReports": "必須コンテキストが縮小目標を超えています：システムプロンプト {{systemTokens}} トークン + 必須レポート {{reportTokens}} トークン + 有効なツール {{toolTokens}} トークン = {{requiredTokens}} トークン。目標は {{maxInputTokens}} トークンです。モデルの実際のコンテキストウィンドウを特定できませんでした。",
     "contextCapacityExceeded": "必須コンテキストがモデル容量を超えています：システムプロンプト {{systemTokens}} トークン + 有効なツール {{toolTokens}} トークン = {{requiredTokens}} トークン。コンテキストウィンドウ {{contextWindow}} トークンに対する入力上限は {{maxInputTokens}} トークンです。",
@@ -1230,7 +1260,7 @@
     "forecastDevReview": "確認",
     "releaseNotesTitle": "バージョン {{version}} のリリースノート",
     "showDetails": "詳細を表示",
-    "hideDetails": "詳細を非表示"
+    "hideDetails": "詳細を非表示", "dismiss": "この通知を隠す", "dismissFailed": "通知を隠せませんでした。", "checkFailed": "更新の確認に失敗しました。しばらくしてからもう一度お試しください。", "cancelling": "キャンセル中…", "cancelled": "ダウンロードをキャンセルし、一時ファイルを削除しました。"
   },
   "units": {
     "gb": "GB"

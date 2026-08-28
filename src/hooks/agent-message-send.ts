@@ -8,13 +8,19 @@ import { showToast } from "@/lib/toast-emitter";
 import { admissionErrorMessage } from "@/lib/admission-error";
 import i18n from "@/i18n";
 import type { AgentMessage } from "@/types/agent";
+import type {
+  NewUserTurnInput,
+  SkillReference,
+  TurnStart,
+} from "@/types/agent-turn.generated";
+import type { QueueStreamResult } from "./agent-stream-run-ownership";
 
 export interface AgentSendPayload {
   text: string;
   sentFiles?: PendingChatFile[];
   workingDir?: string;
   projectId?: string;
-  skills?: { name: string; content: string }[];
+  skills?: SkillReference[];
 }
 
 interface PersistAgentMessageOptions extends AgentSendPayload {
@@ -22,69 +28,64 @@ interface PersistAgentMessageOptions extends AgentSendPayload {
   messages: AgentMessage[];
   permissionMode?: string;
   doStream: (
-    llmMessages: AgentMessage[],
+    turn: TurnStart,
     displayMessages: AgentMessage[],
     sessionId: string,
     workingDir?: string,
     baseTokenCount?: number,
     permissionMode?: string,
+    optimisticUserMessageId?: string,
   ) => Promise<void>;
   queueStreamMessage?: (
     sessionId: string,
-    messages: AgentMessage[],
+    input: NewUserTurnInput,
     displayMessage: AgentMessage,
-  ) => Promise<boolean>;
+  ) => Promise<QueueStreamResult>;
 }
 
 export async function persistAgentMessage(options: PersistAgentMessageOptions) {
   if (options.projectId && options.messages.length === 0) {
     try {
-      await invoke("assign_session_project", {
+      await invoke("update_session_project", {
         id: options.sessionId,
         projectId: options.projectId,
       });
     } catch (error) {
       showToast(admissionErrorMessage(error, i18n.t, "errors.sessionSaveFailed"), "error");
-      return;
+      return false;
     }
   }
   const files = pendingFilesToAttachments(options.sentFiles);
-  const skillNames = options.skills?.map((skill) => skill.name);
+  const skillNames = options.skills?.flatMap((skill) => skill.name ? [skill.name] : []);
   const userMessage = createUserMessage(options.text || "", files, skillNames);
   const displayMessages = [...options.messages, userMessage];
-  const queuedLlmMessages: AgentMessage[] = [];
-  for (const skill of options.skills ?? []) {
-    queuedLlmMessages.push({
-      id: `skill-${crypto.randomUUID()}`,
-      role: "user",
-      content: `The user has loaded the following skill. Follow its instructions exactly:\n\n${skill.content}`,
-      files: [],
-      timestamp: new Date().toISOString(),
-    });
-  }
-  queuedLlmMessages.push(userMessage);
-  if (await options.queueStreamMessage?.(
+  const input: NewUserTurnInput = {
+    content: options.text || "",
+    files,
+    skills: options.skills ?? [],
+  };
+  const queueResult = await options.queueStreamMessage?.(
     options.sessionId,
-    queuedLlmMessages,
+    input,
     userMessage,
-  )) return;
-  const llmMessages = [...options.messages, ...queuedLlmMessages];
-  try {
-    await invoke("add_messages_to_session", {
-      id: options.sessionId,
-      messages: [userMessage],
-      tokens: 0,
-    });
-  } catch (error) {
-    showToast(admissionErrorMessage(error, i18n.t, "errors.sessionSaveFailed"), "error");
-    return;
+  );
+  if (queueResult === "queued") return true;
+  if (queueResult === "stopping") {
+    showToast(i18n.t("errors.streamStopping"), "info");
+    return false;
+  }
+  if (queueResult === "unavailable") {
+    showToast(i18n.t("errors.admission.queueUnavailable"), "error");
+    return false;
   }
   await options.doStream(
-    llmMessages,
+    { type: "new", input },
     displayMessages,
     options.sessionId,
     options.workingDir,
     undefined,
     options.permissionMode,
+    userMessage.id,
   );
+  return true;
 }

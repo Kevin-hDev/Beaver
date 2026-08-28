@@ -4,6 +4,8 @@ use std::path::Path;
 
 pub(super) fn test_session(id: &str, name: &str, heartbeat: bool) -> AgentSession {
     AgentSession {
+        schema_version:
+            crate::services::agent_local::session_limits::CURRENT_SESSION_SCHEMA_VERSION,
         id: id.into(),
         name: name.into(),
         created_at: Utc::now(),
@@ -15,6 +17,7 @@ pub(super) fn test_session(id: &str, name: &str, heartbeat: bool) -> AgentSessio
         thinking_enabled: false,
         fast_mode_enabled: false,
         reasoning_mode: None,
+        preserve_reasoning: Default::default(),
         accumulated_tokens: 0,
         context_tokens: None,
         messages: vec![],

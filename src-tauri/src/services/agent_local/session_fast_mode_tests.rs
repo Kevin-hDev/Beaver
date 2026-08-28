@@ -3,6 +3,7 @@ use serde_json::json;
 
 fn legacy_session_json() -> serde_json::Value {
     json!({
+        "schema_version": super::session_limits::CURRENT_SESSION_SCHEMA_VERSION,
         "id": "550e8400-e29b-41d4-a716-446655440000",
         "name": "Legacy",
         "created_at": "2026-08-22T12:00:00Z",
@@ -23,10 +24,9 @@ async fn delete_sessions(ids: &[&str]) {
 
 #[test]
 fn session_fast_mode_legacy_default_and_explicit_serialization() {
-    let legacy = serde_json::from_value::<super::types_session::AgentSession>(
-        legacy_session_json(),
-    )
-    .expect("deserialize legacy session");
+    let legacy =
+        serde_json::from_value::<super::types_session::AgentSession>(legacy_session_json())
+            .expect("deserialize legacy session");
     assert!(!legacy.fast_mode_enabled);
 
     let mut enabled = legacy;
@@ -47,14 +47,10 @@ async fn session_fast_mode_creation_paths_choose_their_own_default() {
     let heartbeat = session_store::create_full("Heartbeat", "llama3", "ollama", true, None)
         .await
         .expect("create heartbeat session");
-    let gateway = session_store::create_gateway(
-        "Gateway",
-        "llama3",
-        "ollama",
-        "telegram:test".to_string(),
-    )
-    .await
-    .expect("create gateway session");
+    let gateway =
+        session_store::create_gateway("Gateway", "llama3", "ollama", "telegram:test".to_string())
+            .await
+            .expect("create gateway session");
     let interactive = session_store::create_with_project_and_fast_mode(
         "Interactive",
         "gpt-5.6",
@@ -69,13 +65,7 @@ async fn session_fast_mode_creation_paths_choose_their_own_default() {
     assert!(!heartbeat.fast_mode_enabled);
     assert!(!gateway.fast_mode_enabled);
     assert!(interactive.fast_mode_enabled);
-    delete_sessions(&[
-        &standard.id,
-        &heartbeat.id,
-        &gateway.id,
-        &interactive.id,
-    ])
-    .await;
+    delete_sessions(&[&standard.id, &heartbeat.id, &gateway.id, &interactive.id]).await;
 }
 
 #[tokio::test]
@@ -118,16 +108,20 @@ async fn session_fast_mode_command_persists_and_lists_confirmed_metadata() {
         .expect("list sessions through command");
 
     assert!(confirmed);
-    assert!(listed
-        .iter()
-        .find(|meta| meta.id == first.id)
-        .expect("first metadata")
-        .fast_mode_enabled);
-    assert!(!listed
-        .iter()
-        .find(|meta| meta.id == second.id)
-        .expect("second metadata")
-        .fast_mode_enabled);
+    assert!(
+        listed
+            .iter()
+            .find(|meta| meta.id == first.id)
+            .expect("first metadata")
+            .fast_mode_enabled
+    );
+    assert!(
+        !listed
+            .iter()
+            .find(|meta| meta.id == second.id)
+            .expect("second metadata")
+            .fast_mode_enabled
+    );
     delete_sessions(&[&first.id, &second.id]).await;
 }
 
@@ -137,18 +131,19 @@ async fn session_fast_mode_failed_writer_keeps_previous_file_value() {
         .await
         .expect("create session");
 
-    let result = session_store_updates::update_fast_mode_with_writer(
-        &session.id,
-        true,
-        |_| async { Err("injected write failure".to_string()) },
-    )
-    .await;
+    let result =
+        session_store_updates::update_fast_mode_with_writer(&session.id, true, |_| async {
+            Err("injected write failure".to_string())
+        })
+        .await;
 
     assert!(result.is_err());
-    assert!(!session_store::get(&session.id)
-        .await
-        .expect("reload previous file")
-        .fast_mode_enabled);
+    assert!(
+        !session_store::get(&session.id)
+            .await
+            .expect("reload previous file")
+            .fast_mode_enabled
+    );
     delete_sessions(&[&session.id]).await;
 }
 
@@ -159,9 +154,11 @@ async fn failed_index_upsert_is_reconciled_from_the_fast_mode_document() {
         .expect("create session");
     session_index::fail_next_upsert_for_session(&session.id).await;
 
-    assert!(crate::commands::set_session_fast_mode(session.id.clone(), true)
-        .await
-        .expect("document save remains authoritative"));
+    assert!(
+        crate::commands::set_session_fast_mode(session.id.clone(), true)
+            .await
+            .expect("document save remains authoritative")
+    );
     let reloaded = crate::commands::get_agent_session(session.id.clone())
         .await
         .expect("reload document");
@@ -170,21 +167,22 @@ async fn failed_index_upsert_is_reconciled_from_the_fast_mode_document() {
         .expect("reconcile derived index");
 
     assert!(reloaded.fast_mode_enabled);
-    assert!(listed
-        .iter()
-        .find(|meta| meta.id == session.id)
-        .expect("reconciled metadata")
-        .fast_mode_enabled);
+    assert!(
+        listed
+            .iter()
+            .find(|meta| meta.id == session.id)
+            .expect("reconciled metadata")
+            .fast_mode_enabled
+    );
     delete_sessions(&[&session.id]).await;
 }
 
 #[tokio::test]
 async fn rebuilt_index_copies_fast_mode_from_the_session_document() {
     let root = tempfile::tempdir().expect("tempdir");
-    let mut session = serde_json::from_value::<super::types_session::AgentSession>(
-        legacy_session_json(),
-    )
-    .expect("deserialize session");
+    let mut session =
+        serde_json::from_value::<super::types_session::AgentSession>(legacy_session_json())
+            .expect("deserialize session");
     session.fast_mode_enabled = true;
     session_store::write_to_dir(root.path(), &session)
         .await

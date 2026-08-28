@@ -267,6 +267,12 @@
     "selectModel": "Scegli un modello",
     "selectModelHint": "Seleziona modello",
     "reasoningTitle": "Ragionamento",
+    "continuityTitle": "Continuità del ragionamento",
+    "continuityOff": "Disattivata",
+    "continuityLocal": "Locale",
+    "continuityRemote": "Remota",
+    "continuityOptional": "Riprodurre il ragionamento precedente migliora la continuità, ma usa contesto e token aggiuntivi.",
+    "continuityRequired": "Questa continuità è necessaria per preservare la catena degli strumenti.",
     "fastMode": "Rapido",
     "reasoningOff": "Disattivato",
     "reasoningAuto": "Attivato",
@@ -861,9 +867,11 @@
       "archivedChats": "Chat archiviate",
       "advanced": "Avanzate",
       "shortcuts": "Scorciatoie da tastiera",
+      "updates": "Aggiornamenti",
       "about": "Informazioni",
       "channels": "Canali"
     },
+    "updates": { "title": "Aggiornamenti", "description": "Cerca e installa nuove versioni di Beaver e Ollama.", "check": "Cerca aggiornamenti", "checking": "Ricerca…", "installedTitle": "Installato", "availableTitle": "Aggiornamenti disponibili" },
     "mascot": {
       "previewTitle": "Anteprima della mascotte",
       "beaverName": "Beaver",
@@ -1036,7 +1044,20 @@
       "goForward": "Avanti",
       "newSession": "Nuova sessione",
       "searchDialog": "Cerca conversazioni",
-      "togglePreview": "Mostra/nascondi pannello anteprima"
+      "togglePreview": "Mostra/nascondi pannello anteprima",
+      "openSettings": "Apri impostazioni",
+      "searchConversation": "Cerca nella conversazione",
+      "focusComposer": "Attiva il campo della chat",
+      "selectSessionTab": "Cambia scheda della sessione",
+      "changePermissions": "Modifica autorizzazioni",
+      "sendMessage": "Invia messaggio",
+      "newLine": "Inserisci una nuova riga",
+      "stopResponse": "Interrompi risposta",
+      "submitEdit": "Conferma e riesegui il messaggio modificato",
+      "cancelEdit": "Annulla modifica del messaggio",
+      "zoomIn": "Aumenta le dimensioni dell’interfaccia",
+      "zoomOut": "Riduci le dimensioni dell’interfaccia",
+      "resetZoom": "Ripristina le dimensioni dell’interfaccia"
     },
     "confirm": {
       "deleteModel": "Confermare?"
@@ -1062,6 +1083,12 @@
     "recent": "Conversazioni recenti",
     "results": "Risultati",
     "empty": "Nessuna conversazione trovata"
+  },
+  "conversationSearch": {
+    "label": "Cerca nella conversazione",
+    "placeholder": "Cerca nei messaggi…",
+    "previous": "Risultato precedente",
+    "next": "Risultato successivo"
   },
   "about": {
     "version": "Versione",
@@ -1145,6 +1172,7 @@
       "appShuttingDown": "Beaver si sta chiudendo. Riprova dopo aver riavviato l’applicazione.",
       "appCapacity": "Beaver sta già gestendo troppe operazioni. Riprova tra poco.",
       "serviceShuttingDown": "Questo servizio si sta arrestando. Riprova tra poco.",
+      "queueUnavailable": "Attendi la fine della risposta in corso prima di inviare questo messaggio. La bozza viene conservata.",
       "serviceCapacity": "Sono già in corso troppe operazioni. Riprova tra poco.",
       "gatewayShuttingDown": "I canali di messaggistica si stanno arrestando. Riprova tra poco.",
       "gatewayBusy": "Sono già in elaborazione troppi messaggi. Riprova tra poco.",
@@ -1171,6 +1199,8 @@
     },
     "streamStartFailed": "Impossibile avviare lo stream.",
     "streamInterrupted": "Lo stream è stato interrotto.",
+    "streamStopping": "Arresto della risposta corrente… La bozza viene conservata.",
+    "reasoningContinuityInvalid": "La continuità del ragionamento non è compatibile. Cambia modello o avvia una nuova conversazione.",
     "contextCapacityExceededUnknownWindow": "Il contesto obbligatorio supera l'obiettivo di riduzione: prompt di sistema {{systemTokens}} token + strumenti attivi {{toolTokens}} token = {{requiredTokens}} token, per un obiettivo di {{maxInputTokens}} token. Non è stato possibile determinare la finestra di contesto reale del modello.",
     "contextCapacityExceededUnknownWindowWithReports": "Il contesto obbligatorio supera l'obiettivo di riduzione: prompt di sistema {{systemTokens}} token + rapporti obbligatori {{reportTokens}} token + strumenti attivi {{toolTokens}} token = {{requiredTokens}} token, per un obiettivo di {{maxInputTokens}} token. Non è stato possibile determinare la finestra di contesto reale del modello.",
     "contextCapacityExceeded": "Il contesto obbligatorio supera la capacità del modello: prompt di sistema {{systemTokens}} token + strumenti attivi {{toolTokens}} token = {{requiredTokens}} token, con un limite di input di {{maxInputTokens}} token in una finestra di {{contextWindow}} token.",
@@ -1230,7 +1260,7 @@
     "forecastDevReview": "Esamina",
     "releaseNotesTitle": "Note della versione {{version}}",
     "showDetails": "Mostra dettagli",
-    "hideDetails": "Nascondi dettagli"
+    "hideDetails": "Nascondi dettagli", "dismiss": "Nascondi questa notifica", "dismissFailed": "Non è stato possibile nascondere la notifica.", "checkFailed": "La ricerca degli aggiornamenti non è riuscita. Riprova tra poco.", "cancelling": "Annullamento…", "cancelled": "Download annullato e file temporanei eliminati."
   },
   "units": {
     "gb": "GB"

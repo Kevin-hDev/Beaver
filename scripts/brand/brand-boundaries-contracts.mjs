@@ -7,10 +7,10 @@ export const EXPECTED_INTERNAL_REFERENCE_COUNTS = Object.freeze({
   "CL-GO-DASH": 3,
   "CL-GO": 38,
   CLGO: 32,
-  "cl-go-dash": 257,
-  clgo: 106,
+  "cl-go-dash": 254,
+  clgo: 113,
   "cl-go": 72,
-  cl_go_dash: 45,
+  cl_go_dash: 46,
 });
 
 export const COMPATIBILITY_CONTRACTS = Object.freeze([
@@ -124,7 +124,7 @@ export const COMPATIBILITY_CONTRACTS = Object.freeze([
   contract("manifest de mascotte", "src/assets/mascot/cl-go-beaver/manifest.json", [
     '"id": "cl-go-beaver"',
   ]),
-  contract("clés OAuth LLM", "src-tauri/src/services/llm_oauth/types.rs", [
+  contract("clés OAuth LLM", "src-tauri/src/services/api_keys_credential_scope_wire.rs", [
     '"_llm_oauth_xai"',
     '"_llm_oauth_kimi"',
   ]),

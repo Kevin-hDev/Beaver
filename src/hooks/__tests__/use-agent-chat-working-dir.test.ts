@@ -2,16 +2,18 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { useAgentChat } from "../use-agent-chat";
-import type { AgentMessage, AgentSession } from "@/types/agent";
+import type { AgentSession } from "@/types/agent";
+import type { TurnStart } from "@/types/agent-turn.generated";
 
 type StartStreamMock = (
   sessionId: string,
   model: string,
   provider: string,
-  messages: AgentMessage[],
+  turn: TurnStart,
   think?: boolean,
   startState?: Record<string, unknown>,
   workingDir?: string,
+  ...rest: unknown[]
 ) => void | Promise<void>;
 
 const startStream = vi.fn<StartStreamMock>();
@@ -28,6 +30,11 @@ const session: AgentSession = {
   fast_mode_enabled: false,
   project_id: "project-1",
   working_dir: "/private/tmp/stale-directory",
+  working_dir_managed: false,
+  plan_mode_enabled: false,
+  plan_workflow_status: "needs_context",
+  is_heartbeat: false,
+  is_gateway: false,
   messages: [
     {
       id: "m1",
@@ -64,21 +71,8 @@ vi.mock("@/lib/toast-emitter", () => ({ showToast: vi.fn() }));
 vi.mock("@/i18n", () => ({ default: { t: (key: string) => key } }));
 
 function expectLastWorkingDir(workingDir: string | undefined) {
-  expect(startStream).toHaveBeenLastCalledWith(
-    "session-1",
-    "llama3",
-    "ollama",
-    expect.any(Array),
-    false,
-    expect.any(Object),
-    workingDir,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    false,
-  );
+  const calls = startStream.mock.calls;
+  expect(calls[calls.length - 1]?.[6]).toBe(workingDir);
 }
 
 describe("useAgentChat working directory", () => {

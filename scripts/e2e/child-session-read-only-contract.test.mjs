@@ -30,6 +30,9 @@ test("every native E2E journey verifies chat_stream child read-only admission", 
     /specs:\s*\[\[childSessionReadOnlySpec,\s*journeySpec\]\]/u,
   );
   assert.doesNotMatch(wdioSource, /const shutdownSpec/u);
-  assert.match(invokeSource, /#\[cfg\(feature = "e2e"\)\][\s\S]*e2e_verify_child_chat_stream_read_only/u);
+  assert.match(
+    invokeSource,
+    /#\[cfg\((?:all\()?feature = "e2e"[\s\S]*e2e_verify_child_chat_stream_read_only/u,
+  );
   assert.match(commandSource, /pub async fn e2e_verify_child_chat_stream_read_only/u);
 });

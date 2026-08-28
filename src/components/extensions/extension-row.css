@@ -2,8 +2,9 @@
   display: flex;
   align-items: center;
   min-height: var(--extensions-row-height);
-  border-bottom: var(--line-thin) solid var(--edge);
   transition: background var(--ease-smooth);
+  border-radius: var(--radius);
+  margin: 0 var(--list-gutter);
 }
 
 .extr-row:hover {

@@ -1,6 +1,6 @@
 use super::ParentSubagentOrchestrator;
-use crate::services::agent_local::{subagent_completion, subagent_registry};
 use crate::services::agent_local::types_ollama::ChatMessage;
+use crate::services::agent_local::{subagent_completion, subagent_registry};
 use tokio_util::sync::CancellationToken;
 
 impl ParentSubagentOrchestrator {
@@ -23,9 +23,6 @@ impl ParentSubagentOrchestrator {
                 self.reports_injected_since_last_request = true;
                 return Ok(true);
             }
-            if self.drain_parent_messages(messages).await > 0 {
-                return Ok(true);
-            }
             let snapshot = subagent_registry::parent_snapshot(&self.parent_session_id).await;
             if snapshot.active_child_ids.is_empty() {
                 if terminal_failed(&snapshot) {
@@ -38,17 +35,25 @@ impl ParentSubagentOrchestrator {
                     }
                     return Err(subagent_completion::SUBAGENT_COMPLETION_ERROR.to_string());
                 }
-                return Ok(self.finish_parent_messages(messages).await);
+                return Ok(false);
             }
             let signal = terminal_signal
                 .as_mut()
                 .ok_or_else(|| subagent_completion::SUBAGENT_COMPLETION_ERROR.to_string())?;
             if let Some(inbox) = &self.parent_message_inbox {
                 let mut input = inbox.subscribe();
+                if *input.borrow() {
+                    return Err("Annulé".to_string());
+                }
                 tokio::select! {
                     _ = cancel.cancelled() => return Err("Annulé".to_string()),
                     changed = signal.changed() => changed.map_err(|_| generic_error())?,
-                    changed = input.changed() => changed.map_err(|_| generic_input_error())?,
+                    changed = input.changed() => {
+                        changed.map_err(|_| generic_input_error())?;
+                        if *input.borrow() {
+                            return Err("Annulé".to_string());
+                        }
+                    },
                 }
             } else {
                 tokio::select! {

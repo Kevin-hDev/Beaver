@@ -5,7 +5,13 @@ const MAX_BULLETS = 6;
 const MAX_BULLET_CHARS = 180;
 const MAX_VERSION_ENTRIES = 50;
 
-const version = (process.argv[2] || process.env.RELEASE_VERSION || "").replace(/^v/, "");
+const cliArguments = process.argv.slice(2);
+const forceStdout = cliArguments[1] === "--stdout";
+if (cliArguments.length > 2 || (cliArguments[1] && !forceStdout)) {
+  throw new Error("Invalid release notes arguments");
+}
+
+const version = (cliArguments[0] || process.env.RELEASE_VERSION || "").replace(/^v/, "");
 if (!version) {
   throw new Error("Missing release version");
 }
@@ -14,7 +20,7 @@ assertChangelogVersion(version);
 const notes = readReleaseNotes(version);
 const body = ["### App release notes", "", ...notes.en.map((line) => `- ${line}`)].join("\n");
 
-if (process.env.GITHUB_OUTPUT) {
+if (process.env.GITHUB_OUTPUT && !forceStdout) {
   fs.appendFileSync(process.env.GITHUB_OUTPUT, `body<<EOF\n${body}\nEOF\n`);
 } else {
   console.log(body);

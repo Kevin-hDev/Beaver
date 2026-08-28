@@ -1,7 +1,6 @@
 /* Champs de saisie — source unique pour toute l'application.
-   Même géométrie et même famille de couleurs que les boutons secondaires, mais
-   sans leur liseré de relief : c'est ce liseré qui annonce qu'on peut cliquer.
-   Un champ se creuse, un bouton ressort.
+   Un champ se creuse, un bouton ressort : même géométrie, relief retourné.
+   Le trait vient de src/styles/relief.css, qui porte les deux.
 
    Ni le survol ni la mise au point ne touchent le contour : un contour qui
    s'éclaire au passage de la souris se lit comme un état actif alors que rien
@@ -10,7 +9,6 @@
 .field {
   height: var(--btn-height);
   padding: 0 var(--chrome-3);
-  border: var(--line-thin) solid var(--edge-strong);
   border-radius: var(--radius-sm);
   background: var(--field-bg);
   color: var(--ink);

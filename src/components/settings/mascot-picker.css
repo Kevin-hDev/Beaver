@@ -26,7 +26,6 @@
 }
 
 [data-theme="dark"] .msp-choice {
-  border-color: transparent;
   background: var(--surface-glass);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);

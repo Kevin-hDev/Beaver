@@ -1,17 +1,48 @@
-use super::replay;
 use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::llm::vision;
 
+#[cfg(test)]
 pub fn convert_messages(messages: &[ChatMessage]) -> (String, Vec<serde_json::Value>) {
     convert_messages_with_tools(messages, &[])
 }
 
+#[cfg(test)]
 pub fn convert_messages_with_tools(
     messages: &[ChatMessage],
     tools: &[serde_json::Value],
 ) -> (String, Vec<serde_json::Value>) {
+    convert_messages_with_tools_and_continuity(messages, tools, None)
+        .expect("a payload without a continuation target cannot be rejected")
+}
+
+pub(crate) fn convert_messages_with_tools_and_continuity(
+    messages: &[ChatMessage],
+    tools: &[serde_json::Value],
+    target: Option<&crate::services::reasoning_continuity::contract::ContinuationTarget>,
+) -> Result<
+    (String, Vec<serde_json::Value>),
+    crate::services::llm::reasoning_wire::replay::ReplayApplyError,
+> {
+    convert_messages_with_tools_and_continuity_evidence(messages, tools, target)
+        .map(|converted| (converted.instructions, converted.input))
+}
+
+pub(crate) struct ConvertedMessages {
+    pub instructions: String,
+    pub input: Vec<serde_json::Value>,
+    pub replayed: Vec<crate::services::llm::reasoning_wire::replay::ReplayEvidence>,
+}
+
+pub(crate) fn convert_messages_with_tools_and_continuity_evidence(
+    messages: &[ChatMessage],
+    tools: &[serde_json::Value],
+    target: Option<&crate::services::reasoning_continuity::contract::ContinuationTarget>,
+) -> Result<ConvertedMessages, crate::services::llm::reasoning_wire::replay::ReplayApplyError> {
+    let target =
+        crate::services::llm::reasoning_wire::responses::target_for_request(messages, target)?;
     let mut instructions = String::new();
     let mut input = Vec::new();
+    let mut replayed = Vec::new();
     let tool_names = crate::services::llm::tool_schema::ToolNameMap::new(tools);
 
     for msg in messages {
@@ -24,9 +55,16 @@ pub fn convert_messages_with_tools(
         }
 
         if msg.role == "assistant" {
-            if let Some(mut items) = replay::items_from_message(msg) {
-                alias_replay_tool_names(&mut items, &tool_names);
+            if let Some(items) = crate::services::llm::reasoning_wire::responses::items_for_message(
+                msg,
+                target.as_ref(),
+            )? {
                 input.extend(items);
+                replayed.push(
+                    crate::services::llm::reasoning_wire::replay::ReplayEvidence::from_message(
+                        msg,
+                    )?,
+                );
                 continue;
             }
             if !msg.content.is_empty() {
@@ -66,22 +104,27 @@ pub fn convert_messages_with_tools(
             input.push(serde_json::json!({"role": msg.role, "content": msg.content}));
         }
     }
-    (instructions, input)
+    Ok(ConvertedMessages {
+        instructions,
+        input,
+        replayed,
+    })
 }
 
-fn alias_replay_tool_names(
-    items: &mut [serde_json::Value],
-    tool_names: &crate::services::llm::tool_schema::ToolNameMap,
-) {
-    for item in items {
-        if item.get("type").and_then(serde_json::Value::as_str) != Some("function_call") {
-            continue;
-        }
-        let Some(name) = item.get("name").and_then(serde_json::Value::as_str) else {
-            continue;
-        };
-        item["name"] = tool_names.wire_name(name).into();
-    }
+/// Les transports Responses (Codex, OpenAI API et xAI OAuth) réutiliseront
+/// cette conversion unique lorsqu'une politique sera validée réel.
+#[allow(
+    dead_code,
+    reason = "Task 19 connects this only after a live-validated Responses policy"
+)]
+pub(crate) fn convert_continuity(
+    messages: &[ChatMessage],
+    approval: &crate::services::llm::reasoning_wire::replay::ReplayApproval<'_>,
+    input: &mut Vec<serde_json::Value>,
+) -> Result<(), crate::services::llm::reasoning_wire::replay::ReplayApplyError> {
+    crate::services::llm::reasoning_wire::replay::apply_responses_continuity(
+        messages, approval, input,
+    )
 }
 
 fn user_message_to_responses(msg: &ChatMessage) -> serde_json::Value {

@@ -272,6 +272,12 @@
     "selectModel": "Choose a model",
     "selectModelHint": "Select model",
     "reasoningTitle": "Reasoning",
+    "continuityTitle": "Reasoning continuity",
+    "continuityOff": "Off",
+    "continuityLocal": "Local",
+    "continuityRemote": "Remote",
+    "continuityOptional": "Replaying previous reasoning improves continuity, but uses extra context and tokens.",
+    "continuityRequired": "This continuity is required to preserve the tool chain.",
     "fastMode": "Fast",
     "reasoningOff": "Off",
     "reasoningAuto": "On",
@@ -866,8 +872,17 @@
       "archivedChats": "Archived chats",
       "advanced": "Advanced",
       "shortcuts": "Keyboard Shortcuts",
+      "updates": "Updates",
       "about": "About",
       "channels": "Channels"
+    },
+    "updates": {
+      "title": "Updates",
+      "description": "Check and install new versions of Beaver and Ollama.",
+      "check": "Check for updates",
+      "checking": "Checking…",
+      "installedTitle": "Installed",
+      "availableTitle": "Available updates"
     },
     "mascot": {
       "previewTitle": "Mascot preview",
@@ -1041,7 +1056,20 @@
       "goForward": "Go forward",
       "newSession": "New session",
       "searchDialog": "Search conversations",
-      "togglePreview": "Toggle file preview panel"
+      "togglePreview": "Toggle file preview panel",
+      "openSettings": "Open settings",
+      "searchConversation": "Search within conversation",
+      "focusComposer": "Focus the chat input",
+      "selectSessionTab": "Switch session tab",
+      "changePermissions": "Change permissions",
+      "sendMessage": "Send message",
+      "newLine": "Insert a new line",
+      "stopResponse": "Stop response",
+      "submitEdit": "Submit and rerun edited message",
+      "cancelEdit": "Cancel message editing",
+      "zoomIn": "Increase interface size",
+      "zoomOut": "Decrease interface size",
+      "resetZoom": "Reset interface size"
     },
     "confirm": {
       "deleteModel": "Confirm?"
@@ -1067,6 +1095,12 @@
     "recent": "Recent conversations",
     "results": "Results",
     "empty": "No conversation found"
+  },
+  "conversationSearch": {
+    "label": "Search within conversation",
+    "placeholder": "Search messages…",
+    "previous": "Previous result",
+    "next": "Next result"
   },
   "about": {
     "version": "Version",
@@ -1150,6 +1184,7 @@
       "appShuttingDown": "Beaver is closing. Try again after restarting the application.",
       "appCapacity": "Beaver is handling too many operations. Try again shortly.",
       "serviceShuttingDown": "This service is stopping. Try again shortly.",
+      "queueUnavailable": "Wait for the current response before sending this message. Your draft is preserved.",
       "serviceCapacity": "Too many operations are already running. Try again shortly.",
       "gatewayShuttingDown": "Messaging channels are stopping. Try again shortly.",
       "gatewayBusy": "Too many messages are already being processed. Try again shortly.",
@@ -1176,6 +1211,8 @@
     },
     "streamStartFailed": "Stream could not start.",
     "streamInterrupted": "Stream was interrupted.",
+    "streamStopping": "Stopping the current response… Your draft is preserved.",
+    "reasoningContinuityInvalid": "Reasoning continuity is incompatible. Change models or start a new conversation.",
     "contextCapacityExceededUnknownWindow": "The required context exceeds the reduction target: system prompt {{systemTokens}} tokens + active tools {{toolTokens}} tokens = {{requiredTokens}} tokens, for a target of {{maxInputTokens}} tokens. The model's actual context window could not be determined.",
     "contextCapacityExceededUnknownWindowWithReports": "The required context exceeds the reduction target: system prompt {{systemTokens}} tokens + required reports {{reportTokens}} tokens + active tools {{toolTokens}} tokens = {{requiredTokens}} tokens, for a target of {{maxInputTokens}} tokens. The model's actual context window could not be determined.",
     "contextCapacityExceeded": "The required context exceeds the model capacity: system prompt {{systemTokens}} tokens + active tools {{toolTokens}} tokens = {{requiredTokens}} tokens, with an input limit of {{maxInputTokens}} tokens in a {{contextWindow}}-token window.",
@@ -1235,7 +1272,12 @@
     "forecastDevReview": "Review",
     "releaseNotesTitle": "Version {{version}} release notes",
     "showDetails": "Show details",
-    "hideDetails": "Hide details"
+    "hideDetails": "Hide details",
+    "dismiss": "Hide this notification",
+    "dismissFailed": "The notification could not be hidden.",
+    "checkFailed": "The update check failed. Try again shortly.",
+    "cancelling": "Cancelling…",
+    "cancelled": "Download cancelled and temporary files removed."
   },
   "units": {
     "gb": "GB"

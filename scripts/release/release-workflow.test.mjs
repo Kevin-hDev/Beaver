@@ -270,6 +270,10 @@ test("publie Beaver uniquement après vérification complète et refuse un état
   assert.match(workflow, /gh release create "\$RELEASE_TAG"/);
   assert.match(workflow, /--verify-tag \\\n\s+--latest/);
   assert.match(workflow, /--title "Beaver \$RELEASE_TAG"/);
+  assert.match(
+    workflow,
+    /app-release-notes\.mjs "\$RELEASE_TAG" --stdout > "\$NOTES_FILE"/,
+  );
   assert.match(workflow, /if \[ "\$STATE" != \$'false\\tfalse' \]/);
   assert.match(workflow, /gh release upload[\s\S]*--clobber/);
   assert.match(workflow, /gh release edit[\s\S]*--draft=false[\s\S]*--prerelease=false[\s\S]*--latest/);

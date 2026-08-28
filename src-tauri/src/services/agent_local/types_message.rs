@@ -10,6 +10,8 @@ use super::{
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AgentMessage {
     pub id: String,
+    #[serde(default = "AgentMessage::new_turn_id")]
+    pub turn_id: String,
     pub role: String,
     pub content: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -18,6 +20,22 @@ pub struct AgentMessage {
     pub tool_calls: Option<Vec<ToolCallRequest>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tool_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_call_id: Option<String>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "super::types_message_continuation::deserialize"
+    )]
+    pub continuation: Option<crate::services::reasoning_continuity::envelope::ReasoningEnvelope>,
+    /// Provenance privée du tour, durable même si aucune enveloppe n'est capturée.
+    /// Elle ne fait volontairement pas partie des contrats IPC visibles.
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "super::types_message_source::deserialize"
+    )]
+    pub replay_source: Option<crate::services::reasoning_continuity::envelope::ReasoningSource>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tool_activities: Option<Vec<ToolActivityRecord>>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -30,6 +48,10 @@ pub struct AgentMessage {
     pub work_duration_ms: Option<u64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub skill_names: Option<Vec<String>>,
+    /// Identifiants privés nécessaires pour recharger les skills côté Rust.
+    /// Ils ne font volontairement pas partie des contrats IPC visibles.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub skill_ids: Option<Vec<String>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stream_run_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -52,78 +74,8 @@ impl AgentMessage {
             _ => Err("Metadonnees de message invalides.".to_string()),
         };
         metadata?;
-        validate_file_changes(self)
+        super::types_message_validation::validate(self)
     }
-}
-
-fn validate_file_changes(message: &AgentMessage) -> Result<(), String> {
-    let records = message.tool_activities.iter().flatten().chain(
-        message
-            .segments
-            .iter()
-            .flatten()
-            .flat_map(|segment| &segment.tools),
-    );
-    for record in records {
-        if record.domain.as_deref().is_some_and(|domain| domain != "memory")
-            || record.resolved_path.as_deref().is_some_and(|path| {
-                path.is_empty() || path.len() > 4_096 || path.contains('\0')
-            })
-        {
-            return Err("Historique d'outil invalide.".to_string());
-        }
-        if record.file_changes.len() > super::tool_file_changes::MAX_FILE_CHANGES {
-            return Err("Historique de fichiers invalide.".to_string());
-        }
-        if record.affected_paths.len() > super::types_tool_result_details::MAX_AFFECTED_PATHS
-            || record.affected_paths.iter().any(|path| {
-                path.is_empty() || path.len() > 4_096 || path.contains('\0')
-            })
-        {
-            return Err("Historique de fichiers invalide.".to_string());
-        }
-        if record.result_meta.as_ref().is_some_and(|meta| {
-            meta.warnings.len() > 16
-                || meta.status.is_error() != record.is_error.unwrap_or(false)
-                || meta.status.is_error() != meta.error.is_some()
-                || meta.warnings.iter().any(|warning| !valid_meta_text(warning))
-                || meta.error.as_ref().is_some_and(|error| {
-                    error.code.is_empty()
-                        || error.code.len() > 100
-                        || !error.code.bytes().all(|byte| {
-                            byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'_'
-                        })
-                        || error.hint.as_ref().is_some_and(|hint| !valid_meta_text(hint))
-                })
-        }) {
-            return Err("Historique de résultat d'outil invalide.".to_string());
-        }
-        let mut total_diff_bytes = 0usize;
-        for change in &record.file_changes {
-            if let Some(diff) = &change.diff {
-                total_diff_bytes = total_diff_bytes.saturating_add(
-                    crate::services::git::diff_preview::preview_content_bytes(diff),
-                );
-            }
-            if change.path.is_empty()
-                || change.path.len() > 4_096
-                || change.path.contains('\0')
-                || change.additions > 2_000
-                || change.deletions > 2_000
-                || total_diff_bytes > super::tool_file_changes::MAX_FILE_CHANGE_DIFF_BYTES
-                || change.diff.as_ref().is_some_and(|diff| {
-                    !crate::services::git::diff_preview::is_bounded_preview(diff)
-                })
-            {
-                return Err("Historique de fichiers invalide.".to_string());
-            }
-        }
-    }
-    Ok(())
-}
-
-fn valid_meta_text(text: &str) -> bool {
-    super::tool_result_contract::is_safe_metadata_text(text, 1_000)
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -179,6 +131,8 @@ pub struct SavedSegment {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ToolCallRequest {
+    #[serde(default = "ToolCallRequest::local_id")]
+    pub id: String,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub extra_content: Option<serde_json::Value>,
     pub function: ToolCallRequestFunction,

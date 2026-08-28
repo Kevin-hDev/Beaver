@@ -1,4 +1,4 @@
-use super::clone_session_build::{build_clone, hidden_context_message};
+use super::clone_session_build::build_clone;
 use super::clone_summary;
 use super::session_store::{self, validate_session_id};
 use super::session_tabs::SessionTabs;
@@ -80,7 +80,10 @@ async fn clone_session_inner(
         return Err("Action impossible".into());
     }
     let root_id = super::clone_roots::resolve_source_root_id(&source).await?;
-    let mut clone = build_clone(&source, message_id, mode.clone(), index, &root_id);
+    let prefix_end = super::conversation_compaction::terminal_prefix_end(&source.messages, index);
+    let mut clone = build_clone(&source, message_id, mode.clone(), prefix_end, &root_id);
+    super::conversation_history_validation::validate(&clone.messages)
+        .map_err(|_| "Action impossible".to_string())?;
     let clone_id = clone.id.clone();
     session_store::save(&clone).await?;
     let tabs =
@@ -118,7 +121,6 @@ async fn complete_summary(
     clone.clone_summary = Some(summary.clone());
     clone.clone_read_files = read_files;
     clone.clone_modified_files = modified_files;
-    clone.messages.push(hidden_context_message(&summary));
     super::session_store_messages::recompute_accumulated_tokens(clone);
     clone.updated_at = Some(Utc::now());
     Ok(())

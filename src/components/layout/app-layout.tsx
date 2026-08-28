@@ -3,7 +3,7 @@ import { ListPanelFooter } from "./list-panel-footer";
 import type { TabId } from "./nav-items";
 import { DragRegion } from "./drag-region";
 import { WindowToolbar } from "./window-toolbar";
-import { useUpdateChecker } from "@/hooks/use-update-checker";
+import { useUpdates } from "@/hooks/update-context";
 import { CHAT_MIN_WIDTH } from "@/hooks/file-preview-storage";
 import { CHAT_COMPACT_MIN_WIDTH } from "@/hooks/agent-panel-layout-solver";
 import { IS_MAC } from "@/lib/platform";
@@ -47,7 +47,7 @@ export function AppLayout({
   const [searchOpen, setSearchOpen] = useState(false);
   const [updatesOpen, setUpdatesOpen] = useState(false);
   const fullscreen = useWindowFullscreen();
-  const updates = useUpdateChecker();
+  const updates = useUpdates();
   const sidebarHiddenOffset = useSidebarHiddenOffset(agentSidebar.sidebarOpen);
 
   const [listWidth, setListWidth] = useState<number | null>(null);
@@ -79,6 +79,7 @@ export function AppLayout({
   const closeSearch = useCallback(() => setSearchOpen(false), []);
   const toggleSearch = useCallback(() => setSearchOpen((o) => !o), []);
   const toggleSidebar = useCallback(() => setAgentSidebar(toggleAgentSidebar), []);
+  const openSettings = useCallback(() => onTabChange("settings"), [onTabChange]);
   const toggleUpdates = useCallback(() => setUpdatesOpen((o) => !o), []);
   const closeUpdates = useCallback(() => setUpdatesOpen(false), []);
   const handleAutoSidebarHide = useCallback(() => setAgentSidebar(autoHideAgentSidebar), []);
@@ -86,7 +87,14 @@ export function AppLayout({
     setAgentSidebar((state) => setAgentPanelsTight(state, tight));
   }, []);
 
-  useAppLayoutShortcuts({ onBack, onForward, onNewSession, toggleSearch, toggleSidebar });
+  useAppLayoutShortcuts({
+    onBack,
+    onForward,
+    onNewSession,
+    onOpenSettings: openSettings,
+    toggleSearch,
+    toggleSidebar,
+  });
   useAgentPanelsAutoSidebar(
     agentSidebar.sidebarOpen,
     agentSidebar.manualReveal,

@@ -112,11 +112,6 @@
   min-width: var(--forecast-evaluation-table-min-width);
   min-height: var(--nav-item-height);
   padding: var(--space-sm) var(--space-md);
-  border-top: 1px solid var(--edge);
-}
-
-.fcwe-row:first-child {
-  border-top: 0;
 }
 
 .fcwe-table-head {
