@@ -14,8 +14,8 @@
     "https://docs.mistral.ai/models/model-cards/ministral-3-3b-25-12"
   ],
   "models": [
-    {"id":"mistral-medium-3-5","aliases":["mistral-medium-3","mistral-medium-latest"],"context_window":262144,"supports_tools":true,"supports_vision":true,"supports_thinking":true},
-    {"id":"mistral-small-2603","aliases":["mistral-small-latest"],"context_window":262144,"supports_tools":true,"supports_vision":true,"supports_thinking":true},
+    {"id":"mistral-medium-3-5","aliases":["mistral-medium-3","mistral-medium-latest"],"context_window":262144,"supports_tools":true,"supports_vision":true,"supports_thinking":true,"reasoning_modes":["off","high"]},
+    {"id":"mistral-small-2603","aliases":["mistral-small-latest"],"context_window":262144,"supports_tools":true,"supports_vision":true,"supports_thinking":true,"reasoning_modes":["off","high"]},
     {"id":"mistral-large-2512","aliases":["mistral-large-latest"],"context_window":262144,"supports_tools":true,"supports_vision":true,"supports_thinking":false},
     {"id":"codestral-2508","aliases":["codestral-latest"],"context_window":131072,"supports_tools":true,"supports_vision":false,"supports_thinking":false},
     {"id":"labs-leanstral-1-5","context_window":262144,"max_output_tokens":131072,"supports_tools":true,"supports_vision":false,"supports_thinking":false},

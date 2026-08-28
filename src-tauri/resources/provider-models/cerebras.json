@@ -7,8 +7,8 @@
     "https://api.cerebras.ai/public/v1/models"
   ],
   "models": [
-    {"id":"zai-glm-4.7","context_window":131072,"max_output_tokens":40960,"supports_tools":true,"supports_vision":false,"supports_thinking":true},
-    {"id":"gemma-4-31b","context_window":131072,"max_output_tokens":40960,"supports_tools":true,"supports_vision":true,"supports_thinking":true},
-    {"id":"gpt-oss-120b","context_window":131072,"max_output_tokens":40960,"supports_tools":true,"supports_vision":false,"supports_thinking":true}
+    {"id":"zai-glm-4.7","context_window":131072,"max_output_tokens":40960,"supports_tools":true,"supports_vision":false,"supports_thinking":true,"reasoning_modes":["off","auto"]},
+    {"id":"gemma-4-31b","context_window":131072,"max_output_tokens":40960,"supports_tools":true,"supports_vision":true,"supports_thinking":true,"reasoning_modes":["off","auto"]},
+    {"id":"gpt-oss-120b","context_window":131072,"max_output_tokens":40960,"supports_tools":true,"supports_vision":false,"supports_thinking":true,"reasoning_modes":["off","low","medium","high"]}
   ]
 }

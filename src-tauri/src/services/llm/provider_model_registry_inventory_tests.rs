@@ -136,3 +136,23 @@ fn openai_fast_mode_is_limited_to_the_verified_api_models() {
         )
     );
 }
+
+#[test]
+fn snapshot_models_do_not_need_the_legacy_name_fallback() {
+    let mut gaps = Vec::new();
+    for source in SOURCES {
+        for model in list(source.provider_id) {
+            let resolved = crate::services::llm::provider_model_lookup::resolve_local_or_legacy(
+                source.provider_id,
+                &model.id,
+            )
+            .unwrap();
+            if resolved.provenance
+                == crate::services::llm::provider_model_lookup::CapabilityProvenance::LegacyNameFallback
+            {
+                gaps.push(format!("{}/{}", source.provider_id, model.id));
+            }
+        }
+    }
+    assert!(gaps.is_empty(), "missing explicit capabilities: {gaps:?}");
+}
