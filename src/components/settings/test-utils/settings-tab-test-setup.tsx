@@ -105,9 +105,9 @@ vi.mock("@tauri-apps/api/core", async () => {
       if (cmd === "list_oauth_provider_statuses") {
         const xaiConnected = globalThis.localStorage?.getItem("test:xai-connected") === "true";
         return Promise.resolve([
-          { id: "openai", display_name: "OpenAI", connected: true, account: "user@example.com", experimental: false },
-          { id: "moonshot", display_name: "Moonshot AI", connected: false, account: null, experimental: true },
-          { id: "xai", display_name: "xAI", connected: xaiConnected, account: null, experimental: false },
+          { id: "openai", display_name: "OpenAI", connection_id: "codex-oauth", usage_url: "https://chatgpt.com/codex/settings/usage", connected: true, account: "user@example.com", experimental: false },
+          { id: "moonshot", display_name: "Moonshot AI", connection_id: "moonshot-oauth", usage_url: "https://www.kimi.com/code/console", connected: false, account: null, experimental: true },
+          { id: "xai", display_name: "xAI", connection_id: "xai-oauth", usage_url: "https://grok.com/?_s=usage", connected: xaiConnected, account: null, experimental: false },
         ]);
       }
       if (cmd === "disconnect_oauth_provider" && args?.providerId === "xai") {
