@@ -50,8 +50,14 @@ pub(in crate::services::llm) async fn consume_stream(
                     measurement.mark_first_event();
                 }
                 let content_start = state.content.len();
+                let thinking_start = state.thinking.chars().count();
                 let tool_start = state.tool_calls.len();
                 state.apply(&value, usage_context)?;
+                if state.thinking.chars().count() > thinking_start {
+                    super::stream_record::thinking(
+                        on_event, &mut result, &state, thinking_start, &mut token_count,
+                    );
+                }
                 if state.content.len() > content_start {
                     let delta = state.content[content_start..].to_string();
                     crate::services::agent_local::stream_buffer::record_content(
@@ -62,7 +68,9 @@ pub(in crate::services::llm) async fn consume_stream(
                     }
                 }
                 for index in tool_start..state.tool_calls.len() {
-                    record_tool(on_event, &mut result, &state, tools, index, &mut token_count);
+                    super::stream_record::tool(
+                        on_event, &mut result, &state, tools, index, &mut token_count,
+                    );
                     if let Some(measurement) = measurement.as_mut() {
                         measurement.mark_first_useful();
                     }
@@ -125,38 +133,6 @@ pub(in crate::services::llm) async fn consume_stream(
     })
 }
 
-fn record_tool(
-    on_event: &crate::services::agent_local::stream_events::AgentEventEmitter,
-    result: &mut crate::services::agent_local::types_ollama::StreamResult,
-    state: &StreamState,
-    tools: &[serde_json::Value],
-    index: usize,
-    token_count: &mut u32,
-) {
-    use crate::services::agent_local::types_ollama::StreamEvent;
-
-    let (wire_name, arguments) = &state.tool_calls[index];
-    let name = crate::services::llm::tool_schema::restore_tool_name(wire_name, tools);
-    let id = state.tool_call_ids[index].clone();
-    crate::services::agent_local::stream_buffer::record_tool_call_generation(
-        on_event,
-        result,
-        &name,
-        arguments,
-        token_count,
-    );
-    let _ = on_event.send(StreamEvent::ToolCall {
-        name: name.clone(),
-        arguments: arguments.clone(),
-        tool_call_index: index,
-        tool_call_id: Some(id.clone()),
-        domain: crate::services::agent_local::memory_tool::event_domain(&name, arguments),
-    });
-    result.tool_calls.push((name, arguments.clone()));
-    result.tool_call_ids.push(id);
-    result.tool_call_extra_content.push(None);
-}
-
 pub(super) async fn consume_silent(
     response: reqwest::Response,
     cancel: tokio_util::sync::CancellationToken,
@@ -194,6 +170,7 @@ pub(super) async fn consume_silent(
     let consumed = state.finish()?;
     Ok(crate::services::agent_local::types_ollama::StreamResult {
         content: consumed.content,
+        thinking: consumed.thinking,
         prompt_tokens: consumed
             .usage
             .as_ref()

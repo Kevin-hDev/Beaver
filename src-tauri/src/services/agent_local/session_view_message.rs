@@ -2,6 +2,9 @@ use crate::models::agent_session_contract::{
     AgentMessageView, FileAttachmentView, SavedSegmentView, ToolActivityRecordView,
     ToolCallFunctionView, ToolCallRequestView, ToolFileChangeView,
 };
+use crate::services::reasoning_continuity::contract::ContractId;
+use crate::services::reasoning_continuity::eligibility::state_matches_contract;
+use crate::services::reasoning_continuity::envelope::ContinuationState;
 
 use super::types_message::{AgentMessage, FileAttachment, SavedSegment, ToolActivityRecord};
 
@@ -11,7 +14,7 @@ pub(crate) fn from_message(message: &AgentMessage) -> Result<AgentMessageView, S
         turn_id: message.turn_id.clone(),
         role: message.role.clone(),
         content: message.content.clone(),
-        thinking: message.thinking.clone(),
+        thinking: visible_thinking(message),
         tool_calls: message.tool_calls.as_ref().map(|calls| {
             calls
                 .iter()
@@ -55,6 +58,32 @@ pub(crate) fn from_message(message: &AgentMessage) -> Result<AgentMessageView, S
         stream_part: message.stream_part.clone(),
         reasoning_replay_status: super::session_view::replay_status(message.continuation.as_ref()),
     })
+}
+
+fn visible_thinking(message: &AgentMessage) -> Option<String> {
+    if message.thinking.is_some() {
+        return message.thinking.clone();
+    }
+    let envelope = message.continuation.as_ref()?;
+    if envelope.contract_id != ContractId::AnthropicMessagesV1
+        || !state_matches_contract(envelope.contract_id, &envelope.continuation)
+        || envelope.validate().is_err()
+    {
+        return None;
+    }
+    let ContinuationState::AnthropicBlocks { blocks } = &envelope.continuation else {
+        return None;
+    };
+    let thinking = blocks
+        .iter()
+        .filter(|block| block.get("type").and_then(serde_json::Value::as_str) == Some("thinking"))
+        .filter_map(|block| {
+            block
+                .get("thinking")
+                .and_then(serde_json::Value::as_str)
+        })
+        .collect::<String>();
+    (!thinking.is_empty()).then_some(thinking)
 }
 
 fn file_view(file: &FileAttachment) -> FileAttachmentView {

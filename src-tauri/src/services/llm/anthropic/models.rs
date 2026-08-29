@@ -89,13 +89,22 @@ fn reasoning_contract(
         return (Vec::new(), None);
     }
     if nested_supported(item, &["capabilities", "thinking", "types", "adaptive"]) {
-        let mut modes = vec!["off".to_string(), "auto".to_string()];
+        let mut modes = if always_adaptive(item) {
+            vec!["auto".to_string()]
+        } else {
+            vec!["off".to_string(), "auto".to_string()]
+        };
         for effort in ["low", "medium", "high", "xhigh", "max"] {
             if nested_supported(item, &["capabilities", "effort", effort]) {
                 modes.push(effort.to_string());
             }
         }
-        return (modes, Some("auto".to_string()));
+        let default = modes
+            .iter()
+            .any(|mode| mode == "high")
+            .then(|| "high".to_string())
+            .or_else(|| Some("auto".to_string()));
+        return (modes, default);
     }
     if nested_supported(item, &["capabilities", "thinking", "types", "enabled"]) {
         return (
@@ -114,6 +123,13 @@ fn reasoning_contract(
                 model.default_reasoning_mode.clone(),
             )
         },
+    )
+}
+
+fn always_adaptive(item: &Value) -> bool {
+    matches!(
+        item.get("id").and_then(Value::as_str),
+        Some("claude-fable-5" | "claude-mythos-5" | "claude-mythos-preview")
     )
 }
 

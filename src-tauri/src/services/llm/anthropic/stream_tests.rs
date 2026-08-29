@@ -241,6 +241,35 @@ async fn network_consumer_persists_exact_completed_anthropic_blocks() {
 }
 
 #[tokio::test]
+async fn network_consumer_exposes_anthropic_thinking_to_the_session() {
+    use crate::services::agent_local::types_ollama::StreamOutcome;
+
+    let response = response(
+        include_str!("../../../../test-fixtures/anthropic/message-tools-stream.sse"),
+        None,
+    )
+    .await;
+    let outcome = super::stream::consume_stream(
+        &crate::services::agent_local::stream_events::AgentEventEmitter::test("session".into()),
+        response,
+        CancellationToken::new(),
+        true,
+        None,
+        &[],
+        context(),
+        None,
+        None,
+    )
+    .await
+    .unwrap();
+    let StreamOutcome::Completed(result) = outcome else {
+        panic!("completed Anthropic stream")
+    };
+
+    assert_eq!(result.thinking, "private");
+}
+
+#[tokio::test]
 async fn network_consumer_interrupts_for_compression_without_persisting_partial_blocks() {
     use crate::services::agent_local::types_ollama::StreamOutcome;
     let body = format!(

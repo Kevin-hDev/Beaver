@@ -52,5 +52,6 @@
   { "path": "src/hooks/use-api-keys.ts", "owner": "provider_ui", "reason": "État de configuration des clés API.", "max_decisions": 1 },
   { "path": "src/hooks/use-favorite-models.ts", "owner": "provider_ui", "reason": "Comparaison d'identité et migration bornée des favoris persistés.", "max_decisions": 2 },
   { "path": "src/hooks/use-provider-usage.ts", "owner": "provider_usage_ui", "reason": "Chargement des métriques pour les sources prises en charge.", "max_decisions": 1 },
-  { "path": "src/lib/model-migrations.ts", "owner": "persistence_migration", "reason": "Migration historique d'identifiants de modèles persistés.", "max_decisions": 1 }
+  { "path": "src/lib/model-migrations.ts", "owner": "persistence_migration", "reason": "Migration historique d'identifiants de modèles persistés.", "max_decisions": 1 },
+  { "path": "src/lib/reasoning-modes.ts", "owner": "provider_ui", "reason": "Le mode Anthropic auto reste nécessaire au transport mais disparaît de l'interface quand le catalogue publie de vrais efforts.", "max_decisions": 1 }
 ]

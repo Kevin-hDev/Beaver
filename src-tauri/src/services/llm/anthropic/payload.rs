@@ -83,7 +83,17 @@ fn apply_thinking(
                 .unwrap_or_else(|| "medium".to_string())
         })
     });
-    let selected = selected.unwrap_or_else(|| "off".to_string());
+    let mut selected = selected.unwrap_or_else(|| "off".to_string());
+    if selected == "off"
+        && contract.as_ref().is_some_and(|value| {
+            value.supports_thinking && !value.reasoning_modes.iter().any(|mode| mode == "off")
+        })
+    {
+        selected = contract
+            .as_ref()
+            .and_then(|value| value.default_reasoning_mode.clone())
+            .ok_or(BuildError::InvalidReasoningMode)?;
+    }
     let mode = crate::services::reasoning_continuity::contract::ReasoningModeId::from_name(Some(
         &selected,
     ))

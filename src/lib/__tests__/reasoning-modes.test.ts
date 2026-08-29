@@ -29,6 +29,19 @@ describe("reasoning modes", () => {
       .toEqual(["low", "max"]);
   });
 
+  it("ne présente pas le mode technique auto comme un niveau d'effort", () => {
+    expect(reasoningModeOptions(model(
+      ["off", "auto", "low", "high"],
+      { provider_id: "anthropic" },
+    )).map((entry) => entry.mode))
+      .toEqual(["off", "low", "high"]);
+  });
+
+  it("ne modifie pas les modes auto des autres providers", () => {
+    expect(reasoningModeOptions(model(["off", "auto", "high"])).map((entry) => entry.mode))
+      .toEqual(["off", "auto", "high"]);
+  });
+
   it("n’invente aucun mode quand la liste est absente ou vide", () => {
     expect(reasoningModeOptions(model([]))).toEqual([]);
     expect(reasoningModeOptions(model([], { reasoning_modes: undefined }))).toEqual([]);

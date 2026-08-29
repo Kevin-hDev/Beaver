@@ -42,7 +42,9 @@ fn apply_qwen(payload: &mut Value, model: &str, reasoning_mode: Option<&str>) {
         });
     payload["enable_thinking"] = live_mode.is_some().into();
     payload["preserve_thinking"] = live_mode.is_some().into();
-    if let Some(effort) = reasoning_mode.filter(|_| live_mode.is_some()) {
+    if let Some(effort) =
+        reasoning_mode.filter(|mode| live_mode.is_some() && !matches!(*mode, "off" | "auto"))
+    {
         payload["reasoning_effort"] = effort.into();
     }
 }

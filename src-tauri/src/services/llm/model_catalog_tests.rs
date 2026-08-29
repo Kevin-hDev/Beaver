@@ -107,6 +107,19 @@ async fn qwen_successful_catalog_without_the_test_model_stays_usable() {
 }
 
 #[tokio::test]
+async fn qwen_hybrid_models_expose_their_real_thinking_switch() {
+    let models =
+        super::model_catalog::enrich_models("qwen", vec![remote_qwen_model("qwen3.7-plus")], false)
+            .await
+            .unwrap();
+
+    assert_eq!(models.len(), 1);
+    assert!(models[0].supports_thinking);
+    assert_eq!(models[0].reasoning_modes, ["off", "auto"]);
+    assert_eq!(models[0].default_reasoning_mode.as_deref(), Some("auto"));
+}
+
+#[tokio::test]
 async fn anthropic_catalog_keeps_the_reasoning_modes_advertised_by_the_model() {
     let models = super::model_catalog::enrich_models(
         "anthropic",

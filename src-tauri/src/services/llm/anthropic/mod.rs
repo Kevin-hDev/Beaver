@@ -15,6 +15,7 @@ mod payload;
     reason = "candidate Messages transport is activated after live validation"
 )]
 mod stream;
+mod stream_record;
 #[allow(
     dead_code,
     reason = "continuation blocks are consumed by the next activation step"

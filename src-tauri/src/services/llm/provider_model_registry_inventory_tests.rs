@@ -20,16 +20,16 @@ fn canonical_inventory_sizes_match_the_official_catalogs() {
         ("moonshot", 15),
         ("zai", 20),
         ("anthropic", 1),
-        ("qwen", 2),
+        ("qwen", 9),
     ] {
         assert_eq!(list(provider).len(), expected, "{provider}");
     }
 }
 
 #[test]
-fn qwen_fallback_exposes_verified_capabilities_for_both_models() {
+fn qwen_fallback_exposes_verified_reasoning_contracts() {
     let models = list("qwen");
-    assert_eq!(models.len(), 2);
+    assert_eq!(models.len(), 9);
     let flash = &models[0];
     assert_eq!(flash.id, "qwen3.8-flash");
     assert_eq!(flash.context_window, 1_000_000);
@@ -49,6 +49,18 @@ fn qwen_fallback_exposes_verified_capabilities_for_both_models() {
     assert!(max.supports_thinking);
     assert_eq!(max.reasoning_modes, ["off", "low", "medium", "xhigh"]);
     assert_eq!(max.default_reasoning_mode.as_deref(), Some("xhigh"));
+
+    let plus = lookup("qwen", "qwen3.7-plus-2026-05-26").unwrap();
+    assert_eq!(plus.reasoning_modes, ["off", "auto"]);
+    assert_eq!(plus.default_reasoning_mode.as_deref(), Some("auto"));
+    assert!(plus.supports_vision);
+
+    let thinking_only = lookup("qwen", "qwen3.7-max-preview").unwrap();
+    assert_eq!(thinking_only.reasoning_modes, ["auto"]);
+    assert_eq!(
+        thinking_only.default_reasoning_mode.as_deref(),
+        Some("auto")
+    );
 }
 
 #[test]

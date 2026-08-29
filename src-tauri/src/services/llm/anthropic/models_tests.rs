@@ -70,6 +70,38 @@ fn successful_catalog_without_haiku_keeps_the_available_model() {
 }
 
 #[test]
+fn always_adaptive_claude_models_do_not_offer_an_invalid_off_mode() {
+    let models = super::models::parse_catalog(&json!({
+        "data": [{
+            "id": "claude-fable-5",
+            "display_name": "Claude Fable 5",
+            "capabilities": {
+                "thinking": {
+                    "supported": true,
+                    "types": {
+                        "adaptive": {"supported": true},
+                        "enabled": {"supported": false}
+                    }
+                },
+                "effort": {
+                    "low": {"supported": true},
+                    "medium": {"supported": true},
+                    "high": {"supported": true},
+                    "xhigh": {"supported": true}
+                }
+            }
+        }]
+    }))
+    .unwrap();
+
+    assert_eq!(
+        models[0].reasoning_modes,
+        ["auto", "low", "medium", "high", "xhigh"]
+    );
+    assert_eq!(models[0].default_reasoning_mode.as_deref(), Some("high"));
+}
+
+#[test]
 fn unknown_zero_limits_do_not_reject_an_available_model() {
     let models = super::models::parse_catalog(&json!({
         "data": [{

@@ -222,6 +222,38 @@ fn catalog_advertised_adaptive_model_uses_the_validated_anthropic_transport() {
 }
 
 #[test]
+fn stale_off_mode_uses_the_default_for_an_always_adaptive_model() {
+    crate::services::llm::runtime_models::replace_provider(
+        "anthropic",
+        &[crate::services::llm::types::ModelInfo {
+            id: "claude-always-adaptive-test".into(),
+            display_name: None,
+            owned_by: Some("anthropic".into()),
+            context_length: Some(1_000_000),
+            max_output_tokens: Some(128_000),
+            supports_tools: true,
+            supports_vision: true,
+            supports_thinking: true,
+            supports_fast_mode: false,
+            reasoning_modes: vec!["auto".into(), "low".into(), "high".into()],
+            default_reasoning_mode: Some("high".into()),
+            context_usage_includes_reasoning: true,
+            is_free: false,
+        }],
+    );
+    let messages = vec![message("user", "Hi")];
+    let payload = super::build_payload(
+        &config_for_model(&messages, &[], "claude-always-adaptive-test", "off"),
+        128_000,
+    )
+    .unwrap()
+    .payload;
+
+    assert_eq!(payload["thinking"]["type"], "adaptive");
+    assert_eq!(payload["output_config"]["effort"], "high");
+}
+
+#[test]
 fn unknown_anthropic_model_cannot_activate_unvalidated_manual_thinking() {
     let messages = vec![message("user", "Hi")];
     let payload = super::build_payload(
