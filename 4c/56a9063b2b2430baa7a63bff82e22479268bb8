@@ -1,11 +1,27 @@
 Review context: UI provider onboarding cleanup plus dead-code pass requested after Anthropic/Qwen implementation.
 
-Scope and decisions:\n- Configured provider cards no longer render a visible Connected row. The existing ValidateIcon, whose path matches grommet-icons--validate.svg, is positioned in green to the right of the provider logo while the card remains vertically centered. The accessible Connected label remains on the icon.\n- Mistral and DeepSeek descriptions were made factual in all seven locales.\n- The dead-code audit removed catalog::find, ToolChoicePolicy::Unsupported, AuthProbePolicy::None, and a stale dead_code exemption.\n- CANDIDATE_ONLY and CatalogPolicy::ConfigurableApi were deliberately retained: they are the documented fail-closed pre-promotion gate for the next provider and are not accidental leftovers.
+Scope and decisions:
+- Configured provider cards no longer render a visible Connected row. The existing ValidateIcon, whose path matches grommet-icons--validate.svg, is positioned in green to the right of the provider logo while the card remains vertically centered. The accessible Connected label remains on the icon.
+- Mistral and DeepSeek descriptions were made factual in all seven locales.
+- The dead-code audit removed catalog::find, ToolChoicePolicy::Unsupported, AuthProbePolicy::None, and a stale dead_code exemption.
+- CANDIDATE_ONLY and CatalogPolicy::ConfigurableApi were deliberately retained: they are the documented fail-closed pre-promotion gate for the next provider and are not accidental leftovers.
 
-Additional root-cause correction:\nA targeted Rust run exposed a real test race: independent Anthropic/Qwen/Codex catalog tests replaced the same process-global runtime registry concurrently. All tests that mutate that registry now share one test-only async lock. Production registry behavior is unchanged.
+Additional root-cause correction:
+A targeted Rust run exposed a real test race: independent Anthropic/Qwen/Codex catalog tests replaced the same process-global runtime registry concurrently. All tests that mutate that registry now share one test-only async lock. Production registry behavior is unchanged.
 
-Red/green evidence:\n- UI targeted tests initially failed in five expected places before implementation; after the change, 19/19 passed.\n- cargo test services::llm:: initially produced 385 passed / 1 failed because claude-opus-5 was overwritten by a concurrent catalog test; the isolated test passed, proving interference. After the shared test lock, the same 386-test subset passed.
+Red/green evidence:
+- UI targeted tests initially failed in five expected places before implementation; after the change, 19/19 passed.
+- cargo test services::llm:: initially produced 385 passed / 1 failed because claude-opus-5 was overwritten by a concurrent catalog test; the isolated test passed, proving interference. After the shared test lock, the same 386-test subset passed.
 
-Full verification:\n- cargo test: 4358 passed, 0 failed, 7 ignored; integration test 1 passed.\n- cargo fmt --check: pass.\n- cargo clippy --all-targets -- -D warnings: pass.\n- npx tsc --noEmit: pass.\n- npm run lint: pass; provider routing boundaries stable at 56 authorized files.\n- npm test: Vitest 488 files / 2633 tests plus build scripts, CI scripts, CEF, E2E runner, extension host, and reasoning fixture validation all passed.\n- git diff --check: pass.\n- graphify update .: graph rebuilt to 39135 nodes / 81482 edges.
+Full verification:
+- cargo test: 4358 passed, 0 failed, 7 ignored; integration test 1 passed.
+- cargo fmt --check: pass.
+- cargo clippy --all-targets -- -D warnings: pass.
+- npx tsc --noEmit: pass.
+- npm run lint: pass; provider routing boundaries stable at 56 authorized files.
+- npm test: Vitest 488 files / 2633 tests plus build scripts, CI scripts, CEF, E2E runner, extension host, and reasoning fixture validation all passed.
+- git diff --check: pass.
+- graphify update .: graph rebuilt to 39135 nodes / 81482 edges.
 
-Visual/runtime boundary:\nNo Beaver or Vite process was running when the visual check was reached. Per the user constraint, the application was not restarted. Dark/light native inspection therefore remains a manual visual check; placement, centering, color-token usage and accessible labeling are covered by automated tests. No provider API call was needed.
+Visual/runtime boundary:
+No Beaver or Vite process was running when the visual check was reached. Per the user constraint, the application was not restarted. Dark/light native inspection therefore remains a manual visual check; placement, centering, color-token usage and accessible labeling are covered by automated tests. No provider API call was needed.
