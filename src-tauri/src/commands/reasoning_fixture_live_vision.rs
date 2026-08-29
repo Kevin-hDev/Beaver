@@ -5,6 +5,7 @@ use serde::Serialize;
 #[derive(Serialize)]
 struct VisionReport {
     schema_version: u8,
+    source: &'static str,
     fixture_id: String,
     route: String,
     model: String,
@@ -125,25 +126,23 @@ async fn write_report(
     let scenarios = vec![
         scenario(
             "image_input_and_response",
-            request_ids[0].clone(),
-            1,
+            &request_ids[..1],
             "vision decision=\"image_accepted\" count=1",
-        ),
+        )?,
         scenario(
             "history_image_continuity",
-            request_ids[1].clone(),
-            1,
+            &request_ids[1..],
             "vision decision=\"history_reused\" new_images=0",
-        ),
+        )?,
         scenario(
             "diagnostics_redacted",
-            request_ids[1].clone(),
-            2,
+            request_ids,
             "vision decision=\"diagnostics_redacted\"",
-        ),
+        )?,
     ];
     let report = VisionReport {
         schema_version: 1,
+        source: "runner",
         fixture_id: fixture_id.clone(),
         route: spec.provider.to_string(),
         model: spec.model.to_string(),
@@ -160,18 +159,18 @@ async fn write_report(
 
 fn scenario(
     requirement: &'static str,
-    run_id: String,
-    request_count: usize,
+    request_ids: &[String],
     decision: &'static str,
-) -> VisionScenario {
-    VisionScenario {
+) -> Result<VisionScenario, String> {
+    let run_id = request_ids.last().cloned().ok_or_else(unavailable)?;
+    Ok(VisionScenario {
         requirement,
         run_id,
         status: "passe",
-        request_count,
+        request_count: request_ids.len(),
         reasoning_event_count: 0,
         decisions: vec![decision],
-    }
+    })
 }
 
 fn unavailable() -> String {

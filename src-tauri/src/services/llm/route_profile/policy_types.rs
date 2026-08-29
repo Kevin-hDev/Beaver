@@ -131,6 +131,7 @@ pub(in crate::services::llm) struct RoutePolicies {
     pub tool_limits: ToolLimitPolicy,
     pub include_usage: bool,
     pub gemma4_thinking_guard: bool,
+    pub dynamic_reasoning_catalog: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

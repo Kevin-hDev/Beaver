@@ -237,6 +237,7 @@ mod vision_tests {
             assert!(bytes.len() <= 64 * 1024);
             let report: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
             assert_eq!(report["fixture_id"], fixture_id);
+            assert_eq!(report["source"], "session_export");
             let scenarios = report["scenarios"].as_array().unwrap();
             for requirement in [
                 "image_input_and_response",

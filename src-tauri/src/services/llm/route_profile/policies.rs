@@ -45,6 +45,7 @@ const fn policy(
         tool_limits,
         include_usage: false,
         gemma4_thinking_guard: false,
+        dynamic_reasoning_catalog: false,
     }
 }
 
@@ -174,6 +175,7 @@ pub(super) const OLLAMA_LOCAL: RoutePolicies = policy(
 );
 pub(super) const ANTHROPIC: RoutePolicies = RoutePolicies {
     tool_choice: ToolChoicePolicy::ProviderNative,
+    dynamic_reasoning_catalog: true,
     ..policy(
         SchemaPolicy::Anthropic,
         CachePolicy::AnthropicAutomatic,
@@ -187,6 +189,7 @@ pub(super) const QWEN: RoutePolicies = RoutePolicies {
     // Qwen exige `include_usage` sur les streams pour alimenter P11 ; les
     // requêtes non streamées n'utilisent pas ce constructeur de payload.
     include_usage: true,
+    dynamic_reasoning_catalog: true,
     ..policy(
         SchemaPolicy::Qwen,
         CachePolicy::QwenContext,

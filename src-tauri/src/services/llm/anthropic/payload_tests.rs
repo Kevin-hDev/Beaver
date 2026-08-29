@@ -189,7 +189,7 @@ fn thinking_modes_are_bounded_by_output_limit() {
 }
 
 #[test]
-fn unvalidated_adaptive_model_is_explicitly_disabled() {
+fn catalog_advertised_adaptive_model_uses_the_validated_anthropic_transport() {
     crate::services::llm::runtime_models::replace_provider(
         "anthropic",
         &[crate::services::llm::types::ModelInfo {
@@ -216,8 +216,8 @@ fn unvalidated_adaptive_model_is_explicitly_disabled() {
     .unwrap()
     .payload;
 
-    assert_eq!(payload["thinking"]["type"], "disabled");
-    assert!(payload.get("output_config").is_none());
+    assert_eq!(payload["thinking"]["type"], "adaptive");
+    assert_eq!(payload["output_config"]["effort"], "xhigh");
     assert!(payload["thinking"].get("budget_tokens").is_none());
 }
 

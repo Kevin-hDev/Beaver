@@ -215,13 +215,15 @@ fn qwen_uses_boolean_thinking_and_top_level_effort_only() {
     assert_eq!(off["preserve_thinking"], false);
     assert!(off.get("reasoning_effort").is_none());
 
-    for effort in ["low", "medium", "xhigh"] {
-        let selected = payload("qwen", "qwen3.8-flash", Some(effort));
-        assert_eq!(selected["enable_thinking"], true);
-        assert_eq!(selected["preserve_thinking"], true);
-        assert_eq!(selected["reasoning_effort"], effort);
-        assert!(selected.get("thinking").is_none());
-        assert!(selected.get("thinking_budget").is_none());
+    for model in ["qwen3.8-flash", "qwen3.8-max"] {
+        for effort in ["low", "medium", "xhigh"] {
+            let selected = payload("qwen", model, Some(effort));
+            assert_eq!(selected["enable_thinking"], true, "{model}/{effort}");
+            assert_eq!(selected["preserve_thinking"], true, "{model}/{effort}");
+            assert_eq!(selected["reasoning_effort"], effort, "{model}/{effort}");
+            assert!(selected.get("thinking").is_none());
+            assert!(selected.get("thinking_budget").is_none());
+        }
     }
 }
 

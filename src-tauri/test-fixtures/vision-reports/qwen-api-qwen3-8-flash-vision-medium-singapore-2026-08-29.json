@@ -1,5 +1,6 @@
 {
   "schema_version": 1,
+  "source": "session_export",
   "fixture_id": "qwen-api-qwen3-8-flash-vision-medium-singapore-2026-08-29",
   "route": "qwen",
   "model": "qwen3.8-flash",

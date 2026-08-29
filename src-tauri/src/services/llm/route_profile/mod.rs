@@ -50,6 +50,10 @@ pub(crate) fn error_policy(provider_id: &str) -> Option<ErrorPolicy> {
     Some(find(provider_id)?.policies.errors)
 }
 
+pub(crate) fn has_dynamic_reasoning_catalog(provider_id: &str) -> bool {
+    find(provider_id).is_some_and(|profile| profile.policies.dynamic_reasoning_catalog)
+}
+
 pub(crate) fn is_local(provider_id: &str) -> bool {
     find(provider_id).is_some_and(|profile| profile.client == ClientSelector::OllamaLocal)
 }

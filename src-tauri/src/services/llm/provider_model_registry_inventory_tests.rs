@@ -27,7 +27,7 @@ fn canonical_inventory_sizes_match_the_official_catalogs() {
 }
 
 #[test]
-fn qwen_fallback_exposes_verified_models_but_only_validated_reasoning() {
+fn qwen_fallback_exposes_verified_capabilities_for_both_models() {
     let models = list("qwen");
     assert_eq!(models.len(), 2);
     let flash = &models[0];
@@ -46,6 +46,9 @@ fn qwen_fallback_exposes_verified_models_but_only_validated_reasoning() {
     assert_eq!(max.max_output_tokens, Some(131_072));
     assert!(max.supports_tools);
     assert!(max.supports_vision);
+    assert!(max.supports_thinking);
+    assert_eq!(max.reasoning_modes, ["off", "low", "medium", "xhigh"]);
+    assert_eq!(max.default_reasoning_mode.as_deref(), Some("xhigh"));
 }
 
 #[test]

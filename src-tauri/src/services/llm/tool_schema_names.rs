@@ -50,7 +50,7 @@ impl ToolNameMap {
             .filter(|candidate| candidate.as_str() != name)
             .any(|candidate| provider_alias(provider_id, candidate) == alias);
         if collision && name != alias {
-            collision_alias(&format!("{provider_id}:{name}"), &alias)
+            collision_alias(name, &alias)
         } else {
             alias
         }

@@ -62,6 +62,7 @@ fn anthropic_profile_is_native_complete_and_public() {
     assert_eq!(profile.wire.images, ImageFormat::AnthropicBlock);
     assert_eq!(profile.availability, policies::AVAILABLE_ANY);
     assert!(matches!(profile.catalog, CatalogPolicy::PublicApi { .. }));
+    assert!(has_dynamic_reasoning_catalog("anthropic"));
     assert!(matches!(
         profile.auth,
         AuthKind::ApiKey {
@@ -92,6 +93,8 @@ fn qwen_profile_is_public_and_uses_its_configured_endpoint() {
         }
     ));
     assert!(matches!(profile.catalog, CatalogPolicy::PublicApi { .. }));
+    assert!(has_dynamic_reasoning_catalog("qwen"));
+    assert!(!has_dynamic_reasoning_catalog("openai"));
     assert!(super::catalog::configurable().any(|candidate| candidate.id == RouteId::Qwen));
     assert!(public_api().any(|candidate| candidate.id == RouteId::Qwen));
 }

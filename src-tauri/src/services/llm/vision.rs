@@ -3,8 +3,8 @@ use serde_json::{json, Value};
 
 pub const MAX_IMAGES_PER_MESSAGE: usize = 8;
 pub const MAX_IMAGE_BYTES: usize = crate::models::agent_turn_contract::MAX_TURN_IMAGE_BYTES;
-// Claude API direct limit: 10 MiB of base64-encoded data per image.
-pub const MAX_ANTHROPIC_IMAGE_BYTES: usize = 10 * 1024 * 1024;
+// Anthropic documente 10 MB pour l'API directe : la borne est décimale.
+pub const MAX_ANTHROPIC_IMAGE_BYTES: usize = 10_000_000;
 pub const IMAGE_TOKEN_ESTIMATE: usize = 1_100;
 
 pub const NOTICE_UNSUPPORTED_MODEL: &str = "vision.unsupportedModel";

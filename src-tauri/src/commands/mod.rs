@@ -13,6 +13,7 @@ mod agent_chat_run_tests;
 mod agent_chat_stream_replacement_tests;
 pub(crate) mod agent_chat_streams;
 pub(crate) mod agent_chat_target;
+mod agent_chat_target_catalog;
 pub(crate) mod agent_chat_task;
 pub(crate) mod agent_chat_turn;
 pub(crate) mod agent_chat_work;

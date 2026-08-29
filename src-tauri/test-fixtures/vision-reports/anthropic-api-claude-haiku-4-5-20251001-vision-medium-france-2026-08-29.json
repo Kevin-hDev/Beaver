@@ -1,5 +1,6 @@
 {
   "schema_version": 1,
+  "source": "session_export",
   "fixture_id": "anthropic-api-claude-haiku-4-5-20251001-vision-medium-france-2026-08-29",
   "route": "anthropic",
   "model": "claude-haiku-4-5-20251001",

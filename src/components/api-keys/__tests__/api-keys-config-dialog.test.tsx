@@ -107,6 +107,26 @@ describe("ApiKeysConfigDialog Qwen connection", () => {
     expect(screen.getByText("apiKeys.dialog.save")).toBeDisabled();
   });
 
+  it("fails closed when reloading an edited Qwen connection rejects", async () => {
+    vi.mocked(invoke).mockRejectedValue(new Error("vault"));
+    const { container } = render(
+      <ApiKeysConfigDialog
+        provider={qwen}
+        alreadyConfigured
+        onClose={vi.fn()}
+        onTest={vi.fn()}
+        onSave={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(container.querySelector('input[type="password"]')!, {
+      target: { value: "sk-new" },
+    });
+
+    expect(await screen.findByText("errors.operationFailed")).toBeInTheDocument();
+    expect(screen.getByText("apiKeys.dialog.save")).toBeDisabled();
+  });
+
   it("disables save when the Qwen workspace is invalid", () => {
     const { container } = render(
       <ApiKeysConfigDialog

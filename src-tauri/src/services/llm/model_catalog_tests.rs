@@ -85,8 +85,8 @@ async fn qwen_remote_catalog_keeps_every_chat_model_returned_by_the_account() {
     assert_eq!(models[0].max_output_tokens, Some(131_072));
     assert!(models[0].supports_tools);
     assert!(models[0].supports_vision);
-    assert!(!models[0].supports_thinking);
-    assert!(models[0].reasoning_modes.is_empty());
+    assert!(models[0].supports_thinking);
+    assert_eq!(models[0].reasoning_modes, ["off", "low", "medium", "xhigh"]);
     assert!(models[1].supports_tools);
     assert!(models[1].supports_vision);
     assert!(models[1].supports_thinking);
@@ -107,7 +107,7 @@ async fn qwen_successful_catalog_without_the_test_model_stays_usable() {
 }
 
 #[tokio::test]
-async fn unvalidated_anthropic_reasoning_is_hidden_without_hiding_the_model() {
+async fn anthropic_catalog_keeps_the_reasoning_modes_advertised_by_the_model() {
     let models = super::model_catalog::enrich_models(
         "anthropic",
         vec![remote_anthropic_model_with_id("claude-sonnet-5")],
@@ -119,7 +119,23 @@ async fn unvalidated_anthropic_reasoning_is_hidden_without_hiding_the_model() {
     assert_eq!(models.len(), 1);
     assert_eq!(models[0].id, "claude-sonnet-5");
     assert!(models[0].supports_vision);
-    assert!(!models[0].supports_thinking);
-    assert!(models[0].reasoning_modes.is_empty());
-    assert!(models[0].default_reasoning_mode.is_none());
+    assert!(models[0].supports_thinking);
+    assert_eq!(models[0].reasoning_modes, ["off", "low"]);
+    assert_eq!(models[0].default_reasoning_mode.as_deref(), Some("low"));
+}
+
+#[tokio::test]
+async fn provider_transport_proofs_do_not_restrict_third_party_catalog_modes() {
+    let mut model = remote_anthropic_model_with_id("gpt-5.5");
+    model.owned_by = Some("openai".into());
+    model.reasoning_modes = vec!["off".into(), "low".into(), "high".into()];
+    model.default_reasoning_mode = Some("high".into());
+
+    let models = super::model_catalog::enrich_models("openai", vec![model], true)
+        .await
+        .unwrap();
+
+    assert!(models[0].supports_thinking);
+    assert_eq!(models[0].reasoning_modes, ["off", "low", "high"]);
+    assert_eq!(models[0].default_reasoning_mode.as_deref(), Some("high"));
 }

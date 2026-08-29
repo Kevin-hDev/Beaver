@@ -92,6 +92,29 @@ fn qwen_search_alias_remains_collision_safe() {
 }
 
 #[test]
+fn non_qwen_collision_round_trips_through_the_provider_aware_path() {
+    let dotted = "my.tool";
+    let underscored = "my_tool";
+    let tools = vec![
+        tool(dotted, json!({"type": "object"})),
+        tool(underscored, json!({"type": "object"})),
+    ];
+    let policy = super::super::route_profile::tool_policy("openai", "gpt-5.5").unwrap();
+    let fixed = tools_for_policy(policy.schema, policy.strict, &tools);
+
+    for (wire, original) in fixed.iter().zip([dotted, underscored]) {
+        assert_eq!(
+            super::restore_tool_name_for_provider(
+                "openai",
+                wire["function"]["name"].as_str().unwrap(),
+                &tools,
+            ),
+            original
+        );
+    }
+}
+
+#[test]
 fn hashes_only_the_overflow_of_names_longer_than_provider_limits() {
     let name = format!("beaver.{}", "very_long_extension_tool_name.".repeat(4));
     let alias = wire_name(&name);

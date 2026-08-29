@@ -4,47 +4,69 @@ use super::contract::{
 use super::eligibility::{decide, BlockReason, ReplayDecision};
 use super::envelope::{CompletionState, ContinuationState, ReasoningEnvelope, ReasoningSource};
 use super::registry::{
-    active_routes, effective_reasoning_modes, replay_policy, replay_policy_from_routes,
+    active_routes, reasoning_mode_is_live, replay_policy, replay_policy_from_routes,
     route_contract, ActivationState, AdapterId, ModelPolicy, ReplayRequirement, RouteContract,
 };
 
 #[test]
-fn reasoning_is_exposed_only_when_both_continuation_paths_are_live() {
-    let modes = |values: &[&str]| {
-        values
-            .iter()
-            .map(|value| (*value).to_string())
-            .collect::<Vec<_>>()
-    };
-
-    assert_eq!(
-        effective_reasoning_modes(
+fn reasoning_transport_accepts_only_modes_advertised_by_the_model_contract() {
+    for mode in [
+        ReasoningModeId::Low,
+        ReasoningModeId::Medium,
+        ReasoningModeId::High,
+    ] {
+        assert!(reasoning_mode_is_live(
             RouteId::Anthropic,
             "claude-haiku-4-5-20251001",
-            &modes(&["off", "low", "medium", "high", "xhigh"]),
-        ),
-        modes(&["off", "low", "medium", "high"])
-    );
-    assert!(effective_reasoning_modes(
+            mode,
+        ));
+    }
+    assert!(!reasoning_mode_is_live(
         RouteId::Anthropic,
-        "claude-sonnet-5",
-        &modes(&["off", "auto", "high"]),
-    )
-    .is_empty());
-    assert_eq!(
-        effective_reasoning_modes(
+        "claude-haiku-4-5-20251001",
+        ReasoningModeId::Xhigh,
+    ));
+    for model in ["qwen3.8-flash", "qwen3.8-max"] {
+        for mode in [
+            ReasoningModeId::Low,
+            ReasoningModeId::Medium,
+            ReasoningModeId::Xhigh,
+        ] {
+            assert!(reasoning_mode_is_live(RouteId::Qwen, model, mode));
+        }
+        assert!(!reasoning_mode_is_live(
             RouteId::Qwen,
-            "qwen3.8-flash",
-            &modes(&["off", "low", "medium", "high", "xhigh"]),
-        ),
-        modes(&["off", "low", "medium", "xhigh"])
-    );
-    assert!(effective_reasoning_modes(
-        RouteId::Qwen,
-        "qwen3.8-max",
-        &modes(&["off", "low", "medium", "xhigh"]),
-    )
-    .is_empty());
+            model,
+            ReasoningModeId::High,
+        ));
+    }
+}
+
+#[test]
+fn qwen_model_capability_reuses_the_live_route_transport_contract() {
+    let policy = replay_policy(&ReplayTarget {
+        route_id: RouteId::Qwen,
+        model_id: "qwen3.8-max".into(),
+        credential_scope: CredentialScope::authenticated("fixture-scope").unwrap(),
+        reasoning_mode: ReasoningModeId::Medium,
+        continuation_use: ContinuationUse::ToolContinuation,
+    })
+    .expect("Qwen transport contract");
+
+    assert_eq!(policy.activation(), ActivationState::LiveValidated);
+    assert_eq!(policy.requirement(), ReplayRequirement::Required);
+}
+
+#[test]
+fn unknown_qwen_model_cannot_borrow_the_route_transport_contract() {
+    assert!(replay_policy(&ReplayTarget {
+        route_id: RouteId::Qwen,
+        model_id: "qwen-unknown".into(),
+        credential_scope: CredentialScope::authenticated("fixture-scope").unwrap(),
+        reasoning_mode: ReasoningModeId::Medium,
+        continuation_use: ContinuationUse::ToolContinuation,
+    })
+    .is_none());
 }
 
 #[test]
