@@ -83,9 +83,10 @@ impl ReasoningCapture {
             | ContractId::XaiResponsesV1
             | ContractId::CodexResponsesV1 => self.append_response_items(event),
             ContractId::CerebrasChatV1 => self.append_chat(event, true),
-            ContractId::DeepSeekChatV1 | ContractId::KimiChatV1 | ContractId::ZaiChatV1 => {
-                self.append_chat(event, false)
-            }
+            ContractId::DeepSeekChatV1
+            | ContractId::KimiChatV1
+            | ContractId::ZaiChatV1
+            | ContractId::QwenChatV1 => self.append_chat(event, false),
         };
         if result.is_err() {
             self.mark_partial();

@@ -9,10 +9,10 @@ use super::registry::{
 };
 
 #[test]
-fn inventory_has_exactly_twelve_contracts_fourteen_closed_routes_and_fourteen_active_routes() {
-    assert_eq!(ContractId::ALL.len(), 12);
-    assert_eq!(RouteId::ALL.len(), 14);
-    assert_eq!(active_routes().len(), 14);
+fn inventory_has_exactly_thirteen_contracts_fifteen_closed_routes_and_fifteen_active_routes() {
+    assert_eq!(ContractId::ALL.len(), 13);
+    assert_eq!(RouteId::ALL.len(), 15);
+    assert_eq!(active_routes().len(), 15);
 }
 
 #[test]
@@ -94,6 +94,7 @@ fn closed_identifiers_serialize_to_the_exact_normative_wire_values() {
         "zai-chat-v1",
         "codex-responses-v1",
         "anthropic-messages-v1",
+        "qwen-chat-v1",
     ];
     let routes = [
         "ollama",
@@ -110,6 +111,7 @@ fn closed_identifiers_serialize_to_the_exact_normative_wire_values() {
         "zai",
         "codex-oauth",
         "anthropic",
+        "qwen",
     ];
 
     for (value, expected) in ContractId::ALL.iter().zip(contracts) {
@@ -146,6 +148,7 @@ fn every_scoped_route_maps_to_the_normative_contract() {
         (RouteId::Zai, ContractId::ZaiChatV1),
         (RouteId::CodexOauth, ContractId::CodexResponsesV1),
         (RouteId::Anthropic, ContractId::AnthropicMessagesV1),
+        (RouteId::Qwen, ContractId::QwenChatV1),
     ];
     assert_eq!(active_routes().len(), expected.len());
     for (route, contract) in expected {
@@ -376,6 +379,59 @@ fn anthropic_exact_modes_are_declared_but_not_live_before_fixture_validation() {
             assert_eq!(policy.requirement(), ReplayRequirement::Required);
             assert_eq!(policy.activation(), ActivationState::Disabled);
         }
+    }
+}
+
+#[test]
+fn qwen_exact_modes_are_declared_but_not_live_before_fixture_validation() {
+    let route = active_routes()
+        .iter()
+        .find(|route| route.route_id == RouteId::Qwen)
+        .unwrap();
+    assert_eq!(route.contract_id, ContractId::QwenChatV1);
+    assert_eq!(route.adapter, AdapterId::ChatReasoning);
+    assert!(route
+        .models
+        .iter()
+        .all(|policy| policy.activation == ActivationState::Disabled));
+
+    let scope = CredentialScope::authenticated("fixture-scope").unwrap();
+    for mode in [
+        ReasoningModeId::Low,
+        ReasoningModeId::Medium,
+        ReasoningModeId::Xhigh,
+    ] {
+        for continuation_use in [
+            ContinuationUse::UserContinuation,
+            ContinuationUse::ToolContinuation,
+        ] {
+            let policy = replay_policy(&ReplayTarget {
+                route_id: RouteId::Qwen,
+                model_id: "qwen3.8-flash".into(),
+                credential_scope: scope.clone(),
+                reasoning_mode: mode,
+                continuation_use,
+            })
+            .unwrap();
+            assert_eq!(policy.requirement(), ReplayRequirement::Required);
+            assert_eq!(policy.activation(), ActivationState::Disabled);
+        }
+    }
+
+    for continuation_use in [
+        ContinuationUse::UserContinuation,
+        ContinuationUse::ToolContinuation,
+    ] {
+        let policy = replay_policy(&ReplayTarget {
+            route_id: RouteId::Qwen,
+            model_id: "qwen3.8-flash".into(),
+            credential_scope: scope.clone(),
+            reasoning_mode: ReasoningModeId::Off,
+            continuation_use,
+        })
+        .unwrap();
+        assert_eq!(policy.requirement(), ReplayRequirement::Forbidden);
+        assert_eq!(policy.activation(), ActivationState::Disabled);
     }
 }
 

@@ -1,5 +1,7 @@
 use super::{ReasoningCapture, ReasoningCaptureContext};
-use crate::services::reasoning_continuity::contract::{CredentialScope, ReasoningModeId, RouteId};
+use crate::services::reasoning_continuity::contract::{
+    ContractId, CredentialScope, ReasoningModeId, RouteId,
+};
 use crate::services::reasoning_continuity::envelope::ContinuationState;
 use crate::services::reasoning_continuity::limits::{
     MAX_ENVELOPE_BYTES, MAX_NATIVE_ITEMS, MAX_TOOL_CALLS,
@@ -95,6 +97,33 @@ fn chat_capture_accepts_the_native_done_marker_without_a_finish_reason() {
         envelope.continuation,
         ContinuationState::ChatReasoning {
             reasoning_content: "opaque".into()
+        }
+    );
+}
+
+#[test]
+fn qwen_capture_concatenates_fragmented_reasoning_exactly_once() {
+    let mut capture = ReasoningCapture::new(ReasoningCaptureContext {
+        route_id: RouteId::Qwen,
+        model_id: "qwen3.8-flash".into(),
+        credential_scope: CredentialScope::authenticated("fixture-scope").unwrap(),
+        reasoning_mode: ReasoningModeId::Xhigh,
+    })
+    .unwrap();
+    capture.observe_json(&json!({
+        "choices": [{"delta": {"reasoning_content": "opaque-"}}]
+    }));
+    capture.observe_json(&json!({
+        "choices": [{"delta": {"reasoning_content": "qwen"}}]
+    }));
+    capture.observe_transport_complete();
+
+    let envelope = capture.finish_complete().expect("complete envelope");
+    assert_eq!(envelope.contract_id, ContractId::QwenChatV1);
+    assert_eq!(
+        envelope.continuation,
+        ContinuationState::ChatReasoning {
+            reasoning_content: "opaque-qwen".into()
         }
     );
 }

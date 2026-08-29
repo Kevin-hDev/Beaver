@@ -161,3 +161,26 @@ fn anthropic_diagnostics_uses_the_native_payload_kind_without_exposing_blocks() 
     assert!(stats.reasoning_chars > 0);
     assert_eq!(stats.assistant_content_chars, 6);
 }
+
+#[test]
+fn qwen_diagnostics_counts_replay_without_exposing_reasoning_text() {
+    let (target, assistant) = fixture(
+        RouteId::Qwen,
+        "qwen3.8-flash",
+        ReasoningModeId::Xhigh,
+        ContractId::QwenChatV1,
+        ContinuationState::ChatReasoning {
+            reasoning_content: "opaque-qwen-secret".into(),
+        },
+    );
+    let stats = chat_payload_stats(
+        "qwen",
+        &[assistant, ChatMessage::user("next".into())],
+        Some(&target),
+    );
+
+    assert_eq!(stats.reasoning_fields, 1);
+    assert_eq!(stats.reasoning_chars, 18);
+    let diagnostic = format!("{stats:?}");
+    assert!(!diagnostic.contains("opaque-qwen-secret"));
+}

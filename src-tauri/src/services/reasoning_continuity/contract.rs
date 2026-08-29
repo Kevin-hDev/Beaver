@@ -22,11 +22,12 @@ pub enum ContractId {
     ZaiChatV1,
     CodexResponsesV1,
     AnthropicMessagesV1,
+    QwenChatV1,
 }
 
 impl ContractId {
     #[cfg(test)]
-    pub const ALL: [Self; 12] = [
+    pub const ALL: [Self; 13] = [
         Self::OllamaNativeV1,
         Self::GeminiCompatV1,
         Self::MistralChunksV1,
@@ -39,6 +40,7 @@ impl ContractId {
         Self::ZaiChatV1,
         Self::CodexResponsesV1,
         Self::AnthropicMessagesV1,
+        Self::QwenChatV1,
     ];
 }
 

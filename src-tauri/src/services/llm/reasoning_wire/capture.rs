@@ -24,11 +24,12 @@ pub(super) fn empty_continuation(contract: ContractId) -> ContinuationState {
         ContractId::OpenAiResponsesV1
         | ContractId::XaiResponsesV1
         | ContractId::CodexResponsesV1 => ContinuationState::ResponsesLocal { items: Vec::new() },
-        ContractId::DeepSeekChatV1 | ContractId::KimiChatV1 | ContractId::ZaiChatV1 => {
-            ContinuationState::ChatReasoning {
-                reasoning_content: String::new(),
-            }
-        }
+        ContractId::DeepSeekChatV1
+        | ContractId::KimiChatV1
+        | ContractId::ZaiChatV1
+        | ContractId::QwenChatV1 => ContinuationState::ChatReasoning {
+            reasoning_content: String::new(),
+        },
     }
 }
 

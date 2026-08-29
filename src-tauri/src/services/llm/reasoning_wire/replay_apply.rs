@@ -51,7 +51,10 @@ pub(crate) fn apply_chat_payload_continuity(
             );
             Ok(())
         }
-        (super::AdapterId::ChatReasoning, ContractId::DeepSeekChatV1 | ContractId::KimiChatV1)
+        (
+            super::AdapterId::ChatReasoning,
+            ContractId::DeepSeekChatV1 | ContractId::KimiChatV1 | ContractId::QwenChatV1,
+        )
         | (super::AdapterId::CerebrasReasoning, ContractId::CerebrasChatV1)
         | (super::AdapterId::GeminiParts, ContractId::GeminiCompatV1)
         | (super::AdapterId::MistralChunks, ContractId::MistralChunksV1) => Ok(()),

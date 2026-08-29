@@ -109,6 +109,9 @@ pub(crate) fn state_matches_contract(contract: ContractId, state: &ContinuationS
             ContractId::ZaiChatV1,
             ContinuationState::ChatReasoning { .. }
         ) | (
+            ContractId::QwenChatV1,
+            ContinuationState::ChatReasoning { .. }
+        ) | (
             ContractId::OpenAiResponsesV1,
             ContinuationState::ResponsesLocal { .. }
         ) | (

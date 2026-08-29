@@ -10,6 +10,7 @@ pub mod limits;
 pub mod registry;
 mod registry_anthropic;
 mod registry_inventory;
+mod registry_qwen;
 mod registry_validated_cloud;
 mod registry_validated_reasoning;
 pub mod tool_links;

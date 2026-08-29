@@ -15,9 +15,10 @@ pub(super) fn fragments(event: &Value, contract: ContractId) -> Vec<&str> {
 fn from_message(message: &Value, contract: ContractId) -> Vec<&str> {
     let keys: &[&str] = match contract {
         ContractId::CerebrasChatV1 => &["reasoning"],
-        ContractId::DeepSeekChatV1 | ContractId::KimiChatV1 | ContractId::ZaiChatV1 => {
-            &["reasoning_content"]
-        }
+        ContractId::DeepSeekChatV1
+        | ContractId::KimiChatV1
+        | ContractId::ZaiChatV1
+        | ContractId::QwenChatV1 => &["reasoning_content"],
         _ => &[],
     };
     keys.iter()
@@ -108,5 +109,6 @@ fn is_chat_route(route: RouteId) -> bool {
             | RouteId::Moonshot
             | RouteId::MoonshotOauth
             | RouteId::Zai
+            | RouteId::Qwen
     )
 }
