@@ -4,10 +4,9 @@ use crate::services::llm::provider_model_registry::{self, ProviderModelConfig};
 use crate::services::llm::types::{LlmError, ModelInfo};
 
 const PROVIDER_ID: &str = "anthropic";
-const VALIDATED_MODEL_ID: &str = "claude-haiku-4-5-20251001";
 const MAX_MODELS: usize = 500;
 
-pub(super) fn parse_and_intersect(body: &Value) -> Result<Vec<ModelInfo>, LlmError> {
+pub(super) fn parse_catalog(body: &Value) -> Result<Vec<ModelInfo>, LlmError> {
     let data = body
         .get("data")
         .and_then(Value::as_array)
@@ -24,10 +23,7 @@ pub(super) fn parse_and_intersect(body: &Value) -> Result<Vec<ModelInfo>, LlmErr
             return Err(invalid_catalog("model_id"));
         }
     }
-    data.iter()
-        .filter(|item| item.get("id").and_then(Value::as_str) == Some(VALIDATED_MODEL_ID))
-        .map(merge_remote_model)
-        .collect()
+    data.iter().map(merge_remote_model).collect()
 }
 
 pub(super) fn resolve_catalog(
@@ -46,26 +42,82 @@ pub(super) fn resolve_catalog(
 }
 
 fn merge_remote_model(item: &Value) -> Result<ModelInfo, LlmError> {
-    let local = provider_model_registry::lookup(PROVIDER_ID, VALIDATED_MODEL_ID)
-        .ok_or_else(|| invalid_catalog("missing_embedded_model"))?;
+    let id = item
+        .get("id")
+        .and_then(Value::as_str)
+        .ok_or_else(|| invalid_catalog("model_id"))?;
+    let local = provider_model_registry::lookup(PROVIDER_ID, id);
+    let supports_thinking = capability(item, &["thinking"])
+        .or_else(|| local.as_ref().map(|model| model.supports_thinking))
+        .unwrap_or(false);
+    let (reasoning_modes, default_reasoning_mode) =
+        reasoning_contract(item, local.as_ref(), supports_thinking);
     Ok(ModelInfo {
-        id: VALIDATED_MODEL_ID.to_string(),
-        display_name: item
-            .get("display_name")
-            .and_then(Value::as_str)
-            .map(str::to_owned),
+        id: id.to_string(),
+        display_name: optional_text(item, "display_name")?,
         owned_by: Some(PROVIDER_ID.to_string()),
-        context_length: optional_u32(item, "max_input_tokens")?.or(Some(local.context_window)),
-        max_output_tokens: optional_u32(item, "max_tokens")?.or(local.max_output_tokens),
-        supports_tools: capability(item, &["tools", "tool_use"]).unwrap_or(local.supports_tools),
-        supports_vision: capability(item, &["image_input"]).unwrap_or(local.supports_vision),
-        supports_thinking: capability(item, &["thinking"]).unwrap_or(local.supports_thinking),
+        context_length: optional_u32(item, "max_input_tokens")?
+            .or_else(|| local.as_ref().map(|model| model.context_window)),
+        max_output_tokens: optional_u32(item, "max_tokens")?
+            .or_else(|| local.as_ref().and_then(|model| model.max_output_tokens)),
+        supports_tools: capability(item, &["tools", "tool_use"])
+            .or_else(|| local.as_ref().map(|model| model.supports_tools))
+            .unwrap_or(true),
+        supports_vision: capability(item, &["image_input"])
+            .or_else(|| local.as_ref().map(|model| model.supports_vision))
+            .unwrap_or(true),
+        supports_thinking,
         supports_fast_mode: false,
-        reasoning_modes: local.reasoning_modes,
-        default_reasoning_mode: local.default_reasoning_mode,
+        reasoning_modes,
+        default_reasoning_mode,
         context_usage_includes_reasoning: true,
-        is_free: local.is_free,
+        is_free: local.as_ref().is_some_and(|model| model.is_free),
     })
+}
+
+fn reasoning_contract(
+    item: &Value,
+    local: Option<&ProviderModelConfig>,
+    supports_thinking: bool,
+) -> (Vec<String>, Option<String>) {
+    if !supports_thinking {
+        return (Vec::new(), None);
+    }
+    if nested_supported(item, &["capabilities", "thinking", "types", "adaptive"]) {
+        let mut modes = vec!["auto".to_string()];
+        for effort in ["low", "medium", "high", "xhigh", "max"] {
+            if nested_supported(item, &["capabilities", "effort", effort]) {
+                modes.push(effort.to_string());
+            }
+        }
+        return (modes, Some("auto".to_string()));
+    }
+    if nested_supported(item, &["capabilities", "thinking", "types", "enabled"]) {
+        return (
+            ["off", "low", "medium", "high"]
+                .into_iter()
+                .map(str::to_string)
+                .collect(),
+            Some("medium".to_string()),
+        );
+    }
+    local.map_or_else(
+        || (Vec::new(), None),
+        |model| {
+            (
+                model.reasoning_modes.clone(),
+                model.default_reasoning_mode.clone(),
+            )
+        },
+    )
+}
+
+fn nested_supported(item: &Value, path: &[&str]) -> bool {
+    path.iter()
+        .try_fold(item, |value, key| value.get(*key))
+        .and_then(|value| value.get("supported"))
+        .and_then(Value::as_bool)
+        .unwrap_or(false)
 }
 
 fn capability(item: &Value, names: &[&str]) -> Option<bool> {
@@ -82,12 +134,26 @@ fn optional_u32(item: &Value, field: &str) -> Result<Option<u32>, LlmError> {
     let Some(value) = item.get(field) else {
         return Ok(None);
     };
+    if value.is_null() {
+        return Ok(None);
+    }
     let raw = value.as_u64().ok_or_else(|| invalid_catalog(field))?;
+    if raw == 0 {
+        return Ok(None);
+    }
     let parsed = u32::try_from(raw).map_err(|_| invalid_catalog(field))?;
-    (parsed > 0)
-        .then_some(parsed)
-        .ok_or_else(|| invalid_catalog(field))
-        .map(Some)
+    Ok(Some(parsed))
+}
+
+fn optional_text(item: &Value, field: &str) -> Result<Option<String>, LlmError> {
+    let Some(value) = item.get(field) else {
+        return Ok(None);
+    };
+    let text = value.as_str().ok_or_else(|| invalid_catalog(field))?;
+    if text.is_empty() || text.len() > 160 || text.chars().any(char::is_control) {
+        return Err(invalid_catalog(field));
+    }
+    Ok(Some(text.to_string()))
 }
 
 pub(super) fn embedded_models() -> Vec<ModelInfo> {

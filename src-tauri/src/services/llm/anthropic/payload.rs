@@ -54,12 +54,13 @@ pub(in crate::services::llm) fn build_payload(
         payload["tools"] = Value::Array(native_tools);
         payload["tool_choice"] = json!({"type": "auto"});
     }
-    let reasoning_mode = cfg
-        .think
-        .then_some(cfg.reasoning_mode)
-        .flatten()
-        .or(Some("off"));
-    apply_thinking(&mut payload, reasoning_mode, max_tokens)?;
+    apply_thinking(
+        &mut payload,
+        cfg.model,
+        cfg.think,
+        cfg.reasoning_mode,
+        max_tokens,
+    )?;
     let cache = crate::services::llm::route_profile::cache_policy(cfg.provider_id, cfg.model)
         .ok_or(BuildError::InvalidMessage)?;
     crate::services::llm::prompt_cache_policy::apply_payload(&mut payload, cache, cfg.session_id);
@@ -68,10 +69,40 @@ pub(in crate::services::llm) fn build_payload(
 
 fn apply_thinking(
     payload: &mut Value,
+    model: &str,
+    think: bool,
     mode: Option<&str>,
     max_tokens: u32,
 ) -> Result<(), BuildError> {
-    let budget = match mode.unwrap_or("medium") {
+    let contract = crate::services::llm::provider_model_lookup::resolve_local("anthropic", model);
+    let selected = mode.map(str::to_string).or_else(|| {
+        think.then(|| {
+            contract
+                .as_ref()
+                .and_then(|value| value.default_reasoning_mode.clone())
+                .unwrap_or_else(|| "medium".to_string())
+        })
+    });
+    let Some(selected) = selected else {
+        return Ok(());
+    };
+    let adaptive = contract
+        .as_ref()
+        .is_some_and(|value| value.reasoning_modes.iter().any(|mode| mode == "auto"));
+    if adaptive {
+        if !contract
+            .as_ref()
+            .is_some_and(|value| value.reasoning_modes.iter().any(|mode| mode == &selected))
+        {
+            return Err(BuildError::InvalidReasoningMode);
+        }
+        payload["thinking"] = json!({"type": "adaptive"});
+        if selected != "auto" {
+            payload["output_config"] = json!({"effort": selected});
+        }
+        return Ok(());
+    }
+    let budget = match selected.as_str() {
         "off" => {
             payload["thinking"] = json!({"type": "disabled"});
             return Ok(());

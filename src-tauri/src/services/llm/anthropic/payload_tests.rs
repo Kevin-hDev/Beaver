@@ -24,9 +24,18 @@ fn config<'a>(
     tools: &'a [serde_json::Value],
     mode: &'a str,
 ) -> RequestConfig<'a> {
+    config_for_model(messages, tools, "claude-haiku-4-5-20251001", mode)
+}
+
+fn config_for_model<'a>(
+    messages: &'a [ChatMessage],
+    tools: &'a [serde_json::Value],
+    model: &'a str,
+    mode: &'a str,
+) -> RequestConfig<'a> {
     RequestConfig {
         provider_id: "anthropic",
-        model: "claude-haiku-4-5-20251001",
+        model,
         messages,
         tools,
         think: mode != "off",
@@ -169,6 +178,39 @@ fn thinking_modes_are_bounded_by_output_limit() {
         super::build_payload(&config(&messages, &tools, "quantum"), 32_768),
         Err(super::BuildError::InvalidReasoningMode)
     ));
+}
+
+#[test]
+fn adaptive_models_use_native_adaptive_thinking_and_effort() {
+    crate::services::llm::runtime_models::replace_provider(
+        "anthropic",
+        &[crate::services::llm::types::ModelInfo {
+            id: "claude-adaptive-test".into(),
+            display_name: None,
+            owned_by: Some("anthropic".into()),
+            context_length: Some(1_000_000),
+            max_output_tokens: Some(128_000),
+            supports_tools: true,
+            supports_vision: true,
+            supports_thinking: true,
+            supports_fast_mode: false,
+            reasoning_modes: vec!["auto".into(), "low".into(), "xhigh".into()],
+            default_reasoning_mode: Some("auto".into()),
+            context_usage_includes_reasoning: true,
+            is_free: false,
+        }],
+    );
+    let messages = vec![message("user", "Hi")];
+    let payload = super::build_payload(
+        &config_for_model(&messages, &[], "claude-adaptive-test", "xhigh"),
+        128_000,
+    )
+    .unwrap()
+    .payload;
+
+    assert_eq!(payload["thinking"]["type"], "adaptive");
+    assert_eq!(payload["output_config"]["effort"], "xhigh");
+    assert!(payload["thinking"].get("budget_tokens").is_none());
 }
 
 #[test]

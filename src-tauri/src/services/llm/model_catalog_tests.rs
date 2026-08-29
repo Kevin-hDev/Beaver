@@ -62,7 +62,7 @@ async fn catalog_is_deduplicated_before_runtime_registration() {
 }
 
 #[tokio::test]
-async fn qwen_remote_catalog_is_strictly_intersected_with_the_embedded_inventory() {
+async fn qwen_remote_catalog_keeps_every_chat_model_returned_by_the_account() {
     let models = super::model_catalog::enrich_models(
         "qwen",
         vec![
@@ -74,18 +74,20 @@ async fn qwen_remote_catalog_is_strictly_intersected_with_the_embedded_inventory
     .await
     .unwrap();
 
-    assert_eq!(models.len(), 1);
-    assert_eq!(models[0].id, "qwen3.8-flash");
-    assert!(models[0].supports_tools);
-    assert!(models[0].supports_vision);
+    assert_eq!(models.len(), 2);
+    assert_eq!(models[0].id, "qwen3.8-max");
+    assert_eq!(models[1].id, "qwen3.8-flash");
+    assert!(models[1].supports_tools);
+    assert!(models[1].supports_vision);
 }
 
 #[tokio::test]
-async fn qwen_successful_catalog_without_the_enabled_model_stays_empty() {
+async fn qwen_successful_catalog_without_the_test_model_stays_usable() {
     let models =
         super::model_catalog::enrich_models("qwen", vec![remote_qwen_model("qwen3.8-max")], false)
             .await
             .unwrap();
 
-    assert!(models.is_empty());
+    assert_eq!(models.len(), 1);
+    assert_eq!(models[0].id, "qwen3.8-max");
 }

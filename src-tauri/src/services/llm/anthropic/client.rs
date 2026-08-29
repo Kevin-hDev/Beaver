@@ -59,7 +59,7 @@ async fn fetch_models() -> Result<Vec<ModelInfo>, LlmError> {
                 crate::services::llm::provider_error::ProviderErrorCode::ModelCatalogUnavailable,
             )
         })?;
-    models::parse_and_intersect(&body)
+    models::parse_catalog(&body)
 }
 
 pub(super) fn auth_headers() -> Result<(ApiKeyHeader, StaticHeaders), LlmError> {

@@ -186,7 +186,6 @@ pub(in crate::services::llm) struct RouteProfile {
     pub endpoint: EndpointPolicy,
     pub availability: RouteAvailability,
     pub catalog: CatalogPolicy,
-    pub strict_model_allowlist: bool,
     pub output_limits: OutputLimitPolicy,
     pub policies: RoutePolicies,
 }
