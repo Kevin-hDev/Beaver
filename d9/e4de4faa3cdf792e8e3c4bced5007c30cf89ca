@@ -1,0 +1,17 @@
+Review note — DeepSeek preserve-thinking correction
+
+Commit reviewed target: d9e4de4f (branch codex/fix-deepseek-reasoning, based on origin/main 3c68f00d).
+
+Root cause: DeepSeek was registered as forbidden for UserContinuation and required only for ToolContinuation. The continuation target was fixed at user admission, so the later tool loop could not replay reasoning_content and failed locally with reasoning_continuity_invalid. Official DeepSeek thinking-mode documentation requires every previous reasoning_content to be returned whenever tools are present, including reasoning from turns without tool calls.
+
+Correction: DeepSeek v4 Flash now uses required replay for both UserContinuation and ToolContinuation at low, high, and max. The request adapter sends the exact low/high/max effort. Legacy persisted xhigh remains mapped to max. Catalog modes are now off/low/high/max with high as the default.
+
+Payload proof: the contract test sends a tool-enabled user continuation containing multiple earlier assistant envelopes and asserts that every prior reasoning_content is present in the outgoing payload, with replay evidence for each envelope.
+
+Live API proof on 2026-08-29: three independent two-turn fixture runs passed for deepseek-v4-flash low, high, and max. Checked-in reports: deepseek-api-deepseek-v4-flash-low-france-2026-08-29, deepseek-api-deepseek-v4-flash-high-france-2026-08-29, deepseek-api-deepseek-v4-flash-max-france-2026-08-29. Each report contains capture, persistence, replay, and continuation evidence without raw reasoning or credentials.
+
+Existing-session evidence: session c116826c-2e6f-4508-ac33-2c0cea9ce45f was inspected read-only. Its five assistant messages contain DeepSeek continuation envelopes; its user messages lack replay_source because of the old forbidden admission policy. The new admission target makes those envelopes replayable. The exact UI session was not relaunched after the patch to avoid repeated macOS keychain prompts; reviewer should treat visual recovery of that existing session as the only remaining manual check.
+
+Validation: cargo fmt --check passed; cargo clippy --all-targets -- -D warnings passed; cargo test passed with 4239 passed, 0 failed, 7 ignored; cargo test deepseek passed 13/13 after the final catalog metadata update; npx tsc --noEmit passed; npm run lint passed; git diff --check passed; fixture reports were checked for secrets; Graphify code graph was updated.
+
+Scope: DeepSeek only. The broader reasoning-effort selector regression was already restored by merged PR #40 and is deliberately not modified here. No application relaunch, push, release, or changes to the active-stream message policy were performed.
