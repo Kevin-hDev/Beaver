@@ -19,14 +19,6 @@ pub fn all() -> Vec<ProviderSpec> {
         .collect()
 }
 
-#[allow(dead_code, reason = "kept as the public-only catalog lookup authority")]
-pub fn find(provider_id: &str) -> Option<ProviderSpec> {
-    let profile = route_profile::find(provider_id)?;
-    matches!(profile.catalog, CatalogPolicy::PublicApi { .. }).then_some(())?;
-    to_spec(profile)
-}
-
-#[allow(dead_code, reason = "consumed by the candidate settings UI in task 6")]
 pub fn configurable() -> Vec<ProviderSpec> {
     route_profile::configurable().filter_map(to_spec).collect()
 }

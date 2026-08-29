@@ -36,11 +36,9 @@ pub(crate) enum CachePolicy {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[allow(dead_code, reason = "closed variants are reserved for route migration")]
 pub(in crate::services::llm) enum ToolChoicePolicy {
     Default,
     ProviderNative,
-    Unsupported,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -85,13 +83,11 @@ impl ErrorPolicy {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[allow(dead_code, reason = "missing probes are explicit in candidate tests")]
 pub(crate) enum AuthProbePolicy {
     ModelsGet,
     ChatPing,
     OAuthCatalog,
     ClientNative,
-    None,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

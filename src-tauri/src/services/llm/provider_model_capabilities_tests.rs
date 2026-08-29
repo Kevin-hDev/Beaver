@@ -1,8 +1,9 @@
 use super::provider_model_capabilities::{resolve_local, CapabilityProvenance};
 use super::types::ModelInfo;
 
-#[test]
-fn codex_runtime_catalog_resolves_a_model_absent_from_the_fallback() {
+#[tokio::test]
+async fn codex_runtime_catalog_resolves_a_model_absent_from_the_fallback() {
+    let _guard = super::runtime_models::test_mutation_lock().await;
     let model_id = "gpt-runtime-only-fixture";
     super::runtime_models::replace_provider(
         crate::services::codex_client::PROVIDER_ID,

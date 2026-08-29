@@ -82,8 +82,7 @@ pub(crate) fn resolve(provider_id: &str) -> Result<ProbeSpec, &'static str> {
         }),
         AuthProbePolicy::ModelsGet
         | AuthProbePolicy::OAuthCatalog
-        | AuthProbePolicy::ClientNative
-        | AuthProbePolicy::None => Err("provider_configuration_invalid"),
+        | AuthProbePolicy::ClientNative => Err("provider_configuration_invalid"),
     }
 }
 

@@ -188,8 +188,9 @@ fn thinking_modes_are_bounded_by_output_limit() {
     ));
 }
 
-#[test]
-fn every_claude_5_family_uses_visible_adaptive_thinking() {
+#[tokio::test]
+async fn every_claude_5_family_uses_visible_adaptive_thinking() {
+    let _guard = crate::services::llm::runtime_models::test_mutation_lock().await;
     let model_ids = ["claude-sonnet-5", "claude-opus-5", "claude-fable-5"];
     crate::services::llm::runtime_models::replace_provider(
         "anthropic",
@@ -228,8 +229,9 @@ fn every_claude_5_family_uses_visible_adaptive_thinking() {
     }
 }
 
-#[test]
-fn stale_off_mode_uses_the_default_for_an_always_adaptive_model() {
+#[tokio::test]
+async fn stale_off_mode_uses_the_default_for_an_always_adaptive_model() {
+    let _guard = crate::services::llm::runtime_models::test_mutation_lock().await;
     crate::services::llm::runtime_models::replace_provider(
         "anthropic",
         &[crate::services::llm::types::ModelInfo {

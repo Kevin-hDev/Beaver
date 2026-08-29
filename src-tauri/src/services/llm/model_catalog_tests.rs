@@ -42,6 +42,7 @@ fn remote_qwen_model(id: &str) -> ModelInfo {
 
 #[tokio::test]
 async fn native_catalog_keeps_explicit_remote_values() {
+    let _guard = super::runtime_models::test_mutation_lock().await;
     let models =
         super::model_catalog::enrich_models("anthropic", vec![remote_anthropic_model()], true)
             .await
@@ -56,6 +57,7 @@ async fn native_catalog_keeps_explicit_remote_values() {
 
 #[tokio::test]
 async fn catalog_is_deduplicated_before_runtime_registration() {
+    let _guard = super::runtime_models::test_mutation_lock().await;
     let model = remote_anthropic_model();
     let models = super::model_catalog::enrich_models("anthropic", vec![model.clone(), model], true)
         .await
@@ -67,6 +69,7 @@ async fn catalog_is_deduplicated_before_runtime_registration() {
 
 #[tokio::test]
 async fn qwen_remote_catalog_keeps_every_chat_model_returned_by_the_account() {
+    let _guard = super::runtime_models::test_mutation_lock().await;
     let models = super::model_catalog::enrich_models(
         "qwen",
         vec![
@@ -95,6 +98,7 @@ async fn qwen_remote_catalog_keeps_every_chat_model_returned_by_the_account() {
 
 #[tokio::test]
 async fn qwen_successful_catalog_without_the_test_model_stays_usable() {
+    let _guard = super::runtime_models::test_mutation_lock().await;
     let models =
         super::model_catalog::enrich_models("qwen", vec![remote_qwen_model("qwen3.8-max")], false)
             .await
@@ -108,6 +112,7 @@ async fn qwen_successful_catalog_without_the_test_model_stays_usable() {
 
 #[tokio::test]
 async fn qwen_hybrid_models_expose_their_real_thinking_switch() {
+    let _guard = super::runtime_models::test_mutation_lock().await;
     let models =
         super::model_catalog::enrich_models("qwen", vec![remote_qwen_model("qwen3.7-plus")], false)
             .await
@@ -121,6 +126,7 @@ async fn qwen_hybrid_models_expose_their_real_thinking_switch() {
 
 #[tokio::test]
 async fn anthropic_catalog_keeps_the_reasoning_modes_advertised_by_the_model() {
+    let _guard = super::runtime_models::test_mutation_lock().await;
     let models = super::model_catalog::enrich_models(
         "anthropic",
         vec![remote_anthropic_model_with_id("claude-sonnet-5")],
@@ -139,6 +145,7 @@ async fn anthropic_catalog_keeps_the_reasoning_modes_advertised_by_the_model() {
 
 #[tokio::test]
 async fn provider_transport_proofs_do_not_restrict_third_party_catalog_modes() {
+    let _guard = super::runtime_models::test_mutation_lock().await;
     let mut model = remote_anthropic_model_with_id("gpt-5.5");
     model.owned_by = Some("openai".into());
     model.reasoning_modes = vec!["off".into(), "low".into(), "high".into()];
