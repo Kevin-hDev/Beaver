@@ -1,0 +1,26 @@
+Correction du rapport docs/superpowers/plans/2026-08-29-review-d14097fe-et-enquetes.md.
+
+Décisions :
+- Anthropic Models API ne publie pas de capacité tool use. La route suppose donc les tools disponibles uniquement quand aucune valeur distante ou embarquée explicite ne les refuse. Cette exception reste locale à Anthropic et évite de masquer MCP, skills et instructions outils sur les modèles dynamiques.
+- TurnCommitted replie les segments visibles dans contextUsageBuckets avec la primitive existante resolvePreparedContextBuckets avant de vider le stream. Aucun changement de finalizeStream.
+- Le contexte Anthropic additionne input_tokens, cache_read_input_tokens et cache_creation_input_tokens. Les métriques de coût gardent les classes séparées. done_reason et total_chunks sont maintenant alimentés pour les streams interactifs et silencieux.
+- kimi-k3, kimi/kimi-k3 et ZHIPU/GLM-5.3 sont ramenés à auto : aucun effort précis ne reste exposé sans source officielle exacte. Le rejeu documenté de kimi/kimi-k3 est conservé.
+
+TDD rouge observé avant correction :
+- tools Anthropic manquants : supports_tools false au lieu de true.
+- anneau : 22 tokens au lieu de 42 après TurnCommitted.
+- Anthropic cache : 120 tokens au lieu de 220.
+- ZHIPU/GLM-5.3 : low/high/max au lieu de auto.
+
+Vérifications finales :
+- cargo fmt --all -- --check : vert.
+- cargo clippy --all-targets -- -D warnings : vert.
+- cargo test --lib : 4352 réussis, 0 échec, 7 ignorés. Une première passe a rencontré une collision transitoire du test de publication Ollama avec application ouverte ; le test isolé puis la suite complète ont réussi sans relancer application.
+- npx tsc --noEmit : vert.
+- npm run lint : vert, frontières provider stables à 56 fichiers.
+- npm test : vert, dont Vitest 2631 tests et toutes les suites scripts, CEF, extensions et fixtures.
+- graphify update . : graphe code mis à jour.
+
+Documentation ignorée par Git mise à jour dans le dépôt principal : docs/providers/integres/anthropic.md et docs/providers/integres/qwen.md.
+
+Aucun appel API payant et aucun redémarrage de application dans ce lot.
