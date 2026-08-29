@@ -173,3 +173,29 @@ fn candidate_validation_rejects_oversized_raw_values_before_persistence() {
     assert!(!persisted.get());
     assert!(!state.keys.contains_key("raw:oversized"));
 }
+
+#[test]
+fn key_and_provider_configuration_share_one_candidate_transaction() {
+    let mut state = state_with_old_secret();
+    let config_key = "provider_connection:qwen";
+
+    let failed = commit_candidate_with(
+        &mut state,
+        |candidate| {
+            stage_api_key(candidate, "qwen", Some("new-secret"), None)?;
+            stage_raw_entries(candidate, &[(config_key, "new-config")])
+        },
+        |_, _| Err("write refused".to_string()),
+    );
+    assert!(failed.is_err());
+    assert!(bool::from(
+        state
+            .keys
+            .get("openai")
+            .unwrap()
+            .as_bytes()
+            .ct_eq(b"old-secret")
+    ));
+    assert!(!state.keys.contains_key("qwen"));
+    assert!(!state.keys.contains_key("raw:provider_connection:qwen"));
+}

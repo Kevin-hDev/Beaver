@@ -5,8 +5,6 @@
 
 use super::route_profile::EndpointPolicy;
 
-const MAX_WORKSPACE_CHARS: usize = 64;
-
 pub(super) async fn resolve(
     policy: EndpointPolicy,
     supplied: Option<&str>,
@@ -23,7 +21,7 @@ pub(super) async fn resolve(
         }
         EndpointPolicy::Workspace { host_suffix } => {
             let workspace = supplied.ok_or("provider_configuration_invalid")?;
-            if !valid_workspace(workspace) {
+            if crate::services::provider_connections::workspace_id::validate(workspace).is_err() {
                 return Err("provider_configuration_invalid");
             }
             Ok(format!("https://{workspace}.{host_suffix}"))
@@ -40,16 +38,6 @@ fn no_override(base_url: &str, supplied: Option<&str>) -> Result<String, &'stati
         return Err("provider_configuration_invalid");
     }
     Ok(base_url.to_string())
-}
-
-fn valid_workspace(value: &str) -> bool {
-    let len = value.chars().count();
-    (1..=MAX_WORKSPACE_CHARS).contains(&len)
-        && !value.starts_with('-')
-        && !value.ends_with('-')
-        && value.chars().all(|character| {
-            character.is_ascii_lowercase() || character.is_ascii_digit() || character == '-'
-        })
 }
 
 async fn validated_https(supplied: Option<&str>) -> Result<String, &'static str> {
