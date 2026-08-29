@@ -23,7 +23,7 @@ function canonicalComponent(value, fallback) {
   return result.replace(/-+$/, '') || fallback;
 }
 
-export function fixtureId(route, model, region, generatedAt) {
+export function fixtureId(route, model, region, generatedAt, variant) {
   if (!ROUTE.test(route)) throw new Error('invalid fixture report');
   const oauth = route.endsWith('-oauth');
   const provider = oauth ? route.slice(0, -6) : route;
@@ -32,7 +32,9 @@ export function fixtureId(route, model, region, generatedAt) {
   if (!provider || !ROUTE.test(region)
     || region.length > 32 || !/^\d{4}-\d{2}-\d{2}T/.test(generatedAt)
     || !new Date(`${date}T00:00:00Z`).toISOString().startsWith(date)) throw new Error('invalid fixture report');
-  const id = [provider, transport, canonicalComponent(model, 'model'), region, date].join('-');
+  const components = [provider, transport, canonicalComponent(model, 'model')];
+  if (variant !== undefined) components.push(canonicalComponent(variant, 'variant'));
+  const id = [...components, region, date].join('-');
   if (id.length > MAX_FIXTURE_ID_BYTES || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id)) throw new Error('invalid fixture report');
   return id;
 }
@@ -40,8 +42,11 @@ export function fixtureId(route, model, region, generatedAt) {
 export function validateReport(name, value, bytes) {
   if (bytes > MAX_BYTES) throw new Error('invalid fixture report');
   if (!value || value.schema_version !== 1 || !value.fixture_id || !value.route || !value.model || !value.region || !value.reasoning_mode || !value.generated_at) throw new Error('invalid fixture report');
-  const expectedFixtureId = fixtureId(value.route, value.model, value.region, value.generated_at);
-  if (`${expectedFixtureId}.json` !== name || value.fixture_id !== expectedFixtureId) throw new Error('invalid fixture report');
+  const expectedFixtureIds = [
+    fixtureId(value.route, value.model, value.region, value.generated_at),
+    fixtureId(value.route, value.model, value.region, value.generated_at, value.reasoning_mode),
+  ];
+  if (`${value.fixture_id}.json` !== name || !expectedFixtureIds.includes(value.fixture_id)) throw new Error('invalid fixture report');
   if (!Array.isArray(value.scenarios) || value.scenarios.length < 2 || value.scenarios.length > 64) throw new Error('invalid fixture report');
   for (const scenario of value.scenarios) {
     if (!['capture_and_persist', 'replay_and_continue'].includes(scenario.requirement)

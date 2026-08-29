@@ -21,6 +21,42 @@ const report = {
 };
 
 test('accepts a bounded anonymous fixture report', () => assert.equal(validateReport(`${id}.json`, report, 100), true));
+
+test('fixture IDs include an optional canonical reasoning variant', () => {
+  assert.equal(
+    fixtureId('deepseek', 'deepseek-v4-flash', 'france', '2026-08-29T00:00:00Z', 'low'),
+    'deepseek-api-deepseek-v4-flash-low-france-2026-08-29',
+  );
+});
+
+test('accepts a report whose canonical name includes its exact reasoning mode', () => {
+  const variantId = 'deepseek-api-deepseek-v4-flash-low-france-2026-08-29';
+  const variantReport = {
+    ...report,
+    fixture_id: variantId,
+    route: 'deepseek',
+    model: 'deepseek-v4-flash',
+    region: 'france',
+    reasoning_mode: 'low',
+    generated_at: '2026-08-29T00:00:00Z',
+  };
+
+  assert.equal(validateReport(`${variantId}.json`, variantReport, 100), true);
+});
+
+test('rejects a fixture-name variant different from the report reasoning mode', () => {
+  const variantId = 'deepseek-api-deepseek-v4-flash-low-france-2026-08-29';
+  assert.throws(() => validateReport(`${variantId}.json`, {
+    ...report,
+    fixture_id: variantId,
+    route: 'deepseek',
+    model: 'deepseek-v4-flash',
+    region: 'france',
+    reasoning_mode: 'max',
+    generated_at: '2026-08-29T00:00:00Z',
+  }, 100));
+});
+
 test('rejects sensitive payload fields', () => assert.throws(() => validateReport(`${id}.json`, { ...report, session_id: 'secret' }, 100)));
 test('rejects missing counters and noncanonical names', () => {
   assert.throws(() => validateReport(`${id}.json`, { ...report, scenarios: [{ status: 'passe' }] }, 100));
