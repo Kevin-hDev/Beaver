@@ -1,0 +1,9 @@
+Anthropic and Qwen activation review note (2026-08-29).
+
+Decision: both routes are public only after real paid validation. Anthropic is restricted to claude-haiku-4-5-20251001 and Qwen to qwen3.8-flash through an explicit strict_model_allowlist independent from catalog visibility, so a remote catalog cannot expose unvalidated models.
+
+Live evidence: Anthropic low/medium/high in France and Qwen low/medium/xhigh in Singapore passed capture, persistence, user continuation, tool-result continuation, replay and second-turn reasoning. Six sanitized fixture reports are committed. Two-turn image continuity also passed for both providers with an exact VISION_OK then RED contract.
+
+Protocol decisions: Anthropic uses native Messages blocks, signed thinking replay, user tool_result blocks, native image blocks and Anthropic cache/usage semantics. Qwen uses its configured regional Model Studio endpoint, OpenAI-compatible tool/image wire format, reasoning_content replay and Qwen context-cache usage counters.
+
+Verification: npm run lint; npx tsc --noEmit; npm test (488 files, 2624 tests plus all script/fixture suites); npm run build; cargo fmt --check; cargo clippy --all-targets -- -D warnings; cargo test (4313 passed, 7 ignored); provider boundary ratchet green. No credentials, authorization headers or image payloads are present in committed reports.
