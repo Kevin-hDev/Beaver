@@ -42,6 +42,7 @@
       "xai": { "description": "Grok 4.6 — 500K コンテキスト、高度な推論。", "freeTier": "前払いクレジットまたは月額請求で、アカウントにより異なります。" },
       "moonshot": { "description": "Kimi K3 — エージェント型コーディング、マルチモーダル、1M コンテキスト。", "freeTier": "API は利用量に応じて課金されます。" },
       "zai": { "description": "GLM-5.3 — 1M コンテキスト、長期的なコーディングと推論。", "freeTier": "[Free] の Flash モデルは無料で、それ以外は課金されます。" },
+      "anthropic": { "description": "Anthropic のネイティブ Messages API で Claude を利用します。", "freeTier": "Anthropic が利用量に応じて課金します。" },
       "brave": { "description": "独自インデックス。Google／Bing に依存しません。", "freeTier": "毎月のクレジット付きで、その後は従量課金です。" },
       "exa": { "description": "ニューラル検索 — 意味的類似度による検索。", "freeTier": "料金とクレジットはプロバイダーのアカウントで確認してください。" },
       "firecrawl": { "description": "任意の URL から LLM 対応 Markdown を抽出。", "freeTier": "無料プランとクレジットはチームとプランによります。" }

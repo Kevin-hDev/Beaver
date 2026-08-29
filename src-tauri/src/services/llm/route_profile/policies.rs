@@ -18,6 +18,14 @@ pub(super) const INTERACTIVE_ONLY: RouteAvailability = RouteAvailability {
     account_metadata: true,
 };
 
+pub(super) const CANDIDATE_ONLY: RouteAvailability = RouteAvailability {
+    interactive: false,
+    silent: false,
+    automation: false,
+    external_channel: false,
+    account_metadata: false,
+};
+
 pub(super) const OPENAI_CHAT_WIRE: WireContract = WireContract {
     family: WireFamily::OpenAiChatCompletions,
     fragments: FragmentMode::DifferentialFragments,
@@ -47,13 +55,12 @@ pub(super) const OLLAMA_WIRE: WireContract = WireContract {
     usage: UsageApiFormat::ChatCompletions,
 };
 
-#[cfg(test)]
-pub(super) const ANTHROPIC_WIRE_TEST: WireContract = WireContract {
+pub(super) const ANTHROPIC_WIRE: WireContract = WireContract {
     family: WireFamily::AnthropicMessages,
     fragments: FragmentMode::SemanticEvents,
     tool_results: ToolResultPlacement::UserToolResultBlock,
-    images: ImageFormat::Unsupported,
-    usage: UsageApiFormat::ChatCompletions,
+    images: ImageFormat::AnthropicBlock,
+    usage: UsageApiFormat::AnthropicMessages,
 };
 
 const fn policy(
@@ -201,3 +208,14 @@ pub(super) const OLLAMA_LOCAL: RoutePolicies = policy(
     AuthProbePolicy::ClientNative,
     ToolLimitPolicy::Ollama,
 );
+pub(super) const ANTHROPIC: RoutePolicies = RoutePolicies {
+    tool_choice: ToolChoicePolicy::ProviderNative,
+    ..policy(
+        SchemaPolicy::Anthropic,
+        CachePolicy::AnthropicAutomatic,
+        ParameterPolicy::Anthropic,
+        ErrorPolicy::Anthropic,
+        AuthProbePolicy::ModelsGet,
+        ToolLimitPolicy::Default,
+    )
+};

@@ -23,21 +23,22 @@ pub(super) fn parse(
         return parse_deepseek(value, input);
     }
 
-    let read_paths = match context.api_format {
-        UsageApiFormat::Responses => [
+    let read_paths: &[&str] = match context.api_format {
+        UsageApiFormat::Responses => &[
             "/input_tokens_details/cached_tokens",
             "/prompt_tokens_details/cached_tokens",
         ],
-        UsageApiFormat::ChatCompletions | UsageApiFormat::GeminiNative => [
+        UsageApiFormat::ChatCompletions | UsageApiFormat::GeminiNative => &[
             "/prompt_tokens_details/cached_tokens",
             "/input_tokens_details/cached_tokens",
         ],
+        UsageApiFormat::AnthropicMessages => &["/cache_read_input_tokens"],
     };
     let cache_write_supported = context.canonical_provider_id == "openrouter"
         || (context.canonical_provider_id == "openai"
             && crate::services::llm::providers::openai::is_gpt_56(context.model));
     let mut parsed = ParsedCacheUsage {
-        read: first_count(value, &read_paths),
+        read: first_count(value, read_paths),
         write: cache_write_supported
             .then(|| {
                 first_count(

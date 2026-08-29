@@ -7,6 +7,7 @@ pub enum UsageApiFormat {
     ChatCompletions,
     Responses,
     GeminiNative,
+    AnthropicMessages,
 }
 
 #[derive(Debug, Clone, Copy)]

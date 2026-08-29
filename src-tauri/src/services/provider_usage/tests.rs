@@ -1,7 +1,7 @@
 use super::request_usage::{CacheMissSource, CacheUsageStatus, RequestUsage};
 use super::snapshot::build_snapshot;
 use super::types::{LocalSnapshot, RemoteData};
-use super::usage_context::UsageContext;
+use super::usage_context::{UsageApiFormat, UsageContext};
 use serde_json::json;
 
 #[test]
@@ -183,6 +183,25 @@ fn gpt_56_responses_uses_input_token_details() {
     assert_eq!(usage.cache_write_input_tokens, Some(512));
     assert_eq!(usage.cache_miss_input_tokens, Some(1024));
     assert_eq!(usage.cache_miss_source, CacheMissSource::Calculated);
+}
+
+#[test]
+fn anthropic_messages_reads_the_native_cache_hit_counter() {
+    let usage = RequestUsage::from_json_with_context(
+        &json!({
+            "input_tokens": 120,
+            "cache_read_input_tokens": 80
+        }),
+        UsageContext {
+            canonical_provider_id: "anthropic",
+            model: "claude-haiku-4-5-20251001",
+            api_format: UsageApiFormat::AnthropicMessages,
+        },
+    )
+    .unwrap();
+
+    assert_eq!(usage.cached_input_tokens, Some(80));
+    assert_eq!(usage.cache_status, CacheUsageStatus::Reported);
 }
 
 #[test]

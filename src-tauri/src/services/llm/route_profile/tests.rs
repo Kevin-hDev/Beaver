@@ -49,16 +49,31 @@ fn route_profile_keeps_oauth_origins_and_local_endpoint_distinct() {
 }
 
 #[test]
-fn route_profile_declares_anthropic_wire_without_activating_a_route() {
+fn anthropic_profile_is_native_complete_and_candidate_only() {
+    let profile = find("anthropic").expect("anthropic profile");
+    assert_eq!(profile.id, RouteId::Anthropic);
+    assert_eq!(profile.client, ClientSelector::Anthropic);
+    assert_eq!(profile.wire.family, WireFamily::AnthropicMessages);
+    assert_eq!(profile.wire.fragments, FragmentMode::SemanticEvents);
     assert_eq!(
-        policies::ANTHROPIC_WIRE_TEST.family,
-        WireFamily::AnthropicMessages
-    );
-    assert_eq!(
-        policies::ANTHROPIC_WIRE_TEST.tool_results,
+        profile.wire.tool_results,
         ToolResultPlacement::UserToolResultBlock
     );
-    assert!(find("anthropic").is_none());
+    assert_eq!(profile.wire.images, ImageFormat::AnthropicBlock);
+    assert_eq!(profile.availability, policies::CANDIDATE_ONLY);
+    assert!(matches!(
+        profile.catalog,
+        CatalogPolicy::ConfigurableApi { .. }
+    ));
+    assert!(matches!(
+        profile.auth,
+        AuthKind::ApiKey {
+            header: ApiKeyHeader::XApiKey,
+            ..
+        }
+    ));
+    assert!(super::catalog::configurable().any(|candidate| candidate.id == RouteId::Anthropic));
+    assert!(!public_api().any(|candidate| candidate.id == RouteId::Anthropic));
 }
 
 #[test]

@@ -13,9 +13,8 @@ pub async fn test_key_raw(provider_id: &str, key: &str) -> Result<(), String> {
     validate::validate_key_input(provider_id, key)?;
     let client = AuthenticatedClient::new(HTTP_TIMEOUT)
         .map_err(|_| "test de la clé impossible".to_string())?;
-    let request = if crate::services::llm::catalog::find(provider_id).is_some() {
-        let probe =
-            crate::services::llm::api_key_probe::resolve(provider_id).map_err(str::to_string)?;
+    let request = if let Some(probe) = llm_probe(provider_id) {
+        let probe = probe.map_err(str::to_string)?;
         crate::services::llm::api_key_probe::request(&client, &probe, key)
     } else {
         provider_request(&client, provider_id, key)?
@@ -25,6 +24,15 @@ pub async fn test_key_raw(provider_id: &str, key: &str) -> Result<(), String> {
         .await
         .map_err(|_| "test de la clé impossible".to_string())?;
     check_status(response).await
+}
+
+fn llm_probe(
+    provider_id: &str,
+) -> Option<
+    Result<crate::services::llm::api_key_probe::ProbeSpec, &'static str>,
+> {
+    crate::services::llm::catalog::find_configurable(provider_id)?;
+    Some(crate::services::llm::api_key_probe::resolve(provider_id))
 }
 
 fn provider_request(

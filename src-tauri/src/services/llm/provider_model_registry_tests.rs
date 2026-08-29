@@ -39,14 +39,14 @@ fn embedded_registry_accepts_seventeen_valid_sources() {
 }
 
 #[test]
-fn every_supported_provider_has_one_valid_local_file() {
+fn every_configurable_provider_has_one_valid_local_file() {
     let registry = parse_sources(SOURCES).expect("embedded provider registry");
 
     assert_eq!(
         registry.providers.len(),
-        crate::services::llm::catalog::all().len()
+        crate::services::llm::catalog::configurable().len()
     );
-    for provider in crate::services::llm::catalog::all() {
+    for provider in crate::services::llm::catalog::configurable() {
         assert!(registry.providers.contains_key(provider.id));
     }
 }

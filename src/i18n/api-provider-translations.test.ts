@@ -33,8 +33,10 @@ function catalogProviderIds(relativePaths: string[]): string[] {
   for (const relativePath of relativePaths) {
     // eslint-disable-next-line security/detect-non-literal-fs-filename -- chemins constants déclarés en tête de fichier, aucune entrée externe
     const source = readFileSync(new URL(relativePath, import.meta.url), "utf8");
-    for (const match of source.matchAll(/(?:^\s+id: "([^"]+)",$|auth: api_key\("([^"]+)"\))/gmu)) {
-      ids.push(match[1] ?? match[2]);
+    for (const match of source.matchAll(
+      /(?:^\s+id: "([^"]+)",$|auth: api_key\("([^"]+)"\)|credential_id: "([^"]+)")/gmu,
+    )) {
+      ids.push(match[1] ?? match[2] ?? match[3]);
     }
   }
   return ids;

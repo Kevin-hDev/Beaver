@@ -9,9 +9,9 @@ use super::registry::{
 };
 
 #[test]
-fn inventory_has_exactly_eleven_contracts_and_thirteen_closed_routes() {
+fn inventory_has_exactly_eleven_contracts_fourteen_closed_routes_and_thirteen_active_routes() {
     assert_eq!(ContractId::ALL.len(), 11);
-    assert_eq!(RouteId::ALL.len(), 13);
+    assert_eq!(RouteId::ALL.len(), 14);
     assert_eq!(active_routes().len(), 13);
 }
 
@@ -108,6 +108,7 @@ fn closed_identifiers_serialize_to_the_exact_normative_wire_values() {
         "moonshot-oauth",
         "zai",
         "codex-oauth",
+        "anthropic",
     ];
 
     for (value, expected) in ContractId::ALL.iter().zip(contracts) {

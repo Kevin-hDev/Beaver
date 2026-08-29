@@ -19,9 +19,25 @@ fn canonical_inventory_sizes_match_the_official_catalogs() {
         ("xai", 7),
         ("moonshot", 15),
         ("zai", 20),
+        ("anthropic", 1),
     ] {
         assert_eq!(list(provider).len(), expected, "{provider}");
     }
+}
+
+#[test]
+fn anthropic_fallback_exposes_only_the_validated_haiku_model() {
+    let models = list("anthropic");
+    assert_eq!(models.len(), 1);
+    let haiku = &models[0];
+    assert_eq!(haiku.id, "claude-haiku-4-5-20251001");
+    assert_eq!(haiku.context_window, 200_000);
+    assert_eq!(haiku.max_output_tokens, Some(64_000));
+    assert!(haiku.supports_tools);
+    assert!(haiku.supports_vision);
+    assert!(haiku.supports_thinking);
+    assert_eq!(haiku.reasoning_modes, ["off", "low", "medium", "high"]);
+    assert_eq!(haiku.default_reasoning_mode.as_deref(), Some("medium"));
 }
 
 #[test]

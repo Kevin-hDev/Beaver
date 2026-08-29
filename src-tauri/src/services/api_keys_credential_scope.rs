@@ -161,7 +161,7 @@ fn migrate_api_scope(
     }
 }
 
-const API_ROUTES: [RouteId; 9] = [
+const API_ROUTES: [RouteId; 10] = [
     RouteId::Google,
     RouteId::Mistral,
     RouteId::Cerebras,
@@ -171,6 +171,7 @@ const API_ROUTES: [RouteId; 9] = [
     RouteId::Xai,
     RouteId::Moonshot,
     RouteId::Zai,
+    RouteId::Anthropic,
 ];
 
 fn api_provider_for_route(route: RouteId) -> Option<&'static str> {

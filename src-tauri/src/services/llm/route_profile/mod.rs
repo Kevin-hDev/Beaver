@@ -12,7 +12,7 @@ mod types;
 
 #[cfg(test)]
 pub(super) use catalog::{all, find_id};
-pub(super) use catalog::{find, public_api};
+pub(super) use catalog::{configurable, find, public_api};
 pub(crate) use policy_types::{
     AuthProbePolicy, CachePolicy, ErrorPolicy, ExtensionToolPolicy, ParameterPolicy,
     ResolvedCachePolicy, ResolvedPayloadPolicy, ResolvedToolLimitPolicy, ResolvedToolPolicy,

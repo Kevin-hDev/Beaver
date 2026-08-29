@@ -42,6 +42,7 @@
       "xai": { "description": "Grok 4.6 — 50 万上下文，高级推理。", "freeTier": "预付额度或按月计费，取决于账户。" },
       "moonshot": { "description": "Kimi K3 — 智能体编程、多模态、100 万上下文。", "freeTier": "API 按使用量计费。" },
       "zai": { "description": "GLM-5.3 — 100 万上下文，长跨度编程与推理。", "freeTier": "标有[Free]的 Flash 模型无费用；其他模型需付费。" },
+      "anthropic": { "description": "通过 Anthropic 原生 Messages API 使用 Claude。", "freeTier": "由 Anthropic 按使用量计费。" },
       "brave": { "description": "自建索引，不依赖 Google/Bing。", "freeTier": "含每月额度，之后按使用量计费。" },
       "exa": { "description": "神经检索 — 基于语义相似度的搜索。", "freeTier": "请在提供商账户中查看价格和额度。" },
       "firecrawl": { "description": "从任意网址提取 LLM 就绪的 Markdown。", "freeTier": "免费套餐和额度取决于团队与套餐。" }

@@ -61,6 +61,7 @@ pub(crate) fn image_part(
             Ok(json!({ "type": "input_image", "image_url": data_url }))
         }
         super::route_profile::ImageFormat::OllamaNative
+        | super::route_profile::ImageFormat::AnthropicBlock
         | super::route_profile::ImageFormat::Unsupported => Err("vision_wire_unsupported"),
     }
 }

@@ -25,11 +25,16 @@ pub(crate) struct ProbeSpec {
 pub(crate) fn resolve(provider_id: &str) -> Result<ProbeSpec, &'static str> {
     let profile =
         super::route_profile::find(provider_id).ok_or("provider_configuration_invalid")?;
-    let auth = match profile.auth {
-        AuthKind::ApiKey { header, .. } => match header {
-            ApiKeyHeader::Bearer => ProbeAuth::Bearer,
-            ApiKeyHeader::XApiKey => ProbeAuth::XApiKey,
-        },
+    let (auth, headers) = match profile.auth {
+        AuthKind::ApiKey {
+            header, headers, ..
+        } => (
+            match header {
+                ApiKeyHeader::Bearer => ProbeAuth::Bearer,
+                ApiKeyHeader::XApiKey => ProbeAuth::XApiKey,
+            },
+            headers,
+        ),
         AuthKind::OAuth { .. } | AuthKind::ClientOAuth { .. } | AuthKind::Local => {
             return Err("provider_configuration_invalid");
         }
@@ -46,14 +51,14 @@ pub(crate) fn resolve(provider_id: &str) -> Result<ProbeSpec, &'static str> {
             method: ProbeMethod::Get,
             url: format!("{base_url}{models_endpoint}"),
             auth,
-            headers: &[],
+            headers,
             body: None,
         }),
         AuthProbePolicy::ChatPing => Ok(ProbeSpec {
             method: ProbeMethod::Post,
             url: format!("{base_url}/chat/completions"),
             auth,
-            headers: &[],
+            headers,
             body: Some(serde_json::json!({
                 "model": super::openai_compat::ping_model(provider_id),
                 "max_tokens": 1,
@@ -87,15 +92,4 @@ pub(crate) fn request(
         request = request.json(body);
     }
     request
-}
-
-#[cfg(test)]
-pub(crate) fn anthropic_fixture() -> ProbeSpec {
-    ProbeSpec {
-        method: ProbeMethod::Get,
-        url: "https://api.anthropic.com/v1/models".into(),
-        auth: ProbeAuth::XApiKey,
-        headers: &[("anthropic-version", "2023-06-01")],
-        body: None,
-    }
 }

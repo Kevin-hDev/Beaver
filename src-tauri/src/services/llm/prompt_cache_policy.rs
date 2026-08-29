@@ -24,7 +24,10 @@ pub(super) fn apply_payload(
         CachePolicy::OpenAi56 => apply_gpt_56(payload, key),
         CachePolicy::OpenRouter => payload["session_id"] = key.into(),
         CachePolicy::PromptKey => payload["prompt_cache_key"] = key.into(),
-        CachePolicy::None | CachePolicy::Google | CachePolicy::XaiHeader => {}
+        CachePolicy::None
+        | CachePolicy::AnthropicAutomatic
+        | CachePolicy::Google
+        | CachePolicy::XaiHeader => {}
     }
 }
 

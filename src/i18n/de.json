@@ -42,6 +42,7 @@
       "xai": { "description": "Grok 4.6 — 500K Kontext, fortgeschrittenes Reasoning.", "freeTier": "Prepaid-Credits oder monatliche Abrechnung, je nach Konto." },
       "moonshot": { "description": "Kimi K3 — agentisches Coding, multimodal, 1M Kontext.", "freeTier": "API-Abrechnung nach Nutzung." },
       "zai": { "description": "GLM-5.3 — 1M Kontext, Long-Horizon-Coding und Reasoning.", "freeTier": "Flash-Modelle mit [Free] sind kostenfrei; die anderen werden abgerechnet." },
+      "anthropic": { "description": "Claude über die native Messages-API von Anthropic.", "freeTier": "Anthropic rechnet nach Nutzung ab." },
       "brave": { "description": "Eigener Index, ohne Google-/Bing-Abhängigkeit.", "freeTier": "Monatliche Credits inklusive, danach nutzungsbasierte Abrechnung." },
       "exa": { "description": "Neural Search — Suche über semantische Ähnlichkeit.", "freeTier": "Preise und Credits im Anbieter-Konto prüfen." },
       "firecrawl": { "description": "LLM-fertige Markdown-Extraktion aus jeder URL.", "freeTier": "Kostenloser Tarif und Credits je nach Team und Tarif." }

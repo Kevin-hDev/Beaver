@@ -5,10 +5,6 @@ use crate::services::reasoning_continuity::contract::RouteId;
 use super::policy_types::RoutePolicies;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[allow(
-    dead_code,
-    reason = "Anthropic is a compile-time candidate, not an active route"
-)]
 pub(in crate::services::llm) enum ClientSelector {
     OpenAiCompat,
     OpenAiResponses,
@@ -31,6 +27,7 @@ pub(in crate::services::llm) enum CanonicalProviderId {
     Moonshot,
     Zai,
     CodexOauth,
+    Anthropic,
 }
 
 impl CanonicalProviderId {
@@ -47,6 +44,7 @@ impl CanonicalProviderId {
             Self::Moonshot => "moonshot",
             Self::Zai => "zai",
             Self::CodexOauth => "codex-oauth",
+            Self::Anthropic => "anthropic",
         }
     }
 }
@@ -92,6 +90,7 @@ pub(crate) enum ImageFormat {
     MistralFlat,
     ResponsesInput,
     OllamaNative,
+    AnthropicBlock,
     Unsupported,
 }
 
@@ -127,6 +126,7 @@ pub(in crate::services::llm) enum AuthKind {
     ApiKey {
         credential_id: &'static str,
         header: ApiKeyHeader,
+        headers: &'static [(&'static str, &'static str)],
         source: &'static str,
         verified_at: &'static str,
     },
@@ -198,6 +198,7 @@ pub(in crate::services::llm) struct RouteAvailability {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(in crate::services::llm) enum CatalogPolicy {
     PublicApi { signup_url: &'static str },
+    ConfigurableApi { signup_url: &'static str },
     Hidden,
 }
 

@@ -1,6 +1,7 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum SchemaPolicy {
     Generic,
+    Anthropic,
     Google,
     Kimi,
     Xai,
@@ -24,6 +25,7 @@ pub(crate) struct ResolvedToolPolicy {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum CachePolicy {
     None,
+    AnthropicAutomatic,
     Google,
     OpenAi56,
     OpenRouter,
@@ -58,6 +60,7 @@ pub(crate) enum ParameterPolicy {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum ErrorPolicy {
+    Anthropic,
     OpenAiCompatible,
     Responses,
     Moonshot,

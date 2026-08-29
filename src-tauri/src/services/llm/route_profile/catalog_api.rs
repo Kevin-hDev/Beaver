@@ -9,8 +9,18 @@ const fn api_key(id: &'static str) -> AuthKind {
     AuthKind::ApiKey {
         credential_id: id,
         header: ApiKeyHeader::Bearer,
+        headers: &[],
         source: SOURCE,
         verified_at: VERIFIED_AT,
+    }
+}
+const fn anthropic_api_key() -> AuthKind {
+    AuthKind::ApiKey {
+        credential_id: "anthropic",
+        header: ApiKeyHeader::XApiKey,
+        headers: &[("anthropic-version", "2023-06-01")],
+        source: SOURCE,
+        verified_at: "2026-08-29",
     }
 }
 const fn endpoint(base_url: &'static str, models_endpoint: &'static str) -> EndpointPolicy {
@@ -21,6 +31,9 @@ const fn endpoint(base_url: &'static str, models_endpoint: &'static str) -> Endp
 }
 const fn public(signup_url: &'static str) -> CatalogPolicy {
     CatalogPolicy::PublicApi { signup_url }
+}
+const fn configurable(signup_url: &'static str) -> CatalogPolicy {
+    CatalogPolicy::ConfigurableApi { signup_url }
 }
 const fn limits(automatic: bool, fallback: Option<u32>) -> OutputLimitPolicy {
     OutputLimitPolicy {
@@ -149,5 +162,18 @@ pub(super) const API_PROFILES: &[RouteProfile] = &[
         catalog: public("https://z.ai/manage-apikey/apikey-list"),
         output_limits: limits(true, Some(96_000)),
         policies: ZAI,
+    },
+    RouteProfile {
+        id: RouteId::Anthropic,
+        canonical_provider: CanonicalProviderId::Anthropic,
+        display_name: "Anthropic Claude",
+        client: ClientSelector::Anthropic,
+        wire: ANTHROPIC_WIRE,
+        auth: anthropic_api_key(),
+        endpoint: endpoint("https://api.anthropic.com/v1", "/models"),
+        availability: CANDIDATE_ONLY,
+        catalog: configurable("https://console.anthropic.com/settings/keys"),
+        output_limits: limits(true, Some(64_000)),
+        policies: ANTHROPIC,
     },
 ];

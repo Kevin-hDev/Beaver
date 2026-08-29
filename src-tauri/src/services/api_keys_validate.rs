@@ -1,7 +1,7 @@
 const MAX_KEY_LEN: usize = 256;
 
 fn is_known_provider(id: &str) -> bool {
-    crate::services::llm::catalog::find(id).is_some()
+    crate::services::llm::catalog::find_configurable(id).is_some()
         || crate::services::search::catalog::SEARCH_PROVIDERS
             .iter()
             .any(|p| p.id == id)
