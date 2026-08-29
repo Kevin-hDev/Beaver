@@ -14,7 +14,7 @@ pub(in crate::services::llm) async fn consume_stream(
     buffer_content: bool,
     tools: &[serde_json::Value],
     usage_context: UsageContext<'_>,
-    _reasoning_capture: Option<crate::services::llm::reasoning_wire::ReasoningCapture>,
+    mut reasoning_capture: Option<crate::services::llm::reasoning_wire::ReasoningCapture>,
     mut measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
 ) -> Result<crate::services::agent_local::types_ollama::StreamOutcome, String> {
     use eventsource_stream::Eventsource;
@@ -77,6 +77,13 @@ pub(in crate::services::llm) async fn consume_stream(
         }
     }
     let consumed = state.finish()?;
+    if let Some(capture) = reasoning_capture.as_mut() {
+        for block in &consumed.continuation_blocks {
+            capture.observe_anthropic_block(block.clone());
+        }
+        capture.observe_persisted_tool_links(&result.tool_calls, &result.tool_call_ids);
+        capture.observe_done(&serde_json::json!({"type": "message_stop"}));
+    }
     result.prompt_tokens = consumed
         .usage
         .as_ref()
@@ -88,6 +95,7 @@ pub(in crate::services::llm) async fn consume_stream(
         .and_then(|usage| usage.output_tokens)
         .and_then(|value| value.try_into().ok());
     result.usage = consumed.usage;
+    result.continuation = reasoning_capture.and_then(|mut capture| capture.finish_complete());
     Ok(crate::services::agent_local::types_ollama::StreamOutcome::Completed(result))
 }
 

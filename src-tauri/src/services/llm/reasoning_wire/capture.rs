@@ -12,6 +12,9 @@ pub(super) fn empty_continuation(contract: ContractId) -> ContinuationState {
         },
         ContractId::GeminiCompatV1 => ContinuationState::GeminiParts { parts: Vec::new() },
         ContractId::MistralChunksV1 => ContinuationState::MistralChunks { chunks: Vec::new() },
+        ContractId::AnthropicMessagesV1 => {
+            ContinuationState::AnthropicBlocks { blocks: Vec::new() }
+        }
         ContractId::CerebrasChatV1 => ContinuationState::CerebrasReasoning {
             reasoning: String::new(),
         },
@@ -32,7 +35,8 @@ pub(super) fn empty_continuation(contract: ContractId) -> ContinuationState {
 pub(super) fn has_native_items(continuation: &ContinuationState) -> bool {
     matches!(
         continuation,
-        ContinuationState::GeminiParts { .. }
+        ContinuationState::AnthropicBlocks { .. }
+            | ContinuationState::GeminiParts { .. }
             | ContinuationState::MistralChunks { .. }
             | ContinuationState::OpenRouterDetails { .. }
             | ContinuationState::ResponsesLocal { .. }

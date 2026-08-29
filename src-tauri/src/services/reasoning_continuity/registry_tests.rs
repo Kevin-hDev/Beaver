@@ -9,10 +9,10 @@ use super::registry::{
 };
 
 #[test]
-fn inventory_has_exactly_eleven_contracts_fourteen_closed_routes_and_thirteen_active_routes() {
-    assert_eq!(ContractId::ALL.len(), 11);
+fn inventory_has_exactly_twelve_contracts_fourteen_closed_routes_and_fourteen_active_routes() {
+    assert_eq!(ContractId::ALL.len(), 12);
     assert_eq!(RouteId::ALL.len(), 14);
-    assert_eq!(active_routes().len(), 13);
+    assert_eq!(active_routes().len(), 14);
 }
 
 #[test]
@@ -93,6 +93,7 @@ fn closed_identifiers_serialize_to_the_exact_normative_wire_values() {
         "kimi-chat-v1",
         "zai-chat-v1",
         "codex-responses-v1",
+        "anthropic-messages-v1",
     ];
     let routes = [
         "ollama",
@@ -144,6 +145,7 @@ fn every_scoped_route_maps_to_the_normative_contract() {
         (RouteId::MoonshotOauth, ContractId::KimiChatV1),
         (RouteId::Zai, ContractId::ZaiChatV1),
         (RouteId::CodexOauth, ContractId::CodexResponsesV1),
+        (RouteId::Anthropic, ContractId::AnthropicMessagesV1),
     ];
     assert_eq!(active_routes().len(), expected.len());
     for (route, contract) in expected {
@@ -341,12 +343,51 @@ fn local_scope_is_valid_only_for_ollama() {
 }
 
 #[test]
+fn anthropic_exact_modes_are_declared_but_not_live_before_fixture_validation() {
+    let route = active_routes()
+        .iter()
+        .find(|route| route.route_id == RouteId::Anthropic)
+        .unwrap();
+    assert_eq!(route.contract_id, ContractId::AnthropicMessagesV1);
+    assert_eq!(route.adapter, AdapterId::AnthropicBlocks);
+    assert!(route
+        .models
+        .iter()
+        .all(|policy| policy.activation == ActivationState::Disabled));
+
+    let scope = CredentialScope::authenticated("fixture-scope").unwrap();
+    for mode in [
+        ReasoningModeId::Low,
+        ReasoningModeId::Medium,
+        ReasoningModeId::High,
+    ] {
+        for continuation_use in [
+            ContinuationUse::UserContinuation,
+            ContinuationUse::ToolContinuation,
+        ] {
+            let policy = replay_policy(&ReplayTarget {
+                route_id: RouteId::Anthropic,
+                model_id: "claude-haiku-4-5-20251001".into(),
+                credential_scope: scope.clone(),
+                reasoning_mode: mode,
+                continuation_use,
+            })
+            .unwrap();
+            assert_eq!(policy.requirement(), ReplayRequirement::Required);
+            assert_eq!(policy.activation(), ActivationState::Disabled);
+        }
+    }
+}
+
+#[test]
 fn only_exact_live_fixture_pairs_are_activated() {
     let mut live = Vec::new();
     for route in active_routes() {
         assert!(!route.models.is_empty());
         for model in route.models {
-            assert_ne!(model.reasoning_mode, ReasoningModeId::Off);
+            if model.reasoning_mode == ReasoningModeId::Off {
+                assert_eq!(model.requirement, ReplayRequirement::Forbidden);
+            }
             if model.activation == ActivationState::LiveValidated {
                 live.push((route.route_id, model));
             } else {

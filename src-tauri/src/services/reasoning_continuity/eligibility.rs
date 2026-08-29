@@ -85,6 +85,9 @@ pub(crate) fn state_matches_contract(contract: ContractId, state: &ContinuationS
             ContractId::OllamaNativeV1,
             ContinuationState::OllamaNative { .. }
         ) | (
+            ContractId::AnthropicMessagesV1,
+            ContinuationState::AnthropicBlocks { .. }
+        ) | (
             ContractId::GeminiCompatV1,
             ContinuationState::GeminiParts { .. }
         ) | (

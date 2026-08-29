@@ -77,7 +77,8 @@ impl CaptureBudget {
 
 fn has_empty_native_collection(state: &ContinuationState) -> bool {
     match state {
-        ContinuationState::GeminiParts { parts }
+        ContinuationState::AnthropicBlocks { blocks: parts }
+        | ContinuationState::GeminiParts { parts }
         | ContinuationState::MistralChunks { chunks: parts }
         | ContinuationState::OpenRouterDetails { details: parts }
         | ContinuationState::ResponsesLocal { items: parts } => parts.is_empty(),

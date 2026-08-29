@@ -73,6 +73,9 @@ fn r02_all_native_variants_preserve_item_order_through_serde() {
         ContinuationState::ResponsesLocal {
             items: ordered.clone(),
         },
+        ContinuationState::AnthropicBlocks {
+            blocks: ordered.clone(),
+        },
         ContinuationState::RemoteContinuation {
             response_id: "response-ordered".into(),
         },

@@ -170,3 +170,53 @@ async fn network_consumer_observes_safe_request_id_and_finish_reason() {
         (Some("req_123"), Some("refusal"))
     );
 }
+
+#[tokio::test]
+async fn network_consumer_persists_exact_completed_anthropic_blocks() {
+    use crate::services::agent_local::types_ollama::StreamOutcome;
+    use crate::services::llm::reasoning_wire::{ReasoningCapture, ReasoningCaptureContext};
+    use crate::services::reasoning_continuity::contract::{
+        CredentialScope, ReasoningModeId, RouteId,
+    };
+    use crate::services::reasoning_continuity::envelope::ContinuationState;
+
+    let response = response(
+        include_str!("../../../../test-fixtures/anthropic/message-tools-stream.sse"),
+        None,
+    )
+    .await;
+    let capture = ReasoningCapture::new(ReasoningCaptureContext {
+        route_id: RouteId::Anthropic,
+        model_id: "claude-haiku-4-5-20251001".into(),
+        credential_scope: CredentialScope::authenticated("fixture-scope").unwrap(),
+        reasoning_mode: ReasoningModeId::Low,
+    })
+    .unwrap();
+
+    let outcome = super::stream::consume_stream(
+        &crate::services::agent_local::stream_events::AgentEventEmitter::test("session".into()),
+        response,
+        CancellationToken::new(),
+        true,
+        &[],
+        context(),
+        Some(capture),
+        None,
+    )
+    .await
+    .unwrap();
+    let StreamOutcome::Completed(result) = outcome else {
+        panic!("completed Anthropic stream")
+    };
+    let envelope = result.continuation.expect("signed continuation");
+    let ContinuationState::AnthropicBlocks { blocks } = envelope.continuation else {
+        panic!("Anthropic blocks")
+    };
+
+    assert_eq!(blocks[0]["type"], "thinking");
+    assert!(blocks[0]["signature"]
+        .as_str()
+        .is_some_and(|value| !value.is_empty()));
+    assert_eq!(blocks[2]["id"], "toolu_1");
+    assert_eq!(envelope.tool_links[0].provider_call_id, "toolu_1");
+}

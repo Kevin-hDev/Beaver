@@ -8,6 +8,7 @@ pub mod envelope;
 pub mod fingerprint;
 pub mod limits;
 pub mod registry;
+mod registry_anthropic;
 mod registry_inventory;
 mod registry_validated_cloud;
 mod registry_validated_reasoning;

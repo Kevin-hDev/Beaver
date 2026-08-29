@@ -23,6 +23,7 @@ pub enum AdapterId {
     OpenRouterDetails,
     ResponsesLocal,
     ChatReasoning,
+    AnthropicBlocks,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

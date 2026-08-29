@@ -185,4 +185,45 @@ mod tests {
         assert_eq!(stats.assistant_reasoning_messages, 1);
         assert_eq!(stats.assistant_reasoning_chars, 20);
     }
+
+    #[test]
+    fn request_stats_never_turns_anthropic_opaque_blocks_into_diagnostic_text() {
+        use crate::services::reasoning_continuity::contract::{
+            ContractId, CredentialScope, ReasoningModeId, RouteId,
+        };
+        use crate::services::reasoning_continuity::envelope::{
+            CompletionState, ReasoningEnvelope, ReasoningSource,
+        };
+
+        let continuation = ReasoningEnvelope::new(
+            ContractId::AnthropicMessagesV1,
+            ReasoningSource {
+                route_id: RouteId::Anthropic,
+                model_id: "claude-haiku-4-5-20251001".into(),
+                credential_scope: CredentialScope::authenticated("fixture-scope").unwrap(),
+                reasoning_mode: ReasoningModeId::Low,
+            },
+            CompletionState::Complete,
+            ContinuationState::AnthropicBlocks {
+                blocks: vec![serde_json::json!({
+                    "type":"thinking",
+                    "thinking":"opaque-secret",
+                    "signature":"AAE+/=="
+                })],
+            },
+            Vec::new(),
+        );
+        let messages = [ChatMessage::assistant(
+            "answer".into(),
+            None,
+            Some(continuation),
+            None,
+            None,
+        )];
+
+        let stats = request_stats(&messages);
+        assert_eq!(stats.assistant_reasoning_messages, 0);
+        assert_eq!(stats.assistant_reasoning_chars, 0);
+        assert_eq!(stats.assistant_content_chars, 6);
+    }
 }

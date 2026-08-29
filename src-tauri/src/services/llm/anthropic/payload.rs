@@ -11,6 +11,7 @@ pub(in crate::services::llm) enum BuildError {
     InvalidReasoningBudget,
     InvalidReasoningMode,
     InvalidToolSchema,
+    InvalidContinuation,
     TooManyImages,
     TooManyTools,
 }
@@ -32,7 +33,13 @@ pub(in crate::services::llm) fn build_payload(
     if max_tokens == 0 {
         return Err(BuildError::InvalidMaxTokens);
     }
-    let converted = messages::convert(cfg.messages, cfg.tools)?;
+    let mut converted = messages::convert(cfg.messages, cfg.tools)?;
+    let replayed = crate::services::llm::reasoning_wire::replay::apply_anthropic_messages(
+        cfg.messages,
+        cfg.continuation_target,
+        &mut converted.messages,
+    )
+    .map_err(|_| BuildError::InvalidContinuation)?;
     let mut payload = json!({
         "model": cfg.model,
         "messages": converted.messages,
@@ -51,10 +58,7 @@ pub(in crate::services::llm) fn build_payload(
     let cache = crate::services::llm::route_profile::cache_policy(cfg.provider_id, cfg.model)
         .ok_or(BuildError::InvalidMessage)?;
     crate::services::llm::prompt_cache_policy::apply_payload(&mut payload, cache, cfg.session_id);
-    Ok(PreparedPayload {
-        payload,
-        replayed: Vec::new(),
-    })
+    Ok(PreparedPayload { payload, replayed })
 }
 
 fn apply_thinking(
