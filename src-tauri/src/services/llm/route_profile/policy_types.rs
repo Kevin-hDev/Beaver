@@ -26,6 +26,7 @@ pub(crate) struct ResolvedToolPolicy {
 pub(crate) enum CachePolicy {
     None,
     AnthropicAutomatic,
+    QwenContext,
     Google,
     OpenAi56,
     OpenRouter,
@@ -56,11 +57,13 @@ pub(crate) enum ParameterPolicy {
     Ollama,
     #[allow(dead_code, reason = "Anthropic remains a compile-time candidate")]
     Anthropic,
+    Qwen,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum ErrorPolicy {
     Anthropic,
+    Qwen,
     OpenAiCompatible,
     Responses,
     Moonshot,
@@ -146,6 +149,7 @@ pub(crate) struct ResolvedPayloadPolicy {
     pub parameters: ParameterPolicy,
     pub emit_tool_choice: bool,
     pub tool_stream: bool,
+    pub parallel_tool_calls: bool,
     pub upstream_routing: bool,
     pub output_limit_field: &'static str,
 }

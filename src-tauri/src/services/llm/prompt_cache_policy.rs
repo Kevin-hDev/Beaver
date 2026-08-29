@@ -21,6 +21,10 @@ pub(super) fn apply_payload(
         payload["cache_control"] = json!({"type": "ephemeral"});
         return;
     }
+    if policy.kind == CachePolicy::QwenContext {
+        mark_qwen_stable_prefix(payload);
+        return;
+    }
     let Some(key) = cache_key(policy, session_id) else {
         return;
     };
@@ -30,9 +34,37 @@ pub(super) fn apply_payload(
         CachePolicy::PromptKey => payload["prompt_cache_key"] = key.into(),
         CachePolicy::None
         | CachePolicy::AnthropicAutomatic
+        | CachePolicy::QwenContext
         | CachePolicy::Google
         | CachePolicy::XaiHeader => {}
     }
+}
+
+fn mark_qwen_stable_prefix(payload: &mut Value) -> bool {
+    let Some(messages) = payload.get_mut("messages").and_then(Value::as_array_mut) else {
+        return false;
+    };
+    let start = messages.len().saturating_sub(20);
+    let Some(message) = messages[start..].iter_mut().rev().find(|message| {
+        matches!(message["role"].as_str(), Some("system" | "developer"))
+            && message["content"].is_string()
+    }) else {
+        return false;
+    };
+    let Some(text) = message["content"].as_str() else {
+        return false;
+    };
+    if crate::services::token_counting::estimate_text_tokens(text)
+        < MIN_EXPLICIT_PREFIX_ESTIMATED_TOKENS
+    {
+        return false;
+    }
+    message["content"] = json!([{
+        "type": "text",
+        "text": text,
+        "cache_control": {"type": "ephemeral", "ttl": "5m"}
+    }]);
+    true
 }
 
 pub(super) fn request_headers(

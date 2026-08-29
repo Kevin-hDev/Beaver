@@ -207,3 +207,20 @@ fn declared_xai_and_moonshot_effort_modes_reach_the_payload_adapter() {
         }
     }
 }
+
+#[test]
+fn qwen_uses_boolean_thinking_and_top_level_effort_only() {
+    let off = payload("qwen", "qwen3.8-flash", Some("off"));
+    assert_eq!(off["enable_thinking"], false);
+    assert_eq!(off["preserve_thinking"], false);
+    assert!(off.get("reasoning_effort").is_none());
+
+    for effort in ["low", "medium", "xhigh"] {
+        let selected = payload("qwen", "qwen3.8-flash", Some(effort));
+        assert_eq!(selected["enable_thinking"], true);
+        assert_eq!(selected["preserve_thinking"], true);
+        assert_eq!(selected["reasoning_effort"], effort);
+        assert!(selected.get("thinking").is_none());
+        assert!(selected.get("thinking_budget").is_none());
+    }
+}

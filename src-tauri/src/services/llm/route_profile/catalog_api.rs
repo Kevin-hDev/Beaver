@@ -189,6 +189,6 @@ pub(super) const API_PROFILES: &[RouteProfile] = &[
         availability: CANDIDATE_ONLY,
         catalog: configurable("https://modelstudio.console.alibabacloud.com/"),
         output_limits: limits(true, Some(131_072)),
-        policies: OPENAI_CHAT_DEFAULT,
+        policies: QWEN,
     },
 ];

@@ -166,6 +166,26 @@ fn gpt_56_reads_both_cache_directions() {
 }
 
 #[test]
+fn qwen_reads_exact_cache_hit_and_creation_counters() {
+    let usage = RequestUsage::from_json_with_context(
+        &json!({
+            "prompt_tokens": 1200,
+            "prompt_tokens_details": {
+                "cached_tokens": 800,
+                "cache_creation_input_tokens": 400
+            }
+        }),
+        UsageContext::chat("qwen", "qwen3.8-flash"),
+    )
+    .unwrap();
+
+    assert_eq!(usage.cached_input_tokens, Some(800));
+    assert_eq!(usage.cache_write_input_tokens, Some(400));
+    assert_eq!(usage.cache_miss_input_tokens, None);
+    assert_eq!(usage.cache_status, CacheUsageStatus::Reported);
+}
+
+#[test]
 fn gpt_56_responses_uses_input_token_details() {
     let usage = RequestUsage::from_json_with_context(
         &json!({

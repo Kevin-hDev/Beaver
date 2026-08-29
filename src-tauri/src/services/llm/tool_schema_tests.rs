@@ -51,6 +51,7 @@ fn only_hashes_names_when_normalization_really_collides() {
 #[test]
 fn leaves_common_provider_names_unchanged() {
     assert_eq!(wire_name("read_file"), "read_file");
+    assert_eq!(wire_name("search"), "search");
     assert_eq!(wire_name("_internal-tool"), "_internal-tool");
 }
 

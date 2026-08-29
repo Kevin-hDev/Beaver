@@ -219,3 +219,14 @@ pub(super) const ANTHROPIC: RoutePolicies = RoutePolicies {
         ToolLimitPolicy::Default,
     )
 };
+pub(super) const QWEN: RoutePolicies = RoutePolicies {
+    include_usage: true,
+    ..policy(
+        SchemaPolicy::Generic,
+        CachePolicy::QwenContext,
+        ParameterPolicy::Qwen,
+        ErrorPolicy::Qwen,
+        AuthProbePolicy::ModelsGet,
+        ToolLimitPolicy::Default,
+    )
+};

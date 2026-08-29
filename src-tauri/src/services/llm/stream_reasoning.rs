@@ -20,10 +20,23 @@ pub fn apply(
         ParameterPolicy::Moonshot => apply_moonshot(payload, model, think, reasoning_mode),
         ParameterPolicy::Google => apply_google(payload, model, think, reasoning_mode),
         ParameterPolicy::Xai => apply_xai(payload, model, reasoning_mode),
+        ParameterPolicy::Qwen => apply_qwen(payload, reasoning_mode),
         ParameterPolicy::Default
         | ParameterPolicy::Responses
         | ParameterPolicy::Ollama
         | ParameterPolicy::Anthropic => {}
+    }
+}
+
+fn apply_qwen(payload: &mut Value, reasoning_mode: Option<&str>) {
+    let off = reasoning_mode == Some("off");
+    payload["enable_thinking"] = (!off).into();
+    payload["preserve_thinking"] = (!off).into();
+    if !off {
+        let effort = reasoning_mode
+            .filter(|mode| matches!(*mode, "low" | "medium" | "xhigh"))
+            .unwrap_or("xhigh");
+        payload["reasoning_effort"] = effort.into();
     }
 }
 

@@ -85,6 +85,10 @@ fn apply_tools(
     if payload_policy.tool_stream {
         payload["tool_stream"] = true.into();
     }
+    if payload_policy.parallel_tool_calls {
+        payload["n"] = 1.into();
+        payload["parallel_tool_calls"] = true.into();
+    }
 }
 
 #[cfg(test)]

@@ -32,6 +32,22 @@ fn anthropic_cache_marker_does_not_depend_on_a_session() {
 }
 
 #[test]
+fn qwen_marks_only_a_long_stable_prefix_for_five_minutes() {
+    let mut long = long_stable_payload();
+    apply("qwen", "qwen3.8-flash", &mut long, Some("session-1"));
+
+    assert_eq!(
+        long["messages"][0]["content"][0]["cache_control"]["ttl"],
+        "5m"
+    );
+    assert!(long["messages"][1]["content"].is_string());
+
+    let mut short = payload();
+    apply("qwen", "qwen3.8-flash", &mut short, Some("session-1"));
+    assert!(short["messages"][0]["content"].is_string());
+}
+
+#[test]
 fn cache_transformer_receives_a_resolved_policy() {
     let policy = super::route_profile::cache_policy("openrouter", "google/gemini-3.5-pro")
         .expect("known route");

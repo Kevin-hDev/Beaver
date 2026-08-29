@@ -37,13 +37,19 @@ pub(super) fn parse(
         ],
         UsageApiFormat::AnthropicMessages => &["/cache_read_input_tokens"],
     };
-    let cache_write_supported = context.canonical_provider_id == "openrouter"
+    let cache_write_supported = matches!(context.canonical_provider_id, "openrouter" | "qwen")
         || (context.canonical_provider_id == "openai"
             && crate::services::llm::providers::openai::is_gpt_56(context.model));
     let mut parsed = ParsedCacheUsage {
         read: first_count(value, read_paths),
         write: cache_write_supported
             .then(|| {
+                if context.canonical_provider_id == "qwen" {
+                    return first_count(
+                        value,
+                        &["/prompt_tokens_details/cache_creation_input_tokens"],
+                    );
+                }
                 first_count(
                     value,
                     &[
@@ -89,6 +95,9 @@ pub(super) fn parse(
                 .is_some()
                 || value
                     .pointer("/input_tokens_details/cache_write_tokens")
+                    .is_some()
+                || value
+                    .pointer("/prompt_tokens_details/cache_creation_input_tokens")
                     .is_some()))
         || (context.canonical_provider_id == "moonshot" && value.get("cached_tokens").is_some())
         || (context.api_format == UsageApiFormat::GeminiNative

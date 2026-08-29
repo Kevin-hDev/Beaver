@@ -111,6 +111,45 @@ fn openrouter_gpt_56_uses_max_completion_tokens() {
 }
 
 #[test]
+fn qwen_payload_combines_reasoning_and_parallel_tools_without_foreign_fields() {
+    let tools = [serde_json::json!({
+        "type": "function",
+        "function": {
+            "name": "search",
+            "description": "fixture",
+            "parameters": {"type": "object", "properties": {}}
+        }
+    })];
+    let cfg = RequestConfig {
+        provider_id: "qwen",
+        model: "qwen3.8-flash",
+        messages: &[],
+        tools: &tools,
+        think: true,
+        reasoning_mode: Some("medium"),
+        max_tokens: Some(32_768),
+        purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
+        session_id: None,
+        fast_mode: FastModeRequest::Unsupported,
+        continuation_target: None,
+    };
+    let route = route::test_route("qwen");
+    let payload = build_chat_payload(&cfg, &route, Some(32_768)).expect("Qwen payload");
+
+    assert_eq!(payload["enable_thinking"], true);
+    assert_eq!(payload["reasoning_effort"], "medium");
+    assert_eq!(payload["preserve_thinking"], true);
+    assert_eq!(payload["max_completion_tokens"], 32_768);
+    assert_eq!(payload["tool_choice"], "auto");
+    assert_eq!(payload["parallel_tool_calls"], true);
+    assert_eq!(payload["n"], 1);
+    assert_eq!(payload["tools"][0]["function"]["name"], "search");
+    for forbidden in ["thinking", "thinking_budget", "max_tokens", "tool_stream"] {
+        assert!(payload.get(forbidden).is_none(), "{forbidden}");
+    }
+}
+
+#[test]
 fn chat_payload_respects_each_route_cache_and_usage_contract() {
     for (provider, model, usage, cache_field) in [
         ("google", "gemini-2.5-pro", true, None),
