@@ -4,18 +4,51 @@ use crate::services::e2e_profile::{report_lifecycle, LifecycleStage};
 use crate::services::gateway::GatewayService;
 use tauri::{Emitter, Manager};
 
+#[derive(Clone, Copy)]
+enum AppBuildMode {
+    Interactive,
+    LiveFixture,
+}
+
+impl AppBuildMode {
+    fn installs_single_instance(self) -> bool {
+        matches!(self, Self::Interactive)
+    }
+}
+
 pub(super) fn build(
     exit_coordinator: crate::app_exit::AppExitCoordinator,
     runtime: RuntimeServices,
+) -> tauri::Result<tauri::App<tauri::Wry>> {
+    build_with_mode(exit_coordinator, runtime, AppBuildMode::Interactive)
+}
+
+#[cfg(debug_assertions)]
+pub(super) fn build_live_fixture(
+    exit_coordinator: crate::app_exit::AppExitCoordinator,
+    runtime: RuntimeServices,
+) -> tauri::Result<tauri::App<tauri::Wry>> {
+    build_with_mode(exit_coordinator, runtime, AppBuildMode::LiveFixture)
+}
+
+fn build_with_mode(
+    exit_coordinator: crate::app_exit::AppExitCoordinator,
+    runtime: RuntimeServices,
+    mode: AppBuildMode,
 ) -> tauri::Result<tauri::App<tauri::Wry>> {
     let builder = tauri::Builder::default()
         .plugin(crate::services::app_log::plugin())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_shell::init())
-        .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+        .plugin(tauri_plugin_dialog::init());
+    // Live validation must coexist with the already-open development app.
+    let builder = if mode.installs_single_instance() {
+        builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             crate::runtime_state::show_main_window(app);
-        }));
+        }))
+    } else {
+        builder
+    };
     #[cfg(target_os = "macos")]
     let builder = builder
         .menu(crate::macos_app_menu::build)
@@ -170,6 +203,14 @@ fn configure_application(
 
 #[cfg(test)]
 mod tests {
+    use super::AppBuildMode;
+
+    #[test]
+    fn fixture_build_can_run_beside_the_open_application() {
+        assert!(AppBuildMode::Interactive.installs_single_instance());
+        assert!(!AppBuildMode::LiveFixture.installs_single_instance());
+    }
+
     #[test]
     fn application_build_failure_is_returned_instead_of_panicking() {
         let build = include_str!("app_build.rs");
