@@ -98,19 +98,53 @@ pub(super) const OPENROUTER: &[ModelPolicy] = &[
 ];
 
 pub(super) const DEEPSEEK: &[ModelPolicy] = &[
-    disabled(
+    live(
+        "deepseek-v4-flash",
+        ReasoningModeId::Low,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Required,
+        "deepseek-api-deepseek-v4-flash-low-france-2026-08-29",
+        "2026-08-29",
+    ),
+    live(
+        "deepseek-v4-flash",
+        ReasoningModeId::Low,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Required,
+        "deepseek-api-deepseek-v4-flash-low-france-2026-08-29",
+        "2026-08-29",
+    ),
+    live(
         "deepseek-v4-flash",
         ReasoningModeId::High,
         ContinuationUse::UserContinuation,
-        ReplayRequirement::Forbidden,
+        ReplayRequirement::Required,
+        "deepseek-api-deepseek-v4-flash-high-france-2026-08-29",
+        "2026-08-29",
     ),
     live(
         "deepseek-v4-flash",
         ReasoningModeId::High,
         ContinuationUse::ToolContinuation,
         ReplayRequirement::Required,
-        "deepseek-api-deepseek-v4-flash-france-2026-08-26",
-        "2026-08-26",
+        "deepseek-api-deepseek-v4-flash-high-france-2026-08-29",
+        "2026-08-29",
+    ),
+    live(
+        "deepseek-v4-flash",
+        ReasoningModeId::Max,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Required,
+        "deepseek-api-deepseek-v4-flash-max-france-2026-08-29",
+        "2026-08-29",
+    ),
+    live(
+        "deepseek-v4-flash",
+        ReasoningModeId::Max,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Required,
+        "deepseek-api-deepseek-v4-flash-max-france-2026-08-29",
+        "2026-08-29",
     ),
 ];
 

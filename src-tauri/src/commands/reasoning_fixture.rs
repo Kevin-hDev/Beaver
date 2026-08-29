@@ -30,6 +30,14 @@ pub async fn export_reasoning_fixture_report(
     session_id: String,
     region: String,
 ) -> Result<SanitizedFixtureReport, String> {
+    export_reasoning_fixture_report_with_variant(session_id, region, None).await
+}
+
+pub(crate) async fn export_reasoning_fixture_report_with_variant(
+    session_id: String,
+    region: String,
+    variant: Option<&str>,
+) -> Result<SanitizedFixtureReport, String> {
     crate::services::agent_local::session_id::validate_session_id(&session_id)
         .map_err(|_| unavailable())?;
     let session = crate::services::agent_local::session_store::get(&session_id)
@@ -37,12 +45,24 @@ pub async fn export_reasoning_fixture_report(
         .map_err(|_| unavailable())?;
     fixture_scenarios::validate_session(&session)?;
     let generated_at = chrono::Utc::now();
-    let fixture_id = crate::services::reasoning_fixture_store::derive_fixture_id(
-        &session.provider,
-        &session.model,
-        &region,
-        generated_at.date_naive(),
-    )
+    if variant.is_some_and(|variant| session.reasoning_mode.as_deref() != Some(variant)) {
+        return Err(unavailable());
+    }
+    let fixture_id = match variant {
+        Some(variant) => crate::services::reasoning_fixture_store::derive_fixture_id_with_variant(
+            &session.provider,
+            &session.model,
+            variant,
+            &region,
+            generated_at.date_naive(),
+        ),
+        None => crate::services::reasoning_fixture_store::derive_fixture_id(
+            &session.provider,
+            &session.model,
+            &region,
+            generated_at.date_naive(),
+        ),
+    }
     .map_err(|_| unavailable())?;
     let scenarios = fixture_scenarios::collect(&session);
     if !fixture_scenarios::proves_required_scenarios(&scenarios) {

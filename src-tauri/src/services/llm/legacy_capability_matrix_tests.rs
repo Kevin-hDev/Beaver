@@ -68,7 +68,7 @@ fn legacy_capability_matrix_preserves_registered_and_fallback_behavior() {
             tools: true,
             vision: false,
             thinking: true,
-            modes: &["off", "high", "xhigh"],
+            modes: &["off", "low", "high", "max"],
         },
         ExpectedCapabilities {
             route: "xai",

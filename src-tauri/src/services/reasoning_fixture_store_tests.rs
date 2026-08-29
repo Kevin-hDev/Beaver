@@ -60,3 +60,18 @@ fn derives_a_bounded_canonical_report_name() {
         derive_fixture_id("xai", "model", "../escape", chrono::Utc::now().date_naive()).is_err()
     );
 }
+
+#[test]
+fn derives_a_distinct_canonical_report_name_for_each_validated_effort() {
+    let id = derive_fixture_id_with_variant(
+        "deepseek",
+        "deepseek-v4-flash",
+        "low",
+        "france",
+        chrono::NaiveDate::from_ymd_opt(2026, 8, 29).unwrap(),
+    )
+    .unwrap();
+
+    assert_eq!(id, "deepseek-api-deepseek-v4-flash-low-france-2026-08-29");
+    assert!(validate_fixture_id(&id).is_ok());
+}

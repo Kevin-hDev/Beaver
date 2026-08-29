@@ -48,7 +48,19 @@ pub(super) const LIVE_SPECS: &[LiveSpec] = &[
         provider: "deepseek",
         model: "deepseek-v4-flash",
         region: "france",
+        mode: "low",
+    },
+    LiveSpec {
+        provider: "deepseek",
+        model: "deepseek-v4-flash",
+        region: "france",
         mode: "high",
+    },
+    LiveSpec {
+        provider: "deepseek",
+        model: "deepseek-v4-flash",
+        region: "france",
+        mode: "max",
     },
     LiveSpec {
         provider: "xai",
