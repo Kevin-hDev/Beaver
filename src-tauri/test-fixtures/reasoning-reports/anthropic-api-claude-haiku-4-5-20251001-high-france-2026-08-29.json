@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "fixture_id": "anthropic-api-claude-haiku-4-5-20251001-high-france-2026-08-29",
+  "route": "anthropic",
+  "model": "claude-haiku-4-5-20251001",
+  "region": "france",
+  "reasoning_mode": "high",
+  "generated_at": "2026-08-29T14:29:04.752826+00:00",
+  "scenarios": [
+    {
+      "requirement": "capture_and_persist",
+      "run_id": "4f80d135-05a7-4f04-9cbe-0d1b0e192ee9",
+      "status": "passe",
+      "request_count": 2,
+      "reasoning_event_count": 3,
+      "decisions": [
+        "reasoning decision=\"replayed\" code=\"replayed\" items=2 bytes=1456 hmac=dfed7d50e8db7750",
+        "reasoning decision=\"captured\" code=\"captured\" items=2 bytes=1456 hmac=dfed7d50e8db7750",
+        "reasoning decision=\"persisted\" code=\"persisted\" items=2 bytes=1456 hmac=dfed7d50e8db7750"
+      ]
+    },
+    {
+      "requirement": "replay_and_continue",
+      "run_id": "4f80d135-05a7-4f04-9cbe-0d1b0e192ee9",
+      "status": "passe",
+      "request_count": 2,
+      "reasoning_event_count": 3,
+      "decisions": [
+        "reasoning decision=\"replayed\" code=\"replayed\" items=2 bytes=1456 hmac=dfed7d50e8db7750",
+        "reasoning decision=\"captured\" code=\"captured\" items=2 bytes=1456 hmac=dfed7d50e8db7750",
+        "reasoning decision=\"persisted\" code=\"persisted\" items=2 bytes=1456 hmac=dfed7d50e8db7750"
+      ]
+    },
+    {
+      "requirement": "capture_and_persist",
+      "run_id": "179bb3dd-7a08-425b-b6e9-de4e686cb14a",
+      "status": "passe",
+      "request_count": 1,
+      "reasoning_event_count": 6,
+      "decisions": [
+        "reasoning decision=\"replayed\" code=\"replayed\" items=1 bytes=400 hmac=431c52c65e76fbef",
+        "reasoning decision=\"replayed\" code=\"replayed\" items=2 bytes=1456 hmac=dfed7d50e8db7750",
+        "reasoning decision=\"replayed\" code=\"replayed\" items=1 bytes=400 hmac=431c52c65e76fbef",
+        "reasoning decision=\"replayed\" code=\"replayed\" items=2 bytes=1135 hmac=a89a2ce04a5facd5",
+        "reasoning decision=\"captured\" code=\"captured\" items=2 bytes=1135 hmac=a89a2ce04a5facd5",
+        "reasoning decision=\"persisted\" code=\"persisted\" items=2 bytes=1135 hmac=a89a2ce04a5facd5"
+      ]
+    },
+    {
+      "requirement": "replay_and_continue",
+      "run_id": "179bb3dd-7a08-425b-b6e9-de4e686cb14a",
+      "status": "passe",
+      "request_count": 1,
+      "reasoning_event_count": 6,
+      "decisions": [
+        "reasoning decision=\"replayed\" code=\"replayed\" items=1 bytes=400 hmac=431c52c65e76fbef",
+        "reasoning decision=\"replayed\" code=\"replayed\" items=2 bytes=1456 hmac=dfed7d50e8db7750",
+        "reasoning decision=\"replayed\" code=\"replayed\" items=1 bytes=400 hmac=431c52c65e76fbef",
+        "reasoning decision=\"replayed\" code=\"replayed\" items=2 bytes=1135 hmac=a89a2ce04a5facd5",
+        "reasoning decision=\"captured\" code=\"captured\" items=2 bytes=1135 hmac=a89a2ce04a5facd5",
+        "reasoning decision=\"persisted\" code=\"persisted\" items=2 bytes=1135 hmac=a89a2ce04a5facd5"
+      ]
+    }
+  ]
+}

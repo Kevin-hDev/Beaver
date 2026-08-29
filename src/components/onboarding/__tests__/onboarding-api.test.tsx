@@ -47,6 +47,8 @@ describe("OnboardingApi", () => {
         return Promise.resolve([
           provider("openai", "llm"),
           provider("mistral", "llm"),
+          provider("anthropic", "llm"),
+          provider("qwen", "llm"),
           provider("brave", "search"),
         ]);
       }
@@ -68,8 +70,8 @@ describe("OnboardingApi", () => {
     await waitFor(() => expect(screen.getAllByText("openai").length).toBeGreaterThan(0));
 
     expect(screen.queryByText("brave")).toBeNull();
-    expect(screen.queryByText("anthropic")).toBeNull();
-    expect(screen.queryByText("qwen")).toBeNull();
+    expect(screen.getAllByText("anthropic").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("qwen").length).toBeGreaterThan(0);
   });
 
   it("affiche les providers deja configures", async () => {

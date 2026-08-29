@@ -1,6 +1,6 @@
 use super::contract::{ContinuationUse, ReasoningModeId};
 use super::registry::{ModelPolicy, ReplayRequirement};
-use super::registry_inventory::disabled;
+use super::registry_inventory::{disabled, live};
 
 const MODEL: &str = "qwen3.8-flash";
 
@@ -52,5 +52,18 @@ const fn policy(
     continuation_use: ContinuationUse,
     requirement: ReplayRequirement,
 ) -> ModelPolicy {
-    disabled(MODEL, reasoning_mode, continuation_use, requirement)
+    let fixture_id = match reasoning_mode {
+        ReasoningModeId::Low => "qwen-api-qwen3-8-flash-low-singapore-2026-08-29",
+        ReasoningModeId::Medium => "qwen-api-qwen3-8-flash-medium-singapore-2026-08-29",
+        ReasoningModeId::Xhigh => "qwen-api-qwen3-8-flash-xhigh-singapore-2026-08-29",
+        _ => return disabled(MODEL, reasoning_mode, continuation_use, requirement),
+    };
+    live(
+        MODEL,
+        reasoning_mode,
+        continuation_use,
+        requirement,
+        fixture_id,
+        "2026-08-29",
+    )
 }

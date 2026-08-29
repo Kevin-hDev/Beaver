@@ -10,6 +10,7 @@ mod policy_types;
 mod tool_limit_policies;
 mod tool_policies;
 mod types;
+mod wire_contracts;
 
 #[cfg(test)]
 pub(super) use catalog::{all, find_id};

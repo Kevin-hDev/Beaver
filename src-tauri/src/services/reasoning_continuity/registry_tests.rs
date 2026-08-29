@@ -346,18 +346,13 @@ fn local_scope_is_valid_only_for_ollama() {
 }
 
 #[test]
-fn anthropic_exact_modes_are_declared_but_not_live_before_fixture_validation() {
+fn anthropic_exact_modes_are_live_after_fixture_validation() {
     let route = active_routes()
         .iter()
         .find(|route| route.route_id == RouteId::Anthropic)
         .unwrap();
     assert_eq!(route.contract_id, ContractId::AnthropicMessagesV1);
     assert_eq!(route.adapter, AdapterId::AnthropicBlocks);
-    assert!(route
-        .models
-        .iter()
-        .all(|policy| policy.activation == ActivationState::Disabled));
-
     let scope = CredentialScope::authenticated("fixture-scope").unwrap();
     for mode in [
         ReasoningModeId::Low,
@@ -377,24 +372,19 @@ fn anthropic_exact_modes_are_declared_but_not_live_before_fixture_validation() {
             })
             .unwrap();
             assert_eq!(policy.requirement(), ReplayRequirement::Required);
-            assert_eq!(policy.activation(), ActivationState::Disabled);
+            assert_eq!(policy.activation(), ActivationState::LiveValidated);
         }
     }
 }
 
 #[test]
-fn qwen_exact_modes_are_declared_but_not_live_before_fixture_validation() {
+fn qwen_exact_modes_are_live_after_fixture_validation() {
     let route = active_routes()
         .iter()
         .find(|route| route.route_id == RouteId::Qwen)
         .unwrap();
     assert_eq!(route.contract_id, ContractId::QwenChatV1);
     assert_eq!(route.adapter, AdapterId::ChatReasoning);
-    assert!(route
-        .models
-        .iter()
-        .all(|policy| policy.activation == ActivationState::Disabled));
-
     let scope = CredentialScope::authenticated("fixture-scope").unwrap();
     for mode in [
         ReasoningModeId::Low,
@@ -414,7 +404,7 @@ fn qwen_exact_modes_are_declared_but_not_live_before_fixture_validation() {
             })
             .unwrap();
             assert_eq!(policy.requirement(), ReplayRequirement::Required);
-            assert_eq!(policy.activation(), ActivationState::Disabled);
+            assert_eq!(policy.activation(), ActivationState::LiveValidated);
         }
     }
 
@@ -454,6 +444,48 @@ fn only_exact_live_fixture_pairs_are_activated() {
         }
     }
     let expected = [
+        (
+            RouteId::Anthropic,
+            "claude-haiku-4-5-20251001",
+            ReasoningModeId::Low,
+            ReplayRequirement::Required,
+            "anthropic-api-claude-haiku-4-5-20251001-low-france-2026-08-29",
+        ),
+        (
+            RouteId::Anthropic,
+            "claude-haiku-4-5-20251001",
+            ReasoningModeId::Medium,
+            ReplayRequirement::Required,
+            "anthropic-api-claude-haiku-4-5-20251001-medium-france-2026-08-29",
+        ),
+        (
+            RouteId::Anthropic,
+            "claude-haiku-4-5-20251001",
+            ReasoningModeId::High,
+            ReplayRequirement::Required,
+            "anthropic-api-claude-haiku-4-5-20251001-high-france-2026-08-29",
+        ),
+        (
+            RouteId::Qwen,
+            "qwen3.8-flash",
+            ReasoningModeId::Low,
+            ReplayRequirement::Required,
+            "qwen-api-qwen3-8-flash-low-singapore-2026-08-29",
+        ),
+        (
+            RouteId::Qwen,
+            "qwen3.8-flash",
+            ReasoningModeId::Medium,
+            ReplayRequirement::Required,
+            "qwen-api-qwen3-8-flash-medium-singapore-2026-08-29",
+        ),
+        (
+            RouteId::Qwen,
+            "qwen3.8-flash",
+            ReasoningModeId::Xhigh,
+            ReplayRequirement::Required,
+            "qwen-api-qwen3-8-flash-xhigh-singapore-2026-08-29",
+        ),
         (
             RouteId::Ollama,
             "gemma4:e2b-it-q4_K_M",
@@ -574,7 +606,10 @@ fn only_exact_live_fixture_pairs_are_activated() {
             model.continuation_use,
             ContinuationUse::UserContinuation | ContinuationUse::ToolContinuation
         ));
-        let expected_date = if *route == RouteId::DeepSeek {
+        let expected_date = if matches!(
+            *route,
+            RouteId::DeepSeek | RouteId::Anthropic | RouteId::Qwen
+        ) {
             "2026-08-29"
         } else {
             "2026-08-26"

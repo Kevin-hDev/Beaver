@@ -12,6 +12,7 @@ pub(super) const LOCAL_PROFILES: &[RouteProfile] = &[RouteProfile {
     endpoint: EndpointPolicy::OllamaLocal,
     availability: AVAILABLE_ANY,
     catalog: CatalogPolicy::Hidden,
+    strict_model_allowlist: false,
     output_limits: OutputLimitPolicy {
         automatic: false,
         fallback: None,

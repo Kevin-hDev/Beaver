@@ -173,7 +173,7 @@ mod tests {
     }
 
     #[test]
-    fn rejects_candidate_providers_before_public_activation() {
+    fn accepts_live_validated_public_providers() {
         let schedule = WakeupSchedule::Daily {
             time: "08:00".into(),
         };
@@ -181,7 +181,7 @@ mod tests {
             ("anthropic", "claude-haiku-4-5-20251001"),
             ("qwen", "qwen3.8-flash"),
         ] {
-            assert!(validate_input(provider, "Test", model, "Ping", "", &schedule, true).is_err());
+            assert!(validate_input(provider, "Test", model, "Ping", "", &schedule, true).is_ok());
         }
     }
 

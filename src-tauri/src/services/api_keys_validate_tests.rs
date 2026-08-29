@@ -18,7 +18,7 @@ fn validate_provider_accepts_known_llm_provider() {
 }
 
 #[test]
-fn validate_provider_accepts_configurable_anthropic_candidate() {
+fn validate_provider_accepts_anthropic() {
     assert!(validate_provider("anthropic").is_ok());
 }
 

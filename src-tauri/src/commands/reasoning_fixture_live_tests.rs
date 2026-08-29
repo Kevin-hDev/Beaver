@@ -205,7 +205,7 @@ mod vision_tests {
     }
 
     #[test]
-    fn live_specs_include_each_candidate_reasoning_mode_once() {
+    fn live_specs_include_each_validated_provider_mode_once() {
         let tuples = super::LIVE_SPECS
             .iter()
             .filter(|spec| matches!(spec.provider, "anthropic" | "qwen"))

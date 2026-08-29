@@ -1,6 +1,6 @@
 use super::contract::{ContinuationUse, ReasoningModeId};
 use super::registry::{ModelPolicy, ReplayRequirement};
-use super::registry_inventory::disabled;
+use super::registry_inventory::{disabled, live};
 
 const MODEL: &str = "claude-haiku-4-5-20251001";
 
@@ -52,5 +52,20 @@ const fn policy(
     continuation_use: ContinuationUse,
     requirement: ReplayRequirement,
 ) -> ModelPolicy {
-    disabled(MODEL, reasoning_mode, continuation_use, requirement)
+    let fixture_id = match reasoning_mode {
+        ReasoningModeId::Low => "anthropic-api-claude-haiku-4-5-20251001-low-france-2026-08-29",
+        ReasoningModeId::Medium => {
+            "anthropic-api-claude-haiku-4-5-20251001-medium-france-2026-08-29"
+        }
+        ReasoningModeId::High => "anthropic-api-claude-haiku-4-5-20251001-high-france-2026-08-29",
+        _ => return disabled(MODEL, reasoning_mode, continuation_use, requirement),
+    };
+    live(
+        MODEL,
+        reasoning_mode,
+        continuation_use,
+        requirement,
+        fixture_id,
+        "2026-08-29",
+    )
 }

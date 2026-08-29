@@ -132,7 +132,7 @@ fn route_behavior_baseline_preserves_every_remote_route() {
             oauth: false,
             auto_max_tokens: true,
             fallback_max_tokens: Some(64_000),
-            usage_scope: UsageScope::InteractiveOnly,
+            usage_scope: UsageScope::Any,
         },
     ];
 

@@ -129,7 +129,7 @@ fn stream_dispatch_refuses_unavailable_or_unknown_routes_before_payload() {
 }
 
 #[tokio::test]
-async fn anthropic_client_is_wired_but_candidate_route_stays_unavailable() {
+async fn anthropic_live_route_supports_every_declared_invocation_kind() {
     assert_eq!(
         super::stream_dispatch::resolve_client_for_test("anthropic").unwrap(),
         ClientKind::Anthropic
@@ -148,8 +148,9 @@ async fn anthropic_client_is_wired_but_candidate_route_stays_unavailable() {
                 purpose,
             )
             .await
-            .unwrap_err(),
-            RouteSelectionError::Unavailable
+            .unwrap()
+            .client,
+            ClientKind::Anthropic
         );
     }
     assert_eq!(
@@ -160,8 +161,9 @@ async fn anthropic_client_is_wired_but_candidate_route_stays_unavailable() {
             RequestPurpose::ManualChat,
         )
         .await
-        .unwrap_err(),
-        RouteSelectionError::Unavailable
+        .unwrap()
+        .client,
+        ClientKind::Anthropic
     );
 
     let fixture = ContinuationTarget::FixtureCandidate(ReplayTarget {
@@ -191,7 +193,7 @@ async fn anthropic_client_is_wired_but_candidate_route_stays_unavailable() {
 }
 
 #[tokio::test]
-async fn qwen_chat_client_is_wired_but_candidate_route_stays_unavailable() {
+async fn qwen_live_route_supports_every_declared_invocation_kind() {
     assert_eq!(
         super::stream_dispatch::resolve_client_for_test("qwen").unwrap(),
         ClientKind::ChatCompletions
@@ -210,8 +212,9 @@ async fn qwen_chat_client_is_wired_but_candidate_route_stays_unavailable() {
                 purpose,
             )
             .await
-            .unwrap_err(),
-            RouteSelectionError::Unavailable
+            .unwrap()
+            .client,
+            ClientKind::ChatCompletions
         );
     }
     assert_eq!(
@@ -222,8 +225,9 @@ async fn qwen_chat_client_is_wired_but_candidate_route_stays_unavailable() {
             RequestPurpose::ManualChat,
         )
         .await
-        .unwrap_err(),
-        RouteSelectionError::Unavailable
+        .unwrap()
+        .client,
+        ClientKind::ChatCompletions
     );
 
     let fixture = ContinuationTarget::FixtureCandidate(ReplayTarget {

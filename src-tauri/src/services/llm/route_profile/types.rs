@@ -159,8 +159,13 @@ pub(in crate::services::llm) struct RouteAvailability {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(in crate::services::llm) enum CatalogPolicy {
-    PublicApi { signup_url: &'static str },
-    ConfigurableApi { signup_url: &'static str },
+    PublicApi {
+        signup_url: &'static str,
+    },
+    #[allow(dead_code, reason = "reserved for bounded pre-promotion routes")]
+    ConfigurableApi {
+        signup_url: &'static str,
+    },
     Hidden,
 }
 
@@ -181,6 +186,7 @@ pub(in crate::services::llm) struct RouteProfile {
     pub endpoint: EndpointPolicy,
     pub availability: RouteAvailability,
     pub catalog: CatalogPolicy,
+    pub strict_model_allowlist: bool,
     pub output_limits: OutputLimitPolicy,
     pub policies: RoutePolicies,
 }

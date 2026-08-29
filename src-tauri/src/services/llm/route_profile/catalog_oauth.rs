@@ -34,6 +34,7 @@ pub(super) const OAUTH_PROFILES: &[RouteProfile] = &[
         endpoint: endpoint(crate::services::llm_oauth::XAI_PROXY_BASE_URL, "/models-v2"),
         availability: INTERACTIVE_ONLY,
         catalog: CatalogPolicy::Hidden,
+        strict_model_allowlist: false,
         output_limits: OUTPUT,
         policies: XAI_OAUTH,
     },
@@ -47,6 +48,7 @@ pub(super) const OAUTH_PROFILES: &[RouteProfile] = &[
         endpoint: endpoint("https://api.kimi.com/coding/v1", "/models"),
         availability: INTERACTIVE_ONLY,
         catalog: CatalogPolicy::Hidden,
+        strict_model_allowlist: false,
         output_limits: OUTPUT,
         policies: MOONSHOT,
     },
@@ -64,6 +66,7 @@ pub(super) const OAUTH_PROFILES: &[RouteProfile] = &[
         endpoint: EndpointPolicy::ConnectionConfigured,
         availability: AVAILABLE_ANY,
         catalog: CatalogPolicy::Hidden,
+        strict_model_allowlist: false,
         output_limits: OutputLimitPolicy {
             automatic: true,
             fallback: Some(128_000),

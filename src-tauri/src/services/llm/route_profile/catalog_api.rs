@@ -32,9 +32,6 @@ const fn endpoint(base_url: &'static str, models_endpoint: &'static str) -> Endp
 const fn public(signup_url: &'static str) -> CatalogPolicy {
     CatalogPolicy::PublicApi { signup_url }
 }
-const fn configurable(signup_url: &'static str) -> CatalogPolicy {
-    CatalogPolicy::ConfigurableApi { signup_url }
-}
 const fn limits(automatic: bool, fallback: Option<u32>) -> OutputLimitPolicy {
     OutputLimitPolicy {
         automatic,
@@ -56,6 +53,7 @@ pub(super) const API_PROFILES: &[RouteProfile] = &[
         ),
         availability: AVAILABLE_ANY,
         catalog: public("https://aistudio.google.com/app/apikey"),
+        strict_model_allowlist: false,
         output_limits: limits(true, None),
         policies: GOOGLE,
     },
@@ -69,6 +67,7 @@ pub(super) const API_PROFILES: &[RouteProfile] = &[
         endpoint: endpoint("https://api.mistral.ai/v1", "/models"),
         availability: AVAILABLE_ANY,
         catalog: public("https://console.mistral.ai/api-keys"),
+        strict_model_allowlist: false,
         output_limits: limits(true, Some(64_000)),
         policies: MISTRAL,
     },
@@ -82,6 +81,7 @@ pub(super) const API_PROFILES: &[RouteProfile] = &[
         endpoint: endpoint("https://api.cerebras.ai/v1", "/models"),
         availability: AVAILABLE_ANY,
         catalog: public("https://cloud.cerebras.ai/"),
+        strict_model_allowlist: false,
         output_limits: limits(false, None),
         policies: CEREBRAS,
     },
@@ -95,6 +95,7 @@ pub(super) const API_PROFILES: &[RouteProfile] = &[
         endpoint: endpoint("https://openrouter.ai/api/v1", "/models"),
         availability: AVAILABLE_ANY,
         catalog: public("https://openrouter.ai/settings/keys"),
+        strict_model_allowlist: false,
         output_limits: limits(true, Some(64_000)),
         policies: OPENROUTER,
     },
@@ -108,6 +109,7 @@ pub(super) const API_PROFILES: &[RouteProfile] = &[
         endpoint: endpoint("https://api.openai.com/v1", "/models"),
         availability: AVAILABLE_ANY,
         catalog: public("https://platform.openai.com/api-keys"),
+        strict_model_allowlist: false,
         output_limits: limits(true, Some(128_000)),
         policies: OPENAI_RESPONSES_PUBLIC,
     },
@@ -121,6 +123,7 @@ pub(super) const API_PROFILES: &[RouteProfile] = &[
         endpoint: endpoint("https://api.deepseek.com/v1", "/models"),
         availability: AVAILABLE_ANY,
         catalog: public("https://platform.deepseek.com/api_keys"),
+        strict_model_allowlist: false,
         output_limits: limits(true, Some(384_000)),
         policies: DEEPSEEK,
     },
@@ -134,6 +137,7 @@ pub(super) const API_PROFILES: &[RouteProfile] = &[
         endpoint: endpoint("https://api.x.ai/v1", "/models"),
         availability: AVAILABLE_ANY,
         catalog: public("https://console.x.ai"),
+        strict_model_allowlist: false,
         output_limits: limits(true, Some(64_000)),
         policies: XAI_PUBLIC,
     },
@@ -147,6 +151,7 @@ pub(super) const API_PROFILES: &[RouteProfile] = &[
         endpoint: endpoint("https://api.moonshot.ai/v1", "/models"),
         availability: AVAILABLE_ANY,
         catalog: public("https://platform.kimi.ai/console/api-keys"),
+        strict_model_allowlist: false,
         output_limits: limits(true, Some(131_072)),
         policies: MOONSHOT,
     },
@@ -160,6 +165,7 @@ pub(super) const API_PROFILES: &[RouteProfile] = &[
         endpoint: endpoint("https://api.z.ai/api/paas/v4", ""),
         availability: AVAILABLE_ANY,
         catalog: public("https://z.ai/manage-apikey/apikey-list"),
+        strict_model_allowlist: false,
         output_limits: limits(true, Some(96_000)),
         policies: ZAI,
     },
@@ -171,8 +177,9 @@ pub(super) const API_PROFILES: &[RouteProfile] = &[
         wire: ANTHROPIC_WIRE,
         auth: anthropic_api_key(),
         endpoint: endpoint("https://api.anthropic.com/v1", "/models"),
-        availability: CANDIDATE_ONLY,
-        catalog: configurable("https://console.anthropic.com/settings/keys"),
+        availability: AVAILABLE_ANY,
+        catalog: public("https://console.anthropic.com/settings/keys"),
+        strict_model_allowlist: true,
         output_limits: limits(true, Some(64_000)),
         policies: ANTHROPIC,
     },
@@ -186,8 +193,9 @@ pub(super) const API_PROFILES: &[RouteProfile] = &[
         endpoint: EndpointPolicy::ProviderConnection {
             resolver: ConnectionEndpointResolver::QwenModelStudio,
         },
-        availability: CANDIDATE_ONLY,
-        catalog: configurable("https://modelstudio.console.alibabacloud.com/"),
+        availability: AVAILABLE_ANY,
+        catalog: public("https://modelstudio.console.alibabacloud.com/"),
+        strict_model_allowlist: true,
         output_limits: limits(true, Some(131_072)),
         policies: QWEN,
     },

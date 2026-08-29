@@ -107,7 +107,7 @@ fn wire_contract_places_tool_results_without_losing_ids_or_opaque_reasoning() {
 }
 
 #[test]
-fn anthropic_candidate_requires_max_tokens_and_omits_deprecated_sampling_fields() {
+fn anthropic_requires_max_tokens_and_omits_deprecated_sampling_fields() {
     assert_eq!(
         super::route_profile::anthropic_fixture(None),
         Err("provider_max_tokens_required")

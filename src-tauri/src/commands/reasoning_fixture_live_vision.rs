@@ -31,7 +31,7 @@ pub(super) async fn run(app: &tauri::App, spec: &LiveSpec) -> Result<(), String>
         app,
         spec,
         &session.id,
-        "Without a new attachment, reply with the color of the top-left quadrant only.",
+        "Without a new attachment, reply exactly RED for the top-left quadrant.",
         Vec::new(),
     )
     .await?;
