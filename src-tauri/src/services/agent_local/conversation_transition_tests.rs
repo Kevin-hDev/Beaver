@@ -189,7 +189,7 @@ fn current_user_only_turn_is_not_mistaken_for_a_missing_capture() {
 }
 
 #[test]
-fn required_turn_with_one_complete_envelope_does_not_fallback() {
+fn required_turn_with_one_missing_envelope_falls_back_as_a_whole() {
     let replay_target = anthropic_target(ContinuationUse::UserContinuation);
     let mut session = fixture_session();
     let mut user = message("user", "turn", "user", "question");
@@ -207,9 +207,9 @@ fn required_turn_with_one_complete_envelope_does_not_fallback() {
 
     let result = conversation_transition::for_target(&session, &replay_target);
 
-    assert_eq!(result.barrier, None);
-    assert_eq!(result.compatible_suffix_start, 0);
-    assert_eq!(result.replayable_message_indexes, vec![1]);
+    assert_eq!(result.barrier, Some(ContinuityBarrier::Fallback));
+    assert_eq!(result.compatible_suffix_start, session.messages.len());
+    assert!(result.replayable_message_indexes.is_empty());
 }
 
 #[test]

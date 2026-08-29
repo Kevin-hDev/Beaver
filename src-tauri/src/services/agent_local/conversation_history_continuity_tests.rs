@@ -96,7 +96,7 @@ async fn fixture_candidate_reloads_canonical_tool_links_after_restart() {
     }]);
     assistant.continuation = Some(ReasoningEnvelope::new(
         ContractId::OpenAiResponsesV1,
-        source,
+        source.clone(),
         CompletionState::Complete,
         ContinuationState::ResponsesLocal {
             items: vec![serde_json::json!({
@@ -115,12 +115,21 @@ async fn fixture_candidate_reloads_canonical_tool_links_after_restart() {
         "fixture.write_note",
         "ok",
     );
-    let final_assistant = message(
+    let mut final_assistant = message(
         "00000000-0000-4000-8000-000000000014",
         turn_id,
         "assistant",
         "done",
     );
+    final_assistant.continuation = Some(ReasoningEnvelope::new(
+        ContractId::OpenAiResponsesV1,
+        source,
+        CompletionState::Complete,
+        ContinuationState::ResponsesLocal {
+            items: vec![serde_json::json!({"type":"message", "content":[]})],
+        },
+        Vec::new(),
+    ));
     session.messages = vec![user, assistant, tool, final_assistant];
     super::super::session_store::save(&session).await.unwrap();
 

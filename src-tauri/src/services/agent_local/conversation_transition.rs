@@ -112,11 +112,11 @@ fn requires_fallback(
             .is_some_and(|policy| policy.requirement() == ReplayRequirement::Required);
     required_user_replay
         && turn.iter().any(|message| message.role == "assistant")
-        && !turn
+        && turn
             .iter()
             .filter(|message| message.role == "assistant")
             .any(|message| {
-                message.continuation.as_ref().is_some_and(|envelope| {
+                !message.continuation.as_ref().is_some_and(|envelope| {
                     envelope.completion == CompletionState::Complete
                         && allows_replay(target, envelope)
                 })
