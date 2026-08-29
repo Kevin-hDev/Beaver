@@ -19,10 +19,6 @@ pub(in crate::services::llm) enum BuildError {
 #[derive(Debug)]
 pub(in crate::services::llm) struct PreparedPayload {
     pub payload: Value,
-    #[allow(
-        dead_code,
-        reason = "populated by the continuity adapter before activation"
-    )]
     pub replayed: Vec<crate::services::llm::reasoning_wire::replay::ReplayEvidence>,
 }
 

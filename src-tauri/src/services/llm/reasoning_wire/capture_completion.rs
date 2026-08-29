@@ -33,7 +33,8 @@ impl ReasoningCapture {
         }
         if !matches!(
             self.contract_id,
-            ContractId::OllamaNativeV1
+            ContractId::AnthropicMessagesV1
+                | ContractId::OllamaNativeV1
                 | ContractId::OpenAiResponsesV1
                 | ContractId::XaiResponsesV1
                 | ContractId::CodexResponsesV1

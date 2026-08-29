@@ -102,6 +102,20 @@ fn chat_capture_accepts_the_native_done_marker_without_a_finish_reason() {
 }
 
 #[test]
+fn anthropic_transport_end_without_message_stop_cannot_complete_capture() {
+    let mut capture =
+        ReasoningCapture::new(context(RouteId::Anthropic, "claude-haiku-4-5-20251001")).unwrap();
+    capture.observe_anthropic_block(json!({
+        "type": "thinking",
+        "thinking": "opaque",
+        "signature": "AAE+/=="
+    }));
+    capture.observe_transport_complete();
+
+    assert!(capture.finish_complete().is_none());
+}
+
+#[test]
 fn qwen_capture_concatenates_fragmented_reasoning_exactly_once() {
     let mut capture = ReasoningCapture::new(ReasoningCaptureContext {
         route_id: RouteId::Qwen,

@@ -144,6 +144,105 @@ fn compaction_refuses_an_open_tool_chain() {
     assert_eq!(serde_json::to_vec(&session.messages).unwrap(), before);
 }
 
+#[test]
+fn required_user_replay_falls_back_after_a_historical_assistant_loses_its_envelope() {
+    let replay_target = anthropic_target(ContinuationUse::UserContinuation);
+    let mut session = fixture_session();
+    let mut missing = complete_turn("missing", "visible answer", None);
+    missing[0].replay_source = Some(source_for(&replay_target));
+    let mut complete = complete_turn(
+        "complete",
+        "visible answer",
+        Some(anthropic_envelope(&replay_target)),
+    );
+    complete[0].replay_source = Some(source_for(&replay_target));
+    session.messages.extend(missing);
+    session.messages.extend(complete);
+
+    let result = conversation_transition::for_target(&session, &replay_target);
+
+    assert_eq!(result.barrier, Some(ContinuityBarrier::Fallback));
+    assert_eq!(result.compatible_suffix_start, 2);
+    assert_eq!(result.replayable_message_indexes, vec![3]);
+}
+
+#[test]
+fn current_user_only_turn_is_not_mistaken_for_a_missing_capture() {
+    let replay_target = anthropic_target(ContinuationUse::UserContinuation);
+    let mut session = fixture_session();
+    let mut complete = complete_turn(
+        "complete",
+        "visible answer",
+        Some(anthropic_envelope(&replay_target)),
+    );
+    complete[0].replay_source = Some(source_for(&replay_target));
+    session.messages.extend(complete);
+    let mut current = message("user-current", "turn-current", "user", "new question");
+    current.replay_source = Some(source_for(&replay_target));
+    session.messages.push(current);
+
+    let result = conversation_transition::for_target(&session, &replay_target);
+
+    assert_eq!(result.barrier, None);
+    assert_eq!(result.compatible_suffix_start, 0);
+    assert_eq!(result.replayable_message_indexes, vec![1]);
+}
+
+#[test]
+fn required_turn_with_one_complete_envelope_does_not_fallback() {
+    let replay_target = anthropic_target(ContinuationUse::UserContinuation);
+    let mut session = fixture_session();
+    let mut user = message("user", "turn", "user", "question");
+    user.replay_source = Some(source_for(&replay_target));
+    let assistant_with_capture = AgentMessage {
+        continuation: Some(anthropic_envelope(&replay_target)),
+        ..message("assistant-tool", "turn", "assistant", "calling tool")
+    };
+    session.messages = vec![
+        user,
+        assistant_with_capture,
+        message("tool", "turn", "tool", "tool result"),
+        message("assistant-final", "turn", "assistant", "visible answer"),
+    ];
+
+    let result = conversation_transition::for_target(&session, &replay_target);
+
+    assert_eq!(result.barrier, None);
+    assert_eq!(result.compatible_suffix_start, 0);
+    assert_eq!(result.replayable_message_indexes, vec![1]);
+}
+
+#[test]
+fn tool_continuation_with_missing_envelope_stays_fail_closed() {
+    let replay_target = anthropic_target(ContinuationUse::ToolContinuation);
+    let mut session = fixture_session();
+    session.messages = complete_turn("missing", "visible answer", None);
+    session.messages[0].replay_source = Some(source_for(&replay_target));
+
+    let result = conversation_transition::for_target(&session, &replay_target);
+
+    assert_ne!(result.barrier, Some(ContinuityBarrier::Fallback));
+}
+
+#[test]
+fn optional_replay_does_not_create_fallback_for_missing_envelope() {
+    let replay_target = ReplayTarget {
+        route_id: RouteId::Zai,
+        model_id: "glm-4.5-flash".into(),
+        credential_scope: CredentialScope::authenticated("scope-a").unwrap(),
+        reasoning_mode: ReasoningModeId::Auto,
+        continuation_use: ContinuationUse::UserContinuation,
+    };
+    let mut session = fixture_session();
+    session.messages = complete_turn("missing", "visible answer", None);
+    session.messages[0].replay_source = Some(source_for(&replay_target));
+
+    let result = conversation_transition::for_target(&session, &replay_target);
+
+    assert_ne!(result.barrier, Some(ContinuityBarrier::Fallback));
+    assert_eq!(result.compatible_suffix_start, 0);
+}
+
 fn fixture_session() -> AgentSession {
     serde_json::from_value(serde_json::json!({
         "schema_version": 2,
@@ -167,6 +266,41 @@ fn target(model: &str) -> ReplayTarget {
         reasoning_mode: ReasoningModeId::Auto,
         continuation_use: ContinuationUse::UserContinuation,
     }
+}
+
+fn anthropic_target(continuation_use: ContinuationUse) -> ReplayTarget {
+    ReplayTarget {
+        route_id: RouteId::Anthropic,
+        model_id: "claude-haiku-4-5-20251001".into(),
+        credential_scope: CredentialScope::authenticated("scope-a").unwrap(),
+        reasoning_mode: ReasoningModeId::Medium,
+        continuation_use,
+    }
+}
+
+fn source_for(target: &ReplayTarget) -> ReasoningSource {
+    ReasoningSource {
+        route_id: target.route_id,
+        model_id: target.model_id.clone(),
+        credential_scope: target.credential_scope.clone(),
+        reasoning_mode: target.reasoning_mode,
+    }
+}
+
+fn anthropic_envelope(target: &ReplayTarget) -> ReasoningEnvelope {
+    ReasoningEnvelope::new(
+        ContractId::AnthropicMessagesV1,
+        source_for(target),
+        CompletionState::Complete,
+        ContinuationState::AnthropicBlocks {
+            blocks: vec![serde_json::json!({
+                "type": "thinking",
+                "thinking": "opaque",
+                "signature": "AAE+/=="
+            })],
+        },
+        Vec::new(),
+    )
 }
 
 fn complete_turn(
