@@ -34,11 +34,11 @@
   "apiKeys": {
     "providers": {
       "google": { "description": "Gemini 3.7 Flash — multimodale, tool e ragionamento.", "freeTier": "Livello gratuito per alcuni modelli, in base a account e limiti." },
-      "mistral": { "description": "Modelli open-weight francesi — piano Experiment gratuito.", "freeTier": "Modalità gratuita e piano a pagamento; disponibilità in base all’account." },
+      "mistral": { "description": "Modelli open-weight.", "freeTier": "Modalità gratuita e piano a pagamento; disponibilità in base all’account." },
       "cerebras": { "description": "Modelli open-weight fino a 3.000 tok/s su chip wafer-scale.", "freeTier": "Livello gratuito e quote in base al progetto e all’account." },
       "openrouter": { "description": "Accesso a oltre 300 modelli con una sola chiave API.", "freeTier": "I modelli [Free] non usano crediti; gli altri usano il saldo." },
       "openai": { "description": "GPT-5.6 Sol, Terra e Luna — ragionamento all’avanguardia.", "freeTier": "API fatturata in base all’uso e al modello." },
-      "deepseek": { "description": "DeepSeek V4-Flash / V4-Pro — rapporto qualità/prezzo imbattibile.", "freeTier": "API fatturata in base all’uso e al modello." },
+      "deepseek": { "description": "DeepSeek V4-Flash / V4-Pro.", "freeTier": "API fatturata in base all’uso e al modello." },
       "xai": { "description": "Grok 4.6 — contesto 500K, ragionamento avanzato.", "freeTier": "Crediti prepagati o fatturazione mensile, in base all’account." },
       "moonshot": { "description": "Kimi K3 — coding agentico, multimodale, contesto 1M.", "freeTier": "API fatturata in base all’uso." },
       "zai": { "description": "GLM-5.3 — contesto 1M, coding a lungo orizzonte e ragionamento.", "freeTier": "I modelli Flash indicati [Free] non hanno costo; gli altri sono fatturati." },

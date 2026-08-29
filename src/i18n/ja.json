@@ -34,11 +34,11 @@
   "apiKeys": {
     "providers": {
       "google": { "description": "Gemini 3.7 Flash — マルチモーダル、ツール、推論。", "freeTier": "一部モデルに無料枠があり、アカウントと上限により異なります。" },
-      "mistral": { "description": "フランス発のオープンウェイトモデル — 無料の Experiment プラン。", "freeTier": "無料モードと有料プランがあり、利用可否はアカウントによります。" },
+      "mistral": { "description": "オープンウェイトモデル。", "freeTier": "無料モードと有料プランがあり、利用可否はアカウントによります。" },
       "cerebras": { "description": "ウェハースケールチップで最大 3,000 tok/s のオープンウェイトモデル。", "freeTier": "無料枠とクォータはプロジェクトとアカウントによります。" },
       "openrouter": { "description": "1 つの API キーで 300 以上のモデルにアクセス。", "freeTier": "[Free] のモデルはクレジットを使わず、他は残高を使います。" },
       "openai": { "description": "GPT-5.6 Sol、Terra、Luna — 最先端の推論。", "freeTier": "API は利用量とモデルに応じて課金されます。" },
-      "deepseek": { "description": "DeepSeek V4-Flash / V4-Pro — 圧倒的なコストパフォーマンス。", "freeTier": "API は利用量とモデルに応じて課金されます。" },
+      "deepseek": { "description": "DeepSeek V4-Flash / V4-Pro。", "freeTier": "API は利用量とモデルに応じて課金されます。" },
       "xai": { "description": "Grok 4.6 — 500K コンテキスト、高度な推論。", "freeTier": "前払いクレジットまたは月額請求で、アカウントにより異なります。" },
       "moonshot": { "description": "Kimi K3 — エージェント型コーディング、マルチモーダル、1M コンテキスト。", "freeTier": "API は利用量に応じて課金されます。" },
       "zai": { "description": "GLM-5.3 — 1M コンテキスト、長期的なコーディングと推論。", "freeTier": "[Free] の Flash モデルは無料で、それ以外は課金されます。" },

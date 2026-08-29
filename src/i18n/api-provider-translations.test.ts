@@ -73,6 +73,25 @@ describe("api provider translations", () => {
     }
   });
 
+  it("garde les descriptions Mistral et DeepSeek factuelles", () => {
+    const expected = {
+      de: ["Open-Weight-Modelle.", "DeepSeek V4-Flash / V4-Pro."],
+      en: ["Open-weight models.", "DeepSeek V4-Flash / V4-Pro."],
+      es: ["Modelos open-weight.", "DeepSeek V4-Flash / V4-Pro."],
+      fr: ["Modèles open-weight.", "DeepSeek V4-Flash / V4-Pro."],
+      it: ["Modelli open-weight.", "DeepSeek V4-Flash / V4-Pro."],
+      ja: ["オープンウェイトモデル。", "DeepSeek V4-Flash / V4-Pro。"],
+      zh: ["开放权重模型。", "DeepSeek V4-Flash / V4-Pro。"],
+    } as const;
+
+    for (const [lang, locale] of Object.entries(locales)) {
+      expect(
+        [locale.apiKeys.providers.mistral.description, locale.apiKeys.providers.deepseek.description],
+        lang,
+      ).toEqual(expected[lang as keyof typeof expected]);
+    }
+  });
+
   it("retrouve les providers des catalogues Rust", () => {
     const [apiKeys, forecast] = SECTIONS;
     expect(apiKeys.ids).not.toContain("groq");

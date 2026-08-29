@@ -34,11 +34,11 @@
   "apiKeys": {
     "providers": {
       "google": { "description": "Gemini 3.7 Flash — 多模态、工具调用与推理。", "freeTier": "部分模型提供免费层级，取决于账户和限制。" },
-      "mistral": { "description": "法国开源权重模型 — 免费 Experiment 套餐。", "freeTier": "提供免费模式和付费套餐；可用性取决于账户。" },
+      "mistral": { "description": "开放权重模型。", "freeTier": "提供免费模式和付费套餐；可用性取决于账户。" },
       "cerebras": { "description": "晶圆级芯片上运行开源权重模型，最高 3 000 tok/s。", "freeTier": "免费层级和配额取决于项目与账户。" },
       "openrouter": { "description": "一个 API 密钥访问 300+ 模型。", "freeTier": "标有[Free]的模型不消耗额度；其他模型使用账户余额。" },
       "openai": { "description": "GPT-5.6 Sol、Terra 与 Luna — 前沿推理能力。", "freeTier": "API 按使用量和模型计费。" },
-      "deepseek": { "description": "DeepSeek V4-Flash / V4-Pro — 极致性价比。", "freeTier": "API 按使用量和模型计费。" },
+      "deepseek": { "description": "DeepSeek V4-Flash / V4-Pro。", "freeTier": "API 按使用量和模型计费。" },
       "xai": { "description": "Grok 4.6 — 50 万上下文，高级推理。", "freeTier": "预付额度或按月计费，取决于账户。" },
       "moonshot": { "description": "Kimi K3 — 智能体编程、多模态、100 万上下文。", "freeTier": "API 按使用量计费。" },
       "zai": { "description": "GLM-5.3 — 100 万上下文，长跨度编程与推理。", "freeTier": "标有[Free]的 Flash 模型无费用；其他模型需付费。" },
