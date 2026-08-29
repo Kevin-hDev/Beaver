@@ -15,6 +15,14 @@ impl ProviderRequestMetric {
             && valid_routed_endpoint(self)
             && valid_label(&self.request_id, 128)
             && self
+                .provider_request_id
+                .as_deref()
+                .is_none_or(valid_provider_metadata)
+            && self
+                .finish_reason
+                .as_deref()
+                .is_none_or(valid_provider_metadata)
+            && self
                 .session_id
                 .as_deref()
                 .is_none_or(|value| valid_label(value, 128))
@@ -60,6 +68,7 @@ fn valid_route(metric: &ProviderRequestMetric) -> bool {
         "codex-oauth" => ("openai", super::UsageApiFormat::Responses),
         "xai-oauth" => ("xai", super::UsageApiFormat::ChatCompletions),
         "moonshot-oauth" => ("moonshot", super::UsageApiFormat::ChatCompletions),
+        "anthropic" => ("anthropic", super::UsageApiFormat::AnthropicMessages),
         provider => (provider, super::UsageApiFormat::ChatCompletions),
     };
     metric.canonical_provider_id == provider && metric.api_format == format
@@ -90,6 +99,7 @@ fn valid_provider(value: &str) -> bool {
             | "xai"
             | "moonshot"
             | "zai"
+            | "anthropic"
     )
 }
 
@@ -130,4 +140,12 @@ pub(super) fn valid_label(value: &str, maximum: usize) -> bool {
             character.is_ascii_alphanumeric()
                 || matches!(character, '-' | '_' | '.' | '/' | ':' | '@' | '+')
         })
+}
+
+pub(super) fn valid_provider_metadata(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= 128
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'_' | b'-' | b'.'))
 }

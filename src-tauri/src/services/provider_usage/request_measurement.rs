@@ -68,6 +68,18 @@ impl RequestMeasurement {
         self.metric.timing.first_useful_ms.get_or_insert(elapsed);
     }
 
+    pub(crate) fn observe_provider_request_id(&mut self, value: &str) {
+        if super::request_journal_validation::valid_provider_metadata(value) {
+            self.metric.provider_request_id = Some(value.to_string());
+        }
+    }
+
+    pub(crate) fn observe_finish_reason(&mut self, value: &str) {
+        if super::request_journal_validation::valid_provider_metadata(value) {
+            self.metric.finish_reason = Some(value.to_string());
+        }
+    }
+
     pub(crate) fn observe_response_metadata(&mut self, value: &serde_json::Value) {
         if self.metric.canonical_provider_id == "openai" {
             let observed = value
@@ -114,6 +126,14 @@ impl RequestMeasurement {
     #[cfg(test)]
     pub(crate) fn fast_observation(&self) -> (bool, ServiceTierServed) {
         (self.metric.fast_requested, self.metric.service_tier_served)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn provider_metadata(&self) -> (Option<&str>, Option<&str>) {
+        (
+            self.metric.provider_request_id.as_deref(),
+            self.metric.finish_reason.as_deref(),
+        )
     }
 
     pub(crate) async fn finish(

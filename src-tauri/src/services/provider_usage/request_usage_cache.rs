@@ -17,6 +17,9 @@ pub(super) fn parse(
     input: Option<u64>,
     context: UsageContext<'_>,
 ) -> ParsedCacheUsage {
+    if context.api_format == UsageApiFormat::AnthropicMessages {
+        return super::request_usage_cache_anthropic::parse(value);
+    }
     if context.canonical_provider_id == "deepseek"
         && context.api_format == UsageApiFormat::ChatCompletions
     {

@@ -21,6 +21,8 @@ describe("provider usage translations", () => {
       expect(serialized).toContain('"extra_usage_balance"');
       expect(serialized).toContain('"extra_usage_monthly_limit"');
       expect(serialized).toContain('"extra_usage_monthly_used"');
+      expect(serialized).toContain('"providerRequestId"');
+      expect(serialized).toContain('"finishReason"');
     }
   });
 });

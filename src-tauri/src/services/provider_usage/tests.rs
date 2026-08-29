@@ -205,6 +205,57 @@ fn anthropic_messages_reads_the_native_cache_hit_counter() {
 }
 
 #[test]
+fn anthropic_messages_reads_both_cache_creation_windows_without_double_counting() {
+    let usage = RequestUsage::from_json_with_context(
+        &json!({
+            "input_tokens": 120,
+            "cache_read_input_tokens": 80,
+            "cache_creation_input_tokens": 30,
+            "cache_creation": {
+                "ephemeral_5m_input_tokens": 20,
+                "ephemeral_1h_input_tokens": 10
+            }
+        }),
+        UsageContext {
+            canonical_provider_id: "anthropic",
+            model: "claude-haiku-4-5-20251001",
+            api_format: UsageApiFormat::AnthropicMessages,
+        },
+    )
+    .unwrap();
+
+    assert_eq!(usage.cached_input_tokens, Some(80));
+    assert_eq!(usage.cache_write_input_tokens, Some(30));
+    assert_eq!(usage.cache_status, CacheUsageStatus::Reported);
+}
+
+#[test]
+fn anthropic_cache_creation_accepts_one_window_and_rejects_oversized_counts() {
+    let context = UsageContext {
+        canonical_provider_id: "anthropic",
+        model: "claude-haiku-4-5-20251001",
+        api_format: UsageApiFormat::AnthropicMessages,
+    };
+    let one_window = RequestUsage::from_json_with_context(
+        &json!({
+            "input_tokens": 10,
+            "cache_creation": {"ephemeral_5m_input_tokens": 6}
+        }),
+        context,
+    )
+    .unwrap();
+    assert_eq!(one_window.cache_write_input_tokens, Some(6));
+
+    let invalid = RequestUsage::from_json_with_context(
+        &json!({"cache_creation_input_tokens": 10_000_000_001_u64}),
+        context,
+    )
+    .unwrap();
+    assert_eq!(invalid.cache_status, CacheUsageStatus::Invalid);
+    assert_eq!(invalid.cache_write_input_tokens, None);
+}
+
+#[test]
 fn older_openai_models_ignore_gpt_56_only_write_counts() {
     let usage = RequestUsage::from_json_with_context(
         &json!({

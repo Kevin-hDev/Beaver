@@ -60,6 +60,8 @@ pub struct ProviderRequestMetric {
     pub routed_model: Option<String>,
     pub session_id: Option<String>,
     pub request_id: String,
+    pub provider_request_id: Option<String>,
+    pub finish_reason: Option<String>,
     pub turn: Option<u32>,
     pub attempt: u32,
     pub workload: String,

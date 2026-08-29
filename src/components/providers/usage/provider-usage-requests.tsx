@@ -35,6 +35,18 @@ export function ProviderUsageRequests({ metrics, loading }: Props) {
               <strong>{latest.routed_provider}<small>{latest.routed_model}</small></strong>
             </div>
           )}
+          {latest.provider_request_id && (
+            <div className="settings-row pur-row">
+              <span>{t("providers.usage.requestMetrics.providerRequestId")}</span>
+              <strong>{latest.provider_request_id}</strong>
+            </div>
+          )}
+          {latest.finish_reason && (
+            <div className="settings-row pur-row">
+              <span>{t("providers.usage.requestMetrics.finishReason")}</span>
+              <strong>{latest.finish_reason}</strong>
+            </div>
+          )}
           <Timing label={t("providers.usage.requestMetrics.headers")} value={latest.timing.headers_ms} locale={i18n.language} />
           <Timing label={t("providers.usage.requestMetrics.firstEvent")} value={latest.timing.first_event_ms} locale={i18n.language} />
           <Timing label={t("providers.usage.requestMetrics.firstUseful")} value={latest.timing.first_useful_ms} locale={i18n.language} />
