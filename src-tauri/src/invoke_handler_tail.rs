@@ -10,6 +10,7 @@ macro_rules! generate_tail {
             crate::commands::set_mcp_connector_chat_enabled,
             crate::commands::test_mcp_connector,
             crate::commands::list_llm_providers_catalog,
+            crate::commands::list_llm_configurable_providers_catalog,
             crate::commands::list_llm_models,
             crate::commands::test_llm_connection,
             crate::commands::supports_tool_use,

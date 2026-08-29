@@ -67,6 +67,7 @@ describe("OnboardingApi", () => {
     await waitFor(() => expect(screen.getAllByText("openai").length).toBeGreaterThan(0));
 
     expect(screen.queryByText("brave")).toBeNull();
+    expect(screen.queryByText("anthropic")).toBeNull();
   });
 
   it("affiche les providers deja configures", async () => {

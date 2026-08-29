@@ -5,6 +5,7 @@ import { DEFAULT_APP_NAV, type SettingsNavState } from "@/types/navigation";
 import type { ProviderSpec } from "@/types/api";
 
 const mocks = vi.hoisted(() => ({
+  catalog: [] as ProviderSpec[],
   configured: [] as ProviderSpec[],
   onNavChange: vi.fn(),
   onNavReplace: vi.fn(),
@@ -16,7 +17,7 @@ vi.mock("react-i18next", () => ({
 
 vi.mock("@/hooks/use-api-keys", () => ({
   useApiKeys: () => ({
-    catalog: [],
+    catalog: mocks.catalog,
     configuredIds: mocks.configured.map((item) => item.id),
     configured: mocks.configured,
     setKey: vi.fn(),
@@ -39,11 +40,9 @@ vi.mock("../api-keys-details", () => ({
 }));
 
 vi.mock("../api-keys-config-dialog", () => ({
-  ApiKeysConfigDialog: () => null,
-}));
-
-vi.mock("../connectors-modal", () => ({
-  ConnectorsModal: () => null,
+  ApiKeysConfigDialog: ({ provider }: { provider: ProviderSpec }) => (
+    <div role="dialog">config:{provider.id}</div>
+  ),
 }));
 
 function provider(id: string): ProviderSpec {
@@ -71,9 +70,19 @@ describe("ApiKeysTab navigation", () => {
   afterEach(() => cleanup());
 
   beforeEach(() => {
+    mocks.catalog = [provider("openai"), provider("anthropic")];
     mocks.configured = [provider("openai"), provider("mistral")];
     mocks.onNavChange.mockClear();
     mocks.onNavReplace.mockClear();
+  });
+
+  it("permet de configurer Anthropic sans le publier dans l'onboarding", () => {
+    const { getByText } = renderTab({ ...DEFAULT_APP_NAV.settings, apiKeyProviderId: null });
+
+    fireEvent.click(getByText("apiKeys.main.connectorsBtn"));
+    fireEvent.click(getByText("anthropic"));
+
+    expect(getByText("config:anthropic")).toBeTruthy();
   });
 
   it("ouvre la liste sans présélectionner un fournisseur", async () => {

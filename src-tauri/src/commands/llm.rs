@@ -3,7 +3,16 @@ use crate::services::llm::{catalog, provider_model_lookup, types::ModelInfo};
 
 #[tauri::command]
 pub fn list_llm_providers_catalog() -> Vec<ProviderCatalogEntry> {
-    catalog::all()
+    provider_catalog_entries(catalog::all())
+}
+
+#[tauri::command]
+pub fn list_llm_configurable_providers_catalog() -> Vec<ProviderCatalogEntry> {
+    provider_catalog_entries(catalog::configurable())
+}
+
+fn provider_catalog_entries(providers: Vec<catalog::ProviderSpec>) -> Vec<ProviderCatalogEntry> {
+    providers
         .into_iter()
         .map(|provider| {
             ProviderCatalogEntry::new(

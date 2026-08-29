@@ -21,7 +21,7 @@ export function useApiKeys() {
 
   const loadCatalog = useCallback(async () => {
     const [llm, search, forecast] = await Promise.all([
-      invoke<ProviderSpec[]>("list_llm_providers_catalog"),
+      invoke<ProviderSpec[]>("list_llm_configurable_providers_catalog"),
       invoke<ProviderSpec[]>("list_search_providers_catalog"),
       invoke<ProviderSpec[]>("list_forecast_providers_catalog"),
     ]);

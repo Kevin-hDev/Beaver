@@ -3,6 +3,32 @@ async fn openrouter_model_keeps_upstream_tool_capability() {
     assert!(super::supports_tool_use("openrouter".to_string(), "openai/o3".to_string()).await);
 }
 
+#[test]
+fn configurable_catalog_includes_anthropic_without_publishing_it() {
+    let public = super::list_llm_providers_catalog();
+    let configurable = super::list_llm_configurable_providers_catalog();
+
+    assert!(!public.iter().any(|provider| provider.id == "anthropic"));
+    assert_eq!(
+        configurable
+            .iter()
+            .filter(|provider| provider.id == "anthropic")
+            .count(),
+        1
+    );
+    assert!(public.iter().all(|provider| configurable
+        .iter()
+        .any(|candidate| candidate.id == provider.id)));
+
+    let mut ids = configurable
+        .iter()
+        .map(|provider| provider.id.as_str())
+        .collect::<Vec<_>>();
+    ids.sort_unstable();
+    ids.dedup();
+    assert_eq!(ids.len(), configurable.len());
+}
+
 #[tokio::test]
 async fn model_context_comes_from_the_registered_route_metadata() {
     assert_eq!(

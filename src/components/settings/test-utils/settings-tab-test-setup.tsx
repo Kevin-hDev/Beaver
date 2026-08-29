@@ -12,6 +12,7 @@ export const CHILD_COMMANDS = new Set([
   "gateway_get_config",
   "gateway_status",
   "list_llm_providers_catalog",
+  "list_llm_configurable_providers_catalog",
   "list_search_providers_catalog",
   "list_forecast_providers_catalog",
   "list_configured_providers",
@@ -117,6 +118,13 @@ vi.mock("@tauri-apps/api/core", async () => {
       if (cmd === "start_oauth_provider_login" || cmd === "disconnect_oauth_provider" || cmd === "cancel_oauth_provider_login") return Promise.resolve();
       if (cmd === "list_llm_providers_catalog") {
         return Promise.resolve([data.provider("openai", "OpenAI", "llm"), data.provider("mistral", "Mistral", "llm")]);
+      }
+      if (cmd === "list_llm_configurable_providers_catalog") {
+        return Promise.resolve([
+          data.provider("openai", "OpenAI", "llm"),
+          data.provider("mistral", "Mistral", "llm"),
+          data.provider("anthropic", "Anthropic", "llm"),
+        ]);
       }
       if (cmd === "list_search_providers_catalog") return Promise.resolve([data.provider("brave", "Brave", "search")]);
       if (cmd === "list_forecast_providers_catalog") return Promise.resolve([data.provider("nixtla", "Nixtla", "forecast")]);
