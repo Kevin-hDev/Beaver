@@ -172,7 +172,9 @@ pub(super) async fn consume_silent(
         tokio::select! {
             biased;
             _ = cancel.cancelled() => return Err("Annulé".into()),
-            _ = tokio::time::sleep(super::super::timeouts::idle_timeout_for("anthropic")) => {
+            _ = tokio::time::sleep(super::super::timeouts::idle_timeout_for(
+                usage_context.canonical_provider_id,
+            )) => {
                 return Err("provider_temporarily_unavailable".into());
             }
             event = events.next() => {

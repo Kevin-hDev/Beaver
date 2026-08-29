@@ -2,11 +2,13 @@ use crate::models::provider_contract::{ProviderCatalogEntry, ProviderCategory};
 use crate::services::llm::{catalog, provider_model_lookup, types::ModelInfo};
 
 #[tauri::command]
+/// Catalogue public utilisé par les sélecteurs de modèle et les écrans de chat.
 pub fn list_llm_providers_catalog() -> Vec<ProviderCatalogEntry> {
     provider_catalog_entries(catalog::all())
 }
 
 #[tauri::command]
+/// Catalogue élargi utilisé par Réglages pour configurer les routes candidates.
 pub fn list_llm_configurable_providers_catalog() -> Vec<ProviderCatalogEntry> {
     provider_catalog_entries(catalog::configurable())
 }

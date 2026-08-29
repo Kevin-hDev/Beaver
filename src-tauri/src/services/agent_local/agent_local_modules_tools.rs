@@ -149,7 +149,7 @@ pub mod tool_result_budget;
 pub mod tool_result_budget_tests;
 pub mod tool_result_contract;
 pub mod tool_result_model;
-mod tool_result_model_compact;
+pub(crate) mod tool_result_model_compact;
 pub mod tool_result_truncate;
 pub mod tool_scan_timeout;
 #[cfg(test)]

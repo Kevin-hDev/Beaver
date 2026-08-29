@@ -143,7 +143,7 @@ fn qwen_payload_combines_reasoning_and_parallel_tools_without_foreign_fields() {
     assert_eq!(payload["tool_choice"], "auto");
     assert_eq!(payload["parallel_tool_calls"], true);
     assert_eq!(payload["n"], 1);
-    assert_eq!(payload["tools"][0]["function"]["name"], "search");
+    assert_eq!(payload["tools"][0]["function"]["name"], "beaver_search");
     for forbidden in ["thinking", "thinking_budget", "max_tokens", "tool_stream"] {
         assert!(payload.get(forbidden).is_none(), "{forbidden}");
     }

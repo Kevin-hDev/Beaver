@@ -224,3 +224,13 @@ fn qwen_uses_boolean_thinking_and_top_level_effort_only() {
         assert!(selected.get("thinking_budget").is_none());
     }
 }
+
+#[test]
+fn qwen_disables_provider_defaults_when_no_validated_mode_is_selected() {
+    for mode in [None, Some("high"), Some("unknown")] {
+        let selected = payload("qwen", "qwen3.8-flash", mode);
+        assert_eq!(selected["enable_thinking"], false, "mode: {mode:?}");
+        assert_eq!(selected["preserve_thinking"], false, "mode: {mode:?}");
+        assert!(selected.get("reasoning_effort").is_none(), "mode: {mode:?}");
+    }
+}

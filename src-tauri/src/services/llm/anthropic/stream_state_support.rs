@@ -11,30 +11,22 @@ pub(super) fn index(value: &Value) -> Result<usize, String> {
 }
 
 pub(super) fn append_field(value: &mut Value, field: &str, suffix: &str) -> Result<(), String> {
-    let target = value
-        .get_mut(field)
-        .and_then(|value| value.as_str())
-        .ok_or_else(invalid)?
-        .to_string();
-    value[field] = format!("{target}{suffix}").into();
-    Ok(())
+    match value.get_mut(field) {
+        Some(Value::String(target)) => {
+            target.push_str(suffix);
+            Ok(())
+        }
+        _ => Err(invalid()),
+    }
 }
 
 pub(super) fn bounded_string(value: &Value, field: &str) -> Result<String, String> {
     let text = value
         .get(field)
         .and_then(Value::as_str)
-        .filter(|value| valid_metadata(value))
+        .filter(|value| crate::services::provider_usage::valid_provider_metadata(value))
         .ok_or_else(invalid)?;
     Ok(text.to_string())
-}
-
-pub(super) fn valid_metadata(value: &str) -> bool {
-    !value.is_empty()
-        && value.len() <= 128
-        && value
-            .bytes()
-            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'_' | b'-' | b'.'))
 }
 
 pub(super) fn validate_usage_counts(value: &Value) -> Result<(), String> {

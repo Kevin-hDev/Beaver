@@ -114,3 +114,36 @@ fn a_foreign_owner_cannot_reuse_another_direct_providers_model() {
     assert!(find_provider_entry(&registry, "openai", "foreign/o3").is_none());
     assert!(find_provider_entry(&registry, "openai", "openai/o3").is_some());
 }
+
+#[test]
+fn qwen_uses_the_dashscope_catalog_namespace() {
+    let registry = parse_catalog(
+        r#"{
+            "dashscope/qwen3.8-max":{
+                "litellm_provider":"dashscope",
+                "mode":"chat",
+                "supports_function_calling":true,
+                "supports_vision":true,
+                "supports_reasoning":true,
+                "max_input_tokens":1000000,
+                "max_output_tokens":131072
+            }
+        }"#,
+    );
+
+    assert_eq!(
+        capabilities_for(&registry, "qwen", "qwen3.8-max"),
+        Some(CatalogCapabilities {
+            supports_tools: true,
+            supports_vision: true,
+            supports_thinking: true,
+        })
+    );
+    assert_eq!(
+        limits_for(&registry, "qwen", "qwen3.8-max"),
+        Some(CatalogLimits {
+            context_window: Some(1_000_000),
+            max_output_tokens: Some(131_072),
+        })
+    );
+}

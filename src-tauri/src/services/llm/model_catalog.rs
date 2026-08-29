@@ -58,17 +58,32 @@ pub(super) async fn enrich_models(
             filtered.push(model);
         }
     }
-    let runtime_catalog = filtered.clone();
     for model in &mut filtered {
         model.context_usage_includes_reasoning =
             super::context_usage_includes_reasoning(provider_id).unwrap_or(true);
         if !preserve_native_metadata {
             enrich_compat_model(canonical, model).await;
         }
+        restrict_to_live_reasoning(canonical, model);
         repair_reasoning_default(model);
     }
-    super::runtime_models::replace_provider(canonical, &runtime_catalog);
+    super::runtime_models::replace_provider(canonical, &filtered);
     Ok(filtered)
+}
+
+fn restrict_to_live_reasoning(provider_id: &str, model: &mut ModelInfo) {
+    let Some(route_id) =
+        crate::services::reasoning_continuity::contract::RouteId::from_provider_id(provider_id)
+    else {
+        return;
+    };
+    model.reasoning_modes =
+        crate::services::reasoning_continuity::registry::effective_reasoning_modes(
+            route_id,
+            &model.id,
+            &model.reasoning_modes,
+        );
+    model.supports_thinking = !model.reasoning_modes.is_empty();
 }
 
 async fn enrich_compat_model(provider_id: &str, model: &mut ModelInfo) {

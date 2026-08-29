@@ -98,6 +98,7 @@ fn replay_replaces_reconstructed_assistant_content_then_keeps_tool_result() {
 fn missing_signature_and_divergent_tool_id_fail_closed() {
     let missing_signature = envelope(vec![json!({"type":"thinking","thinking":"opaque"})]);
     assert!(missing_signature.validate().is_err());
+    assert!(approval_for_target(&target(), &missing_signature).is_err());
 
     let valid = envelope(blocks());
     let mut message = assistant(valid.clone());

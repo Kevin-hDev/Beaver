@@ -23,6 +23,7 @@ export const DEFAULT_QWEN_CONNECTION: QwenConnectionInput = {
 };
 
 export function isQwenConnectionValid(value: QwenConnectionInput): boolean {
+  // Miroir UI de `provider_connections/workspace_id.rs` ; Rust reste l'autorité.
   if (!MODES_BY_REGION[value.region].includes(value.endpointMode)) return false;
   if (value.endpointMode !== "workspace") return value.workspaceId === undefined;
   const workspace = value.workspaceId ?? "";

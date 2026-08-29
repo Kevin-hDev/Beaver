@@ -19,7 +19,6 @@ pub(super) struct StreamState {
     completed_blocks: Vec<Value>,
     total_bytes: usize,
     pub content: String,
-    pub thinking_text: String,
     pub tool_calls: Vec<(String, Value)>,
     pub tool_call_ids: Vec<String>,
     pub usage: Option<RequestUsage>,
@@ -72,7 +71,6 @@ impl StreamState {
     fn into_consumed(self) -> ConsumedStream {
         ConsumedStream {
             content: self.content,
-            thinking_text: self.thinking_text,
             continuation_blocks: self.completed_blocks,
             tool_calls: self.tool_calls,
             tool_call_ids: self.tool_call_ids,
@@ -89,12 +87,7 @@ impl StreamState {
         let value = event.get("content_block").cloned().ok_or_else(invalid)?;
         self.add_bytes(serialized_len(&value)?)?;
         let block = match value.get("type").and_then(Value::as_str) {
-            Some("thinking" | "redacted_thinking") => {
-                if let Some(text) = value.get("thinking").and_then(Value::as_str) {
-                    self.thinking_text.push_str(text);
-                }
-                Block::Thinking { value }
-            }
+            Some("thinking" | "redacted_thinking") => Block::Thinking { value },
             Some("text") => {
                 if let Some(text) = value.get("text").and_then(Value::as_str) {
                     self.content.push_str(text);
@@ -135,9 +128,11 @@ impl StreamState {
             }
             (Block::Thinking { value }, "thinking_delta") => {
                 append_field(value, "thinking", text)?;
-                self.thinking_text.push_str(text);
             }
             (Block::Thinking { value }, "signature_delta") => {
+                if value.get("signature").is_none() {
+                    value["signature"] = Value::String(String::new());
+                }
                 append_field(value, "signature", text)?
             }
             (Block::Tool { partial_json, .. }, "input_json_delta") => partial_json.push_str(text),
@@ -184,7 +179,7 @@ impl StreamState {
         context: UsageContext<'_>,
     ) -> Result<(), String> {
         if let Some(reason) = event.pointer("/delta/stop_reason").and_then(Value::as_str) {
-            if !valid_metadata(reason) {
+            if !crate::services::provider_usage::valid_provider_metadata(reason) {
                 return Err(invalid());
             }
             self.finish_reason = Some(reason.to_string());
@@ -216,7 +211,6 @@ impl StreamState {
 #[derive(Debug)]
 pub(super) struct ConsumedStream {
     pub content: String,
-    pub thinking_text: String,
     pub continuation_blocks: Vec<Value>,
     pub tool_calls: Vec<(String, Value)>,
     pub tool_call_ids: Vec<String>,

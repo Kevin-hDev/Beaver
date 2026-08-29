@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "fixture_id": "anthropic-api-claude-haiku-4-5-20251001-vision-medium-france-2026-08-29",
+  "route": "anthropic",
+  "model": "claude-haiku-4-5-20251001",
+  "region": "france",
+  "reasoning_mode": "medium",
+  "generated_at": "2026-08-29T14:33:18.063526Z",
+  "scenarios": [
+    {
+      "requirement": "image_input_and_response",
+      "run_id": "9f9f3651-be47-484a-b3a0-90a7c538c07a",
+      "status": "passe",
+      "request_count": 1,
+      "reasoning_event_count": 0,
+      "decisions": ["vision decision=\"image_accepted\" count=1"]
+    },
+    {
+      "requirement": "history_image_continuity",
+      "run_id": "fdd302dc-662c-41f3-97bf-5266b5a00a69",
+      "status": "passe",
+      "request_count": 1,
+      "reasoning_event_count": 0,
+      "decisions": ["vision decision=\"history_reused\" new_images=0"]
+    },
+    {
+      "requirement": "diagnostics_redacted",
+      "run_id": "fdd302dc-662c-41f3-97bf-5266b5a00a69",
+      "status": "passe",
+      "request_count": 2,
+      "reasoning_event_count": 0,
+      "decisions": ["vision decision=\"diagnostics_redacted\""]
+    }
+  ]
+}

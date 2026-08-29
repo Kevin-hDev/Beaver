@@ -223,4 +223,35 @@ mod vision_tests {
             ]
         );
     }
+
+    #[test]
+    fn checked_in_vision_reports_prove_both_live_routes_without_payload_data() {
+        let root =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("test-fixtures/vision-reports");
+        for fixture_id in [
+            "anthropic-api-claude-haiku-4-5-20251001-vision-medium-france-2026-08-29",
+            "qwen-api-qwen3-8-flash-vision-medium-singapore-2026-08-29",
+        ] {
+            let bytes = std::fs::read(root.join(format!("{fixture_id}.json")))
+                .expect("checked-in vision proof");
+            assert!(bytes.len() <= 64 * 1024);
+            let report: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+            assert_eq!(report["fixture_id"], fixture_id);
+            let scenarios = report["scenarios"].as_array().unwrap();
+            for requirement in [
+                "image_input_and_response",
+                "history_image_continuity",
+                "diagnostics_redacted",
+            ] {
+                assert!(scenarios.iter().any(|scenario| {
+                    scenario["requirement"] == requirement && scenario["status"] == "passe"
+                }));
+            }
+            let text = String::from_utf8(bytes).unwrap();
+            assert!(!text.contains("data:image"));
+            assert!(!text.contains("base64"));
+            assert!(!text.contains("VISION_OK"));
+            assert!(!text.contains("RED"));
+        }
+    }
 }

@@ -199,3 +199,78 @@ fn key_and_provider_configuration_share_one_candidate_transaction() {
     assert!(!state.keys.contains_key("qwen"));
     assert!(!state.keys.contains_key("raw:provider_connection:qwen"));
 }
+
+#[test]
+fn failed_qwen_replacement_keeps_the_previous_key_and_connection() {
+    let mut state = state_with_old_secret();
+    let first_scope = generate_credential_scope().unwrap();
+    commit_candidate_with(
+        &mut state,
+        |candidate| {
+            stage_api_key(candidate, "qwen", Some("first-secret"), Some(&first_scope))?;
+            stage_raw_entries(candidate, &[("provider_connection:qwen", "first-config")])
+        },
+        |_, _| Ok(()),
+    )
+    .unwrap();
+
+    let second_scope = generate_credential_scope().unwrap();
+    let failed = commit_candidate_with(
+        &mut state,
+        |candidate| {
+            stage_api_key(
+                candidate,
+                "qwen",
+                Some("second-secret"),
+                Some(&second_scope),
+            )?;
+            stage_raw_entries(candidate, &[("provider_connection:qwen", "second-config")])
+        },
+        |_, _| Err("write refused".to_string()),
+    );
+
+    assert!(failed.is_err());
+    assert!(bool::from(
+        state
+            .keys
+            .get("qwen")
+            .unwrap()
+            .as_bytes()
+            .ct_eq(b"first-secret")
+    ));
+    assert_eq!(
+        state
+            .keys
+            .get("raw:provider_connection:qwen")
+            .map(|value| value.as_str()),
+        Some("first-config")
+    );
+}
+
+#[test]
+fn failed_qwen_deletion_keeps_the_previous_key_and_connection() {
+    let mut state = state_with_old_secret();
+    let first_scope = generate_credential_scope().unwrap();
+    commit_candidate_with(
+        &mut state,
+        |candidate| {
+            stage_api_key(candidate, "qwen", Some("first-secret"), Some(&first_scope))?;
+            stage_raw_entries(candidate, &[("provider_connection:qwen", "first-config")])
+        },
+        |_, _| Ok(()),
+    )
+    .unwrap();
+
+    let failed = commit_candidate_with(
+        &mut state,
+        |candidate| {
+            stage_api_key(candidate, "qwen", None, None)?;
+            stage_remove_raw_entries(candidate, &["provider_connection:qwen"])
+        },
+        |_, _| Err("write refused".to_string()),
+    );
+
+    assert!(failed.is_err());
+    assert!(state.keys.contains_key("qwen"));
+    assert!(state.keys.contains_key("raw:provider_connection:qwen"));
+}

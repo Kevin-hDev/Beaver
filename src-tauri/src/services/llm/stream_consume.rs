@@ -94,7 +94,11 @@ pub(super) async fn consume_stream(
 
     let (tool_calls, ids, extra_content) = acc.finalize();
     for (index, (wire_name, arguments)) in tool_calls.iter().enumerate() {
-        let name = super::tool_schema::restore_tool_name(wire_name, tools);
+        let name = super::tool_schema::restore_tool_name_for_provider(
+            usage_context.canonical_provider_id,
+            wire_name,
+            tools,
+        );
         crate::services::agent_local::stream_buffer::record_tool_call_generation(
             on_event,
             &mut result,

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { open } from "@tauri-apps/plugin-shell";
+import { invoke } from "@tauri-apps/api/core";
 import { X, ArrowSquareOut } from "@/components/ui/icons";
 import { providerDescription } from "@/lib/provider-copy";
 import type { ProviderSpec, QwenConnectionInput } from "@/types/api";
@@ -41,7 +42,30 @@ export function ApiKeysConfigDialog({
   const [submitting, setSubmitting] = useState(false);
   const [connection, setConnection] = useState<QwenConnectionInput>(DEFAULT_QWEN_CONNECTION);
   const requiresConnection = provider.connection_kind === "qwen_model_studio";
-  const connectionValid = !requiresConnection || isQwenConnectionValid(connection);
+  const [connectionReady, setConnectionReady] = useState(!requiresConnection || !alreadyConfigured);
+  const connectionValid = connectionReady
+    && (!requiresConnection || isQwenConnectionValid(connection));
+
+  useEffect(() => {
+    if (!requiresConnection || !alreadyConfigured) return;
+    let active = true;
+    void invoke<QwenConnectionInput | null>("get_provider_connection", {
+      provider: provider.id,
+    }).then((stored) => {
+      if (!active) return;
+      if (!stored) {
+        setTestState({ kind: "error", message: t("errors.operationFailed") });
+        return;
+      }
+      setConnection(stored);
+      setConnectionReady(true);
+    }).catch(() => {
+      if (active) {
+        setTestState({ kind: "error", message: t("errors.operationFailed") });
+      }
+    });
+    return () => { active = false; };
+  }, [alreadyConfigured, provider.id, requiresConnection, t]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -103,7 +127,7 @@ export function ApiKeysConfigDialog({
             <ProviderConnectionForm
               value={connection}
               onChange={setConnection}
-              disabled={submitting}
+              disabled={submitting || !connectionReady}
             />
           )}
           <div className="wk-form-field">

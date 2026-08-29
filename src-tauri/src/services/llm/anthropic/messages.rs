@@ -99,17 +99,7 @@ fn tool_result(message: &ChatMessage) -> Result<Value, BuildError> {
 }
 
 fn result_is_error(content: &str) -> bool {
-    content
-        .lines()
-        .next()
-        .and_then(|line| serde_json::from_str::<Value>(line).ok())
-        .and_then(|value| {
-            value
-                .get("status")
-                .and_then(Value::as_str)
-                .map(str::to_owned)
-        })
-        .is_some_and(|status| matches!(status.as_str(), "error" | "cancelled"))
+    crate::services::agent_local::tool_result_model_compact::rendered_status_is_error(content)
 }
 
 fn flush_tool_results(messages: &mut Vec<Value>, pending: &mut Vec<Value>) {

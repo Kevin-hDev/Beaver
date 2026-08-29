@@ -3,6 +3,7 @@ use super::registry::{ModelPolicy, ReplayRequirement};
 use super::registry_inventory::{disabled, live};
 
 const MODEL: &str = "qwen3.8-flash";
+const UNVALIDATED_MODEL: &str = "qwen3.8-max";
 
 pub(super) const QWEN: &[ModelPolicy] = &[
     policy(
@@ -41,6 +42,42 @@ pub(super) const QWEN: &[ModelPolicy] = &[
         ReplayRequirement::Required,
     ),
     policy(
+        ReasoningModeId::Xhigh,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Required,
+    ),
+    disabled(
+        UNVALIDATED_MODEL,
+        ReasoningModeId::Low,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Required,
+    ),
+    disabled(
+        UNVALIDATED_MODEL,
+        ReasoningModeId::Low,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Required,
+    ),
+    disabled(
+        UNVALIDATED_MODEL,
+        ReasoningModeId::Medium,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Required,
+    ),
+    disabled(
+        UNVALIDATED_MODEL,
+        ReasoningModeId::Medium,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Required,
+    ),
+    disabled(
+        UNVALIDATED_MODEL,
+        ReasoningModeId::Xhigh,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Required,
+    ),
+    disabled(
+        UNVALIDATED_MODEL,
         ReasoningModeId::Xhigh,
         ContinuationUse::ToolContinuation,
         ReplayRequirement::Required,

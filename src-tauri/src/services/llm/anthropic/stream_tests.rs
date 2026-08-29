@@ -42,7 +42,23 @@ fn omitted_thinking_keeps_exact_signature_without_display_text() {
     )
     .unwrap();
 
-    assert_eq!(result.thinking_text, "");
+    assert_eq!(result.continuation_blocks[0]["thinking"], "");
+    assert_eq!(result.continuation_blocks[0]["signature"], "AAE+/==");
+}
+
+#[test]
+fn a_late_signature_is_created_when_the_start_block_omits_the_field() {
+    let fixture = concat!(
+        "data: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"thinking\",\"thinking\":\"\"}}\n\n",
+        "data: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"opaque\"}}\n\n",
+        "data: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"signature_delta\",\"signature\":\"AAE+/==\"}}\n\n",
+        "data: {\"type\":\"content_block_stop\",\"index\":0}\n\n",
+        "data: {\"type\":\"message_stop\"}\n\n",
+    );
+
+    let result = super::stream::consume_fixture(fixture, context()).unwrap();
+
+    assert_eq!(result.continuation_blocks[0]["thinking"], "opaque");
     assert_eq!(result.continuation_blocks[0]["signature"], "AAE+/==");
 }
 

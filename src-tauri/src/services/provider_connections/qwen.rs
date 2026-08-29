@@ -116,3 +116,13 @@ pub fn load() -> Result<QwenConnectionRecord, String> {
     let raw = crate::services::api_keys::get_raw(VAULT_KEY)?;
     decode(&raw)
 }
+
+pub fn load_resolved_endpoint() -> Result<Option<QwenResolvedEndpoint>, String> {
+    if !crate::services::api_keys::has_raw(VAULT_KEY)? {
+        return Ok(None);
+    }
+    let record = load()?;
+    resolve_qwen_endpoint(&record.connection)
+        .map(Some)
+        .map_err(str::to_string)
+}

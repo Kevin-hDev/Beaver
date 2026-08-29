@@ -4,9 +4,48 @@ use super::contract::{
 use super::eligibility::{decide, BlockReason, ReplayDecision};
 use super::envelope::{CompletionState, ContinuationState, ReasoningEnvelope, ReasoningSource};
 use super::registry::{
-    active_routes, replay_policy, replay_policy_from_routes, route_contract, ActivationState,
-    AdapterId, ModelPolicy, ReplayRequirement, RouteContract,
+    active_routes, effective_reasoning_modes, replay_policy, replay_policy_from_routes,
+    route_contract, ActivationState, AdapterId, ModelPolicy, ReplayRequirement, RouteContract,
 };
+
+#[test]
+fn reasoning_is_exposed_only_when_both_continuation_paths_are_live() {
+    let modes = |values: &[&str]| {
+        values
+            .iter()
+            .map(|value| (*value).to_string())
+            .collect::<Vec<_>>()
+    };
+
+    assert_eq!(
+        effective_reasoning_modes(
+            RouteId::Anthropic,
+            "claude-haiku-4-5-20251001",
+            &modes(&["off", "low", "medium", "high", "xhigh"]),
+        ),
+        modes(&["off", "low", "medium", "high"])
+    );
+    assert!(effective_reasoning_modes(
+        RouteId::Anthropic,
+        "claude-sonnet-5",
+        &modes(&["off", "auto", "high"]),
+    )
+    .is_empty());
+    assert_eq!(
+        effective_reasoning_modes(
+            RouteId::Qwen,
+            "qwen3.8-flash",
+            &modes(&["off", "low", "medium", "high", "xhigh"]),
+        ),
+        modes(&["off", "low", "medium", "xhigh"])
+    );
+    assert!(effective_reasoning_modes(
+        RouteId::Qwen,
+        "qwen3.8-max",
+        &modes(&["off", "low", "medium", "xhigh"]),
+    )
+    .is_empty());
+}
 
 #[test]
 fn inventory_has_exactly_thirteen_contracts_fifteen_closed_routes_and_fifteen_active_routes() {

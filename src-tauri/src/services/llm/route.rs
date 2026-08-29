@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use reqwest::{header::HeaderMap, RequestBuilder, Response};
 
 use super::request_purpose::RequestPurpose;
@@ -163,11 +165,15 @@ pub fn resolve(provider_id: &str) -> Option<LlmRoute> {
         route_profile::EndpointPolicy::ProviderConnection {
             resolver: route_profile::ConnectionEndpointResolver::QwenModelStudio,
         } => {
-            let record = crate::services::provider_connections::qwen::load().ok()?;
-            let endpoint = crate::services::provider_connections::qwen::resolve_qwen_endpoint(
-                &record.connection,
-            )
-            .ok()?;
+            let endpoint =
+                match crate::services::provider_connections::qwen::load_resolved_endpoint() {
+                    Ok(Some(endpoint)) => endpoint,
+                    Ok(None) => return None,
+                    Err(_) => {
+                        log::warn!("provider=qwen event=route_hidden reason=invalid_connection");
+                        return None;
+                    }
+                };
             (Cow::Owned(endpoint.base_url), Cow::Borrowed("/models"))
         }
         route_profile::EndpointPolicy::ConnectionConfigured
@@ -217,4 +223,3 @@ pub(super) fn test_route(chat_provider_id: &'static str) -> LlmRoute {
 #[cfg(test)]
 #[path = "route_tests.rs"]
 mod tests;
-use std::borrow::Cow;

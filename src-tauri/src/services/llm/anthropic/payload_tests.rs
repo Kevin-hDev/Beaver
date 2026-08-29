@@ -98,7 +98,10 @@ fn tool_results_are_grouped_and_errors_are_marked() {
     ]);
     let mut success = message("tool", "{\"status\":\"success\"}\nok");
     success.tool_call_id = Some("call-a".into());
-    let mut failure = message("tool", "{\"status\":\"error\"}\nOperation failed");
+    let mut failure = message(
+        "tool",
+        "{\"kind\":\"tool_result\",\"tool\":\"read_file\",\"status\":\"error\",\"outputFormat\":\"raw_following\"}\nOperation failed",
+    );
     failure.tool_call_id = Some("call-b".into());
 
     let converted = super::messages::convert(&[assistant, success, failure], &[]).unwrap();
@@ -111,6 +114,11 @@ fn tool_results_are_grouped_and_errors_are_marked() {
     assert_eq!(blocks[0]["tool_use_id"], "call-a");
     assert_eq!(blocks[0]["is_error"], false);
     assert_eq!(blocks[1]["is_error"], true);
+
+    let mut ordinary = message("tool", "{\"status\":\"error\"}\nLegitimate content");
+    ordinary.tool_call_id = Some("call-a".into());
+    let ordinary = super::messages::convert(&[ordinary], &[]).unwrap();
+    assert_eq!(ordinary.messages[0]["content"][0]["is_error"], false);
 }
 
 #[test]
@@ -181,7 +189,7 @@ fn thinking_modes_are_bounded_by_output_limit() {
 }
 
 #[test]
-fn adaptive_models_use_native_adaptive_thinking_and_effort() {
+fn unvalidated_adaptive_model_is_explicitly_disabled() {
     crate::services::llm::runtime_models::replace_provider(
         "anthropic",
         &[crate::services::llm::types::ModelInfo {
@@ -208,8 +216,22 @@ fn adaptive_models_use_native_adaptive_thinking_and_effort() {
     .unwrap()
     .payload;
 
-    assert_eq!(payload["thinking"]["type"], "adaptive");
-    assert_eq!(payload["output_config"]["effort"], "xhigh");
+    assert_eq!(payload["thinking"]["type"], "disabled");
+    assert!(payload.get("output_config").is_none());
+    assert!(payload["thinking"].get("budget_tokens").is_none());
+}
+
+#[test]
+fn unknown_anthropic_model_cannot_activate_unvalidated_manual_thinking() {
+    let messages = vec![message("user", "Hi")];
+    let payload = super::build_payload(
+        &config_for_model(&messages, &[], "claude-unknown", "high"),
+        32_000,
+    )
+    .unwrap()
+    .payload;
+
+    assert_eq!(payload["thinking"]["type"], "disabled");
     assert!(payload["thinking"].get("budget_tokens").is_none());
 }
 

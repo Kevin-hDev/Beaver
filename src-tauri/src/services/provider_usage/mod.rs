@@ -26,6 +26,7 @@ mod usage_context;
 pub(crate) use request_journal::RequestMetricStatus;
 #[cfg(test)]
 pub(crate) use request_journal::ServiceTierServed;
+pub(crate) use request_journal_validation::valid_provider_metadata;
 pub(crate) use request_measurement::{RequestMeasurement, RequestMeasurementContext};
 pub use request_usage::RequestUsage;
 pub(crate) use request_usage::MAX_REQUEST_TOKENS;

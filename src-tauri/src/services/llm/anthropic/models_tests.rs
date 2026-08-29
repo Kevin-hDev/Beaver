@@ -50,12 +50,12 @@ fn catalog_keeps_every_available_claude_model_and_its_native_capabilities() {
     assert_eq!(models[1].id, OPUS);
     assert_eq!(models[1].context_length, Some(1_000_000));
     assert_eq!(models[1].max_output_tokens, Some(128_000));
-    assert!(models[1].supports_tools);
+    assert!(!models[1].supports_tools);
     assert!(models[1].supports_vision);
     assert!(models[1].supports_thinking);
     assert_eq!(
         models[1].reasoning_modes,
-        ["auto", "low", "medium", "high", "xhigh", "max"]
+        ["off", "auto", "low", "medium", "high", "xhigh", "max"]
     );
 }
 
@@ -87,15 +87,31 @@ fn unknown_zero_limits_do_not_reject_an_available_model() {
 }
 
 #[test]
-fn catalog_rejects_oversize_and_invalid_ids() {
+fn catalog_rejects_oversize_and_skips_only_invalid_ids() {
     let oversized = (0..501)
         .map(|index| json!({"id": format!("claude-{index}")}))
         .collect::<Vec<_>>();
     assert!(super::models::parse_catalog(&json!({"data": oversized})).is_err());
-    assert!(super::models::parse_catalog(&json!({
-        "data": [{"id": "../invalid"}]
+    let models = super::models::parse_catalog(&json!({
+        "data": [
+            {"id": "../invalid"},
+            {"id": OPUS, "display_name": "Claude Opus 4.8"}
+        ]
     }))
-    .is_err());
+    .unwrap();
+    assert_eq!(models.len(), 1);
+    assert_eq!(models[0].id, OPUS);
+}
+
+#[test]
+fn missing_remote_capabilities_are_not_invented() {
+    let models = super::models::parse_catalog(&json!({
+        "data": [{"id": OPUS, "display_name": "Claude Opus 4.8"}]
+    }))
+    .unwrap();
+
+    assert!(!models[0].supports_tools);
+    assert!(!models[0].supports_vision);
 }
 
 #[test]

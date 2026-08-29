@@ -35,7 +35,9 @@ pub(super) fn parse(
             "/prompt_tokens_details/cached_tokens",
             "/input_tokens_details/cached_tokens",
         ],
-        UsageApiFormat::AnthropicMessages => &["/cache_read_input_tokens"],
+        // Anthropic est traité par le retour précoce ci-dessus ; ce bras reste
+        // exhaustif mais ne doit jamais redevenir une seconde autorité de parsing.
+        UsageApiFormat::AnthropicMessages => &[],
     };
     let cache_write_supported = matches!(context.canonical_provider_id, "openrouter" | "qwen")
         || (context.canonical_provider_id == "openai"

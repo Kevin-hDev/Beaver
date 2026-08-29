@@ -44,11 +44,16 @@ fn mark_qwen_stable_prefix(payload: &mut Value) -> bool {
     let Some(messages) = payload.get_mut("messages").and_then(Value::as_array_mut) else {
         return false;
     };
-    let start = messages.len().saturating_sub(20);
-    let Some(message) = messages[start..].iter_mut().rev().find(|message| {
-        matches!(message["role"].as_str(), Some("system" | "developer"))
-            && message["content"].is_string()
-    }) else {
+    let stable_end = messages
+        .iter()
+        .position(|message| !matches!(message["role"].as_str(), Some("system" | "developer")))
+        .unwrap_or(messages.len())
+        .min(20);
+    let Some(message) = messages[..stable_end]
+        .iter_mut()
+        .rev()
+        .find(|message| message["content"].is_string())
+    else {
         return false;
     };
     let Some(text) = message["content"].as_str() else {

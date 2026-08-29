@@ -178,18 +178,20 @@ pub(super) const ANTHROPIC: RoutePolicies = RoutePolicies {
         SchemaPolicy::Anthropic,
         CachePolicy::AnthropicAutomatic,
         ParameterPolicy::Anthropic,
-        ErrorPolicy::Anthropic,
+        ErrorPolicy::OpenAiCompatible,
         AuthProbePolicy::ModelsGet,
         ToolLimitPolicy::Default,
     )
 };
 pub(super) const QWEN: RoutePolicies = RoutePolicies {
+    // Qwen exige `include_usage` sur les streams pour alimenter P11 ; les
+    // requêtes non streamées n'utilisent pas ce constructeur de payload.
     include_usage: true,
     ..policy(
-        SchemaPolicy::Generic,
+        SchemaPolicy::Qwen,
         CachePolicy::QwenContext,
         ParameterPolicy::Qwen,
-        ErrorPolicy::Qwen,
+        ErrorPolicy::OpenAiCompatible,
         AuthProbePolicy::ModelsGet,
         ToolLimitPolicy::Default,
     )

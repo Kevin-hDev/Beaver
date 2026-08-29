@@ -81,10 +81,7 @@ fn unsupported_image_wire_is_rejected_explicitly() {
 
 #[test]
 fn anthropic_image_block_has_a_stricter_ten_megabyte_limit() {
-    let oversized = format!(
-        "iVBOR{}",
-        "A".repeat((MAX_ANTHROPIC_IMAGE_BYTES + 1).saturating_mul(4) / 3)
-    );
+    let oversized = format!("iVBOR{}", "A".repeat(MAX_ANTHROPIC_IMAGE_BYTES));
 
     assert_eq!(
         image_part(

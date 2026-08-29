@@ -56,6 +56,42 @@ fn leaves_common_provider_names_unchanged() {
 }
 
 #[test]
+fn qwen_aliases_reserved_search_reversibly() {
+    let tools = vec![tool("search", json!({"type": "object", "properties": {}}))];
+    let policy = super::super::route_profile::tool_policy("qwen", "qwen3.8-flash").unwrap();
+    let fixed = tools_for_policy(policy.schema, policy.strict, &tools);
+    let wire = fixed[0]["function"]["name"].as_str().unwrap();
+
+    assert_eq!(wire, "beaver_search");
+    assert_eq!(
+        super::restore_tool_name_for_provider("qwen", wire, &tools),
+        "search"
+    );
+}
+
+#[test]
+fn qwen_search_alias_remains_collision_safe() {
+    let tools = vec![
+        tool("search", json!({"type": "object"})),
+        tool("beaver_search", json!({"type": "object"})),
+    ];
+    let policy = super::super::route_profile::tool_policy("qwen", "qwen3.8-flash").unwrap();
+    let fixed = tools_for_policy(policy.schema, policy.strict, &tools);
+    let search_wire = fixed[0]["function"]["name"].as_str().unwrap();
+    let exact_wire = fixed[1]["function"]["name"].as_str().unwrap();
+
+    assert_ne!(search_wire, exact_wire);
+    assert_eq!(
+        super::restore_tool_name_for_provider("qwen", search_wire, &tools),
+        "search"
+    );
+    assert_eq!(
+        super::restore_tool_name_for_provider("qwen", exact_wire, &tools),
+        "beaver_search"
+    );
+}
+
+#[test]
 fn hashes_only_the_overflow_of_names_longer_than_provider_limits() {
     let name = format!("beaver.{}", "very_long_extension_tool_name.".repeat(4));
     let alias = wire_name(&name);

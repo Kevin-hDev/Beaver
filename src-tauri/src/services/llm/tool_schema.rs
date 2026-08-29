@@ -5,7 +5,9 @@ use super::route_profile::SchemaPolicy;
 use super::tool_schema_names::{
     has_provider_name_shape, wire_name, wire_name_with_tools, MAX_PROVIDER_TOOL_NAME,
 };
-pub(crate) use super::tool_schema_names::{restore_tool_name, ToolNameMap};
+pub(crate) use super::tool_schema_names::{
+    restore_tool_name, restore_tool_name_for_provider, ToolNameMap,
+};
 use super::tool_schema_profile::{apply_strict_mode, remove_unsupported_keywords};
 
 pub(crate) fn tools_for_policy(profile: SchemaPolicy, strict: bool, tools: &[Value]) -> Vec<Value> {
@@ -16,7 +18,12 @@ pub(crate) fn tools_for_policy(profile: SchemaPolicy, strict: bool, tools: &[Val
         .map(|mut tool| {
             if let Some(function) = tool.get_mut("function").and_then(Value::as_object_mut) {
                 if let Some(name) = function.get("name").and_then(Value::as_str) {
-                    function.insert("name".to_string(), Value::String(names.wire_name(name)));
+                    let wire_name = if profile == SchemaPolicy::Qwen {
+                        names.wire_name_for_provider("qwen", name)
+                    } else {
+                        names.wire_name(name)
+                    };
+                    function.insert("name".to_string(), Value::String(wire_name));
                 }
                 if let Some(parameters) = function.get_mut("parameters") {
                     normalize_schema(parameters, profile);
@@ -48,7 +55,7 @@ fn normalize_schema(value: &mut Value, profile: SchemaPolicy) {
                 normalize_schema(item, profile);
             }
         }
-        Value::Bool(_) if profile != SchemaPolicy::Generic => {
+        Value::Bool(_) if !is_generic_schema(profile) => {
             *value = json!({"type": "string"});
         }
         _ => {}
@@ -62,11 +69,15 @@ fn normalize_properties(value: &mut Value, profile: SchemaPolicy) {
     for schema in properties.values_mut() {
         match schema {
             Value::Object(_) | Value::Array(_) => normalize_schema(schema, profile),
-            Value::Bool(_) if profile == SchemaPolicy::Generic => {}
+            Value::Bool(_) if is_generic_schema(profile) => {}
             Value::Bool(_) => *schema = json!({"type": "string"}),
             _ => *schema = json!({"type": "string"}),
         }
     }
+}
+
+fn is_generic_schema(profile: SchemaPolicy) -> bool {
+    matches!(profile, SchemaPolicy::Generic | SchemaPolicy::Qwen)
 }
 
 fn repair_structural_schema(map: &mut serde_json::Map<String, Value>) {

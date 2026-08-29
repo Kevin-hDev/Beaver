@@ -51,6 +51,17 @@ pub(crate) fn stage_raw_entries(
     Ok(())
 }
 
+pub(crate) fn stage_remove_raw_entries(
+    candidate: &mut HashMap<String, String>,
+    raw_keys: &[&str],
+) -> Result<(), String> {
+    validate_raw_keys(raw_keys)?;
+    for key in raw_keys {
+        candidate.remove(&prefixed_raw_key(key)?);
+    }
+    Ok(())
+}
+
 fn validate_vault_candidate(candidate: &HashMap<String, String>) -> Result<(), String> {
     if candidate.len() > MAX_VAULT_ENTRIES {
         return Err("limite du coffre atteinte".to_string());
@@ -121,10 +132,7 @@ pub(crate) fn delete_key_with_raw(provider_id: &str, raw_keys: &[&str]) -> Resul
     validate_raw_keys(raw_keys)?;
     transaction(|candidate| {
         stage_api_key(candidate, provider_id, None, None)?;
-        for key in raw_keys {
-            candidate.remove(&prefixed_raw_key(key)?);
-        }
-        Ok(())
+        stage_remove_raw_entries(candidate, raw_keys)
     })?;
     sync_registry_cache();
     Ok(())

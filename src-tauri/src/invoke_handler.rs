@@ -116,6 +116,7 @@ macro_rules! generate {
             crate::commands::delete_api_key,
             crate::commands::has_api_key,
             crate::commands::list_configured_providers,
+            crate::commands::get_provider_connection,
             crate::commands::test_api_key,
             crate::commands::test_api_key_with_value,
             crate::commands::register_attachment_paths,

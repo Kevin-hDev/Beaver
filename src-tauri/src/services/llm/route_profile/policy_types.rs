@@ -4,6 +4,7 @@ pub(crate) enum SchemaPolicy {
     Anthropic,
     Google,
     Kimi,
+    Qwen,
     Xai,
     Upstream,
 }
@@ -55,15 +56,12 @@ pub(crate) enum ParameterPolicy {
     Xai,
     Zai,
     Ollama,
-    #[allow(dead_code, reason = "Anthropic remains a compile-time candidate")]
     Anthropic,
     Qwen,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum ErrorPolicy {
-    Anthropic,
-    Qwen,
     OpenAiCompatible,
     Responses,
     Moonshot,

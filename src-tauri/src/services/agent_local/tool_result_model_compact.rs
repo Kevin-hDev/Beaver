@@ -53,6 +53,19 @@ fn is_tool_metadata(value: &Value) -> bool {
         })
 }
 
+pub(crate) fn rendered_status_is_error(rendered: &str) -> bool {
+    rendered
+        .lines()
+        .next()
+        .and_then(|line| serde_json::from_str::<Value>(line).ok())
+        .is_some_and(|value| {
+            is_tool_metadata(&value)
+                && value["status"]
+                    .as_str()
+                    .is_some_and(|status| matches!(status, "error" | "cancelled"))
+        })
+}
+
 fn legacy_value(rendered: &str) -> Option<Value> {
     if !rendered.starts_with(LEGACY_PREFIX) {
         return None;

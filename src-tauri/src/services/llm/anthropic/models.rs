@@ -14,16 +14,21 @@ pub(super) fn parse_catalog(body: &Value) -> Result<Vec<ModelInfo>, LlmError> {
     if data.len() > MAX_MODELS {
         return Err(invalid_catalog("model_count"));
     }
-    for item in data {
-        let id = item
-            .get("id")
-            .and_then(Value::as_str)
-            .ok_or_else(|| invalid_catalog("model_id"))?;
-        if !crate::services::llm::runtime_models::valid_model_id(id) {
-            return Err(invalid_catalog("model_id"));
-        }
-    }
-    data.iter().map(merge_remote_model).collect()
+    data.iter()
+        .filter(|item| {
+            let valid = item
+                .get("id")
+                .and_then(Value::as_str)
+                .is_some_and(crate::services::llm::runtime_models::valid_model_id);
+            if !valid {
+                log::warn!(
+                    "provider=anthropic event=model_catalog_entry_skipped reason=invalid_model_id"
+                );
+            }
+            valid
+        })
+        .map(merge_remote_model)
+        .collect()
 }
 
 pub(super) fn resolve_catalog(
@@ -62,10 +67,10 @@ fn merge_remote_model(item: &Value) -> Result<ModelInfo, LlmError> {
             .or_else(|| local.as_ref().and_then(|model| model.max_output_tokens)),
         supports_tools: capability(item, &["tools", "tool_use"])
             .or_else(|| local.as_ref().map(|model| model.supports_tools))
-            .unwrap_or(true),
+            .unwrap_or(false),
         supports_vision: capability(item, &["image_input"])
             .or_else(|| local.as_ref().map(|model| model.supports_vision))
-            .unwrap_or(true),
+            .unwrap_or(false),
         supports_thinking,
         supports_fast_mode: false,
         reasoning_modes,
@@ -84,7 +89,7 @@ fn reasoning_contract(
         return (Vec::new(), None);
     }
     if nested_supported(item, &["capabilities", "thinking", "types", "adaptive"]) {
-        let mut modes = vec!["auto".to_string()];
+        let mut modes = vec!["off".to_string(), "auto".to_string()];
         for effort in ["low", "medium", "high", "xhigh", "max"] {
             if nested_supported(item, &["capabilities", "effort", effort]) {
                 modes.push(effort.to_string());

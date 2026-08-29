@@ -26,3 +26,9 @@ fn qwen_only_falls_back_to_chat_when_models_is_unsupported() {
     assert_eq!(super::qwen_probe_action(401), QwenProbeAction::Reject);
     assert_eq!(super::qwen_probe_action(429), QwenProbeAction::Reject);
 }
+
+#[test]
+fn a_stored_qwen_key_uses_the_connection_aware_probe() {
+    assert!(super::uses_qwen_probe("qwen"));
+    assert!(!super::uses_qwen_probe("anthropic"));
+}

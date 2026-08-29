@@ -6,7 +6,16 @@ const HTTP_TIMEOUT: Duration = Duration::from_secs(10);
 
 pub async fn test_key(provider_id: &str) -> Result<(), String> {
     let key = get_key(provider_id)?;
+    if uses_qwen_probe(provider_id) {
+        let connection = crate::services::provider_connections::qwen::load()?.connection;
+        return test_qwen_key_raw(key.as_str(), &connection).await;
+    }
     test_key_raw(provider_id, key.as_str()).await
+}
+
+fn uses_qwen_probe(provider_id: &str) -> bool {
+    provider_id
+        == crate::services::reasoning_continuity::contract::RouteId::Qwen.provider_id()
 }
 
 pub async fn test_key_raw(provider_id: &str, key: &str) -> Result<(), String> {
@@ -45,6 +54,8 @@ pub async fn test_qwen_key_raw(
         QwenProbeAction::ChatFallback => {
             let _ = read_bounded(response, PROVIDER_ERROR_LIMIT).await;
             let url = format!("{}/chat/completions", endpoint.base_url);
+            // Cette sonde minimale reste sur le modèle de validation officiel tant que
+            // `/models` n'est pas disponible dans toutes les régions DashScope.
             let response = client
                 .send(
                     client

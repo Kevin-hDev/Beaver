@@ -3,6 +3,7 @@ use serde_json::{json, Value};
 
 pub const MAX_IMAGES_PER_MESSAGE: usize = 8;
 pub const MAX_IMAGE_BYTES: usize = crate::models::agent_turn_contract::MAX_TURN_IMAGE_BYTES;
+// Claude API direct limit: 10 MiB of base64-encoded data per image.
 pub const MAX_ANTHROPIC_IMAGE_BYTES: usize = 10 * 1024 * 1024;
 pub const IMAGE_TOKEN_ESTIMATE: usize = 1_100;
 
@@ -98,8 +99,10 @@ pub fn detect_mime(b64: &str) -> &'static str {
 }
 
 fn anthropic_image_part(base64_data: &str) -> Result<Value, &'static str> {
-    let payload = image_payload_with_limit(base64_data, MAX_ANTHROPIC_IMAGE_BYTES)
-        .ok_or("vision_image_invalid")?;
+    let payload = normalize_payload(base64_data);
+    if payload.len() > MAX_ANTHROPIC_IMAGE_BYTES || !has_supported_image_signature(payload) {
+        return Err("vision_image_invalid");
+    }
     Ok(json!({
         "type": "image",
         "source": {
@@ -115,10 +118,7 @@ fn image_payload(input: &str) -> Option<&str> {
 }
 
 fn image_payload_with_limit(input: &str, limit: usize) -> Option<&str> {
-    let payload = input
-        .split_once("base64,")
-        .map_or(input, |(_, data)| data)
-        .trim();
+    let payload = normalize_payload(input);
     if payload.is_empty() || decoded_len_estimate(payload) > limit {
         return None;
     }
@@ -127,6 +127,13 @@ fn image_payload_with_limit(input: &str, limit: usize) -> Option<&str> {
     } else {
         None
     }
+}
+
+fn normalize_payload(input: &str) -> &str {
+    input
+        .split_once("base64,")
+        .map_or(input, |(_, data)| data)
+        .trim()
 }
 
 fn has_supported_image_signature(payload: &str) -> bool {

@@ -143,7 +143,7 @@ pub(super) fn valid_label(value: &str, maximum: usize) -> bool {
         })
 }
 
-pub(super) fn valid_provider_metadata(value: &str) -> bool {
+pub(crate) fn valid_provider_metadata(value: &str) -> bool {
     !value.is_empty()
         && value.len() <= 128
         && value

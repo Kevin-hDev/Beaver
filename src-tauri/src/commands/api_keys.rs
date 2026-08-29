@@ -34,6 +34,7 @@ fn set_provider_key(
 ) -> Result<(), String> {
     match connection_kind(provider)? {
         ProviderConnectionKind::QwenModelStudio => {
+            validate_key_for_connection(ProviderConnectionKind::QwenModelStudio, key)?;
             let connection =
                 connection.ok_or_else(|| "provider_configuration_invalid".to_string())?;
             let encoded = qwen::encode(connection)?;
@@ -41,6 +42,13 @@ fn set_provider_key(
         }
         ProviderConnectionKind::ApiKey if connection.is_none() => api_keys::set_key(provider, key),
         ProviderConnectionKind::ApiKey => Err("provider_configuration_invalid".to_string()),
+    }
+}
+
+fn validate_key_for_connection(kind: ProviderConnectionKind, key: &str) -> Result<(), String> {
+    match kind {
+        ProviderConnectionKind::QwenModelStudio => api_keys::reject_unsupported_qwen_key(key),
+        ProviderConnectionKind::ApiKey => Ok(()),
     }
 }
 
@@ -74,6 +82,21 @@ pub async fn list_configured_providers() -> Result<Vec<String>, String> {
 }
 
 #[tauri::command]
+pub async fn get_provider_connection(
+    provider: String,
+) -> Result<Option<QwenConnectionInput>, String> {
+    match connection_kind(&provider)? {
+        ProviderConnectionKind::QwenModelStudio => {
+            if !api_keys::has_key(&provider) {
+                return Ok(None);
+            }
+            qwen::load().map(|record| Some(record.connection))
+        }
+        ProviderConnectionKind::ApiKey => Ok(None),
+    }
+}
+
+#[tauri::command]
 pub async fn test_api_key(provider: String) -> Result<(), String> {
     api_keys::test_key(&provider).await
 }
@@ -95,5 +118,17 @@ pub async fn test_api_key_with_value(
             api_keys::test_key_raw(&provider, &key).await
         }
         ProviderConnectionKind::ApiKey => Err("provider_configuration_invalid".to_string()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn unsupported_qwen_subscription_key_is_rejected_at_the_save_boundary() {
+        assert!(super::validate_key_for_connection(
+            crate::models::provider_contract::ProviderConnectionKind::QwenModelStudio,
+            "sk-sp-fixture",
+        )
+        .is_err());
     }
 }

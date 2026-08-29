@@ -83,9 +83,21 @@ fn apply_thinking(
                 .unwrap_or_else(|| "medium".to_string())
         })
     });
-    let Some(selected) = selected else {
+    let selected = selected.unwrap_or_else(|| "off".to_string());
+    let mode = crate::services::reasoning_continuity::contract::ReasoningModeId::from_name(Some(
+        &selected,
+    ))
+    .ok_or(BuildError::InvalidReasoningMode)?;
+    if mode == crate::services::reasoning_continuity::contract::ReasoningModeId::Off
+        || !crate::services::reasoning_continuity::registry::reasoning_mode_is_live(
+            crate::services::reasoning_continuity::contract::RouteId::Anthropic,
+            model,
+            mode,
+        )
+    {
+        payload["thinking"] = json!({"type": "disabled"});
         return Ok(());
-    };
+    }
     let adaptive = contract
         .as_ref()
         .is_some_and(|value| value.reasoning_modes.iter().any(|mode| mode == "auto"));
@@ -103,10 +115,6 @@ fn apply_thinking(
         return Ok(());
     }
     let budget = match selected.as_str() {
-        "off" => {
-            payload["thinking"] = json!({"type": "disabled"});
-            return Ok(());
-        }
         "low" => 1_024,
         "medium" => 4_096,
         "high" => 16_384,

@@ -7,7 +7,7 @@ pub fn apply(
     think: bool,
     reasoning_mode: Option<&str>,
 ) {
-    if reasoning_mode.is_none() && !think {
+    if reasoning_mode.is_none() && !think && policy != super::route_profile::ParameterPolicy::Qwen {
         return;
     }
     use super::route_profile::ParameterPolicy;
@@ -20,7 +20,7 @@ pub fn apply(
         ParameterPolicy::Moonshot => apply_moonshot(payload, model, think, reasoning_mode),
         ParameterPolicy::Google => apply_google(payload, model, think, reasoning_mode),
         ParameterPolicy::Xai => apply_xai(payload, model, reasoning_mode),
-        ParameterPolicy::Qwen => apply_qwen(payload, reasoning_mode),
+        ParameterPolicy::Qwen => apply_qwen(payload, model, reasoning_mode),
         ParameterPolicy::Default
         | ParameterPolicy::Responses
         | ParameterPolicy::Ollama
@@ -28,14 +28,21 @@ pub fn apply(
     }
 }
 
-fn apply_qwen(payload: &mut Value, reasoning_mode: Option<&str>) {
-    let off = reasoning_mode == Some("off");
-    payload["enable_thinking"] = (!off).into();
-    payload["preserve_thinking"] = (!off).into();
-    if !off {
-        let effort = reasoning_mode
-            .filter(|mode| matches!(*mode, "low" | "medium" | "xhigh"))
-            .unwrap_or("xhigh");
+fn apply_qwen(payload: &mut Value, model: &str, reasoning_mode: Option<&str>) {
+    let live_mode = reasoning_mode
+        .and_then(|mode| {
+            crate::services::reasoning_continuity::contract::ReasoningModeId::from_name(Some(mode))
+        })
+        .filter(|mode| {
+            crate::services::reasoning_continuity::registry::reasoning_mode_is_live(
+                crate::services::reasoning_continuity::contract::RouteId::Qwen,
+                model,
+                *mode,
+            )
+        });
+    payload["enable_thinking"] = live_mode.is_some().into();
+    payload["preserve_thinking"] = live_mode.is_some().into();
+    if let Some(effort) = reasoning_mode.filter(|_| live_mode.is_some()) {
         payload["reasoning_effort"] = effort.into();
     }
 }

@@ -107,6 +107,58 @@ pub fn replay_policy(target: &ReplayTarget) -> Option<ReplayPolicy> {
     find_policy(ACTIVE_ROUTES, target)
 }
 
+pub fn reasoning_mode_is_live(
+    route_id: RouteId,
+    model_id: &str,
+    reasoning_mode: ReasoningModeId,
+) -> bool {
+    if reasoning_mode == ReasoningModeId::Off {
+        return false;
+    }
+    let Some(route) = ACTIVE_ROUTES
+        .iter()
+        .find(|route| route.route_id == route_id)
+    else {
+        return false;
+    };
+    [
+        ContinuationUse::UserContinuation,
+        ContinuationUse::ToolContinuation,
+    ]
+    .into_iter()
+    .all(|continuation_use| {
+        route.models.iter().any(|policy| {
+            policy.model_id == model_id
+                && policy.reasoning_mode == reasoning_mode
+                && policy.continuation_use == continuation_use
+                && policy.activation == ActivationState::LiveValidated
+        })
+    })
+}
+
+pub fn effective_reasoning_modes(
+    route_id: RouteId,
+    model_id: &str,
+    advertised_modes: &[String],
+) -> Vec<String> {
+    let has_live_mode = advertised_modes.iter().any(|mode| {
+        ReasoningModeId::from_name(Some(mode))
+            .is_some_and(|mode| reasoning_mode_is_live(route_id, model_id, mode))
+    });
+    if !has_live_mode {
+        return Vec::new();
+    }
+    advertised_modes
+        .iter()
+        .filter(|mode| {
+            ReasoningModeId::from_name(Some(mode)).is_some_and(|parsed| {
+                parsed == ReasoningModeId::Off || reasoning_mode_is_live(route_id, model_id, parsed)
+            })
+        })
+        .cloned()
+        .collect()
+}
+
 #[cfg(test)]
 pub(super) fn replay_policy_from_routes(
     routes: &[RouteContract],
