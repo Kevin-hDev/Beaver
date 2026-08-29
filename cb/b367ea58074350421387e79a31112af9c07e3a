@@ -1,0 +1,15 @@
+Provider reasoning manual-regression correction, 2026-08-29.
+
+Root causes: Anthropic native thinking blocks were persisted for replay but never copied into the visible StreamResult; the selector exposed the internal adaptive transport mode as a user effort; stale off selections could send disabled thinking to always-adaptive Claude models; the embedded Qwen authority covered only 3.8 models; Qwen boolean auto was incorrectly serialized as reasoning_effort auto.
+
+Decisions: Anthropic catalog capabilities remain authoritative. The UI hides internal auto only when Anthropic publishes real effort levels. Off is offered only when the exact model permits it. Fable 5, Mythos 5, and Mythos Preview are treated as always adaptive. A stale off value on such a model migrates to the catalog default. New Anthropic streams publish visible thinking while signed native blocks remain the sole replay authority. Existing sessions derive visible text only from a validated Anthropic envelope and never expose signatures or redacted_thinking.
+
+Qwen decisions: the embedded authority now includes exact documented 3.6 and 3.7 preserve-thinking models and aliases. Qwen 3.8 max and flash expose low, medium, and xhigh. Documented 3.6 and 3.7 hybrids expose the real boolean on/off control; thinking-only variants expose only on. The transport sends enable_thinking and preserve_thinking for auto but never invents reasoning_effort auto.
+
+Safety: invalid Anthropic envelopes remain invisible; opaque signatures stay outside the public session view and diagnostics. The provider-routing ratchet owns exactly one Anthropic UI presentation exception and is stable at 55 files.
+
+Official authorities checked: Anthropic Models API, Anthropic effort and extended-thinking documentation; Alibaba Model Studio OpenAI-compatible API, deep-thinking, text-model, and vision-model documentation.
+
+Red-green regressions: visible Anthropic stream thinking; restoration from a valid persisted Anthropic continuation; rejection of invalid continuation; no invalid off on always-adaptive Claude; stale off migration; Qwen hybrid switch; omission of reasoning_effort auto; Anthropic technical-auto UI filtering with third-party preservation.
+
+Verification: cargo test => 4343 passed, 0 failed, 7 ignored plus 1 integration test passed; npm test => 488 Vitest files and 2630 tests passed plus all chained build, CI, CEF, E2E-runner, extension-host, and reasoning-fixture suites; cargo clippy --all-targets -- -D warnings passed; cargo fmt --check passed; npm run lint passed with provider boundaries at 55 files; npx tsc --noEmit passed; provider boundary unit tests 11 passed. Graphify incremental updates completed for code and documentation workspaces.
