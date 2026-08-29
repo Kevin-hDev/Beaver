@@ -1,4 +1,55 @@
 {
+  "1.1.8": {
+    "de": [
+      "Anbietertransporte nutzen jetzt einheitliche Verträge für zuverlässigere Werkzeuge, Bilder, Streams und Denkfortsetzung.",
+      "Modellfunktionen stammen jetzt aus geprüften Metadaten und Katalogen, sodass verfügbare Optionen genauer angezeigt werden.",
+      "DeepSeek behält sein Denken jetzt über Werkzeugketten hinweg bei und bietet wieder die Stufen Aus, Niedrig, Hoch und Maximal.",
+      "Eine neue Aktualisierungsseite trennt Beaver- und Ollama-Updates mit Fortschritt, manueller Prüfung und Abbruch laufender Downloads.",
+      "Erweiterte Tastenkürzel erleichtern auf macOS, Linux und Windows die Navigation sowie die Steuerung von Unterhaltungen und Antworten."
+    ],
+    "en": [
+      "Provider transports now use consistent contracts for more reliable tools, images, streaming, and reasoning continuity.",
+      "Model capabilities now come from validated metadata and catalogs, so available options are displayed more accurately.",
+      "DeepSeek now preserves reasoning across tool chains and once again offers Off, Low, High, and Max effort levels.",
+      "A new Updates page separates Beaver and Ollama updates with progress, manual checks, and cancellable downloads.",
+      "Expanded keyboard shortcuts make navigation, conversations, and response controls easier across macOS, Linux, and Windows."
+    ],
+    "es": [
+      "Los transportes de proveedores usan ahora contratos coherentes para herramientas, imágenes, streaming y continuidad del razonamiento más fiables.",
+      "Las capacidades de los modelos proceden ahora de metadatos y catálogos validados, por lo que las opciones disponibles se muestran con más precisión.",
+      "DeepSeek conserva ahora el razonamiento en las cadenas de herramientas y vuelve a ofrecer los niveles Desactivado, Bajo, Alto y Máximo.",
+      "La nueva página de actualizaciones separa Beaver y Ollama, con progreso, comprobaciones manuales y descargas cancelables.",
+      "Los atajos de teclado ampliados facilitan la navegación y el control de conversaciones y respuestas en macOS, Linux y Windows."
+    ],
+    "fr": [
+      "Les transports des fournisseurs utilisent maintenant des contrats cohérents pour des outils, images, flux et raisonnements plus fiables.",
+      "Les capacités des modèles viennent maintenant de métadonnées et catalogues validés, afin d’afficher plus justement les options disponibles.",
+      "DeepSeek conserve maintenant son raisonnement dans les chaînes d’outils et propose de nouveau les niveaux Désactivé, Faible, Élevé et Maximal.",
+      "La nouvelle page Mises à jour sépare Beaver et Ollama, avec progression, vérification manuelle et téléchargements annulables.",
+      "Les raccourcis clavier étendus facilitent la navigation et le contrôle des conversations et réponses sur macOS, Linux et Windows."
+    ],
+    "it": [
+      "I trasporti dei provider usano ora contratti coerenti per strumenti, immagini, streaming e continuità del ragionamento più affidabili.",
+      "Le capacità dei modelli provengono ora da metadati e cataloghi convalidati, mostrando con maggiore precisione le opzioni disponibili.",
+      "DeepSeek conserva ora il ragionamento nelle catene di strumenti e offre di nuovo i livelli Disattivato, Basso, Alto e Massimo.",
+      "La nuova pagina Aggiornamenti separa Beaver e Ollama, con avanzamento, controlli manuali e download annullabili.",
+      "Le scorciatoie da tastiera ampliate facilitano navigazione, conversazioni e risposte su macOS, Linux e Windows."
+    ],
+    "ja": [
+      "プロバイダー通信が統一された契約を使うようになり、ツール、画像、ストリーミング、推論の継続性がより安定しました。",
+      "モデル機能が検証済みのメタデータとカタログに基づくようになり、利用可能な選択肢がより正確に表示されます。",
+      "DeepSeek はツールチェーン全体で推論を保持し、オフ、低、高、最大の思考レベルを再び選べるようになりました。",
+      "新しいアップデート画面で Beaver と Ollama を個別に確認でき、進行状況の表示、手動確認、ダウンロードの中止に対応しました。",
+      "macOS、Linux、Windows のキーボードショートカットが増え、移動、会話、応答の操作が簡単になりました。"
+    ],
+    "zh": [
+      "提供商传输现在采用统一契约，让工具、图像、流式响应和推理连续性更加可靠。",
+      "模型能力现在来自经过验证的元数据和目录，因此可用选项的显示更加准确。",
+      "DeepSeek 现在会在工具链中保留推理，并重新提供关闭、低、高和最高四种思考等级。",
+      "新的更新页面分别管理 Beaver 和 Ollama 更新，支持进度显示、手动检查和取消下载。",
+      "macOS、Linux 和 Windows 现已支持更多键盘快捷键，让导航、会话和响应控制更加便捷。"
+    ]
+  },
   "1.1.7": {
     "de": [
       "Die erforderliche Denkfortsetzung bleibt jetzt unsichtbar und nimmt im Nachrichtenfeld keinen Platz mehr ein."
