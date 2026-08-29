@@ -32,3 +32,33 @@ fn builds_data_url_from_base64() {
         "data:image/png;base64,iVBORw0KGgo="
     );
 }
+
+#[test]
+fn vision_wire_formats_stay_distinct() {
+    let message = user(vec!["iVBORw0KGgo="]);
+    let openai_policy =
+        super::super::route_profile::payload_policy("google", "gemini-3.5-flash").unwrap();
+    let mistral_policy =
+        super::super::route_profile::payload_policy("mistral", "mistral-large").unwrap();
+    let openai =
+        crate::services::llm::stream_convert::message_to_openai(&message, openai_policy.message);
+    let mistral =
+        crate::services::llm::stream_convert::message_to_openai(&message, mistral_policy.message);
+
+    assert_eq!(
+        openai["content"][1]["image_url"]["url"],
+        data_url("iVBORw0KGgo=")
+    );
+    assert_eq!(mistral["content"][1]["image_url"], data_url("iVBORw0KGgo="));
+}
+
+#[test]
+fn unsupported_image_wire_is_rejected_explicitly() {
+    assert_eq!(
+        image_part(
+            "iVBORw0KGgo=",
+            super::super::route_profile::ImageFormat::Unsupported,
+        ),
+        Err("vision_wire_unsupported")
+    );
+}

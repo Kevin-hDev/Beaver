@@ -45,6 +45,7 @@ function model(overrides: Partial<AvailableModel>): AvailableModel {
     is_local: true,
     supports_tools: false,
     supports_thinking: true,
+    context_usage_includes_reasoning: true,
     ...overrides,
   };
 }

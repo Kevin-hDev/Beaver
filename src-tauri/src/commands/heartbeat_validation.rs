@@ -8,21 +8,6 @@ const MAX_PROVIDER_LEN: usize = 64;
 const MAX_PROMPT_LEN: usize = 12_000;
 const MAX_DESCRIPTION_LEN: usize = 300;
 
-const ALLOWED_PROVIDERS: &[&str] = &[
-    "ollama",
-    "groq",
-    "google",
-    "mistral",
-    "cerebras",
-    "openrouter",
-    "openai",
-    "deepseek",
-    "xai",
-    "moonshot",
-    "zai",
-    "codex-oauth",
-];
-
 pub fn validate_capacity(current_len: usize) -> Result<(), String> {
     if current_len >= MAX_WAKEUPS {
         return Err(format!("Maximum {} réveils", MAX_WAKEUPS));
@@ -61,7 +46,11 @@ pub fn validate_wakeup(wakeup: &ScheduledWakeup) -> Result<(), String> {
 }
 
 fn validate_provider(provider: &str) -> Result<(), String> {
-    if ALLOWED_PROVIDERS.contains(&provider) {
+    if crate::services::llm::stream_dispatch::is_available(
+        provider,
+        crate::services::llm::stream_dispatch::InvocationKind::Interactive,
+        crate::services::llm::request_purpose::RequestPurpose::Automation,
+    ) {
         Ok(())
     } else {
         Err("Provider non supporté".into())
@@ -173,6 +162,14 @@ mod tests {
                 validate_input(provider, "Test", "model", "Ping", "", &schedule, true).is_err()
             );
         }
+    }
+
+    #[test]
+    fn rejects_removed_groq_provider() {
+        let schedule = WakeupSchedule::Daily {
+            time: "08:00".into(),
+        };
+        assert!(validate_input("groq", "Test", "model", "Ping", "", &schedule, true).is_err());
     }
 
     #[test]

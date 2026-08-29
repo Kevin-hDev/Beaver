@@ -10,7 +10,6 @@ fn ids(provider_id: &str) -> Vec<String> {
 #[test]
 fn canonical_inventory_sizes_match_the_official_catalogs() {
     for (provider, expected) in [
-        ("groq", 9),
         ("google", 14),
         ("mistral", 8),
         ("cerebras", 3),
@@ -23,6 +22,11 @@ fn canonical_inventory_sizes_match_the_official_catalogs() {
     ] {
         assert_eq!(list(provider).len(), expected, "{provider}");
     }
+}
+
+#[test]
+fn removed_groq_provider_has_no_embedded_models() {
+    assert!(list("groq").is_empty());
 }
 
 #[test]
@@ -131,4 +135,24 @@ fn openai_fast_mode_is_limited_to_the_verified_api_models() {
             "openai/gpt-5.6-sol",
         )
     );
+}
+
+#[test]
+fn snapshot_models_do_not_need_the_legacy_name_fallback() {
+    let mut gaps = Vec::new();
+    for source in SOURCES {
+        for model in list(source.provider_id) {
+            let resolved = crate::services::llm::provider_model_lookup::resolve_local(
+                source.provider_id,
+                &model.id,
+            )
+            .unwrap();
+            if resolved.provenance
+                != crate::services::llm::provider_model_lookup::CapabilityProvenance::EmbeddedRegistry
+            {
+                gaps.push(format!("{}/{}", source.provider_id, model.id));
+            }
+        }
+    }
+    assert!(gaps.is_empty(), "missing explicit capabilities: {gaps:?}");
 }

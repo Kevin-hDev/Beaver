@@ -46,7 +46,7 @@ fn parses_official_k3_and_k27_metadata() {
 }
 
 #[test]
-fn uses_known_kimi_fallbacks_without_guessing_unknown_models() {
+fn uses_known_registry_entries_without_guessing_unknown_models() {
     let models = parse_models_list(&json!({
         "data": [
             { "id": "k3", "context_length": 262_144 },

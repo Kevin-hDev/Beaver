@@ -21,6 +21,29 @@ fn computes_the_effective_context_from_openai_metadata() {
 }
 
 #[test]
+fn remote_catalog_uses_only_a_compatible_fallback_reasoning_default() {
+    let spark = parse(
+        r#"{"models":[{"slug":"gpt-5.3-codex-spark","display_name":"Spark","supported_reasoning_levels":[{"effort":"low"},{"effort":"medium"},{"effort":"high"}],"context_window":128000}]}"#,
+    )
+    .unwrap();
+    let restricted_spark = parse(
+        r#"{"models":[{"slug":"gpt-5.3-codex-spark","display_name":"Spark","supported_reasoning_levels":[{"effort":"low"},{"effort":"medium"}],"context_window":128000}]}"#,
+    )
+    .unwrap();
+    let runtime_only = parse(
+        r#"{"models":[{"slug":"gpt-runtime-only-fixture","display_name":"Runtime","supported_reasoning_levels":[{"effort":"high"}],"context_window":128000}]}"#,
+    )
+    .unwrap();
+
+    assert_eq!(
+        spark[0].info.default_reasoning_mode.as_deref(),
+        Some("high")
+    );
+    assert_eq!(restricted_spark[0].info.default_reasoning_mode, None);
+    assert_eq!(runtime_only[0].info.default_reasoning_mode, None);
+}
+
+#[test]
 fn fast_mode_requires_the_bounded_priority_service_tier() {
     let without_tiers = parse(
         r#"{"models":[{"slug":"gpt-5.6-sol","display_name":"GPT-5.6 Sol","context_window":272000,"effective_context_window_percent":95,"additional_speed_tiers":["fast"]}]}"#,

@@ -70,7 +70,11 @@ async fn dispatch(
     wakeup: &ScheduledWakeup,
     cancel: &CancellationToken,
 ) -> Result<(String, u32), String> {
-    if llm::route::is_interactive_only(&wakeup.provider) {
+    if !llm::stream_dispatch::is_available(
+        &wakeup.provider,
+        llm::stream_dispatch::InvocationKind::Interactive,
+        llm::request_purpose::RequestPurpose::Automation,
+    ) {
         return Err("Provider réservé aux conversations manuelles".to_string());
     }
     let session_id = create_heartbeat_session(wakeup).await?;

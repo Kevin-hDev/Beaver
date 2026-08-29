@@ -8,6 +8,9 @@ export interface OllamaModel {
   is_moe: boolean;
   context_length: number;
   capabilities: ("completion" | "vision" | "thinking" | "tools")[];
+  reasoning_modes: import("@/lib/reasoning-modes").ReasoningMode[];
+  default_reasoning_mode: import("@/lib/reasoning-modes").ReasoningMode | null;
+  context_usage_includes_reasoning: boolean;
   digest_short: string;
   aliases: string[];
   is_customized: boolean;

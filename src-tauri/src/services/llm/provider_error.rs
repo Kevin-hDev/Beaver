@@ -71,12 +71,16 @@ fn service_tier_error_fields(
     code.and_then(serde_json::Value::as_str) == Some("unsupported_service_tier")
 }
 
-pub fn classify_http(provider_id: &str, status: u16, body: &str) -> ProviderErrorCode {
+pub fn classify_http(
+    policy: super::route_profile::ErrorPolicy,
+    status: u16,
+    body: &str,
+) -> ProviderErrorCode {
     if status != 402 {
         return ProviderErrorCode::ProviderAccessUnavailable;
     }
     let parsed = serde_json::from_str::<serde_json::Value>(body).ok();
-    if is_moonshot(provider_id)
+    if policy == super::route_profile::ErrorPolicy::Moonshot
         && parsed
             .as_ref()
             .and_then(|value| value.pointer("/error/message"))
@@ -85,22 +89,28 @@ pub fn classify_http(provider_id: &str, status: u16, body: &str) -> ProviderErro
     {
         return ProviderErrorCode::MoonshotMembershipUnverified;
     }
-    if is_xai(provider_id)
-        && parsed
-            .as_ref()
-            .and_then(|value| value.get("code"))
-            .and_then(serde_json::Value::as_str)
-            == Some(XAI_SPENDING_LIMIT_CODE)
+    if matches!(
+        policy,
+        super::route_profile::ErrorPolicy::Xai | super::route_profile::ErrorPolicy::XaiOauth
+    ) && parsed
+        .as_ref()
+        .and_then(|value| value.get("code"))
+        .and_then(serde_json::Value::as_str)
+        == Some(XAI_SPENDING_LIMIT_CODE)
     {
         return ProviderErrorCode::XaiSubscriptionOrCreditsRequired;
     }
     ProviderErrorCode::ProviderAccessUnavailable
 }
 
-pub fn safe_log_code(provider_id: &str, status: u16, body: &str) -> &'static str {
+pub fn safe_log_code(
+    policy: super::route_profile::ErrorPolicy,
+    status: u16,
+    body: &str,
+) -> &'static str {
     match status {
         401 => "authentication_required",
-        402 => classify_http(provider_id, status, body).as_str(),
+        402 => classify_http(policy, status, body).as_str(),
         403 => "provider_access_unavailable",
         429 => "rate_limit",
         _ => "provider_http_error",
@@ -143,14 +153,6 @@ pub fn catalog_code(error: &LlmError) -> ProviderErrorCode {
         LlmError::RateLimit { .. } => ProviderErrorCode::RateLimited,
         _ => ProviderErrorCode::ModelCatalogUnavailable,
     }
-}
-
-fn is_moonshot(provider_id: &str) -> bool {
-    matches!(provider_id, "moonshot" | "moonshot-oauth")
-}
-
-fn is_xai(provider_id: &str) -> bool {
-    matches!(provider_id, "xai" | "xai-oauth")
 }
 
 const MOONSHOT_MEMBERSHIP_MESSAGE: &str =

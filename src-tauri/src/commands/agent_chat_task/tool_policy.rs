@@ -7,19 +7,23 @@ pub struct ToolPolicy {
     pub extensions_blocked: bool,
 }
 
-pub fn apply(provider_id: &str, model: &str, tools: Vec<Value>) -> ToolPolicy {
-    apply_with(provider_id, model, tools, |name| {
+pub fn apply(
+    policy: crate::services::llm::route_profile::ExtensionToolPolicy,
+    tools: Vec<Value>,
+) -> ToolPolicy {
+    apply_with(policy, tools, |name| {
         crate::services::extensions::is_dynamic_tool(name)
     })
 }
 
 fn apply_with(
-    provider_id: &str,
-    model: &str,
+    policy: crate::services::llm::route_profile::ExtensionToolPolicy,
     mut tools: Vec<Value>,
     is_extension: impl Fn(&str) -> bool,
 ) -> ToolPolicy {
-    if allows_extension_tools(provider_id, model) {
+    use crate::services::llm::route_profile::ExtensionToolPolicy;
+
+    if policy == ExtensionToolPolicy::All {
         return ToolPolicy {
             tools,
             extensions_blocked: false,
@@ -28,7 +32,7 @@ fn apply_with(
     let extensions_blocked = tools
         .iter()
         .any(|tool| is_extension_tool(tool, &is_extension));
-    if is_groq_compound(provider_id, model) {
+    if policy == ExtensionToolPolicy::NoTools {
         tools.clear();
         return ToolPolicy {
             tools,
@@ -42,7 +46,7 @@ fn apply_with(
             if name == crate::services::extensions::SEARCH_TOOL_NAME {
                 return None;
             }
-            if keep_tool(provider_id, model, is_extension(name)) {
+            if !is_extension(name) {
                 Some(tool)
             } else {
                 crate::services::extensions::core_fallback(&tool).cloned()
@@ -61,55 +65,36 @@ fn is_extension_tool(tool: &Value, is_extension: &impl Fn(&str) -> bool) -> bool
         .is_some_and(is_extension)
 }
 
-fn allows_extension_tools(provider_id: &str, model: &str) -> bool {
-    !is_groq_family(provider_id, model)
-}
-
-fn keep_tool(provider_id: &str, model: &str, extension_tool: bool) -> bool {
-    !extension_tool || allows_extension_tools(provider_id, model)
-}
-
-fn is_groq_compound(provider_id: &str, model: &str) -> bool {
-    is_groq_family(provider_id, model)
-        && model
-            .rsplit_once('/')
-            .map_or(model, |(_, name)| name)
-            .to_ascii_lowercase()
-            .starts_with("compound")
-}
-
-fn is_groq_family(provider_id: &str, model: &str) -> bool {
-    provider_id == "groq"
-        || (provider_id == "openrouter" && model.to_ascii_lowercase().starts_with("groq/"))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::services::llm::route_profile::ExtensionToolPolicy;
 
     #[test]
-    fn only_groq_blocks_extension_tools() {
-        assert!(!allows_extension_tools("groq", "llama-3.3"));
-        assert!(!allows_extension_tools("openrouter", "groq/llama-3.3-70b"));
-        assert!(allows_extension_tools("openai", "gpt-5.6"));
-        assert!(allows_extension_tools("moonshot", "kimi-k2.7"));
-        assert!(!keep_tool("groq", "llama-3.3", true));
-        assert!(keep_tool("groq", "llama-3.3", false));
-        assert!(is_groq_compound("groq", "groq/compound"));
-        assert!(is_groq_compound("openrouter", "groq/compound"));
-        assert!(is_groq_compound("groq", "compound-mini"));
-        assert!(!is_groq_compound("groq", "llama-3.3-70b-versatile"));
+    fn openrouter_groq_models_block_extension_tools() {
+        assert_eq!(
+            crate::services::llm::route_profile::tool_policy("openrouter", "groq/llama-3.3-70b")
+                .unwrap()
+                .extensions,
+            ExtensionToolPolicy::WithoutExtensions
+        );
+        assert_eq!(
+            crate::services::llm::route_profile::tool_policy("openrouter", "groq/compound")
+                .unwrap()
+                .extensions,
+            ExtensionToolPolicy::NoTools
+        );
     }
 
     #[test]
-    fn groq_keeps_core_tools_and_removes_complete_plugins() {
+    fn openrouter_groq_keeps_core_tools_and_removes_complete_plugins() {
         let tools = vec![
             serde_json::json!({"function": {"name": "read_file"}}),
             serde_json::json!({"function": {"name": "search_extension_tools"}}),
             serde_json::json!({"function": {"name": "beaver.office.documents.create"}}),
         ];
 
-        let policy = apply_with("groq", "llama-3.3-70b-versatile", tools, |name| {
+        let policy = apply_with(ExtensionToolPolicy::WithoutExtensions, tools, |name| {
             name.starts_with("beaver.office.")
         });
 
@@ -119,16 +104,16 @@ mod tests {
     }
 
     #[test]
-    fn groq_compound_receives_no_tools() {
+    fn openrouter_groq_compound_receives_no_tools() {
         let tools = vec![serde_json::json!({"function": {"name": "read_file"}})];
 
-        let policy = apply_with("groq", "groq/compound", tools, |_| false);
+        let policy = apply_with(ExtensionToolPolicy::NoTools, tools, |_| false);
 
         assert!(policy.tools.is_empty());
     }
 
     #[test]
-    fn groq_restores_native_tools_hidden_by_plugin_replacements() {
+    fn openrouter_groq_restores_native_tools_hidden_by_plugin_replacements() {
         let tools = vec![serde_json::json!({
             "_beaverCoreFallback": {
                 "function": {"name": "read_file", "description": "native"}
@@ -136,7 +121,7 @@ mod tests {
             "function": {"name": "read_file", "description": "plugin"}
         })];
 
-        let policy = apply_with("groq", "llama-3.3-70b-versatile", tools, |_| true);
+        let policy = apply_with(ExtensionToolPolicy::WithoutExtensions, tools, |_| true);
 
         assert_eq!(policy.tools.len(), 1);
         assert_eq!(policy.tools[0]["function"]["description"], "native");

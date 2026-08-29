@@ -11,6 +11,7 @@ pub(super) fn test_route(chat_provider_id: &'static str) -> LlmRoute {
         auto_max_tokens: true,
         fallback_max_tokens: None,
         usage_scope: UsageScope::Any,
+        error_policy: super::route_profile::ErrorPolicy::OpenAiCompatible,
         auth_source: AuthSource::TestToken("fixture-secret"),
     }
 }

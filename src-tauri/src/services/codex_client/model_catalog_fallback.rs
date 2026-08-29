@@ -12,22 +12,36 @@ pub(super) fn models() -> Vec<ModelInfo> {
             FALLBACK_EFFECTIVE_CONTEXT,
             EXTENDED_MODES,
             true,
+            None,
         ),
         (
             "gpt-5.6-terra",
             FALLBACK_EFFECTIVE_CONTEXT,
             EXTENDED_MODES,
             true,
+            None,
         ),
-        ("gpt-5.6-luna", FALLBACK_EFFECTIVE_CONTEXT, LUNA_MODES, true),
-        ("gpt-5.3-codex-spark", 128_000, STANDARD_MODES, false),
-        ("gpt-5.5", 258_000, STANDARD_MODES, true),
-        ("gpt-5.4", 258_000, STANDARD_MODES, true),
-        ("gpt-5.4-mini", 258_000, STANDARD_MODES, true),
-        ("gpt-5.4-pro", 258_000, STANDARD_MODES, true),
+        (
+            "gpt-5.6-luna",
+            FALLBACK_EFFECTIVE_CONTEXT,
+            LUNA_MODES,
+            true,
+            None,
+        ),
+        (
+            "gpt-5.3-codex-spark",
+            128_000,
+            STANDARD_MODES,
+            false,
+            Some("high"),
+        ),
+        ("gpt-5.5", 258_000, STANDARD_MODES, true, None),
+        ("gpt-5.4", 258_000, STANDARD_MODES, true, None),
+        ("gpt-5.4-mini", 258_000, STANDARD_MODES, true, None),
+        ("gpt-5.4-pro", 258_000, STANDARD_MODES, true, None),
     ]
     .into_iter()
-    .map(|(id, context, modes, vision)| ModelInfo {
+    .map(|(id, context, modes, vision, default_mode)| ModelInfo {
         id: id.to_string(),
         display_name: Some(id.to_string()),
         owned_by: Some("openai".to_string()),
@@ -39,8 +53,20 @@ pub(super) fn models() -> Vec<ModelInfo> {
         // Le fallback ne prouve pas l'éligibilité Fast du compte OAuth.
         supports_fast_mode: false,
         reasoning_modes: modes.iter().map(|mode| (*mode).to_string()).collect(),
-        default_reasoning_mode: None,
+        default_reasoning_mode: default_mode.map(str::to_string),
+        context_usage_includes_reasoning: true,
         is_free: false,
     })
     .collect()
+}
+
+pub(super) fn compatible_default_reasoning_mode(
+    model_id: &str,
+    remote_modes: &[String],
+) -> Option<String> {
+    models()
+        .into_iter()
+        .find(|model| model.id == model_id)
+        .and_then(|model| model.default_reasoning_mode)
+        .filter(|mode| remote_modes.contains(mode))
 }

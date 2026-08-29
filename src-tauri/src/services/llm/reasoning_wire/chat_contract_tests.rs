@@ -6,8 +6,8 @@ use crate::services::llm::route;
 use crate::services::llm::stream_http::RequestConfig;
 use crate::services::llm::stream_test_transport::{ScriptedResponse, StreamScenario};
 use crate::services::reasoning_continuity::contract::{
-    ContinuationTarget, ContinuationUse, ContractId, CredentialScope, NonReplayTarget,
-    ReasoningModeId, ReplayTarget, RouteId,
+    ContinuationTarget, ContinuationUse, ContractId, CredentialScope, ReasoningModeId,
+    ReplayTarget, RouteId,
 };
 use crate::services::reasoning_continuity::envelope::{
     CompletionState, ContinuationState, ReasoningEnvelope, ReasoningSource,
@@ -462,11 +462,14 @@ fn kimi_keeps_an_empty_native_reasoning_field_and_legacy_text_is_never_a_fallbac
         .expect("empty native continuation remains valid");
 
     assert_eq!(payload["messages"][0]["reasoning_content"], "");
-    assert!(
-        crate::services::llm::stream_convert::message_to_openai(&legacy, "moonshot")
-            .get("reasoning_content")
-            .is_none()
-    );
+    assert!(crate::services::llm::stream_convert::message_to_openai(
+        &legacy,
+        crate::services::llm::route_profile::payload_policy("moonshot", "kimi-k2.7-code")
+            .unwrap()
+            .message,
+    )
+    .get("reasoning_content")
+    .is_none());
 }
 
 #[test]
@@ -583,22 +586,4 @@ fn fixture_candidate_bypasses_only_activation_and_never_the_provenance_contract(
 
     assert!(payload("cerebras", "zai-glm-4.7", &messages, &production, "auto").is_err());
     assert!(payload("cerebras", "zai-glm-4.7", &messages, &fixture, "auto").is_ok());
-}
-
-#[test]
-fn groq_reasoning_is_forbidden() {
-    let target = ContinuationTarget::Forbidden(NonReplayTarget {
-        route_id: RouteId::Groq,
-        model_id: "openai/gpt-oss-120b".into(),
-        reasoning_mode: ReasoningModeId::High,
-    });
-    let mut assistant = ChatMessage::assistant("prior".into(), None, None, None, None);
-    assistant.tool_loop_reasoning = Some("must-not-forward".into());
-    let messages = [assistant, ChatMessage::user("continue".into())];
-
-    let payload = payload("groq", "openai/gpt-oss-120b", &messages, &target, "high")
-        .expect("Groq remains a regular request without a replay adapter");
-
-    assert!(payload["messages"][0].get("reasoning_content").is_none());
-    assert!(payload["messages"][0].get("reasoning").is_none());
 }

@@ -16,7 +16,8 @@ fn aliases_extension_names_and_restores_them() {
     let original = "beaver.office.documents.create";
     let tools = vec![tool(original, json!({"type": "object", "properties": {}}))];
 
-    let fixed = tools_for_provider("openai", "gpt-5.6-sol", &tools);
+    let policy = super::super::route_profile::tool_policy("openai", "gpt-5.6-sol").unwrap();
+    let fixed = tools_for_policy(policy.schema, policy.strict, &tools);
     let alias = fixed[0]["function"]["name"].as_str().unwrap();
 
     assert_eq!(alias, "beaver_office_documents_create");

@@ -33,7 +33,6 @@
   },
   "apiKeys": {
     "providers": {
-      "groq": { "description": "Inferenza ultrarapida Llama / GPT-OSS su LPU proprietaria.", "freeTier": "Piano gratuito con limiti; l’accesso può dipendere dall’organizzazione." },
       "google": { "description": "Gemini 3.7 Flash — multimodale, tool e ragionamento.", "freeTier": "Livello gratuito per alcuni modelli, in base a account e limiti." },
       "mistral": { "description": "Modelli open-weight francesi — piano Experiment gratuito.", "freeTier": "Modalità gratuita e piano a pagamento; disponibilità in base all’account." },
       "cerebras": { "description": "Modelli open-weight fino a 3.000 tok/s su chip wafer-scale.", "freeTier": "Livello gratuito e quote in base al progetto e all’account." },
@@ -53,7 +52,7 @@
     },
     "empty": {
       "title": "Nessun provider configurato",
-      "subtitle": "Aggiungi una chiave API per accedere agli LLM remoti (Groq, Gemini, Mistral…) o ai servizi di ricerca web (Brave, Exa, Firecrawl)."
+      "subtitle": "Aggiungi una chiave API per accedere agli LLM remoti (OpenAI, Gemini, Mistral…) o ai servizi di ricerca web (Brave, Exa, Firecrawl)."
     },
     "details": {
       "connected": "Connesso",
@@ -325,7 +324,7 @@
       "connection": "Riconnessione...",
       "button": "Riprova"
     },
-    "groqExtensionsUnavailable": "I plugin non sono disponibili con Groq.",
+    "groqExtensionsUnavailable": "I plugin non sono disponibili con i modelli Groq tramite OpenRouter.",
     "contextCompressed": "Contesto compresso",
     "searchBarPlaceholder": "Cerca...",
     "resultCount_one": "{{count}} risultato",

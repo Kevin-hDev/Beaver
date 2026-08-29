@@ -165,6 +165,8 @@ fn convert_model(wire: WireModel) -> Option<CatalogModel> {
     };
     let supports_vision = wire.input_modalities.0.iter().any(|mode| mode == "image");
     let supports_tools = super::supports_tools(&wire.slug);
+    let default_reasoning_mode =
+        super::model_catalog_fallback::compatible_default_reasoning_mode(&wire.slug, &modes);
     Some(CatalogModel {
         visible: wire.visibility.as_deref().unwrap_or("list") == "list",
         info: ModelInfo {
@@ -178,7 +180,8 @@ fn convert_model(wire: WireModel) -> Option<CatalogModel> {
             supports_thinking: !modes.is_empty(),
             supports_fast_mode,
             reasoning_modes: modes,
-            default_reasoning_mode: None,
+            default_reasoning_mode,
+            context_usage_includes_reasoning: true,
             is_free: false,
         },
     })

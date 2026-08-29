@@ -10,6 +10,8 @@ const MAX_OAUTH_ISSUES: usize = 3;
 pub struct OAuthProviderModel {
     pub id: String,
     pub provider_id: ProviderId,
+    pub connection_id: &'static str,
+    pub provider_display_name: &'static str,
     pub display_name: String,
     pub context_length: Option<u32>,
     pub supports_tools: bool,
@@ -18,6 +20,7 @@ pub struct OAuthProviderModel {
     pub supports_fast_mode: bool,
     pub reasoning_modes: Vec<String>,
     pub default_reasoning_mode: Option<String>,
+    pub context_usage_includes_reasoning: bool,
     pub interactive_only: bool,
 }
 
@@ -67,6 +70,7 @@ async fn add_codex_models(
             crate::services::codex_client::model_catalog::fallback_models()
         }
     };
+    crate::services::llm::runtime_models::replace_provider("codex-oauth", &models);
     response.models.extend(models.into_iter().map(|model| {
         let display_name = model
             .display_name
@@ -76,6 +80,8 @@ async fn add_codex_models(
             display_name,
             id: model.id,
             provider_id: ProviderId::OpenAi,
+            connection_id: ProviderId::OpenAi.usage_connection_id(),
+            provider_display_name: ProviderId::OpenAi.display_name(),
             context_length: model.context_length,
             supports_tools: model.supports_tools,
             supports_vision: model.supports_vision,
@@ -83,6 +89,9 @@ async fn add_codex_models(
             supports_fast_mode: model.supports_fast_mode,
             reasoning_modes: model.reasoning_modes,
             default_reasoning_mode: model.default_reasoning_mode,
+            context_usage_includes_reasoning:
+                crate::services::llm::context_usage_includes_reasoning("codex-oauth")
+                    .unwrap_or(false),
             interactive_only: false,
         }
     }));
@@ -145,6 +154,8 @@ fn oauth_model(provider_id: ProviderId, model: ModelInfo) -> OAuthProviderModel 
         display_name,
         id: model.id,
         provider_id,
+        connection_id: provider_id.usage_connection_id(),
+        provider_display_name: provider_id.display_name(),
         context_length: model.context_length,
         supports_tools: model.supports_tools,
         supports_vision: model.supports_vision,
@@ -152,6 +163,10 @@ fn oauth_model(provider_id: ProviderId, model: ModelInfo) -> OAuthProviderModel 
         supports_fast_mode: model.supports_fast_mode,
         reasoning_modes: model.reasoning_modes,
         default_reasoning_mode: model.default_reasoning_mode,
+        context_usage_includes_reasoning: crate::services::llm::context_usage_includes_reasoning(
+            provider_id.usage_connection_id(),
+        )
+        .unwrap_or(true),
         interactive_only: true,
     }
 }
@@ -161,7 +176,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn oauth_model_transports_fast_mode_without_recalculating_it() {
+    fn oauth_model_transports_public_metadata_without_recalculating_it() {
         let model = oauth_model(
             ProviderId::OpenAi,
             ModelInfo {
@@ -176,10 +191,14 @@ mod tests {
                 supports_fast_mode: true,
                 reasoning_modes: vec!["high".to_string()],
                 default_reasoning_mode: Some("high".to_string()),
+                context_usage_includes_reasoning: true,
                 is_free: false,
             },
         );
 
         assert!(model.supports_fast_mode);
+        assert_eq!(model.connection_id, "codex-oauth");
+        assert_eq!(model.provider_display_name, "OpenAI");
+        assert!(!model.context_usage_includes_reasoning);
     }
 }

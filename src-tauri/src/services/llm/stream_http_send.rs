@@ -56,9 +56,10 @@ pub(super) fn outbound_headers(
     session_id: Option<&str>,
     purpose: RequestPurpose,
 ) -> Result<reqwest::header::HeaderMap, RequestError> {
-    let mut headers =
-        super::prompt_cache_policy::request_headers(route, Some(model), session_id, purpose)
-            .map_err(|_| RequestError::InvalidConfiguration)?;
+    let policy = super::route_profile::cache_policy(route.chat_provider_id, model)
+        .ok_or(RequestError::InvalidConfiguration)?;
+    let mut headers = super::prompt_cache_policy::request_headers(policy, session_id, purpose)
+        .map_err(|_| RequestError::InvalidConfiguration)?;
     if route.chat_provider_id == "xai-oauth" {
         headers.extend(
             crate::services::llm_oauth::xai_model_header(model)

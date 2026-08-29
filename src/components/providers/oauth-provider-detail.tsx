@@ -10,7 +10,6 @@ import {
 import type { OAuthProviderStatus } from "@/types/oauth-provider";
 import { SettingsCard } from "@/components/settings/settings-card";
 import { ProviderUsageCard } from "./usage/provider-usage-card";
-import { oauthUsageConnectionId, oauthUsageLink } from "./usage/provider-usage-links";
 
 const ISSUE_KEYS: Record<OAuthProviderIssueCode, string> = {
   moonshot_membership_unverified: "providers.oauth.issues.moonshotMembershipUnverified",
@@ -87,8 +86,8 @@ export function OAuthProviderDetail({ provider, refresh }: Props) {
         </div>
       )}
       <ProviderUsageCard
-        connectionId={oauthUsageConnectionId(provider.id)}
-        siteUrl={oauthUsageLink(provider.id)}
+        connectionId={provider.connection_id}
+        siteUrl={provider.usage_url}
       />
       <SettingsCard>
         <div className="prv-oauth-status">

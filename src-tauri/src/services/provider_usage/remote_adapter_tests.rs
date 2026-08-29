@@ -127,7 +127,7 @@ fn invalid_rate_headers_are_ignored() {
         "x-ratelimit-limit-requests",
         HeaderValue::from_static("secret"),
     );
-    assert!(remote_parse::parse_rate_headers("groq", &headers).is_none());
+    assert!(remote_parse::parse_rate_headers("openai", &headers).is_none());
 }
 
 #[test]

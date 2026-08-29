@@ -71,7 +71,7 @@ describe("ApiKeysTab navigation", () => {
   afterEach(() => cleanup());
 
   beforeEach(() => {
-    mocks.configured = [provider("openai"), provider("groq")];
+    mocks.configured = [provider("openai"), provider("mistral")];
     mocks.onNavChange.mockClear();
     mocks.onNavReplace.mockClear();
   });
@@ -83,7 +83,7 @@ describe("ApiKeysTab navigation", () => {
     });
 
     await waitFor(() => expect(getByText("openai")).toBeTruthy());
-    expect(getByText("groq")).toBeTruthy();
+    expect(getByText("mistral")).toBeTruthy();
     expect(queryByTestId("api-key-detail")).toBeNull();
     expect(mocks.onNavReplace).not.toHaveBeenCalled();
     expect(mocks.onNavChange).not.toHaveBeenCalled();
@@ -92,15 +92,15 @@ describe("ApiKeysTab navigation", () => {
   it("push la selection utilisateur", () => {
     const { getByText } = renderTab({ ...DEFAULT_APP_NAV.settings, apiKeyProviderId: null });
 
-    fireEvent.click(getByText("groq"));
+    fireEvent.click(getByText("mistral"));
 
-    expect(mocks.onNavChange).toHaveBeenCalledWith({ apiKeyProviderId: "groq" });
+    expect(mocks.onNavChange).toHaveBeenCalledWith({ apiKeyProviderId: "mistral" });
   });
 
   it("remplace la fiche par la liste au retour", () => {
     const { getByText, getByTestId } = renderTab({
       ...DEFAULT_APP_NAV.settings,
-      apiKeyProviderId: "groq",
+      apiKeyProviderId: "mistral",
     });
 
     expect(getByTestId("api-key-detail")).toBeTruthy();

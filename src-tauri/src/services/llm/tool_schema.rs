@@ -1,16 +1,14 @@
 use serde_json::{json, Value};
 
+use super::route_profile::SchemaPolicy;
 #[cfg(test)]
 use super::tool_schema_names::{
     has_provider_name_shape, wire_name, wire_name_with_tools, MAX_PROVIDER_TOOL_NAME,
 };
 pub(crate) use super::tool_schema_names::{restore_tool_name, ToolNameMap};
-use super::tool_schema_profile::{
-    apply_strict_mode, remove_unsupported_keywords, resolve, SchemaProfile,
-};
+use super::tool_schema_profile::{apply_strict_mode, remove_unsupported_keywords};
 
-pub fn tools_for_provider(provider_id: &str, model: &str, tools: &[Value]) -> Vec<Value> {
-    let profile = resolve(provider_id, model);
+pub(crate) fn tools_for_policy(profile: SchemaPolicy, strict: bool, tools: &[Value]) -> Vec<Value> {
     let names = ToolNameMap::new(tools);
     tools
         .iter()
@@ -23,14 +21,14 @@ pub fn tools_for_provider(provider_id: &str, model: &str, tools: &[Value]) -> Ve
                 if let Some(parameters) = function.get_mut("parameters") {
                     normalize_schema(parameters, profile);
                 }
-                apply_strict_mode(function, provider_id, profile);
+                apply_strict_mode(function, strict);
             }
             tool
         })
         .collect()
 }
 
-fn normalize_schema(value: &mut Value, profile: SchemaProfile) {
+fn normalize_schema(value: &mut Value, profile: SchemaPolicy) {
     match value {
         Value::Object(map) => {
             remove_unsupported_keywords(map, profile);
@@ -50,21 +48,21 @@ fn normalize_schema(value: &mut Value, profile: SchemaProfile) {
                 normalize_schema(item, profile);
             }
         }
-        Value::Bool(_) if profile != SchemaProfile::Generic => {
+        Value::Bool(_) if profile != SchemaPolicy::Generic => {
             *value = json!({"type": "string"});
         }
         _ => {}
     }
 }
 
-fn normalize_properties(value: &mut Value, profile: SchemaProfile) {
+fn normalize_properties(value: &mut Value, profile: SchemaPolicy) {
     let Some(properties) = value.as_object_mut() else {
         return;
     };
     for schema in properties.values_mut() {
         match schema {
             Value::Object(_) | Value::Array(_) => normalize_schema(schema, profile),
-            Value::Bool(_) if profile == SchemaProfile::Generic => {}
+            Value::Bool(_) if profile == SchemaPolicy::Generic => {}
             Value::Bool(_) => *schema = json!({"type": "string"}),
             _ => *schema = json!({"type": "string"}),
         }

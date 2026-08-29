@@ -31,7 +31,16 @@ pub async fn stream_chat_no_done(
         &crate::services::reasoning_continuity::contract::ContinuationTarget,
     >,
 ) -> Result<StreamOutcome, String> {
+    let transport = super::stream_dispatch::resolve_transport(
+        provider_id,
+        model,
+        super::stream_dispatch::InvocationKind::Interactive,
+        purpose,
+    )
+    .await
+    .map_err(super::stream_dispatch::RouteSelectionError::code)?;
     let mut measurement = super::stream_metrics::start(
+        &transport,
         provider_id,
         model,
         Some(session_id),
@@ -41,123 +50,135 @@ pub async fn stream_chat_no_done(
         crate::services::provider_usage::UsageWorkload::Primary,
         fast_mode,
     );
-    let result = if provider_id == crate::services::codex_client::PROVIDER_ID {
-        crate::services::codex_client::stream::stream_chat_with_budget(
-            on_event,
-            session_id,
-            request_id,
-            model,
-            messages,
-            tools,
-            reasoning_mode,
-            fast_mode,
-            cancel,
-            buffer_content,
-            realtime_budget,
-            reasoning_capture,
-            continuation_target,
-            measurement.as_mut(),
-        )
-        .await
-    } else if matches!(provider_id, "openai" | "xai") {
-        let config = RequestConfig {
-            provider_id,
-            model,
-            messages,
-            tools,
-            think,
-            reasoning_mode,
-            max_tokens: None,
-            purpose,
-            session_id: Some(session_id),
-            fast_mode,
-            continuation_target,
-        };
-        // Les API publiques OpenAI et xAI utilisent Responses avec leur propre authentification.
-        super::openai_responses::stream_chat(
-            on_event,
-            &config,
-            cancel,
-            super::openai_responses::ResponseStreamOptions {
-                buffer_content,
-                realtime_budget,
-                reasoning_capture,
-                request_id,
-            },
-            measurement.as_mut(),
-        )
-        .await
-    } else if provider_id == "xai-oauth" {
-        super::xai_oauth_transport::stream_chat(
-            super::xai_oauth_transport::StreamContext {
+    let result = match transport.client {
+        super::stream_dispatch::ClientKind::Codex => {
+            crate::services::codex_client::stream::stream_chat_with_budget(
                 on_event,
-                request: RequestConfig {
-                    provider_id,
-                    model,
-                    messages,
-                    tools,
-                    think: true,
-                    reasoning_mode,
-                    max_tokens: None,
-                    purpose,
-                    session_id: Some(session_id),
-                    fast_mode,
-                    continuation_target,
-                },
+                session_id,
+                request_id,
+                model,
+                messages,
+                tools,
+                reasoning_mode,
+                fast_mode,
                 cancel,
                 buffer_content,
                 realtime_budget,
                 reasoning_capture,
-                request_id,
-            },
-            measurement.as_mut(),
-        )
-        .await
-    } else {
-        let cfg = RequestConfig {
-            provider_id,
-            model,
-            messages,
-            tools,
-            think,
-            reasoning_mode,
-            max_tokens: None,
-            purpose,
-            session_id: Some(session_id),
-            fast_mode,
-            continuation_target,
-        };
-        match super::stream_http::post_chat_request_measured(
-            &cfg,
-            measurement.as_mut(),
-            Some(request_id),
-        )
-        .await
-        {
-            Ok(resp) => {
-                consume_stream(
+                continuation_target,
+                measurement.as_mut(),
+            )
+            .await
+        }
+        super::stream_dispatch::ClientKind::Responses => {
+            let config = RequestConfig {
+                provider_id,
+                model,
+                messages,
+                tools,
+                think,
+                reasoning_mode,
+                max_tokens: None,
+                purpose,
+                session_id: Some(session_id),
+                fast_mode,
+                continuation_target,
+            };
+            // Les API publiques OpenAI et xAI utilisent Responses avec leur propre authentification.
+            super::openai_responses::stream_chat(
+                on_event,
+                &config,
+                cancel,
+                super::openai_responses::ResponseStreamOptions {
+                    buffer_content,
+                    realtime_budget,
+                    reasoning_capture,
+                    request_id,
+                },
+                measurement.as_mut(),
+            )
+            .await
+        }
+        super::stream_dispatch::ClientKind::XaiOauth(_) => {
+            let catalog_model = transport
+                .xai_catalog_model
+                .as_ref()
+                .ok_or_else(|| "provider_configuration_invalid".to_string())?;
+            super::xai_oauth_transport::stream_chat(
+                super::xai_oauth_transport::StreamContext {
                     on_event,
-                    resp,
+                    request: RequestConfig {
+                        provider_id,
+                        model,
+                        messages,
+                        tools,
+                        think: true,
+                        reasoning_mode,
+                        max_tokens: None,
+                        purpose,
+                        session_id: Some(session_id),
+                        fast_mode,
+                        continuation_target,
+                    },
                     cancel,
                     buffer_content,
                     realtime_budget,
-                    tools,
-                    crate::services::provider_usage::UsageContext::chat(
-                        super::route::canonical_provider_id(provider_id),
-                        model,
-                    ),
                     reasoning_capture,
-                    measurement.as_mut(),
-                )
-                .await
+                    request_id,
+                },
+                catalog_model,
+                measurement.as_mut(),
+            )
+            .await
+        }
+        super::stream_dispatch::ClientKind::ChatCompletions => {
+            let cfg = RequestConfig {
+                provider_id,
+                model,
+                messages,
+                tools,
+                think,
+                reasoning_mode,
+                max_tokens: None,
+                purpose,
+                session_id: Some(session_id),
+                fast_mode,
+                continuation_target,
+            };
+            match super::stream_http::post_chat_request_measured(
+                &cfg,
+                measurement.as_mut(),
+                Some(request_id),
+            )
+            .await
+            {
+                Ok(resp) => {
+                    consume_stream(
+                        on_event,
+                        resp,
+                        cancel,
+                        buffer_content,
+                        realtime_budget,
+                        tools,
+                        transport.usage_context(model),
+                        transport.fragment_mode,
+                        transport.error_policy,
+                        reasoning_capture,
+                        measurement.as_mut(),
+                    )
+                    .await
+                }
+                Err(RequestError::PayloadTooLarge) => Err("provider_payload_too_large".to_string()),
+                Err(RequestError::InvalidConfiguration) => Err(
+                    super::provider_error::ProviderErrorCode::ProviderConfigurationInvalid
+                        .as_str()
+                        .to_string(),
+                ),
+                Err(RequestError::Fatal(msg)) => Err(msg),
             }
-            Err(RequestError::PayloadTooLarge) => Err("provider_payload_too_large".to_string()),
-            Err(RequestError::InvalidConfiguration) => Err(
-                super::provider_error::ProviderErrorCode::ProviderConfigurationInvalid
-                    .as_str()
-                    .to_string(),
-            ),
-            Err(RequestError::Fatal(msg)) => Err(msg),
+        }
+        super::stream_dispatch::ClientKind::OllamaLocal => {
+            Err("provider_configuration_invalid".to_string())
         }
     };
     super::stream_metrics::finish_stream(measurement, &result).await;

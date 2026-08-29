@@ -15,6 +15,8 @@ pub fn list_statuses() -> Vec<OAuthProviderStatus> {
         OAuthProviderStatus {
             id: ProviderId::OpenAi,
             display_name: "OpenAI",
+            connection_id: ProviderId::OpenAi.usage_connection_id(),
+            usage_url: ProviderId::OpenAi.usage_url(),
             connected: codex.is_some(),
             account: codex_account,
             experimental: false,
@@ -48,6 +50,8 @@ fn external_status(id: ProviderId) -> OAuthProviderStatus {
     OAuthProviderStatus {
         id,
         display_name: id.display_name(),
+        connection_id: id.usage_connection_id(),
+        usage_url: id.usage_url(),
         connected,
         account: None,
         experimental: id == ProviderId::Moonshot,

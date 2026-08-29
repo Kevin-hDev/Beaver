@@ -64,10 +64,17 @@ fn validate_accounts(accounts: &[ChannelAccountConfig]) -> Result<(), String> {
 }
 
 fn reject_interactive_only(provider: &str) -> Result<(), String> {
-    if crate::services::llm::route::is_interactive_only(provider) {
-        Err("configuration Gateway invalide".to_string())
-    } else {
+    if provider.is_empty() {
+        return Ok(());
+    }
+    if crate::services::llm::stream_dispatch::is_available(
+        provider,
+        crate::services::llm::stream_dispatch::InvocationKind::Interactive,
+        crate::services::llm::request_purpose::RequestPurpose::ExternalChannel,
+    ) {
         Ok(())
+    } else {
+        Err("configuration Gateway invalide".to_string())
     }
 }
 

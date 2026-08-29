@@ -12,17 +12,19 @@ fn tool(name: &str, parameters: Value) -> Value {
 }
 
 #[test]
-fn sets_explicit_non_strict_mode_where_supported() {
+fn tool_schema_profile_sets_explicit_non_strict_mode_where_supported() {
     let tools = vec![tool(
         "read_file",
         json!({"type": "object", "properties": {}}),
     )];
 
     for provider in ["openai", "moonshot", "deepseek"] {
-        let fixed = tools_for_provider(provider, "model", &tools);
+        let policy = super::super::route_profile::tool_policy(provider, "model").unwrap();
+        let fixed = tools_for_policy(policy.schema, policy.strict, &tools);
         assert_eq!(fixed[0]["function"]["strict"], false, "{provider}");
     }
-    let xai = tools_for_provider("xai", "grok-4", &tools);
+    let policy = super::super::route_profile::tool_policy("xai", "grok-4").unwrap();
+    let xai = tools_for_policy(policy.schema, policy.strict, &tools);
     assert!(xai[0]["function"].get("strict").is_none());
 }
 
@@ -45,7 +47,8 @@ fn removes_kimi_unsupported_validation_keywords() {
         }),
     )];
 
-    let fixed = tools_for_provider("moonshot", "kimi-k2.7-code", &tools);
+    let policy = super::super::route_profile::tool_policy("moonshot", "kimi-k2.7-code").unwrap();
+    let fixed = tools_for_policy(policy.schema, policy.strict, &tools);
     let parameters = &fixed[0]["function"]["parameters"];
     let path = &parameters["properties"]["path"];
     let count = &parameters["properties"]["count"];
@@ -67,7 +70,8 @@ fn provider_copy_never_weakens_beaver_argument_validation() {
     });
     let tools = vec![tool("read_file", original_schema.clone())];
 
-    let provider_copy = tools_for_provider("moonshot", "kimi-k2.7-code", &tools);
+    let policy = super::super::route_profile::tool_policy("moonshot", "kimi-k2.7-code").unwrap();
+    let provider_copy = tools_for_policy(policy.schema, policy.strict, &tools);
 
     assert!(
         provider_copy[0]["function"]["parameters"]["properties"]["path"]
@@ -95,7 +99,8 @@ fn repairs_provider_structural_schemas_without_touching_original() {
         }),
     )];
 
-    let fixed = tools_for_provider("google", "gemini-3.5-flash", &tools);
+    let policy = super::super::route_profile::tool_policy("google", "gemini-3.5-flash").unwrap();
+    let fixed = tools_for_policy(policy.schema, policy.strict, &tools);
     let properties = &fixed[0]["function"]["parameters"]["properties"];
     assert_eq!(properties["items"]["items"]["type"], "string");
     assert!(properties["payload"]["properties"].is_object());
@@ -109,7 +114,8 @@ fn repairs_provider_structural_schemas_without_touching_original() {
 #[test]
 fn app_tool_definitions_remain_structurally_safe_for_google() {
     let tools = crate::services::agent_local::tool_dispatcher::get_tool_definitions();
-    let fixed = tools_for_provider("google", "gemini-3.5-flash", &tools);
+    let policy = super::super::route_profile::tool_policy("google", "gemini-3.5-flash").unwrap();
+    let fixed = tools_for_policy(policy.schema, policy.strict, &tools);
 
     for tool in fixed {
         assert_schema_safe(&tool["function"]["parameters"]);

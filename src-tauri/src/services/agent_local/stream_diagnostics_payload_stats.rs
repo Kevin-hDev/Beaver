@@ -43,7 +43,11 @@ pub(super) fn chat_payload_stats(
     messages: &[ChatMessage],
     target: Option<&crate::services::reasoning_continuity::contract::ContinuationTarget>,
 ) -> PayloadStats {
-    let converted = crate::services::llm::stream_convert::messages_to_openai(messages, provider_id);
+    let Some(policy) = crate::services::llm::route_profile::payload_policy(provider_id, "") else {
+        return PayloadStats::default();
+    };
+    let converted =
+        crate::services::llm::stream_convert::messages_to_openai(messages, policy.message);
     let mut payload = serde_json::json!({"messages": converted});
     if crate::services::llm::reasoning_wire::chat_text::apply_continuity(
         messages,

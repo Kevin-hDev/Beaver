@@ -16,17 +16,21 @@ pub(super) fn build_with_evidence(
         &crate::services::reasoning_continuity::contract::ContinuationTarget,
     >,
 ) -> Result<PreparedResponsesPayload, String> {
+    let payload_policy = super::route_profile::payload_policy("xai-oauth", &model.id)
+        .ok_or_else(|| "provider_configuration_invalid".to_string())?;
+    let tool_policy = super::route_profile::tool_policy("xai-oauth", &model.id)
+        .ok_or_else(|| "provider_configuration_invalid".to_string())?;
     let converted =
         crate::services::codex_client::convert::convert_messages_with_tools_and_continuity_evidence(
             messages,
             tools,
             continuation_target,
+            payload_policy.message.tool_results,
         )
         .map_err(|_| "reasoning_continuity_invalid".to_string())?;
     let effort = super::xai_oauth_transport::catalog_reasoning_mode(model, requested_mode);
-    let tools = crate::services::codex_client::convert::convert_tools_to_responses_api(
-        "xai", &model.id, tools,
-    );
+    let tools =
+        crate::services::codex_client::convert::convert_tools_to_responses_api(tool_policy, tools);
     let mut payload = serde_json::json!({
         "model": model.id,
         "instructions": converted.instructions,

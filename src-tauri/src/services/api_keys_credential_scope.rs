@@ -5,9 +5,6 @@ pub fn credential_scope(route: RouteId) -> Result<CredentialScope, String> {
     if route == RouteId::Ollama {
         return Ok(CredentialScope::local_uncredentialed());
     }
-    if route == RouteId::Groq {
-        return Err(scope_unavailable());
-    }
     let state = STATE.lock().map_err(|_| scope_unavailable())?;
     let current = state.as_ref().ok_or_else(scope_unavailable)?;
     scope_from_map(&current.keys, route)

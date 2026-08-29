@@ -1,4 +1,12 @@
-pub(super) fn classify_status(status: u16, body: &str, has_retry_after: bool) -> &'static str {
+pub(super) fn classify_status(
+    policy: crate::services::llm::route_profile::ErrorPolicy,
+    status: u16,
+    body: &str,
+    has_retry_after: bool,
+) -> &'static str {
+    if policy != crate::services::llm::route_profile::ErrorPolicy::XaiOauth {
+        return "provider_request_rejected";
+    }
     match status {
         401 => "oauth_reauthentication_required",
         403 => "provider_access_unavailable",

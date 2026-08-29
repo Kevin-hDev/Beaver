@@ -29,12 +29,6 @@ fn generated_scopes_are_non_empty_and_rotate() {
 }
 
 #[test]
-fn groq_has_no_reasoning_scope_authority() {
-    assert!(credential_scope(RouteId::Groq).is_err());
-    assert_eq!(credential_scope_vault_key(RouteId::Groq), None);
-}
-
-#[test]
 fn legacy_api_and_oauth_records_migrate_once_before_publication() {
     let xai_legacy = r#"{"access":"access-x","refresh":"refresh-x","expires_at":9}"#;
     let codex_legacy =

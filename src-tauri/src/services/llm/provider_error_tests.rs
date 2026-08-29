@@ -1,4 +1,5 @@
 use super::*;
+use crate::services::llm::route_profile::ErrorPolicy;
 
 #[test]
 fn service_tier_rejection_uses_only_closed_structured_fields() {
@@ -29,7 +30,7 @@ fn classifies_the_exact_moonshot_membership_response() {
     let body = r#"{"error":{"message":"We're unable to verify your membership benefits at this time. Please ensure your membership is active.","type":"invalid_request_error"}}"#;
 
     assert_eq!(
-        classify_http("moonshot-oauth", 402, body),
+        classify_http(ErrorPolicy::Moonshot, 402, body),
         ProviderErrorCode::MoonshotMembershipUnverified
     );
 }
@@ -39,7 +40,7 @@ fn classifies_the_exact_xai_spending_limit_code() {
     let body = r#"{"code":"personal-team-blocked:spending-limit","error":"details"}"#;
 
     assert_eq!(
-        classify_http("xai-oauth", 402, body),
+        classify_http(ErrorPolicy::XaiOauth, 402, body),
         ProviderErrorCode::XaiSubscriptionOrCreditsRequired
     );
 }
@@ -50,14 +51,14 @@ fn similar_or_unknown_responses_remain_generic() {
     let unknown = r#"{"code":"another-code","error":"private details"}"#;
 
     assert_eq!(
-        classify_http("moonshot-oauth", 402, similar),
+        classify_http(ErrorPolicy::Moonshot, 402, similar),
         ProviderErrorCode::ProviderAccessUnavailable
     );
     assert_eq!(
-        classify_http("xai-oauth", 402, unknown),
+        classify_http(ErrorPolicy::XaiOauth, 402, unknown),
         ProviderErrorCode::ProviderAccessUnavailable
     );
-    assert!(!classify_http("xai-oauth", 402, unknown)
+    assert!(!classify_http(ErrorPolicy::XaiOauth, 402, unknown)
         .as_str()
         .contains("private details"));
 }
@@ -68,11 +69,11 @@ fn provider_specific_codes_cannot_cross_providers() {
     let xai = r#"{"code":"personal-team-blocked:spending-limit"}"#;
 
     assert_eq!(
-        classify_http("xai-oauth", 402, moonshot),
+        classify_http(ErrorPolicy::XaiOauth, 402, moonshot),
         ProviderErrorCode::ProviderAccessUnavailable
     );
     assert_eq!(
-        classify_http("moonshot-oauth", 402, xai),
+        classify_http(ErrorPolicy::Moonshot, 402, xai),
         ProviderErrorCode::ProviderAccessUnavailable
     );
 }
@@ -98,13 +99,47 @@ fn catalog_errors_keep_only_safe_codes() {
 #[test]
 fn log_codes_do_not_mislabel_unrelated_statuses() {
     assert_eq!(
-        safe_log_code("moonshot-oauth", 429, "private"),
+        safe_log_code(ErrorPolicy::Moonshot, 429, "private"),
         "rate_limit"
     );
     assert_eq!(
-        safe_log_code("moonshot-oauth", 500, "private"),
+        safe_log_code(ErrorPolicy::Moonshot, 500, "private"),
         "provider_http_error"
     );
+}
+
+#[test]
+fn retry_policy_is_bounded_and_never_retries_bad_requests() {
+    let ollama = crate::services::llm::route_profile::error_policy("ollama").unwrap();
+    let openai = crate::services::llm::route_profile::error_policy("openai").unwrap();
+
+    assert_eq!(ollama.max_server_retries(), 10);
+    assert!(ollama.allows_server_retry(503, 9));
+    assert!(!ollama.allows_server_retry(503, 10));
+    assert!(!ollama.allows_server_retry(400, 0));
+    assert_eq!(openai.max_server_retries(), 0);
+    assert!(!openai.allows_server_retry(503, 0));
+}
+
+#[tokio::test]
+async fn catalog_rate_limit_preserves_the_retry_after_delay() {
+    let response = tauri::http::Response::builder()
+        .status(429)
+        .header("retry-after", "7")
+        .body("")
+        .expect("valid fixture response");
+    let error = crate::services::llm::openai_compat_parsing::map_error_status(
+        reqwest::Response::from(response),
+        ErrorPolicy::OpenAiCompatible,
+    )
+    .await;
+
+    assert!(matches!(
+        error,
+        crate::services::llm::types::LlmError::RateLimit {
+            retry_after_secs: Some(7)
+        }
+    ));
 }
 
 #[test]

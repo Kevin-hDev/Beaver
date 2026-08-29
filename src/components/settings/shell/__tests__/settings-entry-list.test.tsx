@@ -14,7 +14,7 @@ describe("SettingsEntryList", () => {
     render(
       <SettingsEntryList
         entries={[
-          { id: "groq", label: "Groq" },
+          { id: "openai", label: "OpenAI" },
           { id: "mistral", label: "Mistral" },
         ]}
         emptyMessage="vide"

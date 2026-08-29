@@ -26,15 +26,20 @@ struct PreparedResponseRequest {
 fn try_build_request_with_evidence(
     config: &RequestConfig<'_>,
 ) -> Result<PreparedResponseRequest, RequestError> {
+    let payload_policy = super::route_profile::payload_policy(config.provider_id, config.model)
+        .ok_or(RequestError::InvalidConfiguration)?;
     let converted =
         crate::services::codex_client::convert::convert_messages_with_tools_and_continuity_evidence(
             config.messages,
             config.tools,
             config.continuation_target,
+            payload_policy.message.tool_results,
         )
         .map_err(|_| RequestError::InvalidConfiguration)?;
     let instructions = converted.instructions;
     let input = converted.input;
+    let tool_policy = super::route_profile::tool_policy(config.provider_id, config.model)
+        .ok_or(RequestError::InvalidConfiguration)?;
     let mut body = serde_json::json!({
         "model": config.model,
         "instructions": instructions,
@@ -42,8 +47,7 @@ fn try_build_request_with_evidence(
         "stream": true,
         "store": false,
         "tools": crate::services::codex_client::convert::convert_tools_to_responses_api(
-            config.provider_id,
-            config.model,
+            tool_policy,
             config.tools,
         ),
         "tool_choice": "auto",
@@ -59,7 +63,7 @@ fn try_build_request_with_evidence(
         body["service_tier"] = tier.into();
     }
     if let Some(limit) = config.max_tokens {
-        body["max_output_tokens"] = limit.into();
+        body[payload_policy.output_limit_field] = limit.into();
     }
     if let Some(effort) = super::openai_responses_reasoning::requested_effort(config) {
         body["reasoning"] = if effort == "none" {
@@ -194,7 +198,7 @@ pub(super) async fn post(
         config.tools.len(),
     );
     let log_code =
-        super::provider_error::safe_log_code(config.provider_id, status.as_u16(), &error_body);
+        super::provider_error::safe_log_code(route.error_policy, status.as_u16(), &error_body);
     ::log::warn!(
         "[{} responses] HTTP {status} code={log_code}",
         config.provider_id
@@ -203,7 +207,7 @@ pub(super) async fn post(
         status.as_u16(),
         &error_body,
         route.display_name,
-        route.chat_provider_id,
+        route.error_policy,
         false,
         has_retry_after,
     ))

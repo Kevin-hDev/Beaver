@@ -13,6 +13,8 @@ export interface AvailableModel {
   supports_fast_mode?: boolean;
   reasoning_modes?: ReasoningMode[];
   default_reasoning_mode?: ReasoningMode;
+  context_length?: number;
+  context_usage_includes_reasoning: boolean;
   is_free?: boolean;
   hint?: string;
   disabled?: boolean;
@@ -31,5 +33,6 @@ export interface LlmModelInfo {
   supports_fast_mode: boolean;
   reasoning_modes?: ReasoningMode[];
   default_reasoning_mode?: ReasoningMode;
+  context_usage_includes_reasoning: boolean;
   is_free?: boolean;
 }

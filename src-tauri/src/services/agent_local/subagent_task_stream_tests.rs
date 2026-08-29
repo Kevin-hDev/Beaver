@@ -52,10 +52,10 @@ async fn cancellation_without_snapshot_keeps_durable_history() {
 
 #[tokio::test]
 async fn subagent_conversation_adoption_reloads_the_canonical_history() {
-    let parent = session_store::create_full("Parent adoption", "model", "groq", false, None)
+    let parent = session_store::create_full("Parent adoption", "model", "ollama", false, None)
         .await
         .expect("create parent");
-    let mut child = session_store::create_full("Child adoption", "model", "groq", false, None)
+    let mut child = session_store::create_full("Child adoption", "model", "ollama", false, None)
         .await
         .expect("create child");
     child.parent_session_id = Some(parent.id.clone());
@@ -75,7 +75,7 @@ async fn subagent_conversation_adoption_reloads_the_canonical_history() {
         .expect("reload before admission");
     assert!(before_admission.messages.is_empty());
     let target = ContinuationTarget::Forbidden(NonReplayTarget {
-        route_id: RouteId::Groq,
+        route_id: RouteId::Ollama,
         model_id: "model".into(),
         reasoning_mode: ReasoningModeId::Off,
     });

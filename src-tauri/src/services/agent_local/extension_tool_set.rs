@@ -53,8 +53,10 @@ impl ExtensionToolSet {
             &crate::services::extensions::extension_tool_definitions(),
             context.context_window,
         );
-        let provider_limit =
-            super::provider_tool_limits::for_request(context.provider, context.model);
+        let route_policy =
+            crate::services::llm::route_profile::tool_limit_policy(context.provider, context.model)
+                .ok_or_else(|| "provider_configuration_invalid".to_string())?;
+        let provider_limit = super::provider_tool_limits::for_policy(route_policy);
         let plugin_tool_capacity =
             provider_limit.saturating_sub(base_tool_count(&tools).min(provider_limit));
         let catalog = crate::services::extensions::catalog_snapshot();

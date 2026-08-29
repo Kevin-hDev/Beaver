@@ -27,7 +27,7 @@ fn journal_rejects_non_tool_messages_in_a_tool_result_batch() {
 
 #[tokio::test]
 async fn partial_checkpoint_never_commits_a_turn_as_final() {
-    let session = session_store::create_full("Partial journal", "model", "groq", false, None)
+    let session = session_store::create_full("Partial journal", "model", "openai", false, None)
         .await
         .expect("create session");
     let mut journal = ConversationJournal::new(
@@ -123,7 +123,7 @@ async fn assistant_envelope_persists_without_a_duplicate_replay_source() {
 
 #[tokio::test]
 async fn commit_write_failure_leaves_the_durable_turn_uncommitted_and_retryable() {
-    let session = session_store::create_full("Journal failure", "model", "groq", false, None)
+    let session = session_store::create_full("Journal failure", "model", "openai", false, None)
         .await
         .expect("create session");
     let mut journal = ConversationJournal::new(

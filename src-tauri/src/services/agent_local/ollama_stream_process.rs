@@ -10,6 +10,7 @@ pub(crate) use super::ollama_stream_filter::flush_filter;
 pub struct ProcessChunkOptions<'a> {
     pub buffer_content: bool,
     pub reasoning_capture: Option<&'a mut ReasoningCapture>,
+    pub fragments: &'a mut crate::services::llm::stream_fragments::StreamFragmentState,
 }
 
 pub fn process_chunk(
@@ -66,24 +67,21 @@ pub fn process_chunk(
     let mut chunk_has_payload = false;
 
     if let Some(thinking) = msg["thinking"].as_str() {
+        let thinking = options.fragments.thinking(thinking)?;
         if !thinking.is_empty() {
             chunk_has_payload = true;
-            super::stream_buffer::record_thinking(
-                on_event,
-                result,
-                thinking.to_string(),
-                token_count,
-            );
+            super::stream_buffer::record_thinking(on_event, result, thinking, token_count);
         }
     }
 
     if let Some(content) = msg["content"].as_str() {
+        let content = options.fragments.content(content)?;
         if !content.is_empty() {
             chunk_has_payload = true;
             super::stream_buffer::record_generation_started(on_event, result);
             emit_filtered(
                 think_filter,
-                content,
+                &content,
                 on_event,
                 token_count,
                 result,

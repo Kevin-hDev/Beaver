@@ -35,6 +35,14 @@ pub async fn resolve_api(provider: &str, model: &str) -> ContextWindows {
     }
 }
 
+pub async fn resolve(provider: &str, model: &str) -> ContextWindows {
+    if crate::services::llm::route_profile::is_local(provider) {
+        resolve_ollama(model).await
+    } else {
+        resolve_api(provider, model).await
+    }
+}
+
 struct OllamaModelContext {
     context_length: u64,
     num_ctx_from_modelfile: Option<u64>,
@@ -103,26 +111,9 @@ fn ollama_model_context_from_json(model: &str, json: &serde_json::Value) -> Olla
 }
 
 async fn lookup_api_context(provider: &str, model: &str) -> u64 {
-    if provider == "codex-oauth" {
-        return crate::services::codex_client::model_catalog::context_length(model).await;
-    }
-
-    let provider = crate::services::llm::route::canonical_provider_id(provider);
-    if let Some(context) =
-        crate::services::llm::provider_model_lookup::local_limits(provider, model)
-            .and_then(|limits| limits.context_window)
-    {
-        return context as u64;
-    }
-    if let Some(context) = crate::services::llm::runtime_models::lookup(provider, model)
-        .and_then(|model| model.context_length)
-    {
-        return context as u64;
-    }
-    crate::services::llm::provider_model_lookup::limits(provider, model)
+    crate::services::llm::model_context_length(provider, model)
         .await
-        .and_then(|limits| limits.context_window)
-        .unwrap_or(0) as u64
+        .unwrap_or(0)
 }
 
 #[cfg(test)]

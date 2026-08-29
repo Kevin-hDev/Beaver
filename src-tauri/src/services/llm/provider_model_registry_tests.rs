@@ -1,7 +1,41 @@
 use super::*;
 
-fn source(provider_id: &'static str, json: &'static str) -> EmbeddedProviderModels {
+fn source<'a>(provider_id: &'a str, json: &'a str) -> EmbeddedProviderModels<'a> {
     EmbeddedProviderModels { provider_id, json }
+}
+
+#[test]
+fn embedded_registry_accepts_seventeen_valid_sources() {
+    let provider_ids = (0..17)
+        .map(|index| format!("provider-{}", char::from(b'a' + index)))
+        .collect::<Vec<_>>();
+    let json = provider_ids
+        .iter()
+        .map(|provider| {
+            format!(
+                r#"{{
+                  "provider":"{provider}",
+                  "schema_version":1,
+                  "verified_at":"2026-08-28",
+                  "source_urls":["https://example.com/models"],
+                  "models":[{{
+                    "id":"model",
+                    "context_window":10,
+                    "supports_tools":false,
+                    "supports_vision":false,
+                    "supports_thinking":false
+                  }}]
+                }}"#
+            )
+        })
+        .collect::<Vec<_>>();
+    let sources = provider_ids
+        .iter()
+        .zip(&json)
+        .map(|(provider, json)| source(provider, json))
+        .collect::<Vec<_>>();
+
+    assert_eq!(parse_sources(&sources).unwrap().providers.len(), 17);
 }
 
 #[test]
@@ -10,9 +44,9 @@ fn every_supported_provider_has_one_valid_local_file() {
 
     assert_eq!(
         registry.providers.len(),
-        crate::services::llm::catalog::LLM_PROVIDERS.len()
+        crate::services::llm::catalog::all().len()
     );
-    for provider in crate::services::llm::catalog::LLM_PROVIDERS {
+    for provider in crate::services::llm::catalog::all() {
         assert!(registry.providers.contains_key(provider.id));
     }
 }

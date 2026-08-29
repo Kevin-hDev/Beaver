@@ -23,7 +23,14 @@ pub(crate) fn convert_messages_with_tools_and_continuity(
     (String, Vec<serde_json::Value>),
     crate::services::llm::reasoning_wire::replay::ReplayApplyError,
 > {
-    convert_messages_with_tools_and_continuity_evidence(messages, tools, target)
+    let placement = crate::services::llm::route_profile::payload_policy(
+        crate::services::codex_client::PROVIDER_ID,
+        "",
+    )
+    .expect("Codex route profile")
+    .message
+    .tool_results;
+    convert_messages_with_tools_and_continuity_evidence(messages, tools, target, placement)
         .map(|converted| (converted.instructions, converted.input))
 }
 
@@ -37,7 +44,13 @@ pub(crate) fn convert_messages_with_tools_and_continuity_evidence(
     messages: &[ChatMessage],
     tools: &[serde_json::Value],
     target: Option<&crate::services::reasoning_continuity::contract::ContinuationTarget>,
+    placement: crate::services::llm::route_profile::ToolResultPlacement,
 ) -> Result<ConvertedMessages, crate::services::llm::reasoning_wire::replay::ReplayApplyError> {
+    if placement != crate::services::llm::route_profile::ToolResultPlacement::ResponsesItem {
+        return Err(
+            crate::services::llm::reasoning_wire::replay::ReplayApplyError::ContractMismatch,
+        );
+    }
     let target =
         crate::services::llm::reasoning_wire::responses::target_for_request(messages, target)?;
     let mut instructions = String::new();
@@ -167,11 +180,10 @@ fn fix_array_schemas(v: &mut serde_json::Value) {
 }
 
 pub fn convert_tools_to_responses_api(
-    provider_id: &str,
-    model: &str,
+    policy: crate::services::llm::route_profile::ResolvedToolPolicy,
     tools: &[serde_json::Value],
 ) -> Vec<serde_json::Value> {
-    crate::services::llm::tool_schema::tools_for_provider(provider_id, model, tools)
+    crate::services::llm::tool_schema::tools_for_policy(policy.schema, policy.strict, tools)
         .iter()
         .filter_map(|t| {
             let func = t.get("function")?;

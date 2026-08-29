@@ -25,8 +25,14 @@ pub struct ModelInfo {
     pub reasoning_modes: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub default_reasoning_mode: Option<String>,
+    #[serde(default = "default_true")]
+    pub context_usage_includes_reasoning: bool,
     #[serde(default)]
     pub is_free: bool,
+}
+
+const fn default_true() -> bool {
+    true
 }
 
 /// Erreurs du module LLM. Volontairement basées sur `String` pour cohérence

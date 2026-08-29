@@ -149,7 +149,7 @@ mod tests {
     }
 
     #[test]
-    fn fixture_candidate_bypasses_only_activation_for_an_exact_non_forbidden_policy() {
+    fn fixture_candidate_bypasses_only_activation_for_an_exact_policy() {
         let target = fixture_target("deepseek-r1:latest");
         let envelope = fixture_envelope(&target);
         assert_eq!(
@@ -165,25 +165,6 @@ mod tests {
         assert_eq!(
             decide_fixture_candidate(&fixture_envelope(&unknown), &unknown),
             ReplayDecision::Blocked(BlockReason::UnknownTarget)
-        );
-
-        let forbidden = ReplayTarget {
-            route_id: RouteId::Groq,
-            model_id: "any".into(),
-            credential_scope: CredentialScope::authenticated("fixture-scope").unwrap(),
-            reasoning_mode: ReasoningModeId::Auto,
-            continuation_use: ContinuationUse::UserContinuation,
-        };
-        let forbidden_envelope = ReasoningEnvelope::new(
-            ContractId::XaiResponsesV1,
-            ReasoningSource::from_target(&forbidden),
-            CompletionState::Complete,
-            ContinuationState::ResponsesLocal { items: Vec::new() },
-            Vec::new(),
-        );
-        assert_eq!(
-            decide_fixture_candidate(&forbidden_envelope, &forbidden),
-            ReplayDecision::Blocked(BlockReason::Forbidden)
         );
     }
 }

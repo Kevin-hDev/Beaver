@@ -3,7 +3,7 @@ use crate::services::agent_local::types_ollama::ChatMessage;
 const GEMMA4_THINKING_GUARD: &str = "Règle interne pour Gemma 4 : n'écris jamais ton raisonnement interne dans la réponse normale. Si tu produis du raisonnement, encadre-le strictement avec <think>...</think>, puis écris uniquement la réponse finale hors de ces balises.";
 
 pub(crate) fn apply(messages: &mut Vec<ChatMessage>, provider: &str, model: &str) {
-    if !needs_guard(provider, model) {
+    if !crate::services::llm::route_profile::requires_gemma4_thinking_guard(provider, model) {
         return;
     }
     if messages
@@ -18,19 +18,6 @@ pub(crate) fn apply(messages: &mut Vec<ChatMessage>, provider: &str, model: &str
         return;
     }
     messages.insert(0, ChatMessage::system(GEMMA4_THINKING_GUARD.to_string()));
-}
-
-fn needs_guard(provider: &str, model: &str) -> bool {
-    matches!(provider, "google" | "openrouter") && is_gemma4_model(model)
-}
-
-fn is_gemma4_model(model: &str) -> bool {
-    let compact: String = model
-        .chars()
-        .filter(|ch| ch.is_ascii_alphanumeric())
-        .flat_map(|ch| ch.to_lowercase())
-        .collect();
-    compact.contains("gemma4")
 }
 
 #[cfg(test)]
@@ -49,10 +36,30 @@ mod tests {
 
     #[test]
     fn guard_is_limited_to_google_and_openrouter() {
-        assert!(needs_guard("google", "gemma-4-26b"));
-        assert!(needs_guard("openrouter", "google/gemma 4 31b"));
-        assert!(!needs_guard("google", "gemini-2.5-flash"));
-        assert!(!needs_guard("ollama", "gemma4:31b"));
+        assert!(
+            crate::services::llm::route_profile::requires_gemma4_thinking_guard(
+                "google",
+                "gemma-4-26b"
+            )
+        );
+        assert!(
+            crate::services::llm::route_profile::requires_gemma4_thinking_guard(
+                "openrouter",
+                "google/gemma 4 31b"
+            )
+        );
+        assert!(
+            !crate::services::llm::route_profile::requires_gemma4_thinking_guard(
+                "google",
+                "gemini-2.5-flash"
+            )
+        );
+        assert!(
+            !crate::services::llm::route_profile::requires_gemma4_thinking_guard(
+                "ollama",
+                "gemma4:31b"
+            )
+        );
     }
 
     #[test]

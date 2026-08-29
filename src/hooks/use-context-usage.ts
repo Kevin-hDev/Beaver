@@ -24,6 +24,7 @@ interface UseContextUsageArgs {
   permissionMode?: string;
   planMode?: boolean;
   supportsTools?: boolean;
+  contextUsageIncludesReasoning?: boolean;
 }
 
 export function useContextUsage({
@@ -36,6 +37,7 @@ export function useContextUsage({
   permissionMode,
   planMode,
   supportsTools,
+  contextUsageIncludesReasoning: modelIncludesReasoning,
 }: UseContextUsageArgs): ContextUsageBreakdown {
   const hiddenUsage = useContextHiddenUsage({
     enabled: !stream.contextUsageBuckets,
@@ -57,7 +59,7 @@ export function useContextUsage({
     contextUsageBaseSegments,
     contextUsageIncludesReasoning,
   } = stream;
-  const includeThinking = provider !== "codex-oauth";
+  const includeThinking = modelIncludesReasoning ?? contextUsageIncludesReasoning;
   const preparedBuckets = useMemo(
     () => resolvePreparedContextBuckets({
       completedSegments,

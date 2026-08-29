@@ -3,24 +3,15 @@ use serde_json::json;
 
 fn payload(provider: &str, model: &str, mode: Option<&str>) -> serde_json::Value {
     let mut payload = json!({});
-    stream_reasoning::apply(&mut payload, provider, model, mode != Some("off"), mode);
+    let policy = super::route_profile::payload_policy(provider, model).unwrap();
+    stream_reasoning::apply(
+        &mut payload,
+        policy.parameters,
+        model,
+        mode != Some("off"),
+        mode,
+    );
     payload
-}
-
-#[test]
-fn groq_payloads_match_model_family() {
-    assert_eq!(
-        payload("groq", "qwen/qwen3-32b", Some("off"))["reasoning_effort"],
-        "none"
-    );
-    assert_eq!(
-        payload("groq", "qwen/qwen3-32b", Some("auto"))["reasoning_effort"],
-        "default"
-    );
-    assert_eq!(
-        payload("groq", "openai/gpt-oss-20b", Some("high"))["reasoning_effort"],
-        "high"
-    );
 }
 
 #[test]
@@ -192,4 +183,25 @@ fn xai_only_sends_configurable_effort_for_supported_models() {
     assert!(payload("xai", "grok-build-0.1", Some("auto"))
         .get("reasoning_effort")
         .is_none());
+}
+
+#[test]
+fn declared_xai_and_moonshot_effort_modes_reach_the_payload_adapter() {
+    for provider in ["xai", "moonshot"] {
+        for model in super::provider_model_registry::list(provider) {
+            for mode in model
+                .reasoning_modes
+                .iter()
+                .filter(|mode| !matches!(mode.as_str(), "off" | "auto"))
+            {
+                assert!(
+                    payload(provider, &model.id, Some(mode))
+                        .get("reasoning_effort")
+                        .is_some(),
+                    "{provider}/{} declares {mode} but its payload adapter drops it",
+                    model.id
+                );
+            }
+        }
+    }
 }

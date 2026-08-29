@@ -58,7 +58,10 @@ pub fn parse_value_with_context(chunk: &Value, context: UsageContext<'_>) -> Vec
     out
 }
 
-pub(super) fn provider_error_code(status: Option<u16>) -> &'static str {
+pub(super) fn provider_error_code(
+    _policy: super::route_profile::ErrorPolicy,
+    status: Option<u16>,
+) -> &'static str {
     match status {
         Some(429) => "rate_limit",
         Some(408 | 500 | 502 | 503 | 504) => "provider_temporarily_unavailable",
@@ -70,19 +73,11 @@ fn parse_usage(chunk: &Value, context: UsageContext<'_>) -> Option<RequestUsage>
     let choice_usage = (context.canonical_provider_id == "moonshot")
         .then(|| chunk.pointer("/choices/0/usage"))
         .flatten();
-    let groq_usage = (context.canonical_provider_id == "groq")
-        .then(|| chunk.pointer("/x_groq/usage"))
-        .flatten();
-    [
-        chunk.get("usage"),
-        chunk.get("usageMetadata"),
-        choice_usage,
-        groq_usage,
-    ]
-    .into_iter()
-    .flatten()
-    .filter(|value| !value.is_null())
-    .find_map(|value| RequestUsage::from_json_with_context(value, context))
+    [chunk.get("usage"), chunk.get("usageMetadata"), choice_usage]
+        .into_iter()
+        .flatten()
+        .filter(|value| !value.is_null())
+        .find_map(|value| RequestUsage::from_json_with_context(value, context))
 }
 
 fn parse_delta(delta: &Value, out: &mut Vec<ParsedChunk>) {

@@ -34,11 +34,14 @@ fn parse_model(model: &Value, provider_id: &str) -> Option<ModelInfo> {
             .iter()
             .any(|parameter| parameter == name)
     };
+    let resolved = super::provider_model_lookup::resolve_remote_list_defaults(provider_id, id);
     let supports_tools = has_param("tools")
         || model["capabilities"]["function_calling"]
             .as_bool()
             .unwrap_or(false)
-        || super::tool_capable::supports_tools(provider_id, id);
+        || resolved
+            .as_ref()
+            .is_some_and(|capabilities| capabilities.supports_tools);
     let is_chat = model["capabilities"]["completion_chat"]
         .as_bool()
         .unwrap_or(true);
@@ -47,11 +50,15 @@ fn parse_model(model: &Value, provider_id: &str) -> Option<ModelInfo> {
     }
     let supports_vision = model["capabilities"]["vision"].as_bool().unwrap_or(false)
         || architecture_supports_vision(model)
-        || super::tool_capable::supports_vision(provider_id, id);
+        || resolved
+            .as_ref()
+            .is_some_and(|capabilities| capabilities.supports_vision);
     let supports_thinking = has_param("reasoning")
         || has_param("reasoning_effort")
         || has_param("include_reasoning")
-        || super::tool_capable::supports_thinking(provider_id, id);
+        || resolved
+            .as_ref()
+            .is_some_and(|capabilities| capabilities.supports_thinking);
     // `supported_parameters` annonce une fonctionnalité, pas les niveaux permis.
     // Le catalogue dynamique reste vide tant qu'il ne publie pas ces valeurs.
     let (reasoning_modes, default_reasoning_mode) = (Vec::new(), None);
@@ -68,6 +75,7 @@ fn parse_model(model: &Value, provider_id: &str) -> Option<ModelInfo> {
         supports_fast_mode: false,
         reasoning_modes,
         default_reasoning_mode,
+        context_usage_includes_reasoning: true,
         // Un badge gratuit exige un tarif nul explicite pour toutes les unités facturées.
         is_free: has_zero_pricing(&model["pricing"]),
     })

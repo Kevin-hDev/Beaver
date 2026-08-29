@@ -1,4 +1,4 @@
-use super::stream_chunk::{self, ParsedChunk};
+use super::stream_chunk::{self, provider_error_code, ParsedChunk};
 use serde_json::json;
 
 fn parse(value: serde_json::Value) -> Vec<ParsedChunk> {
@@ -161,7 +161,25 @@ fn embedded_provider_errors_keep_only_a_safe_status() {
 }
 
 #[test]
-fn parses_groq_native_completion_time() {
+fn embedded_error_classification_is_called_with_a_typed_policy() {
+    assert_eq!(
+        provider_error_code(
+            crate::services::llm::route_profile::ErrorPolicy::Responses,
+            Some(503),
+        ),
+        "provider_temporarily_unavailable"
+    );
+    assert_eq!(
+        provider_error_code(
+            crate::services::llm::route_profile::ErrorPolicy::OpenAiCompatible,
+            Some(400),
+        ),
+        "provider_request_rejected"
+    );
+}
+
+#[test]
+fn parses_native_completion_time() {
     let chunks = parse(json!({
         "usage": {
             "prompt_tokens": 2,
@@ -211,29 +229,6 @@ fn parses_kimi_usage_nested_in_the_last_choice() {
     assert!(chunks.iter().any(|chunk| matches!(
         chunk,
         ParsedChunk::Usage(usage) if usage.cached_input_tokens == Some(256)
-    )));
-}
-
-#[test]
-fn parses_groq_native_usage_fallback() {
-    let context =
-        crate::services::provider_usage::UsageContext::chat("groq", "openai/gpt-oss-120b");
-    let chunks = stream_chunk::parse_with_context(
-        &json!({
-            "usage": null,
-            "x_groq": { "usage": {
-                "prompt_tokens": 200,
-                "completion_tokens": 10,
-                "prompt_tokens_details": { "cached_tokens": 128 }
-            }}
-        })
-        .to_string(),
-        context,
-    );
-
-    assert!(chunks.iter().any(|chunk| matches!(
-        chunk,
-        ParsedChunk::Usage(usage) if usage.cached_input_tokens == Some(128)
     )));
 }
 

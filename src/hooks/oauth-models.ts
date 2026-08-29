@@ -1,10 +1,13 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { AvailableModel } from "./available-model-types";
 import type { ReasoningMode } from "@/lib/reasoning-modes";
+import type { OAuthProviderId } from "@/types/oauth-provider";
 
 export interface OAuthModelInfo {
   id: string;
-  provider_id: "openai" | "moonshot" | "xai";
+  provider_id: string;
+  connection_id: string;
+  provider_display_name: string;
   display_name: string;
   context_length?: number;
   supports_tools: boolean;
@@ -13,6 +16,7 @@ export interface OAuthModelInfo {
   supports_fast_mode: boolean;
   reasoning_modes?: ReasoningMode[];
   default_reasoning_mode?: ReasoningMode;
+  context_usage_includes_reasoning: boolean;
   interactive_only: boolean;
 }
 
@@ -26,30 +30,25 @@ export type OAuthProviderIssueCode =
 
 export interface OAuthModelsResponse {
   models: OAuthModelInfo[];
-  issues: Array<{ provider_id: OAuthModelInfo["provider_id"]; code: OAuthProviderIssueCode }>;
+  issues: Array<{ provider_id: OAuthProviderId; code: OAuthProviderIssueCode }>;
 }
 
 export interface OAuthModelsResult {
   groups: Map<string, AvailableModel[]>;
-  issues: Map<OAuthModelInfo["provider_id"], OAuthProviderIssueCode>;
+  issues: Map<OAuthProviderId, OAuthProviderIssueCode>;
 }
-
-const PROVIDERS = {
-  openai: { id: "codex-oauth", name: "OpenAI · OAuth" },
-  moonshot: { id: "moonshot-oauth", name: "Moonshot AI · OAuth" },
-  xai: { id: "xai-oauth", name: "xAI · OAuth" },
-} as const;
 
 export function mapOAuthModels(models: OAuthModelInfo[]): Map<string, AvailableModel[]> {
   const groups = new Map<string, AvailableModel[]>();
   for (const model of models) {
-    const provider = PROVIDERS[model.provider_id];
-    if (!provider || typeof model.id !== "string" || model.id.length === 0 || model.id.length > 128) continue;
+    if (!validPublicIdentifier(model.connection_id, 32)
+      || !validDisplayName(model.provider_display_name)
+      || !validPublicIdentifier(model.id, 128)) continue;
     const mapped: AvailableModel = {
       id: model.id,
       display_name: model.display_name,
-      provider_id: provider.id,
-      provider_name: provider.name,
+      provider_id: model.connection_id,
+      provider_name: `${model.provider_display_name} · OAuth`,
       auth_source: "oauth",
       is_local: false,
       supports_tools: model.supports_tools,
@@ -58,11 +57,13 @@ export function mapOAuthModels(models: OAuthModelInfo[]): Map<string, AvailableM
       supports_fast_mode: model.supports_fast_mode,
       reasoning_modes: model.reasoning_modes,
       default_reasoning_mode: model.default_reasoning_mode,
+      context_length: model.context_length,
+      context_usage_includes_reasoning: model.context_usage_includes_reasoning,
       is_free: false,
       interactive_only: model.interactive_only,
       hint: model.context_length ? `${Math.round(model.context_length / 1000)}K ctx` : undefined,
     };
-    groups.set(provider.id, [...(groups.get(provider.id) ?? []), mapped]);
+    groups.set(model.connection_id, [...(groups.get(model.connection_id) ?? []), mapped]);
   }
   return groups;
 }
@@ -79,15 +80,28 @@ let pending: Promise<OAuthModelsResult> | null = null;
 
 export function mapOAuthResponse(response: OAuthModelsResponse): OAuthModelsResult {
   const models = Array.isArray(response.models) ? response.models.slice(0, 600) : [];
-  const issues = new Map<OAuthModelInfo["provider_id"], OAuthProviderIssueCode>();
+  const issues = new Map<OAuthProviderId, OAuthProviderIssueCode>();
   if (Array.isArray(response.issues)) {
     for (const issue of response.issues.slice(0, 3)) {
-      if (PROVIDERS[issue.provider_id] && ISSUE_CODES.has(issue.code)) {
+      if (ISSUE_CODES.has(issue.code)) {
         issues.set(issue.provider_id, issue.code);
       }
     }
   }
   return { groups: mapOAuthModels(models), issues };
+}
+
+function validPublicIdentifier(value: unknown, maxLength: number): value is string {
+  return typeof value === "string" && value.length > 0 && value.length <= maxLength
+    && /^[A-Za-z0-9._:/-]+$/.test(value) && !value.includes("..");
+}
+
+function validDisplayName(value: unknown): value is string {
+  return typeof value === "string" && value.length > 0 && value.length <= 80
+    && Array.from(value).every((character) => {
+      const code = character.charCodeAt(0);
+      return code >= 32 && code !== 127;
+    });
 }
 
 export function invalidateOAuthModelsCache() {

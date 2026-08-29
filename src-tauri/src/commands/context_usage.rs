@@ -35,8 +35,10 @@ pub async fn estimate_context_hidden_usage(
         return Ok(empty_usage());
     };
     let snap = common::collect_git_snapshot(&working_dir).await;
-    let has_tools =
-        mode.is_chat || provider.as_deref() == Some("ollama") || supports_tools.unwrap_or(false);
+    let is_local = provider
+        .as_deref()
+        .is_some_and(crate::services::llm::route_profile::is_local);
+    let has_tools = mode.is_chat || is_local || supports_tools.unwrap_or(false);
     let settings = crate::services::agent_local::agent_settings::load().await;
     let defs = super::context_usage_tools::filtered_definitions(
         &mode.mode,
@@ -45,10 +47,15 @@ pub async fn estimate_context_hidden_usage(
     );
     let defs = provider
         .as_deref()
-        .filter(|provider_id| *provider_id != "ollama")
+        .filter(|_| !is_local)
         .map(|provider_id| {
             let canonical = crate::services::llm::route::canonical_provider_id(provider_id);
-            super::agent_chat_task::tool_policy::apply(canonical, &model, defs.clone()).tools
+            crate::services::llm::route_profile::tool_policy(canonical, &model)
+                .map(|policy| {
+                    super::agent_chat_task::tool_policy::apply(policy.extensions, defs.clone())
+                        .tools
+                })
+                .unwrap_or_default()
         })
         .unwrap_or(defs);
     let enabled_tool_names = tool_catalog::tool_names(&defs);
@@ -67,7 +74,7 @@ pub async fn estimate_context_hidden_usage(
     );
     let prompt_settings =
         crate::services::agent_local::system_prompt_store::snapshot_for_runtime().settings;
-    let instructions = if provider.as_deref() == Some("ollama") {
+    let instructions = if is_local {
         match crate::services::agent_local::system_prompt_resolver::resolve_ollama_without_native(
             &prompt_settings,
             &model,

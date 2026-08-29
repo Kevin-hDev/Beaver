@@ -41,6 +41,24 @@ pub(crate) fn build_model_from_tags(
         .chars()
         .take(12)
         .collect();
+    let supports_thinking = info.as_ref().is_some_and(|model| {
+        model
+            .capabilities
+            .iter()
+            .any(|capability| capability == "thinking")
+    });
+    let reasoning_modes = if supports_thinking {
+        crate::services::reasoning_ollama::supported_modes(&name)
+    } else {
+        Vec::new()
+    };
+    let default_reasoning_mode = supports_thinking.then(|| {
+        if reasoning_modes.iter().any(|mode| mode == "medium") {
+            "medium".to_string()
+        } else {
+            "auto".to_string()
+        }
+    });
     OllamaModel {
         name,
         size: m["size"].as_u64().unwrap_or(0),
@@ -61,6 +79,9 @@ pub(crate) fn build_model_from_tags(
         is_moe: info.as_ref().is_some_and(|i| i.is_moe),
         context_length: info.as_ref().map_or(0, |i| i.context_length),
         capabilities: info.map_or_else(|| vec!["completion".to_string()], |i| i.capabilities),
+        reasoning_modes,
+        default_reasoning_mode,
+        context_usage_includes_reasoning: true,
         digest_short,
         aliases: Vec::new(),
         is_customized,

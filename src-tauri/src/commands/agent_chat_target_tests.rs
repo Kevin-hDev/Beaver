@@ -88,60 +88,6 @@ async fn forged_frontend_hints_cannot_change_persisted_reasoning_mode() {
 }
 
 #[tokio::test]
-async fn groq_resolves_as_explicit_non_replay_without_a_credential_scope() {
-    let session = crate::services::agent_local::session_store::create_full(
-        "Groq no replay",
-        "openai/gpt-oss-120b",
-        "groq",
-        false,
-        None,
-    )
-    .await
-    .unwrap();
-    let target = resolve(
-        &session.id,
-        "groq",
-        "openai/gpt-oss-120b",
-        Some("high"),
-        Some(true),
-    )
-    .await
-    .unwrap();
-    assert!(matches!(
-        target.continuation,
-        ContinuationTarget::Forbidden(_)
-    ));
-    let input = crate::services::agent_local::conversation_input::resolve_with_key(
-        crate::models::agent_turn_contract::NewUserTurnInput {
-            content: "continue".into(),
-            files: Vec::new(),
-            skills: Vec::new(),
-        },
-        &[],
-    )
-    .await
-    .unwrap();
-    let admitted = crate::services::agent_local::conversation_admission::new_turn_for_continuation(
-        &session.id,
-        input,
-        target.continuation,
-    )
-    .await
-    .unwrap();
-    assert!(admitted
-        .history
-        .messages
-        .iter()
-        .all(|message| message.continuation.is_none()));
-    let stored = crate::services::agent_local::session_store::get(&session.id)
-        .await
-        .unwrap();
-    assert!(stored.messages[0].replay_source.is_none());
-    assert!(stored.messages[0].continuation.is_none());
-    cleanup(&session.id).await;
-}
-
-#[tokio::test]
 async fn disabled_required_route_resolves_as_forbidden_until_live_validated() {
     let mut session = crate::services::agent_local::session_store::create_full(
         "Disabled required route",
@@ -175,8 +121,8 @@ async fn disabled_required_route_resolves_as_forbidden_until_live_validated() {
 async fn api_legacy_thinking_never_resolves_off_before_admission() {
     let mut session = crate::services::agent_local::session_store::create_full(
         "API legacy thinking",
-        "openai/gpt-oss-120b",
-        "groq",
+        "deepseek-v4-flash",
+        "deepseek",
         true,
         None,
     )
@@ -188,7 +134,7 @@ async fn api_legacy_thinking_never_resolves_off_before_admission() {
         .await
         .unwrap();
 
-    let target = resolve(&session.id, "groq", "openai/gpt-oss-120b", None, None)
+    let target = resolve_with_api_capability(&session.id, "deepseek", "deepseek-v4-flash", true)
         .await
         .unwrap();
 
@@ -196,7 +142,7 @@ async fn api_legacy_thinking_never_resolves_off_before_admission() {
     assert_ne!(target.continuation.reasoning_mode(), ReasoningModeId::Off);
     assert_eq!(
         target.reasoning.mode_name.as_deref(),
-        Some("medium"),
+        Some("high"),
         "la cible et le runtime doivent partager le défaut canonique"
     );
     cleanup(&session.id).await;
@@ -362,7 +308,9 @@ async fn api_mode_is_identical_from_resolution_through_payload_and_provenance() 
     let mut payload = serde_json::json!({});
     crate::services::llm::stream_reasoning::apply(
         &mut payload,
-        "deepseek",
+        crate::services::llm::route_profile::payload_policy("deepseek", "deepseek-v4-flash")
+            .unwrap()
+            .parameters,
         "deepseek-v4-flash",
         target.reasoning.active,
         target.reasoning.mode_name.as_deref(),
@@ -480,13 +428,20 @@ async fn forbidden_resume_erases_stale_replay_source() {
     let mut changed = crate::services::agent_local::session_store::get(&session_id)
         .await
         .unwrap();
-    changed.provider = "groq".into();
-    changed.model = "openai/gpt-oss-120b".into();
+    changed.provider = "google".into();
+    changed.model = "gemini-3.7-flash".into();
     changed.reasoning_mode = Some("medium".into());
     crate::services::agent_local::session_store::save(&changed)
         .await
         .unwrap();
-    let forbidden = resolve_session(changed, RouteId::Groq, None, Some(true), None).unwrap();
+    let forbidden = resolve_session(
+        changed,
+        RouteId::Google,
+        None,
+        Some(true),
+        Some(CredentialScope::authenticated("new-scope").unwrap()),
+    )
+    .unwrap();
     let lease =
         crate::services::agent_local::session_locks::acquire_admission_lease(&session_id).await;
     crate::services::agent_local::conversation_resume::resume_with_lease_and_reasoning(

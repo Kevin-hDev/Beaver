@@ -28,26 +28,18 @@ fn codex_spark_defaults_to_high_reasoning() {
 
 #[test]
 fn gpt_oss_uses_string_effort() {
-    let think = ollama_think("gpt-oss:20b", Some("low"), false).unwrap();
+    let think = super::reasoning_ollama::payload("gpt-oss:20b", Some("low"), false);
     assert_eq!(think, OllamaThink::Level("low".to_string()));
 }
 
 #[test]
 fn regular_ollama_uses_boolean_thinking() {
-    let think = ollama_think("qwen3", Some("off"), true).unwrap();
+    let think = super::reasoning_ollama::payload("qwen3", Some("off"), true);
     assert_eq!(think, OllamaThink::Bool(false));
 }
 
 #[test]
 fn provider_specific_modes_are_distinct() {
-    assert_eq!(
-        supported_modes("groq", "openai/gpt-oss-20b", true),
-        &["low", "medium", "high"]
-    );
-    assert_eq!(
-        supported_modes("groq", "qwen/qwen3-32b", true),
-        &["off", "auto"]
-    );
     assert_eq!(
         supported_modes("mistral", "mistral-medium-3", true),
         &["off", "high"]
@@ -157,6 +149,7 @@ fn supported_modes_and_default_use_validated_runtime_restrictions() {
         supports_fast_mode: false,
         reasoning_modes: vec!["auto".into()],
         default_reasoning_mode: Some("auto".into()),
+        context_usage_includes_reasoning: true,
         is_free: false,
     };
     crate::services::llm::runtime_models::replace_provider("dynamic-fixture", &[model]);
@@ -190,7 +183,7 @@ fn unsupported_model_clears_mode() {
 #[test]
 fn switchable_thinking_defaults_to_auto() {
     assert_eq!(
-        normalize_for_model("groq", "qwen/qwen3-32b", None, true).as_deref(),
+        normalize_for_model("ollama", "qwen3.5:4b", None, true).as_deref(),
         Some("auto")
     );
 }

@@ -22,7 +22,15 @@ pub(crate) const TOOL_RESPONSE_CLOSE: &str = "</tool_response>";
 ///
 /// Les autres messages (user/assistant/system) sont clonés à l'identique.
 /// Le Vec source n'est jamais muté.
-pub fn wrap_tool_results(messages: &[ChatMessage]) -> Vec<ChatMessage> {
+pub fn wrap_tool_results(
+    messages: &[ChatMessage],
+    placement: crate::services::llm::route_profile::ToolResultPlacement,
+) -> Vec<ChatMessage> {
+    assert_eq!(
+        placement,
+        crate::services::llm::route_profile::ToolResultPlacement::OllamaNative,
+        "Ollama converter requires native tool-result placement"
+    );
     messages
         .iter()
         .map(|m| {

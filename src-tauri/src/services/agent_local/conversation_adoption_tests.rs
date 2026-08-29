@@ -6,11 +6,11 @@ use crate::services::reasoning_continuity::contract::{
 
 #[tokio::test]
 async fn scheduler_conversation_adoption_persists_the_canonical_turn_once() {
-    let session = session_store::create_full("Wakeup", "model", "groq", true, None)
+    let session = session_store::create_full("Wakeup", "model", "ollama", true, None)
         .await
         .expect("create session");
     let target = ContinuationTarget::Forbidden(NonReplayTarget {
-        route_id: RouteId::Groq,
+        route_id: RouteId::Ollama,
         model_id: "model".into(),
         reasoning_mode: ReasoningModeId::Off,
     });

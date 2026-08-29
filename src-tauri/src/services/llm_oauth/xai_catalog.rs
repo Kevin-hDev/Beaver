@@ -114,15 +114,7 @@ async fn fetch() -> Result<Vec<XaiCatalogModel>, LlmError> {
 
 fn to_model_info(model: &XaiCatalogModel) -> ModelInfo {
     let local = crate::services::llm::provider_model_lookup::local_capabilities("xai", &model.id)
-        .unwrap_or_else(
-            || crate::services::llm::provider_model_lookup::ModelCapabilities {
-                supports_tools: crate::services::llm::providers::xai::supports_tools(&model.id),
-                supports_vision: crate::services::llm::providers::xai::supports_vision(&model.id),
-                supports_thinking: crate::services::llm::providers::xai::supports_thinking(
-                    &model.id,
-                ),
-            },
-        );
+        .unwrap_or_default();
     let local_reasoning =
         crate::services::llm::provider_model_lookup::local_reasoning("xai", &model.id);
     ModelInfo {
@@ -147,6 +139,7 @@ fn to_model_info(model: &XaiCatalogModel) -> ModelInfo {
             .default_reasoning_mode
             .clone()
             .or_else(|| local_reasoning.and_then(|reasoning| reasoning.default_mode)),
+        context_usage_includes_reasoning: true,
         is_free: false,
     }
 }

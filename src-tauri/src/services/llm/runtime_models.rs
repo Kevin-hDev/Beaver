@@ -3,7 +3,7 @@ use std::sync::{LazyLock, RwLock};
 
 use super::types::ModelInfo;
 
-const MAX_PROVIDERS: usize = 16;
+const MAX_RUNTIME_PROVIDERS: usize = 16;
 const MAX_MODELS_PER_PROVIDER: usize = 500;
 
 #[derive(Default)]
@@ -46,7 +46,9 @@ pub fn lookup(provider_id: &str, model_id: &str) -> Option<ModelInfo> {
 impl RuntimeRegistry {
     fn replace(&mut self, provider_id: &str, models: HashMap<String, ModelInfo>) {
         self.recency.retain(|id| id != provider_id);
-        if !self.providers.contains_key(provider_id) && self.providers.len() >= MAX_PROVIDERS {
+        if !self.providers.contains_key(provider_id)
+            && self.providers.len() >= MAX_RUNTIME_PROVIDERS
+        {
             if let Some(evicted) = self.recency.pop_front() {
                 self.providers.remove(&evicted);
             }
@@ -91,6 +93,7 @@ mod tests {
             supports_fast_mode: false,
             reasoning_modes: vec!["auto".to_string()],
             default_reasoning_mode: Some("auto".to_string()),
+            context_usage_includes_reasoning: true,
             is_free: true,
         }
     }
@@ -129,14 +132,14 @@ mod tests {
     #[test]
     fn oldest_provider_is_evicted_at_capacity() {
         let mut registry = RuntimeRegistry::default();
-        for index in 0..=MAX_PROVIDERS {
+        for index in 0..=MAX_RUNTIME_PROVIDERS {
             registry.replace(&format!("provider-{index}"), HashMap::new());
         }
 
-        assert_eq!(registry.providers.len(), MAX_PROVIDERS);
+        assert_eq!(registry.providers.len(), MAX_RUNTIME_PROVIDERS);
         assert!(!registry.providers.contains_key("provider-0"));
         assert!(registry
             .providers
-            .contains_key(&format!("provider-{MAX_PROVIDERS}")));
+            .contains_key(&format!("provider-{MAX_RUNTIME_PROVIDERS}")));
     }
 }

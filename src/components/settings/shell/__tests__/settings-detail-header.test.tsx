@@ -11,7 +11,7 @@ describe("SettingsDetailHeader", () => {
 
   it("ramène à la liste depuis le bouton retour", () => {
     const onBack = vi.fn();
-    render(<SettingsDetailHeader title="Groq" onBack={onBack} />);
+    render(<SettingsDetailHeader title="Mistral" onBack={onBack} />);
 
     fireEvent.click(screen.getByLabelText("common.back"));
 
@@ -21,7 +21,7 @@ describe("SettingsDetailHeader", () => {
   it("affiche le sous-titre et les actions fournies", () => {
     render(
       <SettingsDetailHeader
-        title="Groq"
+        title="Mistral"
         subtitle="Inférence rapide"
         actions={<button type="button">Supprimer</button>}
         onBack={vi.fn()}
@@ -33,7 +33,7 @@ describe("SettingsDetailHeader", () => {
   });
 
   it("omet le sous-titre quand il n'y en a pas", () => {
-    const { container } = render(<SettingsDetailHeader title="Groq" onBack={vi.fn()} />);
+    const { container } = render(<SettingsDetailHeader title="Mistral" onBack={vi.fn()} />);
 
     expect(container.querySelector(".settings-detail-title p")).toBeNull();
   });

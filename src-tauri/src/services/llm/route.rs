@@ -1,7 +1,7 @@
 use reqwest::{header::HeaderMap, RequestBuilder, Response};
 
-use super::catalog;
 use super::request_purpose::RequestPurpose;
+use super::route_profile::{self, AuthKind, ClientSelector};
 use crate::services::llm_oauth::{self, LlmOAuthProvider};
 use crate::services::secure_http::AuthenticatedClient;
 
@@ -29,6 +29,7 @@ pub struct LlmRoute {
     pub auto_max_tokens: bool,
     pub fallback_max_tokens: Option<u32>,
     pub usage_scope: UsageScope,
+    pub(crate) error_policy: super::route_profile::ErrorPolicy,
     auth_source: AuthSource,
 }
 
@@ -147,68 +148,41 @@ where
 }
 
 pub fn resolve(provider_id: &str) -> Option<LlmRoute> {
-    match provider_id {
-        "xai-oauth" => Some(oauth_route(
-            "xai-oauth",
-            "xai",
-            crate::services::llm_oauth::XAI_PROXY_BASE_URL,
-            "/models-v2",
-            "xAI",
-            LlmOAuthProvider::Xai,
-        )),
-        "moonshot-oauth" => Some(oauth_route(
-            "moonshot-oauth",
-            "moonshot",
-            "https://api.kimi.com/coding/v1",
-            "/models",
-            "Moonshot AI",
-            LlmOAuthProvider::Kimi,
-        )),
-        _ => catalog::find(provider_id).map(|spec| LlmRoute {
-            chat_provider_id: spec.id,
-            canonical_provider_id: spec.id,
-            base_url: spec.base_url,
-            models_endpoint: spec.models_endpoint,
-            display_name: spec.display_name,
-            auto_max_tokens: spec.auto_max_tokens,
-            fallback_max_tokens: spec.fallback_max_tokens,
-            usage_scope: UsageScope::Any,
-            auth_source: AuthSource::ApiKey(spec.id),
-        }),
+    let profile = route_profile::find(provider_id)?;
+    if matches!(
+        profile.client,
+        ClientSelector::Codex | ClientSelector::OllamaLocal
+    ) {
+        return None;
     }
+    let (base_url, models_endpoint) = profile.endpoint.static_parts()?;
+    let auth_source = match profile.auth {
+        AuthKind::ApiKey { credential_id, .. } => AuthSource::ApiKey(credential_id),
+        AuthKind::OAuth { provider, .. } => AuthSource::OAuth(provider),
+        AuthKind::ClientOAuth { .. } | AuthKind::Local => return None,
+    };
+    Some(LlmRoute {
+        chat_provider_id: profile.id.provider_id(),
+        canonical_provider_id: profile.canonical_provider.as_str(),
+        base_url,
+        models_endpoint,
+        display_name: profile.display_name,
+        auto_max_tokens: profile.output_limits.automatic,
+        fallback_max_tokens: profile.output_limits.fallback,
+        usage_scope: if profile.availability.silent {
+            UsageScope::Any
+        } else {
+            UsageScope::InteractiveOnly
+        },
+        error_policy: profile.policies.errors,
+        auth_source,
+    })
 }
 
 pub fn canonical_provider_id(provider_id: &str) -> &str {
-    match provider_id {
-        "xai-oauth" => "xai",
-        "moonshot-oauth" => "moonshot",
-        _ => provider_id,
-    }
-}
-
-pub fn is_interactive_only(provider_id: &str) -> bool {
-    resolve(provider_id).is_some_and(|route| route.usage_scope == UsageScope::InteractiveOnly)
-}
-
-fn oauth_route(
-    chat_provider_id: &'static str,
-    canonical_provider_id: &'static str,
-    base_url: &'static str,
-    models_endpoint: &'static str,
-    display_name: &'static str,
-    provider: LlmOAuthProvider,
-) -> LlmRoute {
-    LlmRoute {
-        chat_provider_id,
-        canonical_provider_id,
-        base_url,
-        models_endpoint,
-        display_name,
-        auto_max_tokens: true,
-        fallback_max_tokens: Some(64_000),
-        usage_scope: UsageScope::InteractiveOnly,
-        auth_source: AuthSource::OAuth(provider),
-    }
+    route_profile::find(provider_id)
+        .map(|profile| profile.canonical_provider.as_str())
+        .unwrap_or(provider_id)
 }
 
 #[cfg(test)]

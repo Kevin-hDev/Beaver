@@ -68,6 +68,7 @@ export function ChatView({
     stream: chat,
     workingDir: proj.selectedProject?.path, permissionMode: permMode.mode,
     planMode: chat.planModeEnabled, supportsTools: selectedModelCaps?.supports_tools,
+    contextUsageIncludesReasoning: selectedModelCaps?.context_usage_includes_reasoning,
   });
   useSessionFileGroups(
     chat.messages,

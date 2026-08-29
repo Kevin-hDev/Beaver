@@ -33,12 +33,22 @@ impl ProviderId {
             Self::Xai => "xai-oauth",
         }
     }
+
+    pub const fn usage_url(self) -> &'static str {
+        match self {
+            Self::OpenAi => "https://chatgpt.com/codex/settings/usage",
+            Self::Moonshot => "https://www.kimi.com/code/console",
+            Self::Xai => "https://grok.com/?_s=usage",
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
 pub struct OAuthProviderStatus {
     pub id: ProviderId,
     pub display_name: &'static str,
+    pub connection_id: &'static str,
+    pub usage_url: &'static str,
     pub connected: bool,
     pub account: Option<String>,
     pub experimental: bool,

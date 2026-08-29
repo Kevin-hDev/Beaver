@@ -6,7 +6,6 @@ use super::types_ollama::ChatMessage;
 use super::types_session::{AgentMessage, AgentSession, CloneMode};
 use chrono::Utc;
 use serde::Serialize;
-use std::time::Duration;
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
@@ -133,20 +132,6 @@ async fn collect_summary(
     messages: Vec<ChatMessage>,
     cancel: CancellationToken,
 ) -> Result<String, String> {
-    if provider == "ollama" {
-        let ollama = super::ollama_client::OllamaClient::from_global()?;
-        let request = super::ollama_collect::collect_chat_with_timeout_and_limit(
-            &ollama,
-            model,
-            messages,
-            Duration::from_secs(180),
-            Some(SUMMARY_MAX_TOKENS),
-        );
-        return tokio::select! {
-            _ = cancel.cancelled() => Err("Annulé".to_string()),
-            result = request => result.map(|(content, _)| content),
-        };
-    }
     let purpose =
         crate::services::llm::request_purpose::RequestPurpose::for_session(session_id).await;
     let result = crate::services::llm::stream::collect_chat_silent_for_compression(

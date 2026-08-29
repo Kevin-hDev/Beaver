@@ -125,7 +125,7 @@ pub(super) async fn post_chat_request_with_timeout_measured(
         let has_retry_after = resp.headers().contains_key("retry-after");
         let body = read_provider_error(resp).await;
         let log_code =
-            super::provider_error::safe_log_code(route.chat_provider_id, status.as_u16(), &body);
+            super::provider_error::safe_log_code(route.error_policy, status.as_u16(), &body);
         super::provider_diagnostics::record_http_failure(
             route.chat_provider_id,
             cfg.model,
@@ -139,7 +139,7 @@ pub(super) async fn post_chat_request_with_timeout_measured(
             status.as_u16(),
             &body,
             route.display_name,
-            route.chat_provider_id,
+            route.error_policy,
             route.is_oauth(),
             has_retry_after,
         ));
@@ -158,7 +158,7 @@ pub(super) fn classify_error(
     status: u16,
     body: &str,
     _provider_name: &str,
-    provider_id: &str,
+    error_policy: super::route_profile::ErrorPolicy,
     oauth: bool,
     has_retry_after: bool,
 ) -> RequestError {
@@ -171,7 +171,7 @@ pub(super) fn classify_error(
     }
     match status {
         402 => RequestError::Fatal(
-            super::provider_error::classify_http(provider_id, status, body)
+            super::provider_error::classify_http(error_policy, status, body)
                 .as_str()
                 .to_string(),
         ),
@@ -179,7 +179,7 @@ pub(super) fn classify_error(
         403 if oauth => RequestError::Fatal("provider_access_unavailable".into()),
         401 | 403 => RequestError::Fatal("auth_failed".into()),
         413 => RequestError::PayloadTooLarge,
-        429 if provider_id == "xai-oauth"
+        429 if error_policy == super::route_profile::ErrorPolicy::XaiOauth
             && !has_retry_after
             && super::provider_error::safe_details(body)
                 .error_code
