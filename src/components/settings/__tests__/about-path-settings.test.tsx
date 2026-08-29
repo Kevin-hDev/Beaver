@@ -35,7 +35,8 @@ describe("settings CSS wiring", () => {
     expect(container.querySelector(".as-app-logo")).toBeInstanceOf(HTMLImageElement);
     // Le nom n'est plus un texte mais un logotype dessiné : ce qui doit rester
     // vrai, c'est qu'il est là et qu'il s'annonce sous le nom de l'application.
-    expect(getByRole("img", { name: "Beaver" })).toHaveClass("as-wordmark");
+    expect(getByRole("img", { name: "Beaver" })).toBeInTheDocument();
+    expect(container.querySelector(".as-wordmark")).not.toBeNull();
     await waitFor(() => expect(getByText("0.9.6")).not.toBeNull());
 
     fireEvent.click(getByText("about.viewOnGithub"));

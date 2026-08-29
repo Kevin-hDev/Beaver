@@ -2,10 +2,19 @@
    Les valeurs vivent ici et nulle part ailleurs : les écrans qui affichent le
    logotype ne fixent que sa largeur. */
 
+.bw-wrap {
+  display: block;
+  /* Le conteneur de dimensionnement du relief. Les arêtes sont en em, et une
+     taille de police en pixels les décrocherait de la taille du mot : le même
+     réglage donnerait un relief franc en grand et rien du tout en petit. */
+  container-type: inline-size;
+}
+
 .bw-mark {
-  /* Les décalages et le flou sont en em : sans taille de police propre, ils se
-     calculeraient sur celle du parent et changeraient d'un écran à l'autre. */
-  font-size: 46px;
+  /* 22,8 % de la largeur du logotype : le rapport du banc, où la police valait
+     21 % de la colonne pour un tracé occupant 92 % de cette même colonne. Le
+     relief suit donc le mot, quelle que soit la place qu'on lui donne. */
+  font-size: 22.8cqw;
 
   /* Encre : le mot s'assombrit vers le haut, ce qui lui donne du volume.
      Sur fond sombre les trois arrêts sont égaux — un dégradé y creuserait le
@@ -22,13 +31,22 @@
   --bw-light: rgba(255, 255, 255, 0.36);
   --bw-shadow: rgba(0, 0, 0, 0.6);
 
+  /* Le gain allonge les deux arêtes sans les redéfinir. Sur une forme rongée,
+     une arête réglée pour un contour continu se disperse dans deux cents
+     cassures au lieu d'y dessiner un bord. L'écart entre les deux familles a la
+     cause habituelle : sur fond sombre le blanc a 130 niveaux de marge et
+     rayonne dès qu'on l'allonge ; sur fond clair il en a dix et ne peut pas baver. */
+  --bw-gain: 2;
+
   display: block;
   width: 100%;
   height: auto;
   user-select: none;
   filter:
-    drop-shadow(0 var(--bw-edge-down) var(--bw-blur) var(--bw-light))
-    drop-shadow(0 calc(-1 * var(--bw-edge-up)) var(--bw-blur) var(--bw-shadow));
+    drop-shadow(0 calc(var(--bw-edge-down) * var(--bw-gain))
+                  calc(var(--bw-blur) * var(--bw-gain)) var(--bw-light))
+    drop-shadow(0 calc(-1 * var(--bw-edge-up) * var(--bw-gain))
+                  calc(var(--bw-blur) * var(--bw-gain)) var(--bw-shadow));
 }
 
 /* Sur fond clair l'ombre porte et la lumière sature : le fond est un plancher
@@ -43,6 +61,7 @@
   --bw-blur: 0.01em;
   --bw-light: rgba(255, 255, 255, 0.58);
   --bw-shadow: rgba(0, 0, 0, 0.24);
+  --bw-gain: 3;
 }
 
 .bw-ink-top { stop-color: color-mix(in srgb, var(--ink) var(--bw-ink-top), var(--void)); }
