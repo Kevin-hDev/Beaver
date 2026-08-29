@@ -18,6 +18,24 @@ fn remote_anthropic_model() -> ModelInfo {
     }
 }
 
+fn remote_qwen_model(id: &str) -> ModelInfo {
+    ModelInfo {
+        id: id.into(),
+        display_name: Some(id.into()),
+        owned_by: Some("qwen".into()),
+        context_length: None,
+        max_output_tokens: None,
+        supports_tools: false,
+        supports_vision: false,
+        supports_thinking: false,
+        supports_fast_mode: false,
+        reasoning_modes: Vec::new(),
+        default_reasoning_mode: None,
+        context_usage_includes_reasoning: true,
+        is_free: false,
+    }
+}
+
 #[tokio::test]
 async fn native_catalog_keeps_explicit_remote_values() {
     let models =
@@ -41,4 +59,33 @@ async fn catalog_is_deduplicated_before_runtime_registration() {
 
     assert_eq!(models.len(), 1);
     assert!(super::runtime_models::lookup("anthropic", "claude-haiku-4-5-20251001").is_some());
+}
+
+#[tokio::test]
+async fn qwen_remote_catalog_is_strictly_intersected_with_the_embedded_inventory() {
+    let models = super::model_catalog::enrich_models(
+        "qwen",
+        vec![
+            remote_qwen_model("qwen3.8-max"),
+            remote_qwen_model("qwen3.8-flash"),
+        ],
+        false,
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(models.len(), 1);
+    assert_eq!(models[0].id, "qwen3.8-flash");
+    assert!(models[0].supports_tools);
+    assert!(models[0].supports_vision);
+}
+
+#[tokio::test]
+async fn qwen_successful_catalog_without_the_enabled_model_stays_empty() {
+    let models =
+        super::model_catalog::enrich_models("qwen", vec![remote_qwen_model("qwen3.8-max")], false)
+            .await
+            .unwrap();
+
+    assert!(models.is_empty());
 }

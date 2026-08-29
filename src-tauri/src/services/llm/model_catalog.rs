@@ -51,9 +51,20 @@ pub(super) async fn enrich_models(
     let mut seen = HashSet::with_capacity(models.len());
     models.retain(|model| seen.insert(model.id.clone()));
     let canonical = super::route::canonical_provider_id(provider_id);
+    let embedded_intersection = super::route_profile::find(provider_id).is_some_and(|profile| {
+        matches!(
+            profile.catalog,
+            super::route_profile::CatalogPolicy::ConfigurableApi { .. }
+        )
+    });
     let mut filtered = Vec::with_capacity(models.len());
     for model in models {
-        if super::provider_model_lookup::is_chat_model(canonical, &model.id).await {
+        let accepted = if embedded_intersection {
+            super::provider_model_lookup::local_capabilities(canonical, &model.id).is_some()
+        } else {
+            super::provider_model_lookup::is_chat_model(canonical, &model.id).await
+        };
+        if accepted {
             filtered.push(model);
         }
     }

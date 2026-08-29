@@ -15,3 +15,14 @@ fn anthropic_candidate_uses_the_native_llm_probe_path() {
 fn qwen_subscription_keys_are_rejected_before_network_use() {
     assert!(super::reject_unsupported_qwen_key("sk-sp-fixture").is_err());
 }
+
+#[test]
+fn qwen_only_falls_back_to_chat_when_models_is_unsupported() {
+    use super::QwenProbeAction;
+
+    assert_eq!(super::qwen_probe_action(200), QwenProbeAction::Accept);
+    assert_eq!(super::qwen_probe_action(404), QwenProbeAction::ChatFallback);
+    assert_eq!(super::qwen_probe_action(405), QwenProbeAction::ChatFallback);
+    assert_eq!(super::qwen_probe_action(401), QwenProbeAction::Reject);
+    assert_eq!(super::qwen_probe_action(429), QwenProbeAction::Reject);
+}

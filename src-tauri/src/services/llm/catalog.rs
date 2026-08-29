@@ -1,14 +1,16 @@
 //! Vue publique du catalogue, dérivée de l'autorité privée `route_profile`.
 
 use super::route_profile::{self, CatalogPolicy};
+use crate::models::provider_contract::ProviderConnectionKind;
 
 #[derive(Debug, Clone, Copy)]
 pub struct ProviderSpec {
     pub id: &'static str,
     pub display_name: &'static str,
-    pub base_url: &'static str,
-    pub models_endpoint: &'static str,
+    pub base_url: Option<&'static str>,
+    pub models_endpoint: Option<&'static str>,
     pub signup_url: &'static str,
+    pub connection_kind: ProviderConnectionKind,
 }
 
 pub fn all() -> Vec<ProviderSpec> {
@@ -53,12 +55,25 @@ fn to_spec(profile: &'static route_profile::RouteProfile) -> Option<ProviderSpec
         }
         CatalogPolicy::Hidden => unreachable!("hidden routes are filtered before conversion"),
     };
-    let (base_url, models_endpoint) = profile.endpoint.static_parts()?;
+    let (base_url, models_endpoint) = profile
+        .endpoint
+        .static_parts()
+        .map_or((None, None), |(base, models)| (Some(base), Some(models)));
     Some(ProviderSpec {
         id: profile.id.provider_id(),
         display_name: profile.display_name,
         base_url,
         models_endpoint,
         signup_url,
+        connection_kind: if matches!(
+            profile.endpoint,
+            route_profile::EndpointPolicy::ProviderConnection {
+                resolver: route_profile::ConnectionEndpointResolver::QwenModelStudio
+            }
+        ) {
+            ProviderConnectionKind::QwenModelStudio
+        } else {
+            ProviderConnectionKind::ApiKey
+        },
     })
 }

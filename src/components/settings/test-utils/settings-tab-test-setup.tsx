@@ -124,6 +124,7 @@ vi.mock("@tauri-apps/api/core", async () => {
           data.provider("openai", "OpenAI", "llm"),
           data.provider("mistral", "Mistral", "llm"),
           data.provider("anthropic", "Anthropic", "llm"),
+          { ...data.provider("qwen", "Qwen", "llm"), connection_kind: "qwen_model_studio" },
         ]);
       }
       if (cmd === "list_search_providers_catalog") return Promise.resolve([data.provider("brave", "Brave", "search")]);

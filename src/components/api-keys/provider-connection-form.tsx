@@ -26,8 +26,15 @@ export function isQwenConnectionValid(value: QwenConnectionInput): boolean {
   if (!MODES_BY_REGION[value.region].includes(value.endpointMode)) return false;
   if (value.endpointMode !== "workspace") return value.workspaceId === undefined;
   const workspace = value.workspaceId ?? "";
-  return workspace.length <= 64
-    && /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(workspace);
+  return workspace.length >= 1
+    && workspace.length <= 64
+    && !workspace.startsWith("-")
+    && !workspace.endsWith("-")
+    && [...workspace].every((character) => (
+      (character >= "a" && character <= "z")
+      || (character >= "0" && character <= "9")
+      || character === "-"
+    ));
 }
 
 interface ProviderConnectionFormProps {

@@ -1,0 +1,25 @@
+{
+  "provider": "qwen",
+  "schema_version": 1,
+  "verified_at": "2026-08-29",
+  "source_urls": [
+    "https://www.alibabacloud.com/help/en/model-studio/models",
+    "https://www.alibabacloud.com/help/en/model-studio/add-vision-skill",
+    "https://www.alibabacloud.com/help/en/model-studio/visual-reasoning",
+    "https://www.alibabacloud.com/help/en/model-studio/qwen-api-via-openai-chat-completions"
+  ],
+  "models": [{
+    "id": "qwen3.8-flash",
+    "aliases": [],
+    "is_free": false,
+    "context_window": 1000000,
+    "max_output_tokens": 131072,
+    "default_output_tokens": 32768,
+    "supports_tools": true,
+    "supports_vision": true,
+    "supports_thinking": true,
+    "supports_fast_mode": false,
+    "reasoning_modes": ["off", "low", "medium", "xhigh"],
+    "default_reasoning_mode": "xhigh"
+  }]
+}

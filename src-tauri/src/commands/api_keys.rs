@@ -4,7 +4,10 @@
 //! set/delete/has/list/test seulement.
 
 use crate::services::api_keys;
-use crate::{models::provider_contract::QwenConnectionInput, services::provider_connections::qwen};
+use crate::{
+    models::provider_contract::{ProviderConnectionKind, QwenConnectionInput},
+    services::provider_connections::qwen,
+};
 use tauri::Emitter;
 use zeroize::{Zeroize, Zeroizing};
 
@@ -29,23 +32,31 @@ fn set_provider_key(
     key: &str,
     connection: Option<QwenConnectionInput>,
 ) -> Result<(), String> {
-    if provider == "qwen" {
-        let connection = connection.ok_or_else(|| "provider_configuration_invalid".to_string())?;
-        let encoded = qwen::encode(connection)?;
-        return api_keys::set_key_with_raw(provider, key, &[(qwen::VAULT_KEY, encoded.as_str())]);
+    match connection_kind(provider)? {
+        ProviderConnectionKind::QwenModelStudio => {
+            let connection =
+                connection.ok_or_else(|| "provider_configuration_invalid".to_string())?;
+            let encoded = qwen::encode(connection)?;
+            api_keys::set_key_with_raw(provider, key, &[(qwen::VAULT_KEY, encoded.as_str())])
+        }
+        ProviderConnectionKind::ApiKey if connection.is_none() => api_keys::set_key(provider, key),
+        ProviderConnectionKind::ApiKey => Err("provider_configuration_invalid".to_string()),
     }
-    if connection.is_some() {
-        return Err("provider_configuration_invalid".to_string());
-    }
-    api_keys::set_key(provider, key)
+}
+
+fn connection_kind(provider: &str) -> Result<ProviderConnectionKind, String> {
+    crate::services::llm::catalog::find_configurable(provider)
+        .map(|spec| spec.connection_kind)
+        .ok_or_else(|| "provider_configuration_invalid".to_string())
 }
 
 #[tauri::command]
 pub async fn delete_api_key(app: tauri::AppHandle, provider: String) -> Result<(), String> {
-    if provider == "qwen" {
-        api_keys::delete_key_with_raw(&provider, &[qwen::VAULT_KEY])?;
-    } else {
-        api_keys::delete_key(&provider)?;
+    match connection_kind(&provider)? {
+        ProviderConnectionKind::QwenModelStudio => {
+            api_keys::delete_key_with_raw(&provider, &[qwen::VAULT_KEY])?
+        }
+        ProviderConnectionKind::ApiKey => api_keys::delete_key(&provider)?,
     }
     crate::services::provider_usage::invalidate_remote(&provider).await;
     let _ = app.emit("providers-changed", ());
@@ -74,12 +85,15 @@ pub async fn test_api_key_with_value(
     connection: Option<QwenConnectionInput>,
 ) -> Result<(), String> {
     let key = Zeroizing::new(key);
-    if provider == "qwen" {
-        let connection = connection.ok_or_else(|| "provider_configuration_invalid".to_string())?;
-        api_keys::test_qwen_key_raw(&key, &connection).await
-    } else if connection.is_some() {
-        Err("provider_configuration_invalid".to_string())
-    } else {
-        api_keys::test_key_raw(&provider, &key).await
+    match connection_kind(&provider)? {
+        ProviderConnectionKind::QwenModelStudio => {
+            let connection =
+                connection.ok_or_else(|| "provider_configuration_invalid".to_string())?;
+            api_keys::test_qwen_key_raw(&key, &connection).await
+        }
+        ProviderConnectionKind::ApiKey if connection.is_none() => {
+            api_keys::test_key_raw(&provider, &key).await
+        }
+        ProviderConnectionKind::ApiKey => Err("provider_configuration_invalid".to_string()),
     }
 }

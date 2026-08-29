@@ -20,9 +20,25 @@ fn canonical_inventory_sizes_match_the_official_catalogs() {
         ("moonshot", 15),
         ("zai", 20),
         ("anthropic", 1),
+        ("qwen", 1),
     ] {
         assert_eq!(list(provider).len(), expected, "{provider}");
     }
+}
+
+#[test]
+fn qwen_fallback_exposes_only_the_validated_flash_model() {
+    let models = list("qwen");
+    assert_eq!(models.len(), 1);
+    let flash = &models[0];
+    assert_eq!(flash.id, "qwen3.8-flash");
+    assert_eq!(flash.context_window, 1_000_000);
+    assert_eq!(flash.max_output_tokens, Some(131_072));
+    assert!(flash.supports_tools);
+    assert!(flash.supports_vision);
+    assert!(flash.supports_thinking);
+    assert_eq!(flash.reasoning_modes, ["off", "low", "medium", "xhigh"]);
+    assert_eq!(flash.default_reasoning_mode.as_deref(), Some("xhigh"));
 }
 
 #[test]

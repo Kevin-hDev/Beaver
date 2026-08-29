@@ -43,6 +43,7 @@
       "moonshot": { "description": "Kimi K3 — coding agentico, multimodale, contesto 1M.", "freeTier": "API fatturata in base all’uso." },
       "zai": { "description": "GLM-5.3 — contesto 1M, coding a lungo orizzonte e ragionamento.", "freeTier": "I modelli Flash indicati [Free] non hanno costo; gli altri sono fatturati." },
       "anthropic": { "description": "Claude tramite l’API Messages nativa di Anthropic.", "freeTier": "Anthropic fattura in base all’uso." },
+      "qwen": { "description": "Qwen tramite Alibaba Cloud Model Studio.", "freeTier": "L’utilizzo a consumo è fatturato da Alibaba Cloud." },
       "brave": { "description": "Indice proprio, senza dipendere da Google/Bing.", "freeTier": "Crediti mensili inclusi, poi fatturazione in base all’uso." },
       "exa": { "description": "Neural search — ricerca per similarità semantica.", "freeTier": "Controlla prezzi e crediti nell’account del provider." },
       "firecrawl": { "description": "Estrazione Markdown pronta per LLM da qualsiasi URL.", "freeTier": "Piano gratuito e crediti in base al team e al piano." }

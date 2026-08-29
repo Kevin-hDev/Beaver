@@ -30,6 +30,7 @@ pub(super) async fn resolve(
         EndpointPolicy::ConnectionConfigured | EndpointPolicy::OllamaLocal => {
             Err("provider_configuration_invalid")
         }
+        EndpointPolicy::ProviderConnection { .. } => Err("provider_configuration_invalid"),
     }
 }
 

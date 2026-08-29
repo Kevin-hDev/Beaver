@@ -69,6 +69,7 @@ describe("OnboardingApi", () => {
 
     expect(screen.queryByText("brave")).toBeNull();
     expect(screen.queryByText("anthropic")).toBeNull();
+    expect(screen.queryByText("qwen")).toBeNull();
   });
 
   it("affiche les providers deja configures", async () => {

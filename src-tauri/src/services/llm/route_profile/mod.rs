@@ -3,6 +3,7 @@ mod catalog;
 mod catalog_api;
 mod catalog_local;
 mod catalog_oauth;
+mod endpoint_types;
 mod payload_policies;
 mod policies;
 mod policy_types;

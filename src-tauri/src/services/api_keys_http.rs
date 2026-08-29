@@ -39,11 +39,47 @@ pub async fn test_qwen_key_raw(
         .send(client.get(&endpoint.models_url).bearer_auth(key))
         .await
         .map_err(|_| "test de la clé impossible".to_string())?;
-    check_status(response).await
+    match qwen_probe_action(response.status().as_u16()) {
+        QwenProbeAction::Accept => Ok(()),
+        QwenProbeAction::Reject => check_status(response).await,
+        QwenProbeAction::ChatFallback => {
+            let _ = read_bounded(response, PROVIDER_ERROR_LIMIT).await;
+            let url = format!("{}/chat/completions", endpoint.base_url);
+            let response = client
+                .send(
+                    client
+                        .post(&url)
+                        .bearer_auth(key)
+                        .json(&serde_json::json!({
+                            "model": "qwen3.8-flash",
+                            "max_completion_tokens": 1,
+                            "messages": [{"role": "user", "content": "hi"}],
+                        })),
+                )
+                .await
+                .map_err(|_| "test de la clé impossible".to_string())?;
+            check_status(response).await
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum QwenProbeAction {
+    Accept,
+    ChatFallback,
+    Reject,
+}
+
+pub(crate) fn qwen_probe_action(status: u16) -> QwenProbeAction {
+    match status {
+        200..=299 => QwenProbeAction::Accept,
+        404 | 405 => QwenProbeAction::ChatFallback,
+        _ => QwenProbeAction::Reject,
+    }
 }
 
 pub(crate) fn reject_unsupported_qwen_key(key: &str) -> Result<(), String> {
-    validate::validate_key_input("qwen", key)?;
+    validate::validate_key_value(key)?;
     if key.starts_with("sk-sp-") {
         return Err("provider_configuration_invalid".to_string());
     }

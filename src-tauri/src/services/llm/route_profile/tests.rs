@@ -81,6 +81,28 @@ fn anthropic_profile_is_native_complete_and_candidate_only() {
 }
 
 #[test]
+fn qwen_profile_uses_chat_wire_and_configured_endpoint() {
+    let profile = find("qwen").expect("qwen profile");
+    assert_eq!(profile.id, RouteId::Qwen);
+    assert_eq!(profile.client, ClientSelector::OpenAiCompat);
+    assert_eq!(profile.wire.family, WireFamily::OpenAiChatCompletions);
+    assert_eq!(profile.wire.images, ImageFormat::OpenAiNested);
+    assert_eq!(profile.availability, policies::CANDIDATE_ONLY);
+    assert!(matches!(
+        profile.endpoint,
+        EndpointPolicy::ProviderConnection {
+            resolver: ConnectionEndpointResolver::QwenModelStudio
+        }
+    ));
+    assert!(matches!(
+        profile.catalog,
+        CatalogPolicy::ConfigurableApi { .. }
+    ));
+    assert!(super::catalog::configurable().any(|candidate| candidate.id == RouteId::Qwen));
+    assert!(!public_api().any(|candidate| candidate.id == RouteId::Qwen));
+}
+
+#[test]
 fn context_usage_reasoning_policy_is_owned_by_the_route_profile() {
     assert!(!find("codex-oauth")
         .unwrap()

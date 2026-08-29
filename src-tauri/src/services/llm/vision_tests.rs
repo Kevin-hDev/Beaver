@@ -53,6 +53,22 @@ fn vision_wire_formats_stay_distinct() {
 }
 
 #[test]
+fn qwen_uses_the_nested_openai_image_shape() {
+    let message = user(vec!["iVBORw0KGgo="]);
+    let policy = super::super::route_profile::payload_policy("qwen", "qwen3.8-flash").unwrap();
+    let converted =
+        crate::services::llm::stream_convert::message_to_openai(&message, policy.message);
+
+    assert_eq!(
+        converted["content"][1],
+        serde_json::json!({
+            "type": "image_url",
+            "image_url": {"url": "data:image/png;base64,iVBORw0KGgo="}
+        })
+    );
+}
+
+#[test]
 fn unsupported_image_wire_is_rejected_explicitly() {
     assert_eq!(
         image_part(

@@ -176,4 +176,19 @@ pub(super) const API_PROFILES: &[RouteProfile] = &[
         output_limits: limits(true, Some(64_000)),
         policies: ANTHROPIC,
     },
+    RouteProfile {
+        id: RouteId::Qwen,
+        canonical_provider: CanonicalProviderId::Qwen,
+        display_name: "Qwen",
+        client: ClientSelector::OpenAiCompat,
+        wire: OPENAI_CHAT_WIRE,
+        auth: api_key("qwen"),
+        endpoint: EndpointPolicy::ProviderConnection {
+            resolver: ConnectionEndpointResolver::QwenModelStudio,
+        },
+        availability: CANDIDATE_ONLY,
+        catalog: configurable("https://modelstudio.console.alibabacloud.com/"),
+        output_limits: limits(true, Some(131_072)),
+        policies: OPENAI_CHAT_DEFAULT,
+    },
 ];

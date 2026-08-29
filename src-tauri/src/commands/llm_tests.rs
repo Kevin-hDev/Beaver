@@ -4,7 +4,7 @@ async fn openrouter_model_keeps_upstream_tool_capability() {
 }
 
 #[test]
-fn configurable_catalog_includes_anthropic_without_publishing_it() {
+fn configurable_catalog_includes_candidates_without_publishing_them() {
     let public = super::list_llm_providers_catalog();
     let configurable = super::list_llm_configurable_providers_catalog();
 
@@ -16,6 +16,16 @@ fn configurable_catalog_includes_anthropic_without_publishing_it() {
             .count(),
         1
     );
+    let qwen = configurable
+        .iter()
+        .filter(|provider| provider.id == "qwen")
+        .collect::<Vec<_>>();
+    assert_eq!(qwen.len(), 1);
+    assert_eq!(
+        qwen[0].connection_kind,
+        crate::models::provider_contract::ProviderConnectionKind::QwenModelStudio
+    );
+    assert!(!public.iter().any(|provider| provider.id == "qwen"));
     assert!(public.iter().all(|provider| configurable
         .iter()
         .any(|candidate| candidate.id == provider.id)));

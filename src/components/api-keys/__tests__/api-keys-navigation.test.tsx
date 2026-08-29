@@ -71,7 +71,11 @@ describe("ApiKeysTab navigation", () => {
   afterEach(() => cleanup());
 
   beforeEach(() => {
-    mocks.catalog = [provider("openai"), provider("anthropic")];
+    mocks.catalog = [
+      provider("openai"),
+      provider("anthropic"),
+      { ...provider("qwen"), connection_kind: "qwen_model_studio" },
+    ];
     mocks.configured = [provider("openai"), provider("mistral")];
     mocks.onNavChange.mockClear();
     mocks.onNavReplace.mockClear();
@@ -84,6 +88,15 @@ describe("ApiKeysTab navigation", () => {
     fireEvent.click(getByText("anthropic"));
 
     expect(getByText("config:anthropic")).toBeTruthy();
+  });
+
+  it("ouvre la configuration régionale Qwen depuis les connecteurs", () => {
+    const { getByText } = renderTab({ ...DEFAULT_APP_NAV.settings, apiKeyProviderId: null });
+
+    fireEvent.click(getByText("apiKeys.main.connectorsBtn"));
+    fireEvent.click(getByText("qwen"));
+
+    expect(getByText("config:qwen")).toBeTruthy();
   });
 
   it("ouvre la liste sans présélectionner un fournisseur", async () => {

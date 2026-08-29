@@ -62,10 +62,11 @@ pub enum RouteId {
     Zai,
     CodexOauth,
     Anthropic,
+    Qwen,
 }
 
 impl RouteId {
-    pub const ALL: [Self; 14] = [
+    pub const ALL: [Self; 15] = [
         Self::Ollama,
         Self::Google,
         Self::Mistral,
@@ -80,6 +81,7 @@ impl RouteId {
         Self::Zai,
         Self::CodexOauth,
         Self::Anthropic,
+        Self::Qwen,
     ];
 
     pub fn from_provider_id(provider: &str) -> Option<Self> {
@@ -104,6 +106,7 @@ impl RouteId {
             Self::Zai => "zai",
             Self::CodexOauth => "codex-oauth",
             Self::Anthropic => "anthropic",
+            Self::Qwen => "qwen",
         }
     }
 }

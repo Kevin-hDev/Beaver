@@ -39,12 +39,27 @@ pub(crate) fn resolve(provider_id: &str) -> Result<ProbeSpec, &'static str> {
             return Err("provider_configuration_invalid");
         }
     };
-    let EndpointPolicy::Static {
-        base_url,
-        models_endpoint,
-    } = profile.endpoint
-    else {
-        return Err("provider_configuration_invalid");
+    let (base_url, models_endpoint) = match profile.endpoint {
+        EndpointPolicy::Static {
+            base_url,
+            models_endpoint,
+        } => (base_url.to_string(), models_endpoint.to_string()),
+        EndpointPolicy::ProviderConnection { .. } => {
+            let route =
+                super::route::resolve(provider_id).ok_or("provider_configuration_invalid")?;
+            (
+                route.base_url.into_owned(),
+                route.models_endpoint.into_owned(),
+            )
+        }
+        EndpointPolicy::ConnectionConfigured
+        | EndpointPolicy::OllamaLocal
+        | EndpointPolicy::RegionAllowlist { .. }
+        | EndpointPolicy::Workspace { .. }
+        | EndpointPolicy::ValidatedHttps
+        | EndpointPolicy::PinnedBackend { .. } => {
+            return Err("provider_configuration_invalid");
+        }
     };
     match profile.policies.auth_probe {
         AuthProbePolicy::ModelsGet if !models_endpoint.is_empty() => Ok(ProbeSpec {

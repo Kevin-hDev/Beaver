@@ -15,14 +15,16 @@ fn provider_catalog_entries(providers: Vec<catalog::ProviderSpec>) -> Vec<Provid
     providers
         .into_iter()
         .map(|provider| {
-            ProviderCatalogEntry::new(
+            let mut entry = ProviderCatalogEntry::new(
                 provider.id,
                 provider.display_name,
                 ProviderCategory::Llm,
                 provider.signup_url,
-                Some(provider.base_url),
-                Some(provider.models_endpoint),
-            )
+                provider.base_url,
+                provider.models_endpoint,
+            );
+            entry.connection_kind = provider.connection_kind;
+            entry
         })
         .collect()
 }

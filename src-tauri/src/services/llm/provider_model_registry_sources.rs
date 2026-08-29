@@ -44,4 +44,8 @@ pub(super) const SOURCES: &[EmbeddedProviderModels<'static>] = &[
         provider_id: "anthropic",
         json: include_str!("../../../resources/provider-models/anthropic.json"),
     },
+    EmbeddedProviderModels {
+        provider_id: "qwen",
+        json: include_str!("../../../resources/provider-models/qwen.json"),
+    },
 ];
