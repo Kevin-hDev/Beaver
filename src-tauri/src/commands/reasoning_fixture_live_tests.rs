@@ -5,6 +5,8 @@ use tauri::Manager;
 
 #[path = "reasoning_fixture_live_support.rs"]
 mod support;
+#[path = "reasoning_fixture_live_vision.rs"]
+mod vision;
 
 use support::{LiveSpec, LIVE_SPECS};
 
@@ -29,6 +31,24 @@ pub(crate) async fn refresh_live_reasoning_fixture_matrix_once(
     }) {
         if let Err(error) = run_spec(app, spec).await {
             failures.push(format!("{}:{}={error}", spec.provider, spec.model));
+        }
+    }
+    let vision_specs = LIVE_SPECS
+        .iter()
+        .filter(|spec| {
+            matches!(spec.provider, "anthropic" | "qwen")
+                && spec.mode == "medium"
+                && selected.as_deref().is_none_or(|routes| {
+                    routes.split(',').any(|route| route.trim() == spec.provider)
+                })
+                && !failures
+                    .iter()
+                    .any(|failure| failure.starts_with(&format!("{}:", spec.provider)))
+        })
+        .collect::<Vec<_>>();
+    for spec in vision_specs {
+        if let Err(error) = vision::run(app, spec).await {
+            failures.push(format!("{}:vision={error}", spec.provider));
         }
     }
     if failures.is_empty() {
@@ -61,6 +81,7 @@ async fn run_spec(app: &tauri::App, spec: &LiveSpec) -> Result<(), String> {
             spec,
             &session.id,
             "Call fixture.write_note with value fixture, then confirm briefly.",
+            Vec::new(),
         )
         .await?;
         run_turn(
@@ -68,12 +89,13 @@ async fn run_spec(app: &tauri::App, spec: &LiveSpec) -> Result<(), String> {
             spec,
             &session.id,
             "Call fixture.read_note, then report its value briefly.",
+            Vec::new(),
         )
         .await?;
         super::reasoning_fixture::export_reasoning_fixture_report_with_variant(
             session.id.clone(),
             spec.region.to_string(),
-            (spec.provider == "deepseek").then_some(spec.mode),
+            matches!(spec.provider, "deepseek" | "anthropic" | "qwen").then_some(spec.mode),
         )
         .await
         .map(|_| ())
@@ -106,6 +128,7 @@ async fn run_turn(
     spec: &LiveSpec,
     session_id: &str,
     content: &str,
+    files: Vec<crate::models::agent_turn_contract::TurnAttachmentInput>,
 ) -> Result<(), String> {
     let request = super::agent_chat_run::ChatStreamRequest::from_input(ChatStreamRequestInput {
         session_id: session_id.to_string(),
@@ -113,7 +136,7 @@ async fn run_turn(
         provider: spec.provider.to_string(),
         turn: TurnStart::New(NewUserTurnInput {
             content: content.to_string(),
-            files: Vec::new(),
+            files,
             skills: Vec::new(),
         }),
         working_dir: None,
@@ -163,12 +186,41 @@ mod vision_tests {
         assert!(!super::super::reasoning_fixture_vision::inline_base64()
             .unwrap()
             .is_empty());
+        let attachment = super::super::reasoning_fixture_vision::inline_attachment().unwrap();
+        assert!(attachment.path.is_empty());
+        assert_eq!(attachment.mime_type, "image/png");
+        assert_eq!(attachment.size, first.len() as u64);
+        assert!(attachment
+            .thumbnail
+            .as_deref()
+            .unwrap()
+            .starts_with("data:image/png;base64,"));
 
         let image = image::load_from_memory(&first).unwrap().to_rgba8();
-        assert_eq!(image.dimensions(), (8, 8));
+        assert_eq!(image.dimensions(), (64, 64));
         assert_eq!(image.get_pixel(1, 1).0, [255, 0, 0, 255]);
-        assert_eq!(image.get_pixel(6, 1).0, [0, 255, 0, 255]);
-        assert_eq!(image.get_pixel(1, 6).0, [0, 0, 255, 255]);
-        assert_eq!(image.get_pixel(6, 6).0, [255, 255, 0, 255]);
+        assert_eq!(image.get_pixel(62, 1).0, [0, 255, 0, 255]);
+        assert_eq!(image.get_pixel(1, 62).0, [0, 0, 255, 255]);
+        assert_eq!(image.get_pixel(62, 62).0, [255, 255, 0, 255]);
+    }
+
+    #[test]
+    fn live_specs_include_each_candidate_reasoning_mode_once() {
+        let tuples = super::LIVE_SPECS
+            .iter()
+            .filter(|spec| matches!(spec.provider, "anthropic" | "qwen"))
+            .map(|spec| (spec.provider, spec.model, spec.region, spec.mode))
+            .collect::<Vec<_>>();
+        assert_eq!(
+            tuples,
+            vec![
+                ("anthropic", "claude-haiku-4-5-20251001", "france", "low"),
+                ("anthropic", "claude-haiku-4-5-20251001", "france", "medium"),
+                ("anthropic", "claude-haiku-4-5-20251001", "france", "high"),
+                ("qwen", "qwen3.8-flash", "singapore", "low"),
+                ("qwen", "qwen3.8-flash", "singapore", "medium"),
+                ("qwen", "qwen3.8-flash", "singapore", "xhigh"),
+            ]
+        );
     }
 }

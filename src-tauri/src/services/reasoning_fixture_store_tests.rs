@@ -75,3 +75,24 @@ fn derives_a_distinct_canonical_report_name_for_each_validated_effort() {
     assert_eq!(id, "deepseek-api-deepseek-v4-flash-low-france-2026-08-29");
     assert!(validate_fixture_id(&id).is_ok());
 }
+
+#[test]
+fn candidate_provider_reports_keep_the_exact_route_and_effort() {
+    let date = chrono::NaiveDate::from_ymd_opt(2026, 8, 29).unwrap();
+    assert_eq!(
+        derive_fixture_id_with_variant(
+            "anthropic",
+            "claude-haiku-4-5-20251001",
+            "high",
+            "france",
+            date,
+        )
+        .unwrap(),
+        "anthropic-api-claude-haiku-4-5-20251001-high-france-2026-08-29"
+    );
+    assert_eq!(
+        derive_fixture_id_with_variant("qwen", "qwen3.8-flash", "xhigh", "singapore", date,)
+            .unwrap(),
+        "qwen-api-qwen3-8-flash-xhigh-singapore-2026-08-29"
+    );
+}

@@ -89,6 +89,8 @@ fn provider_route(provider: &str) -> Option<(&'static str, &'static str)> {
         "moonshot-oauth" => ("moonshot", "oauth"),
         "zai" => ("zai", "api"),
         "codex-oauth" => ("codex", "oauth"),
+        "anthropic" => ("anthropic", "api"),
+        "qwen" => ("qwen", "api"),
         _ => return None,
     })
 }

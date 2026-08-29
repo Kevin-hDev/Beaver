@@ -1,8 +1,8 @@
 use base64::{engine::general_purpose::STANDARD, Engine};
 use image::{codecs::png::PngEncoder, ExtendedColorType, ImageEncoder};
 
-pub(crate) const WIDTH: u32 = 8;
-pub(crate) const HEIGHT: u32 = 8;
+pub(crate) const WIDTH: u32 = 64;
+pub(crate) const HEIGHT: u32 = 64;
 pub(crate) const MIME: &str = "image/png";
 const MAX_BYTES: usize = 4 * 1024;
 
@@ -31,4 +31,18 @@ pub(crate) fn png_bytes() -> Result<Vec<u8>, String> {
 
 pub(crate) fn inline_base64() -> Result<String, String> {
     png_bytes().map(|bytes| STANDARD.encode(bytes))
+}
+
+pub(crate) fn inline_attachment(
+) -> Result<crate::models::agent_turn_contract::TurnAttachmentInput, String> {
+    let bytes = png_bytes()?;
+    let encoded = STANDARD.encode(&bytes);
+    Ok(crate::models::agent_turn_contract::TurnAttachmentInput {
+        name: "reasoning-fixture-quadrants.png".into(),
+        path: String::new(),
+        mime_type: MIME.into(),
+        size: bytes.len() as u64,
+        thumbnail: Some(format!("data:{MIME};base64,{encoded}")),
+        access_grant: None,
+    })
 }
