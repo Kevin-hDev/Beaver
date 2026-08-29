@@ -8,10 +8,9 @@ use super::runtime_command::{run_runtime_command, RuntimeStage};
 static LOG_GUARD: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 
 const INHERITED_PIPE_TIMEOUT: Duration = Duration::from_secs(2);
-#[cfg(windows)]
+// The process-tree tests prove cleanup after a timeout, so every CI platform
+// must first have enough time to start Python and publish the owned PIDs.
 const PROCESS_START_TIMEOUT: Duration = Duration::from_secs(2);
-#[cfg(not(windows))]
-const PROCESS_START_TIMEOUT: Duration = Duration::from_millis(50);
 const PROCESS_CLEANUP_BOUND: Duration = Duration::from_millis(900);
 #[cfg(windows)]
 const COMMAND_COMPLETION_TIMEOUT: Duration = Duration::from_secs(3);
