@@ -195,12 +195,12 @@ pub struct StreamResult {
     pub prompt_tokens: Option<u32>,
     pub usage: Option<crate::services::provider_usage::RequestUsage>,
     pub generation: super::generation_metrics::GenerationTracker,
-    /// Diagnostic Ollama : raison de fin renvoyée par le chunk `done:true`
-    /// (ex: "stop", "length", "tool_call"). None si le champ est absent.
+    /// Diagnostic provider : raison de fin renvoyée par l'événement final.
+    /// Exemples : "stop", "length", "tool_call". None si le champ est absent.
     pub done_reason: Option<String>,
     /// Diagnostic Ollama : durée totale (ns) annoncée par le chunk final.
     pub total_duration_ns: Option<u64>,
-    /// Diagnostic : nombre total de chunks NDJSON reçus d'Ollama.
+    /// Diagnostic : nombre total d'événements de stream reçus du provider.
     pub total_chunks: u32,
     /// Diagnostic : chunks reçus sans contenu/thinking/tool_call ni `done:true`.
     /// Piste du bug "stream s'arrête après un tool" (cf. pydantic-ai #1292).

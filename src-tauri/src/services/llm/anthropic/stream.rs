@@ -49,6 +49,7 @@ pub(in crate::services::llm) async fn consume_stream(
                 if let Some(measurement) = measurement.as_mut() {
                     measurement.mark_first_event();
                 }
+                result.total_chunks = result.total_chunks.saturating_add(1);
                 let content_start = state.content.len();
                 let thinking_start = state.thinking.chars().count();
                 let tool_start = state.tool_calls.len();
@@ -108,16 +109,14 @@ pub(in crate::services::llm) async fn consume_stream(
             capture.observe_done(&serde_json::json!({"type": "message_stop"}));
         }
     }
-    result.prompt_tokens = consumed
-        .usage
-        .as_ref()
-        .and_then(|usage| usage.input_tokens)
-        .and_then(|value| value.try_into().ok());
+    result.prompt_tokens =
+        super::stream_state_support::context_input_tokens(consumed.usage.as_ref());
     result.eval_count = consumed
         .usage
         .as_ref()
         .and_then(|usage| usage.output_tokens)
         .and_then(|value| value.try_into().ok());
+    result.done_reason = consumed.finish_reason.clone();
     result.usage = consumed.usage;
     result.continuation = reasoning_capture.and_then(|mut capture| {
         if interrupted {
@@ -144,6 +143,7 @@ pub(super) async fn consume_silent(
 
     let mut events = response.bytes_stream().eventsource();
     let mut state = StreamState::default();
+    let mut total_chunks = 0_u32;
     loop {
         tokio::select! {
             biased;
@@ -160,6 +160,7 @@ pub(super) async fn consume_silent(
                 if let Some(measurement) = measurement.as_mut() {
                     measurement.mark_first_event();
                 }
+                total_chunks = total_chunks.saturating_add(1);
                 state.apply(&value, usage_context)?;
                 if value.get("type").and_then(serde_json::Value::as_str) == Some("message_stop") {
                     break;
@@ -171,16 +172,14 @@ pub(super) async fn consume_silent(
     Ok(crate::services::agent_local::types_ollama::StreamResult {
         content: consumed.content,
         thinking: consumed.thinking,
-        prompt_tokens: consumed
-            .usage
-            .as_ref()
-            .and_then(|usage| usage.input_tokens)
-            .and_then(|value| value.try_into().ok()),
+        prompt_tokens: super::stream_state_support::context_input_tokens(consumed.usage.as_ref()),
         eval_count: consumed
             .usage
             .as_ref()
             .and_then(|usage| usage.output_tokens)
             .and_then(|value| value.try_into().ok()),
+        done_reason: consumed.finish_reason,
+        total_chunks,
         usage: consumed.usage,
         ..Default::default()
     })

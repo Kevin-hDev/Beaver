@@ -267,6 +267,9 @@ async fn network_consumer_exposes_anthropic_thinking_to_the_session() {
     };
 
     assert_eq!(result.thinking, "private");
+    assert_eq!(result.prompt_tokens, Some(220));
+    assert_eq!(result.done_reason.as_deref(), Some("tool_use"));
+    assert_eq!(result.total_chunks, 18);
 }
 
 #[tokio::test]

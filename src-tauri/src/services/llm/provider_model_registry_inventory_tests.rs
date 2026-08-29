@@ -75,9 +75,10 @@ fn model_studio_inventory_covers_every_documented_thinking_family() {
             "glm-5.2",
             &["off", "low", "medium", "high", "xhigh", "max"][..],
         ),
-        ("ZHIPU/GLM-5.3", &["low", "high", "max"][..]),
+        ("ZHIPU/GLM-5.3", &["auto"][..]),
         ("kimi-k2.6", &["off", "auto"][..]),
         ("kimi-k2.7-code", &["auto"][..]),
+        ("kimi-k3", &["auto"][..]),
         ("MiniMax-M2.5", &["auto"][..]),
     ] {
         let entry = lookup("qwen", model).unwrap_or_else(|| panic!("missing qwen/{model}"));

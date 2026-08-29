@@ -243,7 +243,8 @@ fn model_studio_uses_each_documented_reasoning_contract() {
         ("deepseek-v4-pro", "max", Some(true), None, Some("max")),
         ("glm-5.2", "xhigh", Some(true), None, Some("xhigh")),
         ("kimi-k2.6", "auto", Some(true), Some(true), None),
-        ("kimi-k3", "low", None, None, Some("low")),
+        ("kimi-k3", "auto", None, None, None),
+        ("kimi/kimi-k3", "auto", None, Some(true), None),
     ];
 
     for (model, mode, enabled, preserved, effort) in cases {

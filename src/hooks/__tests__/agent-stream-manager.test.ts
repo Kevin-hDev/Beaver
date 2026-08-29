@@ -222,6 +222,41 @@ describe("agentStreamManager", () => {
     }));
   });
 
+  it("replie la réponse terminée dans l'anneau avant de vider le stream", async () => {
+    const turn = {
+      turnId: "00000000-0000-4000-8000-000000000011",
+      userMessageId: "00000000-0000-4000-8000-000000000012",
+      assistantMessageId: "00000000-0000-4000-8000-000000000013",
+    };
+    await agentStreamManager.startSession(
+      "context", [message("optimistic", "user", "Question")], 22,
+    );
+    const record = records.get("context");
+    if (!record) throw new Error("missing stream record");
+    record.state.contextUsageBuckets = {
+      messages: 22,
+      systemTools: 0,
+      mcpConnectors: 0,
+      skills: 0,
+      memory: 0,
+      metaContext: 0,
+      systemPrompt: 0,
+    };
+    agentStreamManager.setSessionGeneration("context", 7);
+    agentStreamManager.reconcileTurnAdmission(
+      "context", { generation: 7, ...turn }, "optimistic",
+    );
+    emit("context", {
+      event: "token", data: { content: "a".repeat(80), tokenCount: 20, tps: 1 },
+    }, 7);
+    emit("context", { event: "turnEnd", data: {} }, 7);
+    emit("context", { event: "turnCommitted", data: turn }, 7);
+
+    const after = agentStreamManager.getSnapshot("context");
+    expect(after?.contextUsageBuckets?.messages).toBe(42);
+    expect(after?.completedSegments).toEqual([]);
+  });
+
   it("met en file une intention pendant l'attente de la génération Rust", async () => {
     await agentStreamManager.startSession(
       "s1", [message("u1", "user", "Question")], 10, "chat", true,

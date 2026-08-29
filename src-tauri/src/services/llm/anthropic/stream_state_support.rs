@@ -70,6 +70,15 @@ pub(super) fn merge_usage(current: &mut RequestUsage, update: RequestUsage) {
         .map(|(input, output)| input.saturating_add(output));
 }
 
+pub(super) fn context_input_tokens(usage: Option<&RequestUsage>) -> Option<u32> {
+    let usage = usage?;
+    let total = usage
+        .input_tokens?
+        .checked_add(usage.cached_input_tokens.unwrap_or(0))?
+        .checked_add(usage.cache_write_input_tokens.unwrap_or(0))?;
+    total.try_into().ok()
+}
+
 pub(super) fn serialized_len(value: &Value) -> Result<usize, String> {
     serde_json::to_vec(value)
         .map(|bytes| bytes.len())

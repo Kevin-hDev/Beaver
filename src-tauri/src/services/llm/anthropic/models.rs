@@ -67,7 +67,10 @@ fn merge_remote_model(item: &Value) -> Result<ModelInfo, LlmError> {
             .or_else(|| local.as_ref().and_then(|model| model.max_output_tokens)),
         supports_tools: capability(item, &["tools", "tool_use"])
             .or_else(|| local.as_ref().map(|model| model.supports_tools))
-            .unwrap_or(false),
+            // L'API Models Anthropic ne publie pas cette capacité. Tous les
+            // modèles Claude disponibles le 2026-08-29 acceptent les tools ;
+            // un refus explicite distant ou embarqué garde toutefois priorité.
+            .unwrap_or(true),
         supports_vision: capability(item, &["image_input"])
             .or_else(|| local.as_ref().map(|model| model.supports_vision))
             .unwrap_or(false),

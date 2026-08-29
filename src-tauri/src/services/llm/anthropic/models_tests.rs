@@ -50,7 +50,7 @@ fn catalog_keeps_every_available_claude_model_and_its_native_capabilities() {
     assert_eq!(models[1].id, OPUS);
     assert_eq!(models[1].context_length, Some(1_000_000));
     assert_eq!(models[1].max_output_tokens, Some(128_000));
-    assert!(!models[1].supports_tools);
+    assert!(models[1].supports_tools);
     assert!(models[1].supports_vision);
     assert!(models[1].supports_thinking);
     assert_eq!(
@@ -136,13 +136,13 @@ fn catalog_rejects_oversize_and_skips_only_invalid_ids() {
 }
 
 #[test]
-fn missing_remote_capabilities_are_not_invented() {
+fn missing_remote_tool_capability_uses_the_anthropic_route_contract() {
     let models = super::models::parse_catalog(&json!({
         "data": [{"id": OPUS, "display_name": "Claude Opus 4.8"}]
     }))
     .unwrap();
 
-    assert!(!models[0].supports_tools);
+    assert!(models[0].supports_tools);
     assert!(!models[0].supports_vision);
 }
 
