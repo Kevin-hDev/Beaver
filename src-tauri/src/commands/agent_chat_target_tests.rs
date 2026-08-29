@@ -321,14 +321,14 @@ async fn api_mode_is_identical_from_resolution_through_payload_and_provenance() 
         .unwrap();
     assert_eq!(stored.reasoning_mode.as_deref(), Some("high"));
     assert!(matches!(target.continuation, ContinuationTarget::Replay(_)));
-    assert!(stored.messages[0].replay_source.is_none());
+    assert!(stored.messages[0].replay_source.is_some());
     assert_eq!(payload["thinking"]["type"], "enabled");
     assert_eq!(payload["reasoning_effort"], "high");
     cleanup(&session.id).await;
 }
 
 #[tokio::test]
-async fn disabled_deepseek_resume_does_not_store_replay_provenance() {
+async fn deepseek_resume_replaces_provenance_after_mode_and_scope_change() {
     let mut session = crate::services::agent_local::session_store::create_full(
         "Resume provenance",
         "deepseek-v4-flash",
@@ -394,8 +394,14 @@ async fn disabled_deepseek_resume_does_not_store_replay_provenance() {
     let stored = crate::services::agent_local::session_store::get(&session_id)
         .await
         .unwrap();
-    assert!(stored.messages.last().unwrap().replay_source.is_none());
-    assert_eq!(stored.messages.last().unwrap().content, "edited retry");
+    let resumed = stored.messages.last().unwrap();
+    let source = resumed.replay_source.as_ref().unwrap();
+    assert_eq!(source.reasoning_mode, ReasoningModeId::High);
+    assert_eq!(
+        source.credential_scope,
+        CredentialScope::authenticated("new-scope").unwrap()
+    );
+    assert_eq!(resumed.content, "edited retry");
     cleanup(&session_id).await;
 }
 

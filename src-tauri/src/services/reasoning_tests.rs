@@ -47,7 +47,7 @@ fn provider_specific_modes_are_distinct() {
     assert!(supported_modes("mistral", "mistral-small-2506", true).is_empty());
     assert_eq!(
         supported_modes("deepseek", "deepseek-v4-pro", true),
-        &["off", "high", "xhigh"]
+        &["off", "low", "high", "max"]
     );
     assert_eq!(
         supported_modes("google", "gemini-3.5-flash", true),

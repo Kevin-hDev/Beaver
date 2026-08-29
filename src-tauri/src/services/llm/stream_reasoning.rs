@@ -100,6 +100,9 @@ fn apply_deepseek(payload: &mut Value, reasoning_mode: Option<&str>) {
     }
     payload["thinking"] = serde_json::json!({ "type": "enabled" });
     payload["reasoning_effort"] = match reasoning_mode {
+        Some("low") => "low",
+        Some("max") => "max",
+        // Compatibilité des sessions créées avant l'exposition du mode `max`.
         Some("xhigh") => "max",
         _ => "high",
     }

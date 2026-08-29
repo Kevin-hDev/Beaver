@@ -16,12 +16,14 @@ fn payload(provider: &str, model: &str, mode: Option<&str>) -> serde_json::Value
 
 #[test]
 fn deepseek_payload_uses_thinking_and_effort() {
-    let high = payload("deepseek", "deepseek-v4-pro", Some("high"));
-    assert_eq!(high["thinking"], json!({ "type": "enabled" }));
-    assert_eq!(high["reasoning_effort"], "high");
+    for effort in ["low", "high", "max"] {
+        let selected = payload("deepseek", "deepseek-v4-pro", Some(effort));
+        assert_eq!(selected["thinking"], json!({ "type": "enabled" }));
+        assert_eq!(selected["reasoning_effort"], effort);
+    }
 
-    let max = payload("deepseek", "deepseek-v4-pro", Some("xhigh"));
-    assert_eq!(max["reasoning_effort"], "max");
+    let legacy_xhigh = payload("deepseek", "deepseek-v4-pro", Some("xhigh"));
+    assert_eq!(legacy_xhigh["reasoning_effort"], "max");
 
     let off = payload("deepseek", "deepseek-v4-pro", Some("off"));
     assert_eq!(off["thinking"], json!({ "type": "disabled" }));

@@ -7,13 +7,37 @@ pub(crate) fn derive_fixture_id(
     region: &str,
     date: chrono::NaiveDate,
 ) -> Result<String, String> {
+    derive_fixture_id_inner(provider, model, None, region, date)
+}
+
+pub(crate) fn derive_fixture_id_with_variant(
+    provider: &str,
+    model: &str,
+    variant: &str,
+    region: &str,
+    date: chrono::NaiveDate,
+) -> Result<String, String> {
+    derive_fixture_id_inner(provider, model, Some(variant), region, date)
+}
+
+fn derive_fixture_id_inner(
+    provider: &str,
+    model: &str,
+    variant: Option<&str>,
+    region: &str,
+    date: chrono::NaiveDate,
+) -> Result<String, String> {
     let (provider, route) = provider_route(provider).ok_or_else(unavailable)?;
     let region = canonical_region(region)?;
+    let model = canonical_component(model, "model");
+    let model = variant.map_or(model.clone(), |variant| {
+        format!("{model}-{}", canonical_component(variant, "variant"))
+    });
     let identifier = format!(
         "{}-{}-{}-{}-{}",
         provider,
         route,
-        canonical_component(model, "model"),
+        model,
         region,
         date.format("%Y-%m-%d")
     );

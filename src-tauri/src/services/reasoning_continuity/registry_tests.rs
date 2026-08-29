@@ -60,6 +60,23 @@ fn every_live_activation_has_one_checked_in_capture_and_replay_proof() {
             }));
         }
     }
+
+    for policy in active_routes()
+        .iter()
+        .flat_map(|route| route.models)
+        .filter(|policy| policy.activation == ActivationState::LiveValidated)
+    {
+        let fixture_id = policy.fixture_id.expect("live fixture id");
+        let bytes = std::fs::read(root.join(format!("{fixture_id}.json")))
+            .expect("read exact-mode fixture proof");
+        let report: serde_json::Value =
+            serde_json::from_slice(&bytes).expect("parse exact-mode fixture proof");
+        assert_eq!(
+            report["reasoning_mode"],
+            serde_json::to_value(policy.reasoning_mode).unwrap(),
+            "{fixture_id} does not prove its activated reasoning mode"
+        );
+    }
 }
 
 #[test]
@@ -243,31 +260,33 @@ fn exact_mode_and_continuation_use_are_independent_policy_dimensions() {
 }
 
 #[test]
-fn deepseek_user_replay_is_forbidden_while_tool_replay_is_required() {
+fn deepseek_replay_is_required_for_every_supported_effort_and_continuation() {
     let scope = CredentialScope::authenticated("fixture-scope").unwrap();
-    let target = |continuation_use| ReplayTarget {
+    let target = |reasoning_mode, continuation_use| ReplayTarget {
         route_id: RouteId::DeepSeek,
         model_id: "deepseek-v4-flash".into(),
         credential_scope: scope.clone(),
-        reasoning_mode: ReasoningModeId::High,
+        reasoning_mode,
         continuation_use,
     };
 
-    assert_eq!(
-        replay_policy(&target(ContinuationUse::UserContinuation))
-            .unwrap()
-            .requirement(),
-        ReplayRequirement::Forbidden
-    );
-    assert_eq!(
-        replay_policy(&target(ContinuationUse::ToolContinuation))
-            .unwrap()
-            .requirement(),
-        ReplayRequirement::Required
-    );
+    for reasoning_mode in [
+        ReasoningModeId::Low,
+        ReasoningModeId::High,
+        ReasoningModeId::Max,
+    ] {
+        for continuation_use in [
+            ContinuationUse::UserContinuation,
+            ContinuationUse::ToolContinuation,
+        ] {
+            let policy = replay_policy(&target(reasoning_mode, continuation_use)).unwrap();
+            assert_eq!(policy.requirement(), ReplayRequirement::Required);
+            assert_eq!(policy.activation(), ActivationState::LiveValidated);
+        }
+    }
     assert!(replay_policy(&ReplayTarget {
         reasoning_mode: ReasoningModeId::Off,
-        ..target(ContinuationUse::ToolContinuation)
+        ..target(ReasoningModeId::High, ContinuationUse::ToolContinuation)
     })
     .is_none());
 
@@ -290,10 +309,10 @@ fn deepseek_user_replay_is_forbidden_while_tool_replay_is_required() {
             &envelope,
             &ReplayTarget {
                 reasoning_mode: ReasoningModeId::Low,
-                ..target(ContinuationUse::ToolContinuation)
+                ..target(ReasoningModeId::High, ContinuationUse::ToolContinuation)
             }
         ),
-        ReplayDecision::Blocked(BlockReason::UnknownTarget)
+        ReplayDecision::Blocked(BlockReason::ProvenanceMismatch)
     );
 }
 
@@ -389,9 +408,23 @@ fn only_exact_live_fixture_pairs_are_activated() {
         (
             RouteId::DeepSeek,
             "deepseek-v4-flash",
+            ReasoningModeId::Low,
+            ReplayRequirement::Required,
+            "deepseek-api-deepseek-v4-flash-low-france-2026-08-29",
+        ),
+        (
+            RouteId::DeepSeek,
+            "deepseek-v4-flash",
             ReasoningModeId::High,
             ReplayRequirement::Required,
-            "deepseek-api-deepseek-v4-flash-france-2026-08-26",
+            "deepseek-api-deepseek-v4-flash-high-france-2026-08-29",
+        ),
+        (
+            RouteId::DeepSeek,
+            "deepseek-v4-flash",
+            ReasoningModeId::Max,
+            ReplayRequirement::Required,
+            "deepseek-api-deepseek-v4-flash-max-france-2026-08-29",
         ),
         (
             RouteId::Xai,
@@ -429,7 +462,7 @@ fn only_exact_live_fixture_pairs_are_activated() {
             "zai-api-glm-4-5-flash-local-2026-08-26",
         ),
     ];
-    let expected_count = expected.len() * 2 - 1;
+    let expected_count = expected.len() * 2;
     assert_eq!(live.len(), expected_count);
     for (route, model) in &live {
         assert!(expected.iter().any(|entry| {
@@ -439,34 +472,32 @@ fn only_exact_live_fixture_pairs_are_activated() {
                 && model.requirement == entry.3
                 && model.fixture_id == Some(entry.4)
         }));
-        if *route == RouteId::DeepSeek {
-            assert_eq!(model.continuation_use, ContinuationUse::ToolContinuation);
+        assert!(matches!(
+            model.continuation_use,
+            ContinuationUse::UserContinuation | ContinuationUse::ToolContinuation
+        ));
+        let expected_date = if *route == RouteId::DeepSeek {
+            "2026-08-29"
         } else {
-            assert!(matches!(
-                model.continuation_use,
-                ContinuationUse::UserContinuation | ContinuationUse::ToolContinuation
-            ));
-        }
-        assert_eq!(model.fixture_date, Some("2026-08-26"));
+            "2026-08-26"
+        };
+        assert_eq!(model.fixture_date, Some(expected_date));
     }
     for entry in expected {
         for continuation_use in [
             ContinuationUse::UserContinuation,
             ContinuationUse::ToolContinuation,
         ] {
-            let expected_occurrences = usize::from(
-                entry.0 != RouteId::DeepSeek
-                    || continuation_use == ContinuationUse::ToolContinuation,
-            );
             assert_eq!(
                 live.iter()
                     .filter(|(route, model)| {
                         *route == entry.0
                             && model.model_id == entry.1
+                            && model.reasoning_mode == entry.2
                             && model.continuation_use == continuation_use
                     })
                     .count(),
-                expected_occurrences
+                1
             );
         }
     }

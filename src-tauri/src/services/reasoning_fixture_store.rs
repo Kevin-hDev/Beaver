@@ -11,7 +11,7 @@ static WRITE_LOCK: OnceLock<tokio::sync::Mutex<()>> = OnceLock::new();
 
 #[path = "reasoning_fixture_store_id.rs"]
 mod fixture_id;
-pub(crate) use fixture_id::derive_fixture_id;
+pub(crate) use fixture_id::{derive_fixture_id, derive_fixture_id_with_variant};
 use fixture_id::{is_report_name, validate_fixture_id};
 
 #[cfg(debug_assertions)]

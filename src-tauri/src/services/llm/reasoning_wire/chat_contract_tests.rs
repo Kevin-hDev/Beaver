@@ -186,7 +186,7 @@ fn deepseek_reasoning_tool_continuation_uses_the_tool_contract_even_when_admissi
 }
 
 #[test]
-fn deepseek_user_continuation_emits_neither_reasoning_nor_replay_evidence() {
+fn deepseek_user_continuation_with_tools_replays_all_prior_reasoning() {
     let target = fixture_target(replay_target(
         RouteId::DeepSeek,
         "deepseek-v4-flash",
@@ -196,27 +196,54 @@ fn deepseek_user_continuation_emits_neither_reasoning_nor_replay_evidence() {
     let replay = target.replay().unwrap();
     let messages = [
         ChatMessage::assistant(
-            "answer".into(),
+            "first answer".into(),
             None,
             Some(envelope(
                 replay,
                 ContractId::DeepSeekChatV1,
                 CompletionState::Complete,
                 ContinuationState::ChatReasoning {
-                    reasoning_content: "opaque-user".into(),
+                    reasoning_content: "opaque-first".into(),
                 },
             )),
             None,
             None,
         ),
-        ChatMessage::user("follow up".into()),
+        ChatMessage::user("second question".into()),
+        ChatMessage::assistant(
+            "second answer".into(),
+            None,
+            Some(envelope(
+                replay,
+                ContractId::DeepSeekChatV1,
+                CompletionState::Complete,
+                ContinuationState::ChatReasoning {
+                    reasoning_content: "opaque-second".into(),
+                },
+            )),
+            None,
+            None,
+        ),
+        ChatMessage::user("use a tool now".into()),
     ];
+    let tools = [serde_json::json!({
+        "type": "function",
+        "function": {
+            "name": "lookup",
+            "description": "Read deterministic fixture data.",
+            "parameters": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": false
+            }
+        }
+    })];
 
     let cfg = RequestConfig {
         provider_id: "deepseek",
         model: "deepseek-v4-flash",
         messages: &messages,
-        tools: &[],
+        tools: &tools,
         think: true,
         reasoning_mode: Some("high"),
         max_tokens: None,
@@ -227,12 +254,17 @@ fn deepseek_user_continuation_emits_neither_reasoning_nor_replay_evidence() {
     };
     let prepared =
         build_chat_payload_with_evidence(&cfg, &route::resolve("deepseek").unwrap(), None)
-            .expect("forbidden user replay remains a regular payload");
+            .expect("tool-enabled user continuation payload");
 
-    assert!(prepared.payload["messages"][0]
-        .get("reasoning_content")
-        .is_none());
-    assert!(prepared.replayed.is_empty());
+    assert_eq!(
+        prepared.payload["messages"][0]["reasoning_content"],
+        "opaque-first"
+    );
+    assert_eq!(
+        prepared.payload["messages"][2]["reasoning_content"],
+        "opaque-second"
+    );
+    assert_eq!(prepared.replayed.len(), 2);
 }
 
 #[tokio::test]
