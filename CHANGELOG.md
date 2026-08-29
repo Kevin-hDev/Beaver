@@ -4,6 +4,30 @@
 
 ---
 
+## v1.1.8
+
+### Provider transport refactoring
+
+- **Centralized provider contracts** — Beaver now defines availability, authentication, request payloads, tool behavior, image inputs, streaming, errors, prompt caching, and metrics through one authoritative transport profile for each active provider route.
+- **Reliable runtime capabilities** — selectable models use validated embedded metadata or provider catalogs instead of inferring tools, vision, and reasoning support from model names, while newly discovered models keep the capabilities published by their provider.
+- **Consistent tools and reasoning continuity** — regular chats, tool continuations, scheduled wakeups, API-key checks, and native Ollama flows now use the same provider decisions and preserve validated provider-native reasoning state between turns.
+- **Direct Groq integration removed** — obsolete Groq configuration and credentials are migrated and cleaned up safely, while Groq-hosted models remain available through supported upstream routes where applicable.
+- **Regression protection** — CI now prevents provider-specific branching from spreading outside approved transport boundaries and validates differential and cumulative streaming behavior for every supported reader.
+
+### DeepSeek reasoning continuity
+
+- **Restored tool-chain continuity** — DeepSeek V4 Flash now replays every prior native reasoning block whenever tools are present, including user-initiated continuations, preventing existing conversations from stopping after the first tool call.
+- **Complete reasoning effort controls** — DeepSeek V4 Flash and Pro now expose Off, Low, High, and Max with High as the default, while conversations created with the former Extra High option remain compatible by mapping it to Max.
+- **Mode-specific live validation** — Low, High, and Max continuity each have an independent two-turn API proof, and CI now verifies that every mode-specific fixture name matches the exact reasoning mode recorded in its report.
+
+### Updates and keyboard shortcuts
+
+- **Expanded cross-platform shortcuts** — keyboard shortcuts are now centralized for macOS, Linux, and Windows, with new controls for settings, conversation search, composer focus, session tabs, permissions, message editing, response cancellation, and interface zoom.
+- **Cancellable Beaver and Ollama updates** — active update downloads can now be cancelled, and any partially downloaded files are removed instead of being kept on disk.
+- **Dedicated updates page** — Settings now shows installed and available Beaver and Ollama versions separately, with manual update checks, individual update actions, download progress, cancellation controls, and dismissible update notifications.
+
+---
+
 ## v1.1.7
 
 ### Agent Local composer
