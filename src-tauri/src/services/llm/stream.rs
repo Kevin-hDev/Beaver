@@ -31,6 +31,26 @@ pub async fn stream_chat_no_done(
         &crate::services::reasoning_continuity::contract::ContinuationTarget,
     >,
 ) -> Result<StreamOutcome, String> {
+    #[cfg(debug_assertions)]
+    let transport = if continuation_target.is_some_and(|target| target.is_fixture_candidate()) {
+        super::stream_dispatch::resolve_fixture_transport(
+            provider_id,
+            model,
+            continuation_target.expect("fixture target"),
+            purpose,
+        )
+        .await
+    } else {
+        super::stream_dispatch::resolve_transport(
+            provider_id,
+            model,
+            super::stream_dispatch::InvocationKind::Interactive,
+            purpose,
+        )
+        .await
+    }
+    .map_err(super::stream_dispatch::RouteSelectionError::code)?;
+    #[cfg(not(debug_assertions))]
     let transport = super::stream_dispatch::resolve_transport(
         provider_id,
         model,
@@ -51,6 +71,32 @@ pub async fn stream_chat_no_done(
         fast_mode,
     );
     let result = match transport.client {
+        super::stream_dispatch::ClientKind::Anthropic => {
+            let config = RequestConfig {
+                provider_id,
+                model,
+                messages,
+                tools,
+                think,
+                reasoning_mode,
+                max_tokens: None,
+                purpose,
+                session_id: Some(session_id),
+                fast_mode,
+                continuation_target,
+            };
+            super::anthropic::stream_chat(
+                on_event,
+                &config,
+                cancel,
+                buffer_content,
+                realtime_budget,
+                reasoning_capture,
+                request_id,
+                measurement.as_mut(),
+            )
+            .await
+        }
         super::stream_dispatch::ClientKind::Codex => {
             crate::services::codex_client::stream::stream_chat_with_budget(
                 on_event,

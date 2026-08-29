@@ -3,7 +3,9 @@ use super::types_ollama::{ChatMessage, ChatRequest};
 
 #[path = "stream_diagnostics_payload_stats.rs"]
 mod payload_stats;
-use payload_stats::{chat_payload_stats, ollama_payload_stats, responses_payload_stats};
+use payload_stats::{
+    anthropic_payload_stats, chat_payload_stats, ollama_payload_stats, responses_payload_stats,
+};
 
 #[derive(Debug, Default, PartialEq)]
 struct PayloadStats {
@@ -30,10 +32,10 @@ pub async fn record_api_payload(
 ) {
     let kind = crate::services::llm::route_profile::diagnostic_payload_kind(provider_id)
         .unwrap_or("chat_completions");
-    let stats = if kind == "responses" {
-        responses_payload_stats(messages, continuation_target)
-    } else {
-        chat_payload_stats(provider_id, messages, continuation_target)
+    let stats = match kind {
+        "responses" => responses_payload_stats(messages, continuation_target),
+        "anthropic_messages" => anthropic_payload_stats(messages, continuation_target),
+        _ => chat_payload_stats(provider_id, messages, continuation_target),
     };
     record_payload(session_id, request_id, turn, provider_id, kind, stats).await;
 }

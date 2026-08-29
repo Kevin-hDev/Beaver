@@ -12,6 +12,7 @@ pub(in crate::services::llm) async fn consume_stream(
     response: reqwest::Response,
     cancel: tokio_util::sync::CancellationToken,
     buffer_content: bool,
+    mut realtime_budget: Option<crate::services::compress::realtime_budget::RealtimeBudget>,
     tools: &[serde_json::Value],
     usage_context: UsageContext<'_>,
     mut reasoning_capture: Option<crate::services::llm::reasoning_wire::ReasoningCapture>,
@@ -33,6 +34,7 @@ pub(in crate::services::llm) async fn consume_stream(
     let mut state = StreamState::default();
     let mut result = crate::services::agent_local::types_ollama::StreamResult::default();
     let mut token_count = 0;
+    let mut interrupted = false;
     loop {
         tokio::select! {
             biased;
@@ -73,16 +75,30 @@ pub(in crate::services::llm) async fn consume_stream(
                 if value.get("type").and_then(serde_json::Value::as_str) == Some("message_stop") {
                     break;
                 }
+                if crate::services::llm::stream_consume_budget::should_interrupt(
+                    &mut realtime_budget,
+                    token_count,
+                    state.has_pending_tool(),
+                ) {
+                    interrupted = true;
+                    break;
+                }
             }
         }
     }
-    let consumed = state.finish()?;
-    if let Some(capture) = reasoning_capture.as_mut() {
-        for block in &consumed.continuation_blocks {
-            capture.observe_anthropic_block(block.clone());
+    let consumed = if interrupted {
+        state.finish_partial()?
+    } else {
+        state.finish()?
+    };
+    if !interrupted {
+        if let Some(capture) = reasoning_capture.as_mut() {
+            for block in &consumed.continuation_blocks {
+                capture.observe_anthropic_block(block.clone());
+            }
+            capture.observe_persisted_tool_links(&result.tool_calls, &result.tool_call_ids);
+            capture.observe_done(&serde_json::json!({"type": "message_stop"}));
         }
-        capture.observe_persisted_tool_links(&result.tool_calls, &result.tool_call_ids);
-        capture.observe_done(&serde_json::json!({"type": "message_stop"}));
     }
     result.prompt_tokens = consumed
         .usage
@@ -95,8 +111,18 @@ pub(in crate::services::llm) async fn consume_stream(
         .and_then(|usage| usage.output_tokens)
         .and_then(|value| value.try_into().ok());
     result.usage = consumed.usage;
-    result.continuation = reasoning_capture.and_then(|mut capture| capture.finish_complete());
-    Ok(crate::services::agent_local::types_ollama::StreamOutcome::Completed(result))
+    result.continuation = reasoning_capture.and_then(|mut capture| {
+        if interrupted {
+            capture.finish_partial()
+        } else {
+            capture.finish_complete()
+        }
+    });
+    Ok(if interrupted {
+        crate::services::agent_local::types_ollama::StreamOutcome::InterruptedForCompression(result)
+    } else {
+        crate::services::agent_local::types_ollama::StreamOutcome::Completed(result)
+    })
 }
 
 fn record_tool(
@@ -129,6 +155,56 @@ fn record_tool(
     result.tool_calls.push((name, arguments.clone()));
     result.tool_call_ids.push(id);
     result.tool_call_extra_content.push(None);
+}
+
+pub(super) async fn consume_silent(
+    response: reqwest::Response,
+    cancel: tokio_util::sync::CancellationToken,
+    usage_context: UsageContext<'_>,
+    mut measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
+) -> Result<crate::services::agent_local::types_ollama::StreamResult, String> {
+    use eventsource_stream::Eventsource;
+    use futures_util::StreamExt;
+
+    let mut events = response.bytes_stream().eventsource();
+    let mut state = StreamState::default();
+    loop {
+        tokio::select! {
+            biased;
+            _ = cancel.cancelled() => return Err("Annulé".into()),
+            _ = tokio::time::sleep(super::super::timeouts::idle_timeout_for("anthropic")) => {
+                return Err("provider_temporarily_unavailable".into());
+            }
+            event = events.next() => {
+                let event = event.ok_or_else(|| "provider_connection_failed".to_string())?
+                    .map_err(|_| "provider_connection_failed".to_string())?;
+                let value = crate::services::llm::stream_sse::parse_json(&event.data)?;
+                if let Some(measurement) = measurement.as_mut() {
+                    measurement.mark_first_event();
+                }
+                state.apply(&value, usage_context)?;
+                if value.get("type").and_then(serde_json::Value::as_str) == Some("message_stop") {
+                    break;
+                }
+            }
+        }
+    }
+    let consumed = state.finish()?;
+    Ok(crate::services::agent_local::types_ollama::StreamResult {
+        content: consumed.content,
+        prompt_tokens: consumed
+            .usage
+            .as_ref()
+            .and_then(|usage| usage.input_tokens)
+            .and_then(|value| value.try_into().ok()),
+        eval_count: consumed
+            .usage
+            .as_ref()
+            .and_then(|usage| usage.output_tokens)
+            .and_then(|value| value.try_into().ok()),
+        usage: consumed.usage,
+        ..Default::default()
+    })
 }
 
 #[cfg(test)]

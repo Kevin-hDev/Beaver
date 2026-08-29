@@ -133,3 +133,31 @@ fn openrouter_diagnostics_builds_a_bare_provider_object_without_panicking() {
     assert_eq!(stats.reasoning_fields, 1);
     assert!(stats.reasoning_chars > 0);
 }
+
+#[test]
+fn anthropic_diagnostics_uses_the_native_payload_kind_without_exposing_blocks() {
+    let (target, assistant) = fixture(
+        RouteId::Anthropic,
+        "claude-haiku-4-5-20251001",
+        ReasoningModeId::Low,
+        ContractId::AnthropicMessagesV1,
+        ContinuationState::AnthropicBlocks {
+            blocks: vec![
+                json!({"type":"thinking","thinking":"opaque","signature":"AAE+/=="}),
+                json!({"type":"text","text":"answer"}),
+            ],
+        },
+    );
+    let stats = anthropic_payload_stats(
+        &[assistant, ChatMessage::user("next".into())],
+        Some(&target),
+    );
+
+    assert_eq!(
+        crate::services::llm::route_profile::diagnostic_payload_kind("anthropic"),
+        Some("anthropic_messages")
+    );
+    assert_eq!(stats.reasoning_fields, 1);
+    assert!(stats.reasoning_chars > 0);
+    assert_eq!(stats.assistant_content_chars, 6);
+}

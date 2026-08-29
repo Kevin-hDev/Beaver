@@ -411,6 +411,7 @@ fn mistral_rejects_non_block_aligned_cache_hits() {
 fn invalid_connection_is_rejected() {
     assert!(super::types::validate_connection_id("../secret").is_err());
     assert!(super::types::validate_connection_id("openai").is_ok());
+    assert!(super::types::validate_connection_id("anthropic").is_ok());
 }
 
 #[test]

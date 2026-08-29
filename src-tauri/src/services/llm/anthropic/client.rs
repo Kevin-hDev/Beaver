@@ -7,7 +7,7 @@ use crate::services::llm::route_profile::{ApiKeyHeader, AuthKind};
 use crate::services::llm::types::{LlmError, ModelInfo};
 use crate::services::secure_http::{read_json_bounded, AuthenticatedClient, LLM_BODY_LIMIT};
 
-type StaticHeaders = &'static [(&'static str, &'static str)];
+pub(super) type StaticHeaders = &'static [(&'static str, &'static str)];
 
 pub(in crate::services::llm) async fn list_models() -> Result<Vec<ModelInfo>, LlmError> {
     models::resolve_catalog(fetch_models().await)
@@ -62,7 +62,7 @@ async fn fetch_models() -> Result<Vec<ModelInfo>, LlmError> {
     models::parse_and_intersect(&body)
 }
 
-fn auth_headers() -> Result<(ApiKeyHeader, StaticHeaders), LlmError> {
+pub(super) fn auth_headers() -> Result<(ApiKeyHeader, StaticHeaders), LlmError> {
     let profile = super::super::route_profile::find("anthropic").ok_or_else(configuration_error)?;
     let AuthKind::ApiKey {
         header, headers, ..

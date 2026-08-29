@@ -120,6 +120,31 @@ fn image_is_native_base64_before_text() {
 }
 
 #[test]
+fn synthetic_fixture_image_is_one_native_block_and_oversize_fails_before_transport() {
+    let mut user = message("user", "Name the quadrants");
+    user.images = Some(vec![
+        crate::commands::reasoning_fixture_vision::inline_base64().unwrap(),
+    ]);
+    let converted = super::messages::convert(&[user], &[]).unwrap();
+    let content = converted.messages[0]["content"].as_array().unwrap();
+    assert_eq!(content.len(), 2);
+    assert_eq!(content[0]["type"], "image");
+    assert_eq!(content[0]["source"]["media_type"], "image/png");
+
+    let mut oversized = message("user", "image");
+    oversized.images = Some(vec![format!(
+        "iVBOR{}",
+        "A".repeat(
+            crate::services::llm::vision::MAX_ANTHROPIC_IMAGE_BYTES.saturating_mul(4) / 3 + 8,
+        )
+    )]);
+    assert_eq!(
+        super::messages::convert(&[oversized], &[]),
+        Err(super::BuildError::InvalidImage)
+    );
+}
+
+#[test]
 fn thinking_modes_are_bounded_by_output_limit() {
     let messages = vec![message("user", "Hi")];
     let tools = Vec::new();

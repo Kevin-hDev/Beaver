@@ -72,6 +72,10 @@ fn anthropic_profile_is_native_complete_and_candidate_only() {
             ..
         }
     ));
+    let AuthKind::ApiKey { headers, .. } = profile.auth else {
+        panic!("Anthropic API key auth")
+    };
+    assert_eq!(headers, &[("anthropic-version", "2023-06-01")]);
     assert!(super::catalog::configurable().any(|candidate| candidate.id == RouteId::Anthropic));
     assert!(!public_api().any(|candidate| candidate.id == RouteId::Anthropic));
 }

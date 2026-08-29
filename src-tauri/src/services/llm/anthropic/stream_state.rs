@@ -53,7 +53,24 @@ impl StreamState {
         if !self.complete || !self.blocks.is_empty() {
             return Err("provider_stream_invalid".into());
         }
-        Ok(ConsumedStream {
+        Ok(self.into_consumed())
+    }
+
+    pub fn finish_partial(self) -> Result<ConsumedStream, String> {
+        if self.has_pending_tool() {
+            return Err("provider_stream_invalid".into());
+        }
+        Ok(self.into_consumed())
+    }
+
+    pub fn has_pending_tool(&self) -> bool {
+        self.blocks
+            .values()
+            .any(|block| matches!(block, Block::Tool { .. }))
+    }
+
+    fn into_consumed(self) -> ConsumedStream {
+        ConsumedStream {
             content: self.content,
             thinking_text: self.thinking_text,
             continuation_blocks: self.completed_blocks,
@@ -61,7 +78,7 @@ impl StreamState {
             tool_call_ids: self.tool_call_ids,
             usage: self.usage,
             finish_reason: self.finish_reason,
-        })
+        }
     }
 
     fn start_block(&mut self, event: &Value) -> Result<(), String> {

@@ -1,6 +1,6 @@
 use super::{ReplayApplyError, ReplayApproval, ReplayEvidence};
 use crate::services::agent_local::types_ollama::ChatMessage;
-use crate::services::reasoning_continuity::contract::{ContinuationTarget, ContractId, RouteId};
+use crate::services::reasoning_continuity::contract::{ContinuationTarget, ContractId};
 use crate::services::reasoning_continuity::envelope::ContinuationState;
 use crate::services::reasoning_continuity::registry::ReplayRequirement;
 use serde_json::Value;
@@ -64,7 +64,9 @@ pub(crate) fn apply_all(
     let Some(replay_target) = target.replay() else {
         return Ok(Vec::new());
     };
-    if replay_target.route_id != RouteId::Anthropic {
+    if crate::services::reasoning_continuity::registry::route_contract(replay_target.route_id)
+        != Some(ContractId::AnthropicMessagesV1)
+    {
         return Ok(Vec::new());
     }
     let policy = crate::services::reasoning_continuity::registry::replay_policy(replay_target)

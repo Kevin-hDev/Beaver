@@ -98,6 +98,12 @@ pub mod projects;
 pub mod reasoning_fixture;
 #[cfg(debug_assertions)]
 pub(crate) mod reasoning_fixture_live_tests;
+#[cfg(debug_assertions)]
+#[allow(
+    dead_code,
+    reason = "shared by the paid vision fixtures after provider activation"
+)]
+pub(crate) mod reasoning_fixture_vision;
 pub mod registry;
 pub mod search;
 #[cfg(test)]

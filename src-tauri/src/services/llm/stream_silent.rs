@@ -43,6 +43,18 @@ pub async fn collect_chat_silent_for_compression(
         fast_mode,
     );
     let result = match transport.client {
+        super::stream_dispatch::ClientKind::Anthropic => {
+            let config = request_config(
+                provider_id,
+                fast_mode,
+                model,
+                messages,
+                Some(max_tokens),
+                purpose,
+                Some(session_id),
+            );
+            super::anthropic::collect_silent(&config, cancel, measurement.as_mut()).await
+        }
         super::stream_dispatch::ClientKind::Codex => {
             crate::services::codex_client::stream::collect_chat_silent_for_compression(
                 model,

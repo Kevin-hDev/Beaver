@@ -56,9 +56,8 @@ pub(crate) fn diagnostic_payload_kind(provider_id: &str) -> Option<&'static str>
     let family = find(provider_id)?.wire.family;
     Some(match family {
         WireFamily::OpenAiResponses => "responses",
-        WireFamily::OpenAiChatCompletions
-        | WireFamily::OllamaNative
-        | WireFamily::AnthropicMessages => "chat_completions",
+        WireFamily::AnthropicMessages => "anthropic_messages",
+        WireFamily::OpenAiChatCompletions | WireFamily::OllamaNative => "chat_completions",
     })
 }
 

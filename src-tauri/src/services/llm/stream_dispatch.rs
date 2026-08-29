@@ -16,6 +16,7 @@ pub(super) enum ClientKind {
     XaiOauth(XaiBackend),
     Codex,
     OllamaLocal,
+    Anthropic,
 }
 
 #[derive(Debug)]
@@ -145,7 +146,11 @@ fn resolve_checked(
             };
             (ClientKind::XaiOauth(backend), usage, fragments)
         }
-        ClientSelector::Anthropic => return Err(RouteSelectionError::UnknownRoute),
+        ClientSelector::Anthropic => (
+            ClientKind::Anthropic,
+            profile.wire.usage,
+            profile.wire.fragments,
+        ),
     };
     Ok(ResolvedTransport {
         profile,
@@ -155,6 +160,31 @@ fn resolve_checked(
         error_policy: profile.policies.errors,
         xai_catalog_model,
     })
+}
+
+#[cfg(debug_assertions)]
+pub(super) async fn resolve_fixture_transport(
+    route_id: &str,
+    model: &str,
+    target: &crate::services::reasoning_continuity::contract::ContinuationTarget,
+    purpose: RequestPurpose,
+) -> Result<ResolvedTransport, RouteSelectionError> {
+    use crate::services::llm::route_profile::CatalogPolicy;
+
+    if purpose != RequestPurpose::ManualChat || !target.is_fixture_candidate() {
+        return Err(RouteSelectionError::Unavailable);
+    }
+    let replay = target.replay().ok_or(RouteSelectionError::Unavailable)?;
+    let profile = route_profile::find(route_id).ok_or(RouteSelectionError::UnknownRoute)?;
+    if !matches!(profile.catalog, CatalogPolicy::ConfigurableApi { .. })
+        || replay.route_id != profile.id
+        || replay.model_id != model
+        || replay.validate().is_err()
+        || crate::services::reasoning_continuity::registry::replay_policy(replay).is_none()
+    {
+        return Err(RouteSelectionError::InvalidModel);
+    }
+    resolve_checked(profile, None)
 }
 
 #[cfg(test)]
@@ -168,4 +198,10 @@ pub(super) fn resolve_transport_for_test(
         checked_profile(route_id, invocation, purpose)?,
         xai_catalog_model,
     )
+}
+
+#[cfg(test)]
+pub(super) fn resolve_client_for_test(route_id: &str) -> Result<ClientKind, RouteSelectionError> {
+    let profile = route_profile::find(route_id).ok_or(RouteSelectionError::UnknownRoute)?;
+    resolve_checked(profile, None).map(|transport| transport.client)
 }

@@ -54,7 +54,12 @@ pub(in crate::services::llm) fn build_payload(
         payload["tools"] = Value::Array(native_tools);
         payload["tool_choice"] = json!({"type": "auto"});
     }
-    apply_thinking(&mut payload, cfg.reasoning_mode, max_tokens)?;
+    let reasoning_mode = cfg
+        .think
+        .then_some(cfg.reasoning_mode)
+        .flatten()
+        .or(Some("off"));
+    apply_thinking(&mut payload, reasoning_mode, max_tokens)?;
     let cache = crate::services::llm::route_profile::cache_policy(cfg.provider_id, cfg.model)
         .ok_or(BuildError::InvalidMessage)?;
     crate::services::llm::prompt_cache_policy::apply_payload(&mut payload, cache, cfg.session_id);

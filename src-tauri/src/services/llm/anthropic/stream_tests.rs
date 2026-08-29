@@ -115,6 +115,7 @@ async fn network_consumer_honors_cancellation_before_reading_events() {
         response,
         cancel,
         true,
+        None,
         &[],
         context(),
         None,
@@ -157,6 +158,7 @@ async fn network_consumer_observes_safe_request_id_and_finish_reason() {
         response,
         CancellationToken::new(),
         true,
+        None,
         &[],
         context(),
         None,
@@ -198,6 +200,7 @@ async fn network_consumer_persists_exact_completed_anthropic_blocks() {
         response,
         CancellationToken::new(),
         true,
+        None,
         &[],
         context(),
         Some(capture),
@@ -219,4 +222,35 @@ async fn network_consumer_persists_exact_completed_anthropic_blocks() {
         .is_some_and(|value| !value.is_empty()));
     assert_eq!(blocks[2]["id"], "toolu_1");
     assert_eq!(envelope.tool_links[0].provider_call_id, "toolu_1");
+}
+
+#[tokio::test]
+async fn network_consumer_interrupts_for_compression_without_persisting_partial_blocks() {
+    use crate::services::agent_local::types_ollama::StreamOutcome;
+    let body = format!(
+        "data: {{\"type\":\"content_block_start\",\"index\":0,\"content_block\":{{\"type\":\"text\",\"text\":\"\"}}}}\n\ndata: {{\"type\":\"content_block_delta\",\"index\":0,\"delta\":{{\"type\":\"text_delta\",\"text\":\"{}\"}}}}\n\n",
+        "x".repeat(200)
+    );
+    let response = response(&body, None).await;
+    let budget =
+        crate::services::compress::realtime_budget::RealtimeBudget::new(true, 100, 1, 0).unwrap();
+
+    let outcome = super::stream::consume_stream(
+        &crate::services::agent_local::stream_events::AgentEventEmitter::test("session".into()),
+        response,
+        CancellationToken::new(),
+        true,
+        Some(budget),
+        &[],
+        context(),
+        None,
+        None,
+    )
+    .await
+    .unwrap();
+    let StreamOutcome::InterruptedForCompression(result) = outcome else {
+        panic!("compression interruption")
+    };
+    assert_eq!(result.content.len(), 200);
+    assert!(result.continuation.is_none());
 }

@@ -150,3 +150,25 @@ async fn run_turn(
         .map(|_| ())
         .ok_or_else(|| "fixture request failed".to_string())
 }
+
+#[cfg(test)]
+mod vision_tests {
+    #[test]
+    fn synthetic_png_is_small_deterministic_and_has_four_exact_quadrants() {
+        let first = super::super::reasoning_fixture_vision::png_bytes().unwrap();
+        let second = super::super::reasoning_fixture_vision::png_bytes().unwrap();
+        assert_eq!(first, second);
+        assert!(first.len() < 4 * 1024);
+        assert_eq!(super::super::reasoning_fixture_vision::MIME, "image/png");
+        assert!(!super::super::reasoning_fixture_vision::inline_base64()
+            .unwrap()
+            .is_empty());
+
+        let image = image::load_from_memory(&first).unwrap().to_rgba8();
+        assert_eq!(image.dimensions(), (8, 8));
+        assert_eq!(image.get_pixel(1, 1).0, [255, 0, 0, 255]);
+        assert_eq!(image.get_pixel(6, 1).0, [0, 255, 0, 255]);
+        assert_eq!(image.get_pixel(1, 6).0, [0, 0, 255, 255]);
+        assert_eq!(image.get_pixel(6, 6).0, [255, 255, 0, 255]);
+    }
+}

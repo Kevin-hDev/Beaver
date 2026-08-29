@@ -26,6 +26,7 @@ mod stream_state_support;
     reason = "candidate Messages transport is activated after live validation"
 )]
 pub(super) mod tools;
+mod transport;
 
 pub(super) use client::{list_models, test_connection};
 #[allow(
@@ -38,6 +39,7 @@ pub(super) use payload::{build_payload, BuildError, PreparedPayload};
     reason = "candidate stream consumer is wired into dispatch after live validation"
 )]
 pub(super) use stream::consume_stream;
+pub(super) use transport::{collect_silent, stream_chat};
 
 #[cfg(test)]
 mod models_tests;
@@ -45,3 +47,5 @@ mod models_tests;
 mod payload_tests;
 #[cfg(test)]
 mod stream_tests;
+#[cfg(test)]
+mod transport_tests;

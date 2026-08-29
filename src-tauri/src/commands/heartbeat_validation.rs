@@ -173,6 +173,23 @@ mod tests {
     }
 
     #[test]
+    fn rejects_candidate_anthropic_provider_before_public_activation() {
+        let schedule = WakeupSchedule::Daily {
+            time: "08:00".into(),
+        };
+        assert!(validate_input(
+            "anthropic",
+            "Test",
+            "claude-haiku-4-5-20251001",
+            "Ping",
+            "",
+            &schedule,
+            true,
+        )
+        .is_err());
+    }
+
+    #[test]
     fn rejects_too_long_prompt() {
         let schedule = WakeupSchedule::Daily {
             time: "08:00".into(),

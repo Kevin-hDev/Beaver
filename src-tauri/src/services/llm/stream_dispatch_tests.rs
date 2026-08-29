@@ -5,6 +5,9 @@ use super::stream_dispatch::{
 use crate::services::llm::route_profile::FragmentMode;
 use crate::services::llm_oauth::{XaiBackend, XaiCatalogModel};
 use crate::services::provider_usage::UsageApiFormat;
+use crate::services::reasoning_continuity::contract::{
+    ContinuationTarget, ContinuationUse, CredentialScope, ReasoningModeId, ReplayTarget, RouteId,
+};
 
 fn xai_model(backend: XaiBackend) -> XaiCatalogModel {
     XaiCatalogModel {
@@ -123,4 +126,66 @@ fn stream_dispatch_refuses_unavailable_or_unknown_routes_before_payload() {
         .unwrap_err(),
         RouteSelectionError::Unavailable
     );
+}
+
+#[tokio::test]
+async fn anthropic_client_is_wired_but_candidate_route_stays_unavailable() {
+    assert_eq!(
+        super::stream_dispatch::resolve_client_for_test("anthropic").unwrap(),
+        ClientKind::Anthropic
+    );
+    for purpose in [
+        RequestPurpose::ManualChat,
+        RequestPurpose::Automation,
+        RequestPurpose::ExternalChannel,
+        RequestPurpose::AccountMetadata,
+    ] {
+        assert_eq!(
+            super::stream_dispatch::resolve_transport(
+                "anthropic",
+                "claude-haiku-4-5-20251001",
+                InvocationKind::Interactive,
+                purpose,
+            )
+            .await
+            .unwrap_err(),
+            RouteSelectionError::Unavailable
+        );
+    }
+    assert_eq!(
+        super::stream_dispatch::resolve_transport(
+            "anthropic",
+            "claude-haiku-4-5-20251001",
+            InvocationKind::Silent,
+            RequestPurpose::ManualChat,
+        )
+        .await
+        .unwrap_err(),
+        RouteSelectionError::Unavailable
+    );
+
+    let fixture = ContinuationTarget::FixtureCandidate(ReplayTarget {
+        route_id: RouteId::Anthropic,
+        model_id: "claude-haiku-4-5-20251001".into(),
+        credential_scope: CredentialScope::authenticated("fixture-scope").unwrap(),
+        reasoning_mode: ReasoningModeId::High,
+        continuation_use: ContinuationUse::UserContinuation,
+    });
+    let resolved = super::stream_dispatch::resolve_fixture_transport(
+        "anthropic",
+        "claude-haiku-4-5-20251001",
+        &fixture,
+        RequestPurpose::ManualChat,
+    )
+    .await
+    .unwrap();
+    assert_eq!(resolved.client, ClientKind::Anthropic);
+    assert!(super::stream_dispatch::resolve_fixture_transport(
+        "anthropic",
+        "claude-haiku-4-5-20251001",
+        &fixture,
+        RequestPurpose::Automation,
+    )
+    .await
+    .is_err());
 }
