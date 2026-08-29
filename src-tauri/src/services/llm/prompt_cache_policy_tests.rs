@@ -22,6 +22,16 @@ fn uses_usage(provider: &str) -> bool {
 }
 
 #[test]
+fn anthropic_cache_marker_does_not_depend_on_a_session() {
+    let mut value = payload();
+    apply("anthropic", "claude-haiku-4-5-20251001", &mut value, None);
+
+    assert_eq!(value["cache_control"]["type"], "ephemeral");
+    assert!(value.get("session_id").is_none());
+    assert!(value.get("prompt_cache_key").is_none());
+}
+
+#[test]
 fn cache_transformer_receives_a_resolved_policy() {
     let policy = super::route_profile::cache_policy("openrouter", "google/gemini-3.5-pro")
         .expect("known route");

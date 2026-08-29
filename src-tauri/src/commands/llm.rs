@@ -1,7 +1,5 @@
 use crate::models::provider_contract::{ProviderCatalogEntry, ProviderCategory};
-use crate::services::llm::{
-    catalog, openai_compat::OpenAiCompatProvider, provider_model_lookup, types::ModelInfo,
-};
+use crate::services::llm::{catalog, provider_model_lookup, types::ModelInfo};
 
 #[tauri::command]
 pub fn list_llm_providers_catalog() -> Vec<ProviderCatalogEntry> {
@@ -22,74 +20,9 @@ pub fn list_llm_providers_catalog() -> Vec<ProviderCatalogEntry> {
 
 #[tauri::command]
 pub async fn list_llm_models(provider_id: String) -> Result<Vec<ModelInfo>, String> {
-    let provider = OpenAiCompatProvider::new(&provider_id).map_err(String::from)?;
-    let canonical_provider = crate::services::llm::route::canonical_provider_id(&provider_id);
-    let mut models = provider.list_models().await.map_err(String::from)?;
-    models.truncate(500);
-    let mut seen = std::collections::HashSet::new();
-    models.retain(|m| seen.insert(m.id.clone()));
-    let mut chat_filtered = Vec::with_capacity(models.len());
-    for m in models {
-        if provider_model_lookup::is_chat_model(canonical_provider, &m.id).await {
-            chat_filtered.push(m);
-        }
-    }
-    let mut models = chat_filtered;
-    // Autorité dynamique brute : l'enrichissement ci-dessous sert uniquement à l'UI.
-    let runtime_catalog = models.clone();
-    for m in &mut models {
-        m.context_usage_includes_reasoning =
-            crate::services::llm::context_usage_includes_reasoning(&provider_id).unwrap_or(true);
-        let remote_reasoning_modes = m.reasoning_modes.clone();
-        let local = provider_model_lookup::local_capabilities(canonical_provider, &m.id).is_some();
-        let resolved = provider_model_lookup::resolve(canonical_provider, &m.id).await;
-        m.supports_fast_mode = resolved
-            .as_ref()
-            .is_some_and(|capabilities| capabilities.supports_fast_mode);
-        let local_limits = provider_model_lookup::local_limits(canonical_provider, &m.id);
-        if let Some(limits) = local_limits {
-            m.context_length = limits.context_window;
-            m.max_output_tokens = limits.max_output_tokens;
-        }
-        if let Some(capabilities) = resolved {
-            if local {
-                m.supports_tools = capabilities.supports_tools;
-                m.supports_vision = capabilities.supports_vision;
-                m.supports_thinking = capabilities.supports_thinking;
-                m.reasoning_modes = crate::services::reasoning::restrict_to_dynamic_modes(
-                    capabilities.reasoning_modes.clone(),
-                    (!remote_reasoning_modes.is_empty())
-                        .then_some(remote_reasoning_modes.as_slice()),
-                );
-            } else {
-                m.supports_tools |= capabilities.supports_tools;
-                m.supports_vision |= capabilities.supports_vision;
-                m.supports_thinking |= capabilities.supports_thinking;
-            }
-            if !m.supports_thinking {
-                m.reasoning_modes.clear();
-            } else if m.reasoning_modes.is_empty() {
-                m.reasoning_modes = capabilities.reasoning_modes;
-            }
-            m.default_reasoning_mode = m
-                .default_reasoning_mode
-                .take()
-                .filter(|mode| m.reasoning_modes.contains(mode))
-                .or_else(|| {
-                    capabilities
-                        .default_reasoning_mode
-                        .filter(|mode| m.reasoning_modes.contains(mode))
-                });
-        }
-        if m.default_reasoning_mode
-            .as_ref()
-            .is_some_and(|mode| !m.reasoning_modes.contains(mode))
-        {
-            m.default_reasoning_mode = None;
-        }
-    }
-    crate::services::llm::runtime_models::replace_provider(canonical_provider, &runtime_catalog);
-    Ok(models)
+    crate::services::llm::model_catalog::list_models_for(&provider_id)
+        .await
+        .map_err(String::from)
 }
 
 #[tauri::command]
@@ -157,8 +90,9 @@ fn select_ollama_context(
 
 #[tauri::command]
 pub async fn test_llm_connection(provider_id: String) -> Result<(), String> {
-    let provider = OpenAiCompatProvider::new(&provider_id).map_err(String::from)?;
-    provider.test_connection().await.map_err(String::from)
+    crate::services::llm::model_catalog::test_connection_for(&provider_id)
+        .await
+        .map_err(String::from)
 }
 
 #[tauri::command]

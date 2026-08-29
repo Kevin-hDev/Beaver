@@ -17,6 +17,10 @@ pub(super) fn apply_payload(
     policy: ResolvedCachePolicy,
     session_id: Option<&str>,
 ) {
+    if policy.kind == CachePolicy::AnthropicAutomatic {
+        payload["cache_control"] = json!({"type": "ephemeral"});
+        return;
+    }
     let Some(key) = cache_key(policy, session_id) else {
         return;
     };

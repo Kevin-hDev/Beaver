@@ -3,6 +3,7 @@ use serde_json::{json, Value};
 
 pub const MAX_IMAGES_PER_MESSAGE: usize = 8;
 pub const MAX_IMAGE_BYTES: usize = crate::models::agent_turn_contract::MAX_TURN_IMAGE_BYTES;
+pub const MAX_ANTHROPIC_IMAGE_BYTES: usize = 10 * 1024 * 1024;
 pub const IMAGE_TOKEN_ESTIMATE: usize = 1_100;
 
 pub const NOTICE_UNSUPPORTED_MODEL: &str = "vision.unsupportedModel";
@@ -60,8 +61,8 @@ pub(crate) fn image_part(
         super::route_profile::ImageFormat::ResponsesInput => {
             Ok(json!({ "type": "input_image", "image_url": data_url }))
         }
+        super::route_profile::ImageFormat::AnthropicBlock => anthropic_image_part(base64_data),
         super::route_profile::ImageFormat::OllamaNative
-        | super::route_profile::ImageFormat::AnthropicBlock
         | super::route_profile::ImageFormat::Unsupported => Err("vision_wire_unsupported"),
     }
 }
@@ -96,12 +97,29 @@ pub fn detect_mime(b64: &str) -> &'static str {
     }
 }
 
+fn anthropic_image_part(base64_data: &str) -> Result<Value, &'static str> {
+    let payload = image_payload_with_limit(base64_data, MAX_ANTHROPIC_IMAGE_BYTES)
+        .ok_or("vision_image_invalid")?;
+    Ok(json!({
+        "type": "image",
+        "source": {
+            "type": "base64",
+            "media_type": detect_mime(payload),
+            "data": payload,
+        }
+    }))
+}
+
 fn image_payload(input: &str) -> Option<&str> {
+    image_payload_with_limit(input, MAX_IMAGE_BYTES)
+}
+
+fn image_payload_with_limit(input: &str, limit: usize) -> Option<&str> {
     let payload = input
         .split_once("base64,")
         .map_or(input, |(_, data)| data)
         .trim();
-    if payload.is_empty() || decoded_len_estimate(payload) > MAX_IMAGE_BYTES {
+    if payload.is_empty() || decoded_len_estimate(payload) > limit {
         return None;
     }
     if has_supported_image_signature(payload) {

@@ -29,6 +29,20 @@ fn tool_schema_profile_sets_explicit_non_strict_mode_where_supported() {
 }
 
 #[test]
+fn anthropic_schema_copy_never_adds_strict() {
+    let tools = vec![tool(
+        "read_file",
+        json!({"type": "object", "properties": {}}),
+    )];
+    let policy =
+        super::super::route_profile::tool_policy("anthropic", "claude-haiku-4-5-20251001").unwrap();
+
+    let fixed = tools_for_policy(policy.schema, policy.strict, &tools);
+
+    assert!(fixed[0]["function"].get("strict").is_none());
+}
+
+#[test]
 fn removes_kimi_unsupported_validation_keywords() {
     let tools = vec![tool(
         "read_file",
