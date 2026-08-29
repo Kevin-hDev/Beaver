@@ -51,6 +51,7 @@ function provider(id: string): ProviderSpec {
     display_name: id,
     category: "llm",
     signup_url: "",
+    connection_kind: "api_key",
   };
 }
 

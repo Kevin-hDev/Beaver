@@ -52,6 +52,15 @@
       "exa": { "description": "Neural search — recherche par similarité sémantique.", "freeTier": "Tarification et crédits à consulter sur le compte fournisseur." },
       "firecrawl": { "description": "Extraction Markdown LLM-ready depuis une URL.", "freeTier": "Offre gratuite et crédits selon l’équipe et le forfait." }
     },
+    "connection": {
+      "region": "Région",
+      "endpointMode": "Type d’endpoint",
+      "workspaceId": "Identifiant du workspace",
+      "payAsYouGo": "Cette connexion utilise Model Studio Pay-as-you-go.",
+      "unsupportedPlans": "Les clés Token Plan et Coding Plan ne sont pas encore prises en charge.",
+      "regions": { "beijing": "Pékin", "singapore": "Singapour", "hong_kong": "Hong Kong", "tokyo": "Tokyo", "frankfurt": "Francfort", "virginia": "Virginie" },
+      "modes": { "shared": "Partagé", "workspace": "Workspace", "trial": "Essai" }
+    },
     "main": {
       "title": "Clés API",
       "connectorsBtn": "Connecteurs API"

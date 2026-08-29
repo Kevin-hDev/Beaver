@@ -10,3 +10,8 @@ fn anthropic_candidate_uses_the_native_llm_probe_path() {
     assert_eq!(probe.auth, ProbeAuth::XApiKey);
     assert_eq!(probe.headers, &[("anthropic-version", "2023-06-01")]);
 }
+
+#[test]
+fn qwen_subscription_keys_are_rejected_before_network_use() {
+    assert!(super::reject_unsupported_qwen_key("sk-sp-fixture").is_err());
+}

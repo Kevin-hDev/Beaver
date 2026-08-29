@@ -47,6 +47,13 @@
       "exa": { "description": "ニューラル検索 — 意味的類似度による検索。", "freeTier": "料金とクレジットはプロバイダーのアカウントで確認してください。" },
       "firecrawl": { "description": "任意の URL から LLM 対応 Markdown を抽出。", "freeTier": "無料プランとクレジットはチームとプランによります。" }
     },
+    "connection": {
+      "region": "リージョン", "endpointMode": "エンドポイント種別", "workspaceId": "ワークスペース ID",
+      "payAsYouGo": "この接続は Model Studio の従量課金を使用します。",
+      "unsupportedPlans": "Token Plan と Coding Plan のキーはまだ対応していません。",
+      "regions": { "beijing": "北京", "singapore": "シンガポール", "hong_kong": "香港", "tokyo": "東京", "frankfurt": "フランクフルト", "virginia": "バージニア" },
+      "modes": { "shared": "共有", "workspace": "ワークスペース", "trial": "試用" }
+    },
     "main": {
       "title": "API キー",
       "connectorsBtn": "API コネクター"

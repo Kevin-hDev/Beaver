@@ -36,6 +36,7 @@ function provider(id: string, category: ProviderSpec["category"]): ProviderSpec 
     category,
     display_name: id,
     signup_url: "https://example.com",
+    connection_kind: "api_key",
   };
 }
 

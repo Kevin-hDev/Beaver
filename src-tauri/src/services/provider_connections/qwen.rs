@@ -6,7 +6,9 @@ use super::{qwen_endpoints, workspace_id};
 pub const VAULT_KEY: &str = "provider_connection:qwen";
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[cfg_attr(test, derive(ts_rs::TS))]
 #[serde(rename_all = "snake_case")]
+#[cfg_attr(test, ts(rename_all = "snake_case"))]
 pub enum QwenRegion {
     Beijing,
     Singapore,
@@ -17,7 +19,9 @@ pub enum QwenRegion {
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[cfg_attr(test, derive(ts_rs::TS))]
 #[serde(rename_all = "snake_case")]
+#[cfg_attr(test, ts(rename_all = "snake_case"))]
 pub enum QwenEndpointMode {
     Shared,
     Workspace,
@@ -25,10 +29,14 @@ pub enum QwenEndpointMode {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[cfg_attr(test, derive(ts_rs::TS))]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(test, ts(rename_all = "camelCase"))]
 pub struct QwenConnectionInput {
     pub region: QwenRegion,
     pub endpoint_mode: QwenEndpointMode,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(test, ts(optional))]
     pub workspace_id: Option<String>,
 }
 

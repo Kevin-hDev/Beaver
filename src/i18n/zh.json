@@ -47,6 +47,13 @@
       "exa": { "description": "神经检索 — 基于语义相似度的搜索。", "freeTier": "请在提供商账户中查看价格和额度。" },
       "firecrawl": { "description": "从任意网址提取 LLM 就绪的 Markdown。", "freeTier": "免费套餐和额度取决于团队与套餐。" }
     },
+    "connection": {
+      "region": "区域", "endpointMode": "端点类型", "workspaceId": "工作空间 ID",
+      "payAsYouGo": "此连接使用 Model Studio 按量付费。",
+      "unsupportedPlans": "暂不支持 Token Plan 和 Coding Plan 密钥。",
+      "regions": { "beijing": "北京", "singapore": "新加坡", "hong_kong": "香港", "tokyo": "东京", "frankfurt": "法兰克福", "virginia": "弗吉尼亚" },
+      "modes": { "shared": "共享", "workspace": "工作空间", "trial": "试用" }
+    },
     "main": {
       "title": "API 密钥",
       "connectorsBtn": "API 连接器"

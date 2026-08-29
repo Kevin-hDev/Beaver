@@ -6,7 +6,12 @@ import { ArrowSquareOut, CaretRight } from "@/components/ui/icons";
 import { ApiKeySecretInput } from "@/components/api-keys/api-key-secret-input";
 import { InlineToast } from "@/components/ui/toast";
 import { showToast } from "@/lib/toast-emitter";
-import type { ProviderSpec } from "@/types/api";
+import type { ProviderSpec, QwenConnectionInput } from "@/types/api";
+import {
+  DEFAULT_QWEN_CONNECTION,
+  isQwenConnectionValid,
+  ProviderConnectionForm,
+} from "@/components/api-keys/provider-connection-form";
 import { OnboardingProviderGrid } from "./onboarding-provider-grid";
 
 interface OnboardingApiProps {
@@ -23,6 +28,7 @@ export function OnboardingApi({ onComplete, onBack }: OnboardingApiProps) {
   const [selectedId, setSelectedId] = useState("");
   const [apiKey, setApiKey] = useState("");
   const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [connection, setConnection] = useState<QwenConnectionInput>(DEFAULT_QWEN_CONNECTION);
 
   useEffect(() => {
     Promise.all([
@@ -58,15 +64,20 @@ export function OnboardingApi({ onComplete, onBack }: OnboardingApiProps) {
     setSelectedId(providerId);
     setApiKey("");
     setSaveState("idle");
+    setConnection(DEFAULT_QWEN_CONNECTION);
   }, []);
 
   const handleSave = useCallback(async () => {
     const key = apiKey.trim();
-    if (!selected || !key) return;
+    const requiresConnection = selected?.connection_kind === "qwen_model_studio";
+    if (!selected || !key || (requiresConnection && !isQwenConnectionValid(connection))) return;
     setSaveState("saving");
     try {
-      await invoke("test_api_key_with_value", { provider: selected.id, key });
-      await invoke("set_api_key", { provider: selected.id, key });
+      const providerConnection = requiresConnection ? connection : undefined;
+      await invoke("test_api_key_with_value", {
+        provider: selected.id, key, connection: providerConnection,
+      });
+      await invoke("set_api_key", { provider: selected.id, key, connection: providerConnection });
       setConfiguredIds((current) =>
         current.includes(selected.id) ? current : [...current, selected.id],
       );
@@ -76,7 +87,7 @@ export function OnboardingApi({ onComplete, onBack }: OnboardingApiProps) {
     } catch {
       setSaveState("error");
     }
-  }, [apiKey, selected, t]);
+  }, [apiKey, connection, selected, t]);
 
   return (
     <div className="ob-page ob-page-api">
@@ -93,6 +104,13 @@ export function OnboardingApi({ onComplete, onBack }: OnboardingApiProps) {
       />
 
       <div className="ob-api-form">
+        {selected?.connection_kind === "qwen_model_studio" && (
+          <ProviderConnectionForm
+            value={connection}
+            onChange={setConnection}
+            disabled={saveState === "saving"}
+          />
+        )}
         <div className="ob-api-heading">
           <label className="ob-field-label" htmlFor="ob-api-key">
             {selected
@@ -149,7 +167,13 @@ export function OnboardingApi({ onComplete, onBack }: OnboardingApiProps) {
           type="button"
           className="btn btn-sm btn-primary"
           onClick={() => void handleSave()}
-          disabled={!selected || !apiKey.trim() || saveState === "saving"}
+          disabled={
+            !selected
+            || !apiKey.trim()
+            || saveState === "saving"
+            || (selected.connection_kind === "qwen_model_studio"
+              && !isQwenConnectionValid(connection))
+          }
         >
           {saveState === "saving"
             ? t("onboarding.api.saving")

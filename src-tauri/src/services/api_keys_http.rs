@@ -26,6 +26,30 @@ pub async fn test_key_raw(provider_id: &str, key: &str) -> Result<(), String> {
     check_status(response).await
 }
 
+pub async fn test_qwen_key_raw(
+    key: &str,
+    connection: &crate::services::provider_connections::qwen::QwenConnectionInput,
+) -> Result<(), String> {
+    reject_unsupported_qwen_key(key)?;
+    let endpoint = crate::services::provider_connections::qwen::resolve_qwen_endpoint(connection)
+        .map_err(str::to_string)?;
+    let client = AuthenticatedClient::new(HTTP_TIMEOUT)
+        .map_err(|_| "test de la clé impossible".to_string())?;
+    let response = client
+        .send(client.get(&endpoint.models_url).bearer_auth(key))
+        .await
+        .map_err(|_| "test de la clé impossible".to_string())?;
+    check_status(response).await
+}
+
+pub(crate) fn reject_unsupported_qwen_key(key: &str) -> Result<(), String> {
+    validate::validate_key_input("qwen", key)?;
+    if key.starts_with("sk-sp-") {
+        return Err("provider_configuration_invalid".to_string());
+    }
+    Ok(())
+}
+
 fn llm_probe(
     provider_id: &str,
 ) -> Option<

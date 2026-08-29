@@ -47,6 +47,13 @@
       "exa": { "description": "Neural Search — Suche über semantische Ähnlichkeit.", "freeTier": "Preise und Credits im Anbieter-Konto prüfen." },
       "firecrawl": { "description": "LLM-fertige Markdown-Extraktion aus jeder URL.", "freeTier": "Kostenloser Tarif und Credits je nach Team und Tarif." }
     },
+    "connection": {
+      "region": "Region", "endpointMode": "Endpunkttyp", "workspaceId": "Workspace-ID",
+      "payAsYouGo": "Diese Verbindung verwendet Model Studio Pay-as-you-go.",
+      "unsupportedPlans": "Token-Plan- und Coding-Plan-Schlüssel werden noch nicht unterstützt.",
+      "regions": { "beijing": "Peking", "singapore": "Singapur", "hong_kong": "Hongkong", "tokyo": "Tokio", "frankfurt": "Frankfurt", "virginia": "Virginia" },
+      "modes": { "shared": "Geteilt", "workspace": "Workspace", "trial": "Test" }
+    },
     "main": {
       "title": "API Keys",
       "connectorsBtn": "API Connectors"
