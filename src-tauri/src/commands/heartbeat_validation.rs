@@ -173,20 +173,16 @@ mod tests {
     }
 
     #[test]
-    fn rejects_candidate_anthropic_provider_before_public_activation() {
+    fn rejects_candidate_providers_before_public_activation() {
         let schedule = WakeupSchedule::Daily {
             time: "08:00".into(),
         };
-        assert!(validate_input(
-            "anthropic",
-            "Test",
-            "claude-haiku-4-5-20251001",
-            "Ping",
-            "",
-            &schedule,
-            true,
-        )
-        .is_err());
+        for (provider, model) in [
+            ("anthropic", "claude-haiku-4-5-20251001"),
+            ("qwen", "qwen3.8-flash"),
+        ] {
+            assert!(validate_input(provider, "Test", model, "Ping", "", &schedule, true).is_err());
+        }
     }
 
     #[test]

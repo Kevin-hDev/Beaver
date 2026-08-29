@@ -189,3 +189,74 @@ async fn anthropic_client_is_wired_but_candidate_route_stays_unavailable() {
     .await
     .is_err());
 }
+
+#[tokio::test]
+async fn qwen_chat_client_is_wired_but_candidate_route_stays_unavailable() {
+    assert_eq!(
+        super::stream_dispatch::resolve_client_for_test("qwen").unwrap(),
+        ClientKind::ChatCompletions
+    );
+    for purpose in [
+        RequestPurpose::ManualChat,
+        RequestPurpose::Automation,
+        RequestPurpose::ExternalChannel,
+        RequestPurpose::AccountMetadata,
+    ] {
+        assert_eq!(
+            super::stream_dispatch::resolve_transport(
+                "qwen",
+                "qwen3.8-flash",
+                InvocationKind::Interactive,
+                purpose,
+            )
+            .await
+            .unwrap_err(),
+            RouteSelectionError::Unavailable
+        );
+    }
+    assert_eq!(
+        super::stream_dispatch::resolve_transport(
+            "qwen",
+            "qwen3.8-flash",
+            InvocationKind::Silent,
+            RequestPurpose::ManualChat,
+        )
+        .await
+        .unwrap_err(),
+        RouteSelectionError::Unavailable
+    );
+
+    let fixture = ContinuationTarget::FixtureCandidate(ReplayTarget {
+        route_id: RouteId::Qwen,
+        model_id: "qwen3.8-flash".into(),
+        credential_scope: CredentialScope::authenticated("fixture-scope").unwrap(),
+        reasoning_mode: ReasoningModeId::Xhigh,
+        continuation_use: ContinuationUse::UserContinuation,
+    });
+    let resolved = super::stream_dispatch::resolve_fixture_transport(
+        "qwen",
+        "qwen3.8-flash",
+        &fixture,
+        RequestPurpose::ManualChat,
+    )
+    .await
+    .unwrap();
+    assert_eq!(resolved.client, ClientKind::ChatCompletions);
+
+    assert!(super::stream_dispatch::resolve_fixture_transport(
+        "qwen",
+        "another-model",
+        &fixture,
+        RequestPurpose::ManualChat,
+    )
+    .await
+    .is_err());
+    assert!(super::stream_dispatch::resolve_fixture_transport(
+        "qwen",
+        "qwen3.8-flash",
+        &fixture,
+        RequestPurpose::Automation,
+    )
+    .await
+    .is_err());
+}

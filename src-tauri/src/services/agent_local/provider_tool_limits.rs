@@ -53,5 +53,6 @@ mod tests {
         assert_eq!(limit("openrouter", "deepseek/deepseek-v3"), 128);
         assert_eq!(limit("openrouter", "unknown/model"), 128);
         assert_eq!(limit("ollama", "qwen3"), 256);
+        assert_eq!(limit("qwen", "qwen3.8-flash"), 128);
     }
 }

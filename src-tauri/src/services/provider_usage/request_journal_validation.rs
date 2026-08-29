@@ -100,6 +100,7 @@ fn valid_provider(value: &str) -> bool {
             | "moonshot"
             | "zai"
             | "anthropic"
+            | "qwen"
     )
 }
 
