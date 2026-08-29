@@ -189,36 +189,43 @@ fn thinking_modes_are_bounded_by_output_limit() {
 }
 
 #[test]
-fn catalog_advertised_adaptive_model_uses_the_validated_anthropic_transport() {
+fn every_claude_5_family_uses_visible_adaptive_thinking() {
+    let model_ids = ["claude-sonnet-5", "claude-opus-5", "claude-fable-5"];
     crate::services::llm::runtime_models::replace_provider(
         "anthropic",
-        &[crate::services::llm::types::ModelInfo {
-            id: "claude-adaptive-test".into(),
-            display_name: None,
-            owned_by: Some("anthropic".into()),
-            context_length: Some(1_000_000),
-            max_output_tokens: Some(128_000),
-            supports_tools: true,
-            supports_vision: true,
-            supports_thinking: true,
-            supports_fast_mode: false,
-            reasoning_modes: vec!["auto".into(), "low".into(), "xhigh".into()],
-            default_reasoning_mode: Some("auto".into()),
-            context_usage_includes_reasoning: true,
-            is_free: false,
-        }],
+        &model_ids
+            .iter()
+            .map(|model_id| crate::services::llm::types::ModelInfo {
+                id: (*model_id).into(),
+                display_name: None,
+                owned_by: Some("anthropic".into()),
+                context_length: Some(1_000_000),
+                max_output_tokens: Some(128_000),
+                supports_tools: true,
+                supports_vision: true,
+                supports_thinking: true,
+                supports_fast_mode: false,
+                reasoning_modes: vec!["auto".into(), "low".into(), "xhigh".into()],
+                default_reasoning_mode: Some("auto".into()),
+                context_usage_includes_reasoning: true,
+                is_free: false,
+            })
+            .collect::<Vec<_>>(),
     );
     let messages = vec![message("user", "Hi")];
-    let payload = super::build_payload(
-        &config_for_model(&messages, &[], "claude-adaptive-test", "xhigh"),
-        128_000,
-    )
-    .unwrap()
-    .payload;
+    for model_id in model_ids {
+        let payload = super::build_payload(
+            &config_for_model(&messages, &[], model_id, "xhigh"),
+            128_000,
+        )
+        .unwrap()
+        .payload;
 
-    assert_eq!(payload["thinking"]["type"], "adaptive");
-    assert_eq!(payload["output_config"]["effort"], "xhigh");
-    assert!(payload["thinking"].get("budget_tokens").is_none());
+        assert_eq!(payload["thinking"]["type"], "adaptive", "{model_id}");
+        assert_eq!(payload["thinking"]["display"], "summarized", "{model_id}");
+        assert_eq!(payload["output_config"]["effort"], "xhigh", "{model_id}");
+        assert!(payload["thinking"].get("budget_tokens").is_none());
+    }
 }
 
 #[test]
@@ -250,7 +257,19 @@ fn stale_off_mode_uses_the_default_for_an_always_adaptive_model() {
     .payload;
 
     assert_eq!(payload["thinking"]["type"], "adaptive");
+    assert_eq!(payload["thinking"]["display"], "summarized");
     assert_eq!(payload["output_config"]["effort"], "high");
+}
+
+#[test]
+fn manual_budget_thinking_does_not_invent_an_adaptive_display_contract() {
+    let messages = vec![message("user", "Hi")];
+    let payload = super::build_payload(&config(&messages, &[], "medium"), 8_192)
+        .unwrap()
+        .payload;
+
+    assert_eq!(payload["thinking"]["type"], "enabled");
+    assert!(payload["thinking"].get("display").is_none());
 }
 
 #[test]

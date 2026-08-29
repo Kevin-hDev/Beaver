@@ -164,6 +164,69 @@ fn accepts_an_official_maximum_equal_to_the_context() {
 }
 
 #[test]
+fn model_studio_reasoning_transport_is_explicit_and_provider_scoped() {
+    let missing_toggle = source(
+        "qwen",
+        r#"{
+          "provider":"qwen","schema_version":1,"verified_at":"2026-08-29",
+          "source_urls":["https://example.com/models"],
+          "models":[{"id":"hybrid","context_window":10,"supports_tools":false,
+            "supports_vision":false,"supports_thinking":true,"reasoning_modes":["off","auto"]}]
+        }"#,
+    );
+    let foreign_transport = source(
+        "test",
+        r#"{
+          "provider":"test","schema_version":1,"verified_at":"2026-08-29",
+          "source_urls":["https://example.com/models"],
+          "models":[{"id":"model","context_window":10,"supports_tools":false,
+            "supports_vision":false,"supports_thinking":true,"reasoning_modes":["auto"],
+            "supports_reasoning_replay":true}]
+        }"#,
+    );
+
+    assert_eq!(
+        parse_sources(&[missing_toggle]).err(),
+        Some("reasoning_transport")
+    );
+    assert_eq!(
+        parse_sources(&[foreign_transport]).err(),
+        Some("reasoning_transport")
+    );
+}
+
+#[test]
+fn model_studio_tool_stream_requirement_is_provider_and_tool_scoped() {
+    let foreign = source(
+        "test",
+        r#"{
+          "provider":"test","schema_version":1,"verified_at":"2026-08-29",
+          "source_urls":["https://example.com/models"],
+          "models":[{"id":"model","context_window":10,"supports_tools":true,
+            "supports_vision":false,"supports_thinking":false,"requires_tool_stream":true}]
+        }"#,
+    );
+    let without_tools = source(
+        "qwen",
+        r#"{
+          "provider":"qwen","schema_version":1,"verified_at":"2026-08-29",
+          "source_urls":["https://example.com/models"],
+          "models":[{"id":"model","context_window":10,"supports_tools":false,
+            "supports_vision":false,"supports_thinking":false,"requires_tool_stream":true}]
+        }"#,
+    );
+
+    assert_eq!(
+        parse_sources(&[foreign]).err(),
+        Some("tool_stream_transport")
+    );
+    assert_eq!(
+        parse_sources(&[without_tools]).err(),
+        Some("tool_stream_transport")
+    );
+}
+
+#[test]
 fn rejects_invalid_automatic_output_defaults() {
     let above_maximum = source(
         "test",

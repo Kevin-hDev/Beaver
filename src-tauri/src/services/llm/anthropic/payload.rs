@@ -118,7 +118,9 @@ fn apply_thinking(
         {
             return Err(BuildError::InvalidReasoningMode);
         }
-        payload["thinking"] = json!({"type": "adaptive"});
+        // Les Claude 5 et les modèles adaptatifs récents omettent sinon le texte
+        // visible tout en facturant et signant le raisonnement.
+        payload["thinking"] = json!({"type": "adaptive", "display": "summarized"});
         if selected != "auto" {
             payload["output_config"] = json!({"effort": selected});
         }

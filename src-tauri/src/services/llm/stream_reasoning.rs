@@ -29,7 +29,23 @@ pub fn apply(
 }
 
 fn apply_qwen(payload: &mut Value, model: &str, reasoning_mode: Option<&str>) {
-    let live_mode = reasoning_mode
+    let contract = crate::services::llm::provider_model_lookup::local_reasoning("qwen", model);
+    if contract.is_none() {
+        // Un modèle sans contrat exact ne doit pas hériter du défaut distant.
+        payload["enable_thinking"] = false.into();
+        payload["preserve_thinking"] = false.into();
+        return;
+    }
+    let selected_mode = contract.as_ref().and_then(|contract| {
+        reasoning_mode
+            .filter(|mode| contract.modes.iter().any(|candidate| candidate == mode))
+            .or_else(|| {
+                (!contract.modes.iter().any(|mode| mode == "off"))
+                    .then_some(contract.default_mode.as_deref())
+                    .flatten()
+            })
+    });
+    let live_mode = selected_mode
         .and_then(|mode| {
             crate::services::reasoning_continuity::contract::ReasoningModeId::from_name(Some(mode))
         })
@@ -40,11 +56,14 @@ fn apply_qwen(payload: &mut Value, model: &str, reasoning_mode: Option<&str>) {
                 *mode,
             )
         });
-    payload["enable_thinking"] = live_mode.is_some().into();
-    payload["preserve_thinking"] = live_mode.is_some().into();
-    if let Some(effort) =
-        reasoning_mode.filter(|mode| live_mode.is_some() && !matches!(*mode, "off" | "auto"))
-    {
+    let enabled = live_mode.is_some();
+    if crate::services::llm::provider_model_lookup::supports_reasoning_toggle("qwen", model) {
+        payload["enable_thinking"] = enabled.into();
+    }
+    if crate::services::llm::provider_model_lookup::supports_reasoning_replay("qwen", model) {
+        payload["preserve_thinking"] = enabled.into();
+    }
+    if let Some(effort) = selected_mode.filter(|mode| enabled && !matches!(*mode, "off" | "auto")) {
         payload["reasoning_effort"] = effort.into();
     }
 }

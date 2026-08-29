@@ -51,6 +51,7 @@ mod provider_model_capabilities;
 mod provider_model_capabilities_tests;
 pub(crate) mod provider_model_lookup;
 pub(crate) mod provider_model_registry;
+mod provider_model_registry_schema;
 mod provider_model_registry_sources;
 mod provider_model_registry_validation;
 pub(crate) mod providers;

@@ -187,8 +187,21 @@ fn resolve_model_policy(
     {
         return None;
     }
-    // Anthropic et Qwen valident le transport une fois par route. Les modes
-    // restent propres au modèle et viennent du catalogue officiel/runtime.
+    // Model Studio peut activer plus de modèles qu'il ne sait en rejouer :
+    // une capacité d'activation n'autorise jamais implicitement le rejeu.
+    if route.route_id == RouteId::Qwen
+        && !crate::services::llm::provider_model_lookup::supports_reasoning_replay(
+            route.route_id.provider_id(),
+            model_id,
+        )
+    {
+        return Some(ResolvedPolicy {
+            requirement: ReplayRequirement::Forbidden,
+            activation: ActivationState::LiveValidated,
+        });
+    }
+    // Anthropic et les modèles Model Studio explicitement compatibles valident
+    // le transport une fois par route. Les modes restent propres au modèle.
     let transport = route.models.iter().find(|policy| {
         policy.continuation_use == continuation_use
             && policy.activation == ActivationState::LiveValidated

@@ -487,6 +487,31 @@ fn qwen_exact_modes_are_live_after_fixture_validation() {
 }
 
 #[test]
+fn model_studio_thinking_without_replay_is_live_but_never_replayed() {
+    let scope = CredentialScope::authenticated("fixture-scope").unwrap();
+    for continuation_use in [
+        ContinuationUse::UserContinuation,
+        ContinuationUse::ToolContinuation,
+    ] {
+        let target = ReplayTarget {
+            route_id: RouteId::Qwen,
+            model_id: "deepseek-v4-pro".into(),
+            credential_scope: scope.clone(),
+            reasoning_mode: ReasoningModeId::Max,
+            continuation_use,
+        };
+        assert!(reasoning_mode_is_live(
+            RouteId::Qwen,
+            "deepseek-v4-pro",
+            ReasoningModeId::Max
+        ));
+        let policy = replay_policy(&target).expect("known Model Studio model");
+        assert_eq!(policy.requirement(), ReplayRequirement::Forbidden);
+        assert_eq!(policy.activation(), ActivationState::LiveValidated);
+    }
+}
+
+#[test]
 fn only_exact_live_fixture_pairs_are_activated() {
     let mut live = Vec::new();
     for route in active_routes() {

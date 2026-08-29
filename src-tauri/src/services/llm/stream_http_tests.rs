@@ -250,11 +250,18 @@ fn payload_parameters_are_resolved_before_serialization() {
     let deepseek =
         super::super::route_profile::payload_policy("deepseek", "deepseek-v4-flash").unwrap();
     let zai = super::super::route_profile::payload_policy("zai", "glm-4.7").unwrap();
+    let model_studio_glm = super::super::route_profile::payload_policy("qwen", "glm-5.2").unwrap();
+    let qwen = super::super::route_profile::payload_policy("qwen", "qwen3.8-flash").unwrap();
+    let openrouter_glm =
+        super::super::route_profile::payload_policy("openrouter", "qwen/glm-5.2").unwrap();
     let openrouter =
         super::super::route_profile::payload_policy("openrouter", "openai/gpt-5.6-luna").unwrap();
 
     assert!(!deepseek.emit_tool_choice);
     assert!(zai.tool_stream);
+    assert!(model_studio_glm.tool_stream);
+    assert!(!qwen.tool_stream);
+    assert!(!openrouter_glm.tool_stream);
     assert!(openrouter.upstream_routing);
     assert_eq!(openrouter.output_limit_field, "max_completion_tokens");
 }

@@ -1,51 +1,19 @@
-use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
 use std::sync::OnceLock;
 
+use super::provider_model_registry_schema::ProviderModelFile;
 use super::provider_model_registry_sources::{EmbeddedProviderModels, SOURCES};
 use super::provider_model_registry_validation::{
-    valid_date, valid_provider_id, valid_reasoning_contract, valid_source_url,
+    valid_date, valid_provider_id, valid_reasoning_contract, valid_reasoning_transport,
+    valid_source_url,
 };
+
+pub use super::provider_model_registry_schema::ProviderModelConfig;
 
 const MAX_MODELS_PER_PROVIDER: usize = 500;
 const MAX_ALIASES_PER_MODEL: usize = 32;
 const MAX_SOURCE_URLS: usize = 16;
 const MAX_CONTEXT_TOKENS: u32 = 4_000_000;
-
-#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
-#[serde(deny_unknown_fields)]
-pub struct ProviderModelConfig {
-    pub id: String,
-    #[serde(default)]
-    pub aliases: Vec<String>,
-    /// Vrai uniquement lorsqu'une source tarifaire officielle confirme un coût nul.
-    #[serde(default)]
-    pub is_free: bool,
-    pub context_window: u32,
-    pub max_output_tokens: Option<u32>,
-    pub default_output_tokens: Option<u32>,
-    pub supports_tools: bool,
-    pub supports_vision: bool,
-    pub supports_thinking: bool,
-    #[serde(default)]
-    pub supports_fast_mode: bool,
-    #[serde(default)]
-    pub reasoning_modes: Vec<String>,
-    #[serde(default)]
-    pub default_reasoning_mode: Option<String>,
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct ProviderModelFile {
-    provider: String,
-    schema_version: u8,
-    verified_at: String,
-    source_urls: Vec<String>,
-    #[serde(default)]
-    inherits_upstream: bool,
-    models: Vec<ProviderModelConfig>,
-}
 
 struct ProviderModels {
     ordered: Vec<ProviderModelConfig>,
@@ -142,6 +110,8 @@ fn validate_file(expected_provider: &str, file: &ProviderModelFile) -> Result<()
     if file.provider != expected_provider || !valid_provider_id(&file.provider) {
         return Err("provider_id");
     }
+    let is_model_studio = file.provider
+        == crate::services::reasoning_continuity::contract::RouteId::Qwen.provider_id();
     if file.provider != crate::services::llm::providers::openai::PROVIDER_ID
         && file.models.iter().any(|model| model.supports_fast_mode)
     {
@@ -202,6 +172,15 @@ fn validate_file(expected_provider: &str, file: &ProviderModelFile) -> Result<()
             model.supports_thinking,
             &model.reasoning_modes,
             model.default_reasoning_mode.as_deref(),
+        )?;
+        valid_reasoning_transport(
+            is_model_studio,
+            model.supports_thinking,
+            &model.reasoning_modes,
+            model.supports_reasoning_toggle,
+            model.supports_reasoning_replay,
+            model.supports_tools,
+            model.requires_tool_stream,
         )?;
     }
     Ok(())
