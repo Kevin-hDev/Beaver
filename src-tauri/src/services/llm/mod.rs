@@ -56,6 +56,9 @@ mod provider_model_registry_sources;
 mod provider_model_registry_validation;
 pub(crate) mod providers;
 pub(crate) mod reasoning_wire;
+mod request_auth;
+#[cfg(test)]
+mod request_auth_tests;
 pub(crate) mod request_purpose;
 mod retry;
 pub mod route;

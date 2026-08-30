@@ -30,7 +30,8 @@ pub(in crate::services::llm) async fn consume_stream(
             measurement.observe_provider_request_id(value);
         }
     }
-    let mut events = response.bytes_stream().eventsource();
+    let events = crate::services::llm::stream_sse::bounded_response(response).eventsource();
+    futures_util::pin_mut!(events);
     let mut state = StreamState::default();
     let mut result = crate::services::agent_local::types_ollama::StreamResult::default();
     let mut token_count = 0;
@@ -141,7 +142,8 @@ pub(super) async fn consume_silent(
     use eventsource_stream::Eventsource;
     use futures_util::StreamExt;
 
-    let mut events = response.bytes_stream().eventsource();
+    let events = crate::services::llm::stream_sse::bounded_response(response).eventsource();
+    futures_util::pin_mut!(events);
     let mut state = StreamState::default();
     let mut total_chunks = 0_u32;
     loop {

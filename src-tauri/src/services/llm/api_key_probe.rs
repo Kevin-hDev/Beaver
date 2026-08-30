@@ -95,10 +95,11 @@ pub(crate) fn request(
         ProbeMethod::Get => client.get(&probe.url),
         ProbeMethod::Post => client.post(&probe.url),
     };
-    request = match probe.auth {
-        ProbeAuth::Bearer => request.bearer_auth(key),
-        ProbeAuth::XApiKey => request.header("x-api-key", key),
+    let header = match probe.auth {
+        ProbeAuth::Bearer => ApiKeyHeader::Bearer,
+        ProbeAuth::XApiKey => ApiKeyHeader::XApiKey,
     };
+    request = super::request_auth::apply(request, header, key);
     for (name, value) in probe.headers {
         request = request.header(*name, *value);
     }

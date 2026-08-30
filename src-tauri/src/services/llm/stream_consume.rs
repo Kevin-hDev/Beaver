@@ -24,7 +24,8 @@ pub(super) async fn consume_stream(
     mut reasoning_capture: Option<super::reasoning_wire::ReasoningCapture>,
     mut measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
 ) -> Result<StreamOutcome, String> {
-    let mut stream = resp.bytes_stream().eventsource();
+    let stream = super::stream_sse::bounded_response(resp).eventsource();
+    futures_util::pin_mut!(stream);
     let mut result = StreamResult::default();
     let mut token_count = 0;
     let mut acc = ToolCallAccumulator::new();

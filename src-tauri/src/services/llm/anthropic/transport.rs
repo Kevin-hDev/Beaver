@@ -1,5 +1,4 @@
 use crate::services::agent_local::types_ollama::{StreamOutcome, StreamResult};
-use crate::services::llm::route_profile::ApiKeyHeader;
 use crate::services::llm::stream_http::{RequestConfig, RequestError};
 use crate::services::secure_http::{read_bounded, AuthenticatedClient, PROVIDER_ERROR_LIMIT};
 use tokio_util::sync::CancellationToken;
@@ -121,10 +120,7 @@ async fn post(
     let response = route
         .send_authenticated(&client, config.purpose, |token, inherited| {
             let request = client.post(&url).headers(inherited).json(&prepared.payload);
-            let request = match header {
-                ApiKeyHeader::XApiKey => request.header("x-api-key", token),
-                ApiKeyHeader::Bearer => request.bearer_auth(token),
-            };
+            let request = crate::services::llm::request_auth::apply(request, header, token);
             static_headers
                 .iter()
                 .fold(request, |request, (name, value)| {

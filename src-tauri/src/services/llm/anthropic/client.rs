@@ -32,10 +32,7 @@ async fn fetch_models() -> Result<Vec<ModelInfo>, LlmError> {
                     .get(&url)
                     .query(&[("limit", "500")])
                     .headers(inherited);
-                let request = match header {
-                    ApiKeyHeader::XApiKey => request.header("x-api-key", token),
-                    ApiKeyHeader::Bearer => request.bearer_auth(token),
-                };
+                let request = crate::services::llm::request_auth::apply(request, header, token);
                 static_headers
                     .iter()
                     .fold(request, |request, (name, value)| {
