@@ -30,4 +30,17 @@ describe("compression editor translations", () => {
       expect(compressionKeys(advanced(locale)).sort()).toEqual(expected);
     }
   });
+
+  it("n'affiche aucune interpolation orpheline sur la carte", () => {
+    const locales = [fr, en, es, de, italian, zh, ja];
+    for (const locale of locales) {
+      expect(locale.settings.advanced.compressionAdvancedDesc).not.toContain("{{name}}");
+    }
+  });
+
+  it("reprend exactement l'explication française du garde sous 64K", () => {
+    expect(fr.agentLocal.contextUsage.compressionHelp).toBe(
+      "La compression est désactivée parce que cette fenêtre de contexte est inférieure à 64K. Ces petites fenêtres peuvent ne pas laisser assez de place pour générer puis réinjecter un résumé, les instructions, les outils et les échanges récents. Vous pouvez l’autoriser dans le profil de compression avancé.",
+    );
+  });
 });

@@ -437,7 +437,7 @@
       "compression": "Compressione",
       "compressionDisabled": "Compressione disattivata",
       "compressionHelpTitle": "Perché la compressione è disattivata",
-      "compressionHelp": "La compressione è disattivata per finestre sotto 64K perché il contesto reiniettato potrebbe occupare troppo spazio e impedirne il corretto funzionamento. Puoi consentirla nel profilo di compressione avanzato.",
+      "compressionHelp": "La compressione è disattivata perché questa finestra di contesto è inferiore a 64K. Queste finestre ridotte potrebbero non lasciare spazio sufficiente per generare e poi reinserire un riepilogo, le istruzioni, gli strumenti e gli scambi recenti. Puoi consentirla nel profilo di compressione avanzato.",
       "compressionHelpDismiss": "Chiudi la spiegazione",
       "categories": {
         "messages": "Messaggi",
@@ -1023,7 +1023,7 @@
       "compressionProfileTitle": "Profilo di compressione",
       "compressionProfileDesc": "Configurazione usata per impostazione predefinita nelle nuove sessioni",
       "compressionAdvancedTitle": "Configurazione avanzata",
-      "compressionAdvancedDesc": "Profilo attivo: {{name}}. Prompt, elementi reinseriti e budget per dimensione della finestra.",
+      "compressionAdvancedDesc": "Prompt, elementi reinseriti e budget per dimensione della finestra di contesto.",
       "compressionAdvanced": "Avanzate",
       "compressionClose": "Chiudi",
       "compressionPanelTitle": "Compressione del contesto",

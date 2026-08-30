@@ -437,7 +437,7 @@
       "compression": "Compresión",
       "compressionDisabled": "Compresión desactivada",
       "compressionHelpTitle": "Por qué está desactivada la compresión",
-      "compressionHelp": "La compresión está desactivada para ventanas de menos de 64K porque el contexto reinyectado podría ocupar demasiado espacio e impedir que funcione correctamente. Puedes permitirla en el perfil de compresión avanzado.",
+      "compressionHelp": "La compresión está desactivada porque esta ventana de contexto es inferior a 64K. Estas ventanas pequeñas pueden no dejar espacio suficiente para generar y reinyectar un resumen, las instrucciones, las herramientas y los intercambios recientes. Puedes permitirla en el perfil de compresión avanzado.",
       "compressionHelpDismiss": "Cerrar la explicación",
       "categories": {
         "messages": "Mensajes",
@@ -1023,7 +1023,7 @@
       "compressionProfileTitle": "Perfil de compresión",
       "compressionProfileDesc": "Configuración utilizada por defecto en las sesiones nuevas",
       "compressionAdvancedTitle": "Configuración avanzada",
-      "compressionAdvancedDesc": "Perfil activo: {{name}}. Prompts, elementos reinyectados y presupuestos por tamaño de ventana.",
+      "compressionAdvancedDesc": "Prompts, elementos reinyectados y presupuestos según el tamaño de la ventana de contexto.",
       "compressionAdvanced": "Avanzado",
       "compressionClose": "Cerrar",
       "compressionPanelTitle": "Compresión del contexto",

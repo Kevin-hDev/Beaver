@@ -437,7 +437,7 @@
       "compression": "圧縮",
       "compressionDisabled": "圧縮は無効です",
       "compressionHelpTitle": "圧縮が無効な理由",
-      "compressionHelp": "64K 未満のコンテキスト枠では、再注入するコンテキストが領域を使いすぎて圧縮が正しく動作しない可能性があるため、圧縮は無効です。高度な圧縮プロファイルで許可できます。",
+      "compressionHelp": "このコンテキスト枠が 64K 未満のため、圧縮は無効です。このような小さな枠では、要約、指示、ツール、直近のやり取りを生成して再注入するための領域が足りない場合があります。高度な圧縮プロファイルで許可できます。",
       "compressionHelpDismiss": "説明を閉じる",
       "categories": {
         "messages": "メッセージ",
@@ -1023,7 +1023,7 @@
       "compressionProfileTitle": "圧縮プロファイル",
       "compressionProfileDesc": "新しいセッションで既定として使用する設定",
       "compressionAdvancedTitle": "詳細設定",
-      "compressionAdvancedDesc": "現在のプロファイル：{{name}}。プロンプト、再注入項目、コンテキスト枠サイズ別の予算。",
+      "compressionAdvancedDesc": "プロンプト、再注入項目、コンテキスト枠サイズ別の予算。",
       "compressionAdvanced": "詳細",
       "compressionClose": "閉じる",
       "compressionPanelTitle": "コンテキスト圧縮",

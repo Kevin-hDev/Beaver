@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ContextProgress } from "../context-progress";
 import type { ContextUsageBreakdown } from "@/hooks/context-usage-breakdown";
@@ -92,5 +93,23 @@ describe("ContextProgress", () => {
 
     expect(getByText(/400K \/ 1M/)).toBeTruthy();
     await waitFor(() => expect(getByRole("dialog", { name: "Context window" })).toHaveFocus());
+  });
+
+  it("laisse Tab suivre l'ordre normal sans piéger le focus dans le panneau", async () => {
+    const user = userEvent.setup();
+    const { getByLabelText, getByRole } = render(
+      <>
+        <ContextProgress used={400} max={1_000} />
+        <button type="button">Après l’anneau</button>
+      </>,
+    );
+    const trigger = getByLabelText("Context window");
+    await user.tab();
+    expect(trigger).toHaveFocus();
+    expect(getByRole("dialog", { name: "Context window" })).toBeInTheDocument();
+
+    await user.tab();
+
+    expect(getByRole("button", { name: "Après l’anneau" })).toHaveFocus();
   });
 });

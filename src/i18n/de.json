@@ -437,7 +437,7 @@
       "compression": "Komprimierung",
       "compressionDisabled": "Komprimierung deaktiviert",
       "compressionHelpTitle": "Warum die Komprimierung deaktiviert ist",
-      "compressionHelp": "Die Komprimierung ist für Kontextfenster unter 64K deaktiviert, da der erneut eingefügte Kontext zu viel Platz beanspruchen und die Komprimierung verhindern könnte. Sie können sie im erweiterten Komprimierungsprofil zulassen.",
+      "compressionHelp": "Die Komprimierung ist deaktiviert, weil dieses Kontextfenster kleiner als 64K ist. Diese kleinen Fenster lassen möglicherweise nicht genug Platz, um eine Zusammenfassung, Anweisungen, Werkzeuge und die letzten Nachrichten zu erzeugen und anschließend wieder einzufügen. Sie können sie im erweiterten Komprimierungsprofil zulassen.",
       "compressionHelpDismiss": "Erklärung schließen",
       "categories": {
         "messages": "Nachrichten",
@@ -1023,7 +1023,7 @@
       "compressionProfileTitle": "Komprimierungsprofil",
       "compressionProfileDesc": "Standardkonfiguration für neue Sitzungen",
       "compressionAdvancedTitle": "Erweiterte Konfiguration",
-      "compressionAdvancedDesc": "Aktives Profil: {{name}}. Prompts, wieder eingefügte Elemente und Budgets nach Kontextfenstergröße.",
+      "compressionAdvancedDesc": "Prompts, wieder eingefügte Elemente und Budgets nach Kontextfenstergröße.",
       "compressionAdvanced": "Erweitert",
       "compressionClose": "Schließen",
       "compressionPanelTitle": "Kontextkomprimierung",

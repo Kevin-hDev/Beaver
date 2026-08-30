@@ -444,7 +444,7 @@
       "compression": "Compression",
       "compressionDisabled": "Compression disabled",
       "compressionHelpTitle": "Why compression is disabled",
-      "compressionHelp": "Compression is disabled for context windows under 64K because the reinjected context could take too much space and prevent compression from working correctly. You can allow it in the advanced compression profile.",
+      "compressionHelp": "Compression is disabled because this context window is under 64K. These small windows may not leave enough room to generate and then reinject a summary, instructions, tools, and recent exchanges. You can allow it in the advanced compression profile.",
       "compressionHelpDismiss": "Close explanation",
       "categories": {
         "messages": "Messages",
@@ -1037,7 +1037,7 @@
       "compressionProfileTitle": "Compression profile",
       "compressionProfileDesc": "Configuration used by default in new sessions",
       "compressionAdvancedTitle": "Advanced configuration",
-      "compressionAdvancedDesc": "Active profile: {{name}}. Prompts, reinjected items and budgets by context-window size.",
+      "compressionAdvancedDesc": "Prompts, reinjected items and budgets by context-window size.",
       "compressionAdvanced": "Advanced",
       "compressionClose": "Close",
       "compressionPanelTitle": "Context compression",

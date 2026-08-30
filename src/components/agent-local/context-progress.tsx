@@ -142,7 +142,7 @@ export function ContextProgress({ used, max, breakdown, compression }: ContextPr
         aria-controls={panelId}
         onClick={openPanel}
         onKeyDown={(event) => {
-          if (event.key !== "Enter" && event.key !== " " && event.key !== "Tab") return;
+          if (event.key !== "Enter" && event.key !== " ") return;
           event.preventDefault();
           focusPanelOnOpen.current = true;
           openPanel();

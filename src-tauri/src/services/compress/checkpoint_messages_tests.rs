@@ -165,3 +165,35 @@ fn selected_user_without_assistant_survives_document_assembly() {
     assert!(!checkpoint.content.contains("continuation"));
     assert_eq!(assembled.last().unwrap().content, "current work");
 }
+
+#[test]
+fn selected_assistant_without_user_survives_document_assembly() {
+    let source = vec![
+        message("old", "user", "q".repeat(40_000)),
+        message("old", "assistant", "keep this exact assistant answer"),
+        message("active", "user", "current work"),
+    ];
+    let selected = select(&source, limits(0, 5_000)).unwrap();
+    let assembled = super::checkpoint_document::assemble(
+        &selected.messages,
+        Some("active"),
+        None,
+        &[],
+        super::profile_types::CompressionTrigger::Explicit,
+    )
+    .unwrap();
+
+    let checkpoint = assembled
+        .iter()
+        .find(|message| {
+            message.message_kind
+                == Some(crate::services::agent_local::types_message::AgentMessageKind::CompressionCheckpoint)
+        })
+        .expect("checkpoint");
+    assert!(checkpoint.content.contains("retained_assistant_messages"));
+    assert!(checkpoint
+        .content
+        .contains("keep this exact assistant answer"));
+    assert!(checkpoint.content.contains(&source[1].id));
+    assert_eq!(assembled.last().unwrap().content, "current work");
+}

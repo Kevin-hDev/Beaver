@@ -12,6 +12,7 @@ mod checkpoint_metadata;
 pub mod checkpoint_reasoning;
 mod checkpoint_reference_collect;
 pub mod checkpoint_references;
+mod checkpoint_retained_messages;
 mod checkpoint_section_writer;
 pub mod checkpoint_selection;
 pub mod checkpoint_subagents;

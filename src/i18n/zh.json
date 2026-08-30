@@ -437,7 +437,7 @@
       "compression": "压缩",
       "compressionDisabled": "压缩已停用",
       "compressionHelpTitle": "为什么压缩已停用",
-      "compressionHelp": "小于 64K 的上下文窗口默认停用压缩，因为重新注入的上下文可能占用过多空间，导致压缩无法正常工作。你可以在高级压缩配置中允许它。",
+      "compressionHelp": "压缩已停用，因为此上下文窗口小于 64K。这类小窗口可能没有足够空间来生成并重新注入摘要、指令、工具和最近的对话。你可以在高级压缩配置中允许它。",
       "compressionHelpDismiss": "关闭说明",
       "categories": {
         "messages": "消息",
@@ -1023,7 +1023,7 @@
       "compressionProfileTitle": "压缩配置文件",
       "compressionProfileDesc": "新会话默认使用的配置",
       "compressionAdvancedTitle": "高级配置",
-      "compressionAdvancedDesc": "当前配置：{{name}}。提示词、重新注入内容及按上下文窗口大小划分的预算。",
+      "compressionAdvancedDesc": "提示词、重新注入内容及按上下文窗口大小划分的预算。",
       "compressionAdvanced": "高级",
       "compressionClose": "关闭",
       "compressionPanelTitle": "上下文压缩",

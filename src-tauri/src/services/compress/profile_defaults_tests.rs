@@ -110,6 +110,14 @@ fn beaver_prompts_restore_the_normative_security_and_handoff_texts() {
         .summary
         .handoff_prompt
         .contains("Immediate next action"));
+    assert!(profile
+        .summary
+        .handoff_prompt
+        .contains("Within the nine required sections"));
+    assert!(!profile
+        .summary
+        .handoff_prompt
+        .contains("Include these sections:"));
 }
 
 #[test]

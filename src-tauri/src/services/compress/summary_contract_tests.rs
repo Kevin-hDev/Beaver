@@ -26,6 +26,25 @@ fn accepts_one_complete_bounded_envelope() {
 }
 
 #[test]
+fn accepts_the_literal_fixed_nine_section_contract() {
+    let literal = "<summary>\n\
+1. Primary Request and Intent\nDetails.\n\n\
+2. Key Technical Concepts\nDetails.\n\n\
+3. Files and Code Sections\nDetails.\n\n\
+4. Errors and Fixes\nDetails.\n\n\
+5. Problem Solving\nDetails.\n\n\
+6. User Intent and Corrections\nDetails.\n\n\
+7. Pending Tasks\nDetails.\n\n\
+8. Current Work\nDetails.\n\n\
+9. Next Step\nDetails.\n\
+</summary>";
+
+    let validated = validate(output(literal.to_string()), 2_000).unwrap();
+    assert!(validated.content.contains("1. Primary Request and Intent"));
+    assert!(validated.content.contains("9. Next Step"));
+}
+
+#[test]
 fn rejects_missing_empty_duplicate_or_trailing_envelopes() {
     for content in [
         "plain text".to_string(),

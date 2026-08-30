@@ -30,12 +30,6 @@ struct CheckpointBody<'a> {
     sections: &'a BTreeMap<String, String>,
 }
 
-#[derive(Serialize)]
-struct RetainedUserMessage<'a> {
-    source_message_id: &'a str,
-    content: &'a str,
-}
-
 pub fn assemble(
     selected: &[SelectedCheckpointMessage],
     active_turn_id: Option<&str>,
@@ -43,22 +37,19 @@ pub fn assemble(
     sections: &[CheckpointSection],
     trigger: CompressionTrigger,
 ) -> Result<Vec<AgentMessage>, &'static str> {
-    let (mut completed, active, retained_users) = retained_turns(selected, active_turn_id);
+    let (mut completed, active, retained_users, retained_assistants) =
+        retained_turns(selected, active_turn_id);
     let mut checkpoint_sections = sections.to_vec();
-    if !retained_users.is_empty() {
-        let retained_users = retained_users
-            .iter()
-            .map(|message| RetainedUserMessage {
-                source_message_id: &message.id,
-                content: &message.content,
-            })
-            .collect::<Vec<_>>();
-        checkpoint_sections.push(CheckpointSection {
-            name: "retained_user_messages".to_string(),
-            content: serde_json::to_string(&retained_users)
-                .map_err(|_| "compression_candidate_invalid")?,
-        });
-    }
+    super::checkpoint_retained_messages::append(
+        &mut checkpoint_sections,
+        "retained_user_messages",
+        &retained_users,
+    )?;
+    super::checkpoint_retained_messages::append(
+        &mut checkpoint_sections,
+        "retained_assistant_messages",
+        &retained_assistants,
+    )?;
     let checkpoint = checkpoint_turn(summary, &checkpoint_sections, trigger)?;
     completed.extend(checkpoint);
     completed.extend(active);
@@ -70,7 +61,12 @@ pub fn assemble(
 fn retained_turns(
     selected: &[SelectedCheckpointMessage],
     active_turn_id: Option<&str>,
-) -> (Vec<AgentMessage>, Vec<AgentMessage>, Vec<AgentMessage>) {
+) -> (
+    Vec<AgentMessage>,
+    Vec<AgentMessage>,
+    Vec<AgentMessage>,
+    Vec<AgentMessage>,
+) {
     let mut by_turn = BTreeMap::<String, Vec<AgentMessage>>::new();
     let mut order = Vec::new();
     for item in selected {
@@ -89,6 +85,7 @@ fn retained_turns(
     let mut completed = Vec::new();
     let mut active = Vec::new();
     let mut retained_users = Vec::new();
+    let mut retained_assistants = Vec::new();
     for turn_id in order {
         let Some(turn) = by_turn.remove(&turn_id) else {
             continue;
@@ -105,9 +102,11 @@ fn retained_turns(
             active = turn;
         } else if turn.iter().all(|message| message.role == "user") {
             retained_users.extend(turn);
+        } else if turn.iter().all(|message| message.role == "assistant") {
+            retained_assistants.extend(turn);
         }
     }
-    (completed, active, retained_users)
+    (completed, active, retained_users, retained_assistants)
 }
 
 fn valid_terminal_turn(turn: &[AgentMessage]) -> bool {
