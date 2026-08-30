@@ -1,12 +1,11 @@
 use crate::services::agent_local::types_ollama::ChatMessage;
-use crate::services::compress::{context_capsules, token_estimate};
+use crate::services::compress::token_estimate;
 
 const TRUNCATION_NOTICE: &str = "\n[message truncated for context budget]";
 
 pub(super) struct PruneParams<'a> {
     pub max_input: usize,
     pub tool_tokens: usize,
-    pub capsule_context: u64,
     pub context_window: u64,
     pub provider_id: &'a str,
     pub original_len: usize,
@@ -48,14 +47,6 @@ pub(super) fn prepare_with_limit(
         return Err(super::context_capacity_error::encode(details));
     }
 
-    let capsule = context_capsules::recent_file_context_message(messages, params.capsule_context)
-        .filter(|message| {
-            required_tokens.saturating_add(super::context_budget::estimate_messages(
-                params.provider_id,
-                std::slice::from_ref(message),
-            )) <= message_limit
-        });
-    context_capsules::insert_after_system(&mut next, capsule);
     let remaining = message_limit
         .saturating_sub(super::context_budget::estimate_messages(
             params.provider_id,

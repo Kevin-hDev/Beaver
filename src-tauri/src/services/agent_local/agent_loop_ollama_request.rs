@@ -70,8 +70,12 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
             params.context_usage_seed,
         ),
     );
-    let realtime_budget =
-        RealtimeBudget::from_estimate(params.configured_context, report.estimated_tokens);
+    let realtime_budget = RealtimeBudget::for_session(
+        params.session_id,
+        params.configured_context,
+        report.estimated_tokens,
+    )
+    .await;
     let plan_active =
         super::agent_loop_plan::active(params.session_id, params.plan_mode_active).await;
     let mut request = super::agent_loop_support::build_request(

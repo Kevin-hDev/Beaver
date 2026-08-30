@@ -1,8 +1,13 @@
+#[cfg(test)]
 use crate::services::agent_local::session_store;
+#[cfg(test)]
 use crate::services::agent_local::types_ollama::ChatMessage;
+#[cfg(test)]
 use crate::services::compress::{context_capsules_disk, token_estimate};
+#[cfg(test)]
 use std::path::Path;
 
+#[cfg(test)]
 pub use context_capsules_disk::CompressionMode;
 
 pub fn context_used_for_compression(
@@ -14,10 +19,12 @@ pub fn context_used_for_compression(
         .unwrap_or(estimated_tokens)
 }
 
+#[cfg(test)]
 pub fn is_safe_to_compress(messages: &[ChatMessage]) -> bool {
     super::state_recent::tool_chain_is_closed(messages)
 }
 
+#[cfg(test)]
 pub async fn apply_and_save(
     session_id: &str,
     runtime_messages: &mut Vec<ChatMessage>,
@@ -89,6 +96,7 @@ pub async fn apply_and_save(
         .map_err(|error| error.public_message().to_string())
 }
 
+#[cfg(test)]
 pub fn request_start_index(messages: &[ChatMessage]) -> usize {
     let segment_start = messages
         .iter()

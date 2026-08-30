@@ -38,7 +38,6 @@ pub fn prepare_for_request(
         super::context_budget_prune::PruneParams {
             max_input,
             tool_tokens,
-            capsule_context: context_window,
             context_window,
             provider_id,
             original_len,
@@ -68,7 +67,6 @@ pub fn reduce_after_payload_too_large(
         super::context_budget_prune::PruneParams {
             max_input: target,
             tool_tokens,
-            capsule_context: target as u64,
             context_window,
             provider_id,
             original_len,

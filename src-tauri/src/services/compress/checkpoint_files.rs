@@ -7,7 +7,7 @@ use std::path::Path;
 
 use crate::services::agent_local::types_ollama::ChatMessage;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct CheckpointFile {
     pub tool: String,
     pub path: String,

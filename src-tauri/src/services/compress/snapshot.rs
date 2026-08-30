@@ -20,6 +20,7 @@ pub struct CompressionSnapshot {
     pub trigger: CompressionTrigger,
     pub canonical_messages: Vec<ChatMessage>,
     pub provider_tools: Vec<serde_json::Value>,
+    pub checkpoint_images: Vec<super::checkpoint_attachments::CheckpointImage>,
     pub before_tokens: u32,
     pub provider_id: String,
     pub(crate) source_session: AgentSession,
@@ -50,6 +51,7 @@ impl CompressionSnapshot {
             trigger,
             canonical_messages: Vec::new(),
             provider_tools: Vec::new(),
+            checkpoint_images: Vec::new(),
             before_tokens,
             provider_id: session.provider.clone(),
             source_session: session.clone(),
@@ -68,6 +70,17 @@ impl CompressionSnapshot {
         self.canonical_messages = canonical_messages;
         self.provider_tools = provider_tools;
         self.before_tokens = before_tokens;
+        Ok(self)
+    }
+
+    pub fn with_checkpoint_images(
+        mut self,
+        images: Vec<super::checkpoint_attachments::CheckpointImage>,
+    ) -> Result<Self, String> {
+        if images.len() > 16 {
+            return Err("compression_snapshot_invalid".to_string());
+        }
+        self.checkpoint_images = images;
         Ok(self)
     }
 }

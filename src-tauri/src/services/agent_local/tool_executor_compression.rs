@@ -24,6 +24,9 @@ pub struct ToolCompression<'a> {
     pub native_context: u64,
     pub configured_context: u64,
     pub last_context_tokens: Option<u32>,
+    pub provider_tools: &'a [serde_json::Value],
+    pub chatbot: bool,
+    pub plan_mode_active: bool,
     pub working_dir: &'a Path,
     pub cancel: CancellationToken,
 }
@@ -41,6 +44,9 @@ impl ToolCompression<'_> {
                     self.native_context,
                     self.configured_context,
                     self.last_context_tokens,
+                    self.provider_tools,
+                    self.chatbot,
+                    self.plan_mode_active,
                     self.working_dir,
                     self.cancel.clone(),
                 )
@@ -62,6 +68,9 @@ impl ToolCompression<'_> {
                 self.native_context,
                 self.configured_context,
                 self.last_context_tokens,
+                self.provider_tools,
+                self.chatbot,
+                self.plan_mode_active,
                 self.working_dir,
                 self.cancel.clone(),
             )

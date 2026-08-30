@@ -1,11 +1,15 @@
+#[cfg(test)]
 use crate::services::agent_local::types_ollama::ChatMessage;
+#[cfg(test)]
 use crate::services::compress::prompt;
+#[cfg(test)]
 use crate::services::compress::token_estimate;
 
 pub const BOUNDARY_CONTENT: &str =
     "[Compression boundary — previous messages have been summarized]";
 
 /// Décide si l'auto-compression doit se déclencher.
+#[cfg(test)]
 pub fn should_auto_compress(
     enabled: bool,
     _native_context: u64,
@@ -23,6 +27,7 @@ pub fn should_auto_compress(
 }
 
 /// Filtre les messages pour la requête de compression (exclut system).
+#[cfg(test)]
 pub fn prepare_messages_for_compression(messages: &[ChatMessage]) -> Vec<ChatMessage> {
     messages
         .iter()
@@ -33,6 +38,7 @@ pub fn prepare_messages_for_compression(messages: &[ChatMessage]) -> Vec<ChatMes
 
 /// Construit les messages à envoyer au LLM pour obtenir le résumé.
 /// Ajoute le prompt de compression comme dernier message user.
+#[cfg(test)]
 pub fn build_compression_request_content(
     messages: &[ChatMessage],
     custom_instructions: Option<&str>,

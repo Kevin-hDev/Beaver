@@ -3,7 +3,9 @@ use crate::services::agent_local::types_ollama::ChatMessage;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
-use super::context_capsules_disk::{CapsuleEvent, MAX_RECENT_TOOLS};
+use super::context_capsules_disk::CapsuleEvent;
+#[cfg(test)]
+use super::context_capsules_disk::MAX_RECENT_TOOLS;
 
 const UNAVAILABLE_MARKER: &str = "[file unavailable: deleted, binary, or unreadable]";
 
@@ -40,6 +42,7 @@ pub async fn recent_disk_file_events(
     events
 }
 
+#[cfg(test)]
 pub fn recent_tool_events(messages: &[ChatMessage]) -> Vec<CapsuleEvent> {
     let mut found = Vec::new();
     for msg in messages.iter().filter(|message| message.role == "tool") {
@@ -119,6 +122,7 @@ fn file_path_from_content(tool: &str, content: &str) -> Option<(String, String)>
         .map(|(_, path)| (tool.to_string(), path.trim().to_string()))
 }
 
+#[cfg(test)]
 fn is_context_tool(tool: &str) -> bool {
     matches!(
         tool,

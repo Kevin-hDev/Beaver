@@ -14,11 +14,14 @@ pub mod checkpoint_tools;
 pub mod checkpoint_transaction;
 pub mod checkpoint_units;
 pub mod compression_redaction;
-pub mod context_capsules;
 pub mod context_capsules_disk;
 mod context_capsules_disk_collect;
 pub mod context_resolve;
 pub mod engine;
+pub mod orchestrator;
+mod orchestrator_candidate;
+mod orchestrator_sections;
+mod orchestrator_summary;
 pub mod profile_budget;
 pub mod profile_defaults;
 pub mod profile_limits;
@@ -34,18 +37,17 @@ pub mod realtime_budget;
 pub mod session_capabilities;
 pub mod snapshot;
 pub mod state;
+#[cfg(test)]
 pub(crate) mod state_recent;
 #[cfg(test)]
 mod state_tests;
+#[cfg(test)]
 pub mod summary_budget;
 pub mod summary_contract;
 pub mod summary_request;
 pub mod summary_retry;
 pub mod timeouts;
 pub mod token_estimate;
-
-#[cfg(test)]
-mod context_capsules_tests;
 
 #[cfg(test)]
 mod integration_tests;
@@ -88,6 +90,12 @@ mod checkpoint_tools_tests;
 
 #[cfg(test)]
 mod checkpoint_transaction_tests;
+
+#[cfg(test)]
+mod orchestrator_tests;
+
+#[cfg(test)]
+mod checkpoint_candidate_runtime_tests;
 
 #[cfg(test)]
 mod compression_redaction_tests;

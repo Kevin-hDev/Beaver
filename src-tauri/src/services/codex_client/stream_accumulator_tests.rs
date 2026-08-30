@@ -268,6 +268,29 @@ fn realtime_budget_interrupts_content_for_compression() {
 }
 
 #[test]
+fn realtime_budget_interrupts_reasoning_for_compression() {
+    let budget = RealtimeBudget::new(true, 100, 1, 0).unwrap();
+    let mut accumulator = StreamAccumulator::new("openai", "gpt-5.6-sol", &[], false, Some(budget));
+    let thinking = "x".repeat(256);
+
+    let outcome = accumulator
+        .apply(
+            &NoopSink,
+            &serde_json::json!({
+                "type": "response.reasoning_summary_text.delta",
+                "delta": thinking
+            }),
+        )
+        .unwrap()
+        .unwrap();
+
+    assert!(matches!(
+        outcome,
+        StreamOutcome::InterruptedForCompression(_)
+    ));
+}
+
+#[test]
 fn started_tool_call_is_useful_but_only_completion_is_partial_output() {
     let mut accumulator = StreamAccumulator::new("openai", "gpt-5.6-sol", &[], false, None);
     accumulator

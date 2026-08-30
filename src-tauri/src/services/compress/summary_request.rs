@@ -44,7 +44,12 @@ pub fn build_call(
     maximum_input_tokens: u32,
     maximum_output_tokens: u32,
 ) -> SummaryCall {
-    let redacted = super::compression_redaction::redact_messages_for_compression(source);
+    let source = source
+        .iter()
+        .filter(|message| !(message.role == "user" && message.content.trim() == "/compress"))
+        .cloned()
+        .collect::<Vec<_>>();
+    let redacted = super::compression_redaction::redact_messages_for_compression(&source);
     let history = bounded_history_json(&redacted, maximum_input_tokens);
     let profile_prompt =
         super::compression_redaction::redact_checkpoint_text(&prompts.system_prompt);

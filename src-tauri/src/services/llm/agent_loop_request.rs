@@ -59,7 +59,9 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
             params.context_usage_seed,
         ),
     );
-    let realtime_budget = RealtimeBudget::from_estimate(params.configured_context, input_estimate);
+    let realtime_budget =
+        RealtimeBudget::for_session(params.session_id, params.configured_context, input_estimate)
+            .await;
     let plan_active = crate::services::agent_local::agent_loop_plan::active(
         params.session_id,
         params.plan_mode_active,
@@ -149,8 +151,12 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
                 "Requête provider réduite après un rejet de taille.",
             )
             .await;
-            let reduced_budget =
-                RealtimeBudget::from_estimate(params.configured_context, input_estimate);
+            let reduced_budget = RealtimeBudget::for_session(
+                params.session_id,
+                params.configured_context,
+                input_estimate,
+            )
+            .await;
             super::retry::retry_stream(
                 params.on_event,
                 params.session_id,

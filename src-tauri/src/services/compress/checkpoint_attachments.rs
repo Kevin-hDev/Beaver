@@ -25,7 +25,17 @@ pub fn collect_images(
     } else {
         (16usize, 32 * 1024 * 1024u64)
     };
-    let max_images = profile_max.min(provider_max_images);
+    collect_images_with_limits(messages, profile_max, max_bytes, provider_max_images)
+}
+
+pub fn collect_images_with_limits(
+    messages: &[AgentMessage],
+    profile_max_images: usize,
+    profile_max_bytes: u64,
+    provider_max_images: usize,
+) -> Vec<CheckpointImage> {
+    let max_images = profile_max_images.min(provider_max_images).min(16);
+    let max_bytes = profile_max_bytes.min(32 * 1024 * 1024);
     let mut seen = BTreeSet::new();
     let mut total_bytes = 0u64;
     let mut selected = Vec::new();

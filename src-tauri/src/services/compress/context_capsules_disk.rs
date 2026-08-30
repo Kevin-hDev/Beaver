@@ -1,18 +1,29 @@
+#[cfg(test)]
 use crate::services::agent_local::types_ollama::ChatMessage;
+#[cfg(test)]
 use std::path::Path;
 
+#[cfg(test)]
 use super::context_capsules_disk_collect::{recent_disk_file_events, recent_tool_events};
 
 pub(crate) const MAX_FILES: usize = 15;
 pub(crate) const MAX_UNDER_64K_FILES: usize = 8;
+#[cfg(test)]
 pub(crate) const MAX_RECENT_TOOLS: usize = 100;
+#[cfg(test)]
 pub(crate) const TOKENS_PER_CHAR: usize = 4;
+#[cfg(test)]
 pub(crate) const MIN_TOTAL_TOKENS: usize = 4_000;
+#[cfg(test)]
 pub(crate) const MAX_TOTAL_TOKENS: usize = 20_000;
+#[cfg(test)]
 pub(crate) const MAX_PER_FILE_TOKENS: usize = 8_000;
+#[cfg(test)]
 pub(crate) const MAX_PER_TOOL_TOKENS: usize = 4_000;
+#[cfg(test)]
 const TOTAL_PERCENT: u64 = 5;
 
+#[cfg(test)]
 #[derive(Debug, Clone, Copy)]
 pub enum CompressionMode {
     Manual,
@@ -25,6 +36,7 @@ pub(crate) struct CapsuleEvent {
     pub result: String,
 }
 
+#[cfg(test)]
 pub async fn compression_context_message(
     messages: &[ChatMessage],
     context_window: u64,
@@ -50,6 +62,7 @@ pub async fn compression_context_message(
     Some(build_message(file_events, tool_events, context_window))
 }
 
+#[cfg(test)]
 fn build_message(
     file_events: Vec<CapsuleEvent>,
     tool_events: Vec<CapsuleEvent>,
@@ -85,6 +98,7 @@ fn build_message(
     ChatMessage::user(content)
 }
 
+#[cfg(test)]
 fn capsule_total_tokens(context_window: u64) -> usize {
     if context_window == 0 {
         return MIN_TOTAL_TOKENS;
@@ -93,6 +107,7 @@ fn capsule_total_tokens(context_window: u64) -> usize {
     target.clamp(MIN_TOTAL_TOKENS, MAX_TOTAL_TOKENS)
 }
 
+#[cfg(test)]
 fn truncate_chars(input: &str, max_chars: usize) -> String {
     if input.chars().count() <= max_chars {
         return input.to_string();

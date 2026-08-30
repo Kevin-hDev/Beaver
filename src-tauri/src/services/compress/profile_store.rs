@@ -18,6 +18,7 @@ pub enum CompressionProfileStoreError {
     Migration,
 }
 
+#[cfg(test)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct GlobalCompressionTriggerSettings {
     pub threshold_percent: u8,
@@ -47,13 +48,7 @@ pub fn mutate_document<T>(
     Ok((result, document))
 }
 
-pub fn load_global_trigger_settings(
-    context_window: u64,
-) -> Result<GlobalCompressionTriggerSettings, CompressionProfileStoreError> {
-    let document = load_document()?;
-    trigger_settings(&document, context_window)
-}
-
+#[cfg(test)]
 pub(crate) fn trigger_settings(
     document: &CompressionProfileDocument,
     context_window: u64,

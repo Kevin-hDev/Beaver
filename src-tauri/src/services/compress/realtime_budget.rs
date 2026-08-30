@@ -8,13 +8,19 @@ pub struct RealtimeBudget {
 }
 
 impl RealtimeBudget {
-    pub fn from_estimate(configured_context: u64, base_tokens: usize) -> Option<Self> {
-        let trigger =
-            super::profile_store::load_global_trigger_settings(configured_context).ok()?;
+    pub async fn for_session(
+        session_id: &str,
+        configured_context: u64,
+        base_tokens: usize,
+    ) -> Option<Self> {
+        let session = crate::services::agent_local::session_store::get(session_id)
+            .await
+            .ok()?;
+        let profile = super::profile_resolve::resolve_for_session(&session).ok()?;
         Self::new(
-            trigger.available,
+            profile.available(configured_context),
             configured_context,
-            trigger.threshold_percent,
+            profile.profile.threshold_percent.min(90),
             base_tokens,
         )
     }

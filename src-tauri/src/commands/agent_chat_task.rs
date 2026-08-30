@@ -71,6 +71,7 @@ async fn run_stream_task_inner(
         .ok_or_else(|| "conversation_admission_failed".to_string())?;
     let (messages, mut journal) = conversation
         .into_messages_and_journal(params.session_id.clone(), params.request_id.clone())?;
+    let mode = common::resolve_permission_mode(&params.permission_mode).await;
     if compress::is_compress_command(&messages) {
         let working_dir = common::resolve_working_dir(&params.working_dir)?;
         common::update_working_dir(&params.session_id, &working_dir).await?;
@@ -81,6 +82,9 @@ async fn run_stream_task_inner(
             &messages,
             &params.model,
             &params.provider,
+            &params.tools,
+            mode.is_chat,
+            params.plan_mode.unwrap_or(false),
             &working_dir,
             params.cancel.clone(),
         )
@@ -88,7 +92,6 @@ async fn run_stream_task_inner(
         return Ok(CompletedStreamTurn::compression(messages));
     }
 
-    let mode = common::resolve_permission_mode(&params.permission_mode).await;
     let response_language = common::response_language();
     session_events::emit_started(&params.session_id, &mode.mode);
 

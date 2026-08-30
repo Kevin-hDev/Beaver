@@ -112,7 +112,7 @@ mod integration {
         assert!(p.contains("Files and Code"));
         assert!(p.contains("Errors and Fixes"));
         assert!(p.contains("Problem Solving"));
-        assert!(p.contains("User Messages"));
+        assert!(p.contains("User Intent and Corrections"));
         assert!(p.contains("Pending Tasks"));
         assert!(p.contains("Current Work"));
         assert!(p.contains("Next Step"));

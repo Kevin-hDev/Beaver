@@ -10,7 +10,11 @@ use crate::services::agent_local::types_ollama::{ChatMessage, ToolCallFunction, 
 pub fn project(snapshot: &CompressionSnapshot, persisted: &[AgentMessage]) -> Vec<ChatMessage> {
     let mut runtime = snapshot.canonical_messages.clone();
     let base = runtime.len();
-    runtime.extend(persisted.iter().map(to_chat_message));
+    runtime.extend(
+        persisted
+            .iter()
+            .map(|message| to_chat_message(snapshot, message)),
+    );
     let boundary = runtime[base..].iter().position(|message| {
         message.role == "assistant" && message.content == super::engine::BOUNDARY_CONTENT
     });
@@ -23,7 +27,7 @@ pub fn project(snapshot: &CompressionSnapshot, persisted: &[AgentMessage]) -> Ve
     runtime
 }
 
-fn to_chat_message(message: &AgentMessage) -> ChatMessage {
+fn to_chat_message(snapshot: &CompressionSnapshot, message: &AgentMessage) -> ChatMessage {
     let tool_calls = message.tool_calls.as_ref().map(|calls| {
         calls
             .iter()
@@ -41,7 +45,7 @@ fn to_chat_message(message: &AgentMessage) -> ChatMessage {
         continuity_barrier_before: false,
         role: message.role.clone(),
         content: message.content.clone(),
-        images: None,
+        images: checkpoint_images(snapshot, &message.id),
         tool_calls,
         tool_name: message.tool_name.clone(),
         tool_call_id: message.tool_call_id.clone(),
@@ -49,4 +53,14 @@ fn to_chat_message(message: &AgentMessage) -> ChatMessage {
         continuation: message.continuation.clone(),
         tool_loop_reasoning: None,
     }
+}
+
+fn checkpoint_images(snapshot: &CompressionSnapshot, message_id: &str) -> Option<Vec<String>> {
+    let images: Vec<String> = snapshot
+        .checkpoint_images
+        .iter()
+        .filter(|image| image.source_message_id == message_id)
+        .map(|image| image.provider_payload.clone())
+        .collect();
+    (!images.is_empty()).then_some(images)
 }
