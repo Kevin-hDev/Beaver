@@ -91,16 +91,7 @@ pub struct CompressionDeleteResult {
     pub undo_expires_in_ms: u32,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(ts_rs::TS))]
-#[serde(rename_all = "snake_case")]
-#[cfg_attr(test, ts(rename_all = "snake_case"))]
-// Task 5 exposes this source through the effective per-session projection.
-#[allow(dead_code)]
-pub enum ResolvedCompressionProfileSource {
-    Global,
-    Session,
-}
+pub use crate::services::compress::profile_resolve::ResolvedCompressionProfileSource;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(test, derive(ts_rs::TS))]
@@ -118,6 +109,24 @@ pub struct ResolvedCompressionProfileView {
     pub context_window: u64,
     pub band: Option<crate::services::compress::profile_types::CompressionWindowBand>,
     pub available: bool,
+}
+
+impl ResolvedCompressionProfileView {
+    pub fn from_resolved(
+        resolved: &crate::services::compress::profile_resolve::ResolvedCompressionProfile,
+        context_window: u64,
+    ) -> Self {
+        Self {
+            id: resolved.profile.id.clone(),
+            name: resolved.profile.name.clone(),
+            source: resolved.source,
+            profile_revision: resolved.profile_revision,
+            global_selection_revision: resolved.global_selection_revision,
+            context_window,
+            band: resolved.band(context_window),
+            available: resolved.available(context_window),
+        }
+    }
 }
 
 #[cfg(test)]

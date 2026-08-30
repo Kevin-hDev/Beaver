@@ -41,6 +41,16 @@ pub async fn edit_user_message(id: &str, input: EditUserMessageInput) -> Result<
     super::session_store::save(&session).await
 }
 
+pub async fn set_compression_profile(
+    id: &str,
+    selection: super::types_session::SessionCompressionProfileSelection,
+) -> Result<(), String> {
+    super::session_store_updates::update_locked(id, move |session| {
+        session.compression_profile_selection = Some(selection);
+    })
+    .await
+}
+
 fn validate_patch(patch: &SessionMetadataPatch) -> Result<(), String> {
     if let Some(name) = patch.name.as_deref() {
         if name.trim().is_empty()

@@ -81,6 +81,14 @@ async fn clone_session_inner(
     let root_id = super::clone_roots::resolve_source_root_id(&source).await?;
     let prefix_end = super::conversation_compaction::terminal_prefix_end(&source.messages, index);
     let mut clone = build_clone(&source, message_id, mode.clone(), prefix_end, &root_id);
+    let profile_document = crate::services::compress::profile_store::load_document()
+        .map_err(|_| "Action impossible".to_string())?;
+    clone.compression_profile_selection =
+        crate::services::compress::profile_resolve::active_clone_selection(
+            &source,
+            &profile_document,
+        )
+        .map_err(|_| "Action impossible".to_string())?;
     super::conversation_history_validation::validate(&clone.messages)
         .map_err(|_| "Action impossible".to_string())?;
     let clone_id = clone.id.clone();

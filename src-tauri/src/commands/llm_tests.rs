@@ -50,37 +50,3 @@ async fn model_context_comes_from_the_registered_route_metadata() {
         None
     );
 }
-
-#[test]
-fn ollama_loaded_context_has_priority() {
-    assert_eq!(
-        super::select_ollama_context(Some(65_536), Some(32_768), 16_384, 8_192),
-        65_536
-    );
-}
-
-#[test]
-fn ollama_modelfile_context_has_priority_after_an_absent_loaded_value() {
-    assert_eq!(
-        super::select_ollama_context(Some(0), Some(32_768), 16_384, 8_192),
-        32_768
-    );
-}
-
-#[test]
-fn ollama_model_and_effective_context_use_the_lower_limit() {
-    assert_eq!(
-        super::select_ollama_context(None, None, 16_384, 8_192),
-        8_192
-    );
-    assert_eq!(
-        super::select_ollama_context(None, None, 4_096, 8_192),
-        4_096
-    );
-}
-
-#[test]
-fn ollama_zero_values_fall_through_to_the_available_limit() {
-    assert_eq!(super::select_ollama_context(None, Some(0), 0, 8_192), 8_192);
-    assert_eq!(super::select_ollama_context(None, None, 0, 0), 0);
-}

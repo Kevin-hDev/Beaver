@@ -7,6 +7,7 @@ pub mod profile_budget;
 pub mod profile_defaults;
 pub mod profile_limits;
 mod profile_normalization;
+pub mod profile_resolve;
 pub mod profile_store;
 pub mod profile_store_document;
 mod profile_store_migration;
@@ -33,6 +34,9 @@ mod profile_budget_tests;
 
 #[cfg(test)]
 mod profile_defaults_tests;
+
+#[cfg(test)]
+mod profile_resolve_tests;
 
 #[cfg(test)]
 mod profile_store_tests;
