@@ -178,7 +178,8 @@ async fn consume_sse_with_timeout(
     idle_timeout: std::time::Duration,
     measurement: &mut StreamMeasurement<'_>,
 ) -> Result<StreamOutcome, String> {
-    let mut sse = resp.bytes_stream().eventsource();
+    let sse = crate::services::llm::stream_sse::bounded_response(resp).eventsource();
+    futures_util::pin_mut!(sse);
     let mut accumulator = StreamAccumulator::new_with_capture(
         provider,
         model,

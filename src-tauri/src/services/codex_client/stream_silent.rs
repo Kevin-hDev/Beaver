@@ -78,7 +78,8 @@ async fn consume_sse_silent(
     model: &str,
     measurement: &mut StreamMeasurement<'_>,
 ) -> Result<StreamResult, String> {
-    let mut sse = resp.bytes_stream().eventsource();
+    let sse = crate::services::llm::stream_sse::bounded_response(resp).eventsource();
+    futures_util::pin_mut!(sse);
     let mut result = StreamResult::default();
     let mut text_bytes = 0_usize;
 

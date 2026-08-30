@@ -10,6 +10,29 @@ use crate::services::provider_usage::{
 };
 use crate::services::secure_http::AuthenticatedClient;
 
+async fn oversized_incomplete_sse_response() -> (reqwest::Response, tokio::task::JoinHandle<()>) {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let address = listener.local_addr().unwrap();
+    let server = tokio::spawn(async move {
+        let (mut socket, _) = listener.accept().await.unwrap();
+        let mut request = [0_u8; 1024];
+        let _ = socket.read(&mut request).await;
+        let _ = socket
+            .write_all(b"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\n\r\n")
+            .await;
+        let _ = socket.write_all(b"data: ").await;
+        let body = vec![b'x'; crate::services::secure_http::LLM_BODY_LIMIT + 1];
+        let _ = socket.write_all(&body).await;
+        tokio::time::sleep(Duration::from_secs(10)).await;
+    });
+    let client = AuthenticatedClient::new_loopback(Duration::from_secs(2)).unwrap();
+    let response = client
+        .send(client.get(format!("http://{address}/stream")))
+        .await
+        .unwrap();
+    (response, server)
+}
+
 #[test]
 fn local_output_limit_is_optional() {
     let result = StreamResult {
@@ -66,6 +89,27 @@ async fn silent_stream_rejects_the_generic_error_event_immediately() {
 
     assert_eq!(error, "provider_request_rejected");
     server.await.unwrap();
+}
+
+#[tokio::test]
+async fn silent_oversized_incomplete_sse_is_rejected_before_the_idle_deadline() {
+    let (response, server) = oversized_incomplete_sse_response().await;
+    let mut measurement =
+        crate::services::codex_client::stream_measurement::StreamMeasurement::new(None);
+    let error = consume_sse_silent(
+        response,
+        CancellationToken::new(),
+        Duration::from_secs(5),
+        None,
+        "openai",
+        "gpt-5.6-sol",
+        &mut measurement,
+    )
+    .await
+    .unwrap_err();
+
+    assert_eq!(error, "provider_connection_failed");
+    server.abort();
 }
 
 #[tokio::test]

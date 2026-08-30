@@ -1,6 +1,8 @@
 use futures_util::{Stream, StreamExt};
 
 const MAX_EVENT_BYTES: usize = crate::services::secure_http::LLM_BODY_LIMIT;
+// Shared safety ceiling for raw authenticated wire bytes, not a provider output promise.
+// Raise it only from documented limits corroborated by a bounded live wire measurement.
 const MAX_STREAM_BYTES: usize = crate::services::secure_http::MAX_AUTHENTICATED_BODY_LIMIT;
 const STREAM_LIMIT_ERROR: &str = "provider_connection_failed";
 
@@ -151,6 +153,32 @@ mod tests {
         let source = stream::iter([
             Ok::<_, ()>(Bytes::from_static(b"data:a\n\n")),
             Ok(Bytes::from_static(b"data:b\n\n")),
+        ]);
+        let mut bounded = super::bounded_wire(source, 8, 32);
+
+        assert!(bounded.next().await.unwrap().is_ok());
+        assert!(bounded.next().await.unwrap().is_ok());
+    }
+
+    #[tokio::test]
+    async fn split_crlf_event_boundaries_reset_the_per_event_budget() {
+        let source = stream::iter([
+            Ok::<_, ()>(Bytes::from_static(b"data:a\r")),
+            Ok(Bytes::from_static(b"\n\r")),
+            Ok(Bytes::from_static(b"\ndata:b\r\n\r\n")),
+        ]);
+        let mut bounded = super::bounded_wire(source, 10, 32);
+
+        assert!(bounded.next().await.unwrap().is_ok());
+        assert!(bounded.next().await.unwrap().is_ok());
+        assert!(bounded.next().await.unwrap().is_ok());
+    }
+
+    #[tokio::test]
+    async fn cr_only_event_boundaries_reset_the_per_event_budget() {
+        let source = stream::iter([
+            Ok::<_, ()>(Bytes::from_static(b"data:a\r\r")),
+            Ok(Bytes::from_static(b"data:b\r\r")),
         ]);
         let mut bounded = super::bounded_wire(source, 8, 32);
 

@@ -112,16 +112,22 @@ fn provider_request(
     key: &str,
 ) -> Result<reqwest::RequestBuilder, String> {
     let request = match provider_id {
-        "google" => client
-            .get("https://generativelanguage.googleapis.com/v1beta/models")
-            .header("x-goog-api-key", key),
-        "brave" => client
-            .get("https://api.search.brave.com/res/v1/web/search?q=test&count=1")
-            .header("X-Subscription-Token", key),
-        "exa" => client
-            .post("https://api.exa.ai/search")
-            .header("x-api-key", key)
-            .json(&serde_json::json!({"query":"test","numResults":1})),
+        "google" => crate::services::secure_http::sensitive_header(
+            client.get("https://generativelanguage.googleapis.com/v1beta/models"),
+            "x-goog-api-key",
+            key,
+        ),
+        "brave" => crate::services::secure_http::sensitive_header(
+            client.get("https://api.search.brave.com/res/v1/web/search?q=test&count=1"),
+            "X-Subscription-Token",
+            key,
+        ),
+        "exa" => crate::services::secure_http::sensitive_header(
+            client.post("https://api.exa.ai/search"),
+            "x-api-key",
+            key,
+        )
+        .json(&serde_json::json!({"query":"test","numResults":1})),
         "firecrawl" => client
             .get("https://api.firecrawl.dev/v2/team/credit-usage")
             .bearer_auth(key),

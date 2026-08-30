@@ -25,7 +25,9 @@ pub async fn search(query: &str) -> Result<Vec<SearchResult>, String> {
         }
     });
 
-    let request = client.post(URL).header("x-api-key", &*key).json(&payload);
+    let request =
+        crate::services::secure_http::sensitive_header(client.post(URL), "x-api-key", &key)
+            .json(&payload);
     let resp = client
         .send(request)
         .await

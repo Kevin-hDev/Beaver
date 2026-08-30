@@ -18,6 +18,34 @@ async fn default_client_rejects_plain_http_before_sending() {
     assert!(server.received_requests().await.unwrap().is_empty());
 }
 
+#[test]
+fn custom_auth_header_is_marked_sensitive_before_request_construction() {
+    let client = AuthenticatedClient::new(std::time::Duration::from_secs(1)).unwrap();
+    let request = sensitive_header(
+        client.get("https://example.com"),
+        "x-api-key",
+        "fixture-secret",
+    )
+    .build()
+    .expect("valid fixture request");
+
+    let header = request.headers().get("x-api-key").unwrap();
+    assert_eq!(header, "fixture-secret");
+    assert!(header.is_sensitive());
+}
+
+#[test]
+fn custom_auth_header_rejects_invalid_header_bytes() {
+    let client = AuthenticatedClient::new(std::time::Duration::from_secs(1)).unwrap();
+    let request = sensitive_header(
+        client.get("https://example.com"),
+        "x-api-key",
+        "invalid\nsecret",
+    );
+
+    assert!(request.build().is_err());
+}
+
 #[tokio::test]
 async fn loopback_client_rejects_non_loopback_plain_http() {
     let client = AuthenticatedClient::new_loopback(Duration::from_secs(2)).unwrap();
