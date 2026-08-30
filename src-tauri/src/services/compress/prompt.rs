@@ -54,6 +54,7 @@ const TRAILER: &str = "\n\
 REMINDER: Do NOT call any tools. Respond with plain text only inside one <summary> block. \
 Tool calls will be rejected and you will fail the task.";
 
+#[cfg(test)]
 pub fn format_summary_message(summary: &str, suppress_follow_up: bool) -> String {
     let mut msg = String::from(
         "This session is being continued from a previous conversation that ran out of \

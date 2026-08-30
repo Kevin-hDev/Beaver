@@ -1,5 +1,8 @@
 pub mod canonical_context;
 pub mod checkpoint_attachments;
+pub mod checkpoint_candidate;
+mod checkpoint_candidate_runtime;
+pub mod checkpoint_document;
 pub mod checkpoint_files;
 pub mod checkpoint_live_state;
 pub mod checkpoint_messages;
@@ -8,6 +11,7 @@ pub mod checkpoint_references;
 pub mod checkpoint_selection;
 pub mod checkpoint_subagents;
 pub mod checkpoint_tools;
+pub mod checkpoint_transaction;
 pub mod checkpoint_units;
 pub mod compression_redaction;
 pub mod context_capsules;
@@ -81,6 +85,9 @@ mod checkpoint_reasoning_tests;
 
 #[cfg(test)]
 mod checkpoint_tools_tests;
+
+#[cfg(test)]
+mod checkpoint_transaction_tests;
 
 #[cfg(test)]
 mod compression_redaction_tests;

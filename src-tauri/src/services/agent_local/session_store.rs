@@ -60,10 +60,21 @@ async fn update_index(meta: AgentSessionMeta) {
     }
 }
 
-#[cfg(test)]
-pub(super) async fn save_prepared(
+#[allow(dead_code, reason = "consumed by the staged compression transaction")]
+pub(crate) async fn prepare_document(
+    session: &AgentSession,
+) -> Result<super::session_store_document::PreparedSessionDocument, String> {
+    super::session_store_document::prepare(session).await
+}
+
+#[allow(dead_code, reason = "consumed by the staged compression transaction")]
+pub(crate) async fn save_prepared(
     prepared: super::session_store_document::PreparedSessionDocument,
 ) -> Result<(), String> {
+    #[cfg(test)]
+    if FAIL_NEXT_PREPARED_SAVE.swap(false, std::sync::atomic::Ordering::SeqCst) {
+        return Err("Sauvegarde de session impossible".to_string());
+    }
     validate_session_id(&prepared.session().id)?;
     let path = crate::services::paths::data_file_for_write(
         "agent-sessions",
@@ -75,6 +86,15 @@ pub(super) async fn save_prepared(
     super::session_store_document::write_prepared_to_path(path, prepared).await?;
     update_index(meta).await;
     Ok(())
+}
+
+#[cfg(test)]
+static FAIL_NEXT_PREPARED_SAVE: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+
+#[cfg(test)]
+pub(crate) fn fail_next_prepared_save() {
+    FAIL_NEXT_PREPARED_SAVE.store(true, std::sync::atomic::Ordering::SeqCst);
 }
 
 pub(crate) async fn read_from_dir(dir: &std::path::Path, id: &str) -> Result<AgentSession, String> {

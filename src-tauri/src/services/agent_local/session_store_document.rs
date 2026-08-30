@@ -10,14 +10,14 @@ pub(super) enum SessionReadError {
 }
 
 pub(crate) struct PreparedSessionDocument {
-    #[cfg(test)]
+    #[allow(dead_code, reason = "consumed by the staged compression transaction")]
     session: AgentSession,
     data: Vec<u8>,
 }
 
 impl PreparedSessionDocument {
-    #[cfg(test)]
-    pub(super) fn session(&self) -> &AgentSession {
+    #[allow(dead_code, reason = "consumed by the staged compression transaction")]
+    pub(crate) fn session(&self) -> &AgentSession {
         &self.session
     }
 }
@@ -81,17 +81,10 @@ pub(super) async fn prepare(session: &AgentSession) -> Result<PreparedSessionDoc
         .map_err(|_| super::session_limits::save_failed())?;
     super::session_migration_wire::validate_current_writable(&parsed)
         .map_err(|_| super::session_limits::save_failed())?;
-    #[cfg(test)]
-    let document = PreparedSessionDocument {
+    Ok(PreparedSessionDocument {
         session: parsed,
         data,
-    };
-    #[cfg(not(test))]
-    let document = {
-        drop(parsed);
-        PreparedSessionDocument { data }
-    };
-    Ok(document)
+    })
 }
 
 pub(super) async fn write_prepared_to_path(

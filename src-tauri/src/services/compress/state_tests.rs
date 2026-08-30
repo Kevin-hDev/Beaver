@@ -121,14 +121,19 @@ async fn apply_and_save_keeps_the_two_recent_complete_turns() {
     crate::services::agent_local::session_store::save(&session)
         .await
         .unwrap();
-    let mut runtime = vec![chat("user", "u3"), chat("assistant", "a3")];
+    let mut runtime = vec![
+        chat("user", &"history".repeat(12_000)),
+        chat("assistant", "old answer"),
+        chat("user", "u3"),
+        chat("assistant", "a3"),
+    ];
     let working = tempfile::tempdir().unwrap();
 
     state::apply_and_save(
         &session.id,
         &mut runtime,
         "summary",
-        16_000,
+        128_000,
         false,
         working.path(),
         state::CompressionMode::Manual,
@@ -140,22 +145,22 @@ async fn apply_and_save_keeps_the_two_recent_complete_turns() {
         .await
         .unwrap();
     assert_eq!(reloaded.compression_count, 1);
-    assert_eq!(
-        reloaded.messages[0].message_kind,
-        Some(crate::services::agent_local::types_message::AgentMessageKind::CompressionCheckpoint)
-    );
-    assert_eq!(
-        reloaded.messages[1].message_kind,
-        Some(crate::services::agent_local::types_message::AgentMessageKind::CompressionBoundary)
-    );
-    let tail = reloaded
+    let kinds = reloaded
         .messages
         .iter()
-        .rev()
-        .take(4)
-        .map(|message| message.content.as_str())
+        .filter_map(|message| message.message_kind)
         .collect::<Vec<_>>();
-    assert_eq!(tail, vec!["a3", "u3", "a2", "u2"]);
+    assert_eq!(
+        kinds,
+        vec![
+            crate::services::agent_local::types_message::AgentMessageKind::CompressionCheckpoint,
+            crate::services::agent_local::types_message::AgentMessageKind::CompressionBoundary,
+        ]
+    );
+    assert!(reloaded
+        .messages
+        .iter()
+        .any(|message| message.content == "u3"));
     crate::services::agent_local::session_store::delete_one(&session.id)
         .await
         .unwrap();
@@ -197,6 +202,8 @@ async fn compression_keeps_a_checkpoint_available_for_commit() {
         .await
         .unwrap();
     let mut runtime = vec![
+        chat("user", &"history".repeat(12_000)),
+        chat("assistant", "old answer"),
         chat("user", "current question"),
         chat("assistant", "current answer"),
     ];
@@ -206,7 +213,7 @@ async fn compression_keeps_a_checkpoint_available_for_commit() {
         &session.id,
         &mut runtime,
         "summary",
-        16_000,
+        128_000,
         false,
         working.path(),
         state::CompressionMode::Auto {

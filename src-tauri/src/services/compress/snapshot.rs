@@ -7,6 +7,7 @@ use super::profile_resolve::ResolvedCompressionProfile;
 use super::profile_types::CompressionTrigger;
 use super::session_capabilities::SessionCompressionCapabilities;
 use crate::services::agent_local::types_message::AgentMessage;
+use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::agent_local::types_session::AgentSession;
 
 #[derive(Debug, Clone)]
@@ -17,6 +18,11 @@ pub struct CompressionSnapshot {
     pub context_window: u64,
     pub capabilities: SessionCompressionCapabilities,
     pub trigger: CompressionTrigger,
+    pub canonical_messages: Vec<ChatMessage>,
+    pub provider_tools: Vec<serde_json::Value>,
+    pub before_tokens: u32,
+    pub provider_id: String,
+    pub(crate) source_session: AgentSession,
 }
 
 impl CompressionSnapshot {
@@ -33,6 +39,8 @@ impl CompressionSnapshot {
         {
             return Err("compression_snapshot_invalid".to_string());
         }
+        let before_tokens =
+            crate::services::token_counting::estimate_agent_messages_tokens(&session.messages);
         Ok(Self {
             session_id: session.id.clone(),
             source_messages: session.messages.clone(),
@@ -40,6 +48,26 @@ impl CompressionSnapshot {
             context_window,
             capabilities,
             trigger,
+            canonical_messages: Vec::new(),
+            provider_tools: Vec::new(),
+            before_tokens,
+            provider_id: session.provider.clone(),
+            source_session: session.clone(),
         })
+    }
+
+    pub fn with_runtime_context(
+        mut self,
+        canonical_messages: Vec<ChatMessage>,
+        provider_tools: Vec<serde_json::Value>,
+        before_tokens: u32,
+    ) -> Result<Self, String> {
+        if canonical_messages.len() > 64 || provider_tools.len() > 256 {
+            return Err("compression_snapshot_invalid".to_string());
+        }
+        self.canonical_messages = canonical_messages;
+        self.provider_tools = provider_tools;
+        self.before_tokens = before_tokens;
+        Ok(self)
     }
 }

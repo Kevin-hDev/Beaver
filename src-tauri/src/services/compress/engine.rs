@@ -45,6 +45,7 @@ pub fn build_compression_request_content(
 }
 
 /// Construit les messages post-compression : boundary marker + résumé.
+#[cfg(test)]
 pub fn build_post_compression_messages(
     summary: &str,
     suppress_follow_up: bool,

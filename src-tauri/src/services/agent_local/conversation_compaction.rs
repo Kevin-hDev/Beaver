@@ -1,12 +1,15 @@
+#[cfg(test)]
 use crate::services::reasoning_continuity::envelope::ReasoningEnvelope;
 
 use super::types_message::AgentMessage;
 
+#[cfg(test)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CompactionError {
     OpenTurn,
 }
 
+#[cfg(test)]
 #[derive(Debug, Clone)]
 pub struct CompactionOutcome {
     #[cfg_attr(
@@ -26,6 +29,7 @@ pub struct CompactionOutcome {
 
 /// Drops only terminal turns. A pending tool chain is intentionally a hard stop:
 /// a summary cannot faithfully replace an unfinished provider interaction.
+#[cfg(test)]
 pub fn compact_complete_turns(
     messages: &mut Vec<AgentMessage>,
     keep_complete_turns: usize,
@@ -83,6 +87,7 @@ pub(crate) fn turn_ranges(messages: &[AgentMessage]) -> Vec<std::ops::Range<usiz
     ranges
 }
 
+#[cfg(test)]
 fn is_open_tool_chain(turn: &[AgentMessage]) -> bool {
     turn.iter().any(|message| {
         message.role == "assistant"

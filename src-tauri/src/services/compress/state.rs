@@ -1,14 +1,9 @@
 use crate::services::agent_local::session_store;
 use crate::services::agent_local::types_ollama::ChatMessage;
-use crate::services::agent_local::types_session::AgentMessage;
-use crate::services::compress::{context_capsules_disk, engine, prompt, token_estimate};
+use crate::services::compress::{context_capsules_disk, token_estimate};
 use std::path::Path;
 
 pub use context_capsules_disk::CompressionMode;
-
-// Deux tours doivent survivre : le plus récent peut encore appartenir au journal
-// ouvert, qui doit retrouver son assistant après la compression pour se fermer.
-const RECENT_COMPLETE_TURNS: usize = 2;
 
 pub fn context_used_for_compression(
     last_context_tokens: Option<u32>,
@@ -32,9 +27,7 @@ pub async fn apply_and_save(
     working_dir: &Path,
     mode: CompressionMode,
 ) -> Result<u32, String> {
-    let lock = session_store::lock_session(session_id).await;
-    let _guard = lock.lock().await;
-    let mut session = session_store::get(session_id).await?;
+    let session = session_store::get(session_id).await?;
     let context = context_capsules_disk::compression_context_message(
         runtime_messages,
         context_window,
@@ -42,33 +35,58 @@ pub async fn apply_and_save(
         mode,
     )
     .await;
-    let runtime_recent = current_runtime_turn(runtime_messages);
-
-    replace_runtime_messages(
-        runtime_messages,
-        summary,
-        suppress_follow_up,
-        context.clone(),
-        runtime_recent,
-    );
-    session
-        .messages
-        .retain(|message| !(message.role == "user" && message.content.trim() == "/compress"));
-    crate::services::agent_local::conversation_compaction::compact_complete_turns(
-        &mut session.messages,
-        RECENT_COMPLETE_TURNS,
-    )
-    .map_err(|_| "Compression impossible".to_string())?;
-    let mut compacted = build_summary_turn(summary, suppress_follow_up, context);
-    compacted.append(&mut session.messages);
-    session.messages = compacted;
-    crate::services::agent_local::session_store_messages::recompute_accumulated_tokens(
-        &mut session,
-    );
-    session.compression_count = session.compression_count.saturating_add(1);
-    session_store::save(&session).await?;
-
-    Ok(token_estimate::estimate_tokens(runtime_messages) as u32)
+    let profile = super::profile_resolve::resolve_for_session(&session)
+        .map_err(|_| "Compression impossible".to_string())?;
+    let capabilities = super::session_capabilities::SessionCompressionCapabilities::from_runtime(
+        false,
+        &[],
+        false,
+        false,
+        false,
+    )?;
+    let trigger = match mode {
+        CompressionMode::Manual => super::profile_types::CompressionTrigger::Explicit,
+        CompressionMode::Auto { .. } => super::profile_types::CompressionTrigger::Automatic,
+    };
+    let canonical = runtime_messages
+        .iter()
+        .filter(|message| message.role == "system")
+        .cloned()
+        .collect();
+    let before_tokens =
+        token_estimate::estimate_tokens(runtime_messages).min(u32::MAX as usize) as u32;
+    let snapshot = super::snapshot::CompressionSnapshot::capture(
+        &session,
+        profile,
+        context_window,
+        capabilities,
+        trigger,
+    )?
+    .with_runtime_context(canonical, Vec::new(), before_tokens)?;
+    let validated = super::summary_contract::ValidatedSummary {
+        content: if suppress_follow_up {
+            summary.to_string()
+        } else {
+            format!("{summary}\n\nContinue from this checkpoint.")
+        },
+        estimated_tokens: crate::services::token_counting::estimate_text_tokens(summary)
+            .min(u32::MAX as usize) as u32,
+    };
+    let sections = context
+        .map(|message| {
+            vec![super::checkpoint_document::CheckpointSection {
+                name: "recent_file_context".to_string(),
+                content: message.content,
+            }]
+        })
+        .unwrap_or_default();
+    let candidate = super::checkpoint_candidate::build(&snapshot, Some(&validated), &sections)
+        .await
+        .map_err(|error| error.public_message().to_string())?;
+    super::checkpoint_transaction::commit_candidate(session_id, runtime_messages, candidate)
+        .await
+        .map(|report| report.after_tokens)
+        .map_err(|error| error.public_message().to_string())
 }
 
 pub fn request_start_index(messages: &[ChatMessage]) -> usize {
@@ -83,123 +101,4 @@ pub fn request_start_index(messages: &[ChatMessage]) -> usize {
         })
         .map(|offset| segment_start + offset)
         .unwrap_or(messages.len())
-}
-
-fn replace_runtime_messages(
-    messages: &mut Vec<ChatMessage>,
-    summary: &str,
-    suppress_follow_up: bool,
-    context: Option<ChatMessage>,
-    recent: Vec<ChatMessage>,
-) {
-    let system_messages: Vec<_> = messages
-        .iter()
-        .filter(|message| message.role == "system")
-        .cloned()
-        .collect();
-    let mut next = system_messages;
-    next.extend(engine::build_post_compression_messages(
-        summary,
-        suppress_follow_up,
-    ));
-    next.push(ChatMessage::assistant(
-        engine::BOUNDARY_CONTENT.to_string(),
-        None,
-        None,
-        None,
-        None,
-    ));
-    if let Some(context) = context {
-        if let Some(summary_message) = next.iter_mut().rev().find(|message| message.role == "user")
-        {
-            summary_message.content.push_str("\n\n");
-            summary_message.content.push_str(&context.content);
-        }
-    }
-    let boundary_index = next.len();
-    next.extend(recent);
-    if let Some(message) = next.get_mut(boundary_index) {
-        message.continuity_barrier_before = true;
-    } else if let Some(boundary) = next.last_mut() {
-        boundary.continuity_barrier_before = true;
-    }
-    *messages = next;
-}
-
-fn build_summary_turn(
-    summary: &str,
-    suppress_follow_up: bool,
-    context: Option<ChatMessage>,
-) -> Vec<AgentMessage> {
-    let turn_id = AgentMessage::new_turn_id();
-    let mut user = summary_agent_message(summary, suppress_follow_up, turn_id.clone());
-    if let Some(context) = context {
-        user.content.push_str("\n\n");
-        user.content.push_str(&context.content);
-    }
-    let assistant = AgentMessage {
-        id: uuid::Uuid::new_v4().to_string(),
-        turn_id,
-        role: "assistant".to_string(),
-        content: engine::BOUNDARY_CONTENT.to_string(),
-        message_kind: Some(
-            crate::services::agent_local::types_message::AgentMessageKind::CompressionBoundary,
-        ),
-        thinking: None,
-        tool_calls: None,
-        tool_name: None,
-        tool_call_id: None,
-        continuation: None,
-        replay_source: None,
-        tool_activities: None,
-        segments: None,
-        files: Vec::new(),
-        timestamp: chrono::Utc::now(),
-        tokens: 0,
-        work_duration_ms: None,
-        skill_names: None,
-        skill_ids: None,
-        stream_run_id: None,
-        stream_part: None,
-    };
-    vec![user, assistant]
-}
-
-fn summary_agent_message(summary: &str, suppress_follow_up: bool, turn_id: String) -> AgentMessage {
-    let content = prompt::format_summary_message(summary, suppress_follow_up);
-    let chat = ChatMessage::user(content.clone());
-    AgentMessage {
-        id: uuid::Uuid::new_v4().to_string(),
-        turn_id,
-        role: "user".to_string(),
-        content,
-        message_kind: Some(
-            crate::services::agent_local::types_message::AgentMessageKind::CompressionCheckpoint,
-        ),
-        thinking: None,
-        tool_calls: None,
-        tool_name: None,
-        tool_call_id: None,
-        continuation: None,
-        replay_source: None,
-        tool_activities: None,
-        segments: None,
-        files: vec![],
-        timestamp: chrono::Utc::now(),
-        tokens: token_estimate::estimate_tokens(&[chat]) as u32,
-        work_duration_ms: None,
-        skill_names: None,
-        skill_ids: None,
-        stream_run_id: None,
-        stream_part: None,
-    }
-}
-
-fn current_runtime_turn(messages: &[ChatMessage]) -> Vec<ChatMessage> {
-    let start = request_start_index(messages);
-    messages[start..]
-        .iter()
-        .filter(|message| super::state_recent::include_chat_message(message))
-        .cloned()
-        .collect()
 }
