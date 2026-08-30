@@ -1,0 +1,13 @@
+Security audit follow-up for review-audit-7bfd6107.
+
+S1: both visible and silent Codex SSE consumers now use the shared bounded wire stream before event parsing. Regression tests feed an unfinished event larger than LLM_BODY_LIMIT and prove fail-closed rejection before the idle deadline.
+
+S2: custom authentication headers now use one secure_http::sensitive_header authority. Anthropic request auth plus Google, Brave, and Exa probes and search calls mark values sensitive. Invalid header bytes remain fail closed.
+
+S3: stream budget tests cover CR-only boundaries and CRLF boundaries split across chunks. Mutation verification removed the reset temporarily, observed both tests fail, restored the implementation, then observed both pass.
+
+S4 decision: MAX_STREAM_BYTES remains the shared 32 MiB authenticated wire safety ceiling. The comment records that it is not a provider output promise and may only be raised from documented limits corroborated by a bounded live wire measurement.
+
+Verification: cargo fmt --check; cargo clippy --all-targets -- -D warnings; cargo test --lib: 4368 passed, 7 ignored, 0 failed; npm run lint; npx tsc --noEmit; npm test: 2633 Vitest tests plus all build, CI, CEF, E2E runner, extension host, and reasoning fixture suites passed; provider routing boundary ratchet stable at 56 files; git diff --check; graphify update .
+
+No application restart and no paid or live provider request were needed for this transport-level correction.
