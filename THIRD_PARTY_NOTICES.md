@@ -111,6 +111,15 @@ License.
 
 Copyright (c) Tailwind Labs, Inc.
 
+### Tabler Icons
+
+The `clock-hour-8` icon of the Wake-ups page title
+(`src/components/ui/wakeup-clock-icon.tsx`) is from
+[Tabler Icons](https://github.com/tabler/tabler-icons), licensed under the MIT
+License.
+
+Copyright (c) Paweł Kuna
+
 ### Streamline
 
 The `application-add` icon of the External applications tab
@@ -143,11 +152,13 @@ Copyright (c) Fonticons, Inc.
 
 ### MIT License
 
-Applies to teenyicons, Phosphor Icons, Hugeicons, Famicons and Heroicons above.
+Applies to teenyicons, Phosphor Icons, Hugeicons, Famicons, Heroicons and
+Tabler Icons above.
 
-Changes made to the Hugeicons, Famicons, Heroicons, Streamline and Font Awesome
-icons: each SVG was converted to a React component and its colour replaced by
-`currentColor` so the drawing follows the surrounding text and the active theme.
+Changes made to the Hugeicons, Famicons, Heroicons, Streamline, Font Awesome
+and Tabler icons: each SVG was converted to a React component and its colour
+replaced by `currentColor` so the drawing follows the surrounding text and the
+active theme.
 The paths themselves are unchanged.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy

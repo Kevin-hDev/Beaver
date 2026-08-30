@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
-import { Pulse, Plus } from "@/components/ui/icons";
+import { Plus } from "@/components/ui/icons";
+import { WakeupClockIcon } from "@/components/ui/wakeup-clock-icon";
 import { SettingsCard } from "@/components/settings/settings-card";
 import type { ScheduledWakeup, WakeupStatusSummary } from "@/types/wakeup";
 import { WakeupRow } from "./wakeup-row";
@@ -19,7 +20,7 @@ export function WakeupList({ wakeups, summaries, onSelect, onCreate }: WakeupLis
       <div className="wk-inner">
         <div className="wk-header">
           <div className="wk-header-title">
-            <Pulse size="var(--icon-xl)" weight="regular" />
+            <WakeupClockIcon />
             <span>{t("heartbeat.title")}</span>
           </div>
           <div className="wk-header-subtitle">{t("heartbeat.subtitle")}</div>

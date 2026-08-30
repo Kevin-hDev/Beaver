@@ -7,7 +7,6 @@ import {
   ArrowRight as PhArrowRight,
   ArrowUpRight as PhArrowUpRight,
   BookOpen as PhBookOpen,
-  Pulse as PhPulse,
   ClipboardText as PhClipboardText,
   UserCircle as PhUserCircle,
   Sliders as PhSliders,
@@ -87,7 +86,6 @@ function withSafeCssSize(Component: Icon): Icon {
   return Wrapped;
 }
 
-export const Pulse = withSafeCssSize(PhPulse);
 export const ClipboardText = withSafeCssSize(PhClipboardText);
 export const UserCircle = withSafeCssSize(PhUserCircle);
 export const Sliders = withSafeCssSize(PhSliders);
