@@ -11,6 +11,7 @@ import { FileAccessSettings } from "./file-access-settings";
 import { OllamaSettingsSection } from "./ollama-settings-section";
 import { AgentImportSettings } from "@/components/agent-import/agent-import-settings";
 import { SessionWorkspaceSettings } from "./session-workspace-settings";
+import { CompressionSettingsCard } from "./compression/compression-settings-card";
 import { notifySettingsChanged } from "@/hooks/use-setting-value";
 import { showToast } from "@/lib/toast-emitter";
 import i18n from "@/i18n";
@@ -126,6 +127,10 @@ export function AdvancedSettings({ focusTarget, onFocusTargetHandled }: Advanced
           </SettingsRow>
 
         </SettingsCard>
+
+        <h3 style={subStyle}>{t("settings.advanced.compressionTitle")}</h3>
+
+        <CompressionSettingsCard defaultModel={state.default_model} />
 
         <h3 style={subStyle}>{t("settings.advanced.ollamaTitle")}</h3>
 
