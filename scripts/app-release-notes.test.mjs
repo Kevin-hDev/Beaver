@@ -6,6 +6,7 @@ import { spawnSync } from "node:child_process";
 import test from "node:test";
 
 const EXPECTED_HEADING = "### App release notes";
+const CURRENT_VERSION = JSON.parse(readFileSync("package.json", "utf8")).version;
 
 function runNotes(arguments_, environment = {}) {
   return spawnSync(
@@ -25,7 +26,7 @@ test("writes a bounded GitHub output by default", () => {
   writeFileSync(output, "", "utf8");
 
   try {
-    const result = runNotes(["1.1.5"], { GITHUB_OUTPUT: output });
+    const result = runNotes([CURRENT_VERSION], { GITHUB_OUTPUT: output });
 
     assert.equal(result.status, 0, result.stderr);
     assert.equal(result.stdout, "");
@@ -41,7 +42,7 @@ test("stdout mode remains explicit inside GitHub Actions", () => {
   writeFileSync(output, "", "utf8");
 
   try {
-    const result = runNotes(["1.1.5", "--stdout"], { GITHUB_OUTPUT: output });
+    const result = runNotes([CURRENT_VERSION, "--stdout"], { GITHUB_OUTPUT: output });
 
     assert.equal(result.status, 0, result.stderr);
     assert.match(result.stdout, new RegExp(`^${EXPECTED_HEADING}`, "u"));

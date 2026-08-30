@@ -79,6 +79,9 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
+      - name: Verify bounded app release notes
+        run: node scripts/release/prepare-app-release-notes.mjs "$RELEASE_TAG" --check
+
       - name: Validate Beaver release metadata
         run: |
           node scripts/release/check-brand-artifacts.mjs source "$RELEASE_TAG" .

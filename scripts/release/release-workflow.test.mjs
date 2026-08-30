@@ -46,6 +46,21 @@ test("valide tout le projet et les métadonnées Beaver avant les builds", () =>
   }
 });
 
+test("refuse un tag dont les notes actives n'ont pas été archivées avant les builds", () => {
+  const steps = workflowDocument.jobs.validate.steps;
+  const preparationCheck = steps.find(
+    ({ name }) => name === "Verify bounded app release notes",
+  );
+  const firstBuild = workflowDocument.jobs.build;
+
+  assert.ok(preparationCheck);
+  assert.equal(
+    preparationCheck.run,
+    'node scripts/release/prepare-app-release-notes.mjs "$RELEASE_TAG" --check',
+  );
+  assert.equal(firstBuild.needs, "validate");
+});
+
 test("accepte uniquement un tag exact sans laisser de jeton Git persistant", () => {
   assert.match(
     workflow,
