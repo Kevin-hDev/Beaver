@@ -1,0 +1,13 @@
+Review corrections for customizable context compression.
+
+Product decision: keep the global automatic compression toggle. It controls automatic threshold compression and realtime interruption only; manual /compress remains available. The under-64K guard still applies to both automatic and realtime compression.
+
+Summary contract: the immutable technical prompt now exposes the exact nine required headings and the output budget. Factory prompts match the normative Beaver texts, history remains valid bounded JSON, fallback is restricted to structured retryable transport failures, and summary redaction fails closed.
+
+Checkpoint integrity: retained user-only messages and their images survive through a dedicated bounded section; category flags and budgets are enforced for tools, files, attachments, Git, tasks, unresolved state, references and subagents; all evidence shares one envelope; known models use their real context window, including 8K and 16K Ollama configurations.
+
+Durability and security: structured message kinds drive continuity, checkpoint metadata records profile revision, trigger and token counts without entering provider context, automatic OpenTurn is silent, v1 and v2 legacy markers migrate to v3, corrupt legacy config cannot disable profile storage, undo tokens use constant-time comparison and zeroized buffers, and user-visible failures are stable localized codes.
+
+UI: Settings keeps the automatic toggle and adds the global profile selector; profile actions reuse the shared primitive; Beaver reset and deletion are undoable; prompt reset is available; context ring keyboard access, nested help bubble, stable row height, session state isolation, 1M formatting and unique CSS prefixes are covered.
+
+Validation on 2026-08-31: cargo test passed 4486 tests plus the prelogger integration test, with 0 failures and 8 ignored; npm test passed 2675 Vitest tests plus build, CI, CEF, end-to-end, extension-host and reasoning-fixture suites; cargo clippy --all-targets -- -D warnings passed; npm run lint, npx tsc --noEmit, npm run contracts:check, cargo fmt --all -- --check and git diff --check passed. Graphify was updated after the code changes.
