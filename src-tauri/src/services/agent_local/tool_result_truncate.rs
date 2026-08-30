@@ -9,6 +9,15 @@ const MAX_CHARS_WEB_SEARCH: usize = 10_000;
 const MAX_CHARS_LIST_DIR: usize = 10_000;
 const MAX_CHARS_ERROR: usize = 30_000;
 const PREVIEW_SIZE: usize = 2_000;
+const FULL_RESULT_PREFIX: &str = "[Résultat complet disponible : ";
+
+pub(crate) fn full_result_reference(content: &str) -> Option<&str> {
+    content.lines().find(|line| {
+        line.starts_with(FULL_RESULT_PREFIX)
+            && line.ends_with(']')
+            && line.contains("tool-results/")
+    })
+}
 
 fn max_chars_for_tool(name: &str) -> Option<usize> {
     match name {
@@ -56,7 +65,7 @@ fn apply_truncation(
     let total_kb = total / 1024;
 
     let file_hint = match persist_path.as_deref() {
-        Some(path) => format!("\n[Résultat complet disponible : {path}]"),
+        Some(path) => format!("\n{FULL_RESULT_PREFIX}{path}]"),
         None => String::new(),
     };
 

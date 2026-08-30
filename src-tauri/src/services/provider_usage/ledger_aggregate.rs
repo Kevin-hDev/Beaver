@@ -1,6 +1,6 @@
 use super::pricing::ResolvedCost;
 use super::request_usage::RequestUsage;
-use super::types::{UsageAggregate, UsageBreakdown, UsageOrigin, UsageWorkload};
+use super::types::{CacheTokenTotals, UsageAggregate, UsageBreakdown, UsageOrigin, UsageWorkload};
 use chrono::NaiveDate;
 use std::collections::BTreeMap;
 
@@ -34,6 +34,13 @@ pub fn sum_since(days: &BTreeMap<String, UsageBreakdown>, from: NaiveDate) -> Us
         }
     }
     total
+}
+
+pub fn cache_tokens(source: &UsageAggregate) -> CacheTokenTotals {
+    CacheTokenTotals {
+        read_tokens: source.tokens.cached_input_tokens,
+        write_tokens: source.tokens.cache_write_input_tokens,
+    }
 }
 
 fn add_total(target: &mut UsageAggregate, usage: &RequestUsage, cost: ResolvedCost) {

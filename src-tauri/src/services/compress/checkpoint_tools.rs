@@ -66,11 +66,9 @@ pub fn excerpt_result(message: &AgentMessage, max_tokens: u32) -> AgentMessage {
         return message.clone();
     }
     let mut excerpt = message.clone();
-    let reference = message
-        .content
-        .lines()
-        .find(|line| line.contains("tool-results/"))
-        .unwrap_or_default();
+    let reference =
+        crate::services::agent_local::tool_result_truncate::full_result_reference(&message.content)
+            .unwrap_or_default();
     excerpt.content = super::checkpoint_messages::bounded_excerpt(
         &message.content,
         max_tokens,

@@ -49,6 +49,28 @@ pub async fn mark_phase(session_id: &str, request_id: &str, phase: &str, message
     .await;
 }
 
+pub async fn record_compression_metrics(
+    session_id: &str,
+    request_id: &str,
+    metrics: &crate::services::compress::metrics::CompressionMetrics,
+) {
+    log::info!(
+        target: "compression_metrics",
+        "{}",
+        metrics.safe_log_json()
+    );
+    let _ = support::update_run(session_id, request_id, |_session, run| {
+        support::push_event(
+            run,
+            "compression_metrics",
+            "Métriques techniques de compression enregistrées.",
+            None,
+            metrics.error.map(|error| error.code()),
+        );
+    })
+    .await;
+}
+
 pub async fn record_reasoning(session_id: &str, request_id: &str, message: &str) {
     let _ = support::update_run(session_id, request_id, |_session, run| {
         run.phase = "reasoning".to_string();

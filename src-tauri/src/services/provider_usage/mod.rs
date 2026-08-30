@@ -32,7 +32,7 @@ pub use request_usage::RequestUsage;
 pub(crate) use request_usage::MAX_REQUEST_TOKENS;
 pub use snapshot::ProviderUsageSnapshot;
 pub use types::UsageWorkload;
-pub(crate) use types::{origin_for_session, UsageOrigin};
+pub(crate) use types::{origin_for_session, CacheTokenTotals, UsageOrigin};
 pub use usage_context::{UsageApiFormat, UsageContext};
 
 use reqwest::header::HeaderMap;
@@ -58,6 +58,14 @@ pub async fn snapshot(
 
 pub fn credential_generation(connection_id: &str) -> Option<u64> {
     credential_epoch::current(connection_id)
+}
+
+pub(crate) async fn compression_cache_totals(connection_id: &str) -> CacheTokenTotals {
+    if types::validate_connection_id(connection_id).is_err() {
+        return CacheTokenTotals::default();
+    }
+    let snapshot = ledger::local_snapshot(connection_id).await;
+    ledger_aggregate::cache_tokens(&snapshot.all_time.workloads.compression)
 }
 
 pub async fn invalidate_remote(connection_id: &str) {

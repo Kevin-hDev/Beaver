@@ -55,6 +55,12 @@ pub struct TokenTotals {
     pub total_tokens: u64,
 }
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub(crate) struct CacheTokenTotals {
+    pub read_tokens: u64,
+    pub write_tokens: u64,
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct UsageAggregate {

@@ -18,8 +18,12 @@ pub mod context_capsules_disk;
 mod context_capsules_disk_collect;
 pub mod context_resolve;
 pub mod engine;
+pub mod metrics;
+mod metrics_facts;
+mod metrics_projection;
 pub mod orchestrator;
 mod orchestrator_candidate;
+mod orchestrator_metrics;
 mod orchestrator_sections;
 mod orchestrator_summary;
 pub mod profile_budget;
@@ -51,6 +55,12 @@ pub mod token_estimate;
 
 #[cfg(test)]
 mod integration_tests;
+
+#[cfg(test)]
+mod metrics_tests;
+
+#[cfg(test)]
+mod cache_stability_tests;
 
 #[cfg(test)]
 mod profile_budget_tests;

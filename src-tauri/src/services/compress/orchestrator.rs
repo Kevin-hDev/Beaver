@@ -1,4 +1,5 @@
 use std::path::Path;
+use std::time::Instant;
 
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::types_ollama::{ChatMessage, StreamEvent};
@@ -41,6 +42,16 @@ pub async fn run_compression(
     if !eligible(&profile, request.trigger, request.context_window, used) {
         return Ok(None);
     }
+    let started_at = Instant::now();
+    let session_id = request.session_id.to_string();
+    let request_id = request.request_id.to_string();
+    let provider_id = request.provider_id.to_string();
+    let trigger = request.trigger;
+    let context_window = request.context_window;
+    let cancelled = request.cancel.clone();
+    let compression_count = session.compression_count;
+    let cache_before =
+        crate::services::provider_usage::compression_cache_totals(&provider_id).await;
     let on_event = request.on_event;
     send(on_event, "start");
     crate::services::agent_local::stream_diagnostics::mark_phase(
@@ -50,12 +61,33 @@ pub async fn run_compression(
         "Compression du contexte démarrée.",
     )
     .await;
-    let result = run_started(request, session, profile, used).await;
+    let result = run_started(request, session, profile.clone(), used).await;
+    super::orchestrator_metrics::record(super::orchestrator_metrics::Completion {
+        session_id: &session_id,
+        request_id: &request_id,
+        provider_id: &provider_id,
+        profile: &profile,
+        trigger,
+        context_window,
+        before_tokens: used.min(u32::MAX as usize) as u32,
+        previous_compression_count: compression_count,
+        cache_before,
+        facts: result.as_ref().ok().map(|value| value.facts),
+        error: result.as_ref().err().copied(),
+        cancelled: result.is_err() && cancelled.is_cancelled(),
+        started_at,
+    })
+    .await;
     send(on_event, "done");
     if result.is_ok() {
         let _ = on_event.send(StreamEvent::CompressionComplete {});
     }
-    result.map(Some)
+    result.map(|value| Some(value.report))
+}
+
+struct StartedCompression {
+    report: CompressionCommitReport,
+    facts: super::metrics::CompressionSuccessFacts,
 }
 
 async fn run_started(
@@ -63,7 +95,7 @@ async fn run_started(
     session: crate::services::agent_local::types_session::AgentSession,
     profile: super::profile_resolve::ResolvedCompressionProfile,
     used_tokens: usize,
-) -> Result<CompressionCommitReport, CompressionError> {
+) -> Result<StartedCompression, CompressionError> {
     if request.cancel.is_cancelled() {
         return Err(CompressionError::SummaryInvalid);
     }
@@ -124,12 +156,15 @@ async fn run_started(
         request.working_dir,
     )
     .await?;
-    super::checkpoint_transaction::commit_candidate(
+    let next_count = snapshot.source_session.compression_count.saturating_add(1);
+    let facts = super::metrics_facts::collect(&snapshot, summary.as_ref(), &candidate, next_count);
+    let report = super::checkpoint_transaction::commit_candidate(
         request.session_id,
         request.runtime_messages,
         candidate,
     )
-    .await
+    .await?;
+    Ok(StartedCompression { report, facts })
 }
 
 fn image_budget(
