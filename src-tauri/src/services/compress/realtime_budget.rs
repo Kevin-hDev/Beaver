@@ -9,11 +9,12 @@ pub struct RealtimeBudget {
 
 impl RealtimeBudget {
     pub fn from_estimate(configured_context: u64, base_tokens: usize) -> Option<Self> {
-        let config = crate::services::config::read_config().ok()?.advanced;
+        let trigger =
+            super::profile_store::load_global_trigger_settings(configured_context).ok()?;
         Self::new(
-            config.compression_enabled,
+            trigger.available,
             configured_context,
-            config.compression_threshold,
+            trigger.threshold_percent,
             base_tokens,
         )
     }

@@ -64,6 +64,8 @@ impl TokenBudget {
         }
     }
 
+    // Task 14 exposes this mode in the profile editor.
+    #[allow(dead_code)]
     pub const fn percentage(percent_basis_points: u16) -> Self {
         Self {
             mode: BudgetMode::Percentage,

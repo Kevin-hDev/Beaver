@@ -15,7 +15,6 @@ import { notifySettingsChanged } from "@/hooks/use-setting-value";
 import { showToast } from "@/lib/toast-emitter";
 import i18n from "@/i18n";
 import { ADVANCED_SETTINGS_DEFAULTS, type AdvancedSettingsState } from "./advanced-settings-state";
-import "./compression-slider.css";
 
 interface AdvancedSettingsProps {
   focusTarget?: "file-access" | null;
@@ -137,42 +136,6 @@ export function AdvancedSettings({ focusTarget, onFocusTargetHandled }: Advanced
           showGpuStatus={state.show_gpu_status}
           onSave={save}
         />
-
-        <h3 style={subStyle}>{t("settings.advanced.compressionTitle")}</h3>
-
-        <SettingsCard>
-          <SettingsRow
-            title={t("settings.advanced.compressionEnabledTitle")}
-            description={t("settings.advanced.compressionEnabledDesc")}
-          >
-            <ToggleSwitch
-              checked={state.compression_enabled}
-              ariaLabel={t("settings.advanced.compressionEnabledTitle")}
-              onCheckedChange={(v) => saveFromEvent({ compression_enabled: v })}
-            />
-          </SettingsRow>
-
-          <SettingsRow
-            title={t("settings.advanced.compressionThresholdTitle")}
-            description={t("settings.advanced.compressionThresholdDesc")}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <input
-                type="range"
-                min={0}
-                max={100}
-                value={state.compression_threshold}
-                disabled={!state.compression_enabled}
-                onChange={(e) => saveFromEvent({ compression_threshold: Number(e.target.value) })}
-                className="compression-slider"
-                style={{ width: 120, opacity: state.compression_enabled ? 1 : 0.4, cursor: state.compression_enabled ? "pointer" : "not-allowed" }}
-              />
-              <span style={{ fontSize: "var(--text-sm)", color: "var(--ink-muted)", minWidth: 36, textAlign: "right" }}>
-                {state.compression_threshold}%
-              </span>
-            </div>
-          </SettingsRow>
-        </SettingsCard>
 
         <FileAccessSettings
           paths={state.allowed_paths}

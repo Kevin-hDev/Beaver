@@ -7,6 +7,9 @@ pub mod profile_budget;
 pub mod profile_defaults;
 pub mod profile_limits;
 mod profile_normalization;
+pub mod profile_store;
+pub mod profile_store_document;
+mod profile_store_migration;
 pub mod profile_types;
 pub mod profile_validation;
 pub mod prompt;
@@ -30,6 +33,9 @@ mod profile_budget_tests;
 
 #[cfg(test)]
 mod profile_defaults_tests;
+
+#[cfg(test)]
+mod profile_store_tests;
 
 #[cfg(test)]
 mod profile_validation_tests;

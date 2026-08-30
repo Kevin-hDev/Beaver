@@ -15,6 +15,7 @@ pub fn normalize_profile_document(
     let mut names = HashSet::new();
     profiles.retain(|profile| {
         (profile.id == BEAVER_PROFILE_ID || uuid::Uuid::parse_str(&profile.id).is_ok())
+            && valid_name(&profile.name)
             && ids.insert(profile.id.clone())
             && names.insert(profile.name.trim().to_lowercase())
     });
@@ -28,12 +29,20 @@ pub fn normalize_profile_document(
     }
 }
 
+fn valid_name(name: &str) -> bool {
+    let name = name.trim();
+    !name.is_empty()
+        && name.chars().count() <= super::profile_limits::MAX_PROFILE_NAME_CHARS
+        && !name.chars().any(char::is_control)
+}
+
 fn put_beaver_first(profiles: &mut Vec<CompressionProfile>) {
-    let beaver = profiles
+    let mut beaver = profiles
         .iter()
         .position(|profile| profile.id == BEAVER_PROFILE_ID)
         .map(|index| profiles.remove(index))
         .unwrap_or_else(beaver_profile);
+    beaver.name = "Beaver".to_string();
     profiles.insert(0, beaver);
 }
 

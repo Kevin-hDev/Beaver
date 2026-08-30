@@ -1,10 +1,18 @@
 use super::*;
 
 #[test]
-fn default_compression_settings() {
-    let settings = AdvancedSettings::default();
-    assert!(settings.compression_enabled);
-    assert_eq!(settings.compression_threshold, 85);
+fn legacy_compression_settings_are_not_a_serialized_authority() {
+    let settings: AdvancedSettings = serde_json::from_value(serde_json::json!({
+        "compression_enabled": false,
+        "compression_threshold": 85
+    }))
+    .expect("legacy settings");
+    assert_eq!(settings.legacy_compression_enabled, Some(false));
+    assert_eq!(settings.legacy_compression_threshold, Some(85));
+
+    let serialized = serde_json::to_value(settings).expect("serialized settings");
+    assert!(serialized.get("compression_enabled").is_none());
+    assert!(serialized.get("compression_threshold").is_none());
 }
 
 #[test]
@@ -17,27 +25,6 @@ fn ollama_setup_is_not_skipped_by_default() {
 fn onboarding_is_not_completed_by_default() {
     let settings = AdvancedSettings::default();
     assert!(!settings.onboarding_completed);
-}
-
-#[test]
-fn compression_threshold_bounds() {
-    let mut settings = AdvancedSettings {
-        compression_threshold: 0,
-        ..Default::default()
-    };
-    assert_eq!(settings.compression_threshold, 0);
-    settings.compression_threshold = 100;
-    assert_eq!(settings.compression_threshold, 100);
-}
-
-#[test]
-fn compression_threshold_is_clamped() {
-    let settings = AdvancedSettings {
-        compression_threshold: 150,
-        ..Default::default()
-    }
-    .normalized();
-    assert_eq!(settings.compression_threshold, 100);
 }
 
 #[test]

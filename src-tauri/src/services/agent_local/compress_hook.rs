@@ -20,8 +20,10 @@ pub async fn try_auto_compress(
     working_dir: &Path,
     cancel: CancellationToken,
 ) -> Option<u32> {
-    let config = match crate::services::config::read_config() {
-        Ok(c) => c.advanced,
+    let trigger = match crate::services::compress::profile_store::load_global_trigger_settings(
+        configured_context,
+    ) {
+        Ok(settings) => settings,
         Err(_) => return None,
     };
     let estimated = token_estimate::estimate_tokens(messages);
@@ -30,11 +32,11 @@ pub async fn try_auto_compress(
         return None;
     }
     if !engine::should_auto_compress(
-        config.compression_enabled,
+        trigger.available,
         native_context,
         configured_context,
         used,
-        config.compression_threshold,
+        trigger.threshold_percent,
     ) {
         return None;
     }

@@ -3,11 +3,13 @@ use crate::services::{autostart_migration, config as config_service};
 
 #[tauri::command]
 pub fn get_config() -> Result<ClgoConfig, String> {
+    ensure_compression_profiles()?;
     config_service::read_config()
 }
 
 #[tauri::command]
 pub fn save_config(mut config: ClgoConfig) -> Result<(), String> {
+    ensure_compression_profiles()?;
     validate_outputs_directory(&mut config.advanced)?;
     config_service::update_config(move |current| {
         config.advanced = protect_advanced_settings(config.advanced, current);
@@ -23,6 +25,7 @@ pub(crate) fn keep_current_mascot(config: &mut ClgoConfig, current: &ClgoConfig)
 
 #[tauri::command]
 pub fn get_advanced_settings() -> Result<AdvancedSettings, String> {
+    ensure_compression_profiles()?;
     let config = config_service::read_config()?;
     Ok(config.advanced)
 }
@@ -32,6 +35,7 @@ pub fn set_advanced_settings(
     app: tauri::AppHandle,
     settings: AdvancedSettings,
 ) -> Result<(), String> {
+    ensure_compression_profiles()?;
     let mut settings = settings;
     validate_outputs_directory(&mut settings)?;
     let settings = normalize_advanced_settings(settings);
@@ -79,6 +83,7 @@ pub fn patch_advanced_settings(
     app: tauri::AppHandle,
     patch: serde_json::Value,
 ) -> Result<(), String> {
+    ensure_compression_profiles()?;
     config_service::update_config(move |config| {
         let mut current = serde_json::to_value(&config.advanced).map_err(|e| {
             ::log::error!("[config] serialize: {e}");
@@ -112,4 +117,10 @@ pub fn patch_advanced_settings(
 #[tauri::command]
 pub fn get_effective_context_length() -> u32 {
     crate::services::gpu_detect::compute_default_num_ctx()
+}
+
+fn ensure_compression_profiles() -> Result<(), String> {
+    crate::services::compress::profile_store::load_document()
+        .map(|_| ())
+        .map_err(|_| "Configuration de compression indisponible.".to_string())
 }

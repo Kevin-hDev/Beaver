@@ -53,6 +53,10 @@ fn classify_domain_files() {
         classify_path("/Users/kevin/.local/share/cl-go-dash/configured-providers.json"),
         Some(EVENT_PROVIDERS)
     );
+    assert_eq!(
+        classify_path("/Users/kevin/.local/share/cl-go-dash/compression-profiles.json"),
+        Some(EVENT_COMPRESSION_PROFILES)
+    );
 }
 
 #[test]

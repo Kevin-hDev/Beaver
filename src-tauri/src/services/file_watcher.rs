@@ -11,6 +11,7 @@ const EVENT_LOGS: &str = "fs:logs-changed";
 const EVENT_CONNECTORS: &str = "fs:connectors-changed";
 const EVENT_SKILLS: &str = "fs:skills-changed";
 const EVENT_PROVIDERS: &str = "fs:providers-changed";
+const EVENT_COMPRESSION_PROFILES: &str = "fs:compression-profiles-changed";
 const DEBOUNCE_MS: u64 = 200;
 const MAX_DEBOUNCED_PATHS: usize = 256;
 
@@ -30,6 +31,9 @@ fn classify_path(n: &str) -> Option<&'static str> {
     }
     if n.ends_with("configured-providers.json") {
         return Some(EVENT_PROVIDERS);
+    }
+    if n.ends_with("compression-profiles.json") {
+        return Some(EVENT_COMPRESSION_PROFILES);
     }
     if n.contains("/skills/")
         || n.contains("\\skills\\")

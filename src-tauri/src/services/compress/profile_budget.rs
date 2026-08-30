@@ -9,6 +9,8 @@ pub fn band_for_window(context_window: u64) -> Option<CompressionWindowBand> {
     }
 }
 
+// Task 5 applies this profile calculation to the context selector.
+#[allow(dead_code)]
 pub fn resolve_budget(spec: &TokenBudget, context_window: u64) -> u32 {
     let percentage = ((context_window as u128).saturating_mul(spec.percent_basis_points as u128)
         / 10_000)
@@ -28,6 +30,8 @@ pub fn resolve_budget(spec: &TokenBudget, context_window: u64) -> u32 {
     }
 }
 
+// Task 7 moves summary output sizing onto profiles.
+#[allow(dead_code)]
 pub fn summary_output_limit(
     budget: &SummaryOutputBudget,
     context_window: u64,

@@ -34,7 +34,7 @@ vi.mock("@tauri-apps/api/core", async () => {
       if (cmd === "get_advanced_settings") return Promise.resolve({
         autostart: false, start_hidden: false, show_tray: true, default_model: "", keep_alive: "5m",
         allowed_paths: ["/"], hardware_accel: "gpu", multi_model: false, show_gpu_status: false,
-        compression_enabled: true, compression_threshold: 85, response_language: "",
+        response_language: "",
         link_preview_enabled: true, ollama_setup_skipped: false,
       });
       if (cmd === "get_agent_settings") return Promise.resolve(data.agentSettings());
