@@ -31,14 +31,20 @@ pub fn load_document() -> Result<CompressionProfileDocument, CompressionProfileS
     load_from_paths(&profile_path(), &crate::services::config::config_path())
 }
 
-#[expect(dead_code, reason = "Task 3 exposes validated profile mutations")]
-pub fn save_document(
-    document: &CompressionProfileDocument,
-) -> Result<(), CompressionProfileStoreError> {
+pub fn mutate_document<T>(
+    mutation: impl FnOnce(&mut CompressionProfileDocument) -> Result<T, CompressionProfileStoreError>,
+) -> Result<(T, CompressionProfileDocument), CompressionProfileStoreError> {
     let _guard = PROFILE_STORE_LOCK
         .lock()
         .unwrap_or_else(|error| error.into_inner());
-    write_document(&profile_path(), document)
+    let path = profile_path();
+    let mut document = load_from_paths(&path, &crate::services::config::config_path())?;
+    let result = mutation(&mut document)?;
+    document
+        .validate()
+        .map_err(|_| CompressionProfileStoreError::Invalid)?;
+    write_document(&path, &document)?;
+    Ok((result, document))
 }
 
 pub fn load_global_trigger_settings(

@@ -5,7 +5,8 @@ use super::profile_limits::{
     MAX_PROFILES, MAX_PROFILE_NAME_CHARS, MAX_RETRIES,
 };
 use super::profile_types::{
-    CompressionBandSettings, CompressionProfile, ItemBudget, SummaryModelSelection, TokenBudget,
+    CompressionBandSettings, CompressionCategory, CompressionProfile, ItemBudget,
+    SummaryFailurePolicy, SummaryModelSelection, TokenBudget,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -36,13 +37,18 @@ pub fn validate_profile_input(
     for band in [&profile.under_64k, &profile.compact, &profile.large] {
         validate_band(band)?;
     }
-    let mut categories = HashSet::new();
-    if profile.reduction_order.is_empty()
-        || !profile
-            .reduction_order
-            .iter()
-            .all(|category| categories.insert(*category))
-    {
+    let expected = HashSet::from([
+        CompressionCategory::Images,
+        CompressionCategory::Files,
+        CompressionCategory::Tools,
+        CompressionCategory::AssistantMessages,
+        CompressionCategory::UserMessages,
+    ]);
+    if profile.reduction_order.len() != expected.len() {
+        return Err(ProfileValidationError::InvalidReductionOrder);
+    }
+    let categories: HashSet<_> = profile.reduction_order.iter().copied().collect();
+    if categories != expected {
         return Err(ProfileValidationError::InvalidReductionOrder);
     }
     Ok(())
@@ -98,6 +104,11 @@ fn validate_summary(profile: &CompressionProfile) -> Result<(), ProfileValidatio
     if profile.summary.ordinary_retries > MAX_RETRIES {
         return Err(ProfileValidationError::InvalidBudget);
     }
+    if profile.summary.failure_policy == SummaryFailurePolicy::TryFallback
+        && profile.summary.fallback_model.is_none()
+    {
+        return Err(ProfileValidationError::InvalidModel);
+    }
     validate_token_budget(&profile.summary.input_budget)
 }
 
@@ -125,10 +136,6 @@ fn validate_band(band: &CompressionBandSettings) -> Result<(), ProfileValidation
     let values = [
         band.summary_output.input_floor_tokens,
         band.summary_output.input_ceiling_tokens,
-        band.git_tokens,
-        band.plan_and_tasks_tokens,
-        band.subagent_detail_tokens,
-        band.unresolved_state_tokens,
     ];
     if values.iter().any(|value| *value > MAX_BUDGET_TOKENS)
         || band.summary_output.input_floor_tokens > band.summary_output.input_ceiling_tokens
@@ -144,7 +151,7 @@ fn validate_band(band: &CompressionBandSettings) -> Result<(), ProfileValidation
     Ok(())
 }
 
-fn token_budgets(band: &CompressionBandSettings) -> [&TokenBudget; 6] {
+fn token_budgets(band: &CompressionBandSettings) -> [&TokenBudget; 10] {
     [
         &band.response_reserve,
         &band.minimum_reduction,
@@ -152,13 +159,18 @@ fn token_budgets(band: &CompressionBandSettings) -> [&TokenBudget; 6] {
         &band.user_messages.tokens,
         &band.assistant_messages.tokens,
         &band.evidence_envelope,
+        &band.git_tokens.tokens,
+        &band.plan_and_tasks_tokens.tokens,
+        &band.subagent_detail_tokens.tokens,
+        &band.unresolved_state_tokens.tokens,
     ]
 }
 
-fn item_budgets(band: &CompressionBandSettings) -> [&ItemBudget; 4] {
+fn item_budgets(band: &CompressionBandSettings) -> [&ItemBudget; 5] {
     [
         &band.tools,
         &band.files,
+        &band.modified_files,
         &band.text_attachments,
         &band.critical_references,
     ]

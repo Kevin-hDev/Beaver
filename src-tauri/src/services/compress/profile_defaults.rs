@@ -1,7 +1,7 @@
 use super::profile_types::{
     CategoryBudget, CompressionBandSettings, CompressionCategory, CompressionProfile,
-    CompressionSummarySettings, ImageBudget, ItemBudget, SummaryModelSelection,
-    SummaryOutputBudget, TokenBudget,
+    CompressionSummarySettings, ContextCapacityPolicy, ImageBudget, ItemBudget,
+    SummaryFailurePolicy, SummaryModelSelection, SummaryOutputBudget, TokenBudget,
 };
 
 pub const BEAVER_PROFILE_ID: &str = "beaver";
@@ -16,6 +16,7 @@ pub fn beaver_profile() -> CompressionProfile {
         revision: 1,
         threshold_percent: 90,
         allow_under_64k: false,
+        context_capacity_policy: ContextCapacityPolicy::ReduceOptionalCategories,
         summary: CompressionSummarySettings {
             enabled: true,
             system_prompt: SYSTEM_PROMPT.to_string(),
@@ -24,6 +25,7 @@ pub fn beaver_profile() -> CompressionProfile {
             fallback_model: None,
             ordinary_retries: 0,
             input_budget: TokenBudget::fixed(1_000_000),
+            failure_policy: SummaryFailurePolicy::KeepHistory,
         },
         under_64k: under_64k_settings(),
         compact: standard_settings(5_000, 32_000),
@@ -34,17 +36,11 @@ pub fn beaver_profile() -> CompressionProfile {
 
 pub fn default_reduction_order() -> Vec<CompressionCategory> {
     vec![
+        CompressionCategory::Images,
+        CompressionCategory::Files,
+        CompressionCategory::Tools,
         CompressionCategory::AssistantMessages,
         CompressionCategory::UserMessages,
-        CompressionCategory::Tools,
-        CompressionCategory::Files,
-        CompressionCategory::TextAttachments,
-        CompressionCategory::Images,
-        CompressionCategory::Git,
-        CompressionCategory::PlanAndTasks,
-        CompressionCategory::Subagents,
-        CompressionCategory::UnresolvedState,
-        CompressionCategory::CriticalReferences,
     ]
 }
 
@@ -59,12 +55,13 @@ fn under_64k_settings() -> CompressionBandSettings {
         evidence_envelope: TokenBudget::clamped(250, 2_000, 10_000),
         tools: item_budget(50, 2_000, 0),
         files: item_budget(8, 4_000, 0),
+        modified_files: item_budget(8, 4_000, 0),
         text_attachments: item_budget(8, 4_000, 0),
         images: image_budget(8, 16),
-        git_tokens: 1_000,
-        plan_and_tasks_tokens: 2_000,
-        subagent_detail_tokens: 2_000,
-        unresolved_state_tokens: 1_000,
+        git_tokens: fixed_category_budget(1_000),
+        plan_and_tasks_tokens: fixed_category_budget(2_000),
+        subagent_detail_tokens: fixed_category_budget(2_000),
+        unresolved_state_tokens: fixed_category_budget(1_000),
         critical_references: item_budget(16, 0, 1_000),
     }
 }
@@ -80,12 +77,13 @@ fn standard_settings(message_tokens: u32, summary_window_max: u32) -> Compressio
         evidence_envelope: TokenBudget::clamped(500, 4_000, 20_000),
         tools: item_budget(100, 4_000, 0),
         files: item_budget(15, 8_000, 0),
+        modified_files: item_budget(15, 8_000, 0),
         text_attachments: item_budget(15, 8_000, 0),
         images: image_budget(16, 32),
-        git_tokens: 2_000,
-        plan_and_tasks_tokens: 4_000,
-        subagent_detail_tokens: 4_000,
-        unresolved_state_tokens: 2_000,
+        git_tokens: fixed_category_budget(2_000),
+        plan_and_tasks_tokens: fixed_category_budget(4_000),
+        subagent_detail_tokens: fixed_category_budget(4_000),
+        unresolved_state_tokens: fixed_category_budget(2_000),
         critical_references: item_budget(32, 0, 2_000),
     }
 }
@@ -110,6 +108,13 @@ const fn category_budget(fixed_tokens: u32, percent: u16) -> CategoryBudget {
     CategoryBudget {
         enabled: true,
         tokens: TokenBudget::minimum(fixed_tokens, percent),
+    }
+}
+
+const fn fixed_category_budget(tokens: u32) -> CategoryBudget {
+    CategoryBudget {
+        enabled: true,
+        tokens: TokenBudget::fixed(tokens),
     }
 }
 

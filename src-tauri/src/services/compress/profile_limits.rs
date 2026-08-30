@@ -6,3 +6,8 @@ pub const MAX_BUDGET_TOKENS: u32 = 1_000_000;
 pub const MAX_RETRIES: u8 = 2;
 
 pub const MAX_MODEL_FIELD_CHARS: usize = 256;
+
+// Settings has no session payload to measure, so its preview uses one
+// conservative backend-owned estimate until Task 16 can expose measurements.
+pub const SETTINGS_SYSTEM_TOOLS_ESTIMATE: u32 = 12_000;
+pub const SETTINGS_IMAGE_TOKEN_ESTIMATE: u32 = 1_024;

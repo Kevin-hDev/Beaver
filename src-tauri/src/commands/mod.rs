@@ -43,6 +43,12 @@ pub(crate) mod app_update_source;
 pub mod attachments;
 pub mod browser;
 pub mod codex;
+pub mod compression_profiles;
+mod compression_profiles_mutations;
+mod compression_profiles_projection;
+#[cfg(test)]
+mod compression_profiles_tests;
+mod compression_profiles_undo;
 pub mod config;
 #[cfg(test)]
 mod config_mascot_tests;
@@ -142,6 +148,7 @@ pub use app_update_install::*;
 pub use attachments::*;
 pub use browser::*;
 pub use codex::*;
+pub use compression_profiles::*;
 pub use config::*;
 pub use context_usage::*;
 pub use directory_access::*;

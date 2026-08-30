@@ -48,6 +48,7 @@ fn beaver_keeps_under_64k_values_available_while_disabled() {
     assert_eq!(tiny.tools.tokens_per_item, 2_000);
     assert_eq!(tiny.files.max_items, 8);
     assert_eq!(tiny.files.tokens_per_item, 4_000);
+    assert_eq!(tiny.modified_files, tiny.files);
     assert_eq!(tiny.text_attachments, tiny.files);
     assert_eq!(tiny.images.max_items, 8);
     assert_eq!(tiny.images.max_total_bytes, 16 * 1024 * 1024);
@@ -58,6 +59,7 @@ fn beaver_keeps_under_64k_values_available_while_disabled() {
     assert_eq!(compact.tools.tokens_per_item, 4_000);
     assert_eq!(compact.files.max_items, 15);
     assert_eq!(compact.files.tokens_per_item, 8_000);
+    assert_eq!(compact.modified_files, compact.files);
     assert_eq!(compact.text_attachments, compact.files);
     assert_eq!(compact.images.max_items, 16);
     assert_eq!(compact.images.max_total_bytes, 32 * 1024 * 1024);
@@ -91,5 +93,21 @@ fn beaver_uses_the_expected_targets_and_retries() {
     assert_eq!(
         resolve_budget(&profile.under_64k.minimum_reduction, 32_000),
         2_048
+    );
+}
+
+#[test]
+fn beaver_reduces_only_the_five_user_orderable_categories() {
+    use super::profile_types::CompressionCategory;
+
+    assert_eq!(
+        beaver_profile().reduction_order,
+        vec![
+            CompressionCategory::Images,
+            CompressionCategory::Files,
+            CompressionCategory::Tools,
+            CompressionCategory::AssistantMessages,
+            CompressionCategory::UserMessages,
+        ]
     );
 }

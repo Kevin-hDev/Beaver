@@ -77,6 +77,10 @@ fn normalize_band(band: &mut CompressionBandSettings) {
         &mut band.user_messages.tokens,
         &mut band.assistant_messages.tokens,
         &mut band.evidence_envelope,
+        &mut band.git_tokens.tokens,
+        &mut band.plan_and_tasks_tokens.tokens,
+        &mut band.subagent_detail_tokens.tokens,
+        &mut band.unresolved_state_tokens.tokens,
     ] {
         normalize_token_budget(budget);
     }
@@ -95,20 +99,13 @@ fn normalize_band(band: &mut CompressionBandSettings) {
     for budget in [
         &mut band.tools,
         &mut band.files,
+        &mut band.modified_files,
         &mut band.text_attachments,
         &mut band.critical_references,
     ] {
         normalize_item_budget(budget);
     }
     band.images.max_items = band.images.max_items.min(MAX_CATEGORY_ITEMS);
-    for value in [
-        &mut band.git_tokens,
-        &mut band.plan_and_tasks_tokens,
-        &mut band.subagent_detail_tokens,
-        &mut band.unresolved_state_tokens,
-    ] {
-        *value = (*value).min(MAX_BUDGET_TOKENS);
-    }
 }
 
 fn normalize_token_budget(budget: &mut TokenBudget) {
