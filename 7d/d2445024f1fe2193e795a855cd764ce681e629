@@ -1,1 +1,5 @@
-Release preparation for Beaver v1.1.9.\n\nDecision: keep the canonical application version aligned across package.json, package-lock.json, src-tauri/Cargo.toml, src-tauri/Cargo.lock, and src-tauri/tauri.conf.json. Add concise user-facing release notes in all seven supported languages covering the native Anthropic and Alibaba Cloud Qwen providers, live model capabilities, reasoning continuity, prompt caching, bounded transports, protected keys, and onboarding.\n\nVerification: npm run test:release-workflow (43 passed); node scripts/app-release-notes.mjs v1.1.9 --stdout; explicit five-source version equality check; git diff --check; graphify update . completed.
+Release preparation for Beaver v1.1.9.
+
+Decision: keep the canonical application version aligned across package.json, package-lock.json, src-tauri/Cargo.toml, src-tauri/Cargo.lock, and src-tauri/tauri.conf.json. Add concise user-facing release notes in all seven supported languages covering the native Anthropic and Alibaba Cloud Qwen providers, live model capabilities, reasoning continuity, prompt caching, bounded transports, protected keys, and onboarding.
+
+Verification: npm run test:release-workflow (43 passed); node scripts/app-release-notes.mjs v1.1.9 --stdout; explicit five-source version equality check; git diff --check; graphify update . completed.
