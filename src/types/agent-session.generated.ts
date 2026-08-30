@@ -9,6 +9,8 @@ import type { GitDiffPreview } from "./file-preview";
 
 export type PreserveReasoningSetting = "off" | "local" | "remote";
 
+export type AgentMessageKind = "compression_checkpoint" | "compression_boundary";
+
 export type ReasoningReplayStatus = "unavailable" | "partial" | "preserved" | "compacted";
 
 export type FileAttachmentView = { name: string, path: string, mime_type: string, size: number, thumbnail?: string, access_grant?: string, };
@@ -23,7 +25,7 @@ export type ToolActivityRecordView = { name: string, summary: string, domain?: "
 
 export type SavedSegmentView = { thinking?: string, tools: Array<ToolActivityRecordView>, content: string, phase?: "work" | "final", };
 
-export type AgentMessageView = { id: string, turn_id: string, role: "user" | "assistant" | "tool", content: string, thinking?: string, tool_calls?: Array<ToolCallRequestView>, tool_name?: string, tool_call_id?: string, tool_activities?: Array<ToolActivityRecordView>, segments?: Array<SavedSegmentView>, files: Array<FileAttachmentView>, timestamp: string, tokens: number, work_duration_ms?: number, skill_names?: Array<string>, stream_run_id?: string, stream_part?: "checkpoint" | "input" | "final", reasoning_replay_status: ReasoningReplayStatus, };
+export type AgentMessageView = { id: string, turn_id: string, role: "user" | "assistant" | "tool", content: string, message_kind?: AgentMessageKind, thinking?: string, tool_calls?: Array<ToolCallRequestView>, tool_name?: string, tool_call_id?: string, tool_activities?: Array<ToolActivityRecordView>, segments?: Array<SavedSegmentView>, files: Array<FileAttachmentView>, timestamp: string, tokens: number, work_duration_ms?: number, skill_names?: Array<string>, stream_run_id?: string, stream_part?: "checkpoint" | "input" | "final", reasoning_replay_status: ReasoningReplayStatus, };
 
 export type SubagentLastActivityView = { kind: string, label: string, detail?: string, updated_at: string, };
 

@@ -53,8 +53,9 @@ describe("MessageList compression indicator", () => {
   it("affiche seulement l'animation dédiée pendant une nouvelle compression", () => {
     const compressedMessage: AgentMessage = {
       id: "compressed-1",
-      role: "assistant",
-      content: "This session is being continued from a previous conversation.",
+      role: "user",
+      content: "Résumé avec un libellé libre.",
+      message_kind: "compression_checkpoint",
       files: [],
       timestamp: new Date(0).toISOString(),
     };

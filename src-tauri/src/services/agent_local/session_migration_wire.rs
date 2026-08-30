@@ -35,6 +35,7 @@ struct V1ToolFunctionWire {
 pub(super) enum WireVersion {
     V1,
     V2,
+    V3,
     Future(u16),
 }
 
@@ -42,7 +43,8 @@ pub(super) fn version(bytes: &[u8]) -> Result<WireVersion, String> {
     let probe: VersionProbe = serde_json::from_slice(bytes).map_err(|_| invalid())?;
     Ok(match probe.schema_version {
         None | Some(1) => WireVersion::V1,
-        Some(CURRENT_SESSION_SCHEMA_VERSION) => WireVersion::V2,
+        Some(2) => WireVersion::V2,
+        Some(CURRENT_SESSION_SCHEMA_VERSION) => WireVersion::V3,
         Some(value) if value > CURRENT_SESSION_SCHEMA_VERSION => WireVersion::Future(value),
         Some(_) => return Err(invalid()),
     })
@@ -60,11 +62,21 @@ pub(super) fn parse_v1(bytes: &[u8]) -> Result<AgentSession, String> {
 }
 
 pub(super) fn parse_v2(bytes: &[u8]) -> Result<AgentSession, String> {
+    let mut value: Value = serde_json::from_slice(bytes).map_err(|_| invalid())?;
+    super::session_migration_ids::validate_required_v2_fields(&value)?;
+    super::session_migration_compression::migrate_v2_markers(&mut value)?;
+    let mut session: AgentSession = serde_json::from_value(value).map_err(|_| invalid())?;
+    degrade_unreplayable(&mut session);
+    validate_current_readable(&session)?;
+    Ok(session)
+}
+
+pub(super) fn parse_v3(bytes: &[u8]) -> Result<AgentSession, String> {
     let value: Value = serde_json::from_slice(bytes).map_err(|_| invalid())?;
     super::session_migration_ids::validate_required_v2_fields(&value)?;
     let mut session: AgentSession = serde_json::from_value(value).map_err(|_| invalid())?;
     degrade_unreplayable(&mut session);
-    validate_v2_readable(&session)?;
+    validate_current_readable(&session)?;
     Ok(session)
 }
 
@@ -80,12 +92,12 @@ pub(super) fn parse_future(bytes: &[u8], version: u16) -> Result<AgentSession, S
     Ok(session)
 }
 
-pub(super) fn validate_v2_writable(session: &AgentSession) -> Result<(), String> {
-    validate_v2_readable(session)?;
+pub(super) fn validate_current_writable(session: &AgentSession) -> Result<(), String> {
+    validate_current_readable(session)?;
     session_limits::validate_continuity(session)
 }
 
-fn validate_v2_readable(session: &AgentSession) -> Result<(), String> {
+fn validate_current_readable(session: &AgentSession) -> Result<(), String> {
     if session.schema_version != CURRENT_SESSION_SCHEMA_VERSION
         || session.messages.len() > super::session_limits::MAX_MESSAGES_PER_SESSION
     {
@@ -187,7 +199,7 @@ fn validate_v1_shape(wire: &V1SessionWire) -> Result<(), String> {
 
 fn parse_v2_value(value: Value) -> Result<AgentSession, String> {
     let session: AgentSession = serde_json::from_value(value).map_err(|_| invalid())?;
-    validate_v2_writable(&session)?;
+    validate_current_writable(&session)?;
     Ok(session)
 }
 

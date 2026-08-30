@@ -174,6 +174,7 @@ where
         turn_id: turn_id.clone(),
         role: "user".into(),
         content: input.user_content.clone(),
+        message_kind: None,
         thinking: None,
         tool_calls: None,
         tool_name: None,

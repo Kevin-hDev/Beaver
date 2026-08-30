@@ -71,6 +71,8 @@ async fn create_full_with_fast_mode(
         preserve_reasoning: Default::default(),
         accumulated_tokens: 0,
         context_tokens: None,
+        compression_profile_selection: None,
+        compression_count: 0,
         messages: Vec::new(),
         todos: Vec::new(),
         todo_neglect_count: 0,

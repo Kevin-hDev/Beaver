@@ -18,6 +18,44 @@ const WRITER_COMMIT: &str = "2848a17e87fa641bff067dc4b5c9a2398bae6540";
 const V1_FIXTURE: &[u8] = include_bytes!("../../../test-fixtures/agent-session-v1-synthetic.json");
 const SYNTHETIC_TOOL_CHAIN: &[u8] =
     include_bytes!("../../../test-fixtures/agent-session-v1-synthetic-tool-chain.json");
+const V2_COMPRESSION_FIXTURE: &[u8] =
+    include_bytes!("../../../test-fixtures/agent-session-v2-compression.json");
+
+#[tokio::test]
+async fn v2_compression_markers_migrate_to_v3_with_an_exact_backup() {
+    use super::types_message::AgentMessageKind;
+
+    let root = tempfile::tempdir().expect("tempdir");
+    let path = root.path().join("00000000-0000-4000-8000-000000000020.json");
+    crate::services::private_store::atomic_write(&path, V2_COMPRESSION_FIXTURE)
+        .expect("seed v2 fixture");
+    let loaded = super::session_migration::read(V2_COMPRESSION_FIXTURE, path.clone())
+        .expect("migrate v2 fixture");
+
+    assert_eq!(loaded.version(), super::session_migration::LoadedVersion::V2);
+    assert_eq!(loaded.session().schema_version, 3);
+    assert_eq!(
+        loaded.session().messages[0].message_kind,
+        Some(AgentMessageKind::CompressionCheckpoint)
+    );
+    assert_eq!(
+        loaded.session().messages[1].message_kind,
+        Some(AgentMessageKind::CompressionBoundary)
+    );
+    assert!(loaded.session().messages[2].message_kind.is_none());
+    assert!(loaded.session().compression_profile_selection.is_none());
+    assert_eq!(loaded.session().compression_count, 0);
+
+    super::session_migration::commit_current(&loaded)
+        .await
+        .expect("publish v3");
+    let backup = super::session_migration::v2_backup_path(&path).expect("v2 backup path");
+    assert_eq!(std::fs::read(&backup).unwrap(), V2_COMPRESSION_FIXTURE);
+    let current = std::fs::read(&path).unwrap();
+    let reloaded = super::session_migration::read(&current, path).expect("reload v3");
+    assert_eq!(reloaded.version(), super::session_migration::LoadedVersion::V3);
+    assert_eq!(reloaded.session().schema_version, 3);
+}
 
 #[test]
 fn synthetic_v1_fixture_keeps_visible_thinking_without_promoting_continuation() {
@@ -26,7 +64,10 @@ fn synthetic_v1_fixture_keeps_visible_thinking_without_promoting_continuation() 
     let loaded = super::session_migration::read(V1_FIXTURE, PathBuf::from("fixture.json"))
         .expect("load synthetic v1 fixture");
 
-    assert_eq!(loaded.session().schema_version, 2);
+    assert_eq!(
+        loaded.session().schema_version,
+        super::session_limits::CURRENT_SESSION_SCHEMA_VERSION
+    );
     assert_eq!(
         loaded.session().messages[1].thinking.as_deref(),
         Some("fixture-visible-thinking")
@@ -43,7 +84,10 @@ fn synthetic_v1_tool_chain_migrates_without_promoting_codex_sidecars() {
     .expect("load synthetic v1 fixture");
     let session = loaded.session();
 
-    assert_eq!(session.schema_version, 2);
+    assert_eq!(
+        session.schema_version,
+        super::session_limits::CURRENT_SESSION_SCHEMA_VERSION
+    );
     assert!(session
         .messages
         .iter()
@@ -320,7 +364,7 @@ async fn legacy_tool_ids_are_local_linked_and_stable_after_commit() {
         Some(call_id.as_str())
     );
 
-    super::session_migration::commit_v2(&loaded)
+    super::session_migration::commit_current(&loaded)
         .await
         .expect("commit v2");
     let backup = super::session_migration::backup_path(&path).expect("backup path");
@@ -371,7 +415,7 @@ async fn legacy_messages_share_one_turn_until_the_next_user_message() {
         .iter()
         .all(|message| message.turn_id == second_turn));
 
-    super::session_migration::commit_v2(&loaded)
+    super::session_migration::commit_current(&loaded)
         .await
         .expect("commit v2");
     let restored = super::session_store_document::read_from_path(path)
@@ -611,7 +655,7 @@ async fn injected_failure_before_rename_keeps_v1_and_exact_backup() {
     let loaded = super::session_migration::read(V1_FIXTURE, path.clone()).expect("load v1");
 
     assert!(
-        super::session_migration::commit_v2_fail_before_rename(&loaded)
+        super::session_migration::commit_current_fail_before_rename(&loaded)
             .await
             .is_err()
     );
@@ -635,7 +679,7 @@ async fn migrated_session_backup_and_directory_are_private() {
     let path = private.join("00000000-0000-4000-8000-000000000002.json");
     crate::services::private_store::atomic_write(&path, V1_FIXTURE).expect("seed v1");
     let loaded = super::session_migration::read(V1_FIXTURE, path.clone()).expect("load v1");
-    super::session_migration::commit_v2(&loaded).await.unwrap();
+    super::session_migration::commit_current(&loaded).await.unwrap();
     let backup = super::session_migration::backup_path(&path).unwrap();
 
     assert_eq!(

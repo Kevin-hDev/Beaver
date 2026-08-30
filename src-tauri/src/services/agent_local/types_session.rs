@@ -9,6 +9,7 @@ pub use super::types_message::{
 };
 use super::types_plan::{AgentPlanRun, AgentPlanWorkflowStatus};
 use super::types_todo::{AgentTodoItem, AgentTodoRun};
+pub use super::types_session_compression::SessionCompressionProfileSelection;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct SubagentHiddenReport {
@@ -78,6 +79,10 @@ pub struct AgentSession {
     pub accumulated_tokens: u32,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub context_tokens: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub compression_profile_selection: Option<SessionCompressionProfileSelection>,
+    #[serde(default)]
+    pub compression_count: u32,
     pub messages: Vec<AgentMessage>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub todos: Vec<AgentTodoItem>,

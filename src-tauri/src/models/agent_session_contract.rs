@@ -58,6 +58,7 @@ pub(crate) fn typescript_bindings() -> String {
     let config = Config::default();
     let declarations = [
         crate::services::agent_local::types_session::PreserveReasoningSetting::decl(&config),
+        crate::services::agent_local::types_message::AgentMessageKind::decl(&config),
         ReasoningReplayStatus::decl(&config),
         message::FileAttachmentView::decl(&config),
         message::ToolCallFunctionView::decl(&config),

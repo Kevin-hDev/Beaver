@@ -6,11 +6,16 @@ import {
 } from "./context-messages";
 import type { AgentMessage } from "@/types/agent";
 
-function msg(content: string, role: AgentMessage["role"] = "assistant"): AgentMessage {
+function msg(
+  content: string,
+  role: AgentMessage["role"] = "assistant",
+  messageKind?: "compression_checkpoint" | "compression_boundary",
+): AgentMessage {
   return {
     id: "m1",
     role,
     content,
+    message_kind: messageKind,
     files: [],
     timestamp: new Date().toISOString(),
   };
@@ -18,22 +23,29 @@ function msg(content: string, role: AgentMessage["role"] = "assistant"): AgentMe
 
 describe("context messages", () => {
   it("detecte un resume de compression", () => {
-    const message = msg("This session is being continued from a previous conversation.\n\nSummary");
+    const message = msg("Résumé au format libre", "user", "compression_checkpoint");
     expect(isCompressionSummaryMessage(message)).toBe(true);
     expect(isCompressionContextOnlyMessage(message)).toBe(true);
   });
 
   it("detecte un resume de compression meme avec role user", () => {
     const message = msg(
-      "This session is being continued from a previous conversation.\n\nSummary",
+      "Résumé au format libre",
       "user",
+      "compression_checkpoint",
     );
     expect(isCompressionSummaryMessage(message)).toBe(true);
     expect(isCompressionContextOnlyMessage(message)).toBe(true);
   });
 
-  it("detecte le contexte fichiers conserve", () => {
+  it("ne classe plus un ancien prefixe textuel sans kind", () => {
     const message = msg("Recent file context preserved across compression:\n- read_file: app.ts");
+    expect(isCompressionSummaryMessage(message)).toBe(false);
+    expect(isCompressionContextOnlyMessage(message)).toBe(false);
+  });
+
+  it("detecte la frontiere technique structuree", () => {
+    const message = msg("Texte de frontière modifiable", "assistant", "compression_boundary");
     expect(isCompressionSummaryMessage(message)).toBe(false);
     expect(isCompressionContextOnlyMessage(message)).toBe(true);
   });

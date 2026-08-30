@@ -5,12 +5,20 @@ use zeroize::Zeroizing;
 use super::session_limits::{save_failed, MAX_SESSION_FILE_BYTES};
 
 pub(super) fn backup_path(path: &Path) -> Result<PathBuf, String> {
+    backup_path_for(path, "v1")
+}
+
+pub(super) fn v2_backup_path(path: &Path) -> Result<PathBuf, String> {
+    backup_path_for(path, "v2")
+}
+
+fn backup_path_for(path: &Path, version: &str) -> Result<PathBuf, String> {
     let name = path
         .file_name()
         .and_then(|name| name.to_str())
         .filter(|name| name.ends_with(".json"))
         .ok_or_else(save_failed)?;
-    Ok(path.with_file_name(format!("{name}.v1.bak")))
+    Ok(path.with_file_name(format!("{name}.{version}.bak")))
 }
 
 pub(super) fn corrupt_backup_path(path: &Path) -> Result<PathBuf, String> {
@@ -22,16 +30,19 @@ pub(super) fn corrupt_backup_path(path: &Path) -> Result<PathBuf, String> {
     Ok(path.with_file_name(format!("{name}.corrupt.{}.bak", uuid::Uuid::new_v4())))
 }
 
-pub(super) async fn publish(path: &Path, original: &[u8], v2_bytes: Vec<u8>) -> Result<(), String> {
-    let backup = backup_path(path)?;
+pub(super) async fn publish(
+    path: &Path,
+    backup: PathBuf,
+    original: &[u8],
+    current_bytes: Vec<u8>,
+) -> Result<(), String> {
     ensure_exact_backup(&backup, original).await?;
-    crate::services::private_store::atomic_write_async(path.to_path_buf(), v2_bytes)
+    crate::services::private_store::atomic_write_async(path.to_path_buf(), current_bytes)
         .await
         .map_err(|_| save_failed())
 }
 
-pub(super) async fn acknowledge(path: &Path, can_remove: bool) -> Result<(), String> {
-    let backup = backup_path(path)?;
+pub(super) async fn acknowledge_path(backup: PathBuf, can_remove: bool) -> Result<(), String> {
     let Some(file) = crate::services::private_store::open_regular_single_link(&backup)
         .map_err(|_| save_failed())?
     else {

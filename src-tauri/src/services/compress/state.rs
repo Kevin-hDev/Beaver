@@ -65,18 +65,24 @@ pub async fn apply_and_save(
     crate::services::agent_local::session_store_messages::recompute_accumulated_tokens(
         &mut session,
     );
+    session.compression_count = session.compression_count.saturating_add(1);
     session_store::save(&session).await?;
 
     Ok(token_estimate::estimate_tokens(runtime_messages) as u32)
 }
 
 pub fn request_start_index(messages: &[ChatMessage]) -> usize {
-    messages
+    let segment_start = messages
+        .iter()
+        .rposition(|message| message.continuity_barrier_before)
+        .unwrap_or(0);
+    messages[segment_start..]
         .iter()
         .rposition(|message| {
             message.role == "user" && super::state_recent::include_chat_message(message)
         })
-        .unwrap_or(0)
+        .map(|offset| segment_start + offset)
+        .unwrap_or(messages.len())
 }
 
 fn replace_runtime_messages(
@@ -114,6 +120,8 @@ fn replace_runtime_messages(
     next.extend(recent);
     if let Some(message) = next.get_mut(boundary_index) {
         message.continuity_barrier_before = true;
+    } else if let Some(boundary) = next.last_mut() {
+        boundary.continuity_barrier_before = true;
     }
     *messages = next;
 }
@@ -134,6 +142,9 @@ fn build_summary_turn(
         turn_id,
         role: "assistant".to_string(),
         content: engine::BOUNDARY_CONTENT.to_string(),
+        message_kind: Some(
+            crate::services::agent_local::types_message::AgentMessageKind::CompressionBoundary,
+        ),
         thinking: None,
         tool_calls: None,
         tool_name: None,
@@ -162,6 +173,9 @@ fn summary_agent_message(summary: &str, suppress_follow_up: bool, turn_id: Strin
         turn_id,
         role: "user".to_string(),
         content,
+        message_kind: Some(
+            crate::services::agent_local::types_message::AgentMessageKind::CompressionCheckpoint,
+        ),
         thinking: None,
         tool_calls: None,
         tool_name: None,

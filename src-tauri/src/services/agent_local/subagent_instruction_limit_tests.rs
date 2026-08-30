@@ -45,6 +45,7 @@ fn agent_message(content: &str) -> super::types_session::AgentMessage {
         turn_id: super::types_session::AgentMessage::new_turn_id(),
         role: "assistant".into(),
         content: content.into(),
+        message_kind: None,
         thinking: None,
         tool_calls: None,
         tool_name: None,

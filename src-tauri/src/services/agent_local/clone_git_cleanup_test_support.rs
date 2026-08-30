@@ -37,6 +37,8 @@ pub(super) fn session(id: &str, parent: Option<&str>, git_branch: Option<&str>) 
         preserve_reasoning: Default::default(),
         accumulated_tokens: 0,
         context_tokens: None,
+        compression_profile_selection: None,
+        compression_count: 0,
         messages: vec![],
         todos: vec![],
         todo_neglect_count: 0,

@@ -144,6 +144,7 @@ pub(super) async fn create_child(
     child.thinking_enabled = parent.thinking_enabled;
     child.reasoning_mode = parent.reasoning_mode.clone();
     child.preserve_reasoning = parent.preserve_reasoning;
+    child.compression_profile_selection = parent.compression_profile_selection.clone();
     child.working_dir = parent.working_dir.clone();
     child.working_dir_managed = parent.working_dir_managed;
     session_store::save(&child).await.map_err(|_| {
@@ -169,6 +170,7 @@ pub(super) async fn inherit_parent_context(
     current.thinking_enabled = parent.thinking_enabled;
     current.reasoning_mode = parent.reasoning_mode.clone();
     current.preserve_reasoning = parent.preserve_reasoning;
+    current.compression_profile_selection = parent.compression_profile_selection.clone();
     current.working_dir = parent.working_dir.clone();
     current.working_dir_managed = parent.working_dir_managed;
     session_store::save(&current).await?;

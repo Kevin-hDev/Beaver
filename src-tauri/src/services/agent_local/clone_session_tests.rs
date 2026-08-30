@@ -8,6 +8,7 @@ fn message(id: &str, role: &str, content: &str) -> AgentMessage {
         turn_id: format!("turn-{id}"),
         role: role.into(),
         content: content.into(),
+        message_kind: None,
         thinking: None,
         tool_calls: None,
         tool_name: None,
@@ -45,6 +46,8 @@ fn session() -> AgentSession {
         preserve_reasoning: Default::default(),
         accumulated_tokens: 0,
         context_tokens: None,
+        compression_profile_selection: None,
+        compression_count: 0,
         messages: vec![
             message("m1", "user", "start"),
             message("m2", "assistant", "answer"),

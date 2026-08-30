@@ -23,6 +23,8 @@ fn clone_session(id: &str, parent_id: &str, root_id: Option<&str>) -> AgentSessi
         preserve_reasoning: Default::default(),
         accumulated_tokens: 0,
         context_tokens: None,
+        compression_profile_selection: None,
+        compression_count: 0,
         messages: vec![],
         todos: vec![],
         todo_neglect_count: 0,

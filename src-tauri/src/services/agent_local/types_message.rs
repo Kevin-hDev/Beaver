@@ -7,6 +7,15 @@ use super::{
     types_tools::ToolFileChange,
 };
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[serde(rename_all = "snake_case")]
+#[cfg_attr(test, ts(rename_all = "snake_case"))]
+pub enum AgentMessageKind {
+    CompressionCheckpoint,
+    CompressionBoundary,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AgentMessage {
     pub id: String,
@@ -14,6 +23,8 @@ pub struct AgentMessage {
     pub turn_id: String,
     pub role: String,
     pub content: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message_kind: Option<AgentMessageKind>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub thinking: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]

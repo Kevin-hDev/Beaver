@@ -18,6 +18,7 @@ fn agent(role: &str, content: &str) -> AgentMessage {
         turn_id: AgentMessage::new_turn_id(),
         role: role.to_string(),
         content: content.to_string(),
+        message_kind: None,
         thinking: None,
         tool_calls: None,
         tool_name: None,
@@ -53,21 +54,28 @@ fn context_used_prefers_larger_real_or_estimate() {
 }
 
 #[test]
-fn request_start_index_ignores_compression_context_and_command() {
+fn request_start_index_uses_the_structured_runtime_barrier() {
+    let mut current = chat("user", "vraie demande");
+    current.continuity_barrier_before = true;
     let messages = vec![
-        chat("user", "vraie demande"),
         chat(
             "user",
             "This session is being continued from a previous conversation",
         ),
-        chat(
-            "user",
-            "Recent file context preserved across compression:\n- a.rs",
-        ),
+        current,
         chat("user", "/compress"),
     ];
 
-    assert_eq!(state::request_start_index(&messages), 0);
+    assert_eq!(state::request_start_index(&messages), 1);
+}
+
+#[test]
+fn request_start_index_is_empty_after_a_terminal_compression_boundary() {
+    let mut boundary = chat("assistant", "boundary");
+    boundary.continuity_barrier_before = true;
+    let messages = vec![boundary, chat("user", "/compress")];
+
+    assert_eq!(state::request_start_index(&messages), messages.len());
 }
 
 #[test]
@@ -131,6 +139,15 @@ async fn apply_and_save_keeps_the_two_recent_complete_turns() {
     let reloaded = crate::services::agent_local::session_store::get(&session.id)
         .await
         .unwrap();
+    assert_eq!(reloaded.compression_count, 1);
+    assert_eq!(
+        reloaded.messages[0].message_kind,
+        Some(crate::services::agent_local::types_message::AgentMessageKind::CompressionCheckpoint)
+    );
+    assert_eq!(
+        reloaded.messages[1].message_kind,
+        Some(crate::services::agent_local::types_message::AgentMessageKind::CompressionBoundary)
+    );
     let tail = reloaded
         .messages
         .iter()

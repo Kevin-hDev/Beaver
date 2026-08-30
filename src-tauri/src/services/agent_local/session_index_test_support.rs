@@ -20,6 +20,8 @@ pub(super) fn test_session(id: &str, name: &str, heartbeat: bool) -> AgentSessio
         preserve_reasoning: Default::default(),
         accumulated_tokens: 0,
         context_tokens: None,
+        compression_profile_selection: None,
+        compression_count: 0,
         messages: vec![],
         todos: vec![],
         todo_neglect_count: 0,

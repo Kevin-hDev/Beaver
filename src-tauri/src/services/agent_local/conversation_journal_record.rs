@@ -34,6 +34,7 @@ pub(super) fn from_message(
         turn_id: turn_id.to_string(),
         role: message.role.clone(),
         content: message.content.clone(),
+        message_kind: None,
         thinking: message.display_thinking.clone(),
         tool_calls,
         tool_name: message.tool_name.clone(),

@@ -45,8 +45,13 @@ pub(super) fn from_continuation(
         );
         prefix_count += 1;
     }
-    if suffix > 0 && suffix < history_len {
-        messages[suffix + prefix_count].continuity_barrier_before = true;
+    if suffix > 0 && history_len > 0 {
+        let boundary_index = if suffix < history_len {
+            suffix + prefix_count
+        } else {
+            history_len + prefix_count - 1
+        };
+        messages[boundary_index].continuity_barrier_before = true;
     }
     Ok(ConversationHistory {
         messages,

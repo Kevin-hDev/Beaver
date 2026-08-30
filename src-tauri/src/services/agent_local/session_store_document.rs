@@ -51,7 +51,7 @@ pub(super) async fn read_from_path(path: PathBuf) -> Result<AgentSession, Sessio
     };
     let loaded =
         super::session_migration::read(&data, path).map_err(|_| SessionReadError::Invalid)?;
-    super::session_migration::acknowledge_v2(&loaded)
+    super::session_migration::acknowledge_current(&loaded)
         .await
         .map_err(|_| SessionReadError::Unavailable)?;
     Ok(loaded.into_session())
@@ -67,7 +67,7 @@ pub(super) async fn write_to_path(path: PathBuf, session: &AgentSession) -> Resu
 }
 
 pub(super) async fn prepare(session: &AgentSession) -> Result<PreparedSessionDocument, String> {
-    super::session_migration_wire::validate_v2_writable(session)
+    super::session_migration_wire::validate_current_writable(session)
         .map_err(|_| super::session_limits::save_failed())?;
     let mut value = serde_json::to_value(session)
         .map_err(|_| "Sauvegarde de session impossible".to_string())?;
@@ -77,9 +77,9 @@ pub(super) async fn prepare(session: &AgentSession) -> Result<PreparedSessionDoc
     let data = serde_json::to_vec_pretty(&value)
         .map_err(|_| "Sauvegarde de session impossible".to_string())?;
     super::session_limits::validate_serialized_size(data.len())?;
-    let parsed = super::session_migration_wire::parse_v2(&data)
+    let parsed = super::session_migration_wire::parse_v3(&data)
         .map_err(|_| super::session_limits::save_failed())?;
-    super::session_migration_wire::validate_v2_writable(&parsed)
+    super::session_migration_wire::validate_current_writable(&parsed)
         .map_err(|_| super::session_limits::save_failed())?;
     #[cfg(test)]
     let document = PreparedSessionDocument {
@@ -123,10 +123,11 @@ pub(super) async fn write_prepared_to_path(
                 }
             };
             match loaded.version() {
-                super::session_migration::LoadedVersion::V1 => {
-                    super::session_migration::commit_v2_bytes(&loaded, data).await
+                super::session_migration::LoadedVersion::V1
+                | super::session_migration::LoadedVersion::V2 => {
+                    super::session_migration::commit_migrated_bytes(&loaded, data).await
                 }
-                super::session_migration::LoadedVersion::V2 => {
+                super::session_migration::LoadedVersion::V3 => {
                     crate::services::private_store::atomic_write_async(path, data)
                         .await
                         .map_err(|_| super::session_limits::save_failed())

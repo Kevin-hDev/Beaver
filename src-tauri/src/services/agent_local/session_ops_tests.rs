@@ -99,6 +99,7 @@ fn message(
         turn_id: "turn-fixture".into(),
         role: "assistant".into(),
         content: content.into(),
+        message_kind: None,
         thinking: None,
         tool_calls: None,
         tool_name: None,

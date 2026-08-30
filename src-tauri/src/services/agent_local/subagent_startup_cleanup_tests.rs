@@ -25,6 +25,8 @@ fn session(id: &str, status: &str, parent: bool, offset_secs: i64) -> AgentSessi
         preserve_reasoning: Default::default(),
         accumulated_tokens: 0,
         context_tokens: None,
+        compression_profile_selection: None,
+        compression_count: 0,
         messages: vec![],
         todos: vec![],
         todo_neglect_count: 0,
