@@ -1,4 +1,48 @@
 {
+  "1.1.9": {
+    "de": [
+      "Anthropic Claude und Alibaba Cloud Qwen sind jetzt als native Anbieter in Beaver verfügbar.",
+      "Live-Modellkataloge zeigen Werkzeuge, Bilder und Denkoptionen nur an, wenn sie unterstützt werden.",
+      "Denkfortsetzung, Prompt-Caching und Nutzungsmetriken bleiben über Nachrichten und Werkzeugaufrufe hinweg erhalten.",
+      "Begrenzte Antwortströme, geschützte Schlüssel und eine klarere Anbieter-Einrichtung verbessern Sicherheit und Bedienung."
+    ],
+    "en": [
+      "Anthropic Claude and Alibaba Cloud Qwen are now available as native Beaver providers.",
+      "Live model catalogs expose tools, images, and reasoning options only when they are supported.",
+      "Reasoning continuity, prompt caching, and usage metrics are preserved across messages and tool calls.",
+      "Bounded response streams, protected keys, and clearer provider onboarding improve security and usability."
+    ],
+    "es": [
+      "Anthropic Claude y Alibaba Cloud Qwen ya están disponibles como proveedores nativos de Beaver.",
+      "Los catálogos de modelos en vivo muestran herramientas, imágenes y opciones de razonamiento solo cuando son compatibles.",
+      "La continuidad del razonamiento, la caché de prompts y las métricas de uso se conservan entre mensajes y llamadas a herramientas.",
+      "Los flujos de respuesta limitados, las claves protegidas y una configuración más clara mejoran la seguridad y la facilidad de uso."
+    ],
+    "fr": [
+      "Anthropic Claude et Alibaba Cloud Qwen sont maintenant disponibles comme fournisseurs natifs dans Beaver.",
+      "Les catalogues de modèles en direct affichent les outils, images et options de raisonnement uniquement lorsqu’ils sont pris en charge.",
+      "La continuité du raisonnement, le cache des prompts et les métriques d’utilisation sont préservés entre les messages et les appels d’outils.",
+      "Les flux de réponse bornés, les clés protégées et une configuration plus claire améliorent la sécurité et la simplicité d’utilisation."
+    ],
+    "it": [
+      "Anthropic Claude e Alibaba Cloud Qwen sono ora disponibili come provider nativi di Beaver.",
+      "I cataloghi dei modelli in tempo reale mostrano strumenti, immagini e opzioni di ragionamento solo quando sono supportati.",
+      "La continuità del ragionamento, la cache dei prompt e le metriche di utilizzo vengono mantenute tra messaggi e chiamate agli strumenti.",
+      "Flussi di risposta limitati, chiavi protette e una configurazione più chiara migliorano sicurezza e facilità d’uso."
+    ],
+    "ja": [
+      "Anthropic Claude と Alibaba Cloud Qwen が Beaver のネイティブプロバイダーとして利用できるようになりました。",
+      "ライブモデルカタログでは、対応している場合にのみツール、画像、推論オプションが表示されます。",
+      "推論の継続性、プロンプトキャッシュ、使用量の指標がメッセージやツール呼び出しをまたいで保持されます。",
+      "応答ストリームの上限、保護されたキー、より分かりやすいプロバイダー設定により、安全性と使いやすさが向上しました。"
+    ],
+    "zh": [
+      "Anthropic Claude 和阿里云 Qwen 现已作为 Beaver 原生提供商上线。",
+      "实时模型目录仅在功能受支持时显示工具、图像和推理选项。",
+      "推理连续性、提示词缓存和用量指标会在消息与工具调用之间保留。",
+      "受限的响应流、受保护的密钥和更清晰的提供商配置提升了安全性与易用性。"
+    ]
+  },
   "1.1.8": {
     "de": [
       "Anbietertransporte nutzen jetzt einheitliche Verträge für zuverlässigere Werkzeuge, Bilder, Streams und Denkfortsetzung.",
