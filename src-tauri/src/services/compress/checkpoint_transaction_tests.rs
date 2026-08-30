@@ -220,3 +220,148 @@ async fn hostile_text_cannot_create_kinds_or_persist_capsule_credentials() {
         .await
         .unwrap();
 }
+
+#[tokio::test]
+async fn enabled_under_64k_candidate_uses_the_real_8192_window() {
+    let mut session = super::snapshot_tests::session();
+    session.messages = (0..8)
+        .flat_map(|index| {
+            let turn = uuid::Uuid::new_v4().to_string();
+            [
+                super::checkpoint_messages_tests::message(
+                    &turn,
+                    "user",
+                    format!("user-{index} {}", "u".repeat(2_000)),
+                ),
+                super::checkpoint_messages_tests::message(
+                    &turn,
+                    "assistant",
+                    format!("assistant-{index} {}", "a".repeat(2_000)),
+                ),
+            ]
+        })
+        .chain(std::iter::once(super::checkpoint_messages_tests::message(
+            &uuid::Uuid::new_v4().to_string(),
+            "user",
+            "current work",
+        )))
+        .collect();
+    let mut document = super::profile_store_document::CompressionProfileDocument::default();
+    document.profiles[0].allow_under_64k = true;
+    let profile = super::profile_resolve::resolve_from_document(None, &document).unwrap();
+    let capabilities = super::session_capabilities::SessionCompressionCapabilities::from_runtime(
+        false,
+        &[],
+        false,
+        false,
+        false,
+    )
+    .unwrap();
+    let tiny = super::snapshot::CompressionSnapshot::capture(
+        &session,
+        profile,
+        8_192,
+        capabilities,
+        super::profile_types::CompressionTrigger::Explicit,
+    )
+    .unwrap()
+    .with_runtime_context(Vec::new(), Vec::new(), 7_500)
+    .unwrap();
+
+    let candidate = checkpoint_candidate::build(&tiny, Some(&summary()), &[])
+        .await
+        .expect("8K candidate");
+    assert!(
+        candidate.after_tokens <= 4_096,
+        "{}",
+        candidate.after_tokens
+    );
+}
+
+#[tokio::test]
+async fn disabled_tool_category_excludes_closed_tool_chains() {
+    let mut session = super::snapshot_tests::session();
+    let turn = uuid::Uuid::new_v4().to_string();
+    let call_id = uuid::Uuid::new_v4().to_string();
+    let mut assistant = super::checkpoint_messages_tests::message(&turn, "assistant", "");
+    assistant.tool_calls = Some(vec![ToolCallRequest {
+        id: call_id.clone(),
+        extra_content: None,
+        function: ToolCallRequestFunction {
+            name: "web_search".into(),
+            arguments: serde_json::json!({"q": "beaver"}),
+        },
+    }]);
+    let mut tool = super::checkpoint_messages_tests::message(&turn, "tool", "tool evidence");
+    tool.tool_name = Some("web_search".into());
+    tool.tool_call_id = Some(call_id);
+    session.messages = vec![
+        super::checkpoint_messages_tests::message(&turn, "user", "question"),
+        assistant,
+        tool,
+        super::checkpoint_messages_tests::message(&turn, "assistant", "final answer"),
+        super::checkpoint_messages_tests::message(
+            &uuid::Uuid::new_v4().to_string(),
+            "user",
+            "current work",
+        ),
+    ];
+    let mut document = super::profile_store_document::CompressionProfileDocument::default();
+    document.profiles[0].compact.tools.enabled = false;
+    let profile = super::profile_resolve::resolve_from_document(None, &document).unwrap();
+    let capabilities = super::session_capabilities::SessionCompressionCapabilities::from_runtime(
+        false,
+        &["web_search".into()],
+        false,
+        false,
+        false,
+    )
+    .unwrap();
+    let snapshot = super::snapshot::CompressionSnapshot::capture(
+        &session,
+        profile,
+        96_000,
+        capabilities,
+        super::profile_types::CompressionTrigger::Explicit,
+    )
+    .unwrap()
+    .with_runtime_context(Vec::new(), Vec::new(), 80_000)
+    .unwrap();
+
+    let candidate = checkpoint_candidate::build(&snapshot, Some(&summary()), &[])
+        .await
+        .unwrap();
+    assert!(!candidate
+        .persisted_messages
+        .iter()
+        .any(|message| message.role == "tool" || message.tool_calls.is_some()));
+}
+
+#[tokio::test]
+async fn durable_checkpoint_metadata_is_not_projected_to_the_provider() {
+    let session = stored_session().await;
+    let captured = snapshot(&session);
+    let candidate = checkpoint_candidate::build(&captured, Some(&summary()), &[])
+        .await
+        .unwrap();
+    let persisted = candidate
+        .persisted_messages
+        .iter()
+        .find(|message| message.message_kind == Some(AgentMessageKind::CompressionCheckpoint))
+        .unwrap();
+    let body: serde_json::Value = serde_json::from_str(&persisted.content).unwrap();
+    let metadata = &body["metadata"];
+
+    assert_eq!(metadata["profile_id"], "beaver");
+    assert_eq!(metadata["profile_revision"], 1);
+    assert_eq!(metadata["before_tokens"], captured.before_tokens);
+    assert_eq!(metadata["after_tokens"], candidate.after_tokens);
+    assert_eq!(metadata["trigger"], "explicit");
+    assert!(candidate
+        .runtime_messages
+        .iter()
+        .all(|message| !message.content.contains("\"metadata\"")));
+    crate::services::agent_local::session_store::delete_one(&session.id)
+        .await
+        .unwrap();
+}

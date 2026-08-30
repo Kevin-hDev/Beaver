@@ -21,6 +21,7 @@ interface ChatPlusMenuProps {
   onPlanModeChange: (enabled: boolean) => void;
   showCompression?: boolean;
   compressionProfiles?: CompressionProfileView[];
+  compressionProfilesStatus?: "loading" | "ready" | "error";
   selectedCompressionId?: string;
   onCompressionSelect?: (profileId: string) => Promise<boolean>;
 }
@@ -35,6 +36,7 @@ export function ChatPlusMenu({
   onPlanModeChange,
   showCompression = false,
   compressionProfiles = NO_COMPRESSION_PROFILES,
+  compressionProfilesStatus = "ready",
   selectedCompressionId,
   onCompressionSelect = NO_COMPRESSION_SELECT,
 }: ChatPlusMenuProps) {
@@ -195,6 +197,7 @@ export function ChatPlusMenu({
         >
           <ChatPlusCompressionMenu
             profiles={compressionProfiles}
+            status={compressionProfilesStatus}
             selectedId={selectedCompressionId}
             onSelect={onCompressionSelect}
             onConfirmed={close}

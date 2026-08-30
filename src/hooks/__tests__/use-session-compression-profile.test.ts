@@ -90,4 +90,16 @@ describe("useSessionCompressionProfile", () => {
       ([command]) => command === "get_session_compression_profile",
     ).length).toBeGreaterThanOrEqual(before + 3));
   });
+
+  it("n'affiche jamais le profil effectif de la session précédente", async () => {
+    const { result, rerender } = renderHook(
+      ({ sessionId }) => useSessionCompressionProfile(sessionId),
+      { initialProps: { sessionId: "session-1" } },
+    );
+    await waitFor(() => expect(result.current.effective?.id).toBe("beaver"));
+
+    rerender({ sessionId: "session-2" });
+
+    expect(result.current.effective).toBeNull();
+  });
 });

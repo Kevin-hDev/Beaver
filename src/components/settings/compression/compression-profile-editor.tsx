@@ -115,6 +115,7 @@ export function CompressionProfileEditor({
           disabled={under64Disabled}
           onProfileChange={update}
           onBandChange={updateBand}
+          onResetPrompts={() => { void controller.resetPrompts(profile.id); }}
         />
         <CompressionFailureSection
           profile={profile}
@@ -124,7 +125,6 @@ export function CompressionProfileEditor({
       </div>
       <footer className="cpa-foot">
         <CompressionBudgetPreview
-          key={editedBand}
           profileId={profile.id}
           profileRevision={confirmed.revision}
           band={editedBand}

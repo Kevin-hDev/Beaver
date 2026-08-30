@@ -29,3 +29,9 @@
 .csc-note {
   border-top: 1px solid var(--edge);
 }
+
+.csc-advanced-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}

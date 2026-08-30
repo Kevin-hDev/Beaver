@@ -20,6 +20,7 @@
 }
 
 .context-ring-panel {
+  z-index: var(--z-overlay);
   width: min(var(--context-popover-width), calc(100vw - var(--space-xl)));
   padding: 12px;
   overflow-y: auto;

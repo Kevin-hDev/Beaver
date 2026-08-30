@@ -5,6 +5,7 @@ import type {
   BudgetProjectionView,
   CompressionWindowBand,
 } from "@/types/compression-profile.generated";
+import { formatTokenCount } from "@/lib/token-format";
 import "./compression-budget-preview.css";
 
 interface CompressionBudgetPreviewProps {
@@ -27,9 +28,7 @@ function belongs(window: number, band: CompressionWindowBand): boolean {
 }
 
 export function formatCompressionWindow(tokens: number): string {
-  if (tokens >= 1_000_000 && tokens % 1_000_000 === 0) return `${tokens / 1_000_000}M`;
-  if (tokens >= 1_000 && tokens % 1_000 === 0) return `${tokens / 1_000}K`;
-  return tokens.toLocaleString();
+  return formatTokenCount(tokens);
 }
 
 export function CompressionBudgetPreview({
@@ -45,6 +44,7 @@ export function CompressionBudgetPreview({
   );
   const [projection, setProjection] = useState<BudgetProjectionView | null>(null);
   const [failed, setFailed] = useState(false);
+  const [requestRevision, setRequestRevision] = useState(0);
 
   useEffect(() => {
     let current = true;
@@ -61,7 +61,7 @@ export function CompressionBudgetPreview({
       if (current) setFailed(true);
     });
     return () => { current = false; };
-  }, [band, profileId, profileRevision, window]);
+  }, [band, profileId, profileRevision, requestRevision, window]);
 
   const contextWindow = projection?.context_window ?? window;
   const scale = projection ? Math.max(projection.total_tokens, contextWindow) : contextWindow;
@@ -93,6 +93,7 @@ export function CompressionBudgetPreview({
                 onClick={() => {
                   setFailed(false);
                   setWindow(value);
+                  setRequestRevision((current) => current + 1);
                 }}
               >
                 {formatCompressionWindow(value)}

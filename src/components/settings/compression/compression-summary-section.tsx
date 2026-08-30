@@ -22,11 +22,11 @@ interface CompressionSummarySectionProps {
   disabled: boolean;
   onProfileChange: (profile: CompressionProfile) => void;
   onBandChange: (band: CompressionBandSettings) => void;
+  onResetPrompts: () => void;
 }
 
 const CURRENT = "__current";
 const NONE = "__none";
-
 function encode(model: SummaryModelSelection | null): string {
   if (!model) return NONE;
   return model.kind === "current" ? CURRENT : `${model.provider}:${model.model}`;
@@ -50,6 +50,7 @@ export function CompressionSummarySection({
   disabled,
   onProfileChange,
   onBandChange,
+  onResetPrompts,
 }: CompressionSummarySectionProps) {
   const { t } = useTranslation();
   const { groups } = useAvailableModels();
@@ -222,6 +223,7 @@ export function CompressionSummarySection({
         summary={summary}
         disabled={disabled || !summary.enabled}
         onChange={changeSummary}
+        onReset={onResetPrompts}
       />
     </CompressionSection>
   );

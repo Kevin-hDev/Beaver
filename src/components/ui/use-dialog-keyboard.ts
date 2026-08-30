@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 const FOCUSABLE = [
   "button:not([disabled]):not([tabindex='-1'])",
@@ -22,9 +22,13 @@ export function useDialogKeyboard({
   onEscape,
   enabled = true,
 }: DialogKeyboardOptions) {
+  const initialFocusApplied = useRef(false);
   useEffect(() => {
     if (!enabled) return;
-    initialFocusRef.current?.focus();
+    if (!initialFocusApplied.current) {
+      initialFocusApplied.current = true;
+      initialFocusRef.current?.focus();
+    }
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();

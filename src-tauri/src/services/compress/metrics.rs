@@ -193,7 +193,9 @@ fn phase_for_error(error: CompressionMetricError) -> CompressionMetricPhase {
 impl From<CompressionError> for CompressionMetricError {
     fn from(value: CompressionError) -> Self {
         match value {
-            CompressionError::Unavailable => Self::Unavailable,
+            CompressionError::Unavailable | CompressionError::UnavailableUnder64K => {
+                Self::Unavailable
+            }
             CompressionError::SnapshotInvalid => Self::InvalidSnapshot,
             CompressionError::OpenTurn => Self::OpenTurn,
             CompressionError::SummaryInvalid => Self::InvalidSummary,

@@ -77,7 +77,7 @@ pub async fn generate(
     match super::summary_request::execute(collector, &call, profile.summary.ordinary_retries).await
     {
         Ok(summary) => Ok(Some(summary)),
-        Err(_)
+        Err(super::summary_request::SummaryExecutionError::Retryable)
             if profile.summary.failure_policy
                 == super::profile_types::SummaryFailurePolicy::TryFallback =>
         {
@@ -158,24 +158,17 @@ fn selected_model<'a>(
 }
 
 fn budget_window(snapshot: &super::snapshot::CompressionSnapshot) -> u64 {
-    snapshot
-        .context_window
-        .max(u64::from(snapshot.before_tokens).max(32_000))
+    super::profile_budget::effective_budget_window(snapshot.context_window, snapshot.before_tokens)
 }
 
-fn classify(error: &str, cancelled: bool) -> SummaryAttemptError {
-    if cancelled || error == "Annulé" {
+pub(super) fn classify(error: &str, cancelled: bool) -> SummaryAttemptError {
+    if cancelled {
         return SummaryAttemptError::Cancelled;
     }
-    let normalized = error.to_ascii_lowercase();
-    if normalized.contains("timeout")
-        || normalized.contains("connection")
-        || normalized.contains("429")
-        || normalized.contains("500")
-        || normalized.contains("502")
-        || normalized.contains("503")
-        || normalized.contains("504")
-    {
+    if matches!(
+        error,
+        "rate_limit" | "provider_temporarily_unavailable" | "provider_connection_failed"
+    ) {
         SummaryAttemptError::Retryable
     } else {
         SummaryAttemptError::Fatal

@@ -29,7 +29,8 @@ function controller(active = "custom"): CompressionProfilesController {
     save: vi.fn(() => Promise.resolve(true)),
     create: vi.fn(() => Promise.resolve(true)),
     rename: vi.fn(() => Promise.resolve(true)),
-    resetBeaver: vi.fn(() => Promise.resolve(true)),
+    resetBeaver: vi.fn(() => Promise.resolve(null)),
+    resetPrompts: vi.fn(() => Promise.resolve(true)),
     deleteProfile: vi.fn(() => Promise.resolve({
       view: { automatic_enabled: true, global_profile_id: "beaver", global_selection_revision: 2, profiles: [profile("beaver", "Beaver")] },
       undo_token: "undo-token",
@@ -84,6 +85,30 @@ describe("CompressionProfileBar", () => {
     expect(screen.getByRole("button", { name: "settings.advanced.compressionRename" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "settings.advanced.compressionDelete" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "settings.advanced.compressionReset" })).toBeEnabled();
+  });
+
+  it("permet d'annuler la restauration des valeurs Beaver", async () => {
+    const api = controller("beaver");
+    api.resetBeaver = vi.fn(() => Promise.resolve({
+      view: api.view!,
+      undo_token: "reset-token",
+      undo_expires_in_ms: 30_000,
+    }));
+    // Test spies extracted from a structural controller, with no `this` usage.
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    const reset = api.resetBeaver;
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    const undo = api.undoDelete;
+    render(<CompressionProfileBar controller={api} onInteractionChange={() => undefined} />);
+
+    fireEvent.click(screen.getByRole("button", {
+      name: "settings.advanced.compressionReset",
+    }));
+
+    await waitFor(() => expect(reset).toHaveBeenCalledOnce());
+    const options = showToast.mock.calls[0][3] as { action: { onClick: () => void } };
+    options.action.onClick();
+    expect(undo).toHaveBeenCalledWith("reset-token");
   });
 
   it("supprime après confirmation et expose l'annulation backend", async () => {

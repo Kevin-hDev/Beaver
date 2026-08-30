@@ -11,7 +11,7 @@ pub fn projected_budget(
         Some(CompressionWindowBand::Large) => &profile.profile.large,
         Some(CompressionWindowBand::Compact) | None => &profile.profile.compact,
     };
-    let window = context_window.max(u64::from(before_tokens).max(32_000));
+    let window = super::profile_budget::effective_budget_window(context_window, before_tokens);
     let target = ((u128::from(window) * u128::from(band.target_percent)) / 100)
         .min(u128::from(u32::MAX)) as u32;
     target.saturating_sub(super::profile_budget::resolve_budget(

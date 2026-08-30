@@ -13,19 +13,32 @@ pub async fn build(
     runtime: &[ChatMessage],
     working_dir: &Path,
 ) -> Result<super::checkpoint_candidate::CompressionCandidate, CompressionError> {
-    let sections = super::orchestrator_sections::collect(snapshot, runtime, working_dir).await?;
-    match super::checkpoint_candidate::build(snapshot, summary, &sections).await {
+    let collected = super::orchestrator_sections::collect(snapshot, runtime, working_dir).await?;
+    match super::checkpoint_candidate::build_with_evidence(
+        snapshot,
+        summary,
+        &collected.sections,
+        collected.evidence_tokens,
+    )
+    .await
+    {
         Err(CompressionError::CapacityExceeded)
             if snapshot.profile.profile.context_capacity_policy
                 == ContextCapacityPolicy::ReduceOptionalCategories =>
         {
             let mut reduced = snapshot.clone();
-            if !reduce_first_contributing_category(&mut reduced, &sections) {
+            if !reduce_first_contributing_category(&mut reduced, &collected.sections) {
                 return Err(CompressionError::CapacityExceeded);
             }
-            let sections =
+            let collected =
                 super::orchestrator_sections::collect(&reduced, runtime, working_dir).await?;
-            super::checkpoint_candidate::build(&reduced, summary, &sections).await
+            super::checkpoint_candidate::build_with_evidence(
+                &reduced,
+                summary,
+                &collected.sections,
+                collected.evidence_tokens,
+            )
+            .await
         }
         result => result,
     }

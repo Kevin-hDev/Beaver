@@ -7,6 +7,8 @@ use std::collections::BTreeSet;
 
 use crate::services::agent_local::types_session::{AgentMessage, FileAttachment};
 
+pub const MAX_IMAGE_CANDIDATES: usize = 64;
+
 #[derive(Debug, Clone)]
 pub struct CheckpointImage {
     pub source_message_id: String,
@@ -34,7 +36,9 @@ pub fn collect_images_with_limits(
     profile_max_bytes: u64,
     provider_max_images: usize,
 ) -> Vec<CheckpointImage> {
-    let max_images = profile_max_images.min(provider_max_images).min(16);
+    let max_images = profile_max_images
+        .min(provider_max_images)
+        .min(MAX_IMAGE_CANDIDATES);
     let max_bytes = profile_max_bytes.min(32 * 1024 * 1024);
     let mut seen = BTreeSet::new();
     let mut total_bytes = 0u64;
@@ -48,13 +52,14 @@ pub fn collect_images_with_limits(
                 continue;
             };
             let identity = format!("{}:{}:{}", file.name, file.size, payload.len());
-            if !seen.insert(identity) {
+            if seen.contains(&identity) {
                 continue;
             }
             let bytes = payload.len().saturating_mul(3).div_ceil(4) as u64;
             if selected.len() >= max_images || total_bytes.saturating_add(bytes) > max_bytes {
                 continue;
             }
+            seen.insert(identity);
             total_bytes = total_bytes.saturating_add(bytes);
             selected.push(CheckpointImage {
                 source_message_id: message.id.clone(),
@@ -66,6 +71,30 @@ pub fn collect_images_with_limits(
     }
     selected.reverse();
     selected
+}
+
+pub fn retain_images_for_messages(
+    images: &[CheckpointImage],
+    source_message_ids: &BTreeSet<String>,
+    profile_max_images: usize,
+    profile_max_bytes: u64,
+) -> Vec<CheckpointImage> {
+    let max_images = profile_max_images.min(16);
+    let max_bytes = profile_max_bytes.min(32 * 1024 * 1024);
+    let mut total_bytes = 0_u64;
+    images
+        .iter()
+        .filter(|image| source_message_ids.contains(&image.source_message_id))
+        .filter(|image| {
+            if total_bytes.saturating_add(image.estimated_bytes) > max_bytes {
+                return false;
+            }
+            total_bytes = total_bytes.saturating_add(image.estimated_bytes);
+            true
+        })
+        .take(max_images)
+        .cloned()
+        .collect()
 }
 
 fn validated_payload(thumbnail: &str) -> Option<String> {

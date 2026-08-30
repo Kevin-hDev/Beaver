@@ -7,6 +7,7 @@ pub fn redact_messages_for_compression(source: &[AgentMessage]) -> Vec<AgentMess
         .map(|mut message| {
             redact_string(&mut message.content);
             redact_optional(&mut message.thinking);
+            message.continuation = None;
             if let Some(calls) = &mut message.tool_calls {
                 for call in calls {
                     crate::services::agent_local::sensitive_data::redact_json_preserving_shape(
@@ -46,7 +47,7 @@ fn redact_optional(value: &mut Option<String>) {
     }
 }
 
-fn redact_serializable<T>(value: &mut Option<Vec<T>>)
+pub(super) fn redact_serializable<T>(value: &mut Option<Vec<T>>)
 where
     T: serde::Serialize + serde::de::DeserializeOwned,
 {
@@ -54,9 +55,8 @@ where
         return;
     };
     let Ok(mut json) = serde_json::to_value(&items) else {
-        *value = Some(items);
         return;
     };
     crate::services::agent_local::sensitive_data::redact_json_preserving_shape(&mut json);
-    *value = serde_json::from_value(json).ok().or(Some(items));
+    *value = serde_json::from_value(json).ok();
 }

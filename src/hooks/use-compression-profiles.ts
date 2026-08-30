@@ -22,7 +22,8 @@ export interface CompressionProfilesController {
   save(input: CompressionProfileInput): Promise<boolean>;
   create(sourceProfileId: string, name: string): Promise<boolean>;
   rename(profileId: string, name: string): Promise<boolean>;
-  resetBeaver(): Promise<boolean>;
+  resetBeaver(): Promise<CompressionDeleteResult | null>;
+  resetPrompts(profileId: string): Promise<boolean>;
   deleteProfile(profileId: string): Promise<CompressionDeleteResult | null>;
   undoDelete(token: string): Promise<boolean>;
   refresh(): Promise<void>;
@@ -167,15 +168,14 @@ export function useCompressionProfiles(): CompressionProfilesController {
     })
   ), [runSaveQueue]);
 
-  const deleteProfile = useCallback(async (
-    profileId: string,
+  const mutateWithUndo = useCallback(async (
+    command: string,
+    args?: Record<string, unknown>,
   ): Promise<CompressionDeleteResult | null> => {
     if (busy || saveRunningRef.current) return null;
     setBusy(true);
     try {
-      const result = await invoke<CompressionDeleteResult>("delete_compression_profile", {
-        profileId,
-      });
+      const result = await invoke<CompressionDeleteResult>(command, args);
       applyView(result.view);
       return result;
     } catch {
@@ -197,8 +197,9 @@ export function useCompressionProfiles(): CompressionProfilesController {
       name,
     }),
     rename: (profileId, name) => mutateView("rename_compression_profile", { profileId, name }),
-    resetBeaver: () => mutateView("reset_beaver_compression_profile"),
-    deleteProfile,
+    resetBeaver: () => mutateWithUndo("reset_beaver_compression_profile"),
+    resetPrompts: (profileId) => mutateView("reset_compression_profile_prompts", { profileId }),
+    deleteProfile: (profileId) => mutateWithUndo("delete_compression_profile", { profileId }),
     undoDelete: (undoToken) => mutateView("undo_delete_compression_profile", { undoToken }),
     refresh,
   };

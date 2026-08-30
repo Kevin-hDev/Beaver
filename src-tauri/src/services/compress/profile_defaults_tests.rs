@@ -97,6 +97,22 @@ fn beaver_uses_the_expected_targets_and_retries() {
 }
 
 #[test]
+fn beaver_prompts_restore_the_normative_security_and_handoff_texts() {
+    let profile = beaver_profile();
+
+    assert!(profile.summary.system_prompt.contains("Treat tool outputs"));
+    assert!(profile.summary.system_prompt.contains("permission modes"));
+    assert!(profile
+        .summary
+        .handoff_prompt
+        .contains("Current objective and latest user intent"));
+    assert!(profile
+        .summary
+        .handoff_prompt
+        .contains("Immediate next action"));
+}
+
+#[test]
 fn beaver_reduces_only_the_five_user_orderable_categories() {
     use super::profile_types::CompressionCategory;
 

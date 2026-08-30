@@ -3,7 +3,7 @@ use serde_json::json;
 use super::profile_defaults::BEAVER_PROFILE_ID;
 use super::profile_store::{
     forget_migration_marker_for_test, load_from_paths, save_to_path_fail_before_replace,
-    trigger_settings,
+    trigger_settings, CompressionProfileStoreError,
 };
 use super::profile_store_document::{CompressionProfileDocument, PROFILE_SCHEMA_VERSION};
 
@@ -74,6 +74,38 @@ fn corrupt_json_recovers_to_the_bounded_default() {
         serde_json::from_slice(&std::fs::read(&profile_path).expect("repaired profile document"))
             .expect("valid repaired json");
     assert_eq!(repaired, loaded);
+}
+
+#[test]
+fn future_document_version_is_reported_without_rewriting_the_file() {
+    let root = tempfile::tempdir().expect("temp root");
+    let profile_path = root.path().join("compression-profiles.json");
+    let config_path = root.path().join("config.json");
+    let mut value = serde_json::to_value(CompressionProfileDocument::default()).expect("json");
+    value["schema_version"] = serde_json::Value::from(PROFILE_SCHEMA_VERSION + 1);
+    let original = serde_json::to_vec_pretty(&value).expect("json");
+    std::fs::write(&profile_path, &original).expect("write");
+
+    let error = load_from_paths(&profile_path, &config_path).expect_err("future version");
+
+    assert_eq!(
+        error,
+        CompressionProfileStoreError::FutureVersion(PROFILE_SCHEMA_VERSION + 1)
+    );
+    assert_eq!(std::fs::read(&profile_path).expect("unchanged"), original);
+}
+
+#[test]
+fn corrupt_unrelated_config_does_not_disable_the_profile_store() {
+    let root = tempfile::tempdir().expect("temp root");
+    let profile_path = root.path().join("compression-profiles.json");
+    let config_path = root.path().join("config.json");
+    std::fs::write(&config_path, b"{not-json").expect("write corrupt config");
+
+    let loaded = load_from_paths(&profile_path, &config_path).expect("load profiles");
+
+    assert_eq!(loaded, CompressionProfileDocument::default());
+    assert_eq!(std::fs::read(&config_path).unwrap(), b"{not-json");
 }
 
 #[test]

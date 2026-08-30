@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render } from "@testing-library/react";
+import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ContextProgress } from "../context-progress";
 import type { ContextUsageBreakdown } from "@/hooks/context-usage-breakdown";
@@ -78,7 +78,19 @@ describe("ContextProgress", () => {
 
     rerender(<ContextProgress used={140} max={1000} breakdown={liveBreakdown} />);
 
-    expect(getByText("140 / 1.0K (14.0%)")).toBeTruthy();
+    expect(getByText("140 / 1K (14.0%)")).toBeTruthy();
     expect(getByText("90")).toBeTruthy();
+  });
+
+  it("affiche 1M et place le focus dans le panneau activé au clavier", async () => {
+    const { getByLabelText, getByRole, getByText } = render(
+      <ContextProgress used={400_000} max={1_000_000} />,
+    );
+    const trigger = getByLabelText("Context window");
+
+    fireEvent.keyDown(trigger, { key: "Enter" });
+
+    expect(getByText(/400K \/ 1M/)).toBeTruthy();
+    await waitFor(() => expect(getByRole("dialog", { name: "Context window" })).toHaveFocus());
   });
 });

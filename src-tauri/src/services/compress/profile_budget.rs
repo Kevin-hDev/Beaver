@@ -9,6 +9,14 @@ pub fn band_for_window(context_window: u64) -> Option<CompressionWindowBand> {
     }
 }
 
+pub fn effective_budget_window(context_window: u64, _before_tokens: u32) -> u64 {
+    if context_window > 0 {
+        context_window
+    } else {
+        32_000
+    }
+}
+
 // Task 5 applies this profile calculation to the context selector.
 #[allow(dead_code)]
 pub fn resolve_budget(spec: &TokenBudget, context_window: u64) -> u32 {

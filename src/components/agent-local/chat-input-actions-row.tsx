@@ -82,6 +82,7 @@ export function ChatInputActionsRow({
         onPlanModeChange={onPlanModeChange ?? (() => {})}
         showCompression={Boolean(sessionId)}
         compressionProfiles={compression.profiles}
+        compressionProfilesStatus={compression.profilesStatus}
         selectedCompressionId={compression.effective?.id}
         onCompressionSelect={(profileId) => compression.select(profileId)}
       />

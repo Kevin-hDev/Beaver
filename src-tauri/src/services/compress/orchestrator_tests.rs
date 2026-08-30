@@ -96,3 +96,64 @@ fn global_switch_disables_only_automatic_compression() {
     ));
     assert!(eligible(&profile, CompressionTrigger::Explicit, 128_000, 1));
 }
+
+#[test]
+fn explicit_under_64k_refusal_has_a_stable_user_facing_code() {
+    assert_eq!(
+        super::checkpoint_transaction::CompressionError::UnavailableUnder64K.public_message(),
+        "compression_disabled_under_64k"
+    );
+    assert_eq!(
+        super::checkpoint_transaction::CompressionError::Unavailable.public_message(),
+        "compression_unavailable"
+    );
+}
+
+#[test]
+fn summary_transport_retryability_uses_stable_provider_codes_only() {
+    for code in [
+        "rate_limit",
+        "provider_temporarily_unavailable",
+        "provider_connection_failed",
+    ] {
+        assert_eq!(
+            super::orchestrator_summary::classify(code, false),
+            super::summary_request::SummaryAttemptError::Retryable
+        );
+    }
+    for code in [
+        "oauth_reauthentication_required",
+        "provider_configuration_invalid",
+        "the model returned 500 items",
+    ] {
+        assert_eq!(
+            super::orchestrator_summary::classify(code, false),
+            super::summary_request::SummaryAttemptError::Fatal
+        );
+    }
+}
+
+#[test]
+fn automatic_open_turn_is_silent_before_start_while_explicit_reports_it() {
+    let mut messages = super::snapshot_tests::session().messages;
+    messages.truncate(2);
+    messages[1].tool_calls = Some(vec![
+        crate::services::agent_local::types_message::ToolCallRequest {
+            id: uuid::Uuid::new_v4().to_string(),
+            extra_content: None,
+            function: crate::services::agent_local::types_message::ToolCallRequestFunction {
+                name: "web_search".into(),
+                arguments: serde_json::json!({}),
+            },
+        },
+    ]);
+
+    assert_eq!(
+        super::orchestrator::preflight_messages(&messages, CompressionTrigger::Automatic),
+        Ok(false)
+    );
+    assert_eq!(
+        super::orchestrator::preflight_messages(&messages, CompressionTrigger::Explicit),
+        Err(super::checkpoint_transaction::CompressionError::OpenTurn)
+    );
+}

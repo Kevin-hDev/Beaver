@@ -100,13 +100,6 @@
   flex-shrink: 0;
 }
 
-.fch-actions .era-confirm {
-  right: calc(100% + 8px);
-  bottom: auto;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
 .fch-error {
   margin: 0 16px 10px;
   color: var(--signal-error);

@@ -4,7 +4,7 @@
 )]
 
 use super::checkpoint_document::CheckpointSection;
-use super::checkpoint_selection::{CheckpointSelection, CheckpointSelectionLimits};
+use super::checkpoint_selection::CheckpointSelection;
 use super::profile_types::{CompressionBandSettings, CompressionWindowBand};
 use super::snapshot::CompressionSnapshot;
 use super::summary_contract::ValidatedSummary;
@@ -27,6 +27,7 @@ pub struct CompressionCandidate {
     pub runtime_messages: Vec<ChatMessage>,
     pub before_tokens: u32,
     pub after_tokens: u32,
+    pub retained_images: usize,
     pub report: CompressionSelectionReport,
 }
 
@@ -35,23 +36,64 @@ pub async fn build(
     summary: Option<&ValidatedSummary>,
     sections: &[CheckpointSection],
 ) -> Result<CompressionCandidate, super::checkpoint_transaction::CompressionError> {
+    build_with_evidence(snapshot, summary, sections, 0).await
+}
+
+pub async fn build_with_evidence(
+    snapshot: &CompressionSnapshot,
+    summary: Option<&ValidatedSummary>,
+    sections: &[CheckpointSection],
+    evidence_tokens: u32,
+) -> Result<CompressionCandidate, super::checkpoint_transaction::CompressionError> {
     validate_snapshot(snapshot)?;
     let band = resolved_band(snapshot)?;
     let selection = super::checkpoint_selection::select(
         &snapshot.source_messages,
-        selection_limits(snapshot, band),
+        super::checkpoint_candidate_budget::selection_limits(
+            snapshot,
+            band,
+            summary,
+            sections,
+            evidence_tokens,
+        ),
     )
     .map_err(super::checkpoint_transaction::CompressionError::from_code)?;
-    let persisted_messages = super::checkpoint_document::assemble(
+    let mut persisted_messages = super::checkpoint_document::assemble(
         &selection.messages,
+        active_turn_id(snapshot, &selection),
         summary.map(|value| value.content.as_str()),
         sections,
         snapshot.trigger,
     )
     .map_err(super::checkpoint_transaction::CompressionError::from_code)?;
-    let runtime_messages =
-        super::checkpoint_candidate_runtime::project(snapshot, &persisted_messages);
-    let after_tokens = super::token_estimate::estimate_request_tokens_for_provider(
+    let (retained_images, retained_source_message_ids) =
+        super::checkpoint_candidate_images::prepare(
+            snapshot,
+            &selection,
+            &persisted_messages,
+            band,
+        );
+    let mut runtime_snapshot = snapshot.clone();
+    runtime_snapshot.checkpoint_images = retained_images;
+    let mut runtime_messages =
+        super::checkpoint_candidate_runtime::project(&runtime_snapshot, &persisted_messages);
+    let mut after_tokens = super::token_estimate::estimate_request_tokens_for_provider(
+        &snapshot.provider_id,
+        &runtime_messages,
+        &snapshot.provider_tools,
+    )
+    .min(u32::MAX as usize) as u32;
+    super::checkpoint_metadata::set(
+        &mut persisted_messages,
+        snapshot,
+        after_tokens,
+        sections,
+        retained_source_message_ids,
+    )
+    .map_err(super::checkpoint_transaction::CompressionError::from_code)?;
+    runtime_messages =
+        super::checkpoint_candidate_runtime::project(&runtime_snapshot, &persisted_messages);
+    after_tokens = super::token_estimate::estimate_request_tokens_for_provider(
         &snapshot.provider_id,
         &runtime_messages,
         &snapshot.provider_tools,
@@ -65,8 +107,21 @@ pub async fn build(
         runtime_messages,
         before_tokens: snapshot.before_tokens,
         after_tokens,
+        retained_images: runtime_snapshot.checkpoint_images.len(),
         report,
     })
+}
+
+fn active_turn_id<'a>(
+    snapshot: &'a CompressionSnapshot,
+    selection: &CheckpointSelection,
+) -> Option<&'a str> {
+    selection
+        .units
+        .iter()
+        .find(|unit| unit.kind == super::checkpoint_units::CheckpointUnitKind::ActiveTurn)
+        .and_then(|unit| snapshot.source_messages.get(unit.message_indexes.start))
+        .map(|message| message.turn_id.as_str())
 }
 
 async fn prepare_candidate(
@@ -120,26 +175,6 @@ fn resolved_band(
     }
 }
 
-fn selection_limits(
-    snapshot: &CompressionSnapshot,
-    band: &CompressionBandSettings,
-) -> CheckpointSelectionLimits {
-    let window = budget_window(snapshot);
-    let evidence = super::profile_budget::resolve_budget(&band.evidence_envelope, window);
-    CheckpointSelectionLimits {
-        user_tokens: category_tokens(&band.user_messages, window),
-        assistant_tokens: category_tokens(&band.assistant_messages, window),
-        tool_tokens: if band.tools.total_tokens > 0 {
-            band.tools.total_tokens
-        } else {
-            evidence
-        },
-        tool_tokens_per_result: band.tools.tokens_per_item,
-        max_tool_events: band.tools.max_items,
-        total_tokens: target_tokens(window, band).saturating_sub(reserve_tokens(window, band)),
-    }
-}
-
 fn validate_reduction(
     snapshot: &CompressionSnapshot,
     band: &CompressionBandSettings,
@@ -147,8 +182,10 @@ fn validate_reduction(
     after_tokens: u32,
 ) -> Result<CompressionSelectionReport, super::checkpoint_transaction::CompressionError> {
     let known_window = (snapshot.context_window > 0).then_some(snapshot.context_window);
-    let target = known_window.map(|window| target_tokens(window, band));
-    let reserve = known_window.map(|window| reserve_tokens(window, band));
+    let target =
+        known_window.map(|window| super::checkpoint_candidate_budget::target_tokens(window, band));
+    let reserve =
+        known_window.map(|window| super::checkpoint_candidate_budget::reserve_tokens(window, band));
     let minimum = known_window
         .map(|window| super::profile_budget::resolve_budget(&band.minimum_reduction, window));
     if target
@@ -171,28 +208,9 @@ fn validate_reduction(
     })
 }
 
-fn budget_window(snapshot: &CompressionSnapshot) -> u64 {
-    snapshot
-        .context_window
-        .max(u64::from(snapshot.before_tokens).max(32_000))
-}
-
-fn category_tokens(budget: &super::profile_types::CategoryBudget, window: u64) -> u32 {
-    if budget.enabled {
-        super::profile_budget::resolve_budget(&budget.tokens, window)
-    } else {
-        0
-    }
-}
-
-fn target_tokens(window: u64, band: &CompressionBandSettings) -> u32 {
-    ((window as u128 * u128::from(band.target_percent)) / 100).min(u128::from(u32::MAX)) as u32
-}
-
-fn reserve_tokens(window: u64, band: &CompressionBandSettings) -> u32 {
-    super::profile_budget::resolve_budget(&band.response_reserve, window)
-}
-
 pub(crate) fn same_messages(left: &[AgentMessage], right: &[AgentMessage]) -> bool {
-    serde_json::to_vec(left).ok() == serde_json::to_vec(right).ok()
+    match (serde_json::to_vec(left), serde_json::to_vec(right)) {
+        (Ok(left), Ok(right)) => left == right,
+        _ => false,
+    }
 }

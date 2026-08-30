@@ -11,6 +11,7 @@ use crate::services::agent_local::types_session::{AgentSession, SubagentHiddenRe
 #[derive(Debug, Clone, Serialize)]
 pub struct CheckpointSubagents {
     pub active: Vec<ActiveSubagentCheckpoint>,
+    pub unreadable_active_ids: Vec<String>,
     pub pending_reports: Vec<ReportCheckpoint>,
     pub delivered_report_ids: Vec<String>,
 }
@@ -44,9 +45,12 @@ pub async fn collect(parent: &AgentSession, detail_tokens: u32) -> CheckpointSub
     active_ids.sort();
     active_ids.truncate(crate::services::agent_local::subagent_registry::MAX_PER_PARENT);
     let mut active = Vec::with_capacity(active_ids.len());
+    let mut unreadable_active_ids = Vec::new();
     for child_id in active_ids {
         if let Ok(child) = crate::services::agent_local::session_store::get(&child_id).await {
             active.push(active_checkpoint(&child, &mut remaining_tokens));
+        } else {
+            unreadable_active_ids.push(child_id);
         }
     }
     let mut seen = BTreeSet::new();
@@ -74,6 +78,7 @@ pub async fn collect(parent: &AgentSession, detail_tokens: u32) -> CheckpointSub
         .collect();
     CheckpointSubagents {
         active,
+        unreadable_active_ids,
         pending_reports,
         delivered_report_ids,
     }

@@ -164,6 +164,7 @@ mod tests {
             32_768
         );
         assert_eq!(select_ollama_context(None, None, 16_384, 8_192), 8_192);
+        assert_eq!(select_ollama_context(None, Some(0), 16_384, 8_192), 8_192);
         assert_eq!(select_ollama_context(None, None, 4_096, 8_192), 4_096);
         assert_eq!(select_ollama_context(None, None, 0, 0), 0);
     }

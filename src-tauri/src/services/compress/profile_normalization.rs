@@ -112,7 +112,10 @@ fn normalize_band(band: &mut CompressionBandSettings) {
 
 fn normalize_token_budget(budget: &mut TokenBudget) {
     budget.fixed_tokens = budget.fixed_tokens.min(MAX_BUDGET_TOKENS);
-    budget.minimum_tokens = budget.minimum_tokens.min(budget.fixed_tokens);
+    budget.minimum_tokens = budget.minimum_tokens.min(MAX_BUDGET_TOKENS);
+    if budget.fixed_tokens > 0 {
+        budget.minimum_tokens = budget.minimum_tokens.min(budget.fixed_tokens);
+    }
     budget.percent_basis_points = budget.percent_basis_points.min(10_000);
 }
 

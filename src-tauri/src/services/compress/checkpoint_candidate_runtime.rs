@@ -15,8 +15,11 @@ pub fn project(snapshot: &CompressionSnapshot, persisted: &[AgentMessage]) -> Ve
             .iter()
             .map(|message| to_chat_message(snapshot, message)),
     );
-    let boundary = runtime[base..].iter().position(|message| {
-        message.role == "assistant" && message.content == super::engine::BOUNDARY_CONTENT
+    let boundary = persisted.iter().position(|message| {
+        message.message_kind
+            == Some(
+                crate::services::agent_local::types_message::AgentMessageKind::CompressionBoundary,
+            )
     });
     if let Some(index) = boundary.map(|index| base + index) {
         let barrier = (index + 1).min(runtime.len().saturating_sub(1));
@@ -44,7 +47,7 @@ fn to_chat_message(snapshot: &CompressionSnapshot, message: &AgentMessage) -> Ch
     ChatMessage {
         continuity_barrier_before: false,
         role: message.role.clone(),
-        content: message.content.clone(),
+        content: provider_content(message),
         images: checkpoint_images(snapshot, &message.id),
         tool_calls,
         tool_name: message.tool_name.clone(),
@@ -53,6 +56,23 @@ fn to_chat_message(snapshot: &CompressionSnapshot, message: &AgentMessage) -> Ch
         continuation: message.continuation.clone(),
         tool_loop_reasoning: None,
     }
+}
+
+fn provider_content(message: &AgentMessage) -> String {
+    if message.message_kind
+        != Some(
+            crate::services::agent_local::types_message::AgentMessageKind::CompressionCheckpoint,
+        )
+    {
+        return message.content.clone();
+    }
+    let Ok(mut body) = serde_json::from_str::<serde_json::Value>(&message.content) else {
+        return message.content.clone();
+    };
+    if let Some(object) = body.as_object_mut() {
+        object.remove("metadata");
+    }
+    serde_json::to_string_pretty(&body).unwrap_or_else(|_| message.content.clone())
 }
 
 fn checkpoint_images(snapshot: &CompressionSnapshot, message_id: &str) -> Option<Vec<String>> {

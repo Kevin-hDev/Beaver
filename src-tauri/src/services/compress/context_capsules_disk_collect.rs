@@ -19,10 +19,29 @@ pub async fn recent_disk_file_events(
     working_dir: &Path,
     max_files: usize,
 ) -> Vec<CapsuleEvent> {
+    recent_disk_file_events_inner(messages, working_dir, max_files, None).await
+}
+
+pub async fn recent_disk_file_events_bounded(
+    messages: &[ChatMessage],
+    working_dir: &Path,
+    max_files: usize,
+    max_tokens_per_file: u32,
+) -> Vec<CapsuleEvent> {
+    recent_disk_file_events_inner(messages, working_dir, max_files, Some(max_tokens_per_file)).await
+}
+
+async fn recent_disk_file_events_inner(
+    messages: &[ChatMessage],
+    working_dir: &Path,
+    max_files: usize,
+    max_tokens_per_file: Option<u32>,
+) -> Vec<CapsuleEvent> {
     let mut seen = HashSet::<PathBuf>::new();
     let mut events = Vec::new();
     for candidate in file_candidates(messages).into_iter().rev() {
-        let Some((resolved, result)) = read_current_state(&candidate.path, working_dir).await
+        let Some((resolved, result)) =
+            read_current_state(&candidate.path, working_dir, max_tokens_per_file).await
         else {
             continue;
         };
@@ -62,12 +81,55 @@ pub fn recent_tool_events(messages: &[ChatMessage]) -> Vec<CapsuleEvent> {
     found.into_iter().skip(keep_from).collect()
 }
 
-async fn read_current_state(path: &str, working_dir: &Path) -> Option<(PathBuf, String)> {
+async fn read_current_state(
+    path: &str,
+    working_dir: &Path,
+    max_tokens: Option<u32>,
+) -> Option<(PathBuf, String)> {
     let resolved = tool_files::resolve_read_path(path, working_dir).ok()?;
-    let content = tokio::fs::read_to_string(&resolved)
-        .await
-        .unwrap_or_else(|_| UNAVAILABLE_MARKER.to_string());
+    let content = match max_tokens {
+        Some(tokens) => read_bounded_text(&resolved, tokens).await,
+        None => tokio::fs::read_to_string(&resolved)
+            .await
+            .unwrap_or_else(|_| UNAVAILABLE_MARKER.to_string()),
+    };
     Some((resolved, content))
+}
+
+async fn read_bounded_text(path: &Path, max_tokens: u32) -> String {
+    use tokio::io::AsyncReadExt;
+
+    let max_bytes = usize::try_from(max_tokens)
+        .unwrap_or(usize::MAX)
+        .saturating_mul(4)
+        .max(1);
+    let Ok(file) = tokio::fs::File::open(path).await else {
+        return UNAVAILABLE_MARKER.to_string();
+    };
+    let mut bytes = Vec::with_capacity(max_bytes.min(64 * 1024));
+    if file
+        .take(max_bytes.saturating_add(1) as u64)
+        .read_to_end(&mut bytes)
+        .await
+        .is_err()
+    {
+        return UNAVAILABLE_MARKER.to_string();
+    }
+    let truncated = bytes.len() > max_bytes;
+    bytes.truncate(max_bytes);
+    let Ok(text) = String::from_utf8(bytes) else {
+        return UNAVAILABLE_MARKER.to_string();
+    };
+    if truncated {
+        super::checkpoint_messages::bounded_excerpt(
+            &text,
+            max_tokens,
+            "\n[file content truncated]",
+            "",
+        )
+    } else {
+        text
+    }
 }
 
 fn file_candidates(messages: &[ChatMessage]) -> Vec<FileCandidate> {

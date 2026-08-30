@@ -75,6 +75,19 @@ fn disk_normalization_clamps_values_without_reusing_migration_semantics() {
 }
 
 #[test]
+fn uncapped_percentage_budget_keeps_its_floor_during_normalization() {
+    let mut profiles = vec![beaver_profile()];
+    profiles[0].compact.response_reserve.mode = super::profile_types::BudgetMode::Percentage;
+    profiles[0].compact.response_reserve.fixed_tokens = 0;
+    profiles[0].compact.response_reserve.minimum_tokens = 500;
+    let mut global_id = "beaver".to_string();
+
+    normalize_profile_document(&mut profiles, &mut global_id);
+
+    assert_eq!(profiles[0].compact.response_reserve.minimum_tokens, 500);
+}
+
+#[test]
 fn profile_collection_is_bounded() {
     let mut profiles = (0..=MAX_PROFILES)
         .map(|index| {

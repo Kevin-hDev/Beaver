@@ -30,8 +30,13 @@ pub(crate) fn finalize_compression_settings_migration_at(path: &Path) -> Result<
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(false),
         Err(_) => return Err(migration_error()),
     };
-    let mut value: serde_json::Value =
-        serde_json::from_slice(&bytes).map_err(|_| migration_error())?;
+    let mut value: serde_json::Value = match serde_json::from_slice(&bytes) {
+        Ok(value) => value,
+        Err(_) => {
+            log::warn!("compression_legacy_config_invalid_skipped");
+            return Ok(false);
+        }
+    };
     let Some(advanced) = value
         .get_mut("advanced")
         .and_then(serde_json::Value::as_object_mut)
@@ -62,7 +67,13 @@ pub(crate) fn acknowledge_compression_settings_backup_at(path: &Path) -> Result<
 
 fn read_value(path: &Path) -> Result<serde_json::Value, String> {
     match std::fs::read(path) {
-        Ok(bytes) => serde_json::from_slice(&bytes).map_err(|_| migration_error()),
+        Ok(bytes) => match serde_json::from_slice(&bytes) {
+            Ok(value) => Ok(value),
+            Err(_) => {
+                log::warn!("compression_legacy_config_invalid_ignored");
+                Ok(serde_json::Value::Object(serde_json::Map::new()))
+            }
+        },
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
             Ok(serde_json::Value::Object(serde_json::Map::new()))
         }

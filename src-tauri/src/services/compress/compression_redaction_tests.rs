@@ -1,5 +1,17 @@
 use super::compression_redaction::{redact_checkpoint_text, redact_messages_for_compression};
 
+#[derive(serde::Deserialize)]
+struct SerializationFailure;
+
+impl serde::Serialize for SerializationFailure {
+    fn serialize<S>(&self, _serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        Err(serde::ser::Error::custom("fixture serialization failure"))
+    }
+}
+
 #[test]
 fn messages_and_checkpoint_are_redacted_without_mutating_the_source() {
     let session = super::snapshot_tests::session();
@@ -40,8 +52,26 @@ fn messages_and_checkpoint_are_redacted_without_mutating_the_source() {
 }
 
 #[test]
-fn opaque_reasoning_envelope_is_left_byte_identical() {
+fn opaque_reasoning_envelope_is_excluded_only_from_the_summary_copy() {
     let mut source = super::snapshot_tests::session().messages;
+    source[1].continuation = Some(
+        crate::services::reasoning_continuity::envelope::ReasoningEnvelope::new(
+            crate::services::reasoning_continuity::contract::ContractId::OllamaNativeV1,
+            crate::services::reasoning_continuity::envelope::ReasoningSource {
+                route_id: crate::services::reasoning_continuity::contract::RouteId::Ollama,
+                model_id: "fixture".into(),
+                credential_scope:
+                    crate::services::reasoning_continuity::contract::CredentialScope::local_uncredentialed(),
+                reasoning_mode:
+                    crate::services::reasoning_continuity::contract::ReasoningModeId::High,
+            },
+            crate::services::reasoning_continuity::envelope::CompletionState::Complete,
+            crate::services::reasoning_continuity::envelope::ContinuationState::OllamaNative {
+                thinking: "token=hunter2".into(),
+            },
+            Vec::new(),
+        ),
+    );
     let before = source[1]
         .continuation
         .as_ref()
@@ -50,13 +80,20 @@ fn opaque_reasoning_envelope_is_left_byte_identical() {
         .unwrap();
 
     let redacted = redact_messages_for_compression(&source);
-    let after = redacted[1]
+    assert!(redacted[1].continuation.is_none());
+    let source_after = source[1]
         .continuation
         .as_ref()
         .map(serde_json::to_vec)
         .transpose()
         .unwrap();
-
-    assert_eq!(before, after);
+    assert_eq!(before, source_after);
     source.clear();
+}
+
+#[test]
+fn structured_redaction_failure_drops_the_unfiltered_value() {
+    let mut value = Some(vec![SerializationFailure]);
+    super::compression_redaction::redact_serializable(&mut value);
+    assert!(value.is_none());
 }

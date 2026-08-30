@@ -14,6 +14,7 @@ import type {
 
 export interface SessionCompressionProfileState {
   profiles: CompressionProfileView[];
+  profilesStatus: "loading" | "ready" | "error";
   effective: ResolvedCompressionProfileView | null;
   compressionAvailable: boolean;
   select(profileId: string): Promise<boolean>;
@@ -23,18 +24,26 @@ export function useSessionCompressionProfile(
   sessionId?: string,
 ): SessionCompressionProfileState {
   const [profiles, setProfiles] = useState<CompressionProfileView[]>([]);
-  const [effective, setEffective] = useState<ResolvedCompressionProfileView | null>(null);
+  const [profilesStatus, setProfilesStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [effectiveState, setEffectiveState] = useState<{
+    sessionId: string;
+    value: ResolvedCompressionProfileView;
+  } | null>(null);
+  const effective = effectiveState && effectiveState.sessionId === sessionId
+    ? effectiveState.value
+    : null;
 
   const refreshEffective = useCallback(async () => {
     if (!sessionId) {
-      setEffective(null);
+      setEffectiveState(null);
       return;
     }
     try {
-      setEffective(await invoke<ResolvedCompressionProfileView>(
+      const value = await invoke<ResolvedCompressionProfileView>(
         "get_session_compression_profile",
         { sessionId },
-      ));
+      );
+      setEffectiveState({ sessionId, value });
     } catch {
       // Une actualisation transitoire ne remplace jamais le dernier état valide.
     }
@@ -43,14 +52,16 @@ export function useSessionCompressionProfile(
   const refreshAll = useCallback(async () => {
     if (!sessionId) {
       setProfiles([]);
-      setEffective(null);
+      setProfilesStatus("loading");
+      setEffectiveState(null);
       return;
     }
     try {
       const view = await invoke<CompressionProfilesView>("get_compression_profiles");
       setProfiles(view.profiles.slice(0, 20));
+      setProfilesStatus("ready");
     } catch {
-      // Le menu reste sur sa dernière liste confirmée.
+      setProfilesStatus("error");
     }
     await refreshEffective();
   }, [refreshEffective, sessionId]);
@@ -83,7 +94,7 @@ export function useSessionCompressionProfile(
         "set_session_compression_profile",
         { sessionId, profileId },
       );
-      setEffective(next);
+      setEffectiveState({ sessionId, value: next });
       notifyAgentSessionsChanged();
       return true;
     } catch {
@@ -94,6 +105,7 @@ export function useSessionCompressionProfile(
 
   return {
     profiles,
+    profilesStatus,
     effective,
     compressionAvailable: effective?.available ?? false,
     select,

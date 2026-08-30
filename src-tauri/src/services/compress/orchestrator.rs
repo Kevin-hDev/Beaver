@@ -39,7 +39,16 @@ pub async fn run_compression(
         request.provider_tools,
     );
     let used = super::state::context_used_for_compression(request.last_context_tokens, estimated);
+    if !profile.available(request.context_window) {
+        return match request.trigger {
+            CompressionTrigger::Automatic => Ok(None),
+            CompressionTrigger::Explicit => Err(CompressionError::UnavailableUnder64K),
+        };
+    }
     if !eligible(&profile, request.trigger, request.context_window, used) {
+        return Ok(None);
+    }
+    if !preflight_messages(&session.messages, request.trigger)? {
         return Ok(None);
     }
     let started_at = Instant::now();
@@ -53,7 +62,7 @@ pub async fn run_compression(
     let cache_before =
         crate::services::provider_usage::compression_cache_totals(&provider_id).await;
     let on_event = request.on_event;
-    send(on_event, "start");
+    super::orchestrator_support::send(on_event, "start");
     crate::services::agent_local::stream_diagnostics::mark_phase(
         request.session_id,
         request.request_id,
@@ -78,11 +87,24 @@ pub async fn run_compression(
         started_at,
     })
     .await;
-    send(on_event, "done");
+    super::orchestrator_support::send(on_event, "done");
     if result.is_ok() {
         let _ = on_event.send(StreamEvent::CompressionComplete {});
     }
     result.map(|value| Some(value.report))
+}
+
+pub(super) fn preflight_messages(
+    messages: &[crate::services::agent_local::types_message::AgentMessage],
+    trigger: CompressionTrigger,
+) -> Result<bool, CompressionError> {
+    if crate::services::agent_local::conversation_history_validation::validate(messages).is_ok() {
+        return Ok(true);
+    }
+    match trigger {
+        CompressionTrigger::Automatic => Ok(false),
+        CompressionTrigger::Explicit => Err(CompressionError::OpenTurn),
+    }
 }
 
 struct StartedCompression {
@@ -99,12 +121,12 @@ async fn run_started(
     if request.cancel.is_cancelled() {
         return Err(CompressionError::SummaryInvalid);
     }
-    let tool_names = tool_names(request.provider_tools);
+    let tool_names = super::orchestrator_support::tool_names(request.provider_tools);
     let capabilities = super::session_capabilities::SessionCompressionCapabilities::from_runtime(
         request.chatbot,
         &tool_names,
         !session.working_dir.is_empty(),
-        is_git_repository(request.working_dir),
+        super::orchestrator_support::is_git_repository(request.working_dir),
         request.plan_mode_active,
     )
     .map_err(|_| CompressionError::SnapshotInvalid)?;
@@ -128,13 +150,13 @@ async fn run_started(
         used_tokens.min(u32::MAX as usize) as u32,
     )
     .map_err(|_| CompressionError::SnapshotInvalid)?;
-    let image_budget = image_budget(&snapshot);
+    let image_budget = super::orchestrator_support::image_budget(&snapshot);
     let images = if image_budget.enabled {
         super::checkpoint_attachments::collect_images_with_limits(
             &snapshot.source_messages,
-            usize::from(image_budget.max_items),
-            image_budget.max_total_bytes,
-            16,
+            super::checkpoint_attachments::MAX_IMAGE_CANDIDATES,
+            32 * 1024 * 1024,
+            super::checkpoint_attachments::MAX_IMAGE_CANDIDATES,
         )
     } else {
         Vec::new()
@@ -167,22 +189,6 @@ async fn run_started(
     Ok(StartedCompression { report, facts })
 }
 
-fn image_budget(
-    snapshot: &super::snapshot::CompressionSnapshot,
-) -> super::profile_types::ImageBudget {
-    match snapshot.profile.band(snapshot.context_window) {
-        Some(super::profile_types::CompressionWindowBand::Under64K) => {
-            snapshot.profile.profile.under_64k.images
-        }
-        Some(super::profile_types::CompressionWindowBand::Large) => {
-            snapshot.profile.profile.large.images
-        }
-        Some(super::profile_types::CompressionWindowBand::Compact) | None => {
-            snapshot.profile.profile.compact.images
-        }
-    }
-}
-
 pub(super) fn eligible(
     profile: &super::profile_resolve::ResolvedCompressionProfile,
     trigger: CompressionTrigger,
@@ -204,26 +210,4 @@ pub(super) fn eligible(
                 )
         }
     }
-}
-
-fn tool_names(tools: &[serde_json::Value]) -> Vec<String> {
-    tools
-        .iter()
-        .filter_map(|tool| {
-            tool.pointer("/function/name")
-                .and_then(serde_json::Value::as_str)
-        })
-        .take(256)
-        .map(str::to_string)
-        .collect()
-}
-
-fn is_git_repository(working_dir: &Path) -> bool {
-    git2::Repository::discover(working_dir).is_ok()
-}
-
-fn send(on_event: &AgentEventEmitter, status: &str) {
-    let _ = on_event.send(StreamEvent::Compressing {
-        status: status.to_string(),
-    });
 }

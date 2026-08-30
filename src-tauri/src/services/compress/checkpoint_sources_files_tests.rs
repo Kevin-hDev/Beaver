@@ -52,6 +52,30 @@ async fn files_are_reread_deduplicated_and_unavailable_content_is_generic() {
 }
 
 #[tokio::test]
+async fn file_collection_obeys_profile_item_and_per_file_token_limits() {
+    let root = tempfile::tempdir().unwrap();
+    tokio::fs::write(root.path().join("first.txt"), "a".repeat(20_000))
+        .await
+        .unwrap();
+    let messages = vec![
+        assistant_file("first.txt"),
+        ChatMessage::tool("cached".into(), None, None),
+    ];
+    let budget = super::super::profile_types::ItemBudget {
+        enabled: true,
+        max_items: 1,
+        tokens_per_item: 32,
+        total_tokens: 32,
+    };
+
+    let files =
+        super::super::checkpoint_files::collect_with_budget(&messages, root.path(), &budget).await;
+
+    assert_eq!(files.len(), 1);
+    assert!(crate::services::token_counting::estimate_text_tokens(&files[0].current_content) <= 32);
+}
+
+#[tokio::test]
 async fn inaccessible_attachment_does_not_discard_a_later_image() {
     use base64::Engine;
     let missing = TurnAttachmentInput {
@@ -114,6 +138,41 @@ fn image_selection_keeps_metadata_and_obeys_provider_limit() {
     assert!(images
         .iter()
         .all(|image| image.provider_payload.starts_with("iVBOR")));
+}
+
+#[test]
+fn image_budget_is_applied_after_message_retention() {
+    let retained = bare_message();
+    let dropped = bare_message();
+    let image = |source_message_id: String, name: &str| {
+        super::super::checkpoint_attachments::CheckpointImage {
+            source_message_id,
+            file: crate::services::agent_local::types_session::FileAttachment {
+                name: name.into(),
+                path: String::new(),
+                mime_type: "image/png".into(),
+                size: 12,
+                thumbnail: None,
+                access_grant: None,
+            },
+            provider_payload: "iVBORw0KGgoAAAAA".into(),
+            estimated_bytes: 12,
+        }
+    };
+    let images = vec![
+        image(dropped.id.clone(), "dropped.png"),
+        image(retained.id.clone(), "retained.png"),
+    ];
+
+    let selected = super::super::checkpoint_attachments::retain_images_for_messages(
+        &images,
+        &[retained.id].into_iter().collect(),
+        1,
+        1024,
+    );
+
+    assert_eq!(selected.len(), 1);
+    assert_eq!(selected[0].file.name, "retained.png");
 }
 
 #[test]

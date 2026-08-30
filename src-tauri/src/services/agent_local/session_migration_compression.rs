@@ -14,6 +14,24 @@ pub(super) fn migrate_v2_markers(value: &mut Value) -> Result<(), String> {
     if object.get("schema_version").and_then(Value::as_u64) != Some(2) {
         return Err(super::session_limits::invalid_session());
     }
+    classify_legacy_markers(object)?;
+    object.insert(
+        "schema_version".into(),
+        Value::from(CURRENT_SESSION_SCHEMA_VERSION),
+    );
+    Ok(())
+}
+
+pub(super) fn classify_markers_after_v1_migration(value: &mut Value) -> Result<(), String> {
+    let object = value
+        .as_object_mut()
+        .ok_or_else(super::session_limits::invalid_session)?;
+    classify_legacy_markers(object)
+}
+
+fn classify_legacy_markers(
+    object: &mut serde_json::Map<String, Value>,
+) -> Result<(), String> {
     let messages = object
         .get_mut("messages")
         .and_then(Value::as_array_mut)
@@ -41,9 +59,5 @@ pub(super) fn migrate_v2_markers(value: &mut Value) -> Result<(), String> {
             message.insert("message_kind".into(), Value::String(kind.into()));
         }
     }
-    object.insert(
-        "schema_version".into(),
-        Value::from(CURRENT_SESSION_SCHEMA_VERSION),
-    );
     Ok(())
 }

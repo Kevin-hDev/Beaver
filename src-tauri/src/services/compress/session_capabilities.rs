@@ -25,7 +25,7 @@ impl SessionCompressionCapabilities {
         tool_names: &[String],
         project_context: bool,
         git_repository: bool,
-        plan_mode_active: bool,
+        _plan_mode_active: bool,
     ) -> Result<Self, String> {
         if tool_names.len() > MAX_RUNTIME_TOOL_NAMES
             || tool_names.iter().any(|name| {
@@ -64,7 +64,7 @@ impl SessionCompressionCapabilities {
             project_context: !chatbot && project_context && local_files,
             subagents: !chatbot && subagents,
             git: !chatbot && git_repository,
-            plan_and_tasks: !chatbot && plan_mode_active && plan_and_tasks,
+            plan_and_tasks: !chatbot && plan_and_tasks,
             tool_names,
         })
     }

@@ -2,13 +2,15 @@ import "./context-progress.css";
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
-import type { ContextUsageBreakdown, ContextUsageItem } from "@/hooks/context-usage-breakdown";
+import type { ContextUsageBreakdown } from "@/hooks/context-usage-breakdown";
 import type { ResolvedCompressionProfileView } from "@/types/compression-profile.generated";
 import {
   floatingMenuPortalRoot,
   useFloatingMenuPosition,
 } from "@/hooks/use-floating-menu-position";
 import { ContextCompressionHelpPopover } from "./context-compression-help-popover";
+import { formatTokenCount } from "@/lib/token-format";
+import { ContextUsageRow } from "./context-progress-row";
 
 interface ContextProgressProps {
   used: number;
@@ -29,14 +31,9 @@ function colorForPercentage(p: number): ColorKey {
 const FILL_COLORS: Record<ColorKey, string> = {
   neutral: "var(--context-ring-fill)",
   yellow: "var(--signal-warning)",
-  orange: "var(--tool-bash)",
+  orange: "var(--signal-alert)",
   red: "var(--signal-error)",
 };
-
-function formatTokens(n: number): string {
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
-  return String(n);
-}
 
 const SIZE = 16;
 const STROKE = 3;
@@ -51,6 +48,7 @@ export function ContextProgress({ used, max, breakdown, compression }: ContextPr
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const suppressNextFocusOpen = useRef(false);
+  const focusPanelOnOpen = useRef(false);
   const panelId = useId();
   const { anchorRef, floatingRef, floatingStyle } = useFloatingMenuPosition(
     open,
@@ -98,6 +96,12 @@ export function ContextProgress({ used, max, breakdown, compression }: ContextPr
     };
   }, [floatingRef, helpOpen, open]);
 
+  useEffect(() => {
+    if (!open || !focusPanelOnOpen.current) return;
+    focusPanelOnOpen.current = false;
+    requestAnimationFrame(() => floatingRef.current?.focus());
+  }, [floatingRef, open]);
+
   useEffect(() => () => cancelClose(), []);
 
   if (!max || max <= 0) return null;
@@ -137,6 +141,13 @@ export function ContextProgress({ used, max, breakdown, compression }: ContextPr
         aria-expanded={open}
         aria-controls={panelId}
         onClick={openPanel}
+        onKeyDown={(event) => {
+          if (event.key !== "Enter" && event.key !== " " && event.key !== "Tab") return;
+          event.preventDefault();
+          focusPanelOnOpen.current = true;
+          openPanel();
+          if (open) requestAnimationFrame(() => floatingRef.current?.focus());
+        }}
       >
         <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`}>
           <circle
@@ -162,8 +173,9 @@ export function ContextProgress({ used, max, breakdown, compression }: ContextPr
         ref={floatingRef}
         id={panelId}
         className="context-ring-panel"
-        style={{ ...floatingStyle, zIndex: "var(--z-overlay)" }}
+        style={floatingStyle}
         role="dialog"
+        tabIndex={-1}
         aria-modal="false"
         aria-label={t("agentLocal.contextUsage.title")}
         onMouseEnter={openPanel}
@@ -173,7 +185,7 @@ export function ContextProgress({ used, max, breakdown, compression }: ContextPr
       >
         <div className="context-ring-header">
           <span>{t("agentLocal.contextUsage.title")}</span>
-          <strong>{formatTokens(resolvedUsed)} / {formatTokens(max)} ({pctDisplay}%)</strong>
+          <strong>{formatTokenCount(resolvedUsed)} / {formatTokenCount(max)} ({pctDisplay}%)</strong>
         </div>
         <div className="context-ring-bar" aria-hidden="true">
           <div className="context-ring-bar-fill" style={{ width: `${percentage}%` }} />
@@ -183,9 +195,9 @@ export function ContextProgress({ used, max, breakdown, compression }: ContextPr
             <ContextUsageRow key={item.key} item={item} />
           ))}
         </div>
-        {compression && (
-          <div className="context-ring-compression-row">
-            {compression.available ? (
+        <div className="context-ring-compression-row">
+          {compression ? (
+            compression.available ? (
               <>
                 <span>{t("agentLocal.contextUsage.compression")}</span>
                 <strong title={compression.name}>{compression.name}</strong>
@@ -198,29 +210,15 @@ export function ContextProgress({ used, max, breakdown, compression }: ContextPr
                   setHelpOpen(next);
                 }} />
               </>
-            )}
-          </div>
-        )}
+            )
+          ) : (
+            <>
+              <span>{t("agentLocal.contextUsage.compression")}</span>
+              <strong aria-busy="true">—</strong>
+            </>
+          )}
+        </div>
       </div>, floatingMenuPortalRoot())}
     </span>
   );
-}
-
-function ContextUsageRow({ item }: { item: ContextUsageItem }) {
-  const { t } = useTranslation();
-  return (
-    <div className="context-ring-row">
-      <span className={`context-ring-dot context-ring-dot-${item.key}`} aria-hidden="true" />
-      <span className="context-ring-label">{t(`agentLocal.contextUsage.categories.${item.key}`)}</span>
-      <span className="context-ring-values">
-        {formatTokens(item.tokens)}
-        <span>{formatShare(item.percentage)}%</span>
-      </span>
-    </div>
-  );
-}
-
-function formatShare(value: number): string {
-  if (value > 0 && value < 0.1) return "<0.1";
-  return value.toFixed(1);
 }

@@ -114,6 +114,8 @@ interface EditableRowActionsProps {
   deleteLabel: string;
   confirmLabel: string;
   cancelLabel: string;
+  confirmationMessage?: string;
+  confirmationPlacement?: "above" | "below" | "side";
   disabled?: boolean;
 }
 
@@ -123,12 +125,19 @@ export function EditableRowActions({
   deleteLabel,
   confirmLabel,
   cancelLabel,
+  confirmationMessage,
+  confirmationPlacement = "above",
   disabled = false,
 }: EditableRowActionsProps) {
   return (
     <div className="era-actions">
       {controller.confirmingDelete && (
-        <div className="era-confirm relief" role="dialog" aria-label={deleteLabel}>
+        <div
+          className={`era-confirm era-confirm-${confirmationPlacement} relief`}
+          role="dialog"
+          aria-label={deleteLabel}
+        >
+          {confirmationMessage && <p className="era-confirm-message">{confirmationMessage}</p>}
           <button type="button" className="btn btn-sm btn-primary" onClick={(event) => { event.stopPropagation(); void controller.confirmDelete(); }}>
             {confirmLabel}
           </button>

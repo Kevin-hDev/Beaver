@@ -122,5 +122,5 @@ pub fn get_effective_context_length() -> u32 {
 fn ensure_compression_profiles() -> Result<(), String> {
     crate::services::compress::profile_store::load_document()
         .map(|_| ())
-        .map_err(|_| "Configuration de compression indisponible.".to_string())
+        .map_err(|_| "compression_profiles_unavailable".to_string())
 }

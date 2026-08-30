@@ -77,7 +77,7 @@ impl CompressionSnapshot {
         mut self,
         images: Vec<super::checkpoint_attachments::CheckpointImage>,
     ) -> Result<Self, String> {
-        if images.len() > 16 {
+        if images.len() > super::checkpoint_attachments::MAX_IMAGE_CANDIDATES {
             return Err("compression_snapshot_invalid".to_string());
         }
         self.checkpoint_images = images;

@@ -76,6 +76,37 @@ fn synthetic_v1_fixture_keeps_visible_thinking_without_promoting_continuation() 
 }
 
 #[test]
+fn v1_compression_markers_are_classified_before_the_session_becomes_v3() {
+    use super::types_message::AgentMessageKind;
+
+    for checkpoint in [
+        "This session is being continued from a previous conversation\nsummary",
+        "Recent file context preserved across compression:\nfiles",
+    ] {
+        let mut value: serde_json::Value = serde_json::from_slice(V1_FIXTURE).unwrap();
+        value["messages"][0]["content"] = json!(checkpoint);
+        value["messages"][1]["content"] =
+            json!("[Compression boundary — previous messages have been summarized]");
+        let bytes = serde_json::to_vec(&value).unwrap();
+
+        let loaded = super::session_migration::read(
+            &bytes,
+            PathBuf::from("v1-compression-marker.json"),
+        )
+        .expect("migrate v1 compression markers");
+
+        assert_eq!(
+            loaded.session().messages[0].message_kind,
+            Some(AgentMessageKind::CompressionCheckpoint)
+        );
+        assert_eq!(
+            loaded.session().messages[1].message_kind,
+            Some(AgentMessageKind::CompressionBoundary)
+        );
+    }
+}
+
+#[test]
 fn synthetic_v1_tool_chain_migrates_without_promoting_codex_sidecars() {
     let loaded = super::session_migration::read(
         SYNTHETIC_TOOL_CHAIN,

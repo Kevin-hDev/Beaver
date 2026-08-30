@@ -71,7 +71,11 @@ export function CompressionProfileDialog({
             }}
           />
           <span className="cpd-count">
-            {visibleLength >= 36 ? t("settings.advanced.compressionCharactersLeft", { count: NAME_MAX - visibleLength }) : ""}
+            {duplicate
+              ? t("settings.advanced.compressionDuplicateName")
+              : visibleLength >= 36
+                ? t("settings.advanced.compressionCharactersLeft", { count: NAME_MAX - visibleLength })
+                : ""}
           </span>
           <div className="cpd-actions">
             <button type="button" className="btn btn-sm btn-secondary" onClick={onCancel}>

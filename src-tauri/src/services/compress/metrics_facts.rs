@@ -18,7 +18,7 @@ pub fn collect(
         .flat_map(|message| &message.files)
         .filter(|file| file.thumbnail.is_some())
         .count();
-    let retained_images = snapshot.checkpoint_images.len();
+    let retained_images = candidate.retained_images;
     CompressionSuccessFacts {
         after_tokens: candidate.after_tokens,
         summary_tokens: summary.map_or(0, |value| text_tokens(&value.content)),

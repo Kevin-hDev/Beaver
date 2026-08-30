@@ -1,4 +1,5 @@
 use std::time::{Duration, Instant};
+use subtle::ConstantTimeEq;
 
 use crate::services::compress::profile_store::CompressionProfileStoreError;
 use crate::services::compress::profile_store_document::CompressionProfileDocument;
@@ -11,7 +12,7 @@ pub(super) struct UndoSlot {
 }
 
 struct DeletedProfileSnapshot {
-    token: String,
+    token: zeroize::Zeroizing<String>,
     document_before: CompressionProfileDocument,
     document_after: CompressionProfileDocument,
     expires_at: Instant,
@@ -26,7 +27,7 @@ impl UndoSlot {
     ) -> String {
         let token = uuid::Uuid::new_v4().to_string();
         self.snapshot = Some(DeletedProfileSnapshot {
-            token: token.clone(),
+            token: zeroize::Zeroizing::new(token.clone()),
             document_before,
             document_after,
             expires_at: now + UNDO_DURATION,
@@ -68,13 +69,16 @@ impl UndoSlot {
 
 fn constant_time_token_eq(candidate: &str, expected: &str) -> bool {
     const UUID_TEXT_BYTES: usize = 36;
+    let mut candidate_bytes = zeroize::Zeroizing::new([0_u8; UUID_TEXT_BYTES]);
+    let mut expected_bytes = zeroize::Zeroizing::new([0_u8; UUID_TEXT_BYTES]);
     let candidate = candidate.as_bytes();
     let expected = expected.as_bytes();
-    let mut difference = candidate.len() ^ expected.len();
-    for index in 0..UUID_TEXT_BYTES {
-        let left = candidate.get(index).copied().unwrap_or_default();
-        let right = expected.get(index).copied().unwrap_or_default();
-        difference |= usize::from(left ^ right);
-    }
-    difference == 0
+    candidate_bytes[..candidate.len().min(UUID_TEXT_BYTES)]
+        .copy_from_slice(&candidate[..candidate.len().min(UUID_TEXT_BYTES)]);
+    expected_bytes[..expected.len().min(UUID_TEXT_BYTES)]
+        .copy_from_slice(&expected[..expected.len().min(UUID_TEXT_BYTES)]);
+    bool::from(
+        candidate_bytes.as_ref().ct_eq(expected_bytes.as_ref())
+            & (candidate.len() as u64).ct_eq(&(expected.len() as u64)),
+    )
 }

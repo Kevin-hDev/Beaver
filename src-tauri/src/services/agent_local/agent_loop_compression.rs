@@ -80,7 +80,7 @@ impl LoopCompression<'_> {
         cancel: CancellationToken,
     ) -> Result<(), String> {
         messages.push(agent_loop_support::build_assistant_message(result));
-        let context = token_estimate::estimate_tokens(messages)
+        let context = token_estimate::estimate_tokens_for_provider("ollama", messages)
             .saturating_add(result.content_chunks.len())
             .min(u32::MAX as usize) as u32;
         if self
@@ -88,7 +88,7 @@ impl LoopCompression<'_> {
             .await
             .is_none()
         {
-            return Err("Compression impossible après interruption du stream".to_string());
+            return Err("compression_failed".to_string());
         }
         Self::reset_counts(counts.prompt, counts.eval);
         Ok(())

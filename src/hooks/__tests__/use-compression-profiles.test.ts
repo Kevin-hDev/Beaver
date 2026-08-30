@@ -108,6 +108,22 @@ describe("useCompressionProfiles", () => {
     expect(result.current.view?.automatic_enabled).toBe(false);
   });
 
+  it("réinitialise les prompts du profil actif via l'autorité backend", async () => {
+    vi.mocked(invoke).mockResolvedValueOnce(view()).mockResolvedValueOnce(view(90, 2));
+    const { result } = renderHook(() => useCompressionProfiles());
+    await waitFor(() => expect(result.current.view).not.toBeNull());
+
+    await act(async () => {
+      expect(await result.current.resetPrompts("beaver")).toBe(true);
+    });
+
+    expect(invoke).toHaveBeenLastCalledWith(
+      "reset_compression_profile_prompts",
+      { profileId: "beaver" },
+    );
+    expect(result.current.view?.profiles[0].revision).toBe(2);
+  });
+
   it("conserve la dernière vue confirmée et affiche une erreur générique", async () => {
     vi.mocked(invoke).mockResolvedValueOnce(view()).mockRejectedValueOnce(new Error("secret"));
     const { result } = renderHook(() => useCompressionProfiles());

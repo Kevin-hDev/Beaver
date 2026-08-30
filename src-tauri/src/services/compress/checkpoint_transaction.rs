@@ -11,6 +11,7 @@ use crate::services::agent_local::types_ollama::ChatMessage;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CompressionError {
     Unavailable,
+    UnavailableUnder64K,
     SnapshotInvalid,
     OpenTurn,
     SummaryInvalid,
@@ -33,8 +34,9 @@ impl CompressionError {
 
     pub const fn public_message(self) -> &'static str {
         match self {
-            Self::Unavailable => "Compression indisponible.",
-            _ => "Compression impossible.",
+            Self::UnavailableUnder64K => "compression_disabled_under_64k",
+            Self::Unavailable => "compression_unavailable",
+            _ => "compression_failed",
         }
     }
 }

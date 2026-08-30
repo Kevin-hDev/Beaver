@@ -6,6 +6,7 @@ import { SavedToolBubble } from "./tool-bubble";
 import { ChatMarkdown } from "./chat-markdown";
 import { useHoverClass } from "@/hooks/use-hover-class";
 import { formatCompactDuration } from "@/lib/duration-format";
+import { formatTokenCount } from "@/lib/token-format";
 import type { ToolActivityRecord } from "@/types/agent";
 import "./messages.css";
 
@@ -24,11 +25,6 @@ interface AssistantMessageProps {
   totalElapsedMs?: number;
   showActions?: boolean;
   variant?: "default" | "trace";
-}
-
-function formatTokens(n: number): string {
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
-  return String(n);
 }
 
 function formatTotalElapsed(ms: number): string {
@@ -62,7 +58,7 @@ export const AssistantMessage = memo(function AssistantMessage({
           {(hasTokens || hasTps || totalTime) && (
             <span className="msg-stats-inline">
               {totalTime && <><span>{totalTime}</span><span>&middot;</span></>}
-              {hasTokens && <span>{formatTokens(tokens)} {t("agentLocal.tokens")}</span>}
+              {hasTokens && <span>{formatTokenCount(tokens)} {t("agentLocal.tokens")}</span>}
               {hasTokens && hasTps && <span>&middot;</span>}
               {hasTps && (
                 <span>{tpsEstimated ? "≈ " : ""}{tps.toFixed(1)} {t("agentLocal.tps")}</span>

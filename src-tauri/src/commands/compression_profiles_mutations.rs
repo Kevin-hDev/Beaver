@@ -91,6 +91,19 @@ pub(super) fn reset_beaver(
     Ok(())
 }
 
+pub(super) fn reset_prompts(
+    document: &mut CompressionProfileDocument,
+    profile_id: &str,
+) -> Result<(), CompressionProfileStoreError> {
+    let index = profile_index(document, profile_id)?;
+    let defaults = beaver_profile();
+    let profile = &mut document.profiles[index];
+    profile.summary.system_prompt = defaults.summary.system_prompt;
+    profile.summary.handoff_prompt = defaults.summary.handoff_prompt;
+    profile.revision = next_revision(profile.revision)?;
+    Ok(())
+}
+
 pub(super) fn delete(
     document: &mut CompressionProfileDocument,
     profile_id: &str,

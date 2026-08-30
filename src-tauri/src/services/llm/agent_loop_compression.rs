@@ -94,7 +94,7 @@ impl LoopCompression<'_> {
             .await
             .is_none()
         {
-            return Err("Compression impossible après interruption du stream".to_string());
+            return Err("compression_failed".to_string());
         }
         Self::reset_counts(counts.prompt, counts.eval);
         Ok(())

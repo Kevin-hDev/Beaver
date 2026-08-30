@@ -54,7 +54,7 @@ pub(crate) async fn handle_compress_command(
     .await
     {
         Ok(Some(_)) => Ok(()),
-        Ok(None) => Err("Compression indisponible.".to_string()),
+        Ok(None) => Err("compression_unavailable".to_string()),
         Err(error) => Err(error.public_message().to_string()),
     }
 }

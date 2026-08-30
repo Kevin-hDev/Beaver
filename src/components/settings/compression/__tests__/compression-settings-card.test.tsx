@@ -11,7 +11,8 @@ const controller = vi.hoisted(() => ({
   refresh: vi.fn(() => Promise.resolve()),
   create: vi.fn(() => Promise.resolve(true)),
   rename: vi.fn(() => Promise.resolve(true)),
-  resetBeaver: vi.fn(() => Promise.resolve(true)),
+  resetBeaver: vi.fn(() => Promise.resolve(null)),
+  resetPrompts: vi.fn(() => Promise.resolve(true)),
   deleteProfile: vi.fn(() => Promise.resolve(null)),
   undoDelete: vi.fn(() => Promise.resolve(true)),
   view: null as null | {
@@ -77,6 +78,15 @@ describe("CompressionSettingsCard", () => {
     expect(screen.getByRole("dialog", { name: /settings.advanced.compressionPanelTitle/i })).toBeInTheDocument();
   });
 
+  it("sélectionne le profil global directement depuis la carte", () => {
+    render(<CompressionSettingsCard defaultModel="ollama:qwen" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Beaver" }));
+    fireEvent.click(screen.getByRole("button", { name: "Custom" }));
+
+    expect(controller.selectGlobal).toHaveBeenCalledWith("custom");
+  });
+
   it("borne le seuil entre 1 et 90 et sauvegarde le profil entier", () => {
     render(<CompressionSettingsCard defaultModel="ollama:qwen" />);
     const slider = screen.getByRole("slider", { name: /Seuil de compression/i });
@@ -97,7 +107,7 @@ describe("CompressionSettingsCard", () => {
     render(<CompressionSettingsCard defaultModel="ollama:qwen" />);
 
     expect(screen.getByText(/inférieures à 64K/i)).toBeInTheDocument();
-    expect(screen.getByRole("switch")).toBeDisabled();
-    expect(screen.getByRole("slider")).toBeDisabled();
+    expect(screen.getByRole("switch")).toBeEnabled();
+    expect(screen.getByRole("slider")).toBeEnabled();
   });
 });

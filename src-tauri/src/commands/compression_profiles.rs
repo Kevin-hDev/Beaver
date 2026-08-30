@@ -13,7 +13,7 @@ use super::compression_profiles_undo::{UndoSlot, UNDO_DURATION};
 
 const CHANGED_EVENT: &str = "fs:compression-profiles-changed";
 const ERROR_CODE: &str = "compression_profiles_unavailable";
-static DELETE_UNDO: LazyLock<Mutex<UndoSlot>> = LazyLock::new(|| Mutex::new(UndoSlot::default()));
+static MUTATION_UNDO: LazyLock<Mutex<UndoSlot>> = LazyLock::new(|| Mutex::new(UndoSlot::default()));
 
 #[tauri::command]
 pub fn get_compression_profiles() -> Result<CompressionProfilesView, String> {
@@ -77,8 +77,18 @@ pub fn set_automatic_compression_enabled(
 #[tauri::command]
 pub fn reset_beaver_compression_profile(
     app: tauri::AppHandle,
+) -> Result<CompressionDeleteResult, String> {
+    mutate_with_undo(&app, super::compression_profiles_mutations::reset_beaver)
+}
+
+#[tauri::command]
+pub fn reset_compression_profile_prompts(
+    app: tauri::AppHandle,
+    profile_id: String,
 ) -> Result<CompressionProfilesView, String> {
-    mutate_and_emit(&app, super::compression_profiles_mutations::reset_beaver)
+    mutate_and_emit(&app, |document| {
+        super::compression_profiles_mutations::reset_prompts(document, &profile_id)
+    })
 }
 
 #[tauri::command]
@@ -86,21 +96,8 @@ pub fn delete_compression_profile(
     app: tauri::AppHandle,
     profile_id: String,
 ) -> Result<CompressionDeleteResult, String> {
-    let ((before, ()), after) = profile_store::mutate_document(|document| {
-        let before = document.clone();
-        super::compression_profiles_mutations::delete(document, &profile_id)?;
-        Ok((before, ()))
-    })
-    .map_err(map_error)?;
-    let token = DELETE_UNDO
-        .lock()
-        .unwrap_or_else(|error| error.into_inner())
-        .record(before, after.clone(), Instant::now());
-    emit_changed(&app);
-    Ok(CompressionDeleteResult {
-        view: CompressionProfilesView::from(&after),
-        undo_token: token,
-        undo_expires_in_ms: UNDO_DURATION.as_millis() as u32,
+    mutate_with_undo(&app, |document| {
+        super::compression_profiles_mutations::delete(document, &profile_id)
     })
 }
 
@@ -109,7 +106,7 @@ pub fn undo_delete_compression_profile(
     app: tauri::AppHandle,
     undo_token: String,
 ) -> Result<CompressionProfilesView, String> {
-    let (before, after) = DELETE_UNDO
+    let (before, after) = MUTATION_UNDO
         .lock()
         .unwrap_or_else(|error| error.into_inner())
         .candidate(&undo_token, Instant::now())
@@ -122,7 +119,7 @@ pub fn undo_delete_compression_profile(
         Ok(())
     })
     .map_err(map_error)?;
-    DELETE_UNDO
+    MUTATION_UNDO
         .lock()
         .unwrap_or_else(|error| error.into_inner())
         .clear_if_token(&undo_token);
@@ -155,6 +152,30 @@ fn mutate_and_emit(
     let (_, document) = profile_store::mutate_document(mutation).map_err(map_error)?;
     emit_changed(app);
     Ok(CompressionProfilesView::from(&document))
+}
+
+fn mutate_with_undo(
+    app: &tauri::AppHandle,
+    mutation: impl FnOnce(
+        &mut crate::services::compress::profile_store_document::CompressionProfileDocument,
+    ) -> Result<(), profile_store::CompressionProfileStoreError>,
+) -> Result<CompressionDeleteResult, String> {
+    let ((before, ()), after) = profile_store::mutate_document(|document| {
+        let before = document.clone();
+        mutation(document)?;
+        Ok((before, ()))
+    })
+    .map_err(map_error)?;
+    let token = MUTATION_UNDO
+        .lock()
+        .unwrap_or_else(|error| error.into_inner())
+        .record(before, after.clone(), Instant::now());
+    emit_changed(app);
+    Ok(CompressionDeleteResult {
+        view: CompressionProfilesView::from(&after),
+        undo_token: token,
+        undo_expires_in_ms: UNDO_DURATION.as_millis() as u32,
+    })
 }
 
 fn emit_changed(app: &tauri::AppHandle) {

@@ -5,7 +5,7 @@
 
 use std::collections::BTreeSet;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct CheckpointReference {
     pub kind: String,
     pub id: String,

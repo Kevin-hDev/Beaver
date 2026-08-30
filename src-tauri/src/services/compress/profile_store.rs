@@ -14,6 +14,7 @@ static MIGRATED_PROFILE_PATHS: std::sync::LazyLock<Mutex<HashSet<PathBuf>>> =
 pub enum CompressionProfileStoreError {
     Read,
     Invalid,
+    FutureVersion(u16),
     Write,
     Migration,
 }
@@ -101,8 +102,10 @@ pub(crate) fn load_from_paths(
             let migrated_now = super::profile_store_migration::finish_existing(config_path)?;
             if migrated_now {
                 remember_migration(profile_path);
-            } else if !migrated_in_this_process(profile_path) {
-                super::profile_store_migration::acknowledge_backup(config_path)?;
+            } else if !migrated_in_this_process(profile_path)
+                && super::profile_store_migration::acknowledge_backup(config_path).is_err()
+            {
+                log::warn!("compression_profile_migration_backup_cleanup_failed");
             }
             Ok(document)
         }
@@ -159,6 +162,15 @@ fn normalize_loaded_document(
     document: &mut CompressionProfileDocument,
 ) -> Result<(), CompressionProfileStoreError> {
     if document.schema_version != super::profile_store_document::PROFILE_SCHEMA_VERSION {
+        if document.schema_version > super::profile_store_document::PROFILE_SCHEMA_VERSION {
+            log::warn!(
+                "compression_profile_document_future_version version={}",
+                document.schema_version
+            );
+            return Err(CompressionProfileStoreError::FutureVersion(
+                document.schema_version,
+            ));
+        }
         return Err(CompressionProfileStoreError::Invalid);
     }
     document.normalize();

@@ -69,6 +69,7 @@ export function ForecastHistoryRow({
       <div className="fch-actions">
         <EditableRowActions
           controller={actions}
+          confirmationPlacement="side"
           renameLabel={t("forecast.history.edit")}
           deleteLabel={t("forecast.history.delete")}
           confirmLabel={t("forecast.history.validate")}

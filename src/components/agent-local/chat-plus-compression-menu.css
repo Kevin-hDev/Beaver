@@ -1,18 +1,18 @@
-.cpc-list {
-  max-height: var(--extensions-chat-list-max-height);
+.cpcm-list {
+  max-height: var(--chat-compression-list-max-height);
   overflow-y: auto;
 }
 
-.cpc-item {
+.cpcm-item {
   justify-content: space-between;
 }
 
-.cpc-item:disabled {
+.cpcm-item:disabled {
   cursor: wait;
   opacity: 0.6;
 }
 
-.cpc-name {
+.cpcm-name {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;

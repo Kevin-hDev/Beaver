@@ -133,3 +133,35 @@ fn indivisible_oversized_assistant_is_omitted_whole() {
         .iter()
         .any(|item| item.message().id == source[1].id));
 }
+
+#[test]
+fn selected_user_without_assistant_survives_document_assembly() {
+    let source = vec![
+        message("old", "user", "keep this exact user intent"),
+        message("old", "assistant", "r".repeat(40_000)),
+        message("active", "user", "current work"),
+    ];
+    let selected = select(&source, limits(5_000, 1_000)).unwrap();
+    let assembled = super::checkpoint_document::assemble(
+        &selected.messages,
+        Some("active"),
+        None,
+        &[],
+        super::profile_types::CompressionTrigger::Explicit,
+    )
+    .unwrap();
+
+    let checkpoint = assembled
+        .iter()
+        .find(|message| {
+            message.message_kind
+                == Some(crate::services::agent_local::types_message::AgentMessageKind::CompressionCheckpoint)
+        })
+        .expect("checkpoint");
+    assert!(checkpoint.content.contains("retained_user_messages"));
+    assert!(checkpoint.content.contains("keep this exact user intent"));
+    assert!(checkpoint.content.contains("source_message_id"));
+    assert!(!checkpoint.content.contains("tool_activities"));
+    assert!(!checkpoint.content.contains("continuation"));
+    assert_eq!(assembled.last().unwrap().content, "current work");
+}

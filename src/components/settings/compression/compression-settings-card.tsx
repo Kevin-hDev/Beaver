@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { SettingsCard } from "@/components/settings/settings-card";
 import { SettingsRow } from "@/components/settings/settings-row";
+import { SettingsSelect } from "@/components/settings/settings-select";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { useCompressionProfiles } from "@/hooks/use-compression-profiles";
 import { useContextProgress } from "@/hooks/use-context-progress";
@@ -55,7 +56,7 @@ export function CompressionSettingsCard({ defaultModel }: CompressionSettingsCar
         {controller.view ? (
           <ToggleSwitch
             checked={controller.view.automatic_enabled}
-            disabled={controller.busy || unavailableUnder64}
+            disabled={controller.busy}
             ariaLabel={t("settings.advanced.compressionEnabledTitle")}
             onCheckedChange={(enabled) => { void controller.setAutomaticEnabled(enabled); }}
           />
@@ -74,7 +75,7 @@ export function CompressionSettingsCard({ defaultModel }: CompressionSettingsCar
               min={1}
               max={90}
               value={threshold}
-              disabled={!controller.view?.automatic_enabled || unavailableUnder64}
+              disabled={!controller.view?.automatic_enabled}
               aria-label={t("settings.advanced.compressionThresholdTitle")}
               onChange={(event) => {
                 const next = Math.min(90, Math.max(1, Number(event.target.value)));
@@ -101,19 +102,31 @@ export function CompressionSettingsCard({ defaultModel }: CompressionSettingsCar
 
       <SettingsRow
         title={t("settings.advanced.compressionAdvancedTitle")}
-        description={active
-          ? t("settings.advanced.compressionAdvancedDesc", { name: active.name })
-          : "—"}
+        description={t("settings.advanced.compressionAdvancedDesc")}
       >
-        <button
-          ref={advancedButtonRef}
-          type="button"
-          className="btn btn-sm btn-secondary"
-          disabled={!controller.view}
-          onClick={() => setPanelOpen(true)}
-        >
-          {t("settings.advanced.compressionAdvanced")}
-        </button>
+        <div className="csc-advanced-actions">
+          {controller.view && active && (
+            <SettingsSelect
+              options={controller.view.profiles.map((profile) => ({
+                value: profile.id,
+                label: profile.name,
+              }))}
+              value={active.id}
+              disabled={controller.busy}
+              fitLongestOption
+              onChange={(profileId) => { void controller.selectGlobal(profileId); }}
+            />
+          )}
+          <button
+            ref={advancedButtonRef}
+            type="button"
+            className="btn btn-sm btn-secondary"
+            disabled={!controller.view}
+            onClick={() => setPanelOpen(true)}
+          >
+            {t("settings.advanced.compressionAdvanced")}
+          </button>
+        </div>
       </SettingsRow>
       {panelOpen && (
         <CompressionPanel

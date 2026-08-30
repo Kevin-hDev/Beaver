@@ -1,9 +1,11 @@
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { SettingsSelect } from "@/components/settings/settings-select";
-import { useEditableRowActions } from "@/components/ui/editable-row-actions";
+import {
+  EditableRowActions,
+  useEditableRowActions,
+} from "@/components/ui/editable-row-actions";
 import type { CompressionProfilesController } from "@/hooks/use-compression-profiles";
-import { CompressionProfileActions } from "./compression-profile-actions";
 import { CompressionProfileDialog } from "./compression-profile-dialog";
 import { offerCompressionProfileUndo } from "./compression-profile-undo";
 
@@ -51,6 +53,17 @@ export function CompressionProfileBar({
   if (!controller.view || !active) return <div className="cpb-loading" aria-busy="true">—</div>;
   const builtIn = active.id === "beaver";
 
+  const resetBeaver = async () => {
+    const result = await controller.resetBeaver();
+    if (!result) return;
+    offerCompressionProfileUndo(
+      t("settings.advanced.compressionResetDone"),
+      t("settings.advanced.compressionUndo"),
+      result.undo_expires_in_ms,
+      () => { void controller.undoDelete(result.undo_token); },
+    );
+  };
+
   return (
     <div ref={rootRef} className="cpb-bar">
       <span className="cpb-label">{t("settings.advanced.compressionProfileLabel")}</span>
@@ -81,20 +94,21 @@ export function CompressionProfileBar({
         >
           {t("settings.advanced.compressionNewProfile")}
         </button>
-        <CompressionProfileActions
+        <EditableRowActions
           controller={actions}
           disabled={builtIn || controller.busy}
-          labels={{
-            rename: t("settings.advanced.compressionRename"),
-            remove: t("settings.advanced.compressionDelete"),
-            confirm: t("settings.advanced.compressionDelete"),
-            cancel: t("settings.advanced.compressionCancel"),
-            question: t("settings.advanced.compressionDeleteConfirm", { name: active.name }),
-          }}
+          renameLabel={t("settings.advanced.compressionRename")}
+          deleteLabel={t("settings.advanced.compressionDelete")}
+          confirmLabel={t("settings.advanced.compressionDelete")}
+          cancelLabel={t("settings.advanced.compressionCancel")}
+          confirmationMessage={t("settings.advanced.compressionDeleteConfirm", { name: active.name })}
+          confirmationPlacement="below"
         />
-        <button type="button" className="btn btn-sm btn-ghost" disabled={controller.busy} onClick={() => { void controller.resetBeaver(); }}>
-          {t("settings.advanced.compressionReset")}
-        </button>
+        {builtIn && (
+          <button type="button" className="btn btn-sm btn-ghost" disabled={controller.busy} onClick={() => { void resetBeaver(); }}>
+            {t("settings.advanced.compressionReset")}
+          </button>
+        )}
       </div>
       {creating && (
         <CompressionProfileDialog

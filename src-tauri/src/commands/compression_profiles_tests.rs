@@ -68,6 +68,38 @@ fn rename_and_reset_preserve_global_selection_revision() {
 }
 
 #[test]
+fn reset_prompts_restores_only_the_beaver_prompt_texts() {
+    let mut document = CompressionProfileDocument::default();
+    mutations::create(&mut document, BEAVER_PROFILE_ID, "Custom".into()).expect("create");
+    let custom_id = document.global_profile_id.clone();
+    let profile = document
+        .profiles
+        .iter_mut()
+        .find(|profile| profile.id == custom_id)
+        .unwrap();
+    profile.summary.system_prompt = "custom system".into();
+    profile.summary.handoff_prompt = "custom handoff".into();
+    profile.threshold_percent = 42;
+    let revision = profile.revision;
+
+    mutations::reset_prompts(&mut document, &custom_id).expect("reset prompts");
+
+    let restored = document
+        .profiles
+        .iter()
+        .find(|profile| profile.id == custom_id)
+        .unwrap();
+    let beaver = beaver_profile();
+    assert_eq!(restored.summary.system_prompt, beaver.summary.system_prompt);
+    assert_eq!(
+        restored.summary.handoff_prompt,
+        beaver.summary.handoff_prompt
+    );
+    assert_eq!(restored.threshold_percent, 42);
+    assert_eq!(restored.revision, revision + 1);
+}
+
+#[test]
 fn select_increments_only_when_the_profile_changes() {
     let mut document = CompressionProfileDocument::default();
     mutations::create(&mut document, BEAVER_PROFILE_ID, "Custom".into()).expect("create");

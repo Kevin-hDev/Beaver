@@ -6,12 +6,14 @@ interface CompressionSummaryPromptsProps {
   summary: CompressionSummarySettings;
   disabled: boolean;
   onChange: (patch: Partial<CompressionSummarySettings>) => void;
+  onReset: () => void;
 }
 
 export function CompressionSummaryPrompts({
   summary,
   disabled,
   onChange,
+  onReset,
 }: CompressionSummaryPromptsProps) {
   const { t } = useTranslation();
   return (
@@ -43,6 +45,19 @@ export function CompressionSummaryPrompts({
           disabled={disabled}
           onChange={(event) => onChange({ handoff_prompt: event.target.value })}
         />
+      </CompressionSettingRow>
+      <CompressionSettingRow
+        title={t("settings.advanced.compressionResetPrompts")}
+        description={t("settings.advanced.compressionResetPromptsDesc")}
+      >
+        <button
+          type="button"
+          className="btn btn-sm btn-secondary"
+          disabled={disabled}
+          onClick={onReset}
+        >
+          {t("settings.advanced.compressionResetPrompts")}
+        </button>
       </CompressionSettingRow>
     </>
   );

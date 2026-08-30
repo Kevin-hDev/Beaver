@@ -32,6 +32,7 @@ function controller(
     create: vi.fn(),
     rename: vi.fn(),
     resetBeaver: vi.fn(),
+    resetPrompts: vi.fn(),
     deleteProfile: vi.fn(),
     undoDelete: vi.fn(),
     refresh: vi.fn(),

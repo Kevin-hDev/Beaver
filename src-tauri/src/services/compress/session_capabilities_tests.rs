@@ -49,3 +49,16 @@ fn external_tool_collection_is_bounded() {
         .collect::<Vec<_>>();
     assert!(SessionCompressionCapabilities::from_runtime(false, &names, true, true, true).is_err());
 }
+
+#[test]
+fn existing_todos_remain_available_when_plan_mode_is_not_active() {
+    let capabilities = SessionCompressionCapabilities::from_runtime(
+        false,
+        &["todo_write".into()],
+        false,
+        false,
+        false,
+    )
+    .unwrap();
+    assert!(capabilities.plan_and_tasks);
+}
