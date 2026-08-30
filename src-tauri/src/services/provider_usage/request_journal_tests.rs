@@ -100,6 +100,19 @@ fn route_timing_and_usage_states_must_stay_coherent() {
 }
 
 #[test]
+fn qwen_chat_metrics_use_the_qwen_connection_and_canonical_provider() {
+    let mut entry = metric(Some("session-1"), 1);
+    entry.connection_id = "qwen".into();
+    entry.canonical_provider_id = "qwen".into();
+    entry.model = "qwen3.8-flash".into();
+
+    assert!(entry.is_valid());
+
+    entry.canonical_provider_id = "openai".into();
+    assert!(!entry.is_valid());
+}
+
+#[test]
 fn routed_endpoint_is_allowed_only_as_a_complete_openrouter_pair() {
     let mut entry = metric(Some("session-1"), 1);
     entry.connection_id = "openrouter".into();

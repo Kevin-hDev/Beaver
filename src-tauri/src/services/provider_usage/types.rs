@@ -20,6 +20,8 @@ const CONNECTIONS: &[&str] = &[
     "codex-oauth",
     "xai-oauth",
     "moonshot-oauth",
+    "anthropic",
+    "qwen",
 ];
 pub(super) const CONNECTION_COUNT: usize = CONNECTIONS.len();
 

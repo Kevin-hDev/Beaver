@@ -36,7 +36,10 @@ function options(modes: ReasoningMode[]): ReasoningModeOption[] {
 
 export function reasoningModeOptions(model: AvailableModel | null): ReasoningModeOption[] {
   if (!model?.supports_thinking) return [];
-  return options(model.reasoning_modes ?? []);
+  const modes = model.reasoning_modes ?? [];
+  const hidesTechnicalAuto = model.provider_id === "anthropic"
+    && modes.some((mode) => !["off", "auto"].includes(mode));
+  return options(modes.filter((mode) => mode !== "auto" || !hidesTechnicalAuto));
 }
 
 export function normalizeReasoningMode(

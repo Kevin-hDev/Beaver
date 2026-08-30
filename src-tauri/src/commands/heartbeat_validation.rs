@@ -173,6 +173,19 @@ mod tests {
     }
 
     #[test]
+    fn accepts_live_validated_public_providers() {
+        let schedule = WakeupSchedule::Daily {
+            time: "08:00".into(),
+        };
+        for (provider, model) in [
+            ("anthropic", "claude-haiku-4-5-20251001"),
+            ("qwen", "qwen3.8-flash"),
+        ] {
+            assert!(validate_input(provider, "Test", model, "Ping", "", &schedule, true).is_ok());
+        }
+    }
+
+    #[test]
     fn rejects_too_long_prompt() {
         let schedule = WakeupSchedule::Daily {
             time: "08:00".into(),

@@ -4,6 +4,7 @@ export function provider(id: string, displayName: string, category: string) {
     display_name: displayName,
     category,
     signup_url: "",
+    connection_kind: "api_key",
   };
 }
 

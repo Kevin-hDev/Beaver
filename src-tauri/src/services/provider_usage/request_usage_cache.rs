@@ -17,29 +17,41 @@ pub(super) fn parse(
     input: Option<u64>,
     context: UsageContext<'_>,
 ) -> ParsedCacheUsage {
+    if context.api_format == UsageApiFormat::AnthropicMessages {
+        return super::request_usage_cache_anthropic::parse(value);
+    }
     if context.canonical_provider_id == "deepseek"
         && context.api_format == UsageApiFormat::ChatCompletions
     {
         return parse_deepseek(value, input);
     }
 
-    let read_paths = match context.api_format {
-        UsageApiFormat::Responses => [
+    let read_paths: &[&str] = match context.api_format {
+        UsageApiFormat::Responses => &[
             "/input_tokens_details/cached_tokens",
             "/prompt_tokens_details/cached_tokens",
         ],
-        UsageApiFormat::ChatCompletions | UsageApiFormat::GeminiNative => [
+        UsageApiFormat::ChatCompletions | UsageApiFormat::GeminiNative => &[
             "/prompt_tokens_details/cached_tokens",
             "/input_tokens_details/cached_tokens",
         ],
+        // Anthropic est traité par le retour précoce ci-dessus ; ce bras reste
+        // exhaustif mais ne doit jamais redevenir une seconde autorité de parsing.
+        UsageApiFormat::AnthropicMessages => &[],
     };
-    let cache_write_supported = context.canonical_provider_id == "openrouter"
+    let cache_write_supported = matches!(context.canonical_provider_id, "openrouter" | "qwen")
         || (context.canonical_provider_id == "openai"
             && crate::services::llm::providers::openai::is_gpt_56(context.model));
     let mut parsed = ParsedCacheUsage {
-        read: first_count(value, &read_paths),
+        read: first_count(value, read_paths),
         write: cache_write_supported
             .then(|| {
+                if context.canonical_provider_id == "qwen" {
+                    return first_count(
+                        value,
+                        &["/prompt_tokens_details/cache_creation_input_tokens"],
+                    );
+                }
                 first_count(
                     value,
                     &[
@@ -85,6 +97,9 @@ pub(super) fn parse(
                 .is_some()
                 || value
                     .pointer("/input_tokens_details/cache_write_tokens")
+                    .is_some()
+                || value
+                    .pointer("/prompt_tokens_details/cache_creation_input_tokens")
                     .is_some()))
         || (context.canonical_provider_id == "moonshot" && value.get("cached_tokens").is_some())
         || (context.api_format == UsageApiFormat::GeminiNative

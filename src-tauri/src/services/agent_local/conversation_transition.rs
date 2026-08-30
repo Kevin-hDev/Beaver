@@ -1,15 +1,14 @@
-use crate::services::reasoning_continuity::contract::{ContinuationTarget, ReplayTarget};
+use crate::services::reasoning_continuity::contract::{
+    ContinuationTarget, ContinuationUse, ReplayTarget,
+};
 use crate::services::reasoning_continuity::envelope::{CompletionState, ReasoningSource};
+use crate::services::reasoning_continuity::registry::ReplayRequirement;
 
 use super::types_session::AgentSession;
 
 /// A boundary is recorded instead of trying to translate native provider state.
 /// The previous visible conversation remains available, but replay begins after it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[allow(
-    dead_code,
-    reason = "fallback and durable compaction adopt this closed barrier in later provider tasks"
-)]
 pub enum ContinuityBarrier {
     Model,
     Route,
@@ -80,6 +79,12 @@ pub fn for_continuation(session: &AgentSession, target: &ContinuationTarget) -> 
             // A provider state cannot be split from the visible user/assistant/tool turn it belongs to.
             result.compatible_suffix_start = turn_end;
             result.replayable_message_indexes.clear();
+        } else if requires_fallback(target, &session.messages[turn_start..turn_end]) {
+            // A completed visible turn without its required native state cannot
+            // be replayed. Keep it visible and resume from the next turn.
+            result.barrier = Some(ContinuityBarrier::Fallback);
+            result.compatible_suffix_start = turn_end;
+            result.replayable_message_indexes.clear();
         } else {
             for (offset, message) in session.messages[turn_start..turn_end].iter().enumerate() {
                 if message.continuation.as_ref().is_some_and(|envelope| {
@@ -93,6 +98,29 @@ pub fn for_continuation(session: &AgentSession, target: &ContinuationTarget) -> 
         turn_start = turn_end;
     }
     result
+}
+
+fn requires_fallback(
+    target: &ContinuationTarget,
+    turn: &[super::types_message::AgentMessage],
+) -> bool {
+    let Some(replay_target) = target.replay() else {
+        return false;
+    };
+    let required_user_replay = replay_target.continuation_use == ContinuationUse::UserContinuation
+        && crate::services::reasoning_continuity::registry::replay_policy(replay_target)
+            .is_some_and(|policy| policy.requirement() == ReplayRequirement::Required);
+    required_user_replay
+        && turn.iter().any(|message| message.role == "assistant")
+        && turn
+            .iter()
+            .filter(|message| message.role == "assistant")
+            .any(|message| {
+                !message.continuation.as_ref().is_some_and(|envelope| {
+                    envelope.completion == CompletionState::Complete
+                        && allows_replay(target, envelope)
+                })
+            })
 }
 
 fn allows_replay(

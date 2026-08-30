@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "fixture_id": "qwen-api-qwen3-8-flash-low-singapore-2026-08-29",
+  "route": "qwen",
+  "model": "qwen3.8-flash",
+  "region": "singapore",
+  "reasoning_mode": "low",
+  "generated_at": "2026-08-29T14:29:38.361977+00:00",
+  "scenarios": [
+    {
+      "requirement": "capture_and_persist",
+      "run_id": "b075f9c3-8b39-4b48-9026-d82f6a3a4cf7",
+      "status": "passe",
+      "request_count": 2,
+      "reasoning_event_count": 3,
+      "decisions": [
+        "reasoning decision=\"replayed\" code=\"replayed\" items=1 bytes=472 hmac=72aa81f16dfc6c03",
+        "reasoning decision=\"captured\" code=\"captured\" items=1 bytes=472 hmac=72aa81f16dfc6c03",
+        "reasoning decision=\"persisted\" code=\"persisted\" items=1 bytes=472 hmac=72aa81f16dfc6c03"
+      ]
+    },
+    {
+      "requirement": "replay_and_continue",
+      "run_id": "b075f9c3-8b39-4b48-9026-d82f6a3a4cf7",
+      "status": "passe",
+      "request_count": 2,
+      "reasoning_event_count": 3,
+      "decisions": [
+        "reasoning decision=\"replayed\" code=\"replayed\" items=1 bytes=472 hmac=72aa81f16dfc6c03",
+        "reasoning decision=\"captured\" code=\"captured\" items=1 bytes=472 hmac=72aa81f16dfc6c03",
+        "reasoning decision=\"persisted\" code=\"persisted\" items=1 bytes=472 hmac=72aa81f16dfc6c03"
+      ]
+    },
+    {
+      "requirement": "capture_and_persist",
+      "run_id": "eddf503e-7c29-491f-8b8d-8d5d41849b58",
+      "status": "passe",
+      "request_count": 1,
+      "reasoning_event_count": 6,
+      "decisions": [
+        "reasoning decision=\"replayed\" code=\"replayed\" items=1 bytes=383 hmac=93106a5ac78ec6bd",
+        "reasoning decision=\"replayed\" code=\"replayed\" items=1 bytes=472 hmac=72aa81f16dfc6c03",
+        "reasoning decision=\"replayed\" code=\"replayed\" items=1 bytes=383 hmac=93106a5ac78ec6bd",
+        "reasoning decision=\"replayed\" code=\"replayed\" items=1 bytes=446 hmac=59a49b879cbfc976",
+        "reasoning decision=\"captured\" code=\"captured\" items=1 bytes=446 hmac=59a49b879cbfc976",
+        "reasoning decision=\"persisted\" code=\"persisted\" items=1 bytes=446 hmac=59a49b879cbfc976"
+      ]
+    },
+    {
+      "requirement": "replay_and_continue",
+      "run_id": "eddf503e-7c29-491f-8b8d-8d5d41849b58",
+      "status": "passe",
+      "request_count": 1,
+      "reasoning_event_count": 6,
+      "decisions": [
+        "reasoning decision=\"replayed\" code=\"replayed\" items=1 bytes=383 hmac=93106a5ac78ec6bd",
+        "reasoning decision=\"replayed\" code=\"replayed\" items=1 bytes=472 hmac=72aa81f16dfc6c03",
+        "reasoning decision=\"replayed\" code=\"replayed\" items=1 bytes=383 hmac=93106a5ac78ec6bd",
+        "reasoning decision=\"replayed\" code=\"replayed\" items=1 bytes=446 hmac=59a49b879cbfc976",
+        "reasoning decision=\"captured\" code=\"captured\" items=1 bytes=446 hmac=59a49b879cbfc976",
+        "reasoning decision=\"persisted\" code=\"persisted\" items=1 bytes=446 hmac=59a49b879cbfc976"
+      ]
+    }
+  ]
+}

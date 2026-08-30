@@ -1,6 +1,6 @@
 use super::policy_types::*;
 use super::types::*;
-use crate::services::provider_usage::UsageApiFormat;
+pub(super) use super::wire_contracts::*;
 
 pub(super) const AVAILABLE_ANY: RouteAvailability = RouteAvailability {
     interactive: true,
@@ -18,42 +18,13 @@ pub(super) const INTERACTIVE_ONLY: RouteAvailability = RouteAvailability {
     account_metadata: true,
 };
 
-pub(super) const OPENAI_CHAT_WIRE: WireContract = WireContract {
-    family: WireFamily::OpenAiChatCompletions,
-    fragments: FragmentMode::DifferentialFragments,
-    tool_results: ToolResultPlacement::ToolRole,
-    images: ImageFormat::OpenAiNested,
-    usage: UsageApiFormat::ChatCompletions,
-};
-
-pub(super) const MISTRAL_CHAT_WIRE: WireContract = WireContract {
-    images: ImageFormat::MistralFlat,
-    ..OPENAI_CHAT_WIRE
-};
-
-pub(super) const RESPONSES_WIRE: WireContract = WireContract {
-    family: WireFamily::OpenAiResponses,
-    fragments: FragmentMode::SemanticEvents,
-    tool_results: ToolResultPlacement::ResponsesItem,
-    images: ImageFormat::ResponsesInput,
-    usage: UsageApiFormat::Responses,
-};
-
-pub(super) const OLLAMA_WIRE: WireContract = WireContract {
-    family: WireFamily::OllamaNative,
-    fragments: FragmentMode::DifferentialFragments,
-    tool_results: ToolResultPlacement::OllamaNative,
-    images: ImageFormat::OllamaNative,
-    usage: UsageApiFormat::ChatCompletions,
-};
-
-#[cfg(test)]
-pub(super) const ANTHROPIC_WIRE_TEST: WireContract = WireContract {
-    family: WireFamily::AnthropicMessages,
-    fragments: FragmentMode::SemanticEvents,
-    tool_results: ToolResultPlacement::UserToolResultBlock,
-    images: ImageFormat::Unsupported,
-    usage: UsageApiFormat::ChatCompletions,
+#[allow(dead_code, reason = "reserved for the next bounded candidate route")]
+pub(super) const CANDIDATE_ONLY: RouteAvailability = RouteAvailability {
+    interactive: false,
+    silent: false,
+    automation: false,
+    external_channel: false,
+    account_metadata: false,
 };
 
 const fn policy(
@@ -74,6 +45,7 @@ const fn policy(
         tool_limits,
         include_usage: false,
         gemma4_thinking_guard: false,
+        dynamic_reasoning_catalog: false,
     }
 }
 
@@ -201,3 +173,29 @@ pub(super) const OLLAMA_LOCAL: RoutePolicies = policy(
     AuthProbePolicy::ClientNative,
     ToolLimitPolicy::Ollama,
 );
+pub(super) const ANTHROPIC: RoutePolicies = RoutePolicies {
+    tool_choice: ToolChoicePolicy::ProviderNative,
+    dynamic_reasoning_catalog: true,
+    ..policy(
+        SchemaPolicy::Anthropic,
+        CachePolicy::AnthropicAutomatic,
+        ParameterPolicy::Anthropic,
+        ErrorPolicy::OpenAiCompatible,
+        AuthProbePolicy::ModelsGet,
+        ToolLimitPolicy::Default,
+    )
+};
+pub(super) const QWEN: RoutePolicies = RoutePolicies {
+    // Qwen exige `include_usage` sur les streams pour alimenter P11 ; les
+    // requêtes non streamées n'utilisent pas ce constructeur de payload.
+    include_usage: true,
+    dynamic_reasoning_catalog: true,
+    ..policy(
+        SchemaPolicy::Qwen,
+        CachePolicy::QwenContext,
+        ParameterPolicy::Qwen,
+        ErrorPolicy::OpenAiCompatible,
+        AuthProbePolicy::ModelsGet,
+        ToolLimitPolicy::Default,
+    )
+};

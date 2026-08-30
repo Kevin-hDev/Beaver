@@ -1,0 +1,25 @@
+{
+  "provider": "anthropic",
+  "schema_version": 1,
+  "verified_at": "2026-08-29",
+  "source_urls": [
+    "https://platform.claude.com/docs/en/models/overview",
+    "https://platform.claude.com/docs/en/models/haiku-4-5/migration-guide",
+    "https://platform.claude.com/docs/en/build-with-claude/vision",
+    "https://platform.claude.com/docs/en/api/http/models"
+  ],
+  "models": [{
+    "id": "claude-haiku-4-5-20251001",
+    "aliases": [],
+    "is_free": false,
+    "context_window": 200000,
+    "max_output_tokens": 64000,
+    "default_output_tokens": 32768,
+    "supports_tools": true,
+    "supports_vision": true,
+    "supports_thinking": true,
+    "supports_fast_mode": false,
+    "reasoning_modes": ["off", "low", "medium", "high"],
+    "default_reasoning_mode": "medium"
+  }]
+}

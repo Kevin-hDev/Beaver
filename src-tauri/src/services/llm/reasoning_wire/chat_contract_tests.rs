@@ -92,7 +92,12 @@ fn payload(
         fast_mode: FastModeRequest::Unsupported,
         continuation_target: Some(target),
     };
-    build_chat_payload(&cfg, &route::resolve(provider_id).unwrap(), None)
+    let route = if provider_id == "qwen" {
+        route::test_route("qwen")
+    } else {
+        route::resolve(provider_id).unwrap()
+    };
+    build_chat_payload(&cfg, &route, None)
 }
 
 #[test]
@@ -117,6 +122,82 @@ fn kimi_reasoning_fixture_payload_places_opaque_reasoning_on_the_same_assistant_
         .expect("fixture payload");
 
     assert_eq!(payload["messages"][0]["reasoning_content"], "opaque-kimi");
+}
+
+#[test]
+fn qwen_tool_continuation_replays_reasoning_on_the_exact_assistant_message() {
+    let target = fixture_target(replay_target(
+        RouteId::Qwen,
+        "qwen3.8-flash",
+        ReasoningModeId::Xhigh,
+        ContinuationUse::ToolContinuation,
+    ));
+    let replay = target.replay().unwrap();
+    let messages = [
+        ChatMessage::assistant(
+            "".into(),
+            None,
+            Some(envelope(
+                replay,
+                ContractId::QwenChatV1,
+                CompletionState::Complete,
+                ContinuationState::ChatReasoning {
+                    reasoning_content: "opaque-qwen".into(),
+                },
+            )),
+            None,
+            Some(vec![ToolCallOllama {
+                id: Some("call_qwen".into()),
+                extra_content: None,
+                function: ToolCallFunction {
+                    name: "lookup".into(),
+                    arguments: serde_json::json!({"query": "beaver"}),
+                },
+            }]),
+        ),
+        ChatMessage::tool(
+            "result".into(),
+            Some("call_qwen".into()),
+            Some("lookup".into()),
+        ),
+    ];
+
+    let payload = payload("qwen", "qwen3.8-flash", &messages, &target, "xhigh")
+        .expect("Qwen fixture payload");
+
+    assert_eq!(payload["messages"][0]["reasoning_content"], "opaque-qwen");
+    assert_eq!(payload["messages"][1]["role"], "tool");
+}
+
+#[test]
+fn qwen_reasoning_replay_rejects_a_different_credential_scope() {
+    let target = fixture_target(replay_target(
+        RouteId::Qwen,
+        "qwen3.8-flash",
+        ReasoningModeId::Medium,
+        ContinuationUse::UserContinuation,
+    ));
+    let mut source = target.replay().unwrap().clone();
+    source.credential_scope = CredentialScope::authenticated("other-workspace").unwrap();
+    let messages = [
+        ChatMessage::assistant(
+            "prior".into(),
+            None,
+            Some(envelope(
+                &source,
+                ContractId::QwenChatV1,
+                CompletionState::Complete,
+                ContinuationState::ChatReasoning {
+                    reasoning_content: "must-not-leak".into(),
+                },
+            )),
+            None,
+            None,
+        ),
+        ChatMessage::user("continue".into()),
+    ];
+
+    assert!(payload("qwen", "qwen3.8-flash", &messages, &target, "medium").is_err());
 }
 
 #[test]

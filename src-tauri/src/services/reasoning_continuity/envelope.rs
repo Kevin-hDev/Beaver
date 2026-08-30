@@ -61,6 +61,7 @@ pub enum ContinuationState {
     MistralChunks { chunks: Vec<Value> },
     OpenRouterDetails { details: Vec<Value> },
     ResponsesLocal { items: Vec<Value> },
+    AnthropicBlocks { blocks: Vec<Value> },
     RemoteContinuation { response_id: String },
 }
 
@@ -99,13 +100,17 @@ impl ReasoningEnvelope {
         self.source.validate()?;
         tool_links::validate(&self.tool_links)?;
         validate_continuation(&self.continuation)?;
+        if let ContinuationState::AnthropicBlocks { blocks } = &self.continuation {
+            validate_anthropic_blocks(blocks, &self.tool_links)?;
+        }
         serialized_len_bounded(self, MAX_ENVELOPE_BYTES).map(|_| ())
     }
 }
 
 fn validate_continuation(state: &ContinuationState) -> Result<(), LimitError> {
     match state {
-        ContinuationState::GeminiParts { parts }
+        ContinuationState::AnthropicBlocks { blocks: parts }
+        | ContinuationState::GeminiParts { parts }
         | ContinuationState::MistralChunks { chunks: parts }
         | ContinuationState::OpenRouterDetails { details: parts }
         | ContinuationState::ResponsesLocal { items: parts } => validate_items(parts),
@@ -116,6 +121,66 @@ fn validate_continuation(state: &ContinuationState) -> Result<(), LimitError> {
         | ContinuationState::ChatReasoning { .. }
         | ContinuationState::CerebrasReasoning { .. } => Ok(()),
     }
+}
+
+fn validate_anthropic_blocks(blocks: &[Value], tool_links: &[ToolLink]) -> Result<(), LimitError> {
+    validate_items(blocks)?;
+    let mut tool_ids = std::collections::HashSet::new();
+    for block in blocks {
+        let kind = block
+            .get("type")
+            .and_then(Value::as_str)
+            .ok_or(LimitError::CaptureSkeleton)?;
+        match kind {
+            "thinking" => {
+                block
+                    .get("thinking")
+                    .and_then(Value::as_str)
+                    .ok_or(LimitError::CaptureSkeleton)?;
+                block
+                    .get("signature")
+                    .and_then(Value::as_str)
+                    .filter(|value| !value.is_empty())
+                    .ok_or(LimitError::CaptureSkeleton)?;
+            }
+            "redacted_thinking" => {
+                block
+                    .get("data")
+                    .and_then(Value::as_str)
+                    .filter(|value| !value.is_empty())
+                    .ok_or(LimitError::CaptureSkeleton)?;
+            }
+            "text" => {
+                block
+                    .get("text")
+                    .and_then(Value::as_str)
+                    .ok_or(LimitError::CaptureSkeleton)?;
+            }
+            "tool_use" => {
+                let id = block
+                    .get("id")
+                    .and_then(Value::as_str)
+                    .ok_or(LimitError::ProviderCallId)?;
+                let name = block
+                    .get("name")
+                    .and_then(Value::as_str)
+                    .ok_or(LimitError::ToolName)?;
+                super::limits::validate_provider_call_id(id)?;
+                super::limits::validate_tool_name(name)?;
+                if !block.get("input").is_some_and(Value::is_object) || !tool_ids.insert(id) {
+                    return Err(LimitError::CaptureSkeleton);
+                }
+            }
+            _ => return Err(LimitError::CaptureSkeleton),
+        }
+    }
+    let linked_ids = tool_links
+        .iter()
+        .map(|link| link.provider_call_id.as_str())
+        .collect::<std::collections::HashSet<_>>();
+    (tool_ids == linked_ids)
+        .then_some(())
+        .ok_or(LimitError::ProviderCallId)
 }
 
 fn validate_items(items: &[Value]) -> Result<(), LimitError> {

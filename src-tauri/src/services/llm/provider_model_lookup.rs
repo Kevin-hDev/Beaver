@@ -63,6 +63,18 @@ pub fn supports_fast_mode(provider_id: &str, model_id: &str) -> bool {
             .is_some_and(|model| model.supports_fast_mode)
 }
 
+pub fn supports_reasoning_toggle(provider_id: &str, model_id: &str) -> bool {
+    local_entry(provider_id, model_id).is_some_and(|model| model.supports_reasoning_toggle)
+}
+
+pub fn supports_reasoning_replay(provider_id: &str, model_id: &str) -> bool {
+    local_entry(provider_id, model_id).is_some_and(|model| model.supports_reasoning_replay)
+}
+
+pub fn requires_tool_stream(provider_id: &str, model_id: &str) -> bool {
+    direct_entry(provider_id, model_id).is_some_and(|model| model.requires_tool_stream)
+}
+
 pub async fn is_chat_model(provider_id: &str, model_id: &str) -> bool {
     local_entry(provider_id, model_id).is_some()
         || super::litellm_catalog_lookup::is_chat_model(provider_id, model_id).await

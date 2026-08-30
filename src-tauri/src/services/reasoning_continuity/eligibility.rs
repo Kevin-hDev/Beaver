@@ -85,6 +85,9 @@ pub(crate) fn state_matches_contract(contract: ContractId, state: &ContinuationS
             ContractId::OllamaNativeV1,
             ContinuationState::OllamaNative { .. }
         ) | (
+            ContractId::AnthropicMessagesV1,
+            ContinuationState::AnthropicBlocks { .. }
+        ) | (
             ContractId::GeminiCompatV1,
             ContinuationState::GeminiParts { .. }
         ) | (
@@ -104,6 +107,9 @@ pub(crate) fn state_matches_contract(contract: ContractId, state: &ContinuationS
             ContinuationState::ChatReasoning { .. }
         ) | (
             ContractId::ZaiChatV1,
+            ContinuationState::ChatReasoning { .. }
+        ) | (
+            ContractId::QwenChatV1,
             ContinuationState::ChatReasoning { .. }
         ) | (
             ContractId::OpenAiResponsesV1,

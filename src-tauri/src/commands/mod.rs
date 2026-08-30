@@ -13,6 +13,7 @@ mod agent_chat_run_tests;
 mod agent_chat_stream_replacement_tests;
 pub(crate) mod agent_chat_streams;
 pub(crate) mod agent_chat_target;
+mod agent_chat_target_catalog;
 pub(crate) mod agent_chat_task;
 pub(crate) mod agent_chat_turn;
 pub(crate) mod agent_chat_work;
@@ -98,6 +99,12 @@ pub mod projects;
 pub mod reasoning_fixture;
 #[cfg(debug_assertions)]
 pub(crate) mod reasoning_fixture_live_tests;
+#[cfg(debug_assertions)]
+#[allow(
+    dead_code,
+    reason = "shared by the paid vision fixtures after provider activation"
+)]
+pub(crate) mod reasoning_fixture_vision;
 pub mod registry;
 pub mod search;
 #[cfg(test)]

@@ -1,5 +1,7 @@
 use super::contract::{ContinuationUse, ContractId, ReasoningModeId, RouteId};
 use super::registry::{ActivationState, AdapterId, ModelPolicy, ReplayRequirement, RouteContract};
+use super::registry_anthropic::ANTHROPIC;
+use super::registry_qwen::QWEN;
 use super::registry_validated_cloud::{CODEX, MISTRAL, OLLAMA, OPENAI, XAI_OAUTH, ZAI};
 use super::registry_validated_reasoning::{CEREBRAS, DEEPSEEK, GOOGLE, MOONSHOT, OPENROUTER, XAI};
 
@@ -72,6 +74,18 @@ const MOONSHOT_OAUTH: &[ModelPolicy] = &[
     tool("kimi-for-coding", ReasoningModeId::Auto, Required),
 ];
 pub(super) const ACTIVE_ROUTES: &[RouteContract] = &[
+    route(
+        RouteId::Anthropic,
+        ContractId::AnthropicMessagesV1,
+        AdapterId::AnthropicBlocks,
+        ANTHROPIC,
+    ),
+    route(
+        RouteId::Qwen,
+        ContractId::QwenChatV1,
+        AdapterId::ChatReasoning,
+        QWEN,
+    ),
     route(
         RouteId::Ollama,
         ContractId::OllamaNativeV1,

@@ -33,8 +33,10 @@ function catalogProviderIds(relativePaths: string[]): string[] {
   for (const relativePath of relativePaths) {
     // eslint-disable-next-line security/detect-non-literal-fs-filename -- chemins constants déclarés en tête de fichier, aucune entrée externe
     const source = readFileSync(new URL(relativePath, import.meta.url), "utf8");
-    for (const match of source.matchAll(/(?:^\s+id: "([^"]+)",$|auth: api_key\("([^"]+)"\))/gmu)) {
-      ids.push(match[1] ?? match[2]);
+    for (const match of source.matchAll(
+      /(?:^\s+id: "([^"]+)",$|auth: api_key\("([^"]+)"\)|credential_id: "([^"]+)")/gmu,
+    )) {
+      ids.push(match[1] ?? match[2] ?? match[3]);
     }
   }
   return ids;
@@ -68,6 +70,25 @@ describe("api provider translations", () => {
         locale.providers.usage.notices.openrouter_account_balance_requires_management_key.trim(),
         `${lang} → providers.usage.notices.openrouter_account_balance_requires_management_key vide`,
       ).not.toBe("");
+    }
+  });
+
+  it("garde les descriptions Mistral et DeepSeek factuelles", () => {
+    const expected = {
+      de: ["Open-Weight-Modelle.", "DeepSeek V4-Flash / V4-Pro."],
+      en: ["Open-weight models.", "DeepSeek V4-Flash / V4-Pro."],
+      es: ["Modelos open-weight.", "DeepSeek V4-Flash / V4-Pro."],
+      fr: ["Modèles open-weight.", "DeepSeek V4-Flash / V4-Pro."],
+      it: ["Modelli open-weight.", "DeepSeek V4-Flash / V4-Pro."],
+      ja: ["オープンウェイトモデル。", "DeepSeek V4-Flash / V4-Pro。"],
+      zh: ["开放权重模型。", "DeepSeek V4-Flash / V4-Pro。"],
+    } as const;
+
+    for (const [lang, locale] of Object.entries(locales)) {
+      expect(
+        [locale.apiKeys.providers.mistral.description, locale.apiKeys.providers.deepseek.description],
+        lang,
+      ).toEqual(expected[lang as keyof typeof expected]);
     }
   });
 

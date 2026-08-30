@@ -124,6 +124,8 @@ pub(crate) fn validate_target_profile(
     think: bool,
     reasoning_mode: Option<&str>,
 ) -> Result<(), String> {
+    // Autorité finale : `think`, `reasoning_mode`, profil et cible sont issus de
+    // la même résolution ; tout couple incohérent est refusé avant le transport.
     let route =
         crate::services::reasoning_continuity::contract::RouteId::from_provider_id(provider);
     let mode = serde_json::to_value(target.reasoning_mode())

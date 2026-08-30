@@ -1,7 +1,7 @@
 const MAX_KEY_LEN: usize = 256;
 
 fn is_known_provider(id: &str) -> bool {
-    crate::services::llm::catalog::find(id).is_some()
+    crate::services::llm::catalog::find_configurable(id).is_some()
         || crate::services::search::catalog::SEARCH_PROVIDERS
             .iter()
             .any(|p| p.id == id)
@@ -19,6 +19,10 @@ pub fn validate_provider(provider_id: &str) -> Result<(), String> {
 
 pub fn validate_key_input(provider_id: &str, key: &str) -> Result<(), String> {
     validate_provider(provider_id)?;
+    validate_key_value(key)
+}
+
+pub fn validate_key_value(key: &str) -> Result<(), String> {
     if key.is_empty() || key.len() > MAX_KEY_LEN {
         return Err("clé API invalide (vide ou trop longue)".to_string());
     }

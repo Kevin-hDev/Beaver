@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Check } from "@/components/ui/icons";
+import { ValidateIcon } from "@/components/ui/validate-icon";
 import { ProviderIcon } from "@/lib/provider-icons";
 import { providerDescription } from "@/lib/provider-copy";
 import type { ProviderSpec } from "@/types/api";
@@ -39,19 +39,26 @@ export function OnboardingProviderGrid({
                 .join(" ")}
               onClick={() => onSelect(provider.id)}
             >
-              <ProviderIcon
-                providerId={provider.id}
-                displayName={provider.display_name}
-                size={28}
-              />
+              <span className="ob-provider-icon">
+                <ProviderIcon
+                  providerId={provider.id}
+                  displayName={provider.display_name}
+                  size={28}
+                />
+                {isConfigured && (
+                  <span
+                    className="ob-provider-configured-icon"
+                    role="img"
+                    aria-label={t("apiKeys.details.connected")}
+                  >
+                    <ValidateIcon size="var(--icon-sm)" />
+                  </span>
+                )}
+              </span>
               <span className="ob-provider-name">{provider.display_name}</span>
-              <span className="ob-provider-desc">{providerDescription(t, provider)}</span>
-              {isConfigured && (
-                <span className="ob-provider-status">
-                  <Check size="var(--icon-xs)" weight="bold" />
-                  {t("apiKeys.details.connected")}
-                </span>
-              )}
+              <span className="ob-provider-desc">
+                {providerDescription(t, provider)}
+              </span>
             </button>
           );
         })

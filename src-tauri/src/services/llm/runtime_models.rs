@@ -15,6 +15,14 @@ struct RuntimeRegistry {
 static MODELS: LazyLock<RwLock<RuntimeRegistry>> =
     LazyLock::new(|| RwLock::new(RuntimeRegistry::default()));
 
+#[cfg(test)]
+static TEST_MUTATION_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+
+#[cfg(test)]
+pub(crate) async fn test_mutation_lock() -> tokio::sync::MutexGuard<'static, ()> {
+    TEST_MUTATION_LOCK.lock().await
+}
+
 pub fn replace_provider(provider_id: &str, models: &[ModelInfo]) {
     if !valid_provider_id(provider_id) {
         return;
@@ -98,8 +106,9 @@ mod tests {
         }
     }
 
-    #[test]
-    fn runtime_catalog_is_bounded_and_validated() {
+    #[tokio::test]
+    async fn runtime_catalog_is_bounded_and_validated() {
+        let _guard = test_mutation_lock().await;
         let models = (0..600)
             .map(|index| model(format!("kimi-{index}")))
             .collect::<Vec<_>>();
@@ -117,8 +126,9 @@ mod tests {
         assert!(lookup("moonshot", "invalid-reasoning").is_none());
     }
 
-    #[test]
-    fn catalogs_are_isolated_by_provider() {
+    #[tokio::test]
+    async fn catalogs_are_isolated_by_provider() {
+        let _guard = test_mutation_lock().await;
         replace_provider("openrouter", &[model("shared".to_string())]);
         replace_provider("openai", &[model("shared".to_string())]);
 

@@ -98,6 +98,42 @@ pub(super) const LIVE_SPECS: &[LiveSpec] = &[
         region: "france",
         mode: "high",
     },
+    LiveSpec {
+        provider: "anthropic",
+        model: "claude-haiku-4-5-20251001",
+        region: "france",
+        mode: "low",
+    },
+    LiveSpec {
+        provider: "anthropic",
+        model: "claude-haiku-4-5-20251001",
+        region: "france",
+        mode: "medium",
+    },
+    LiveSpec {
+        provider: "anthropic",
+        model: "claude-haiku-4-5-20251001",
+        region: "france",
+        mode: "high",
+    },
+    LiveSpec {
+        provider: "qwen",
+        model: "qwen3.8-flash",
+        region: "singapore",
+        mode: "low",
+    },
+    LiveSpec {
+        provider: "qwen",
+        model: "qwen3.8-flash",
+        region: "singapore",
+        mode: "medium",
+    },
+    LiveSpec {
+        provider: "qwen",
+        model: "qwen3.8-flash",
+        region: "singapore",
+        mode: "xhigh",
+    },
 ];
 
 pub(super) async fn prepare_ollama(app: &tauri::App) -> Result<(), String> {

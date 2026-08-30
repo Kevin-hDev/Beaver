@@ -66,6 +66,29 @@ async fn sse_response(
     (response, server)
 }
 
+async fn oversized_incomplete_sse_response() -> (reqwest::Response, tokio::task::JoinHandle<()>) {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let address = listener.local_addr().unwrap();
+    let server = tokio::spawn(async move {
+        let (mut socket, _) = listener.accept().await.unwrap();
+        let mut request = [0_u8; 1024];
+        let _ = socket.read(&mut request).await;
+        let _ = socket
+            .write_all(b"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\n\r\n")
+            .await;
+        let _ = socket.write_all(b"data: ").await;
+        let body = vec![b'x'; crate::services::secure_http::LLM_BODY_LIMIT + 1];
+        let _ = socket.write_all(&body).await;
+        tokio::time::sleep(Duration::from_secs(10)).await;
+    });
+    let client = AuthenticatedClient::new_loopback(Duration::from_secs(2)).unwrap();
+    let response = client
+        .send(client.get(format!("http://{address}/stream")))
+        .await
+        .unwrap();
+    (response, server)
+}
+
 #[tokio::test]
 async fn completed_sse_returns_the_accumulated_result() {
     let body = "data: {\"type\":\"response.output_text.delta\",\"delta\":\"ok\"}\n\ndata: {\"type\":\"response.completed\",\"response\":{\"service_tier\":\"priority\"}}\n\n";
@@ -167,6 +190,30 @@ async fn stalled_sse_is_cancelled_by_user_or_idle_deadline() {
     )
     .await;
     assert_eq!(timed_out.unwrap_err(), "provider_temporarily_unavailable");
+    server.abort();
+}
+
+#[tokio::test]
+async fn oversized_incomplete_sse_is_rejected_before_the_idle_deadline() {
+    let (response, server) = oversized_incomplete_sse_response().await;
+    let mut measurement = StreamMeasurement::new(None);
+    let error = consume_sse_with_timeout(
+        &NoopSink,
+        response,
+        CancellationToken::new(),
+        false,
+        None,
+        "openai",
+        "gpt-5.6-sol",
+        &[],
+        None,
+        Duration::from_secs(5),
+        &mut measurement,
+    )
+    .await
+    .unwrap_err();
+
+    assert_eq!(error, "provider_connection_failed");
     server.abort();
 }
 

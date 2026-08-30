@@ -3,16 +3,18 @@ mod catalog;
 mod catalog_api;
 mod catalog_local;
 mod catalog_oauth;
+mod endpoint_types;
 mod payload_policies;
 mod policies;
 mod policy_types;
 mod tool_limit_policies;
 mod tool_policies;
 mod types;
+mod wire_contracts;
 
 #[cfg(test)]
 pub(super) use catalog::{all, find_id};
-pub(super) use catalog::{find, public_api};
+pub(super) use catalog::{configurable, find, public_api};
 pub(crate) use policy_types::{
     AuthProbePolicy, CachePolicy, ErrorPolicy, ExtensionToolPolicy, ParameterPolicy,
     ResolvedCachePolicy, ResolvedPayloadPolicy, ResolvedToolLimitPolicy, ResolvedToolPolicy,
@@ -48,6 +50,10 @@ pub(crate) fn error_policy(provider_id: &str) -> Option<ErrorPolicy> {
     Some(find(provider_id)?.policies.errors)
 }
 
+pub(crate) fn has_dynamic_reasoning_catalog(provider_id: &str) -> bool {
+    find(provider_id).is_some_and(|profile| profile.policies.dynamic_reasoning_catalog)
+}
+
 pub(crate) fn is_local(provider_id: &str) -> bool {
     find(provider_id).is_some_and(|profile| profile.client == ClientSelector::OllamaLocal)
 }
@@ -56,9 +62,8 @@ pub(crate) fn diagnostic_payload_kind(provider_id: &str) -> Option<&'static str>
     let family = find(provider_id)?.wire.family;
     Some(match family {
         WireFamily::OpenAiResponses => "responses",
-        WireFamily::OpenAiChatCompletions
-        | WireFamily::OllamaNative
-        | WireFamily::AnthropicMessages => "chat_completions",
+        WireFamily::AnthropicMessages => "anthropic_messages",
+        WireFamily::OpenAiChatCompletions | WireFamily::OllamaNative => "chat_completions",
     })
 }
 

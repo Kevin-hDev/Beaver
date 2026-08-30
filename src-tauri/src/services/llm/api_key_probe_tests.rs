@@ -1,4 +1,4 @@
-use super::api_key_probe::{anthropic_fixture, resolve, ProbeAuth, ProbeMethod};
+use super::api_key_probe::{resolve, ProbeAuth, ProbeMethod};
 
 #[test]
 fn api_key_probe_declares_active_routes_without_network_calls() {
@@ -21,8 +21,8 @@ fn api_key_probe_declares_active_routes_without_network_calls() {
 }
 
 #[test]
-fn api_key_probe_anthropic_fixture_uses_native_auth_and_version() {
-    let probe = anthropic_fixture();
+fn anthropic_probe_uses_models_and_version_header() {
+    let probe = resolve("anthropic").expect("anthropic probe");
     assert_eq!(probe.method, ProbeMethod::Get);
     assert_eq!(probe.url, "https://api.anthropic.com/v1/models");
     assert_eq!(probe.auth, ProbeAuth::XApiKey);

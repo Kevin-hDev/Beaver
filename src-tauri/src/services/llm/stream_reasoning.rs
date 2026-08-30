@@ -7,7 +7,7 @@ pub fn apply(
     think: bool,
     reasoning_mode: Option<&str>,
 ) {
-    if reasoning_mode.is_none() && !think {
+    if reasoning_mode.is_none() && !think && policy != super::route_profile::ParameterPolicy::Qwen {
         return;
     }
     use super::route_profile::ParameterPolicy;
@@ -20,10 +20,51 @@ pub fn apply(
         ParameterPolicy::Moonshot => apply_moonshot(payload, model, think, reasoning_mode),
         ParameterPolicy::Google => apply_google(payload, model, think, reasoning_mode),
         ParameterPolicy::Xai => apply_xai(payload, model, reasoning_mode),
+        ParameterPolicy::Qwen => apply_qwen(payload, model, reasoning_mode),
         ParameterPolicy::Default
         | ParameterPolicy::Responses
         | ParameterPolicy::Ollama
         | ParameterPolicy::Anthropic => {}
+    }
+}
+
+fn apply_qwen(payload: &mut Value, model: &str, reasoning_mode: Option<&str>) {
+    let contract = crate::services::llm::provider_model_lookup::local_reasoning("qwen", model);
+    if contract.is_none() {
+        // Un modèle sans contrat exact ne doit pas hériter du défaut distant.
+        payload["enable_thinking"] = false.into();
+        payload["preserve_thinking"] = false.into();
+        return;
+    }
+    let selected_mode = contract.as_ref().and_then(|contract| {
+        reasoning_mode
+            .filter(|mode| contract.modes.iter().any(|candidate| candidate == mode))
+            .or_else(|| {
+                (!contract.modes.iter().any(|mode| mode == "off"))
+                    .then_some(contract.default_mode.as_deref())
+                    .flatten()
+            })
+    });
+    let live_mode = selected_mode
+        .and_then(|mode| {
+            crate::services::reasoning_continuity::contract::ReasoningModeId::from_name(Some(mode))
+        })
+        .filter(|mode| {
+            crate::services::reasoning_continuity::registry::reasoning_mode_is_live(
+                crate::services::reasoning_continuity::contract::RouteId::Qwen,
+                model,
+                *mode,
+            )
+        });
+    let enabled = live_mode.is_some();
+    if crate::services::llm::provider_model_lookup::supports_reasoning_toggle("qwen", model) {
+        payload["enable_thinking"] = enabled.into();
+    }
+    if crate::services::llm::provider_model_lookup::supports_reasoning_replay("qwen", model) {
+        payload["preserve_thinking"] = enabled.into();
+    }
+    if let Some(effort) = selected_mode.filter(|mode| enabled && !matches!(*mode, "off" | "auto")) {
+        payload["reasoning_effort"] = effort.into();
     }
 }
 

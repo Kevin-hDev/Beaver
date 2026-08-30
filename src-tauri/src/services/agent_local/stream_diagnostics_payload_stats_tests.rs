@@ -133,3 +133,54 @@ fn openrouter_diagnostics_builds_a_bare_provider_object_without_panicking() {
     assert_eq!(stats.reasoning_fields, 1);
     assert!(stats.reasoning_chars > 0);
 }
+
+#[test]
+fn anthropic_diagnostics_uses_the_native_payload_kind_without_exposing_blocks() {
+    let (target, assistant) = fixture(
+        RouteId::Anthropic,
+        "claude-haiku-4-5-20251001",
+        ReasoningModeId::Low,
+        ContractId::AnthropicMessagesV1,
+        ContinuationState::AnthropicBlocks {
+            blocks: vec![
+                json!({"type":"thinking","thinking":"opaque","signature":"AAE+/=="}),
+                json!({"type":"text","text":"answer"}),
+            ],
+        },
+    );
+    let stats = anthropic_payload_stats(
+        &[assistant, ChatMessage::user("next".into())],
+        Some(&target),
+    );
+
+    assert_eq!(
+        crate::services::llm::route_profile::diagnostic_payload_kind("anthropic"),
+        Some("anthropic_messages")
+    );
+    assert_eq!(stats.reasoning_fields, 1);
+    assert!(stats.reasoning_chars > 0);
+    assert_eq!(stats.assistant_content_chars, 6);
+}
+
+#[test]
+fn qwen_diagnostics_counts_replay_without_exposing_reasoning_text() {
+    let (target, assistant) = fixture(
+        RouteId::Qwen,
+        "qwen3.8-flash",
+        ReasoningModeId::Xhigh,
+        ContractId::QwenChatV1,
+        ContinuationState::ChatReasoning {
+            reasoning_content: "opaque-qwen-secret".into(),
+        },
+    );
+    let stats = chat_payload_stats(
+        "qwen",
+        &[assistant, ChatMessage::user("next".into())],
+        Some(&target),
+    );
+
+    assert_eq!(stats.reasoning_fields, 1);
+    assert_eq!(stats.reasoning_chars, 18);
+    let diagnostic = format!("{stats:?}");
+    assert!(!diagnostic.contains("opaque-qwen-secret"));
+}

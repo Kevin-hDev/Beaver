@@ -9,6 +9,9 @@ pub(crate) mod replay;
 pub(crate) mod responses;
 mod tool_link_capture;
 
+#[cfg(test)]
+mod anthropic_contract_tests;
+
 use crate::services::reasoning_continuity::bounded_json::serialized_len_bounded_from;
 use crate::services::reasoning_continuity::capture_budget::CaptureBudget;
 use crate::services::reasoning_continuity::contract::ContractId;
@@ -71,6 +74,7 @@ impl ReasoningCapture {
             return;
         }
         let result = match self.contract_id {
+            ContractId::AnthropicMessagesV1 => Ok(()),
             ContractId::OllamaNativeV1 => self.append_ollama(event),
             ContractId::GeminiCompatV1 => self.append_items(gemini::parts(event)),
             ContractId::MistralChunksV1 => self.append_items(mistral::chunks(event)),
@@ -79,9 +83,10 @@ impl ReasoningCapture {
             | ContractId::XaiResponsesV1
             | ContractId::CodexResponsesV1 => self.append_response_items(event),
             ContractId::CerebrasChatV1 => self.append_chat(event, true),
-            ContractId::DeepSeekChatV1 | ContractId::KimiChatV1 | ContractId::ZaiChatV1 => {
-                self.append_chat(event, false)
-            }
+            ContractId::DeepSeekChatV1
+            | ContractId::KimiChatV1
+            | ContractId::ZaiChatV1
+            | ContractId::QwenChatV1 => self.append_chat(event, false),
         };
         if result.is_err() {
             self.mark_partial();
@@ -146,7 +151,8 @@ impl ReasoningCapture {
                 .as_mut()
                 .ok_or(LimitError::CaptureClosed)?;
             match continuation {
-                ContinuationState::GeminiParts { parts }
+                ContinuationState::AnthropicBlocks { blocks: parts }
+                | ContinuationState::GeminiParts { parts }
                 | ContinuationState::MistralChunks { chunks: parts }
                 | ContinuationState::OpenRouterDetails { details: parts }
                 | ContinuationState::ResponsesLocal { items: parts } => parts.push(item),
@@ -154,6 +160,16 @@ impl ReasoningCapture {
             }
         }
         Ok(())
+    }
+
+    pub(crate) fn observe_anthropic_block(&mut self, block: Value) {
+        if self.partial || self.contract_id != ContractId::AnthropicMessagesV1 {
+            self.mark_partial();
+            return;
+        }
+        if self.append_items(vec![block]).is_err() {
+            self.mark_partial();
+        }
     }
 
     fn append_response_items(&mut self, event: &Value) -> Result<(), LimitError> {

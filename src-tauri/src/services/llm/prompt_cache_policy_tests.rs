@@ -22,6 +22,68 @@ fn uses_usage(provider: &str) -> bool {
 }
 
 #[test]
+fn anthropic_cache_marker_does_not_depend_on_a_session() {
+    let mut value = payload();
+    apply("anthropic", "claude-haiku-4-5-20251001", &mut value, None);
+
+    assert_eq!(value["cache_control"]["type"], "ephemeral");
+    assert!(value.get("session_id").is_none());
+    assert!(value.get("prompt_cache_key").is_none());
+}
+
+#[test]
+fn qwen_marks_only_a_long_stable_prefix_for_five_minutes() {
+    let mut long = long_stable_payload();
+    apply("qwen", "qwen3.8-flash", &mut long, Some("session-1"));
+
+    assert_eq!(
+        long["messages"][0]["content"][0]["cache_control"]["ttl"],
+        "5m"
+    );
+    assert!(long["messages"][1]["content"].is_string());
+
+    let mut short = payload();
+    apply("qwen", "qwen3.8-flash", &mut short, Some("session-1"));
+    assert!(short["messages"][0]["content"].is_string());
+}
+
+#[test]
+fn qwen_keeps_the_head_system_prefix_after_twenty_messages() {
+    let mut messages = vec![json!({
+        "role": "system",
+        "content": "abcd".repeat(1_280),
+    })];
+    messages.extend((0..20).map(|index| {
+        json!({
+            "role": "user",
+            "content": format!("message-{index}"),
+        })
+    }));
+    let mut value = json!({"messages": messages});
+
+    apply("qwen", "qwen3.8-flash", &mut value, Some("session-1"));
+
+    assert_eq!(
+        value["messages"][0]["content"][0]["cache_control"]["ttl"],
+        "5m"
+    );
+}
+
+#[test]
+fn qwen_never_marks_a_late_system_message() {
+    let mut value = json!({
+        "messages": [
+            {"role": "user", "content": "variable"},
+            {"role": "system", "content": "abcd".repeat(1_280)}
+        ]
+    });
+
+    apply("qwen", "qwen3.8-flash", &mut value, Some("session-1"));
+
+    assert!(value["messages"][1]["content"].is_string());
+}
+
+#[test]
 fn cache_transformer_receives_a_resolved_policy() {
     let policy = super::route_profile::cache_policy("openrouter", "google/gemini-3.5-pro")
         .expect("known route");

@@ -1,7 +1,7 @@
 use super::request_usage::{CacheMissSource, CacheUsageStatus, RequestUsage};
 use super::snapshot::build_snapshot;
 use super::types::{LocalSnapshot, RemoteData};
-use super::usage_context::UsageContext;
+use super::usage_context::{UsageApiFormat, UsageContext};
 use serde_json::json;
 
 #[test]
@@ -166,6 +166,26 @@ fn gpt_56_reads_both_cache_directions() {
 }
 
 #[test]
+fn qwen_reads_exact_cache_hit_and_creation_counters() {
+    let usage = RequestUsage::from_json_with_context(
+        &json!({
+            "prompt_tokens": 1200,
+            "prompt_tokens_details": {
+                "cached_tokens": 800,
+                "cache_creation_input_tokens": 400
+            }
+        }),
+        UsageContext::chat("qwen", "qwen3.8-flash"),
+    )
+    .unwrap();
+
+    assert_eq!(usage.cached_input_tokens, Some(800));
+    assert_eq!(usage.cache_write_input_tokens, Some(400));
+    assert_eq!(usage.cache_miss_input_tokens, None);
+    assert_eq!(usage.cache_status, CacheUsageStatus::Reported);
+}
+
+#[test]
 fn gpt_56_responses_uses_input_token_details() {
     let usage = RequestUsage::from_json_with_context(
         &json!({
@@ -183,6 +203,76 @@ fn gpt_56_responses_uses_input_token_details() {
     assert_eq!(usage.cache_write_input_tokens, Some(512));
     assert_eq!(usage.cache_miss_input_tokens, Some(1024));
     assert_eq!(usage.cache_miss_source, CacheMissSource::Calculated);
+}
+
+#[test]
+fn anthropic_messages_reads_the_native_cache_hit_counter() {
+    let usage = RequestUsage::from_json_with_context(
+        &json!({
+            "input_tokens": 120,
+            "cache_read_input_tokens": 80
+        }),
+        UsageContext {
+            canonical_provider_id: "anthropic",
+            model: "claude-haiku-4-5-20251001",
+            api_format: UsageApiFormat::AnthropicMessages,
+        },
+    )
+    .unwrap();
+
+    assert_eq!(usage.cached_input_tokens, Some(80));
+    assert_eq!(usage.cache_status, CacheUsageStatus::Reported);
+}
+
+#[test]
+fn anthropic_messages_reads_both_cache_creation_windows_without_double_counting() {
+    let usage = RequestUsage::from_json_with_context(
+        &json!({
+            "input_tokens": 120,
+            "cache_read_input_tokens": 80,
+            "cache_creation_input_tokens": 30,
+            "cache_creation": {
+                "ephemeral_5m_input_tokens": 20,
+                "ephemeral_1h_input_tokens": 10
+            }
+        }),
+        UsageContext {
+            canonical_provider_id: "anthropic",
+            model: "claude-haiku-4-5-20251001",
+            api_format: UsageApiFormat::AnthropicMessages,
+        },
+    )
+    .unwrap();
+
+    assert_eq!(usage.cached_input_tokens, Some(80));
+    assert_eq!(usage.cache_write_input_tokens, Some(30));
+    assert_eq!(usage.cache_status, CacheUsageStatus::Reported);
+}
+
+#[test]
+fn anthropic_cache_creation_accepts_one_window_and_rejects_oversized_counts() {
+    let context = UsageContext {
+        canonical_provider_id: "anthropic",
+        model: "claude-haiku-4-5-20251001",
+        api_format: UsageApiFormat::AnthropicMessages,
+    };
+    let one_window = RequestUsage::from_json_with_context(
+        &json!({
+            "input_tokens": 10,
+            "cache_creation": {"ephemeral_5m_input_tokens": 6}
+        }),
+        context,
+    )
+    .unwrap();
+    assert_eq!(one_window.cache_write_input_tokens, Some(6));
+
+    let invalid = RequestUsage::from_json_with_context(
+        &json!({"cache_creation_input_tokens": 10_000_000_001_u64}),
+        context,
+    )
+    .unwrap();
+    assert_eq!(invalid.cache_status, CacheUsageStatus::Invalid);
+    assert_eq!(invalid.cache_write_input_tokens, None);
 }
 
 #[test]
@@ -341,6 +431,8 @@ fn mistral_rejects_non_block_aligned_cache_hits() {
 fn invalid_connection_is_rejected() {
     assert!(super::types::validate_connection_id("../secret").is_err());
     assert!(super::types::validate_connection_id("openai").is_ok());
+    assert!(super::types::validate_connection_id("anthropic").is_ok());
+    assert!(super::types::validate_connection_id("qwen").is_ok());
 }
 
 #[test]

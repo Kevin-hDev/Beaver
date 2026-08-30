@@ -9,6 +9,9 @@ impl ReasoningCapture {
             return;
         }
         self.provider_complete = match self.contract_id {
+            ContractId::AnthropicMessagesV1 => {
+                event.get("type").and_then(Value::as_str) == Some("message_stop")
+            }
             ContractId::OllamaNativeV1 => event.get("done").and_then(Value::as_bool) == Some(true),
             ContractId::OpenAiResponsesV1
             | ContractId::XaiResponsesV1
@@ -30,7 +33,8 @@ impl ReasoningCapture {
         }
         if !matches!(
             self.contract_id,
-            ContractId::OllamaNativeV1
+            ContractId::AnthropicMessagesV1
+                | ContractId::OllamaNativeV1
                 | ContractId::OpenAiResponsesV1
                 | ContractId::XaiResponsesV1
                 | ContractId::CodexResponsesV1
@@ -47,6 +51,10 @@ impl ReasoningCapture {
             self.continuation.as_ref(),
             Some(crate::services::reasoning_continuity::envelope::ContinuationState::MistralChunks { chunks })
                 if chunks.is_empty()
+        ) || matches!(
+            self.continuation.as_ref(),
+            Some(crate::services::reasoning_continuity::envelope::ContinuationState::AnthropicBlocks { blocks })
+                if blocks.is_empty()
         ) {
             return None;
         }

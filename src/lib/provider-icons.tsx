@@ -10,6 +10,8 @@ import firecrawlIconSvg from "@/assets/Firecrawl/Firecrawl-icon.svg";
 import xaiSvg from "@/assets/Grok/grok-icon.svg";
 import moonshotSvg from "@/assets/moonshot-ai/moonshot-icon.svg";
 import zaiSvg from "@/assets/Z/Z.ai.svg";
+import anthropicSvg from "@/assets/providers/anthropic.svg";
+import qwenSvg from "@/assets/providers/qwen.svg";
 
 interface ImgEntry { kind: "img"; src: string; mono?: boolean }
 
@@ -28,6 +30,8 @@ const ICONS: Record<string, ProviderIconEntry> = {
   xai:        { kind: "img", src: xaiSvg },
   moonshot:   { kind: "img", src: moonshotSvg },
   zai:        { kind: "img", src: zaiSvg },
+  anthropic:  { kind: "img", src: anthropicSvg },
+  qwen:       { kind: "img", src: qwenSvg },
 };
 
 interface ProviderIconProps {

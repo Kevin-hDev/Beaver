@@ -2,6 +2,69 @@ use super::super::types_ollama::{ChatMessage, ChatRequest};
 use super::PayloadStats;
 use serde_json::Value;
 
+pub(super) fn anthropic_payload_stats(
+    messages: &[ChatMessage],
+    target: Option<&crate::services::reasoning_continuity::contract::ContinuationTarget>,
+) -> PayloadStats {
+    let mut stats = PayloadStats::default();
+    let mut in_tool_group = false;
+    for message in messages {
+        match message.role.as_str() {
+            "system" | "developer" => {
+                stats.instructions_chars += char_count(&message.content);
+                in_tool_group = false;
+            }
+            "tool" => {
+                stats.tool_results += 1;
+                if !in_tool_group {
+                    stats.items += 1;
+                    in_tool_group = true;
+                }
+            }
+            "assistant" => {
+                in_tool_group = false;
+                stats.items += 1;
+                stats.assistant_items += 1;
+                let approved = message.continuation.as_ref().filter(|envelope| {
+                    target.is_some_and(|target| {
+                        crate::services::llm::reasoning_wire::replay::approval_for_target(
+                            target, envelope,
+                        )
+                        .is_ok()
+                    })
+                });
+                if let Some(envelope) = approved {
+                    let crate::services::reasoning_continuity::envelope::ContinuationState::AnthropicBlocks { blocks } = &envelope.continuation else {
+                        continue;
+                    };
+                    for block in blocks {
+                        match block["type"].as_str() {
+                            Some("thinking" | "redacted_thinking") => {
+                                stats.reasoning_fields += 1;
+                                stats.reasoning_chars += json_chars(block);
+                            }
+                            Some("text") => {
+                                stats.assistant_content_chars += value_text_chars(&block["text"])
+                            }
+                            Some("tool_use") => stats.tool_calls += 1,
+                            _ => {}
+                        }
+                    }
+                } else {
+                    stats.assistant_content_chars += char_count(&message.content);
+                    stats.tool_calls += message.tool_calls.as_ref().map_or(0, Vec::len);
+                }
+            }
+            "user" => {
+                in_tool_group = false;
+                stats.items += 1;
+            }
+            _ => {}
+        }
+    }
+    stats
+}
+
 pub(super) fn responses_payload_stats(
     messages: &[ChatMessage],
     target: Option<&crate::services::reasoning_continuity::contract::ContinuationTarget>,

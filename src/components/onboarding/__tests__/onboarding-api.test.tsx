@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { invoke } from "@tauri-apps/api/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { OnboardingApi } from "../onboarding-api";
@@ -36,7 +36,15 @@ function provider(id: string, category: ProviderSpec["category"]): ProviderSpec 
     category,
     display_name: id,
     signup_url: "https://example.com",
+    connection_kind: "api_key",
   };
+}
+
+function providerCard(name: string): HTMLElement {
+  const label = screen.getByText(name, { selector: ".ob-provider-name" });
+  const card = label.closest("button");
+  expect(card).not.toBeNull();
+  return card as HTMLElement;
 }
 
 describe("OnboardingApi", () => {
@@ -46,6 +54,8 @@ describe("OnboardingApi", () => {
         return Promise.resolve([
           provider("openai", "llm"),
           provider("mistral", "llm"),
+          provider("anthropic", "llm"),
+          provider("qwen", "llm"),
           provider("brave", "search"),
         ]);
       }
@@ -67,6 +77,8 @@ describe("OnboardingApi", () => {
     await waitFor(() => expect(screen.getAllByText("openai").length).toBeGreaterThan(0));
 
     expect(screen.queryByText("brave")).toBeNull();
+    expect(screen.getAllByText("anthropic").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("qwen").length).toBeGreaterThan(0);
   });
 
   it("affiche les providers deja configures", async () => {
@@ -86,7 +98,9 @@ describe("OnboardingApi", () => {
     render(<OnboardingApi onComplete={vi.fn()} onBack={vi.fn()} />);
 
     await waitFor(() => expect(screen.getAllByText("mistral").length).toBeGreaterThan(0));
-    expect(screen.getByText("apiKeys.details.connected")).toBeTruthy();
+    const card = providerCard("mistral");
+    expect(within(card).getByRole("img", { name: "apiKeys.details.connected" })).toBeTruthy();
+    expect(within(card).queryByText("apiKeys.details.connected")).toBeNull();
   });
 
   it("conserve le statut d'un provider affiche même après des identifiants sans rapport", async () => {
@@ -106,7 +120,8 @@ describe("OnboardingApi", () => {
     render(<OnboardingApi onComplete={vi.fn()} onBack={vi.fn()} />);
 
     await waitFor(() => expect(screen.getAllByText("mistral").length).toBeGreaterThan(0));
-    expect(screen.getByText("apiKeys.details.connected")).toBeTruthy();
+    const card = providerCard("mistral");
+    expect(within(card).getByRole("img", { name: "apiKeys.details.connected" })).toBeTruthy();
   });
 
   it("teste puis enregistre la cle sans quitter la page", async () => {
@@ -128,7 +143,8 @@ describe("OnboardingApi", () => {
       key: "sk-test",
     });
     expect(await screen.findByText("apiKeys.dialog.testOk")).toBeTruthy();
-    expect(screen.getByText("apiKeys.details.connected")).toBeTruthy();
+    const card = providerCard("openai");
+    expect(within(card).getByRole("img", { name: "apiKeys.details.connected" })).toBeTruthy();
     expect(onComplete).not.toHaveBeenCalled();
   });
 

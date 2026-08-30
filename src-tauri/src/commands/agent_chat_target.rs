@@ -25,6 +25,13 @@ pub(crate) async fn resolve(
         return Err(generic_error());
     }
     let route_id = RouteId::from_provider_id(provider).ok_or_else(generic_error)?;
+    super::agent_chat_target_catalog::ensure_reasoning_contract(
+        provider,
+        model,
+        session.thinking_enabled,
+    )
+    .await
+    .map_err(|_| generic_error())?;
     let ollama_capabilities = if route_id == RouteId::Ollama {
         Some(
             crate::services::agent_local::ollama_client::OllamaClient::from_global()

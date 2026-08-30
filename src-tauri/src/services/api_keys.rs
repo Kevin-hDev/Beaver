@@ -156,6 +156,10 @@ include!("api_keys_mcp.rs");
 mod validate_tests;
 
 #[cfg(test)]
+#[path = "api_keys_http_tests.rs"]
+mod http_tests;
+
+#[cfg(test)]
 #[path = "api_keys_mcp_tests.rs"]
 mod mcp_tests;
 

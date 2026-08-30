@@ -39,3 +39,24 @@ pub(super) fn valid_reasoning_contract(
     }
     Ok(())
 }
+
+pub(super) fn valid_reasoning_transport(
+    is_model_studio: bool,
+    supports_thinking: bool,
+    modes: &[String],
+    supports_toggle: bool,
+    supports_replay: bool,
+    supports_tools: bool,
+    requires_tool_stream: bool,
+) -> Result<(), &'static str> {
+    if (supports_toggle || supports_replay) && (!is_model_studio || !supports_thinking) {
+        return Err("reasoning_transport");
+    }
+    if is_model_studio && modes.iter().any(|mode| mode == "off") && !supports_toggle {
+        return Err("reasoning_transport");
+    }
+    if requires_tool_stream && (!is_model_studio || !supports_tools) {
+        return Err("tool_stream_transport");
+    }
+    Ok(())
+}

@@ -1,7 +1,13 @@
 use serde_json::json;
 
 use crate::models::agent_session_contract::ReasoningReplayStatus;
+use crate::services::reasoning_continuity::contract::{
+    ContractId, CredentialScope, ReasoningModeId, RouteId,
+};
 use crate::services::reasoning_continuity::envelope::CompletionState;
+use crate::services::reasoning_continuity::envelope::{
+    ContinuationState, ReasoningEnvelope, ReasoningSource,
+};
 
 use super::session_view_test_support::{fixture_session, responses_envelope};
 
@@ -101,6 +107,73 @@ fn replay_status_comes_from_the_envelope_not_display_thinking() {
             .reasoning_replay_status,
         ReasoningReplayStatus::Unavailable
     );
+}
+
+#[test]
+fn validated_anthropic_continuation_restores_missing_visible_thinking() {
+    let mut session = fixture_session();
+    let assistant = &mut session.messages[1];
+    assistant.thinking = None;
+    assistant.continuation = Some(ReasoningEnvelope::new(
+        ContractId::AnthropicMessagesV1,
+        ReasoningSource {
+            route_id: RouteId::Anthropic,
+            model_id: "claude-sonnet-5".into(),
+            credential_scope: CredentialScope::authenticated("fixture-scope").unwrap(),
+            reasoning_mode: ReasoningModeId::High,
+        },
+        CompletionState::Complete,
+        ContinuationState::AnthropicBlocks {
+            blocks: vec![
+                json!({
+                    "type": "thinking",
+                    "thinking": "raisonnement historique",
+                    "signature": "opaque-signature"
+                }),
+                json!({"type": "text", "text": "réponse"}),
+            ],
+        },
+        Vec::new(),
+    ));
+
+    let view = super::session_view::from_session(&session).expect("visible view");
+    assert_eq!(
+        view.messages[1].thinking.as_deref(),
+        Some("raisonnement historique")
+    );
+    assert!(!serde_json::to_string(&view)
+        .expect("serialize visible view")
+        .contains("opaque-signature"));
+}
+
+#[test]
+fn invalid_anthropic_continuation_never_becomes_visible_thinking() {
+    let mut session = fixture_session();
+    let assistant = &mut session.messages[1];
+    assistant.thinking = None;
+    let mut envelope = ReasoningEnvelope::new(
+        ContractId::AnthropicMessagesV1,
+        ReasoningSource {
+            route_id: RouteId::Anthropic,
+            model_id: "claude-sonnet-5".into(),
+            credential_scope: CredentialScope::authenticated("fixture-scope").unwrap(),
+            reasoning_mode: ReasoningModeId::High,
+        },
+        CompletionState::Complete,
+        ContinuationState::AnthropicBlocks {
+            blocks: vec![json!({
+                "type": "thinking",
+                "thinking": "ne doit pas sortir",
+                "signature": "opaque-signature"
+            })],
+        },
+        Vec::new(),
+    );
+    envelope.schema_version = u16::MAX;
+    assistant.continuation = Some(envelope);
+
+    let view = super::session_view::from_session(&session).expect("visible view");
+    assert_eq!(view.messages[1].thinking, None);
 }
 
 #[test]

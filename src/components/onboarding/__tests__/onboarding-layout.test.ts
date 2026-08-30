@@ -2,6 +2,10 @@ import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it } from "vitest";
 
 const onboardingCss = readFileSync("src/components/onboarding/onboarding.css", "utf8");
+const onboardingFormCss = readFileSync(
+  "src/components/onboarding/onboarding-form.css",
+  "utf8",
+);
 const agentImportCss = readFileSync(
   "src/components/agent-import/agent-import.css",
   "utf8",
@@ -78,5 +82,17 @@ describe("contrat CSS du splash", () => {
     ]) {
       expect(property(tokensCss, ":root", token)).toMatch(/^clamp\(/);
     }
+  });
+
+  it("centre les cartes et place la validation à droite du logo", () => {
+    expect(property(onboardingFormCss, ".ob-provider-card", "justify-content")).toBe("center");
+    expect(property(onboardingFormCss, ".ob-provider-icon", "position")).toBe("relative");
+    expect(property(onboardingFormCss, ".ob-provider-configured-icon", "position")).toBe(
+      "absolute",
+    );
+    expect(property(onboardingFormCss, ".ob-provider-configured-icon", "left")).toContain("100%");
+    expect(property(onboardingFormCss, ".ob-provider-configured-icon", "color")).toBe(
+      "var(--toast-ok-text)",
+    );
   });
 });

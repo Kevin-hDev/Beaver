@@ -18,7 +18,7 @@ fn route_profile_inventory_is_complete_and_unique() {
 #[test]
 fn route_profile_public_catalog_contains_only_api_key_routes() {
     let profiles = public_api().collect::<Vec<_>>();
-    assert_eq!(profiles.len(), 9);
+    assert_eq!(profiles.len(), 11);
     assert!(profiles
         .iter()
         .all(|profile| matches!(profile.catalog, CatalogPolicy::PublicApi { .. })));
@@ -49,16 +49,54 @@ fn route_profile_keeps_oauth_origins_and_local_endpoint_distinct() {
 }
 
 #[test]
-fn route_profile_declares_anthropic_wire_without_activating_a_route() {
+fn anthropic_profile_is_native_complete_and_public() {
+    let profile = find("anthropic").expect("anthropic profile");
+    assert_eq!(profile.id, RouteId::Anthropic);
+    assert_eq!(profile.client, ClientSelector::Anthropic);
+    assert_eq!(profile.wire.family, WireFamily::AnthropicMessages);
+    assert_eq!(profile.wire.fragments, FragmentMode::SemanticEvents);
     assert_eq!(
-        policies::ANTHROPIC_WIRE_TEST.family,
-        WireFamily::AnthropicMessages
-    );
-    assert_eq!(
-        policies::ANTHROPIC_WIRE_TEST.tool_results,
+        profile.wire.tool_results,
         ToolResultPlacement::UserToolResultBlock
     );
-    assert!(find("anthropic").is_none());
+    assert_eq!(profile.wire.images, ImageFormat::AnthropicBlock);
+    assert_eq!(profile.availability, policies::AVAILABLE_ANY);
+    assert!(matches!(profile.catalog, CatalogPolicy::PublicApi { .. }));
+    assert!(has_dynamic_reasoning_catalog("anthropic"));
+    assert!(matches!(
+        profile.auth,
+        AuthKind::ApiKey {
+            header: ApiKeyHeader::XApiKey,
+            ..
+        }
+    ));
+    let AuthKind::ApiKey { headers, .. } = profile.auth else {
+        panic!("Anthropic API key auth")
+    };
+    assert_eq!(headers, &[("anthropic-version", "2023-06-01")]);
+    assert!(super::catalog::configurable().any(|candidate| candidate.id == RouteId::Anthropic));
+    assert!(public_api().any(|candidate| candidate.id == RouteId::Anthropic));
+}
+
+#[test]
+fn qwen_profile_is_public_and_uses_its_configured_endpoint() {
+    let profile = find("qwen").expect("qwen profile");
+    assert_eq!(profile.id, RouteId::Qwen);
+    assert_eq!(profile.client, ClientSelector::OpenAiCompat);
+    assert_eq!(profile.wire.family, WireFamily::OpenAiChatCompletions);
+    assert_eq!(profile.wire.images, ImageFormat::OpenAiNested);
+    assert_eq!(profile.availability, policies::AVAILABLE_ANY);
+    assert!(matches!(
+        profile.endpoint,
+        EndpointPolicy::ProviderConnection {
+            resolver: ConnectionEndpointResolver::QwenModelStudio
+        }
+    ));
+    assert!(matches!(profile.catalog, CatalogPolicy::PublicApi { .. }));
+    assert!(has_dynamic_reasoning_catalog("qwen"));
+    assert!(!has_dynamic_reasoning_catalog("openai"));
+    assert!(super::catalog::configurable().any(|candidate| candidate.id == RouteId::Qwen));
+    assert!(public_api().any(|candidate| candidate.id == RouteId::Qwen));
 }
 
 #[test]

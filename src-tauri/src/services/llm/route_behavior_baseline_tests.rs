@@ -124,6 +124,16 @@ fn route_behavior_baseline_preserves_every_remote_route() {
             fallback_max_tokens: Some(64_000),
             usage_scope: UsageScope::InteractiveOnly,
         },
+        ExpectedRoute {
+            id: "anthropic",
+            canonical: "anthropic",
+            base_url: "https://api.anthropic.com/v1",
+            models_endpoint: "/models",
+            oauth: false,
+            auto_max_tokens: true,
+            fallback_max_tokens: Some(64_000),
+            usage_scope: UsageScope::Any,
+        },
     ];
 
     for item in expected {
@@ -143,7 +153,7 @@ fn route_behavior_baseline_preserves_every_remote_route() {
         assert_eq!(actual.usage_scope, item.usage_scope, "{}", item.id);
     }
 
-    for special_or_unknown in ["codex-oauth", "ollama", "anthropic", "unknown"] {
+    for special_or_unknown in ["codex-oauth", "ollama", "qwen", "unknown"] {
         assert!(
             route::resolve(special_or_unknown).is_none(),
             "{special_or_unknown}"

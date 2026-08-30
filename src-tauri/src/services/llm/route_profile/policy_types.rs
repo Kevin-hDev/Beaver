@@ -1,8 +1,10 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum SchemaPolicy {
     Generic,
+    Anthropic,
     Google,
     Kimi,
+    Qwen,
     Xai,
     Upstream,
 }
@@ -24,6 +26,8 @@ pub(crate) struct ResolvedToolPolicy {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum CachePolicy {
     None,
+    AnthropicAutomatic,
+    QwenContext,
     Google,
     OpenAi56,
     OpenRouter,
@@ -32,11 +36,9 @@ pub(crate) enum CachePolicy {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[allow(dead_code, reason = "closed variants are reserved for route migration")]
 pub(in crate::services::llm) enum ToolChoicePolicy {
     Default,
     ProviderNative,
-    Unsupported,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -52,8 +54,8 @@ pub(crate) enum ParameterPolicy {
     Xai,
     Zai,
     Ollama,
-    #[allow(dead_code, reason = "Anthropic remains a compile-time candidate")]
     Anthropic,
+    Qwen,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -81,13 +83,11 @@ impl ErrorPolicy {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[allow(dead_code, reason = "missing probes are explicit in candidate tests")]
 pub(crate) enum AuthProbePolicy {
     ModelsGet,
     ChatPing,
     OAuthCatalog,
     ClientNative,
-    None,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -127,6 +127,7 @@ pub(in crate::services::llm) struct RoutePolicies {
     pub tool_limits: ToolLimitPolicy,
     pub include_usage: bool,
     pub gemma4_thinking_guard: bool,
+    pub dynamic_reasoning_catalog: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -143,6 +144,7 @@ pub(crate) struct ResolvedPayloadPolicy {
     pub parameters: ParameterPolicy,
     pub emit_tool_choice: bool,
     pub tool_stream: bool,
+    pub parallel_tool_calls: bool,
     pub upstream_routing: bool,
     pub output_limit_field: &'static str,
 }

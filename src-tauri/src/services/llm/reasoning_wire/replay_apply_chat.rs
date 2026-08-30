@@ -23,7 +23,7 @@ pub(super) fn apply(
         }
         (
             super::AdapterId::ChatReasoning,
-            ContractId::KimiChatV1 | ContractId::ZaiChatV1,
+            ContractId::KimiChatV1 | ContractId::ZaiChatV1 | ContractId::QwenChatV1,
             ContinuationState::ChatReasoning { reasoning_content },
         ) => {
             payload.insert("reasoning_content".into(), reasoning_content.clone().into());

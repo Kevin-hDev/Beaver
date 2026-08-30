@@ -137,11 +137,11 @@ export function useApiKeysTabContent({ navState, onNavChange, onNavReplace }: Ap
           provider={dialog.provider}
           alreadyConfigured={dialog.alreadyConfigured}
           onClose={handleConfigClose}
-          onSave={async (key) => {
-            await setKey(dialog.provider.id, key);
+          onSave={async (key, connection) => {
+            await setKey(dialog.provider.id, key, connection);
           }}
-          onTest={async (key) => {
-            await testKeyRaw(dialog.provider.id, key);
+          onTest={async (key, connection) => {
+            await testKeyRaw(dialog.provider.id, key, connection);
           }}
           onClearKey={
             dialog.alreadyConfigured

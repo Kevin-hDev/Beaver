@@ -141,6 +141,18 @@ impl AuthenticatedClient {
     }
 }
 
+pub(crate) fn sensitive_header(
+    request: RequestBuilder,
+    name: &'static str,
+    value: &str,
+) -> RequestBuilder {
+    let Ok(mut header) = reqwest::header::HeaderValue::from_bytes(value.as_bytes()) else {
+        return request.header(name, value);
+    };
+    header.set_sensitive(true);
+    request.header(name, header)
+}
+
 pub async fn read_bounded(
     response: Response,
     limit: usize,

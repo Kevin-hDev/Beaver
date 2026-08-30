@@ -4,6 +4,18 @@
 
 ---
 
+## v1.1.9
+
+### Anthropic and Alibaba Cloud Qwen providers
+
+- **Native Anthropic support** — Claude models can now be configured and used directly through the Anthropic API, with provider-native streaming, tools, images, prompt caching, usage metrics, and preserved reasoning across messages and tool continuations.
+- **Native Alibaba Cloud Qwen support** — Qwen Model Studio can now be configured for its supported regions, with its live model catalog, multimodal inputs, tools, prompt caching, and documented reasoning controls for Qwen and compatible hosted model families.
+- **Accurate model capabilities** — Beaver combines provider catalogs with validated model metadata so reasoning levels, tools, vision, context limits, and availability are shown only when their transport contract is known.
+- **Secure and resilient transports** — credentials remain inside Beaver's encrypted vault, authenticated responses are size-bounded before streaming, provider errors stay sanitized, and native reasoning state is persisted and replayed without exposing private signatures to the interface.
+- **Updated provider onboarding** — Anthropic and Qwen join the provider setup experience with their dedicated icons, regional configuration where required, clearer connection status, and less crowded provider cards.
+
+---
+
 ## v1.1.8
 
 ### Provider transport refactoring

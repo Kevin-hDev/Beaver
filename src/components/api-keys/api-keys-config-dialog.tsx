@@ -1,18 +1,24 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { open } from "@tauri-apps/plugin-shell";
+import { invoke } from "@tauri-apps/api/core";
 import { X, ArrowSquareOut } from "@/components/ui/icons";
 import { providerDescription } from "@/lib/provider-copy";
-import type { ProviderSpec } from "@/types/api";
+import type { ProviderSpec, QwenConnectionInput } from "@/types/api";
 import { ApiKeySecretInput } from "./api-key-secret-input";
+import {
+  DEFAULT_QWEN_CONNECTION,
+  isQwenConnectionValid,
+  ProviderConnectionForm,
+} from "./provider-connection-form";
 
 interface ApiKeysConfigDialogProps {
   provider: ProviderSpec;
   /** true = provider déjà configuré (édition) ; false = ajout */
   alreadyConfigured: boolean;
   onClose: () => void;
-  onSave: (key: string) => Promise<void>;
-  onTest: (key: string) => Promise<void>;
+  onSave: (key: string, connection?: QwenConnectionInput) => Promise<void>;
+  onTest: (key: string, connection?: QwenConnectionInput) => Promise<void>;
   onClearKey?: () => Promise<void>;
 }
 
@@ -34,6 +40,32 @@ export function ApiKeysConfigDialog({
   const [apiKey, setApiKey] = useState("");
   const [testState, setTestState] = useState<TestState>({ kind: "idle" });
   const [submitting, setSubmitting] = useState(false);
+  const [connection, setConnection] = useState<QwenConnectionInput>(DEFAULT_QWEN_CONNECTION);
+  const requiresConnection = provider.connection_kind === "qwen_model_studio";
+  const [connectionReady, setConnectionReady] = useState(!requiresConnection || !alreadyConfigured);
+  const connectionValid = connectionReady
+    && (!requiresConnection || isQwenConnectionValid(connection));
+
+  useEffect(() => {
+    if (!requiresConnection || !alreadyConfigured) return;
+    let active = true;
+    void invoke<QwenConnectionInput | null>("get_provider_connection", {
+      provider: provider.id,
+    }).then((stored) => {
+      if (!active) return;
+      if (!stored) {
+        setTestState({ kind: "error", message: t("errors.operationFailed") });
+        return;
+      }
+      setConnection(stored);
+      setConnectionReady(true);
+    }).catch(() => {
+      if (active) {
+        setTestState({ kind: "error", message: t("errors.operationFailed") });
+      }
+    });
+    return () => { active = false; };
+  }, [alreadyConfigured, provider.id, requiresConnection, t]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -48,13 +80,14 @@ export function ApiKeysConfigDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!apiKey.trim()) return;
+    if (!apiKey.trim() || !connectionValid) return;
     setSubmitting(true);
     setTestState({ kind: "testing" });
     try {
-      await onTest(apiKey.trim());
+      const providerConnection = requiresConnection ? connection : undefined;
+      await onTest(apiKey.trim(), providerConnection);
       setTestState({ kind: "ok" });
-      await onSave(apiKey.trim());
+      await onSave(apiKey.trim(), providerConnection);
       setTimeout(() => onClose(), 500);
     } catch {
       setTestState({ kind: "error", message: t("errors.operationFailed") });
@@ -90,6 +123,13 @@ export function ApiKeysConfigDialog({
         </header>
 
         <form className="wk-form" onSubmit={(e) => void handleSubmit(e)}>
+          {requiresConnection && (
+            <ProviderConnectionForm
+              value={connection}
+              onChange={setConnection}
+              disabled={submitting || !connectionReady}
+            />
+          )}
           <div className="wk-form-field">
             <label className="wk-form-label">{t("apiKeys.dialog.apiKey")}</label>
             <ApiKeySecretInput
@@ -153,7 +193,7 @@ export function ApiKeysConfigDialog({
             <button
               type="submit"
               className="btn btn-sm btn-primary"
-              disabled={submitting || !apiKey.trim()}
+              disabled={submitting || !apiKey.trim() || !connectionValid}
             >
               {alreadyConfigured
                 ? t("apiKeys.dialog.save")

@@ -1,4 +1,6 @@
-use super::provider_contract::{typescript_bindings, ProviderCatalogEntry, ProviderCategory};
+use super::provider_contract::{
+    typescript_bindings, ProviderCatalogEntry, ProviderCategory, ProviderConnectionKind,
+};
 use serde_json::json;
 
 fn entry(category: ProviderCategory) -> ProviderCatalogEntry {
@@ -7,6 +9,7 @@ fn entry(category: ProviderCategory) -> ProviderCatalogEntry {
         display_name: "Provider".to_string(),
         category,
         signup_url: "https://example.com/signup".to_string(),
+        connection_kind: ProviderConnectionKind::ApiKey,
         base_url: Some("https://api.example.com".to_string()),
         models_endpoint: None,
     }
@@ -23,6 +26,7 @@ fn provider_contract_serializes_the_frontend_shape() {
             "display_name": "Provider",
             "category": "forecast",
             "signup_url": "https://example.com/signup",
+            "connection_kind": "api_key",
             "base_url": "https://api.example.com"
         })
     );

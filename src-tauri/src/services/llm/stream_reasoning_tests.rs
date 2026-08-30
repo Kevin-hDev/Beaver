@@ -207,3 +207,98 @@ fn declared_xai_and_moonshot_effort_modes_reach_the_payload_adapter() {
         }
     }
 }
+
+#[test]
+fn qwen_uses_boolean_thinking_and_top_level_effort_only() {
+    let off = payload("qwen", "qwen3.8-flash", Some("off"));
+    assert_eq!(off["enable_thinking"], false);
+    assert_eq!(off["preserve_thinking"], false);
+    assert!(off.get("reasoning_effort").is_none());
+
+    for model in ["qwen3.8-flash", "qwen3.8-max"] {
+        for effort in ["low", "medium", "xhigh"] {
+            let selected = payload("qwen", model, Some(effort));
+            assert_eq!(selected["enable_thinking"], true, "{model}/{effort}");
+            assert_eq!(selected["preserve_thinking"], true, "{model}/{effort}");
+            assert_eq!(selected["reasoning_effort"], effort, "{model}/{effort}");
+            assert!(selected.get("thinking").is_none());
+            assert!(selected.get("thinking_budget").is_none());
+        }
+    }
+}
+
+#[test]
+fn qwen_boolean_thinking_does_not_invent_an_auto_effort() {
+    let selected = payload("qwen", "qwen3.7-plus", Some("auto"));
+
+    assert_eq!(selected["enable_thinking"], true);
+    assert_eq!(selected["preserve_thinking"], true);
+    assert!(selected.get("reasoning_effort").is_none());
+}
+
+#[test]
+fn model_studio_uses_each_documented_reasoning_contract() {
+    let cases = [
+        ("qwen3.5-plus", "auto", Some(true), None, None),
+        ("deepseek-v4-pro", "max", Some(true), None, Some("max")),
+        ("glm-5.2", "xhigh", Some(true), None, Some("xhigh")),
+        ("kimi-k2.6", "auto", Some(true), Some(true), None),
+        ("kimi-k3", "auto", None, None, None),
+        ("kimi/kimi-k3", "auto", None, Some(true), None),
+    ];
+
+    for (model, mode, enabled, preserved, effort) in cases {
+        let selected = payload("qwen", model, Some(mode));
+        assert_eq!(
+            selected
+                .get("enable_thinking")
+                .and_then(serde_json::Value::as_bool),
+            enabled,
+            "{model}/{mode}"
+        );
+        assert_eq!(
+            selected
+                .get("preserve_thinking")
+                .and_then(serde_json::Value::as_bool),
+            preserved,
+            "{model}/{mode}"
+        );
+        assert_eq!(
+            selected
+                .get("reasoning_effort")
+                .and_then(serde_json::Value::as_str),
+            effort,
+            "{model}/{mode}"
+        );
+    }
+}
+
+#[test]
+fn model_studio_thinking_only_models_never_receive_false_from_a_stale_session() {
+    for model in ["deepseek-r1", "kimi-k2.7-code", "ZHIPU/GLM-5.3"] {
+        let selected = payload("qwen", model, Some("off"));
+        assert!(selected.get("enable_thinking").is_none(), "{model}");
+        assert_ne!(selected["reasoning_effort"], "off", "{model}");
+    }
+}
+
+#[test]
+fn model_studio_minimax_thinking_only_omits_unsupported_switches() {
+    let selected = payload("qwen", "MiniMax-M2.5", Some("auto"));
+
+    // MiniMax-M2.5 est thinking-only sur Model Studio : aucun commutateur
+    // n'est documenté ou nécessaire sur la route compatible OpenAI.
+    assert!(selected.get("thinking").is_none());
+    assert!(selected.get("enable_thinking").is_none());
+    assert!(selected.get("preserve_thinking").is_none());
+}
+
+#[test]
+fn qwen_disables_provider_defaults_when_no_validated_mode_is_selected() {
+    for mode in [None, Some("high"), Some("unknown")] {
+        let selected = payload("qwen", "qwen3.8-flash", mode);
+        assert_eq!(selected["enable_thinking"], false, "mode: {mode:?}");
+        assert_eq!(selected["preserve_thinking"], false, "mode: {mode:?}");
+        assert!(selected.get("reasoning_effort").is_none(), "mode: {mode:?}");
+    }
+}

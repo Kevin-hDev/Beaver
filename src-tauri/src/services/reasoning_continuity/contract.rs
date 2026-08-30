@@ -21,11 +21,13 @@ pub enum ContractId {
     KimiChatV1,
     ZaiChatV1,
     CodexResponsesV1,
+    AnthropicMessagesV1,
+    QwenChatV1,
 }
 
 impl ContractId {
     #[cfg(test)]
-    pub const ALL: [Self; 11] = [
+    pub const ALL: [Self; 13] = [
         Self::OllamaNativeV1,
         Self::GeminiCompatV1,
         Self::MistralChunksV1,
@@ -37,6 +39,8 @@ impl ContractId {
         Self::KimiChatV1,
         Self::ZaiChatV1,
         Self::CodexResponsesV1,
+        Self::AnthropicMessagesV1,
+        Self::QwenChatV1,
     ];
 }
 
@@ -59,10 +63,12 @@ pub enum RouteId {
     MoonshotOauth,
     Zai,
     CodexOauth,
+    Anthropic,
+    Qwen,
 }
 
 impl RouteId {
-    pub const ALL: [Self; 13] = [
+    pub const ALL: [Self; 15] = [
         Self::Ollama,
         Self::Google,
         Self::Mistral,
@@ -76,6 +82,8 @@ impl RouteId {
         Self::MoonshotOauth,
         Self::Zai,
         Self::CodexOauth,
+        Self::Anthropic,
+        Self::Qwen,
     ];
 
     pub fn from_provider_id(provider: &str) -> Option<Self> {
@@ -99,6 +107,8 @@ impl RouteId {
             Self::MoonshotOauth => "moonshot-oauth",
             Self::Zai => "zai",
             Self::CodexOauth => "codex-oauth",
+            Self::Anthropic => "anthropic",
+            Self::Qwen => "qwen",
         }
     }
 }

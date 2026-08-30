@@ -51,6 +51,17 @@ pub(crate) fn stage_raw_entries(
     Ok(())
 }
 
+pub(crate) fn stage_remove_raw_entries(
+    candidate: &mut HashMap<String, String>,
+    raw_keys: &[&str],
+) -> Result<(), String> {
+    validate_raw_keys(raw_keys)?;
+    for key in raw_keys {
+        candidate.remove(&prefixed_raw_key(key)?);
+    }
+    Ok(())
+}
+
 fn validate_vault_candidate(candidate: &HashMap<String, String>) -> Result<(), String> {
     if candidate.len() > MAX_VAULT_ENTRIES {
         return Err("limite du coffre atteinte".to_string());
@@ -98,4 +109,31 @@ where
         .as_mut()
         .ok_or_else(|| "coffre indisponible".to_string())?;
     commit_candidate_with(current, mutate, vault::write_vault)
+}
+
+pub(crate) fn set_key_with_raw(
+    provider_id: &str,
+    key: &str,
+    entries: &[(&str, &str)],
+) -> Result<(), String> {
+    validate::validate_key_input(provider_id, key)?;
+    let route = api_route_for_provider(provider_id);
+    let scope = route.map(|_| generate_credential_scope()).transpose()?;
+    transaction(|candidate| {
+        stage_api_key(candidate, provider_id, Some(key), scope.as_ref())?;
+        stage_raw_entries(candidate, entries)
+    })?;
+    sync_registry_cache();
+    Ok(())
+}
+
+pub(crate) fn delete_key_with_raw(provider_id: &str, raw_keys: &[&str]) -> Result<(), String> {
+    validate::validate_provider(provider_id)?;
+    validate_raw_keys(raw_keys)?;
+    transaction(|candidate| {
+        stage_api_key(candidate, provider_id, None, None)?;
+        stage_remove_raw_entries(candidate, raw_keys)
+    })?;
+    sync_registry_cache();
+    Ok(())
 }

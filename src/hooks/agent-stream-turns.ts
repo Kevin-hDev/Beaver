@@ -2,6 +2,7 @@ import { flushFrameNotify } from "./agent-stream-notify";
 import { notifyRecord, notifyRecordActivity } from "./agent-stream-notify-dispatch";
 import { getRecord } from "./agent-stream-records";
 import { visibleAssistant } from "./agent-stream-visible-assistant";
+import { resolvePreparedContextBuckets } from "./context-usage-stream";
 import type { VisibleTurnIdentity } from "./agent-chat-stream-types";
 import type { ChatStreamAdmission } from "@/types/agent-turn.generated";
 
@@ -85,6 +86,8 @@ export function reconcileTurnCommitted(
   record.state = {
     ...record.state,
     messages: assistant ? [...record.state.messages, assistant] : record.state.messages,
+    contextUsageBuckets: resolvePreparedContextBuckets(record.state, []),
+    contextUsageBaseSegments: 0,
     completedSegments: [],
     currentContent: "",
     currentContentPhase: undefined,

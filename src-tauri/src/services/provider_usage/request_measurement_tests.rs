@@ -118,3 +118,22 @@ fn unsafe_openrouter_metadata_is_ignored() {
 
     assert_eq!(measurement.routed_endpoint(), (None, None));
 }
+
+#[test]
+fn provider_request_metadata_accepts_only_bounded_safe_labels() {
+    let mut measurement = RequestMeasurement::start(context(Some("session-1"))).unwrap();
+
+    measurement.observe_provider_request_id("req_123.abc");
+    measurement.observe_finish_reason("tool_use");
+    assert_eq!(
+        measurement.provider_metadata(),
+        (Some("req_123.abc"), Some("tool_use"))
+    );
+
+    measurement.observe_provider_request_id("bad/value");
+    measurement.observe_finish_reason(&"x".repeat(129));
+    assert_eq!(
+        measurement.provider_metadata(),
+        (Some("req_123.abc"), Some("tool_use"))
+    );
+}

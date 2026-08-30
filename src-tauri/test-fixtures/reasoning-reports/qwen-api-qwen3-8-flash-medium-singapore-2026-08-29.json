@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "fixture_id": "qwen-api-qwen3-8-flash-medium-singapore-2026-08-29",
+  "route": "qwen",
+  "model": "qwen3.8-flash",
+  "region": "singapore",
+  "reasoning_mode": "medium",
+  "generated_at": "2026-08-29T14:30:02.695308+00:00",
+  "scenarios": [
+    {
+      "requirement": "capture_and_persist",
+      "run_id": "8ab08906-b2e1-4496-b3ea-41d6eee233c3",
+      "status": "passe",
+      "request_count": 1,
+      "reasoning_event_count": 5,
+      "decisions": [
+        "reasoning decision=\"replayed\" code=\"replayed\" items=1 bytes=480 hmac=ffbf3d260149e0b7",
+        "reasoning decision=\"replayed\" code=\"replayed\" items=1 bytes=480 hmac=ffbf3d260149e0b7",
+        "reasoning decision=\"replayed\" code=\"replayed\" items=1 bytes=621 hmac=3281333f73cc815d",
+        "reasoning decision=\"captured\" code=\"captured\" items=1 bytes=480 hmac=ffbf3d260149e0b7",
+        "reasoning decision=\"persisted\" code=\"persisted\" items=1 bytes=480 hmac=ffbf3d260149e0b7"
+      ]
+    },
+    {
+      "requirement": "replay_and_continue",
+      "run_id": "8ab08906-b2e1-4496-b3ea-41d6eee233c3",
+      "status": "passe",
+      "request_count": 1,
+      "reasoning_event_count": 5,
+      "decisions": [
+        "reasoning decision=\"replayed\" code=\"replayed\" items=1 bytes=480 hmac=ffbf3d260149e0b7",
+        "reasoning decision=\"replayed\" code=\"replayed\" items=1 bytes=480 hmac=ffbf3d260149e0b7",
+        "reasoning decision=\"replayed\" code=\"replayed\" items=1 bytes=621 hmac=3281333f73cc815d",
+        "reasoning decision=\"captured\" code=\"captured\" items=1 bytes=480 hmac=ffbf3d260149e0b7",
+        "reasoning decision=\"persisted\" code=\"persisted\" items=1 bytes=480 hmac=ffbf3d260149e0b7"
+      ]
+    },
+    {
+      "requirement": "capture_and_persist",
+      "run_id": "98da6db8-c861-43c1-9160-fc934202dba1",
+      "status": "passe",
+      "request_count": 1,
+      "reasoning_event_count": 6,
+      "decisions": [
+        "reasoning decision=\"replayed\" code=\"replayed\" items=1 bytes=480 hmac=ffbf3d260149e0b7",
+        "reasoning decision=\"replayed\" code=\"replayed\" items=1 bytes=621 hmac=3281333f73cc815d",
+        "reasoning decision=\"replayed\" code=\"replayed\" items=1 bytes=396 hmac=b778c08d95df5d3d",
+        "reasoning decision=\"replayed\" code=\"replayed\" items=1 bytes=470 hmac=ae4c0e2dcb15ba7b",
+        "reasoning decision=\"captured\" code=\"captured\" items=1 bytes=470 hmac=ae4c0e2dcb15ba7b",
+        "reasoning decision=\"persisted\" code=\"persisted\" items=1 bytes=470 hmac=ae4c0e2dcb15ba7b"
+      ]
+    },
+    {
+      "requirement": "replay_and_continue",
+      "run_id": "98da6db8-c861-43c1-9160-fc934202dba1",
+      "status": "passe",
+      "request_count": 1,
+      "reasoning_event_count": 6,
+      "decisions": [
+        "reasoning decision=\"replayed\" code=\"replayed\" items=1 bytes=480 hmac=ffbf3d260149e0b7",
+        "reasoning decision=\"replayed\" code=\"replayed\" items=1 bytes=621 hmac=3281333f73cc815d",
+        "reasoning decision=\"replayed\" code=\"replayed\" items=1 bytes=396 hmac=b778c08d95df5d3d",
+        "reasoning decision=\"replayed\" code=\"replayed\" items=1 bytes=470 hmac=ae4c0e2dcb15ba7b",
+        "reasoning decision=\"captured\" code=\"captured\" items=1 bytes=470 hmac=ae4c0e2dcb15ba7b",
+        "reasoning decision=\"persisted\" code=\"persisted\" items=1 bytes=470 hmac=ae4c0e2dcb15ba7b"
+      ]
+    }
+  ]
+}

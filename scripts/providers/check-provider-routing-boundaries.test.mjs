@@ -113,11 +113,10 @@ test("exclut tests, fixtures et fichiers générés du scan de production", () =
   assert.equal(isProductionSource("src-tauri/src/services/llm/route.rs"), true);
 });
 
-test("les cinq consommateurs frontend ne décident plus selon le provider", () => {
+test("les consommateurs frontend génériques ne décident plus selon le provider", () => {
   const files = [
     "src/components/providers/usage/provider-usage-links.ts",
     "src/hooks/oauth-models.ts",
-    "src/lib/reasoning-modes.ts",
     "src/hooks/use-context-progress.ts",
     "src/hooks/use-context-usage.ts",
   ];
@@ -125,4 +124,10 @@ test("les cinq consommateurs frontend ne décident plus selon le provider", () =
     const source = fs.existsSync(path) ? fs.readFileSync(path, "utf8") : "";
     assert.equal(count(path, source), 0, path);
   }
+});
+
+test("le sélecteur porte une seule exception de présentation Anthropic", () => {
+  const path = "src/lib/reasoning-modes.ts";
+  const source = fs.readFileSync(path, "utf8");
+  assert.equal(count(path, source), 1);
 });

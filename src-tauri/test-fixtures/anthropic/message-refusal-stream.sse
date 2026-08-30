@@ -1,0 +1,6 @@
+event: message_delta
+data: {"type":"message_delta","delta":{"stop_reason":"refusal"},"usage":{"output_tokens":4}}
+
+event: message_stop
+data: {"type":"message_stop"}
+

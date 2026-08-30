@@ -69,12 +69,14 @@ export interface ProviderRequestMetric {
   started_at_ms: number;
   connection_id: string;
   canonical_provider_id: string;
-  api_format: "chat_completions" | "responses" | "gemini_native";
+  api_format: "chat_completions" | "responses" | "gemini_native" | "anthropic_messages";
   model: string;
   routed_provider: string | null;
   routed_model: string | null;
   session_id: string | null;
   request_id: string;
+  provider_request_id: string | null;
+  finish_reason: string | null;
   turn: number | null;
   attempt: number;
   workload: "primary" | "subagent" | "compression";

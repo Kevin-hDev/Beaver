@@ -19,9 +19,122 @@ fn canonical_inventory_sizes_match_the_official_catalogs() {
         ("xai", 7),
         ("moonshot", 15),
         ("zai", 20),
+        ("anthropic", 1),
+        ("qwen", 76),
     ] {
         assert_eq!(list(provider).len(), expected, "{provider}");
     }
+}
+
+#[test]
+fn qwen_fallback_exposes_verified_reasoning_contracts() {
+    let models = list("qwen");
+    assert_eq!(models.len(), 76);
+    let flash = &models[0];
+    assert_eq!(flash.id, "qwen3.8-flash");
+    assert_eq!(flash.context_window, 1_000_000);
+    assert_eq!(flash.max_output_tokens, Some(131_072));
+    assert!(flash.supports_tools);
+    assert!(flash.supports_vision);
+    assert!(flash.supports_thinking);
+    assert_eq!(flash.reasoning_modes, ["off", "low", "medium", "xhigh"]);
+    assert_eq!(flash.default_reasoning_mode.as_deref(), Some("xhigh"));
+
+    let max = &models[1];
+    assert_eq!(max.id, "qwen3.8-max");
+    assert_eq!(max.context_window, 1_000_000);
+    assert_eq!(max.max_output_tokens, Some(131_072));
+    assert!(max.supports_tools);
+    assert!(max.supports_vision);
+    assert!(max.supports_thinking);
+    assert_eq!(max.reasoning_modes, ["off", "low", "medium", "xhigh"]);
+    assert_eq!(max.default_reasoning_mode.as_deref(), Some("xhigh"));
+
+    let plus = lookup("qwen", "qwen3.7-plus-2026-05-26").unwrap();
+    assert_eq!(plus.reasoning_modes, ["off", "auto"]);
+    assert_eq!(plus.default_reasoning_mode.as_deref(), Some("auto"));
+    assert!(plus.supports_vision);
+
+    let thinking_only = lookup("qwen", "qwen3.7-max-preview").unwrap();
+    assert_eq!(thinking_only.reasoning_modes, ["auto"]);
+    assert_eq!(
+        thinking_only.default_reasoning_mode.as_deref(),
+        Some("auto")
+    );
+}
+
+#[test]
+fn model_studio_inventory_covers_every_documented_thinking_family() {
+    for (model, expected_modes) in [
+        ("qwen3.5-plus", &["off", "auto"][..]),
+        ("qwen3-vl-plus", &["off", "auto"][..]),
+        ("qwen3-vl-235b-a22b-thinking", &["auto"][..]),
+        ("deepseek-v4-pro", &["off", "high", "max"][..]),
+        ("deepseek-r1", &["auto"][..]),
+        (
+            "glm-5.2",
+            &["off", "low", "medium", "high", "xhigh", "max"][..],
+        ),
+        ("ZHIPU/GLM-5.3", &["auto"][..]),
+        ("kimi-k2.6", &["off", "auto"][..]),
+        ("kimi-k2.7-code", &["auto"][..]),
+        ("kimi-k3", &["auto"][..]),
+        ("MiniMax-M2.5", &["auto"][..]),
+    ] {
+        let entry = lookup("qwen", model).unwrap_or_else(|| panic!("missing qwen/{model}"));
+        assert!(entry.supports_thinking, "{model}");
+        assert_eq!(entry.reasoning_modes, expected_modes, "{model}");
+    }
+}
+
+#[test]
+fn model_studio_keeps_tool_transport_and_distilled_limits_exact() {
+    for model in ["glm-5.2", "glm-5.1", "glm-5", "glm-4.7", "glm-4.6"] {
+        let entry = lookup("qwen", model).unwrap();
+        assert!(entry.supports_tools, "{model}");
+        assert!(entry.requires_tool_stream, "{model}");
+    }
+    assert!(!lookup("qwen", "glm-4.5").unwrap().requires_tool_stream);
+
+    for model in [
+        "deepseek-r1-distill-qwen-32b",
+        "deepseek-r1-distill-qwen-14b",
+        "deepseek-r1-distill-qwen-7b",
+        "deepseek-r1-distill-qwen-1.5b",
+        "deepseek-r1-distill-llama-70b",
+        "deepseek-r1-distill-llama-8b",
+    ] {
+        let entry = lookup("qwen", model).unwrap();
+        assert!(entry.supports_thinking, "{model}");
+        assert!(!entry.supports_tools, "{model}");
+        assert_eq!(entry.max_output_tokens, Some(16_384), "{model}");
+    }
+
+    assert_eq!(
+        lookup("qwen", "deepseek-v4-pro-0813")
+            .unwrap()
+            .max_output_tokens,
+        Some(393_216)
+    );
+    assert_eq!(
+        lookup("qwen", "deepseek-v4-pro-us").unwrap().id,
+        "deepseek-v4-pro"
+    );
+}
+
+#[test]
+fn anthropic_fallback_exposes_only_the_validated_haiku_model() {
+    let models = list("anthropic");
+    assert_eq!(models.len(), 1);
+    let haiku = &models[0];
+    assert_eq!(haiku.id, "claude-haiku-4-5-20251001");
+    assert_eq!(haiku.context_window, 200_000);
+    assert_eq!(haiku.max_output_tokens, Some(64_000));
+    assert!(haiku.supports_tools);
+    assert!(haiku.supports_vision);
+    assert!(haiku.supports_thinking);
+    assert_eq!(haiku.reasoning_modes, ["off", "low", "medium", "high"]);
+    assert_eq!(haiku.default_reasoning_mode.as_deref(), Some("medium"));
 }
 
 #[test]

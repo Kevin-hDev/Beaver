@@ -11,7 +11,12 @@ pub(super) fn resolve(profile: &RouteProfile, model: &str) -> ResolvedPayloadPol
         },
         parameters: profile.policies.parameters,
         emit_tool_choice: profile.policies.tool_choice == ToolChoicePolicy::Default,
-        tool_stream: profile.policies.parameters == ParameterPolicy::Zai,
+        tool_stream: profile.policies.parameters == ParameterPolicy::Zai
+            || super::super::provider_model_lookup::requires_tool_stream(
+                profile.id.provider_id(),
+                model,
+            ),
+        parallel_tool_calls: profile.policies.parameters == ParameterPolicy::Qwen,
         upstream_routing: profile.policies.schema == super::SchemaPolicy::Upstream,
         output_limit_field: output_limit_field(profile, model),
     }
@@ -20,6 +25,9 @@ pub(super) fn resolve(profile: &RouteProfile, model: &str) -> ResolvedPayloadPol
 fn output_limit_field(profile: &RouteProfile, model: &str) -> &'static str {
     if profile.policies.parameters == ParameterPolicy::Responses {
         return "max_output_tokens";
+    }
+    if profile.policies.parameters == ParameterPolicy::Qwen {
+        return "max_completion_tokens";
     }
     let completion_tokens = match profile.id.provider_id() {
         "openai" => super::super::providers::openai::uses_max_completion_tokens(model),

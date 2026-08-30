@@ -25,7 +25,7 @@
       "descriptions": { "openai": "ChatGPT through Codex", "moonshot": "Kimi through native web sign-in, without a client", "xai": "Grok through native web sign-in, without a client" }
     },
     "usage": {
-      "requestMetrics": { "title": "Detailed measurements", "empty": "No measured request", "unavailable": "Detailed measurements unavailable", "latestRequest": "Latest request", "routedProvider": "Provider that served the request", "latestSession": "Latest measured session", "turn": "Turn {{value}}", "attempt": "Attempt {{value}}", "headers": "Server response", "firstEvent": "First event", "firstUseful": "First result", "totalDuration": "Total duration", "usageIncomplete": "Token data is incomplete", "statuses": { "completed": "Completed", "interrupted": "Interrupted for compression", "cancelled": "Cancelled", "failed": "Failed" } },
+      "requestMetrics": { "title": "Detailed measurements", "empty": "No measured request", "unavailable": "Detailed measurements unavailable", "latestRequest": "Latest request", "routedProvider": "Provider that served the request", "providerRequestId": "Provider request ID", "finishReason": "Finish reason", "latestSession": "Latest measured session", "turn": "Turn {{value}}", "attempt": "Attempt {{value}}", "headers": "Server response", "firstEvent": "First event", "firstUseful": "First result", "totalDuration": "Total duration", "usageIncomplete": "Token data is incomplete", "statuses": { "completed": "Completed", "interrupted": "Interrupted for compression", "cancelled": "Cancelled", "failed": "Failed" } },
       "providerTitle": "Provider limits and credits", "generalLimitsTitle": "General usage limits", "namedLimitsTitle": "{{name}} usage limits", "localTitle": "Usage in Beaver", "refresh": "Refresh", "remoteUnavailable": "Account usage data is unavailable", "remainingPercent": "{{value}}% remaining", "updated": "Updated", "stale": "Older data", "resetsAt": "Resets: {{date}}", "openProviderSite": "View at provider", "periodLabel": "Period", "historyEmpty": "No usage recorded", "requests": "Requests", "inputTokens": "Input tokens", "outputTokens": "Output tokens", "cachedTokens": "Cache read tokens", "cacheWriteTokens": "Cache write tokens", "cacheMissTokens": "Cache miss tokens", "reasoningTokens": "Reasoning tokens", "totalTokens": "Total tokens", "cost": "Cost", "byOrigin": "By origin", "byWorkload": "By workload",
       "periods": { "today": "Today", "seven_days": "7 days", "thirty_days": "30 days", "all_time": "All time" },
       "quality": { "exact": "Exact", "estimated": "Estimated", "partial": "Partial", "unavailable": "Unavailable" },
@@ -39,17 +39,28 @@
   "apiKeys": {
     "providers": {
       "google": { "description": "Gemini 3.7 Flash — multimodal, tools and reasoning.", "freeTier": "Free tier for selected models, depending on account and limits." },
-      "mistral": { "description": "French open-weight models — free Experiment plan.", "freeTier": "Free mode and paid plan; availability depends on the account." },
+      "mistral": { "description": "Open-weight models.", "freeTier": "Free mode and paid plan; availability depends on the account." },
       "cerebras": { "description": "Open-weight models up to 3,000 tok/s on wafer-scale chip.", "freeTier": "Free tier and quotas depend on the project and account." },
       "openrouter": { "description": "Access 300+ models with a single API key.", "freeTier": "[Free] models use no credits; all others use your balance." },
       "openai": { "description": "GPT-5.6 Sol, Terra and Luna — frontier reasoning.", "freeTier": "API billed by usage and model." },
-      "deepseek": { "description": "DeepSeek V4-Flash / V4-Pro — unbeatable value for money.", "freeTier": "API billed by usage and model." },
+      "deepseek": { "description": "DeepSeek V4-Flash / V4-Pro.", "freeTier": "API billed by usage and model." },
       "xai": { "description": "Grok 4.6 — 500K context, advanced reasoning.", "freeTier": "Prepaid credits or monthly billing, depending on the account." },
       "moonshot": { "description": "Kimi K3 — agentic coding, multimodal, 1M context.", "freeTier": "API billed by usage." },
       "zai": { "description": "GLM-5.3 — 1M context, long-horizon coding and reasoning.", "freeTier": "Flash models marked [Free] have no cost; the others are billed." },
+      "anthropic": { "description": "Claude through Anthropic's native Messages API.", "freeTier": "Usage is billed by Anthropic." },
+      "qwen": { "description": "Qwen through Alibaba Cloud Model Studio.", "freeTier": "Pay-as-you-go usage is billed by Alibaba Cloud." },
       "brave": { "description": "Independent index, no Google/Bing dependency.", "freeTier": "Monthly included credits, then usage-based billing." },
       "exa": { "description": "Neural search — semantic similarity search.", "freeTier": "Check pricing and credits in the provider account." },
       "firecrawl": { "description": "LLM-ready Markdown extraction from any URL.", "freeTier": "Free plan and credits depend on the team and plan." }
+    },
+    "connection": {
+      "region": "Region",
+      "endpointMode": "Endpoint type",
+      "workspaceId": "Workspace ID",
+      "payAsYouGo": "This connection uses Model Studio Pay-as-you-go.",
+      "unsupportedPlans": "Token Plan and Coding Plan keys are not supported yet.",
+      "regions": { "beijing": "Beijing", "singapore": "Singapore", "hong_kong": "Hong Kong", "tokyo": "Tokyo", "frankfurt": "Frankfurt", "virginia": "Virginia" },
+      "modes": { "shared": "Shared", "workspace": "Workspace", "trial": "Trial" }
     },
     "main": {
       "title": "API Keys",

@@ -18,6 +18,11 @@ fn validate_provider_accepts_known_llm_provider() {
 }
 
 #[test]
+fn validate_provider_accepts_anthropic() {
+    assert!(validate_provider("anthropic").is_ok());
+}
+
+#[test]
 fn validate_provider_rejects_removed_groq_provider() {
     assert!(validate_provider("groq").is_err());
 }

@@ -58,6 +58,7 @@ pub mod personality_injection;
 pub mod private_store;
 pub mod process_identity;
 pub mod process_tree;
+pub mod provider_connections;
 pub mod provider_usage;
 pub mod reasoning;
 pub mod reasoning_continuity;

@@ -24,7 +24,8 @@ pub(super) async fn consume_stream(
     mut reasoning_capture: Option<super::reasoning_wire::ReasoningCapture>,
     mut measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
 ) -> Result<StreamOutcome, String> {
-    let mut stream = resp.bytes_stream().eventsource();
+    let stream = super::stream_sse::bounded_response(resp).eventsource();
+    futures_util::pin_mut!(stream);
     let mut result = StreamResult::default();
     let mut token_count = 0;
     let mut acc = ToolCallAccumulator::new();
@@ -94,7 +95,11 @@ pub(super) async fn consume_stream(
 
     let (tool_calls, ids, extra_content) = acc.finalize();
     for (index, (wire_name, arguments)) in tool_calls.iter().enumerate() {
-        let name = super::tool_schema::restore_tool_name(wire_name, tools);
+        let name = super::tool_schema::restore_tool_name_for_provider(
+            usage_context.canonical_provider_id,
+            wire_name,
+            tools,
+        );
         crate::services::agent_local::stream_buffer::record_tool_call_generation(
             on_event,
             &mut result,

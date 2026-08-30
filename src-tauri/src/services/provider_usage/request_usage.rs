@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use super::usage_context::UsageApiFormat;
 use super::usage_context::UsageContext;
 
-pub(super) const MAX_REQUEST_TOKENS: u64 = 10_000_000_000;
+pub(crate) const MAX_REQUEST_TOKENS: u64 = 10_000_000_000;
 pub(super) const MAX_COST_USD: f64 = 1_000_000.0;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]

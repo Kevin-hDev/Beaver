@@ -55,7 +55,7 @@ pub fn run_live_reasoning_fixtures() -> bool {
         Err(_) => return false,
     };
     let runtime = runtime_state::services(&coordinator);
-    let app = match app_build::build(coordinator, runtime) {
+    let app = match app_build::build_live_fixture(coordinator, runtime) {
         Ok(value) => value,
         Err(_) => return false,
     };

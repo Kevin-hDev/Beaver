@@ -53,6 +53,22 @@ fn vision_wire_formats_stay_distinct() {
 }
 
 #[test]
+fn qwen_uses_the_nested_openai_image_shape() {
+    let message = user(vec!["iVBORw0KGgo="]);
+    let policy = super::super::route_profile::payload_policy("qwen", "qwen3.8-flash").unwrap();
+    let converted =
+        crate::services::llm::stream_convert::message_to_openai(&message, policy.message);
+
+    assert_eq!(
+        converted["content"][1],
+        serde_json::json!({
+            "type": "image_url",
+            "image_url": {"url": "data:image/png;base64,iVBORw0KGgo="}
+        })
+    );
+}
+
+#[test]
 fn unsupported_image_wire_is_rejected_explicitly() {
     assert_eq!(
         image_part(
@@ -60,5 +76,18 @@ fn unsupported_image_wire_is_rejected_explicitly() {
             super::super::route_profile::ImageFormat::Unsupported,
         ),
         Err("vision_wire_unsupported")
+    );
+}
+
+#[test]
+fn anthropic_image_block_has_a_stricter_ten_megabyte_limit() {
+    let oversized = format!("iVBOR{}", "A".repeat(10_000_000 - 4));
+
+    assert_eq!(
+        image_part(
+            &oversized,
+            super::super::route_profile::ImageFormat::AnthropicBlock,
+        ),
+        Err("vision_image_invalid")
     );
 }

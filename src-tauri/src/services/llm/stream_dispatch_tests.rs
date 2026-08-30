@@ -5,6 +5,9 @@ use super::stream_dispatch::{
 use crate::services::llm::route_profile::FragmentMode;
 use crate::services::llm_oauth::{XaiBackend, XaiCatalogModel};
 use crate::services::provider_usage::UsageApiFormat;
+use crate::services::reasoning_continuity::contract::{
+    ContinuationTarget, ContinuationUse, CredentialScope, ReasoningModeId, ReplayTarget, RouteId,
+};
 
 fn xai_model(backend: XaiBackend) -> XaiCatalogModel {
     XaiCatalogModel {
@@ -123,4 +126,141 @@ fn stream_dispatch_refuses_unavailable_or_unknown_routes_before_payload() {
         .unwrap_err(),
         RouteSelectionError::Unavailable
     );
+}
+
+#[tokio::test]
+async fn anthropic_live_route_supports_every_declared_invocation_kind() {
+    assert_eq!(
+        super::stream_dispatch::resolve_client_for_test("anthropic").unwrap(),
+        ClientKind::Anthropic
+    );
+    for purpose in [
+        RequestPurpose::ManualChat,
+        RequestPurpose::Automation,
+        RequestPurpose::ExternalChannel,
+        RequestPurpose::AccountMetadata,
+    ] {
+        assert_eq!(
+            super::stream_dispatch::resolve_transport(
+                "anthropic",
+                "claude-haiku-4-5-20251001",
+                InvocationKind::Interactive,
+                purpose,
+            )
+            .await
+            .unwrap()
+            .client,
+            ClientKind::Anthropic
+        );
+    }
+    assert_eq!(
+        super::stream_dispatch::resolve_transport(
+            "anthropic",
+            "claude-haiku-4-5-20251001",
+            InvocationKind::Silent,
+            RequestPurpose::ManualChat,
+        )
+        .await
+        .unwrap()
+        .client,
+        ClientKind::Anthropic
+    );
+
+    let fixture = ContinuationTarget::FixtureCandidate(ReplayTarget {
+        route_id: RouteId::Anthropic,
+        model_id: "claude-haiku-4-5-20251001".into(),
+        credential_scope: CredentialScope::authenticated("fixture-scope").unwrap(),
+        reasoning_mode: ReasoningModeId::High,
+        continuation_use: ContinuationUse::UserContinuation,
+    });
+    let resolved = super::stream_dispatch::resolve_fixture_transport(
+        "anthropic",
+        "claude-haiku-4-5-20251001",
+        &fixture,
+        RequestPurpose::ManualChat,
+    )
+    .await
+    .unwrap();
+    assert_eq!(resolved.client, ClientKind::Anthropic);
+    assert!(super::stream_dispatch::resolve_fixture_transport(
+        "anthropic",
+        "claude-haiku-4-5-20251001",
+        &fixture,
+        RequestPurpose::Automation,
+    )
+    .await
+    .is_err());
+}
+
+#[tokio::test]
+async fn qwen_live_route_supports_every_declared_invocation_kind() {
+    assert_eq!(
+        super::stream_dispatch::resolve_client_for_test("qwen").unwrap(),
+        ClientKind::ChatCompletions
+    );
+    for purpose in [
+        RequestPurpose::ManualChat,
+        RequestPurpose::Automation,
+        RequestPurpose::ExternalChannel,
+        RequestPurpose::AccountMetadata,
+    ] {
+        assert_eq!(
+            super::stream_dispatch::resolve_transport(
+                "qwen",
+                "qwen3.8-flash",
+                InvocationKind::Interactive,
+                purpose,
+            )
+            .await
+            .unwrap()
+            .client,
+            ClientKind::ChatCompletions
+        );
+    }
+    assert_eq!(
+        super::stream_dispatch::resolve_transport(
+            "qwen",
+            "qwen3.8-flash",
+            InvocationKind::Silent,
+            RequestPurpose::ManualChat,
+        )
+        .await
+        .unwrap()
+        .client,
+        ClientKind::ChatCompletions
+    );
+
+    let fixture = ContinuationTarget::FixtureCandidate(ReplayTarget {
+        route_id: RouteId::Qwen,
+        model_id: "qwen3.8-flash".into(),
+        credential_scope: CredentialScope::authenticated("fixture-scope").unwrap(),
+        reasoning_mode: ReasoningModeId::Xhigh,
+        continuation_use: ContinuationUse::UserContinuation,
+    });
+    let resolved = super::stream_dispatch::resolve_fixture_transport(
+        "qwen",
+        "qwen3.8-flash",
+        &fixture,
+        RequestPurpose::ManualChat,
+    )
+    .await
+    .unwrap();
+    assert_eq!(resolved.client, ClientKind::ChatCompletions);
+
+    assert!(super::stream_dispatch::resolve_fixture_transport(
+        "qwen",
+        "another-model",
+        &fixture,
+        RequestPurpose::ManualChat,
+    )
+    .await
+    .is_err());
+    assert!(super::stream_dispatch::resolve_fixture_transport(
+        "qwen",
+        "qwen3.8-flash",
+        &fixture,
+        RequestPurpose::Automation,
+    )
+    .await
+    .is_err());
 }

@@ -128,7 +128,8 @@ const fn code_for_decision(decision: ReasoningDecision) -> ReasonCode {
 
 fn item_count(state: &ContinuationState) -> usize {
     match state {
-        ContinuationState::GeminiParts { parts }
+        ContinuationState::AnthropicBlocks { blocks: parts }
+        | ContinuationState::GeminiParts { parts }
         | ContinuationState::MistralChunks { chunks: parts }
         | ContinuationState::OpenRouterDetails { details: parts }
         | ContinuationState::ResponsesLocal { items: parts } => parts.len(),

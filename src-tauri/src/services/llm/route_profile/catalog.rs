@@ -12,7 +12,18 @@ pub(in crate::services::llm) fn all() -> impl Iterator<Item = &'static RouteProf
 }
 
 pub(in crate::services::llm) fn public_api() -> impl Iterator<Item = &'static RouteProfile> {
-    API_PROFILES.iter()
+    API_PROFILES
+        .iter()
+        .filter(|profile| matches!(profile.catalog, super::CatalogPolicy::PublicApi { .. }))
+}
+
+pub(in crate::services::llm) fn configurable() -> impl Iterator<Item = &'static RouteProfile> {
+    API_PROFILES.iter().filter(|profile| {
+        matches!(
+            profile.catalog,
+            super::CatalogPolicy::PublicApi { .. } | super::CatalogPolicy::ConfigurableApi { .. }
+        )
+    })
 }
 
 pub(in crate::services::llm) fn find(provider_id: &str) -> Option<&'static RouteProfile> {

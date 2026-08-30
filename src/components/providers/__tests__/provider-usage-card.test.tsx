@@ -75,6 +75,8 @@ const snapshot: ProviderUsageSnapshot = {
       routed_model: null,
       session_id: "session-1",
       request_id: "request-1",
+      provider_request_id: null,
+      finish_reason: null,
       turn: 1,
       attempt: 2,
       workload: "primary",

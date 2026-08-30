@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use reqwest::{header::HeaderMap, RequestBuilder, Response};
 
 use super::request_purpose::RequestPurpose;
@@ -19,12 +21,12 @@ enum AuthSource {
     TestToken(&'static str),
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct LlmRoute {
     pub chat_provider_id: &'static str,
     pub canonical_provider_id: &'static str,
-    pub base_url: &'static str,
-    pub models_endpoint: &'static str,
+    pub base_url: Cow<'static, str>,
+    pub models_endpoint: Cow<'static, str>,
     pub display_name: &'static str,
     pub auto_max_tokens: bool,
     pub fallback_max_tokens: Option<u32>,
@@ -104,11 +106,11 @@ impl LlmRoute {
         }
     }
 
-    pub const fn is_oauth(self) -> bool {
+    pub const fn is_oauth(&self) -> bool {
         matches!(self.auth_source, AuthSource::OAuth(_))
     }
 
-    fn permits(self, purpose: RequestPurpose) -> bool {
+    fn permits(&self, purpose: RequestPurpose) -> bool {
         self.usage_scope == UsageScope::Any || purpose.allows_interactive_oauth()
     }
 }
@@ -155,7 +157,32 @@ pub fn resolve(provider_id: &str) -> Option<LlmRoute> {
     ) {
         return None;
     }
-    let (base_url, models_endpoint) = profile.endpoint.static_parts()?;
+    let (base_url, models_endpoint) = match profile.endpoint {
+        route_profile::EndpointPolicy::Static {
+            base_url,
+            models_endpoint,
+        } => (Cow::Borrowed(base_url), Cow::Borrowed(models_endpoint)),
+        route_profile::EndpointPolicy::ProviderConnection {
+            resolver: route_profile::ConnectionEndpointResolver::QwenModelStudio,
+        } => {
+            let endpoint =
+                match crate::services::provider_connections::qwen::load_resolved_endpoint() {
+                    Ok(Some(endpoint)) => endpoint,
+                    Ok(None) => return None,
+                    Err(_) => {
+                        log::warn!("provider=qwen event=route_hidden reason=invalid_connection");
+                        return None;
+                    }
+                };
+            (Cow::Owned(endpoint.base_url), Cow::Borrowed("/models"))
+        }
+        route_profile::EndpointPolicy::ConnectionConfigured
+        | route_profile::EndpointPolicy::OllamaLocal
+        | route_profile::EndpointPolicy::RegionAllowlist { .. }
+        | route_profile::EndpointPolicy::Workspace { .. }
+        | route_profile::EndpointPolicy::ValidatedHttps
+        | route_profile::EndpointPolicy::PinnedBackend { .. } => return None,
+    };
     let auth_source = match profile.auth {
         AuthKind::ApiKey { credential_id, .. } => AuthSource::ApiKey(credential_id),
         AuthKind::OAuth { provider, .. } => AuthSource::OAuth(provider),

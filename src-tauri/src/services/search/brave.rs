@@ -39,13 +39,14 @@ pub async fn search(query: &str) -> Result<Vec<SearchResult>, String> {
     wait_rate_limit().await;
     let key = api_keys::get_key("brave")?;
     let client = AuthenticatedClient::new(TIMEOUT).map_err(|_| "Brave: erreur interne")?;
-    let request = client
-        .get(URL)
-        .query(&[
+    let request = crate::services::secure_http::sensitive_header(
+        client.get(URL).query(&[
             ("q", query.as_str()),
             ("count", &common::MAX_RESULTS.to_string()),
-        ])
-        .header("X-Subscription-Token", &*key);
+        ]),
+        "X-Subscription-Token",
+        &key,
+    );
     let resp = client
         .send(request)
         .await

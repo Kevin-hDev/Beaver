@@ -4,15 +4,76 @@ use super::contract::{
 use super::eligibility::{decide, BlockReason, ReplayDecision};
 use super::envelope::{CompletionState, ContinuationState, ReasoningEnvelope, ReasoningSource};
 use super::registry::{
-    active_routes, replay_policy, replay_policy_from_routes, route_contract, ActivationState,
-    AdapterId, ModelPolicy, ReplayRequirement, RouteContract,
+    active_routes, reasoning_mode_is_live, replay_policy, replay_policy_from_routes,
+    route_contract, ActivationState, AdapterId, ModelPolicy, ReplayRequirement, RouteContract,
 };
 
 #[test]
-fn inventory_has_exactly_eleven_contracts_and_thirteen_closed_routes() {
-    assert_eq!(ContractId::ALL.len(), 11);
-    assert_eq!(RouteId::ALL.len(), 13);
-    assert_eq!(active_routes().len(), 13);
+fn reasoning_transport_accepts_only_modes_advertised_by_the_model_contract() {
+    for mode in [
+        ReasoningModeId::Low,
+        ReasoningModeId::Medium,
+        ReasoningModeId::High,
+    ] {
+        assert!(reasoning_mode_is_live(
+            RouteId::Anthropic,
+            "claude-haiku-4-5-20251001",
+            mode,
+        ));
+    }
+    assert!(!reasoning_mode_is_live(
+        RouteId::Anthropic,
+        "claude-haiku-4-5-20251001",
+        ReasoningModeId::Xhigh,
+    ));
+    for model in ["qwen3.8-flash", "qwen3.8-max"] {
+        for mode in [
+            ReasoningModeId::Low,
+            ReasoningModeId::Medium,
+            ReasoningModeId::Xhigh,
+        ] {
+            assert!(reasoning_mode_is_live(RouteId::Qwen, model, mode));
+        }
+        assert!(!reasoning_mode_is_live(
+            RouteId::Qwen,
+            model,
+            ReasoningModeId::High,
+        ));
+    }
+}
+
+#[test]
+fn qwen_model_capability_reuses_the_live_route_transport_contract() {
+    let policy = replay_policy(&ReplayTarget {
+        route_id: RouteId::Qwen,
+        model_id: "qwen3.8-max".into(),
+        credential_scope: CredentialScope::authenticated("fixture-scope").unwrap(),
+        reasoning_mode: ReasoningModeId::Medium,
+        continuation_use: ContinuationUse::ToolContinuation,
+    })
+    .expect("Qwen transport contract");
+
+    assert_eq!(policy.activation(), ActivationState::LiveValidated);
+    assert_eq!(policy.requirement(), ReplayRequirement::Required);
+}
+
+#[test]
+fn unknown_qwen_model_cannot_borrow_the_route_transport_contract() {
+    assert!(replay_policy(&ReplayTarget {
+        route_id: RouteId::Qwen,
+        model_id: "qwen-unknown".into(),
+        credential_scope: CredentialScope::authenticated("fixture-scope").unwrap(),
+        reasoning_mode: ReasoningModeId::Medium,
+        continuation_use: ContinuationUse::ToolContinuation,
+    })
+    .is_none());
+}
+
+#[test]
+fn inventory_has_exactly_thirteen_contracts_fifteen_closed_routes_and_fifteen_active_routes() {
+    assert_eq!(ContractId::ALL.len(), 13);
+    assert_eq!(RouteId::ALL.len(), 15);
+    assert_eq!(active_routes().len(), 15);
 }
 
 #[test]
@@ -93,6 +154,8 @@ fn closed_identifiers_serialize_to_the_exact_normative_wire_values() {
         "kimi-chat-v1",
         "zai-chat-v1",
         "codex-responses-v1",
+        "anthropic-messages-v1",
+        "qwen-chat-v1",
     ];
     let routes = [
         "ollama",
@@ -108,6 +171,8 @@ fn closed_identifiers_serialize_to_the_exact_normative_wire_values() {
         "moonshot-oauth",
         "zai",
         "codex-oauth",
+        "anthropic",
+        "qwen",
     ];
 
     for (value, expected) in ContractId::ALL.iter().zip(contracts) {
@@ -143,6 +208,8 @@ fn every_scoped_route_maps_to_the_normative_contract() {
         (RouteId::MoonshotOauth, ContractId::KimiChatV1),
         (RouteId::Zai, ContractId::ZaiChatV1),
         (RouteId::CodexOauth, ContractId::CodexResponsesV1),
+        (RouteId::Anthropic, ContractId::AnthropicMessagesV1),
+        (RouteId::Qwen, ContractId::QwenChatV1),
     ];
     assert_eq!(active_routes().len(), expected.len());
     for (route, contract) in expected {
@@ -340,12 +407,119 @@ fn local_scope_is_valid_only_for_ollama() {
 }
 
 #[test]
+fn anthropic_exact_modes_are_live_after_fixture_validation() {
+    let route = active_routes()
+        .iter()
+        .find(|route| route.route_id == RouteId::Anthropic)
+        .unwrap();
+    assert_eq!(route.contract_id, ContractId::AnthropicMessagesV1);
+    assert_eq!(route.adapter, AdapterId::AnthropicBlocks);
+    let scope = CredentialScope::authenticated("fixture-scope").unwrap();
+    for mode in [
+        ReasoningModeId::Low,
+        ReasoningModeId::Medium,
+        ReasoningModeId::High,
+    ] {
+        for continuation_use in [
+            ContinuationUse::UserContinuation,
+            ContinuationUse::ToolContinuation,
+        ] {
+            let policy = replay_policy(&ReplayTarget {
+                route_id: RouteId::Anthropic,
+                model_id: "claude-haiku-4-5-20251001".into(),
+                credential_scope: scope.clone(),
+                reasoning_mode: mode,
+                continuation_use,
+            })
+            .unwrap();
+            assert_eq!(policy.requirement(), ReplayRequirement::Required);
+            assert_eq!(policy.activation(), ActivationState::LiveValidated);
+        }
+    }
+}
+
+#[test]
+fn qwen_exact_modes_are_live_after_fixture_validation() {
+    let route = active_routes()
+        .iter()
+        .find(|route| route.route_id == RouteId::Qwen)
+        .unwrap();
+    assert_eq!(route.contract_id, ContractId::QwenChatV1);
+    assert_eq!(route.adapter, AdapterId::ChatReasoning);
+    let scope = CredentialScope::authenticated("fixture-scope").unwrap();
+    for mode in [
+        ReasoningModeId::Low,
+        ReasoningModeId::Medium,
+        ReasoningModeId::Xhigh,
+    ] {
+        for continuation_use in [
+            ContinuationUse::UserContinuation,
+            ContinuationUse::ToolContinuation,
+        ] {
+            let policy = replay_policy(&ReplayTarget {
+                route_id: RouteId::Qwen,
+                model_id: "qwen3.8-flash".into(),
+                credential_scope: scope.clone(),
+                reasoning_mode: mode,
+                continuation_use,
+            })
+            .unwrap();
+            assert_eq!(policy.requirement(), ReplayRequirement::Required);
+            assert_eq!(policy.activation(), ActivationState::LiveValidated);
+        }
+    }
+
+    for continuation_use in [
+        ContinuationUse::UserContinuation,
+        ContinuationUse::ToolContinuation,
+    ] {
+        let policy = replay_policy(&ReplayTarget {
+            route_id: RouteId::Qwen,
+            model_id: "qwen3.8-flash".into(),
+            credential_scope: scope.clone(),
+            reasoning_mode: ReasoningModeId::Off,
+            continuation_use,
+        })
+        .unwrap();
+        assert_eq!(policy.requirement(), ReplayRequirement::Forbidden);
+        assert_eq!(policy.activation(), ActivationState::Disabled);
+    }
+}
+
+#[test]
+fn model_studio_thinking_without_replay_is_live_but_never_replayed() {
+    let scope = CredentialScope::authenticated("fixture-scope").unwrap();
+    for continuation_use in [
+        ContinuationUse::UserContinuation,
+        ContinuationUse::ToolContinuation,
+    ] {
+        let target = ReplayTarget {
+            route_id: RouteId::Qwen,
+            model_id: "deepseek-v4-pro".into(),
+            credential_scope: scope.clone(),
+            reasoning_mode: ReasoningModeId::Max,
+            continuation_use,
+        };
+        assert!(reasoning_mode_is_live(
+            RouteId::Qwen,
+            "deepseek-v4-pro",
+            ReasoningModeId::Max
+        ));
+        let policy = replay_policy(&target).expect("known Model Studio model");
+        assert_eq!(policy.requirement(), ReplayRequirement::Forbidden);
+        assert_eq!(policy.activation(), ActivationState::LiveValidated);
+    }
+}
+
+#[test]
 fn only_exact_live_fixture_pairs_are_activated() {
     let mut live = Vec::new();
     for route in active_routes() {
         assert!(!route.models.is_empty());
         for model in route.models {
-            assert_ne!(model.reasoning_mode, ReasoningModeId::Off);
+            if model.reasoning_mode == ReasoningModeId::Off {
+                assert_eq!(model.requirement, ReplayRequirement::Forbidden);
+            }
             if model.activation == ActivationState::LiveValidated {
                 live.push((route.route_id, model));
             } else {
@@ -356,6 +530,48 @@ fn only_exact_live_fixture_pairs_are_activated() {
         }
     }
     let expected = [
+        (
+            RouteId::Anthropic,
+            "claude-haiku-4-5-20251001",
+            ReasoningModeId::Low,
+            ReplayRequirement::Required,
+            "anthropic-api-claude-haiku-4-5-20251001-low-france-2026-08-29",
+        ),
+        (
+            RouteId::Anthropic,
+            "claude-haiku-4-5-20251001",
+            ReasoningModeId::Medium,
+            ReplayRequirement::Required,
+            "anthropic-api-claude-haiku-4-5-20251001-medium-france-2026-08-29",
+        ),
+        (
+            RouteId::Anthropic,
+            "claude-haiku-4-5-20251001",
+            ReasoningModeId::High,
+            ReplayRequirement::Required,
+            "anthropic-api-claude-haiku-4-5-20251001-high-france-2026-08-29",
+        ),
+        (
+            RouteId::Qwen,
+            "qwen3.8-flash",
+            ReasoningModeId::Low,
+            ReplayRequirement::Required,
+            "qwen-api-qwen3-8-flash-low-singapore-2026-08-29",
+        ),
+        (
+            RouteId::Qwen,
+            "qwen3.8-flash",
+            ReasoningModeId::Medium,
+            ReplayRequirement::Required,
+            "qwen-api-qwen3-8-flash-medium-singapore-2026-08-29",
+        ),
+        (
+            RouteId::Qwen,
+            "qwen3.8-flash",
+            ReasoningModeId::Xhigh,
+            ReplayRequirement::Required,
+            "qwen-api-qwen3-8-flash-xhigh-singapore-2026-08-29",
+        ),
         (
             RouteId::Ollama,
             "gemma4:e2b-it-q4_K_M",
@@ -476,7 +692,10 @@ fn only_exact_live_fixture_pairs_are_activated() {
             model.continuation_use,
             ContinuationUse::UserContinuation | ContinuationUse::ToolContinuation
         ));
-        let expected_date = if *route == RouteId::DeepSeek {
+        let expected_date = if matches!(
+            *route,
+            RouteId::DeepSeek | RouteId::Anthropic | RouteId::Qwen
+        ) {
             "2026-08-29"
         } else {
             "2026-08-26"

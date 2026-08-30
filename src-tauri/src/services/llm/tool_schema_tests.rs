@@ -51,7 +51,67 @@ fn only_hashes_names_when_normalization_really_collides() {
 #[test]
 fn leaves_common_provider_names_unchanged() {
     assert_eq!(wire_name("read_file"), "read_file");
+    assert_eq!(wire_name("search"), "search");
     assert_eq!(wire_name("_internal-tool"), "_internal-tool");
+}
+
+#[test]
+fn qwen_aliases_reserved_search_reversibly() {
+    let tools = vec![tool("search", json!({"type": "object", "properties": {}}))];
+    let policy = super::super::route_profile::tool_policy("qwen", "qwen3.8-flash").unwrap();
+    let fixed = tools_for_policy(policy.schema, policy.strict, &tools);
+    let wire = fixed[0]["function"]["name"].as_str().unwrap();
+
+    assert_eq!(wire, "beaver_search");
+    assert_eq!(
+        super::restore_tool_name_for_provider("qwen", wire, &tools),
+        "search"
+    );
+}
+
+#[test]
+fn qwen_search_alias_remains_collision_safe() {
+    let tools = vec![
+        tool("search", json!({"type": "object"})),
+        tool("beaver_search", json!({"type": "object"})),
+    ];
+    let policy = super::super::route_profile::tool_policy("qwen", "qwen3.8-flash").unwrap();
+    let fixed = tools_for_policy(policy.schema, policy.strict, &tools);
+    let search_wire = fixed[0]["function"]["name"].as_str().unwrap();
+    let exact_wire = fixed[1]["function"]["name"].as_str().unwrap();
+
+    assert_ne!(search_wire, exact_wire);
+    assert_eq!(
+        super::restore_tool_name_for_provider("qwen", search_wire, &tools),
+        "search"
+    );
+    assert_eq!(
+        super::restore_tool_name_for_provider("qwen", exact_wire, &tools),
+        "beaver_search"
+    );
+}
+
+#[test]
+fn non_qwen_collision_round_trips_through_the_provider_aware_path() {
+    let dotted = "my.tool";
+    let underscored = "my_tool";
+    let tools = vec![
+        tool(dotted, json!({"type": "object"})),
+        tool(underscored, json!({"type": "object"})),
+    ];
+    let policy = super::super::route_profile::tool_policy("openai", "gpt-5.5").unwrap();
+    let fixed = tools_for_policy(policy.schema, policy.strict, &tools);
+
+    for (wire, original) in fixed.iter().zip([dotted, underscored]) {
+        assert_eq!(
+            super::restore_tool_name_for_provider(
+                "openai",
+                wire["function"]["name"].as_str().unwrap(),
+                &tools,
+            ),
+            original
+        );
+    }
 }
 
 #[test]

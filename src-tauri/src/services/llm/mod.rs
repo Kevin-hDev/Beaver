@@ -11,6 +11,7 @@ mod agent_loop_request;
 mod agent_loop_request_types;
 pub(crate) mod agent_loop_tools;
 mod agent_loop_turn;
+pub(crate) mod anthropic;
 pub(crate) mod api_key_probe;
 #[cfg(test)]
 mod api_key_probe_tests;
@@ -27,6 +28,9 @@ pub mod litellm_catalog;
 mod litellm_catalog_lookup;
 mod litellm_catalog_refresh;
 pub mod litellm_catalog_search;
+pub(crate) mod model_catalog;
+#[cfg(test)]
+mod model_catalog_tests;
 mod model_metadata;
 pub mod model_pricing;
 pub mod openai_compat;
@@ -47,10 +51,14 @@ mod provider_model_capabilities;
 mod provider_model_capabilities_tests;
 pub(crate) mod provider_model_lookup;
 pub(crate) mod provider_model_registry;
+mod provider_model_registry_schema;
 mod provider_model_registry_sources;
 mod provider_model_registry_validation;
 pub(crate) mod providers;
 pub(crate) mod reasoning_wire;
+mod request_auth;
+#[cfg(test)]
+mod request_auth_tests;
 pub(crate) mod request_purpose;
 mod retry;
 pub mod route;

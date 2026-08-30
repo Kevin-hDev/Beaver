@@ -19,7 +19,8 @@ pub(super) async fn consume_silent(
     error_policy: super::route_profile::ErrorPolicy,
     mut measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
 ) -> Result<StreamResult, String> {
-    let mut stream = resp.bytes_stream().eventsource();
+    let stream = super::stream_sse::bounded_response(resp).eventsource();
+    futures_util::pin_mut!(stream);
     let mut result = StreamResult::default();
     let mut acc = ToolCallAccumulator::new();
     let mut think_filter = ThinkTagFilter::new();

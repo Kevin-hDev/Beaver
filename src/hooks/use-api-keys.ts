@@ -4,7 +4,7 @@ import { listen } from "@tauri-apps/api/event";
 import { showToast } from "@/lib/toast-emitter";
 import { cleanupTauriListener } from "@/lib/tauri-listen";
 import i18n from "@/i18n";
-import type { ProviderSpec } from "@/types/api";
+import type { ProviderSpec, QwenConnectionInput } from "@/types/api";
 
 /**
  * Hook de gestion des clés API.
@@ -21,7 +21,7 @@ export function useApiKeys() {
 
   const loadCatalog = useCallback(async () => {
     const [llm, search, forecast] = await Promise.all([
-      invoke<ProviderSpec[]>("list_llm_providers_catalog"),
+      invoke<ProviderSpec[]>("list_llm_configurable_providers_catalog"),
       invoke<ProviderSpec[]>("list_search_providers_catalog"),
       invoke<ProviderSpec[]>("list_forecast_providers_catalog"),
     ]);
@@ -49,9 +49,9 @@ export function useApiKeys() {
   }, [loadConfigured]);
 
   const setKey = useCallback(
-    async (provider: string, key: string) => {
+    async (provider: string, key: string, connection?: QwenConnectionInput) => {
       try {
-        await invoke("set_api_key", { provider, key });
+        await invoke("set_api_key", { provider, key, connection });
         await loadConfigured();
       } catch {
         showToast(i18n.t("errors.apiKeyFailed"), "error");
@@ -84,8 +84,8 @@ export function useApiKeys() {
   }, [catalog]);
 
   const testKeyRaw = useCallback(
-    async (provider: string, key: string): Promise<void> => {
-      await invoke("test_api_key_with_value", { provider, key });
+    async (provider: string, key: string, connection?: QwenConnectionInput): Promise<void> => {
+      await invoke("test_api_key_with_value", { provider, key, connection });
     },
     [],
   );

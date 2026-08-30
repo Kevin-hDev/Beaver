@@ -11,6 +11,8 @@ use crate::services::reasoning_continuity::envelope::ContinuationState;
 
 #[path = "replay_apply.rs"]
 mod replay_apply;
+#[path = "replay_apply_anthropic.rs"]
+mod replay_apply_anthropic;
 #[path = "replay_apply_chat.rs"]
 mod replay_apply_chat;
 #[cfg(test)]
@@ -19,6 +21,9 @@ pub(crate) use replay_apply::{
     apply_chat_continuity_at, apply_chat_payload_continuity, apply_ollama_continuity,
     apply_responses_continuity,
 };
+#[cfg(test)]
+pub(crate) use replay_apply_anthropic::apply as apply_anthropic_continuity;
+pub(crate) use replay_apply_anthropic::apply_all as apply_anthropic_messages;
 
 #[cfg(debug_assertions)]
 pub(crate) mod fixture_candidate;

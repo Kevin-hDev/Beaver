@@ -44,6 +44,16 @@ fn removed_groq_route_is_not_resolved() {
 }
 
 #[test]
+fn anthropic_native_route_uses_the_exact_messages_endpoint_and_api_key_scope() {
+    let anthropic = resolve("anthropic").unwrap();
+    assert_eq!(anthropic.base_url, "https://api.anthropic.com/v1");
+    assert_eq!(anthropic.models_endpoint, "/models");
+    assert_eq!(anthropic.chat_provider_id, "anthropic");
+    assert_eq!(anthropic.canonical_provider_id, "anthropic");
+    assert!(!anthropic.is_oauth());
+}
+
+#[test]
 fn interactive_oauth_is_refused_for_background_and_unknown_requests() {
     let oauth = resolve("xai-oauth").unwrap();
     let api = resolve("xai").unwrap();

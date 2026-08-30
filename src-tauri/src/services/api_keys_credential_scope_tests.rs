@@ -20,6 +20,18 @@ fn authenticated_scope_uses_one_logical_raw_key_prefix() {
 }
 
 #[test]
+fn anthropic_api_key_staging_creates_its_credential_scope() {
+    let scope = generate_credential_scope().expect("anthropic scope");
+    let mut map = HashMap::new();
+
+    stage_api_key(&mut map, "anthropic", Some("fixture-secret"), Some(&scope))
+        .expect("stage anthropic key");
+
+    assert!(map.contains_key("anthropic"));
+    assert!(scope_from_map(&map, RouteId::Anthropic).is_ok());
+}
+
+#[test]
 fn generated_scopes_are_non_empty_and_rotate() {
     let first = generate_credential_scope().expect("first scope");
     let second = generate_credential_scope().expect("second scope");

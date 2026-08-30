@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "source": "session_export",
+  "fixture_id": "qwen-api-qwen3-8-flash-vision-medium-singapore-2026-08-29",
+  "route": "qwen",
+  "model": "qwen3.8-flash",
+  "region": "singapore",
+  "reasoning_mode": "medium",
+  "generated_at": "2026-08-29T14:33:25.710841Z",
+  "scenarios": [
+    {
+      "requirement": "image_input_and_response",
+      "run_id": "1ace1241-1791-4a42-9b6e-f25f4b6908d4",
+      "status": "passe",
+      "request_count": 1,
+      "reasoning_event_count": 0,
+      "decisions": ["vision decision=\"image_accepted\" count=1"]
+    },
+    {
+      "requirement": "history_image_continuity",
+      "run_id": "e4f4ca85-df22-4436-b030-491a4bea848b",
+      "status": "passe",
+      "request_count": 1,
+      "reasoning_event_count": 0,
+      "decisions": ["vision decision=\"history_reused\" new_images=0"]
+    },
+    {
+      "requirement": "diagnostics_redacted",
+      "run_id": "e4f4ca85-df22-4436-b030-491a4bea848b",
+      "status": "passe",
+      "request_count": 2,
+      "reasoning_event_count": 0,
+      "decisions": ["vision decision=\"diagnostics_redacted\""]
+    }
+  ]
+}

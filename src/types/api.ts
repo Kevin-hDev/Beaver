@@ -3,6 +3,14 @@
 
 export type ProviderCategory = "llm" | "search" | "scraping" | "forecast";
 
-export type ProviderCatalogEntry = { id: string, display_name: string, category: ProviderCategory, signup_url: string, base_url?: string, models_endpoint?: string, };
+export type ProviderConnectionKind = "api_key" | "qwen_model_studio";
+
+export type QwenRegion = "beijing" | "singapore" | "hong_kong" | "tokyo" | "frankfurt" | "virginia";
+
+export type QwenEndpointMode = "shared" | "workspace" | "trial";
+
+export type QwenConnectionInput = { region: QwenRegion, endpointMode: QwenEndpointMode, workspaceId?: string, };
+
+export type ProviderCatalogEntry = { id: string, display_name: string, category: ProviderCategory, signup_url: string, connection_kind: ProviderConnectionKind, base_url?: string, models_endpoint?: string, };
 
 export type ProviderSpec = ProviderCatalogEntry;

@@ -2,13 +2,12 @@ use crate::services::llm_oauth::LlmOAuthProvider;
 use crate::services::provider_usage::UsageApiFormat;
 use crate::services::reasoning_continuity::contract::RouteId;
 
+pub(in crate::services::llm) use super::endpoint_types::{
+    ConnectionEndpointResolver, EndpointPolicy,
+};
 use super::policy_types::RoutePolicies;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[allow(
-    dead_code,
-    reason = "Anthropic is a compile-time candidate, not an active route"
-)]
 pub(in crate::services::llm) enum ClientSelector {
     OpenAiCompat,
     OpenAiResponses,
@@ -31,6 +30,8 @@ pub(in crate::services::llm) enum CanonicalProviderId {
     Moonshot,
     Zai,
     CodexOauth,
+    Anthropic,
+    Qwen,
 }
 
 impl CanonicalProviderId {
@@ -47,6 +48,8 @@ impl CanonicalProviderId {
             Self::Moonshot => "moonshot",
             Self::Zai => "zai",
             Self::CodexOauth => "codex-oauth",
+            Self::Anthropic => "anthropic",
+            Self::Qwen => "qwen",
         }
     }
 }
@@ -92,6 +95,7 @@ pub(crate) enum ImageFormat {
     MistralFlat,
     ResponsesInput,
     OllamaNative,
+    AnthropicBlock,
     Unsupported,
 }
 
@@ -127,6 +131,7 @@ pub(in crate::services::llm) enum AuthKind {
     ApiKey {
         credential_id: &'static str,
         header: ApiKeyHeader,
+        headers: &'static [(&'static str, &'static str)],
         source: &'static str,
         verified_at: &'static str,
     },
@@ -144,49 +149,6 @@ pub(in crate::services::llm) enum AuthKind {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[allow(
-    dead_code,
-    reason = "configurable endpoint variants are compiled before candidate route activation"
-)]
-pub(in crate::services::llm) enum EndpointPolicy {
-    Static {
-        base_url: &'static str,
-        models_endpoint: &'static str,
-    },
-    ConnectionConfigured,
-    OllamaLocal,
-    RegionAllowlist {
-        regions: &'static [(&'static str, &'static str)],
-    },
-    Workspace {
-        host_suffix: &'static str,
-    },
-    ValidatedHttps,
-    PinnedBackend {
-        base_url: &'static str,
-    },
-}
-
-impl EndpointPolicy {
-    pub(in crate::services::llm) const fn static_parts(
-        self,
-    ) -> Option<(&'static str, &'static str)> {
-        match self {
-            Self::Static {
-                base_url,
-                models_endpoint,
-            } => Some((base_url, models_endpoint)),
-            Self::ConnectionConfigured
-            | Self::OllamaLocal
-            | Self::RegionAllowlist { .. }
-            | Self::Workspace { .. }
-            | Self::ValidatedHttps
-            | Self::PinnedBackend { .. } => None,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(in crate::services::llm) struct RouteAvailability {
     pub interactive: bool,
     pub silent: bool,
@@ -197,7 +159,13 @@ pub(in crate::services::llm) struct RouteAvailability {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(in crate::services::llm) enum CatalogPolicy {
-    PublicApi { signup_url: &'static str },
+    PublicApi {
+        signup_url: &'static str,
+    },
+    #[allow(dead_code, reason = "reserved for bounded pre-promotion routes")]
+    ConfigurableApi {
+        signup_url: &'static str,
+    },
     Hidden,
 }
 

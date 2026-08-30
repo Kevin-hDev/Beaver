@@ -132,6 +132,7 @@ fn is_chat(entry: &ModelEntry) -> bool {
 fn provider_prefix(provider_id: &str) -> &str {
     match provider_id {
         "google" => "gemini",
+        "qwen" => "dashscope",
         "x-ai" => "xai",
         _ => provider_id,
     }

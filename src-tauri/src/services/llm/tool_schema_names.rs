@@ -42,6 +42,20 @@ impl ToolNameMap {
         }
     }
 
+    pub(crate) fn wire_name_for_provider(&self, provider_id: &str, name: &str) -> String {
+        let alias = provider_alias(provider_id, name);
+        let collision = self
+            .names
+            .iter()
+            .filter(|candidate| candidate.as_str() != name)
+            .any(|candidate| provider_alias(provider_id, candidate) == alias);
+        if collision && name != alias {
+            collision_alias(name, &alias)
+        } else {
+            alias
+        }
+    }
+
     pub(crate) fn restore(&self, name: &str, tools: &[Value]) -> String {
         tools
             .iter()
@@ -49,6 +63,28 @@ impl ToolNameMap {
             .find(|candidate| self.wire_name(candidate) == name)
             .unwrap_or(name)
             .to_string()
+    }
+
+    pub(crate) fn restore_for_provider(
+        &self,
+        provider_id: &str,
+        name: &str,
+        tools: &[Value],
+    ) -> String {
+        tools
+            .iter()
+            .filter_map(tool_name)
+            .find(|candidate| self.wire_name_for_provider(provider_id, candidate) == name)
+            .unwrap_or(name)
+            .to_string()
+    }
+}
+
+fn provider_alias(provider_id: &str, name: &str) -> String {
+    if provider_id == "qwen" && name == "search" {
+        "beaver_search".to_string()
+    } else {
+        wire_name(name)
     }
 }
 
@@ -63,6 +99,14 @@ pub(crate) fn wire_name_with_tools(name: &str, tools: &[Value]) -> String {
 
 pub(crate) fn restore_tool_name(name: &str, tools: &[Value]) -> String {
     ToolNameMap::new(tools).restore(name, tools)
+}
+
+pub(crate) fn restore_tool_name_for_provider(
+    provider_id: &str,
+    name: &str,
+    tools: &[Value],
+) -> String {
+    ToolNameMap::new(tools).restore_for_provider(provider_id, name, tools)
 }
 
 fn readable_alias(name: &str) -> String {

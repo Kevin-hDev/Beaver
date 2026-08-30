@@ -34,8 +34,7 @@ pub(super) fn output_starts_with(rendered: &str, prefix: &str) -> bool {
 fn raw_parts(rendered: &str) -> Option<(&str, &str)> {
     let (metadata, output) = rendered.split_once('\n')?;
     let value: Value = serde_json::from_str(metadata).ok()?;
-    (is_tool_metadata(&value) && value["outputFormat"] == RAW_FORMAT)
-        .then_some((metadata, output))
+    (is_tool_metadata(&value) && value["outputFormat"] == RAW_FORMAT).then_some((metadata, output))
 }
 
 fn is_legacy_envelope(value: &Value) -> bool {
@@ -50,6 +49,19 @@ fn is_tool_metadata(value: &Value) -> bool {
                 status,
                 "success" | "running" | "partial" | "error" | "cancelled" | "stopped"
             )
+        })
+}
+
+pub(crate) fn rendered_status_is_error(rendered: &str) -> bool {
+    rendered
+        .lines()
+        .next()
+        .and_then(|line| serde_json::from_str::<Value>(line).ok())
+        .is_some_and(|value| {
+            is_tool_metadata(&value)
+                && value["status"]
+                    .as_str()
+                    .is_some_and(|status| matches!(status, "error" | "cancelled"))
         })
 }
 

@@ -1,5 +1,7 @@
 use super::{ReasoningCapture, ReasoningCaptureContext};
-use crate::services::reasoning_continuity::contract::{CredentialScope, ReasoningModeId, RouteId};
+use crate::services::reasoning_continuity::contract::{
+    ContractId, CredentialScope, ReasoningModeId, RouteId,
+};
 use crate::services::reasoning_continuity::envelope::ContinuationState;
 use crate::services::reasoning_continuity::limits::{
     MAX_ENVELOPE_BYTES, MAX_NATIVE_ITEMS, MAX_TOOL_CALLS,
@@ -100,6 +102,47 @@ fn chat_capture_accepts_the_native_done_marker_without_a_finish_reason() {
 }
 
 #[test]
+fn anthropic_transport_end_without_message_stop_cannot_complete_capture() {
+    let mut capture =
+        ReasoningCapture::new(context(RouteId::Anthropic, "claude-haiku-4-5-20251001")).unwrap();
+    capture.observe_anthropic_block(json!({
+        "type": "thinking",
+        "thinking": "opaque",
+        "signature": "AAE+/=="
+    }));
+    capture.observe_transport_complete();
+
+    assert!(capture.finish_complete().is_none());
+}
+
+#[test]
+fn qwen_capture_concatenates_fragmented_reasoning_exactly_once() {
+    let mut capture = ReasoningCapture::new(ReasoningCaptureContext {
+        route_id: RouteId::Qwen,
+        model_id: "qwen3.8-flash".into(),
+        credential_scope: CredentialScope::authenticated("fixture-scope").unwrap(),
+        reasoning_mode: ReasoningModeId::Xhigh,
+    })
+    .unwrap();
+    capture.observe_json(&json!({
+        "choices": [{"delta": {"reasoning_content": "opaque-"}}]
+    }));
+    capture.observe_json(&json!({
+        "choices": [{"delta": {"reasoning_content": "qwen"}}]
+    }));
+    capture.observe_transport_complete();
+
+    let envelope = capture.finish_complete().expect("complete envelope");
+    assert_eq!(envelope.contract_id, ContractId::QwenChatV1);
+    assert_eq!(
+        envelope.continuation,
+        ContinuationState::ChatReasoning {
+            reasoning_content: "opaque-qwen".into()
+        }
+    );
+}
+
+#[test]
 fn r07_first_limit_excess_releases_native_state_and_cannot_recover() {
     let mut capture =
         ReasoningCapture::new(context(RouteId::OpenRouter, "moonshotai/kimi-k2.5")).unwrap();
@@ -179,4 +222,29 @@ fn persisted_tool_links_use_canonical_names_without_changing_native_items() {
         panic!("responses envelope");
     };
     assert_eq!(items[0]["name"], "fixture_write_note");
+}
+
+#[test]
+fn anthropic_capture_keeps_completed_signed_blocks_and_canonical_tool_links() {
+    let mut capture =
+        ReasoningCapture::new(context(RouteId::Anthropic, "claude-haiku-4-5-20251001")).unwrap();
+    let blocks = vec![
+        json!({"type":"thinking","thinking":"opaque","signature":"AAE+/=="}),
+        json!({"type":"tool_use","id":"toolu_1","name":"read_file","input":{"path":"README.md"}}),
+    ];
+    for block in &blocks {
+        capture.observe_anthropic_block(block.clone());
+    }
+    capture.observe_persisted_tool_links(
+        &[("read_file".into(), json!({"path":"README.md"}))],
+        &["toolu_1".into()],
+    );
+    capture.observe_done(&json!({"type":"message_stop"}));
+
+    let envelope = capture.finish_complete().unwrap();
+    assert_eq!(envelope.tool_links[0].provider_call_id, "toolu_1");
+    assert_eq!(
+        envelope.continuation,
+        ContinuationState::AnthropicBlocks { blocks }
+    );
 }
