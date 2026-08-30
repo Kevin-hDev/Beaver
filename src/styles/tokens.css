@@ -94,6 +94,7 @@
   --dialog-compact-max-width: 27.5rem;
   --dialog-wide-max-width: 53.75rem;
   --dialog-tall-max-height: 45rem;
+  --context-popover-width: 18.75rem;
   --onboarding-panel-max-height: 43rem;
   /* Onboarding: spacing driven by the viewport so a step keeps its actions
      on screen when the window shrinks, instead of pushing them below the fold. */

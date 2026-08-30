@@ -1,0 +1,20 @@
+.cpc-list {
+  max-height: var(--extensions-chat-list-max-height);
+  overflow-y: auto;
+}
+
+.cpc-item {
+  justify-content: space-between;
+}
+
+.cpc-item:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.cpc-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

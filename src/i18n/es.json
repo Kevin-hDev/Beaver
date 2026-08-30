@@ -434,6 +434,11 @@
     "tokens": "tokens",
     "contextUsage": {
       "title": "Ventana de contexto",
+      "compression": "Compresión",
+      "compressionDisabled": "Compresión desactivada",
+      "compressionHelpTitle": "Por qué está desactivada la compresión",
+      "compressionHelp": "La compresión está desactivada para ventanas de menos de 64K porque el contexto reinyectado podría ocupar demasiado espacio e impedir que funcione correctamente.",
+      "compressionHelpDismiss": "Cerrar la explicación",
       "categories": {
         "messages": "Mensajes",
         "systemTools": "Herramientas del sistema",
@@ -2434,6 +2439,8 @@
   "chatMenu": {
     "plusButtonHint": "Añadir archivos y más",
     "addFile": "Añadir una imagen o archivo",
+    "compression": "Compresión",
+    "compressionNoProfiles": "Ningún perfil de compresión",
     "planMode": "Modo plan",
     "planModeDesc": "Preparar un plan",
     "disablePlanMode": "Desactivar modo plan",

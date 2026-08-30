@@ -11,6 +11,7 @@ import type { PermissionMode } from "@/hooks/use-permission-mode";
 import type { ReasoningMode } from "@/lib/reasoning-modes";
 import type { RetryIndicatorState } from "@/types/agent";
 import type { MissingSessionDirectory } from "@/hooks/use-agent-missing-directory";
+import { useSessionCompressionProfile } from "@/hooks/use-session-compression-profile";
 
 type ButtonState = "stop" | "confirmStop" | "send" | "hidden";
 
@@ -71,6 +72,7 @@ export function ChatInputActionsRow({
   onSend,
   onStop,
 }: ChatInputActionsRowProps) {
+  const compression = useSessionCompressionProfile(sessionId);
   return (
     <div className="chat-input-row3">
       <ChatPlusMenu
@@ -78,8 +80,17 @@ export function ChatInputActionsRow({
         agentic={permissionMode !== "chat"}
         planModeEnabled={planModeEnabled}
         onPlanModeChange={onPlanModeChange ?? (() => {})}
+        showCompression={Boolean(sessionId)}
+        compressionProfiles={compression.profiles}
+        selectedCompressionId={compression.effective?.id}
+        onCompressionSelect={(profileId) => compression.select(profileId)}
       />
-      <ContextProgress used={contextUsed} max={contextMax} breakdown={contextBreakdown} />
+      <ContextProgress
+        used={contextUsed}
+        max={contextMax}
+        breakdown={contextBreakdown}
+        compression={compression.effective}
+      />
       <div className="mdp-anchor">
         <PermissionModeSelector
           mode={permissionMode}

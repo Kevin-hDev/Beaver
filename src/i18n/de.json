@@ -434,6 +434,11 @@
     "tokens": "tokens",
     "contextUsage": {
       "title": "Kontextfenster",
+      "compression": "Komprimierung",
+      "compressionDisabled": "Komprimierung deaktiviert",
+      "compressionHelpTitle": "Warum die Komprimierung deaktiviert ist",
+      "compressionHelp": "Die Komprimierung ist für Kontextfenster unter 64K deaktiviert, da der erneut eingefügte Kontext zu viel Platz beanspruchen und die Komprimierung verhindern könnte.",
+      "compressionHelpDismiss": "Erklärung schließen",
       "categories": {
         "messages": "Nachrichten",
         "systemTools": "System-Tools",
@@ -2420,6 +2425,8 @@
   "chatMenu": {
     "plusButtonHint": "Dateien und mehr hinzufügen",
     "addFile": "Bild oder Datei hinzufügen",
+    "compression": "Komprimierung",
+    "compressionNoProfiles": "Kein Komprimierungsprofil",
     "planMode": "Planmodus",
     "planModeDesc": "Plan vorbereiten",
     "disablePlanMode": "Planmodus deaktivieren",

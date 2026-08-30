@@ -434,6 +434,11 @@
     "tokens": "tokens",
     "contextUsage": {
       "title": "コンテキストウィンドウ",
+      "compression": "圧縮",
+      "compressionDisabled": "圧縮は無効です",
+      "compressionHelpTitle": "圧縮が無効な理由",
+      "compressionHelp": "64K 未満のコンテキスト枠では、再注入するコンテキストが領域を使いすぎて圧縮が正しく動作しない可能性があるため、圧縮は無効です。",
+      "compressionHelpDismiss": "説明を閉じる",
       "categories": {
         "messages": "メッセージ",
         "systemTools": "システムツール",
@@ -2418,6 +2423,8 @@
   "chatMenu": {
     "plusButtonHint": "ファイルなどを追加",
     "addFile": "画像またはファイルを追加",
+    "compression": "圧縮",
+    "compressionNoProfiles": "圧縮プロファイルなし",
     "planMode": "計画モード",
     "planModeDesc": "計画を作成",
     "disablePlanMode": "計画モードを無効化",

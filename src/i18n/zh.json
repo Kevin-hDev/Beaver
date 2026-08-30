@@ -434,6 +434,11 @@
     "tokens": "tokens",
     "contextUsage": {
       "title": "上下文窗口",
+      "compression": "压缩",
+      "compressionDisabled": "压缩已停用",
+      "compressionHelpTitle": "为什么压缩已停用",
+      "compressionHelp": "小于 64K 的上下文窗口默认停用压缩，因为重新注入的上下文可能占用过多空间，导致压缩无法正常工作。",
+      "compressionHelpDismiss": "关闭说明",
       "categories": {
         "messages": "消息",
         "systemTools": "系统工具",
@@ -2418,6 +2423,8 @@
   "chatMenu": {
     "plusButtonHint": "添加文件及更多",
     "addFile": "添加图片或文件",
+    "compression": "压缩",
+    "compressionNoProfiles": "没有压缩配置文件",
     "planMode": "计划模式",
     "planModeDesc": "准备计划",
     "disablePlanMode": "关闭计划模式",

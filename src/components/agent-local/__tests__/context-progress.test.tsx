@@ -1,4 +1,4 @@
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ContextProgress } from "../context-progress";
 import type { ContextUsageBreakdown } from "@/hooks/context-usage-breakdown";
@@ -48,6 +48,7 @@ describe("ContextProgress", () => {
     );
 
     expect(getByLabelText("Context window")).toBeTruthy();
+    fireEvent.mouseEnter(getByLabelText("Context window"));
     expect(getByText("Messages")).toBeTruthy();
     expect(getByText("System tools")).toBeTruthy();
     expect(getByText("MCP / connectors")).toBeTruthy();
@@ -67,6 +68,7 @@ describe("ContextProgress", () => {
     const { getByText, rerender } = render(
       <ContextProgress used={100} max={1000} breakdown={breakdown} />,
     );
+    fireEvent.mouseEnter(document.querySelector(".context-ring") as HTMLElement);
     const liveBreakdown: ContextUsageBreakdown = {
       used: 140,
       items: breakdown.items.map((item) => item.key === "messages"
