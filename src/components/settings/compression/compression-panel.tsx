@@ -4,14 +4,17 @@ import { X } from "@/components/ui/icons";
 import { DialogPortal } from "@/components/ui/dialog-portal";
 import type { CompressionProfilesController } from "@/hooks/use-compression-profiles";
 import { CompressionProfileBar } from "./compression-profile-bar";
+import { CompressionProfileEditor } from "./compression-profile-editor";
 import "./compression-panel.css";
+import "./compression-sections.css";
 
 interface CompressionPanelProps {
   controller: CompressionProfilesController;
+  currentWindow: number;
   onClose: () => void;
 }
 
-export function CompressionPanel({ controller, onClose }: CompressionPanelProps) {
+export function CompressionPanel({ controller, currentWindow, onClose }: CompressionPanelProps) {
   const { t } = useTranslation();
   const titleId = useId();
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -57,13 +60,19 @@ export function CompressionPanel({ controller, onClose }: CompressionPanelProps)
             onInteractionChange={setInteractionActive}
           />
 
-          <div className="cpa-body">
-            <div className="cpa-placeholder relief">
-              {t("settings.advanced.compressionPanelPlaceholder")}
-            </div>
-          </div>
-
-          <footer className="cpa-foot" aria-hidden="true" />
+          {controller.view && (() => {
+            const active = controller.view.profiles.find(
+              (profile) => profile.id === controller.view?.global_profile_id,
+            );
+            return active ? (
+              <CompressionProfileEditor
+                key={active.id}
+                profile={active}
+                currentWindow={currentWindow}
+                controller={controller}
+              />
+            ) : null;
+          })()}
         </section>
       </div>
     </DialogPortal>

@@ -112,7 +112,13 @@ export function CompressionSettingsCard({ defaultModel }: CompressionSettingsCar
           </div>
         </div>
       )}
-      {panelOpen && <CompressionPanel controller={controller} onClose={closePanel} />}
+      {panelOpen && (
+        <CompressionPanel
+          controller={controller}
+          currentWindow={max}
+          onClose={closePanel}
+        />
+      )}
     </SettingsCard>
   );
 }

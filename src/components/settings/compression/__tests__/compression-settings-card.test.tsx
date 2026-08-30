@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CompressionProfile } from "@/types/compression-profile.generated";
+import { compressionProfileFixture } from "@/test-utils/compression-profile-fixture";
 
 const controller = vi.hoisted(() => ({
   busy: false,
@@ -44,12 +45,12 @@ vi.mock("react-i18next", () => ({
 import { CompressionSettingsCard } from "../compression-settings-card";
 
 const profile = (id: string, name: string, threshold: number, allowUnder64 = false) => ({
+  ...compressionProfileFixture(),
   id,
   name,
-  revision: 1,
   threshold_percent: threshold,
   allow_under_64k: allowUnder64,
-}) as CompressionProfile;
+}) satisfies CompressionProfile;
 
 beforeEach(() => {
   vi.clearAllMocks();

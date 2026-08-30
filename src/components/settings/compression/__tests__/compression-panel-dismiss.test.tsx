@@ -8,6 +8,10 @@ vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 
+vi.mock("../compression-profile-editor", () => ({
+  CompressionProfileEditor: () => <div data-testid="compression-editor" />,
+}));
+
 const api = {
   view: {
     global_profile_id: "beaver",
@@ -28,18 +32,20 @@ const api = {
 describe("CompressionPanel", () => {
   it("se ferme par Échap et par le fond", () => {
     const close = vi.fn();
-    const { rerender } = render(<CompressionPanel controller={api} onClose={close} />);
+    const { rerender } = render(
+      <CompressionPanel controller={api} currentWindow={128_000} onClose={close} />,
+    );
     fireEvent.keyDown(window, { key: "Escape" });
     expect(close).toHaveBeenCalledOnce();
     close.mockClear();
-    rerender(<CompressionPanel controller={api} onClose={close} />);
+    rerender(<CompressionPanel controller={api} currentWindow={128_000} onClose={close} />);
     fireEvent.click(screen.getAllByRole("button", { name: "settings.advanced.compressionClose" })[0]);
     expect(close).toHaveBeenCalledOnce();
   });
 
   it("Échap ferme d'abord la création sans fermer le panneau", () => {
     const close = vi.fn();
-    render(<CompressionPanel controller={api} onClose={close} />);
+    render(<CompressionPanel controller={api} currentWindow={128_000} onClose={close} />);
     fireEvent.click(screen.getByRole("button", { name: "settings.advanced.compressionNewProfile" }));
     expect(screen.getAllByRole("dialog")).toHaveLength(2);
     fireEvent.keyDown(window, { key: "Escape" });

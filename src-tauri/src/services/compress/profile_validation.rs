@@ -1,8 +1,8 @@
 use std::collections::HashSet;
 
 use super::profile_limits::{
-    MAX_BUDGET_TOKENS, MAX_CATEGORY_ITEMS, MAX_CUSTOM_PROMPT_CHARS, MAX_MODEL_FIELD_CHARS,
-    MAX_PROFILES, MAX_PROFILE_NAME_CHARS, MAX_RETRIES,
+    MAX_BUDGET_TOKENS, MAX_CATEGORY_ITEMS, MAX_CUSTOM_PROMPT_CHARS, MAX_IMAGE_BYTES,
+    MAX_MODEL_FIELD_CHARS, MAX_PROFILES, MAX_PROFILE_NAME_CHARS, MAX_RETRIES,
 };
 use super::profile_types::{
     CompressionBandSettings, CompressionCategory, CompressionProfile, ItemBudget,
@@ -145,7 +145,7 @@ fn validate_band(band: &CompressionBandSettings) -> Result<(), ProfileValidation
     for budget in item_budgets(band) {
         validate_item_budget(budget)?;
     }
-    if band.images.max_items > MAX_CATEGORY_ITEMS {
+    if band.images.max_items > MAX_CATEGORY_ITEMS || band.images.max_total_bytes > MAX_IMAGE_BYTES {
         return Err(ProfileValidationError::InvalidBudget);
     }
     Ok(())

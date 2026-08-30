@@ -1,0 +1,45 @@
+.cse-order-copy {
+  margin-top: var(--space-sm);
+}
+
+.cse-order {
+  margin: var(--space-sm) 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-xs);
+  list-style: none;
+}
+
+.cse-order-item {
+  width: 100%;
+  min-height: 2.5rem;
+  padding: var(--space-xs) var(--space-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--surface-glass);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: grab;
+}
+
+.cse-order-item:hover,
+.cse-order-item:focus-visible {
+  background: var(--surface-hover);
+}
+
+.cse-order-item:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.cse-order-rank {
+  width: 1.5rem;
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  text-align: center;
+}

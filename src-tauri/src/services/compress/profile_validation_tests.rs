@@ -1,6 +1,6 @@
 use super::profile_defaults::beaver_profile;
 use super::profile_limits::{
-    MAX_BUDGET_TOKENS, MAX_CATEGORY_ITEMS, MAX_CUSTOM_PROMPT_CHARS, MAX_PROFILES,
+    MAX_BUDGET_TOKENS, MAX_CATEGORY_ITEMS, MAX_CUSTOM_PROMPT_CHARS, MAX_IMAGE_BYTES, MAX_PROFILES,
     MAX_PROFILE_NAME_CHARS, MAX_RETRIES,
 };
 use super::profile_validation::{normalize_profile_document, validate_profile_input};
@@ -12,6 +12,7 @@ fn absolute_limits_are_centralized_and_distinct_from_defaults() {
     assert_eq!(MAX_CUSTOM_PROMPT_CHARS, 32_000);
     assert_eq!(MAX_CATEGORY_ITEMS, 100);
     assert_eq!(MAX_BUDGET_TOKENS, 1_000_000);
+    assert_eq!(MAX_IMAGE_BYTES, 32 * 1024 * 1024);
     assert_eq!(MAX_RETRIES, 2);
 
     let profile = beaver_profile();
@@ -49,6 +50,10 @@ fn ipc_validation_rejects_oversized_collections_and_values() {
     input.summary.system_prompt.clear();
     input.compact.tools.max_items = MAX_CATEGORY_ITEMS + 1;
     assert!(validate_profile_input(&input, &[]).is_err());
+
+    input.compact.tools.max_items = MAX_CATEGORY_ITEMS;
+    input.compact.images.max_total_bytes = MAX_IMAGE_BYTES + 1;
+    assert!(validate_profile_input(&input, &[]).is_err());
 }
 
 #[test]
@@ -57,6 +62,7 @@ fn disk_normalization_clamps_values_without_reusing_migration_semantics() {
     profiles[0].threshold_percent = 0;
     profiles[0].summary.ordinary_retries = u8::MAX;
     profiles[0].compact.tools.tokens_per_item = MAX_BUDGET_TOKENS + 1;
+    profiles[0].compact.images.max_total_bytes = MAX_IMAGE_BYTES + 1;
     let mut global_id = "missing".to_string();
 
     normalize_profile_document(&mut profiles, &mut global_id);
@@ -64,6 +70,7 @@ fn disk_normalization_clamps_values_without_reusing_migration_semantics() {
     assert_eq!(profiles[0].threshold_percent, 1);
     assert_eq!(profiles[0].summary.ordinary_retries, MAX_RETRIES);
     assert_eq!(profiles[0].compact.tools.tokens_per_item, MAX_BUDGET_TOKENS);
+    assert_eq!(profiles[0].compact.images.max_total_bytes, MAX_IMAGE_BYTES);
     assert_eq!(global_id, "beaver");
 }
 

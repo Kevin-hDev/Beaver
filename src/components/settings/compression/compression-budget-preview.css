@@ -1,0 +1,94 @@
+.cbp-budget {
+  padding-top: var(--space-sm);
+}
+
+.cbp-head,
+.cbp-window-label,
+.cbp-window-list,
+.cbp-legend {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.cbp-head {
+  justify-content: space-between;
+}
+
+.cbp-title {
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.cbp-window-label,
+.cbp-legend {
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+}
+
+.cbp-window-list {
+  padding: var(--space-xs);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-sm);
+}
+
+.cbp-window {
+  padding: var(--space-xs) var(--space-sm);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.cbp-window:hover,
+.cbp-window[aria-pressed="true"] {
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+
+.cbp-gauge {
+  height: 0.55rem;
+  margin: var(--space-sm) 0;
+  display: flex;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--surface-hover);
+}
+
+.cbp-gauge-system {
+  background: var(--ink-faint);
+}
+
+.cbp-gauge-profile {
+  background: var(--pulse);
+}
+
+.cbp-gauge-reserve {
+  background: var(--signal-info);
+}
+
+.cbp-legend {
+  flex-wrap: wrap;
+}
+
+.cbp-verdict {
+  margin-top: var(--space-sm);
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+  text-align: right;
+}
+
+.cbp-verdict[data-risk="high"] {
+  color: var(--signal-warning);
+}
+
+@media (max-width: 760px) {
+  .cbp-head,
+  .cbp-window-label {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

@@ -2,7 +2,8 @@ use std::collections::HashSet;
 
 use super::profile_defaults::{beaver_profile, default_reduction_order, BEAVER_PROFILE_ID};
 use super::profile_limits::{
-    MAX_BUDGET_TOKENS, MAX_CATEGORY_ITEMS, MAX_CUSTOM_PROMPT_CHARS, MAX_PROFILES, MAX_RETRIES,
+    MAX_BUDGET_TOKENS, MAX_CATEGORY_ITEMS, MAX_CUSTOM_PROMPT_CHARS, MAX_IMAGE_BYTES, MAX_PROFILES,
+    MAX_RETRIES,
 };
 use super::profile_types::{CompressionBandSettings, CompressionProfile, ItemBudget, TokenBudget};
 
@@ -106,6 +107,7 @@ fn normalize_band(band: &mut CompressionBandSettings) {
         normalize_item_budget(budget);
     }
     band.images.max_items = band.images.max_items.min(MAX_CATEGORY_ITEMS);
+    band.images.max_total_bytes = band.images.max_total_bytes.min(MAX_IMAGE_BYTES);
 }
 
 fn normalize_token_budget(budget: &mut TokenBudget) {

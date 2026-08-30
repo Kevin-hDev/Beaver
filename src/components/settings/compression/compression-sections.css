@@ -1,0 +1,230 @@
+.cpe-editor {
+  display: contents;
+}
+
+.cse-ranges {
+  flex: none;
+  display: grid;
+  grid-template-columns: auto minmax(18rem, 1fr) auto;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.cse-ranges-label,
+.cse-ranges-legend,
+.cse-under64-state,
+.cse-hint {
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+}
+
+.cse-range-rail {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  padding: var(--space-xs);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius);
+  background: var(--surface-glass);
+}
+
+.cse-range-tab {
+  position: relative;
+  min-height: var(--btn-height-sm);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-muted);
+  font: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.cse-range-tab:hover,
+.cse-range-tab[aria-selected="true"] {
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+
+.cse-range-tab[aria-selected="true"] {
+  box-shadow: inset 0 -2px 0 var(--pulse);
+}
+
+.cse-range-live {
+  position: absolute;
+  top: var(--space-xs);
+  right: var(--space-xs);
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: var(--pulse);
+}
+
+.cse-under64 {
+  flex: none;
+  padding: var(--space-sm) var(--space-md);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  border-radius: var(--radius);
+}
+
+.cse-under64-copy,
+.cse-row-copy,
+.cse-order-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.cse-warning {
+  flex: none;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--signal-warning);
+  border-radius: var(--radius);
+  background: var(--signal-warning-bg);
+  color: var(--ink);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+}
+
+.cse-section {
+  margin-bottom: var(--space-md);
+  border-radius: var(--radius);
+}
+
+.cse-section-head {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: var(--space-sm) var(--space-md);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cse-section-chevron {
+  flex: none;
+  transition: transform var(--ease-smooth);
+}
+
+.cse-section-head[aria-expanded="true"] .cse-section-chevron {
+  transform: rotate(90deg);
+}
+
+.cse-section-note {
+  margin-left: auto;
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+  font-weight: 400;
+}
+
+.cse-section-body {
+  padding: 0 var(--space-md) var(--space-md);
+}
+
+.cse-row,
+.cse-check-row {
+  min-height: 3.75rem;
+  padding: var(--space-sm) 0;
+  display: grid;
+  grid-template-columns: minmax(12rem, 1fr) minmax(18rem, auto);
+  align-items: center;
+  gap: var(--space-md);
+  border-top: 1px solid var(--edge);
+}
+
+.cse-row-stacked {
+  grid-template-columns: 1fr;
+}
+
+.cse-row-title {
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 550;
+}
+
+.cse-row-desc {
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+}
+
+.cse-row-control,
+.cse-budget-control,
+.cse-item-fields {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.cse-num {
+  width: 6.5rem;
+}
+
+.cse-inline-field,
+.cse-item-fields label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+}
+
+.cse-textarea {
+  min-height: 7rem;
+  resize: vertical;
+  font-family: var(--font-mono);
+  line-height: 1.45;
+}
+
+.cse-check-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.cse-check-label input {
+  accent-color: var(--pulse);
+}
+
+.cse-hint {
+  margin: var(--space-sm) 0;
+  line-height: 1.45;
+}
+
+.cse-copy {
+  margin-left: auto;
+  display: block;
+}
+
+.cpa-body[data-disabled="true"] .cse-section-body {
+  opacity: 0.55;
+}
+
+@media (max-width: 860px) {
+  .cse-ranges {
+    grid-template-columns: 1fr;
+  }
+
+  .cse-row,
+  .cse-check-row {
+    grid-template-columns: 1fr;
+  }
+
+  .cse-row-control,
+  .cse-budget-control,
+  .cse-item-fields {
+    justify-content: flex-start;
+  }
+}

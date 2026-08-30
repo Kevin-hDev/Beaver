@@ -45,6 +45,7 @@ export function useCompressionProfiles(): CompressionProfilesController {
   const mountedRef = useRef(true);
   const saveRunningRef = useRef(false);
   const queuedSaveRef = useRef<QueuedSave | null>(null);
+  const profileEventPendingRef = useRef(false);
 
   const applyView = useCallback((next: CompressionProfilesView) => {
     const normalized = ordered(next);
@@ -70,7 +71,13 @@ export function useCompressionProfiles(): CompressionProfilesController {
     };
   }, [refresh]);
 
-  useFsEvent("fs:compression-profiles-changed", () => { void refresh(); });
+  useFsEvent("fs:compression-profiles-changed", () => {
+    if (saveRunningRef.current) {
+      profileEventPendingRef.current = true;
+      return;
+    }
+    void refresh();
+  });
 
   const selectGlobal = useCallback(async (profileId: string): Promise<boolean> => {
     if (busy || saveRunningRef.current) return false;
@@ -138,6 +145,12 @@ export function useCompressionProfiles(): CompressionProfilesController {
         await refresh();
         current = null;
       }
+    }
+    // Un seul rechargement après la rafale conserve aussi un éventuel changement
+    // externe, sans faire sauter les champs locaux à chaque événement intermédiaire.
+    if (profileEventPendingRef.current) {
+      profileEventPendingRef.current = false;
+      await refresh();
     }
     saveRunningRef.current = false;
     if (mountedRef.current) setBusy(false);
