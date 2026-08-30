@@ -30,6 +30,13 @@
   box-shadow: var(--shadow-lg);
 }
 
+/* Variante large : même gabarit que le dialogue d'import des autres assistants.
+   La valeur vit dans tokens.css, l'enveloppe partagée nomme la variante ici pour
+   qu'aucun dialogue ne se redéclare une largeur à lui. */
+.wk-dialog-wide {
+  max-width: min(var(--dialog-wide-max-width), 92vw);
+}
+
 /* WebKit nested-blur workaround: disable the panel blur when the dialog
    contains a custom-select dropdown. */
 .wk-dialog:has(.cs-dropdown) {

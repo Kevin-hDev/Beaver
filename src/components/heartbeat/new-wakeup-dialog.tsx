@@ -113,10 +113,15 @@ export function NewWakeupDialog({
   return (
     <div className="wk-dialog-overlay" role="button" tabIndex={-1} aria-label="Close dialog" onClick={onClose} onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}>
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- dialog stop-propagation pattern */}
-      <div className="wk-dialog" onClick={(e) => e.stopPropagation()} role="dialog">
+      <div className="wk-dialog wk-dialog-wide" onClick={(e) => e.stopPropagation()} role="dialog">
         <header className="wk-dialog-header">
           <span>{title}</span>
-          <button type="button" className="wk-dialog-close" onClick={onClose}>
+          <button
+            type="button"
+            className="icon-btn icon-btn-secondary"
+            onClick={onClose}
+            aria-label={t("a11y.close")}
+          >
             <X size="var(--icon-md)" />
           </button>
         </header>
