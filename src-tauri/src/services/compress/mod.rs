@@ -1,4 +1,5 @@
 pub mod canonical_context;
+pub mod compression_redaction;
 pub mod context_capsules;
 pub mod context_capsules_disk;
 mod context_capsules_disk_collect;
@@ -23,6 +24,9 @@ pub(crate) mod state_recent;
 #[cfg(test)]
 mod state_tests;
 pub mod summary_budget;
+pub mod summary_contract;
+pub mod summary_request;
+pub mod summary_retry;
 pub mod timeouts;
 pub mod token_estimate;
 
@@ -55,6 +59,15 @@ mod snapshot_tests;
 
 #[cfg(test)]
 mod canonical_context_tests;
+
+#[cfg(test)]
+mod compression_redaction_tests;
+
+#[cfg(test)]
+mod summary_contract_tests;
+
+#[cfg(test)]
+mod summary_request_tests;
 
 #[cfg(test)]
 mod timeouts_tests;

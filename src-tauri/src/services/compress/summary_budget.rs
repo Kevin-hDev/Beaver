@@ -34,9 +34,20 @@ pub fn summary_instruction_for_input(
     context_window: u64,
     input_tokens: usize,
 ) -> (Option<String>, u32) {
-    let context_cap = summary_token_limit(context_window).unwrap_or(SUMMARY_OUTPUT_MAX);
-    let input_cap =
-        ((input_tokens as u64) / SUMMARY_INPUT_RATIO).clamp(SUMMARY_OUTPUT_MIN, SUMMARY_OUTPUT_MAX);
+    let under_64k = context_window > 0 && context_window < SMALL_CONTEXT_LIMIT;
+    let context_cap = summary_token_limit(context_window)
+        .map(|limit| if under_64k { limit / 2 } else { limit })
+        .unwrap_or(SUMMARY_OUTPUT_MAX);
+    let (divisor, floor, ceiling) = if under_64k {
+        (
+            SUMMARY_INPUT_RATIO * 2,
+            SUMMARY_OUTPUT_MIN / 2,
+            SUMMARY_OUTPUT_MAX / 2,
+        )
+    } else {
+        (SUMMARY_INPUT_RATIO, SUMMARY_OUTPUT_MIN, SUMMARY_OUTPUT_MAX)
+    };
+    let input_cap = ((input_tokens as u64) / divisor).clamp(floor, ceiling);
     let limit = context_cap.min(input_cap).max(1) as u32;
     (
         Some(format!(
@@ -73,5 +84,14 @@ mod tests {
     fn input_sized_summary_is_capped_for_large_sessions() {
         let (_, limit) = summary_instruction_for_input(258_000, 65_000);
         assert_eq!(limit, 16_000);
+    }
+
+    #[test]
+    fn under_64k_halves_the_input_formula_and_window_cap() {
+        let (_, small) = summary_instruction_for_input(32_000, 3_000);
+        let (_, large_input) = summary_instruction_for_input(32_000, 60_000);
+
+        assert_eq!(small, 500);
+        assert_eq!(large_input, 2_400);
     }
 }
