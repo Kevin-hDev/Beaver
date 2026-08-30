@@ -1,0 +1,21 @@
+Security audit correction for Anthropic and Qwen.
+
+Root causes and decisions:
+- eventsource-stream buffers an unfinished SSE event internally, so Beaver's old 10 MiB JSON check ran too late. A bounded byte stream now runs before the parser.
+- The per-event authority remains secure_http::LLM_BODY_LIMIT (10 MiB). The total response authority is secure_http::MAX_AUTHENTICATED_BODY_LIMIT (32 MiB). Both limits fail closed with the existing generic provider connection error.
+- The same bounded path is used by generic OpenAI-compatible visible/silent streams (including Qwen) and Anthropic visible/silent streams, avoiding provider-specific duplication.
+- Anthropic x-api-key construction is centralized in request_auth. Valid custom header values are marked sensitive before request construction; invalid values remain a request-build failure. Catalogue, Messages and API-key probe all use it.
+
+TDD evidence:
+- The new SSE tests first failed with E0425 because bounded_wire did not exist. After implementation, all 6 stream_sse tests passed.
+- The authentication test first failed with E0583 because request_auth did not exist. After implementation, the test proved x-api-key is sensitive.
+- Tests cover a fragmented oversized event, reset after a completed event, aggregate exhaustion across valid events, and the sensitive Anthropic header.
+
+Verification on this commit's exact staged content:
+- cargo fmt -- --check: pass.
+- cargo clippy --all-targets -- -D warnings: pass.
+- cargo test --lib: 4362 passed, 0 failed, 7 ignored. The only output warning is the existing macOS linker __eh_frame size warning.
+- npm run lint:provider-boundaries: pass, 56 authorized files.
+- git diff --check: pass.
+- graphify update .: pass, 39156 nodes / 81516 edges / 2231 communities.
+- No frontend file changed, no application restart and no paid provider request were required.
