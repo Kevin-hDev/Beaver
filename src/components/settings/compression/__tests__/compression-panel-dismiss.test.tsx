@@ -14,11 +14,13 @@ vi.mock("../compression-profile-editor", () => ({
 
 const api = {
   view: {
+    automatic_enabled: true,
     global_profile_id: "beaver",
     global_selection_revision: 1,
     profiles: [{ id: "beaver", name: "Beaver", revision: 1 } as CompressionProfile],
   },
   busy: false,
+  setAutomaticEnabled: vi.fn(() => Promise.resolve(true)),
   selectGlobal: vi.fn(() => Promise.resolve(true)),
   save: vi.fn(() => Promise.resolve(true)),
   create: vi.fn(() => Promise.resolve(true)),

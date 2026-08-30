@@ -57,6 +57,9 @@ pub mod token_estimate;
 mod integration_tests;
 
 #[cfg(test)]
+mod end_to_end_tests;
+
+#[cfg(test)]
 mod metrics_tests;
 
 #[cfg(test)]

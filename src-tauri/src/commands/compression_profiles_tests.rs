@@ -81,6 +81,18 @@ fn select_increments_only_when_the_profile_changes() {
 }
 
 #[test]
+fn automatic_switch_changes_only_the_global_automatic_policy() {
+    let mut document = CompressionProfileDocument::default();
+    let selection_revision = document.global_selection_revision;
+
+    mutations::set_automatic_enabled(&mut document, false).expect("disable automatic");
+
+    assert!(!document.automatic_enabled);
+    assert_eq!(document.global_selection_revision, selection_revision);
+    assert_eq!(document.profiles[0], beaver_profile());
+}
+
+#[test]
 fn save_rejects_a_stale_profile_revision() {
     let mut document = CompressionProfileDocument::default();
     let mut input = input_from_profile(&document.profiles[0]);

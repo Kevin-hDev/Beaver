@@ -1,7 +1,8 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { X } from "@/components/ui/icons";
 import { DialogPortal } from "@/components/ui/dialog-portal";
+import { useDialogKeyboard } from "@/components/ui/use-dialog-keyboard";
 import type { CompressionProfilesController } from "@/hooks/use-compression-profiles";
 import { CompressionProfileBar } from "./compression-profile-bar";
 import { CompressionProfileEditor } from "./compression-profile-editor";
@@ -18,16 +19,15 @@ export function CompressionPanel({ controller, currentWindow, onClose }: Compres
   const { t } = useTranslation();
   const titleId = useId();
   const closeRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLElement>(null);
   const [interactionActive, setInteractionActive] = useState(false);
 
-  useEffect(() => {
-    closeRef.current?.focus();
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !interactionActive) onClose();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [interactionActive, onClose]);
+  useDialogKeyboard({
+    rootRef: dialogRef,
+    initialFocusRef: closeRef,
+    onEscape: onClose,
+    enabled: !interactionActive,
+  });
 
   return (
     <DialogPortal>
@@ -35,10 +35,11 @@ export function CompressionPanel({ controller, currentWindow, onClose }: Compres
         <button
           type="button"
           className="cpa-backdrop-dismiss"
+          tabIndex={-1}
           aria-label={t("settings.advanced.compressionClose")}
           onClick={onClose}
         />
-        <section className="cpa-dialog relief" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+        <section ref={dialogRef} className="cpa-dialog relief" role="dialog" aria-modal="true" aria-labelledby={titleId}>
           <header className="cpa-head">
             <div>
               <h2 id={titleId}>{t("settings.advanced.compressionPanelTitle")}</h2>

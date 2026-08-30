@@ -19,6 +19,7 @@ pub enum ResolvedCompressionProfileSource {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ResolvedCompressionProfile {
+    pub automatic_enabled: bool,
     pub profile: CompressionProfile,
     pub profile_revision: u64,
     pub source: ResolvedCompressionProfileSource,
@@ -71,6 +72,7 @@ pub(crate) fn resolve_from_document(
         })
         .ok_or(CompressionProfileStoreError::Invalid)?;
     Ok(ResolvedCompressionProfile {
+        automatic_enabled: document.automatic_enabled,
         profile: profile.clone(),
         profile_revision: profile.revision,
         source,

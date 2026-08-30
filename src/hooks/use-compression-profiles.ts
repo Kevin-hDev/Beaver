@@ -17,6 +17,7 @@ interface QueuedSave {
 export interface CompressionProfilesController {
   view: CompressionProfilesView | null;
   busy: boolean;
+  setAutomaticEnabled(enabled: boolean): Promise<boolean>;
   selectGlobal(profileId: string): Promise<boolean>;
   save(input: CompressionProfileInput): Promise<boolean>;
   create(sourceProfileId: string, name: string): Promise<boolean>;
@@ -116,7 +117,6 @@ export function useCompressionProfiles(): CompressionProfilesController {
 
   const runSaveQueue = useCallback(async (first: QueuedSave) => {
     saveRunningRef.current = true;
-    if (mountedRef.current) setBusy(true);
     let current: QueuedSave | null = first;
     while (current) {
       const request = current;
@@ -153,7 +153,6 @@ export function useCompressionProfiles(): CompressionProfilesController {
       await refresh();
     }
     saveRunningRef.current = false;
-    if (mountedRef.current) setBusy(false);
   }, [applyView, refresh]);
 
   const save = useCallback((input: CompressionProfileInput): Promise<boolean> => (
@@ -190,6 +189,7 @@ export function useCompressionProfiles(): CompressionProfilesController {
   return {
     view,
     busy,
+    setAutomaticEnabled: (enabled) => mutateView("set_automatic_compression_enabled", { enabled }),
     selectGlobal,
     save,
     create: (sourceProfileId, name) => mutateView("create_compression_profile", {

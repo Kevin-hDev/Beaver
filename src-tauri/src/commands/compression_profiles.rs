@@ -65,6 +65,16 @@ pub fn select_global_compression_profile(
 }
 
 #[tauri::command]
+pub fn set_automatic_compression_enabled(
+    app: tauri::AppHandle,
+    enabled: bool,
+) -> Result<CompressionProfilesView, String> {
+    mutate_and_emit(&app, |document| {
+        super::compression_profiles_mutations::set_automatic_enabled(document, enabled)
+    })
+}
+
+#[tauri::command]
 pub fn reset_beaver_compression_profile(
     app: tauri::AppHandle,
 ) -> Result<CompressionProfilesView, String> {

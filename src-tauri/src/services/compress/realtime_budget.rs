@@ -18,7 +18,7 @@ impl RealtimeBudget {
             .ok()?;
         let profile = super::profile_resolve::resolve_for_session(&session).ok()?;
         Self::new(
-            profile.available(configured_context),
+            profile.automatic_enabled && profile.available(configured_context),
             configured_context,
             profile.profile.threshold_percent.min(90),
             base_tokens,

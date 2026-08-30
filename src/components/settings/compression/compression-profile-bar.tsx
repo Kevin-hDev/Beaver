@@ -89,6 +89,7 @@ export function CompressionProfileBar({
             remove: t("settings.advanced.compressionDelete"),
             confirm: t("settings.advanced.compressionDelete"),
             cancel: t("settings.advanced.compressionCancel"),
+            question: t("settings.advanced.compressionDeleteConfirm", { name: active.name }),
           }}
         />
         <button type="button" className="btn btn-sm btn-ghost" disabled={controller.busy} onClick={() => { void controller.resetBeaver(); }}>

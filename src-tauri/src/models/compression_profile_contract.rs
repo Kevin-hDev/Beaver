@@ -50,6 +50,7 @@ impl From<CompressionProfileInput> for CompressionProfile {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(test, derive(ts_rs::TS))]
 pub struct CompressionProfilesView {
+    pub automatic_enabled: bool,
     pub global_profile_id: String,
     #[cfg_attr(test, ts(type = "number"))]
     pub global_selection_revision: u64,
@@ -59,6 +60,7 @@ pub struct CompressionProfilesView {
 impl From<&CompressionProfileDocument> for CompressionProfilesView {
     fn from(document: &CompressionProfileDocument) -> Self {
         Self {
+            automatic_enabled: document.automatic_enabled,
             global_profile_id: document.global_profile_id.clone(),
             global_selection_revision: document.global_selection_revision,
             profiles: document.profiles.clone(),

@@ -79,3 +79,20 @@ fn under_64k_can_be_enabled_by_the_profile() {
     ));
     assert!(eligible(&profile, CompressionTrigger::Explicit, 32_000, 1));
 }
+
+#[test]
+fn global_switch_disables_only_automatic_compression() {
+    let document = CompressionProfileDocument {
+        automatic_enabled: false,
+        ..CompressionProfileDocument::default()
+    };
+    let profile = resolve_from_document(None, &document).unwrap();
+
+    assert!(!eligible(
+        &profile,
+        CompressionTrigger::Automatic,
+        128_000,
+        128_000
+    ));
+    assert!(eligible(&profile, CompressionTrigger::Explicit, 128_000, 1));
+}

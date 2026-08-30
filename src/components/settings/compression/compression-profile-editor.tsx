@@ -91,6 +91,17 @@ export function CompressionProfileEditor({
         className="cpa-body"
         data-disabled={under64Disabled ? "true" : undefined}
       >
+        <CompressionContentSection
+          band={band}
+          disabled={under64Disabled}
+          onChange={updateBand}
+          onCopy={() => update({
+            ...profile,
+            under_64k: band,
+            compact: band,
+            large: band,
+          })}
+        />
         <CompressionTriggerSection
           profile={profile}
           band={band}
@@ -104,17 +115,6 @@ export function CompressionProfileEditor({
           disabled={under64Disabled}
           onProfileChange={update}
           onBandChange={updateBand}
-        />
-        <CompressionContentSection
-          band={band}
-          disabled={under64Disabled}
-          onChange={updateBand}
-          onCopy={() => update({
-            ...profile,
-            under_64k: band,
-            compact: band,
-            large: band,
-          })}
         />
         <CompressionFailureSection
           profile={profile}

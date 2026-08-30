@@ -1,4 +1,4 @@
-import { EditableRowActions, type EditableRowController } from "@/components/ui/editable-row-actions";
+import type { EditableRowController } from "@/components/ui/editable-row-actions";
 
 interface CompressionProfileActionsProps {
   controller: EditableRowController;
@@ -8,6 +8,7 @@ interface CompressionProfileActionsProps {
     remove: string;
     confirm: string;
     cancel: string;
+    question: string;
   };
 }
 
@@ -17,13 +18,39 @@ export function CompressionProfileActions({
   labels,
 }: CompressionProfileActionsProps) {
   return (
-    <EditableRowActions
-      controller={controller}
-      disabled={disabled}
-      renameLabel={labels.rename}
-      deleteLabel={labels.remove}
-      confirmLabel={labels.confirm}
-      cancelLabel={labels.cancel}
-    />
+    <div className="cpra-actions">
+      <button
+        type="button"
+        className="btn btn-sm btn-secondary"
+        disabled={disabled || controller.editing}
+        onClick={(event) => { event.stopPropagation(); controller.startRename(); }}
+      >
+        {labels.rename}
+      </button>
+      <div className="cpra-confirm-anchor">
+        <button
+          type="button"
+          className="btn btn-sm btn-secondary"
+          disabled={disabled || controller.editing}
+          aria-expanded={controller.confirmingDelete}
+          onClick={(event) => { event.stopPropagation(); controller.startDelete(); }}
+        >
+          {labels.remove}
+        </button>
+        {controller.confirmingDelete && (
+          <div className="cpra-confirm relief" role="dialog" aria-label={labels.remove}>
+            <p>{labels.question}</p>
+            <div className="cpra-confirm-buttons">
+              <button type="button" className="btn btn-sm btn-secondary" onClick={() => controller.cancel()}>
+                {labels.cancel}
+              </button>
+              <button type="button" className="btn btn-sm btn-danger" onClick={() => { void controller.confirmDelete(); }}>
+                {labels.confirm}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

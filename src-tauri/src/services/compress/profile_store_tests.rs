@@ -8,7 +8,7 @@ use super::profile_store::{
 use super::profile_store_document::{CompressionProfileDocument, PROFILE_SCHEMA_VERSION};
 
 #[test]
-fn missing_file_migrates_legacy_threshold_and_ignores_enabled() {
+fn missing_file_migrates_legacy_threshold_and_enabled_state() {
     let root = tempfile::tempdir().expect("temp root");
     let profile_path = root.path().join("compression-profiles.json");
     let config_path = root.path().join("config.json");
@@ -19,6 +19,7 @@ fn missing_file_migrates_legacy_threshold_and_ignores_enabled() {
     assert_eq!(document.schema_version, PROFILE_SCHEMA_VERSION);
     assert_eq!(document.global_profile_id, BEAVER_PROFILE_ID);
     assert_eq!(document.profiles[0].threshold_percent, 85);
+    assert!(!document.automatic_enabled);
     let migrated: serde_json::Value =
         serde_json::from_slice(&std::fs::read(&config_path).expect("config")).expect("json");
     assert!(migrated["advanced"].get("compression_enabled").is_none());
@@ -154,6 +155,13 @@ fn trigger_adapter_uses_the_global_profile_and_under_64k_guard() {
     assert!(
         trigger_settings(&document, 32_000)
             .expect("enabled tiny settings")
+            .available
+    );
+
+    document.automatic_enabled = false;
+    assert!(
+        !trigger_settings(&document, 128_000)
+            .expect("disabled automatic compression")
             .available
     );
 }

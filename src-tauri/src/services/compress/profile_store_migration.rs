@@ -10,9 +10,12 @@ pub(super) fn migrate(
     let seed: crate::services::config::LegacyCompressionSeed =
         crate::services::config::legacy_compression_seed_from_path(config_path)
             .map_err(|_| CompressionProfileStoreError::Migration)?;
-    // The former global switch is intentionally not an authority in the new model.
-    let _legacy_enabled = seed.enabled;
-    let mut document = CompressionProfileDocument::default();
+    // La commande globale reste une autorite unique : la migration conserve
+    // donc le choix explicite de l'utilisateur au lieu de le reinitialiser.
+    let mut document = CompressionProfileDocument {
+        automatic_enabled: seed.enabled.unwrap_or(true),
+        ..CompressionProfileDocument::default()
+    };
     document.profiles[0].threshold_percent = migrate_threshold(seed.threshold_percent);
     write_document(profile_path, &document)?;
     crate::services::config::finalize_compression_settings_migration_at(config_path)

@@ -5,6 +5,7 @@ import { compressionProfileFixture } from "@/test-utils/compression-profile-fixt
 
 const controller = vi.hoisted(() => ({
   busy: false,
+  setAutomaticEnabled: vi.fn(() => Promise.resolve(true)),
   selectGlobal: vi.fn(() => Promise.resolve(true)),
   save: vi.fn(() => Promise.resolve(true)),
   refresh: vi.fn(() => Promise.resolve()),
@@ -14,6 +15,7 @@ const controller = vi.hoisted(() => ({
   deleteProfile: vi.fn(() => Promise.resolve(null)),
   undoDelete: vi.fn(() => Promise.resolve(true)),
   view: null as null | {
+    automatic_enabled: boolean;
     global_profile_id: string;
     global_selection_revision: number;
     profiles: CompressionProfile[];
@@ -35,6 +37,8 @@ vi.mock("react-i18next", () => ({
       "settings.advanced.compressionAdvancedTitle": "Configuration avancée",
       "settings.advanced.compressionAdvancedDesc": "Profil et contenu conservé",
       "settings.advanced.compressionAdvanced": "Avancé",
+      "settings.advanced.compressionEnabledTitle": "Compression automatique",
+      "settings.advanced.compressionEnabledDesc": "Compresse la conversation",
       "settings.advanced.compressionThresholdTitle": "Seuil de compression",
       "settings.advanced.compressionThresholdDesc": "Part de la fenêtre",
       "settings.advanced.compressionDisabledUnder64": "Compression désactivée pour les fenêtres de contexte inférieures à 64K.",
@@ -57,18 +61,18 @@ beforeEach(() => {
   context.max = 128_000;
   controller.view = {
     global_profile_id: "beaver",
+    automatic_enabled: true,
     global_selection_revision: 1,
     profiles: [profile("beaver", "Beaver", 90), profile("custom", "Custom", 82)],
   };
 });
 
 describe("CompressionSettingsCard", () => {
-  it("affiche Beaver puis les profils personnalisés avec le panneau fonctionnel", () => {
+  it("conserve l'interrupteur global et ouvre le panneau avancé", () => {
     render(<CompressionSettingsCard defaultModel="ollama:qwen" />);
 
-    fireEvent.click(screen.getByRole("button", { name: /Beaver/i }));
-    const options = [...document.querySelectorAll(".ss-option")];
-    expect(options.map((option) => option.textContent)).toEqual(["Beaver", "Custom"]);
+    fireEvent.click(screen.getByRole("switch", { name: /Compression automatique/i }));
+    expect(controller.setAutomaticEnabled).toHaveBeenCalledWith(false);
     fireEvent.click(screen.getByRole("button", { name: "Avancé" }));
     expect(screen.getByRole("dialog", { name: /settings.advanced.compressionPanelTitle/i })).toBeInTheDocument();
   });
@@ -93,6 +97,7 @@ describe("CompressionSettingsCard", () => {
     render(<CompressionSettingsCard defaultModel="ollama:qwen" />);
 
     expect(screen.getByText(/inférieures à 64K/i)).toBeInTheDocument();
-    expect(screen.getByRole("slider")).toBeInTheDocument();
+    expect(screen.getByRole("switch")).toBeDisabled();
+    expect(screen.getByRole("slider")).toBeDisabled();
   });
 });

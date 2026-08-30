@@ -1,6 +1,7 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { DialogPortal } from "@/components/ui/dialog-portal";
+import { useDialogKeyboard } from "@/components/ui/use-dialog-keyboard";
 
 interface CompressionProfileDialogProps {
   sourceName: string;
@@ -20,6 +21,7 @@ export function CompressionProfileDialog({
   const { t } = useTranslation();
   const titleId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLElement>(null);
   const submittingRef = useRef(false);
   const [name, setName] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -28,17 +30,7 @@ export function CompressionProfileDialog({
   const duplicate = existingNames.some((item) => item.toLocaleLowerCase() === trimmed.toLocaleLowerCase());
   const valid = visibleLength > 0 && visibleLength <= NAME_MAX && !duplicate && !submitting;
 
-  useEffect(() => {
-    inputRef.current?.focus();
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        onCancel();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onCancel]);
+  useDialogKeyboard({ rootRef: dialogRef, initialFocusRef: inputRef, onEscape: onCancel });
 
   const create = async () => {
     if (!valid || submittingRef.current) return;
@@ -57,10 +49,11 @@ export function CompressionProfileDialog({
         <button
           type="button"
           className="cpd-backdrop-dismiss"
+          tabIndex={-1}
           aria-label={t("settings.advanced.compressionCancel")}
           onClick={onCancel}
         />
-        <section className="cpd-dialog relief" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+        <section ref={dialogRef} className="cpd-dialog relief" role="dialog" aria-modal="true" aria-labelledby={titleId}>
           <h3 id={titleId}>{t("settings.advanced.compressionNewProfile")}</h3>
           <p>{t("settings.advanced.compressionCreateFrom", { name: sourceName })}</p>
           <input

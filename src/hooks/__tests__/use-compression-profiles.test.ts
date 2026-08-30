@@ -27,6 +27,7 @@ const profile = (id: string, threshold: number, revision = 1) => ({
 }) as CompressionProfile;
 
 const view = (threshold = 90, revision = 1): CompressionProfilesView => ({
+  automatic_enabled: true,
   global_profile_id: "beaver",
   global_selection_revision: 1,
   profiles: [profile("custom", 80), profile("beaver", threshold, revision)],
@@ -79,12 +80,32 @@ describe("useCompressionProfiles", () => {
       void result.current.save({ ...beaver, threshold_percent: 87 });
       last = result.current.save({ ...beaver, threshold_percent: 88 });
     });
+    expect(result.current.busy).toBe(false);
     act(() => resolveFirst?.(view(89, 2)));
     await expect(last).resolves.toBe(true);
 
     const saves = vi.mocked(invoke).mock.calls.filter(([command]) => command === "save_compression_profile");
     expect(saves).toHaveLength(2);
     expect(saves[1][1]).toMatchObject({ input: { revision: 2, threshold_percent: 88 } });
+  });
+
+  it("persiste l'interrupteur automatique sans modifier le profil", async () => {
+    vi.mocked(invoke).mockResolvedValueOnce(view()).mockResolvedValueOnce({
+      ...view(),
+      automatic_enabled: false,
+    });
+    const { result } = renderHook(() => useCompressionProfiles());
+    await waitFor(() => expect(result.current.view).not.toBeNull());
+
+    await act(async () => {
+      expect(await result.current.setAutomaticEnabled(false)).toBe(true);
+    });
+
+    expect(invoke).toHaveBeenLastCalledWith(
+      "set_automatic_compression_enabled",
+      { enabled: false },
+    );
+    expect(result.current.view?.automatic_enabled).toBe(false);
   });
 
   it("conserve la dernière vue confirmée et affiche une erreur générique", async () => {

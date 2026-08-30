@@ -18,18 +18,20 @@ const profile = (id: string, name: string) => ({ id, name, revision: 1 }) as Com
 function controller(active = "custom"): CompressionProfilesController {
   return {
     view: {
+      automatic_enabled: true,
       global_profile_id: active,
       global_selection_revision: 1,
       profiles: [profile("beaver", "Beaver"), profile("custom", "Longues sessions")],
     },
     busy: false,
+    setAutomaticEnabled: vi.fn(() => Promise.resolve(true)),
     selectGlobal: vi.fn(() => Promise.resolve(true)),
     save: vi.fn(() => Promise.resolve(true)),
     create: vi.fn(() => Promise.resolve(true)),
     rename: vi.fn(() => Promise.resolve(true)),
     resetBeaver: vi.fn(() => Promise.resolve(true)),
     deleteProfile: vi.fn(() => Promise.resolve({
-      view: { global_profile_id: "beaver", global_selection_revision: 2, profiles: [profile("beaver", "Beaver")] },
+      view: { automatic_enabled: true, global_profile_id: "beaver", global_selection_revision: 2, profiles: [profile("beaver", "Beaver")] },
       undo_token: "undo-token",
       undo_expires_in_ms: 30_000,
     })),

@@ -107,6 +107,43 @@
   width: 12rem;
 }
 
+.cpra-actions,
+.cpra-confirm-buttons {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.cpra-confirm-anchor {
+  position: relative;
+}
+
+.cpra-confirm {
+  position: absolute;
+  top: calc(100% + var(--chrome-1));
+  right: 0;
+  z-index: var(--z-dropdown);
+  width: 20rem;
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  box-shadow: var(--elev-float);
+}
+
+.cpra-confirm p {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.cpra-confirm-buttons {
+  justify-content: flex-end;
+}
+
 .cpd-overlay {
   z-index: var(--z-dialog);
 }

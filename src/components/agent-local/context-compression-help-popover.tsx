@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import badgeQuestionMark from "@/assets/lucide--badge-question-mark.svg";
@@ -27,10 +27,10 @@ export function ContextCompressionHelpPopover({
     "auto",
   );
 
-  const changeOpen = (next: boolean) => {
+  const changeOpen = useCallback((next: boolean) => {
     setOpen(next);
     onOpenChange(next);
-  };
+  }, [onOpenChange]);
 
   useEffect(() => {
     if (!open) return;
@@ -45,7 +45,7 @@ export function ContextCompressionHelpPopover({
     return () => {
       document.removeEventListener("keydown", onKeyDown, true);
     };
-  }, [floatingRef, open]);
+  }, [changeOpen, floatingRef, open]);
 
   const setButton = (node: HTMLButtonElement | null) => {
     buttonRef.current = node;

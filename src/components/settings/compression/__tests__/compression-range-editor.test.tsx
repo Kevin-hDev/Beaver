@@ -26,6 +26,7 @@ function controller(
   return {
     view: null,
     busy: false,
+    setAutomaticEnabled: vi.fn(),
     selectGlobal: vi.fn(),
     save,
     create: vi.fn(),
@@ -54,18 +55,30 @@ describe("CompressionProfileEditor", () => {
     fireEvent.click(screen.getByRole("tab", {
       name: "settings.advanced.compressionRange.under_64k",
     }));
-    expect(screen.getByText("settings.advanced.compressionStateDisabled")).toBeInTheDocument();
+    expect(screen.queryByText("settings.advanced.compressionUnder64Warning")).not.toBeInTheDocument();
     expect(screen.getByLabelText("settings.advanced.compressionAutomaticThreshold")).toBeDisabled();
 
     fireEvent.click(screen.getByRole("switch", {
       name: "settings.advanced.compressionUnder64Title",
     }));
     expect(save).toHaveBeenLastCalledWith(expect.objectContaining({ allow_under_64k: true }));
-    expect(screen.getByText("settings.advanced.compressionStateEnabled")).toBeInTheDocument();
+    expect(screen.getByText("settings.advanced.compressionUnder64Warning")).toBeInTheDocument();
     expect(screen.getByLabelText("settings.advanced.compressionAutomaticThreshold")).toBeEnabled();
     const saved = save.mock.lastCall?.[0];
     if (!saved) throw new Error("missing saved profile");
     expect(saved.under_64k).toEqual(profile.under_64k);
+  });
+
+  it("ne montre jamais l'avertissement sous 64K sur une autre plage", () => {
+    render(
+      <CompressionProfileEditor
+        profile={{ ...compressionProfileFixture(), allow_under_64k: true }}
+        currentWindow={96_000}
+        controller={controller()}
+      />,
+    );
+
+    expect(screen.queryByText("settings.advanced.compressionUnder64Warning")).not.toBeInTheDocument();
   });
 
   it("copie la plage éditée et expose les trois modes de budget", () => {

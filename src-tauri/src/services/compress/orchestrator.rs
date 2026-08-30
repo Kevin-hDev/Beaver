@@ -195,7 +195,8 @@ pub(super) fn eligible(
     match trigger {
         CompressionTrigger::Explicit => true,
         CompressionTrigger::Automatic => {
-            context_window > 0
+            profile.automatic_enabled
+                && context_window > 0
                 && super::token_estimate::should_compress(
                     used_tokens,
                     context_window,

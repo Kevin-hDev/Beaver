@@ -58,13 +58,13 @@ pub(crate) fn trigger_settings(
         .iter()
         .find(|profile| profile.id == document.global_profile_id)
         .ok_or(CompressionProfileStoreError::Invalid)?;
-    let available = match super::profile_budget::band_for_window(context_window) {
+    let band_available = match super::profile_budget::band_for_window(context_window) {
         Some(super::profile_types::CompressionWindowBand::Under64K) => profile.allow_under_64k,
         Some(_) | None => true,
     };
     Ok(GlobalCompressionTriggerSettings {
         threshold_percent: profile.threshold_percent,
-        available,
+        available: document.automatic_enabled && band_available,
     })
 }
 

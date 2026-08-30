@@ -31,6 +31,7 @@ export function CompressionBudgetControl({
         options={options}
         value={value.mode}
         disabled={disabled}
+        fitLongestOption
         onChange={(mode) => onChange({ ...value, mode: mode as BudgetMode })}
       />
       {value.mode !== "percentage" && (

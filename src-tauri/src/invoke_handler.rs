@@ -24,6 +24,7 @@ macro_rules! generate {
             crate::commands::rename_compression_profile,
             crate::commands::save_compression_profile,
             crate::commands::select_global_compression_profile,
+            crate::commands::set_automatic_compression_enabled,
             crate::commands::reset_beaver_compression_profile,
             crate::commands::delete_compression_profile,
             crate::commands::undo_delete_compression_profile,

@@ -63,13 +63,19 @@ export function CompressionBudgetPreview({
     return () => { current = false; };
   }, [band, profileId, profileRevision, window]);
 
-  const maximum = projection?.context_window ?? window;
-  const systemPercent = projection ? Math.min(100, projection.system_tools_tokens / maximum * 100) : 0;
+  const contextWindow = projection?.context_window ?? window;
+  const scale = projection ? Math.max(projection.total_tokens, contextWindow) : contextWindow;
+  const systemPercent = projection ? projection.system_tools_tokens / scale * 100 : 0;
   const reinjected = projection
     ? projection.summary_tokens + projection.categories_tokens
     : 0;
-  const profilePercent = projection ? Math.min(100, reinjected / maximum * 100) : 0;
-  const reservePercent = projection ? Math.min(100, projection.reserve_tokens / maximum * 100) : 0;
+  const profilePercent = projection ? reinjected / scale * 100 : 0;
+  const reservePercent = projection ? projection.reserve_tokens / scale * 100 : 0;
+  const windowPercent = contextWindow / scale * 100;
+  const overflowPercent = projection
+    ? Math.max(0, projection.total_tokens - contextWindow) / scale * 100
+    : 0;
+  const risk = projection?.exceeds_window ? "high" : projection?.high_risk ? "tight" : "ok";
 
   return (
     <div className="cbp-budget">
@@ -95,30 +101,46 @@ export function CompressionBudgetPreview({
           </span>
         </span>
       </div>
-      <div className="cbp-gauge" aria-label={t("settings.advanced.compressionProjectionTitle")}>
-        <span className="cbp-gauge-system" style={{ width: `${systemPercent}%` }} />
-        <span className="cbp-gauge-profile" style={{ width: `${profilePercent}%` }} />
-        <span className="cbp-gauge-reserve" style={{ width: `${reservePercent}%` }} />
+      <div
+        className="cbp-gauge"
+        data-overflow={projection?.exceeds_window ? "true" : "false"}
+        aria-label={t("settings.advanced.compressionProjectionTitle")}
+      >
+        <div className="cbp-gauge-track">
+          <span className="cbp-gauge-system" style={{ width: `${systemPercent}%` }} />
+          <span className="cbp-gauge-profile" style={{ width: `${profilePercent}%` }} />
+          <span className="cbp-gauge-reserve" style={{ width: `${reservePercent}%` }} />
+          {overflowPercent > 0 && (
+            <span
+              className="cbp-gauge-over"
+              style={{ left: `${windowPercent}%`, width: `${overflowPercent}%` }}
+            />
+          )}
+        </div>
+        <span className="cbp-gauge-limit" style={{ left: `${Math.min(windowPercent, 99.5)}%` }}>
+          <span>{t("settings.advanced.compressionTestWindow")} {formatCompressionWindow(contextWindow)}</span>
+        </span>
       </div>
       {projection && (
         <div className="cbp-legend">
-          <span>{t("settings.advanced.compressionProjectionSystem")}: {formatCompressionWindow(projection.system_tools_tokens)}</span>
-          <span>{t("settings.advanced.compressionProjectionProfile")}: {formatCompressionWindow(reinjected)}</span>
-          <span>{t("settings.advanced.compressionProjectionReserve")}: {formatCompressionWindow(projection.reserve_tokens)}</span>
+          <span><i className="cbp-swatch cbp-swatch-system" />{t("settings.advanced.compressionProjectionSystem")} <b>{formatCompressionWindow(projection.system_tools_tokens)}</b></span>
+          <span><i className="cbp-swatch cbp-swatch-profile" />{t("settings.advanced.compressionProjectionProfile")} <b>{formatCompressionWindow(reinjected)}</b></span>
+          <span><i className="cbp-swatch cbp-swatch-reserve" />{t("settings.advanced.compressionProjectionReserve")} <b>{formatCompressionWindow(projection.reserve_tokens)}</b></span>
         </div>
       )}
       <div
         className="cbp-verdict"
-        data-risk={projection?.high_risk ? "high" : "ok"}
+        data-risk={risk}
         aria-live="polite"
       >
         {failed
           ? t("settings.advanced.compressionProjectionUnavailable")
           : projection
-            ? t("settings.advanced.compressionProjectionTotal", {
-                total: formatCompressionWindow(projection.total_tokens),
-                percent: projection.projected_percent,
-              })
+            ? <>
+                <span>{t("settings.advanced.compressionProjectionTotal")}</span>
+                <b>{formatCompressionWindow(projection.total_tokens)} / {formatCompressionWindow(contextWindow)}</b>
+                <strong>{t(`settings.advanced.compressionProjectionRisk.${risk}`)}</strong>
+              </>
             : t("settings.advanced.compressionProjectionLoading")}
       </div>
     </div>

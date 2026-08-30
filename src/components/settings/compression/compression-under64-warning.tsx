@@ -13,11 +13,11 @@ export function CompressionUnder64Warning({
   onChange,
 }: CompressionUnder64WarningProps) {
   const { t } = useTranslation();
-  if (!toggleVisible && !enabled) return null;
+  if (!toggleVisible) return null;
 
   return (
     <>
-      {toggleVisible && <div className="cse-under64 relief">
+      <div className="cse-under64 relief">
         <span className="cse-under64-copy">
           <span className="cse-row-title">
             {t("settings.advanced.compressionUnder64Title")}
@@ -25,18 +25,13 @@ export function CompressionUnder64Warning({
           <span className="cse-row-desc">
             {t("settings.advanced.compressionUnder64Desc")}
           </span>
-          <span className="cse-under64-state">
-            {t(enabled
-              ? "settings.advanced.compressionStateEnabled"
-              : "settings.advanced.compressionStateDisabled")}
-          </span>
         </span>
         <ToggleSwitch
           checked={enabled}
           onCheckedChange={onChange}
           ariaLabel={t("settings.advanced.compressionUnder64Title")}
         />
-      </div>}
+      </div>
       {enabled && (
         <div className="cse-warning" role="status">
           {t("settings.advanced.compressionUnder64Warning")}

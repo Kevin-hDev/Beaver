@@ -73,6 +73,14 @@ pub(super) fn select_global(
     Ok(())
 }
 
+pub(super) fn set_automatic_enabled(
+    document: &mut CompressionProfileDocument,
+    enabled: bool,
+) -> Result<(), CompressionProfileStoreError> {
+    document.automatic_enabled = enabled;
+    Ok(())
+}
+
 pub(super) fn reset_beaver(
     document: &mut CompressionProfileDocument,
 ) -> Result<(), CompressionProfileStoreError> {

@@ -41,7 +41,7 @@ export type CompressionProfile = { id: string, name: string, revision: number, t
 
 export type CompressionProfileInput = { id: string, name: string, revision: number, threshold_percent: number, allow_under_64k: boolean, context_capacity_policy: ContextCapacityPolicy, summary: CompressionSummarySettings, under_64k: CompressionBandSettings, compact: CompressionBandSettings, large: CompressionBandSettings, reduction_order: Array<CompressionCategory>, };
 
-export type CompressionProfilesView = { global_profile_id: string, global_selection_revision: number, profiles: Array<CompressionProfile>, };
+export type CompressionProfilesView = { automatic_enabled: boolean, global_profile_id: string, global_selection_revision: number, profiles: Array<CompressionProfile>, };
 
 export type BudgetProjectionView = { context_window: number, band: CompressionWindowBand, system_tools_tokens: number, summary_tokens: number, categories_tokens: number, reserve_tokens: number, total_tokens: number, projected_percent: number, exceeds_window: boolean, high_risk: boolean, };
 
