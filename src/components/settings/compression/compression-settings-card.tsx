@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { SettingsCard } from "@/components/settings/settings-card";
 import { SettingsRow } from "@/components/settings/settings-row";
 import { SettingsSelect } from "@/components/settings/settings-select";
 import { useCompressionProfiles } from "@/hooks/use-compression-profiles";
 import { useContextProgress } from "@/hooks/use-context-progress";
+import { CompressionPanel } from "./compression-panel";
 import "../compression-slider.css";
 import "./compression-settings-card.css";
 
@@ -24,6 +25,8 @@ function modelRoute(value: string): { provider: string; model: string } {
 export function CompressionSettingsCard({ defaultModel }: CompressionSettingsCardProps) {
   const { t } = useTranslation();
   const controller = useCompressionProfiles();
+  const advancedButtonRef = useRef<HTMLButtonElement>(null);
+  const [panelOpen, setPanelOpen] = useState(false);
   const route = useMemo(() => modelRoute(defaultModel), [defaultModel]);
   const { max } = useContextProgress(route.model, 0, route.provider);
   const active = controller.view?.profiles.find(
@@ -42,21 +45,35 @@ export function CompressionSettingsCard({ defaultModel }: CompressionSettingsCar
   const threshold = active && thresholdDraft?.profileId === active.id
     ? thresholdDraft.value
     : active?.threshold_percent;
+  const closePanel = useCallback(() => {
+    setPanelOpen(false);
+    requestAnimationFrame(() => advancedButtonRef.current?.focus());
+  }, []);
 
   return (
     <SettingsCard className="csc-card">
       <SettingsRow
-        title={t("settings.advanced.compressionProfileTitle")}
-        description={t("settings.advanced.compressionProfileDesc")}
+        title={t("settings.advanced.compressionAdvancedTitle")}
+        description={t("settings.advanced.compressionAdvancedDesc")}
       >
         {controller.view ? (
-          <SettingsSelect
-            options={options}
-            value={controller.view.global_profile_id}
-            disabled={controller.busy}
-            fitLongestOption
-            onChange={(profileId) => { void controller.selectGlobal(profileId); }}
-          />
+          <div className="csc-advanced-control">
+            <SettingsSelect
+              options={options}
+              value={controller.view.global_profile_id}
+              disabled={controller.busy}
+              fitLongestOption
+              onChange={(profileId) => { void controller.selectGlobal(profileId); }}
+            />
+            <button
+              ref={advancedButtonRef}
+              type="button"
+              className="btn btn-sm btn-secondary"
+              onClick={() => setPanelOpen(true)}
+            >
+              {t("settings.advanced.compressionAdvanced")}
+            </button>
+          </div>
         ) : <span className="csc-loading" aria-busy="true">—</span>}
       </SettingsRow>
 
@@ -95,6 +112,7 @@ export function CompressionSettingsCard({ defaultModel }: CompressionSettingsCar
           </div>
         </div>
       )}
+      {panelOpen && <CompressionPanel controller={controller} onClose={closePanel} />}
     </SettingsCard>
   );
 }

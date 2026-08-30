@@ -7,6 +7,11 @@ const controller = vi.hoisted(() => ({
   selectGlobal: vi.fn(() => Promise.resolve(true)),
   save: vi.fn(() => Promise.resolve(true)),
   refresh: vi.fn(() => Promise.resolve()),
+  create: vi.fn(() => Promise.resolve(true)),
+  rename: vi.fn(() => Promise.resolve(true)),
+  resetBeaver: vi.fn(() => Promise.resolve(true)),
+  deleteProfile: vi.fn(() => Promise.resolve(null)),
+  undoDelete: vi.fn(() => Promise.resolve(true)),
   view: null as null | {
     global_profile_id: string;
     global_selection_revision: number;
@@ -26,6 +31,9 @@ vi.mock("react-i18next", () => ({
     t: (key: string) => ({
       "settings.advanced.compressionProfileTitle": "Profil de compression",
       "settings.advanced.compressionProfileDesc": "Configuration par défaut",
+      "settings.advanced.compressionAdvancedTitle": "Configuration avancée",
+      "settings.advanced.compressionAdvancedDesc": "Profil et contenu conservé",
+      "settings.advanced.compressionAdvanced": "Avancé",
       "settings.advanced.compressionThresholdTitle": "Seuil de compression",
       "settings.advanced.compressionThresholdDesc": "Part de la fenêtre",
       "settings.advanced.compressionDisabledUnder64": "Compression désactivée pour les fenêtres de contexte inférieures à 64K.",
@@ -54,13 +62,14 @@ beforeEach(() => {
 });
 
 describe("CompressionSettingsCard", () => {
-  it("affiche Beaver puis les profils personnalisés sans bouton avancé inerte", () => {
+  it("affiche Beaver puis les profils personnalisés avec le panneau fonctionnel", () => {
     render(<CompressionSettingsCard defaultModel="ollama:qwen" />);
 
     fireEvent.click(screen.getByRole("button", { name: /Beaver/i }));
     const options = [...document.querySelectorAll(".ss-option")];
     expect(options.map((option) => option.textContent)).toEqual(["Beaver", "Custom"]);
-    expect(screen.queryByRole("button", { name: /Avancé/i })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Avancé" }));
+    expect(screen.getByRole("dialog", { name: /settings.advanced.compressionPanelTitle/i })).toBeInTheDocument();
   });
 
   it("borne le seuil entre 1 et 90 et sauvegarde le profil entier", () => {

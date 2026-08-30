@@ -1,0 +1,148 @@
+.cpa-overlay,
+.cpd-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  padding: var(--space-xl);
+  display: grid;
+  place-items: center;
+}
+
+.cpa-backdrop-dismiss,
+.cpd-backdrop-dismiss {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: var(--dialog-backdrop);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  cursor: default;
+}
+
+.cpa-dialog {
+  position: relative;
+  width: min(var(--dialog-wide-max-width), 92vw);
+  height: min(var(--dialog-tall-max-height), 88vh);
+  min-height: 0;
+  padding: var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  border-radius: var(--radius-panel);
+  background: var(--surface-raised);
+  color: var(--ink);
+  box-shadow: var(--elev-above);
+}
+
+.cpa-head {
+  flex: none;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.cpa-head h2 {
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: 600;
+}
+
+.cpa-head p {
+  margin: var(--space-xs) 0 0;
+  max-width: 56ch;
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.cpa-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding-right: var(--space-sm);
+  overflow-y: auto;
+}
+
+.cpa-placeholder {
+  min-height: 8rem;
+  padding: var(--space-xl);
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius);
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+  text-align: center;
+}
+
+.cpa-foot {
+  flex: none;
+  min-height: var(--space-xs);
+  border-top: 1px solid var(--edge);
+}
+
+.cpb-bar {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.cpb-label,
+.cpb-loading {
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+}
+
+.cpb-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.cpb-rename {
+  width: 12rem;
+}
+
+.cpd-overlay {
+  z-index: var(--z-dialog);
+}
+
+.cpd-dialog {
+  position: relative;
+  width: min(26rem, calc(100vw - var(--space-xl) * 2));
+  padding: var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  color: var(--ink);
+  box-shadow: var(--elev-above);
+}
+
+.cpd-dialog h3,
+.cpd-dialog p {
+  margin: 0;
+}
+
+.cpd-dialog p {
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+}
+
+.cpd-count {
+  min-height: 1rem;
+  color: var(--ink-faint);
+  font-size: var(--text-xs);
+}
+
+.cpd-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+}

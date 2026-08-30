@@ -1,0 +1,18 @@
+.era-actions {
+  position: relative;
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.era-confirm {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + var(--space-xs));
+  z-index: var(--z-dropdown);
+  padding: var(--space-sm);
+  display: flex;
+  gap: var(--space-xs);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  box-shadow: var(--elev-float);
+}

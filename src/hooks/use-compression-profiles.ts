@@ -4,6 +4,7 @@ import { useFsEvent } from "@/hooks/use-fs-event";
 import { showToast } from "@/lib/toast-emitter";
 import i18n from "@/i18n";
 import type {
+  CompressionDeleteResult,
   CompressionProfileInput,
   CompressionProfilesView,
 } from "@/types/compression-profile.generated";
@@ -18,6 +19,11 @@ export interface CompressionProfilesController {
   busy: boolean;
   selectGlobal(profileId: string): Promise<boolean>;
   save(input: CompressionProfileInput): Promise<boolean>;
+  create(sourceProfileId: string, name: string): Promise<boolean>;
+  rename(profileId: string, name: string): Promise<boolean>;
+  resetBeaver(): Promise<boolean>;
+  deleteProfile(profileId: string): Promise<CompressionDeleteResult | null>;
+  undoDelete(token: string): Promise<boolean>;
   refresh(): Promise<void>;
 }
 
@@ -84,6 +90,23 @@ export function useCompressionProfiles(): CompressionProfilesController {
     }
   }, [applyView, busy]);
 
+  const mutateView = useCallback(async (
+    command: string,
+    args?: Record<string, unknown>,
+  ): Promise<boolean> => {
+    if (busy || saveRunningRef.current) return false;
+    setBusy(true);
+    try {
+      applyView(await invoke<CompressionProfilesView>(command, args));
+      return true;
+    } catch {
+      showToast(i18n.t("errors.saveFailed"), "error");
+      return false;
+    } finally {
+      if (mountedRef.current) setBusy(false);
+    }
+  }, [applyView, busy]);
+
   const runSaveQueue = useCallback(async (first: QueuedSave) => {
     saveRunningRef.current = true;
     if (mountedRef.current) setBusy(true);
@@ -132,5 +155,38 @@ export function useCompressionProfiles(): CompressionProfilesController {
     })
   ), [runSaveQueue]);
 
-  return { view, busy, selectGlobal, save, refresh };
+  const deleteProfile = useCallback(async (
+    profileId: string,
+  ): Promise<CompressionDeleteResult | null> => {
+    if (busy || saveRunningRef.current) return null;
+    setBusy(true);
+    try {
+      const result = await invoke<CompressionDeleteResult>("delete_compression_profile", {
+        profileId,
+      });
+      applyView(result.view);
+      return result;
+    } catch {
+      showToast(i18n.t("errors.saveFailed"), "error");
+      return null;
+    } finally {
+      if (mountedRef.current) setBusy(false);
+    }
+  }, [applyView, busy]);
+
+  return {
+    view,
+    busy,
+    selectGlobal,
+    save,
+    create: (sourceProfileId, name) => mutateView("create_compression_profile", {
+      sourceProfileId,
+      name,
+    }),
+    rename: (profileId, name) => mutateView("rename_compression_profile", { profileId, name }),
+    resetBeaver: () => mutateView("reset_beaver_compression_profile"),
+    deleteProfile,
+    undoDelete: (undoToken) => mutateView("undo_delete_compression_profile", { undoToken }),
+    refresh,
+  };
 }
