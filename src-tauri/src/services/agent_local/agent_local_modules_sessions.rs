@@ -22,6 +22,7 @@ mod conversation_history_resolve;
 mod conversation_history_tests;
 pub(crate) mod conversation_history_validation;
 pub mod conversation_input;
+mod conversation_input_persisted;
 #[cfg(test)]
 mod conversation_input_tests;
 pub(crate) mod conversation_journal;

@@ -11,6 +11,7 @@ pub use super::subagent_report_context::{
 };
 
 pub(super) const MAX_PENDING_REPORTS: usize = 16;
+pub(super) const REPORT_QUEUE_FULL: &str = "La file de rapports de sous-agents est pleine.";
 const MAX_REPORT_SUMMARY_CHARS: usize = 12_000;
 
 #[cfg(test)]
@@ -38,7 +39,7 @@ pub(super) async fn append_locked(
             .iter()
             .position(|stored| stored.delivered)
         else {
-            return Err("La file de rapports de sous-agents est pleine.".to_string());
+            return Err(REPORT_QUEUE_FULL.to_string());
         };
         session.subagent_hidden_reports.remove(oldest_delivered);
     }
@@ -49,16 +50,15 @@ pub(super) async fn append_locked(
 pub async fn peek_reports(session_id: &str) -> Vec<SubagentHiddenReport> {
     let lock = super::session_store::lock_session(session_id).await;
     let _guard = lock.lock().await;
-    super::session_store::get(session_id)
-        .await
-        .map(|session| {
-            session
-                .subagent_hidden_reports
-                .into_iter()
-                .filter(|report| !report.delivered)
-                .collect()
-        })
-        .unwrap_or_default()
+    let Ok(mut session) = super::session_store::get(session_id).await else {
+        return Vec::new();
+    };
+    let _ = super::subagent_report_overflow::drain_into_parent(&mut session).await;
+    session
+        .subagent_hidden_reports
+        .into_iter()
+        .filter(|report| !report.delivered)
+        .collect()
 }
 
 #[cfg(test)]

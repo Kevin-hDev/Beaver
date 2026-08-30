@@ -62,10 +62,10 @@ async fn write_file_reads_real_content_from_disk() {
 }
 
 #[tokio::test]
-async fn manual_keeps_only_five_recent_files() {
+async fn both_triggers_keep_the_same_fifteen_recent_files() {
     let tmp = tempdir().unwrap();
     let mut messages = Vec::new();
-    for idx in 0..6 {
+    for idx in 0..20 {
         let name = format!("f{idx}.rs");
         tokio::fs::write(tmp.path().join(&name), format!("content {idx}"))
             .await
@@ -76,13 +76,13 @@ async fn manual_keeps_only_five_recent_files() {
     let msg = compression_context_message(&messages, 200_000, tmp.path(), CompressionMode::Manual)
         .await
         .unwrap();
-    assert!(!msg.content.contains("f0.rs"));
-    assert!(msg.content.contains("f1.rs"));
+    assert!(!msg.content.contains("f4.rs"));
     assert!(msg.content.contains("f5.rs"));
+    assert!(msg.content.contains("f19.rs"));
 }
 
 #[tokio::test]
-async fn auto_scans_only_since_request_start() {
+async fn auto_and_manual_scan_the_same_history() {
     let tmp = tempdir().unwrap();
     tokio::fs::write(tmp.path().join("old.rs"), "old")
         .await
@@ -108,8 +108,28 @@ async fn auto_scans_only_since_request_start() {
     )
     .await
     .unwrap();
-    assert!(!msg.content.contains("old.rs"));
+    assert!(msg.content.contains("old.rs"));
     assert!(msg.content.contains("now.rs"));
+}
+
+#[tokio::test]
+async fn under_64k_keeps_eight_recent_files() {
+    let tmp = tempdir().unwrap();
+    let mut messages = Vec::new();
+    for idx in 0..10 {
+        let name = format!("small{idx}.rs");
+        tokio::fs::write(tmp.path().join(&name), format!("content {idx}"))
+            .await
+            .unwrap();
+        messages.push(assistant("read_file", &name));
+        messages.push(tool("ignored cache"));
+    }
+    let msg = compression_context_message(&messages, 32_000, tmp.path(), CompressionMode::Manual)
+        .await
+        .unwrap();
+    assert!(!msg.content.contains("small1.rs"));
+    assert!(msg.content.contains("small2.rs"));
+    assert!(msg.content.contains("small9.rs"));
 }
 
 #[tokio::test]

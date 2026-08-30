@@ -91,7 +91,7 @@ async fn legacy_skill_names_without_private_ids_stay_readable_without_invented_c
 }
 
 #[tokio::test]
-async fn unavailable_historical_file_or_skill_blocks_with_one_generic_error() {
+async fn unavailable_historical_file_is_marked_but_missing_skill_still_blocks() {
     for remove_skill in [false, true] {
         let session = create_session().await;
         let fixture = install_context_fixture(if remove_skill {
@@ -111,18 +111,26 @@ async fn unavailable_historical_file_or_skill_blocks_with_one_generic_error() {
             fs::remove_file(&fixture.text_path).unwrap();
         }
 
-        let error =
+        let result =
             conversation_history::load_for_target_with_key(&session.id, &target("model-a"), &KEY)
-                .await
-                .expect_err("missing authority must close");
-        assert_eq!(error.to_string(), ERROR);
+                .await;
+        if remove_skill {
+            assert_eq!(result.unwrap_err().to_string(), ERROR);
+        } else {
+            let history = result.expect("one missing attachment is isolated");
+            assert!(history
+                .messages
+                .iter()
+                .any(|message| message.content.contains("[attachment unavailable]")));
+            assert!(history.messages.iter().any(|message| !message.images.is_empty()));
+        }
         fixture.cleanup();
         cleanup(&session.id).await;
     }
 }
 
 #[tokio::test]
-async fn unavailable_prior_context_blocks_admission_before_mutating_the_session() {
+async fn unavailable_prior_attachment_is_marked_without_blocking_admission() {
     let session = create_session().await;
     let fixture = install_context_fixture("admission-preflight");
     let first = conversation_input::resolve_with_key(fixture.input("first"), &KEY)
@@ -154,19 +162,23 @@ async fn unavailable_prior_context_blocks_admission_before_mutating_the_session(
     .await
     .unwrap();
 
-    let error =
+    let admitted =
         conversation_admission::new_turn_with_key(&session.id, next, target("model-a"), &KEY)
             .await
-            .expect_err("unavailable prior context blocks admission");
+            .expect("unavailable prior attachment is isolated");
 
-    assert_eq!(error.to_string(), ERROR);
-    assert_eq!(fs::read(path).unwrap(), before);
+    assert!(admitted
+        .history
+        .messages
+        .iter()
+        .any(|message| message.content.contains("[attachment unavailable]")));
+    assert_ne!(fs::read(path).unwrap(), before);
     fixture.cleanup();
     cleanup(&session.id).await;
 }
 
 #[tokio::test]
-async fn unavailable_context_blocks_edit_before_mutating_the_session() {
+async fn unavailable_attachment_is_marked_without_blocking_edit() {
     let session = create_session().await;
     let fixture = install_context_fixture("edit-preflight");
     let first = conversation_input::resolve_with_key(fixture.input("first"), &KEY)
@@ -180,7 +192,7 @@ async fn unavailable_context_blocks_edit_before_mutating_the_session() {
     let path = super::support::session_path(&session.id);
     let before = fs::read(&path).unwrap();
 
-    let error = super::super::conversation_edit::edit_user_message(
+    let history = super::super::conversation_edit::edit_user_message(
         &session.id,
         crate::models::agent_session_contract::EditUserMessageInput {
             message_id: admitted.user_message_id,
@@ -189,10 +201,13 @@ async fn unavailable_context_blocks_edit_before_mutating_the_session() {
         &target("model-a"),
     )
     .await
-    .expect_err("unavailable context blocks edit before its write");
+    .expect("unavailable attachment is isolated");
 
-    assert_eq!(error.to_string(), ERROR);
-    assert_eq!(fs::read(path).unwrap(), before);
+    assert!(history
+        .messages
+        .iter()
+        .any(|message| message.content.contains("[attachment unavailable]")));
+    assert_ne!(fs::read(path).unwrap(), before);
     fixture.cleanup();
     cleanup(&session.id).await;
 }
@@ -253,7 +268,7 @@ async fn resume_rebuilds_prior_context_before_accepting_a_simple_terminal_user()
 }
 
 #[tokio::test]
-async fn edit_race_after_preflight_fails_before_writer_and_preserves_exact_bytes() {
+async fn edit_race_after_preflight_marks_attachment_and_still_calls_writer() {
     let session = create_session().await;
     let fixture = install_context_fixture("edit-race");
     let first = conversation_input::resolve_with_key(fixture.input("first"), &KEY)
@@ -269,7 +284,7 @@ async fn edit_race_after_preflight_fails_before_writer_and_preserves_exact_bytes
     let writer_called = Arc::new(AtomicBool::new(false));
     let observed = writer_called.clone();
 
-    let error = conversation_admission::edit_user_message_after_preflight_with_key_and_writer(
+    let history = conversation_admission::edit_user_message_after_preflight_with_key_and_writer(
         &session.id,
         crate::models::agent_session_contract::EditUserMessageInput {
             message_id: admitted.user_message_id,
@@ -286,10 +301,13 @@ async fn edit_race_after_preflight_fails_before_writer_and_preserves_exact_bytes
         },
     )
     .await
-    .expect_err("post-preflight race must fail before the writer");
+    .expect("post-preflight attachment loss is isolated");
 
-    assert_eq!(error.to_string(), ERROR);
-    assert!(!writer_called.load(Ordering::SeqCst));
+    assert!(history
+        .messages
+        .iter()
+        .any(|message| message.content.contains("[attachment unavailable]")));
+    assert!(writer_called.load(Ordering::SeqCst));
     assert_eq!(fs::read(path).unwrap(), before);
     fixture.cleanup();
     cleanup(&session.id).await;

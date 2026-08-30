@@ -131,9 +131,15 @@ async fn append_report(
         status.to_string(),
         summary.to_string(),
     );
-    super::subagent_hidden_reports::append_locked(parent, report)
-        .await
-        .is_ok()
+    match super::subagent_hidden_reports::append_locked(parent, report.clone()).await {
+        Ok(()) => true,
+        Err(error) if error == super::subagent_hidden_reports::REPORT_QUEUE_FULL => {
+            super::subagent_report_overflow::enqueue(&parent.id, report)
+                .await
+                .is_ok()
+        }
+        Err(_) => false,
+    }
 }
 
 async fn persist_failed_child(child: &mut AgentSession) -> Result<(), String> {

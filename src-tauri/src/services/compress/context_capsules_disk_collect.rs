@@ -3,9 +3,7 @@ use crate::services::agent_local::types_ollama::ChatMessage;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
-use super::context_capsules_disk::{
-    CapsuleEvent, CompressionMode, MAX_AUTO_FILES, MAX_MANUAL_FILES, MAX_RECENT_TOOLS,
-};
+use super::context_capsules_disk::{CapsuleEvent, MAX_RECENT_TOOLS};
 
 const UNAVAILABLE_MARKER: &str = "[file unavailable: deleted, binary, or unreadable]";
 
@@ -17,7 +15,7 @@ struct FileCandidate {
 pub async fn recent_disk_file_events(
     messages: &[ChatMessage],
     working_dir: &Path,
-    mode: CompressionMode,
+    max_files: usize,
 ) -> Vec<CapsuleEvent> {
     let mut seen = HashSet::<PathBuf>::new();
     let mut events = Vec::new();
@@ -34,19 +32,12 @@ pub async fn recent_disk_file_events(
             path: candidate.path,
             result,
         });
-        if events.len() >= max_file_events(mode) {
+        if events.len() >= max_files {
             break;
         }
     }
     events.reverse();
     events
-}
-
-fn max_file_events(mode: CompressionMode) -> usize {
-    match mode {
-        CompressionMode::Manual => MAX_MANUAL_FILES,
-        CompressionMode::Auto { .. } => MAX_AUTO_FILES,
-    }
 }
 
 pub fn recent_tool_events(messages: &[ChatMessage]) -> Vec<CapsuleEvent> {

@@ -110,6 +110,9 @@ pub(crate) async fn delete_one(id: &str) -> Result<(), String> {
     super::extension_session_state::remove(id)
         .await
         .map_err(|_| "Suppression de session impossible".to_string())?;
+    super::subagent_report_overflow::remove_for_parent(id)
+        .await
+        .map_err(|_| "Suppression de session impossible".to_string())?;
     super::session_permission_state::remove(id)
         .await
         .map_err(|_| "Suppression de session impossible".to_string())?;

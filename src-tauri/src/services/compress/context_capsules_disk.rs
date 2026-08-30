@@ -3,9 +3,9 @@ use std::path::Path;
 
 use super::context_capsules_disk_collect::{recent_disk_file_events, recent_tool_events};
 
-pub(crate) const MAX_MANUAL_FILES: usize = 5;
-pub(crate) const MAX_AUTO_FILES: usize = 15;
-pub(crate) const MAX_RECENT_TOOLS: usize = 3;
+pub(crate) const MAX_FILES: usize = 15;
+pub(crate) const MAX_UNDER_64K_FILES: usize = 8;
+pub(crate) const MAX_RECENT_TOOLS: usize = 100;
 pub(crate) const TOKENS_PER_CHAR: usize = 4;
 pub(crate) const MIN_TOTAL_TOKENS: usize = 4_000;
 pub(crate) const MAX_TOTAL_TOKENS: usize = 20_000;
@@ -31,22 +31,23 @@ pub async fn compression_context_message(
     working_dir: &Path,
     mode: CompressionMode,
 ) -> Option<ChatMessage> {
-    let scan = scan_messages(messages, mode);
-    let file_events = recent_disk_file_events(scan, working_dir, mode).await;
-    let tool_events = recent_tool_events(scan);
+    let _legacy_request_start = match mode {
+        CompressionMode::Manual => None,
+        CompressionMode::Auto {
+            request_start_index,
+        } => Some(request_start_index),
+    };
+    let max_files = if context_window < 64_000 {
+        MAX_UNDER_64K_FILES
+    } else {
+        MAX_FILES
+    };
+    let file_events = recent_disk_file_events(messages, working_dir, max_files).await;
+    let tool_events = recent_tool_events(messages);
     if file_events.is_empty() && tool_events.is_empty() {
         return None;
     }
     Some(build_message(file_events, tool_events, context_window))
-}
-
-fn scan_messages(messages: &[ChatMessage], mode: CompressionMode) -> &[ChatMessage] {
-    match mode {
-        CompressionMode::Manual => messages,
-        CompressionMode::Auto {
-            request_start_index,
-        } => &messages[request_start_index.min(messages.len())..],
-    }
 }
 
 fn build_message(
