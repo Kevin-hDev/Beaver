@@ -37,13 +37,6 @@
   max-width: min(var(--dialog-wide-max-width), 92vw);
 }
 
-/* WebKit nested-blur workaround: disable the panel blur when the dialog
-   contains a custom-select dropdown. */
-.wk-dialog:has(.cs-dropdown) {
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-}
-
 .wk-dialog-header {
   display: flex;
   align-items: center;

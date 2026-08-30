@@ -5,7 +5,7 @@
   --void: #121212;
   --app-frame: var(--void);
   --shell: var(--surface-glass);
-  --shell-opaque: rgba(37, 37, 37, 0.98);
+  --shell-opaque: #252525;
   --shell-translucent: rgba(37, 37, 37, 0.85);
   --surface: var(--surface-glass);
   --surface-hover: rgba(200, 200, 210, 0.08);

@@ -23,9 +23,3 @@
   font-weight: 600;
   line-height: 1.5;
 }
-
-.gmd-dialog .cs-dropdown {
-  background: var(--shell-opaque);
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-}

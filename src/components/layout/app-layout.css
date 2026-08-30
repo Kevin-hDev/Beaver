@@ -8,6 +8,25 @@ body.os-mac {
   --dialog-overlay-filter: blur(8px);
 }
 
+/* Un voile flouté interdit tout autre flou à l'intérieur : WebKit ne refloute
+   pas ce qui l'est déjà, et une couche posée dans un dialogue n'obtient alors
+   que la couleur de son token — translucide, donc transparente à l'écran. Sous
+   le voile, les couches passent à l'opaque ; les tokens étant hérités, panneaux,
+   listes et infobulles suivent sans qu'aucun composant ait à le savoir.
+   Mesuré dans WebKit : couper le flou du seul panneau ne change rien, c'est le
+   voile qui fait écran. */
+.wk-dialog-overlay,
+.aim-dialog-backdrop,
+.search-overlay,
+.ib-dialog-overlay,
+.spp-warning-overlay,
+.bcd-overlay,
+.cga-overlay {
+  --popover-bg: var(--shell-opaque);
+  --popover-backdrop-filter: none;
+  --tooltip-backdrop-filter: none;
+}
+
 .app-root {
   --app-sidebar-hidden-offset: calc(var(--list-width) + 20px);
   display: flex;
