@@ -34,8 +34,7 @@ pub(super) fn output_starts_with(rendered: &str, prefix: &str) -> bool {
 fn raw_parts(rendered: &str) -> Option<(&str, &str)> {
     let (metadata, output) = rendered.split_once('\n')?;
     let value: Value = serde_json::from_str(metadata).ok()?;
-    (is_tool_metadata(&value) && value["outputFormat"] == RAW_FORMAT)
-        .then_some((metadata, output))
+    (is_tool_metadata(&value) && value["outputFormat"] == RAW_FORMAT).then_some((metadata, output))
 }
 
 fn is_legacy_envelope(value: &Value) -> bool {

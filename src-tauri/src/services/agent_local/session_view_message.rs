@@ -77,11 +77,7 @@ fn visible_thinking(message: &AgentMessage) -> Option<String> {
     let thinking = blocks
         .iter()
         .filter(|block| block.get("type").and_then(serde_json::Value::as_str) == Some("thinking"))
-        .filter_map(|block| {
-            block
-                .get("thinking")
-                .and_then(serde_json::Value::as_str)
-        })
+        .filter_map(|block| block.get("thinking").and_then(serde_json::Value::as_str))
         .collect::<String>();
     (!thinking.is_empty()).then_some(thinking)
 }

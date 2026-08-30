@@ -14,8 +14,7 @@ pub async fn test_key(provider_id: &str) -> Result<(), String> {
 }
 
 fn uses_qwen_probe(provider_id: &str) -> bool {
-    provider_id
-        == crate::services::reasoning_continuity::contract::RouteId::Qwen.provider_id()
+    provider_id == crate::services::reasoning_continuity::contract::RouteId::Qwen.provider_id()
 }
 
 pub async fn test_key_raw(provider_id: &str, key: &str) -> Result<(), String> {
@@ -57,16 +56,11 @@ pub async fn test_qwen_key_raw(
             // Cette sonde minimale reste sur le modèle de validation officiel tant que
             // `/models` n'est pas disponible dans toutes les régions DashScope.
             let response = client
-                .send(
-                    client
-                        .post(&url)
-                        .bearer_auth(key)
-                        .json(&serde_json::json!({
-                            "model": "qwen3.8-flash",
-                            "max_completion_tokens": 1,
-                            "messages": [{"role": "user", "content": "hi"}],
-                        })),
-                )
+                .send(client.post(&url).bearer_auth(key).json(&serde_json::json!({
+                    "model": "qwen3.8-flash",
+                    "max_completion_tokens": 1,
+                    "messages": [{"role": "user", "content": "hi"}],
+                })))
                 .await
                 .map_err(|_| "test de la clé impossible".to_string())?;
             check_status(response).await
@@ -99,9 +93,7 @@ pub(crate) fn reject_unsupported_qwen_key(key: &str) -> Result<(), String> {
 
 fn llm_probe(
     provider_id: &str,
-) -> Option<
-    Result<crate::services::llm::api_key_probe::ProbeSpec, &'static str>,
-> {
+) -> Option<Result<crate::services::llm::api_key_probe::ProbeSpec, &'static str>> {
     crate::services::llm::catalog::find_configurable(provider_id)?;
     Some(crate::services::llm::api_key_probe::resolve(provider_id))
 }
