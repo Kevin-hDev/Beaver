@@ -69,7 +69,7 @@ pub fn compact_complete_turns(
     })
 }
 
-pub(super) fn turn_ranges(messages: &[AgentMessage]) -> Vec<std::ops::Range<usize>> {
+pub(crate) fn turn_ranges(messages: &[AgentMessage]) -> Vec<std::ops::Range<usize>> {
     let mut ranges = Vec::new();
     let mut start = 0usize;
     while start < messages.len() {
@@ -94,7 +94,7 @@ fn is_open_tool_chain(turn: &[AgentMessage]) -> bool {
     })
 }
 
-pub(super) fn is_terminal_turn(turn: &[AgentMessage]) -> bool {
+pub(crate) fn is_terminal_turn(turn: &[AgentMessage]) -> bool {
     turn.last()
         .is_some_and(|message| message.role == "assistant" && message.tool_calls.is_none())
 }

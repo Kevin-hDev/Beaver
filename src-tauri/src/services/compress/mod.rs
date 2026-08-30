@@ -1,4 +1,9 @@
 pub mod canonical_context;
+pub mod checkpoint_messages;
+pub mod checkpoint_reasoning;
+pub mod checkpoint_selection;
+pub mod checkpoint_tools;
+pub mod checkpoint_units;
 pub mod compression_redaction;
 pub mod context_capsules;
 pub mod context_capsules_disk;
@@ -59,6 +64,15 @@ mod snapshot_tests;
 
 #[cfg(test)]
 mod canonical_context_tests;
+
+#[cfg(test)]
+mod checkpoint_messages_tests;
+
+#[cfg(test)]
+mod checkpoint_reasoning_tests;
+
+#[cfg(test)]
+mod checkpoint_tools_tests;
 
 #[cfg(test)]
 mod compression_redaction_tests;

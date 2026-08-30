@@ -46,8 +46,10 @@ fn valid_v1_document_is_normalized_and_missing_global_falls_back() {
     let root = tempfile::tempdir().expect("temp root");
     let profile_path = root.path().join("compression-profiles.json");
     let config_path = root.path().join("config.json");
-    let mut document = CompressionProfileDocument::default();
-    document.global_profile_id = "missing".into();
+    let mut document = CompressionProfileDocument {
+        global_profile_id: "missing".into(),
+        ..CompressionProfileDocument::default()
+    };
     document.profiles[0].threshold_percent = 200;
     std::fs::write(&profile_path, serde_json::to_vec(&document).expect("json")).expect("write");
 

@@ -1,4 +1,5 @@
 use crate::services::agent_local::types_ollama::ChatMessage;
+use crate::services::agent_local::types_session::AgentMessage;
 
 pub fn estimate_tokens(messages: &[ChatMessage]) -> usize {
     crate::services::token_counting::estimate_chat_tokens(messages)
@@ -63,6 +64,20 @@ pub fn estimate_request_tokens_for_provider(
     tools: &[serde_json::Value],
 ) -> usize {
     estimate_tokens_for_provider(provider_id, messages).saturating_add(estimate_tool_tokens(tools))
+}
+
+#[allow(
+    dead_code,
+    reason = "the compression orchestrator consumes checkpoint estimates in Task 10"
+)]
+pub fn estimate_checkpoint_message_tokens(message: &AgentMessage) -> u32 {
+    let visible = crate::services::token_counting::estimate_agent_message_tokens(message);
+    let continuation = message
+        .continuation
+        .as_ref()
+        .and_then(|envelope| serde_json::to_vec(envelope).ok())
+        .map_or(0, |bytes| bytes.len().div_ceil(4));
+    visible.saturating_add(continuation).min(u32::MAX as usize) as u32
 }
 
 pub fn should_compress(used_tokens: usize, context_window: u64, threshold_pct: u8) -> bool {
