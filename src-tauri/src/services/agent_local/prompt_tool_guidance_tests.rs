@@ -80,3 +80,18 @@ fn agent_prompts_do_not_claim_an_active_permission_mode() {
         assert!(!prompt.contains("Full access mode"));
     }
 }
+
+#[test]
+fn chatbot_prompts_expose_only_real_web_capabilities() {
+    for prompt in [
+        super::prompt_chat_compact::build_with_behavior(Path::new("."), None),
+        super::prompt_chat_detailed::build_with_behavior(Path::new("."), None),
+    ] {
+        assert!(prompt.contains("web_search"));
+        assert!(prompt.contains("web_fetch"));
+        assert!(!prompt.contains("ask_user_choice"));
+        assert!(!prompt.contains("Chatbot"));
+        assert!(!prompt.contains("Ask for approval"));
+        assert!(!prompt.contains("Full access"));
+    }
+}

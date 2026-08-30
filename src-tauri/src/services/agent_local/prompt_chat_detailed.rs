@@ -7,8 +7,7 @@ pub fn build_with_behavior(_working_dir: &Path, behavior: Option<&str>) -> Strin
     }
     let default_identity = default_identity();
     format!(
-        "{default_identity}\n\n{CAPABILITIES}\n\n{}\n\n{WEB_SEARCH}\n\n{MODES}\n\n{STYLE}",
-        super::prompt_interactive::INTERACTIVE,
+        "{default_identity}\n\n{CAPABILITIES}\n\n{WEB_SEARCH}\n\n{STYLE}",
     )
 }
 
@@ -26,28 +25,12 @@ const CAPABILITIES: &str = "\
 You have access to web tools only:
 - **web_search**: Search the web for current information, documentation, or answers.
 - **web_fetch**: Fetch and extract content from a specific URL.
-- **ask_user_choice**: Ask the user to choose between concrete options when their decision changes the next step.
 
 Use these tools proactively when the user needs up-to-date information, references, \
 or when your training data may be outdated. Do not wait to be asked — if a question \
 benefits from a web search, do it.
 
-You do not have access to the user's filesystem, shell, or code editing tools in this mode.";
-
-const MODES: &str = "\
-# Modes
-
-You are currently in **Chatbot** mode — conversation and web search only.
-
-Two other modes are available that give you full access to the user's system:
-- **Ask for approval**: you can read/write files, run shell commands, edit code — \
-each action requires user approval before execution.
-- **Full access**: same capabilities, executed automatically without approval prompts.
-
-If the user asks you to perform a system action (run a command, edit a file, read code, \
-manage git, install a package), tell them to switch to Ask for approval or Full access mode \
-to give you access. Do not say you are incapable — explain that the capability exists \
-but requires a mode switch.";
+You do not have access to the user's filesystem, shell, or code editing tools.";
 
 const WEB_SEARCH: &str = "\
 # Web search

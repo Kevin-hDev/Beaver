@@ -28,7 +28,7 @@ fn chat_mode_injects_chat_prompt() {
     assert!(sys.content.contains("conversational assistant"));
     assert!(sys.content.contains("Beaver"));
     assert!(!sys.content.contains("CL-GO"));
-    assert!(sys.content.contains("Chatbot"));
+    assert!(!sys.content.contains("Chatbot"));
     assert!(!sys.content.contains("autonomous"));
 }
 
@@ -76,7 +76,7 @@ fn chat_mode_skips_skills() {
 }
 
 #[test]
-fn chat_mode_mentions_other_modes() {
+fn chat_prompt_does_not_expose_backend_modes_or_unavailable_tools() {
     let mut msgs = vec![make_user_msg("hello")];
     let wd = std::path::Path::new("/tmp/project");
     prepare_messages(
@@ -92,8 +92,10 @@ fn chat_mode_mentions_other_modes() {
         "",
     );
     let sys = &msgs[0];
-    assert!(sys.content.contains("Ask for approval"));
-    assert!(sys.content.contains("Full access"));
+    assert!(!sys.content.contains("Chatbot"));
+    assert!(!sys.content.contains("Ask for approval"));
+    assert!(!sys.content.contains("Full access"));
+    assert!(!sys.content.contains("ask_user_choice"));
 }
 
 #[test]

@@ -1,3 +1,4 @@
+pub mod canonical_context;
 pub mod context_capsules;
 pub mod context_capsules_disk;
 mod context_capsules_disk_collect;
@@ -15,6 +16,8 @@ pub mod profile_types;
 pub mod profile_validation;
 pub mod prompt;
 pub mod realtime_budget;
+pub mod session_capabilities;
+pub mod snapshot;
 pub mod state;
 pub(crate) mod state_recent;
 #[cfg(test)]
@@ -43,6 +46,15 @@ mod profile_store_tests;
 
 #[cfg(test)]
 mod profile_validation_tests;
+
+#[cfg(test)]
+mod session_capabilities_tests;
+
+#[cfg(test)]
+mod snapshot_tests;
+
+#[cfg(test)]
+mod canonical_context_tests;
 
 #[cfg(test)]
 mod timeouts_tests;
