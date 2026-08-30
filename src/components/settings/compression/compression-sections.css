@@ -76,17 +76,6 @@
   gap: var(--space-xs);
 }
 
-.cse-warning {
-  flex: none;
-  padding: var(--space-md);
-  border: 1px solid var(--signal-warning);
-  border-radius: var(--radius-sm);
-  background: var(--surface-raised);
-  color: var(--ink);
-  font-size: var(--text-sm);
-  line-height: 1.45;
-}
-
 .cse-ranges-legend {
   margin-left: auto;
 }

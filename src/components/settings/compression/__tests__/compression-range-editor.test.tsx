@@ -62,7 +62,9 @@ describe("CompressionProfileEditor", () => {
       name: "settings.advanced.compressionUnder64Title",
     }));
     expect(save).toHaveBeenLastCalledWith(expect.objectContaining({ allow_under_64k: true }));
-    expect(screen.getByText("settings.advanced.compressionUnder64Warning")).toBeInTheDocument();
+    expect(screen.getByText("settings.advanced.compressionUnder64Warning")).toHaveClass(
+      "toast-warning",
+    );
     expect(screen.getByLabelText("settings.advanced.compressionAutomaticThreshold")).toBeEnabled();
     const saved = save.mock.lastCall?.[0];
     if (!saved) throw new Error("missing saved profile");

@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { InlineToast } from "@/components/ui/toast";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 
 interface CompressionUnder64WarningProps {
@@ -33,9 +34,9 @@ export function CompressionUnder64Warning({
         />
       </div>
       {enabled && (
-        <div className="cse-warning" role="status">
+        <InlineToast type="warning">
           {t("settings.advanced.compressionUnder64Warning")}
-        </div>
+        </InlineToast>
       )}
     </>
   );
