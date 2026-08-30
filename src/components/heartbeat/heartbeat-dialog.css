@@ -1,7 +1,9 @@
 /* Unified dialog contract — Phase 1 spec §4.1.
    Overlay: --dialog-backdrop + OS-gated blur(8px), z --z-overlay.
-   Panel: radius-md glass (OS-gated via --popover-* tokens), border --edge,
-   shadow --shadow-lg. Shared by every .wk-dialog across the app. */
+   Panel: radius-md, --popover-* tokens, border --edge, shadow --shadow-lg.
+   Shared by every .wk-dialog across the app. Those tokens resolve to an opaque
+   colour under the overlay — a nested backdrop-filter has no effect in WebKit,
+   see the rule on the overlays in app-layout.css. */
 .wk-dialog-overlay {
   position: fixed;
   inset: 0;
@@ -97,11 +99,6 @@
   letter-spacing: 0.5px;
   color: var(--ink-muted);
   font-weight: 500;
-}
-
-.wk-input option {
-  background: var(--shell-opaque);
-  color: var(--ink);
 }
 
 .wk-input:disabled {
