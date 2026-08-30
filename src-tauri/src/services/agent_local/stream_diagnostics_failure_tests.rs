@@ -93,3 +93,12 @@ fn stable_provider_codes_survive_session_persistence() {
         "service_tier_unavailable"
     );
 }
+
+#[test]
+fn compression_failure_keeps_its_stable_code() {
+    assert_eq!(
+        classify_error("compression_failed", false),
+        "compression_failed"
+    );
+    assert_eq!(safe_code("compression_failed"), "compression_failed");
+}

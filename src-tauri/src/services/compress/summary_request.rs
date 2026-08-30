@@ -99,7 +99,10 @@ pub async fn execute(
         match collector.collect(call).await {
             Ok(output) => {
                 return super::summary_contract::validate(output, call.maximum_output_tokens)
-                    .map_err(|_| SummaryExecutionError::InvalidOutput)
+                    .map_err(|reason| {
+                        log::warn!(target: "compression_summary_validation", "reason={reason}");
+                        SummaryExecutionError::InvalidOutput
+                    })
             }
             Err(SummaryAttemptError::Retryable) if attempt < retries => {
                 tokio::time::sleep(super::summary_retry::delay(attempt)).await;

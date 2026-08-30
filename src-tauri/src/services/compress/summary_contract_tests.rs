@@ -49,7 +49,6 @@ fn rejects_missing_empty_duplicate_or_trailing_envelopes() {
     for content in [
         "plain text".to_string(),
         "<summary> </summary>".to_string(),
-        format!("{}\n{}", valid_output(), valid_output()),
         format!("{} trailing", valid_output()),
         "<summary>1. Primary Request and Intent</summary>".to_string(),
     ] {
@@ -58,18 +57,94 @@ fn rejects_missing_empty_duplicate_or_trailing_envelopes() {
 }
 
 #[test]
+fn normalizes_harmless_envelope_replays_and_mentions() {
+    let single = validate(output(valid_output()), 2_000).unwrap();
+    let replayed = validate(
+        output(format!("{}\n{}", valid_output(), valid_output())),
+        2_000,
+    )
+    .unwrap();
+    assert_eq!(replayed, single);
+
+    let with_mentions = valid_output().replacen(
+        "Details.",
+        "Details about the literal `<summary>` and `</summary>` markers.",
+        1,
+    );
+    let normalized = validate(output(with_mentions), 2_000).unwrap();
+    assert!(normalized.content.contains("&lt;summary&gt;"));
+    assert!(normalized.content.contains("&lt;/summary&gt;"));
+    assert!(!normalized.content.contains("<summary>"));
+    assert!(!normalized.content.contains("</summary>"));
+
+    let distinct = valid_output().replacen("Details.", "Different details.", 1);
+    assert_eq!(
+        validate(output(format!("{}\n{distinct}", valid_output())), 2_000).unwrap_err(),
+        "compression_summary_duplicate_distinct"
+    );
+}
+
+#[test]
 fn rejects_truncation_tool_calls_cancellation_and_budget_overflow() {
     let mut raw = output(valid_output());
     raw.truncated = true;
-    assert!(validate(raw, 2_000).is_err());
+    assert_eq!(
+        validate(raw, 2_000).unwrap_err(),
+        "compression_summary_truncated"
+    );
 
     let mut raw = output(valid_output());
     raw.tool_call_count = 1;
-    assert!(validate(raw, 2_000).is_err());
+    assert_eq!(
+        validate(raw, 2_000).unwrap_err(),
+        "compression_summary_tool_call"
+    );
 
     let mut raw = output(valid_output());
     raw.cancelled = true;
-    assert!(validate(raw, 2_000).is_err());
+    assert_eq!(
+        validate(raw, 2_000).unwrap_err(),
+        "compression_summary_cancelled"
+    );
 
-    assert!(validate(output(valid_output()), 1).is_err());
+    assert_eq!(
+        validate(output(valid_output()), 1).unwrap_err(),
+        "compression_summary_over_budget"
+    );
+}
+
+#[test]
+fn reports_safe_structural_rejection_reasons_without_echoing_content() {
+    assert_eq!(
+        validate(output("private source text".to_string()), 2_000).unwrap_err(),
+        "compression_summary_missing_open_tag"
+    );
+    assert_eq!(
+        validate(output("<summary>private source text".to_string()), 2_000).unwrap_err(),
+        "compression_summary_missing_close_tag"
+    );
+    assert_eq!(
+        validate(
+            output("<summary>private source text</summary> trailing".to_string()),
+            2_000,
+        )
+        .unwrap_err(),
+        "compression_summary_trailing_text"
+    );
+    assert_eq!(
+        validate(
+            output("<summary><summary>private source text</summary></summary>".to_string()),
+            2_000,
+        )
+        .unwrap_err(),
+        "compression_summary_missing_section_1"
+    );
+    assert_eq!(
+        validate(
+            output("<summary>1. Primary Request and Intent</summary>".to_string()),
+            2_000,
+        )
+        .unwrap_err(),
+        "compression_summary_missing_section_2"
+    );
 }

@@ -202,6 +202,23 @@ describe("error", () => {
     expect(result.state.diagnosticSummary).toBe("Interruption pendant le tool write_file.");
   });
 
+  it("masque le diagnostic technique redondant d'un échec de compression", () => {
+    const result = applyStreamEvent(makeState(), {
+      event: "error",
+      data: {
+        message: "compression_failed",
+        diagnostic: {
+          requestId: "req-compression",
+          phase: "compression",
+          errorType: "unknown",
+          safeSummary: "Interruption pendant compression (unknown).",
+        },
+      },
+    });
+    expect(result.state.error).toBe("errors.compressionFailed");
+    expect(result.state.diagnosticSummary).toBeUndefined();
+  });
+
   it("ne crée pas de message assistant parasite si le contenu est vide", () => {
     const result = applyStreamEvent(makeState({ currentContent: "" }), {
       event: "error", data: { message: "crash" },
