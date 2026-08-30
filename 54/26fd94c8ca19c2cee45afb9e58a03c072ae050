@@ -1,0 +1,41 @@
+Compression final-review follow-up
+
+Product decisions:
+
+- Keep the global automatic-compression switch. It gates automatic triggering and realtime interruption only; explicit /compress remains available.
+
+- Keep the fixed nine-section summary contract. The immutable technical prompt defines the headings; the customizable handoff prompt only defines what content to cover inside them. Reason: one stable, testable checkpoint format is more reliable across models.
+
+- Use the exact localized under-64K explanation from the product SPEC.
+
+Corrections:
+
+- Removed the orphan {{name}} interpolation from the Advanced Settings description in all seven locales.
+
+- Restored normal Tab navigation around the context ring; Enter and Space remain the explicit keyboard open actions.
+
+- Preserved selected assistant-only history in a bounded retained_assistant_messages checkpoint section, symmetrical with retained user messages.
+
+- Added a literal validator fixture independent from required_sections and removed the competing section wording from the Beaver handoff prompt.
+
+Validation on the committed tree:
+
+- cargo fmt --all -- --check: passed.
+
+- cargo clippy --all-targets -- -D warnings: passed.
+
+- cargo test: 4488 passed, 0 failed, 8 ignored; prelogger integration 1 passed.
+
+- npm test: 502 Vitest files / 2678 tests passed; build scripts 56, CI scripts 16, CEF, E2E 70, extension host 53, reasoning fixtures 10 passed.
+
+- npm run lint, npx tsc --noEmit, npm run contracts:check: passed.
+
+- graphify update . completed: 40245 nodes, 84013 edges, 2321 communities.
+
+Manual acceptance:
+
+- Tauri dev compiled and launched, but macOS requested access to the cl-go-dash and Chromium Safe Storage keychains. Access was deliberately refused, so Settings and live provider/Ollama compression were not claimed as manually validated.
+
+Documentation:
+
+- The personal ignored SPEC was updated locally for the fixed nine headings and the already-decided global automatic switch; it is intentionally absent from this commit.
