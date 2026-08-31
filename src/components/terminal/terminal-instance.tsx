@@ -9,7 +9,7 @@ import "@xterm/xterm/css/xterm.css";
 
 interface TerminalInstanceProps {
   tabId: string;
-  cwd: string;
+  groupKey: string;
   isVisible: boolean;
   onPtyReady: (tabId: string, ptyId: number, ptyToken: string) => void;
   onExit: (tabId: string) => void;
@@ -19,7 +19,7 @@ interface TerminalInstanceProps {
 
 export function TerminalInstance({
   tabId,
-  cwd,
+  groupKey,
   isVisible,
   onPtyReady,
   onExit,
@@ -115,7 +115,7 @@ export function TerminalInstance({
     };
 
     invoke<{ id: number; token: string }>("pty_spawn", {
-      cwd: cwd || null,
+      groupKey,
       cols: term.cols || 80,
       rows: term.rows || 24,
       onOutput: channel,

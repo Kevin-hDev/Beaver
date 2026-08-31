@@ -164,7 +164,7 @@ export function TerminalPanel({
               <TerminalInstance
                 key={tab.id}
                 tabId={tab.id}
-                cwd={tab.cwd}
+                groupKey={groupKey}
                 /* Replié, aucun écran n'est actif : un terminal invisible qui
                  garde le focus avalerait les touches frappées ailleurs. */
               isVisible={isOpen && groupKey === activeGroupKey && tab.id === activeTabId}

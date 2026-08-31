@@ -7,6 +7,7 @@ use console::PseudoConsole;
 use output::{OutputControl, PtyReader};
 use std::fs::File;
 use std::io::{Read, Write};
+use std::path::Path;
 use std::process::ExitStatus;
 use std::sync::{Arc, Mutex};
 
@@ -30,7 +31,7 @@ impl PtyChildStatus {
 
 impl PtySession {
     pub fn spawn(
-        cwd: Option<&str>,
+        cwd: Option<&Path>,
         cols: u16,
         rows: u16,
     ) -> Result<(Self, Box<dyn Read + Send>), String> {
@@ -144,15 +145,14 @@ fn validate_size(cols: u16, rows: u16) -> Result<(), String> {
     }
 }
 
-fn validated_cwd(cwd: Option<&str>) -> Result<Option<&std::path::Path>, String> {
+fn validated_cwd(cwd: Option<&Path>) -> Result<Option<&Path>, String> {
     let Some(directory) = cwd else {
         return Ok(None);
     };
-    let path = std::path::Path::new(directory);
-    if !path.is_absolute() || !path.is_dir() {
+    if !directory.is_absolute() || !directory.is_dir() {
         Err("terminal-cwd-invalid".to_string())
     } else {
-        Ok(Some(path))
+        Ok(Some(directory))
     }
 }
 

@@ -23,14 +23,22 @@ pub async fn save_terminal_tabs(document: TerminalTabsDocument) -> Result<(), St
 }
 
 #[tauri::command]
-pub fn pty_spawn(
-    cwd: Option<String>,
+pub async fn pty_spawn(
+    group_key: String,
     cols: u16,
     rows: u16,
     on_output: Channel<PtyChannelEvent>,
     state: State<'_, PtyManager>,
 ) -> Result<PtySpawnResult, String> {
-    let (id, token) = state.spawn(on_output, cwd.as_deref(), cols, rows)?;
+    let cwd = crate::services::terminal::cwd_resolver::resolve(&group_key).await?;
+    let manager = state.inner().clone();
+    // Provisoire : le lanceur durable Linux du plan I/O remplacera cette
+    // frontière avant l'ajout de PR_SET_PDEATHSIG.
+    let (id, token) = tauri::async_runtime::spawn_blocking(move || {
+        manager.spawn(on_output, Some(cwd.as_path()), cols, rows)
+    })
+    .await
+    .map_err(|_| "terminal-error".to_string())??;
     Ok(PtySpawnResult { id, token })
 }
 

@@ -1,5 +1,6 @@
 use portable_pty::{CommandBuilder, NativePtySystem, PtySize, PtySystem};
 use std::io::{Read, Write};
+use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
@@ -31,7 +32,7 @@ impl PtyChildStatus {
 
 impl PtySession {
     pub fn spawn(
-        cwd: Option<&str>,
+        cwd: Option<&Path>,
         cols: u16,
         rows: u16,
     ) -> Result<(Self, Box<dyn Read + Send>), String> {
@@ -199,12 +200,11 @@ fn validate_size(cols: u16, rows: u16) -> Result<(), String> {
     }
 }
 
-fn validated_cwd(cwd: Option<&str>) -> Result<Option<&str>, String> {
+fn validated_cwd(cwd: Option<&Path>) -> Result<Option<&Path>, String> {
     let Some(directory) = cwd else {
         return Ok(None);
     };
-    let path = std::path::Path::new(directory);
-    if !path.is_absolute() || !path.is_dir() {
+    if !directory.is_absolute() || !directory.is_dir() {
         Err("terminal-cwd-invalid".to_string())
     } else {
         Ok(Some(directory))

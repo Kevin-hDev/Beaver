@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, render } from "@testing-library/react";
+import { readFileSync } from "node:fs";
 import { TerminalPanel } from "../terminal-panel";
 import type { TerminalTab } from "@/hooks/use-terminal";
 
@@ -59,12 +60,24 @@ const TAB: TerminalTab = {
   hasActivity: false,
 };
 
-function panel(isOpen: boolean) {
+const OTHER_TAB: TerminalTab = {
+  id: "shell",
+  ptyId: null,
+  ptyToken: null,
+  label: "shell",
+  cwd: "/home",
+  hasActivity: false,
+};
+
+function panel(
+  isOpen: boolean,
+  allTabs = [{ tab: TAB, groupKey: "projet" }],
+) {
   return (
     <TerminalPanel
       tabs={[TAB]}
       activeTabId={TAB.id}
-      allTabs={[{ tab: TAB, groupKey: "projet" }]}
+      allTabs={allTabs}
       activeGroupKey="projet"
       isOpen={isOpen}
       panelHeight={200}
@@ -112,6 +125,37 @@ afterEach(() => {
 });
 
 describe("durée de vie des shells du panneau", () => {
+  it("transmet la clé de groupe à chaque terminal rendu", () => {
+    render(
+      panel(true, [
+        { tab: TAB, groupKey: "projet" },
+        { tab: OTHER_TAB, groupKey: "__default__" },
+      ]),
+    );
+
+    const spawnPayloads = invoke.mock.calls
+      .filter((call) => call[0] === "pty_spawn")
+      .map((call): unknown => call[1] as unknown);
+    expect(spawnPayloads).toEqual([
+      expect.objectContaining({ groupKey: "projet" }),
+      expect.objectContaining({ groupKey: "__default__" }),
+    ]);
+  });
+
+  it("n'envoie jamais cwd dans la charge utile pty_spawn", () => {
+    const source = readFileSync(
+      "src/components/terminal/terminal-instance.tsx",
+      "utf8",
+    );
+    const payload = source.match(
+      /invoke<[^>]+>\("pty_spawn",\s*\{([\s\S]*?)\}\)/,
+    )?.[1];
+
+    expect(payload).toBeDefined();
+    expect(payload).toContain("groupKey");
+    expect(payload).not.toMatch(/\bcwd\s*:/);
+  });
+
   it("ne tue aucun shell quand on referme le panneau", () => {
     const { rerender } = render(panel(true));
 

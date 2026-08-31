@@ -1,10 +1,12 @@
 #[cfg(test)]
 mod tests {
     use crate::app_exit::AppExitCoordinator;
+    use crate::services::terminal::cwd_resolver::resolve_with;
     use crate::services::terminal::pty_session::PtySession;
     use crate::services::terminal::shutdown;
     use crate::services::terminal::PtyManager;
     use std::io::Read;
+    use std::path::Path;
     use std::sync::{Arc, Condvar, Mutex};
     use std::time::{Duration, Instant};
     use sysinfo::{Pid, System};
@@ -41,9 +43,68 @@ mod tests {
     #[test]
     fn test_pty_spawn_with_cwd() {
         let tmp = tempfile::tempdir().unwrap();
-        let path = tmp.path().to_str().unwrap();
-        let (session, reader) = PtySession::spawn(Some(path), 80, 24).expect("spawn with cwd");
+        let (session, reader) =
+            PtySession::spawn(Some(tmp.path()), 80, 24).expect("spawn with cwd");
         close_session(session, reader);
+    }
+
+    #[test]
+    fn test_pty_rejects_a_relative_cwd_path() {
+        let error = PtySession::spawn(Some(Path::new("relative")), 80, 24)
+            .err()
+            .expect("relative cwd must fail");
+
+        assert_eq!(error, "terminal-cwd-invalid");
+    }
+
+    #[tokio::test]
+    async fn resolved_project_key_is_passed_to_the_manager_as_a_path() {
+        let root = tempfile::tempdir().unwrap();
+        let project = root.path().join("Projet espace é");
+        std::fs::create_dir(&project).unwrap();
+        let project_string = project.to_string_lossy().into_owned();
+        let resolved = resolve_with("project-a", Path::new("/"), |_| async move {
+            Ok(Some(project_string))
+        })
+        .await
+        .unwrap();
+        let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
+        let manager = PtyManager::new(coordinator.work_supervisor());
+
+        manager
+            .spawn_for_test(Some(resolved.as_path()), 80, 24)
+            .expect("spawn in resolved project");
+
+        assert!(
+            manager
+                .stop_and_wait(Instant::now() + Duration::from_secs(5))
+                .await
+        );
+    }
+
+    #[tokio::test]
+    async fn default_group_uses_the_canonical_home_path() {
+        let root = tempfile::tempdir().unwrap();
+        std::fs::create_dir(root.path().join("child")).unwrap();
+        let home_with_parent = root.path().join("child/..");
+
+        let resolved = resolve_with("__default__", &home_with_parent, unreachable_find)
+            .await
+            .unwrap();
+
+        assert_eq!(resolved, dunce::canonicalize(root.path()).unwrap());
+    }
+
+    #[tokio::test]
+    async fn invalid_group_key_returns_the_public_cwd_error() {
+        assert_eq!(
+            resolve_with("bad\nkey", Path::new("/"), unreachable_find).await,
+            Err("terminal-cwd-invalid".to_string())
+        );
+    }
+
+    async fn unreachable_find(_: String) -> Result<Option<String>, String> {
+        panic!("default and invalid groups must not query the project registry")
     }
 
     #[test]

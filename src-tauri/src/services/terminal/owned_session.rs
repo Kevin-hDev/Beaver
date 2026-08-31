@@ -2,6 +2,7 @@ use super::manager::PtyChannelEvent;
 use super::pty_session::PtySession;
 use crate::services::work_registry::ServiceWorkAdmission;
 use std::io::Read;
+use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread::JoinHandle;
@@ -18,7 +19,7 @@ impl OwnedSession {
     pub(super) fn spawn(
         admission: ServiceWorkAdmission<16>,
         token: zeroize::Zeroizing<String>,
-        cwd: Option<&str>,
+        cwd: Option<&Path>,
         cols: u16,
         rows: u16,
         sink: impl Fn(PtyChannelEvent) + Send + 'static,

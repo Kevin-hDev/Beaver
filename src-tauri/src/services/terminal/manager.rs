@@ -4,6 +4,7 @@ use super::{generate_token, verify_token};
 use crate::app_exit::AppWorkSupervisor;
 use crate::services::work_registry::ServiceWorkSupervisor;
 use std::collections::HashMap;
+use std::path::Path;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
@@ -47,7 +48,7 @@ impl PtyManager {
     pub fn spawn(
         &self,
         on_output: Channel<PtyChannelEvent>,
-        cwd: Option<&str>,
+        cwd: Option<&Path>,
         cols: u16,
         rows: u16,
     ) -> Result<(u32, String), String> {
@@ -58,7 +59,7 @@ impl PtyManager {
 
     fn spawn_with_sink(
         &self,
-        cwd: Option<&str>,
+        cwd: Option<&Path>,
         cols: u16,
         rows: u16,
         sink: impl Fn(PtyChannelEvent) + Send + 'static,
@@ -191,7 +192,7 @@ impl PtyManager {
     #[cfg(test)]
     pub(crate) fn spawn_for_test(
         &self,
-        cwd: Option<&str>,
+        cwd: Option<&Path>,
         cols: u16,
         rows: u16,
     ) -> Result<(u32, String), String> {
