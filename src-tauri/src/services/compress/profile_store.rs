@@ -19,13 +19,6 @@ pub enum CompressionProfileStoreError {
     Migration,
 }
 
-#[cfg(test)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct GlobalCompressionTriggerSettings {
-    pub threshold_percent: u8,
-    pub available: bool,
-}
-
 pub fn load_document() -> Result<CompressionProfileDocument, CompressionProfileStoreError> {
     let _guard = PROFILE_STORE_LOCK
         .lock()
@@ -47,26 +40,6 @@ pub fn mutate_document<T>(
         .map_err(|_| CompressionProfileStoreError::Invalid)?;
     write_document(&path, &document)?;
     Ok((result, document))
-}
-
-#[cfg(test)]
-pub(crate) fn trigger_settings(
-    document: &CompressionProfileDocument,
-    context_window: u64,
-) -> Result<GlobalCompressionTriggerSettings, CompressionProfileStoreError> {
-    let profile = document
-        .profiles
-        .iter()
-        .find(|profile| profile.id == document.global_profile_id)
-        .ok_or(CompressionProfileStoreError::Invalid)?;
-    let band_available = match super::profile_budget::band_for_window(context_window) {
-        Some(super::profile_types::CompressionWindowBand::Under64K) => profile.allow_under_64k,
-        Some(_) | None => true,
-    };
-    Ok(GlobalCompressionTriggerSettings {
-        threshold_percent: profile.threshold_percent,
-        available: document.automatic_enabled && band_available,
-    })
 }
 
 pub(crate) fn load_from_paths(

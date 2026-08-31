@@ -1,33 +1,14 @@
-#![allow(
-    dead_code,
-    reason = "the compression orchestrator consumes checkpoint attachments in Task 10"
-)]
-
 use std::collections::BTreeSet;
 
-use crate::services::agent_local::types_session::{AgentMessage, FileAttachment};
+use crate::services::agent_local::types_session::AgentMessage;
 
 pub const MAX_IMAGE_CANDIDATES: usize = 64;
 
 #[derive(Debug, Clone)]
 pub struct CheckpointImage {
     pub source_message_id: String,
-    pub file: FileAttachment,
     pub provider_payload: String,
     pub estimated_bytes: u64,
-}
-
-pub fn collect_images(
-    messages: &[AgentMessage],
-    context_window: u64,
-    provider_max_images: usize,
-) -> Vec<CheckpointImage> {
-    let (profile_max, max_bytes) = if context_window < 64_000 {
-        (8usize, 16 * 1024 * 1024u64)
-    } else {
-        (16usize, 32 * 1024 * 1024u64)
-    };
-    collect_images_with_limits(messages, profile_max, max_bytes, provider_max_images)
 }
 
 pub fn collect_images_with_limits(
@@ -63,7 +44,6 @@ pub fn collect_images_with_limits(
             total_bytes = total_bytes.saturating_add(bytes);
             selected.push(CheckpointImage {
                 source_message_id: message.id.clone(),
-                file: file.clone(),
                 provider_payload: payload,
                 estimated_bytes: bytes,
             });

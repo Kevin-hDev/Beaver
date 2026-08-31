@@ -117,14 +117,8 @@ fn selected_tool_chain_survives_document_assembly_without_its_user_message() {
         .iter()
         .any(|item| item.message().role == "tool"));
 
-    let assembled = super::checkpoint_document::assemble(
-        &selected.messages,
-        None,
-        None,
-        &[],
-        super::profile_types::CompressionTrigger::Explicit,
-    )
-    .unwrap();
+    let assembled =
+        super::checkpoint_document::assemble(&selected.messages, None, None, &[]).unwrap();
     let checkpoint = assembled
         .iter()
         .find(|message| {
@@ -143,14 +137,8 @@ fn selected_user_survives_document_assembly_beside_tool_evidence() {
     let mut configured = limits(1_000, 0);
     configured.recent_message_count = 1;
     let selected = select(&source, configured).unwrap();
-    let assembled = super::checkpoint_document::assemble(
-        &selected.messages,
-        None,
-        None,
-        &[],
-        super::profile_types::CompressionTrigger::Explicit,
-    )
-    .unwrap();
+    let assembled =
+        super::checkpoint_document::assemble(&selected.messages, None, None, &[]).unwrap();
     let checkpoint = assembled
         .iter()
         .find(|message| {

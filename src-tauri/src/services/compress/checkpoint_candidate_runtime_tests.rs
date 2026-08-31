@@ -2,18 +2,9 @@
 fn selected_images_remain_attached_to_their_source_message() {
     let session = super::snapshot_tests::session();
     let source = session.messages[0].clone();
-    let file = crate::services::agent_local::types_session::FileAttachment {
-        name: "kept.png".into(),
-        path: String::new(),
-        mime_type: "image/png".into(),
-        size: 12,
-        thumbnail: Some("data:image/png;base64,iVBORw0KGgoAAAAA".into()),
-        access_grant: None,
-    };
     let snapshot = super::snapshot_tests::snapshot(&session)
         .with_checkpoint_images(vec![super::checkpoint_attachments::CheckpointImage {
             source_message_id: source.id.clone(),
-            file,
             provider_payload: "iVBORw0KGgoAAAAA".into(),
             estimated_bytes: 12,
         }])
@@ -66,14 +57,9 @@ fn image_from_a_user_only_selection_is_attached_to_the_checkpoint() {
         super::checkpoint_messages_tests::limits(5_000, 1_000),
     )
     .unwrap();
-    let persisted = super::checkpoint_document::assemble(
-        &selection.messages,
-        Some("active"),
-        None,
-        &[],
-        super::profile_types::CompressionTrigger::Explicit,
-    )
-    .unwrap();
+    let persisted =
+        super::checkpoint_document::assemble(&selection.messages, Some("active"), None, &[])
+            .unwrap();
     let checkpoint_id = persisted
         .iter()
         .find(|message| message.message_kind == Some(AgentMessageKind::CompressionCheckpoint))
@@ -84,14 +70,6 @@ fn image_from_a_user_only_selection_is_attached_to_the_checkpoint() {
     snapshot.source_messages = source.clone();
     snapshot.checkpoint_images = vec![super::checkpoint_attachments::CheckpointImage {
         source_message_id: source[0].id.clone(),
-        file: crate::services::agent_local::types_session::FileAttachment {
-            name: "retained.png".into(),
-            path: String::new(),
-            mime_type: "image/png".into(),
-            size: 12,
-            thumbnail: None,
-            access_grant: None,
-        },
         provider_payload: "iVBORw0KGgoAAAAA".into(),
         estimated_bytes: 12,
     }];

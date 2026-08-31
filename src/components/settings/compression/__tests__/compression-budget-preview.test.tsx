@@ -18,7 +18,6 @@ vi.mock("react-i18next", () => ({
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(() => Promise.resolve({
-    band: "compact",
     before_tokens: 96_000,
     system_tools_tokens: 12_000,
     variable_tokens: 16_800,
@@ -26,14 +25,12 @@ vi.mock("@tauri-apps/api/core", () => ({
     range_lower_tokens: 24_000,
     range_upper_tokens: 32_000,
     image_count: 4,
-    projected_percent: 30,
     reduction_lower_percent: 67,
     reduction_upper_percent: 75,
   })),
 }));
 
-const projection = (band: "under_64k" | "compact" | "large" = "compact") => ({
-  band,
+const projection = () => ({
   before_tokens: 96_000,
   system_tools_tokens: 12_000,
   variable_tokens: 16_800,
@@ -41,7 +38,6 @@ const projection = (band: "under_64k" | "compact" | "large" = "compact") => ({
   range_lower_tokens: 24_000,
   range_upper_tokens: 32_000,
   image_count: 4,
-  projected_percent: 30,
   reduction_lower_percent: 67,
   reduction_upper_percent: 75,
 });

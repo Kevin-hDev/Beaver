@@ -3,7 +3,7 @@ use serde_json::json;
 use super::profile_defaults::BEAVER_PROFILE_ID;
 use super::profile_store::{
     forget_migration_marker_for_test, load_from_paths, save_to_path_fail_before_replace,
-    trigger_settings, CompressionProfileStoreError,
+    CompressionProfileStoreError,
 };
 use super::profile_store_document::{CompressionProfileDocument, PROFILE_SCHEMA_VERSION};
 
@@ -245,38 +245,6 @@ fn failed_replace_keeps_the_previous_document() {
         serde_json::from_slice(&std::fs::read(&profile_path).expect("stored original"))
             .expect("original json");
     assert_eq!(stored, original);
-}
-
-#[test]
-fn trigger_adapter_uses_the_global_profile_and_under_64k_guard() {
-    let mut document = CompressionProfileDocument::default();
-    let tiny = trigger_settings(&document, 63_999).expect("tiny settings");
-    assert_eq!(tiny.threshold_percent, 90);
-    assert!(!tiny.available);
-    assert!(
-        trigger_settings(&document, 64_000)
-            .expect("compact settings")
-            .available
-    );
-    assert!(
-        trigger_settings(&document, 0)
-            .expect("unknown settings")
-            .available
-    );
-
-    document.profiles[0].allow_under_64k = true;
-    assert!(
-        trigger_settings(&document, 32_000)
-            .expect("enabled tiny settings")
-            .available
-    );
-
-    document.automatic_enabled = false;
-    assert!(
-        !trigger_settings(&document, 128_000)
-            .expect("disabled automatic compression")
-            .available
-    );
 }
 
 #[test]

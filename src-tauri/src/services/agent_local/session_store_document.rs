@@ -10,13 +10,11 @@ pub(super) enum SessionReadError {
 }
 
 pub(crate) struct PreparedSessionDocument {
-    #[allow(dead_code, reason = "consumed by the staged compression transaction")]
     session: AgentSession,
     data: Vec<u8>,
 }
 
 impl PreparedSessionDocument {
-    #[allow(dead_code, reason = "consumed by the staged compression transaction")]
     pub(crate) fn session(&self) -> &AgentSession {
         &self.session
     }

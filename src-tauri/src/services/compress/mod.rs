@@ -25,7 +25,6 @@ pub mod checkpoint_transaction;
 pub mod checkpoint_units;
 pub mod command;
 pub mod compression_redaction;
-pub mod context_capsules_disk;
 mod context_capsules_disk_collect;
 pub mod context_resolve;
 pub mod metrics;

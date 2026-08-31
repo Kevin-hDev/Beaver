@@ -1,8 +1,3 @@
-#![allow(
-    dead_code,
-    reason = "the compression orchestrator consumes tool selection in Task 10"
-)]
-
 use crate::services::agent_local::types_session::AgentMessage;
 use std::collections::HashSet;
 

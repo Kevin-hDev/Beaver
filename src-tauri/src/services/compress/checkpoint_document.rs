@@ -4,7 +4,6 @@ use serde::Serialize;
 
 use super::checkpoint_messages::SelectedCheckpointMessage;
 use super::compression_redaction::redact_checkpoint_text;
-use super::profile_types::CompressionTrigger;
 use crate::services::agent_local::types_message::{AgentMessage, AgentMessageKind};
 
 const CHECKPOINT_FORMAT_VERSION: u16 = 1;
@@ -38,7 +37,6 @@ pub fn assemble(
     active_turn_id: Option<&str>,
     summary: Option<&str>,
     sections: &[CheckpointSection],
-    trigger: CompressionTrigger,
 ) -> Result<Vec<AgentMessage>, &'static str> {
     let retained = retained_turns(selected, active_turn_id);
     let mut completed = retained.completed;
@@ -54,7 +52,7 @@ pub fn assemble(
         "retained_assistant_messages",
         &retained.assistants,
     )?;
-    let checkpoint = checkpoint_turn(summary, &checkpoint_sections, trigger)?;
+    let checkpoint = checkpoint_turn(summary, &checkpoint_sections)?;
     completed.extend(checkpoint);
     completed.extend(retained.active);
     crate::services::agent_local::conversation_history_validation::validate(&completed)
@@ -142,7 +140,6 @@ fn valid_active_turn(turn: &[AgentMessage]) -> bool {
 fn checkpoint_turn(
     summary: Option<&str>,
     sections: &[CheckpointSection],
-    _trigger: CompressionTrigger,
 ) -> Result<Vec<AgentMessage>, &'static str> {
     let checkpoint_id = uuid::Uuid::new_v4().to_string();
     let sections = sanitized_sections(sections)?;

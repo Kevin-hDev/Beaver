@@ -3,8 +3,6 @@
 
 export type CompressionWindowBand = "under_64k" | "compact" | "large";
 
-export type CompressionTrigger = "automatic" | "explicit";
-
 export type CompressionBandSettings = { recent_message_count: number, summary_max_tokens: number, tool_result_count: number, recent_file_count: number, image_count: number, include_work_state: boolean, };
 
 export type CompressionProfile = { id: string, name: string, revision: number, threshold_percent: number, allow_under_64k: boolean, system_prompt: string, handoff_prompt: string, under_64k: CompressionBandSettings, compact: CompressionBandSettings, large: CompressionBandSettings, };
@@ -15,7 +13,7 @@ export type CompressionProfilesView = { automatic_enabled: boolean, global_profi
 
 export type CompressionLimitsView = { max_profiles: number, max_profile_name_chars: number, max_custom_prompt_chars: number, max_messages: number, max_tool_results: number, max_files: number, max_images: number, min_summary_tokens: number, max_summary_tokens: number, min_threshold_percent: number, max_threshold_percent: number, under_64k_upper_exclusive: number, compact_upper_exclusive: number, };
 
-export type BudgetProjectionView = { band: CompressionWindowBand, before_tokens: number, system_tools_tokens: number, variable_tokens: number, target_tokens: number, range_lower_tokens: number, range_upper_tokens: number, image_count: number, projected_percent: number, reduction_lower_percent: number, reduction_upper_percent: number, };
+export type BudgetProjectionView = { before_tokens: number, system_tools_tokens: number, variable_tokens: number, target_tokens: number, range_lower_tokens: number, range_upper_tokens: number, image_count: number, reduction_lower_percent: number, reduction_upper_percent: number, };
 
 export type CompressionDeleteResult = { view: CompressionProfilesView, undo_token: string, undo_expires_in_ms: number, };
 
@@ -24,4 +22,3 @@ export type ResolvedCompressionProfileSource = "global" | "session";
 export type ResolvedCompressionProfileView = { id: string, name: string, source: ResolvedCompressionProfileSource, profile_revision: number, global_selection_revision: number, context_window: number, band: CompressionWindowBand | null, available: boolean, };
 
 export type CompressionProfileView = CompressionProfile;
-export type CompressionBandView = CompressionBandSettings;

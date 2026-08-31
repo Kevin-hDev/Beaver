@@ -1,8 +1,3 @@
-#![allow(
-    dead_code,
-    reason = "the compression orchestrator consumes critical references in Task 10"
-)]
-
 use std::collections::BTreeSet;
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]

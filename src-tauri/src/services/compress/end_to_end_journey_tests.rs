@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use super::super::checkpoint_candidate;
 use super::super::checkpoint_transaction::{commit_candidate, CompressionError};
-use super::super::profile_store::{load_from_paths, trigger_settings};
+use super::super::profile_store::load_from_paths;
 use crate::services::agent_local::types_message::AgentMessageKind;
 use crate::services::agent_local::types_ollama::ChatMessage;
 
@@ -18,12 +18,14 @@ async fn migration_profile_snapshot_and_two_atomic_compressions_survive_restart(
     .expect("legacy config");
     let mut document = load_from_paths(&profile_path, &config_path).expect("profile migration");
     assert_eq!(document.profiles[0].threshold_percent, 85);
-    assert!(!trigger_settings(&document, 32_000).unwrap().available);
     assert!(!document.automatic_enabled);
+    let disabled = super::super::profile_resolve::resolve_from_document(None, &document).unwrap();
+    assert!(!disabled.available(32_000));
     document.automatic_enabled = true;
     document.profiles[0].allow_under_64k = true;
+    let enabled = super::super::profile_resolve::resolve_from_document(None, &document).unwrap();
     for window in [32_000, 96_000, 200_000] {
-        assert!(trigger_settings(&document, window).unwrap().available);
+        assert!(enabled.available(window));
     }
 
     let legacy_path = root.path().join("session.json");

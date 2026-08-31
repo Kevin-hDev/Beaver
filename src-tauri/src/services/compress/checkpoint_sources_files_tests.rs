@@ -38,7 +38,16 @@ async fn files_are_reread_deduplicated_and_unavailable_content_is_generic() {
         .await
         .unwrap();
 
-    let files = super::super::checkpoint_files::collect(&messages, root.path(), 128_000).await;
+    let files = super::super::checkpoint_files::collect_with_budget(
+        &messages,
+        root.path(),
+        super::super::checkpoint_evidence::EvidenceItemLimit {
+            max_items: 15,
+            tokens_per_item: 8_000,
+            total_tokens: 120_000,
+        },
+    )
+    .await;
 
     assert_eq!(files.len(), 2);
     assert_eq!(files[0].current_content, "modified");
@@ -130,10 +139,14 @@ fn image_selection_keeps_metadata_and_obeys_provider_limit() {
         )
         .collect();
 
-    let images = super::super::checkpoint_attachments::collect_images(&[message], 128_000, 2);
+    let images = super::super::checkpoint_attachments::collect_images_with_limits(
+        &[message],
+        3,
+        32 * 1024 * 1024,
+        2,
+    );
 
     assert_eq!(images.len(), 2);
-    assert!(images.iter().all(|image| image.file.thumbnail.is_some()));
     assert!(images
         .iter()
         .all(|image| image.provider_payload.starts_with("iVBOR")));
@@ -143,18 +156,10 @@ fn image_selection_keeps_metadata_and_obeys_provider_limit() {
 fn image_budget_is_applied_after_message_retention() {
     let retained = bare_message();
     let dropped = bare_message();
-    let image = |source_message_id: String, name: &str| {
+    let image = |source_message_id: String, provider_payload: &str| {
         super::super::checkpoint_attachments::CheckpointImage {
             source_message_id,
-            file: crate::services::agent_local::types_session::FileAttachment {
-                name: name.into(),
-                path: String::new(),
-                mime_type: "image/png".into(),
-                size: 12,
-                thumbnail: None,
-                access_grant: None,
-            },
-            provider_payload: "iVBORw0KGgoAAAAA".into(),
+            provider_payload: provider_payload.into(),
             estimated_bytes: 12,
         }
     };
@@ -171,7 +176,7 @@ fn image_budget_is_applied_after_message_retention() {
     );
 
     assert_eq!(selected.len(), 1);
-    assert_eq!(selected[0].file.name, "retained.png");
+    assert_eq!(selected[0].provider_payload, "retained.png");
 }
 
 #[test]

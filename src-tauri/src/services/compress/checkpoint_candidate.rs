@@ -63,7 +63,6 @@ pub async fn build_with_evidence(
         active_turn_id(snapshot, &selection),
         Some(summary.content.as_str()),
         sections,
-        snapshot.trigger,
     )
     .map_err(super::checkpoint_transaction::CompressionError::from_code)?;
     let (retained_images, retained_source_message_ids) =

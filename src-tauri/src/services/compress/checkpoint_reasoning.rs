@@ -1,8 +1,3 @@
-#![allow(
-    dead_code,
-    reason = "the compression orchestrator consumes reasoning selection in Task 10"
-)]
-
 use crate::services::agent_local::types_session::AgentMessage;
 
 pub fn validate(message: &AgentMessage) -> Result<(), &'static str> {

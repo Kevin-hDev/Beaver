@@ -1,19 +1,9 @@
-#![allow(
-    dead_code,
-    reason = "the compression orchestrator consumes checkpoint messages in Task 10"
-)]
-
 use crate::services::agent_local::types_session::AgentMessage;
 
 #[derive(Debug, Clone)]
 pub enum SelectedCheckpointMessage {
     Exact {
         source_index: usize,
-        message: AgentMessage,
-    },
-    TruncatedUserExcerpt {
-        source_index: usize,
-        source_message_id: String,
         message: AgentMessage,
     },
     ToolResultExcerpt {
@@ -25,17 +15,15 @@ pub enum SelectedCheckpointMessage {
 impl SelectedCheckpointMessage {
     pub fn source_index(&self) -> usize {
         match self {
-            Self::Exact { source_index, .. }
-            | Self::TruncatedUserExcerpt { source_index, .. }
-            | Self::ToolResultExcerpt { source_index, .. } => *source_index,
+            Self::Exact { source_index, .. } | Self::ToolResultExcerpt { source_index, .. } => {
+                *source_index
+            }
         }
     }
 
     pub fn message(&self) -> &AgentMessage {
         match self {
-            Self::Exact { message, .. }
-            | Self::TruncatedUserExcerpt { message, .. }
-            | Self::ToolResultExcerpt { message, .. } => message,
+            Self::Exact { message, .. } | Self::ToolResultExcerpt { message, .. } => message,
         }
     }
 }
@@ -44,26 +32,6 @@ pub fn exact(source_index: usize, message: &AgentMessage) -> SelectedCheckpointM
     SelectedCheckpointMessage::Exact {
         source_index,
         message: message.clone(),
-    }
-}
-
-pub fn truncate_user(
-    source_index: usize,
-    message: &AgentMessage,
-    max_tokens: u32,
-) -> SelectedCheckpointMessage {
-    let mut excerpt = message.clone();
-    excerpt.id = uuid::Uuid::new_v4().to_string();
-    excerpt.content = bounded_excerpt(
-        &message.content,
-        max_tokens,
-        "\n[user message excerpt]\n",
-        "",
-    );
-    SelectedCheckpointMessage::TruncatedUserExcerpt {
-        source_index,
-        source_message_id: message.id.clone(),
-        message: excerpt,
     }
 }
 

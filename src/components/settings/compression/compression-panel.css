@@ -65,17 +65,6 @@
   overflow-y: auto;
 }
 
-.cpa-placeholder {
-  min-height: 8rem;
-  padding: var(--space-xl);
-  display: grid;
-  place-items: center;
-  border-radius: var(--radius);
-  color: var(--ink-muted);
-  font-size: var(--text-sm);
-  text-align: center;
-}
-
 .cpa-foot {
   flex: none;
   min-height: var(--space-xs);

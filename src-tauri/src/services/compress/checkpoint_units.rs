@@ -1,8 +1,3 @@
-#![allow(
-    dead_code,
-    reason = "the compression orchestrator consumes checkpoint units in Task 10"
-)]
-
 use std::ops::Range;
 
 use crate::services::agent_local::types_session::AgentMessage;

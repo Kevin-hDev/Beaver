@@ -12,7 +12,7 @@ import type {
   ResolvedCompressionProfileView,
 } from "@/types/compression-profile.generated";
 
-export interface SessionCompressionProfileState {
+interface SessionCompressionProfileState {
   profiles: CompressionProfileView[];
   profilesStatus: "loading" | "ready" | "error";
   effective: ResolvedCompressionProfileView | null;

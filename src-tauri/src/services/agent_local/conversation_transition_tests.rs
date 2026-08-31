@@ -128,60 +128,6 @@ fn incompatible_provenance_discards_its_entire_user_assistant_tool_turn() {
 }
 
 #[test]
-fn compacting_only_removes_complete_turns_and_marks_replaced_envelopes() {
-    let mut session = fixture_session();
-    session.messages = complete_turn(
-        "complete",
-        "answer",
-        Some(envelope(RouteId::Ollama, "model-a", "opaque-native")),
-    );
-    session
-        .messages
-        .push(message("user-open", "turn-open", "user", "unfinished"));
-
-    let compacted =
-        super::conversation_compaction::compact_complete_turns(&mut session.messages, 0)
-            .expect("only the completed turn is compacted");
-
-    assert_eq!(compacted.removed_turns, 1);
-    assert_eq!(compacted.replaced_envelopes.len(), 1);
-    assert_eq!(
-        compacted.replaced_envelopes[0].completion,
-        CompletionState::Compacted
-    );
-    assert_eq!(session.messages.len(), 1);
-    assert_eq!(session.messages[0].turn_id, "turn-open");
-}
-
-#[test]
-fn compaction_refuses_an_open_tool_chain() {
-    let mut session = fixture_session();
-    let mut assistant = message("assistant-open", "turn-open", "assistant", "");
-    assistant.tool_calls = Some(vec![super::types_message::ToolCallRequest {
-        id: "call-open".into(),
-        extra_content: None,
-        function: super::types_message::ToolCallRequestFunction {
-            name: "read_file".into(),
-            arguments: serde_json::json!({"path": "a"}),
-        },
-    }]);
-    session.messages = vec![
-        message("user-open", "turn-open", "user", "question"),
-        assistant,
-    ];
-    let before = serde_json::to_vec(&session.messages).unwrap();
-
-    let error = super::conversation_compaction::compact_complete_turns(&mut session.messages, 1)
-        .expect_err("open chains cannot be compacted");
-
-    assert_eq!(
-        error,
-        super::conversation_compaction::CompactionError::OpenTurn
-    );
-    assert_eq!(serde_json::to_vec(&session.messages).unwrap(), before);
-}
-
-#[test]
 fn required_user_replay_falls_back_after_a_historical_assistant_loses_its_envelope() {
     let replay_target = anthropic_target(ContinuationUse::UserContinuation);
     let mut session = fixture_session();

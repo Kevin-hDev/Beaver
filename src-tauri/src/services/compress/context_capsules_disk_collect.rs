@@ -3,23 +3,17 @@ use crate::services::agent_local::types_ollama::ChatMessage;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
-use super::context_capsules_disk::CapsuleEvent;
-#[cfg(test)]
-use super::context_capsules_disk::MAX_RECENT_TOOLS;
+pub(crate) struct CapsuleEvent {
+    pub tool: String,
+    pub path: String,
+    pub result: String,
+}
 
 const UNAVAILABLE_MARKER: &str = "[file unavailable: deleted, binary, or unreadable]";
 
 struct FileCandidate {
     tool: String,
     path: String,
-}
-
-pub async fn recent_disk_file_events(
-    messages: &[ChatMessage],
-    working_dir: &Path,
-    max_files: usize,
-) -> Vec<CapsuleEvent> {
-    recent_disk_file_events_inner(messages, working_dir, max_files, None).await
 }
 
 pub async fn recent_disk_file_events_bounded(
@@ -59,26 +53,6 @@ async fn recent_disk_file_events_inner(
     }
     events.reverse();
     events
-}
-
-#[cfg(test)]
-pub fn recent_tool_events(messages: &[ChatMessage]) -> Vec<CapsuleEvent> {
-    let mut found = Vec::new();
-    for msg in messages.iter().filter(|message| message.role == "tool") {
-        let Some(tool) = msg.tool_name.as_deref() else {
-            continue;
-        };
-        if !is_context_tool(tool) || file_path_from_content(tool, &msg.content).is_some() {
-            continue;
-        }
-        found.push(CapsuleEvent {
-            tool: tool.to_string(),
-            path: String::new(),
-            result: msg.content.clone(),
-        });
-    }
-    let keep_from = found.len().saturating_sub(MAX_RECENT_TOOLS);
-    found.into_iter().skip(keep_from).collect()
 }
 
 async fn read_current_state(
@@ -189,12 +163,4 @@ fn file_path_from_content(tool: &str, content: &str) -> Option<(String, String)>
         .then(|| content.split_once(':'))
         .flatten()
         .map(|(_, path)| (tool.to_string(), path.trim().to_string()))
-}
-
-#[cfg(test)]
-fn is_context_tool(tool: &str) -> bool {
-    matches!(
-        tool,
-        "bash" | "grep" | "glob" | "list_dir" | "web_fetch" | "web_search" | "mcp_tool" | "mcp"
-    ) || tool.starts_with("mcp_")
 }

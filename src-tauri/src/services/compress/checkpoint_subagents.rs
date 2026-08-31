@@ -1,8 +1,3 @@
-#![allow(
-    dead_code,
-    reason = "the compression orchestrator consumes subagent state in Task 10"
-)]
-
 use serde::Serialize;
 use std::collections::BTreeSet;
 

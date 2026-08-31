@@ -11,7 +11,7 @@ interface EditableRowOptions {
   onInteractionChange?: (active: boolean) => void;
 }
 
-export interface EditableRowController {
+interface EditableRowController {
   editing: boolean;
   confirmingDelete: boolean;
   draft: string;

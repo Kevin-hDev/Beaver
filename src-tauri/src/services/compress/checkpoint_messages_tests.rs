@@ -126,14 +126,9 @@ fn selected_user_without_assistant_survives_document_assembly() {
         message("active", "user", "current work"),
     ];
     let selected = select(&source, limits(5_000, 1_000)).unwrap();
-    let assembled = super::checkpoint_document::assemble(
-        &selected.messages,
-        Some("active"),
-        None,
-        &[],
-        super::profile_types::CompressionTrigger::Explicit,
-    )
-    .unwrap();
+    let assembled =
+        super::checkpoint_document::assemble(&selected.messages, Some("active"), None, &[])
+            .unwrap();
 
     let checkpoint = assembled
         .iter()
@@ -158,14 +153,9 @@ fn selected_assistant_without_user_survives_document_assembly() {
         message("active", "user", "current work"),
     ];
     let selected = select(&source, limits(0, 5_000)).unwrap();
-    let assembled = super::checkpoint_document::assemble(
-        &selected.messages,
-        Some("active"),
-        None,
-        &[],
-        super::profile_types::CompressionTrigger::Explicit,
-    )
-    .unwrap();
+    let assembled =
+        super::checkpoint_document::assemble(&selected.messages, Some("active"), None, &[])
+            .unwrap();
 
     let checkpoint = assembled
         .iter()

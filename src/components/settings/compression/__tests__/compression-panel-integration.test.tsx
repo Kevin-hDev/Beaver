@@ -19,7 +19,6 @@ vi.mock("@/hooks/use-available-models", () => ({
 }));
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(() => Promise.resolve({
-    band: "compact",
     before_tokens: 96_000,
     system_tools_tokens: 12_000,
     variable_tokens: 16_800,
@@ -27,7 +26,6 @@ vi.mock("@tauri-apps/api/core", () => ({
     range_lower_tokens: 24_000,
     range_upper_tokens: 32_000,
     image_count: 4,
-    projected_percent: 30,
   })),
 }));
 
