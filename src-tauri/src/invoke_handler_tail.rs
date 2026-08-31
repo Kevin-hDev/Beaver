@@ -45,6 +45,8 @@ macro_rules! generate_tail {
             crate::commands::open_app_data_folder,
             crate::commands::read_agent_md,
             crate::commands::write_agent_md,
+            crate::commands::load_terminal_tabs,
+            crate::commands::save_terminal_tabs,
             crate::commands::pty_spawn,
             crate::commands::pty_write,
             crate::commands::pty_resize,

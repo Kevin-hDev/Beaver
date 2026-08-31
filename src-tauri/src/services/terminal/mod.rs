@@ -1,3 +1,4 @@
+pub mod cwd_resolver;
 mod manager;
 mod owned_session;
 pub mod pty_session;
@@ -6,6 +7,9 @@ mod shutdown;
 pub mod tab_store;
 
 pub use manager::{PtyChannelEvent, PtyManager};
+
+#[cfg(test)]
+mod cwd_resolver_tests;
 
 #[cfg(test)]
 mod tests;

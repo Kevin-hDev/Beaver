@@ -1,4 +1,7 @@
-use crate::services::terminal::{PtyChannelEvent, PtyManager};
+use crate::services::terminal::{
+    tab_store::{self, TerminalTabsDocument},
+    PtyChannelEvent, PtyManager,
+};
 use tauri::ipc::Channel;
 use tauri::State;
 
@@ -7,6 +10,16 @@ use tauri::State;
 pub struct PtySpawnResult {
     pub id: u32,
     pub token: String,
+}
+
+#[tauri::command]
+pub async fn load_terminal_tabs() -> Result<TerminalTabsDocument, String> {
+    tab_store::load().await
+}
+
+#[tauri::command]
+pub async fn save_terminal_tabs(document: TerminalTabsDocument) -> Result<(), String> {
+    tab_store::save(document).await
 }
 
 #[tauri::command]
