@@ -1219,7 +1219,10 @@
     "failedToStart": "Le terminal n'a pas pu démarrer",
     "closeTab": "Fermer l'onglet",
     "activity": "Nouvelle sortie dans cet onglet",
-    "resizePanel": "Ajuster la hauteur du panneau"
+    "resizePanel": "Ajuster la hauteur du panneau",
+    "tabsLoadFailed": "Impossible de restaurer les onglets du terminal. Redémarrez Beaver pour réessayer.",
+    "tabsSaveFailed": "Impossible d’enregistrer les onglets du terminal. Redémarrez Beaver pour réessayer.",
+    "tabLimitReached": "La limite d’onglets du terminal est atteinte."
   },
   "skills": {
     "sourceBuiltIn": "Intégré",

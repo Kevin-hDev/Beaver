@@ -56,7 +56,6 @@ const TAB: TerminalTab = {
   ptyId: null,
   ptyToken: null,
   label: "serveur",
-  cwd: "/projet",
   hasActivity: false,
 };
 
@@ -65,7 +64,6 @@ const OTHER_TAB: TerminalTab = {
   ptyId: null,
   ptyToken: null,
   label: "shell",
-  cwd: "/home",
   hasActivity: false,
 };
 

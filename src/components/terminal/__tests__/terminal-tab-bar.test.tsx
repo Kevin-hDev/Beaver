@@ -4,7 +4,7 @@ import { TerminalTabBar } from "../terminal-tab-bar";
 import type { TerminalTab } from "@/hooks/use-terminal";
 
 function tab(id: string, extra: Partial<TerminalTab> = {}): TerminalTab {
-  return { id, ptyId: null, ptyToken: null, label: id, cwd: "/tmp", hasActivity: false, ...extra };
+  return { id, ptyId: null, ptyToken: null, label: id, hasActivity: false, ...extra };
 }
 
 function renderBar(tabs: TerminalTab[], activeTabId: string | null, handlers = {}) {

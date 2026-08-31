@@ -1,93 +1,72 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { loadSavedGroups, saveGroups } from "../terminal-persistence";
-import type { TerminalGroup } from "../terminal-types";
+import type { TerminalTabsDocument } from "../terminal-persistence";
 
-const calls: { op: string; path: string; content?: string }[] = [];
+const { invokeMock } = vi.hoisted(() => ({ invokeMock: vi.fn() }));
 
-vi.mock("@tauri-apps/api/path", () => ({
-  homeDir: () => Promise.resolve("/home/test"),
-  join: (...parts: string[]) => Promise.resolve(parts.join("/")),
-}));
+vi.mock("@tauri-apps/api/core", () => ({ invoke: invokeMock }));
 
-let renameFailures = 0;
+const validDocument: TerminalTabsDocument = {
+  version: 1,
+  groups: { project: [{ label: "build" }] },
+};
 
-vi.mock("@tauri-apps/plugin-fs", () => ({
-  readTextFile: (path: string) => {
-    calls.push({ op: "read", path });
-    if (path.includes("corrupt")) return Promise.reject(new Error("not found"));
-    return Promise.resolve("{}");
-  },
-  writeTextFile: (path: string, content: string) => {
-    calls.push({ op: "write", path, content });
-    return Promise.resolve();
-  },
-  rename: (from: string, to: string) => {
-    calls.push({ op: "rename", path: `${from} -> ${to}` });
-    if (renameFailures > 0) {
-      renameFailures -= 1;
-      return Promise.reject(new Error("dest exists"));
-    }
-    return Promise.resolve();
-  },
-  remove: (path: string) => {
-    calls.push({ op: "remove", path });
-    return Promise.resolve();
-  },
-}));
-
-function groupWith(label: string): TerminalGroup {
-  return {
-    tabs: [{ id: "t1", ptyId: 1, ptyToken: "tok", label, cwd: "/tmp", hasActivity: false }],
-    activeTabId: "t1",
-  };
-}
-
-describe("saveGroups", () => {
+describe("terminal persistence IPC", () => {
   beforeEach(() => {
-    calls.length = 0;
-    renameFailures = 0;
+    invokeMock.mockReset();
   });
 
-  it("écrit dans un fichier temporaire puis renomme (écriture atomique)", async () => {
-    const groups = new Map([["proj", groupWith("build")]]);
+  it("charge et valide le document versionné renvoyé par Rust", async () => {
+    invokeMock.mockResolvedValue(validDocument);
 
-    await saveGroups(groups);
-
-    const ops = calls.map((c) => c.op);
-    expect(ops).toEqual(["write", "rename"]);
-    expect(calls[0].path).toMatch(/terminal-tabs\.json\.tmp$/);
-    expect(calls[0].content).toBe(JSON.stringify({ proj: [{ label: "build", cwd: "/tmp" }] }));
-    expect(calls[1].path).toMatch(/terminal-tabs\.json\.tmp -> .*terminal-tabs\.json$/);
+    await expect(loadSavedGroups()).resolves.toEqual(validDocument);
+    expect(invokeMock).toHaveBeenCalledWith("load_terminal_tabs");
   });
 
-  it("ne persiste jamais les identifiants ni jetons PTY", async () => {
-    await saveGroups(new Map([["proj", groupWith("build")]]));
+  it.each([
+    undefined,
+    null,
+    [],
+    {},
+    { version: 1 },
+    { groups: {} },
+    { version: 2, groups: {} },
+    { version: 1, groups: [] },
+    { version: 1, groups: { project: [{ label: "" }] } },
+    { version: 1, groups: { project: [{ label: "bad\nlabel" }] } },
+    { version: 1, groups: { project: [{ label: "é".repeat(257) }] } },
+    { version: 1, groups: { project: Array.from({ length: 17 }, () => ({ label: "tab" })) } },
+    {
+      version: 1,
+      groups: Object.fromEntries(Array.from({ length: 129 }, (_, index) => [`g-${index}`, []])),
+    },
+    {
+      version: 1,
+      groups: Object.fromEntries(Array.from({ length: 17 }, (_, group) => [
+        `g-${group}`,
+        Array.from({ length: 16 }, (_, tab) => ({ label: `${group}-${tab}` })),
+      ])),
+    },
+  ])("rejette une réponse IPC invalide au lieu de créer un document vide", async (value) => {
+    invokeMock.mockResolvedValue(value);
 
-    expect(calls[0].content).not.toContain("ptyId");
-    expect(calls[0].content).not.toContain("tok");
+    await expect(loadSavedGroups()).rejects.toThrow("terminal-tabs-invalid");
   });
 
-  it("retire la destination avant de renommer quand Windows refuse l'écrasement", async () => {
-    renameFailures = 1;
+  it("accepte un ancien libellé composé d'espaces lorsque Rust l'a validé", async () => {
+    const document = { version: 1, groups: { project: [{ label: " " }] } };
+    invokeMock.mockResolvedValue(document);
 
-    await saveGroups(new Map([["proj", groupWith("build")]]));
-
-    expect(calls.map((c) => c.op)).toEqual(["write", "rename", "remove", "rename"]);
+    await expect(loadSavedGroups()).resolves.toEqual(document);
   });
 
-  it("avale une erreur d'écriture sans propager", async () => {
-    renameFailures = 99;
+  it("transmet uniquement le document durable à Rust", async () => {
+    invokeMock.mockResolvedValue(undefined);
 
-    await expect(saveGroups(new Map([["proj", groupWith("build")]]))).resolves.toBeUndefined();
-  });
-});
+    await saveGroups(validDocument);
 
-describe("loadSavedGroups", () => {
-  beforeEach(() => {
-    calls.length = 0;
-  });
-
-  it("renvoie un objet vide quand le fichier est illisible", async () => {
-    expect(await loadSavedGroups()).toEqual({});
+    expect(invokeMock).toHaveBeenCalledWith("save_terminal_tabs", {
+      document: validDocument,
+    });
   });
 });

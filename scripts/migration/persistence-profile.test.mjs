@@ -106,6 +106,25 @@ test("les identités historiques restent inchangées", () => {
   });
 });
 
+test("le profil terminal délègue le fichier borné à Rust et prouve la frontière TypeScript", () => {
+  const terminal = loadManifest().domains.find(({ id }) => id === "terminal");
+  assert.deepEqual(terminal.contracts, [
+    {
+      file: "src-tauri/src/services/terminal/tab_store.rs",
+      snippets: [".join(\"terminal-tabs.json\")", "const MAX_FILE_BYTES"],
+    },
+    {
+      file: "src/hooks/terminal-persistence.ts",
+      snippets: ["\"load_terminal_tabs\"", "\"save_terminal_tabs\""],
+    },
+  ]);
+  assert.deepEqual(terminal.evidence, [
+    "src-tauri/src/services/terminal/tab_store_tests.rs",
+    "src/hooks/__tests__/terminal-persistence.test.ts",
+    "src/hooks/__tests__/use-terminal.test.ts",
+  ]);
+});
+
 test("chaque chemin de profil est borné, relatif et conserve le nom CL-GO", () => {
   const paths = loadManifest().domains.flatMap(({ profilePaths }) => profilePaths);
   assert.ok(paths.length > 0 && paths.length <= MAX_PROFILE_PATHS);

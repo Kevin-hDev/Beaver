@@ -3,7 +3,7 @@ import { updateTab } from "../terminal-groups";
 import type { TerminalGroup, TerminalTab } from "../terminal-types";
 
 function tab(id: string, extra: Partial<TerminalTab> = {}): TerminalTab {
-  return { id, ptyId: null, ptyToken: null, label: id, cwd: "/tmp", hasActivity: false, ...extra };
+  return { id, ptyId: null, ptyToken: null, label: id, hasActivity: false, ...extra };
 }
 
 function groups(): Map<string, TerminalGroup> {

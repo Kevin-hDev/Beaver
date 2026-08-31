@@ -1138,7 +1138,10 @@
     "failedToStart": "El Terminal no pudo iniciarse",
     "closeTab": "Cerrar la pestaña",
     "activity": "Nueva salida en esta pestaña",
-    "resizePanel": "Ajustar la altura del panel"
+    "resizePanel": "Ajustar la altura del panel",
+    "tabsLoadFailed": "No se pudieron restaurar las pestañas del terminal. Reinicia Beaver para volver a intentarlo.",
+    "tabsSaveFailed": "No se pudieron guardar las pestañas del terminal. Reinicia Beaver para volver a intentarlo.",
+    "tabLimitReached": "Se ha alcanzado el límite de pestañas del terminal."
   },
   "skills": {
     "sourceBuiltIn": "Integrado",

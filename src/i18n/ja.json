@@ -1133,7 +1133,10 @@
     "failedToStart": "Terminal を起動できませんでした",
     "closeTab": "タブを閉じる",
     "activity": "このタブに新しい出力があります",
-    "resizePanel": "パネルの高さを調整"
+    "resizePanel": "パネルの高さを調整",
+    "tabsLoadFailed": "ターミナルタブを復元できませんでした。Beaver を再起動してもう一度お試しください。",
+    "tabsSaveFailed": "ターミナルタブを保存できませんでした。Beaver を再起動してもう一度お試しください。",
+    "tabLimitReached": "ターミナルタブの上限に達しました。"
   },
   "skills": {
     "sourceBuiltIn": "内蔵",

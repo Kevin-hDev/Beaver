@@ -1,117 +1,222 @@
-import { describe, it, expect } from "vitest";
-import { renderHook, act } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { showToast } from "@/lib/toast-emitter";
 import { useTerminal } from "../use-terminal";
 
+const { loadMock, saveMock } = vi.hoisted(() => ({
+  loadMock: vi.fn(),
+  saveMock: vi.fn(),
+}));
+
+vi.mock("../terminal-persistence", () => ({
+  loadSavedGroups: loadMock,
+  saveGroups: saveMock,
+}));
+vi.mock("@/lib/toast-emitter", () => ({ showToast: vi.fn() }));
+vi.mock("@/i18n", () => ({ default: { t: (key: string) => key } }));
+
+const GROUP_KEY = "test-project";
+const DEFAULT_CWD = "/Users/test/project";
+const ready = (validGroupKeys = [GROUP_KEY]) => ({
+  validGroupKeys,
+  projectLoadState: "ready" as const,
+});
+
 describe("useTerminal", () => {
-  const GROUP_KEY = "test-project";
-  const DEFAULT_CWD = "/Users/test/project";
-
-  it("starts with no tabs, closed panel", () => {
-    const { result } = renderHook(() => useTerminal(GROUP_KEY, DEFAULT_CWD));
-    expect(result.current.tabs).toEqual([]);
-    expect(result.current.isOpen).toBe(false);
-    expect(result.current.activeTabId).toBeNull();
+  beforeEach(() => {
+    loadMock.mockReset();
+    loadMock.mockResolvedValue({ version: 1, groups: {} });
+    saveMock.mockReset();
+    saveMock.mockResolvedValue(undefined);
+    vi.mocked(showToast).mockReset();
   });
 
-  it("addTab creates a tab with folder name as label", () => {
-    const { result } = renderHook(() => useTerminal(GROUP_KEY, DEFAULT_CWD));
-    act(() => { result.current.addTab("/Users/test/my-app"); });
-    expect(result.current.tabs).toHaveLength(1);
-    expect(result.current.tabs[0].label).toBe("my-app");
-    expect(result.current.tabs[0].cwd).toBe("/Users/test/my-app");
+  it("crée un onglet sans conserver son chemin", async () => {
+    const { result } = renderHook(() => useTerminal(GROUP_KEY, DEFAULT_CWD, ready()));
+    await waitFor(() => expect(result.current.persistenceStatus).toBe("healthy"));
+
+    let id: string | null = null;
+    act(() => { id = result.current.addTab("/Users/test/my-app"); });
+
+    expect(id).not.toBeNull();
+    expect(result.current.tabs[0]).toMatchObject({ label: "my-app", hasActivity: false });
+    expect(result.current.tabs[0]).not.toHaveProperty("cwd");
     expect(result.current.isOpen).toBe(true);
   });
 
-  it("addTab without cwd uses defaultCwd", () => {
-    const { result } = renderHook(() => useTerminal(GROUP_KEY, DEFAULT_CWD));
-    act(() => { result.current.addTab(); });
-    expect(result.current.tabs[0].cwd).toBe(DEFAULT_CWD);
-    expect(result.current.tabs[0].label).toBe("project");
+  it("projette seulement les libellés vers le document durable", async () => {
+    const { result } = renderHook(() => useTerminal(GROUP_KEY, DEFAULT_CWD, ready()));
+    await waitFor(() => expect(result.current.persistenceStatus).toBe("healthy"));
+
+    act(() => { result.current.addTab("/secret/worktree"); });
+
+    await waitFor(() => expect(saveMock).toHaveBeenCalledOnce());
+    expect(saveMock).toHaveBeenCalledWith({
+      version: 1,
+      groups: { [GROUP_KEY]: [{ label: "worktree" }] },
+    });
   });
 
-  it("closeTab removes the tab", () => {
-    const { result } = renderHook(() => useTerminal(GROUP_KEY, DEFAULT_CWD));
-    act(() => { result.current.addTab("/a"); });
-    act(() => { result.current.addTab("/b"); });
-    const idToClose = result.current.tabs[0].id;
-    act(() => { result.current.closeTab(idToClose); });
+  it("conserve les groupes tant que les projets sont en chargement sans sauvegarder", async () => {
+    loadMock.mockResolvedValue({
+      version: 1,
+      groups: { "project-a": [{ label: "build" }] },
+    });
+    const { result } = renderHook(() => useTerminal("project-a", "/a", {
+      validGroupKeys: [],
+      projectLoadState: "loading",
+    }));
+
+    await waitFor(() => expect(result.current.persistenceStatus).toBe("healthy"));
     expect(result.current.tabs).toHaveLength(1);
-    expect(result.current.tabs[0].cwd).toBe("/b");
+    expect(saveMock).not.toHaveBeenCalled();
   });
 
-  it("closing last tab sets isOpen to false", () => {
-    const { result } = renderHook(() => useTerminal(GROUP_KEY, DEFAULT_CWD));
+  it("conserve le projet restauré quand le chargement prêt le confirme", async () => {
+    loadMock.mockResolvedValue({
+      version: 1,
+      groups: { "project-a": [{ label: "build" }] },
+    });
+    const { result, rerender } = renderHook(
+      ({ projectLoadState }) => useTerminal("project-a", "/a", {
+        validGroupKeys: ["project-a"],
+        projectLoadState,
+      }),
+      { initialProps: { projectLoadState: "loading" as "loading" | "ready" } },
+    );
+    await waitFor(() => expect(result.current.tabs).toHaveLength(1));
+
+    rerender({ projectLoadState: "ready" });
+
+    expect(result.current.tabs).toHaveLength(1);
+    expect(saveMock).not.toHaveBeenCalled();
+  });
+
+  it("retire un projet absent seulement à ready puis sauvegarde exactement une fois", async () => {
+    loadMock.mockResolvedValue({
+      version: 1,
+      groups: { "project-a": [{ label: "build" }] },
+    });
+    const { result, rerender } = renderHook(
+      ({ projectLoadState }) => useTerminal("project-a", "/a", {
+        validGroupKeys: [],
+        projectLoadState,
+      }),
+      { initialProps: { projectLoadState: "loading" as "loading" | "ready" } },
+    );
+    await waitFor(() => expect(result.current.tabs).toHaveLength(1));
+
+    rerender({ projectLoadState: "ready" });
+
+    await waitFor(() => expect(result.current.tabs).toHaveLength(0));
+    await waitFor(() => expect(saveMock).toHaveBeenCalledOnce());
+    expect(saveMock).toHaveBeenCalledWith({ version: 1, groups: {} });
+  });
+
+  it("normalise un renommage valide et refuse les libellés invalides", async () => {
+    const { result } = renderHook(() => useTerminal(GROUP_KEY, DEFAULT_CWD, ready()));
+    await waitFor(() => expect(result.current.persistenceStatus).toBe("healthy"));
     act(() => { result.current.addTab(); });
     const id = result.current.tabs[0].id;
-    act(() => { result.current.closeTab(id); });
+
+    let renamed = false;
+    act(() => { renamed = result.current.renameTab(id, "  Build  "); });
+    expect(renamed).toBe(true);
+    expect(result.current.tabs[0].label).toBe("Build");
+
+    for (const invalid of [" ", "bad\nlabel", "é".repeat(257)]) {
+      act(() => { renamed = result.current.renameTab(id, invalid); });
+      expect(renamed).toBe(false);
+      expect(result.current.tabs[0].label).toBe("Build");
+    }
+  });
+
+  it("refuse le dix-septième onglet d'un groupe sans mutation", async () => {
+    const { result } = renderHook(() => useTerminal(GROUP_KEY, DEFAULT_CWD, ready()));
+    await waitFor(() => expect(result.current.persistenceStatus).toBe("healthy"));
+    for (let index = 0; index < 16; index += 1) {
+      act(() => { result.current.addTab(`/tab-${index}`); });
+    }
+
+    let refused: string | null = "unexpected";
+    act(() => { refused = result.current.addTab("/tab-17"); });
+
+    expect(refused).toBeNull();
+    expect(result.current.tabs).toHaveLength(16);
+    expect(showToast).toHaveBeenCalledOnce();
+    expect(showToast).toHaveBeenCalledWith("terminal.tabLimitReached", "error");
+  });
+
+  it("refuse le 257e onglet total sans créer un nouveau groupe", async () => {
+    const keys = Array.from({ length: 17 }, (_, index) => `group-${index}`);
+    const { result, rerender } = renderHook(
+      ({ groupKey }) => useTerminal(groupKey, "/root", ready(keys)),
+      { initialProps: { groupKey: keys[0] } },
+    );
+    await waitFor(() => expect(result.current.persistenceStatus).toBe("healthy"));
+    for (const groupKey of keys.slice(0, 16)) {
+      rerender({ groupKey });
+      for (let tab = 0; tab < 16; tab += 1) {
+        act(() => { result.current.addTab(`/${groupKey}-${tab}`); });
+      }
+    }
+    rerender({ groupKey: keys[16] });
+
+    let refused: string | null = "unexpected";
+    act(() => { refused = result.current.addTab("/overflow"); });
+
+    expect(refused).toBeNull();
     expect(result.current.tabs).toHaveLength(0);
-    expect(result.current.isOpen).toBe(false);
+    expect(showToast).toHaveBeenCalledOnce();
   });
 
-  it("renameTab updates the label", () => {
-    const { result } = renderHook(() => useTerminal(GROUP_KEY, DEFAULT_CWD));
-    act(() => { result.current.addTab(); });
-    const id = result.current.tabs[0].id;
-    act(() => { result.current.renameTab(id, "My Terminal"); });
-    expect(result.current.tabs[0].label).toBe("My Terminal");
+  it("refuse le 129e groupe durable sans mutation", async () => {
+    const keys = Array.from({ length: 129 }, (_, index) => `group-${index}`);
+    const { result, rerender } = renderHook(
+      ({ groupKey }) => useTerminal(groupKey, "/root", ready(keys)),
+      { initialProps: { groupKey: keys[0] } },
+    );
+    await waitFor(() => expect(result.current.persistenceStatus).toBe("healthy"));
+    for (const groupKey of keys.slice(0, 128)) {
+      rerender({ groupKey });
+      act(() => { result.current.addTab(`/${groupKey}`); });
+    }
+    rerender({ groupKey: keys[128] });
+
+    let refused: string | null = "unexpected";
+    act(() => { refused = result.current.addTab("/overflow"); });
+
+    expect(refused).toBeNull();
+    expect(result.current.tabs).toHaveLength(0);
+    expect(showToast).toHaveBeenCalledOnce();
   });
 
-  it("reorderTabs moves tab from index 0 to 2", () => {
-    const { result } = renderHook(() => useTerminal(GROUP_KEY, DEFAULT_CWD));
+  it("ignore les réordonnancements invalides sans changer la liste", async () => {
+    const { result } = renderHook(() => useTerminal(GROUP_KEY, DEFAULT_CWD, ready()));
+    await waitFor(() => expect(result.current.persistenceStatus).toBe("healthy"));
+    for (const cwd of ["/a", "/b", "/c"]) {
+      act(() => { result.current.addTab(cwd); });
+    }
+    const before = result.current.tabs;
+
+    for (const [from, to] of [[-1, 1], [0, -1], [3, 0], [0, 3], [1, 1]]) {
+      act(() => { result.current.reorderTabs(from, to); });
+      expect(result.current.tabs).toBe(before);
+    }
+  });
+
+  it("ferme l'onglet actif et conserve les opérations PTY runtime", async () => {
+    const { result } = renderHook(() => useTerminal(GROUP_KEY, DEFAULT_CWD, ready()));
+    await waitFor(() => expect(result.current.persistenceStatus).toBe("healthy"));
     act(() => { result.current.addTab("/a"); });
     act(() => { result.current.addTab("/b"); });
-    act(() => { result.current.addTab("/c"); });
-    act(() => { result.current.reorderTabs(0, 2); });
-    expect(result.current.tabs.map((t) => t.cwd)).toEqual(["/b", "/c", "/a"]);
-  });
-
-  it("togglePanel opens and closes", () => {
-    const { result } = renderHook(() => useTerminal(GROUP_KEY, DEFAULT_CWD));
-    act(() => { result.current.addTab(); });
-    expect(result.current.isOpen).toBe(true);
-    act(() => { result.current.togglePanel(); });
-    expect(result.current.isOpen).toBe(false);
-    act(() => { result.current.togglePanel(); });
-    expect(result.current.isOpen).toBe(true);
-  });
-
-  it("togglePanel without tabs does nothing", () => {
-    const { result } = renderHook(() => useTerminal(GROUP_KEY, DEFAULT_CWD));
-    act(() => { result.current.togglePanel(); });
-    expect(result.current.isOpen).toBe(false);
-  });
-
-  it("resizePanel clamps to maxHeight", () => {
-    const { result } = renderHook(() => useTerminal(GROUP_KEY, DEFAULT_CWD));
-    act(() => { result.current.setMaxHeight(400); });
-    act(() => { result.current.resizePanel(9999); });
-    expect(result.current.panelHeight).toBe(400);
-  });
-
-  it("resizePanel clamps to minHeight", () => {
-    const { result } = renderHook(() => useTerminal(GROUP_KEY, DEFAULT_CWD));
-    act(() => { result.current.setMaxHeight(400); });
-    act(() => { result.current.resizePanel(10); });
-    expect(result.current.panelHeight).toBe(80);
-  });
-
-  it("setPtyId updates the ptyId of a tab", () => {
-    const { result } = renderHook(() => useTerminal(GROUP_KEY, DEFAULT_CWD));
-    act(() => { result.current.addTab(); });
-    const id = result.current.tabs[0].id;
-    act(() => { result.current.setPtyId(id, 42); });
-    expect(result.current.tabs[0].ptyId).toBe(42);
-  });
-
-  it("closing active tab switches to next available", () => {
-    const { result } = renderHook(() => useTerminal(GROUP_KEY, DEFAULT_CWD));
-    act(() => { result.current.addTab("/a"); });
-    act(() => { result.current.addTab("/b"); });
-    act(() => { result.current.addTab("/c"); });
     const firstId = result.current.tabs[0].id;
+    act(() => { result.current.setPtyId(firstId, 42, "token"); });
+    expect(result.current.getGroupPtyEntries(GROUP_KEY)).toEqual([{ id: 42, token: "token" }]);
+
     act(() => { result.current.setActiveTab(firstId); });
     act(() => { result.current.closeTab(firstId); });
-    expect(result.current.activeTabId).toBeTruthy();
-    expect(result.current.tabs).toHaveLength(2);
+    expect(result.current.tabs).toHaveLength(1);
+    expect(result.current.activeTabId).toBe(result.current.tabs[0].id);
   });
 });

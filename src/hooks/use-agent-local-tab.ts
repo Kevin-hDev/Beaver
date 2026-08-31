@@ -42,8 +42,10 @@ export function useAgentLocalTab({ navState, onSessionChange, onNavChange, listF
     : null;
   const terminalGroupKey = activeProject?.id || "__default__";
   const terminalCwd = activeProject?.path || "";
-  const validGroupKeys = projectsHook.projects.map((p) => p.id);
-  const terminalState = useTerminal(terminalGroupKey, terminalCwd, validGroupKeys);
+  const terminalState = useTerminal(terminalGroupKey, terminalCwd, {
+    validGroupKeys: projectsHook.projects.map((project) => project.id),
+    projectLoadState: projectsHook.loadState,
+  });
   const { model: defaultModel, provider: defaultProvider } = useDefaultModel();
   const [welcomeModel, setWelcomeModel] = useState<{ model: string; provider: string } | null>(null);
   const [welcomeReasoningMode, setWelcomeReasoningMode] = useState<string | null>(null);
