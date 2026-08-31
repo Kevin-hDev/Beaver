@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { useState } from "react";
+import { StrictMode, useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { showToast } from "@/lib/toast-emitter";
 import { useTerminalPersistence } from "../use-terminal-persistence";
@@ -23,11 +23,30 @@ function useHarness(canSave: boolean) {
   return { groups, setGroups, ...persistence };
 }
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((ok) => { resolve = ok; });
+  return { promise, resolve };
+}
+
 describe("useTerminalPersistence", () => {
   beforeEach(() => {
     loadMock.mockReset();
     saveMock.mockReset();
     vi.mocked(showToast).mockReset();
+  });
+
+  it("ne lance qu'un chargement sous StrictMode et garde son résultat comme seule autorité", async () => {
+    const first = deferred<{ version: 1; groups: { project: { label: string }[] } }>();
+    loadMock
+      .mockImplementationOnce(() => first.promise)
+      .mockResolvedValue({ version: 1, groups: { project: [{ label: "second" }] } });
+    const { result } = renderHook(() => useHarness(false), { wrapper: StrictMode });
+
+    expect(loadMock).toHaveBeenCalledOnce();
+    first.resolve({ version: 1, groups: { project: [{ label: "first" }] } });
+    await waitFor(() => expect(result.current.persistenceStatus).toBe("healthy"));
+    expect(result.current.groups.get("project")?.tabs[0].label).toBe("first");
   });
 
   it("devient sain seulement après restauration du document durable sans chemin", async () => {

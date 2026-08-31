@@ -52,9 +52,12 @@ export function useTerminalPersistence({
   const queueRef = useRef<TerminalPersistenceQueue | null>(null);
   const monitoringRef = useRef(false);
   const lastProjectionRef = useRef<string | null>(null);
+  const loadStartedRef = useRef(false);
   if (queueRef.current === null) queueRef.current = new TerminalPersistenceQueue(saveGroups);
 
   useEffect(() => {
+    if (loadStartedRef.current) return;
+    loadStartedRef.current = true;
     void loadSavedGroups().then((document) => {
       lastProjectionRef.current = JSON.stringify(document);
       setGroups(restoreGroups(document));
