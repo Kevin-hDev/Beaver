@@ -1,5 +1,29 @@
 Review correction set after verification of 38b232dd.
 
-Decisions and reasons:\n- Numeric compression fields keep an unpersisted edit buffer and commit only on blur or Enter, so multi-digit input never saves partial values or loses focus.\n- A factory repair of compression-profiles.json persists recovery_backup_pending; the v1 backup is not deleted because a readable factory document is not proof that user profiles were recovered.\n- Summary input reserves max(256 tokens, 5% of the effective context window) to cover estimator error on dense JSON and local Ollama windows.\n- Explicit compression persists the same snapshot fingerprint before network; a failure blocks automatic retry on that unchanged state but does not increment the automatic failure counter. A new user turn still rearms compression.\n- A failed first compression after reload keeps the reconstructed context ring when no prior provider snapshot exists.\n- Rust recognition of /compress now has one shared authority.
+Decisions and reasons:
 
-Validation:\n- Targeted frontend: 4 files, 17 tests passed.\n- Compression Rust: 171 passed.\n- Full frontend: 502 files, 2689 tests passed; all npm script suites passed.\n- Full Rust: 4479 passed, 8 ignored, 0 failed; prelogger integration passed.\n- npm run lint, npx tsc --noEmit, npm run contracts:check passed.\n- cargo check, cargo fmt --check, cargo clippy --all-targets -- -D warnings passed.\n- graphify update . completed.\n- Manual Gemma 34K compression and visual keyboard checks remain acceptance checks in the running app.
+Numeric compression fields keep an unpersisted edit buffer and commit only on blur or Enter, so multi-digit input never saves partial values or loses focus.
+
+A factory repair of compression-profiles.json persists recovery_backup_pending; the v1 backup is not deleted because a readable factory document is not proof that user profiles were recovered.
+
+Summary input reserves max(256 tokens, 5% of the effective context window) to cover estimator error on dense JSON and local Ollama windows.
+
+Explicit compression persists the same snapshot fingerprint before network; a failure blocks automatic retry on that unchanged state but does not increment the automatic failure counter. A new user turn still rearms compression.
+
+A failed first compression after reload keeps the reconstructed context ring when no prior provider snapshot exists.
+
+Rust recognition of /compress now has one shared authority.
+
+Validation:
+
+Targeted frontend: 4 files, 17 tests passed. Compression Rust: 171 passed.
+
+Full frontend: 502 files, 2689 tests passed; all npm script suites passed.
+
+Full Rust: 4479 passed, 8 ignored, 0 failed; prelogger integration passed.
+
+npm run lint, npx tsc --noEmit, npm run contracts:check, cargo check, cargo fmt --check, and cargo clippy --all-targets -- -D warnings passed.
+
+graphify update . completed.
+
+Manual Gemma 34K compression and visual keyboard checks remain acceptance checks in the running app.
