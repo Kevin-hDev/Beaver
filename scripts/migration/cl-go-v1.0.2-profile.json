@@ -167,6 +167,7 @@
       "profilePaths": [
         "session-tabs.json",
         "agent-settings.json",
+        "compression-profiles.json",
         "session-permissions/550e8400-e29b-41d4-a716-446655440000.json"
       ],
       "contracts": [
@@ -179,12 +180,20 @@
           "snippets": [".join(\"agent-settings.json\")"]
         },
         {
+          "scope": "migration",
+          "file": "src-tauri/src/services/compress/profile_store.rs",
+          "snippets": [".join(\"compression-profiles.json\")"]
+        },
+        {
           "file": "src-tauri/src/services/agent_local/session_permission_state.rs",
           "snippets": [".join(\"session-permissions\")"]
         }
       ],
-      "evidence": ["src-tauri/src/services/agent_local/session_permission_state_tests.rs"],
-      "manualGates": []
+      "evidence": [
+        "src-tauri/src/services/agent_local/session_permission_state_tests.rs",
+        "src-tauri/src/services/compress/profile_store_tests.rs"
+      ],
+      "manualGates": ["Rouvre les profils de compression globaux et propres aux sessions après redémarrage."]
     },
     {
       "id": "global-memory",
@@ -282,6 +291,7 @@
         "subagent-worktrees/550e8400-e29b-41d4-a716-446655440004/550e8400-e29b-41d4-a716-446655440005/.git/HEAD",
         "subagent-changes/550e8400-e29b-41d4-a716-446655440004.json",
         "subagent-directory-repos/550e8400-e29b-41d4-a716-446655440004/550e8400-e29b-41d4-a716-446655440005/.git/HEAD",
+        "subagent-reports/overflow.json",
         "sdr/550e8400e29b41d4a716446655440004/.git/HEAD"
       ],
       "contracts": [
@@ -299,6 +309,11 @@
         },
         {
           "scope": "migration",
+          "file": "src-tauri/src/services/agent_local/subagent_report_overflow.rs",
+          "snippets": [".join(\"subagent-reports\")"]
+        },
+        {
+          "scope": "migration",
           "file": "src-tauri/src/services/agent_local/subagent_directory_workspace.rs",
           "snippets": [".join(\"sdr\")"]
         }
@@ -306,6 +321,7 @@
       "evidence": [
         "src-tauri/src/services/agent_local/subagent_worktree_ownership_tests.rs",
         "src-tauri/src/services/agent_local/subagent_directory_recovery_tests.rs",
+        "src-tauri/src/services/agent_local/subagent_completion_capacity_tests.rs",
         "src-tauri/src/services/agent_local/subagent_startup_cleanup_tests.rs"
       ],
       "manualGates": ["Récupère un vrai worktree non fusionné."]
