@@ -2,8 +2,8 @@
 .uis-switch {
   position: relative;
   display: inline-block;
-  width: 3.5em;
-  height: 2em;
+  width: 3.4em;
+  height: 2.2em;
   font-size: var(--switch-unit);
   cursor: pointer;
   flex-shrink: 0;
@@ -32,9 +32,9 @@
 .uis-slider::before {
   position: absolute;
   top: 50%;
-  left: 0.3em;
-  width: 1.4em;
-  height: 1.4em;
+  left: 0.35em;
+  width: 1.7em;
+  height: 1.7em;
   border-radius: 0.25em;
   background: var(--switch-knob);
   box-shadow: var(--shadow-sm);
@@ -49,7 +49,7 @@
 }
 
 .uis-input:checked + .uis-slider::before {
-  transform: translate(1.5em, -50%);
+  transform: translate(1em, -50%);
 }
 
 .uis-input:focus-visible + .uis-slider {

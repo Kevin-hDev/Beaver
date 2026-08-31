@@ -56,6 +56,8 @@ describe("ToggleSwitch", () => {
   it("centre verticalement le curseur dans les deux états", () => {
     expect(switchCss).toMatch(/\.uis-slider::before\s*\{[^}]*top:\s*50%;/s);
     expect(switchCss).toMatch(/\.uis-slider::before\s*\{[^}]*transform:\s*translateY\(-50%\);/s);
-    expect(switchCss).toContain("transform: translate(1.5em, -50%);");
+    expect(switchCss).toMatch(
+      /\.uis-input:checked \+ \.uis-slider::before\s*\{[^}]*transform:\s*translate\([^,]+,\s*-50%\);/s,
+    );
   });
 });
