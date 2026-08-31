@@ -49,6 +49,18 @@ describe("apparence du terminal", () => {
     expect(instance).not.toMatch(/#[0-9a-fA-F]{3,8}\b|rgba?\(/);
   });
 
+  it("le collage naturel de xterm suit l'unique file d'entrée bornée", () => {
+    const instance = read("src/components/terminal/terminal-instance.tsx");
+    const bridge = read("src/components/terminal/terminal-pty-bridge.ts");
+
+    expect(instance).not.toContain('addEventListener("paste"');
+    expect(instance).not.toContain("clipboardData");
+    expect(instance).not.toContain('invoke("pty_write"');
+    expect(instance).toContain("createTerminalPtyBridge");
+    expect(bridge).toContain("terminal.onData");
+    expect(bridge).toContain("new TerminalInputQueue");
+  });
+
   /* Sans les seize, xterm garde sa palette d'usine — inchangée dans les six
      thèmes, et dont le blanc vif est illisible sur les fonds clairs. */
   it("les seize couleurs de sortie sont dérivées des jetons de l'application", () => {

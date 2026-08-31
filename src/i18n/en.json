@@ -1172,7 +1172,9 @@
     "tabsSaveFailed": "Terminal tabs could not be saved. Restart Beaver to try again.",
     "tabLimitReached": "The terminal tab limit has been reached.",
     "liveLimitReached": "The active terminal limit has been reached. Close a tab to try again.",
-    "failedToClose": "The terminal could not be closed. Try again."
+    "failedToClose": "The terminal could not be closed. Try again.",
+    "inputQueueFull": "The terminal is still processing too much input. Wait and try again.",
+    "inputFailed": "The input could not be sent to the terminal. Try again."
   },
   "skills": {
     "sourceBuiltIn": "Built-in",

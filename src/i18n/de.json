@@ -1139,7 +1139,9 @@
     "tabsSaveFailed": "Die Terminal-Tabs konnten nicht gespeichert werden. Starten Sie Beaver neu, um es erneut zu versuchen.",
     "tabLimitReached": "Die maximale Anzahl an Terminal-Tabs ist erreicht.",
     "liveLimitReached": "Die maximale Anzahl aktiver Terminals ist erreicht. Schließen Sie einen Tab und versuchen Sie es erneut.",
-    "failedToClose": "Das Terminal konnte nicht geschlossen werden. Versuchen Sie es erneut."
+    "failedToClose": "Das Terminal konnte nicht geschlossen werden. Versuchen Sie es erneut.",
+    "inputQueueFull": "Das Terminal verarbeitet noch zu viele Eingaben. Warten Sie und versuchen Sie es erneut.",
+    "inputFailed": "Die Eingabe konnte nicht an das Terminal gesendet werden. Versuchen Sie es erneut."
   },
   "skills": {
     "sourceBuiltIn": "Integriert",

@@ -1,9 +1,8 @@
 import { useEffect, useRef } from "react";
-import { invoke, Channel } from "@tauri-apps/api/core";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { IS_MAC } from "@/lib/platform";
-import i18n from "@/i18n";
+import { createTerminalPtyBridge } from "./terminal-pty-bridge";
 import { readTerminalTheme, readTerminalFont } from "./terminal-theme";
 import "@xterm/xterm/css/xterm.css";
 
@@ -29,8 +28,6 @@ export function TerminalInstance({
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
   const fitRef = useRef<FitAddon | null>(null);
-  const ptyIdRef = useRef<number | null>(null);
-  const ptyTokenRef = useRef<string | null>(null);
   /* Le flux est branché une fois pour toutes au montage : il ne verrait qu'un
      état figé de la visibilité et du rappel s'ils y étaient lus directement. */
   const visibleRef = useRef(isVisible);
@@ -89,57 +86,17 @@ export function TerminalInstance({
       return true;
     });
 
-    const pasteHandler = (e: ClipboardEvent) => {
-      const text = e.clipboardData?.getData("text");
-      if (text && ptyIdRef.current !== null && ptyTokenRef.current) {
-        invoke("pty_write", { id: ptyIdRef.current, token: ptyTokenRef.current, data: text }).catch(() => {});
-        e.preventDefault();
-      }
-    };
-    containerRef.current.addEventListener("paste", pasteHandler);
-
-    let disposed = false;
-
-    const channel = new Channel<{ data: string; isExit: boolean; exitCode: number }>();
-    channel.onmessage = (event) => {
-      if (disposed) return;
-      if (event.isExit) {
-        term.writeln(`\r\n[${i18n.t("terminal.processExited", { code: event.exitCode })}]`);
-        ptyIdRef.current = null;
-        onExit(tabId);
-      } else {
-        term.write(event.data);
-        /* Hors des regards, le texte qui arrive vaut une marque sur l'onglet. */
-        if (!visibleRef.current) activityRef.current(tabId, true);
-      }
-    };
-
-    invoke<{ id: number; token: string }>("pty_spawn", {
+    const bridge = createTerminalPtyBridge({
+      tabId,
       groupKey,
-      cols: term.cols || 80,
-      rows: term.rows || 24,
-      onOutput: channel,
-    }).then(({ id, token }) => {
-      if (disposed) {
-        invoke("pty_kill", { id, token }).catch(() => {});
-        return;
-      }
-      ptyIdRef.current = id;
-      ptyTokenRef.current = token;
-      onPtyReady(tabId, id, token);
-
-      term.onData((data) => {
-        invoke("pty_write", { id, token, data }).catch(() => {});
-      });
-
-      term.onResize(({ cols, rows }) => {
-        invoke("pty_resize", { id, token, cols, rows }).catch(() => {});
-      });
-    }).catch(() => {
-      if (!disposed) {
-        term.writeln(`\r\n${i18n.t("terminal.failedToStart")}\r\n`);
-      }
+      terminal: term,
+      isVisible: () => visibleRef.current,
+      onPtyReady,
+      onExit,
+      onActivity: (id, hasActivity) => activityRef.current(id, hasActivity),
     });
+    void bridge.start();
+    const resizeSubscription = term.onResize(({ cols, rows }) => bridge.resize(cols, rows));
 
     let resizeTimer: ReturnType<typeof setTimeout>;
     const resizeObserver = new ResizeObserver(() => {
@@ -156,15 +113,11 @@ export function TerminalInstance({
     });
     resizeObserver.observe(containerRef.current);
 
-    const container = containerRef.current;
     return () => {
-      disposed = true;
       clearTimeout(resizeTimer);
-      container?.removeEventListener("paste", pasteHandler);
       resizeObserver.disconnect();
-      if (ptyIdRef.current !== null && ptyTokenRef.current) {
-        invoke("pty_kill", { id: ptyIdRef.current, token: ptyTokenRef.current }).catch(() => {});
-      }
+      resizeSubscription.dispose();
+      bridge.dispose();
       term.dispose();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- PTY mount-only setup

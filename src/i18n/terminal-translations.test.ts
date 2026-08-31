@@ -14,10 +14,12 @@ const keys = [
   "tabLimitReached",
   "liveLimitReached",
   "failedToClose",
+  "inputQueueFull",
+  "inputFailed",
 ] as const;
 
 describe("traductions de la persistance terminal", () => {
-  it.each(Object.entries(translations))("définit les cinq messages en %s", (_locale, value) => {
+  it.each(Object.entries(translations))("définit les sept messages en %s", (_locale, value) => {
     const terminal = value.terminal as Record<string, string>;
     for (const key of keys) {
       const message = terminal[key];

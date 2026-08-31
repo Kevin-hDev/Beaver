@@ -1138,7 +1138,9 @@
     "tabsSaveFailed": "无法保存终端标签页。请重启 Beaver 后重试。",
     "tabLimitReached": "已达到终端标签页数量上限。",
     "liveLimitReached": "已达到活动终端数量上限。请关闭一个标签页后重试。",
-    "failedToClose": "无法关闭终端。请重试。"
+    "failedToClose": "无法关闭终端。请重试。",
+    "inputQueueFull": "终端仍在处理过多输入。请稍候再试。",
+    "inputFailed": "无法将输入发送到终端。请重试。"
   },
   "skills": {
     "sourceBuiltIn": "内置",

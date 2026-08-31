@@ -1139,7 +1139,9 @@
     "tabsSaveFailed": "Impossibile salvare le schede del terminale. Riavvia Beaver per riprovare.",
     "tabLimitReached": "È stato raggiunto il limite di schede del terminale.",
     "liveLimitReached": "È stato raggiunto il limite di terminali attivi. Chiudi una scheda per riprovare.",
-    "failedToClose": "Impossibile chiudere il terminale. Riprova."
+    "failedToClose": "Impossibile chiudere il terminale. Riprova.",
+    "inputQueueFull": "Il terminale sta ancora elaborando troppi dati. Attendi e riprova.",
+    "inputFailed": "Impossibile inviare l’input al terminale. Riprova."
   },
   "skills": {
     "sourceBuiltIn": "Integrato",
