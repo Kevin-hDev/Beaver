@@ -1,6 +1,8 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { useProjects } from "@/hooks/use-projects";
 import { useTerminal } from "@/hooks/use-terminal";
+import type { Project } from "@/types/agent";
 
 const { invokeMock } = vi.hoisted(() => ({ invokeMock: vi.fn() }));
 
@@ -10,6 +12,21 @@ const ready = (groupKey: string) => ({
   validGroupKeys: [groupKey],
   projectLoadState: "ready" as const,
 });
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((ok) => { resolve = ok; });
+  return { promise, resolve };
+}
+
+function useTerminalWithProjects() {
+  const projects = useProjects();
+  const terminal = useTerminal("project-a", "/a", {
+    validGroupKeys: projects.projects.map((project) => project.id),
+    projectLoadState: projects.loadState,
+  });
+  return { terminal, projectLoadState: projects.loadState };
+}
 
 describe("terminal integration - isolation par projet", () => {
   beforeEach(() => {
@@ -66,6 +83,42 @@ describe("terminal integration - isolation par projet", () => {
 
     await waitFor(() => expect(result.current.persistenceStatus).toBe("error"));
 
+    expect(invokeMock).not.toHaveBeenCalledWith("save_terminal_tabs", expect.anything());
+  });
+
+  it("conserve project-a pendant deux cycles avant la réponse de list_projects", async () => {
+    const pendingProjects = deferred<Project[]>();
+    invokeMock.mockImplementation((command: string) => {
+      if (command === "load_terminal_tabs") {
+        return Promise.resolve({ version: 1, groups: { "project-a": [{ label: "build" }] } });
+      }
+      if (command === "list_projects") return pendingProjects.promise;
+      return Promise.resolve(undefined);
+    });
+    const { result, rerender } = renderHook(() => useTerminalWithProjects());
+    await waitFor(() => expect(result.current.terminal.persistenceStatus).toBe("healthy"));
+
+    rerender();
+    expect(result.current.terminal.tabs).toHaveLength(1);
+    rerender();
+    expect(result.current.terminal.tabs).toHaveLength(1);
+    expect(result.current.projectLoadState).toBe("loading");
+    expect(invokeMock).not.toHaveBeenCalledWith("save_terminal_tabs", expect.anything());
+
+    await act(async () => {
+      pendingProjects.resolve([{
+        id: "project-a",
+        name: "Project A",
+        path: "/a",
+        order: 0,
+        created_at: "2026-08-31T00:00:00Z",
+      }]);
+      await pendingProjects.promise;
+    });
+
+    await waitFor(() => expect(result.current.projectLoadState).toBe("ready"));
+    expect(result.current.terminal.tabs).toHaveLength(1);
+    expect(result.current.terminal.tabs[0].label).toBe("build");
     expect(invokeMock).not.toHaveBeenCalledWith("save_terminal_tabs", expect.anything());
   });
 });
