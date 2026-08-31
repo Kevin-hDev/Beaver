@@ -98,8 +98,8 @@ pub(super) fn reset_prompts(
     let index = profile_index(document, profile_id)?;
     let defaults = beaver_profile();
     let profile = &mut document.profiles[index];
-    profile.summary.system_prompt = defaults.summary.system_prompt;
-    profile.summary.handoff_prompt = defaults.summary.handoff_prompt;
+    profile.system_prompt = defaults.system_prompt;
+    profile.handoff_prompt = defaults.handoff_prompt;
     profile.revision = next_revision(profile.revision)?;
     Ok(())
 }

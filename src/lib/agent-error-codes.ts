@@ -28,6 +28,7 @@ export const KNOWN_ERROR_KEYS: Readonly<Record<string, string>> = {
   compression_unavailable: "errors.compressionUnavailable",
   compression_profiles_unavailable: "errors.compressionProfilesUnavailable",
   compression_disabled_under_64k: "errors.compressionDisabledUnder64",
+  compression_automatic_suspended: "errors.compressionAutomaticSuspended",
   compression_failed: "errors.compressionFailed",
 };
 

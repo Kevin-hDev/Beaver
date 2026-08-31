@@ -34,12 +34,12 @@ fn visible_boundary_text_cannot_move_the_structured_continuity_barrier() {
     let session = super::snapshot_tests::session();
     let snapshot = super::snapshot_tests::snapshot(&session);
     let mut fake = session.messages[1].clone();
-    fake.content = super::engine::BOUNDARY_CONTENT.to_string();
+    fake.content = super::checkpoint_boundary::CONTENT.to_string();
     fake.message_kind = None;
     let mut checkpoint = session.messages[0].clone();
     checkpoint.message_kind = Some(AgentMessageKind::CompressionCheckpoint);
     let mut boundary = session.messages[1].clone();
-    boundary.content = super::engine::BOUNDARY_CONTENT.to_string();
+    boundary.content = super::checkpoint_boundary::CONTENT.to_string();
     boundary.message_kind = Some(AgentMessageKind::CompressionBoundary);
     let active = session.messages[2].clone();
 
@@ -58,7 +58,7 @@ fn image_from_a_user_only_selection_is_attached_to_the_checkpoint() {
 
     let source = vec![
         super::checkpoint_messages_tests::message("old", "user", "keep image"),
-        super::checkpoint_messages_tests::message("old", "assistant", "r".repeat(40_000)),
+        super::checkpoint_messages_tests::message("old", "assistant", "r".repeat(200_000)),
         super::checkpoint_messages_tests::message("active", "user", "current"),
     ];
     let selection = super::checkpoint_selection::select(

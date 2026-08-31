@@ -10,10 +10,16 @@ pub async fn apply_metadata_patch(id: &str, patch: SessionMetadataPatch) -> Resu
             session.name = name;
         }
         if let Some(model) = patch.model {
+            if session.model != model {
+                crate::services::compress::automatic_guard::reset(session);
+            }
             session.model = model;
             session.context_tokens = None;
         }
         if let Some(provider) = patch.provider {
+            if session.provider != provider {
+                crate::services::compress::automatic_guard::reset(session);
+            }
             session.provider = provider;
             session.context_tokens = None;
         }
@@ -38,6 +44,7 @@ pub async fn edit_user_message(id: &str, input: EditUserMessageInput) -> Result<
     let _guard = lock.lock().await;
     let mut session = super::session_store::get(id).await?;
     super::conversation_edit::apply_to_session(&mut session, input)?;
+    crate::services::compress::automatic_guard::reset(&mut session);
     super::session_store::save(&session).await
 }
 
@@ -46,7 +53,10 @@ pub async fn set_compression_profile(
     selection: super::types_session::SessionCompressionProfileSelection,
 ) -> Result<(), String> {
     super::session_store_updates::update_locked(id, move |session| {
-        session.compression_profile_selection = Some(selection);
+        if session.compression_profile_selection.as_ref() != Some(&selection) {
+            crate::services::compress::automatic_guard::reset(session);
+            session.compression_profile_selection = Some(selection);
+        }
     })
     .await
 }

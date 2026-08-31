@@ -36,6 +36,7 @@ pub(super) enum WireVersion {
     V1,
     V2,
     V3,
+    V4,
     Future(u16),
 }
 
@@ -44,7 +45,8 @@ pub(super) fn version(bytes: &[u8]) -> Result<WireVersion, String> {
     Ok(match probe.schema_version {
         None | Some(1) => WireVersion::V1,
         Some(2) => WireVersion::V2,
-        Some(CURRENT_SESSION_SCHEMA_VERSION) => WireVersion::V3,
+        Some(3) => WireVersion::V3,
+        Some(CURRENT_SESSION_SCHEMA_VERSION) => WireVersion::V4,
         Some(value) if value > CURRENT_SESSION_SCHEMA_VERSION => WireVersion::Future(value),
         Some(_) => return Err(invalid()),
     })
@@ -73,8 +75,19 @@ pub(super) fn parse_v2(bytes: &[u8]) -> Result<AgentSession, String> {
 }
 
 pub(super) fn parse_v3(bytes: &[u8]) -> Result<AgentSession, String> {
+    let mut value: Value = serde_json::from_slice(bytes).map_err(|_| invalid())?;
+    super::session_migration_ids::validate_required_v2_fields(&value)?;
+    super::session_migration_compression_guard::migrate_v3(&mut value)?;
+    parse_v4_value(value)
+}
+
+pub(super) fn parse_v4(bytes: &[u8]) -> Result<AgentSession, String> {
     let value: Value = serde_json::from_slice(bytes).map_err(|_| invalid())?;
     super::session_migration_ids::validate_required_v2_fields(&value)?;
+    parse_v4_value(value)
+}
+
+fn parse_v4_value(value: Value) -> Result<AgentSession, String> {
     let mut session: AgentSession = serde_json::from_value(value).map_err(|_| invalid())?;
     degrade_unreplayable(&mut session);
     validate_current_readable(&session)?;
@@ -104,6 +117,9 @@ fn validate_current_readable(session: &AgentSession) -> Result<(), String> {
     {
         return Err(invalid());
     }
+    super::session_migration_compression_guard::validate(
+        &session.automatic_compression_guard,
+    )?;
     for message in &session.messages {
         super::session_migration_ids::validate_id(&message.turn_id)?;
         if message

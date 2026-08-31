@@ -4,7 +4,6 @@
 
 .cbp-head,
 .cbp-window-label,
-.cbp-window-list,
 .cbp-legend {
   display: flex;
   align-items: center;
@@ -27,26 +26,10 @@
   font-size: var(--text-xs);
 }
 
-.cbp-window-list {
-  padding: var(--space-xs);
-  border: 1px solid var(--edge);
-  border-radius: var(--radius-sm);
-}
-
-.cbp-window {
-  padding: var(--space-xs) var(--space-sm);
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--ink-muted);
-  font: inherit;
-  cursor: pointer;
-}
-
-.cbp-window:hover,
-.cbp-window[aria-pressed="true"] {
-  background: var(--surface-hover);
+.cbp-window-label b {
   color: var(--ink);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
 }
 
 .cbp-gauge {
@@ -75,36 +58,6 @@
   background: var(--pulse);
 }
 
-.cbp-gauge-reserve {
-  background: var(--signal-info);
-}
-
-.cbp-gauge-over {
-  position: absolute;
-  top: 0;
-  background: repeating-linear-gradient(
-    135deg,
-    var(--signal-error) 0 4px,
-    color-mix(in srgb, var(--signal-error) 55%, var(--surface)) 4px 8px
-  );
-}
-
-.cbp-gauge-limit {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: var(--ink);
-}
-
-.cbp-gauge-limit > span {
-  position: absolute;
-  top: calc(100% + var(--space-2xs));
-  right: calc(100% + var(--space-2xs));
-  color: var(--ink-muted);
-  font-size: var(--text-2xs);
-  white-space: nowrap;
-}
 
 .cbp-legend {
   margin-top: var(--space-lg);
@@ -132,7 +85,6 @@
 
 .cbp-swatch-system { background: var(--ink-faint); }
 .cbp-swatch-profile { background: var(--pulse); }
-.cbp-swatch-reserve { background: var(--signal-info); }
 
 .cbp-verdict {
   margin-top: var(--space-sm);
@@ -149,16 +101,15 @@
   font-variant-numeric: tabular-nums;
 }
 
-.cbp-verdict[data-risk="high"] strong {
-  color: var(--signal-error);
-}
-
-.cbp-verdict[data-risk="tight"] strong {
-  color: var(--signal-warning);
-}
-
 .cbp-verdict[data-risk="ok"] strong {
   color: var(--toast-ok-text);
+}
+
+.cbp-note {
+  margin: var(--space-xs) 0 0;
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+  line-height: 1.4;
 }
 
 @media (max-width: 760px) {

@@ -7,7 +7,6 @@ import type {
 } from "@/types/compression-profile.generated";
 import { CompressionBudgetPreview } from "./compression-budget-preview";
 import { CompressionContentSection } from "./compression-content-section";
-import { CompressionFailureSection } from "./compression-failure-section";
 import { CompressionRangeTabs } from "./compression-range-tabs";
 import { CompressionSummarySection } from "./compression-summary-section";
 import { CompressionTriggerSection } from "./compression-trigger-section";
@@ -104,10 +103,8 @@ export function CompressionProfileEditor({
         />
         <CompressionTriggerSection
           profile={profile}
-          band={band}
           disabled={under64Disabled}
           onProfileChange={update}
-          onBandChange={updateBand}
         />
         <CompressionSummarySection
           profile={profile}
@@ -117,18 +114,12 @@ export function CompressionProfileEditor({
           onBandChange={updateBand}
           onResetPrompts={() => { void controller.resetPrompts(profile.id); }}
         />
-        <CompressionFailureSection
-          profile={profile}
-          disabled={under64Disabled}
-          onChange={update}
-        />
       </div>
       <footer className="cpa-foot">
         <CompressionBudgetPreview
           profileId={profile.id}
           profileRevision={confirmed.revision}
           band={editedBand}
-          currentWindow={currentWindow}
         />
       </footer>
     </div>

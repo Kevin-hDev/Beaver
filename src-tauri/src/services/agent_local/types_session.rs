@@ -9,7 +9,9 @@ pub use super::types_message::{
 };
 use super::types_plan::{AgentPlanRun, AgentPlanWorkflowStatus};
 use super::types_todo::{AgentTodoItem, AgentTodoRun};
-pub use super::types_session_compression::SessionCompressionProfileSelection;
+pub use super::types_session_compression::{
+    AutomaticCompressionAttempt, AutomaticCompressionGuard, SessionCompressionProfileSelection,
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct SubagentHiddenReport {
@@ -83,6 +85,8 @@ pub struct AgentSession {
     pub compression_profile_selection: Option<SessionCompressionProfileSelection>,
     #[serde(default)]
     pub compression_count: u32,
+    #[serde(default, skip_serializing_if = "AutomaticCompressionGuard::is_empty")]
+    pub automatic_compression_guard: AutomaticCompressionGuard,
     pub messages: Vec<AgentMessage>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub todos: Vec<AgentTodoItem>,
@@ -152,9 +156,8 @@ pub struct AgentSession {
     pub clone_read_files: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub clone_modified_files: Vec<String>,
-    /// Racine du groupe d'onglets (la session principale d'origine).
-    /// `None` pour la session principale elle-même, ou pour les anciennes
-    /// sessions créées avant l'introduction de ce champ.
+    /// Racine du groupe d'onglets, absente sur la session principale et les
+    /// anciennes sessions créées avant ce champ.
     /// Contrairement à `clone_parent_session_id` qui pointe vers le parent
     /// **immédiat**, ce champ pointe toujours vers la **racine** du groupe.
     #[serde(default, skip_serializing_if = "Option::is_none")]

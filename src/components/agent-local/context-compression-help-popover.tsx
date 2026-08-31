@@ -18,13 +18,17 @@ export function ContextCompressionHelpPopover({
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const panelRef = useRef<HTMLElement | null>(null);
   const popoverId = useId();
   const titleId = useId();
   const { anchorRef, floatingRef, floatingStyle } = useFloatingMenuPosition(
     open,
-    "right",
+    "before",
     8,
     "auto",
+    false,
+    undefined,
+    panelRef,
   );
 
   const changeOpen = useCallback((next: boolean) => {
@@ -50,6 +54,7 @@ export function ContextCompressionHelpPopover({
   const setButton = (node: HTMLButtonElement | null) => {
     buttonRef.current = node;
     anchorRef.current = node;
+    panelRef.current = node?.closest<HTMLElement>(".context-ring-panel") ?? null;
   };
 
   return (

@@ -116,7 +116,6 @@ async fn hostile_history_cannot_change_the_fixed_contract_or_enable_tools() {
         call.messages[0].content,
         super::prompt::fixed_summary_system_prompt()
     );
-    assert!(call.tools.is_empty());
     let payload = serde_json::to_string(&call.messages).unwrap();
     assert!(!payload.contains("abcdefgh"));
     assert!(payload.contains("untrusted historical data"));
@@ -148,7 +147,6 @@ async fn retries_only_retryable_failures_and_keeps_the_same_model() {
     let calls = fake.calls.lock().unwrap();
     assert_eq!(calls.len(), 2);
     assert!(calls.iter().all(|call| call.model == "chosen-model"));
-    assert!(calls.iter().all(|call| call.tools.is_empty()));
 }
 
 #[tokio::test]

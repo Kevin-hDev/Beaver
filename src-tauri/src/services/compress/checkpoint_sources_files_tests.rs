@@ -61,15 +61,14 @@ async fn file_collection_obeys_profile_item_and_per_file_token_limits() {
         assistant_file("first.txt"),
         ChatMessage::tool("cached".into(), None, None),
     ];
-    let budget = super::super::profile_types::ItemBudget {
-        enabled: true,
+    let budget = super::super::checkpoint_evidence::EvidenceItemLimit {
         max_items: 1,
         tokens_per_item: 32,
         total_tokens: 32,
     };
 
     let files =
-        super::super::checkpoint_files::collect_with_budget(&messages, root.path(), &budget).await;
+        super::super::checkpoint_files::collect_with_budget(&messages, root.path(), budget).await;
 
     assert_eq!(files.len(), 1);
     assert!(crate::services::token_counting::estimate_text_tokens(&files[0].current_content) <= 32);

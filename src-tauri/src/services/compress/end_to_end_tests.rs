@@ -9,3 +9,9 @@ mod inputs;
 
 #[path = "end_to_end_boundaries_tests.rs"]
 mod boundaries;
+
+#[path = "end_to_end_target_test_support.rs"]
+mod target_support;
+
+#[path = "end_to_end_target_tests.rs"]
+mod targets;

@@ -35,6 +35,7 @@ const session: AgentSession = {
   plan_workflow_status: "needs_context",
   is_heartbeat: false,
   is_gateway: false,
+  automatic_compression_suspended: false,
   messages: [
     {
       id: "m1",

@@ -4,9 +4,7 @@ use crate::models::compression_profile_contract::CompressionProfileInput;
 use crate::services::compress::profile_defaults::{beaver_profile, BEAVER_PROFILE_ID};
 use crate::services::compress::profile_limits::MAX_PROFILES;
 use crate::services::compress::profile_store_document::CompressionProfileDocument;
-use crate::services::compress::profile_types::{
-    CompressionCategory, CompressionWindowBand, SummaryFailurePolicy,
-};
+use crate::services::compress::profile_types::CompressionWindowBand;
 
 use super::compression_profiles_mutations as mutations;
 use super::compression_profiles_projection::project;
@@ -77,8 +75,8 @@ fn reset_prompts_restores_only_the_beaver_prompt_texts() {
         .iter_mut()
         .find(|profile| profile.id == custom_id)
         .unwrap();
-    profile.summary.system_prompt = "custom system".into();
-    profile.summary.handoff_prompt = "custom handoff".into();
+    profile.system_prompt = "custom system".into();
+    profile.handoff_prompt = "custom handoff".into();
     profile.threshold_percent = 42;
     let revision = profile.revision;
 
@@ -90,11 +88,8 @@ fn reset_prompts_restores_only_the_beaver_prompt_texts() {
         .find(|profile| profile.id == custom_id)
         .unwrap();
     let beaver = beaver_profile();
-    assert_eq!(restored.summary.system_prompt, beaver.summary.system_prompt);
-    assert_eq!(
-        restored.summary.handoff_prompt,
-        beaver.summary.handoff_prompt
-    );
+    assert_eq!(restored.system_prompt, beaver.system_prompt);
+    assert_eq!(restored.handoff_prompt, beaver.handoff_prompt);
     assert_eq!(restored.threshold_percent, 42);
     assert_eq!(restored.revision, revision + 1);
 }
@@ -131,32 +126,6 @@ fn save_rejects_a_stale_profile_revision() {
     input.revision += 1;
     assert!(mutations::save(&mut document, input).is_err());
     assert_eq!(document.profiles[0], beaver_profile());
-}
-
-#[test]
-fn failure_policy_requires_an_explicit_fallback_model() {
-    let mut document = CompressionProfileDocument::default();
-    let mut input = input_from_profile(&document.profiles[0]);
-    input.summary.failure_policy = SummaryFailurePolicy::TryFallback;
-    assert!(mutations::save(&mut document, input).is_err());
-}
-
-#[test]
-fn reduction_order_accepts_exactly_the_five_mockup_categories() {
-    let mut document = CompressionProfileDocument::default();
-    let mut input = input_from_profile(&document.profiles[0]);
-    input.reduction_order = vec![
-        CompressionCategory::Images,
-        CompressionCategory::Files,
-        CompressionCategory::Tools,
-        CompressionCategory::AssistantMessages,
-        CompressionCategory::UserMessages,
-    ];
-    mutations::save(&mut document, input).expect("valid reduction order");
-
-    let mut invalid = input_from_profile(&document.profiles[0]);
-    invalid.reduction_order.pop();
-    assert!(mutations::save(&mut document, invalid).is_err());
 }
 
 #[test]
@@ -198,11 +167,15 @@ fn undo_expires_and_a_new_snapshot_invalidates_the_previous_token() {
 }
 
 #[test]
-fn projection_accepts_an_arbitrary_window_and_includes_agentic_categories() {
-    let projection = project(&beaver_profile(), CompressionWindowBand::Compact, 72_345)
-        .expect("arbitrary context window");
-    assert_eq!(projection.context_window, 72_345);
-    assert!(projection.system_tools_tokens > 0);
-    assert!(projection.categories_tokens > 0);
-    assert!(projection.total_tokens >= u64::from(projection.categories_tokens));
+fn projection_uses_the_fixed_public_demonstration() {
+    let projection =
+        project(&beaver_profile(), CompressionWindowBand::Compact).expect("fixed projection");
+    assert_eq!(projection.before_tokens, 96_000);
+    assert_eq!(projection.system_tools_tokens, 12_000);
+    assert_eq!(projection.variable_tokens, 16_800);
+    assert_eq!(projection.target_tokens, 28_800);
+    assert_eq!(
+        (projection.range_lower_tokens, projection.range_upper_tokens),
+        (24_000, 32_000)
+    );
 }

@@ -4,7 +4,7 @@ use serde::Serialize;
 
 use super::types_session::AgentSession;
 
-pub const CURRENT_SESSION_SCHEMA_VERSION: u16 = 3;
+pub const CURRENT_SESSION_SCHEMA_VERSION: u16 = 4;
 pub const MAX_SESSION_FILE_BYTES: u64 = 32 * 1024 * 1024;
 pub const MAX_SESSION_FILES: usize = 4_096;
 pub const MAX_MESSAGES_PER_SESSION: usize = 2_000;

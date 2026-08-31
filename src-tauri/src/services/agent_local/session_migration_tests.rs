@@ -20,6 +20,35 @@ const SYNTHETIC_TOOL_CHAIN: &[u8] =
     include_bytes!("../../../test-fixtures/agent-session-v1-synthetic-tool-chain.json");
 const V2_COMPRESSION_FIXTURE: &[u8] =
     include_bytes!("../../../test-fixtures/agent-session-v2-compression.json");
+const V3_COMPRESSION_FIXTURE: &[u8] =
+    include_bytes!("fixtures/session-v3-compression.json");
+
+#[tokio::test]
+async fn v3_migrates_to_v4_with_an_empty_guard_and_exact_backup() {
+    let root = tempfile::tempdir().expect("tempdir");
+    let path = root.path().join("00000000-0000-4000-8000-000000000030.json");
+    crate::services::private_store::atomic_write(&path, V3_COMPRESSION_FIXTURE)
+        .expect("seed v3 fixture");
+
+    let loaded = super::session_migration::read(V3_COMPRESSION_FIXTURE, path.clone())
+        .expect("migrate v3 fixture");
+
+    assert_eq!(loaded.version(), super::session_migration::LoadedVersion::V3);
+    assert_eq!(loaded.session().schema_version, 4);
+    assert!(loaded.session().automatic_compression_guard.is_empty());
+    assert_eq!(loaded.session().compression_count, 2);
+    assert_eq!(loaded.session().messages.len(), 3);
+    super::session_migration::commit_current(&loaded)
+        .await
+        .expect("publish v4");
+    let backup = super::session_migration::v3_backup_path(&path).expect("v3 backup path");
+    assert_eq!(std::fs::read(&backup).unwrap(), V3_COMPRESSION_FIXTURE);
+
+    let current = std::fs::read(&path).unwrap();
+    let reloaded = super::session_migration::read(&current, path).expect("reload v4");
+    assert_eq!(reloaded.version(), super::session_migration::LoadedVersion::V4);
+    assert!(reloaded.session().automatic_compression_guard.is_empty());
+}
 
 #[tokio::test]
 async fn v2_compression_markers_migrate_to_v3_with_an_exact_backup() {
@@ -33,7 +62,7 @@ async fn v2_compression_markers_migrate_to_v3_with_an_exact_backup() {
         .expect("migrate v2 fixture");
 
     assert_eq!(loaded.version(), super::session_migration::LoadedVersion::V2);
-    assert_eq!(loaded.session().schema_version, 3);
+    assert_eq!(loaded.session().schema_version, 4);
     assert_eq!(
         loaded.session().messages[0].message_kind,
         Some(AgentMessageKind::CompressionCheckpoint)
@@ -48,13 +77,13 @@ async fn v2_compression_markers_migrate_to_v3_with_an_exact_backup() {
 
     super::session_migration::commit_current(&loaded)
         .await
-        .expect("publish v3");
+        .expect("publish v4");
     let backup = super::session_migration::v2_backup_path(&path).expect("v2 backup path");
     assert_eq!(std::fs::read(&backup).unwrap(), V2_COMPRESSION_FIXTURE);
     let current = std::fs::read(&path).unwrap();
-    let reloaded = super::session_migration::read(&current, path).expect("reload v3");
-    assert_eq!(reloaded.version(), super::session_migration::LoadedVersion::V3);
-    assert_eq!(reloaded.session().schema_version, 3);
+    let reloaded = super::session_migration::read(&current, path).expect("reload v4");
+    assert_eq!(reloaded.version(), super::session_migration::LoadedVersion::V4);
+    assert_eq!(reloaded.session().schema_version, 4);
 }
 
 #[test]

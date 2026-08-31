@@ -1,13 +1,9 @@
 use serde::{Deserialize, Serialize};
 
 use crate::services::compress::profile_store_document::CompressionProfileDocument;
-use crate::services::compress::profile_types::{
-    CompressionBandSettings, CompressionCategory, CompressionProfile, CompressionSummarySettings,
-    ContextCapacityPolicy,
-};
+use crate::services::compress::profile_types::{CompressionBandSettings, CompressionProfile};
 
 pub type CompressionProfileView = CompressionProfile;
-// Exported as a TypeScript alias by `typescript_bindings`.
 #[allow(dead_code)]
 pub type CompressionBandView = CompressionBandSettings;
 
@@ -21,12 +17,11 @@ pub struct CompressionProfileInput {
     pub revision: u64,
     pub threshold_percent: u8,
     pub allow_under_64k: bool,
-    pub context_capacity_policy: ContextCapacityPolicy,
-    pub summary: CompressionSummarySettings,
+    pub system_prompt: String,
+    pub handoff_prompt: String,
     pub under_64k: CompressionBandSettings,
     pub compact: CompressionBandSettings,
     pub large: CompressionBandSettings,
-    pub reduction_order: Vec<CompressionCategory>,
 }
 
 impl From<CompressionProfileInput> for CompressionProfile {
@@ -37,12 +32,11 @@ impl From<CompressionProfileInput> for CompressionProfile {
             revision: input.revision,
             threshold_percent: input.threshold_percent,
             allow_under_64k: input.allow_under_64k,
-            context_capacity_policy: input.context_capacity_policy,
-            summary: input.summary,
+            system_prompt: input.system_prompt,
+            handoff_prompt: input.handoff_prompt,
             under_64k: input.under_64k,
             compact: input.compact,
             large: input.large,
-            reduction_order: input.reduction_order,
         }
     }
 }
@@ -71,18 +65,15 @@ impl From<&CompressionProfileDocument> for CompressionProfilesView {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(test, derive(ts_rs::TS))]
 pub struct BudgetProjectionView {
-    #[cfg_attr(test, ts(type = "number"))]
-    pub context_window: u64,
     pub band: crate::services::compress::profile_types::CompressionWindowBand,
+    pub before_tokens: u32,
     pub system_tools_tokens: u32,
-    pub summary_tokens: u32,
-    pub categories_tokens: u32,
-    pub reserve_tokens: u32,
-    #[cfg_attr(test, ts(type = "number"))]
-    pub total_tokens: u64,
+    pub variable_tokens: u32,
+    pub target_tokens: u32,
+    pub range_lower_tokens: u32,
+    pub range_upper_tokens: u32,
+    pub image_count: u16,
     pub projected_percent: u8,
-    pub exceeds_window: bool,
-    pub high_risk: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -97,8 +88,6 @@ pub use crate::services::compress::profile_resolve::ResolvedCompressionProfileSo
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(test, derive(ts_rs::TS))]
-// Task 5 constructs this view once session profile resolution is available.
-#[allow(dead_code)]
 pub struct ResolvedCompressionProfileView {
     pub id: String,
     pub name: String,
@@ -139,17 +128,7 @@ pub(crate) fn typescript_bindings() -> String {
     let config = Config::default();
     let declarations = [
         CompressionWindowBand::decl(&config),
-        BudgetMode::decl(&config),
-        CompressionCategory::decl(&config),
-        SummaryFailurePolicy::decl(&config),
-        ContextCapacityPolicy::decl(&config),
-        TokenBudget::decl(&config),
-        CategoryBudget::decl(&config),
-        ItemBudget::decl(&config),
-        ImageBudget::decl(&config),
-        SummaryOutputBudget::decl(&config),
-        SummaryModelSelection::decl(&config),
-        CompressionSummarySettings::decl(&config),
+        CompressionTrigger::decl(&config),
         CompressionBandSettings::decl(&config),
         CompressionProfile::decl(&config),
         CompressionProfileInput::decl(&config),

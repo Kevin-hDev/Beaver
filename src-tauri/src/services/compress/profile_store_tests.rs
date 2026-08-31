@@ -43,7 +43,7 @@ fn legacy_thresholds_are_migrated_once_into_one_to_ninety() {
 }
 
 #[test]
-fn valid_v1_document_is_normalized_and_missing_global_falls_back() {
+fn valid_v2_document_is_normalized_and_missing_global_falls_back() {
     let root = tempfile::tempdir().expect("temp root");
     let profile_path = root.path().join("compression-profiles.json");
     let config_path = root.path().join("config.json");
@@ -117,13 +117,47 @@ fn missing_nested_fields_use_the_beaver_band_defaults() {
     value["profiles"][0]["compact"]
         .as_object_mut()
         .expect("compact object")
-        .remove("tools");
+        .remove("recent_message_count");
     std::fs::write(&profile_path, serde_json::to_vec(&value).expect("json")).expect("write");
 
     let loaded = load_from_paths(&profile_path, &config_path).expect("load");
 
-    assert_eq!(loaded.profiles[0].compact.tools.max_items, 100);
-    assert_eq!(loaded.profiles[0].compact.tools.tokens_per_item, 4_000);
+    assert_eq!(loaded.profiles[0].compact.recent_message_count, 4);
+}
+
+#[test]
+fn v1_profiles_migrate_identity_prompts_and_policy_but_reset_all_bands() {
+    let root = tempfile::tempdir().expect("temp root");
+    let profile_path = root.path().join("compression-profiles.json");
+    let config_path = root.path().join("config.json");
+    let custom_id = "00000000-0000-4000-8000-000000000001";
+    let original = include_bytes!("fixtures/compression-profiles-v1.json").to_vec();
+    std::fs::write(&profile_path, &original).expect("write legacy");
+
+    let loaded = load_from_paths(&profile_path, &config_path).expect("migrate v1");
+
+    assert_eq!(loaded.schema_version, 2);
+    assert!(!loaded.automatic_enabled);
+    assert_eq!(loaded.global_profile_id, custom_id);
+    assert_eq!(loaded.global_selection_revision, 7);
+    let custom = loaded
+        .profiles
+        .iter()
+        .find(|profile| profile.id == custom_id)
+        .unwrap();
+    assert_eq!(custom.revision, 9);
+    assert_eq!(custom.threshold_percent, 72);
+    assert!(custom.allow_under_64k);
+    assert_eq!(custom.system_prompt, "custom system");
+    assert_eq!(custom.handoff_prompt, "custom handoff");
+    assert_eq!(
+        custom.compact,
+        super::profile_defaults::beaver_profile().compact
+    );
+    assert_eq!(
+        std::fs::read(root.path().join("compression-profiles.v1.bak")).expect("backup"),
+        original
+    );
 }
 
 #[test]

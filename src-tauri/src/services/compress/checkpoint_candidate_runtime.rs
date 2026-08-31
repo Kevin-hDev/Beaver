@@ -1,8 +1,3 @@
-#![allow(
-    dead_code,
-    reason = "the shared compression orchestrator consumes this staged projection in Task 11"
-)]
-
 use super::snapshot::CompressionSnapshot;
 use crate::services::agent_local::types_message::AgentMessage;
 use crate::services::agent_local::types_ollama::{ChatMessage, ToolCallFunction, ToolCallOllama};

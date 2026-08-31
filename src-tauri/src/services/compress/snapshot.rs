@@ -1,8 +1,3 @@
-#![allow(
-    dead_code,
-    reason = "the compression orchestrator consumes this staged snapshot in Task 10"
-)]
-
 use super::profile_resolve::ResolvedCompressionProfile;
 use super::profile_types::CompressionTrigger;
 use super::session_capabilities::SessionCompressionCapabilities;
@@ -22,6 +17,7 @@ pub struct CompressionSnapshot {
     pub provider_tools: Vec<serde_json::Value>,
     pub checkpoint_images: Vec<super::checkpoint_attachments::CheckpointImage>,
     pub before_tokens: u32,
+    pub system_head_tokens: u32,
     pub provider_id: String,
     pub(crate) source_session: AgentSession,
 }
@@ -53,6 +49,7 @@ impl CompressionSnapshot {
             provider_tools: Vec::new(),
             checkpoint_images: Vec::new(),
             before_tokens,
+            system_head_tokens: 0,
             provider_id: session.provider.clone(),
             source_session: session.clone(),
         })
@@ -70,6 +67,13 @@ impl CompressionSnapshot {
         self.canonical_messages = canonical_messages;
         self.provider_tools = provider_tools;
         self.before_tokens = before_tokens;
+        self.system_head_tokens =
+            super::token_estimate::estimate_textual_request_tokens_for_provider(
+                &self.provider_id,
+                &self.canonical_messages,
+                &self.provider_tools,
+            )
+            .min(u32::MAX as usize) as u32;
         Ok(self)
     }
 

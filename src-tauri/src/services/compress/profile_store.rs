@@ -85,60 +85,41 @@ pub(crate) fn load_from_paths(
             Ok(document)
         }
         crate::services::private_store::BoundedFile::Content(bytes) => {
-            let mut document = match parse_document(&bytes) {
-                Ok(document) => document,
-                Err(_) => {
-                    ::log::warn!("compression_profile_document_invalid_json");
-                    let document = CompressionProfileDocument::default();
-                    write_document(profile_path, &document)?;
-                    document
-                }
-            };
+            let mut migrated_profile = false;
+            let mut document =
+                match super::profile_store_parse::parse_document(profile_path, &bytes) {
+                    Ok((document, migrated)) => {
+                        migrated_profile = migrated;
+                        document
+                    }
+                    Err(error @ CompressionProfileStoreError::FutureVersion(_)) => {
+                        return Err(error);
+                    }
+                    Err(_) => {
+                        ::log::warn!("compression_profile_document_invalid_json");
+                        let document = CompressionProfileDocument::default();
+                        write_document(profile_path, &document)?;
+                        document
+                    }
+                };
             let before = document.clone();
             normalize_loaded_document(&mut document)?;
-            if document != before {
+            if migrated_profile || document != before {
                 write_document(profile_path, &document)?;
             }
             let migrated_now = super::profile_store_migration::finish_existing(config_path)?;
-            if migrated_now {
+            if migrated_now || migrated_profile {
                 remember_migration(profile_path);
-            } else if !migrated_in_this_process(profile_path)
-                && super::profile_store_migration::acknowledge_backup(config_path).is_err()
-            {
-                log::warn!("compression_profile_migration_backup_cleanup_failed");
+            } else if !migrated_in_this_process(profile_path) {
+                if super::profile_store_migration::acknowledge_backup(config_path).is_err() {
+                    log::warn!("compression_profile_migration_backup_cleanup_failed");
+                }
+                if super::profile_store_migration::acknowledge_profile_backup(profile_path).is_err()
+                {
+                    log::warn!("compression_profile_v1_backup_cleanup_failed");
+                }
             }
             Ok(document)
-        }
-    }
-}
-
-fn parse_document(bytes: &[u8]) -> Result<CompressionProfileDocument, serde_json::Error> {
-    let mut value: serde_json::Value = serde_json::from_slice(bytes)?;
-    let defaults = serde_json::to_value(CompressionProfileDocument::default())?;
-    merge_missing_fields(&mut value, &defaults);
-
-    let profile_defaults = serde_json::to_value(super::profile_defaults::beaver_profile())?;
-    if let Some(profiles) = value
-        .get_mut("profiles")
-        .and_then(serde_json::Value::as_array_mut)
-    {
-        for profile in profiles {
-            merge_missing_fields(profile, &profile_defaults);
-        }
-    }
-    serde_json::from_value(value)
-}
-
-fn merge_missing_fields(value: &mut serde_json::Value, defaults: &serde_json::Value) {
-    let (Some(value), Some(defaults)) = (value.as_object_mut(), defaults.as_object()) else {
-        return;
-    };
-    for (key, default) in defaults {
-        match value.get_mut(key) {
-            Some(existing) => merge_missing_fields(existing, default),
-            None => {
-                value.insert(key.clone(), default.clone());
-            }
         }
     }
 }

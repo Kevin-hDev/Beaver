@@ -1,4 +1,7 @@
 use super::*;
+use crate::services::agent_local::types_session::{
+    AutomaticCompressionAttempt, AutomaticCompressionGuard,
+};
 use crate::services::llm::stream_test_transport::{ScriptedResponse, StreamScenario};
 use chrono::Utc;
 
@@ -48,6 +51,7 @@ fn session() -> AgentSession {
         context_tokens: None,
         compression_profile_selection: None,
         compression_count: 0,
+        automatic_compression_guard: Default::default(),
         messages: vec![
             message("m1", "user", "start"),
             message("m2", "assistant", "answer"),
@@ -181,6 +185,31 @@ fn build_clone_does_not_inherit_fast_mode() {
     let clone = build_clone(&source, "m2", CloneMode::Cut, 2, &source.id);
 
     assert!(!clone.fast_mode_enabled);
+}
+
+#[test]
+fn build_clone_does_not_inherit_automatic_compression_failures() {
+    let mut source = session();
+    source.automatic_compression_guard = AutomaticCompressionGuard {
+        last_attempt: Some(AutomaticCompressionAttempt {
+            top_level_turn_id: "00000000-0000-4000-8000-000000000001".into(),
+            last_message_id: "00000000-0000-4000-8000-000000000002".into(),
+            message_count: 3,
+            last_checkpoint_message_id: None,
+            provider_id: source.provider.clone(),
+            model_id: source.model.clone(),
+            context_window: 96_000,
+            profile_id: "beaver".into(),
+            profile_revision: 1,
+            global_selection_revision: 1,
+        }),
+        consecutive_failures: 3,
+        suspended: true,
+    };
+
+    let clone = build_clone(&source, "m2", CloneMode::Cut, 2, &source.id);
+
+    assert!(clone.automatic_compression_guard.is_empty());
 }
 
 #[tokio::test]

@@ -84,7 +84,7 @@ describe("CompressionProfileEditor", () => {
     expect(screen.queryByText("settings.advanced.compressionUnder64Warning")).not.toBeInTheDocument();
   });
 
-  it("copie la plage éditée et expose les trois modes de budget", () => {
+  it("copie la plage éditée et n'expose que les quantités simples", () => {
     const save = vi.fn((_profile: CompressionProfile) => Promise.resolve(true));
     render(
       <CompressionProfileEditor
@@ -100,6 +100,7 @@ describe("CompressionProfileEditor", () => {
     if (!saved) throw new Error("missing saved profile");
     expect(saved.under_64k).toEqual(saved.compact);
     expect(saved.large).toEqual(saved.compact);
-    expect(screen.getAllByText("settings.advanced.compressionBudgetMode.fixed").length).toBeGreaterThan(0);
+    expect(screen.getByLabelText("settings.advanced.compressionRecentMessages")).toBeInTheDocument();
+    expect(screen.queryByText("settings.advanced.compressionBudgetMode.fixed")).not.toBeInTheDocument();
   });
 });

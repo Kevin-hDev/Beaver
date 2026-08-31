@@ -88,6 +88,7 @@ pub struct AgentSessionView {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[cfg_attr(test, ts(optional))]
     pub context_tokens: Option<u32>,
+    pub automatic_compression_suspended: bool,
     pub messages: Vec<AgentMessageView>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     #[cfg_attr(test, ts(optional, type = "AgentTodoItem[]"))]

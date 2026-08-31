@@ -1,8 +1,3 @@
-#![allow(
-    dead_code,
-    reason = "the compression orchestrator consumes this staged contract in Task 10"
-)]
-
 use std::collections::BTreeSet;
 
 use serde::Serialize;

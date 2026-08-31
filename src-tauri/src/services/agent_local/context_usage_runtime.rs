@@ -47,11 +47,11 @@ impl StreamResult {
 }
 
 fn resolved_usage(estimated_input_tokens: u32, result: &StreamResult) -> (u32, u32, bool) {
-    let input = result.prompt_tokens.unwrap_or(estimated_input_tokens);
+    let input = estimated_input_tokens;
     let output = result
         .eval_count
         .unwrap_or_else(|| result.estimated_output_tokens());
-    let estimated = result.prompt_tokens.is_none() || result.eval_count.is_none();
+    let estimated = true;
     (input, output, estimated)
 }
 

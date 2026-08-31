@@ -107,6 +107,10 @@ fn explicit_under_64k_refusal_has_a_stable_user_facing_code() {
         super::checkpoint_transaction::CompressionError::Unavailable.public_message(),
         "compression_unavailable"
     );
+    assert_eq!(
+        super::checkpoint_transaction::CompressionError::AutomaticSuspended.public_message(),
+        "compression_automatic_suspended"
+    );
 }
 
 #[test]

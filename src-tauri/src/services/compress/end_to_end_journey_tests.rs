@@ -48,7 +48,7 @@ async fn migration_profile_snapshot_and_two_atomic_compressions_survive_restart(
     .expect("reload v3");
     assert_eq!(
         reloaded.version(),
-        crate::services::agent_local::session_migration::LoadedVersion::V3
+        crate::services::agent_local::session_migration::LoadedVersion::V4
     );
 
     let fixture = reloaded.into_session();

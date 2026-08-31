@@ -1,8 +1,3 @@
-#![allow(
-    dead_code,
-    reason = "the shared compression orchestrator consumes this staged candidate in Task 11"
-)]
-
 use super::checkpoint_document::CheckpointSection;
 use super::checkpoint_selection::CheckpointSelection;
 use super::profile_types::{CompressionBandSettings, CompressionWindowBand};
@@ -29,8 +24,11 @@ pub struct CompressionCandidate {
     pub after_tokens: u32,
     pub retained_images: usize,
     pub report: CompressionSelectionReport,
+    pub automatic_compression_guard:
+        crate::services::agent_local::types_session::AutomaticCompressionGuard,
 }
 
+#[cfg(test)]
 pub async fn build(
     snapshot: &CompressionSnapshot,
     summary: Option<&ValidatedSummary>,
@@ -46,11 +44,13 @@ pub async fn build_with_evidence(
     evidence_tokens: u32,
 ) -> Result<CompressionCandidate, super::checkpoint_transaction::CompressionError> {
     validate_snapshot(snapshot)?;
-    let band = resolved_band(snapshot)?;
+    let (kind, band) = resolved_band(snapshot)?;
+    let summary = summary.ok_or(super::checkpoint_transaction::CompressionError::SummaryInvalid)?;
     let selection = super::checkpoint_selection::select(
         &snapshot.source_messages,
         super::checkpoint_candidate_budget::selection_limits(
             snapshot,
+            kind,
             band,
             summary,
             sections,
@@ -61,7 +61,7 @@ pub async fn build_with_evidence(
     let mut persisted_messages = super::checkpoint_document::assemble(
         &selection.messages,
         active_turn_id(snapshot, &selection),
-        summary.map(|value| value.content.as_str()),
+        Some(summary.content.as_str()),
         sections,
         snapshot.trigger,
     )
@@ -77,7 +77,7 @@ pub async fn build_with_evidence(
     runtime_snapshot.checkpoint_images = retained_images;
     let mut runtime_messages =
         super::checkpoint_candidate_runtime::project(&runtime_snapshot, &persisted_messages);
-    let mut after_tokens = super::token_estimate::estimate_request_tokens_for_provider(
+    let mut after_tokens = super::token_estimate::estimate_textual_request_tokens_for_provider(
         &snapshot.provider_id,
         &runtime_messages,
         &snapshot.provider_tools,
@@ -93,13 +93,13 @@ pub async fn build_with_evidence(
     .map_err(super::checkpoint_transaction::CompressionError::from_code)?;
     runtime_messages =
         super::checkpoint_candidate_runtime::project(&runtime_snapshot, &persisted_messages);
-    after_tokens = super::token_estimate::estimate_request_tokens_for_provider(
+    after_tokens = super::token_estimate::estimate_textual_request_tokens_for_provider(
         &snapshot.provider_id,
         &runtime_messages,
         &snapshot.provider_tools,
     )
     .min(u32::MAX as usize) as u32;
-    let report = validate_reduction(snapshot, band, &selection, after_tokens)?;
+    let report = validate_reduction(snapshot, kind, &selection, after_tokens)?;
     prepare_candidate(snapshot, &persisted_messages).await?;
     Ok(CompressionCandidate {
         source_messages: snapshot.source_messages.clone(),
@@ -109,6 +109,7 @@ pub async fn build_with_evidence(
         after_tokens,
         retained_images: runtime_snapshot.checkpoint_images.len(),
         report,
+        automatic_compression_guard: snapshot.source_session.automatic_compression_guard.clone(),
     })
 }
 
@@ -158,43 +159,52 @@ fn validate_snapshot(
 
 fn resolved_band(
     snapshot: &CompressionSnapshot,
-) -> Result<&CompressionBandSettings, super::checkpoint_transaction::CompressionError> {
+) -> Result<
+    (CompressionWindowBand, &CompressionBandSettings),
+    super::checkpoint_transaction::CompressionError,
+> {
     match snapshot.profile.band(snapshot.context_window) {
-        Some(CompressionWindowBand::Under64K) if snapshot.profile.profile.allow_under_64k => {
-            Ok(&snapshot.profile.profile.under_64k)
-        }
+        Some(CompressionWindowBand::Under64K) if snapshot.profile.profile.allow_under_64k => Ok((
+            CompressionWindowBand::Under64K,
+            &snapshot.profile.profile.under_64k,
+        )),
         Some(CompressionWindowBand::Under64K) => {
             Err(super::checkpoint_transaction::CompressionError::Unavailable)
         }
-        Some(CompressionWindowBand::Compact) => Ok(&snapshot.profile.profile.compact),
-        Some(CompressionWindowBand::Large) => Ok(&snapshot.profile.profile.large),
-        None if snapshot.trigger == super::profile_types::CompressionTrigger::Explicit => {
-            Ok(&snapshot.profile.profile.compact)
-        }
+        Some(CompressionWindowBand::Compact) => Ok((
+            CompressionWindowBand::Compact,
+            &snapshot.profile.profile.compact,
+        )),
+        Some(CompressionWindowBand::Large) => Ok((
+            CompressionWindowBand::Large,
+            &snapshot.profile.profile.large,
+        )),
+        None if snapshot.trigger == super::profile_types::CompressionTrigger::Explicit => Ok((
+            CompressionWindowBand::Compact,
+            &snapshot.profile.profile.compact,
+        )),
         None => Err(super::checkpoint_transaction::CompressionError::Unavailable),
     }
 }
 
 fn validate_reduction(
     snapshot: &CompressionSnapshot,
-    band: &CompressionBandSettings,
+    kind: CompressionWindowBand,
     selection: &CheckpointSelection,
     after_tokens: u32,
 ) -> Result<CompressionSelectionReport, super::checkpoint_transaction::CompressionError> {
-    let known_window = (snapshot.context_window > 0).then_some(snapshot.context_window);
-    let target =
-        known_window.map(|window| super::checkpoint_candidate_budget::target_tokens(window, band));
-    let reserve =
-        known_window.map(|window| super::checkpoint_candidate_budget::reserve_tokens(window, band));
-    let minimum = known_window
-        .map(|window| super::profile_budget::resolve_budget(&band.minimum_reduction, window));
-    if target
-        .zip(reserve)
-        .is_some_and(|(target, reserve)| after_tokens > target.saturating_sub(reserve))
-    {
+    let target = super::checkpoint_candidate_budget::target_tokens(snapshot, kind);
+    let checkpoint_tokens = after_tokens.saturating_sub(selection.active_turn_tokens);
+    if checkpoint_tokens > target {
         return Err(super::checkpoint_transaction::CompressionError::CapacityExceeded);
     }
-    if minimum.is_some_and(|minimum| snapshot.before_tokens.saturating_sub(after_tokens) < minimum)
+    let compressible_after = checkpoint_tokens.saturating_sub(snapshot.system_head_tokens);
+    if snapshot.trigger == super::profile_types::CompressionTrigger::Automatic
+        && super::token_estimate::should_compress(
+            compressible_after as usize,
+            snapshot.context_window,
+            snapshot.profile.profile.threshold_percent,
+        )
     {
         return Err(super::checkpoint_transaction::CompressionError::InsufficientReduction);
     }
@@ -202,9 +212,9 @@ fn validate_reduction(
         selected_messages: selection.messages.len(),
         before_tokens: snapshot.before_tokens,
         after_tokens,
-        target_tokens: target,
-        reserve_tokens: reserve,
-        minimum_reduction_tokens: minimum,
+        target_tokens: Some(target),
+        reserve_tokens: None,
+        minimum_reduction_tokens: None,
     })
 }
 

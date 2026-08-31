@@ -1,18 +1,21 @@
 import { useTranslation } from "react-i18next";
-import type { CompressionSummarySettings } from "@/types/compression-profile.generated";
 import { CompressionSettingRow } from "./compression-setting-row";
 
 interface CompressionSummaryPromptsProps {
-  summary: CompressionSummarySettings;
+  systemPrompt: string;
+  handoffPrompt: string;
   disabled: boolean;
-  onChange: (patch: Partial<CompressionSummarySettings>) => void;
+  onSystemPromptChange: (value: string) => void;
+  onHandoffPromptChange: (value: string) => void;
   onReset: () => void;
 }
 
 export function CompressionSummaryPrompts({
-  summary,
+  systemPrompt,
+  handoffPrompt,
   disabled,
-  onChange,
+  onSystemPromptChange,
+  onHandoffPromptChange,
   onReset,
 }: CompressionSummaryPromptsProps) {
   const { t } = useTranslation();
@@ -27,9 +30,9 @@ export function CompressionSummaryPrompts({
           className="field field-wide cse-textarea"
           rows={5}
           maxLength={32_000}
-          value={summary.system_prompt}
+          value={systemPrompt}
           disabled={disabled}
-          onChange={(event) => onChange({ system_prompt: event.target.value })}
+          onChange={(event) => onSystemPromptChange(event.target.value)}
         />
       </CompressionSettingRow>
       <CompressionSettingRow
@@ -41,9 +44,9 @@ export function CompressionSummaryPrompts({
           className="field field-wide cse-textarea"
           rows={5}
           maxLength={32_000}
-          value={summary.handoff_prompt}
+          value={handoffPrompt}
           disabled={disabled}
-          onChange={(event) => onChange({ handoff_prompt: event.target.value })}
+          onChange={(event) => onHandoffPromptChange(event.target.value)}
         />
       </CompressionSettingRow>
       <CompressionSettingRow

@@ -1,11 +1,7 @@
 import { useTranslation } from "react-i18next";
+import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import type { CompressionBandSettings } from "@/types/compression-profile.generated";
-import { CompressionBudgetControl } from "./compression-budget-control";
-import {
-  CompressionCategoryControl,
-  CompressionImageControl,
-  CompressionItemControl,
-} from "./compression-content-controls";
+import { CompressionQuantityControl } from "./compression-quantity-control";
 import { CompressionSection } from "./compression-section";
 import { CompressionSettingRow } from "./compression-setting-row";
 
@@ -23,95 +19,54 @@ export function CompressionContentSection({
   onCopy,
 }: CompressionContentSectionProps) {
   const { t } = useTranslation();
-  const title = (key: string) => t(`settings.advanced.compressionContent.${key}`);
-
   return (
     <CompressionSection
       title={t("settings.advanced.compressionContentSection")}
       note={t("settings.advanced.compressionRangeSpecific")}
     >
-      <CompressionCategoryControl
-        title={title("user_messages")}
-        value={band.user_messages}
+      <QuantityRow
+        title={t("settings.advanced.compressionRecentMessages")}
+        description={t("settings.advanced.compressionRecentMessagesDesc")}
+        value={band.recent_message_count}
+        maximum={8}
         disabled={disabled}
-        onChange={(user_messages) => onChange({ ...band, user_messages })}
+        onChange={(recent_message_count) => onChange({ ...band, recent_message_count })}
       />
-      <CompressionCategoryControl
-        title={title("assistant_messages")}
-        value={band.assistant_messages}
+      <QuantityRow
+        title={t("settings.advanced.compressionToolResults")}
+        description={t("settings.advanced.compressionToolResultsDesc")}
+        value={band.tool_result_count}
+        maximum={50}
         disabled={disabled}
-        onChange={(assistant_messages) => onChange({ ...band, assistant_messages })}
+        onChange={(tool_result_count) => onChange({ ...band, tool_result_count })}
+      />
+      <QuantityRow
+        title={t("settings.advanced.compressionRecentFiles")}
+        description={t("settings.advanced.compressionRecentFilesDesc")}
+        value={band.recent_file_count}
+        maximum={15}
+        disabled={disabled}
+        onChange={(recent_file_count) => onChange({ ...band, recent_file_count })}
+      />
+      <QuantityRow
+        title={t("settings.advanced.compressionImages")}
+        description={t("settings.advanced.compressionImagesDesc")}
+        value={band.image_count}
+        maximum={16}
+        disabled={disabled}
+        onChange={(image_count) => onChange({ ...band, image_count })}
       />
       <CompressionSettingRow
-        title={t("settings.advanced.compressionEvidenceEnvelope")}
-        description={t("settings.advanced.compressionEvidenceEnvelopeDesc")}
+        title={t("settings.advanced.compressionWorkState")}
+        description={t("settings.advanced.compressionWorkStateDesc")}
       >
-        <CompressionBudgetControl
-          value={band.evidence_envelope}
+        <ToggleSwitch
+          checked={band.include_work_state}
           disabled={disabled}
-          onChange={(evidence_envelope) => onChange({ ...band, evidence_envelope })}
+          ariaLabel={t("settings.advanced.compressionWorkState")}
+          onCheckedChange={(include_work_state) => onChange({ ...band, include_work_state })}
         />
       </CompressionSettingRow>
-      <CompressionItemControl
-        title={title("tools")}
-        value={band.tools}
-        disabled={disabled}
-        onChange={(tools) => onChange({ ...band, tools })}
-      />
-      <CompressionItemControl
-        title={title("files")}
-        value={band.files}
-        disabled={disabled}
-        onChange={(files) => onChange({ ...band, files })}
-      />
-      <CompressionItemControl
-        title={title("modified_files")}
-        value={band.modified_files}
-        disabled={disabled}
-        onChange={(modified_files) => onChange({ ...band, modified_files })}
-      />
-      <CompressionItemControl
-        title={title("text_attachments")}
-        value={band.text_attachments}
-        disabled={disabled}
-        onChange={(text_attachments) => onChange({ ...band, text_attachments })}
-      />
-      <CompressionImageControl
-        title={title("images")}
-        value={band.images}
-        disabled={disabled}
-        onChange={(images) => onChange({ ...band, images })}
-      />
-      <CompressionCategoryControl
-        title={title("git")}
-        value={band.git_tokens}
-        disabled={disabled}
-        onChange={(git_tokens) => onChange({ ...band, git_tokens })}
-      />
-      <CompressionCategoryControl
-        title={title("plan_and_tasks")}
-        value={band.plan_and_tasks_tokens}
-        disabled={disabled}
-        onChange={(plan_and_tasks_tokens) => onChange({ ...band, plan_and_tasks_tokens })}
-      />
-      <CompressionCategoryControl
-        title={title("subagents")}
-        value={band.subagent_detail_tokens}
-        disabled={disabled}
-        onChange={(subagent_detail_tokens) => onChange({ ...band, subagent_detail_tokens })}
-      />
-      <CompressionCategoryControl
-        title={title("unresolved_state")}
-        value={band.unresolved_state_tokens}
-        disabled={disabled}
-        onChange={(unresolved_state_tokens) => onChange({ ...band, unresolved_state_tokens })}
-      />
-      <CompressionItemControl
-        title={title("critical_references")}
-        value={band.critical_references}
-        disabled={disabled}
-        onChange={(critical_references) => onChange({ ...band, critical_references })}
-      />
       <p className="cse-hint">{t("settings.advanced.compressionContentHint")}</p>
       <button
         type="button"
@@ -122,5 +77,28 @@ export function CompressionContentSection({
         {t("settings.advanced.compressionCopyOtherRanges")}
       </button>
     </CompressionSection>
+  );
+}
+
+interface QuantityRowProps {
+  title: string;
+  description: string;
+  value: number;
+  maximum: number;
+  disabled: boolean;
+  onChange: (value: number) => void;
+}
+
+function QuantityRow(props: QuantityRowProps) {
+  return (
+    <CompressionSettingRow title={props.title} description={props.description}>
+      <CompressionQuantityControl
+        value={props.value}
+        maximum={props.maximum}
+        disabled={props.disabled}
+        ariaLabel={props.title}
+        onChange={props.onChange}
+      />
+    </CompressionSettingRow>
   );
 }

@@ -103,6 +103,7 @@ mod tests {
         context_tokens: None,
         compression_profile_selection: None,
         compression_count: 0,
+            automatic_compression_guard: Default::default(),
             messages: Vec::new(),
             todos: Vec::new(),
             todo_neglect_count: 0,

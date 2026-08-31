@@ -4,6 +4,8 @@ use tokio_util::sync::CancellationToken;
 use super::summary_contract::{SummaryRawOutput, ValidatedSummary};
 use super::summary_request::{SummaryAttemptError, SummaryCall, SummaryCollector};
 
+const MAX_SUMMARY_INPUT_TOKENS: u32 = 1_000_000;
+
 pub struct ProviderSummaryCollector<'a> {
     pub session_id: &'a str,
     pub request_id: &'a str,
@@ -54,111 +56,35 @@ pub async fn generate(
     snapshot: &super::snapshot::CompressionSnapshot,
     collector: &dyn SummaryCollector,
 ) -> Result<Option<ValidatedSummary>, super::checkpoint_transaction::CompressionError> {
-    if !snapshot.profile.profile.summary.enabled {
-        return Ok(None);
-    }
-    let profile = &snapshot.profile.profile;
-    let band = band(snapshot)?;
-    let input_limit = super::profile_budget::resolve_budget(
-        &profile.summary.input_budget,
-        budget_window(snapshot),
+    let band_kind = snapshot
+        .profile
+        .band(snapshot.context_window)
+        .unwrap_or(super::profile_types::CompressionWindowBand::Compact);
+    let band = snapshot.profile.profile.band_settings(band_kind);
+    let target = super::checkpoint_target::checkpoint_target(
+        snapshot.before_tokens,
+        snapshot.system_head_tokens,
+        band_kind,
     );
-    let output_limit = super::profile_budget::summary_output_limit(
-        &band.summary_output,
-        budget_window(snapshot),
-        u64::from(snapshot.before_tokens),
-    );
-    let (provider, model) = selected_model(
-        &profile.summary.model,
-        &snapshot.provider_id,
-        &snapshot.source_session.model,
-    );
-    let call = build_call(snapshot, provider, model, input_limit, output_limit);
-    match super::summary_request::execute(collector, &call, profile.summary.ordinary_retries).await
-    {
-        Ok(summary) => Ok(Some(summary)),
-        Err(super::summary_request::SummaryExecutionError::Retryable)
-            if profile.summary.failure_policy
-                == super::profile_types::SummaryFailurePolicy::TryFallback =>
-        {
-            let Some(selection) = profile.summary.fallback_model.as_ref() else {
-                return Err(super::checkpoint_transaction::CompressionError::SummaryInvalid);
-            };
-            let (provider, model) = selected_model(
-                selection,
-                &snapshot.provider_id,
-                &snapshot.source_session.model,
-            );
-            let fallback = build_call(snapshot, provider, model, input_limit, output_limit);
-            super::summary_request::execute(collector, &fallback, profile.summary.ordinary_retries)
-                .await
-                .map(Some)
-                .map_err(|_| super::checkpoint_transaction::CompressionError::SummaryInvalid)
-        }
-        Err(_)
-            if profile.summary.failure_policy
-                == super::profile_types::SummaryFailurePolicy::DeterministicCheckpoint =>
-        {
-            Ok(None)
-        }
-        Err(_) => Err(super::checkpoint_transaction::CompressionError::SummaryInvalid),
-    }
-}
-
-fn build_call(
-    snapshot: &super::snapshot::CompressionSnapshot,
-    provider: &str,
-    model: &str,
-    input_limit: u32,
-    output_limit: u32,
-) -> SummaryCall {
-    super::summary_request::build_call(
+    let available = target.saturating_sub(snapshot.system_head_tokens);
+    let output_limit =
+        super::checkpoint_target::effective_summary_limit(band.summary_max_tokens, available)
+            .map_err(|_| super::checkpoint_transaction::CompressionError::CapacityExceeded)?;
+    let call = super::summary_request::build_call(
         &snapshot.source_messages,
         &super::summary_request::SummaryPromptConfig {
-            system_prompt: snapshot.profile.profile.summary.system_prompt.clone(),
-            handoff_request: snapshot.profile.profile.summary.handoff_prompt.clone(),
+            system_prompt: snapshot.profile.profile.system_prompt.clone(),
+            handoff_request: snapshot.profile.profile.handoff_prompt.clone(),
         },
-        provider,
-        model,
-        input_limit,
+        &snapshot.provider_id,
+        &snapshot.source_session.model,
+        snapshot.before_tokens.clamp(1, MAX_SUMMARY_INPUT_TOKENS),
         output_limit,
-    )
-}
-
-fn band(
-    snapshot: &super::snapshot::CompressionSnapshot,
-) -> Result<
-    &super::profile_types::CompressionBandSettings,
-    super::checkpoint_transaction::CompressionError,
-> {
-    match snapshot.profile.band(snapshot.context_window) {
-        Some(super::profile_types::CompressionWindowBand::Under64K) => {
-            Ok(&snapshot.profile.profile.under_64k)
-        }
-        Some(super::profile_types::CompressionWindowBand::Compact) | None => {
-            Ok(&snapshot.profile.profile.compact)
-        }
-        Some(super::profile_types::CompressionWindowBand::Large) => {
-            Ok(&snapshot.profile.profile.large)
-        }
-    }
-}
-
-fn selected_model<'a>(
-    selection: &'a super::profile_types::SummaryModelSelection,
-    current_provider: &'a str,
-    current_model: &'a str,
-) -> (&'a str, &'a str) {
-    match selection {
-        super::profile_types::SummaryModelSelection::Current => (current_provider, current_model),
-        super::profile_types::SummaryModelSelection::Explicit { provider, model } => {
-            (provider, model)
-        }
-    }
-}
-
-fn budget_window(snapshot: &super::snapshot::CompressionSnapshot) -> u64 {
-    super::profile_budget::effective_budget_window(snapshot.context_window, snapshot.before_tokens)
+    );
+    super::summary_request::execute(collector, &call, 0)
+        .await
+        .map(Some)
+        .map_err(|_| super::checkpoint_transaction::CompressionError::SummaryInvalid)
 }
 
 pub(super) fn classify(error: &str, cancelled: bool) -> SummaryAttemptError {

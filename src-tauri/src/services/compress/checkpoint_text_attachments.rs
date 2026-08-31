@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use super::profile_types::ItemBudget;
+use super::checkpoint_evidence::EvidenceItemLimit;
 
 #[derive(Serialize)]
 pub struct TextAttachmentCheckpoint {
@@ -11,7 +11,7 @@ pub struct TextAttachmentCheckpoint {
 
 pub async fn collect(
     messages: &[crate::services::agent_local::types_message::AgentMessage],
-    budget: &ItemBudget,
+    budget: EvidenceItemLimit,
 ) -> Vec<TextAttachmentCheckpoint> {
     use crate::models::agent_turn_contract::{NewUserTurnInput, TurnAttachmentInput};
 

@@ -5,7 +5,7 @@ use super::profile_limits::MAX_PROFILES;
 use super::profile_types::CompressionProfile;
 use super::profile_validation::{normalize_profile_document, validate_profile_input};
 
-pub const PROFILE_SCHEMA_VERSION: u16 = 1;
+pub const PROFILE_SCHEMA_VERSION: u16 = 2;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]

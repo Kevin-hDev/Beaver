@@ -94,6 +94,7 @@ mod tests {
         context_tokens: None,
         compression_profile_selection: None,
         compression_count: 0,
+            automatic_compression_guard: Default::default(),
             messages: vec![],
             todos: vec![],
             todo_neglect_count: 0,

@@ -16,16 +16,15 @@ vi.mock("@/hooks/use-available-models", () => ({
 }));
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(() => Promise.resolve({
-    context_window: 64_000,
     band: "compact",
+    before_tokens: 96_000,
     system_tools_tokens: 12_000,
-    summary_tokens: 4_000,
-    categories_tokens: 20_000,
-    reserve_tokens: 4_000,
-    total_tokens: 40_000,
-    projected_percent: 63,
-    exceeds_window: false,
-    high_risk: false,
+    variable_tokens: 16_800,
+    target_tokens: 28_800,
+    range_lower_tokens: 24_000,
+    range_upper_tokens: 32_000,
+    image_count: 4,
+    projected_percent: 30,
   })),
 }));
 
@@ -56,7 +55,7 @@ describe("CompressionPanel integration", () => {
     const rename = vi.fn(() => Promise.resolve(true));
     const controller = api({ save, create, rename });
     render(<CompressionPanel controller={controller} currentWindow={32_000} onClose={vi.fn()} />);
-    await screen.findByText("settings.advanced.compressionProjectionTotal");
+    await screen.findByText("settings.advanced.compressionProjectionTarget");
 
     fireEvent.click(screen.getByRole("tab", { name: /settings\.advanced\.compressionRange\.under_64k/ }));
     expect(screen.getByLabelText("settings.advanced.compressionAutomaticThreshold")).toBeDisabled();

@@ -1,0 +1,45 @@
+{
+  "schema_version": 3,
+  "id": "00000000-0000-4000-8000-000000000030",
+  "name": "fixture-v3-compression",
+  "created_at": "2026-08-31T10:00:00Z",
+  "model": "fixture-model",
+  "provider": "ollama",
+  "accumulated_tokens": 42,
+  "compression_profile_selection": {
+    "profile_id": "beaver",
+    "global_selection_revision": 4
+  },
+  "compression_count": 2,
+  "messages": [
+    {
+      "id": "00000000-0000-4000-8000-000000000031",
+      "turn_id": "00000000-0000-4000-8000-000000000034",
+      "role": "user",
+      "content": "{\"format_version\":1,\"summary\":\"Fixture checkpoint\"}",
+      "message_kind": "compression_checkpoint",
+      "files": [],
+      "timestamp": "2026-08-31T10:00:00Z",
+      "tokens": 34
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000032",
+      "turn_id": "00000000-0000-4000-8000-000000000034",
+      "role": "assistant",
+      "content": "[Compression boundary — previous messages have been summarized]",
+      "message_kind": "compression_boundary",
+      "files": [],
+      "timestamp": "2026-08-31T10:00:01Z",
+      "tokens": 8
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000033",
+      "turn_id": "00000000-0000-4000-8000-000000000035",
+      "role": "user",
+      "content": "Continue fixture work",
+      "files": [],
+      "timestamp": "2026-08-31T10:00:02Z",
+      "tokens": 3
+    }
+  ]
+}

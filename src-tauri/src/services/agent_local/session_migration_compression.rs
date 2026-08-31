@@ -4,8 +4,6 @@ use super::session_limits::CURRENT_SESSION_SCHEMA_VERSION;
 
 const SUMMARY_PREFIX: &str = "This session is being continued from a previous conversation";
 const CONTEXT_PREFIX: &str = "Recent file context preserved across compression:";
-const BOUNDARY_CONTENT: &str =
-    "[Compression boundary — previous messages have been summarized]";
 
 pub(super) fn migrate_v2_markers(value: &mut Value) -> Result<(), String> {
     let object = value
@@ -50,7 +48,9 @@ fn classify_legacy_markers(
             && (content.starts_with(SUMMARY_PREFIX) || content.starts_with(CONTEXT_PREFIX))
         {
             Some("compression_checkpoint")
-        } else if role == Some("assistant") && content == BOUNDARY_CONTENT {
+        } else if role == Some("assistant")
+            && content == crate::services::compress::checkpoint_boundary::CONTENT
+        {
             Some("compression_boundary")
         } else {
             None

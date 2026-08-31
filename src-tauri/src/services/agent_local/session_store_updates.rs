@@ -27,6 +27,9 @@ pub async fn update_model(
     supports_thinking: Option<bool>,
 ) -> Result<(), String> {
     update_locked(id, |session| {
+        if session.model != model || session.provider != provider {
+            crate::services::compress::automatic_guard::reset(session);
+        }
         let previous_mode = reasoning_mode.or_else(|| session.reasoning_mode.clone());
         let supports_thinking = supports_thinking.unwrap_or_else(|| {
             crate::services::reasoning::provider_model_supports_thinking(provider, model)

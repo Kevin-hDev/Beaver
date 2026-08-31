@@ -111,6 +111,7 @@ pub(super) fn classify_error(message: &str, is_connection: bool) -> String {
             | "compression_unavailable"
             | "compression_profiles_unavailable"
             | "compression_disabled_under_64k"
+            | "compression_automatic_suspended"
             | "compression_failed"
     ) {
         return lower;

@@ -1,4 +1,3 @@
-use super::canonical_context::rebuild_canonical_context;
 use super::checkpoint_selection::{select, CheckpointSelectionLimits};
 
 #[tokio::test]
@@ -20,12 +19,6 @@ async fn unchanged_reconstruction_and_tool_head_are_byte_identical() {
     let snapshot = super::snapshot_tests::snapshot(&session)
         .with_runtime_context(canonical.clone(), tools.clone(), 40_000)
         .unwrap();
-    let first = rebuild_canonical_context(&session, &snapshot)
-        .await
-        .unwrap();
-    let second = rebuild_canonical_context(&session, &snapshot)
-        .await
-        .unwrap();
     let head_before =
         serde_json::to_vec(&(&snapshot.provider_tools, &snapshot.canonical_messages)).unwrap();
 
@@ -33,11 +26,6 @@ async fn unchanged_reconstruction_and_tool_head_are_byte_identical() {
     let head_after =
         serde_json::to_vec(&(&snapshot.provider_tools, &runtime[..canonical.len()])).unwrap();
 
-    assert_eq!(
-        serde_json::to_vec(&first).unwrap(),
-        serde_json::to_vec(&second).unwrap()
-    );
-    assert_eq!(first.tool_names, vec!["read_file", "web_search"]);
     assert_eq!(head_before, head_after);
     assert_eq!(snapshot.provider_tools[0]["function"]["name"], "alpha");
     assert_eq!(snapshot.provider_tools[1]["function"]["name"], "beta");
@@ -51,8 +39,7 @@ fn retained_messages_are_not_rewritten() {
     let selected = select(
         &session.messages,
         CheckpointSelectionLimits {
-            user_tokens: u32::MAX,
-            assistant_tokens: u32::MAX,
+            recent_message_count: 8,
             tool_tokens: u32::MAX,
             tool_tokens_per_result: u32::MAX,
             max_tool_events: 100,

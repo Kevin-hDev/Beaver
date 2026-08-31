@@ -38,41 +38,23 @@ pub async fn collect(
 pub async fn collect_with_budget(
     messages: &[ChatMessage],
     working_dir: &Path,
-    budget: &super::profile_types::ItemBudget,
+    budget: super::checkpoint_evidence::EvidenceItemLimit,
 ) -> Vec<CheckpointFile> {
     collect_kind(messages, working_dir, budget, FileKind::Any).await
-}
-
-pub async fn collect_read_with_budget(
-    messages: &[ChatMessage],
-    working_dir: &Path,
-    budget: &super::profile_types::ItemBudget,
-) -> Vec<CheckpointFile> {
-    collect_kind(messages, working_dir, budget, FileKind::Read).await
-}
-
-pub async fn collect_modified_with_budget(
-    messages: &[ChatMessage],
-    working_dir: &Path,
-    budget: &super::profile_types::ItemBudget,
-) -> Vec<CheckpointFile> {
-    collect_kind(messages, working_dir, budget, FileKind::Modified).await
 }
 
 #[derive(Clone, Copy)]
 enum FileKind {
     Any,
-    Read,
-    Modified,
 }
 
 async fn collect_kind(
     messages: &[ChatMessage],
     working_dir: &Path,
-    budget: &super::profile_types::ItemBudget,
+    budget: super::checkpoint_evidence::EvidenceItemLimit,
     kind: FileKind,
 ) -> Vec<CheckpointFile> {
-    if !budget.enabled || budget.max_items == 0 || budget.tokens_per_item == 0 {
+    if budget.max_items == 0 || budget.tokens_per_item == 0 {
         return Vec::new();
     }
     let max_items = usize::from(budget.max_items);
@@ -85,20 +67,12 @@ async fn collect_kind(
     for event in super::context_capsules_disk_collect::recent_disk_file_events_bounded(
         messages,
         working_dir,
-        usize::from(super::profile_limits::MAX_CATEGORY_ITEMS),
+        usize::from(super::profile_limits::MAX_FILES),
         budget.tokens_per_item,
     )
     .await
     {
-        let modified = matches!(
-            event.tool.as_str(),
-            "write_file" | "edit_file" | "write_document" | "write_spreadsheet"
-        );
-        if matches!(kind, FileKind::Read) && modified
-            || matches!(kind, FileKind::Modified) && !modified
-        {
-            continue;
-        }
+        let _ = kind;
         if output.len() >= max_items {
             break;
         }

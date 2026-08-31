@@ -1,7 +1,4 @@
-#![allow(
-    dead_code,
-    reason = "the compression orchestrator consumes the staged selection in Task 10"
-)]
+use std::collections::BTreeSet;
 
 use super::checkpoint_messages::SelectedCheckpointMessage;
 use super::checkpoint_units::{CheckpointUnit, CheckpointUnitKind};
@@ -9,8 +6,7 @@ use crate::services::agent_local::types_session::AgentMessage;
 
 #[derive(Debug, Clone, Copy)]
 pub struct CheckpointSelectionLimits {
-    pub user_tokens: u32,
-    pub assistant_tokens: u32,
+    pub recent_message_count: u8,
     pub tool_tokens: u32,
     pub tool_tokens_per_result: u32,
     pub max_tool_events: u16,
@@ -21,7 +17,7 @@ pub struct CheckpointSelectionLimits {
 pub struct CheckpointSelection {
     pub units: Vec<CheckpointUnit>,
     pub messages: Vec<SelectedCheckpointMessage>,
-    pub estimated_tokens: u32,
+    pub active_turn_tokens: u32,
 }
 
 pub fn select(
@@ -29,86 +25,94 @@ pub fn select(
     limits: CheckpointSelectionLimits,
 ) -> Result<CheckpointSelection, &'static str> {
     let units = super::checkpoint_units::build(source)?;
-    validate_reasoning(source)?;
+    source
+        .iter()
+        .try_for_each(super::checkpoint_reasoning::validate)?;
+    let mut selected_starts = BTreeSet::new();
+    let mut usage = Usage::default();
+    select_role_quotas(&units, limits, &mut usage, &mut selected_starts);
+    fill_message_slots(&units, limits, &mut usage, &mut selected_starts);
+
     let mut selected = Vec::new();
-    let mut used = Usage::default();
+    let mut active_turn_tokens = 0_u32;
     for unit in units.iter().rev() {
         if unit.required {
-            if unit.estimated_tokens > limits.total_tokens.saturating_sub(used.total) {
-                return Err(crate::services::agent_local::context_capacity_error::CODE);
-            }
             push_exact(source, unit, &mut selected);
-            used.total = used.total.saturating_add(unit.estimated_tokens);
-            continue;
-        }
-        match unit.kind {
-            CheckpointUnitKind::UserMessage => {
-                select_user(source, unit, limits, &mut used, &mut selected)
-            }
-            CheckpointUnitKind::AssistantMessage => {
-                if fits(
-                    unit.estimated_tokens,
-                    used.assistant,
-                    limits.assistant_tokens,
-                    used.total,
-                    limits.total_tokens,
-                ) {
-                    push_exact(source, unit, &mut selected);
-                    used.assistant = used.assistant.saturating_add(unit.estimated_tokens);
-                    used.total = used.total.saturating_add(unit.estimated_tokens);
-                }
-            }
-            CheckpointUnitKind::ToolChain => {
-                select_tool_chain(source, unit, limits, &mut used, &mut selected)
-            }
-            CheckpointUnitKind::ActiveTurn => unreachable!("required units handled above"),
+            active_turn_tokens = active_turn_tokens.saturating_add(unit.estimated_tokens);
+        } else if selected_starts.contains(&unit.message_indexes.start) {
+            push_exact(source, unit, &mut selected);
+        } else if unit.kind == CheckpointUnitKind::ToolChain {
+            select_tool_chain(source, unit, limits, &mut usage, &mut selected);
         }
     }
     selected.sort_by_key(SelectedCheckpointMessage::source_index);
     Ok(CheckpointSelection {
         units,
         messages: selected,
-        estimated_tokens: used.total,
+        active_turn_tokens,
     })
 }
 
 #[derive(Default)]
 struct Usage {
-    user: u32,
-    assistant: u32,
+    users: u8,
+    assistants: u8,
+    messages: u8,
     tools: u32,
     tool_events: u16,
     total: u32,
 }
 
-fn select_user(
-    source: &[AgentMessage],
-    unit: &CheckpointUnit,
+fn select_role_quotas(
+    units: &[CheckpointUnit],
     limits: CheckpointSelectionLimits,
-    used: &mut Usage,
-    out: &mut Vec<SelectedCheckpointMessage>,
+    usage: &mut Usage,
+    selected: &mut BTreeSet<usize>,
 ) {
-    let remaining = limits
-        .user_tokens
-        .saturating_sub(used.user)
-        .min(limits.total_tokens.saturating_sub(used.total));
-    if remaining == 0 {
-        return;
+    let user_quota = limits.recent_message_count.saturating_add(1) / 2;
+    let assistant_quota = limits.recent_message_count / 2;
+    for unit in units.iter().rev() {
+        let role_has_space = match unit.kind {
+            CheckpointUnitKind::UserMessage => usage.users < user_quota,
+            CheckpointUnitKind::AssistantMessage => usage.assistants < assistant_quota,
+            _ => false,
+        };
+        if role_has_space && fits_total(unit.estimated_tokens, usage.total, limits.total_tokens) {
+            selected.insert(unit.message_indexes.start);
+            usage.total = usage.total.saturating_add(unit.estimated_tokens);
+            usage.messages = usage.messages.saturating_add(1);
+            match unit.kind {
+                CheckpointUnitKind::UserMessage => usage.users = usage.users.saturating_add(1),
+                CheckpointUnitKind::AssistantMessage => {
+                    usage.assistants = usage.assistants.saturating_add(1)
+                }
+                _ => {}
+            }
+        }
     }
-    if unit.estimated_tokens <= remaining {
-        push_exact(source, unit, out);
-        used.user = used.user.saturating_add(unit.estimated_tokens);
-        used.total = used.total.saturating_add(unit.estimated_tokens);
-    } else {
-        let selected = super::checkpoint_messages::truncate_user(
-            unit.message_indexes.start,
-            &source[unit.message_indexes.start],
-            remaining,
-        );
-        let tokens = super::token_estimate::estimate_checkpoint_message_tokens(selected.message());
-        out.push(selected);
-        used.user = used.user.saturating_add(tokens);
-        used.total = used.total.saturating_add(tokens);
+}
+
+fn fill_message_slots(
+    units: &[CheckpointUnit],
+    limits: CheckpointSelectionLimits,
+    usage: &mut Usage,
+    selected: &mut BTreeSet<usize>,
+) {
+    for unit in units.iter().rev() {
+        if usage.messages >= limits.recent_message_count {
+            break;
+        }
+        if !matches!(
+            unit.kind,
+            CheckpointUnitKind::UserMessage | CheckpointUnitKind::AssistantMessage
+        ) || selected.contains(&unit.message_indexes.start)
+            || !fits_total(unit.estimated_tokens, usage.total, limits.total_tokens)
+        {
+            continue;
+        }
+        selected.insert(unit.message_indexes.start);
+        usage.total = usage.total.saturating_add(unit.estimated_tokens);
+        usage.messages = usage.messages.saturating_add(1);
     }
 }
 
@@ -116,84 +120,74 @@ fn select_tool_chain(
     source: &[AgentMessage],
     unit: &CheckpointUnit,
     limits: CheckpointSelectionLimits,
-    used: &mut Usage,
-    out: &mut Vec<SelectedCheckpointMessage>,
+    usage: &mut Usage,
+    output: &mut Vec<SelectedCheckpointMessage>,
 ) {
     let events = source[unit.message_indexes.clone()]
         .iter()
         .filter(|message| message.role == "tool")
-        .count() as u16;
-    if used.tool_events.saturating_add(events)
+        .count()
+        .min(usize::from(u16::MAX)) as u16;
+    if usage.tool_events.saturating_add(events)
         > limits
             .max_tool_events
             .min(super::checkpoint_tools::MAX_TOOL_EVENTS as u16)
     {
         return;
     }
-    let transformed = source[unit.message_indexes.clone()]
-        .iter()
-        .enumerate()
-        .map(|(offset, message)| {
-            let source_index = unit.message_indexes.start + offset;
-            if message.role == "tool" {
-                let excerpt =
-                    super::checkpoint_tools::excerpt_result(message, limits.tool_tokens_per_result);
-                if excerpt.content == message.content {
-                    super::checkpoint_messages::exact(source_index, message)
-                } else {
-                    SelectedCheckpointMessage::ToolResultExcerpt {
-                        source_index,
-                        message: excerpt,
-                    }
-                }
-            } else {
-                super::checkpoint_messages::exact(source_index, message)
-            }
-        })
-        .collect::<Vec<_>>();
+    let transformed = transform_tool_chain(source, unit, limits.tool_tokens_per_result);
     let tokens = transformed.iter().fold(0u32, |total, selected| {
         total.saturating_add(super::token_estimate::estimate_checkpoint_message_tokens(
             selected.message(),
         ))
     });
-    if !fits(
-        tokens,
-        used.tools,
-        limits.tool_tokens,
-        used.total,
-        limits.total_tokens,
-    ) {
+    if tokens > limits.tool_tokens.saturating_sub(usage.tools)
+        || !fits_total(tokens, usage.total, limits.total_tokens)
+    {
         return;
     }
-    out.extend(transformed);
-    used.tools = used.tools.saturating_add(tokens);
-    used.tool_events = used.tool_events.saturating_add(events);
-    used.total = used.total.saturating_add(tokens);
+    output.extend(transformed);
+    usage.tools = usage.tools.saturating_add(tokens);
+    usage.tool_events = usage.tool_events.saturating_add(events);
+    usage.total = usage.total.saturating_add(tokens);
 }
 
-fn validate_reasoning(source: &[AgentMessage]) -> Result<(), &'static str> {
-    source
+fn transform_tool_chain(
+    source: &[AgentMessage],
+    unit: &CheckpointUnit,
+    tokens_per_result: u32,
+) -> Vec<SelectedCheckpointMessage> {
+    source[unit.message_indexes.clone()]
         .iter()
-        .try_for_each(super::checkpoint_reasoning::validate)
+        .enumerate()
+        .map(|(offset, message)| {
+            let source_index = unit.message_indexes.start + offset;
+            if message.role != "tool" {
+                return super::checkpoint_messages::exact(source_index, message);
+            }
+            let excerpt = super::checkpoint_tools::excerpt_result(message, tokens_per_result);
+            if excerpt.content == message.content {
+                super::checkpoint_messages::exact(source_index, message)
+            } else {
+                SelectedCheckpointMessage::ToolResultExcerpt {
+                    source_index,
+                    message: excerpt,
+                }
+            }
+        })
+        .collect()
 }
 
-fn fits(
-    value: u32,
-    category_used: u32,
-    category_limit: u32,
-    total_used: u32,
-    total_limit: u32,
-) -> bool {
-    value <= category_limit.saturating_sub(category_used)
-        && value <= total_limit.saturating_sub(total_used)
+fn fits_total(value: u32, used: u32, limit: u32) -> bool {
+    value <= limit.saturating_sub(used)
 }
 
 fn push_exact(
     source: &[AgentMessage],
     unit: &CheckpointUnit,
-    out: &mut Vec<SelectedCheckpointMessage>,
+    output: &mut Vec<SelectedCheckpointMessage>,
 ) {
-    out.extend(
+    output.extend(
         unit.message_indexes
             .clone()
             .map(|index| super::checkpoint_messages::exact(index, &source[index])),

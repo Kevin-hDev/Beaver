@@ -1,6 +1,7 @@
 use serde::Serialize;
 
 use super::checkpoint_transaction::CompressionError;
+pub use super::metrics_error::{CompressionMetricError, CompressionMetricPhase};
 use super::profile_resolve::ResolvedCompressionProfile;
 use super::profile_types::{CompressionTrigger, CompressionWindowBand};
 use crate::services::provider_usage::CacheTokenTotals;
@@ -15,47 +16,6 @@ pub enum CompressionMetricOutcome {
     Failed,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "snake_case")]
-pub enum CompressionMetricPhase {
-    Snapshot,
-    Summary,
-    Candidate,
-    Commit,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "snake_case")]
-pub enum CompressionMetricError {
-    Unavailable,
-    InvalidSnapshot,
-    OpenTurn,
-    InvalidSummary,
-    InvalidCandidate,
-    CapacityExceeded,
-    InsufficientReduction,
-    PrepareFailed,
-    SessionChanged,
-    SaveFailed,
-}
-
-impl CompressionMetricError {
-    pub const fn code(self) -> &'static str {
-        match self {
-            Self::Unavailable => "unavailable",
-            Self::InvalidSnapshot => "invalid_snapshot",
-            Self::OpenTurn => "open_turn",
-            Self::InvalidSummary => "invalid_summary",
-            Self::InvalidCandidate => "invalid_candidate",
-            Self::CapacityExceeded => "capacity_exceeded",
-            Self::InsufficientReduction => "insufficient_reduction",
-            Self::PrepareFailed => "prepare_failed",
-            Self::SessionChanged => "session_changed",
-            Self::SaveFailed => "save_failed",
-        }
-    }
-}
-
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct CompressionMetrics {
     pub session_id: String,
@@ -68,16 +28,21 @@ pub struct CompressionMetrics {
     pub trigger: CompressionTrigger,
     pub phase: CompressionMetricPhase,
     pub before_tokens: u32,
+    pub system_head_tokens: u32,
+    pub target_tokens: u32,
     pub after_tokens: u32,
+    pub reduction_tokens: u32,
     pub summary_tokens: u32,
+    pub retained_messages: u16,
     pub retained_user_tokens: u32,
     pub retained_tool_results: u16,
     pub dropped_tool_results: u16,
     pub retained_images: u16,
     pub dropped_images: u16,
     pub retained_subagent_reports: u16,
-    pub projected_budget_tokens: u32,
-    pub projected_overflow_tokens: u32,
+    pub target_overflow_tokens: u32,
+    pub guard_consecutive_failures: u8,
+    pub guard_suspended: bool,
     pub duration_ms: u64,
     pub outcome: CompressionMetricOutcome,
     pub error: Option<CompressionMetricError>,
@@ -95,7 +60,10 @@ pub struct CompressionMetricContext<'a> {
     pub trigger: CompressionTrigger,
     pub context_window: u64,
     pub before_tokens: u32,
-    pub projected_budget_tokens: u32,
+    pub system_head_tokens: u32,
+    pub target_tokens: u32,
+    pub guard_consecutive_failures: u8,
+    pub guard_suspended: bool,
     pub compression_count: u32,
     pub cache_before: CacheTokenTotals,
 }
@@ -104,6 +72,7 @@ pub struct CompressionMetricContext<'a> {
 pub struct CompressionSuccessFacts {
     pub after_tokens: u32,
     pub summary_tokens: u32,
+    pub retained_messages: u16,
     pub retained_user_tokens: u32,
     pub retained_tool_results: u16,
     pub dropped_tool_results: u16,
@@ -145,19 +114,23 @@ impl CompressionMetrics {
             threshold_percent: context.profile.profile.threshold_percent,
             effective_threshold_percent: context.profile.profile.threshold_percent.min(90),
             trigger: context.trigger,
-            phase: metric_error.map_or(CompressionMetricPhase::Commit, phase_for_error),
+            phase: metric_error.map_or(CompressionMetricPhase::Commit, |error| error.phase()),
             before_tokens: context.before_tokens,
+            system_head_tokens: context.system_head_tokens,
+            target_tokens: context.target_tokens,
             after_tokens: facts.after_tokens,
+            reduction_tokens: context.before_tokens.saturating_sub(facts.after_tokens),
             summary_tokens: facts.summary_tokens,
+            retained_messages: facts.retained_messages,
             retained_user_tokens: facts.retained_user_tokens,
             retained_tool_results: facts.retained_tool_results,
             dropped_tool_results: facts.dropped_tool_results,
             retained_images: facts.retained_images,
             dropped_images: facts.dropped_images,
             retained_subagent_reports: facts.retained_subagent_reports,
-            projected_budget_tokens: context.projected_budget_tokens,
-            projected_overflow_tokens: projected_tokens
-                .saturating_sub(context.projected_budget_tokens),
+            target_overflow_tokens: projected_tokens.saturating_sub(context.target_tokens),
+            guard_consecutive_failures: context.guard_consecutive_failures.min(3),
+            guard_suspended: context.guard_suspended,
             duration_ms: duration_ms.min(MAX_DURATION_MS),
             outcome,
             error: metric_error,
@@ -171,41 +144,6 @@ impl CompressionMetrics {
 
     pub fn safe_log_json(&self) -> String {
         serde_json::to_string(self).unwrap_or_else(|_| "{}".to_string())
-    }
-}
-
-fn phase_for_error(error: CompressionMetricError) -> CompressionMetricPhase {
-    match error {
-        CompressionMetricError::Unavailable | CompressionMetricError::InvalidSnapshot => {
-            CompressionMetricPhase::Snapshot
-        }
-        CompressionMetricError::InvalidSummary => CompressionMetricPhase::Summary,
-        CompressionMetricError::OpenTurn
-        | CompressionMetricError::InvalidCandidate
-        | CompressionMetricError::CapacityExceeded
-        | CompressionMetricError::InsufficientReduction => CompressionMetricPhase::Candidate,
-        CompressionMetricError::PrepareFailed
-        | CompressionMetricError::SessionChanged
-        | CompressionMetricError::SaveFailed => CompressionMetricPhase::Commit,
-    }
-}
-
-impl From<CompressionError> for CompressionMetricError {
-    fn from(value: CompressionError) -> Self {
-        match value {
-            CompressionError::Unavailable | CompressionError::UnavailableUnder64K => {
-                Self::Unavailable
-            }
-            CompressionError::SnapshotInvalid => Self::InvalidSnapshot,
-            CompressionError::OpenTurn => Self::OpenTurn,
-            CompressionError::SummaryInvalid => Self::InvalidSummary,
-            CompressionError::CandidateInvalid => Self::InvalidCandidate,
-            CompressionError::CapacityExceeded => Self::CapacityExceeded,
-            CompressionError::InsufficientReduction => Self::InsufficientReduction,
-            CompressionError::PrepareFailed => Self::PrepareFailed,
-            CompressionError::SessionChanged => Self::SessionChanged,
-            CompressionError::SaveFailed => Self::SaveFailed,
-        }
     }
 }
 

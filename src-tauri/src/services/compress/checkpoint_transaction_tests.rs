@@ -166,7 +166,7 @@ async fn preparation_refusal_returns_before_mutation() {
 }
 
 #[tokio::test]
-async fn open_tool_turn_and_insufficient_reduction_are_rejected() {
+async fn open_tool_turn_and_candidate_above_the_real_target_are_rejected() {
     let session = stored_session().await;
     let mut open = session.clone();
     open.messages.truncate(2);
@@ -187,6 +187,44 @@ async fn open_tool_turn_and_insufficient_reduction_are_rejected() {
         .unwrap();
     assert!(matches!(
         checkpoint_candidate::build(&too_small, Some(&summary()), &[]).await,
+        Err(CompressionError::CapacityExceeded)
+    ));
+    crate::services::agent_local::session_store::delete_one(&session.id)
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
+async fn automatic_candidate_with_only_compressible_content_above_threshold_is_rejected() {
+    let session = stored_session().await;
+    let mut document = super::profile_store_document::CompressionProfileDocument::default();
+    document.profiles[0].threshold_percent = 1;
+    let profile = super::profile_resolve::resolve_from_document(None, &document).unwrap();
+    let capabilities = super::session_capabilities::SessionCompressionCapabilities::from_runtime(
+        false,
+        &[],
+        false,
+        false,
+        false,
+    )
+    .unwrap();
+    let snapshot = super::snapshot::CompressionSnapshot::capture(
+        &session,
+        profile,
+        128_000,
+        capabilities,
+        super::profile_types::CompressionTrigger::Automatic,
+    )
+    .unwrap()
+    .with_runtime_context(Vec::new(), Vec::new(), 100_000)
+    .unwrap();
+    let sections = [CheckpointSection {
+        name: "evidence".into(),
+        content: "e".repeat(8_000),
+    }];
+
+    assert!(matches!(
+        checkpoint_candidate::build(&snapshot, Some(&summary()), &sections).await,
         Err(CompressionError::InsufficientReduction)
     ));
     crate::services::agent_local::session_store::delete_one(&session.id)
@@ -307,7 +345,7 @@ async fn disabled_tool_category_excludes_closed_tool_chains() {
         ),
     ];
     let mut document = super::profile_store_document::CompressionProfileDocument::default();
-    document.profiles[0].compact.tools.enabled = false;
+    document.profiles[0].compact.tool_result_count = 0;
     let profile = super::profile_resolve::resolve_from_document(None, &document).unwrap();
     let capabilities = super::session_capabilities::SessionCompressionCapabilities::from_runtime(
         false,

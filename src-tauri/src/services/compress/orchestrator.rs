@@ -33,12 +33,18 @@ pub async fn run_compression(
         .map_err(|_| CompressionError::SnapshotInvalid)?;
     let profile = super::profile_resolve::resolve_for_session(&session)
         .map_err(|_| CompressionError::Unavailable)?;
-    let estimated = super::token_estimate::estimate_request_tokens_for_provider(
+    let estimated = super::token_estimate::estimate_textual_request_tokens_for_provider(
         request.provider_id,
         request.runtime_messages,
         request.provider_tools,
     );
-    let used = super::state::context_used_for_compression(request.last_context_tokens, estimated);
+    let _provider_usage = request.last_context_tokens;
+    let used = estimated;
+    let system_head_tokens = super::orchestrator_support::system_head_tokens(
+        request.provider_id,
+        request.runtime_messages,
+        request.provider_tools,
+    );
     if !profile.available(request.context_window) {
         return match request.trigger {
             CompressionTrigger::Automatic => Ok(None),
@@ -51,6 +57,28 @@ pub async fn run_compression(
     if !preflight_messages(&session.messages, request.trigger)? {
         return Ok(None);
     }
+    let prepared_guard = match super::automatic_guard::prepare(
+        &session,
+        &profile,
+        request.context_window,
+        request.trigger,
+    )
+    .await
+    {
+        Ok(value) => value,
+        Err(CompressionError::AutomaticSuspended) => {
+            let _ = request.on_event.send(StreamEvent::Notice {
+                message_key: "errors.compressionAutomaticSuspended".into(),
+            });
+            return Err(CompressionError::AutomaticSuspended);
+        }
+        Err(error) => return Err(error),
+    };
+    let Some(prepared_guard) = prepared_guard else {
+        return Ok(None);
+    };
+    let session = prepared_guard.session;
+    let attempt = prepared_guard.attempt;
     let started_at = Instant::now();
     let session_id = request.session_id.to_string();
     let request_id = request.request_id.to_string();
@@ -70,7 +98,14 @@ pub async fn run_compression(
         "Compression du contexte démarrée.",
     )
     .await;
-    let result = run_started(request, session, profile.clone(), used).await;
+    let result =
+        super::orchestrator_started::run(request, session, profile.clone(), used, attempt.clone())
+            .await;
+    if result.is_err() {
+        if let Some(attempt) = attempt.as_ref() {
+            super::automatic_guard::record_failure(&session_id, attempt).await;
+        }
+    }
     super::orchestrator_metrics::record(super::orchestrator_metrics::Completion {
         session_id: &session_id,
         request_id: &request_id,
@@ -79,6 +114,7 @@ pub async fn run_compression(
         trigger,
         context_window,
         before_tokens: used.min(u32::MAX as usize) as u32,
+        system_head_tokens,
         previous_compression_count: compression_count,
         cache_before,
         facts: result.as_ref().ok().map(|value| value.facts),
@@ -105,88 +141,6 @@ pub(super) fn preflight_messages(
         CompressionTrigger::Automatic => Ok(false),
         CompressionTrigger::Explicit => Err(CompressionError::OpenTurn),
     }
-}
-
-struct StartedCompression {
-    report: CompressionCommitReport,
-    facts: super::metrics::CompressionSuccessFacts,
-}
-
-async fn run_started(
-    request: CompressionRunRequest<'_>,
-    session: crate::services::agent_local::types_session::AgentSession,
-    profile: super::profile_resolve::ResolvedCompressionProfile,
-    used_tokens: usize,
-) -> Result<StartedCompression, CompressionError> {
-    if request.cancel.is_cancelled() {
-        return Err(CompressionError::SummaryInvalid);
-    }
-    let tool_names = super::orchestrator_support::tool_names(request.provider_tools);
-    let capabilities = super::session_capabilities::SessionCompressionCapabilities::from_runtime(
-        request.chatbot,
-        &tool_names,
-        !session.working_dir.is_empty(),
-        super::orchestrator_support::is_git_repository(request.working_dir),
-        request.plan_mode_active,
-    )
-    .map_err(|_| CompressionError::SnapshotInvalid)?;
-    let canonical = request
-        .runtime_messages
-        .iter()
-        .filter(|message| message.role == "system")
-        .cloned()
-        .collect();
-    let snapshot = super::snapshot::CompressionSnapshot::capture(
-        &session,
-        profile,
-        request.context_window,
-        capabilities,
-        request.trigger,
-    )
-    .map_err(|_| CompressionError::SnapshotInvalid)?
-    .with_runtime_context(
-        canonical,
-        request.provider_tools.to_vec(),
-        used_tokens.min(u32::MAX as usize) as u32,
-    )
-    .map_err(|_| CompressionError::SnapshotInvalid)?;
-    let image_budget = super::orchestrator_support::image_budget(&snapshot);
-    let images = if image_budget.enabled {
-        super::checkpoint_attachments::collect_images_with_limits(
-            &snapshot.source_messages,
-            super::checkpoint_attachments::MAX_IMAGE_CANDIDATES,
-            32 * 1024 * 1024,
-            super::checkpoint_attachments::MAX_IMAGE_CANDIDATES,
-        )
-    } else {
-        Vec::new()
-    };
-    let snapshot = snapshot
-        .with_checkpoint_images(images)
-        .map_err(|_| CompressionError::SnapshotInvalid)?;
-    let collector = super::orchestrator_summary::ProviderSummaryCollector {
-        session_id: request.session_id,
-        request_id: request.request_id,
-        fast_mode: request.fast_mode,
-        cancel: request.cancel,
-    };
-    let summary = super::orchestrator_summary::generate(&snapshot, &collector).await?;
-    let candidate = super::orchestrator_candidate::build(
-        &snapshot,
-        summary.as_ref(),
-        request.runtime_messages,
-        request.working_dir,
-    )
-    .await?;
-    let next_count = snapshot.source_session.compression_count.saturating_add(1);
-    let facts = super::metrics_facts::collect(&snapshot, summary.as_ref(), &candidate, next_count);
-    let report = super::checkpoint_transaction::commit_candidate(
-        request.session_id,
-        request.runtime_messages,
-        candidate,
-    )
-    .await?;
-    Ok(StartedCompression { report, facts })
 }
 
 pub(super) fn eligible(

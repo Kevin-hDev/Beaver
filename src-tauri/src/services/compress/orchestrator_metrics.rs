@@ -14,6 +14,7 @@ pub struct Completion<'a> {
     pub trigger: CompressionTrigger,
     pub context_window: u64,
     pub before_tokens: u32,
+    pub system_head_tokens: u32,
     pub previous_compression_count: u32,
     pub cache_before: CacheTokenTotals,
     pub facts: Option<CompressionSuccessFacts>,
@@ -25,6 +26,17 @@ pub struct Completion<'a> {
 pub async fn record(completion: Completion<'_>) {
     let cache_after =
         crate::services::provider_usage::compression_cache_totals(completion.provider_id).await;
+    let guard = crate::services::agent_local::session_store::get(completion.session_id)
+        .await
+        .ok()
+        .map(|session| session.automatic_compression_guard)
+        .unwrap_or_default();
+    let target_tokens = super::metrics_projection::projected_target(
+        completion.profile,
+        completion.context_window,
+        completion.before_tokens,
+        completion.system_head_tokens,
+    );
     let metric = CompressionMetrics::finish(
         CompressionMetricContext {
             session_id: completion.session_id,
@@ -33,11 +45,10 @@ pub async fn record(completion: Completion<'_>) {
             trigger: completion.trigger,
             context_window: completion.context_window,
             before_tokens: completion.before_tokens,
-            projected_budget_tokens: super::metrics_projection::projected_budget(
-                completion.profile,
-                completion.context_window,
-                completion.before_tokens,
-            ),
+            system_head_tokens: completion.system_head_tokens,
+            target_tokens,
+            guard_consecutive_failures: guard.consecutive_failures,
+            guard_suspended: guard.suspended,
             compression_count: completion.previous_compression_count,
             cache_before: completion.cache_before,
         },

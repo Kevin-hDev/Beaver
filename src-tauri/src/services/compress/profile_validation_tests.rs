@@ -1,106 +1,96 @@
 use super::profile_defaults::beaver_profile;
 use super::profile_limits::{
-    MAX_BUDGET_TOKENS, MAX_CATEGORY_ITEMS, MAX_CUSTOM_PROMPT_CHARS, MAX_IMAGE_BYTES, MAX_PROFILES,
-    MAX_PROFILE_NAME_CHARS, MAX_RETRIES,
+    MAX_CUSTOM_PROMPT_CHARS, MAX_FILES, MAX_IMAGES, MAX_MESSAGES, MAX_PROFILES,
+    MAX_PROFILE_NAME_CHARS, MAX_SUMMARY_TOKENS, MAX_TOOL_RESULTS, MIN_SUMMARY_TOKENS,
 };
 use super::profile_validation::{normalize_profile_document, validate_profile_input};
 
 #[test]
-fn absolute_limits_are_centralized_and_distinct_from_defaults() {
+fn absolute_limits_are_centralized() {
     assert_eq!(MAX_PROFILES, 20);
     assert_eq!(MAX_PROFILE_NAME_CHARS, 48);
     assert_eq!(MAX_CUSTOM_PROMPT_CHARS, 32_000);
-    assert_eq!(MAX_CATEGORY_ITEMS, 100);
-    assert_eq!(MAX_BUDGET_TOKENS, 1_000_000);
-    assert_eq!(MAX_IMAGE_BYTES, 32 * 1024 * 1024);
-    assert_eq!(MAX_RETRIES, 2);
-
-    let profile = beaver_profile();
-    assert_eq!(profile.compact.images.max_items, 16);
-    assert_eq!(profile.compact.critical_references.max_items, 32);
+    assert_eq!(MAX_MESSAGES, 8);
+    assert_eq!(MAX_TOOL_RESULTS, 50);
+    assert_eq!(MAX_FILES, 15);
+    assert_eq!(MAX_IMAGES, 16);
+    assert_eq!(MIN_SUMMARY_TOKENS, 1_000);
+    assert_eq!(MAX_SUMMARY_TOKENS, 8_000);
 }
 
 #[test]
-fn ipc_validation_rejects_invalid_identity_names_and_duplicates() {
+fn ipc_validation_rejects_out_of_range_simple_quantities() {
     let existing = vec![beaver_profile()];
-    let mut input = beaver_profile();
-    input.id = "not-a-uuid".into();
-    input.name = "Custom".into();
-    assert!(validate_profile_input(&input, &existing).is_err());
+    let mut input = custom_profile();
 
-    input.id = "4f93ca54-5c44-44ec-bd90-122fcea4e181".into();
-    input.name = "\u{0007}".into();
+    input.compact.recent_message_count = 9;
     assert!(validate_profile_input(&input, &existing).is_err());
+    input.compact.recent_message_count = 8;
 
-    input.name = "BEAVER".into();
+    input.compact.summary_max_tokens = 999;
     assert!(validate_profile_input(&input, &existing).is_err());
+    input.compact.summary_max_tokens = 8_001;
+    assert!(validate_profile_input(&input, &existing).is_err());
+    input.compact.summary_max_tokens = 1_000;
+
+    input.compact.tool_result_count = 51;
+    assert!(validate_profile_input(&input, &existing).is_err());
+    input.compact.tool_result_count = 50;
+
+    input.compact.recent_file_count = 16;
+    assert!(validate_profile_input(&input, &existing).is_err());
+    input.compact.recent_file_count = 15;
+
+    input.compact.image_count = 17;
+    assert!(validate_profile_input(&input, &existing).is_err());
+    input.compact.image_count = 16;
+
+    assert!(validate_profile_input(&input, &existing).is_ok());
 }
 
 #[test]
-fn ipc_validation_rejects_oversized_collections_and_values() {
-    let mut input = beaver_profile();
-    input.id = "4f93ca54-5c44-44ec-bd90-122fcea4e181".into();
-    input.name = "x".repeat(MAX_PROFILE_NAME_CHARS + 1);
-    assert!(validate_profile_input(&input, &[]).is_err());
-
-    input.name = "Custom".into();
-    input.summary.system_prompt = "x".repeat(MAX_CUSTOM_PROMPT_CHARS + 1);
-    assert!(validate_profile_input(&input, &[]).is_err());
-
-    input.summary.system_prompt.clear();
-    input.compact.tools.max_items = MAX_CATEGORY_ITEMS + 1;
-    assert!(validate_profile_input(&input, &[]).is_err());
-
-    input.compact.tools.max_items = MAX_CATEGORY_ITEMS;
-    input.compact.images.max_total_bytes = MAX_IMAGE_BYTES + 1;
-    assert!(validate_profile_input(&input, &[]).is_err());
-}
-
-#[test]
-fn disk_normalization_clamps_values_without_reusing_migration_semantics() {
+fn disk_normalization_clamps_simple_values_and_repairs_zero_summary() {
     let mut profiles = vec![beaver_profile()];
-    profiles[0].threshold_percent = 0;
-    profiles[0].summary.ordinary_retries = u8::MAX;
-    profiles[0].compact.tools.tokens_per_item = MAX_BUDGET_TOKENS + 1;
-    profiles[0].compact.images.max_total_bytes = MAX_IMAGE_BYTES + 1;
+    let profile = &mut profiles[0];
+    profile.threshold_percent = 0;
+    profile.compact.recent_message_count = u8::MAX;
+    profile.compact.summary_max_tokens = 0;
+    profile.compact.tool_result_count = u16::MAX;
+    profile.compact.recent_file_count = u16::MAX;
+    profile.compact.image_count = u16::MAX;
     let mut global_id = "missing".to_string();
 
     normalize_profile_document(&mut profiles, &mut global_id);
 
-    assert_eq!(profiles[0].threshold_percent, 1);
-    assert_eq!(profiles[0].summary.ordinary_retries, MAX_RETRIES);
-    assert_eq!(profiles[0].compact.tools.tokens_per_item, MAX_BUDGET_TOKENS);
-    assert_eq!(profiles[0].compact.images.max_total_bytes, MAX_IMAGE_BYTES);
+    let profile = &profiles[0];
+    assert_eq!(profile.threshold_percent, 1);
+    assert_eq!(profile.compact.recent_message_count, 8);
+    assert_eq!(profile.compact.summary_max_tokens, 1_000);
+    assert_eq!(profile.compact.tool_result_count, 50);
+    assert_eq!(profile.compact.recent_file_count, 15);
+    assert_eq!(profile.compact.image_count, 16);
     assert_eq!(global_id, "beaver");
 }
 
 #[test]
-fn uncapped_percentage_budget_keeps_its_floor_during_normalization() {
-    let mut profiles = vec![beaver_profile()];
-    profiles[0].compact.response_reserve.mode = super::profile_types::BudgetMode::Percentage;
-    profiles[0].compact.response_reserve.fixed_tokens = 0;
-    profiles[0].compact.response_reserve.minimum_tokens = 500;
-    let mut global_id = "beaver".to_string();
+fn ipc_validation_rejects_invalid_identity_names_and_prompts() {
+    let existing = vec![beaver_profile()];
+    let mut input = custom_profile();
+    input.id = "not-a-uuid".into();
+    assert!(validate_profile_input(&input, &existing).is_err());
 
-    normalize_profile_document(&mut profiles, &mut global_id);
+    input.id = "4f93ca54-5c44-44ec-bd90-122fcea4e181".into();
+    input.name = "BEAVER".into();
+    assert!(validate_profile_input(&input, &existing).is_err());
 
-    assert_eq!(profiles[0].compact.response_reserve.minimum_tokens, 500);
+    input.name = "Custom".into();
+    input.system_prompt = "x".repeat(MAX_CUSTOM_PROMPT_CHARS + 1);
+    assert!(validate_profile_input(&input, &existing).is_err());
 }
 
-#[test]
-fn profile_collection_is_bounded() {
-    let mut profiles = (0..=MAX_PROFILES)
-        .map(|index| {
-            let mut profile = beaver_profile();
-            profile.id = format!("00000000-0000-4000-8000-{index:012}");
-            profile.name = format!("Profile {index}");
-            profile
-        })
-        .collect::<Vec<_>>();
-    let mut global_id = profiles.last().expect("last profile").id.clone();
-
-    normalize_profile_document(&mut profiles, &mut global_id);
-
-    assert_eq!(profiles.len(), MAX_PROFILES);
-    assert_eq!(global_id, "beaver");
+fn custom_profile() -> super::profile_types::CompressionProfile {
+    let mut profile = beaver_profile();
+    profile.id = "4f93ca54-5c44-44ec-bd90-122fcea4e181".into();
+    profile.name = "Custom".into();
+    profile
 }

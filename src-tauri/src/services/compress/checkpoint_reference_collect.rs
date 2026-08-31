@@ -1,9 +1,9 @@
+use super::checkpoint_evidence::EvidenceItemLimit;
 use super::checkpoint_references::CheckpointReference;
-use super::profile_types::ItemBudget;
 
 pub fn collect(
     messages: &[crate::services::agent_local::types_message::AgentMessage],
-    budget: &ItemBudget,
+    budget: EvidenceItemLimit,
 ) -> Vec<CheckpointReference> {
     let mut candidates = Vec::new();
     for message in messages {

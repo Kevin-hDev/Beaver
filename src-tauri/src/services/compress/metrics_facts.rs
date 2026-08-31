@@ -22,6 +22,16 @@ pub fn collect(
     CompressionSuccessFacts {
         after_tokens: candidate.after_tokens,
         summary_tokens: summary.map_or(0, |value| text_tokens(&value.content)),
+        retained_messages: count_u16(
+            candidate
+                .persisted_messages
+                .iter()
+                .filter(|message| {
+                    matches!(message.role.as_str(), "user" | "assistant")
+                        && message.message_kind.is_none()
+                })
+                .count(),
+        ),
         retained_user_tokens: candidate
             .persisted_messages
             .iter()

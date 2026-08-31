@@ -17,6 +17,9 @@ impl RealtimeBudget {
             .await
             .ok()?;
         let profile = super::profile_resolve::resolve_for_session(&session).ok()?;
+        if !super::automatic_guard::allows_realtime(&session, &profile, configured_context) {
+            return None;
+        }
         Self::new(
             profile.automatic_enabled && profile.available(configured_context),
             configured_context,

@@ -12,61 +12,58 @@ vi.mock("react-i18next", () => ({
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(() => Promise.resolve({
-    context_window: 72_345,
     band: "compact",
+    before_tokens: 96_000,
     system_tools_tokens: 12_000,
-    summary_tokens: 5_000,
-    categories_tokens: 20_000,
-    reserve_tokens: 4_000,
-    total_tokens: 41_000,
-    projected_percent: 56,
-    exceeds_window: false,
-    high_risk: true,
+    variable_tokens: 16_800,
+    target_tokens: 28_800,
+    range_lower_tokens: 24_000,
+    range_upper_tokens: 32_000,
+    image_count: 4,
+    projected_percent: 30,
   })),
 }));
 
 describe("CompressionBudgetPreview", () => {
-  it("affiche 1M et accepte une fenêtre valide absente des boutons", async () => {
+  it("affiche 1M et utilise uniquement la démonstration backend fixe", async () => {
     render(
       <CompressionBudgetPreview
         profileId="beaver"
         profileRevision={1}
         band="compact"
-        currentWindow={72_345}
       />,
     );
     expect(formatCompressionWindow(1_000_000)).toBe("1M");
     await waitFor(() => expect(invoke).toHaveBeenCalledWith(
       "project_settings_compression_budget",
-      { profileId: "beaver", band: "compact", contextWindow: 72_345 },
+      { profileId: "beaver", band: "compact" },
     ));
-    expect(screen.getByText("settings.advanced.compressionProjectionTotal")).toBeInTheDocument();
+    expect(screen.getByText("settings.advanced.compressionProjectionTarget")).toBeInTheDocument();
   });
 
-  it("rend le dépassement et le repère de fenêtre visibles", async () => {
+  it("affiche la tranche cible, les images et la note sur le tour actif", async () => {
     vi.mocked(invoke).mockResolvedValueOnce({
-      context_window: 64_000,
       band: "compact",
-      system_tools_tokens: 20_000,
-      summary_tokens: 20_000,
-      categories_tokens: 30_000,
-      reserve_tokens: 10_000,
-      total_tokens: 80_000,
-      projected_percent: 125,
-      exceeds_window: true,
-      high_risk: true,
+      before_tokens: 96_000,
+      system_tools_tokens: 12_000,
+      variable_tokens: 16_800,
+      target_tokens: 28_800,
+      range_lower_tokens: 24_000,
+      range_upper_tokens: 32_000,
+      image_count: 4,
+      projected_percent: 30,
     });
     const { container } = render(
       <CompressionBudgetPreview
         profileId="beaver"
         profileRevision={1}
         band="compact"
-        currentWindow={64_000}
       />,
     );
 
-    await waitFor(() => expect(container.querySelector(".cbp-gauge-over")).toBeInTheDocument());
-    expect(container.querySelector(".cbp-gauge")).toHaveAttribute("data-overflow", "true");
-    expect(container.querySelector(".cbp-gauge-limit")).toHaveStyle({ left: "80%" });
+    await waitFor(() => expect(screen.getByText("28.8K")).toBeInTheDocument());
+    expect(container.querySelector(".cbp-gauge-profile")).toHaveStyle({ width: "17.5%" });
+    expect(screen.getByText("settings.advanced.compressionProjectionImages")).toBeInTheDocument();
+    expect(screen.getByText("settings.advanced.compressionProjectionActiveTurn")).toBeInTheDocument();
   });
 });

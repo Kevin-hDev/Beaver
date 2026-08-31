@@ -131,7 +131,6 @@ pub fn undo_delete_compression_profile(
 pub fn project_settings_compression_budget(
     profile_id: String,
     band: CompressionWindowBand,
-    context_window: u64,
 ) -> Result<BudgetProjectionView, String> {
     let document = profile_store::load_document().map_err(map_error)?;
     let profile = document
@@ -139,8 +138,7 @@ pub fn project_settings_compression_budget(
         .iter()
         .find(|profile| profile.id == profile_id)
         .ok_or_else(|| ERROR_CODE.to_string())?;
-    super::compression_profiles_projection::project(profile, band, context_window)
-        .map_err(map_error)
+    super::compression_profiles_projection::project(profile, band).map_err(map_error)
 }
 
 fn mutate_and_emit(

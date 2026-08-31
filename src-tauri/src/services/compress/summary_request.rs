@@ -1,8 +1,3 @@
-#![allow(
-    dead_code,
-    reason = "the compression orchestrator consumes this staged request service in Task 10"
-)]
-
 use async_trait::async_trait;
 
 use super::summary_contract::{SummaryRawOutput, ValidatedSummary};
@@ -18,7 +13,6 @@ pub struct SummaryPromptConfig {
 #[derive(Debug, Clone)]
 pub struct SummaryCall {
     pub messages: Vec<ChatMessage>,
-    pub tools: Vec<serde_json::Value>,
     pub provider: String,
     pub model: String,
     pub maximum_output_tokens: u32,
@@ -79,7 +73,6 @@ pub fn build_call(
     ];
     SummaryCall {
         messages,
-        tools: Vec::new(),
         provider: provider.to_string(),
         model: model.to_string(),
         maximum_output_tokens,
@@ -91,7 +84,7 @@ pub async fn execute(
     call: &SummaryCall,
     retries: u8,
 ) -> Result<ValidatedSummary, SummaryExecutionError> {
-    if retries > crate::services::compress::profile_limits::MAX_RETRIES {
+    if retries > 2 {
         return Err(SummaryExecutionError::InvalidOutput);
     }
     let mut attempt = 0_u8;

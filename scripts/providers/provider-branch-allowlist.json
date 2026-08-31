@@ -7,7 +7,7 @@
   { "path": "src-tauri/src/services/agent_local/session_store_updates.rs", "owner": "session_store", "reason": "Migration persistée propre aux sessions de la route retirée.", "max_decisions": 1 },
   { "path": "src-tauri/src/services/agent_local/tool_dispatcher_forecast_execute.rs", "owner": "forecast_tool", "reason": "Validation métier du provider Forecast, distincte du transport LLM.", "max_decisions": 1 },
   { "path": "src-tauri/src/services/api_keys_http.rs", "owner": "api_key_probe", "reason": "Sondes des services non-LLM et repli régional Qwen partagé par les tests de clé enregistrée ou candidate.", "max_decisions": 2 },
-  { "path": "src-tauri/src/services/compress/token_estimate.rs", "owner": "compression", "reason": "Deux décisions de comptage Codex réservées au chantier compression séparé.", "max_decisions": 2, "remove_after_task": "chantier-3-compression" },
+  { "path": "src-tauri/src/services/compress/token_estimate.rs", "owner": "compression", "reason": "Une décision centralisée exclut le raisonnement Codex qui n'est pas rejoué.", "max_decisions": 1 },
   { "path": "src-tauri/src/services/llm/fast_mode.rs", "owner": "fast_mode", "reason": "Compatibilité du mode rapide avec les routes et modèles qui le publient.", "max_decisions": 5 },
   { "path": "src-tauri/src/services/llm/litellm_catalog_lookup.rs", "owner": "model_catalog", "reason": "Rapprochement borné des identifiants avec les catalogues externes et leur fournisseur amont.", "max_decisions": 3 },
   { "path": "src-tauri/src/services/llm/openai_compat_models.rs", "owner": "model_catalog", "reason": "Adaptation du catalogue OpenAI-compatible, dont le catalogue Z.AI embarqué.", "max_decisions": 2 },

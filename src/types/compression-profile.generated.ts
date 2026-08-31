@@ -3,47 +3,17 @@
 
 export type CompressionWindowBand = "under_64k" | "compact" | "large";
 
-export type BudgetMode = "fixed" | "percentage" | "minimum";
+export type CompressionTrigger = "automatic" | "explicit";
 
-export type CompressionCategory = "user_messages" | "assistant_messages" | "tools" | "files" | "modified_files" | "text_attachments" | "images" | "git" | "plan_and_tasks" | "subagents" | "unresolved_state" | "critical_references";
+export type CompressionBandSettings = { recent_message_count: number, summary_max_tokens: number, tool_result_count: number, recent_file_count: number, image_count: number, include_work_state: boolean, };
 
-export type SummaryFailurePolicy = "keep_history" | "try_fallback" | "deterministic_checkpoint";
+export type CompressionProfile = { id: string, name: string, revision: number, threshold_percent: number, allow_under_64k: boolean, system_prompt: string, handoff_prompt: string, under_64k: CompressionBandSettings, compact: CompressionBandSettings, large: CompressionBandSettings, };
 
-export type ContextCapacityPolicy = "retry_same_limits" | "reduce_optional_categories" | "stop";
-
-export type TokenBudget = { mode: BudgetMode, fixed_tokens: number, percent_basis_points: number,
-/**
- * Lower bound used by Beaver's clamped factory policies. User-selected
- * fixed, percentage and minimum modes keep this at zero.
- */
-minimum_tokens: number, };
-
-export type CategoryBudget = { enabled: boolean, tokens: TokenBudget, };
-
-export type ItemBudget = { enabled: boolean, max_items: number, tokens_per_item: number, total_tokens: number, };
-
-export type ImageBudget = { enabled: boolean, max_items: number, max_total_bytes: number, };
-
-export type SummaryOutputBudget = { window_limit: TokenBudget, input_ratio_divisor: number, input_floor_tokens: number, input_ceiling_tokens: number, };
-
-export type SummaryModelSelection = { "kind": "current" } | { "kind": "explicit", provider: string, model: string, };
-
-export type CompressionSummarySettings = { enabled: boolean, system_prompt: string, handoff_prompt: string, model: SummaryModelSelection, fallback_model: SummaryModelSelection | null, ordinary_retries: number, input_budget: TokenBudget,
-/**
- * Explicit policy keeps the failure selector authoritative instead of
- * inferring behavior from the presence of a fallback model.
- */
-failure_policy: SummaryFailurePolicy, };
-
-export type CompressionBandSettings = { target_percent: number, response_reserve: TokenBudget, minimum_reduction: TokenBudget, summary_output: SummaryOutputBudget, user_messages: CategoryBudget, assistant_messages: CategoryBudget, evidence_envelope: TokenBudget, tools: ItemBudget, files: ItemBudget, modified_files: ItemBudget, text_attachments: ItemBudget, images: ImageBudget, git_tokens: CategoryBudget, plan_and_tasks_tokens: CategoryBudget, subagent_detail_tokens: CategoryBudget, unresolved_state_tokens: CategoryBudget, critical_references: ItemBudget, };
-
-export type CompressionProfile = { id: string, name: string, revision: number, threshold_percent: number, allow_under_64k: boolean, context_capacity_policy: ContextCapacityPolicy, summary: CompressionSummarySettings, under_64k: CompressionBandSettings, compact: CompressionBandSettings, large: CompressionBandSettings, reduction_order: Array<CompressionCategory>, };
-
-export type CompressionProfileInput = { id: string, name: string, revision: number, threshold_percent: number, allow_under_64k: boolean, context_capacity_policy: ContextCapacityPolicy, summary: CompressionSummarySettings, under_64k: CompressionBandSettings, compact: CompressionBandSettings, large: CompressionBandSettings, reduction_order: Array<CompressionCategory>, };
+export type CompressionProfileInput = { id: string, name: string, revision: number, threshold_percent: number, allow_under_64k: boolean, system_prompt: string, handoff_prompt: string, under_64k: CompressionBandSettings, compact: CompressionBandSettings, large: CompressionBandSettings, };
 
 export type CompressionProfilesView = { automatic_enabled: boolean, global_profile_id: string, global_selection_revision: number, profiles: Array<CompressionProfile>, };
 
-export type BudgetProjectionView = { context_window: number, band: CompressionWindowBand, system_tools_tokens: number, summary_tokens: number, categories_tokens: number, reserve_tokens: number, total_tokens: number, projected_percent: number, exceeds_window: boolean, high_risk: boolean, };
+export type BudgetProjectionView = { band: CompressionWindowBand, before_tokens: number, system_tools_tokens: number, variable_tokens: number, target_tokens: number, range_lower_tokens: number, range_upper_tokens: number, image_count: number, projected_percent: number, };
 
 export type CompressionDeleteResult = { view: CompressionProfilesView, undo_token: string, undo_expires_in_ms: number, };
 

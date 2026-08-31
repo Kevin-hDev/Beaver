@@ -14,7 +14,7 @@ fn metric(
     let session = super::snapshot_tests::session();
     let mut snapshot = super::snapshot_tests::snapshot(&session);
     snapshot.profile.profile.name = "PRIVATE PROFILE NAME".to_string();
-    snapshot.profile.profile.summary.system_prompt = "SECRET PROMPT /private/path".to_string();
+    snapshot.profile.profile.system_prompt = "SECRET PROMPT /private/path".to_string();
     CompressionMetrics::finish(
         CompressionMetricContext {
             session_id: &session.id,
@@ -23,7 +23,10 @@ fn metric(
             trigger: CompressionTrigger::Automatic,
             context_window: 128_000,
             before_tokens: 115_200,
-            projected_budget_tokens: 75_000,
+            system_head_tokens: 12_000,
+            target_tokens: 75_000,
+            guard_consecutive_failures: 0,
+            guard_suspended: false,
             compression_count: 3,
             cache_before: CacheTokenTotals {
                 read_tokens: 100,
@@ -33,6 +36,7 @@ fn metric(
         error.is_none().then_some(CompressionSuccessFacts {
             after_tokens: 72_000,
             summary_tokens: 1_500,
+            retained_messages: 4,
             retained_user_tokens: 20_000,
             retained_tool_results: 14,
             dropped_tool_results: 3,
@@ -63,7 +67,8 @@ fn successful_metric_contains_only_bounded_technical_facts() {
     assert_eq!(metric.cache_read_tokens_after, 160);
     assert_eq!(metric.duration_ms, 86_400_000);
     assert!(log.contains("\"retained_tool_results\":14"));
-    assert!(log.contains("\"projected_budget_tokens\":75000"));
+    assert!(log.contains("\"target_tokens\":75000"));
+    assert!(log.contains("\"reduction_tokens\":43200"));
     for forbidden in [
         "PRIVATE PROFILE NAME",
         "SECRET PROMPT",
@@ -84,7 +89,7 @@ fn failures_use_closed_error_and_phase_enums() {
     assert_eq!(metric.error, Some(CompressionMetricError::InvalidSummary));
     assert_eq!(metric.error.unwrap().code(), "invalid_summary");
     assert_eq!(metric.after_tokens, 0);
-    assert_eq!(metric.projected_overflow_tokens, 40_200);
+    assert_eq!(metric.target_overflow_tokens, 40_200);
 }
 
 #[test]
@@ -107,7 +112,10 @@ fn malformed_identifiers_are_replaced_instead_of_logged() {
             trigger: CompressionTrigger::Explicit,
             context_window: 0,
             before_tokens: 1,
-            projected_budget_tokens: 1,
+            system_head_tokens: 0,
+            target_tokens: 1,
+            guard_consecutive_failures: 0,
+            guard_suspended: false,
             compression_count: 0,
             cache_before: CacheTokenTotals::default(),
         },

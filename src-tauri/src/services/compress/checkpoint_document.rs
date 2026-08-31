@@ -1,8 +1,3 @@
-#![allow(
-    dead_code,
-    reason = "the shared compression orchestrator consumes this staged document in Task 11"
-)]
-
 use std::collections::{BTreeMap, BTreeSet};
 
 use serde::Serialize;
@@ -146,7 +141,7 @@ fn checkpoint_turn(
     );
     let assistant = technical_message(
         "assistant",
-        super::engine::BOUNDARY_CONTENT.to_string(),
+        super::checkpoint_boundary::CONTENT.to_string(),
         turn_id,
         AgentMessageKind::CompressionBoundary,
     );

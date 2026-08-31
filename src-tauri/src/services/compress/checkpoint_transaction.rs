@@ -1,8 +1,3 @@
-#![allow(
-    dead_code,
-    reason = "the shared compression orchestrator consumes this staged transaction in Task 11"
-)]
-
 use super::checkpoint_candidate::{
     same_messages, CompressionCandidate, CompressionSelectionReport,
 };
@@ -12,6 +7,7 @@ use crate::services::agent_local::types_ollama::ChatMessage;
 pub enum CompressionError {
     Unavailable,
     UnavailableUnder64K,
+    AutomaticSuspended,
     SnapshotInvalid,
     OpenTurn,
     SummaryInvalid,
@@ -35,6 +31,7 @@ impl CompressionError {
     pub const fn public_message(self) -> &'static str {
         match self {
             Self::UnavailableUnder64K => "compression_disabled_under_64k",
+            Self::AutomaticSuspended => "compression_automatic_suspended",
             Self::Unavailable => "compression_unavailable",
             _ => "compression_failed",
         }
@@ -66,6 +63,7 @@ pub async fn commit_candidate(
     }
     session.messages = candidate.persisted_messages;
     session.compression_count = session.compression_count.saturating_add(1);
+    session.automatic_compression_guard = candidate.automatic_compression_guard;
     session.updated_at = Some(chrono::Utc::now());
     crate::services::agent_local::session_store_messages::recompute_accumulated_tokens(
         &mut session,

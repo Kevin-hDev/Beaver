@@ -1,11 +1,11 @@
 use std::collections::HashSet;
 
-use super::profile_defaults::{beaver_profile, default_reduction_order, BEAVER_PROFILE_ID};
+use super::profile_defaults::{beaver_profile, BEAVER_PROFILE_ID};
 use super::profile_limits::{
-    MAX_BUDGET_TOKENS, MAX_CATEGORY_ITEMS, MAX_CUSTOM_PROMPT_CHARS, MAX_IMAGE_BYTES, MAX_PROFILES,
-    MAX_RETRIES,
+    MAX_CUSTOM_PROMPT_CHARS, MAX_FILES, MAX_IMAGES, MAX_MESSAGES, MAX_PROFILES, MAX_SUMMARY_TOKENS,
+    MAX_TOOL_RESULTS, MIN_SUMMARY_TOKENS,
 };
-use super::profile_types::{CompressionBandSettings, CompressionProfile, ItemBudget, TokenBudget};
+use super::profile_types::{CompressionBandSettings, CompressionProfile};
 
 pub fn normalize_profile_document(
     profiles: &mut Vec<CompressionProfile>,
@@ -49,80 +49,21 @@ fn put_beaver_first(profiles: &mut Vec<CompressionProfile>) {
 
 fn normalize_profile(profile: &mut CompressionProfile) {
     profile.threshold_percent = profile.threshold_percent.clamp(1, 90);
-    profile.summary.ordinary_retries = profile.summary.ordinary_retries.min(MAX_RETRIES);
-    profile.summary.system_prompt = truncate(&profile.summary.system_prompt);
-    profile.summary.handoff_prompt = truncate(&profile.summary.handoff_prompt);
-    normalize_token_budget(&mut profile.summary.input_budget);
-    for band in [
-        &mut profile.under_64k,
-        &mut profile.compact,
-        &mut profile.large,
-    ] {
-        normalize_band(band);
-    }
-    let mut categories = HashSet::new();
-    profile
-        .reduction_order
-        .retain(|category| categories.insert(*category));
-    if profile.reduction_order.is_empty() {
-        profile.reduction_order = default_reduction_order();
-    }
+    profile.system_prompt = truncate(&profile.system_prompt);
+    profile.handoff_prompt = truncate(&profile.handoff_prompt);
+    normalize_band(&mut profile.under_64k);
+    normalize_band(&mut profile.compact);
+    normalize_band(&mut profile.large);
 }
 
 fn normalize_band(band: &mut CompressionBandSettings) {
-    band.target_percent = band.target_percent.clamp(1, 100);
-    for budget in [
-        &mut band.response_reserve,
-        &mut band.minimum_reduction,
-        &mut band.summary_output.window_limit,
-        &mut band.user_messages.tokens,
-        &mut band.assistant_messages.tokens,
-        &mut band.evidence_envelope,
-        &mut band.git_tokens.tokens,
-        &mut band.plan_and_tasks_tokens.tokens,
-        &mut band.subagent_detail_tokens.tokens,
-        &mut band.unresolved_state_tokens.tokens,
-    ] {
-        normalize_token_budget(budget);
-    }
-    band.summary_output.input_ratio_divisor = band.summary_output.input_ratio_divisor.max(1);
-    band.summary_output.input_floor_tokens = band
-        .summary_output
-        .input_floor_tokens
-        .min(MAX_BUDGET_TOKENS);
-    band.summary_output.input_ceiling_tokens = band
-        .summary_output
-        .input_ceiling_tokens
-        .min(MAX_BUDGET_TOKENS);
-    if band.summary_output.input_floor_tokens > band.summary_output.input_ceiling_tokens {
-        band.summary_output.input_floor_tokens = band.summary_output.input_ceiling_tokens;
-    }
-    for budget in [
-        &mut band.tools,
-        &mut band.files,
-        &mut band.modified_files,
-        &mut band.text_attachments,
-        &mut band.critical_references,
-    ] {
-        normalize_item_budget(budget);
-    }
-    band.images.max_items = band.images.max_items.min(MAX_CATEGORY_ITEMS);
-    band.images.max_total_bytes = band.images.max_total_bytes.min(MAX_IMAGE_BYTES);
-}
-
-fn normalize_token_budget(budget: &mut TokenBudget) {
-    budget.fixed_tokens = budget.fixed_tokens.min(MAX_BUDGET_TOKENS);
-    budget.minimum_tokens = budget.minimum_tokens.min(MAX_BUDGET_TOKENS);
-    if budget.fixed_tokens > 0 {
-        budget.minimum_tokens = budget.minimum_tokens.min(budget.fixed_tokens);
-    }
-    budget.percent_basis_points = budget.percent_basis_points.min(10_000);
-}
-
-fn normalize_item_budget(budget: &mut ItemBudget) {
-    budget.max_items = budget.max_items.min(MAX_CATEGORY_ITEMS);
-    budget.tokens_per_item = budget.tokens_per_item.min(MAX_BUDGET_TOKENS);
-    budget.total_tokens = budget.total_tokens.min(MAX_BUDGET_TOKENS);
+    band.recent_message_count = band.recent_message_count.min(MAX_MESSAGES);
+    band.summary_max_tokens = band
+        .summary_max_tokens
+        .clamp(MIN_SUMMARY_TOKENS, MAX_SUMMARY_TOKENS);
+    band.tool_result_count = band.tool_result_count.min(MAX_TOOL_RESULTS);
+    band.recent_file_count = band.recent_file_count.min(MAX_FILES);
+    band.image_count = band.image_count.min(MAX_IMAGES);
 }
 
 fn truncate(value: &str) -> String {

@@ -56,6 +56,9 @@ pub async fn add_messages_with_context(
     let has_user_message = new_messages.iter().any(|message| message.role == "user");
     let todo_housekeeping =
         super::session_store_todos::apply_user_turn(&mut session, has_user_message);
+    if has_user_message {
+        crate::services::compress::automatic_guard::reset(&mut session);
+    }
     if tokens > 0 {
         if let Some(last) = new_messages.last_mut() {
             last.tokens = tokens;

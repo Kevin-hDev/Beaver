@@ -42,6 +42,7 @@ function session(projectId: string | undefined, workingDir: string): AgentSessio
     plan_workflow_status: "needs_context",
     is_heartbeat: false,
     is_gateway: false,
+    automatic_compression_suspended: false,
   };
 }
 

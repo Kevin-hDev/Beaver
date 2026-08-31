@@ -50,7 +50,6 @@ fn chatbot_agentic_images_ollama_and_hostile_summary_use_real_effective_inputs()
     assert!(!payload.contains("sk-proj-abcdefgh"));
     assert!(!payload.contains("hunter2"));
     assert!(!payload.contains("abcdefghijk"));
-    assert!(call.tools.is_empty());
     assert_eq!(
         super::super::context_resolve::select_ollama_context(None, Some(32_000), 200_000, 128_000,),
         32_000

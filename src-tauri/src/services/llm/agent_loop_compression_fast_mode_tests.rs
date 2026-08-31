@@ -12,9 +12,13 @@ use tokio_util::sync::CancellationToken;
 fn runtime_messages() -> Vec<ChatMessage> {
     vec![
         ChatMessage::system("rules".into()),
-        ChatMessage::user("question".into()),
+        ChatMessage::user(large_question()),
         ChatMessage::assistant("answer".into(), None, None, None, None),
     ]
+}
+
+fn large_question() -> String {
+    "question ".repeat(50_000)
 }
 
 fn summary_fragments() -> Vec<String> {
@@ -76,7 +80,7 @@ async fn captured_session(name: &str) -> (AgentSession, fast_mode::FastModeReque
         .expect("create session");
     let turn_id = AgentMessage::new_turn_id();
     session.messages = vec![
-        message("user", "question", &turn_id),
+        message("user", &large_question(), &turn_id),
         message("assistant", "answer", &turn_id),
     ];
     crate::services::agent_local::session_store::save(&session)
