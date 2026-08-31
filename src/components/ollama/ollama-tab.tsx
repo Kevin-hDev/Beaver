@@ -79,9 +79,7 @@ export function useOllamaTabContent({ navState, onNavChange, onNavReplace }: Oll
     }
     return (
       <SettingsPanel title={t("settings.tabs.ollama")}>
-        <div className="ollama-runtime-status" data-ollama-daemon={daemonKind(runtimeStatus.daemon)}>
-          {t(`ollama.runtime.${daemonKind(runtimeStatus.daemon)}`)}
-        </div>
+        <OllamaDaemonNotice daemon={daemonKind(runtimeStatus.daemon)} t={t} />
         <SettingsTabbar
           items={tabs}
           active={subTab}
@@ -162,6 +160,27 @@ function progressLabel(status: OllamaRuntimeStatus, t: (key: string) => string):
   if (status.operation === "cancelling") return t("ollamaSetup.cancelling");
   if (status.progress === null) return t("ollama.runtime.loading");
   return t(ollamaProgressKey(status.progress));
+}
+
+/**
+ * N'annonce l'état du démon que lorsqu'il apprend quelque chose. « Géré par
+ * Beaver » est le cas normal : la ligne n'y disait rien et occupait un rang
+ * entier au-dessus des onglets. Ollama externe et Ollama indisponible, eux,
+ * expliquent pourquoi la liste des modèles n'est pas celle attendue.
+ */
+function OllamaDaemonNotice({
+  daemon,
+  t,
+}: {
+  daemon: "owned" | "external" | "unavailable";
+  t: (key: string) => string;
+}) {
+  if (daemon === "owned") return null;
+  return (
+    <p className="settings-panel-description" data-ollama-daemon={daemon}>
+      {t(`ollama.runtime.${daemon}`)}
+    </p>
+  );
 }
 
 function daemonKind(daemon: DaemonState | null | undefined): "owned" | "external" | "unavailable" {
