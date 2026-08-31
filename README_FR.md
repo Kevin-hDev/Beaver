@@ -9,10 +9,12 @@ Beaver est un espace de travail agentique pour les modèles locaux via Ollama et
 - **Conversations et projets** : gère les discussions en onglets, les pièces jointes, les favoris, les messages en attente, les branches de conversation, les archives, les résumés cachés et les dossiers de projet
 - **Sous-agents contrôlés par le parent** : coordonne des sessions enfant isolées, suis leur activité, corrige-les ou réutilise-les, examine leurs changements et nettoie leurs worktrees en sécurité
 - **Mémoire persistante** : conserve une mémoire globale et une mémoire par projet, avec modes manuel ou automatique, résumés limités, fichiers par sujet, activité visible et accès en lecture seule pour les sous-agents
+- **Compression du contexte personnalisable** : crée des profils réutilisables, choisis-les globalement ou par conversation, règle les éléments conservés selon la taille du contexte et prévisualise le prochain point de compression limité avant son exécution
 - **Navigateur intégré** : navigue dans dix onglets maximum par conversation, conserve les connexions web, détecte les sites locaux et partage le panneau latéral avec les aperçus et Forecast. Disponible sur macOS et Windows
 - **Workflow Git complet** : crée, change, fusionne et supprime des branches ou worktrees ; crée des commits et pousse-les ; parcours les changements et consulte les différences récentes ou historiques
 - **Forecast V2** : contrôle les séries temporelles, sélectionne les modèles manuellement ou automatiquement, lance des prévisions locales ou cloud, compare les backtests, crée des ensembles, explore les analyses avancées et exporte les résultats
-- **Fournisseurs et consommation** : connecte OpenAI/Codex, Grok et Kimi avec un compte web, utilise les fournisseurs par clé API et consulte les limites, crédits, tokens, requêtes et coûts estimés disponibles
+- **Fournisseurs et consommation** : connecte OpenAI/Codex, Grok et Kimi avec un compte web ; configure Anthropic, Alibaba Cloud Qwen et les autres fournisseurs par clé API ; puis consulte les limites, crédits, tokens, requêtes et coûts estimés disponibles
+- **Raisonnement et continuité multimodale** : utilise les réglages de raisonnement et les images validées pour chaque modèle pendant que Beaver conserve le raisonnement natif du fournisseur entre les messages et les appels d'outils sans exposer son état privé
 - **Connecteurs MCP et canaux** : active des connecteurs MCP locaux ou cloud par conversation et relie éventuellement la Gateway à Telegram, Slack ou Discord
 - **Réveils** : programme des demandes ponctuelles, quotidiennes ou hebdomadaires avec le scheduler interne et conserve chaque résultat dans une conversation dédiée
 - **Ollama géré par Beaver** : télécharge Ollama au premier lancement, réutilise un service existant, parcourt et installe les modèles, modifie les modelfiles et configure les paramètres ou instructions de chaque modèle
@@ -33,6 +35,8 @@ Beaver est un espace de travail agentique pour les modèles locaux via Ollama et
 | LLM | [xAI](https://console.x.ai) | Clé API ou compte web Grok |
 | LLM | [Moonshot Kimi](https://platform.kimi.ai/console/api-keys) | Clé API ou compte web Kimi expérimental |
 | LLM | [Z.ai GLM](https://z.ai/manage-apikey/apikey-list) | Clé API |
+| LLM | [Anthropic Claude](https://platform.claude.com/settings/keys) | Clé API |
+| LLM | [Alibaba Cloud Qwen](https://modelstudio.console.alibabacloud.com/) | Clé API et région Model Studio |
 | Recherche | [Brave Search](https://api-dashboard.search.brave.com/app/keys) | Clé API |
 | Recherche | [Exa](https://dashboard.exa.ai/api-keys) | Clé API |
 | Recherche / extraction | [Firecrawl](https://www.firecrawl.dev/app/api-keys) | Clé API |
@@ -65,9 +69,120 @@ Beaver inclut un espace Forecast dédié à l'analyse des séries temporelles :
 
 ## Prérequis
 
-- macOS (Apple Silicon), Linux, ou Windows
-- Node.js 20+
-- Rust (via `rustup`)
+### Runtimes externes
+
+- macOS (Apple Silicon), Linux ou Windows
+- Node.js 24 LTS — environnement général de Beaver
+- CPython 3.14 — uniquement pour la solution locale SearXNG
+
+Node.js et CPython sont des prérequis externes : Beaver ne les embarque pas. CPython 3.14 est nécessaire uniquement pour la solution locale SearXNG, pas pour les fonctionnalités de Beaver qui ne l'utilisent pas.
+
+Les commandes ci-dessous ont été vérifiées le 31 août 2026 avec la [page officielle de téléchargement de Node.js](https://nodejs.org/en/download) (Node.js 24.20.0 LTS) et la [documentation d'Astral uv](https://docs.astral.sh/uv/getting-started/installation/). Elles évitent de dépendre d'un gestionnaire de paquets propre à une distribution Linux.
+
+### macOS (Apple Silicon)
+
+Installe Node.js et uv :
+
+```bash
+curl -fsSLO https://nodejs.org/dist/v24.20.0/node-v24.20.0.pkg
+sudo installer -pkg node-v24.20.0.pkg -target /
+rm node-v24.20.0.pkg
+
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Ferme et rouvre le terminal. Installe ensuite CPython pour la solution locale SearXNG :
+
+```bash
+UV_PYTHON_BIN_DIR="$HOME/.local/bin" UV_PYTHON_INSTALL_BIN=1 uv python install 3.14
+```
+
+Ferme et rouvre le terminal et Beaver, puis vérifie :
+
+```bash
+node --version
+python3.14 --version
+```
+
+### Linux (x64)
+
+Installe Node.js et uv :
+
+```bash
+(
+set -e
+curl -fsSLO https://nodejs.org/dist/v24.20.0/node-v24.20.0-linux-x64.tar.xz
+mkdir -p "$HOME/.local/opt" "$HOME/.local/bin"
+tar -xJf node-v24.20.0-linux-x64.tar.xz -C "$HOME/.local/opt"
+rm node-v24.20.0-linux-x64.tar.xz
+nodeRoot="$HOME/.local/opt/node-v24.20.0-linux-x64"
+binDir="$HOME/.local/bin"
+for executable in node npm npx corepack; do
+  target="$nodeRoot/bin/$executable"
+  destination="$binDir/$executable"
+  if [ ! -x "$target" ]; then
+    printf 'Exécutable Node indisponible : %s\n' "$target" >&2
+    exit 1
+  elif [ ! -e "$destination" ] && [ ! -L "$destination" ]; then
+    ln -s "$target" "$destination" || exit 1
+  elif [ -L "$destination" ] && [ "$(readlink "$destination")" = "$target" ]; then
+    : # Lien déjà géré : ne pas le modifier.
+  else
+    printf 'Remplacement de %s refusé ; déplace-le manuellement, puis relance cette commande.\n' "$destination" >&2
+    exit 1
+  fi
+done
+
+curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="$binDir" sh
+)
+```
+
+Ferme et rouvre le terminal. `UV_INSTALL_DIR` demande à l'installateur officiel d'uv de configurer ce dossier `~/.local/bin`, où se trouvent les liens Node.js protégés. Installe ensuite CPython pour la solution locale SearXNG dans le même dossier d'exécutables :
+
+```bash
+UV_PYTHON_BIN_DIR="$HOME/.local/bin" UV_PYTHON_INSTALL_BIN=1 uv python install 3.14
+```
+
+Ferme et rouvre le terminal et Beaver, puis vérifie :
+
+```bash
+node --version
+python3.14 --version
+```
+
+### Windows (PowerShell)
+
+Installe Node.js et uv :
+
+```powershell
+$nodeInstaller = Join-Path $env:TEMP "node-v24.20.0-x64.msi"
+Invoke-WebRequest -Uri "https://nodejs.org/dist/v24.20.0/node-v24.20.0-x64.msi" -OutFile $nodeInstaller
+Start-Process msiexec.exe -Wait -ArgumentList @("/i", $nodeInstaller, "/passive")
+Remove-Item $nodeInstaller
+
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+Ferme et rouvre PowerShell. Installe ensuite CPython pour la solution locale SearXNG :
+
+```powershell
+$env:UV_PYTHON_INSTALL_BIN = "1"
+uv python install 3.14
+uv python update-shell
+```
+
+Sous Windows, Beaver suit le dossier d'exécutables choisi par l'installateur officiel d'uv ; `uv python update-shell` publie ce dossier sans le remplacer par un chemin de type Unix.
+
+Ferme et rouvre PowerShell et Beaver, puis vérifie :
+
+```powershell
+node --version
+python3.14 --version
+```
+
+### Développement uniquement
+
+Rust (via [`rustup`](https://rustup.rs/)) est nécessaire uniquement pour compiler ou développer Beaver ; il n'est pas requis par l'application installée.
 
 ## Installation
 
@@ -95,7 +210,7 @@ Télécharge la dernière release et lance l'installeur Windows NSIS `-setup.exe
 
 ### Mises à jour
 
-Les mises à jour sont automatiques : une notification apparaît dans l'app quand une nouvelle version est disponible. Un clic et l'app se met à jour toute seule.
+Les mises à jour sont automatiques : une notification apparaît dans l'app quand une nouvelle version est disponible, avec les notes de version traduites lorsque la release les fournit. Un clic et l'app se met à jour toute seule.
 
 ### De CL-GO à Beaver
 
@@ -140,8 +255,10 @@ src-tauri/                # Backend Rust + Tauri
 │   │   ├── agent_local/  # Sessions, outils, permissions, plans, mémoire, sous-agents
 │   │   ├── agent_import/ # Import guidé depuis d'autres applications agentiques
 │   │   ├── browser/      # Sessions Chromium isolées et vues natives
-│   │   ├── llm/          # Client cloud unifié, catalogue, raisonnement, streaming
+│   │   ├── compress/     # Profils de contexte, points de compression et résumés limités
+│   │   ├── llm/          # Transports fournisseurs, catalogue, raisonnement, streaming
 │   │   ├── codex_client/ et *_oauth/  # Connexions web OpenAI, Grok, Kimi et MCP
+│   │   ├── provider_connections/  # Configuration des endpoints propres aux fournisseurs
 │   │   ├── provider_usage/  # Limites, historique d'usage et coûts estimés
 │   │   ├── search/ et searxng/  # Recherche cloud et solution locale
 │   │   ├── forecast/     # Contrôles des données, modèles, analyses et exports
@@ -189,6 +306,7 @@ identifiant historique pour rester compatible avec les installations existantes 
 | `config.json`, `heartbeat-runtime.json` | Réglages de l'application et état des réveils |
 | `agent-sessions/*.json` | Conversations de l'Agent local |
 | `agent-settings.json`, `session-tabs.json` | Permissions et onglets de conversation ouverts |
+| `compression-profiles.json` | Profils réutilisables de compression du contexte et sélection globale |
 | `projects.json`, `favorite-models.json`, `terminal-tabs.json` | Projets, modèles favoris et onglets du terminal |
 | `AGENTS.md`, `external-agent-sources.json`, `agent-import-backups/` | Instructions importées, sources externes et sauvegardes |
 | `plans/`, `skills/`, `tool-results/` | Plans de l'agent, skills locales et gros résultats d'outils |

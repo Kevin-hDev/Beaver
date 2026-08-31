@@ -9,10 +9,12 @@ Beaver is an agentic desktop workspace for local models through Ollama and cloud
 - **Conversations and projects**: manage tabbed chats, attachments, favorites, queued messages, session branches, archived chats, hidden summaries, and project folders
 - **Parent-controlled subagents**: coordinate isolated child sessions, follow their live status, correct or reuse them, review their changes, and clean up their worktrees safely
 - **Persistent memory**: keep optional global and per-project memory with manual or automatic modes, bounded summaries, topic files, live activity, and read-only access for subagents
+- **Customizable context compression**: create reusable profiles, choose them globally or per conversation, tune what is retained for each context-window range, and preview the next bounded checkpoint before it runs
 - **Embedded browser**: browse in up to ten tabs per conversation, keep signed-in sessions, detect local development sites, and share the side panel with previews and Forecast. Available on macOS and Windows
 - **Complete Git workflow**: create, switch, merge, and delete branches or worktrees; commit and push; browse uncommitted changes; and inspect recent or historical diffs
 - **Forecast V2**: audit time-series data, select models manually or automatically, run local or cloud forecasts, compare backtests, build ensembles, explore advanced analysis, and export results
-- **Providers and usage**: connect OpenAI/Codex, Grok, and Kimi through web authentication, use API-key providers, and view available limits, credits, token usage, request counts, and estimated costs
+- **Providers and usage**: connect OpenAI/Codex, Grok, and Kimi through web authentication; configure Anthropic, Alibaba Cloud Qwen, and other API-key providers; and view available limits, credits, token usage, request counts, and estimated costs
+- **Reasoning and multimodal continuity**: use the reasoning controls and image inputs validated for each model while Beaver preserves provider-native reasoning across messages and tool continuations without exposing private provider state
 - **MCP connectors and channels**: activate local or cloud MCP connectors per chat and optionally connect the background Gateway to Telegram, Slack, or Discord
 - **Wakeups**: schedule one-time, daily, or weekly prompts with the internal scheduler and keep each result in a dedicated conversation
 - **Managed Ollama runtime**: download Ollama on first launch, reuse an existing daemon when available, browse and install models, edit modelfiles, and configure model parameters or system prompts
@@ -33,6 +35,8 @@ Beaver is an agentic desktop workspace for local models through Ollama and cloud
 | LLM | [xAI](https://console.x.ai) | API key or Grok web account |
 | LLM | [Moonshot Kimi](https://platform.kimi.ai/console/api-keys) | API key or experimental Kimi web account |
 | LLM | [Z.ai GLM](https://z.ai/manage-apikey/apikey-list) | API key |
+| LLM | [Anthropic Claude](https://platform.claude.com/settings/keys) | API key |
+| LLM | [Alibaba Cloud Qwen](https://modelstudio.console.alibabacloud.com/) | API key and Model Studio region |
 | Search | [Brave Search](https://api-dashboard.search.brave.com/app/keys) | API key |
 | Search | [Exa](https://dashboard.exa.ai/api-keys) | API key |
 | Search / scraping | [Firecrawl](https://www.firecrawl.dev/app/api-keys) | API key |
@@ -73,16 +77,16 @@ Beaver includes a dedicated Forecast workspace for time-series analysis:
 
 Node.js and CPython are external prerequisites: Beaver does not embed either runtime. CPython 3.14 is needed only when using the local SearXNG fallback, not for Beaver features that do not use that fallback.
 
-The commands below were checked on August 20, 2026 against the official [Node.js download page](https://nodejs.org/en/download) (Node.js 24.19.0 LTS) and [Astral uv documentation](https://docs.astral.sh/uv/getting-started/installation/). They avoid a Linux package manager tied to one distribution.
+The commands below were checked on August 31, 2026 against the official [Node.js download page](https://nodejs.org/en/download) (Node.js 24.20.0 LTS) and [Astral uv documentation](https://docs.astral.sh/uv/getting-started/installation/). They avoid a Linux package manager tied to one distribution.
 
 ### macOS (Apple Silicon)
 
 Install Node.js and uv:
 
 ```bash
-curl -fsSLO https://nodejs.org/dist/v24.19.0/node-v24.19.0.pkg
-sudo installer -pkg node-v24.19.0.pkg -target /
-rm node-v24.19.0.pkg
+curl -fsSLO https://nodejs.org/dist/v24.20.0/node-v24.20.0.pkg
+sudo installer -pkg node-v24.20.0.pkg -target /
+rm node-v24.20.0.pkg
 
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
@@ -107,11 +111,11 @@ Install Node.js and uv:
 ```bash
 (
 set -e
-curl -fsSLO https://nodejs.org/dist/v24.19.0/node-v24.19.0-linux-x64.tar.xz
+curl -fsSLO https://nodejs.org/dist/v24.20.0/node-v24.20.0-linux-x64.tar.xz
 mkdir -p "$HOME/.local/opt" "$HOME/.local/bin"
-tar -xJf node-v24.19.0-linux-x64.tar.xz -C "$HOME/.local/opt"
-rm node-v24.19.0-linux-x64.tar.xz
-nodeRoot="$HOME/.local/opt/node-v24.19.0-linux-x64"
+tar -xJf node-v24.20.0-linux-x64.tar.xz -C "$HOME/.local/opt"
+rm node-v24.20.0-linux-x64.tar.xz
+nodeRoot="$HOME/.local/opt/node-v24.20.0-linux-x64"
 binDir="$HOME/.local/bin"
 for executable in node npm npx corepack; do
   target="$nodeRoot/bin/$executable"
@@ -151,8 +155,8 @@ python3.14 --version
 Install Node.js and uv:
 
 ```powershell
-$nodeInstaller = Join-Path $env:TEMP "node-v24.19.0-x64.msi"
-Invoke-WebRequest -Uri "https://nodejs.org/dist/v24.19.0/node-v24.19.0-x64.msi" -OutFile $nodeInstaller
+$nodeInstaller = Join-Path $env:TEMP "node-v24.20.0-x64.msi"
+Invoke-WebRequest -Uri "https://nodejs.org/dist/v24.20.0/node-v24.20.0-x64.msi" -OutFile $nodeInstaller
 Start-Process msiexec.exe -Wait -ArgumentList @("/i", $nodeInstaller, "/passive")
 Remove-Item $nodeInstaller
 
@@ -206,7 +210,7 @@ Downloads the latest release and launches the Windows NSIS `-setup.exe` installe
 
 ### Updates
 
-Updates are automatic: a notification appears in the app when a new version is available. One click and the app updates itself.
+Updates are automatic: a notification appears in the app when a new version is available, with localized release notes when the release provides them. One click and the app updates itself.
 
 ### From CL-GO to Beaver
 
@@ -253,8 +257,10 @@ src-tauri/                # Rust + Tauri backend
 │   │   ├── agent_local/  # Sessions, tools, permissions, plans, memory, subagents
 │   │   ├── agent_import/ # Guided import from other agent applications
 │   │   ├── browser/      # Sandboxed Chromium sessions and native views
-│   │   ├── llm/          # Unified cloud client, catalog, reasoning, streaming
+│   │   ├── compress/     # Context profiles, bounded checkpoints, summaries
+│   │   ├── llm/          # Provider transports, catalog, reasoning, streaming
 │   │   ├── codex_client/ and *_oauth/  # OpenAI, Grok, Kimi, and MCP web auth
+│   │   ├── provider_connections/  # Provider-specific endpoint configuration
 │   │   ├── provider_usage/  # Limits, usage history, and cost estimates
 │   │   ├── search/ and searxng/  # Cloud search and local fallback
 │   │   ├── forecast/     # Data audits, models, runs, evaluations, exports
@@ -302,6 +308,7 @@ historical identifier for compatibility with existing installations:
 | `config.json`, `heartbeat-runtime.json` | Application settings and wakeup runtime state |
 | `agent-sessions/*.json` | Local Agent conversations |
 | `agent-settings.json`, `session-tabs.json` | Permissions and open conversation tabs |
+| `compression-profiles.json` | Reusable context-compression profiles and global selection |
 | `projects.json`, `favorite-models.json`, `terminal-tabs.json` | Projects, model favorites, and terminal tabs |
 | `AGENTS.md`, `external-agent-sources.json`, `agent-import-backups/` | Imported instructions, external sources, and safe backups |
 | `plans/`, `skills/`, `tool-results/` | Agent plans, local skills, and large tool outputs |
