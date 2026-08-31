@@ -1,8 +1,8 @@
 import { TerminalPanel } from "@/components/terminal/terminal-panel";
-import type { useTerminal } from "@/hooks/use-terminal";
+import type { useAgentLocalControlledTerminal } from "@/hooks/use-agent-local-controlled-terminal";
 
 interface ChatTerminalDockProps {
-  terminalState: ReturnType<typeof useTerminal>;
+  terminalState: ReturnType<typeof useAgentLocalControlledTerminal>;
 }
 
 export function ChatTerminalDock({ terminalState }: ChatTerminalDockProps) {

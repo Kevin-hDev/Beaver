@@ -9,7 +9,7 @@ import { useSessionActions } from "@/hooks/use-session-actions";
 import { useSessionFastMode } from "@/hooks/use-session-fast-mode";
 import { useFilePreview } from "@/hooks/use-file-preview";
 import { useAgentLocalShortcuts } from "@/hooks/use-agent-local-shortcuts";
-import { useAgentLocalTabPanelSync } from "@/hooks/use-agent-local-tab-panel-sync";
+import { useAgentLocalPreviewSync } from "@/hooks/use-agent-local-preview-sync";
 import { useAgentLocalControlledPreview } from "@/hooks/use-agent-local-controlled-preview";
 import { useAgentLocalControlledTerminal } from "@/hooks/use-agent-local-controlled-terminal";
 import { useArrowNavigation } from "@/hooks/use-arrow-navigation";
@@ -138,15 +138,11 @@ export function useAgentLocalTab({ navState, onSessionChange, onNavChange, listF
 
   useAgentLocalShortcuts({
     activeSessionId,
-    terminalOpen: terminal.isOpen,
-    terminalTabsCount: terminal.tabs.length,
-    terminalCwd,
-    onAddTerminalTab: terminal.addTab,
     onToggleTerminal: terminal.togglePanel,
     onTogglePreview: filePreview.toggleOpen,
   });
 
-  useAgentLocalTabPanelSync({ navState, filePreview: filePreviewState, terminal: terminalState });
+  useAgentLocalPreviewSync({ navState, filePreview: filePreviewState });
 
   const visibleSessionIds = useMemo(() => {
     const projectIdSet = new Set(projectsHook.projects.map((p) => p.id));

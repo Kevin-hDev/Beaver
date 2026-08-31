@@ -61,18 +61,15 @@ describe("terminal integration - isolation par projet", () => {
     expect(result.current.tabs.map((tab) => tab.id).sort()).toEqual(before);
   });
 
-  it("conserve les opérations de panneau et de groupe", async () => {
+  it("conserve les opérations de hauteur et de groupe", async () => {
     const { result } = renderHook(() => useTerminal("test", "/test", ready("test")));
     await waitFor(() => expect(result.current.persistenceStatus).toBe("healthy"));
     expect(result.current.panelHeight).toBe(120);
     expect(result.current.getGroupPtyIds("nonexistent")).toEqual([]);
 
     act(() => { result.current.addTab("/test"); });
-    expect(result.current.isOpen).toBe(true);
     act(() => { result.current.removeGroup("test"); });
     expect(result.current.tabs).toHaveLength(0);
-    act(() => { result.current.togglePanel(); });
-    expect(result.current.isOpen).toBe(false);
   });
 
   it("place la persistance en erreur sans écrire après une réponse IPC mal formée", async () => {

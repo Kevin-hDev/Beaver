@@ -31,12 +31,13 @@ describe("useTerminal", () => {
     vi.mocked(showToast).mockReset();
   });
 
-  it("démarre sans onglet avec le panneau fermé", () => {
+  it("démarre sans onglet et sans autorité d'ouverture du panneau", () => {
     const { result } = renderHook(() => useTerminal(GROUP_KEY, DEFAULT_CWD, ready()));
 
     expect(result.current.tabs).toEqual([]);
     expect(result.current.activeTabId).toBeNull();
-    expect(result.current.isOpen).toBe(false);
+    expect(result.current).not.toHaveProperty("isOpen");
+    expect(result.current).not.toHaveProperty("togglePanel");
   });
 
   it("utilise le dossier par défaut comme libellé sans conserver son chemin", async () => {
@@ -49,7 +50,7 @@ describe("useTerminal", () => {
     expect(result.current.tabs[0]).not.toHaveProperty("cwd");
   });
 
-  it("ferme le panneau avec le dernier onglet", async () => {
+  it("ferme le dernier onglet", async () => {
     const { result } = renderHook(() => useTerminal(GROUP_KEY, DEFAULT_CWD, ready()));
     await waitFor(() => expect(result.current.persistenceStatus).toBe("healthy"));
     act(() => { result.current.addTab(); });
@@ -58,20 +59,6 @@ describe("useTerminal", () => {
     act(() => { result.current.closeTab(id); });
 
     expect(result.current.tabs).toHaveLength(0);
-    expect(result.current.isOpen).toBe(false);
-  });
-
-  it("ouvre et ferme le panneau seulement lorsqu'un onglet existe", async () => {
-    const { result } = renderHook(() => useTerminal(GROUP_KEY, DEFAULT_CWD, ready()));
-    await waitFor(() => expect(result.current.persistenceStatus).toBe("healthy"));
-
-    act(() => { result.current.togglePanel(); });
-    expect(result.current.isOpen).toBe(false);
-    act(() => { result.current.addTab(); });
-    act(() => { result.current.togglePanel(); });
-    expect(result.current.isOpen).toBe(false);
-    act(() => { result.current.togglePanel(); });
-    expect(result.current.isOpen).toBe(true);
   });
 
   it("pince la hauteur du panneau entre le minimum et le maximum", async () => {
@@ -95,7 +82,6 @@ describe("useTerminal", () => {
     expect(id).not.toBeNull();
     expect(result.current.tabs[0]).toMatchObject({ label: "my-app", hasActivity: false });
     expect(result.current.tabs[0]).not.toHaveProperty("cwd");
-    expect(result.current.isOpen).toBe(true);
   });
 
   it("projette seulement les libellés vers le document durable", async () => {

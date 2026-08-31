@@ -4,7 +4,7 @@ import i18n from "@/i18n";
 import { showToast } from "@/lib/toast-emitter";
 import type { ProjectLoadState } from "./use-projects";
 import { useTerminalPersistence } from "./use-terminal-persistence";
-import { updateTab } from "./terminal-groups";
+import { closeTabInGroup as closeGroupTab, updateTab } from "./terminal-groups";
 import {
   DEFAULT_GROUP_KEY,
   folderName,
@@ -33,7 +33,7 @@ export function useTerminal(
 ) {
   const [groups, setGroups] = useState<Map<string, TerminalGroup>>(new Map());
   const groupsRef = useRef(groups);
-  const [global, setGlobal] = useState({ isOpen: false, panelHeight: DEFAULT_HEIGHT });
+  const [panelHeight, setPanelHeight] = useState(DEFAULT_HEIGHT);
   const [resolvedCwd, setResolvedCwd] = useState(defaultCwd);
   const maxHeightRef = useRef(0);
   const { loaded, persistenceStatus } = useTerminalPersistence({
@@ -104,27 +104,16 @@ export function useTerminal(
     next.set(groupKey, { tabs: [...group.tabs, tab], activeTabId: tab.id });
     groupsRef.current = next;
     setGroups(next);
-    setGlobal((value) => ({ ...value, isOpen: true }));
     return tab.id;
   }, [groupKey, resolvedCwd]);
 
-  const closeTab = useCallback((id: string) => {
-    setGroups((previous) => {
-      const group = previous.get(groupKey);
-      if (!group || !group.tabs.some((tab) => tab.id === id)) return previous;
-      const tabs = group.tabs.filter((tab) => tab.id !== id);
-      const closedIndex = group.tabs.findIndex((tab) => tab.id === id);
-      const activeTabId = group.activeTabId === id
-        ? tabs[Math.min(closedIndex, tabs.length - 1)]?.id ?? null
-        : group.activeTabId;
-      const next = new Map(previous);
-      next.set(groupKey, { tabs, activeTabId });
-      return next;
-    });
-    if (currentGroup.tabs.filter((tab) => tab.id !== id).length === 0) {
-      setGlobal((value) => ({ ...value, isOpen: false }));
-    }
-  }, [currentGroup.tabs, groupKey]);
+  const closeTabInGroup = useCallback((key: string, id: string): void => {
+    setGroups((previous) => closeGroupTab(previous, key, id).groups);
+  }, []);
+
+  const closeTab = useCallback((id: string): void => {
+    closeTabInGroup(groupKey, id);
+  }, [closeTabInGroup, groupKey]);
 
   const setActiveTab = useCallback((id: string) => {
     setGroups((previous) => {
@@ -168,12 +157,6 @@ export function useTerminal(
     });
   }, [groupKey]);
 
-  const togglePanel = useCallback(() => {
-    setGlobal((value) => value.isOpen
-      ? { ...value, isOpen: false }
-      : currentGroup.tabs.length > 0 ? { ...value, isOpen: true } : value);
-  }, [currentGroup.tabs.length]);
-
   const setPtyId = useCallback((tabId: string, ptyId: number, ptyToken?: string) => {
     setGroups((previous) => updateTab(previous, tabId, { ptyId, ptyToken: ptyToken ?? null }) ?? previous);
   }, []);
@@ -183,8 +166,7 @@ export function useTerminal(
   }, []);
 
   const resizePanel = useCallback((height: number) => {
-    const panelHeight = Math.max(MIN_HEIGHT, Math.min(height, maxHeightRef.current));
-    setGlobal((value) => ({ ...value, panelHeight }));
+    setPanelHeight(Math.max(MIN_HEIGHT, Math.min(height, maxHeightRef.current)));
   }, []);
   const setMaxHeight = useCallback((height: number) => { maxHeightRef.current = height; }, []);
   const removeGroup = useCallback((key: string) => {
@@ -203,8 +185,8 @@ export function useTerminal(
 
   return {
     tabs: currentGroup.tabs, activeTabId: currentGroup.activeTabId,
-    isOpen: global.isOpen, panelHeight: global.panelHeight, persistenceStatus,
-    allTabs, addTab, closeTab, setActiveTab, renameTab, reorderTabs, togglePanel,
+    panelHeight, persistenceStatus,
+    allTabs, addTab, closeTab, closeTabInGroup, setActiveTab, renameTab, reorderTabs,
     setPtyId, setTabActivity, resizePanel, setMaxHeight, removeGroup,
     getGroupPtyIds, getGroupPtyEntries, groupKey,
   };

@@ -8,7 +8,7 @@ import type { useFilePreview } from "@/hooks/use-file-preview";
 import type { useFileTree } from "@/hooks/use-file-tree";
 import { useAgentPanelLayout } from "@/hooks/use-agent-panel-layout";
 import type { DroppedFile } from "@/hooks/use-file-drop";
-import type { useTerminal } from "@/hooks/use-terminal";
+import type { useAgentLocalControlledTerminal } from "@/hooks/use-agent-local-controlled-terminal";
 import type { CloneMessageHandler } from "@/hooks/use-chat-clone";
 import type { Project, SessionTab } from "@/types/agent";
 import type { FileOperation, FileOperationGroups } from "@/types/file-preview";
@@ -31,7 +31,7 @@ interface AgentChatDetailProps {
   reasoningMode?: string | null;
   fastModeEnabled: boolean;
   fastModePending: boolean;
-  terminal: ReturnType<typeof useTerminal>;
+  terminal: ReturnType<typeof useAgentLocalControlledTerminal>;
   filePreview: ReturnType<typeof useFilePreview>;
   fullscreenSwitching: boolean;
   fileOperations: FileOperationGroups;
