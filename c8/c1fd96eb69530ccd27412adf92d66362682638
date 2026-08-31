@@ -1,0 +1,7 @@
+CI root-cause correction for PR #43.
+
+Brand contracts: the two new internal references are legitimate compression paths. The visible-brand hash was already stale on a clean origin/main checkout; the clean baseline produced the same 107-reference hash now recorded.
+
+Persistence contracts: compression-profiles.json and subagent-reports are registered under existing domains with migration scope, preserving the immutable 25-domain CL-GO historical attestation.
+
+Verified locally: npm run test:persistence-migration (9/9), npm run test:brand-boundaries (14/14), npm run lint, git diff --check, and graphify update .
