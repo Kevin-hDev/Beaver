@@ -40,6 +40,7 @@ function renderList(messages: AgentMessage[], isCompressing = false) {
       currentThinking=""
       currentTools={[]}
       isStreaming={isCompressing}
+      isWorking={isCompressing}
       isCompressing={isCompressing}
       tps={0}
       totalElapsedMs={0}

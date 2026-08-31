@@ -27,7 +27,11 @@ export function getOrCreateRecord(sessionId: string): StreamRecord {
   let record = records.get(sessionId);
   if (record) return record;
   record = {
-    state: { ...createManagedStreamState([], 0), isStreaming: false },
+    state: {
+      ...createManagedStreamState([], 0),
+      isStreaming: false,
+      isWorking: false,
+    },
     subscribers: new Map(),
     nextSubscriberId: 1,
     cleanupTimer: null,

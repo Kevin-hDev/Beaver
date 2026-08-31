@@ -65,7 +65,7 @@ export function finalizeStream(
     messages: allMessages,
     completedSegments: [], currentContent: "", currentThinking: "",
     currentContentPhase: undefined, currentTools: [], activeStreamItem: null,
-    isStreaming: false, isCompressing: false, tps, tpsEstimated,
+    isStreaming: false, isWorking: false, isCompressing: false, tps, tpsEstimated,
     sessionTokenCount: resolvedContextTokens,
     contextInputTokens: resolvedContextTokens,
     contextOutputTokens: 0,

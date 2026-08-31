@@ -25,6 +25,7 @@ export function handleCompressionComplete(
       streamStartedAt: null,
       segmentStartedAt: null,
       isStreaming: false,
+      isWorking: false,
       isCompressing: false,
       ...context,
       contextInputTokens: context.sessionTokenCount,

@@ -95,6 +95,7 @@ export function reconcileTurnCommitted(
     currentTools: [],
     activeStreamItem: null,
     activeTurn: undefined,
+    isWorking: false,
     updatedAt: Date.now(),
   };
   flushFrameNotify(record, notifyRecord);

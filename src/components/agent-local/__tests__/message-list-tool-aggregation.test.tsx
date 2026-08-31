@@ -131,6 +131,7 @@ describe("MessageList tool aggregation", () => {
         currentThinking=""
         currentTools={[{ name: "edit_file", args: { path: "b.ts", old_string: "a", new_string: "b" }, result: "ok" }]}
         isStreaming
+        isWorking
         isCompressing={false}
         tps={0}
         totalElapsedMs={0}
@@ -166,6 +167,7 @@ describe("MessageList tool aggregation", () => {
         currentThinking="thinking before plan"
         currentTools={[]}
         isStreaming
+        isWorking
         isCompressing={false}
         tps={0}
         totalElapsedMs={0}

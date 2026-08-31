@@ -59,6 +59,7 @@ describe("MessageList subagents", () => {
       <MessageList
         messages={rawHistory} completedSegments={[]}
         currentContent="" currentThinking="" currentTools={[]} isStreaming={false}
+        isWorking={false}
         isCompressing={false}
         tps={0} totalElapsedMs={0} segmentStartedAt={null} liveTokenCount={0}
       />,
@@ -81,6 +82,7 @@ describe("MessageList subagents", () => {
         currentThinking=""
         currentTools={[]}
         isStreaming={false}
+        isWorking={false}
         isCompressing={false}
         tps={0}
         totalElapsedMs={0}
@@ -115,6 +117,7 @@ describe("MessageList subagents", () => {
         currentThinking=""
         currentTools={[]}
         isStreaming={false}
+        isWorking={false}
         isCompressing={false}
         tps={0}
         totalElapsedMs={0}

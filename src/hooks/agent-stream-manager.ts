@@ -186,7 +186,12 @@ function handleStreamEvent(sessionId: string, event: StreamEvent, generation: nu
   }
 
   if (!record.state.isStreaming && event.event !== "done" && event.event !== "error") {
-    record.state = { ...record.state, isStreaming: true, completed: false };
+    record.state = {
+      ...record.state,
+      isStreaming: true,
+      isWorking: true,
+      completed: false,
+    };
   }
 
   const toastMessage = webToolErrorToastMessage(sessionId, event);

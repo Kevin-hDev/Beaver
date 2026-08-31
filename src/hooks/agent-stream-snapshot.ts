@@ -23,6 +23,7 @@ export function applySessionSnapshot(
     contextUsageVisible: record.state.contextUsageVisible
       || messages.some((message) => message.role === "assistant"),
     isStreaming: true,
+    isWorking: true,
     activeStreamItem: null,
     completed: false,
   };

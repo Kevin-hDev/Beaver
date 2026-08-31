@@ -27,6 +27,7 @@ interface MessageListProps {
   currentTools: ToolActivity[];
   activeStreamItem?: ActiveStreamItem;
   isStreaming: boolean;
+  isWorking: boolean;
   isCompressing: boolean;
   tps: number;
   tpsEstimated?: boolean;
@@ -55,7 +56,7 @@ interface MessageListProps {
 export function MessageList({
   messages, queuedUserMessages = [], completedSegments, currentContent,
   currentContentPhase, currentThinking,
-  currentTools, activeStreamItem = null, isStreaming, tps, tpsEstimated = false, totalElapsedMs, segmentStartedAt,
+  currentTools, activeStreamItem = null, isStreaming, isWorking, tps, tpsEstimated = false, totalElapsedMs, segmentStartedAt,
   isCompressing, liveTokenCount, onReload, onEdit, onCloneMessage, onFileClick, onFilePreview, onFileReview,
   projectPath, knownSubagents = [], onOpenSubagent, planPreview, streamRunId = "",
   activeSearchMessageId,
@@ -155,7 +156,7 @@ export function MessageList({
         />
       ))}
       {planPreview && <PlanPreviewBubble plan={planPreview} />}
-      {isStreaming && !isCompressing && streamStartedAt != null && (
+      {isWorking && !isCompressing && streamStartedAt != null && (
         <LoadingIndicator startedAt={streamStartedAt} liveTokenCount={liveTokenCount} />
       )}
 

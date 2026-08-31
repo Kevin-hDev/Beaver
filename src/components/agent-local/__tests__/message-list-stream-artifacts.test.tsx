@@ -47,6 +47,7 @@ function renderList(messages: AgentMessage[], isStreaming: boolean) {
   return render(<MessageList
     messages={messages} completedSegments={[]}
     currentContent="" currentThinking="" currentTools={[]} isStreaming={isStreaming}
+    isWorking={isStreaming}
     isCompressing={false}
     streamRunId={RUN} tps={0} totalElapsedMs={0} segmentStartedAt={null}
     liveTokenCount={0} knownSubagents={[known()]}

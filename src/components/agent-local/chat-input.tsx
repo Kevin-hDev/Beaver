@@ -39,6 +39,7 @@ export function ChatInput({
     setText,
     rememberSkill,
     consume: consumeDraft,
+    restore: restoreDraft,
   } = useComposerDraft(draftKey);
   const slash = useSlashCommands();
   const skills = useActiveSkills(
@@ -68,18 +69,26 @@ export function ChatInput({
     if (!hasContent || interactivePending || sendingRef.current) return;
     const sentDraft = { text, skills: [...draftSkills] };
     const sentFiles = files?.map((file) => ({ ...file }));
+    const consumedOptimistically = !isStreaming;
     sendingRef.current = true;
+    if (consumedOptimistically) consumeDraft(sentDraft);
     try {
       const accepted = await onSend(
         text.trim(), hasFiles ? files : undefined, skills.getSkillsPayload(),
       );
-      if (accepted === false) return;
-      consumeDraft(sentDraft);
+      if (accepted === false) {
+        if (consumedOptimistically) restoreDraft(sentDraft);
+        return;
+      }
+      if (!consumedOptimistically) consumeDraft(sentDraft);
       if (sameChatFiles(filesRef.current, sentFiles)) onClearFiles?.();
+    } catch (error) {
+      if (consumedOptimistically) restoreDraft(sentDraft);
+      throw error;
     } finally {
       sendingRef.current = false;
     }
-  }, [text, draftSkills, hasContent, hasFiles, files, skills, interactivePending, onSend, onClearFiles, consumeDraft]);
+  }, [text, draftSkills, hasContent, hasFiles, files, skills, interactivePending, isStreaming, onSend, onClearFiles, consumeDraft, restoreDraft]);
 
   const handleChange = useCallback((value: string, cursorPos: number) => {
     setText(value);

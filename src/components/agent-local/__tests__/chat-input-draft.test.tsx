@@ -154,6 +154,67 @@ describe("ChatInput drafts", () => {
     expect(screen.getByRole("textbox", { name: "composer" })).toHaveValue("Suivant");
   });
 
+  it("retire immédiatement le brouillon du nouveau stream pendant son admission", async () => {
+    const pending = deferred<boolean>();
+    render(
+      <ChatInput
+        {...baseProps} draftKey="session:one"
+        onSend={vi.fn().mockReturnValue(pending.promise)}
+      />,
+    );
+    fireEvent.change(screen.getByRole("textbox", { name: "composer" }), {
+      target: { value: "Message envoyé" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "send" }));
+
+    expect(screen.getByRole("textbox", { name: "composer" })).toHaveValue("");
+    await act(async () => { pending.resolve(true); await pending.promise; });
+  });
+
+  it("ne remplace pas un nouveau brouillon si l'admission initiale est refusée", async () => {
+    const pending = deferred<boolean>();
+    render(
+      <ChatInput
+        {...baseProps} draftKey="session:one"
+        onSend={vi.fn().mockReturnValue(pending.promise)}
+      />,
+    );
+    fireEvent.change(screen.getByRole("textbox", { name: "composer" }), {
+      target: { value: "Premier" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "send" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "composer" }), {
+      target: { value: "Nouveau brouillon" },
+    });
+
+    await act(async () => { pending.resolve(false); await pending.promise; });
+
+    expect(screen.getByRole("textbox", { name: "composer" }))
+      .toHaveValue("Nouveau brouillon");
+  });
+
+  it("conserve le brouillon visible pendant un stream si l'envoi est refusé", async () => {
+    const pending = deferred<boolean>();
+    render(
+      <ChatInput
+        {...baseProps} draftKey="session:one" isStreaming
+        onSend={vi.fn().mockReturnValue(pending.promise)}
+      />,
+    );
+    fireEvent.change(screen.getByRole("textbox", { name: "composer" }), {
+      target: { value: "Précision pendant le stream" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "send" }));
+
+    expect(screen.getByRole("textbox", { name: "composer" }))
+      .toHaveValue("Précision pendant le stream");
+    await act(async () => { pending.resolve(false); await pending.promise; });
+    expect(screen.getByRole("textbox", { name: "composer" }))
+      .toHaveValue("Précision pendant le stream");
+  });
+
   it("préserve le nouveau fichier et le nouveau skill pendant l'envoi", async () => {
     const pending = deferred<boolean>();
     const onClearFiles = vi.fn();

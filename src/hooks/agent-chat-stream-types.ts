@@ -31,6 +31,8 @@ export interface ChatState {
   currentTools: ToolActivity[];
   activeStreamItem: ActiveStreamItem;
   isStreaming: boolean;
+  // The visible work ends at turnCommitted; stream ownership stays active until done.
+  isWorking: boolean;
   isCompressing: boolean;
   tps: number;
   tpsEstimated: boolean;
@@ -70,7 +72,7 @@ export interface ManagedStreamState extends ChatState {
 export const EMPTY_CHAT_STATE: ChatState = {
   messages: [], queuedUserMessages: [], completedSegments: [], currentContent: "",
   currentContentPhase: undefined, currentThinking: "", currentTools: [],
-  activeStreamItem: null, isStreaming: false, isCompressing: false,
+  activeStreamItem: null, isStreaming: false, isWorking: false, isCompressing: false,
   tps: 0, tpsEstimated: false, sessionTokenCount: 0,
   contextInputTokens: 0, contextOutputTokens: 0, contextLimitTokens: 0,
   hasContextUsageSnapshot: false,
@@ -97,6 +99,7 @@ export function createManagedStreamState(
     ...EMPTY_CHAT_STATE, messages, sessionTokenCount, contextInputTokens: sessionTokenCount,
     contextUsageVisible: messages.some((message) => message.role === "assistant"),
     isStreaming: true,
+    isWorking: true,
     isCompressing: streamKind === "compression",
     streamRunId: crypto.randomUUID(),
     streamStartedAt: now, segmentStartedAt: now,
@@ -113,6 +116,7 @@ export function toChatState(state: ManagedStreamState): ChatState {
     currentThinking: state.currentThinking,
     currentTools: state.currentTools, activeStreamItem: state.activeStreamItem,
     isStreaming: state.isStreaming,
+    isWorking: state.isWorking,
     isCompressing: state.isCompressing,
     tps: state.tps, tpsEstimated: state.tpsEstimated,
     sessionTokenCount: state.sessionTokenCount,

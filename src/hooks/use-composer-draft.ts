@@ -58,8 +58,11 @@ export function useComposerDraft(draftKey: string) {
   const consume = useCallback((expected: ComposerDraftSnapshot) => {
     consumeComposerDraft(draftKey, expected);
   }, [draftKey]);
+  const restore = useCallback((submitted: ComposerDraftSnapshot) => {
+    restoreComposerDraft(draftKey, submitted);
+  }, [draftKey]);
 
-  return { ...draft, setText, rememberSkill, clear, consume };
+  return { ...draft, setText, rememberSkill, clear, consume, restore };
 }
 
 function consumeComposerDraft(draftKey: string, expected: ComposerDraftSnapshot) {
@@ -75,6 +78,13 @@ function consumeComposerDraft(draftKey: string, expected: ComposerDraftSnapshot)
       skills: sameSkills ? [] : current.skills,
     };
   });
+}
+
+function restoreComposerDraft(draftKey: string, submitted: ComposerDraftSnapshot) {
+  updateComposerDraft(draftKey, (current) => ({
+    text: current.text.length === 0 ? submitted.text : current.text,
+    skills: current.skills.length === 0 ? submitted.skills : current.skills,
+  }));
 }
 
 export function clearComposerDraft(draftKey: string) {

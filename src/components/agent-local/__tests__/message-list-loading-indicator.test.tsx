@@ -53,6 +53,7 @@ function renderStreaming(overrides: {
   currentTools?: ToolActivity[];
   segmentStartedAt?: number | null;
   isCompressing?: boolean;
+  isWorking?: boolean;
 } = {}) {
   const segmentStartedAt = "segmentStartedAt" in overrides
     ? overrides.segmentStartedAt ?? null
@@ -66,6 +67,7 @@ function renderStreaming(overrides: {
       currentThinking={overrides.currentThinking ?? ""}
       currentTools={overrides.currentTools ?? []}
       isStreaming
+      isWorking={overrides.isWorking ?? true}
       isCompressing={overrides.isCompressing ?? false}
       tps={0}
       totalElapsedMs={0}
@@ -110,6 +112,12 @@ describe("MessageList loading indicator", () => {
     expect(view.queryByTestId("loading-indicator")).toBeNull();
   });
 
+  it("disparaît dès que le travail visible est terminé pendant le nettoyage du stream", () => {
+    const view = renderStreaming({ isWorking: false });
+
+    expect(view.queryByTestId("loading-indicator")).toBeNull();
+  });
+
   it("affiche le message en attente après le travail courant", () => {
     const view = renderStreaming({ currentContent: "travail visible" });
     view.rerender(
@@ -123,6 +131,7 @@ describe("MessageList loading indicator", () => {
         currentThinking=""
         currentTools={[]}
         isStreaming
+        isWorking
         isCompressing={false}
         tps={0}
         totalElapsedMs={0}

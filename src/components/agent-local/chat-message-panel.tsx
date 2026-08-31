@@ -40,6 +40,7 @@ export function ChatMessagePanel({
       currentTools={chat.currentTools}
       activeStreamItem={chat.activeStreamItem}
       isStreaming={chat.isStreaming}
+      isWorking={chat.isWorking}
       isCompressing={chat.isCompressing}
       tps={chat.tps}
       tpsEstimated={chat.tpsEstimated}

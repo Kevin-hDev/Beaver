@@ -14,6 +14,7 @@ export function failSession(sessionId: string, message = i18n.t("errors.streamSt
   record.state = {
     ...record.state,
     isStreaming: false,
+    isWorking: false,
     isCompressing: false,
     completed: true,
     activeStreamItem: null,

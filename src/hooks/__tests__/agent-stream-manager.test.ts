@@ -220,6 +220,9 @@ describe("agentStreamManager", () => {
     expect(messages[1]).toEqual(expect.objectContaining({
       id: turn.assistantMessageId, turn_id: turn.turnId, content: "Réponse",
     }));
+    const committed = agentStreamManager.getSnapshot("s1");
+    expect(committed?.isWorking).toBe(false);
+    expect(committed?.isStreaming).toBe(true);
   });
 
   it("replie la réponse terminée dans l'anneau avant de vider le stream", async () => {
