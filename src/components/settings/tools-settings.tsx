@@ -4,6 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { showToast } from "@/lib/toast-emitter";
 import i18n from "@/i18n";
+import { SettingsPanel } from "./shell/settings-panel";
 import { SettingsCard } from "./settings-card";
 import { SettingsRow } from "./settings-row";
 import "./tools-settings.css";
@@ -63,47 +64,44 @@ export function ToolsSettings() {
   }, [enabledTools]);
 
   return (
-    <div className="ats-page">
-      <div className="ats-inner">
-        <h2 className="ats-title">{t("settings.tabs.tools")}</h2>
-        <p className="ats-intro">{t("settings.tools.intro")}</p>
+    <SettingsPanel title={t("settings.tabs.tools")}>
+      <p className="ats-intro">{t("settings.tools.intro")}</p>
 
-        <h3 className="ats-section-title">{t("settings.tools.lockedTitle")}</h3>
-        <SettingsCard>
-          {locked.map((group) => (
+      <h3 className="ats-section-title">{t("settings.tools.lockedTitle")}</h3>
+      <SettingsCard>
+        {locked.map((group) => (
+          <SettingsRow
+            key={group.id}
+            title={t(`settings.tools.groups.${group.id}.title`)}
+            description={t(`settings.tools.groups.${group.id}.description`)}
+            className="ats-tool-row"
+          >
+            <span className="ats-lock-pill">{t("settings.tools.lockedBadge")}</span>
+          </SettingsRow>
+        ))}
+      </SettingsCard>
+
+      <h3 className="ats-section-title">{t("settings.tools.optionalTitle")}</h3>
+      <SettingsCard>
+        {optional.map((group) => {
+          const enabled = isGroupEnabled(group);
+          return (
             <SettingsRow
               key={group.id}
               title={t(`settings.tools.groups.${group.id}.title`)}
               description={t(`settings.tools.groups.${group.id}.description`)}
-              className="ats-tool-row"
+              className={`ats-tool-row${enabled ? "" : " is-off"}`}
             >
-              <span className="ats-lock-pill">{t("settings.tools.lockedBadge")}</span>
+              <ToggleSwitch
+                checked={enabled}
+                ariaLabel={t(`settings.tools.groups.${group.id}.title`)}
+                onCheckedChange={(checked) => toggleGroup(group, checked)}
+                title={t(`settings.tools.groups.${group.id}.description`)}
+              />
             </SettingsRow>
-          ))}
-        </SettingsCard>
-
-        <h3 className="ats-section-title">{t("settings.tools.optionalTitle")}</h3>
-        <SettingsCard>
-          {optional.map((group) => {
-            const enabled = isGroupEnabled(group);
-            return (
-              <SettingsRow
-                key={group.id}
-                title={t(`settings.tools.groups.${group.id}.title`)}
-                description={t(`settings.tools.groups.${group.id}.description`)}
-                className={`ats-tool-row${enabled ? "" : " is-off"}`}
-              >
-                <ToggleSwitch
-                  checked={enabled}
-                  ariaLabel={t(`settings.tools.groups.${group.id}.title`)}
-                  onCheckedChange={(checked) => toggleGroup(group, checked)}
-                  title={t(`settings.tools.groups.${group.id}.description`)}
-                />
-              </SettingsRow>
-            );
-          })}
-        </SettingsCard>
-      </div>
-    </div>
+          );
+        })}
+      </SettingsCard>
+    </SettingsPanel>
   );
 }

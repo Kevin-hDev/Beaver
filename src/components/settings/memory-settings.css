@@ -4,19 +4,6 @@
   padding: var(--chrome-5);
 }
 
-.mems-inner {
-  width: 100%;
-  max-width: var(--settings-content-max-width);
-  margin: 0 auto;
-}
-
-.mems-title {
-  margin: 0 0 var(--chrome-3);
-  color: var(--ink);
-  font-size: var(--text-xl);
-  font-weight: 700;
-}
-
 .mems-intro {
   margin: 0 0 var(--memory-section-gap);
   color: var(--ink-muted);

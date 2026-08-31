@@ -1,9 +1,4 @@
 @media (max-width: 760px) {
-  .acs-page {
-    padding: 16px;
-  }
-
-  .acs-heading,
   .acs-session {
     align-items: stretch;
     flex-direction: column;

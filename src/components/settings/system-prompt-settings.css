@@ -22,7 +22,7 @@
 .sps-title {
   margin: 0 0 var(--space-lg);
   color: var(--ink);
-  font-size: var(--text-xl);
+  font-size: var(--settings-title-size);
   font-weight: 700;
 }
 

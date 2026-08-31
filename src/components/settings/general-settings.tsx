@@ -5,6 +5,7 @@ import type { ThemeChoice } from "@/hooks/use-theme";
 import type { useSettings } from "@/hooks/use-settings";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { showToast } from "@/lib/toast-emitter";
+import { SettingsPanel } from "./shell/settings-panel";
 import { SettingsCard } from "./settings-card";
 import { SettingsRow } from "./settings-row";
 import { SettingsSelect } from "./settings-select";
@@ -81,117 +82,106 @@ export function GeneralSettings({ themeChoice, onThemeChange, settings }: Genera
   };
 
   return (
-    <div style={{ padding: 24, overflowY: "auto", flex: 1 }}>
-      <div style={{ maxWidth: "var(--settings-content-max-width)", width: "100%", margin: "0 auto" }}>
-        <h2 style={{
-          fontSize: "var(--text-xl)",
-          fontWeight: 700,
-          color: "var(--ink)",
-          marginBottom: 28,
-        }}>
-          {t("settings.tabs.general")}
-        </h2>
+    <SettingsPanel title={t("settings.tabs.general")}>
+      <SettingsCard>
+        <SettingsRow
+          title={t("settings.general.themeTitle")}
+          description={t("settings.general.themeDesc")}
+        >
+          <ThemeSelector value={themeChoice} onChange={onThemeChange} />
+        </SettingsRow>
 
-        <SettingsCard>
-          <SettingsRow
-            title={t("settings.general.themeTitle")}
-            description={t("settings.general.themeDesc")}
-          >
-            <ThemeSelector value={themeChoice} onChange={onThemeChange} />
-          </SettingsRow>
+        <SettingsRow
+          title={t("settings.general.fontSizeTitle")}
+          description={t("settings.general.fontSizeDesc")}
+        >
+          <FontSizeControl value={settings.fontSize} onChange={settings.setFontSize} />
+        </SettingsRow>
 
-          <SettingsRow
-            title={t("settings.general.fontSizeTitle")}
-            description={t("settings.general.fontSizeDesc")}
-          >
-            <FontSizeControl value={settings.fontSize} onChange={settings.setFontSize} />
-          </SettingsRow>
+        <SettingsRow
+          title={t("settings.general.fontFamilyTitle")}
+          description={t("settings.general.fontFamilyDesc")}
+        >
+          <SettingsSelect
+            options={FONT_FAMILY_OPTIONS}
+            value={settings.fontFamilyId}
+            onChange={(v) => settings.setFontFamily(v as typeof settings.fontFamilyId)}
+          />
+        </SettingsRow>
 
-          <SettingsRow
-            title={t("settings.general.fontFamilyTitle")}
-            description={t("settings.general.fontFamilyDesc")}
-          >
-            <SettingsSelect
-              options={FONT_FAMILY_OPTIONS}
-              value={settings.fontFamilyId}
-              onChange={(v) => settings.setFontFamily(v as typeof settings.fontFamilyId)}
-            />
-          </SettingsRow>
+        <SettingsRow
+          title={t("settings.general.codeThemeTitle")}
+          description={t("settings.general.codeThemeDesc")}
+        >
+          <SettingsSelect
+            options={CODE_THEME_OPTIONS}
+            value={settings.codeThemeId}
+            onChange={(v) => settings.setCodeTheme(v as typeof settings.codeThemeId)}
+          />
+        </SettingsRow>
+      </SettingsCard>
 
-          <SettingsRow
-            title={t("settings.general.codeThemeTitle")}
-            description={t("settings.general.codeThemeDesc")}
-          >
-            <SettingsSelect
-              options={CODE_THEME_OPTIONS}
-              value={settings.codeThemeId}
-              onChange={(v) => settings.setCodeTheme(v as typeof settings.codeThemeId)}
-            />
-          </SettingsRow>
-        </SettingsCard>
+      <CodeThemePreview themeId={settings.codeThemeId} />
 
-        <CodeThemePreview themeId={settings.codeThemeId} />
+      <SettingsCard>
+        <SettingsRow
+          title={t("settings.general.languageTitle")}
+          description={t("settings.general.languageDesc")}
+        >
+          <SettingsSelect
+            options={LANGUAGE_OPTIONS}
+            value={i18n.language}
+            onChange={changeLang}
+          />
+        </SettingsRow>
 
-        <SettingsCard>
-          <SettingsRow
-            title={t("settings.general.languageTitle")}
-            description={t("settings.general.languageDesc")}
-          >
-            <SettingsSelect
-              options={LANGUAGE_OPTIONS}
-              value={i18n.language}
-              onChange={changeLang}
-            />
-          </SettingsRow>
+        <SettingsRow
+          title={t("settings.general.responseLangTitle")}
+          description={t("settings.general.responseLangDesc")}
+        >
+          <SettingsSelect
+            options={RESPONSE_LANGUAGE_OPTIONS}
+            value={startup.response_language}
+            onChange={(v) => saveAdvanced({ response_language: v })}
+          />
+        </SettingsRow>
 
-          <SettingsRow
-            title={t("settings.general.responseLangTitle")}
-            description={t("settings.general.responseLangDesc")}
-          >
-            <SettingsSelect
-              options={RESPONSE_LANGUAGE_OPTIONS}
-              value={startup.response_language}
-              onChange={(v) => saveAdvanced({ response_language: v })}
-            />
-          </SettingsRow>
+        <SettingsRow
+          title={t("settings.general.linkPreviewTitle")}
+          description={t("settings.general.linkPreviewDesc")}
+        >
+          <ToggleSwitch
+            checked={startup.link_preview_enabled}
+            ariaLabel={t("settings.general.linkPreviewTitle")}
+            onCheckedChange={(v) => saveAdvanced({ link_preview_enabled: v })}
+          />
+        </SettingsRow>
+      </SettingsCard>
 
-          <SettingsRow
-            title={t("settings.general.linkPreviewTitle")}
-            description={t("settings.general.linkPreviewDesc")}
-          >
-            <ToggleSwitch
-              checked={startup.link_preview_enabled}
-              ariaLabel={t("settings.general.linkPreviewTitle")}
-              onCheckedChange={(v) => saveAdvanced({ link_preview_enabled: v })}
-            />
-          </SettingsRow>
-        </SettingsCard>
+      <SettingsCard>
+        <SettingsRow
+          title={t("settings.advanced.autostartTitle")}
+          description={t("settings.advanced.autostartDesc")}
+        >
+          <ToggleSwitch
+            checked={startup.autostart}
+            ariaLabel={t("settings.advanced.autostartTitle")}
+            onCheckedChange={(v) => saveAdvanced({ autostart: v })}
+          />
+        </SettingsRow>
 
-        <SettingsCard>
-          <SettingsRow
-            title={t("settings.advanced.autostartTitle")}
-            description={t("settings.advanced.autostartDesc")}
-          >
-            <ToggleSwitch
-              checked={startup.autostart}
-              ariaLabel={t("settings.advanced.autostartTitle")}
-              onCheckedChange={(v) => saveAdvanced({ autostart: v })}
-            />
-          </SettingsRow>
-
-          <SettingsRow
-            title={t("settings.advanced.startHiddenTitle")}
-            description={t("settings.advanced.startHiddenDesc")}
-          >
-            <ToggleSwitch
-              checked={startup.autostart && startup.start_hidden}
-              ariaLabel={t("settings.advanced.startHiddenTitle")}
-              disabled={!startup.autostart}
-              onCheckedChange={(v) => saveAdvanced({ start_hidden: v })}
-            />
-          </SettingsRow>
-        </SettingsCard>
-      </div>
-    </div>
+        <SettingsRow
+          title={t("settings.advanced.startHiddenTitle")}
+          description={t("settings.advanced.startHiddenDesc")}
+        >
+          <ToggleSwitch
+            checked={startup.autostart && startup.start_hidden}
+            ariaLabel={t("settings.advanced.startHiddenTitle")}
+            disabled={!startup.autostart}
+            onCheckedChange={(v) => saveAdvanced({ start_hidden: v })}
+          />
+        </SettingsRow>
+      </SettingsCard>
+    </SettingsPanel>
   );
 }

@@ -1,22 +1,3 @@
-.scs-root {
-  padding: var(--space-xl);
-  overflow-y: auto;
-  flex: 1;
-}
-
-.scs-content {
-  max-width: var(--settings-content-max-width);
-  width: 100%;
-  margin: 0 auto;
-}
-
-.scs-title {
-  font-size: var(--text-xl);
-  font-weight: 700;
-  color: var(--ink);
-  margin-bottom: 28px;
-}
-
 .scs-row {
   display: flex;
   align-items: center;

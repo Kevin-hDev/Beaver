@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { useMemorySettings, type MemoryTopic } from "@/hooks/use-memory-settings";
+import { SettingsPanel } from "./shell/settings-panel";
 import { SettingsCard } from "./settings-card";
 import { SettingsRow } from "./settings-row";
 import { MemoryScopeSection } from "./memory-scope-section";
@@ -92,99 +93,96 @@ export function MemorySettings({ activeSessionId }: { activeSessionId?: string |
   }));
 
   return (
-    <div className="mems-page">
-      <div className="mems-inner">
-        <h2 className="mems-title">{t("settings.tabs.memory")}</h2>
-        <p className="mems-intro">{t("settings.memory.intro")}</p>
+    <SettingsPanel title={t("settings.tabs.memory")}>
+      <p className="mems-intro">{t("settings.memory.intro")}</p>
 
-        <SettingsCard>
-          <SettingsRow title={t("settings.memory.modeTitle")} description={t("settings.memory.modeDesc")}>
-            <CustomSelect
-              value={overview.settings.mode}
-              options={modes}
-              onChange={(value) => state.setMode(value as typeof overview.settings.mode)}
-              ariaLabel={t("settings.memory.modeTitle")}
-            />
-          </SettingsRow>
-          <SettingsRow title={t("settings.memory.budgetTitle")} description={t("settings.memory.budgetDesc")}>
-            <CustomSelect
-              value={String(overview.settings.contextBudgetTokens)}
-              options={BUDGETS.map((value) => ({
-                value: String(value),
-                label: `${value} ${t("settings.memory.tokenUnit")}`,
-              }))}
-              onChange={(value) => state.setBudget(Number(value))}
-              disabled={overview.settings.mode === "disabled"}
-              ariaLabel={t("settings.memory.budgetTitle")}
-            />
-          </SettingsRow>
-        </SettingsCard>
-
-        {overview.legacyDetected && (
-          <div className="mems-legacy">
-            <strong>{t("settings.memory.legacyTitle")}</strong>
-            <span>{t("settings.memory.legacyDesc")}</span>
-          </div>
-        )}
-        {state.error && (
-          <MemoryError
-            text={t("settings.memory.error")}
-            retryLabel={t("settings.memory.retry")}
-            onRetry={state.refresh}
+      <SettingsCard>
+        <SettingsRow title={t("settings.memory.modeTitle")} description={t("settings.memory.modeDesc")}>
+          <CustomSelect
+            value={overview.settings.mode}
+            options={modes}
+            onChange={(value) => state.setMode(value as typeof overview.settings.mode)}
+            ariaLabel={t("settings.memory.modeTitle")}
           />
-        )}
-
-        <h3 className="mems-section-title">{t("settings.memory.topics")}</h3>
-        {overview.settings.mode === "disabled" && (
-          <div className="mems-empty mems-disabled">{t("settings.memory.disabledHint")}</div>
-        )}
-        <div className="mems-filters">
-          <input
-            className="field field-wide"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder={t("settings.memory.search")}
+        </SettingsRow>
+        <SettingsRow title={t("settings.memory.budgetTitle")} description={t("settings.memory.budgetDesc")}>
+          <CustomSelect
+            value={String(overview.settings.contextBudgetTokens)}
+            options={BUDGETS.map((value) => ({
+              value: String(value),
+              label: `${value} ${t("settings.memory.tokenUnit")}`,
+            }))}
+            onChange={(value) => state.setBudget(Number(value))}
+            disabled={overview.settings.mode === "disabled"}
+            ariaLabel={t("settings.memory.budgetTitle")}
           />
-          <CustomSelect value={type} options={types} onChange={setType} />
-          <CustomSelect value={status} options={statuses} onChange={setStatus} />
+        </SettingsRow>
+      </SettingsCard>
+
+      {overview.legacyDetected && (
+        <div className="mems-legacy">
+          <strong>{t("settings.memory.legacyTitle")}</strong>
+          <span>{t("settings.memory.legacyDesc")}</span>
         </div>
+      )}
+      {state.error && (
+        <MemoryError
+          text={t("settings.memory.error")}
+          retryLabel={t("settings.memory.retry")}
+          onRetry={state.refresh}
+        />
+      )}
+
+      <h3 className="mems-section-title">{t("settings.memory.topics")}</h3>
+      {overview.settings.mode === "disabled" && (
+        <div className="mems-empty mems-disabled">{t("settings.memory.disabledHint")}</div>
+      )}
+      <div className="mems-filters">
+        <input
+          className="field field-wide"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder={t("settings.memory.search")}
+        />
+        <CustomSelect value={type} options={types} onChange={setType} />
+        <CustomSelect value={status} options={statuses} onChange={setStatus} />
+      </div>
+      <MemoryScopeSection
+        title={t("settings.memory.global")}
+        scope={overview.global}
+        topics={topics.global}
+        selectedPath={selected?.path}
+        onSelect={selectTopic}
+      />
+      {overview.activeProject && (
         <MemoryScopeSection
-          title={t("settings.memory.global")}
-          scope={overview.global}
-          topics={topics.global}
+          title={t("settings.memory.activeProject", { name: overview.activeProject.label })}
+          scope={overview.activeProject}
+          topics={topics.active}
           selectedPath={selected?.path}
           onSelect={selectTopic}
         />
-        {overview.activeProject && (
-          <MemoryScopeSection
-            title={t("settings.memory.activeProject", { name: overview.activeProject.label })}
-            scope={overview.activeProject}
-            topics={topics.active}
-            selectedPath={selected?.path}
-            onSelect={selectTopic}
-          />
-        )}
-        {topics.others.map(({ scope, topics: filtered }) => (
-          <MemoryScopeSection
-            key={scope.id}
-            title={scope.label}
-            scope={scope}
-            topics={filtered}
-            selectedPath={selected?.path}
-            onSelect={selectTopic}
-            loading={state.loadingProjectId === scope.id}
-            onLoad={() => state.loadProjectTopics(scope.id)}
-          />
-        ))}
-        {selected && preview && (
-          <MemorySettingsTopicPreview
-            topic={selected}
-            content={preview}
-            onArchive={archiveSelected}
-            onClose={() => setSelected(null)}
-          />
-        )}
-      </div>
-    </div>
+      )}
+      {topics.others.map(({ scope, topics: filtered }) => (
+        <MemoryScopeSection
+          key={scope.id}
+          title={scope.label}
+          scope={scope}
+          topics={filtered}
+          selectedPath={selected?.path}
+          onSelect={selectTopic}
+          loading={state.loadingProjectId === scope.id}
+          onLoad={() => state.loadProjectTopics(scope.id)}
+        />
+      ))}
+      {selected && preview && (
+        <MemorySettingsTopicPreview
+          topic={selected}
+          content={preview}
+          onArchive={archiveSelected}
+          onClose={() => setSelected(null)}
+        />
+      )}
+    </SettingsPanel>
   );
 }

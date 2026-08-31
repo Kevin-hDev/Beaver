@@ -1,22 +1,3 @@
-.ats-page {
-  flex: 1;
-  overflow-y: auto;
-  padding: var(--chrome-5);
-}
-
-.ats-inner {
-  width: 100%;
-  max-width: var(--settings-content-max-width);
-  margin: 0 auto;
-}
-
-.ats-title {
-  margin: 0 0 12px;
-  color: var(--ink);
-  font-size: var(--text-xl);
-  font-weight: 700;
-}
-
 .ats-intro {
   margin: 0 0 28px;
   color: var(--ink-muted);
@@ -63,10 +44,6 @@
 }
 
 @media (max-width: 640px) {
-  .ats-page {
-    padding: 18px;
-  }
-
   .ats-lock-pill {
     min-height: 26px;
     padding: 0 8px;

@@ -19,7 +19,7 @@
   margin: 0;
   overflow: hidden;
   color: var(--ink);
-  font-size: var(--text-xl);
+  font-size: var(--settings-title-size);
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;

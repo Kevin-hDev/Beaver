@@ -4,6 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useAvailableModels } from "@/hooks/use-available-models";
 import { useFsEvent } from "@/hooks/use-fs-event";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
+import { SettingsPanel } from "./shell/settings-panel";
 import { SettingsCard } from "./settings-card";
 import { SettingsRow } from "./settings-row";
 import { SettingsSelect, type SelectGroup } from "./settings-select";
@@ -91,70 +92,64 @@ export function AdvancedSettings({ focusTarget, onFocusTargetHandled }: Advanced
     return result;
   }, [groups]);
 
-  const titleStyle = { fontSize: "var(--text-xl)", fontWeight: 700, color: "var(--ink)", marginBottom: 28 } as const;
   const subStyle = { fontSize: "var(--text-base)", fontWeight: 600, color: "var(--ink)", marginTop: 28, marginBottom: 12 } as const;
 
   return (
-    <div style={{ padding: 24, overflowY: "auto", flex: 1 }}>
-      <div style={{ maxWidth: "var(--settings-content-max-width)", width: "100%", margin: "0 auto" }}>
-        <h2 style={titleStyle}>{t("settings.tabs.advanced")}</h2>
+    <SettingsPanel title={t("settings.tabs.advanced")}>
+      <AgentImportSettings />
 
-        <AgentImportSettings />
+      <SettingsCard>
+        <SettingsRow
+          title={t("settings.advanced.trayTitle")}
+          description={t("settings.advanced.trayDesc")}
+        >
+          <ToggleSwitch
+            checked={state.show_tray}
+            ariaLabel={t("settings.advanced.trayTitle")}
+            onCheckedChange={(v) => saveFromEvent({ show_tray: v })}
+          />
+        </SettingsRow>
 
-        <SettingsCard>
-          <SettingsRow
-            title={t("settings.advanced.trayTitle")}
-            description={t("settings.advanced.trayDesc")}
-          >
-            <ToggleSwitch
-              checked={state.show_tray}
-              ariaLabel={t("settings.advanced.trayTitle")}
-              onCheckedChange={(v) => saveFromEvent({ show_tray: v })}
-            />
-          </SettingsRow>
+        <SettingsRow
+          title={t("settings.advanced.defaultModelTitle")}
+          description={t("settings.advanced.defaultModelDesc")}
+        >
+          <SettingsSelect
+            groups={modelGroups}
+            value={state.default_model}
+            onChange={(v) => saveFromEvent({ default_model: v })}
+            searchable
+            searchPlaceholder={t("settings.advanced.searchModel")}
+          />
+        </SettingsRow>
 
-          <SettingsRow
-            title={t("settings.advanced.defaultModelTitle")}
-            description={t("settings.advanced.defaultModelDesc")}
-          >
-            <SettingsSelect
-              groups={modelGroups}
-              value={state.default_model}
-              onChange={(v) => saveFromEvent({ default_model: v })}
-              searchable
-              searchPlaceholder={t("settings.advanced.searchModel")}
-            />
-          </SettingsRow>
+      </SettingsCard>
 
-        </SettingsCard>
+      <h3 style={subStyle}>{t("settings.advanced.compressionTitle")}</h3>
 
-        <h3 style={subStyle}>{t("settings.advanced.compressionTitle")}</h3>
+      <CompressionSettingsCard defaultModel={state.default_model} />
 
-        <CompressionSettingsCard defaultModel={state.default_model} />
+      <h3 style={subStyle}>{t("settings.advanced.ollamaTitle")}</h3>
 
-        <h3 style={subStyle}>{t("settings.advanced.ollamaTitle")}</h3>
+      <OllamaSettingsSection
+        keepAlive={state.keep_alive}
+        hardwareAccel={state.hardware_accel}
+        multiModel={state.multi_model}
+        showGpuStatus={state.show_gpu_status}
+        onSave={save}
+      />
 
-        <OllamaSettingsSection
-          keepAlive={state.keep_alive}
-          hardwareAccel={state.hardware_accel}
-          multiModel={state.multi_model}
-          showGpuStatus={state.show_gpu_status}
-          onSave={save}
-        />
+      <FileAccessSettings
+        paths={state.allowed_paths}
+        focusRequested={focusTarget === "file-access"}
+        onPathsChange={saveAllowedPaths}
+        onFocusHandled={onFocusTargetHandled}
+      />
 
-        <FileAccessSettings
-          paths={state.allowed_paths}
-          focusRequested={focusTarget === "file-access"}
-          onPathsChange={saveAllowedPaths}
-          onFocusHandled={onFocusTargetHandled}
-        />
-
-        <SessionWorkspaceSettings
-          outputsDirectory={state.session_outputs_directory}
-          onOutputsDirectoryChange={(directory) => saveFromEvent({ session_outputs_directory: directory })}
-        />
-
-      </div>
-    </div>
+      <SessionWorkspaceSettings
+        outputsDirectory={state.session_outputs_directory}
+        onOutputsDirectoryChange={(directory) => saveFromEvent({ session_outputs_directory: directory })}
+      />
+    </SettingsPanel>
   );
 }

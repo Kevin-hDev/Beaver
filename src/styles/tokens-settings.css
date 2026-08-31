@@ -1,0 +1,37 @@
+/* Source de vérité des mesures propres aux pages de Réglages.
+   Sorties de tokens.css, qui touchait sa limite de taille : même découpage par
+   domaine que tokens-icon-sizes.css. */
+:root {
+  /* Colonne de contenu des pages de Réglages. En rem pour suivre le réglage de
+     taille de police (18px par défaut, réglable de 10 à 24) : une largeur en px
+     figée laisserait les lignes s'allonger quand le texte grossit. */
+  --settings-content-max-width: 33.3333rem; /* 600px à la taille par défaut */
+  /* Réservé aux pages dont le contenu ne tient pas dans la colonne standard :
+     Extensions et Mascotte, où chaque ligne porte une icône et des commandes. */
+  --settings-content-max-width-wide: 37.5rem;
+  --settings-editor-min-height: 20rem;
+  --settings-empty-min-height: 12.5rem;
+
+  /* Titre de page de Réglages : seule autorité, douze écrans le redessinaient
+     chacun de leur côté. La graisse le distingue du reste, pas la taille. */
+  --settings-title-size: var(--text-sm);
+  /* Bande occupée par le titre figé. Le contenu qui passe dessous y est
+     entièrement effacé : sans cela une ligne de réglage se lit à travers le
+     titre pendant tout le défilement. */
+  --settings-header-height: 3rem;
+  /* Fin du fondu : en dessous, le contenu est à pleine opacité. C'est aussi la
+     marge haute de la zone qui défile, pour qu'au repos rien ne soit effacé —
+     le contenu commence là où le fondu se termine. Les deux vont donc ensemble :
+     rallonger le fondu repousse le contenu vers le bas d'autant. Calé à 4rem,
+     soit les 72px où commençait le contenu avant que le titre ne soit figé. */
+  --settings-fade-height: 4rem;
+
+  /* Hauteur d'un sous-onglet, figée pour qu'elle ne dépende pas de ce que la
+     page y met : une icône plus grande que le libellé faisait grandir la barre
+     d'un onglet de Réglages à l'autre. Calée sur la hauteur de bouton, et donc
+     en px comme elle : en rem, l'onglet dépassait le bouton posé sur la même
+     ligne de 11px au réglage de police le plus grand, et passait dessous au
+     plus petit. Seule la piste déborde, de sa marge intérieure. */
+  --settings-tabbar-item-height: var(--btn-height);
+  --settings-status-dot-size: 0.375rem;
+}

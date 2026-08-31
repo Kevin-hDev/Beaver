@@ -10,7 +10,7 @@ const crimsonCss = readFileSync("src/styles/themes/crimson-eclipse.css", "utf8")
 const toolPreviewsCss = readFileSync("src/components/agent-local/tool-previews.css", "utf8");
 const gitDiffCss = readFileSync("src/components/file-preview/git-diff-preview.css", "utf8");
 const tabbarCss = readFileSync("src/components/settings/shell/settings-tabbar.css", "utf8");
-const tokensCss = readFileSync("src/styles/tokens.css", "utf8");
+const settingsTokensCss = readFileSync("src/styles/tokens-settings.css", "utf8");
 
 function tokenNames(css: string): string[] {
   return [...css.matchAll(/(--[a-z0-9-]+)\s*:/g)]
@@ -134,6 +134,6 @@ describe("Barre de sous-onglets des Réglages", () => {
   });
 
   it("aligne la hauteur d'un onglet sur celle d'un bouton", () => {
-    expect(tokensCss).toContain("--settings-tabbar-item-height: var(--btn-height);");
+    expect(settingsTokensCss).toContain("--settings-tabbar-item-height: var(--btn-height);");
   });
 });

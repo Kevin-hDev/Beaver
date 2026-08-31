@@ -1,8 +1,46 @@
 .settings-panel {
+  display: flex;
+  position: relative;
   flex: 1;
+  flex-direction: column;
   min-width: 0;
+  /* Sans cette borne, l'élément flex prend la hauteur de son contenu au lieu de
+     celle du panneau, et la zone en dessous ne défile plus : elle déborde. */
+  min-height: 0;
+}
+
+.settings-panel-scroll {
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: var(--chrome-5);
+}
+
+/* Le contenu s'efface en passant sous le titre figé au lieu d'y être tranché
+   net. Un masque plutôt qu'un dégradé de couleur posé par-dessus : les surfaces
+   de l'application sont translucides, une couleur opaque s'y verrait — en six
+   thèmes de surcroît. Même mécanisme que la transcription du chat.
+   La marge haute vaut la fin du fondu : au repos le contenu commence là où le
+   fondu se termine, donc rien n'est effacé tant qu'on n'a pas défilé. */
+.settings-panel-headed .settings-panel-scroll {
+  padding-top: var(--settings-fade-height);
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent var(--settings-header-height),
+    #000 var(--settings-fade-height),
+    #000 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent var(--settings-header-height),
+    #000 var(--settings-fade-height),
+    #000 100%
+  );
+  /* Une commande atteinte au clavier ne doit pas s'immobiliser sous le fondu,
+     où elle serait focalisée et invisible. */
+  scroll-padding-top: var(--settings-fade-height);
 }
 
 .settings-panel-inner {
@@ -16,17 +54,37 @@
 }
 
 .settings-panel-header {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: var(--settings-header-height);
+  padding: 0 var(--chrome-5);
+  /* La bande couvre toute la largeur : sans cela elle intercepterait les clics
+     destinés au contenu qui défile dessous. */
+  pointer-events: none;
+}
+
+.settings-panel-header .settings-panel-inner {
+  height: 100%;
+}
+
+.settings-panel-header-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-md);
-  margin-bottom: var(--space-lg);
+  height: 100%;
+}
+
+.settings-panel-header-row > * {
+  pointer-events: auto;
 }
 
 .settings-panel-title {
   margin: 0;
   color: var(--ink);
-  font-size: var(--text-xl);
+  font-size: var(--settings-title-size);
   font-weight: 700;
 }
 
@@ -39,7 +97,7 @@
 
 /* Le bouton d'action partage la ligne du titre : sans flex-shrink il se replie
    sur deux lignes dès que le titre est long. */
-.settings-panel-header > button {
+.settings-panel-header-row > button {
   display: inline-flex;
   flex-shrink: 0;
   align-items: center;
@@ -47,7 +105,15 @@
 }
 
 @media (max-width: 640px) {
-  .settings-panel {
+  .settings-panel-scroll {
     padding: var(--chrome-4);
+  }
+
+  .settings-panel-headed .settings-panel-scroll {
+    padding-top: var(--settings-fade-height);
+  }
+
+  .settings-panel-header {
+    padding: 0 var(--chrome-4);
   }
 }

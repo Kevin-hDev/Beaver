@@ -1,22 +1,3 @@
-.msp-page {
-  flex: 1;
-  overflow-y: auto;
-  padding: var(--chrome-5);
-}
-
-.msp-content {
-  width: 100%;
-  max-width: var(--settings-content-max-width-wide);
-  margin: 0 auto;
-}
-
-.msp-title {
-  margin-bottom: 1.75rem;
-  color: var(--ink);
-  font-size: var(--text-xl);
-  font-weight: 700;
-}
-
 .msp-preview {
   display: flex;
   flex-direction: column;
@@ -88,10 +69,6 @@
 }
 
 @media (max-width: 44rem) {
-  .msp-page {
-    padding: var(--chrome-4);
-  }
-
   .msp-bubble {
     width: 9.5rem;
     height: 9.5rem;

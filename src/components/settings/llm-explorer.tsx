@@ -4,6 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { LlmFamilyGrid } from "./llm-family-grid";
 import { LlmModelList } from "./llm-model-list";
 import { LlmModelDetail } from "./llm-model-detail";
+import { SettingsPanel } from "./shell/settings-panel";
 import { SettingsCard } from "./settings-card";
 import type { RegistryModelInfo, FamilyGroup } from "./llm-types";
 import type { LlmNavState } from "@/types/navigation";
@@ -102,60 +103,54 @@ export function LlmExplorer({ navState, onNavChange }: LlmExplorerProps) {
   }, [showFamilies, onNavChange]);
 
   return (
-    <div style={{ padding: 24, overflowY: "auto", flex: 1 }}>
-      <div style={{ maxWidth: "var(--settings-content-max-width)", width: "100%", margin: "0 auto" }}>
-        <h2 style={{ fontSize: "var(--text-xl)", fontWeight: 700, color: "var(--ink)", marginBottom: 20 }}>
-          LLM
-        </h2>
+    <SettingsPanel title={t("settings.tabs.llm")}>
+      <SettingsCard>
+        <div className="llm-search-bar">
+          <input
+            className="field llm-search-input"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => { if (e.key.startsWith("Ent")) void handleSearch(); }}
+            placeholder={t("settings.llm.searchPlaceholder")}
+          />
+          <button
+            className={`btn btn-sm btn-secondary llm-family-btn ${showFamilies ? "active" : ""}`}
+            onClick={toggleFamilies}
+          >
+            {t("settings.llm.families")}
+          </button>
+        </div>
+      </SettingsCard>
 
+      {showFamilies && viewIs(view, "idle") && (
         <SettingsCard>
-          <div className="llm-search-bar">
-            <input
-              className="field llm-search-input"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => { if (e.key.startsWith("Ent")) void handleSearch(); }}
-              placeholder={t("settings.llm.searchPlaceholder")}
-            />
-            <button
-              className={`btn btn-sm btn-secondary llm-family-btn ${showFamilies ? "active" : ""}`}
-              onClick={toggleFamilies}
-            >
-              {t("settings.llm.families")}
-            </button>
-          </div>
+          <LlmFamilyGrid families={families} onSelect={(f) => void handleFamilyClick(f)} />
         </SettingsCard>
+      )}
 
-        {showFamilies && viewIs(view, "idle") && (
-          <SettingsCard>
-            <LlmFamilyGrid families={families} onSelect={(f) => void handleFamilyClick(f)} />
-          </SettingsCard>
-        )}
+      {viewIs(view, "search") && (
+        <LlmModelList
+          models={(view as View & { kind: "search" }).results}
+          title={(view as View & { kind: "search" }).query}
+          onSelect={handleModelClick}
+        />
+      )}
 
-        {viewIs(view, "search") && (
-          <LlmModelList
-            models={(view as View & { kind: "search" }).results}
-            title={(view as View & { kind: "search" }).query}
-            onSelect={handleModelClick}
-          />
-        )}
+      {viewIs(view, "family") && (
+        <LlmModelList
+          models={(view as View & { kind: "family-models" }).models}
+          title={(view as View & { kind: "family-models" }).family}
+          onSelect={handleModelClick}
+          onBack={() => onNavChange({ kind: "idle", showFamilies: true })}
+        />
+      )}
 
-        {viewIs(view, "family") && (
-          <LlmModelList
-            models={(view as View & { kind: "family-models" }).models}
-            title={(view as View & { kind: "family-models" }).family}
-            onSelect={handleModelClick}
-            onBack={() => onNavChange({ kind: "idle", showFamilies: true })}
-          />
-        )}
-
-        {viewIs(view, "detail") && (
-          <LlmModelDetail
-            model={(view as View & { kind: "detail" }).model}
-            onBack={handleBack}
-          />
-        )}
-      </div>
-    </div>
+      {viewIs(view, "detail") && (
+        <LlmModelDetail
+          model={(view as View & { kind: "detail" }).model}
+          onBack={handleBack}
+        />
+      )}
+    </SettingsPanel>
   );
 }

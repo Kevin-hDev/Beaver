@@ -1,29 +1,3 @@
-.ups-root {
-  flex: 1;
-  overflow-y: auto;
-  padding: var(--chrome-5);
-}
-
-.ups-inner {
-  width: 100%;
-  max-width: 620px;
-  margin: 0 auto;
-}
-
-.ups-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-lg);
-  margin-bottom: var(--chrome-4);
-}
-
-.ups-title {
-  margin: 0;
-  color: var(--ink);
-  font-size: var(--text-xl);
-}
-
 .ups-description {
   margin: var(--space-xs) 0 0;
   color: var(--ink-muted);
@@ -87,11 +61,6 @@
 }
 
 @media (max-width: 620px) {
-  .ups-header {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
   .ups-row-has-action {
     gap: var(--space-sm);
   }
