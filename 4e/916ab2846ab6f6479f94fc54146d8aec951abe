@@ -1,1 +1,27 @@
-Reviewer note — chat composer and working-indicator lifecycle\n\nDecisions and rationale:\n- A draft starting a new stream is consumed before awaiting backend admission, so the composer clears in the same UI action as the optimistic user message.\n- If admission fails, the submitted snapshot is restored only into still-empty draft fields; text or skills entered while admission was pending are never overwritten.\n- A send attempted during an existing stream keeps its draft until accepted, preserving Beaver's established refusal behavior.\n- isWorking is the single authority for the visible "En cours" indicator. It ends at the durable turnCommitted event, while isStreaming deliberately remains true until done so stream ownership, late usage data, diagnostics, and cleanup still complete normally.\n- Failure, stop/finalization, compression completion, restored snapshots, and dormant records explicitly initialize or clear isWorking.\n\nRegression coverage:\n- Draft clears immediately while admission is pending.\n- Rejected admission restores the prior draft without overwriting a newer draft.\n- Rejected send during a stream remains visible.\n- turnCommitted clears isWorking while isStreaming stays true.\n- MessageList hides the loader during post-commit technical cleanup.\n- Existing message list, compression, subagent, stream-artifact, tool aggregation, done-event, and stream race suites remain green.\n\nVerification executed:\n- Targeted Vitest: 9 files, 86 tests passed.\n- npx tsc --noEmit: passed.\n- npm run lint: passed.\n- npm test: passed (502 Vitest files / 2693 tests plus build scripts, CI scripts, CEF, E2E runner, extension host, and reasoning fixtures).\n- graphify update .: passed.\n\nScope:\n- Commit contains only chat/draft/stream lifecycle source and tests.\n- Existing docs/beaver-site and image worktree changes were intentionally excluded.
+Reviewer note — chat composer and working-indicator lifecycle
+
+Decisions and rationale:
+- A draft starting a new stream is consumed before awaiting backend admission, so the composer clears in the same UI action as the optimistic user message.
+- If admission fails, the submitted snapshot is restored only into still-empty draft fields; text or skills entered while admission was pending are never overwritten.
+- A send attempted during an existing stream keeps its draft until accepted, preserving Beaver's established refusal behavior.
+- isWorking is the single authority for the visible "En cours" indicator. It ends at the durable turnCommitted event, while isStreaming deliberately remains true until done so stream ownership, late usage data, diagnostics, and cleanup still complete normally.
+- Failure, stop/finalization, compression completion, restored snapshots, and dormant records explicitly initialize or clear isWorking.
+
+Regression coverage:
+- Draft clears immediately while admission is pending.
+- Rejected admission restores the prior draft without overwriting a newer draft.
+- Rejected send during a stream remains visible.
+- turnCommitted clears isWorking while isStreaming stays true.
+- MessageList hides the loader during post-commit technical cleanup.
+- Existing message list, compression, subagent, stream-artifact, tool aggregation, done-event, and stream race suites remain green.
+
+Verification executed:
+- Targeted Vitest: 9 files, 86 tests passed.
+- npx tsc --noEmit: passed.
+- npm run lint: passed.
+- npm test: passed (502 Vitest files / 2693 tests plus build scripts, CI scripts, CEF, E2E runner, extension host, and reasoning fixtures).
+- graphify update .: passed.
+
+Scope:
+- Commit contains only chat/draft/stream lifecycle source and tests.
+- Existing docs/beaver-site and image worktree changes were intentionally excluded.
