@@ -4,6 +4,27 @@
 
 ---
 
+## v1.2.0
+
+### Customizable context compression
+
+- **Named compression profiles** — create, rename, duplicate, delete, restore, and switch between reusable compression profiles while keeping Beaver's built-in profile available as a safe default.
+- **Global and per-conversation selection** — choose the default profile in Settings or override it for one conversation from the composer; session-specific choices persist without changing the global preference.
+- **Context-window-specific policies** — configure separate retention budgets for models below 64K, from 64K to below 128K, and at 128K or above. Compression below 64K remains disabled by default and can be enabled explicitly with reduced defaults and a clear warning.
+- **Focused retention controls** — tune the compression threshold, generated summary, recent user and assistant messages, tool evidence, files, attachments, images, live project state, and summary prompts without exposing permission modes to the compression context.
+- **Projected checkpoint preview** — the advanced editor estimates the system head, retained context, output reserve, target range, and expected reduction before a profile is used.
+
+### Reliable compression and recovery
+
+- **Smaller usage-based checkpoints** — automatic and manual compression target the conversation's actual provider context instead of filling a fixed share of the model window, while preserving recent messages as complete units.
+- **Atomic session updates** — Beaver validates and saves a complete checkpoint before replacing the active conversation, so failed summaries or storage errors leave both the runtime and the session file unchanged.
+- **Bounded summaries and evidence** — summary requests, tool results, reread files, attachments, images, subagent reports, and other retained sources use explicit limits that adapt to the effective model window, including custom Ollama `num_ctx` values.
+- **Structured continuity and migrations** — versioned checkpoint markers replace text-prefix detection, existing sessions and compression settings migrate safely, and recovery backups remain available when a profile document needs repair.
+- **Loop and failure protection** — repeated automatic failures are suspended for the unchanged session state, explicit `/compress` remains available, and successful compression cannot immediately trigger an unbounded recompression cycle.
+- **Consistent context visibility** — the context ring shows the effective profile or the under-64K disabled state, while manual and automatic compression share the same profile resolution, safety checks, and provider-aware token accounting.
+
+---
+
 ## v1.1.9
 
 ### Anthropic and Alibaba Cloud Qwen providers
