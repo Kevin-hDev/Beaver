@@ -1,3 +1,52 @@
+use super::manager::{PtyManager, NEXT_ID};
+use super::session_handle::{SessionControl, SessionHandle, SessionOps};
+use std::path::Path;
+use std::sync::atomic::Ordering;
+use std::sync::Arc;
+
+impl PtyManager {
+    pub(in crate::services::terminal) fn spawn_for_test(
+        &self,
+        cwd: Option<&Path>,
+        cols: u16,
+        rows: u16,
+    ) -> Result<(u32, String), String> {
+        self.spawn_with_sink(cwd, cols, rows, |_| Ok(()))
+    }
+
+    pub(in crate::services::terminal) fn insert_session_for_test(
+        &self,
+        operations: Box<dyn SessionOps>,
+        control: SessionControl,
+        token: &str,
+    ) -> (u32, String) {
+        let id = NEXT_ID.fetch_add(1, Ordering::Relaxed);
+        let token = zeroize::Zeroizing::new(token.to_string());
+        let token_copy = token.to_string();
+        self.state
+            .lock()
+            .unwrap()
+            .sessions
+            .insert(id, Arc::new(SessionHandle::new(operations, control, token)));
+        (id, token_copy)
+    }
+
+    pub(in crate::services::terminal) fn manager_lock_is_available_for_test(&self) -> bool {
+        self.state.try_lock().is_ok()
+    }
+
+    pub(in crate::services::terminal) fn process_id_for_test(&self, id: u32) -> Option<u32> {
+        self.state.lock().ok()?.sessions.get(&id)?.process_id()
+    }
+
+    pub(in crate::services::terminal) fn active_sessions_for_test(&self) -> usize {
+        self.state
+            .lock()
+            .map(|state| state.sessions.len())
+            .unwrap_or(Self::MAX_PTY_SESSIONS)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::app_exit::AppExitCoordinator;
@@ -132,30 +181,37 @@ mod tests {
     fn test_pty_read_output() {
         let (session, mut reader) = PtySession::spawn(None, 80, 24).expect("spawn");
         session.write(b"echo pty_test_marker\n").expect("write");
-
-        let mut output = String::new();
-        let mut buf = [0u8; 1024];
-        let deadline = std::time::Instant::now() + Duration::from_secs(3);
-
-        while std::time::Instant::now() < deadline {
-            match reader.read(&mut buf) {
-                Ok(0) => break,
-                Ok(n) => {
-                    output.push_str(&String::from_utf8_lossy(&buf[..n]));
-                    if output.contains("pty_test_marker") {
-                        break;
+        let (chunks, received) = std::sync::mpsc::sync_channel(4);
+        let reader_thread = std::thread::spawn(move || {
+            let mut buffer = [0_u8; 1024];
+            loop {
+                match reader.read(&mut buffer) {
+                    Ok(0) | Err(_) => break,
+                    Ok(read) => {
+                        if chunks.send(buffer[..read].to_vec()).is_err() {
+                            break;
+                        }
                     }
                 }
-                Err(_) => break,
+            }
+        });
+        let mut output = String::new();
+        let deadline = Instant::now() + Duration::from_secs(3);
+        while !output.contains("pty_test_marker") {
+            let remaining = deadline.saturating_duration_since(Instant::now());
+            match received.recv_timeout(remaining) {
+                Ok(chunk) => output.push_str(&String::from_utf8_lossy(&chunk)),
+                Err(error) => {
+                    drop(received);
+                    drop(session);
+                    reader_thread.join().expect("reader worker");
+                    panic!("PTY output deadline reached: {error}");
+                }
             }
         }
-
-        assert!(
-            output.contains("pty_test_marker"),
-            "expected marker in output, got: {}",
-            output
-        );
-        close_session(session, reader);
+        drop(received);
+        drop(session);
+        reader_thread.join().expect("reader worker");
     }
 
     #[test]

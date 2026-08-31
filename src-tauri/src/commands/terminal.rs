@@ -32,38 +32,41 @@ pub async fn pty_spawn(
 ) -> Result<PtySpawnResult, String> {
     let cwd = crate::services::terminal::cwd_resolver::resolve(&group_key).await?;
     let manager = state.inner().clone();
-    // Provisoire : le lanceur durable Linux du plan I/O remplacera cette
-    // frontière avant l'ajout de PR_SET_PDEATHSIG.
-    let (id, token) = tauri::async_runtime::spawn_blocking(move || {
+    #[cfg(target_os = "linux")]
+    let (id, token) = manager.spawn_linux(on_output, cwd, cols, rows).await?;
+    #[cfg(not(target_os = "linux"))]
+    let (id, token) = super::terminal_blocking::run(move || {
         manager.spawn(on_output, Some(cwd.as_path()), cols, rows)
     })
-    .await
-    .map_err(|_| "terminal-error".to_string())??;
+    .await?;
     Ok(PtySpawnResult { id, token })
 }
 
 #[tauri::command]
-pub fn pty_write(
+pub async fn pty_write(
     id: u32,
     token: String,
     data: String,
     state: State<'_, PtyManager>,
 ) -> Result<(), String> {
-    state.write(id, &token, data.as_bytes())
+    let manager = state.inner().clone();
+    super::terminal_blocking::run(move || manager.write(id, &token, data.as_bytes())).await
 }
 
 #[tauri::command]
-pub fn pty_resize(
+pub async fn pty_resize(
     id: u32,
     token: String,
     cols: u16,
     rows: u16,
     state: State<'_, PtyManager>,
 ) -> Result<(), String> {
-    state.resize(id, &token, cols, rows)
+    let manager = state.inner().clone();
+    super::terminal_blocking::run(move || manager.resize(id, &token, cols, rows)).await
 }
 
 #[tauri::command]
-pub fn pty_kill(id: u32, token: String, state: State<'_, PtyManager>) -> Result<(), String> {
-    state.kill(id, &token)
+pub async fn pty_kill(id: u32, token: String, state: State<'_, PtyManager>) -> Result<(), String> {
+    let manager = state.inner().clone();
+    super::terminal_blocking::run(move || manager.kill(id, &token)).await
 }

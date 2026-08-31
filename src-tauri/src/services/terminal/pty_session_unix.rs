@@ -1,3 +1,4 @@
+use crate::services::terminal::limits::MAX_PTY_WRITE_BYTES;
 use portable_pty::{CommandBuilder, NativePtySystem, PtySize, PtySystem};
 use std::io::{Read, Write};
 use std::path::Path;
@@ -80,10 +81,8 @@ impl PtySession {
         ))
     }
 
-    const MAX_WRITE_BYTES: usize = 65_536;
-
     pub fn write(&self, data: &[u8]) -> Result<(), String> {
-        if data.len() > Self::MAX_WRITE_BYTES {
+        if data.len() > MAX_PTY_WRITE_BYTES {
             return Err("terminal-write-too-large".to_string());
         }
         let mut writer = self.writer.lock().map_err(|_| terminal_error())?;

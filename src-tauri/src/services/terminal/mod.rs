@@ -1,8 +1,13 @@
 pub mod cwd_resolver;
+mod limits;
+#[cfg(target_os = "linux")]
+mod linux_spawn_worker;
 mod manager;
+mod output_window;
 mod owned_session;
 pub mod pty_session;
 mod public_error;
+mod session_handle;
 mod shutdown;
 pub mod tab_store;
 
@@ -10,6 +15,15 @@ pub use manager::{PtyChannelEvent, PtyManager};
 
 #[cfg(test)]
 mod cwd_resolver_tests;
+
+#[cfg(test)]
+mod output_window_tests;
+
+#[cfg(all(test, target_os = "linux"))]
+mod linux_spawn_worker_tests;
+
+#[cfg(test)]
+mod session_handle_tests;
 
 #[cfg(test)]
 mod tests;
