@@ -4,12 +4,8 @@ import { readFileSync } from "node:fs";
 import { TerminalPanel } from "../terminal-panel";
 import type { TerminalTab } from "@/hooks/use-terminal";
 
-/* Refermer le panneau démontait les écrans, et le démontage tuait les shells :
-   un serveur lancé dans un onglet mourait avec lui, et tout ce que les
-   terminaux contenaient disparaissait. Rien ne l'annonçait — il fallait garder
-   le panneau ouvert en permanence pour ne rien perdre.
-   Les shells vivent maintenant tant que l'application vit ; seule la croix d'un
-   onglet, ou la fermeture de l'application, les arrête. */
+/* Le repli ne démonte plus les écrans : seuls la croix d'un onglet ou l'arrêt
+   de l'application mettent fin aux shells. */
 
 const invoke = vi.hoisted(() => vi.fn());
 
@@ -73,6 +69,8 @@ function panel(
   activeGroupKey = "projet",
   activeTab = TAB,
   onCloseTab = vi.fn(),
+  panelHeight = 200,
+  onResize = vi.fn(),
 ) {
   return (
     <TerminalPanel
@@ -81,7 +79,7 @@ function panel(
       allTabs={allTabs}
       activeGroupKey={activeGroupKey}
       isOpen={isOpen}
-      panelHeight={200}
+      panelHeight={panelHeight}
       onAddTab={vi.fn()}
       onCloseTab={onCloseTab}
       onSelectTab={vi.fn()}
@@ -92,7 +90,7 @@ function panel(
       onTabActivity={vi.fn()}
       onProcessExit={vi.fn()}
       onLiveLimitReached={vi.fn()}
-      onResize={vi.fn()}
+      onResize={onResize}
       onSetMaxHeight={vi.fn()}
     />
   );
@@ -104,6 +102,11 @@ function killCalls(): unknown[][] {
 
 function screenOf(container: HTMLElement): HTMLElement | null {
   return container.querySelector(".terminal-screen");
+}
+
+function finishClosing(rerender: ReturnType<typeof render>["rerender"]) {
+  rerender(panel(false));
+  act(() => { vi.advanceTimersByTime(WELL_AFTER_CLOSING_MS); });
 }
 
 beforeEach(() => {
@@ -161,11 +164,7 @@ describe("durée de vie des shells du panneau", () => {
 
   it("ne tue aucun shell quand on referme le panneau", () => {
     const { rerender } = render(panel(true));
-
-    rerender(panel(false));
-    act(() => {
-      vi.advanceTimersByTime(WELL_AFTER_CLOSING_MS);
-    });
+    finishClosing(rerender);
 
     expect(killCalls()).toEqual([]);
   });
@@ -184,11 +183,7 @@ describe("durée de vie des shells du panneau", () => {
      « arrêté ». */
   it("garde l'écran monté après la fermeture", () => {
     const { container, rerender } = render(panel(true));
-
-    rerender(panel(false));
-    act(() => {
-      vi.advanceTimersByTime(WELL_AFTER_CLOSING_MS);
-    });
+    finishClosing(rerender);
 
     expect(screenOf(container)).not.toBeNull();
   });
@@ -197,25 +192,33 @@ describe("durée de vie des shells du panneau", () => {
      avalerait les touches frappées dans la conversation. */
   it("rend l'écran inactif tant que le panneau est fermé", () => {
     const { container, rerender } = render(panel(true));
-
-    rerender(panel(false));
-    act(() => {
-      vi.advanceTimersByTime(WELL_AFTER_CLOSING_MS);
-    });
+    finishClosing(rerender);
 
     expect(screenOf(container)?.style.visibility).toBe("hidden");
   });
 
   it("le rend de nouveau actif à la réouverture", () => {
     const { container, rerender } = render(panel(true));
-    rerender(panel(false));
-    act(() => {
-      vi.advanceTimersByTime(WELL_AFTER_CLOSING_MS);
-    });
-
+    finishClosing(rerender);
     rerender(panel(true));
 
     expect(screenOf(container)?.style.visibility).toBe("visible");
+  });
+
+  it("affiche exactement la hauteur bornée retournée pendant le drag", () => {
+    const onResize = vi.fn((requested: number) => requested > 400 ? 400 : 80);
+    const { container } = render(panel(true, undefined, undefined, undefined, undefined, 120, onResize));
+    const handle = container.querySelector(".terminal-resize-handle")!;
+    const renderedPanel = container.querySelector(".terminal-panel") as HTMLElement;
+    fireEvent.pointerDown(handle, { clientY: 0 });
+    for (const movement of [
+      { clientY: -780, requested: 900, clamped: 400 },
+      { clientY: 100, requested: 20, clamped: 80 },
+    ]) {
+      fireEvent.pointerMove(window, { clientY: movement.clientY });
+      expect(onResize).toHaveBeenLastCalledWith(movement.requested);
+      expect(renderedPanel.style.height).toBe(`${movement.clamped}px`);
+    }
   });
 
   it("ne monte rien tant que le panneau n'a jamais été ouvert", () => {

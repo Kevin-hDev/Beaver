@@ -3,6 +3,7 @@ import { homeDir } from "@tauri-apps/api/path";
 import i18n from "@/i18n";
 import { showToast } from "@/lib/toast-emitter";
 import type { ProjectLoadState } from "./use-projects";
+import { clampTerminalHeight, TERMINAL_DEFAULT_HEIGHT } from "./terminal-layout";
 import { useTerminalPersistence } from "./use-terminal-persistence";
 import { closeTabInGroup as closeGroupTab, updateTab } from "./terminal-groups";
 import {
@@ -15,8 +16,6 @@ import type { TerminalGroup, TerminalTab } from "./terminal-types";
 
 export type { TerminalGroup, TerminalTab };
 
-const DEFAULT_HEIGHT = 120;
-const MIN_HEIGHT = 80;
 const MAX_GROUPS = 128;
 const MAX_TABS_PER_GROUP = 16;
 const MAX_TOTAL_TABS = 256;
@@ -33,7 +32,7 @@ export function useTerminal(
 ) {
   const [groups, setGroups] = useState<Map<string, TerminalGroup>>(new Map());
   const groupsRef = useRef(groups);
-  const [panelHeight, setPanelHeight] = useState(DEFAULT_HEIGHT);
+  const [panelHeight, setPanelHeight] = useState(TERMINAL_DEFAULT_HEIGHT);
   const [resolvedCwd, setResolvedCwd] = useState(defaultCwd);
   const maxHeightRef = useRef(0);
   const { loaded, persistenceStatus } = useTerminalPersistence({
@@ -166,7 +165,9 @@ export function useTerminal(
   }, []);
 
   const resizePanel = useCallback((height: number) => {
-    setPanelHeight(Math.max(MIN_HEIGHT, Math.min(height, maxHeightRef.current)));
+    const clamped = clampTerminalHeight(height, maxHeightRef.current);
+    setPanelHeight(clamped);
+    return clamped;
   }, []);
   const setMaxHeight = useCallback((height: number) => { maxHeightRef.current = height; }, []);
   const removeGroup = useCallback((key: string) => {

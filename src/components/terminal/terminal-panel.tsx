@@ -5,6 +5,7 @@ import { TerminalTabBar } from "./terminal-tab-bar";
 import { TerminalInstance } from "./terminal-instance";
 import type { TerminalTab } from "@/hooks/use-terminal";
 import { MAX_LIVE_TERMINALS } from "@/hooks/terminal-types";
+import { TERMINAL_MAX_VIEWPORT_RATIO } from "@/hooks/terminal-layout";
 import { showToast } from "@/lib/toast-emitter";
 import "./terminal-panel.css";
 
@@ -25,7 +26,7 @@ interface TerminalPanelProps {
   onTabActivity: (tabId: string, hasActivity: boolean) => void;
   onProcessExit: (tabId: string, groupKey: string) => void;
   onLiveLimitReached: (tabId: string) => void;
-  onResize: (height: number) => void;
+  onResize: (height: number) => number;
   onSetMaxHeight: (maxH: number) => void;
 }
 
@@ -61,7 +62,7 @@ export function TerminalPanel({
 
   useEffect(() => {
     const updateMax = () => {
-      onSetMaxHeight(Math.floor(window.innerHeight * 0.5));
+      onSetMaxHeight(Math.floor(window.innerHeight * TERMINAL_MAX_VIEWPORT_RATIO));
     };
     updateMax();
     window.addEventListener("resize", updateMax);
@@ -133,8 +134,8 @@ export function TerminalPanel({
       const onMove = (ev: PointerEvent) => {
         if (!resizing.current) return;
         const delta = startY - ev.clientY;
-        onResize(startH + delta);
-        setAnimatedHeight(startH + delta);
+        const clamped = onResize(startH + delta);
+        setAnimatedHeight(clamped);
       };
 
       const onUp = () => {

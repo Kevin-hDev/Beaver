@@ -66,9 +66,12 @@ describe("useTerminal", () => {
     await waitFor(() => expect(result.current.persistenceStatus).toBe("healthy"));
     act(() => { result.current.setMaxHeight(400); });
 
-    act(() => { result.current.resizePanel(9999); });
+    let resized: number | undefined;
+    act(() => { resized = result.current.resizePanel(9999); });
+    expect(resized).toBe(400);
     expect(result.current.panelHeight).toBe(400);
-    act(() => { result.current.resizePanel(10); });
+    act(() => { resized = result.current.resizePanel(10); });
+    expect(resized).toBe(80);
     expect(result.current.panelHeight).toBe(80);
   });
 
