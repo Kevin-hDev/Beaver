@@ -10,7 +10,8 @@ type FsEvent =
   | "fs:skills-changed"
   | "fs:external-agent-sources-changed"
   | "fs:providers-changed"
-  | "fs:extensions-changed";
+  | "fs:extensions-changed"
+  | "fs:compression-profiles-changed";
 
 export function useFsEvent(event: FsEvent, callback: () => void) {
   useEffect(() => {

@@ -25,6 +25,11 @@ export const KNOWN_ERROR_KEYS: Readonly<Record<string, string>> = {
   circuit_breaker: "errors.circuitBreaker",
   tool_error: "errors.toolError",
   stream_error: "errors.streamError",
+  compression_unavailable: "errors.compressionUnavailable",
+  compression_profiles_unavailable: "errors.compressionProfilesUnavailable",
+  compression_disabled_under_64k: "errors.compressionDisabledUnder64",
+  compression_automatic_suspended: "errors.compressionAutomaticSuspended",
+  compression_failed: "errors.compressionFailed",
 };
 
 export function isKnownAgentErrorCode(code: string): boolean {

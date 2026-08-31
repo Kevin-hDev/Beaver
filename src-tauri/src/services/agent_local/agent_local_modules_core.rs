@@ -193,6 +193,7 @@ mod subagent_report_context;
 mod subagent_report_delivery;
 #[cfg(test)]
 mod subagent_report_delivery_tests;
+pub(crate) mod subagent_report_overflow;
 #[cfg(test)]
 mod subagent_review_fail_closed_tests;
 #[cfg(test)]

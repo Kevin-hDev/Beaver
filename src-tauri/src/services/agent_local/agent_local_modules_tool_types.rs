@@ -5,6 +5,7 @@ mod types_message_validation;
 pub mod types_ollama;
 pub mod types_plan;
 pub mod types_session;
+mod types_session_compression;
 pub mod types_stream;
 pub mod types_todo;
 mod types_tool_result;

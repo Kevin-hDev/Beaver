@@ -51,54 +51,13 @@ pub async fn get_model_context(
     let route =
         RouteId::from_provider_id(&route_id).ok_or_else(|| "Fournisseur invalide".to_string())?;
     if route == RouteId::Ollama {
-        return resolve_ollama_context(&ollama, &model_id).await.map(Some);
+        let context = crate::services::compress::context_resolve::resolve_ollama_with_client(
+            &ollama, &model_id,
+        )
+        .await;
+        return Ok((context.configured > 0).then_some(context.configured));
     }
     Ok(crate::services::llm::model_context_length(&route_id, &model_id).await)
-}
-
-async fn resolve_ollama_context(
-    ollama: &crate::services::agent_local::ollama_client::OllamaClient,
-    model_id: &str,
-) -> Result<u64, String> {
-    let loaded = ollama.loaded_context_length(model_id).await?;
-    if loaded.is_some_and(|value| value > 0) {
-        return Ok(select_ollama_context(loaded, None, 0, 0));
-    }
-    let info = ollama.show_model(model_id).await?;
-    let parsed = crate::services::agent_local::modelfile_parser::parse_modelfile(&info.modelfile);
-    let configured = parsed
-        .parameters
-        .get("num_ctx")
-        .and_then(|value| value.as_u64());
-    if configured.is_some_and(|value| value > 0) {
-        return Ok(select_ollama_context(loaded, configured, 0, 0));
-    }
-    let effective = u64::from(crate::services::gpu_detect::compute_default_num_ctx());
-    Ok(select_ollama_context(
-        loaded,
-        configured,
-        info.context_length,
-        effective,
-    ))
-}
-
-fn select_ollama_context(
-    loaded: Option<u64>,
-    configured: Option<u64>,
-    model: u64,
-    effective: u64,
-) -> u64 {
-    if let Some(value) = loaded.filter(|value| *value > 0) {
-        return value;
-    }
-    if let Some(value) = configured.filter(|value| *value > 0) {
-        return value;
-    }
-    match (model, effective) {
-        (model, configured) if model > 0 && configured > 0 => model.min(configured),
-        (model, _) if model > 0 => model,
-        (_, configured) => configured,
-    }
 }
 
 #[tauri::command]

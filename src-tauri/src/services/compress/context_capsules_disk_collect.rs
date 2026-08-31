@@ -3,9 +3,11 @@ use crate::services::agent_local::types_ollama::ChatMessage;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
-use super::context_capsules_disk::{
-    CapsuleEvent, CompressionMode, MAX_AUTO_FILES, MAX_MANUAL_FILES, MAX_RECENT_TOOLS,
-};
+pub(crate) struct CapsuleEvent {
+    pub tool: String,
+    pub path: String,
+    pub result: String,
+}
 
 const UNAVAILABLE_MARKER: &str = "[file unavailable: deleted, binary, or unreadable]";
 
@@ -14,15 +16,26 @@ struct FileCandidate {
     path: String,
 }
 
-pub async fn recent_disk_file_events(
+pub async fn recent_disk_file_events_bounded(
     messages: &[ChatMessage],
     working_dir: &Path,
-    mode: CompressionMode,
+    max_files: usize,
+    max_tokens_per_file: u32,
+) -> Vec<CapsuleEvent> {
+    recent_disk_file_events_inner(messages, working_dir, max_files, Some(max_tokens_per_file)).await
+}
+
+async fn recent_disk_file_events_inner(
+    messages: &[ChatMessage],
+    working_dir: &Path,
+    max_files: usize,
+    max_tokens_per_file: Option<u32>,
 ) -> Vec<CapsuleEvent> {
     let mut seen = HashSet::<PathBuf>::new();
     let mut events = Vec::new();
     for candidate in file_candidates(messages).into_iter().rev() {
-        let Some((resolved, result)) = read_current_state(&candidate.path, working_dir).await
+        let Some((resolved, result)) =
+            read_current_state(&candidate.path, working_dir, max_tokens_per_file).await
         else {
             continue;
         };
@@ -34,7 +47,7 @@ pub async fn recent_disk_file_events(
             path: candidate.path,
             result,
         });
-        if events.len() >= max_file_events(mode) {
+        if events.len() >= max_files {
             break;
         }
     }
@@ -42,38 +55,62 @@ pub async fn recent_disk_file_events(
     events
 }
 
-fn max_file_events(mode: CompressionMode) -> usize {
-    match mode {
-        CompressionMode::Manual => MAX_MANUAL_FILES,
-        CompressionMode::Auto { .. } => MAX_AUTO_FILES,
-    }
-}
-
-pub fn recent_tool_events(messages: &[ChatMessage]) -> Vec<CapsuleEvent> {
-    let mut found = Vec::new();
-    for msg in messages.iter().filter(|message| message.role == "tool") {
-        let Some(tool) = msg.tool_name.as_deref() else {
-            continue;
-        };
-        if !is_context_tool(tool) || file_path_from_content(tool, &msg.content).is_some() {
-            continue;
-        }
-        found.push(CapsuleEvent {
-            tool: tool.to_string(),
-            path: String::new(),
-            result: msg.content.clone(),
-        });
-    }
-    let keep_from = found.len().saturating_sub(MAX_RECENT_TOOLS);
-    found.into_iter().skip(keep_from).collect()
-}
-
-async fn read_current_state(path: &str, working_dir: &Path) -> Option<(PathBuf, String)> {
+async fn read_current_state(
+    path: &str,
+    working_dir: &Path,
+    max_tokens: Option<u32>,
+) -> Option<(PathBuf, String)> {
     let resolved = tool_files::resolve_read_path(path, working_dir).ok()?;
-    let content = tokio::fs::read_to_string(&resolved)
-        .await
-        .unwrap_or_else(|_| UNAVAILABLE_MARKER.to_string());
+    let content = match max_tokens {
+        Some(tokens) => read_bounded_text(&resolved, tokens).await,
+        None => tokio::fs::read_to_string(&resolved)
+            .await
+            .unwrap_or_else(|_| UNAVAILABLE_MARKER.to_string()),
+    };
     Some((resolved, content))
+}
+
+async fn read_bounded_text(path: &Path, max_tokens: u32) -> String {
+    use tokio::io::AsyncReadExt;
+
+    let max_bytes = usize::try_from(max_tokens)
+        .unwrap_or(usize::MAX)
+        .saturating_mul(4)
+        .max(1);
+    let Ok(file) = tokio::fs::File::open(path).await else {
+        return UNAVAILABLE_MARKER.to_string();
+    };
+    let mut bytes = Vec::with_capacity(max_bytes.min(64 * 1024));
+    if file
+        .take(max_bytes.saturating_add(1) as u64)
+        .read_to_end(&mut bytes)
+        .await
+        .is_err()
+    {
+        return UNAVAILABLE_MARKER.to_string();
+    }
+    let truncated = bytes.len() > max_bytes;
+    bytes.truncate(max_bytes);
+    let text = match String::from_utf8(bytes) {
+        Ok(text) => text,
+        Err(error) if truncated && error.utf8_error().error_len().is_none() => {
+            let valid = error.utf8_error().valid_up_to();
+            let mut bytes = error.into_bytes();
+            bytes.truncate(valid);
+            String::from_utf8(bytes).unwrap_or_default()
+        }
+        Err(_) => return UNAVAILABLE_MARKER.to_string(),
+    };
+    if truncated {
+        super::checkpoint_messages::bounded_excerpt(
+            &text,
+            max_tokens,
+            "\n[file content truncated]",
+            "",
+        )
+    } else {
+        text
+    }
 }
 
 fn file_candidates(messages: &[ChatMessage]) -> Vec<FileCandidate> {
@@ -126,11 +163,4 @@ fn file_path_from_content(tool: &str, content: &str) -> Option<(String, String)>
         .then(|| content.split_once(':'))
         .flatten()
         .map(|(_, path)| (tool.to_string(), path.trim().to_string()))
-}
-
-fn is_context_tool(tool: &str) -> bool {
-    matches!(
-        tool,
-        "bash" | "grep" | "glob" | "list_dir" | "web_fetch" | "web_search" | "mcp_tool" | "mcp"
-    ) || tool.starts_with("mcp_")
 }

@@ -1,68 +1,73 @@
 use crate::services::agent_local::types_ollama::ChatMessage;
+use crate::services::agent_local::types_session::AgentMessage;
+
+pub use super::token_estimate_request::{
+    estimate_request_tokens, estimate_request_tokens_for_provider,
+    estimate_textual_request_tokens_for_provider, estimate_tool_tokens,
+};
 
 pub fn estimate_tokens(messages: &[ChatMessage]) -> usize {
     crate::services::token_counting::estimate_chat_tokens(messages)
 }
 
 pub fn estimate_tokens_for_provider(provider_id: &str, messages: &[ChatMessage]) -> usize {
-    let visible = if provider_id == crate::services::codex_client::PROVIDER_ID {
-        crate::services::token_counting::estimate_chat_tokens_without_reasoning(messages)
-    } else {
+    let visible = if counts_visible_reasoning(provider_id) {
         estimate_tokens(messages)
+    } else {
+        crate::services::token_counting::estimate_chat_tokens_without_reasoning(messages)
     };
-    visible.saturating_add(estimate_native_continuations(provider_id, messages))
+    visible.saturating_add(
+        super::token_estimate_reasoning::estimate_native_continuation_tokens(provider_id, messages),
+    )
+}
+
+pub fn estimate_textual_tokens_for_provider(provider_id: &str, messages: &[ChatMessage]) -> usize {
+    let visible = if counts_visible_reasoning(provider_id) {
+        crate::services::token_counting::estimate_textual_chat_tokens(messages)
+    } else {
+        messages
+            .iter()
+            .map(crate::services::token_counting::estimate_textual_chat_message_tokens_without_reasoning)
+            .sum()
+    };
+    visible.saturating_add(
+        super::token_estimate_reasoning::estimate_native_continuation_tokens(provider_id, messages),
+    )
 }
 
 pub fn estimate_message_tokens_for_provider(provider_id: &str, message: &ChatMessage) -> usize {
-    let visible = if provider_id == crate::services::codex_client::PROVIDER_ID {
-        crate::services::token_counting::estimate_chat_message_tokens_without_reasoning(message)
-    } else {
+    let visible = if counts_visible_reasoning(provider_id) {
         crate::services::token_counting::estimate_chat_message_tokens(message)
+    } else {
+        crate::services::token_counting::estimate_chat_message_tokens_without_reasoning(message)
     };
-    visible.saturating_add(estimate_native_continuations(
-        provider_id,
-        std::slice::from_ref(message),
-    ))
+    visible.saturating_add(
+        super::token_estimate_reasoning::estimate_native_continuation_tokens(
+            provider_id,
+            std::slice::from_ref(message),
+        ),
+    )
 }
 
-fn estimate_native_continuations(provider_id: &str, messages: &[ChatMessage]) -> usize {
-    let Some(route) =
-        crate::services::reasoning_continuity::contract::RouteId::from_provider_id(provider_id)
-    else {
-        return 0;
-    };
-    messages.iter().fold(0usize, |total, message| {
-        let bytes = message.continuation.as_ref().and_then(|envelope| {
-            (envelope.completion
-                == crate::services::reasoning_continuity::envelope::CompletionState::Complete
-                && envelope.source.route_id == route
-                && crate::services::reasoning_continuity::registry::route_contract(route)
-                    == Some(envelope.contract_id))
-            .then(|| serde_json::to_vec(envelope).ok())
-            .flatten()
-        });
-        total.saturating_add(bytes.map_or(0, |value| value.len().saturating_add(3) / 4))
-    })
+fn counts_visible_reasoning(provider_id: &str) -> bool {
+    provider_id != crate::services::codex_client::PROVIDER_ID
 }
 
-pub fn estimate_tool_tokens(tools: &[serde_json::Value]) -> usize {
-    tools.iter().fold(0usize, |total, tool| {
-        total.saturating_add(crate::services::token_counting::estimate_text_tokens(
-            &tool.to_string(),
-        ))
-    })
-}
-
-pub fn estimate_request_tokens(messages: &[ChatMessage], tools: &[serde_json::Value]) -> usize {
-    estimate_tokens(messages).saturating_add(estimate_tool_tokens(tools))
-}
-
-pub fn estimate_request_tokens_for_provider(
+pub(crate) fn estimate_native_continuation_tokens_for_provider(
     provider_id: &str,
     messages: &[ChatMessage],
-    tools: &[serde_json::Value],
 ) -> usize {
-    estimate_tokens_for_provider(provider_id, messages).saturating_add(estimate_tool_tokens(tools))
+    super::token_estimate_reasoning::estimate_native_continuation_tokens(provider_id, messages)
+}
+
+pub fn estimate_checkpoint_message_tokens(message: &AgentMessage) -> u32 {
+    let visible = crate::services::token_counting::estimate_agent_message_tokens(message);
+    let continuation = message
+        .continuation
+        .as_ref()
+        .and_then(|envelope| serde_json::to_vec(envelope).ok())
+        .map_or(0, |bytes| bytes.len().div_ceil(4));
+    visible.saturating_add(continuation).min(u32::MAX as usize) as u32
 }
 
 pub fn should_compress(used_tokens: usize, context_window: u64, threshold_pct: u8) -> bool {
@@ -131,6 +136,20 @@ mod tests {
         let mut message = msg("user", "hello");
         message.images = Some(vec!["iVBORw0KGgo=".to_string()]);
         assert!(estimate_tokens(&[message]) >= crate::services::llm::vision::IMAGE_TOKEN_ESTIMATE);
+    }
+
+    #[test]
+    fn textual_request_tracks_images_separately() {
+        let mut message = msg("user", "hello");
+        message.images = Some(vec!["iVBORw0KGgo=".to_string()]);
+
+        let capacity = estimate_request_tokens_for_provider("ollama", &[message.clone()], &[]);
+        let textual = estimate_textual_request_tokens_for_provider("ollama", &[message], &[]);
+
+        assert_eq!(
+            capacity - textual,
+            crate::services::llm::vision::IMAGE_TOKEN_ESTIMATE
+        );
     }
 
     #[test]

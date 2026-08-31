@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "automatic_enabled": false,
+  "global_profile_id": "00000000-0000-4000-8000-000000000001",
+  "global_selection_revision": 7,
+  "profiles": [
+    {
+      "id": "beaver",
+      "name": "Beaver",
+      "revision": 3,
+      "threshold_percent": 85,
+      "allow_under_64k": false,
+      "summary": {
+        "system_prompt": "beaver system",
+        "handoff_prompt": "beaver handoff"
+      },
+      "compact": { "target_percent": 75 }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000001",
+      "name": "Custom",
+      "revision": 9,
+      "threshold_percent": 72,
+      "allow_under_64k": true,
+      "summary": {
+        "system_prompt": "custom system",
+        "handoff_prompt": "custom handoff"
+      },
+      "compact": { "target_percent": 99 }
+    }
+  ]
+}

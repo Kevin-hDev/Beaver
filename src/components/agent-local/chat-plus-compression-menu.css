@@ -1,0 +1,20 @@
+.cpcm-list {
+  max-height: var(--chat-compression-list-max-height);
+  overflow-y: auto;
+}
+
+.cpcm-item {
+  justify-content: space-between;
+}
+
+.cpcm-item:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.cpcm-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

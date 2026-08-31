@@ -144,6 +144,17 @@ pub(super) async fn create_child(
     child.thinking_enabled = parent.thinking_enabled;
     child.reasoning_mode = parent.reasoning_mode.clone();
     child.preserve_reasoning = parent.preserve_reasoning;
+    child.compression_profile_selection = Some(
+        crate::services::compress::profile_resolve::resolve_for_session(parent)
+            .map_err(|_| {
+                ToolResult::internal(
+                    "subagent_compression_profile_failed",
+                    "Erreur interne lors de la création du sous-agent",
+                    false,
+                )
+            })?
+            .selection(),
+    );
     child.working_dir = parent.working_dir.clone();
     child.working_dir_managed = parent.working_dir_managed;
     session_store::save(&child).await.map_err(|_| {
@@ -169,6 +180,11 @@ pub(super) async fn inherit_parent_context(
     current.thinking_enabled = parent.thinking_enabled;
     current.reasoning_mode = parent.reasoning_mode.clone();
     current.preserve_reasoning = parent.preserve_reasoning;
+    current.compression_profile_selection = Some(
+        crate::services::compress::profile_resolve::resolve_for_session(parent)
+            .map_err(|_| "Mise à jour du sous-agent impossible".to_string())?
+            .selection(),
+    );
     current.working_dir = parent.working_dir.clone();
     current.working_dir_managed = parent.working_dir_managed;
     session_store::save(&current).await?;

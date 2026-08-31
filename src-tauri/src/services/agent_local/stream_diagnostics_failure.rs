@@ -108,6 +108,11 @@ pub(super) fn classify_error(message: &str, is_connection: bool) -> String {
             | "provider_payload_too_large"
             | "provider_configuration_invalid"
             | "service_tier_unavailable"
+            | "compression_unavailable"
+            | "compression_profiles_unavailable"
+            | "compression_disabled_under_64k"
+            | "compression_automatic_suspended"
+            | "compression_failed"
     ) {
         return lower;
     }
@@ -154,7 +159,12 @@ pub(super) fn classify_error(message: &str, is_connection: bool) -> String {
 pub(crate) fn is_connection_error(message: &str) -> bool {
     message
         .split(|character: char| !character.is_ascii_alphanumeric() && character != '_')
-        .any(|part| matches!(part, "ollama_connection_lost" | "provider_connection_failed"))
+        .any(|part| {
+            matches!(
+                part,
+                "ollama_connection_lost" | "provider_connection_failed"
+            )
+        })
 }
 
 #[cfg(test)]

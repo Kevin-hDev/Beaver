@@ -8,6 +8,14 @@ use std::sync::{Mutex, OnceLock, RwLock};
 static SESSION_OUTPUTS_DIRECTORY: OnceLock<RwLock<Option<PathBuf>>> = OnceLock::new();
 static CONFIG_UPDATE_LOCK: Mutex<()> = Mutex::new(());
 
+#[path = "config_compression_migration.rs"]
+mod compression_migration;
+
+pub(crate) use compression_migration::{
+    acknowledge_compression_settings_backup_at, finalize_compression_settings_migration_at,
+    legacy_compression_seed_from_path, LegacyCompressionSeed,
+};
+
 pub(crate) fn config_path() -> PathBuf {
     crate::services::paths::data_dir().join("config.json")
 }

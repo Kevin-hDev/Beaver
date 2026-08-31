@@ -1,6 +1,6 @@
+use super::context_usage_buckets::RequestContextUsage;
 use super::stream_events::AgentEventEmitter;
 use super::types_stream::{StreamEvent, StreamResult};
-use super::context_usage_buckets::RequestContextUsage;
 use crate::services::token_counting;
 
 pub fn emit_input(
@@ -10,7 +10,14 @@ pub fn emit_input(
     breakdown: RequestContextUsage,
 ) -> u32 {
     let input_tokens = bounded_tokens(input_tokens);
-    emit(on_event, input_tokens, 0, context_limit, true, Some(breakdown));
+    emit(
+        on_event,
+        input_tokens,
+        0,
+        context_limit,
+        true,
+        Some(breakdown),
+    );
     input_tokens
 }
 
@@ -40,18 +47,16 @@ impl StreamResult {
     }
 
     pub fn estimated_output_tokens(&self) -> u32 {
-        bounded_tokens(token_counting::token_count_from_units(
-            self.generated_units,
-        ))
+        bounded_tokens(token_counting::token_count_from_units(self.generated_units))
     }
 }
 
 fn resolved_usage(estimated_input_tokens: u32, result: &StreamResult) -> (u32, u32, bool) {
-    let input = result.prompt_tokens.unwrap_or(estimated_input_tokens);
+    let input = estimated_input_tokens;
     let output = result
         .eval_count
         .unwrap_or_else(|| result.estimated_output_tokens());
-    let estimated = result.prompt_tokens.is_none() || result.eval_count.is_none();
+    let estimated = true;
     (input, output, estimated)
 }
 

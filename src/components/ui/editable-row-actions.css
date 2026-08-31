@@ -1,0 +1,41 @@
+.era-actions {
+  position: relative;
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.era-confirm {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + var(--space-xs));
+  z-index: var(--z-dropdown);
+  padding: var(--space-sm);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  width: max-content;
+  max-width: min(20rem, 80vw);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  box-shadow: var(--elev-float);
+}
+
+.era-confirm-below {
+  top: calc(100% + var(--space-xs));
+  bottom: auto;
+}
+
+.era-confirm-side {
+  right: calc(100% + var(--space-sm));
+  bottom: auto;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.era-confirm-message {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+}

@@ -10,6 +10,13 @@ pub fn estimate_chat_tokens(messages: &[ChatMessage]) -> usize {
     messages.iter().map(estimate_chat_message_tokens).sum()
 }
 
+pub fn estimate_textual_chat_tokens(messages: &[ChatMessage]) -> usize {
+    messages
+        .iter()
+        .map(estimate_textual_chat_message_tokens)
+        .sum()
+}
+
 pub fn estimate_chat_tokens_without_reasoning(messages: &[ChatMessage]) -> usize {
     messages
         .iter()
@@ -19,6 +26,14 @@ pub fn estimate_chat_tokens_without_reasoning(messages: &[ChatMessage]) -> usize
 
 pub fn estimate_chat_message_tokens_without_reasoning(message: &ChatMessage) -> usize {
     estimate_chat_message_tokens_with_reasoning(message, false)
+}
+
+pub fn estimate_textual_chat_message_tokens(message: &ChatMessage) -> usize {
+    estimate_textual_chat_message_tokens_with_reasoning(message, true)
+}
+
+pub fn estimate_textual_chat_message_tokens_without_reasoning(message: &ChatMessage) -> usize {
+    estimate_textual_chat_message_tokens_with_reasoning(message, false)
 }
 
 pub fn estimate_text_tokens(input: &str) -> usize {
@@ -41,6 +56,14 @@ fn estimate_chat_message_tokens_with_reasoning(
     message: &ChatMessage,
     include_reasoning: bool,
 ) -> usize {
+    estimate_textual_chat_message_tokens_with_reasoning(message, include_reasoning)
+        + image_tokens(message.images.as_ref().map(Vec::len).unwrap_or(0))
+}
+
+fn estimate_textual_chat_message_tokens_with_reasoning(
+    message: &ChatMessage,
+    include_reasoning: bool,
+) -> usize {
     let mut units = text_units(&message.content);
     if include_reasoning {
         units += message
@@ -55,7 +78,7 @@ fn estimate_chat_message_tokens_with_reasoning(
             units += text_units(&call.function.arguments.to_string());
         }
     }
-    token_count_from_units(units) + image_tokens(message.images.as_ref().map(Vec::len).unwrap_or(0))
+    token_count_from_units(units)
 }
 
 pub fn estimate_agent_message_tokens(message: &AgentMessage) -> usize {

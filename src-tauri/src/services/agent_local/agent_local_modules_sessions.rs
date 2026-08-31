@@ -22,6 +22,7 @@ mod conversation_history_resolve;
 mod conversation_history_tests;
 pub(crate) mod conversation_history_validation;
 pub mod conversation_input;
+mod conversation_input_persisted;
 #[cfg(test)]
 mod conversation_input_tests;
 pub(crate) mod conversation_journal;
@@ -47,6 +48,8 @@ pub mod session_limits;
 pub mod session_locks;
 pub mod session_migration;
 mod session_migration_backup;
+mod session_migration_compression;
+mod session_migration_compression_guard;
 mod session_migration_ids;
 mod session_migration_legacy_history;
 #[cfg(test)]

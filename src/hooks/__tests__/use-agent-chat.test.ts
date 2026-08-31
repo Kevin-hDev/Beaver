@@ -68,6 +68,7 @@ const session: AgentSession = {
   plan_workflow_status: "needs_context",
   is_heartbeat: false,
   is_gateway: false,
+  automatic_compression_suspended: false,
   working_dir: "",
   working_dir_managed: false,
   messages: [

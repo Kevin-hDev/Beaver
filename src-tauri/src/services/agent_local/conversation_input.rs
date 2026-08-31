@@ -63,11 +63,19 @@ pub async fn resolve(input: NewUserTurnInput) -> Result<ResolvedTurnInput, Conve
     resolve_with_key_source(input, crate::services::attachment_access::attachment_key).await
 }
 
+#[cfg(test)]
 pub(crate) async fn resolve_with_key(
     input: NewUserTurnInput,
     key: &[u8],
 ) -> Result<ResolvedTurnInput, ConversationInputError> {
     resolve_with_key_source(input, || Ok(zeroize::Zeroizing::new(key.to_vec()))).await
+}
+
+pub(crate) async fn resolve_persisted_with_key(
+    input: NewUserTurnInput,
+    key: &[u8],
+) -> Result<ResolvedTurnInput, ConversationInputError> {
+    super::conversation_input_persisted::resolve(input, key).await
 }
 
 pub(crate) async fn resolve_with_key_source<F>(
@@ -151,7 +159,7 @@ pub(crate) fn validate_intention(input: &NewUserTurnInput) -> Result<(), Convers
     Ok(())
 }
 
-fn validate_top_level(input: &NewUserTurnInput) -> Result<(), ConversationInputError> {
+pub(super) fn validate_top_level(input: &NewUserTurnInput) -> Result<(), ConversationInputError> {
     if input.content.len() > MAX_TURN_CONTENT_BYTES
         || input.content.contains('\0')
         || input.files.len() > MAX_TURN_ATTACHMENTS

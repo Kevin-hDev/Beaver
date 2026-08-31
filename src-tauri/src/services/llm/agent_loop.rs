@@ -68,6 +68,9 @@ pub async fn run_agent_loop(
         request_id: &request_id,
         native_context,
         configured_context,
+        provider_tools: tools.active().to_vec(),
+        chatbot: permission_mode == "chat",
+        plan_mode_active,
         working_dir: &working_dir,
     };
     for turn in 0..MAX_TURNS {

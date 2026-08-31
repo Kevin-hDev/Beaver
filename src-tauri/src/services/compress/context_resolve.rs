@@ -9,16 +9,22 @@ pub struct ContextWindows {
 }
 
 pub async fn resolve_ollama(model: &str) -> ContextWindows {
-    let info = fetch_ollama_model_info(model).await;
+    let Ok(ollama) = OllamaClient::from_global() else {
+        return unavailable_ollama_context(model);
+    };
+    resolve_ollama_with_client(&ollama, model).await
+}
+
+pub async fn resolve_ollama_with_client(ollama: &OllamaClient, model: &str) -> ContextWindows {
+    let loaded = ollama.loaded_context_length(model).await.ok().flatten();
+    let info = fetch_ollama_model_info(ollama, model).await;
     let native = info.context_length;
-    let configured = info.num_ctx_from_modelfile.unwrap_or_else(|| {
-        let hardware_default = crate::services::gpu_detect::compute_default_num_ctx() as u64;
-        if hardware_default > 0 && native > 0 {
-            hardware_default.min(native)
-        } else {
-            native
-        }
-    });
+    let configured = select_ollama_context(
+        loaded,
+        info.num_ctx_from_modelfile,
+        native,
+        u64::from(crate::services::gpu_detect::compute_default_num_ctx()),
+    );
     ContextWindows {
         native,
         configured,
@@ -49,42 +55,22 @@ struct OllamaModelContext {
     prompt_tier: PromptTier,
 }
 
-async fn fetch_ollama_model_info(model: &str) -> OllamaModelContext {
-    let Ok(ollama) = OllamaClient::from_global() else {
-        return OllamaModelContext {
-            context_length: 0,
-            num_ctx_from_modelfile: None,
-            prompt_tier: crate::services::agent_local::model_size::detect_tier(model),
-        };
+async fn fetch_ollama_model_info(ollama: &OllamaClient, model: &str) -> OllamaModelContext {
+    let Ok(info) = ollama.show_model(model).await else {
+        return unavailable_ollama_info(model);
     };
-    let Ok(base_url) = ollama.base_url().await else {
-        return OllamaModelContext {
-            context_length: 0,
-            num_ctx_from_modelfile: None,
-            prompt_tier: crate::services::agent_local::model_size::detect_tier(model),
-        };
-    };
-    let client = reqwest::Client::new();
-    let resp = client
-        .post(format!("{base_url}/api/show"))
-        .json(&serde_json::json!({ "model": model }))
-        .send()
-        .await;
-
-    let json = match resp {
-        Ok(r) => r.json::<serde_json::Value>().await.unwrap_or_default(),
-        Err(_) => {
-            return OllamaModelContext {
-                context_length: 0,
-                num_ctx_from_modelfile: None,
-                prompt_tier: crate::services::agent_local::model_size::detect_tier(model),
-            }
-        }
-    };
-
-    ollama_model_context_from_json(model, &json)
+    let parsed = parse_modelfile(&info.modelfile);
+    OllamaModelContext {
+        context_length: info.context_length,
+        num_ctx_from_modelfile: parsed.parameters.get("num_ctx").and_then(|v| v.as_u64()),
+        prompt_tier: crate::services::agent_local::model_size::detect_ollama_tier(
+            &info.parameter_size,
+            model,
+        ),
+    }
 }
 
+#[cfg(test)]
 fn ollama_model_context_from_json(model: &str, json: &serde_json::Value) -> OllamaModelContext {
     let mi = &json["model_info"];
     let arch = mi["general.architecture"].as_str().unwrap_or("");
@@ -110,6 +96,42 @@ fn ollama_model_context_from_json(model: &str, json: &serde_json::Value) -> Olla
     }
 }
 
+pub(crate) fn select_ollama_context(
+    loaded: Option<u64>,
+    configured: Option<u64>,
+    native: u64,
+    hardware_default: u64,
+) -> u64 {
+    if let Some(value) = loaded.filter(|value| *value > 0) {
+        return value;
+    }
+    if let Some(value) = configured.filter(|value| *value > 0) {
+        return value;
+    }
+    match (native, hardware_default) {
+        (native, hardware) if native > 0 && hardware > 0 => native.min(hardware),
+        (native, _) if native > 0 => native,
+        (_, hardware) => hardware,
+    }
+}
+
+fn unavailable_ollama_context(model: &str) -> ContextWindows {
+    let info = unavailable_ollama_info(model);
+    ContextWindows {
+        native: 0,
+        configured: 0,
+        prompt_tier: Some(info.prompt_tier),
+    }
+}
+
+fn unavailable_ollama_info(model: &str) -> OllamaModelContext {
+    OllamaModelContext {
+        context_length: 0,
+        num_ctx_from_modelfile: None,
+        prompt_tier: crate::services::agent_local::model_size::detect_tier(model),
+    }
+}
+
 async fn lookup_api_context(provider: &str, model: &str) -> u64 {
     crate::services::llm::model_context_length(provider, model)
         .await
@@ -129,6 +151,22 @@ mod tests {
         };
         assert_eq!(ctx.native, 131_072);
         assert_eq!(ctx.configured, 32_768);
+    }
+
+    #[test]
+    fn next_ollama_request_uses_loaded_then_modelfile_then_safe_native_limit() {
+        assert_eq!(
+            select_ollama_context(Some(65_536), Some(32_768), 16_384, 8_192),
+            65_536
+        );
+        assert_eq!(
+            select_ollama_context(Some(0), Some(32_768), 16_384, 8_192),
+            32_768
+        );
+        assert_eq!(select_ollama_context(None, None, 16_384, 8_192), 8_192);
+        assert_eq!(select_ollama_context(None, Some(0), 16_384, 8_192), 8_192);
+        assert_eq!(select_ollama_context(None, None, 4_096, 8_192), 4_096);
+        assert_eq!(select_ollama_context(None, None, 0, 0), 0);
     }
 
     #[test]

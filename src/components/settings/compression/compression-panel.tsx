@@ -1,0 +1,83 @@
+import { useId, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { X } from "@/components/ui/icons";
+import { DialogPortal } from "@/components/ui/dialog-portal";
+import { useDialogKeyboard } from "@/components/ui/use-dialog-keyboard";
+import type { CompressionProfilesController } from "@/hooks/use-compression-profiles";
+import { CompressionProfileBar } from "./compression-profile-bar";
+import { CompressionProfileEditor } from "./compression-profile-editor";
+import "./compression-panel.css";
+import "./compression-sections.css";
+
+interface CompressionPanelProps {
+  controller: CompressionProfilesController;
+  currentWindow: number;
+  onClose: () => void;
+}
+
+export function CompressionPanel({ controller, currentWindow, onClose }: CompressionPanelProps) {
+  const { t } = useTranslation();
+  const titleId = useId();
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLElement>(null);
+  const [interactionActive, setInteractionActive] = useState(false);
+
+  useDialogKeyboard({
+    rootRef: dialogRef,
+    initialFocusRef: closeRef,
+    onEscape: onClose,
+    enabled: !interactionActive,
+  });
+
+  return (
+    <DialogPortal>
+      <div className="cpa-overlay">
+        <button
+          type="button"
+          className="cpa-backdrop-dismiss"
+          tabIndex={-1}
+          aria-label={t("settings.advanced.compressionClose")}
+          onClick={onClose}
+        />
+        <section ref={dialogRef} className="cpa-dialog relief" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+          <header className="cpa-head">
+            <div>
+              <h2 id={titleId}>{t("settings.advanced.compressionPanelTitle")}</h2>
+              <p>{t("settings.advanced.compressionPanelDesc")}</p>
+            </div>
+            <button
+              ref={closeRef}
+              type="button"
+              className="icon-btn icon-btn-secondary"
+              aria-label={t("settings.advanced.compressionClose")}
+              onClick={onClose}
+            >
+              <X size="var(--icon-sm)" />
+            </button>
+          </header>
+
+          <CompressionProfileBar
+            controller={controller}
+            onInteractionChange={setInteractionActive}
+          />
+
+          {controller.view && (() => {
+            const active = controller.view.profiles.find(
+              (profile) => profile.id === controller.view?.global_profile_id,
+            );
+            return active ? (
+              <CompressionProfileEditor
+                key={active.id}
+                profile={active}
+                currentWindow={currentWindow}
+                controller={controller}
+                limits={controller.view.limits}
+                automaticEnabled={controller.view.automatic_enabled}
+              />
+            ) : null;
+          })()}
+        </section>
+      </div>
+    </DialogPortal>
+  );
+}

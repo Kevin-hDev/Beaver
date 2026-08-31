@@ -1,4 +1,5 @@
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ContextProgress } from "../context-progress";
 import type { ContextUsageBreakdown } from "@/hooks/context-usage-breakdown";
@@ -48,6 +49,7 @@ describe("ContextProgress", () => {
     );
 
     expect(getByLabelText("Context window")).toBeTruthy();
+    fireEvent.mouseEnter(getByLabelText("Context window"));
     expect(getByText("Messages")).toBeTruthy();
     expect(getByText("System tools")).toBeTruthy();
     expect(getByText("MCP / connectors")).toBeTruthy();
@@ -67,6 +69,7 @@ describe("ContextProgress", () => {
     const { getByText, rerender } = render(
       <ContextProgress used={100} max={1000} breakdown={breakdown} />,
     );
+    fireEvent.mouseEnter(document.querySelector(".context-ring") as HTMLElement);
     const liveBreakdown: ContextUsageBreakdown = {
       used: 140,
       items: breakdown.items.map((item) => item.key === "messages"
@@ -76,7 +79,37 @@ describe("ContextProgress", () => {
 
     rerender(<ContextProgress used={140} max={1000} breakdown={liveBreakdown} />);
 
-    expect(getByText("140 / 1.0K (14.0%)")).toBeTruthy();
+    expect(getByText("140 / 1K (14.0%)")).toBeTruthy();
     expect(getByText("90")).toBeTruthy();
+  });
+
+  it("affiche 1M et place le focus dans le panneau activé au clavier", async () => {
+    const { getByLabelText, getByRole, getByText } = render(
+      <ContextProgress used={400_000} max={1_000_000} />,
+    );
+    const trigger = getByLabelText("Context window");
+
+    fireEvent.keyDown(trigger, { key: "Enter" });
+
+    expect(getByText(/400K \/ 1M/)).toBeTruthy();
+    await waitFor(() => expect(getByRole("dialog", { name: "Context window" })).toHaveFocus());
+  });
+
+  it("laisse Tab suivre l'ordre normal sans piéger le focus dans le panneau", async () => {
+    const user = userEvent.setup();
+    const { getByLabelText, getByRole } = render(
+      <>
+        <ContextProgress used={400} max={1_000} />
+        <button type="button">Après l’anneau</button>
+      </>,
+    );
+    const trigger = getByLabelText("Context window");
+    await user.tab();
+    expect(trigger).toHaveFocus();
+    expect(getByRole("dialog", { name: "Context window" })).toBeInTheDocument();
+
+    await user.tab();
+
+    expect(getByRole("button", { name: "Après l’anneau" })).toHaveFocus();
   });
 });

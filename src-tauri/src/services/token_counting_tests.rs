@@ -71,6 +71,7 @@ fn agent_estimate_counts_tool_payload_once() {
         turn_id: AgentMessage::new_turn_id(),
         role: "assistant".into(),
         content: String::new(),
+        message_kind: None,
         thinking: None,
         tool_calls: None,
         tool_name: None,

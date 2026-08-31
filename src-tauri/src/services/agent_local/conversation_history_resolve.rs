@@ -41,7 +41,11 @@ pub(super) async fn from_session_for_continuation(
             && Some(message.id.as_str()) != skip_user_id
             && message.files.iter().any(|file| !file.path.is_empty())
     });
-    let key = needs_key.then(|| load_key(key_source)).transpose()?;
+    let key = needs_key
+        .then(|| load_key(key_source))
+        .transpose()
+        .ok()
+        .flatten();
     for message in session
         .messages
         .iter()
@@ -55,7 +59,7 @@ pub(super) async fn from_session_for_continuation(
         if message.files.is_empty() && !has_skill_ids {
             continue;
         }
-        let resolved = super::conversation_input::resolve_with_key(
+        let resolved = super::conversation_input::resolve_persisted_with_key(
             persisted_input(message)?,
             key.as_ref().map_or(&[], |value| value.as_slice()),
         )

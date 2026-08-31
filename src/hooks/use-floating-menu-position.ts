@@ -1,6 +1,6 @@
 import { useCallback, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 
-type FloatingAlign = "left" | "right";
+type FloatingAlign = "left" | "right" | "before" | "after";
 type FloatingPlacement = "above" | "below" | "auto";
 
 const VIEWPORT_PADDING = 12;
@@ -25,6 +25,7 @@ export function useFloatingMenuPosition(
   placement: FloatingPlacement = "above",
   matchAnchorWidth = false,
   spanRef?: React.RefObject<HTMLElement | null>,
+  horizontalRef?: React.RefObject<HTMLElement | null>,
 ) {
   const anchorRef = useRef<HTMLElement | null>(null);
   const floatingRef = useRef<HTMLDivElement | null>(null);
@@ -46,8 +47,18 @@ export function useFloatingMenuPosition(
     const maxWidth = Math.max(0, window.innerWidth - (VIEWPORT_PADDING * 2));
     const boundedWidth = Math.min(width, maxWidth);
     const maxLeft = Math.max(VIEWPORT_PADDING, window.innerWidth - boundedWidth - VIEWPORT_PADDING);
-    const horizontalRect = spanRect ?? anchorRect;
-    const rawLeft = align === "right" ? horizontalRect.right - width : horizontalRect.left;
+    const horizontalRect = horizontalRef?.current?.getBoundingClientRect() ?? spanRect ?? anchorRect;
+    let rawLeft = align === "right"
+      ? horizontalRect.right - width
+      : align === "before"
+        ? horizontalRect.left - width - gap
+        : align === "after"
+          ? horizontalRect.right + gap
+          : horizontalRect.left;
+    if (align === "before" && rawLeft < VIEWPORT_PADDING) {
+      const after = horizontalRect.right + gap;
+      if (after + boundedWidth <= window.innerWidth - VIEWPORT_PADDING) rawLeft = after;
+    }
     const left = Math.min(Math.max(rawLeft, VIEWPORT_PADDING), maxLeft);
     const availableAbove = Math.max(0, anchorRect.top - gap - VIEWPORT_PADDING);
     const availableBelow = Math.max(
@@ -77,7 +88,7 @@ export function useFloatingMenuPosition(
       visibility: "visible",
       zIndex: 1000,
     });
-  }, [align, gap, matchAnchorWidth, open, placement, spanRef]);
+  }, [align, gap, horizontalRef, matchAnchorWidth, open, placement, spanRef]);
 
   useLayoutEffect(() => {
     if (!open) {

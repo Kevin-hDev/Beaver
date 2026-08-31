@@ -2,6 +2,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 use super::ReasoningReplayStatus;
+use crate::services::agent_local::types_message::AgentMessageKind;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(test, derive(ts_rs::TS))]
@@ -118,6 +119,9 @@ pub struct AgentMessageView {
     #[cfg_attr(test, ts(type = "\"user\" | \"assistant\" | \"tool\""))]
     pub role: String,
     pub content: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(test, ts(optional))]
+    pub message_kind: Option<AgentMessageKind>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[cfg_attr(test, ts(optional))]
     pub thinking: Option<String>,

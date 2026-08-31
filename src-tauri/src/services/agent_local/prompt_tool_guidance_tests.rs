@@ -28,10 +28,8 @@ fn discovery_tools_have_distinct_scopes() {
 #[test]
 fn discovery_guidance_disappears_with_its_unavailable_tool() {
     for prompt in prompts() {
-        let filtered = super::tool_prompt_filter::filter_system_prompt(
-            &prompt,
-            &["read_file".to_string()],
-        );
+        let filtered =
+            super::tool_prompt_filter::filter_system_prompt(&prompt, &["read_file".to_string()]);
 
         assert!(!filtered.contains("search_mcp_tools for external MCP services"));
         assert!(!filtered.contains("search_extension_tools for enabled Beaver plugins"));
@@ -78,5 +76,20 @@ fn agent_prompts_do_not_claim_an_active_permission_mode() {
         assert!(!prompt.contains("session-allowed"));
         assert!(!prompt.contains("Ask for approval mode"));
         assert!(!prompt.contains("Full access mode"));
+    }
+}
+
+#[test]
+fn chatbot_prompts_expose_only_real_web_capabilities() {
+    for prompt in [
+        super::prompt_chat_compact::build_with_behavior(Path::new("."), None),
+        super::prompt_chat_detailed::build_with_behavior(Path::new("."), None),
+    ] {
+        assert!(prompt.contains("web_search"));
+        assert!(prompt.contains("web_fetch"));
+        assert!(!prompt.contains("ask_user_choice"));
+        assert!(!prompt.contains("Chatbot"));
+        assert!(!prompt.contains("Ask for approval"));
+        assert!(!prompt.contains("Full access"));
     }
 }

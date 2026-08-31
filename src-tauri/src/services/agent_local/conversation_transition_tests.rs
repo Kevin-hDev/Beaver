@@ -40,6 +40,43 @@ fn legacy_turn_without_provenance_becomes_a_replay_boundary() {
 }
 
 #[test]
+fn structured_compaction_kind_is_the_barrier_even_when_recent_is_empty() {
+    use super::types_message::AgentMessageKind;
+    use crate::services::reasoning_continuity::contract::ContinuationTarget;
+
+    let mut session = fixture_session();
+    let mut checkpoint = message("checkpoint", "turn-compression", "user", "libellé libre");
+    checkpoint.message_kind = Some(AgentMessageKind::CompressionCheckpoint);
+    let mut boundary = message("boundary", "turn-compression", "assistant", "libellé libre");
+    boundary.message_kind = Some(AgentMessageKind::CompressionBoundary);
+    session.messages = vec![checkpoint, boundary];
+
+    let result = conversation_transition::for_target(&session, &target("model-a"));
+    assert_eq!(result.barrier, Some(ContinuityBarrier::Compaction));
+    assert_eq!(result.compatible_suffix_start, session.messages.len());
+
+    let history = super::conversation_history_build::from_continuation(
+        &session,
+        &ContinuationTarget::Replay(target("model-a")),
+    )
+    .expect("rebuild empty recent history");
+    assert!(history.messages.last().unwrap().continuity_barrier_before);
+}
+
+#[test]
+fn old_compression_prefix_without_kind_is_only_legacy_text() {
+    let mut session = fixture_session();
+    session.messages = complete_turn(
+        "ordinary",
+        "This session is being continued from a previous conversation",
+        None,
+    );
+
+    let result = conversation_transition::for_target(&session, &target("model-a"));
+    assert_eq!(result.barrier, Some(ContinuityBarrier::Legacy));
+}
+
+#[test]
 fn credential_and_mode_changes_are_explicit_barriers() {
     let mut session = fixture_session();
     session.messages = complete_turn(
@@ -88,60 +125,6 @@ fn incompatible_provenance_discards_its_entire_user_assistant_tool_turn() {
         assert_eq!(result.barrier, Some(ContinuityBarrier::Model));
         assert_eq!(result.compatible_suffix_start, 6);
     }
-}
-
-#[test]
-fn compacting_only_removes_complete_turns_and_marks_replaced_envelopes() {
-    let mut session = fixture_session();
-    session.messages = complete_turn(
-        "complete",
-        "answer",
-        Some(envelope(RouteId::Ollama, "model-a", "opaque-native")),
-    );
-    session
-        .messages
-        .push(message("user-open", "turn-open", "user", "unfinished"));
-
-    let compacted =
-        super::conversation_compaction::compact_complete_turns(&mut session.messages, 0)
-            .expect("only the completed turn is compacted");
-
-    assert_eq!(compacted.removed_turns, 1);
-    assert_eq!(compacted.replaced_envelopes.len(), 1);
-    assert_eq!(
-        compacted.replaced_envelopes[0].completion,
-        CompletionState::Compacted
-    );
-    assert_eq!(session.messages.len(), 1);
-    assert_eq!(session.messages[0].turn_id, "turn-open");
-}
-
-#[test]
-fn compaction_refuses_an_open_tool_chain() {
-    let mut session = fixture_session();
-    let mut assistant = message("assistant-open", "turn-open", "assistant", "");
-    assistant.tool_calls = Some(vec![super::types_message::ToolCallRequest {
-        id: "call-open".into(),
-        extra_content: None,
-        function: super::types_message::ToolCallRequestFunction {
-            name: "read_file".into(),
-            arguments: serde_json::json!({"path": "a"}),
-        },
-    }]);
-    session.messages = vec![
-        message("user-open", "turn-open", "user", "question"),
-        assistant,
-    ];
-    let before = serde_json::to_vec(&session.messages).unwrap();
-
-    let error = super::conversation_compaction::compact_complete_turns(&mut session.messages, 1)
-        .expect_err("open chains cannot be compacted");
-
-    assert_eq!(
-        error,
-        super::conversation_compaction::CompactionError::OpenTurn
-    );
-    assert_eq!(serde_json::to_vec(&session.messages).unwrap(), before);
 }
 
 #[test]
@@ -245,7 +228,7 @@ fn optional_replay_does_not_create_fallback_for_missing_envelope() {
 
 fn fixture_session() -> AgentSession {
     serde_json::from_value(serde_json::json!({
-        "schema_version": 2,
+        "schema_version": super::session_limits::CURRENT_SESSION_SCHEMA_VERSION,
         "id": "00000000-0000-4000-8000-000000000001",
         "name": "fixture",
         "created_at": Utc::now(),
@@ -350,6 +333,7 @@ fn message(id: &str, turn_id: &str, role: &str, content: &str) -> AgentMessage {
         turn_id: turn_id.into(),
         role: role.into(),
         content: content.into(),
+        message_kind: None,
         thinking: None,
         tool_calls: None,
         tool_name: None,

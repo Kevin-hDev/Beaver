@@ -87,6 +87,7 @@
   --signal-ok-bg: rgba(22, 163, 74, 0.12);
   --signal-error-bg: rgba(220, 38, 38, 0.12);
   --signal-warning: #a16207;
+  --signal-alert: #ea580c;
   --signal-warning-bg: rgba(161, 98, 7, 0.12);
   --signal-info: #3b82f6;
   --signal-info-bg: rgba(59, 130, 246, 0.12);

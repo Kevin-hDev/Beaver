@@ -12,6 +12,8 @@ use super::types_session::AgentSession;
 pub enum LoadedVersion {
     V1,
     V2,
+    V3,
+    V4,
     Future(u16),
 }
 
@@ -53,6 +55,14 @@ pub fn read(bytes: &[u8], path: PathBuf) -> Result<LoadedSession, String> {
             super::session_migration_wire::parse_v2(bytes)?,
             LoadedVersion::V2,
         ),
+        WireVersion::V3 => (
+            super::session_migration_wire::parse_v3(bytes)?,
+            LoadedVersion::V3,
+        ),
+        WireVersion::V4 => (
+            super::session_migration_wire::parse_v4(bytes)?,
+            LoadedVersion::V4,
+        ),
         WireVersion::Future(value) => (
             super::session_migration_wire::parse_future(bytes, value)?,
             LoadedVersion::Future(value),
@@ -62,7 +72,11 @@ pub fn read(bytes: &[u8], path: PathBuf) -> Result<LoadedSession, String> {
         session,
         path,
         version,
-        original: (version == LoadedVersion::V1).then(|| Zeroizing::new(bytes.to_vec())),
+        original: matches!(
+            version,
+            LoadedVersion::V1 | LoadedVersion::V2 | LoadedVersion::V3
+        )
+        .then(|| Zeroizing::new(bytes.to_vec())),
     })
 }
 
@@ -70,36 +84,50 @@ pub fn read(bytes: &[u8], path: PathBuf) -> Result<LoadedSession, String> {
     dead_code,
     reason = "public migration API consumed by staged session owners"
 )]
-pub async fn commit_v2(loaded: &LoadedSession) -> Result<(), String> {
-    let bytes = serialize_v2(loaded.session())?;
-    commit_v2_bytes(loaded, bytes).await
+pub async fn commit_current(loaded: &LoadedSession) -> Result<(), String> {
+    let bytes = serialize_current(loaded.session())?;
+    commit_migrated_bytes(loaded, bytes).await
 }
 
-pub(super) async fn commit_v2_bytes(loaded: &LoadedSession, bytes: Vec<u8>) -> Result<(), String> {
-    if loaded.version != LoadedVersion::V1 {
-        return Err(session_limits::save_failed());
-    }
+pub(super) async fn commit_migrated_bytes(
+    loaded: &LoadedSession,
+    bytes: Vec<u8>,
+) -> Result<(), String> {
+    let backup = match loaded.version {
+        LoadedVersion::V1 => super::session_migration_backup::backup_path(&loaded.path)?,
+        LoadedVersion::V2 => super::session_migration_backup::v2_backup_path(&loaded.path)?,
+        LoadedVersion::V3 => super::session_migration_backup::v3_backup_path(&loaded.path)?,
+        LoadedVersion::V4 | LoadedVersion::Future(_) => {
+            return Err(session_limits::save_failed());
+        }
+    };
     session_limits::validate_serialized_size(bytes.len())?;
     let original = loaded
         .original
         .as_deref()
         .ok_or_else(session_limits::save_failed)?;
-    super::session_migration_backup::publish(&loaded.path, original, bytes).await
+    super::session_migration_backup::publish(&loaded.path, backup, original, bytes).await
 }
 
 #[cfg(test)]
-pub(super) async fn commit_v2_fail_before_rename(loaded: &LoadedSession) -> Result<(), String> {
-    if loaded.version != LoadedVersion::V1 {
-        return Err(session_limits::save_failed());
-    }
-    let backup = super::session_migration_backup::backup_path(&loaded.path)?;
+pub(super) async fn commit_current_fail_before_rename(
+    loaded: &LoadedSession,
+) -> Result<(), String> {
+    let backup = match loaded.version {
+        LoadedVersion::V1 => super::session_migration_backup::backup_path(&loaded.path)?,
+        LoadedVersion::V2 => super::session_migration_backup::v2_backup_path(&loaded.path)?,
+        LoadedVersion::V3 => super::session_migration_backup::v3_backup_path(&loaded.path)?,
+        LoadedVersion::V4 | LoadedVersion::Future(_) => {
+            return Err(session_limits::save_failed());
+        }
+    };
     let original = loaded
         .original
         .as_deref()
         .ok_or_else(session_limits::save_failed)?;
     super::session_migration_backup::ensure_exact_backup(&backup, original).await?;
     let path = loaded.path.clone();
-    let bytes = serialize_v2(loaded.session())?;
+    let bytes = serialize_current(loaded.session())?;
     tokio::task::spawn_blocking(move || {
         crate::services::private_store::atomic_write_fail_before_replace(&path, &bytes)
     })
@@ -107,16 +135,23 @@ pub(super) async fn commit_v2_fail_before_rename(loaded: &LoadedSession) -> Resu
     .map_err(|_| session_limits::save_failed())?
 }
 
-pub(super) async fn acknowledge_v2(loaded: &LoadedSession) -> Result<(), String> {
-    if loaded.version == LoadedVersion::V2
-        && super::session_migration_backup::acknowledge(
-            &loaded.path,
-            !loaded.session.messages.is_empty(),
-        )
-        .await
-        .is_err()
-    {
-        log::warn!("session_migration_backup_cleanup_failed");
+pub(super) async fn acknowledge_current(loaded: &LoadedSession) -> Result<(), String> {
+    if loaded.version == LoadedVersion::V4 {
+        for backup in [
+            super::session_migration_backup::backup_path(&loaded.path)?,
+            super::session_migration_backup::v2_backup_path(&loaded.path)?,
+            super::session_migration_backup::v3_backup_path(&loaded.path)?,
+        ] {
+            if super::session_migration_backup::acknowledge_path(
+                backup,
+                !loaded.session.messages.is_empty(),
+            )
+            .await
+            .is_err()
+            {
+                log::warn!("session_migration_backup_cleanup_failed");
+            }
+        }
     }
     Ok(())
 }
@@ -126,15 +161,25 @@ pub(super) fn backup_path(path: &Path) -> Result<PathBuf, String> {
     super::session_migration_backup::backup_path(path)
 }
 
+#[cfg(test)]
+pub(super) fn v2_backup_path(path: &Path) -> Result<PathBuf, String> {
+    super::session_migration_backup::v2_backup_path(path)
+}
+
+#[cfg(test)]
+pub(super) fn v3_backup_path(path: &Path) -> Result<PathBuf, String> {
+    super::session_migration_backup::v3_backup_path(path)
+}
+
 #[allow(
     dead_code,
     reason = "shared serializer for the staged public migration API"
 )]
-pub(super) fn serialize_v2(session: &AgentSession) -> Result<Vec<u8>, String> {
+pub(super) fn serialize_current(session: &AgentSession) -> Result<Vec<u8>, String> {
     if session.schema_version != CURRENT_SESSION_SCHEMA_VERSION {
         return Err(session_limits::save_failed());
     }
-    super::session_migration_wire::validate_v2_writable(session)
+    super::session_migration_wire::validate_current_writable(session)
         .map_err(|_| session_limits::save_failed())?;
     let bytes = serde_json::to_vec_pretty(session).map_err(|_| session_limits::save_failed())?;
     session_limits::validate_serialized_size(bytes.len())?;

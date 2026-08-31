@@ -1,5 +1,5 @@
-pub mod chat_prompts;
 pub(crate) mod chat_prompt_sections;
+pub mod chat_prompts;
 #[cfg(test)]
 mod chat_prompts_behavior_tests;
 #[cfg(test)]
@@ -13,13 +13,12 @@ pub mod prompt_compact_style;
 pub mod prompt_detailed;
 pub mod prompt_detailed_sections;
 pub mod prompt_external_content;
-pub mod prompt_interactive;
 pub mod prompt_objective;
 pub mod prompt_plan;
 pub mod prompt_priority;
-pub mod system_prompt_defaults;
-pub mod system_prompt_runtime_context;
-#[cfg(test)]
-mod system_prompt_defaults_tests;
 #[cfg(test)]
 mod prompt_tool_guidance_tests;
+pub mod system_prompt_defaults;
+#[cfg(test)]
+mod system_prompt_defaults_tests;
+pub mod system_prompt_runtime_context;

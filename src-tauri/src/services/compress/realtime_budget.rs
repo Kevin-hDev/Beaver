@@ -8,12 +8,22 @@ pub struct RealtimeBudget {
 }
 
 impl RealtimeBudget {
-    pub fn from_estimate(configured_context: u64, base_tokens: usize) -> Option<Self> {
-        let config = crate::services::config::read_config().ok()?.advanced;
+    pub async fn for_session(
+        session_id: &str,
+        configured_context: u64,
+        base_tokens: usize,
+    ) -> Option<Self> {
+        let session = crate::services::agent_local::session_store::get(session_id)
+            .await
+            .ok()?;
+        let profile = super::profile_resolve::resolve_for_session(&session).ok()?;
+        if !super::automatic_guard::allows_realtime(&session, &profile, configured_context) {
+            return None;
+        }
         Self::new(
-            config.compression_enabled,
+            profile.automatic_enabled && profile.available(configured_context),
             configured_context,
-            config.compression_threshold,
+            profile.profile.threshold_percent.min(90),
             base_tokens,
         )
     }

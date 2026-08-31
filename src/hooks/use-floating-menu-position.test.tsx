@@ -41,6 +41,18 @@ function SpanningFixture() {
   );
 }
 
+function SideFixture() {
+  const horizontalRef = useRef<HTMLDivElement | null>(null);
+  const { anchorRef, floatingRef, floatingStyle } =
+    useFloatingMenuPosition(true, "before", 8, "auto", false, undefined, horizontalRef);
+  return (
+    <div ref={horizontalRef} data-horizontal>
+      <button ref={(node) => { anchorRef.current = node; }} data-anchor>anchor</button>
+      <div ref={floatingRef} style={floatingStyle}>side menu</div>
+    </div>
+  );
+}
+
 afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
@@ -143,6 +155,60 @@ describe("useFloatingMenuPosition", () => {
       width: "500px",
       // le placement vertical reste celui du bouton, pas celui de la zone
       bottom: "256px",
+    }));
+  });
+
+  it("place une seconde bulle avant le panneau sans les superposer", async () => {
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
+      .mockImplementation(function getRect(this: HTMLElement) {
+        if (this.dataset.horizontal !== undefined) {
+          return {
+            x: 500, y: 260, top: 260, right: 740, bottom: 560, left: 500,
+            width: 240, height: 300, toJSON: () => ({}),
+          };
+        }
+        return {
+          x: 700, y: 520, top: 520, right: 728, bottom: 548, left: 700,
+          width: 28, height: 28, toJSON: () => ({}),
+        };
+      });
+    vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(340);
+    vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(120);
+    vi.stubGlobal("innerWidth", 1_000);
+    vi.stubGlobal("innerHeight", 800);
+
+    render(<SideFixture />);
+
+    await waitFor(() => expect(screen.getByText("side menu")).toHaveStyle({
+      left: "152px",
+      visibility: "visible",
+    }));
+  });
+
+  it("bascule la seconde bulle après le panneau quand la gauche est trop étroite", async () => {
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
+      .mockImplementation(function getRect(this: HTMLElement) {
+        if (this.dataset.horizontal !== undefined) {
+          return {
+            x: 40, y: 260, top: 260, right: 280, bottom: 560, left: 40,
+            width: 240, height: 300, toJSON: () => ({}),
+          };
+        }
+        return {
+          x: 240, y: 520, top: 520, right: 268, bottom: 548, left: 240,
+          width: 28, height: 28, toJSON: () => ({}),
+        };
+      });
+    vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(340);
+    vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(120);
+    vi.stubGlobal("innerWidth", 1_000);
+    vi.stubGlobal("innerHeight", 800);
+
+    render(<SideFixture />);
+
+    await waitFor(() => expect(screen.getByText("side menu")).toHaveStyle({
+      left: "288px",
+      visibility: "visible",
     }));
   });
 });

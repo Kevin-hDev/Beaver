@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { Pencil, Trash } from "@/components/ui/icons";
-import { Tooltip } from "@/components/ui/tooltip";
+import {
+  EditableRowActions,
+  useEditableRowActions,
+} from "@/components/ui/editable-row-actions";
 import type { AnalysisMeta } from "./forecast-history";
 
 interface ForecastHistoryRowProps {
@@ -18,58 +20,13 @@ export function ForecastHistoryRow({
   onDelete,
 }: ForecastHistoryRowProps) {
   const { t, i18n } = useTranslation();
-  const [editing, setEditing] = useState(false);
-  const [draftName, setDraftName] = useState(analysis.name);
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
-
-  const commitRename = useCallback(async () => {
-    const trimmed = draftName.trim();
-    if (!trimmed || trimmed === analysis.name) {
-      setEditing(false);
-      setDraftName(analysis.name);
-      return;
-    }
-    await onRename(analysis.id, trimmed);
-    setEditing(false);
-  }, [analysis.id, analysis.name, draftName, onRename]);
-
-  const confirmDeleteAnalysis = useCallback(async () => {
-    await onDelete(analysis.id);
-    setConfirmDelete(false);
-  }, [analysis.id, onDelete]);
-
-  useEffect(() => {
-    if (!editing && !confirmDelete) return;
-
-    const handlePointerDown = (event: MouseEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) {
-        setEditing(false);
-        setConfirmDelete(false);
-        setDraftName(analysis.name);
-      }
-    };
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setEditing(false);
-        setConfirmDelete(false);
-        setDraftName(analysis.name);
-      }
-      if (event.key === "Enter") {
-        event.preventDefault();
-        if (editing) void commitRename();
-        if (confirmDelete) void confirmDeleteAnalysis();
-      }
-    };
-
-    window.addEventListener("mousedown", handlePointerDown);
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("mousedown", handlePointerDown);
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [editing, confirmDelete, analysis.name, commitRename, confirmDeleteAnalysis]);
+  const actions = useEditableRowActions({
+    rootRef,
+    value: analysis.name,
+    onRename: (name) => onRename(analysis.id, name),
+    onDelete: () => onDelete(analysis.id),
+  });
 
   return (
     <div
@@ -78,10 +35,10 @@ export function ForecastHistoryRow({
       role="button"
       tabIndex={0}
       onClick={() => {
-        if (!editing) onLoad(analysis.id);
+        if (!actions.editing) onLoad(analysis.id);
       }}
       onKeyDown={(event) => {
-        if (!editing && (event.key === "Enter" || event.key === " ")) {
+        if (!actions.editing && (event.key === "Enter" || event.key === " ")) {
           event.preventDefault();
           onLoad(analysis.id);
         }
@@ -89,13 +46,13 @@ export function ForecastHistoryRow({
     >
       <div className="fch-card-main">
         <span className="fch-name-row">
-          {editing ? (
+          {actions.editing ? (
             <input
               className="field fch-rename-input"
-              value={draftName}
+              value={actions.draft}
               autoFocus
               onClick={(event) => event.stopPropagation()}
-              onChange={(event) => setDraftName(event.target.value)}
+              onChange={(event) => actions.setDraft(event.target.value)}
             />
           ) : (
             <span className="fch-name">{analysis.name}</span>
@@ -110,57 +67,14 @@ export function ForecastHistoryRow({
         <span className="fch-date">{formatTimestamp(analysis.created_at, i18n.language)}</span>
       </div>
       <div className="fch-actions">
-        {confirmDelete && (
-          <div className="fch-confirm-popover">
-            <button
-              type="button"
-              className="btn btn-sm btn-primary"
-              onClick={(event) => {
-                event.stopPropagation();
-                void confirmDeleteAnalysis();
-              }}
-            >
-              {t("forecast.history.validate")}
-            </button>
-            <button
-              type="button"
-              className="btn btn-sm btn-secondary"
-              onClick={(event) => {
-                event.stopPropagation();
-                setConfirmDelete(false);
-              }}
-            >
-              {t("forecast.history.cancel")}
-            </button>
-          </div>
-        )}
-        <Tooltip label={t("forecast.history.edit")}>
-          <button
-            type="button"
-            className="icon-btn icon-btn-secondary"
-            onClick={(event) => {
-              event.stopPropagation();
-              setConfirmDelete(false);
-              setDraftName(analysis.name);
-              setEditing(true);
-            }}
-          >
-            <Pencil size="var(--icon-15)" />
-          </button>
-        </Tooltip>
-      <Tooltip label={t("forecast.history.delete")}>
-        <button
-          type="button"
-          className="icon-btn icon-btn-secondary icon-btn-destructive"
-          onClick={(event) => {
-            event.stopPropagation();
-            setEditing(false);
-            setConfirmDelete(true);
-          }}
-        >
-          <Trash size="var(--icon-15)" />
-        </button>
-      </Tooltip>
+        <EditableRowActions
+          controller={actions}
+          confirmationPlacement="side"
+          renameLabel={t("forecast.history.edit")}
+          deleteLabel={t("forecast.history.delete")}
+          confirmLabel={t("forecast.history.validate")}
+          cancelLabel={t("forecast.history.cancel")}
+        />
       </div>
     </div>
   );

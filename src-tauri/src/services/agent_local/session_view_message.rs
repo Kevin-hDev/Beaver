@@ -14,6 +14,7 @@ pub(crate) fn from_message(message: &AgentMessage) -> Result<AgentMessageView, S
         turn_id: message.turn_id.clone(),
         role: message.role.clone(),
         content: message.content.clone(),
+        message_kind: message.message_kind,
         thinking: visible_thinking(message),
         tool_calls: message.tool_calls.as_ref().map(|calls| {
             calls

@@ -174,6 +174,7 @@ where
         turn_id: turn_id.clone(),
         role: "user".into(),
         content: input.user_content.clone(),
+        message_kind: None,
         thinking: None,
         tool_calls: None,
         tool_name: None,
@@ -192,6 +193,9 @@ where
         stream_part: None,
     };
     let housekeeping = super::session_store_todos::apply_user_turn(&mut session, true);
+    if !crate::services::compress::command::is_explicit_compression_command(&input.user_content) {
+        crate::services::compress::automatic_guard::reset(&mut session);
+    }
     session.messages.push(message);
     session.updated_at = Some(Utc::now());
     super::session_store_messages::recompute_accumulated_tokens(&mut session);

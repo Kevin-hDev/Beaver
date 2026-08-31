@@ -55,6 +55,10 @@ impl RequestContextUsage {
                 .unwrap_or(SYSTEM_TOOLS);
             classified[bucket] = classified[bucket].saturating_add(tokens);
         }
+        classified[MESSAGES] = classified[MESSAGES].saturating_add(
+            crate::services::compress::token_estimate::
+                estimate_native_continuation_tokens_for_provider(provider_id, messages),
+        );
 
         let (skills, memory, meta_context, system_prompt) =
             split_system_tokens(system_tokens, seed);
@@ -68,6 +72,16 @@ impl RequestContextUsage {
             system_prompt: bounded(system_prompt),
             reasoning_included,
         }
+    }
+
+    pub fn total_tokens(self) -> usize {
+        (self.messages as usize)
+            .saturating_add(self.system_tools as usize)
+            .saturating_add(self.mcp_connectors as usize)
+            .saturating_add(self.skills as usize)
+            .saturating_add(self.memory as usize)
+            .saturating_add(self.meta_context as usize)
+            .saturating_add(self.system_prompt as usize)
     }
 }
 
@@ -101,10 +115,6 @@ fn add_message(target: &mut [usize; 4], message: &ChatMessage, include_reasoning
     for index in 0..target.len() {
         target[index] = target[index].saturating_add(allocated[index]);
     }
-    let image_count = message.images.as_ref().map(Vec::len).unwrap_or(0);
-    target[MESSAGES] = target[MESSAGES].saturating_add(
-        image_count.saturating_mul(crate::services::llm::vision::IMAGE_TOKEN_ESTIMATE),
-    );
 }
 
 fn allocate_text_tokens(units: [usize; 4]) -> [usize; 4] {
@@ -156,9 +166,7 @@ fn message_tokens(message: &ChatMessage, include_reasoning: bool) -> usize {
                 &call.function.arguments.to_string(),
             ));
     }
-    let images = message.images.as_ref().map(Vec::len).unwrap_or(0);
     token_counting::token_count_from_units(units)
-        .saturating_add(images.saturating_mul(crate::services::llm::vision::IMAGE_TOKEN_ESTIMATE))
 }
 
 fn split_system_tokens(total: usize, seed: ContextUsageSeed) -> (usize, usize, usize, usize) {

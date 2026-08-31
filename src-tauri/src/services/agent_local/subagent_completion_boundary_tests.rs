@@ -72,6 +72,7 @@ async fn message_between_terminal_save_and_registry_completion_is_never_stranded
                 turn_id: AgentMessage::new_turn_id(),
                 role: "user".to_string(),
                 content: prompt.to_string(),
+                message_kind: None,
                 thinking: None,
                 tool_calls: None,
                 tool_name: None,

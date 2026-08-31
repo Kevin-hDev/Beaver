@@ -23,7 +23,7 @@ fn generated_output_saturates_at_u32_max() {
 }
 
 #[test]
-fn preserves_real_prompt_count_when_output_count_is_missing() {
+fn preserves_internal_textual_prompt_count_when_provider_differs() {
     let mut result = StreamResult {
         prompt_tokens: Some(321),
         ..Default::default()
@@ -32,7 +32,7 @@ fn preserves_real_prompt_count_when_output_count_is_missing() {
 
     let (input, output, estimated) = resolved_usage(999, &result);
 
-    assert_eq!(input, 321);
+    assert_eq!(input, 999);
     assert_eq!(output, result.estimated_output_tokens());
     assert!(estimated);
 }

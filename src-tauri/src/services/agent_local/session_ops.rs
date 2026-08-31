@@ -2,7 +2,9 @@ use super::session_store::{get, list, validate_session_id};
 #[cfg(test)]
 use super::session_store::{lock_session, save};
 
-pub use super::session_mutations::{apply_metadata_patch, edit_user_message};
+pub use super::session_mutations::{
+    apply_metadata_patch, edit_user_message, set_compression_profile,
+};
 
 pub async fn export_markdown(id: &str) -> Result<String, String> {
     validate_session_id(id)?;

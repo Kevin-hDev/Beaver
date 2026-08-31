@@ -163,6 +163,7 @@ fn session_snapshot_projects_only_positive_message_view_fields() {
         turn_id: "turn-1".into(),
         role: "assistant".into(),
         content: "visible".into(),
+        message_kind: None,
         thinking: Some("visible thinking".into()),
         tool_calls: None,
         tool_name: None,

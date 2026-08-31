@@ -2,15 +2,21 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { invoke } from "@tauri-apps/api/core";
 
+const eventListeners = vi.hoisted(() => new Map<string, () => void>());
+
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 vi.mock("@tauri-apps/api/event", () => ({
-  listen: vi.fn(() => Promise.resolve(() => undefined)),
+  listen: vi.fn((event: string, callback: () => void) => {
+    eventListeners.set(event, callback);
+    return Promise.resolve(() => eventListeners.delete(event));
+  }),
 }));
 
 import { useContextProgress } from "@/hooks/use-context-progress";
 
 beforeEach(() => {
   vi.clearAllMocks();
+  eventListeners.clear();
 });
 
 describe("useContextProgress", () => {
@@ -48,5 +54,15 @@ describe("useContextProgress", () => {
     rerender({ used: 10 });
 
     await waitFor(() => expect(result.current.max).toBe(16384));
+  });
+
+  it("relit la fenêtre effective après une modification du Modelfile", async () => {
+    vi.mocked(invoke).mockResolvedValueOnce(128_000).mockResolvedValueOnce(32_000);
+    const { result } = renderHook(() => useContextProgress("local", 0, "ollama"));
+    await waitFor(() => expect(result.current.max).toBe(128_000));
+
+    eventListeners.get("modelfile-updated")?.();
+
+    await waitFor(() => expect(result.current.max).toBe(32_000));
   });
 });

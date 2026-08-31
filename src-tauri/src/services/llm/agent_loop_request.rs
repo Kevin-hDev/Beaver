@@ -47,19 +47,25 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
         params.request_id,
     )
     .await;
-    let mut input_estimate = report.estimated_tokens;
+    let breakdown = RequestContextUsage::from_request(
+        params.provider_id,
+        params.messages,
+        params.tools,
+        params.context_usage_seed,
+    );
+    let mut textual_input_tokens = breakdown.total_tokens();
     let mut input_tokens = crate::services::agent_local::context_usage_runtime::emit_input(
         params.on_event,
-        input_estimate,
+        textual_input_tokens,
         params.configured_context,
-        RequestContextUsage::from_request(
-            params.provider_id,
-            params.messages,
-            params.tools,
-            params.context_usage_seed,
-        ),
+        breakdown,
     );
-    let realtime_budget = RealtimeBudget::from_estimate(params.configured_context, input_estimate);
+    let realtime_budget = RealtimeBudget::for_session(
+        params.session_id,
+        params.configured_context,
+        textual_input_tokens,
+    )
+    .await;
     let plan_active = crate::services::agent_local::agent_loop_plan::active(
         params.session_id,
         params.plan_mode_active,
@@ -125,23 +131,25 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
             if !changed {
                 return Err(error);
             }
-            let reduced_report = crate::services::agent_local::context_budget::prepare_for_request(
-                params.messages,
-                params.configured_context,
-                params.tools,
+            let _reduced_report =
+                crate::services::agent_local::context_budget::prepare_for_request(
+                    params.messages,
+                    params.configured_context,
+                    params.tools,
+                    params.provider_id,
+                )?;
+            let breakdown = RequestContextUsage::from_request(
                 params.provider_id,
-            )?;
-            input_estimate = reduced_report.estimated_tokens;
+                params.messages,
+                params.tools,
+                params.context_usage_seed,
+            );
+            textual_input_tokens = breakdown.total_tokens();
             input_tokens = crate::services::agent_local::context_usage_runtime::emit_input(
                 params.on_event,
-                input_estimate,
+                textual_input_tokens,
                 params.configured_context,
-                RequestContextUsage::from_request(
-                    params.provider_id,
-                    params.messages,
-                    params.tools,
-                    params.context_usage_seed,
-                ),
+                breakdown,
             );
             crate::services::agent_local::stream_diagnostics::record_retry(
                 params.session_id,
@@ -149,8 +157,12 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
                 "Requête provider réduite après un rejet de taille.",
             )
             .await;
-            let reduced_budget =
-                RealtimeBudget::from_estimate(params.configured_context, input_estimate);
+            let reduced_budget = RealtimeBudget::for_session(
+                params.session_id,
+                params.configured_context,
+                textual_input_tokens,
+            )
+            .await;
             super::retry::retry_stream(
                 params.on_event,
                 params.session_id,

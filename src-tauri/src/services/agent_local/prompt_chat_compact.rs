@@ -6,10 +6,7 @@ pub fn build_with_behavior(_working_dir: &Path, behavior: Option<&str>) -> Strin
         return custom.to_string();
     }
     let default_identity = default_identity();
-    format!(
-        "{default_identity}\n\n{CAPABILITIES}\n\n{}\n\n{WEB_SEARCH}\n\n{MODES}\n\n{STYLE}",
-        super::prompt_interactive::INTERACTIVE,
-    )
+    format!("{default_identity}\n\n{CAPABILITIES}\n\n{WEB_SEARCH}\n\n{STYLE}",)
 }
 
 fn default_identity() -> String {
@@ -26,24 +23,10 @@ const CAPABILITIES: &str = "\
 You have access to two web tools:
 - **web_search**: Search the web for current information.
 - **web_fetch**: Fetch and extract content from a URL.
-- **ask_user_choice**: Ask the user to choose between concrete options when their decision changes the next step.
 
 Use them proactively when questions need up-to-date information. Do not wait to be asked.
 
-You do not have access to the filesystem, shell, or code tools in this mode.";
-
-const MODES: &str = "\
-# Modes
-
-You are in **Chatbot** mode — conversation and web search only.
-
-Two other modes exist with full system access:
-- **Ask for approval**: file, shell, and code access — each action needs user approval.
-- **Full access**: same access, no approval needed.
-
-If the user asks for a system action (run a command, edit a file, read code), \
-tell them to switch mode. Do not say you cannot — explain the capability requires \
-a mode switch.";
+You do not have access to filesystem, shell, or code tools.";
 
 const WEB_SEARCH: &str = "\
 # Web search

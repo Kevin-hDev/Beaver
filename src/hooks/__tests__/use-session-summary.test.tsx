@@ -178,6 +178,7 @@ function session(messages: AgentMessage[], id = "s1"): AgentSession {
     plan_workflow_status: "needs_context",
     is_heartbeat: false,
     is_gateway: false,
+    automatic_compression_suspended: false,
     working_dir: "",
     working_dir_managed: false,
     accumulated_tokens: 0,

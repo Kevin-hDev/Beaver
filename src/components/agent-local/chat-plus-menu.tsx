@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Plus, Image, Plugs, PuzzlePiece, CaretRight, ClipboardText } from "@/components/ui/icons";
+import {
+  Plus, Image, Plugs, PuzzlePiece, CaretRight, ClipboardText, ArrowsClockwise,
+} from "@/components/ui/icons";
 import { Tooltip } from "@/components/ui/tooltip";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { useConnectors } from "@/hooks/use-connectors";
@@ -8,6 +10,8 @@ import { useExtensions } from "@/hooks/use-extensions";
 import { ChatPlusConnectorRow } from "./chat-plus-connector-row";
 import { ChatPlusPluginMenu, chatPluginShortcuts } from "./chat-plus-plugin-menu";
 import { useChatPlusSubmenuPosition } from "./use-chat-plus-submenu-position";
+import { ChatPlusCompressionMenu } from "./chat-plus-compression-menu";
+import type { CompressionProfileView } from "@/types/compression-profile.generated";
 import "./chat-plus-menu.css";
 
 interface ChatPlusMenuProps {
@@ -15,18 +19,31 @@ interface ChatPlusMenuProps {
   agentic: boolean;
   planModeEnabled: boolean;
   onPlanModeChange: (enabled: boolean) => void;
+  showCompression?: boolean;
+  compressionProfiles?: CompressionProfileView[];
+  compressionProfilesStatus?: "loading" | "ready" | "error";
+  selectedCompressionId?: string;
+  onCompressionSelect?: (profileId: string) => Promise<boolean>;
 }
+
+const NO_COMPRESSION_PROFILES: CompressionProfileView[] = [];
+const NO_COMPRESSION_SELECT = () => Promise.resolve(false);
 
 export function ChatPlusMenu({
   onFileImport,
   agentic,
   planModeEnabled,
   onPlanModeChange,
+  showCompression = false,
+  compressionProfiles = NO_COMPRESSION_PROFILES,
+  compressionProfilesStatus = "ready",
+  selectedCompressionId,
+  onCompressionSelect = NO_COMPRESSION_SELECT,
 }: ChatPlusMenuProps) {
   const { t } = useTranslation();
   const planModeSwitchId = useId();
   const [open, setOpen] = useState(false);
-  const [submenu, setSubmenu] = useState<"connectors" | "plugins" | null>(null);
+  const [submenu, setSubmenu] = useState<"compression" | "connectors" | "plugins" | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const submenuRef = useRef<HTMLDivElement>(null);
@@ -61,7 +78,12 @@ export function ChatPlusMenu({
   return (
     <div className="cpm-wrapper" ref={menuRef}>
       <Tooltip label={t("chatMenu.plusButtonHint")}>
-        <button className="icon-btn chat-plus-btn" onClick={() => setOpen(!open)} type="button">
+        <button
+          className="icon-btn chat-plus-btn"
+          aria-label={t("chatMenu.plusButtonHint")}
+          onClick={() => setOpen(!open)}
+          type="button"
+        >
           <Plus size="var(--icon-md)" />
         </button>
       </Tooltip>
@@ -72,6 +94,22 @@ export function ChatPlusMenu({
             <Image size="var(--icon-md)" weight="regular" />
             <span>{t("chatMenu.addFile")}</span>
           </button>
+
+          {showCompression && (
+            <button
+              type="button"
+              className={`cpm-item cpm-has-sub ${submenu === "compression" ? "active" : ""}`}
+              onMouseEnter={() => setSubmenu("compression")}
+              onFocus={() => setSubmenu("compression")}
+              onClick={() => setSubmenu("compression")}
+              aria-haspopup="menu"
+              aria-expanded={submenu === "compression"}
+            >
+              <ArrowsClockwise size="var(--icon-md)" weight="regular" />
+              <span>{t("chatMenu.compression")}</span>
+              <CaretRight size="var(--icon-xs)" className="cpm-caret" />
+            </button>
+          )}
 
           {agentic && (
             <>
@@ -145,6 +183,25 @@ export function ChatPlusMenu({
               />
             ))
           )}
+        </div>
+      )}
+
+      {open && submenu === "compression" && (
+        <div
+          ref={submenuRef}
+          className="cpm-submenu"
+          role="group"
+          aria-label={t("chatMenu.compression")}
+          style={{ left: submenuLeft }}
+          onMouseLeave={() => setSubmenu(null)}
+        >
+          <ChatPlusCompressionMenu
+            profiles={compressionProfiles}
+            status={compressionProfilesStatus}
+            selectedId={selectedCompressionId}
+            onSelect={onCompressionSelect}
+            onConfirmed={close}
+          />
         </div>
       )}
 

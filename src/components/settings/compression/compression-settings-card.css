@@ -1,0 +1,37 @@
+.csc-card {
+  position: relative;
+}
+
+.csc-threshold {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.csc-slider {
+  width: 7.5rem;
+}
+
+.csc-value {
+  min-width: 2.75rem;
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.csc-loading {
+  min-width: 2.75rem;
+  color: var(--ink-faint);
+  text-align: right;
+}
+
+.csc-note {
+  border-top: 1px solid var(--edge);
+}
+
+.csc-advanced-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}

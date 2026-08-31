@@ -46,8 +46,9 @@ fn partitions_the_prepared_request_without_changing_its_total() {
 
     let usage = RequestContextUsage::from_request("ollama", &messages, &tools, seed);
     let expected =
-        crate::services::compress::token_estimate::estimate_request_tokens(&messages, &tools)
-            as u32;
+        crate::services::compress::token_estimate::estimate_textual_request_tokens_for_provider(
+            "ollama", &messages, &tools,
+        ) as u32;
 
     assert_eq!(total(usage), expected);
     assert_eq!(usage.skills, 10);
@@ -56,6 +57,28 @@ fn partitions_the_prepared_request_without_changing_its_total() {
     assert_eq!(usage.system_prompt, 65);
     assert!(usage.system_tools > 0);
     assert!(usage.mcp_connectors > 0);
+}
+
+#[test]
+fn images_do_not_inflate_the_textual_ring_total() {
+    let mut with_image = message("user", "hello");
+    with_image.images = Some(vec!["iVBORw0KGgo=".into()]);
+
+    let usage = RequestContextUsage::from_request(
+        "ollama",
+        std::slice::from_ref(&with_image),
+        &[],
+        ContextUsageSeed::default(),
+    );
+
+    assert_eq!(
+        total(usage),
+        crate::services::compress::token_estimate::estimate_textual_request_tokens_for_provider(
+            "ollama",
+            &[with_image],
+            &[],
+        ) as u32,
+    );
 }
 
 #[test]

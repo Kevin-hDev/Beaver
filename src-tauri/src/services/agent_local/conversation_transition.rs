@@ -49,7 +49,11 @@ pub fn for_continuation(session: &AgentSession, target: &ContinuationTarget) -> 
         let compaction_boundary = session.messages[turn_start..turn_end]
             .iter()
             .any(|message| {
-                crate::services::compress::state_recent::is_compression_context(&message.content)
+                matches!(
+                    message.message_kind,
+                    Some(super::types_message::AgentMessageKind::CompressionCheckpoint)
+                        | Some(super::types_message::AgentMessageKind::CompressionBoundary)
+                )
             });
         let barrier = session.messages[turn_start..turn_end]
             .iter()

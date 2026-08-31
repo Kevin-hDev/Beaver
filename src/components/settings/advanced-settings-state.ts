@@ -9,8 +9,6 @@ export interface AdvancedSettingsState {
   hardware_accel: string;
   multi_model: boolean;
   show_gpu_status: boolean;
-  compression_enabled: boolean;
-  compression_threshold: number;
   response_language: string;
   link_preview_enabled: boolean;
   ollama_setup_skipped: boolean;
@@ -27,8 +25,6 @@ export const ADVANCED_SETTINGS_DEFAULTS: AdvancedSettingsState = {
   hardware_accel: "gpu",
   multi_model: false,
   show_gpu_status: false,
-  compression_enabled: true,
-  compression_threshold: 85,
   response_language: "",
   link_preview_enabled: true,
   ollama_setup_skipped: false,

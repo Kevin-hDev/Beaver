@@ -50,6 +50,7 @@ pub(super) fn user_message(content: &str) -> AgentMessage {
         turn_id: AgentMessage::new_turn_id(),
         role: "user".to_string(),
         content: content.to_string(),
+        message_kind: None,
         thinking: None,
         tool_calls: None,
         tool_name: None,

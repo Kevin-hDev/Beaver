@@ -124,12 +124,11 @@ fn partial_config_keeps_valid_sections() {
         config.heartbeat.global_paused,
         "heartbeat valide doit être conservé"
     );
-    // advanced invalide → reset à default (compression_threshold par défaut).
-    // On compare un champ représentatif plutôt que la struct entière (pas de
-    // derive PartialEq sur AdvancedSettings).
+    // advanced invalide → reset à default. On compare un champ représentatif
+    // plutôt que la struct entière (pas de derive PartialEq).
     assert_eq!(
-        config.advanced.compression_threshold,
-        ClgoConfig::default().advanced.compression_threshold,
+        config.advanced.keep_alive,
+        ClgoConfig::default().advanced.keep_alive,
         "advanced invalide doit être reset à default"
     );
 }

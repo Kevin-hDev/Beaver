@@ -25,8 +25,10 @@ pub struct AdvancedSettings {
     pub hardware_accel: String,
     pub multi_model: bool,
     pub show_gpu_status: bool,
-    pub compression_enabled: bool,
-    pub compression_threshold: u8,
+    #[serde(default, rename = "compression_enabled", skip_serializing)]
+    pub legacy_compression_enabled: Option<bool>,
+    #[serde(default, rename = "compression_threshold", skip_serializing)]
+    pub legacy_compression_threshold: Option<u8>,
     pub response_language: String,
     pub link_preview_enabled: bool,
     pub ollama_setup_skipped: bool,
@@ -46,8 +48,8 @@ impl Default for AdvancedSettings {
             hardware_accel: "gpu".to_string(),
             multi_model: false,
             show_gpu_status: false,
-            compression_enabled: true,
-            compression_threshold: 85,
+            legacy_compression_enabled: None,
+            legacy_compression_threshold: None,
             response_language: String::new(),
             link_preview_enabled: true,
             ollama_setup_skipped: false,
@@ -58,7 +60,6 @@ impl Default for AdvancedSettings {
 
 impl AdvancedSettings {
     pub fn normalized(mut self) -> Self {
-        self.compression_threshold = self.compression_threshold.min(100);
         self.session_outputs_directory =
             normalize_optional_directory(&self.session_outputs_directory).unwrap_or_default();
         // Les versions antérieures autorisaient l'enregistrement d'une liste vide.

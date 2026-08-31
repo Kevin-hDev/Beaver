@@ -19,6 +19,9 @@ pub(super) struct LoopCompression<'a> {
     pub request_id: &'a str,
     pub native_context: u64,
     pub configured_context: u64,
+    pub provider_tools: Vec<serde_json::Value>,
+    pub chatbot: bool,
+    pub plan_mode_active: bool,
     pub working_dir: &'a Path,
 }
 
@@ -66,6 +69,9 @@ impl LoopCompression<'_> {
             self.native_context,
             self.configured_context,
             last_context_tokens,
+            &self.provider_tools,
+            self.chatbot,
+            self.plan_mode_active,
             self.working_dir,
             cancel,
         )
@@ -88,7 +94,7 @@ impl LoopCompression<'_> {
             .await
             .is_none()
         {
-            return Err("Compression impossible après interruption du stream".to_string());
+            return Err("compression_failed".to_string());
         }
         Self::reset_counts(counts.prompt, counts.eval);
         Ok(())
@@ -172,6 +178,9 @@ impl LoopCompression<'_> {
             native_context: self.native_context,
             configured_context: self.configured_context,
             last_context_tokens,
+            provider_tools: &self.provider_tools,
+            chatbot: self.chatbot,
+            plan_mode_active: self.plan_mode_active,
             working_dir: self.working_dir,
             cancel,
         }

@@ -59,19 +59,25 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
         "ollama",
     )?;
     super::context_budget::record_repairs(&report, params.session_id, params.request_id).await;
+    let breakdown = RequestContextUsage::from_request(
+        "ollama",
+        params.messages,
+        params.tools,
+        params.context_usage_seed,
+    );
+    let textual_input_tokens = breakdown.total_tokens();
     let input_tokens = super::context_usage_runtime::emit_input(
         params.on_event,
-        report.estimated_tokens,
+        textual_input_tokens,
         params.configured_context,
-        RequestContextUsage::from_request(
-            "ollama",
-            params.messages,
-            params.tools,
-            params.context_usage_seed,
-        ),
+        breakdown,
     );
-    let realtime_budget =
-        RealtimeBudget::from_estimate(params.configured_context, report.estimated_tokens);
+    let realtime_budget = RealtimeBudget::for_session(
+        params.session_id,
+        params.configured_context,
+        textual_input_tokens,
+    )
+    .await;
     let plan_active =
         super::agent_loop_plan::active(params.session_id, params.plan_mode_active).await;
     let mut request = super::agent_loop_support::build_request(

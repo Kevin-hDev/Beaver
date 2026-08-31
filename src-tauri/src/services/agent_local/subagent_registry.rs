@@ -6,7 +6,7 @@ use tokio_util::sync::CancellationToken;
 pub use super::subagent_terminal_signal::SubagentTerminalKind;
 use super::subagent_terminal_signal::{SubagentTerminalNotifier, SubagentTerminalState};
 
-pub(super) const MAX_PER_PARENT: usize = 4;
+pub(crate) const MAX_PER_PARENT: usize = 4;
 pub(super) const MAX_TOTAL: usize = super::agent_work_supervision::MAX_ACTIVE_SUBAGENTS;
 
 struct SubagentEntry {

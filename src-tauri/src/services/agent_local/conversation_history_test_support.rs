@@ -137,6 +137,7 @@ pub fn message(id: &str, turn_id: &str, role: &str, content: &str) -> AgentMessa
         turn_id: turn_id.into(),
         role: role.into(),
         content: content.into(),
+        message_kind: None,
         thinking: None,
         tool_calls: None,
         tool_name: None,

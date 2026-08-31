@@ -9,6 +9,8 @@ import type { GitDiffPreview } from "./file-preview";
 
 export type PreserveReasoningSetting = "off" | "local" | "remote";
 
+export type AgentMessageKind = "compression_checkpoint" | "compression_boundary";
+
 export type ReasoningReplayStatus = "unavailable" | "partial" | "preserved" | "compacted";
 
 export type FileAttachmentView = { name: string, path: string, mime_type: string, size: number, thumbnail?: string, access_grant?: string, };
@@ -23,7 +25,7 @@ export type ToolActivityRecordView = { name: string, summary: string, domain?: "
 
 export type SavedSegmentView = { thinking?: string, tools: Array<ToolActivityRecordView>, content: string, phase?: "work" | "final", };
 
-export type AgentMessageView = { id: string, turn_id: string, role: "user" | "assistant" | "tool", content: string, thinking?: string, tool_calls?: Array<ToolCallRequestView>, tool_name?: string, tool_call_id?: string, tool_activities?: Array<ToolActivityRecordView>, segments?: Array<SavedSegmentView>, files: Array<FileAttachmentView>, timestamp: string, tokens: number, work_duration_ms?: number, skill_names?: Array<string>, stream_run_id?: string, stream_part?: "checkpoint" | "input" | "final", reasoning_replay_status: ReasoningReplayStatus, };
+export type AgentMessageView = { id: string, turn_id: string, role: "user" | "assistant" | "tool", content: string, message_kind?: AgentMessageKind, thinking?: string, tool_calls?: Array<ToolCallRequestView>, tool_name?: string, tool_call_id?: string, tool_activities?: Array<ToolActivityRecordView>, segments?: Array<SavedSegmentView>, files: Array<FileAttachmentView>, timestamp: string, tokens: number, work_duration_ms?: number, skill_names?: Array<string>, stream_run_id?: string, stream_part?: "checkpoint" | "input" | "final", reasoning_replay_status: ReasoningReplayStatus, };
 
 export type SubagentLastActivityView = { kind: string, label: string, detail?: string, updated_at: string, };
 
@@ -35,7 +37,7 @@ export type ContinuityState = "locked" | "available";
 
 export type ContinuityCapability = { requirement: ContinuityRequirement, local_available: boolean, remote_available: boolean, state: ContinuityState, explanation_key: string, };
 
-export type AgentSessionView = { id: string, name: string, created_at: string, updated_at?: string, archived_at?: string, pinned_at?: string, model: string, provider: string, thinking_enabled: boolean, fast_mode_enabled: boolean, reasoning_mode?: string, preserve_reasoning: PreserveReasoningSetting, continuity_capability?: ContinuityCapability, accumulated_tokens: number, context_tokens?: number, messages: Array<AgentMessageView>, todos?: AgentTodoItem[], todo_runs?: AgentTodoRun[], active_todo_run_id?: string, stream_failures?: Array<AgentStreamFailureView>, diagnostic_runs?: AgentDiagnosticRun[], plan_mode_enabled: boolean, plan_runs?: AgentPlanRun[], active_plan_id?: string, plan_workflow_status: AgentPlanWorkflowStatus, is_heartbeat: boolean, is_gateway: boolean, gateway_channel_key?: string, project_id?: string, working_dir: string, working_dir_managed: boolean, parent_session_id?: string, subagent_type?: "explorer" | "coder", subagent_worktree?: string, subagent_status?: string, subagent_run_id?: string, subagent_description?: string, subagent_color_key?: string, subagent_summary?: string, subagent_last_activity?: SubagentLastActivityView, clone_parent_session_id?: string, clone_parent_message_id?: string, clone_mode?: "cut" | "summary", clone_root_session_id?: string, git_branch?: string, };
+export type AgentSessionView = { id: string, name: string, created_at: string, updated_at?: string, archived_at?: string, pinned_at?: string, model: string, provider: string, thinking_enabled: boolean, fast_mode_enabled: boolean, reasoning_mode?: string, preserve_reasoning: PreserveReasoningSetting, continuity_capability?: ContinuityCapability, accumulated_tokens: number, context_tokens?: number, automatic_compression_suspended: boolean, messages: Array<AgentMessageView>, todos?: AgentTodoItem[], todo_runs?: AgentTodoRun[], active_todo_run_id?: string, stream_failures?: Array<AgentStreamFailureView>, diagnostic_runs?: AgentDiagnosticRun[], plan_mode_enabled: boolean, plan_runs?: AgentPlanRun[], active_plan_id?: string, plan_workflow_status: AgentPlanWorkflowStatus, is_heartbeat: boolean, is_gateway: boolean, gateway_channel_key?: string, project_id?: string, working_dir: string, working_dir_managed: boolean, parent_session_id?: string, subagent_type?: "explorer" | "coder", subagent_worktree?: string, subagent_status?: string, subagent_run_id?: string, subagent_description?: string, subagent_color_key?: string, subagent_summary?: string, subagent_last_activity?: SubagentLastActivityView, clone_parent_session_id?: string, clone_parent_message_id?: string, clone_mode?: "cut" | "summary", clone_root_session_id?: string, git_branch?: string, };
 
 export type SessionMetadataPatch = { name?: string, model?: string, provider?: string, reasoning_mode?: string, fast_mode_enabled?: boolean, project_id?: string, };
 

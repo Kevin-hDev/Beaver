@@ -66,7 +66,9 @@ impl<'a> StreamAccumulator<'a> {
             capture.observe_done(event);
         }
         match event["type"].as_str().unwrap_or_default() {
-            "response.reasoning_summary_text.delta" => self.record_thinking(on_event, event)?,
+            "response.reasoning_summary_text.delta" => {
+                return self.record_thinking(on_event, event)
+            }
             "response.output_text.delta" => return self.record_content(on_event, event),
             "response.output_item.added" => self.tool.start(on_event, &mut self.result, event)?,
             "response.function_call_arguments.delta" => {
@@ -95,7 +97,7 @@ impl<'a> StreamAccumulator<'a> {
         &mut self,
         on_event: &impl StreamEventSink,
         event: &serde_json::Value,
-    ) -> Result<(), String> {
+    ) -> Result<Option<StreamOutcome>, String> {
         let delta = event["delta"].as_str().unwrap_or_default();
         if !delta.is_empty() {
             self.record_text_size(delta)?;
@@ -106,7 +108,7 @@ impl<'a> StreamAccumulator<'a> {
                 &mut self.token_count,
             );
         }
-        Ok(())
+        Ok(self.interrupt_if_needed())
     }
 
     fn record_content(
@@ -126,17 +128,21 @@ impl<'a> StreamAccumulator<'a> {
             &mut self.token_count,
             self.buffer_content,
         );
+        Ok(self.interrupt_if_needed())
+    }
+
+    fn interrupt_if_needed(&mut self) -> Option<StreamOutcome> {
         if stream_protocol::should_interrupt(
             &mut self.realtime_budget,
             self.token_count,
             self.tool.is_pending() || !self.result.tool_calls.is_empty(),
         ) {
             self.attach_partial_continuity();
-            return Ok(Some(StreamOutcome::InterruptedForCompression(
-                std::mem::take(&mut self.result),
+            return Some(StreamOutcome::InterruptedForCompression(std::mem::take(
+                &mut self.result,
             )));
         }
-        Ok(None)
+        None
     }
 
     fn finish_item(

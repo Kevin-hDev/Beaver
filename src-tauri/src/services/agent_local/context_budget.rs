@@ -38,7 +38,6 @@ pub fn prepare_for_request(
         super::context_budget_prune::PruneParams {
             max_input,
             tool_tokens,
-            capsule_context: context_window,
             context_window,
             provider_id,
             original_len,
@@ -68,7 +67,6 @@ pub fn reduce_after_payload_too_large(
         super::context_budget_prune::PruneParams {
             max_input: target,
             tool_tokens,
-            capsule_context: target as u64,
             context_window,
             provider_id,
             original_len,
@@ -98,11 +96,7 @@ pub(super) fn estimate_messages(provider_id: &str, messages: &[ChatMessage]) -> 
     token_estimate::estimate_tokens_for_provider(provider_id, messages)
 }
 
-pub async fn record_repairs(
-    report: &ContextBudgetReport,
-    session_id: &str,
-    request_id: &str,
-) {
+pub async fn record_repairs(report: &ContextBudgetReport, session_id: &str, request_id: &str) {
     if report.repaired_tool_chains == 0 && report.dropped_tool_results == 0 {
         return;
     }

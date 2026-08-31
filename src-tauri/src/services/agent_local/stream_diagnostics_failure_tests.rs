@@ -1,9 +1,7 @@
 use chrono::Utc;
 
 use super::*;
-use crate::services::agent_local::types_diagnostics::{
-    AgentDiagnosticRun, AgentDiagnosticTool,
-};
+use crate::services::agent_local::types_diagnostics::{AgentDiagnosticRun, AgentDiagnosticTool};
 
 fn run(phase: &str, tool_status: &str) -> AgentDiagnosticRun {
     AgentDiagnosticRun {
@@ -92,4 +90,13 @@ fn stable_provider_codes_survive_session_persistence() {
         safe_code("service_tier_unavailable"),
         "service_tier_unavailable"
     );
+}
+
+#[test]
+fn compression_failure_keeps_its_stable_code() {
+    assert_eq!(
+        classify_error("compression_failed", false),
+        "compression_failed"
+    );
+    assert_eq!(safe_code("compression_failed"), "compression_failed");
 }

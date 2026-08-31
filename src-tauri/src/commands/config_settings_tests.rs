@@ -43,18 +43,6 @@ fn normalize_keeps_start_hidden_when_autostart_is_enabled() {
 }
 
 #[test]
-fn normalize_clamps_compression_threshold() {
-    let settings = AdvancedSettings {
-        compression_threshold: 150,
-        ..Default::default()
-    };
-
-    let normalized = normalize_advanced_settings(settings);
-
-    assert_eq!(normalized.compression_threshold, 100);
-}
-
-#[test]
 fn output_setting_rejects_a_relative_directory() {
     let mut settings = AdvancedSettings {
         session_outputs_directory: "../outside".to_string(),
