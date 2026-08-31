@@ -257,6 +257,30 @@ describe("agentStreamManager", () => {
     expect(after?.completedSegments).toEqual([]);
   });
 
+  it("conserve l'instantané préparé de l'anneau pendant une compression", async () => {
+    await agentStreamManager.startSession("compression-context", [], 96_000);
+    const record = records.get("compression-context");
+    if (!record) throw new Error("missing stream record");
+    record.state.contextUsageBuckets = {
+      messages: 10_600,
+      systemTools: 5_200,
+      mcpConnectors: 344,
+      skills: 3_700,
+      memory: 0,
+      metaContext: 1_300,
+      systemPrompt: 2_900,
+    };
+    record.state.hasContextUsageSnapshot = true;
+
+    await agentStreamManager.startSession(
+      "compression-context", [], 96_000, "compression",
+    );
+
+    const during = agentStreamManager.getSnapshot("compression-context");
+    expect(during?.contextUsageBuckets?.messages).toBe(10_600);
+    expect(during?.hasContextUsageSnapshot).toBe(true);
+  });
+
   it("met en file une intention pendant l'attente de la génération Rust", async () => {
     await agentStreamManager.startSession(
       "s1", [message("u1", "user", "Question")], 10, "chat", true,

@@ -37,10 +37,6 @@ pub async fn prepare(
         return Err(CompressionError::SessionChanged);
     }
     if trigger == CompressionTrigger::Explicit {
-        current.automatic_compression_guard = AutomaticCompressionGuard::default();
-        crate::services::agent_local::session_store::save(&current)
-            .await
-            .map_err(|_| CompressionError::SaveFailed)?;
         return Ok(Some(PreparedGuard {
             session: current,
             attempt: None,
@@ -117,7 +113,9 @@ pub fn allows_realtime(
     {
         return true;
     }
-    !guard.suspended && guard.last_attempt.as_ref() != Some(&attempt)
+    !guard.suspended
+        && !same_successful_top_level(guard, &attempt)
+        && guard.last_attempt.as_ref() != Some(&attempt)
 }
 
 pub fn reset(session: &mut AgentSession) {
@@ -174,11 +172,27 @@ fn start(
     if guard.suspended {
         return StartDecision::Suspended;
     }
+    // Une compression reussie qui reste au-dessus du seuil ne doit jamais
+    // reboucler dans le meme tour principal, meme si le checkpoint change les ids.
+    if same_successful_top_level(guard, attempt) {
+        return StartDecision::AlreadyAttempted;
+    }
     if guard.last_attempt.as_ref() == Some(attempt) {
         return StartDecision::AlreadyAttempted;
     }
     guard.last_attempt = Some(attempt.clone());
     StartDecision::Proceed
+}
+
+fn same_successful_top_level(
+    guard: &AutomaticCompressionGuard,
+    attempt: &AutomaticCompressionAttempt,
+) -> bool {
+    guard.consecutive_failures == 0
+        && guard.last_attempt.as_ref().is_some_and(|previous| {
+            same_environment(previous, attempt)
+                && previous.top_level_turn_id == attempt.top_level_turn_id
+        })
 }
 
 fn fail(guard: &mut AutomaticCompressionGuard) {

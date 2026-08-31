@@ -117,8 +117,15 @@ async fn read_bounded_text(path: &Path, max_tokens: u32) -> String {
     }
     let truncated = bytes.len() > max_bytes;
     bytes.truncate(max_bytes);
-    let Ok(text) = String::from_utf8(bytes) else {
-        return UNAVAILABLE_MARKER.to_string();
+    let text = match String::from_utf8(bytes) {
+        Ok(text) => text,
+        Err(error) if truncated && error.utf8_error().error_len().is_none() => {
+            let valid = error.utf8_error().valid_up_to();
+            let mut bytes = error.into_bytes();
+            bytes.truncate(valid);
+            String::from_utf8(bytes).unwrap_or_default()
+        }
+        Err(_) => return UNAVAILABLE_MARKER.to_string(),
     };
     if truncated {
         super::checkpoint_messages::bounded_excerpt(

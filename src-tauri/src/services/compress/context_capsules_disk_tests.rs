@@ -198,3 +198,28 @@ async fn large_file_is_truncated() {
         .content
         .contains("[content truncated for context budget]"));
 }
+
+#[tokio::test]
+async fn utf8_cut_at_the_byte_limit_keeps_the_valid_prefix() {
+    let tmp = tempdir().unwrap();
+    tokio::fs::write(
+        tmp.path().join("accent.txt"),
+        format!("{}é suite", "a".repeat(39)),
+    )
+    .await
+    .unwrap();
+    let messages = vec![assistant("read_file", "accent.txt"), tool("cache")];
+
+    let events = super::super::context_capsules_disk_collect::recent_disk_file_events_bounded(
+        &messages,
+        tmp.path(),
+        10,
+        10,
+    )
+    .await;
+
+    assert_eq!(events.len(), 1);
+    assert!(events[0].result.starts_with('a'));
+    assert!(events[0].result.contains("[file content truncated]"));
+    assert!(!events[0].result.contains("[file unavailable"));
+}

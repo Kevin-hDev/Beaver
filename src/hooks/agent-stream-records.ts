@@ -64,7 +64,19 @@ export function startStreamRecord(
 ): StreamRecord {
   const record = getOrCreateRecord(sessionId);
   clearCleanup(record);
-  record.state = createManagedStreamState(messages, sessionTokenCount, streamKind);
+  const previous = record.state;
+  const next = createManagedStreamState(messages, sessionTokenCount, streamKind);
+  record.state = streamKind === "compression" ? {
+    ...next,
+    contextInputTokens: previous.contextInputTokens,
+    contextOutputTokens: previous.contextOutputTokens,
+    contextLimitTokens: previous.contextLimitTokens,
+    hasContextUsageSnapshot: previous.hasContextUsageSnapshot,
+    contextUsageBuckets: previous.contextUsageBuckets,
+    contextUsageBaseSegments: previous.contextUsageBaseSegments,
+    contextUsageIncludesReasoning: previous.contextUsageIncludesReasoning,
+    contextUsageVisible: previous.contextUsageVisible,
+  } : next;
   record.started = true;
   if (awaitingAdmission && record.activeGeneration !== null) {
     record.cancelledGenerations = [

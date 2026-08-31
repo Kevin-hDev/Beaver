@@ -71,6 +71,8 @@ export function CompressionPanel({ controller, currentWindow, onClose }: Compres
                 profile={active}
                 currentWindow={currentWindow}
                 controller={controller}
+                limits={controller.view.limits}
+                automaticEnabled={controller.view.automatic_enabled}
               />
             ) : null;
           })()}

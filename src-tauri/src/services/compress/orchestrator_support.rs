@@ -6,11 +6,12 @@ use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::types_ollama::StreamEvent;
 
 pub(super) fn image_count(snapshot: &CompressionSnapshot) -> u16 {
-    match snapshot.profile.band(snapshot.context_window) {
+    let configured = match snapshot.profile.band(snapshot.context_window) {
         Some(CompressionWindowBand::Under64K) => snapshot.profile.profile.under_64k.image_count,
         Some(CompressionWindowBand::Large) => snapshot.profile.profile.large.image_count,
         Some(CompressionWindowBand::Compact) | None => snapshot.profile.profile.compact.image_count,
-    }
+    };
+    configured.min(crate::services::llm::vision::MAX_IMAGES_PER_MESSAGE as u16)
 }
 
 pub(super) fn tool_names(tools: &[serde_json::Value]) -> Vec<String> {

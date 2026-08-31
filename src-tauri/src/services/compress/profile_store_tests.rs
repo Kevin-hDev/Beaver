@@ -161,6 +161,44 @@ fn v1_profiles_migrate_identity_prompts_and_policy_but_reset_all_bands() {
 }
 
 #[test]
+fn failed_v1_backup_keeps_the_source_document_untouched() {
+    let root = tempfile::tempdir().expect("temp root");
+    let profile_path = root.path().join("compression-profiles.json");
+    let config_path = root.path().join("config.json");
+    let backup_path = root.path().join("compression-profiles.v1.bak");
+    let original = include_bytes!("fixtures/compression-profiles-v1.json").to_vec();
+    std::fs::write(&profile_path, &original).expect("write legacy");
+    std::fs::create_dir(&backup_path).expect("blocking backup directory");
+
+    assert_eq!(
+        load_from_paths(&profile_path, &config_path).unwrap_err(),
+        CompressionProfileStoreError::Migration
+    );
+    assert_eq!(
+        std::fs::read(&profile_path).expect("source remains"),
+        original
+    );
+}
+
+#[test]
+fn repairing_an_unreadable_v2_document_keeps_the_v1_backup() {
+    let root = tempfile::tempdir().expect("temp root");
+    let profile_path = root.path().join("compression-profiles.json");
+    let config_path = root.path().join("config.json");
+    let backup_path = root.path().join("compression-profiles.v1.bak");
+    let original = include_bytes!("fixtures/compression-profiles-v1.json").to_vec();
+    std::fs::write(&profile_path, &original).expect("write legacy");
+    load_from_paths(&profile_path, &config_path).expect("migrate legacy");
+    assert_eq!(std::fs::read(&backup_path).expect("backup"), original);
+
+    forget_migration_marker_for_test(&profile_path);
+    std::fs::write(&profile_path, b"{not-json").expect("corrupt v2");
+    load_from_paths(&profile_path, &config_path).expect("repair v2");
+
+    assert_eq!(std::fs::read(&backup_path).expect("backup kept"), original);
+}
+
+#[test]
 fn twenty_one_profiles_are_bounded_and_an_invalid_name_is_dropped() {
     let root = tempfile::tempdir().expect("temp root");
     let profile_path = root.path().join("compression-profiles.json");

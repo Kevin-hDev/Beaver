@@ -3,6 +3,7 @@ import type { CompressionProfilesController } from "@/hooks/use-compression-prof
 import type {
   CompressionBandSettings,
   CompressionProfile,
+  CompressionLimitsView,
   CompressionWindowBand,
 } from "@/types/compression-profile.generated";
 import { CompressionBudgetPreview } from "./compression-budget-preview";
@@ -16,12 +17,17 @@ interface CompressionProfileEditorProps {
   profile: CompressionProfile;
   currentWindow: number;
   controller: CompressionProfilesController;
+  limits: CompressionLimitsView;
+  automaticEnabled: boolean;
 }
 
-function bandForWindow(window: number): CompressionWindowBand | null {
+function bandForWindow(
+  window: number,
+  limits: CompressionLimitsView,
+): CompressionWindowBand | null {
   if (window <= 0) return null;
-  if (window < 64_000) return "under_64k";
-  if (window < 128_000) return "compact";
+  if (window < limits.under_64k_upper_exclusive) return "under_64k";
+  if (window < limits.compact_upper_exclusive) return "compact";
   return "large";
 }
 
@@ -45,10 +51,12 @@ export function CompressionProfileEditor({
   profile: confirmed,
   currentWindow,
   controller,
+  limits,
+  automaticEnabled,
 }: CompressionProfileEditorProps) {
   const [profile, setProfile] = useState(confirmed);
   const [editedBand, setEditedBand] = useState<CompressionWindowBand>(
-    bandForWindow(currentWindow) ?? "compact",
+    bandForWindow(currentWindow, limits) ?? "compact",
   );
   const band = bandSettings(profile, editedBand);
   const under64Disabled = editedBand === "under_64k" && !profile.allow_under_64k;
@@ -78,7 +86,7 @@ export function CompressionProfileEditor({
     <div className="cpe-editor">
       <CompressionRangeTabs
         edited={editedBand}
-        active={bandForWindow(currentWindow)}
+        active={bandForWindow(currentWindow, limits)}
         onChange={setEditedBand}
       />
       <CompressionUnder64Warning
@@ -86,12 +94,10 @@ export function CompressionProfileEditor({
         enabled={profile.allow_under_64k}
         onChange={(allow_under_64k) => update({ ...profile, allow_under_64k })}
       />
-      <div
-        className="cpa-body"
-        data-disabled={under64Disabled ? "true" : undefined}
-      >
+      <div className="cpa-body">
         <CompressionContentSection
           band={band}
+          limits={limits}
           disabled={under64Disabled}
           onChange={updateBand}
           onCopy={() => update({
@@ -103,13 +109,15 @@ export function CompressionProfileEditor({
         />
         <CompressionTriggerSection
           profile={profile}
-          disabled={under64Disabled}
+          limits={limits}
+          disabled={!automaticEnabled}
           onProfileChange={update}
         />
         <CompressionSummarySection
           profile={profile}
           band={band}
-          disabled={under64Disabled}
+          limits={limits}
+          quantityDisabled={under64Disabled}
           onProfileChange={update}
           onBandChange={updateBand}
           onResetPrompts={() => { void controller.resetPrompts(profile.id); }}

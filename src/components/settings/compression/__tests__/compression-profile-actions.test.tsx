@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CompressionProfilesController } from "@/hooks/use-compression-profiles";
 import type { CompressionProfile } from "@/types/compression-profile.generated";
 import { CompressionProfileBar } from "../compression-profile-bar";
+import { compressionProfilesViewFixture } from "@/test-utils/compression-profile-fixture";
 
 const showToast = vi.hoisted(() => vi.fn());
 
@@ -17,12 +18,10 @@ const profile = (id: string, name: string) => ({ id, name, revision: 1 }) as Com
 
 function controller(active = "custom"): CompressionProfilesController {
   return {
-    view: {
-      automatic_enabled: true,
-      global_profile_id: active,
-      global_selection_revision: 1,
-      profiles: [profile("beaver", "Beaver"), profile("custom", "Longues sessions")],
-    },
+    view: compressionProfilesViewFixture(
+      [profile("beaver", "Beaver"), profile("custom", "Longues sessions")],
+      active,
+    ),
     busy: false,
     setAutomaticEnabled: vi.fn(() => Promise.resolve(true)),
     selectGlobal: vi.fn(() => Promise.resolve(true)),
@@ -32,7 +31,10 @@ function controller(active = "custom"): CompressionProfilesController {
     resetBeaver: vi.fn(() => Promise.resolve(null)),
     resetPrompts: vi.fn(() => Promise.resolve(true)),
     deleteProfile: vi.fn(() => Promise.resolve({
-      view: { automatic_enabled: true, global_profile_id: "beaver", global_selection_revision: 2, profiles: [profile("beaver", "Beaver")] },
+      view: {
+        ...compressionProfilesViewFixture([profile("beaver", "Beaver")]),
+        global_selection_revision: 2,
+      },
       undo_token: "undo-token",
       undo_expires_in_ms: 30_000,
     })),

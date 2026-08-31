@@ -193,7 +193,9 @@ where
         stream_part: None,
     };
     let housekeeping = super::session_store_todos::apply_user_turn(&mut session, true);
-    crate::services::compress::automatic_guard::reset(&mut session);
+    if input.user_content.trim() != "/compress" {
+        crate::services::compress::automatic_guard::reset(&mut session);
+    }
     session.messages.push(message);
     session.updated_at = Some(Utc::now());
     super::session_store_messages::recompute_accumulated_tokens(&mut session);

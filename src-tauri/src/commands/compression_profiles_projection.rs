@@ -27,6 +27,15 @@ pub(super) fn project(
         .checked_div(SETTINGS_CONTEXT_TOKENS)
         .unwrap_or_default()
         .min(100) as u8;
+    let reduction_for = |result: u32| {
+        SETTINGS_CONTEXT_TOKENS
+            .saturating_sub(result)
+            .saturating_mul(100)
+            .saturating_add(SETTINGS_CONTEXT_TOKENS / 2)
+            .checked_div(SETTINGS_CONTEXT_TOKENS)
+            .unwrap_or_default()
+            .min(100) as u8
+    };
     Ok(BudgetProjectionView {
         band,
         before_tokens: SETTINGS_CONTEXT_TOKENS,
@@ -37,5 +46,7 @@ pub(super) fn project(
         range_upper_tokens,
         image_count: settings.image_count,
         projected_percent,
+        reduction_lower_percent: reduction_for(range_upper_tokens),
+        reduction_upper_percent: reduction_for(range_lower_tokens),
     })
 }

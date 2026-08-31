@@ -53,3 +53,10 @@ pub(super) fn validate(
     }
     Ok(())
 }
+
+pub(super) fn normalize_for_read(session: &mut super::types_session::AgentSession) {
+    if validate(&session.automatic_compression_guard).is_err() {
+        log::warn!("automatic_compression_guard_invalid_reset");
+        session.automatic_compression_guard = Default::default();
+    }
+}

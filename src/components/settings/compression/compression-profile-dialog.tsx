@@ -6,15 +6,15 @@ import { useDialogKeyboard } from "@/components/ui/use-dialog-keyboard";
 interface CompressionProfileDialogProps {
   sourceName: string;
   existingNames: string[];
+  nameMaximum: number;
   onCancel: () => void;
   onCreate: (name: string) => Promise<boolean>;
 }
 
-const NAME_MAX = 48;
-
 export function CompressionProfileDialog({
   sourceName,
   existingNames,
+  nameMaximum,
   onCancel,
   onCreate,
 }: CompressionProfileDialogProps) {
@@ -28,7 +28,7 @@ export function CompressionProfileDialog({
   const trimmed = name.trim();
   const visibleLength = [...trimmed].length;
   const duplicate = existingNames.some((item) => item.toLocaleLowerCase() === trimmed.toLocaleLowerCase());
-  const valid = visibleLength > 0 && visibleLength <= NAME_MAX && !duplicate && !submitting;
+  const valid = visibleLength > 0 && visibleLength <= nameMaximum && !duplicate && !submitting;
 
   useDialogKeyboard({ rootRef: dialogRef, initialFocusRef: inputRef, onEscape: onCancel });
 
@@ -60,7 +60,7 @@ export function CompressionProfileDialog({
             ref={inputRef}
             className="field field-wide"
             value={name}
-            maxLength={NAME_MAX * 2}
+            maxLength={nameMaximum * 2}
             aria-label={t("settings.advanced.compressionProfileName")}
             onChange={(event) => setName(event.target.value)}
             onKeyDown={(event) => {
@@ -73,8 +73,8 @@ export function CompressionProfileDialog({
           <span className="cpd-count">
             {duplicate
               ? t("settings.advanced.compressionDuplicateName")
-              : visibleLength >= 36
-                ? t("settings.advanced.compressionCharactersLeft", { count: NAME_MAX - visibleLength })
+              : visibleLength >= Math.floor(nameMaximum * 0.75)
+                ? t("settings.advanced.compressionCharactersLeft", { count: nameMaximum - visibleLength })
                 : ""}
           </span>
           <div className="cpd-actions">

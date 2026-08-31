@@ -15,6 +15,7 @@ use crate::services::agent_local::types_ollama::ChatMessage;
 pub(super) struct RecordingCollector {
     calls: AtomicUsize,
     limits: Mutex<Vec<u32>>,
+    input_tokens: Mutex<Vec<u32>>,
 }
 
 impl RecordingCollector {
@@ -22,6 +23,7 @@ impl RecordingCollector {
         Self {
             calls: AtomicUsize::new(0),
             limits: Mutex::new(Vec::new()),
+            input_tokens: Mutex::new(Vec::new()),
         }
     }
 
@@ -32,6 +34,10 @@ impl RecordingCollector {
     pub(super) fn limits(&self) -> Vec<u32> {
         self.limits.lock().unwrap().clone()
     }
+
+    pub(super) fn input_tokens(&self) -> Vec<u32> {
+        self.input_tokens.lock().unwrap().clone()
+    }
 }
 
 #[async_trait]
@@ -39,6 +45,13 @@ impl SummaryCollector for RecordingCollector {
     async fn collect(&self, call: &SummaryCall) -> Result<SummaryRawOutput, SummaryAttemptError> {
         self.calls.fetch_add(1, Ordering::Relaxed);
         self.limits.lock().unwrap().push(call.maximum_output_tokens);
+        let input = super::super::token_estimate::estimate_textual_request_tokens_for_provider(
+            &call.provider,
+            &call.messages,
+            &[],
+        )
+        .min(u32::MAX as usize) as u32;
+        self.input_tokens.lock().unwrap().push(input);
         Ok(SummaryRawOutput {
             content: format!("<summary>{}</summary>", super::support::summary().content),
             tool_call_count: 0,

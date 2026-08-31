@@ -101,7 +101,10 @@ pub async fn run_compression(
     let result =
         super::orchestrator_started::run(request, session, profile.clone(), used, attempt.clone())
             .await;
-    if result.is_err() {
+    if result
+        .as_ref()
+        .is_err_and(|error| should_record_failure(*error))
+    {
         if let Some(attempt) = attempt.as_ref() {
             super::automatic_guard::record_failure(&session_id, attempt).await;
         }
@@ -128,6 +131,10 @@ pub async fn run_compression(
         let _ = on_event.send(StreamEvent::CompressionComplete {});
     }
     result.map(|value| Some(value.report))
+}
+
+pub(super) fn should_record_failure(error: CompressionError) -> bool {
+    error != CompressionError::Cancelled
 }
 
 pub(super) fn preflight_messages(

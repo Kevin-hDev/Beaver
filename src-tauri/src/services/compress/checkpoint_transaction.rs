@@ -11,6 +11,8 @@ pub enum CompressionError {
     SnapshotInvalid,
     OpenTurn,
     SummaryInvalid,
+    SummaryRequestFailed,
+    Cancelled,
     CandidateInvalid,
     CapacityExceeded,
     InsufficientReduction,

@@ -86,6 +86,8 @@ pub(crate) fn load_from_paths(
         }
         crate::services::private_store::BoundedFile::Content(bytes) => {
             let mut migrated_profile = false;
+            let mut repaired_invalid_json = false;
+            let syntactically_valid = serde_json::from_slice::<serde_json::Value>(&bytes).is_ok();
             let mut document =
                 match super::profile_store_parse::parse_document(profile_path, &bytes) {
                     Ok((document, migrated)) => {
@@ -95,12 +97,14 @@ pub(crate) fn load_from_paths(
                     Err(error @ CompressionProfileStoreError::FutureVersion(_)) => {
                         return Err(error);
                     }
-                    Err(_) => {
+                    Err(CompressionProfileStoreError::Invalid) if !syntactically_valid => {
                         ::log::warn!("compression_profile_document_invalid_json");
                         let document = CompressionProfileDocument::default();
                         write_document(profile_path, &document)?;
+                        repaired_invalid_json = true;
                         document
                     }
+                    Err(error) => return Err(error),
                 };
             let before = document.clone();
             normalize_loaded_document(&mut document)?;
@@ -110,7 +114,7 @@ pub(crate) fn load_from_paths(
             let migrated_now = super::profile_store_migration::finish_existing(config_path)?;
             if migrated_now || migrated_profile {
                 remember_migration(profile_path);
-            } else if !migrated_in_this_process(profile_path) {
+            } else if !repaired_invalid_json && !migrated_in_this_process(profile_path) {
                 if super::profile_store_migration::acknowledge_backup(config_path).is_err() {
                     log::warn!("compression_profile_migration_backup_cleanup_failed");
                 }

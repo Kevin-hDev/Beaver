@@ -23,7 +23,7 @@ pub(super) fn prepare(
     let images = super::checkpoint_attachments::retain_images_for_messages(
         &snapshot.checkpoint_images,
         &source_ids,
-        usize::from(band.image_count),
+        usize::from(band.image_count).min(crate::services::llm::vision::MAX_IMAGES_PER_MESSAGE),
         32 * 1024 * 1024,
     );
     let persisted_ids: BTreeSet<&str> = persisted

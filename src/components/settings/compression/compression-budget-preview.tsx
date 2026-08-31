@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import type {
@@ -26,9 +26,17 @@ export function CompressionBudgetPreview({
   const { t } = useTranslation();
   const [projection, setProjection] = useState<BudgetProjectionView | null>(null);
   const [failed, setFailed] = useState(false);
+  const identityRef = useRef("");
 
   useEffect(() => {
     let current = true;
+    const identity = `${profileId}:${band}`;
+    if (identityRef.current !== identity) {
+      identityRef.current = identity;
+      setProjection(null);
+    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- chaque nouvelle requête quitte explicitement l'état d'échec précédent
+    setFailed(false);
     void invoke<BudgetProjectionView>("project_settings_compression_budget", {
       profileId,
       band,
@@ -65,13 +73,13 @@ export function CompressionBudgetPreview({
           )}
         </span>
       </div>
-      <div className="cbp-gauge" aria-label={t("settings.advanced.compressionProjectionTitle")}>
+      {!failed && <div className="cbp-gauge" aria-label={t("settings.advanced.compressionProjectionTitle")}>
         <div className="cbp-gauge-track">
           <span className="cbp-gauge-system" style={{ width: `${systemPercent}%` }} />
           <span className="cbp-gauge-profile" style={{ width: `${variablePercent}%` }} />
         </div>
-      </div>
-      {projection && (
+      </div>}
+      {!failed && projection && (
         <div className="cbp-legend">
           <span>
             <i className="cbp-swatch cbp-swatch-system" />
@@ -101,6 +109,12 @@ export function CompressionBudgetPreview({
                   {formatCompressionWindow(projection.range_lower_tokens)}–
                   {formatCompressionWindow(projection.range_upper_tokens)}
                 </strong>
+                <span>
+                  {t("settings.advanced.compressionProjectionReduction", {
+                    minimum: projection.reduction_lower_percent,
+                    maximum: projection.reduction_upper_percent,
+                  })}
+                </span>
               </>
             : t("settings.advanced.compressionProjectionLoading")}
       </div>

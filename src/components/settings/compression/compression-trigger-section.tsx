@@ -1,17 +1,22 @@
 import { useTranslation } from "react-i18next";
-import type { CompressionProfile } from "@/types/compression-profile.generated";
+import type {
+  CompressionLimitsView,
+  CompressionProfile,
+} from "@/types/compression-profile.generated";
 import { CompressionQuantityControl } from "./compression-quantity-control";
 import { CompressionSection } from "./compression-section";
 import { CompressionSettingRow } from "./compression-setting-row";
 
 interface CompressionTriggerSectionProps {
   profile: CompressionProfile;
+  limits: CompressionLimitsView;
   disabled: boolean;
   onProfileChange: (profile: CompressionProfile) => void;
 }
 
 export function CompressionTriggerSection({
   profile,
+  limits,
   disabled,
   onProfileChange,
 }: CompressionTriggerSectionProps) {
@@ -29,8 +34,8 @@ export function CompressionTriggerSection({
       >
         <CompressionQuantityControl
           value={profile.threshold_percent}
-          minimum={1}
-          maximum={90}
+          minimum={limits.min_threshold_percent}
+          maximum={limits.max_threshold_percent}
           disabled={disabled}
           ariaLabel={t("settings.advanced.compressionAutomaticThreshold")}
           unit="%"

@@ -38,7 +38,11 @@ export function CompressionSettingsCard({ defaultModel }: CompressionSettingsCar
     value: number;
   } | null>(null);
 
-  const unavailableUnder64 = max > 0 && max < 64_000 && !active?.allow_under_64k;
+  const limits = controller.view?.limits;
+  const unavailableUnder64 = max > 0
+    && !!limits
+    && max < limits.under_64k_upper_exclusive
+    && !active?.allow_under_64k;
   const threshold = active && thresholdDraft?.profileId === active.id
     ? thresholdDraft.value
     : active?.threshold_percent;
@@ -72,13 +76,17 @@ export function CompressionSettingsCard({ defaultModel }: CompressionSettingsCar
             <input
               className="compression-slider csc-slider"
               type="range"
-              min={1}
-              max={90}
+              min={limits?.min_threshold_percent}
+              max={limits?.max_threshold_percent}
               value={threshold}
               disabled={!controller.view?.automatic_enabled}
               aria-label={t("settings.advanced.compressionThresholdTitle")}
               onChange={(event) => {
-                const next = Math.min(90, Math.max(1, Number(event.target.value)));
+                if (!limits) return;
+                const next = Math.min(
+                  limits.max_threshold_percent,
+                  Math.max(limits.min_threshold_percent, Number(event.target.value)),
+                );
                 setThresholdDraft({ profileId: active.id, value: next });
                 void controller.save({ ...active, threshold_percent: next }).then(() => {
                   setThresholdDraft((current) => (

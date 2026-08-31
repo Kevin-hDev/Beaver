@@ -19,6 +19,8 @@ pub enum CompressionMetricError {
     InvalidSnapshot,
     OpenTurn,
     InvalidSummary,
+    SummaryRequestFailed,
+    Cancelled,
     InvalidCandidate,
     CapacityExceeded,
     InsufficientReduction,
@@ -35,6 +37,8 @@ impl CompressionMetricError {
             Self::InvalidSnapshot => "invalid_snapshot",
             Self::OpenTurn => "open_turn",
             Self::InvalidSummary => "invalid_summary",
+            Self::SummaryRequestFailed => "summary_request_failed",
+            Self::Cancelled => "cancelled",
             Self::InvalidCandidate => "invalid_candidate",
             Self::CapacityExceeded => "capacity_exceeded",
             Self::InsufficientReduction => "insufficient_reduction",
@@ -49,7 +53,9 @@ impl CompressionMetricError {
             Self::Unavailable | Self::AutomaticSuspended | Self::InvalidSnapshot => {
                 CompressionMetricPhase::Snapshot
             }
-            Self::InvalidSummary => CompressionMetricPhase::Summary,
+            Self::InvalidSummary | Self::SummaryRequestFailed | Self::Cancelled => {
+                CompressionMetricPhase::Summary
+            }
             Self::OpenTurn
             | Self::InvalidCandidate
             | Self::CapacityExceeded
@@ -71,6 +77,8 @@ impl From<CompressionError> for CompressionMetricError {
             CompressionError::SnapshotInvalid => Self::InvalidSnapshot,
             CompressionError::OpenTurn => Self::OpenTurn,
             CompressionError::SummaryInvalid => Self::InvalidSummary,
+            CompressionError::SummaryRequestFailed => Self::SummaryRequestFailed,
+            CompressionError::Cancelled => Self::Cancelled,
             CompressionError::CandidateInvalid => Self::InvalidCandidate,
             CompressionError::CapacityExceeded => Self::CapacityExceeded,
             CompressionError::InsufficientReduction => Self::InsufficientReduction,

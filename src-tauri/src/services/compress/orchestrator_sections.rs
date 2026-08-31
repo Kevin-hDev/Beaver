@@ -61,7 +61,9 @@ async fn push_work_state(
     if snapshot.capabilities.plan_and_tasks {
         writer.push_evidence("plan_and_tasks", &(live.todos, live.active_plan), share)?;
     }
-    writer.push_evidence("unresolved_state", &live.failures, share)?;
+    if !snapshot.capabilities.chatbot {
+        writer.push_evidence("unresolved_state", &live.failures, share)?;
+    }
     if snapshot.capabilities.subagents {
         let subagents =
             super::checkpoint_subagents::collect(&snapshot.source_session, writer.remaining).await;

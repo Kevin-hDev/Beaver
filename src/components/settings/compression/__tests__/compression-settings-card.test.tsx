@@ -1,7 +1,11 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CompressionProfile } from "@/types/compression-profile.generated";
-import { compressionProfileFixture } from "@/test-utils/compression-profile-fixture";
+import {
+  compressionLimitsFixture,
+  compressionProfileFixture,
+} from "@/test-utils/compression-profile-fixture";
+import type { CompressionLimitsView } from "@/types/compression-profile.generated";
 
 const controller = vi.hoisted(() => ({
   busy: false,
@@ -20,6 +24,7 @@ const controller = vi.hoisted(() => ({
     global_profile_id: string;
     global_selection_revision: number;
     profiles: CompressionProfile[];
+    limits: CompressionLimitsView;
   },
 }));
 const context = vi.hoisted(() => ({ max: 128_000 }));
@@ -65,6 +70,7 @@ beforeEach(() => {
     automatic_enabled: true,
     global_selection_revision: 1,
     profiles: [profile("beaver", "Beaver", 90), profile("custom", "Custom", 82)],
+    limits: compressionLimitsFixture(),
   };
 });
 

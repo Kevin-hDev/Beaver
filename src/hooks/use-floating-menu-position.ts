@@ -48,13 +48,17 @@ export function useFloatingMenuPosition(
     const boundedWidth = Math.min(width, maxWidth);
     const maxLeft = Math.max(VIEWPORT_PADDING, window.innerWidth - boundedWidth - VIEWPORT_PADDING);
     const horizontalRect = horizontalRef?.current?.getBoundingClientRect() ?? spanRect ?? anchorRect;
-    const rawLeft = align === "right"
+    let rawLeft = align === "right"
       ? horizontalRect.right - width
       : align === "before"
         ? horizontalRect.left - width - gap
         : align === "after"
           ? horizontalRect.right + gap
           : horizontalRect.left;
+    if (align === "before" && rawLeft < VIEWPORT_PADDING) {
+      const after = horizontalRect.right + gap;
+      if (after + boundedWidth <= window.innerWidth - VIEWPORT_PADDING) rawLeft = after;
+    }
     const left = Math.min(Math.max(rawLeft, VIEWPORT_PADDING), maxLeft);
     const availableAbove = Math.max(0, anchorRect.top - gap - VIEWPORT_PADDING);
     const availableBelow = Math.max(

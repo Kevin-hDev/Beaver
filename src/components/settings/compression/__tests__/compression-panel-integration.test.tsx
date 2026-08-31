@@ -1,7 +1,10 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { CompressionProfilesController } from "@/hooks/use-compression-profiles";
-import { compressionProfileFixture } from "@/test-utils/compression-profile-fixture";
+import {
+  compressionProfilesViewFixture,
+  compressionProfileFixture,
+} from "@/test-utils/compression-profile-fixture";
 import type { CompressionProfile } from "@/types/compression-profile.generated";
 import { CompressionPanel } from "../compression-panel";
 
@@ -32,7 +35,7 @@ function api(overrides: Partial<CompressionProfilesController> = {}): Compressio
   const beaver = compressionProfileFixture();
   const custom: CompressionProfile = { ...compressionProfileFixture(), id: "custom", name: "Custom" };
   return {
-    view: { automatic_enabled: true, global_profile_id: "custom", global_selection_revision: 1, profiles: [beaver, custom] },
+    view: compressionProfilesViewFixture([beaver, custom], "custom"),
     busy: false,
     setAutomaticEnabled: vi.fn(() => Promise.resolve(true)),
     selectGlobal: vi.fn(() => Promise.resolve(true)),
@@ -58,7 +61,7 @@ describe("CompressionPanel integration", () => {
     await screen.findByText("settings.advanced.compressionProjectionTarget");
 
     fireEvent.click(screen.getByRole("tab", { name: /settings\.advanced\.compressionRange\.under_64k/ }));
-    expect(screen.getByLabelText("settings.advanced.compressionAutomaticThreshold")).toBeDisabled();
+    expect(screen.getByLabelText("settings.advanced.compressionAutomaticThreshold")).toBeEnabled();
     fireEvent.click(screen.getByRole("switch", { name: "settings.advanced.compressionUnder64Title" }));
     expect(save).toHaveBeenCalledWith(expect.objectContaining({ allow_under_64k: true }));
 

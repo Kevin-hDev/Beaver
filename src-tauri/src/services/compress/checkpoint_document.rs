@@ -17,6 +17,14 @@ pub struct CheckpointSection {
     pub content: String,
 }
 
+struct RetainedTurns {
+    completed: Vec<AgentMessage>,
+    active: Vec<AgentMessage>,
+    users: Vec<AgentMessage>,
+    assistants: Vec<AgentMessage>,
+    tools: Vec<AgentMessage>,
+}
+
 #[derive(Serialize)]
 struct CheckpointBody<'a> {
     format_version: u16,
@@ -32,22 +40,23 @@ pub fn assemble(
     sections: &[CheckpointSection],
     trigger: CompressionTrigger,
 ) -> Result<Vec<AgentMessage>, &'static str> {
-    let (mut completed, active, retained_users, retained_assistants) =
-        retained_turns(selected, active_turn_id);
+    let retained = retained_turns(selected, active_turn_id);
+    let mut completed = retained.completed;
     let mut checkpoint_sections = sections.to_vec();
     super::checkpoint_retained_messages::append(
         &mut checkpoint_sections,
         "retained_user_messages",
-        &retained_users,
+        &retained.users,
     )?;
+    super::checkpoint_retained_messages::append_tools(&mut checkpoint_sections, &retained.tools)?;
     super::checkpoint_retained_messages::append(
         &mut checkpoint_sections,
         "retained_assistant_messages",
-        &retained_assistants,
+        &retained.assistants,
     )?;
     let checkpoint = checkpoint_turn(summary, &checkpoint_sections, trigger)?;
     completed.extend(checkpoint);
-    completed.extend(active);
+    completed.extend(retained.active);
     crate::services::agent_local::conversation_history_validation::validate(&completed)
         .map_err(|_| "compression_candidate_invalid")?;
     Ok(completed)
@@ -56,12 +65,7 @@ pub fn assemble(
 fn retained_turns(
     selected: &[SelectedCheckpointMessage],
     active_turn_id: Option<&str>,
-) -> (
-    Vec<AgentMessage>,
-    Vec<AgentMessage>,
-    Vec<AgentMessage>,
-    Vec<AgentMessage>,
-) {
+) -> RetainedTurns {
     let mut by_turn = BTreeMap::<String, Vec<AgentMessage>>::new();
     let mut order = Vec::new();
     for item in selected {
@@ -81,6 +85,7 @@ fn retained_turns(
     let mut active = Vec::new();
     let mut retained_users = Vec::new();
     let mut retained_assistants = Vec::new();
+    let mut retained_tools = Vec::new();
     for turn_id in order {
         let Some(turn) = by_turn.remove(&turn_id) else {
             continue;
@@ -99,9 +104,27 @@ fn retained_turns(
             retained_users.extend(turn);
         } else if turn.iter().all(|message| message.role == "assistant") {
             retained_assistants.extend(turn);
+        } else {
+            retained_users.extend(
+                turn.iter()
+                    .filter(|message| message.role == "user")
+                    .cloned(),
+            );
+            retained_assistants.extend(
+                turn.iter()
+                    .filter(|message| message.role == "assistant" && message.tool_calls.is_none())
+                    .cloned(),
+            );
+            retained_tools.extend(turn);
         }
     }
-    (completed, active, retained_users, retained_assistants)
+    RetainedTurns {
+        completed,
+        active,
+        users: retained_users,
+        assistants: retained_assistants,
+        tools: retained_tools,
+    }
 }
 
 fn valid_terminal_turn(turn: &[AgentMessage]) -> bool {

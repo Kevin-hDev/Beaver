@@ -49,6 +49,48 @@ pub struct CompressionProfilesView {
     #[cfg_attr(test, ts(type = "number"))]
     pub global_selection_revision: u64,
     pub profiles: Vec<CompressionProfileView>,
+    pub limits: CompressionLimitsView,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+pub struct CompressionLimitsView {
+    pub max_profiles: u16,
+    pub max_profile_name_chars: u32,
+    pub max_custom_prompt_chars: u32,
+    pub max_messages: u8,
+    pub max_tool_results: u16,
+    pub max_files: u16,
+    pub max_images: u16,
+    pub min_summary_tokens: u32,
+    pub max_summary_tokens: u32,
+    pub min_threshold_percent: u8,
+    pub max_threshold_percent: u8,
+    #[cfg_attr(test, ts(type = "number"))]
+    pub under_64k_upper_exclusive: u64,
+    #[cfg_attr(test, ts(type = "number"))]
+    pub compact_upper_exclusive: u64,
+}
+
+impl Default for CompressionLimitsView {
+    fn default() -> Self {
+        use crate::services::compress::profile_limits::*;
+        Self {
+            max_profiles: MAX_PROFILES as u16,
+            max_profile_name_chars: MAX_PROFILE_NAME_CHARS as u32,
+            max_custom_prompt_chars: MAX_CUSTOM_PROMPT_CHARS as u32,
+            max_messages: MAX_MESSAGES,
+            max_tool_results: MAX_TOOL_RESULTS,
+            max_files: MAX_FILES,
+            max_images: MAX_IMAGES,
+            min_summary_tokens: MIN_SUMMARY_TOKENS,
+            max_summary_tokens: MAX_SUMMARY_TOKENS,
+            min_threshold_percent: MIN_THRESHOLD_PERCENT,
+            max_threshold_percent: MAX_THRESHOLD_PERCENT,
+            under_64k_upper_exclusive: UNDER_64K_UPPER_EXCLUSIVE,
+            compact_upper_exclusive: COMPACT_UPPER_EXCLUSIVE,
+        }
+    }
 }
 
 impl From<&CompressionProfileDocument> for CompressionProfilesView {
@@ -58,6 +100,7 @@ impl From<&CompressionProfileDocument> for CompressionProfilesView {
             global_profile_id: document.global_profile_id.clone(),
             global_selection_revision: document.global_selection_revision,
             profiles: document.profiles.clone(),
+            limits: CompressionLimitsView::default(),
         }
     }
 }
@@ -74,6 +117,8 @@ pub struct BudgetProjectionView {
     pub range_upper_tokens: u32,
     pub image_count: u16,
     pub projected_percent: u8,
+    pub reduction_lower_percent: u8,
+    pub reduction_upper_percent: u8,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -133,6 +178,7 @@ pub(crate) fn typescript_bindings() -> String {
         CompressionProfile::decl(&config),
         CompressionProfileInput::decl(&config),
         CompressionProfilesView::decl(&config),
+        CompressionLimitsView::decl(&config),
         BudgetProjectionView::decl(&config),
         CompressionDeleteResult::decl(&config),
         ResolvedCompressionProfileSource::decl(&config),

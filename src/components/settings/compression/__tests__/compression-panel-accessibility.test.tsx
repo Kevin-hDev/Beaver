@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { CompressionProfilesController } from "@/hooks/use-compression-profiles";
 import type { CompressionProfile } from "@/types/compression-profile.generated";
 import { CompressionPanel } from "../compression-panel";
+import { compressionProfilesViewFixture } from "@/test-utils/compression-profile-fixture";
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -14,7 +15,7 @@ vi.mock("../compression-profile-editor", () => ({
 
 const profile = { id: "beaver", name: "Beaver", revision: 1 } as CompressionProfile;
 const controller: CompressionProfilesController = {
-  view: { automatic_enabled: true, global_profile_id: "beaver", global_selection_revision: 1, profiles: [profile] },
+  view: compressionProfilesViewFixture([profile]),
   busy: false,
   setAutomaticEnabled: vi.fn(() => Promise.resolve(true)),
   selectGlobal: vi.fn(() => Promise.resolve(true)),

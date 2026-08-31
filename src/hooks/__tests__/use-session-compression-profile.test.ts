@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
+import { compressionLimitsFixture } from "@/test-utils/compression-profile-fixture";
 
 const fsListener = vi.hoisted(() => ({ callback: null as null | (() => void) }));
 const eventListeners = vi.hoisted(() => new Map<string, () => void>());
@@ -41,6 +42,7 @@ beforeEach(() => {
         global_profile_id: "beaver",
         global_selection_revision: 2,
         profiles: [profile],
+        limits: compressionLimitsFixture(),
       });
     }
     return Promise.resolve(resolved);

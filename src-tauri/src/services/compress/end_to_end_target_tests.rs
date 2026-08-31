@@ -102,6 +102,34 @@ async fn small_windows_reduce_the_summary_limit_without_changing_the_profile() {
 }
 
 #[tokio::test]
+async fn summary_request_fits_the_effective_ollama_window() {
+    let mut session = super::target_support::stored_session().await;
+    session.messages[0].content = "historical context ".repeat(30_000);
+    let mut document = CompressionProfileDocument::default();
+    document.profiles[0].allow_under_64k = true;
+    let captured = super::target_support::snapshot(
+        &session,
+        &document,
+        34_000,
+        96_000,
+        13_400,
+        CompressionTrigger::Explicit,
+    );
+    let collector = super::target_support::RecordingCollector::new();
+
+    super::super::orchestrator_summary::generate(&captured, &collector)
+        .await
+        .unwrap();
+
+    let input = collector.input_tokens()[0];
+    let output = collector.limits()[0];
+    assert!(input.saturating_add(output) < 34_000);
+    crate::services::agent_local::session_store::delete_one(&session.id)
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
 async fn a_511_token_summary_refusal_skips_network_and_counts_the_automatic_failure() {
     let session = super::target_support::stored_session().await;
     let document = CompressionProfileDocument::default();

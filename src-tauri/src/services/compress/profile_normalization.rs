@@ -67,5 +67,9 @@ fn normalize_band(band: &mut CompressionBandSettings) {
 }
 
 fn truncate(value: &str) -> String {
-    value.chars().take(MAX_CUSTOM_PROMPT_CHARS).collect()
+    value
+        .chars()
+        .filter(|character| !character.is_control() || matches!(character, '\n' | '\r' | '\t'))
+        .take(MAX_CUSTOM_PROMPT_CHARS)
+        .collect()
 }

@@ -5,6 +5,7 @@ import type {
   CompressionProfile,
   CompressionProfilesView,
 } from "@/types/compression-profile.generated";
+import { compressionLimitsFixture } from "@/test-utils/compression-profile-fixture";
 
 const { fsCallbacks, showToast } = vi.hoisted(() => ({
   fsCallbacks: new Map<string, () => void>(),
@@ -31,6 +32,7 @@ const view = (threshold = 90, revision = 1): CompressionProfilesView => ({
   global_profile_id: "beaver",
   global_selection_revision: 1,
   profiles: [profile("custom", 80), profile("beaver", threshold, revision)],
+  limits: compressionLimitsFixture(),
 });
 
 beforeEach(() => {

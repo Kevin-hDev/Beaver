@@ -3,6 +3,11 @@ use super::profile_defaults::beaver_profile;
 use super::profile_types::CompressionWindowBand;
 
 #[test]
+fn profile_document_enables_automatic_compression_by_default() {
+    assert!(super::profile_store_document::CompressionProfileDocument::default().automatic_enabled);
+}
+
+#[test]
 fn window_bands_use_the_exact_boundaries() {
     assert_eq!(band_for_window(0), None);
     assert_eq!(

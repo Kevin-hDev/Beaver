@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import type {
   CompressionBandSettings,
   CompressionProfile,
+  CompressionLimitsView,
 } from "@/types/compression-profile.generated";
 import { CompressionQuantityControl } from "./compression-quantity-control";
 import { CompressionSection } from "./compression-section";
@@ -11,7 +12,8 @@ import { CompressionSummaryPrompts } from "./compression-summary-prompts";
 interface CompressionSummarySectionProps {
   profile: CompressionProfile;
   band: CompressionBandSettings;
-  disabled: boolean;
+  limits: CompressionLimitsView;
+  quantityDisabled: boolean;
   onProfileChange: (profile: CompressionProfile) => void;
   onBandChange: (band: CompressionBandSettings) => void;
   onResetPrompts: () => void;
@@ -20,7 +22,8 @@ interface CompressionSummarySectionProps {
 export function CompressionSummarySection({
   profile,
   band,
-  disabled,
+  limits,
+  quantityDisabled,
   onProfileChange,
   onBandChange,
   onResetPrompts,
@@ -37,9 +40,9 @@ export function CompressionSummarySection({
       >
         <CompressionQuantityControl
           value={band.summary_max_tokens}
-          minimum={1_000}
-          maximum={8_000}
-          disabled={disabled}
+          minimum={limits.min_summary_tokens}
+          maximum={limits.max_summary_tokens}
+          disabled={quantityDisabled}
           ariaLabel={t("settings.advanced.compressionSummaryMaximum")}
           unit={t("settings.advanced.compressionTokens")}
           onChange={(summary_max_tokens) => onBandChange({ ...band, summary_max_tokens })}
@@ -48,7 +51,8 @@ export function CompressionSummarySection({
       <CompressionSummaryPrompts
         systemPrompt={profile.system_prompt}
         handoffPrompt={profile.handoff_prompt}
-        disabled={disabled}
+        disabled={false}
+        maxLength={limits.max_custom_prompt_chars}
         onSystemPromptChange={(system_prompt) => onProfileChange({ ...profile, system_prompt })}
         onHandoffPromptChange={(handoff_prompt) => onProfileChange({ ...profile, handoff_prompt })}
         onReset={onResetPrompts}

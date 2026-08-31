@@ -3,7 +3,10 @@ import { describe, expect, it, vi } from "vitest";
 import type { CompressionProfilesController } from "@/hooks/use-compression-profiles";
 import type { CompressionProfile } from "@/types/compression-profile.generated";
 import { CompressionProfileEditor } from "../compression-profile-editor";
-import { compressionProfileFixture } from "@/test-utils/compression-profile-fixture";
+import {
+  compressionLimitsFixture,
+  compressionProfileFixture,
+} from "@/test-utils/compression-profile-fixture";
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
@@ -48,6 +51,8 @@ describe("CompressionProfileEditor", () => {
         profile={profile}
         currentWindow={96_000}
         controller={controller(save)}
+        limits={compressionLimitsFixture()}
+        automaticEnabled
       />,
     );
 
@@ -57,7 +62,7 @@ describe("CompressionProfileEditor", () => {
       name: "settings.advanced.compressionRange.under_64k",
     }));
     expect(screen.queryByText("settings.advanced.compressionUnder64Warning")).not.toBeInTheDocument();
-    expect(screen.getByLabelText("settings.advanced.compressionAutomaticThreshold")).toBeDisabled();
+    expect(screen.getByLabelText("settings.advanced.compressionAutomaticThreshold")).toBeEnabled();
 
     fireEvent.click(screen.getByRole("switch", {
       name: "settings.advanced.compressionUnder64Title",
@@ -78,6 +83,8 @@ describe("CompressionProfileEditor", () => {
         profile={{ ...compressionProfileFixture(), allow_under_64k: true }}
         currentWindow={96_000}
         controller={controller()}
+        limits={compressionLimitsFixture()}
+        automaticEnabled
       />,
     );
 
@@ -91,6 +98,8 @@ describe("CompressionProfileEditor", () => {
         profile={{ ...compressionProfileFixture(), allow_under_64k: true }}
         currentWindow={96_000}
         controller={controller(save)}
+        limits={compressionLimitsFixture()}
+        automaticEnabled
       />,
     );
     fireEvent.click(screen.getByRole("button", {
@@ -102,5 +111,28 @@ describe("CompressionProfileEditor", () => {
     expect(saved.large).toEqual(saved.compact);
     expect(screen.getByLabelText("settings.advanced.compressionRecentMessages")).toBeInTheDocument();
     expect(screen.queryByText("settings.advanced.compressionBudgetMode.fixed")).not.toBeInTheDocument();
+  });
+
+  it("laisse saisir une taille de résumé sans persister une valeur intermédiaire bornée", () => {
+    const save = vi.fn((_profile: CompressionProfile) => Promise.resolve(true));
+    render(
+      <CompressionProfileEditor
+        profile={compressionProfileFixture()}
+        currentWindow={96_000}
+        controller={controller(save)}
+        limits={compressionLimitsFixture()}
+        automaticEnabled
+      />,
+    );
+    const input = screen.getByLabelText("settings.advanced.compressionSummaryMaximum");
+
+    fireEvent.change(input, { target: { value: "2" } });
+    expect(input).toHaveValue(2);
+    expect(save).not.toHaveBeenCalled();
+    fireEvent.change(input, { target: { value: "2500" } });
+
+    const saved = save.mock.lastCall?.[0];
+    if (!saved) throw new Error("missing saved profile");
+    expect(saved.compact.summary_max_tokens).toBe(2500);
   });
 });

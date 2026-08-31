@@ -50,6 +50,29 @@ async fn v3_migrates_to_v4_with_an_empty_guard_and_exact_backup() {
     assert!(reloaded.session().automatic_compression_guard.is_empty());
 }
 
+#[test]
+fn invalid_automatic_compression_guard_does_not_make_the_session_unreadable() {
+    let root = tempfile::tempdir().expect("tempdir");
+    let path = root.path().join("00000000-0000-4000-8000-000000000031.json");
+    let migrated = super::session_migration::read(V3_COMPRESSION_FIXTURE, path.clone())
+        .expect("migrate v3 fixture");
+    let mut value = serde_json::to_value(migrated.session()).expect("session json");
+    value["automatic_compression_guard"] = serde_json::json!({
+        "last_attempt": null,
+        "consecutive_failures": 255,
+        "suspended": true
+    });
+    let bytes = serde_json::to_vec(&value).expect("session bytes");
+
+    let loaded = super::session_migration::read(&bytes, path).expect("guard degrades safely");
+
+    assert!(loaded.session().automatic_compression_guard.is_empty());
+    assert_eq!(
+        serde_json::to_vec(&loaded.session().messages).unwrap(),
+        serde_json::to_vec(&migrated.session().messages).unwrap()
+    );
+}
+
 #[tokio::test]
 async fn v2_compression_markers_migrate_to_v3_with_an_exact_backup() {
     use super::types_message::AgentMessageKind;

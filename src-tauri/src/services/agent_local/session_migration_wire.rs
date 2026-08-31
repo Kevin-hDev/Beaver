@@ -90,6 +90,7 @@ pub(super) fn parse_v4(bytes: &[u8]) -> Result<AgentSession, String> {
 fn parse_v4_value(value: Value) -> Result<AgentSession, String> {
     let mut session: AgentSession = serde_json::from_value(value).map_err(|_| invalid())?;
     degrade_unreplayable(&mut session);
+    super::session_migration_compression_guard::normalize_for_read(&mut session);
     validate_current_readable(&session)?;
     Ok(session)
 }

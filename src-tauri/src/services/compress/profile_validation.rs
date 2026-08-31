@@ -57,7 +57,10 @@ fn validate_identity(
     {
         return Err(ProfileValidationError::DuplicateName);
     }
-    if !(1..=90).contains(&profile.threshold_percent) {
+    if !(super::profile_limits::MIN_THRESHOLD_PERCENT
+        ..=super::profile_limits::MAX_THRESHOLD_PERCENT)
+        .contains(&profile.threshold_percent)
+    {
         return Err(ProfileValidationError::InvalidBudget);
     }
     Ok(())

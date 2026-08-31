@@ -78,6 +78,7 @@ export function ContextCompressionHelpPopover({
         <button
           type="button"
           className="cch-shield"
+          tabIndex={-1}
           aria-label={t("agentLocal.contextUsage.compressionHelpDismiss")}
           onClick={() => {
             changeOpen(false);

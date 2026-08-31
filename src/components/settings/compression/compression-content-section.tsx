@@ -1,12 +1,16 @@
 import { useTranslation } from "react-i18next";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
-import type { CompressionBandSettings } from "@/types/compression-profile.generated";
+import type {
+  CompressionBandSettings,
+  CompressionLimitsView,
+} from "@/types/compression-profile.generated";
 import { CompressionQuantityControl } from "./compression-quantity-control";
 import { CompressionSection } from "./compression-section";
 import { CompressionSettingRow } from "./compression-setting-row";
 
 interface CompressionContentSectionProps {
   band: CompressionBandSettings;
+  limits: CompressionLimitsView;
   disabled: boolean;
   onChange: (band: CompressionBandSettings) => void;
   onCopy: () => void;
@@ -14,6 +18,7 @@ interface CompressionContentSectionProps {
 
 export function CompressionContentSection({
   band,
+  limits,
   disabled,
   onChange,
   onCopy,
@@ -28,7 +33,7 @@ export function CompressionContentSection({
         title={t("settings.advanced.compressionRecentMessages")}
         description={t("settings.advanced.compressionRecentMessagesDesc")}
         value={band.recent_message_count}
-        maximum={8}
+        maximum={limits.max_messages}
         disabled={disabled}
         onChange={(recent_message_count) => onChange({ ...band, recent_message_count })}
       />
@@ -36,7 +41,7 @@ export function CompressionContentSection({
         title={t("settings.advanced.compressionToolResults")}
         description={t("settings.advanced.compressionToolResultsDesc")}
         value={band.tool_result_count}
-        maximum={50}
+        maximum={limits.max_tool_results}
         disabled={disabled}
         onChange={(tool_result_count) => onChange({ ...band, tool_result_count })}
       />
@@ -44,7 +49,7 @@ export function CompressionContentSection({
         title={t("settings.advanced.compressionRecentFiles")}
         description={t("settings.advanced.compressionRecentFilesDesc")}
         value={band.recent_file_count}
-        maximum={15}
+        maximum={limits.max_files}
         disabled={disabled}
         onChange={(recent_file_count) => onChange({ ...band, recent_file_count })}
       />
@@ -52,7 +57,7 @@ export function CompressionContentSection({
         title={t("settings.advanced.compressionImages")}
         description={t("settings.advanced.compressionImagesDesc")}
         value={band.image_count}
-        maximum={16}
+        maximum={limits.max_images}
         disabled={disabled}
         onChange={(image_count) => onChange({ ...band, image_count })}
       />

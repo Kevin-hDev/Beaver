@@ -49,6 +49,37 @@ fn ipc_validation_rejects_out_of_range_simple_quantities() {
 }
 
 #[test]
+fn ipc_accepts_each_simple_boundary_and_rejects_threshold_overflows() {
+    let existing = vec![beaver_profile()];
+    let mut input = custom_profile();
+    for threshold in [1, 90] {
+        input.threshold_percent = threshold;
+        assert!(validate_profile_input(&input, &existing).is_ok());
+    }
+    for threshold in [0, 91] {
+        input.threshold_percent = threshold;
+        assert!(validate_profile_input(&input, &existing).is_err());
+    }
+    input.threshold_percent = 90;
+    input.compact.summary_max_tokens = 8_000;
+    for messages in [0, 1, 7, 8] {
+        input.compact.recent_message_count = messages;
+        assert!(validate_profile_input(&input, &existing).is_ok());
+    }
+}
+
+#[test]
+fn disk_normalization_removes_forbidden_prompt_controls() {
+    let mut profiles = vec![beaver_profile()];
+    profiles[0].system_prompt = "safe\u{000b}text\nkept".into();
+    let mut global_id = "beaver".to_string();
+
+    normalize_profile_document(&mut profiles, &mut global_id);
+
+    assert_eq!(profiles[0].system_prompt, "safetext\nkept");
+}
+
+#[test]
 fn disk_normalization_clamps_simple_values_and_repairs_zero_summary() {
     let mut profiles = vec![beaver_profile()];
     let profile = &mut profiles[0];

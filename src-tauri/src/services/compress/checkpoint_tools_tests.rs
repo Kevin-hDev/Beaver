@@ -105,3 +105,34 @@ fn rejects_orphan_tool_results_and_caps_events_at_one_hundred() {
         0
     );
 }
+
+#[test]
+fn selected_tool_chain_survives_document_assembly_without_its_user_message() {
+    let source = tool_chain(1, |_| "important tool evidence".into());
+    let mut configured = limits(0, 0);
+    configured.recent_message_count = 0;
+    let selected = select(&source, configured).unwrap();
+    assert!(selected
+        .messages
+        .iter()
+        .any(|item| item.message().role == "tool"));
+
+    let assembled = super::checkpoint_document::assemble(
+        &selected.messages,
+        None,
+        None,
+        &[],
+        super::profile_types::CompressionTrigger::Explicit,
+    )
+    .unwrap();
+    let checkpoint = assembled
+        .iter()
+        .find(|message| {
+            message.message_kind
+                == Some(crate::services::agent_local::types_message::AgentMessageKind::CompressionCheckpoint)
+        })
+        .expect("checkpoint");
+    assert!(checkpoint.content.contains("retained_tool_results"));
+    assert!(checkpoint.content.contains("important tool evidence"));
+    assert!(checkpoint.content.contains("read_file"));
+}

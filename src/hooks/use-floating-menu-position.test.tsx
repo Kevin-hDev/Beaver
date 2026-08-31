@@ -184,4 +184,31 @@ describe("useFloatingMenuPosition", () => {
       visibility: "visible",
     }));
   });
+
+  it("bascule la seconde bulle après le panneau quand la gauche est trop étroite", async () => {
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
+      .mockImplementation(function getRect(this: HTMLElement) {
+        if (this.dataset.horizontal !== undefined) {
+          return {
+            x: 40, y: 260, top: 260, right: 280, bottom: 560, left: 40,
+            width: 240, height: 300, toJSON: () => ({}),
+          };
+        }
+        return {
+          x: 240, y: 520, top: 520, right: 268, bottom: 548, left: 240,
+          width: 28, height: 28, toJSON: () => ({}),
+        };
+      });
+    vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(340);
+    vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(120);
+    vi.stubGlobal("innerWidth", 1_000);
+    vi.stubGlobal("innerHeight", 800);
+
+    render(<SideFixture />);
+
+    await waitFor(() => expect(screen.getByText("side menu")).toHaveStyle({
+      left: "288px",
+      visibility: "visible",
+    }));
+  });
 });

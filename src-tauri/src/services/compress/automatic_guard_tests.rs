@@ -74,6 +74,23 @@ fn successful_result_below_threshold_clears_the_guard() {
     assert!(guard.is_empty());
 }
 
+#[test]
+fn successful_result_still_above_threshold_blocks_the_same_top_level_turn() {
+    let original = attempt("00000000-0000-4000-8000-000000000002", "model");
+    let mut guard = success_guard(Some(original.clone()), 90_000, 96_000, 90);
+    let mut after_checkpoint = original;
+    after_checkpoint.last_message_id = "00000000-0000-4000-8000-000000000099".into();
+    after_checkpoint.message_count = 4;
+    after_checkpoint.last_checkpoint_message_id =
+        Some("00000000-0000-4000-8000-000000000098".into());
+
+    assert!(matches!(
+        start(&mut guard, &after_checkpoint),
+        StartDecision::AlreadyAttempted
+    ));
+    assert!(same_successful_top_level(&guard, &after_checkpoint));
+}
+
 async fn stored_session() -> AgentSession {
     let fixture = super::super::snapshot_tests::session();
     let mut session = crate::services::agent_local::session_store::create_full(
@@ -120,7 +137,7 @@ async fn persisted_attempt_survives_reload_and_blocks_the_same_snapshot() {
 }
 
 #[tokio::test]
-async fn explicit_compression_clears_a_persisted_suspension() {
+async fn explicit_compression_remains_available_without_clearing_guard_before_success() {
     let mut session = stored_session().await;
     let profile = super::super::profile_resolve::resolve_for_session(&session).unwrap();
     session.automatic_compression_guard = AutomaticCompressionGuard {
@@ -140,7 +157,7 @@ async fn explicit_compression_clears_a_persisted_suspension() {
         .unwrap()
         .expect("explicit compression remains available");
 
-    assert!(prepared.session.automatic_compression_guard.is_empty());
+    assert!(prepared.session.automatic_compression_guard.suspended);
     assert!(prepared.attempt.is_none());
     crate::services::agent_local::session_store::delete_one(&session.id)
         .await

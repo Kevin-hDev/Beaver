@@ -161,3 +161,13 @@ fn automatic_open_turn_is_silent_before_start_while_explicit_reports_it() {
         Err(super::checkpoint_transaction::CompressionError::OpenTurn)
     );
 }
+
+#[test]
+fn user_cancellation_does_not_increment_the_automatic_failure_guard() {
+    assert!(!super::orchestrator::should_record_failure(
+        super::checkpoint_transaction::CompressionError::Cancelled,
+    ));
+    assert!(super::orchestrator::should_record_failure(
+        super::checkpoint_transaction::CompressionError::SummaryRequestFailed,
+    ));
+}

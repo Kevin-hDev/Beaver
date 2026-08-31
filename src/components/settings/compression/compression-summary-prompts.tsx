@@ -5,6 +5,7 @@ interface CompressionSummaryPromptsProps {
   systemPrompt: string;
   handoffPrompt: string;
   disabled: boolean;
+  maxLength: number;
   onSystemPromptChange: (value: string) => void;
   onHandoffPromptChange: (value: string) => void;
   onReset: () => void;
@@ -14,6 +15,7 @@ export function CompressionSummaryPrompts({
   systemPrompt,
   handoffPrompt,
   disabled,
+  maxLength,
   onSystemPromptChange,
   onHandoffPromptChange,
   onReset,
@@ -29,7 +31,7 @@ export function CompressionSummaryPrompts({
         <textarea
           className="field field-wide cse-textarea"
           rows={5}
-          maxLength={32_000}
+          maxLength={maxLength}
           value={systemPrompt}
           disabled={disabled}
           onChange={(event) => onSystemPromptChange(event.target.value)}
@@ -43,7 +45,7 @@ export function CompressionSummaryPrompts({
         <textarea
           className="field field-wide cse-textarea"
           rows={5}
-          maxLength={32_000}
+          maxLength={maxLength}
           value={handoffPrompt}
           disabled={disabled}
           onChange={(event) => onHandoffPromptChange(event.target.value)}

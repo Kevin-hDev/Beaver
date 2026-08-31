@@ -7,7 +7,13 @@ import {
 } from "../compression-budget-preview";
 
 vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
+  useTranslation: () => ({
+    t: (key: string, values?: Record<string, number>) => (
+      key === "settings.advanced.compressionProjectionReduction"
+        ? `${key}:${values?.minimum}-${values?.maximum}`
+        : key
+    ),
+  }),
 }));
 
 vi.mock("@tauri-apps/api/core", () => ({
@@ -21,6 +27,8 @@ vi.mock("@tauri-apps/api/core", () => ({
     range_upper_tokens: 32_000,
     image_count: 4,
     projected_percent: 30,
+    reduction_lower_percent: 67,
+    reduction_upper_percent: 75,
   })),
 }));
 
@@ -52,6 +60,8 @@ describe("CompressionBudgetPreview", () => {
       range_upper_tokens: 32_000,
       image_count: 4,
       projected_percent: 30,
+      reduction_lower_percent: 67,
+      reduction_upper_percent: 75,
     });
     const { container } = render(
       <CompressionBudgetPreview
@@ -65,5 +75,8 @@ describe("CompressionBudgetPreview", () => {
     expect(container.querySelector(".cbp-gauge-profile")).toHaveStyle({ width: "17.5%" });
     expect(screen.getByText("settings.advanced.compressionProjectionImages")).toBeInTheDocument();
     expect(screen.getByText("settings.advanced.compressionProjectionActiveTurn")).toBeInTheDocument();
+    expect(screen.getByText(
+      "settings.advanced.compressionProjectionReduction:67-75",
+    )).toBeInTheDocument();
   });
 });

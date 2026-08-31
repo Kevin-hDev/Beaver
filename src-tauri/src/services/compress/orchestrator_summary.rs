@@ -5,6 +5,7 @@ use super::summary_contract::{SummaryRawOutput, ValidatedSummary};
 use super::summary_request::{SummaryAttemptError, SummaryCall, SummaryCollector};
 
 const MAX_SUMMARY_INPUT_TOKENS: u32 = 1_000_000;
+const SUMMARY_INPUT_SAFETY_TOKENS: u32 = 256;
 
 pub struct ProviderSummaryCollector<'a> {
     pub session_id: &'a str,
@@ -70,21 +71,62 @@ pub async fn generate(
     let output_limit =
         super::checkpoint_target::effective_summary_limit(band.summary_max_tokens, available)
             .map_err(|_| super::checkpoint_transaction::CompressionError::CapacityExceeded)?;
-    let call = super::summary_request::build_call(
-        &snapshot.source_messages,
-        &super::summary_request::SummaryPromptConfig {
-            system_prompt: snapshot.profile.profile.system_prompt.clone(),
-            handoff_request: snapshot.profile.profile.handoff_prompt.clone(),
-        },
+    let prompts = super::summary_request::SummaryPromptConfig {
+        system_prompt: snapshot.profile.profile.system_prompt.clone(),
+        handoff_request: snapshot.profile.profile.handoff_prompt.clone(),
+    };
+    let empty_call = super::summary_request::build_call(
+        &[],
+        &prompts,
         &snapshot.provider_id,
         &snapshot.source_session.model,
-        snapshot.before_tokens.clamp(1, MAX_SUMMARY_INPUT_TOKENS),
+        1,
         output_limit,
     );
-    super::summary_request::execute(collector, &call, 0)
-        .await
-        .map(Some)
-        .map_err(|_| super::checkpoint_transaction::CompressionError::SummaryInvalid)
+    let fixed_input = super::token_estimate::estimate_textual_request_tokens_for_provider(
+        &snapshot.provider_id,
+        &empty_call.messages,
+        &[],
+    )
+    .min(u32::MAX as usize) as u32;
+    let input_window = if snapshot.context_window > 0 {
+        snapshot.context_window.min(u64::from(u32::MAX)) as u32
+    } else {
+        snapshot.before_tokens
+    };
+    if input_window
+        <= fixed_input
+            .saturating_add(output_limit)
+            .saturating_add(SUMMARY_INPUT_SAFETY_TOKENS)
+    {
+        return Err(super::checkpoint_transaction::CompressionError::CapacityExceeded);
+    }
+    let history_limit = input_window
+        .saturating_sub(output_limit)
+        .saturating_sub(fixed_input)
+        .saturating_sub(SUMMARY_INPUT_SAFETY_TOKENS)
+        .clamp(1, MAX_SUMMARY_INPUT_TOKENS);
+    let call = super::summary_request::build_call(
+        &snapshot.source_messages,
+        &prompts,
+        &snapshot.provider_id,
+        &snapshot.source_session.model,
+        history_limit,
+        output_limit,
+    );
+    match super::summary_request::execute(collector, &call, 0).await {
+        Ok(summary) => Ok(Some(summary)),
+        Err(super::summary_request::SummaryExecutionError::InvalidOutput) => {
+            Err(super::checkpoint_transaction::CompressionError::SummaryInvalid)
+        }
+        Err(super::summary_request::SummaryExecutionError::Cancelled) => {
+            Err(super::checkpoint_transaction::CompressionError::Cancelled)
+        }
+        Err(
+            super::summary_request::SummaryExecutionError::Retryable
+            | super::summary_request::SummaryExecutionError::Fatal,
+        ) => Err(super::checkpoint_transaction::CompressionError::SummaryRequestFailed),
+    }
 }
 
 pub(super) fn classify(error: &str, cancelled: bool) -> SummaryAttemptError {

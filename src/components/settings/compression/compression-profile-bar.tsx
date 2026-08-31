@@ -114,6 +114,7 @@ export function CompressionProfileBar({
         <CompressionProfileDialog
           sourceName={active.name}
           existingNames={controller.view.profiles.map((profile) => profile.name)}
+          nameMaximum={controller.view.limits.max_profile_name_chars}
           onCancel={() => {
             setCreating(false);
             onInteractionChange(false);

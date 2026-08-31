@@ -178,4 +178,11 @@ fn projection_uses_the_fixed_public_demonstration() {
         (projection.range_lower_tokens, projection.range_upper_tokens),
         (24_000, 32_000)
     );
+    assert_eq!(
+        (
+            projection.reduction_lower_percent,
+            projection.reduction_upper_percent
+        ),
+        (67, 75)
+    );
 }

@@ -13,7 +13,7 @@ pub(super) async fn run(
     attempt: Option<crate::services::agent_local::types_session::AutomaticCompressionAttempt>,
 ) -> Result<StartedCompression, CompressionError> {
     if request.cancel.is_cancelled() {
-        return Err(CompressionError::SummaryInvalid);
+        return Err(CompressionError::Cancelled);
     }
     let tool_names = super::orchestrator_support::tool_names(request.provider_tools);
     let capabilities = super::session_capabilities::SessionCompressionCapabilities::from_runtime(
