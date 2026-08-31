@@ -123,7 +123,34 @@ async fn summary_request_fits_the_effective_ollama_window() {
 
     let input = collector.input_tokens()[0];
     let output = collector.limits()[0];
-    assert!(input.saturating_add(output) < 34_000);
+    assert!(input.saturating_add(output) <= 32_300);
+    crate::services::agent_local::session_store::delete_one(&session.id)
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
+async fn oversized_fixed_summary_input_is_refused_before_network() {
+    let session = super::target_support::stored_session().await;
+    let mut document = CompressionProfileDocument::default();
+    document.profiles[0].allow_under_64k = true;
+    document.profiles[0].system_prompt = "fixed contract ".repeat(10_000);
+    let captured = super::target_support::snapshot(
+        &session,
+        &document,
+        16_000,
+        16_000,
+        4_000,
+        CompressionTrigger::Explicit,
+    );
+    let collector = super::target_support::RecordingCollector::new();
+
+    assert_eq!(
+        super::super::orchestrator_summary::generate(&captured, &collector).await,
+        Err(super::super::checkpoint_transaction::CompressionError::CapacityExceeded)
+    );
+    assert_eq!(collector.calls(), 0);
+
     crate::services::agent_local::session_store::delete_one(&session.id)
         .await
         .unwrap();

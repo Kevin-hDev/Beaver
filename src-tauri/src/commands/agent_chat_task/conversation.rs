@@ -71,7 +71,10 @@ impl StreamConversation {
                 subagent_owner,
             } => {
                 let is_compress_command = admitted.history.messages.last().is_some_and(|message| {
-                    message.role == ProviderRole::User && message.content.trim() == "/compress"
+                    message.role == ProviderRole::User
+                        && crate::services::compress::command::is_explicit_compression_command(
+                            &message.content,
+                        )
                 });
                 let journal = if is_compress_command {
                     None

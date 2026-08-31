@@ -103,7 +103,7 @@ pub async fn run_compression(
             .await;
     if result
         .as_ref()
-        .is_err_and(|error| should_record_failure(*error))
+        .is_err_and(|error| should_record_failure(trigger, *error))
     {
         if let Some(attempt) = attempt.as_ref() {
             super::automatic_guard::record_failure(&session_id, attempt).await;
@@ -133,8 +133,8 @@ pub async fn run_compression(
     result.map(|value| Some(value.report))
 }
 
-pub(super) fn should_record_failure(error: CompressionError) -> bool {
-    error != CompressionError::Cancelled
+pub(super) fn should_record_failure(trigger: CompressionTrigger, error: CompressionError) -> bool {
+    trigger == CompressionTrigger::Automatic && error != CompressionError::Cancelled
 }
 
 pub(super) fn preflight_messages(

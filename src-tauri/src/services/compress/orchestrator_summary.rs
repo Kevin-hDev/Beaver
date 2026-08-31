@@ -5,7 +5,11 @@ use super::summary_contract::{SummaryRawOutput, ValidatedSummary};
 use super::summary_request::{SummaryAttemptError, SummaryCall, SummaryCollector};
 
 const MAX_SUMMARY_INPUT_TOKENS: u32 = 1_000_000;
-const SUMMARY_INPUT_SAFETY_TOKENS: u32 = 256;
+const MIN_SUMMARY_INPUT_SAFETY_TOKENS: u32 = 256;
+
+pub(super) fn summary_input_safety_tokens(input_window: u32) -> u32 {
+    MIN_SUMMARY_INPUT_SAFETY_TOKENS.max(input_window / 20)
+}
 
 pub struct ProviderSummaryCollector<'a> {
     pub session_id: &'a str,
@@ -94,17 +98,18 @@ pub async fn generate(
     } else {
         snapshot.before_tokens
     };
+    let input_safety = summary_input_safety_tokens(input_window);
     if input_window
         <= fixed_input
             .saturating_add(output_limit)
-            .saturating_add(SUMMARY_INPUT_SAFETY_TOKENS)
+            .saturating_add(input_safety)
     {
         return Err(super::checkpoint_transaction::CompressionError::CapacityExceeded);
     }
     let history_limit = input_window
         .saturating_sub(output_limit)
         .saturating_sub(fixed_input)
-        .saturating_sub(SUMMARY_INPUT_SAFETY_TOKENS)
+        .saturating_sub(input_safety)
         .clamp(1, MAX_SUMMARY_INPUT_TOKENS);
     let call = super::summary_request::build_call(
         &snapshot.source_messages,

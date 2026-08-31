@@ -36,13 +36,17 @@ pub async fn prepare(
     {
         return Err(CompressionError::SessionChanged);
     }
+    let attempt = attempt_for(&current, profile, context_window)?;
     if trigger == CompressionTrigger::Explicit {
+        current.automatic_compression_guard.last_attempt = Some(attempt.clone());
+        crate::services::agent_local::session_store::save(&current)
+            .await
+            .map_err(|_| CompressionError::SaveFailed)?;
         return Ok(Some(PreparedGuard {
             session: current,
-            attempt: None,
+            attempt: Some(attempt),
         }));
     }
-    let attempt = attempt_for(&current, profile, context_window)?;
     match start(&mut current.automatic_compression_guard, &attempt) {
         StartDecision::AlreadyAttempted => return Ok(None),
         StartDecision::Suspended => return Err(CompressionError::AutomaticSuspended),

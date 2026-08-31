@@ -23,6 +23,7 @@ mod checkpoint_text_attachments;
 pub mod checkpoint_tools;
 pub mod checkpoint_transaction;
 pub mod checkpoint_units;
+pub mod command;
 pub mod compression_redaction;
 pub mod context_capsules_disk;
 mod context_capsules_disk_collect;

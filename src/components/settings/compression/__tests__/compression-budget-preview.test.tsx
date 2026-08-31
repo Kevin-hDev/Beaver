@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { invoke } from "@tauri-apps/api/core";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   CompressionBudgetPreview,
   formatCompressionWindow,
@@ -32,6 +32,25 @@ vi.mock("@tauri-apps/api/core", () => ({
   })),
 }));
 
+const projection = (band: "under_64k" | "compact" | "large" = "compact") => ({
+  band,
+  before_tokens: 96_000,
+  system_tools_tokens: 12_000,
+  variable_tokens: 16_800,
+  target_tokens: 28_800,
+  range_lower_tokens: 24_000,
+  range_upper_tokens: 32_000,
+  image_count: 4,
+  projected_percent: 30,
+  reduction_lower_percent: 67,
+  reduction_upper_percent: 75,
+});
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  vi.mocked(invoke).mockResolvedValue(projection());
+});
+
 describe("CompressionBudgetPreview", () => {
   it("affiche 1M et utilise uniquement la démonstration backend fixe", async () => {
     render(
@@ -50,19 +69,7 @@ describe("CompressionBudgetPreview", () => {
   });
 
   it("affiche la tranche cible, les images et la note sur le tour actif", async () => {
-    vi.mocked(invoke).mockResolvedValueOnce({
-      band: "compact",
-      before_tokens: 96_000,
-      system_tools_tokens: 12_000,
-      variable_tokens: 16_800,
-      target_tokens: 28_800,
-      range_lower_tokens: 24_000,
-      range_upper_tokens: 32_000,
-      image_count: 4,
-      projected_percent: 30,
-      reduction_lower_percent: 67,
-      reduction_upper_percent: 75,
-    });
+    vi.mocked(invoke).mockResolvedValueOnce(projection());
     const { container } = render(
       <CompressionBudgetPreview
         profileId="beaver"
@@ -78,5 +85,37 @@ describe("CompressionBudgetPreview", () => {
     expect(screen.getByText(
       "settings.advanced.compressionProjectionReduction:67-75",
     )).toBeInTheDocument();
+  });
+
+  it("vide l'ancienne projection pendant le chargement d'une autre plage", async () => {
+    const { rerender } = render(
+      <CompressionBudgetPreview profileId="beaver" profileRevision={1} band="compact" />,
+    );
+    await screen.findByText("28.8K");
+    vi.mocked(invoke).mockImplementationOnce(() => new Promise(() => {}));
+
+    rerender(
+      <CompressionBudgetPreview profileId="beaver" profileRevision={1} band="large" />,
+    );
+
+    await screen.findByText("settings.advanced.compressionProjectionLoading");
+    expect(screen.queryByText("28.8K")).not.toBeInTheDocument();
+  });
+
+  it("quitte l'état d'échec quand une nouvelle projection réussit", async () => {
+    vi.mocked(invoke).mockRejectedValueOnce(new Error("failed"));
+    const { rerender } = render(
+      <CompressionBudgetPreview profileId="beaver" profileRevision={1} band="compact" />,
+    );
+    await screen.findByText("settings.advanced.compressionProjectionUnavailable");
+    vi.mocked(invoke).mockResolvedValueOnce(projection());
+
+    rerender(
+      <CompressionBudgetPreview profileId="beaver" profileRevision={2} band="compact" />,
+    );
+
+    await screen.findByText("settings.advanced.compressionProjectionTarget");
+    expect(screen.queryByText("settings.advanced.compressionProjectionUnavailable"))
+      .not.toBeInTheDocument();
   });
 });

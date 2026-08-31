@@ -193,7 +193,7 @@ where
         stream_part: None,
     };
     let housekeeping = super::session_store_todos::apply_user_turn(&mut session, true);
-    if input.user_content.trim() != "/compress" {
+    if !crate::services::compress::command::is_explicit_compression_command(&input.user_content) {
         crate::services::compress::automatic_guard::reset(&mut session);
     }
     session.messages.push(message);

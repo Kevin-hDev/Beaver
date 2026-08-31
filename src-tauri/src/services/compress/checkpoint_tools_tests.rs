@@ -136,3 +136,30 @@ fn selected_tool_chain_survives_document_assembly_without_its_user_message() {
     assert!(checkpoint.content.contains("important tool evidence"));
     assert!(checkpoint.content.contains("read_file"));
 }
+
+#[test]
+fn selected_user_survives_document_assembly_beside_tool_evidence() {
+    let source = tool_chain(1, |_| "important tool evidence".into());
+    let mut configured = limits(1_000, 0);
+    configured.recent_message_count = 1;
+    let selected = select(&source, configured).unwrap();
+    let assembled = super::checkpoint_document::assemble(
+        &selected.messages,
+        None,
+        None,
+        &[],
+        super::profile_types::CompressionTrigger::Explicit,
+    )
+    .unwrap();
+    let checkpoint = assembled
+        .iter()
+        .find(|message| {
+            message.message_kind
+                == Some(crate::services::agent_local::types_message::AgentMessageKind::CompressionCheckpoint)
+        })
+        .expect("checkpoint");
+
+    assert!(checkpoint.content.contains("retained_user_messages"));
+    assert!(checkpoint.content.contains("inspect"));
+    assert!(checkpoint.content.contains("retained_tool_results"));
+}

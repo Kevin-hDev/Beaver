@@ -63,6 +63,8 @@ describe("CompressionProfileEditor", () => {
     }));
     expect(screen.queryByText("settings.advanced.compressionUnder64Warning")).not.toBeInTheDocument();
     expect(screen.getByLabelText("settings.advanced.compressionAutomaticThreshold")).toBeEnabled();
+    expect(screen.getAllByRole("textbox")).toHaveLength(2);
+    expect(screen.getAllByRole("textbox").every((field) => !field.hasAttribute("disabled"))).toBe(true);
 
     fireEvent.click(screen.getByRole("switch", {
       name: "settings.advanced.compressionUnder64Title",
@@ -113,7 +115,7 @@ describe("CompressionProfileEditor", () => {
     expect(screen.queryByText("settings.advanced.compressionBudgetMode.fixed")).not.toBeInTheDocument();
   });
 
-  it("laisse saisir une taille de résumé sans persister une valeur intermédiaire bornée", () => {
+  it("enregistre une taille de résumé complète seulement à la sortie du champ", () => {
     const save = vi.fn((_profile: CompressionProfile) => Promise.resolve(true));
     render(
       <CompressionProfileEditor
@@ -130,9 +132,55 @@ describe("CompressionProfileEditor", () => {
     expect(input).toHaveValue(2);
     expect(save).not.toHaveBeenCalled();
     fireEvent.change(input, { target: { value: "2500" } });
+    expect(save).not.toHaveBeenCalled();
+    fireEvent.blur(input);
 
     const saved = save.mock.lastCall?.[0];
     if (!saved) throw new Error("missing saved profile");
     expect(saved.compact.summary_max_tokens).toBe(2500);
+  });
+
+  it("garde le focus pour saisir 75 avant d'enregistrer le seuil", () => {
+    const save = vi.fn((_profile: CompressionProfile) => Promise.resolve(true));
+    render(
+      <CompressionProfileEditor
+        profile={compressionProfileFixture()}
+        currentWindow={96_000}
+        controller={controller(save)}
+        limits={compressionLimitsFixture()}
+        automaticEnabled
+      />,
+    );
+    const input = screen.getByLabelText("settings.advanced.compressionAutomaticThreshold");
+    input.focus();
+
+    fireEvent.change(input, { target: { value: "7" } });
+    expect(input).toHaveFocus();
+    expect(save).not.toHaveBeenCalled();
+    fireEvent.change(input, { target: { value: "75" } });
+    expect(input).toHaveFocus();
+    expect(save).not.toHaveBeenCalled();
+    fireEvent.blur(input);
+
+    const saved = save.mock.lastCall?.[0];
+    if (!saved) throw new Error("missing saved profile");
+    expect(saved.threshold_percent).toBe(75);
+  });
+
+  it("utilise les bornes reçues du backend pour les quantités", () => {
+    const limits = compressionLimitsFixture();
+    limits.max_messages = 3;
+    render(
+      <CompressionProfileEditor
+        profile={compressionProfileFixture()}
+        currentWindow={96_000}
+        controller={controller()}
+        limits={limits}
+        automaticEnabled
+      />,
+    );
+
+    expect(screen.getByLabelText("settings.advanced.compressionRecentMessages"))
+      .toHaveAttribute("max", "3");
   });
 });

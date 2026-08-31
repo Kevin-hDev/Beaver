@@ -56,7 +56,12 @@ pub async fn add_messages_with_context(
     let has_user_message = new_messages.iter().any(|message| message.role == "user");
     let has_rearming_user_message = new_messages
         .iter()
-        .any(|message| message.role == "user" && message.content.trim() != "/compress");
+        .any(|message| {
+            message.role == "user"
+                && !crate::services::compress::command::is_explicit_compression_command(
+                    &message.content,
+                )
+        });
     let todo_housekeeping =
         super::session_store_todos::apply_user_turn(&mut session, has_user_message);
     if has_rearming_user_message {

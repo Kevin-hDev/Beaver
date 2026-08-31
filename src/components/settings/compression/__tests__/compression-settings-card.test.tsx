@@ -116,4 +116,12 @@ describe("CompressionSettingsCard", () => {
     expect(screen.getByRole("switch")).toBeEnabled();
     expect(screen.getByRole("slider")).toBeEnabled();
   });
+
+  it("désactive uniquement le seuil quand la compression automatique est coupée", () => {
+    controller.view = { ...controller.view!, automatic_enabled: false };
+    render(<CompressionSettingsCard defaultModel="ollama:qwen" />);
+
+    expect(screen.getByRole("switch")).toBeEnabled();
+    expect(screen.getByRole("slider")).toBeDisabled();
+  });
 });

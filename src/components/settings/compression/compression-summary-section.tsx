@@ -51,7 +51,6 @@ export function CompressionSummarySection({
       <CompressionSummaryPrompts
         systemPrompt={profile.system_prompt}
         handoffPrompt={profile.handoff_prompt}
-        disabled={false}
         maxLength={limits.max_custom_prompt_chars}
         onSystemPromptChange={(system_prompt) => onProfileChange({ ...profile, system_prompt })}
         onHandoffPromptChange={(handoff_prompt) => onProfileChange({ ...profile, handoff_prompt })}

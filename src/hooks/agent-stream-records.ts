@@ -66,7 +66,7 @@ export function startStreamRecord(
   clearCleanup(record);
   const previous = record.state;
   const next = createManagedStreamState(messages, sessionTokenCount, streamKind);
-  record.state = streamKind === "compression" ? {
+  record.state = streamKind === "compression" && previous.hasContextUsageSnapshot ? {
     ...next,
     contextInputTokens: previous.contextInputTokens,
     contextOutputTokens: previous.contextOutputTokens,

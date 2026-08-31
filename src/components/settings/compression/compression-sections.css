@@ -180,10 +180,6 @@
   display: block;
 }
 
-.cpa-body[data-disabled="true"] .cse-section-body {
-  opacity: 0.55;
-}
-
 @media (max-width: 860px) {
   .cse-row {
     grid-template-columns: 1fr;

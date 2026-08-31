@@ -4,7 +4,6 @@ import { CompressionSettingRow } from "./compression-setting-row";
 interface CompressionSummaryPromptsProps {
   systemPrompt: string;
   handoffPrompt: string;
-  disabled: boolean;
   maxLength: number;
   onSystemPromptChange: (value: string) => void;
   onHandoffPromptChange: (value: string) => void;
@@ -14,7 +13,6 @@ interface CompressionSummaryPromptsProps {
 export function CompressionSummaryPrompts({
   systemPrompt,
   handoffPrompt,
-  disabled,
   maxLength,
   onSystemPromptChange,
   onHandoffPromptChange,
@@ -33,7 +31,6 @@ export function CompressionSummaryPrompts({
           rows={5}
           maxLength={maxLength}
           value={systemPrompt}
-          disabled={disabled}
           onChange={(event) => onSystemPromptChange(event.target.value)}
         />
       </CompressionSettingRow>
@@ -47,7 +44,6 @@ export function CompressionSummaryPrompts({
           rows={5}
           maxLength={maxLength}
           value={handoffPrompt}
-          disabled={disabled}
           onChange={(event) => onHandoffPromptChange(event.target.value)}
         />
       </CompressionSettingRow>
@@ -58,7 +54,6 @@ export function CompressionSummaryPrompts({
         <button
           type="button"
           className="btn btn-sm btn-secondary"
-          disabled={disabled}
           onClick={onReset}
         >
           {t("settings.advanced.compressionResetPrompts")}

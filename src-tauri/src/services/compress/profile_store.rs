@@ -86,7 +86,6 @@ pub(crate) fn load_from_paths(
         }
         crate::services::private_store::BoundedFile::Content(bytes) => {
             let mut migrated_profile = false;
-            let mut repaired_invalid_json = false;
             let syntactically_valid = serde_json::from_slice::<serde_json::Value>(&bytes).is_ok();
             let mut document =
                 match super::profile_store_parse::parse_document(profile_path, &bytes) {
@@ -99,9 +98,13 @@ pub(crate) fn load_from_paths(
                     }
                     Err(CompressionProfileStoreError::Invalid) if !syntactically_valid => {
                         ::log::warn!("compression_profile_document_invalid_json");
-                        let document = CompressionProfileDocument::default();
+                        // Une réparation d'usine ne prouve pas que les profils utilisateur
+                        // ont été récupérés : la sauvegarde v1 reste donc durablement protégée.
+                        let document = CompressionProfileDocument {
+                            recovery_backup_pending: true,
+                            ..CompressionProfileDocument::default()
+                        };
                         write_document(profile_path, &document)?;
-                        repaired_invalid_json = true;
                         document
                     }
                     Err(error) => return Err(error),
@@ -114,7 +117,7 @@ pub(crate) fn load_from_paths(
             let migrated_now = super::profile_store_migration::finish_existing(config_path)?;
             if migrated_now || migrated_profile {
                 remember_migration(profile_path);
-            } else if !repaired_invalid_json && !migrated_in_this_process(profile_path) {
+            } else if !document.recovery_backup_pending && !migrated_in_this_process(profile_path) {
                 if super::profile_store_migration::acknowledge_backup(config_path).is_err() {
                     log::warn!("compression_profile_migration_backup_cleanup_failed");
                 }

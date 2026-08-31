@@ -165,9 +165,27 @@ fn automatic_open_turn_is_silent_before_start_while_explicit_reports_it() {
 #[test]
 fn user_cancellation_does_not_increment_the_automatic_failure_guard() {
     assert!(!super::orchestrator::should_record_failure(
+        CompressionTrigger::Automatic,
         super::checkpoint_transaction::CompressionError::Cancelled,
     ));
     assert!(super::orchestrator::should_record_failure(
+        CompressionTrigger::Automatic,
         super::checkpoint_transaction::CompressionError::SummaryRequestFailed,
     ));
+    assert!(!super::orchestrator::should_record_failure(
+        CompressionTrigger::Explicit,
+        super::checkpoint_transaction::CompressionError::SummaryRequestFailed,
+    ));
+}
+
+#[test]
+fn summary_input_margin_scales_to_five_percent_of_the_effective_window() {
+    assert_eq!(
+        super::orchestrator_summary::summary_input_safety_tokens(34_000),
+        1_700
+    );
+    assert_eq!(
+        super::orchestrator_summary::summary_input_safety_tokens(4_000),
+        256
+    );
 }

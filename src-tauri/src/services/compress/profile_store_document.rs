@@ -11,6 +11,7 @@ pub const PROFILE_SCHEMA_VERSION: u16 = 2;
 #[serde(default)]
 pub struct CompressionProfileDocument {
     pub schema_version: u16,
+    pub recovery_backup_pending: bool,
     pub automatic_enabled: bool,
     pub global_profile_id: String,
     pub global_selection_revision: u64,
@@ -21,6 +22,7 @@ impl Default for CompressionProfileDocument {
     fn default() -> Self {
         Self {
             schema_version: PROFILE_SCHEMA_VERSION,
+            recovery_backup_pending: false,
             automatic_enabled: true,
             global_profile_id: BEAVER_PROFILE_ID.to_string(),
             global_selection_revision: 1,

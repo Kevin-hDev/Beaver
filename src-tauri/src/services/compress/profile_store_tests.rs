@@ -69,7 +69,11 @@ fn corrupt_json_recovers_to_the_bounded_default() {
 
     let loaded = load_from_paths(&profile_path, &config_path).expect("recover");
 
-    assert_eq!(loaded, CompressionProfileDocument::default());
+    let expected = CompressionProfileDocument {
+        recovery_backup_pending: true,
+        ..CompressionProfileDocument::default()
+    };
+    assert_eq!(loaded, expected);
     let repaired: CompressionProfileDocument =
         serde_json::from_slice(&std::fs::read(&profile_path).expect("repaired profile document"))
             .expect("valid repaired json");
@@ -196,6 +200,11 @@ fn repairing_an_unreadable_v2_document_keeps_the_v1_backup() {
     load_from_paths(&profile_path, &config_path).expect("repair v2");
 
     assert_eq!(std::fs::read(&backup_path).expect("backup kept"), original);
+    load_from_paths(&profile_path, &config_path).expect("reload repaired v2");
+    assert_eq!(
+        std::fs::read(&backup_path).expect("backup survives later reloads"),
+        original
+    );
 }
 
 #[test]

@@ -1,3 +1,5 @@
+import { useEffect, useRef } from "react";
+
 interface CompressionQuantityControlProps {
   value: number;
   minimum?: number;
@@ -17,6 +19,13 @@ export function CompressionQuantityControl({
   unit,
   onChange,
 }: CompressionQuantityControlProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const input = inputRef.current;
+    if (input && document.activeElement !== input) input.value = String(value);
+  }, [value]);
+
   const commit = (input: HTMLInputElement) => {
     const parsed = Number.parseInt(input.value, 10);
     const next = Number.isFinite(parsed) ? parsed : minimum;
@@ -28,7 +37,7 @@ export function CompressionQuantityControl({
   return (
     <>
       <input
-        key={`${ariaLabel}-${value}`}
+        ref={inputRef}
         className="field cse-num"
         type="number"
         min={minimum}
@@ -36,12 +45,6 @@ export function CompressionQuantityControl({
         defaultValue={value}
         disabled={disabled}
         aria-label={ariaLabel}
-        onChange={(event) => {
-          const parsed = Number.parseInt(event.target.value, 10);
-          if (Number.isFinite(parsed) && parsed >= minimum && parsed <= maximum) {
-            onChange(parsed);
-          }
-        }}
         onBlur={(event) => commit(event.currentTarget)}
         onKeyDown={(event) => {
           if (event.key === "Enter") {

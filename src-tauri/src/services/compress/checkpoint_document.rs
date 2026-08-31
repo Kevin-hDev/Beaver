@@ -90,10 +90,10 @@ fn retained_turns(
         let Some(turn) = by_turn.remove(&turn_id) else {
             continue;
         };
-        if turn
-            .first()
-            .is_some_and(|message| message.role == "user" && message.content.trim() == "/compress")
-        {
+        if turn.first().is_some_and(|message| {
+            message.role == "user"
+                && super::command::is_explicit_compression_command(&message.content)
+        }) {
             continue;
         }
         if valid_terminal_turn(&turn) {

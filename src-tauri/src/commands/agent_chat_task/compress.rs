@@ -10,7 +10,10 @@ use tokio_util::sync::CancellationToken;
 pub(crate) fn is_compress_command(messages: &[ChatMessage]) -> bool {
     messages
         .last()
-        .map(|m| m.role == "user" && m.content.trim() == "/compress")
+        .map(|m| {
+            m.role == "user"
+                && crate::services::compress::command::is_explicit_compression_command(&m.content)
+        })
         .unwrap_or(false)
 }
 

@@ -48,7 +48,10 @@ pub fn build_call(
 ) -> SummaryCall {
     let source = source
         .iter()
-        .filter(|message| !(message.role == "user" && message.content.trim() == "/compress"))
+        .filter(|message| {
+            !(message.role == "user"
+                && super::command::is_explicit_compression_command(&message.content))
+        })
         .cloned()
         .collect::<Vec<_>>();
     let redacted = super::compression_redaction::redact_messages_for_compression(&source);
