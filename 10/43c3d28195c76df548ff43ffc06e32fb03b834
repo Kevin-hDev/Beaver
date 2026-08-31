@@ -1,0 +1,24 @@
+Dead-code cleanup review note
+
+Decision:
+- Removed only implementation paths independently confirmed unused by compiler/lint, Knip, integration tracing, intent review, and Git-history review.
+- Deleted the superseded test-only summary builder, legacy context-capsule engine, old compaction implementation, unused checkpoint wrappers/fields, and redundant profile trigger adapter.
+- Trimmed generated compression contracts and frontend exports to values actually consumed.
+- Kept INTERACTIVE_SECTION deliberately: prior branch decisions retain it as a bounded defensive compatibility filter even though no current producer emits the section.
+- Left unrelated repository-wide Knip findings untouched because they are outside the compression scope.
+
+Why:
+The customizable compression engine is now the sole authority. Keeping the superseded implementations created duplicate behavior and tests that validated code production no longer executed.
+
+Validation:
+- cargo clippy --all-targets -- -D warnings: passed
+- npx tsc --noEmit: passed
+- npm run contracts:check: passed
+- npm run lint: passed
+- cargo test compress --lib: 183 passed, 1 ignored
+- targeted Vitest: 4 files, 13 tests passed
+- cargo test: passed (4,468 tests discovered; platform/release tests intentionally ignored where declared)
+- npm test: passed, including 502 Vitest files / 2,689 tests and all build, CI, CEF, E2E-runner, extension-host, and reasoning-fixture suites
+- Knip audit after cleanup: no compression-feature files, exports, or types reported unused
+- git diff --check: passed
+- graphify update .: passed, no topology changes
