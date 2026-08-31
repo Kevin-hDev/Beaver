@@ -8,12 +8,21 @@ import ja from "./ja.json";
 import zh from "./zh.json";
 
 const translations = { de, en, es, fr, it: italian, ja, zh };
-const keys = ["tabsLoadFailed", "tabsSaveFailed", "tabLimitReached"] as const;
+const keys = [
+  "tabsLoadFailed",
+  "tabsSaveFailed",
+  "tabLimitReached",
+  "liveLimitReached",
+  "failedToClose",
+] as const;
 
 describe("traductions de la persistance terminal", () => {
-  it.each(Object.entries(translations))("définit les trois messages en %s", (_locale, value) => {
+  it.each(Object.entries(translations))("définit les cinq messages en %s", (_locale, value) => {
+    const terminal = value.terminal as Record<string, string>;
     for (const key of keys) {
-      expect(value.terminal[key].trim()).not.toBe("");
+      const message = terminal[key];
+      expect(typeof message).toBe("string");
+      expect(message?.trim()).not.toBe("");
     }
   });
 });

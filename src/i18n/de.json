@@ -1137,7 +1137,9 @@
     "resizePanel": "Panelhöhe anpassen",
     "tabsLoadFailed": "Die Terminal-Tabs konnten nicht wiederhergestellt werden. Starten Sie Beaver neu, um es erneut zu versuchen.",
     "tabsSaveFailed": "Die Terminal-Tabs konnten nicht gespeichert werden. Starten Sie Beaver neu, um es erneut zu versuchen.",
-    "tabLimitReached": "Die maximale Anzahl an Terminal-Tabs ist erreicht."
+    "tabLimitReached": "Die maximale Anzahl an Terminal-Tabs ist erreicht.",
+    "liveLimitReached": "Die maximale Anzahl aktiver Terminals ist erreicht. Schließen Sie einen Tab und versuchen Sie es erneut.",
+    "failedToClose": "Das Terminal konnte nicht geschlossen werden. Versuchen Sie es erneut."
   },
   "skills": {
     "sourceBuiltIn": "Integriert",

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, render } from "@testing-library/react";
+import { act, fireEvent, render } from "@testing-library/react";
 import { readFileSync } from "node:fs";
 import { TerminalPanel } from "../terminal-panel";
 import type { TerminalTab } from "@/hooks/use-terminal";
@@ -70,23 +70,28 @@ const OTHER_TAB: TerminalTab = {
 function panel(
   isOpen: boolean,
   allTabs = [{ tab: TAB, groupKey: "projet" }],
+  activeGroupKey = "projet",
+  activeTab = TAB,
+  onCloseTab = vi.fn(),
 ) {
   return (
     <TerminalPanel
-      tabs={[TAB]}
-      activeTabId={TAB.id}
+      tabs={[activeTab]}
+      activeTabId={activeTab.id}
       allTabs={allTabs}
-      activeGroupKey="projet"
+      activeGroupKey={activeGroupKey}
       isOpen={isOpen}
       panelHeight={200}
       onAddTab={vi.fn()}
-      onCloseTab={vi.fn()}
+      onCloseTab={onCloseTab}
       onSelectTab={vi.fn()}
       onRenameTab={vi.fn()}
       onReorderTabs={vi.fn()}
       onTogglePanel={vi.fn()}
       onPtyReady={vi.fn()}
       onTabActivity={vi.fn()}
+      onProcessExit={vi.fn()}
+      onLiveLimitReached={vi.fn()}
       onResize={vi.fn()}
       onSetMaxHeight={vi.fn()}
     />
@@ -124,12 +129,12 @@ afterEach(() => {
 
 describe("durée de vie des shells du panneau", () => {
   it("transmet la clé de groupe à chaque terminal rendu", () => {
-    render(
-      panel(true, [
-        { tab: TAB, groupKey: "projet" },
-        { tab: OTHER_TAB, groupKey: "__default__" },
-      ]),
-    );
+    const allTabs = [
+      { tab: TAB, groupKey: "projet" },
+      { tab: OTHER_TAB, groupKey: "__default__" },
+    ];
+    const { rerender } = render(panel(true, allTabs));
+    rerender(panel(true, allTabs, "__default__", OTHER_TAB));
 
     const spawnPayloads = invoke.mock.calls
       .filter((call) => call[0] === "pty_spawn")
@@ -163,6 +168,16 @@ describe("durée de vie des shells du panneau", () => {
     });
 
     expect(killCalls()).toEqual([]);
+  });
+
+  it("ferme immédiatement un onglet qui n'a pas encore de PTY", () => {
+    const onCloseTab = vi.fn();
+    const { container } = render(panel(true, undefined, undefined, undefined, onCloseTab));
+
+    fireEvent.click(container.querySelector(".terminal-tab-close")!);
+
+    expect(killCalls()).toEqual([]);
+    expect(onCloseTab).toHaveBeenCalledWith(TAB.id);
   });
 
   /* Le shell doit rester joignable : c'est ce qui distingue « caché » de

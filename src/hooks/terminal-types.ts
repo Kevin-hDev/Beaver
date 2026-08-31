@@ -16,6 +16,8 @@ export interface TerminalGroup {
 }
 
 export const DEFAULT_GROUP_KEY = "__default__";
+/** Miroir frontend du plafond d'admission fixé par le gestionnaire PTY Rust. */
+export const MAX_LIVE_TERMINALS = 16;
 
 const MAX_TERMINAL_LABEL_BYTES = 512;
 

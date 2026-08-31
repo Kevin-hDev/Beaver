@@ -1136,7 +1136,9 @@
     "resizePanel": "调整面板高度",
     "tabsLoadFailed": "无法恢复终端标签页。请重启 Beaver 后重试。",
     "tabsSaveFailed": "无法保存终端标签页。请重启 Beaver 后重试。",
-    "tabLimitReached": "已达到终端标签页数量上限。"
+    "tabLimitReached": "已达到终端标签页数量上限。",
+    "liveLimitReached": "已达到活动终端数量上限。请关闭一个标签页后重试。",
+    "failedToClose": "无法关闭终端。请重试。"
   },
   "skills": {
     "sourceBuiltIn": "内置",

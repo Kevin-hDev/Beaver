@@ -1137,7 +1137,9 @@
     "resizePanel": "Regola l'altezza del pannello",
     "tabsLoadFailed": "Impossibile ripristinare le schede del terminale. Riavvia Beaver per riprovare.",
     "tabsSaveFailed": "Impossibile salvare le schede del terminale. Riavvia Beaver per riprovare.",
-    "tabLimitReached": "È stato raggiunto il limite di schede del terminale."
+    "tabLimitReached": "È stato raggiunto il limite di schede del terminale.",
+    "liveLimitReached": "È stato raggiunto il limite di terminali attivi. Chiudi una scheda per riprovare.",
+    "failedToClose": "Impossibile chiudere il terminale. Riprova."
   },
   "skills": {
     "sourceBuiltIn": "Integrato",

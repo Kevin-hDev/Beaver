@@ -4,6 +4,8 @@ import { invoke } from "@tauri-apps/api/core";
 import { TerminalTabBar } from "./terminal-tab-bar";
 import { TerminalInstance } from "./terminal-instance";
 import type { TerminalTab } from "@/hooks/use-terminal";
+import { MAX_LIVE_TERMINALS } from "@/hooks/terminal-types";
+import { showToast } from "@/lib/toast-emitter";
 import "./terminal-panel.css";
 
 interface TerminalPanelProps {
@@ -21,6 +23,8 @@ interface TerminalPanelProps {
   onTogglePanel: () => void;
   onPtyReady: (tabId: string, ptyId: number, ptyToken: string) => void;
   onTabActivity: (tabId: string, hasActivity: boolean) => void;
+  onProcessExit: (tabId: string, groupKey: string) => void;
+  onLiveLimitReached: (tabId: string) => void;
   onResize: (height: number) => void;
   onSetMaxHeight: (maxH: number) => void;
 }
@@ -40,17 +44,18 @@ export function TerminalPanel({
   onTogglePanel,
   onPtyReady,
   onTabActivity,
+  onProcessExit,
+  onLiveLimitReached,
   onResize,
   onSetMaxHeight,
 }: TerminalPanelProps) {
   const { t } = useTranslation();
   const panelRef = useRef<HTMLDivElement>(null);
   const resizing = useRef(false);
-  /* Une fois ouvert, le panneau ne se démonte plus : le démontage tuait les
-     shells, et avec eux les serveurs et les commandes longues qu'ils
-     portaient. Refermé, il garde ses écrans vivants derrière une hauteur
-     nulle. */
-  const [everOpened, setEverOpened] = useState(false);
+  /* Autorité unique des PTY déjà lancés : elle reste bornée comme le backend
+     et abandonne toute tab retirée de la restauration. */
+  const [startedTabIds, setStartedTabIds] = useState<Set<string>>(() => new Set());
+  const lastRejectedTabId = useRef<string | null>(null);
   const [animatedHeight, setAnimatedHeight] = useState(0);
   const [isResizing, setIsResizing] = useState(false);
 
@@ -65,14 +70,13 @@ export function TerminalPanel({
 
   useEffect(() => {
     if (isOpen) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- animation state management is intentional
-      setEverOpened(true);
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           setAnimatedHeight(panelHeight);
         });
       });
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- animation state management is intentional
       setAnimatedHeight(0);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- animate only on isOpen toggle
@@ -85,6 +89,38 @@ export function TerminalPanel({
     }
     prevHeightRef.current = panelHeight;
   }, [panelHeight, isOpen, isResizing]);
+
+  useEffect(() => {
+    if (!isOpen || activeTabId === null
+      || !allTabs.some(({ tab }) => tab.id === activeTabId)) return;
+    if (startedTabIds.has(activeTabId)) {
+      lastRejectedTabId.current = null;
+      return;
+    }
+    if (startedTabIds.size >= MAX_LIVE_TERMINALS) {
+      if (lastRejectedTabId.current !== activeTabId) {
+        lastRejectedTabId.current = activeTabId;
+        onLiveLimitReached(activeTabId);
+      }
+      return;
+    }
+    lastRejectedTabId.current = null;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- l'activation crée l'unique instance demandée
+    setStartedTabIds((current) => {
+      if (current.has(activeTabId) || current.size >= MAX_LIVE_TERMINALS) return current;
+      return new Set(current).add(activeTabId);
+    });
+  }, [activeTabId, allTabs, isOpen, onLiveLimitReached, startedTabIds]);
+
+  useEffect(() => {
+    const presentTabIds = new Set(allTabs.map(({ tab }) => tab.id));
+    setStartedTabIds((current) => {
+      const next = new Set([...current].filter((id) => presentTabIds.has(id)));
+      if (next.size === current.size) return current;
+      lastRejectedTabId.current = null;
+      return next;
+    });
+  }, [allTabs]);
 
   const handleResizeStart = useCallback(
     (e: React.PointerEvent) => {
@@ -115,24 +151,27 @@ export function TerminalPanel({
   );
 
   const handleTabClose = useCallback(
-    (id: string) => {
+    async (id: string) => {
       const tab = tabs.find((t) => t.id === id);
-      if (tab?.ptyId != null && tab.ptyToken) {
-        invoke("pty_kill", { id: tab.ptyId, token: tab.ptyToken }).catch(() => {});
+      if (tab?.ptyId == null || !tab.ptyToken) {
+        onCloseTab(id);
+        return;
       }
-      onCloseTab(id);
+      try {
+        await invoke("pty_kill", { id: tab.ptyId, token: tab.ptyToken });
+        onCloseTab(id);
+      } catch (error) {
+        if (error === "terminal-not-found") {
+          onCloseTab(id);
+          return;
+        }
+        showToast(t("terminal.failedToClose"), "error");
+      }
     },
-    [tabs, onCloseTab]
+    [onCloseTab, t, tabs]
   );
 
-  const handleExit = useCallback(
-    (tabId: string) => {
-      onCloseTab(tabId);
-    },
-    [onCloseTab]
-  );
-
-  if (!everOpened) return null;
+  if (startedTabIds.size === 0) return null;
 
   return (
     <div
@@ -152,7 +191,7 @@ export function TerminalPanel({
           tabs={tabs}
           activeTabId={activeTabId}
           onSelect={onSelectTab}
-          onClose={handleTabClose}
+          onClose={(id) => { void handleTabClose(id); }}
           onAdd={() => onAddTab()}
           onRename={onRenameTab}
           onReorder={onReorderTabs}
@@ -160,7 +199,7 @@ export function TerminalPanel({
         />
         <div className="terminal-stage">
           <div className="terminal-instances">
-            {allTabs.map(({ tab, groupKey }) => (
+            {allTabs.filter(({ tab }) => startedTabIds.has(tab.id)).map(({ tab, groupKey }) => (
               <TerminalInstance
                 key={tab.id}
                 tabId={tab.id}
@@ -169,7 +208,7 @@ export function TerminalPanel({
                  garde le focus avalerait les touches frappées ailleurs. */
               isVisible={isOpen && groupKey === activeGroupKey && tab.id === activeTabId}
                 onPtyReady={onPtyReady}
-                onExit={handleExit}
+                onExit={() => onProcessExit(tab.id, groupKey)}
                 onActivity={onTabActivity}
                 onTogglePanel={onTogglePanel}
               />

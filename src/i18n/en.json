@@ -1170,7 +1170,9 @@
     "resizePanel": "Adjust panel height",
     "tabsLoadFailed": "Terminal tabs could not be restored. Restart Beaver to try again.",
     "tabsSaveFailed": "Terminal tabs could not be saved. Restart Beaver to try again.",
-    "tabLimitReached": "The terminal tab limit has been reached."
+    "tabLimitReached": "The terminal tab limit has been reached.",
+    "liveLimitReached": "The active terminal limit has been reached. Close a tab to try again.",
+    "failedToClose": "The terminal could not be closed. Try again."
   },
   "skills": {
     "sourceBuiltIn": "Built-in",

@@ -1,12 +1,27 @@
-import { act, renderHook, waitFor } from "@testing-library/react";
+import { createElement, type ComponentProps } from "react";
+import { act, render, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useProjects } from "@/hooks/use-projects";
 import { useTerminal } from "@/hooks/use-terminal";
 import type { Project } from "@/types/agent";
+import { ChatTerminalDock } from "../chat-terminal-dock";
 
-const { invokeMock } = vi.hoisted(() => ({ invokeMock: vi.fn() }));
+interface DockPanelProps {
+  onProcessExit: (tabId: string, groupKey: string) => void;
+}
+
+const { invokeMock, panelHarness } = vi.hoisted(() => ({
+  invokeMock: vi.fn(),
+  panelHarness: { props: null as DockPanelProps | null },
+}));
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: invokeMock }));
+vi.mock("@/components/terminal/terminal-panel", () => ({
+  TerminalPanel: (props: DockPanelProps) => {
+    panelHarness.props = props;
+    return null;
+  },
+}));
 
 const ready = (groupKey: string) => ({
   validGroupKeys: [groupKey],
@@ -45,6 +60,22 @@ describe("terminal integration - isolation par projet", () => {
     expect(result.current.tabs).toHaveLength(1);
     expect(result.current.allTabs()).toHaveLength(1);
     expect(result.current.allTabs()[0].groupKey).toBe("project-a");
+  });
+
+  it("achemine la fin d'un PTY vers le groupe qui l'a démarré", () => {
+    const closeTabInGroup = vi.fn();
+    const terminalState = {
+      tabs: [], activeTabId: null, allTabs: () => [], groupKey: "project-a",
+      isOpen: true, panelHeight: 200, addTab: vi.fn(), closeTab: vi.fn(),
+      closeTabInGroup, setActiveTab: vi.fn(), renameTab: vi.fn(),
+      reorderTabs: vi.fn(), togglePanel: vi.fn(), setPtyId: vi.fn(),
+      setTabActivity: vi.fn(), resizePanel: vi.fn(), setMaxHeight: vi.fn(),
+    } as unknown as ComponentProps<typeof ChatTerminalDock>["terminalState"];
+    render(createElement(ChatTerminalDock, { terminalState }));
+
+    panelHarness.props?.onProcessExit("b1", "project-b");
+
+    expect(closeTabInGroup).toHaveBeenCalledWith("project-b", "b1");
   });
 
   it("crée des identifiants distincts sans perdre d'onglet au réordonnancement", async () => {
