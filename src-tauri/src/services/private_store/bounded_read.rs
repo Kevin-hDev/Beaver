@@ -1,30 +1,55 @@
 use std::fs::OpenOptions;
 use std::io::Read;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use super::BoundedFile;
 
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) enum BoundedReadFailure {
+    TooLarge,
+    Unavailable,
+}
+
 pub(super) fn read(path: &Path, max_bytes: u64) -> Result<BoundedFile, ()> {
+    read_classified(path, max_bytes).map_err(|_| ())
+}
+
+pub(crate) async fn read_bounded_regular_classified_async(
+    path: PathBuf,
+    max_bytes: u64,
+) -> Result<BoundedFile, BoundedReadFailure> {
+    tokio::task::spawn_blocking(move || read_classified(&path, max_bytes))
+        .await
+        .map_err(|_| BoundedReadFailure::Unavailable)?
+}
+
+fn read_classified(path: &Path, max_bytes: u64) -> Result<BoundedFile, BoundedReadFailure> {
     let Some(mut file) = open_regular_single_link(path)? else {
         return Ok(BoundedFile::Missing);
     };
-    let metadata = file.metadata().map_err(|_| ())?;
+    let metadata = file
+        .metadata()
+        .map_err(|_| BoundedReadFailure::Unavailable)?;
     if metadata.len() > max_bytes {
-        return Err(());
+        return Err(BoundedReadFailure::TooLarge);
     }
-    let read_limit = max_bytes.checked_add(1).ok_or(())?;
+    let read_limit = max_bytes
+        .checked_add(1)
+        .ok_or(BoundedReadFailure::Unavailable)?;
     let mut content = Vec::with_capacity(metadata.len() as usize);
     Read::by_ref(&mut file)
         .take(read_limit)
         .read_to_end(&mut content)
-        .map_err(|_| ())?;
+        .map_err(|_| BoundedReadFailure::Unavailable)?;
     if content.len() as u64 > max_bytes {
-        return Err(());
+        return Err(BoundedReadFailure::TooLarge);
     }
     Ok(BoundedFile::Content(content))
 }
 
-pub(super) fn open_regular_single_link(path: &Path) -> Result<Option<std::fs::File>, ()> {
+pub(super) fn open_regular_single_link(
+    path: &Path,
+) -> Result<Option<std::fs::File>, BoundedReadFailure> {
     let mut options = OpenOptions::new();
     options.read(true);
     configure_no_follow(&mut options);
@@ -33,10 +58,10 @@ pub(super) fn open_regular_single_link(path: &Path) -> Result<Option<std::fs::Fi
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
             return Ok(None);
         }
-        Err(_) => return Err(()),
+        Err(_) => return Err(BoundedReadFailure::Unavailable),
     };
     if !file_is_single_link_regular(&file) {
-        return Err(());
+        return Err(BoundedReadFailure::Unavailable);
     }
     Ok(Some(file))
 }

@@ -21,6 +21,7 @@ fn fresh_install_only_creates_personality_memory() {
     for path in LEGACY_MEMORY_PATHS {
         assert!(!root.path().join(path).exists(), "{path}");
     }
+    assert!(!root.path().join("terminal-tabs.json").exists());
 }
 
 #[test]

@@ -3,11 +3,15 @@ mod owned_session;
 pub mod pty_session;
 mod public_error;
 mod shutdown;
+pub mod tab_store;
 
 pub use manager::{PtyChannelEvent, PtyManager};
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod tab_store_tests;
 
 fn generate_token() -> zeroize::Zeroizing<String> {
     use rand::RngCore;

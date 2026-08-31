@@ -84,7 +84,6 @@ fn init_base_structure(base: &std::path::Path) -> Result<(), String> {
         ("configured-providers.json", "[]"),
         ("favorite-models.json", "[]"),
         ("projects.json", "[]"),
-        ("terminal-tabs.json", "[]"),
         ("inbox/pending.json", "[]"),
         (
             "personality-injection.json",
