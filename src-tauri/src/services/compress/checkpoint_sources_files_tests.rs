@@ -84,6 +84,69 @@ async fn file_collection_obeys_profile_item_and_per_file_token_limits() {
 }
 
 #[tokio::test]
+async fn utf8_cut_at_the_byte_limit_keeps_the_valid_prefix() {
+    let root = tempfile::tempdir().unwrap();
+    tokio::fs::write(
+        root.path().join("accent.txt"),
+        format!("{}é suite", "a".repeat(39)),
+    )
+    .await
+    .unwrap();
+    let messages = vec![
+        assistant_file("accent.txt"),
+        ChatMessage::tool("cached".into(), None, None),
+    ];
+
+    let files = super::super::checkpoint_files::collect_with_budget(
+        &messages,
+        root.path(),
+        super::super::checkpoint_evidence::EvidenceItemLimit {
+            max_items: 1,
+            tokens_per_item: 10,
+            total_tokens: 20,
+        },
+    )
+    .await;
+
+    assert_eq!(files.len(), 1);
+    assert!(files[0].current_content.starts_with('a'));
+    assert!(files[0]
+        .current_content
+        .contains("[file content truncated]"));
+    assert!(!files[0].current_content.contains("[file unavailable"));
+}
+
+#[tokio::test]
+async fn binary_file_uses_the_generic_unavailable_marker() {
+    let root = tempfile::tempdir().unwrap();
+    tokio::fs::write(root.path().join("binary.dat"), [0xff, 0xfe, 0xfd])
+        .await
+        .unwrap();
+    let messages = vec![
+        assistant_file("binary.dat"),
+        ChatMessage::tool("cached binary content".into(), None, None),
+    ];
+
+    let files = super::super::checkpoint_files::collect_with_budget(
+        &messages,
+        root.path(),
+        super::super::checkpoint_evidence::EvidenceItemLimit {
+            max_items: 1,
+            tokens_per_item: 100,
+            total_tokens: 100,
+        },
+    )
+    .await;
+
+    assert_eq!(files.len(), 1);
+    assert_eq!(
+        files[0].current_content,
+        "[file unavailable: deleted, binary, or unreadable]"
+    );
+    assert!(!files[0].current_content.contains("cached binary content"));
+}
+
+#[tokio::test]
 async fn inaccessible_attachment_does_not_discard_a_later_image() {
     use base64::Engine;
     let missing = TurnAttachmentInput {
