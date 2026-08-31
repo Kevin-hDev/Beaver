@@ -184,7 +184,7 @@ portable-pty = "0.9"
 landlock = "0.4.4"
 
 [target.'cfg(windows)'.dependencies]
-winreg = "0.55"
+winreg = "0.56"
 # ConPTY children are created suspended and enter Beaver's global Job before
 # they can execute, preserving the single native confinement authority.
 windows-spawn = "=0.1.0"
