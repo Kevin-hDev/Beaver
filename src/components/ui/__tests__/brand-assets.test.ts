@@ -57,6 +57,35 @@ async function pngPixel(
   return [...context.getImageData(x, y, 1, 1).data] as [number, number, number, number];
 }
 
+/* Un .icns est une suite de blocs — quatre octets de type, quatre de longueur
+   totale, puis les données. Le bloc « ic10 » porte la tuile de 1024, encodée
+   en PNG : c'est celle que macOS affiche dans le Dock. */
+function icnsChunk(relativePath: string, type: string): Buffer {
+  // Les chemins sont tous des constantes internes déclarées dans ce test.
+  // eslint-disable-next-line security/detect-non-literal-fs-filename
+  const bytes = readFileSync(path(relativePath));
+  expect(bytes.subarray(0, 4).toString("ascii")).toBe("icns");
+  let offset = 8;
+  while (offset + 8 <= bytes.length) {
+    const length = bytes.readUInt32BE(offset + 4);
+    if (length < 8) break;
+    if (bytes.subarray(offset, offset + 4).toString("ascii") === type) {
+      return bytes.subarray(offset + 8, offset + length);
+    }
+    offset += length;
+  }
+  throw new Error(`bloc ${type} absent de ${relativePath}`);
+}
+
+async function alphaSampler(source: Buffer): Promise<(x: number, y: number) => number> {
+  const image = await loadImage(source);
+  const canvas = createCanvas(image.width, image.height);
+  const context = canvas.getContext("2d");
+  context.drawImage(image, 0, 0);
+  const { data } = context.getImageData(0, 0, image.width, image.height);
+  return (x, y) => data[(y * image.width + x) * 4 + 3];
+}
+
 describe("assets de marque", () => {
   it("conserve le logo approuvé avec son fond sombre et ses coins arrondis", async () => {
     expect(fileExists("public/castor-surface.svg")).toBe(true);
@@ -145,6 +174,30 @@ describe("assets de marque", () => {
     expect(sha256("src-tauri/icons/icon.ico")).toBe(
       "76efa8ed52632b06614fa7c95d8d5dd0ff20f9f00b13104b7c2aadb69a3581e5",
     );
+  });
+
+  /* macOS n'ajoute aucune marge : il affiche l'icône telle quelle. Le gabarit
+     relevé sur les applications du système — un dessin de 824 px centré dans
+     une toile de 1024 — est donc à la charge de l'application, et sans lui elle
+     paraît un quart plus large que toutes ses voisines du Dock. Les PNG carrés
+     à côté servent Windows et Linux, où le plein cadre est la norme : eux ne
+     doivent surtout pas suivre ce gabarit. */
+  it("garde l'icône macOS au gabarit du système", async () => {
+    expect(pngSize("src-tauri/icons/macos-shape.png")).toEqual({ width: 824, height: 824 });
+
+    const alpha = await alphaSampler(icnsChunk("src-tauri/icons/icon.icns", "ic10"));
+
+    // Marge vide sur les quatre côtés : seule l'ombre y passe, loin du plein.
+    expect(alpha(512, 60)).toBeLessThan(80);
+    expect(alpha(60, 512)).toBeLessThan(80);
+    expect(alpha(512, 964)).toBeLessThan(80);
+    // Le dessin, lui, commence bien à cent pixels du bord.
+    expect(alpha(512, 120)).toBe(255);
+    expect(alpha(120, 512)).toBe(255);
+    // Coin arrondi : creusé dans l'angle de la boîte, plein plus loin sur le
+    // même bord. Sans la seconde mesure, un arrondi qui dévore tout passerait.
+    expect(alpha(110, 110)).toBe(0);
+    expect(alpha(400, 110)).toBe(255);
   });
 
   it("utilise Beaver sur les surfaces desktop sans changer l'identifiant système", () => {
