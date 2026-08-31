@@ -29,7 +29,11 @@ pub async fn enqueue(parent_session_id: &str, report: SubagentHiddenReport) -> R
     super::session_store::validate_session_id(parent_session_id)?;
     let _guard = LOCK.lock().await;
     let mut document = load().await?;
-    if document.entries.iter().any(|entry| entry.report.id == report.id) {
+    if document
+        .entries
+        .iter()
+        .any(|entry| entry.report.id == report.id)
+    {
         return Ok(());
     }
     if document.entries.len() >= MAX_PENDING {
@@ -102,17 +106,16 @@ async fn load() -> Result<Document, String> {
     let path = crate::services::paths::data_dir()
         .join("subagent-reports")
         .join(FILE_NAME);
-    let bytes = match crate::services::private_store::read_bounded_regular_async(path, MAX_BYTES)
-        .await?
-    {
-        crate::services::private_store::BoundedFile::Missing => {
-            return Ok(Document {
-                schema_version: SCHEMA_VERSION,
-                entries: Vec::new(),
-            });
-        }
-        crate::services::private_store::BoundedFile::Content(bytes) => bytes,
-    };
+    let bytes =
+        match crate::services::private_store::read_bounded_regular_async(path, MAX_BYTES).await? {
+            crate::services::private_store::BoundedFile::Missing => {
+                return Ok(Document {
+                    schema_version: SCHEMA_VERSION,
+                    entries: Vec::new(),
+                });
+            }
+            crate::services::private_store::BoundedFile::Content(bytes) => bytes,
+        };
     let document: Document = serde_json::from_slice(&bytes)
         .map_err(|_| "subagent_report_overflow_invalid".to_string())?;
     if document.schema_version != SCHEMA_VERSION || document.entries.len() > MAX_PENDING {

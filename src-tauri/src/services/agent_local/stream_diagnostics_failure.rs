@@ -159,7 +159,12 @@ pub(super) fn classify_error(message: &str, is_connection: bool) -> String {
 pub(crate) fn is_connection_error(message: &str) -> bool {
     message
         .split(|character: char| !character.is_ascii_alphanumeric() && character != '_')
-        .any(|part| matches!(part, "ollama_connection_lost" | "provider_connection_failed"))
+        .any(|part| {
+            matches!(
+                part,
+                "ollama_connection_lost" | "provider_connection_failed"
+            )
+        })
 }
 
 #[cfg(test)]

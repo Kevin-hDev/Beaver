@@ -74,7 +74,6 @@ impl RequestContextUsage {
         }
     }
 
-
     pub fn total_tokens(self) -> usize {
         (self.messages as usize)
             .saturating_add(self.system_tools as usize)

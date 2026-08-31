@@ -45,8 +45,10 @@ fn partitions_the_prepared_request_without_changing_its_total() {
     };
 
     let usage = RequestContextUsage::from_request("ollama", &messages, &tools, seed);
-    let expected = crate::services::compress::token_estimate::
-        estimate_textual_request_tokens_for_provider("ollama", &messages, &tools) as u32;
+    let expected =
+        crate::services::compress::token_estimate::estimate_textual_request_tokens_for_provider(
+            "ollama", &messages, &tools,
+        ) as u32;
 
     assert_eq!(total(usage), expected);
     assert_eq!(usage.skills, 10);

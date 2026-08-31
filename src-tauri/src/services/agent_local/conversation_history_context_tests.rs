@@ -122,7 +122,10 @@ async fn unavailable_historical_file_is_marked_but_missing_skill_still_blocks() 
                 .messages
                 .iter()
                 .any(|message| message.content.contains("[attachment unavailable]")));
-            assert!(history.messages.iter().any(|message| !message.images.is_empty()));
+            assert!(history
+                .messages
+                .iter()
+                .any(|message| !message.images.is_empty()));
         }
         fixture.cleanup();
         cleanup(&session.id).await;

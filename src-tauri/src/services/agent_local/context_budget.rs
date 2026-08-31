@@ -96,11 +96,7 @@ pub(super) fn estimate_messages(provider_id: &str, messages: &[ChatMessage]) -> 
     token_estimate::estimate_tokens_for_provider(provider_id, messages)
 }
 
-pub async fn record_repairs(
-    report: &ContextBudgetReport,
-    session_id: &str,
-    request_id: &str,
-) {
+pub async fn record_repairs(report: &ContextBudgetReport, session_id: &str, request_id: &str) {
     if report.repaired_tool_chains == 0 && report.dropped_tool_results == 0 {
         return;
     }

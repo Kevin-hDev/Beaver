@@ -1,9 +1,7 @@
 use chrono::Utc;
 
 use super::*;
-use crate::services::agent_local::types_diagnostics::{
-    AgentDiagnosticRun, AgentDiagnosticTool,
-};
+use crate::services::agent_local::types_diagnostics::{AgentDiagnosticRun, AgentDiagnosticTool};
 
 fn run(phase: &str, tool_status: &str) -> AgentDiagnosticRun {
     AgentDiagnosticRun {

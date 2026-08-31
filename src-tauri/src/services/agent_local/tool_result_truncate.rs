@@ -144,8 +144,7 @@ mod tests {
     #[tokio::test]
     async fn tools_without_a_success_limit_remain_unchanged() {
         let content = "r".repeat(100_000);
-        let result =
-            truncate_result(ToolResult::ok(content.clone()), "read_file", "unused").await;
+        let result = truncate_result(ToolResult::ok(content.clone()), "read_file", "unused").await;
 
         assert_eq!(result.content, content);
         assert!(!result.truncated);
@@ -167,7 +166,9 @@ mod tests {
 
     #[tokio::test]
     async fn result_storage_rejects_an_invalid_session_path() {
-        assert!(persist_result("secret".into(), "../outside").await.is_none());
+        assert!(persist_result("secret".into(), "../outside")
+            .await
+            .is_none());
     }
 
     #[tokio::test]

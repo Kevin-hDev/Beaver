@@ -118,9 +118,7 @@ fn validate_current_readable(session: &AgentSession) -> Result<(), String> {
     {
         return Err(invalid());
     }
-    super::session_migration_compression_guard::validate(
-        &session.automatic_compression_guard,
-    )?;
+    super::session_migration_compression_guard::validate(&session.automatic_compression_guard)?;
     for message in &session.messages {
         super::session_migration_ids::validate_id(&message.turn_id)?;
         if message

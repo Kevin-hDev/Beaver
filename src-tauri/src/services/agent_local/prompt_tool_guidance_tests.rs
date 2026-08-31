@@ -28,10 +28,8 @@ fn discovery_tools_have_distinct_scopes() {
 #[test]
 fn discovery_guidance_disappears_with_its_unavailable_tool() {
     for prompt in prompts() {
-        let filtered = super::tool_prompt_filter::filter_system_prompt(
-            &prompt,
-            &["read_file".to_string()],
-        );
+        let filtered =
+            super::tool_prompt_filter::filter_system_prompt(&prompt, &["read_file".to_string()]);
 
         assert!(!filtered.contains("search_mcp_tools for external MCP services"));
         assert!(!filtered.contains("search_extension_tools for enabled Beaver plugins"));

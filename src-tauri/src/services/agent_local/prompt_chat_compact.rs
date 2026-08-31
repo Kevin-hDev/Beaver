@@ -6,9 +6,7 @@ pub fn build_with_behavior(_working_dir: &Path, behavior: Option<&str>) -> Strin
         return custom.to_string();
     }
     let default_identity = default_identity();
-    format!(
-        "{default_identity}\n\n{CAPABILITIES}\n\n{WEB_SEARCH}\n\n{STYLE}",
-    )
+    format!("{default_identity}\n\n{CAPABILITIES}\n\n{WEB_SEARCH}\n\n{STYLE}",)
 }
 
 fn default_identity() -> String {

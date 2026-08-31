@@ -7,10 +7,9 @@ async fn full_parent_report_queue_persists_a_retryable_overflow_report() {
     let parent = session_store::create_full("Parent full queue", "llama3", "ollama", false, None)
         .await
         .expect("create parent");
-    let mut child =
-        session_store::create_full("Geminitor", "llama3", "ollama", false, None)
-            .await
-            .expect("create child");
+    let mut child = session_store::create_full("Geminitor", "llama3", "ollama", false, None)
+        .await
+        .expect("create child");
     child.parent_session_id = Some(parent.id.clone());
     child.subagent_type = Some("explorer".into());
     child.subagent_status = Some(subagent_status::RUNNING.into());
@@ -42,7 +41,9 @@ async fn full_parent_report_queue_persists_a_retryable_overflow_report() {
 
     assert!(result.is_ok());
     assert_eq!(
-        subagent_hidden_reports::peek_reports(&parent.id).await.len(),
+        subagent_hidden_reports::peek_reports(&parent.id)
+            .await
+            .len(),
         subagent_hidden_reports::MAX_PENDING_REPORTS
     );
     assert!(

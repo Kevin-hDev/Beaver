@@ -156,7 +156,6 @@ mod subagent_execution_ownership_tests;
 #[cfg(test)]
 mod subagent_failure_queue_tests;
 pub mod subagent_hidden_reports;
-pub(crate) mod subagent_report_overflow;
 pub(crate) mod subagent_instruction_delivery;
 #[cfg(test)]
 mod subagent_instruction_delivery_tests;
@@ -194,6 +193,7 @@ mod subagent_report_context;
 mod subagent_report_delivery;
 #[cfg(test)]
 mod subagent_report_delivery_tests;
+pub(crate) mod subagent_report_overflow;
 #[cfg(test)]
 mod subagent_review_fail_closed_tests;
 #[cfg(test)]

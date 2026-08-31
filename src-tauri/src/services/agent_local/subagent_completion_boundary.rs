@@ -1,4 +1,7 @@
-#![expect(clippy::too_many_arguments, reason = "orchestration boundary keeps related runtime context explicit")]
+#![expect(
+    clippy::too_many_arguments,
+    reason = "orchestration boundary keeps related runtime context explicit"
+)]
 use super::subagent_registry::SubagentTerminalKind;
 use super::types_session::AgentSession;
 use std::future::Future;
@@ -37,9 +40,7 @@ where
         return Err(super::subagent_completion::SUBAGENT_COMPLETION_ERROR.to_string());
     }
     after_report(super::subagent_completion::TerminalOutcome::new(
-        successful,
-        status,
-        summary,
+        successful, status, summary,
     ))
     .await;
     finish_registry(parent_id, child_id, true).await

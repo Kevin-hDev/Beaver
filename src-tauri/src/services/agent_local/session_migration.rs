@@ -72,8 +72,11 @@ pub fn read(bytes: &[u8], path: PathBuf) -> Result<LoadedSession, String> {
         session,
         path,
         version,
-        original: matches!(version, LoadedVersion::V1 | LoadedVersion::V2 | LoadedVersion::V3)
-            .then(|| Zeroizing::new(bytes.to_vec())),
+        original: matches!(
+            version,
+            LoadedVersion::V1 | LoadedVersion::V2 | LoadedVersion::V3
+        )
+        .then(|| Zeroizing::new(bytes.to_vec())),
     })
 }
 

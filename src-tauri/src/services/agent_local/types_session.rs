@@ -8,10 +8,10 @@ pub use super::types_message::{
     ToolCallRequestFunction,
 };
 use super::types_plan::{AgentPlanRun, AgentPlanWorkflowStatus};
-use super::types_todo::{AgentTodoItem, AgentTodoRun};
 pub use super::types_session_compression::{
     AutomaticCompressionAttempt, AutomaticCompressionGuard, SessionCompressionProfileSelection,
 };
+use super::types_todo::{AgentTodoItem, AgentTodoRun};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct SubagentHiddenReport {

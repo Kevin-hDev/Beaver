@@ -27,9 +27,7 @@ pub(super) fn classify_markers_after_v1_migration(value: &mut Value) -> Result<(
     classify_legacy_markers(object)
 }
 
-fn classify_legacy_markers(
-    object: &mut serde_json::Map<String, Value>,
-) -> Result<(), String> {
+fn classify_legacy_markers(object: &mut serde_json::Map<String, Value>) -> Result<(), String> {
     let messages = object
         .get_mut("messages")
         .and_then(Value::as_array_mut)

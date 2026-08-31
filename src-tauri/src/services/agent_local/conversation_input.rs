@@ -159,9 +159,7 @@ pub(crate) fn validate_intention(input: &NewUserTurnInput) -> Result<(), Convers
     Ok(())
 }
 
-pub(super) fn validate_top_level(
-    input: &NewUserTurnInput,
-) -> Result<(), ConversationInputError> {
+pub(super) fn validate_top_level(input: &NewUserTurnInput) -> Result<(), ConversationInputError> {
     if input.content.len() > MAX_TURN_CONTENT_BYTES
         || input.content.contains('\0')
         || input.files.len() > MAX_TURN_ATTACHMENTS
