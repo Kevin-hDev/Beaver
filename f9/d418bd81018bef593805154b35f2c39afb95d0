@@ -1,0 +1,13 @@
+CI correction — cause racine et validation
+
+Cause racine : la CI utilise Rust stable 1.98.0 alors que la validation locale précédente utilisait 1.97.1. Le rustfmt 1.98 impose un ordre canonique différent pour certains modules et reformate plusieurs fichiers Rust modifiés par la PR. Le script différentiel de CI s'arrêtait au premier fichier non conforme.
+
+Correction : mise à niveau locale vers Rust 1.98.0 puis formatage mécanique de l'ensemble exact des fichiers Rust modifiés depuis origin/main avec les mêmes options que scripts/build/check-rust-format.mjs (edition 2021, skip_children=true). Aucun comportement métier n'a été modifié.
+
+Validations sur f9d418bd :
+- script différentiel Rustfmt de la CI : vert
+- cargo fmt --check : vert
+- cargo clippy --all-targets -- -D warnings : vert
+- cargo test : 4462 réussis, 0 échec, 8 ignorés
+- git diff --check : vert
+- graphify update . exécuté
