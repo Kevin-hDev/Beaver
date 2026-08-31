@@ -622,12 +622,20 @@
       "profilePaths": ["terminal-tabs.json"],
       "contracts": [
         {
+          "file": "src/hooks/terminal-persistence.ts",
+          "snippets": ["\"cl-go-dash\"", "\"terminal-tabs.json\""]
+        },
+        {
           "file": "src-tauri/src/services/terminal/tab_store.rs",
-          "snippets": [".join(\"terminal-tabs.json\")", "const MAX_FILE_BYTES"]
+          "scope": "migration",
+          "snippets": [".join(\"terminal-tabs.json\")", "const MAX_FILE_BYTES"],
+          "replaces": ["\"terminal-tabs.json\""]
         },
         {
           "file": "src/hooks/terminal-persistence.ts",
-          "snippets": ["\"load_terminal_tabs\"", "\"save_terminal_tabs\""]
+          "scope": "migration",
+          "snippets": ["\"load_terminal_tabs\"", "\"save_terminal_tabs\""],
+          "replaces": ["\"cl-go-dash\""]
         }
       ],
       "evidence": [

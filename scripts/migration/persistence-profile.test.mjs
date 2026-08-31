@@ -106,16 +106,24 @@ test("les identités historiques restent inchangées", () => {
   });
 });
 
-test("le profil terminal délègue le fichier borné à Rust et prouve la frontière TypeScript", () => {
+test("le profil terminal conserve le contrat historique et atteste la migration Rust IPC", () => {
   const terminal = loadManifest().domains.find(({ id }) => id === "terminal");
   assert.deepEqual(terminal.contracts, [
     {
+      file: "src/hooks/terminal-persistence.ts",
+      snippets: ["\"cl-go-dash\"", "\"terminal-tabs.json\""],
+    },
+    {
       file: "src-tauri/src/services/terminal/tab_store.rs",
+      scope: "migration",
       snippets: [".join(\"terminal-tabs.json\")", "const MAX_FILE_BYTES"],
+      replaces: ["\"terminal-tabs.json\""],
     },
     {
       file: "src/hooks/terminal-persistence.ts",
+      scope: "migration",
       snippets: ["\"load_terminal_tabs\"", "\"save_terminal_tabs\""],
+      replaces: ["\"cl-go-dash\""],
     },
   ]);
   assert.deepEqual(terminal.evidence, [
