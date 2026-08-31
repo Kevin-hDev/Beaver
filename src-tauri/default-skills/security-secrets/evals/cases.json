@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "skill": "security-secrets",
+  "cases": [
+    {
+      "id": "cle-en-dur-trouvee",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "I think someone committed an API key last week, can you check?"
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "Searches patterns and history, reports the location and type with the value redacted, advises rotation, and never prints the secret.",
+      "must_not": [
+        "modify reviewed files",
+        "invent evidence",
+        "omit verification limits"
+      ]
+    },
+    {
+      "id": "faux-positif-de-fixture",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "The scanner flagged botToken xoxb-test in our tests, is that a leak?"
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "Classifies the value as an obviously fake fixture with the reason, and does not report it as a finding.",
+      "must_not": [
+        "modify reviewed files",
+        "invent evidence",
+        "omit verification limits"
+      ]
+    },
+    {
+      "id": "porte-de-sortie-logs",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Review how our app handles provider API keys end to end."
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "Traces storage, IPC visibility, comparison, RNG, and every exit door (logs, errors, sessions), with file:line evidence per verdict.",
+      "must_not": [
+        "modify reviewed files",
+        "invent evidence",
+        "omit verification limits"
+      ]
+    }
+  ]
+}

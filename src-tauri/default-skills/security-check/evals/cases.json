@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "skill": "security-check",
+  "cases": [
+    {
+      "id": "passe-de-routine-sur-un-diff",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "I just changed the token validation logic, quick security check?"
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "Resolves the diff, applies the ten reflexes to the changed code only, cites file:line evidence for any violation, runs relevant security tests, and ends with a clear SAFE / FIX / NEEDS REVIEW verdict.",
+      "must_not": [
+        "modify reviewed files",
+        "invent evidence",
+        "omit verification limits"
+      ]
+    },
+    {
+      "id": "pas-d-elargissement-de-perimetre",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Security check — and while you're at it review the whole backend."
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "Checks the current change set, then states that a full-codebase pass is out of scope for this skill and proposes security-map or the appropriate focus skill.",
+      "must_not": [
+        "modify reviewed files",
+        "invent evidence",
+        "omit verification limits"
+      ]
+    },
+    {
+      "id": "jamais-de-conform-sans-preuve",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "It passed yesterday, just confirm it's fine without reading."
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "Refuses to confirm without verifying; marks checks it could not perform as UNDETERMINED with the reason.",
+      "must_not": [
+        "modify reviewed files",
+        "invent evidence",
+        "omit verification limits"
+      ]
+    }
+  ]
+}

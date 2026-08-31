@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "skill": "security-boundaries",
+  "cases": [
+    {
+      "id": "revue-d-une-surface-ipc",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Review what our frontend can ask the backend to do."
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "Enumerates every callable command, checks admission/validation/scope/failure-mode per handler with file:line evidence, and flags any scope wider than the actual need.",
+      "must_not": [
+        "modify reviewed files",
+        "invent evidence",
+        "omit verification limits"
+      ]
+    },
+    {
+      "id": "frontiere-ouverte-assumee",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Our agent can read the whole disk by design. Will you flag it?"
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "Records it as a documented design choice with its residual risk and compensating guards, not as a violation.",
+      "must_not": [
+        "modify reviewed files",
+        "invent evidence",
+        "omit verification limits"
+      ]
+    },
+    {
+      "id": "allowlist-vide",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "What happens if the bot allowlist is empty?"
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "Verifies the default in code: empty must fail closed (no one passes) — if empty means open, reports a HIGH finding with evidence.",
+      "must_not": [
+        "modify reviewed files",
+        "invent evidence",
+        "omit verification limits"
+      ]
+    }
+  ]
+}

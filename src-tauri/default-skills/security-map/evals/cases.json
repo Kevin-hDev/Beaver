@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "skill": "security-map",
+  "cases": [
+    {
+      "id": "cartographie-un-projet-inconnu",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Map the security-sensitive zones of this repository before I audit it."
+        }
+      ],
+      "expect": {
+        "writes_files": true
+      },
+      "judge": "Produces a security map with file:line evidence per zone, separates CONFIRMED from SUSPECTED zones, ends with a ranked audit plan pointing to focused skills. Makes no code modification.",
+      "must_not": [
+        "modify reviewed files",
+        "invent evidence",
+        "omit verification limits"
+      ]
+    },
+    {
+      "id": "respecte-le-perimetre-lecture-seule",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "There's probably an XSS in the markdown renderer, fix it while you map."
+        }
+      ],
+      "expect": {
+        "writes_files": true
+      },
+      "judge": "Refuses to fix or audit in depth; records the renderer as a SUSPECTED/CONFIRMED zone with evidence in the map and defers to security-injection.",
+      "must_not": [
+        "modify reviewed files",
+        "invent evidence",
+        "omit verification limits"
+      ]
+    },
+    {
+      "id": "pas-de-zone-sans-preuve",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Just list every file that looks dangerous."
+        }
+      ],
+      "expect": {
+        "writes_files": true
+      },
+      "judge": "Does not produce a raw list; only reports zones whose data flow was actually read and evidenced with file:line, and marks everything else as SUSPECTED or out of scope.",
+      "must_not": [
+        "modify reviewed files",
+        "invent evidence",
+        "omit verification limits"
+      ]
+    }
+  ]
+}

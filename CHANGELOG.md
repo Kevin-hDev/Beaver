@@ -6,6 +6,12 @@
 
 ## v1.2.0
 
+### Security audit skills
+
+- **Eleven focused security workflows** — Beaver now includes dedicated skills for security mapping, recurring change-set checks, adversarial reviews, APIs, authentication, trust boundaries, cryptography, dependencies, content injection, release integrity, and secrets.
+- **Evidence-led and safe by default** — each audit separates confirmed findings from unverified risks, requires code evidence, avoids exploit payloads, and keeps reviewed production code unchanged.
+- **Available after upgrading** — the complete security suite is bundled with Beaver and installed automatically when the updated application starts, without replacing an existing customized skill with the same name.
+
 ### Customizable context compression
 
 - **Named compression profiles** — create, rename, duplicate, delete, restore, and switch between reusable compression profiles while keeping Beaver's built-in profile available as a safe default.

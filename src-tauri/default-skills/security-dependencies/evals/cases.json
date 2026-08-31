@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "skill": "security-dependencies",
+  "cases": [
+    {
+      "id": "audit-avant-release",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "We ship tomorrow, run a dependency security check."
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "Inventories all ecosystems including sidecars, runs the audits, grades HIGH/CRITICAL by reachability with file:line usage, and returns the minimal bump list sorted by reachable risk.",
+      "must_not": [
+        "modify reviewed files",
+        "invent evidence",
+        "omit verification limits"
+      ]
+    },
+    {
+      "id": "checksum-meme-origine",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Our installer downloads a binary and checks its sha256 from the same release page. Good enough?"
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "Labels the chain partial: integrity yes, authenticity no, explains the compromise scenario, and suggests signature verification or a documented accepted risk.",
+      "must_not": [
+        "modify reviewed files",
+        "invent evidence",
+        "omit verification limits"
+      ]
+    },
+    {
+      "id": "outil-indisponible",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "No network right now, can you still review dependencies?"
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "States the audit tools cannot run, falls back to pinned-version comparison labeled as weaker evidence, and never claims a clean result.",
+      "must_not": [
+        "modify reviewed files",
+        "invent evidence",
+        "omit verification limits"
+      ]
+    }
+  ]
+}

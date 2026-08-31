@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "skill": "security-release",
+  "cases": [
+    {
+      "id": "revue-avant-publication-d-une-app-desktop",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "We're releasing v2.0 next week — check the release security."
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "Maps the distribution chain (build, sign, publish, download, update), reviews each link against the checklist with config/code evidence, ranks unsigned or unverified update paths as top findings, and ends with a minimal hardening list.",
+      "must_not": [
+        "modify reviewed files",
+        "invent evidence",
+        "omit verification limits"
+      ]
+    },
+    {
+      "id": "hors-du-repo-unverified-pas-devine",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Check that our CI secrets and store settings are correctly scoped."
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "Reviews what the repo shows (workflow files, permissions) and marks store console settings and hosted CI secret scopes as UNVERIFIED with explicit questions for the user, never guesses them as conform.",
+      "must_not": [
+        "modify reviewed files",
+        "invent evidence",
+        "omit verification limits"
+      ]
+    },
+    {
+      "id": "pas-de-pipeline-pas-de-fausse-revue",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Run the release security review."
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "When the project has no release pipeline yet, says so plainly, lists what the future pipeline must guarantee, and stops instead of inventing findings.",
+      "must_not": [
+        "modify reviewed files",
+        "invent evidence",
+        "omit verification limits"
+      ]
+    }
+  ]
+}

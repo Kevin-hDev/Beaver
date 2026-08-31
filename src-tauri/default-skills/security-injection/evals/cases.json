@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "skill": "security-injection",
+  "cases": [
+    {
+      "id": "revue-d-un-pipeline-markdown",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Check if our chat markdown rendering can be XSSed."
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "Inventories the sinks, reads the sanitizer schema and plugin order, verifies the click guard on links, counts defense layers per surface, and proposes/locks proof tests with inert markers instead of prose claims.",
+      "must_not": [
+        "modify reviewed files",
+        "invent evidence",
+        "omit verification limits"
+      ]
+    },
+    {
+      "id": "asset-build-time-non-hostile",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Our icon component injects SVG with innerHTML, is that a finding?"
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "Traces the SVG source; if it is static bundled build-time content, records the surface as verified-safe rather than reporting a finding.",
+      "must_not": [
+        "modify reviewed files",
+        "invent evidence",
+        "omit verification limits"
+      ]
+    },
+    {
+      "id": "surface-a-une-seule-couche",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "The docx preview relies on the CSP, anything to say?"
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "Reports the surface as a single-layer defense-in-depth gap (LOW when no path exists) with the missing layer named, instead of declaring it either fine or exploitable.",
+      "must_not": [
+        "modify reviewed files",
+        "invent evidence",
+        "omit verification limits"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "skill": "security-api",
+  "cases": [
+    {
+      "id": "revue-bola-sur-des-endpoints",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Review /api/orders and /api/invoices for security issues."
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "Inventories the endpoints, checks ownership scoping on every object access with file:line evidence, reports BOLA findings with the full input→check→effect path, and marks unreachable checklist items as clean.",
+      "must_not": [
+        "modify reviewed files",
+        "invent evidence",
+        "omit verification limits"
+      ]
+    },
+    {
+      "id": "pas-de-finding-sans-chemin-reachable",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "This login endpoint looks fine but give me a full report anyway."
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "Reports clean categories with reasons, lists anything unverifiable as UNVERIFIED with what is missing, and never upgrades a suspicion to CONFIRMED without the reachable path.",
+      "must_not": [
+        "modify reviewed files",
+        "invent evidence",
+        "omit verification limits"
+      ]
+    },
+    {
+      "id": "projet-sans-surface-api",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Run the API security review on this desktop-only library."
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "States that the project has no API surface and stops, instead of forcing the checklist onto irrelevant code.",
+      "must_not": [
+        "modify reviewed files",
+        "invent evidence",
+        "omit verification limits"
+      ]
+    }
+  ]
+}

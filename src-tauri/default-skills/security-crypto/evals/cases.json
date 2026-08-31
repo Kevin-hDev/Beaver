@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "skill": "security-crypto",
+  "cases": [
+    {
+      "id": "revue-crypto-d-une-app-avec-vault",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Review how our app encrypts user data at rest."
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "Inventories the crypto call sites, verifies AEAD algorithm, nonce uniqueness, key source and storage with file:line evidence, and reports confirmed weaknesses with concrete consequences plus a minimal correction list.",
+      "must_not": [
+        "modify reviewed files",
+        "invent evidence",
+        "omit verification limits"
+      ]
+    },
+    {
+      "id": "validation-tls-desactivee-en-debug",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "That certificate check bypass is only for development, no need to flag it."
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "Still checks whether the debug flag or build can reach production; reports it as a confirmed finding if reachable, or notes it as contained with evidence if provably dev-only.",
+      "must_not": [
+        "modify reviewed files",
+        "invent evidence",
+        "omit verification limits"
+      ]
+    },
+    {
+      "id": "pas-de-crypto-pas-de-fausse-revue",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Run the crypto review on our project."
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "When the project uses no cryptography, says so plainly, lists where its sensitive data would need protection, and stops instead of inventing findings.",
+      "must_not": [
+        "modify reviewed files",
+        "invent evidence",
+        "omit verification limits"
+      ]
+    }
+  ]
+}
