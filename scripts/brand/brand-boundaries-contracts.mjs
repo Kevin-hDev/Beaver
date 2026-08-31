@@ -7,7 +7,8 @@ export const EXPECTED_INTERNAL_REFERENCE_COUNTS = Object.freeze({
   "CL-GO-DASH": 3,
   "CL-GO": 38,
   CLGO: 32,
-  "cl-go-dash": 253,
+  // La baseline Terminal restaurée est attestée dans le manifeste et son test (+4).
+  "cl-go-dash": 257,
   clgo: 114,
   "cl-go": 72,
   cl_go_dash: 46,
