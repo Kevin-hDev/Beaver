@@ -1,7 +1,11 @@
+/* `min-height` et non `height` : dans le panneau latéral la vue remplit la
+   colonne, dans une carte du plan de travail elle doit pousser la carte à sa
+   taille. Avec une hauteur imposée, tout ce qui dépassait passait sous le
+   bord et s'y faisait couper — le bas du graphe le premier. */
 .fc-view {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  min-height: 100%;
   gap: 0;
 }
 
@@ -70,9 +74,7 @@
    ici ne le laissait pas s'étirer : il gardait la hauteur qu'il croyait avoir
    et son bas passait sous le bord de la carte. */
 .fc-chart-area {
-  flex: 0 0 400px;
-  min-height: 400px;
-  max-height: 400px;
+  flex: none;
   padding: 12px 14px;
   display: flex;
   flex-direction: column;
