@@ -29,6 +29,21 @@
 - **Loop and failure protection** — repeated automatic failures are suspended for the unchanged session state, explicit `/compress` remains available, and successful compression cannot immediately trigger an unbounded recompression cycle.
 - **Consistent context visibility** — the context ring shows the effective profile or the under-64K disabled state, while manual and automatic compression share the same profile resolution, safety checks, and provider-aware token accounting.
 
+### Embedded terminal reliability
+
+- **Durable project terminal tabs** — terminal groups and labels are restored without persisting frontend-supplied working directories, while legacy data migrates safely and concurrent tab creation or closure cannot overwrite another update.
+- **Crash-safe terminal recovery** — bounded, versioned terminal state is written atomically; malformed or oversized files are preserved for diagnosis, reset safely, and an interrupted recovery resumes from its durable marker on the next launch.
+- **Lazy project-aware shells** — restored tabs do not start processes until they are opened, and Beaver resolves each shell directory from the canonical project registry instead of trusting a path sent by the interface.
+- **Stable terminal controls** — active tabs, panel height, collapse and reopen behavior, project switching, and targeted tab closure now share one lifecycle without losing a live shell or reviving a closed tab.
+- **Lossless bounded streams** — ordered input queues, incremental UTF-8 decoding, explicit output acknowledgements, and bounded backpressure preserve early output and complete Unicode text without allowing terminal traffic to grow without limit.
+
+### Terminal security and process lifecycle
+
+- **Authenticated terminal commands** — every terminal operation is restricted to Beaver's main window and the owning session, with cryptographically random capabilities, constant-time verification, zeroized source buffers, validated inputs, fixed capacity limits, and generic public errors.
+- **Deadlock-free bounded shutdown** — writes, reads, output flow control, shell reaping, worker failures, and panic paths use independent control paths and bounded deadlines so a blocked terminal cannot freeze application shutdown or prevent another terminal from opening.
+- **Shells die with Beaver on every desktop OS** — Linux uses a durable parent-death worker, Windows uses a kill-on-close Job Object, and macOS relies on PTY hangup semantics; native tests prove abrupt parent disappearance separately on macOS, Linux, and Windows.
+- **Cross-platform regression coverage** — frontend contracts and native PTY tests cover persistence, ownership, capacity, Unicode, backpressure, shutdown, and parent death without treating evidence from one operating system as proof for another.
+
 ---
 
 ## v1.1.9
