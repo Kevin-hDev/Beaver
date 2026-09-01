@@ -1,46 +1,53 @@
 {
-  "1.1.9": {
-    "de": [
-      "Anthropic Claude und Alibaba Cloud Qwen sind jetzt als native Anbieter in Beaver verfügbar.",
-      "Live-Modellkataloge zeigen Werkzeuge, Bilder und Denkoptionen nur an, wenn sie unterstützt werden.",
-      "Denkfortsetzung, Prompt-Caching und Nutzungsmetriken bleiben über Nachrichten und Werkzeugaufrufe hinweg erhalten.",
-      "Begrenzte Antwortströme, geschützte Schlüssel und eine klarere Anbieter-Einrichtung verbessern Sicherheit und Bedienung."
+  "1.2.0": {
+    "fr": [
+      "Beaver inclut désormais onze parcours d’audit de sécurité fondés sur des preuves pour le code, l’authentification, les dépendances, les secrets et les releases.",
+      "Les profils de compression sont personnalisables globalement ou par conversation, avec des sauvegardes, migrations et reprises plus sûres.",
+      "Les onglets du terminal sont restaurés par projet ou conversation, et les shells ne démarrent que lorsque vous les ouvrez.",
+      "Les commandes du terminal sont authentifiées et bornées, et les shells s’arrêtent avec Beaver sur macOS, Linux et Windows sans blocage.",
+      "Les panneaux, fichiers, analyses Forecast, notes et profils de données sont isolés par projet ou conversation et restent récupérables après suppression du propriétaire."
     ],
     "en": [
-      "Anthropic Claude and Alibaba Cloud Qwen are now available as native Beaver providers.",
-      "Live model catalogs expose tools, images, and reasoning options only when they are supported.",
-      "Reasoning continuity, prompt caching, and usage metrics are preserved across messages and tool calls.",
-      "Bounded response streams, protected keys, and clearer provider onboarding improve security and usability."
+      "Beaver now includes eleven evidence-led security audit workflows for code, authentication, dependencies, secrets, and release integrity.",
+      "Compression profiles can be customized globally or per conversation, with safer checkpoints, migrations, recovery, and bounded context retention.",
+      "Terminal tabs restore by project or conversation, and shells start only when you open them.",
+      "Terminal commands are authenticated and bounded, while shells shut down with Beaver on macOS, Linux, and Windows without deadlocks.",
+      "Panels, files, Forecast analyses, notes, and data profiles are isolated per project or conversation and remain recoverable after their owner is removed."
     ],
     "es": [
-      "Anthropic Claude y Alibaba Cloud Qwen ya están disponibles como proveedores nativos de Beaver.",
-      "Los catálogos de modelos en vivo muestran herramientas, imágenes y opciones de razonamiento solo cuando son compatibles.",
-      "La continuidad del razonamiento, la caché de prompts y las métricas de uso se conservan entre mensajes y llamadas a herramientas.",
-      "Los flujos de respuesta limitados, las claves protegidas y una configuración más clara mejoran la seguridad y la facilidad de uso."
+      "Beaver incluye ahora once flujos de auditoría de seguridad basados en pruebas para código, autenticación, dependencias, secretos e integridad de versiones.",
+      "Los perfiles de compresión se pueden personalizar globalmente o por conversación, con puntos de control, migraciones y recuperación más seguros.",
+      "Las pestañas del terminal se restauran por proyecto o conversación, y los shells solo se inician al abrirlos.",
+      "Los comandos del terminal están autenticados y limitados, y los shells se cierran con Beaver en macOS, Linux y Windows sin bloqueos.",
+      "Los paneles, archivos, análisis Forecast, notas y perfiles de datos se aíslan por proyecto o conversación y siguen siendo recuperables tras eliminar su propietario."
     ],
-    "fr": [
-      "Anthropic Claude et Alibaba Cloud Qwen sont maintenant disponibles comme fournisseurs natifs dans Beaver.",
-      "Les catalogues de modèles en direct affichent les outils, images et options de raisonnement uniquement lorsqu’ils sont pris en charge.",
-      "La continuité du raisonnement, le cache des prompts et les métriques d’utilisation sont préservés entre les messages et les appels d’outils.",
-      "Les flux de réponse bornés, les clés protégées et une configuration plus claire améliorent la sécurité et la simplicité d’utilisation."
+    "de": [
+      "Beaver enthält jetzt elf evidenzbasierte Sicherheitsprüfungen für Code, Authentifizierung, Abhängigkeiten, Geheimnisse und Release-Integrität.",
+      "Komprimierungsprofile lassen sich global oder je Unterhaltung anpassen und bieten sicherere Prüfpunkte, Migrationen und Wiederherstellung.",
+      "Terminal-Tabs werden je Projekt oder Unterhaltung wiederhergestellt, und Shells starten erst beim Öffnen.",
+      "Terminalbefehle sind authentifiziert und begrenzt, während Shells mit Beaver unter macOS, Linux und Windows ohne Blockaden beendet werden.",
+      "Panels, Dateien, Forecast-Analysen, Notizen und Datenprofile sind je Projekt oder Unterhaltung isoliert und bleiben nach dem Löschen des Besitzers wiederherstellbar."
     ],
     "it": [
-      "Anthropic Claude e Alibaba Cloud Qwen sono ora disponibili come provider nativi di Beaver.",
-      "I cataloghi dei modelli in tempo reale mostrano strumenti, immagini e opzioni di ragionamento solo quando sono supportati.",
-      "La continuità del ragionamento, la cache dei prompt e le metriche di utilizzo vengono mantenute tra messaggi e chiamate agli strumenti.",
-      "Flussi di risposta limitati, chiavi protette e una configurazione più chiara migliorano sicurezza e facilità d’uso."
-    ],
-    "ja": [
-      "Anthropic Claude と Alibaba Cloud Qwen が Beaver のネイティブプロバイダーとして利用できるようになりました。",
-      "ライブモデルカタログでは、対応している場合にのみツール、画像、推論オプションが表示されます。",
-      "推論の継続性、プロンプトキャッシュ、使用量の指標がメッセージやツール呼び出しをまたいで保持されます。",
-      "応答ストリームの上限、保護されたキー、より分かりやすいプロバイダー設定により、安全性と使いやすさが向上しました。"
+      "Beaver include ora undici procedure di audit della sicurezza basate su prove per codice, autenticazione, dipendenze, segreti e integrità delle release.",
+      "I profili di compressione sono personalizzabili globalmente o per conversazione, con checkpoint, migrazioni e ripristino più sicuri.",
+      "Le schede del terminale vengono ripristinate per progetto o conversazione e le shell si avviano solo quando vengono aperte.",
+      "I comandi del terminale sono autenticati e limitati, mentre le shell si chiudono con Beaver su macOS, Linux e Windows senza blocchi.",
+      "Pannelli, file, analisi Forecast, note e profili dati sono isolati per progetto o conversazione e restano recuperabili dopo la rimozione del proprietario."
     ],
     "zh": [
-      "Anthropic Claude 和阿里云 Qwen 现已作为 Beaver 原生提供商上线。",
-      "实时模型目录仅在功能受支持时显示工具、图像和推理选项。",
-      "推理连续性、提示词缓存和用量指标会在消息与工具调用之间保留。",
-      "受限的响应流、受保护的密钥和更清晰的提供商配置提升了安全性与易用性。"
+      "Beaver 现提供十一套基于证据的安全审计流程，覆盖代码、身份验证、依赖项、密钥与发布完整性。",
+      "压缩配置可在全局或单个对话中自定义，并提供更安全的检查点、迁移、恢复和有界上下文保留。",
+      "终端标签页会按项目或对话恢复，shell 仅在打开标签页时启动。",
+      "终端命令经过身份验证并受到容量限制，shell 会在 macOS、Linux 和 Windows 上随 Beaver 安全退出且不会死锁。",
+      "面板、文件、Forecast 分析、笔记和数据配置按项目或对话隔离，所属对象删除后仍可恢复。"
+    ],
+    "ja": [
+      "Beaver に、コード、認証、依存関係、秘密情報、リリース整合性を対象とする、証拠重視の11種類のセキュリティ監査ワークフローが追加されました。",
+      "圧縮プロファイルを全体または会話ごとに設定でき、チェックポイント、移行、復旧、コンテキスト保持がより安全になりました。",
+      "ターミナルタブはプロジェクトまたは会話ごとに復元され、シェルはタブを開いたときだけ起動します。",
+      "ターミナルコマンドは認証と上限設定で保護され、macOS、Linux、Windows で Beaver の終了時にデッドロックなくシェルも終了します。",
+      "パネル、ファイル、Forecast 分析、ノート、データプロファイルはプロジェクトまたは会話ごとに分離され、所有元の削除後も復旧できます。"
     ]
   }
 }

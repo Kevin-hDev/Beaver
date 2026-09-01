@@ -11,6 +11,10 @@ const SCRIPT = join(
   "prepare-app-release-notes.mjs",
 );
 const REPOSITORY_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+// The manifests own the release version; this repository assertion must follow them.
+const REPOSITORY_VERSION = JSON.parse(
+  readFileSync(join(REPOSITORY_ROOT, "package.json"), "utf8"),
+).version;
 
 function localizedNotes(label) {
   return {
@@ -98,7 +102,7 @@ test("check mode rejects an unprepared payload without modifying either file", (
 });
 
 test("the tagged repository payload is already prepared before release builds", () => {
-  const checked = run(REPOSITORY_ROOT, "1.1.9", "--check");
+  const checked = run(REPOSITORY_ROOT, REPOSITORY_VERSION, "--check");
   assert.equal(checked.status, 0, checked.stderr);
 });
 
