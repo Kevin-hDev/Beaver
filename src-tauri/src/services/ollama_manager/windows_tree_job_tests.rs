@@ -10,7 +10,7 @@ fn ollama_job_termination_removes_root_and_model_runner() {
     let temp = tempfile::tempdir().expect("temp root");
     let gate = temp.path().join("start.gate");
     let pids = temp.path().join("tree.pids");
-    let script = "import os,pathlib,subprocess,sys,time; gate=pathlib.Path(sys.argv[1]);\nwhile not gate.exists(): time.sleep(.01)\nchild=subprocess.Popen([sys.executable,'-c','import time;time.sleep(120)']); pathlib.Path(sys.argv[2]).write_text(f'{os.getpid()},{child.pid}'); time.sleep(120)";
+    let script = "import os,pathlib,subprocess,sys,time; gate=pathlib.Path(sys.argv[1]);\nwhile not gate.exists(): time.sleep(.01)\nchild=subprocess.Popen([sys.executable,'-c','import time;time.sleep(120)']); target=pathlib.Path(sys.argv[2]); pending=target.with_suffix('.tmp'); pending.write_text(f'{os.getpid()},{child.pid}'); os.replace(pending,target); time.sleep(120)";
     let mut root = Command::new(python)
         .args(["-c", script])
         .arg(&gate)
