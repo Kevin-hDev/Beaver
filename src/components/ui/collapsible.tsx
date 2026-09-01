@@ -98,6 +98,12 @@ export function Collapsible({
     <div
       ref={regionRef}
       className={cn("cps-region", className)}
+      /* L'état de repos est annoncé dès le rendu, pas dans un effet : les
+       * effets des enfants s'exécutent avant celui du parent, et un contenu
+       * qui se mesure lui-même (un graphe, par exemple) se dessinerait dans
+       * une région encore haute de zéro. Les styles écrits pendant
+       * l'animation restent prioritaires, ils sont en ligne. */
+      data-open={open ? "true" : "false"}
       onTransitionEnd={handleTransitionEnd}
     >
       {(mounted || !unmountWhenClosed) && (

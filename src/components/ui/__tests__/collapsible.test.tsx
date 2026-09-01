@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, fireEvent, render } from "@testing-library/react";
-import { useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { Collapsible } from "../collapsible";
 
 afterEach(cleanup);
@@ -71,6 +71,37 @@ describe("Collapsible", () => {
 
     fireEvent.click(toggle);
     expect(queryByText("contenu")).toBeNull();
+  });
+
+  it("annonce son ouverture dès le rendu, avant tout effet", () => {
+    /* Les effets des enfants s'exécutent avant celui du parent : un contenu
+       qui se mesure lui-même — un graphe, par exemple — se dessinait dans une
+       région encore haute de zéro, et gardait cette taille. L'état de repos
+       doit donc être lisible dans le balisage, pas seulement dans un effet.
+       Défaut relevé par Kevin sur le graphe principal de forecast. */
+    let hauteurAuMontage: string | null = null;
+    function Sonde() {
+      useLayoutEffect(() => {
+        const region = document.querySelector(".cps-region");
+        hauteurAuMontage = region?.getAttribute("data-open") ?? null;
+      }, []);
+      return <p>contenu</p>;
+    }
+    render(
+      <Collapsible open>
+        <Sonde />
+      </Collapsible>,
+    );
+    expect(hauteurAuMontage).toBe("true");
+  });
+
+  it("ferme la région par le balisage et non par un effet", () => {
+    const { container } = render(
+      <Collapsible open={false}>
+        <p>contenu</p>
+      </Collapsible>,
+    );
+    expect(container.querySelector(".cps-region")?.getAttribute("data-open")).toBe("false");
   });
 
   it("ignore une fin de transition remontée par un enfant", () => {

@@ -39,12 +39,13 @@
   max-width: 100%;
 }
 
+/* Cet écran est entièrement centré : une liste alignée à gauche y décroche,
+   même quand son bloc est lui-même centré. */
 .fc-recent {
   width: 100%;
   max-width: 280px;
   margin-top: 16px;
   padding: 0 var(--list-gutter);
-  text-align: left;
 }
 
 .fc-recent-title {
@@ -60,7 +61,7 @@
 .fc-recent-item {
   display: flex;
   flex-direction: column;
-  align-items: stretch;
+  align-items: center;
   gap: 1px;
   width: 100%;
   padding: 6px 8px;
@@ -84,12 +85,14 @@
    elle qui cède la place. Avant, elle refusait de rétrécir et le nom tombait
    à trois lettres. */
 .fc-recent-name {
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .fc-recent-meta {
+  max-width: 100%;
   overflow: hidden;
   font-size: var(--text-xs);
   color: var(--ink-faint);
