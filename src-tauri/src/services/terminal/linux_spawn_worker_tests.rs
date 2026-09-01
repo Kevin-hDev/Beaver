@@ -106,7 +106,7 @@ async fn closing_refuses_new_requests_and_joins_the_worker() {
 fn linux_pty_spawn_uses_the_durable_worker() {
     let command_source = include_str!("../../commands/terminal.rs");
     let session_source = include_str!("pty_session_unix.rs");
-    assert!(command_source.contains("manager.spawn_linux"));
+    assert!(command_source.contains(".spawn_linux("));
     assert!(command_source.contains("#[cfg(target_os = \"linux\")]"));
     assert!(session_source.contains("shell_helper::ROLE_FLAG"));
     assert!(!session_source.contains("terminal_blocking::run"));
