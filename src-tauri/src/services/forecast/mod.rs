@@ -81,6 +81,7 @@ mod storage_index;
 mod storage_io;
 mod storage_load;
 mod storage_paths;
+mod storage_repair;
 mod storage_revision;
 mod storage_scope;
 pub mod target_domain;

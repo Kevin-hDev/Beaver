@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { homeDir } from "@tauri-apps/api/path";
 import i18n from "@/i18n";
 import { showToast } from "@/lib/toast-emitter";
+import type { AgentSessionLoadState } from "./use-agent-sessions";
 import type { ProjectLoadState } from "./use-projects";
 import { clampTerminalHeight, TERMINAL_DEFAULT_HEIGHT } from "./terminal-layout";
 import { useTerminalPersistence } from "./use-terminal-persistence";
@@ -19,9 +20,10 @@ import type { TerminalGroup, TerminalTab } from "./terminal-types";
 
 export type { TerminalGroup, TerminalTab };
 
-interface TerminalProjectState {
+interface TerminalOwnerState {
   validGroupKeys: string[];
   projectLoadState: ProjectLoadState;
+  sessionLoadState: AgentSessionLoadState;
   defaultLabel?: string;
 }
 
@@ -48,17 +50,19 @@ function addTabToGroups(
 export function useTerminal(
   groupKey: string,
   defaultCwd: string,
-  { validGroupKeys, projectLoadState, defaultLabel }: TerminalProjectState,
+  { validGroupKeys, projectLoadState, sessionLoadState, defaultLabel }: TerminalOwnerState,
 ) {
   const [groups, setGroups] = useState<Map<string, TerminalGroup>>(new Map());
   const groupsRef = useRef(groups);
   const [panelHeight, setPanelHeight] = useState(TERMINAL_DEFAULT_HEIGHT);
   const [resolvedCwd, setResolvedCwd] = useState(defaultCwd);
   const maxHeightRef = useRef(0);
+  const legacyNoticeShownRef = useRef(false);
+  const ownersReady = projectLoadState === "ready" && sessionLoadState === "ready";
   const { loaded, persistenceStatus } = useTerminalPersistence({
     groups,
     setGroups,
-    canSave: projectLoadState === "ready",
+    canSave: ownersReady,
   });
 
   useEffect(() => { groupsRef.current = groups; }, [groups]);
@@ -75,23 +79,23 @@ export function useTerminal(
   }, [defaultCwd]);
 
   useEffect(() => {
-    if (!loaded || projectLoadState !== "ready") return;
+    if (!loaded || !ownersReady) return;
     const valid = new Set(validGroupKeys);
+    if (groupsRef.current.has(DEFAULT_GROUP_KEY) && !valid.has(DEFAULT_GROUP_KEY)
+      && !legacyNoticeShownRef.current) {
+      legacyNoticeShownRef.current = true;
+      showToast(i18n.t("terminal.legacyTabsRemoved"), "info");
+    }
     // eslint-disable-next-line react-hooks/set-state-in-effect -- readiness authorizes one cleanup pass
     setGroups((previous) => {
       if ([...previous.keys()].every((key) => valid.has(key))) return previous;
-      if (previous.has(DEFAULT_GROUP_KEY) && !valid.has(DEFAULT_GROUP_KEY)) {
-        // L'ancien groupe était partagé entre toutes les discussions sans projet :
-        // l'attribuer à l'une d'elles recréerait la fuite que l'isolation supprime.
-        showToast(i18n.t("terminal.legacyTabsRemoved"), "info");
-      }
       const next = new Map(previous);
       for (const key of next.keys()) {
         if (!valid.has(key)) next.delete(key);
       }
       return next;
     });
-  }, [loaded, projectLoadState, setGroups, validGroupKeys]);
+  }, [loaded, ownersReady, setGroups, validGroupKeys]);
 
   const currentGroup = groups.get(groupKey) ?? { tabs: [], activeTabId: null };
 

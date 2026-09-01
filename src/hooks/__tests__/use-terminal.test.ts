@@ -1,3 +1,4 @@
+import { createElement, StrictMode, type ReactNode } from "react";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { showToast } from "@/lib/toast-emitter";
@@ -21,6 +22,7 @@ const DEFAULT_CWD = "/Users/test/project";
 const ready = (validGroupKeys = [GROUP_KEY]) => ({
   validGroupKeys,
   projectLoadState: "ready" as const,
+  sessionLoadState: "ready" as const,
 });
 
 function deferred<T>() {
@@ -154,6 +156,52 @@ describe("useTerminal", () => {
     const { result } = renderHook(() => useTerminal("project-a", "/a", {
       validGroupKeys: [],
       projectLoadState: "loading",
+      sessionLoadState: "ready",
+    }));
+
+    await waitFor(() => expect(result.current.persistenceStatus).toBe("healthy"));
+    expect(result.current.tabs).toHaveLength(1);
+    expect(saveMock).not.toHaveBeenCalled();
+  });
+
+  it("conserve les groupes de discussion tant que les sessions sont en chargement", async () => {
+    loadMock.mockResolvedValue({
+      version: 1,
+      groups: { "session:one": [{ label: "shell" }] },
+    });
+    const { result, rerender } = renderHook(
+      ({ sessionLoadState, validGroupKeys }) => useTerminal("session:one", "", {
+        validGroupKeys,
+        projectLoadState: "ready",
+        sessionLoadState,
+      }),
+      {
+        initialProps: {
+          sessionLoadState: "loading" as "loading" | "ready",
+          validGroupKeys: [] as string[],
+        },
+      },
+    );
+
+    await waitFor(() => expect(result.current.persistenceStatus).toBe("healthy"));
+    expect(result.current.tabs).toHaveLength(1);
+    expect(saveMock).not.toHaveBeenCalled();
+
+    rerender({ sessionLoadState: "ready", validGroupKeys: ["session:one"] });
+
+    expect(result.current.tabs).toHaveLength(1);
+    expect(saveMock).not.toHaveBeenCalled();
+  });
+
+  it("ne nettoie ni ne sauvegarde quand le chargement des sessions échoue", async () => {
+    loadMock.mockResolvedValue({
+      version: 1,
+      groups: { "session:one": [{ label: "shell" }] },
+    });
+    const { result } = renderHook(() => useTerminal("session:one", "", {
+      validGroupKeys: [],
+      projectLoadState: "ready",
+      sessionLoadState: "error",
     }));
 
     await waitFor(() => expect(result.current.persistenceStatus).toBe("healthy"));
@@ -170,6 +218,7 @@ describe("useTerminal", () => {
       ({ projectLoadState }) => useTerminal("project-a", "/a", {
         validGroupKeys: ["project-a"],
         projectLoadState,
+        sessionLoadState: "ready",
       }),
       { initialProps: { projectLoadState: "loading" as "loading" | "ready" } },
     );
@@ -190,6 +239,7 @@ describe("useTerminal", () => {
       ({ projectLoadState }) => useTerminal("project-a", "/a", {
         validGroupKeys: [],
         projectLoadState,
+        sessionLoadState: "ready",
       }),
       { initialProps: { projectLoadState: "loading" as "loading" | "ready" } },
     );
@@ -207,13 +257,15 @@ describe("useTerminal", () => {
       version: 1,
       groups: { __default__: [{ label: "legacy" }] },
     });
-    const { result } = renderHook(() => useTerminal("session:one", "", {
-      validGroupKeys: ["session:one"],
-      projectLoadState: "ready",
-    }));
+    const wrapper = ({ children }: { children: ReactNode }) =>
+      createElement(StrictMode, null, children);
+    const { result } = renderHook(() => useTerminal("session:one", "", ready(["session:one"])), {
+      wrapper,
+    });
 
     await waitFor(() => expect(result.current.persistenceStatus).toBe("healthy"));
     await waitFor(() => expect(saveMock).toHaveBeenCalledWith({ version: 1, groups: {} }));
+    expect(showToast).toHaveBeenCalledOnce();
     expect(showToast).toHaveBeenCalledWith("terminal.legacyTabsRemoved", "info");
   });
 

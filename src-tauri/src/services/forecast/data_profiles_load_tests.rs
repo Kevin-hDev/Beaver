@@ -42,6 +42,12 @@ async fn claims_a_real_pre_scope_profile_for_exactly_one_workspace() {
     let rejected = load_profile_classified(&second.id, &id).await;
 
     assert_eq!(claimed.id, id);
+    assert!(
+        super::super::data_profiles::legacy_profile_path_for_read(&id)
+            .await
+            .is_err(),
+        "a completed claim must purge its legacy migration marker"
+    );
     assert!(matches!(rejected, Err(DataProfileLoadError::NotFound)));
     cleanup(&first.id, &id).await;
     cleanup(&second.id, &id).await;

@@ -27,7 +27,7 @@ pub async fn save_for_session(session_id: &str, result: &mut ForecastResult) -> 
 
 pub async fn list_for_session(session_id: &str) -> Result<Vec<ForecastAnalysisMeta>, String> {
     crate::services::agent_local::session_store::validate_session_id(session_id)?;
-    repair_orphaned_owners().await?;
+    super::storage_repair::ensure_orphaned_owners_repaired().await?;
     let workspace = crate::services::workspace_scope::resolve(session_id).await?;
     let entries = super::storage_index::list().await?;
     let mut visible = Vec::new();
@@ -71,7 +71,7 @@ pub(crate) async fn release_workspace_locked(
     release_workspaces_locked(&workspaces, deleted_session_ids).await
 }
 
-async fn release_workspaces_locked(
+pub(super) async fn release_workspaces_locked(
     workspaces: &[ForecastWorkspace],
     deleted_session_ids: &[String],
 ) -> Result<(), String> {
@@ -108,39 +108,11 @@ async fn release_workspaces_locked(
     Ok(())
 }
 
-async fn repair_orphaned_owners() -> Result<(), String> {
-    let _guard = super::workspace_lifecycle::lock().await;
-    let snapshot = crate::services::workspace_scope::WorkspaceSnapshot::load().await?;
-    let entries = super::storage_index::list().await?;
-    let workspaces = entries
-        .iter()
-        .filter(|entry| {
-            entry.workspace != ForecastWorkspace::Legacy && !snapshot.is_live(&entry.workspace)
-        })
-        .map(|entry| entry.workspace.clone())
-        .collect::<std::collections::HashSet<_>>()
-        .into_iter()
-        .collect::<Vec<_>>();
-    let deleted_sessions = entries
-        .iter()
-        .filter(|entry| entry.workspace == ForecastWorkspace::Legacy)
-        .filter_map(|entry| entry.session_id.as_ref())
-        .filter(|session_id| !snapshot.contains_session(session_id))
-        .cloned()
-        .collect::<std::collections::HashSet<_>>()
-        .into_iter()
-        .collect::<Vec<_>>();
-    if workspaces.is_empty() && deleted_sessions.is_empty() {
-        return Ok(());
-    }
-    release_workspaces_locked(&workspaces, &deleted_sessions).await
-}
-
 pub async fn list_unassigned_for_session(
     session_id: &str,
 ) -> Result<Vec<ForecastAnalysisMeta>, String> {
     crate::services::agent_local::session_store::validate_session_id(session_id)?;
-    repair_orphaned_owners().await?;
+    super::storage_repair::ensure_orphaned_owners_repaired().await?;
     crate::services::workspace_scope::resolve(session_id).await?;
     Ok(super::storage_index::list()
         .await?

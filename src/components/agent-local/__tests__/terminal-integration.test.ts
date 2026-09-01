@@ -26,6 +26,7 @@ vi.mock("@/components/terminal/terminal-panel", () => ({
 const ready = (groupKey: string) => ({
   validGroupKeys: [groupKey],
   projectLoadState: "ready" as const,
+  sessionLoadState: "ready" as const,
 });
 
 function deferred<T>() {
@@ -39,6 +40,7 @@ function useTerminalWithProjects() {
   const terminal = useTerminal("project-a", "/a", {
     validGroupKeys: projects.projects.map((project) => project.id),
     projectLoadState: projects.loadState,
+    sessionLoadState: "ready",
   });
   return { terminal, projectLoadState: projects.loadState };
 }

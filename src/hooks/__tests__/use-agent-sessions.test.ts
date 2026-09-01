@@ -38,6 +38,7 @@ describe("useAgentSessions", () => {
       expect(result.current.loading).toBe(false);
     });
 
+    expect(result.current.loadState).toBe("ready");
     expect(invoke).toHaveBeenCalledWith("list_agent_sessions");
     expect(result.current.sessions).toEqual([mockSession]);
   });
@@ -61,6 +62,7 @@ describe("useAgentSessions", () => {
       expect(result.current.loading).toBe(false);
     });
 
+    expect(result.current.loadState).toBe("error");
     expect(result.current.sessions).toEqual([]);
   });
 

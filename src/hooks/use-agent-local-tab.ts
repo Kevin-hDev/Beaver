@@ -38,7 +38,7 @@ interface UseAgentLocalTabOpts {
 export function useAgentLocalTab({
   navState, onSessionChange, onNavChange, onWorkspaceClear, listFocused,
 }: UseAgentLocalTabOpts) {
-  const { sessions, refresh, create, rename, reorder: reorderSessions, reorderPinned, remove, archive, togglePin, updateModel, updateReasoning } = useAgentSessions();
+  const { sessions, loadState: sessionLoadState, refresh, create, rename, reorder: reorderSessions, reorderPinned, remove, archive, togglePin, updateModel, updateReasoning } = useAgentSessions();
   const projectsHook = useProjects();
   const activeSessionId = navState.sessionId;
 
@@ -59,6 +59,7 @@ export function useAgentLocalTab({
   const terminalState = useTerminal(terminalGroupKey, terminalCwd, {
     validGroupKeys: terminalWorkspaceGroupKeys(sessions, projectIds),
     projectLoadState: projectsHook.loadState,
+    sessionLoadState,
     defaultLabel: activeProject?.name ?? activeSession?.name,
   });
   const { model: defaultModel, provider: defaultProvider } = useDefaultModel();

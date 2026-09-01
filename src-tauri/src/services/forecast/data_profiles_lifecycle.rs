@@ -15,7 +15,9 @@ pub(super) async fn claim_legacy(
 ) -> Result<StoredDataProfile, DataProfileLoadError> {
     let _guard = PROFILE_LOCK.lock().await;
     if let Ok(path) = profile_path_for_read(workspace, id).await {
-        return read_for_workspace(&path, id, workspace).await;
+        let stored = read_for_workspace(&path, id, workspace).await?;
+        purge_completed_marker(workspace, id).await?;
+        return Ok(stored);
     }
     let legacy_path = legacy_profile_path_for_read(id)
         .await
@@ -31,7 +33,26 @@ pub(super) async fn claim_legacy(
         .await
         .map_err(|_| DataProfileLoadError::Unavailable)?;
     write_stored(&target, &stored).await?;
+    // La copie isolée est durable avant cette suppression : une interruption
+    // laisse donc toujours une source complète et la reprise reste idempotente.
+    purge_completed_marker(workspace, id).await?;
     Ok(stored)
+}
+
+async fn purge_completed_marker(
+    workspace: &WorkspaceScope,
+    id: &str,
+) -> Result<(), DataProfileLoadError> {
+    let marker = match legacy_profile_path_for_read(id).await {
+        Ok(path) => path,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+        Err(error) => return Err(classify_io(error)),
+    };
+    let stored = read_stored(&marker, id).await?;
+    if stored.workspace != *workspace {
+        return Ok(());
+    }
+    tokio::fs::remove_file(marker).await.map_err(classify_io)
 }
 
 pub(super) async fn stage_release(workspace: &WorkspaceScope) -> Result<Vec<String>, String> {

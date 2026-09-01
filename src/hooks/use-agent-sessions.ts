@@ -9,18 +9,22 @@ import { admissionErrorMessage } from "@/lib/admission-error";
 import { showToast } from "@/lib/toast-emitter";
 import i18n from "@/i18n";
 
+export type AgentSessionLoadState = "loading" | "ready" | "error";
+
 export function useAgentSessions() {
   const [sessions, setSessions] = useState<AgentSessionMeta[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadState, setLoadState] = useState<AgentSessionLoadState>("loading");
 
   const refresh = useCallback(async () => {
+    setLoadState("loading");
     try {
       const list = await invoke<AgentSessionMeta[]>("list_agent_sessions");
       setSessions(list);
+      setLoadState("ready");
     } catch {
-      setSessions([]);
-    } finally {
-      setLoading(false);
+      // La dernière liste confirmée reste visible, mais ne peut autoriser
+      // aucun nettoyage tant que l'inventaire durable est indisponible.
+      setLoadState("error");
     }
   }, []);
 
@@ -169,7 +173,8 @@ export function useAgentSessions() {
 
   return {
     sessions,
-    loading,
+    loading: loadState === "loading",
+    loadState,
     refresh,
     create,
     rename,

@@ -97,6 +97,8 @@ fn resolve_from_snapshot(
             None => return Ok(WorkspaceScope::Session(current.id.clone())),
         }
     }
+    // L'interface replie une ascendance invalide sur la discussion feuille
+    // pour isoler l'affichage ; Rust refuse ici car il porte l'autorité d'accès.
     Err(scope_error())
 }
 
