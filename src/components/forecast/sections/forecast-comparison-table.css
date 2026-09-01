@@ -1,4 +1,5 @@
 .fccmp-table {
+  padding: 0 var(--list-gutter);
   border-top: 1px solid var(--edge);
 }
 
@@ -15,7 +16,7 @@
   position: sticky;
   top: 0;
   z-index: 1;
-  padding: 8px 14px;
+  padding: 8px 10px;
   border-bottom: 1px solid var(--edge);
   background: var(--void);
   color: var(--ink-faint);
@@ -28,7 +29,8 @@
 }
 
 .fccmp-table-row {
-  padding: 8px 14px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
   color: var(--ink);
   font-family: var(--font-sans);
   font-size: var(--text-sm);

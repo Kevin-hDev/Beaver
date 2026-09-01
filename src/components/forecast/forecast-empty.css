@@ -43,6 +43,7 @@
   width: 100%;
   max-width: 280px;
   margin-top: 16px;
+  padding: 0 var(--list-gutter);
   text-align: left;
 }
 

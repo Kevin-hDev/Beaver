@@ -30,6 +30,7 @@
 
 .fcs-menu-panel {
   overflow-y: auto;
+  padding: 0 var(--list-gutter);
   border: 1px solid var(--edge);
   border-radius: var(--radius-sm);
   background: var(--popover-bg, var(--shell));
@@ -51,6 +52,7 @@
   align-items: center;
   gap: 8px;
   padding: 0 10px;
+  border-radius: var(--radius-sm);
   border: none;
   background: transparent;
   color: var(--ink);

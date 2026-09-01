@@ -1,4 +1,9 @@
+/* Le retrait vit sur le parent commun de l'en-tête et des lignes : posé sur
+   le corps seul, il décalerait les lignes de leur en-tête. Les 4 px repris
+   ici sont retranchés du retrait interne des deux, pour que les textes
+   restent alignés sur la colonne de gauche. */
 .fc-predictions-table {
+  padding: 0 var(--list-gutter);
   flex: 1 1 auto;
   min-height: 0;
   /* Cap long horizons: the body scrolls instead of stretching the card. */
@@ -67,7 +72,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) max-content;
   column-gap: 18px;
-  padding: 6px 14px;
+  padding: 6px 10px;
   font-size: var(--text-xs);
   font-family: var(--font-sans);
   color: var(--ink-faint);
@@ -95,7 +100,8 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) max-content;
   column-gap: 18px;
-  padding: 8px 14px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
   font-size: var(--text-sm);
   transition: background 80ms ease;
   align-items: center;
