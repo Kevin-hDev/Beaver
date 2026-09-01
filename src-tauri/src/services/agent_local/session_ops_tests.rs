@@ -9,21 +9,23 @@ use crate::services::reasoning_continuity::envelope::{
 
 #[tokio::test]
 async fn project_cleanup_revalidates_the_selected_project_under_lock() {
+    let project_id = format!("deleted-project-{}", uuid::Uuid::new_v4());
     let mut session = session_store::create_full(
         "Project race",
         "llama3",
         "ollama",
         false,
-        Some("deleted-project".to_string()),
+        Some(project_id.clone()),
     )
     .await
     .expect("create session");
-    session.project_id = Some("deleted-project".to_string());
+    session.project_id = Some(project_id.clone());
     session_store::save(&session).await.expect("seed project");
     let (selected_tx, selected_rx) = tokio::sync::oneshot::channel();
     let (release_tx, release_rx) = tokio::sync::oneshot::channel();
+    let cleanup_project_id = project_id.clone();
     let cleanup = tokio::spawn(async move {
-        clear_project_id_with_after_list("deleted-project", move || async move {
+        clear_project_id_with_after_list(&cleanup_project_id, move || async move {
             let _ = selected_tx.send(());
             let _ = release_rx.await;
         })
@@ -41,6 +43,33 @@ async fn project_cleanup_revalidates_the_selected_project_under_lock() {
 
     let saved = session_store::get(&session.id).await.expect("reload");
     assert_eq!(saved.project_id.as_deref(), Some("replacement-project"));
+    session_store::delete_one(&session.id)
+        .await
+        .expect("cleanup session");
+}
+
+#[tokio::test]
+async fn project_cleanup_detaches_archived_sessions_too() {
+    let project_id = format!("deleted-project-{}", uuid::Uuid::new_v4());
+    let session = session_store::create_full(
+        "Archived project",
+        "llama3",
+        "ollama",
+        false,
+        Some(project_id.clone()),
+    )
+    .await
+    .expect("create session");
+    session_store::archive(&session.id)
+        .await
+        .expect("archive session");
+
+    clear_project_id(&project_id)
+        .await
+        .expect("clear project");
+
+    let stored = session_store::get(&session.id).await.expect("reload session");
+    assert_eq!(stored.project_id, None);
     session_store::delete_one(&session.id)
         .await
         .expect("cleanup session");

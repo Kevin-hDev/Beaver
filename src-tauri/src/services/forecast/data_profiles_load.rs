@@ -5,7 +5,7 @@ use crate::services::workspace_scope::WorkspaceScope;
 use serde::{Deserialize, Serialize};
 use tokio::io::AsyncReadExt;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub(super) struct StoredDataProfile {
     pub profile: DataProfile,
     pub data: String,
@@ -87,13 +87,34 @@ pub async fn load_profile_classified(
 
 async fn load(session_id: &str, id: &str) -> Result<StoredDataProfile, DataProfileLoadError> {
     uuid::Uuid::parse_str(id).map_err(|_| DataProfileLoadError::InvalidId)?;
+    let _lifecycle_guard = super::workspace_lifecycle::lock().await;
     let workspace = crate::services::workspace_scope::resolve(session_id)
         .await
         .map_err(|_| DataProfileLoadError::Unavailable)?;
+    let stored = match super::data_profiles::profile_path_for_read(&workspace, id).await {
+        Ok(path) => match read_stored(&path, id).await {
+            Ok(stored) => stored,
+            Err(DataProfileLoadError::NotFound) => {
+                super::data_profiles_lifecycle::claim_legacy(&workspace, id).await?
+            }
+            Err(error) => return Err(error),
+        },
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            super::data_profiles_lifecycle::claim_legacy(&workspace, id).await?
+        }
+        Err(_) => return Err(DataProfileLoadError::Unavailable),
+    };
+    if stored.workspace != workspace {
+        return Err(DataProfileLoadError::Corrupt);
+    }
+    Ok(stored)
+}
+
+pub(super) async fn read_stored(
+    path: &std::path::Path,
+    id: &str,
+) -> Result<StoredDataProfile, DataProfileLoadError> {
     let max_bytes = MAX_INLINE_DATA_BYTES.saturating_add(64 * 1024);
-    let path = super::data_profiles::profile_path_for_read(&workspace, id)
-        .await
-        .map_err(classify_io)?;
     let file = tokio::fs::File::open(path).await.map_err(classify_io)?;
     let mut data = Vec::with_capacity(max_bytes.min(64 * 1024));
     file.take((max_bytes + 1) as u64)
@@ -105,10 +126,7 @@ async fn load(session_id: &str, id: &str) -> Result<StoredDataProfile, DataProfi
     }
     let mut stored: StoredDataProfile =
         serde_json::from_slice(&data).map_err(|_| DataProfileLoadError::Corrupt)?;
-    if stored.workspace != workspace
-        || stored.profile.id != id
-        || !stored.profile.valid
-        || stored.data.len() > MAX_INLINE_DATA_BYTES
+    if stored.profile.id != id || !stored.profile.valid || stored.data.len() > MAX_INLINE_DATA_BYTES
     {
         return Err(DataProfileLoadError::Corrupt);
     }
@@ -137,20 +155,5 @@ fn matches_request(profile: &DataProfile, request: &ForecastRequest) -> bool {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[tokio::test]
-    async fn invalid_and_missing_profiles_have_distinct_failures() {
-        assert_eq!(
-            load_profile_classified("not-a-session", "not-a-uuid")
-                .await
-                .unwrap_err(),
-            DataProfileLoadError::InvalidId
-        );
-        assert_eq!(
-            classify_io(std::io::Error::from(std::io::ErrorKind::NotFound)),
-            DataProfileLoadError::NotFound
-        );
-    }
-}
+#[path = "data_profiles_load_tests.rs"]
+mod tests;

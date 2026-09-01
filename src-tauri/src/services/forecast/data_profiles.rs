@@ -12,13 +12,14 @@ pub use super::data_profiles_load::{
 };
 
 const MAX_DIRECTORY_SCAN: usize = 1_000;
-static PROFILE_LOCK: Mutex<()> = Mutex::const_new(());
+pub(super) static PROFILE_LOCK: Mutex<()> = Mutex::const_new(());
 
 pub async fn save(
     session_id: &str,
     profile: &DataProfile,
     request: &ForecastRequest,
 ) -> Result<(), String> {
+    let _lifecycle_guard = super::workspace_lifecycle::lock().await;
     validate_id(&profile.id)?;
     if !profile.valid {
         return Err("Profil de données invalide".into());
@@ -111,7 +112,10 @@ pub(super) async fn profile_path_for_read(
     .await
 }
 
-async fn profile_path_for_write(workspace: &WorkspaceScope, id: &str) -> Result<PathBuf, String> {
+pub(super) async fn profile_path_for_write(
+    workspace: &WorkspaceScope,
+    id: &str,
+) -> Result<PathBuf, String> {
     let directory =
         profile_directory(workspace).map_err(|_| "Sauvegarde du profil impossible".to_string())?;
     crate::services::paths::data_file_for_write(&directory, &format!("{id}.json"))
@@ -119,7 +123,7 @@ async fn profile_path_for_write(workspace: &WorkspaceScope, id: &str) -> Result<
         .map_err(|_| "Sauvegarde du profil impossible".to_string())
 }
 
-fn profile_directory(workspace: &WorkspaceScope) -> std::io::Result<String> {
+pub(super) fn profile_directory(workspace: &WorkspaceScope) -> std::io::Result<String> {
     let value = match workspace {
         WorkspaceScope::Project(id) => format!("forecast-data-profiles-project-{id}"),
         WorkspaceScope::Session(id) => format!("forecast-data-profiles-session-{id}"),
@@ -128,13 +132,24 @@ fn profile_directory(workspace: &WorkspaceScope) -> std::io::Result<String> {
     Ok(value)
 }
 
+pub(super) async fn legacy_profile_path_for_read(id: &str) -> std::io::Result<PathBuf> {
+    crate::services::paths::data_file_for_read("forecast-data-profiles", &format!("{id}.json"))
+        .await
+}
+
+pub(super) async fn legacy_profile_path_for_write(id: &str) -> Result<PathBuf, String> {
+    crate::services::paths::data_file_for_write("forecast-data-profiles", &format!("{id}.json"))
+        .await
+        .map_err(|_| "Sauvegarde du profil impossible".to_string())
+}
+
 fn validate_id(id: &str) -> Result<(), String> {
     Uuid::parse_str(id)
         .map(|_| ())
         .map_err(|_| "Identifiant de profil invalide".into())
 }
 
-fn is_profile_file(path: &Path) -> bool {
+pub(super) fn is_profile_file(path: &Path) -> bool {
     path.extension().and_then(|value| value.to_str()) == Some("json")
         && path
             .file_stem()

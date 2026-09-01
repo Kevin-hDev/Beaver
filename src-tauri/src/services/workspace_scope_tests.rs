@@ -55,3 +55,25 @@ fn corrupt_ancestry_fails_closed() {
 
     assert!(resolve_from_metas(&orphan_id, &[orphan]).is_err());
 }
+
+#[tokio::test]
+async fn deleted_project_reference_falls_back_to_the_root_session_scope() {
+    let session = super::agent_local::session_store::create_full(
+        "Orphan project",
+        "model",
+        "provider",
+        false,
+        Some("deleted-project".into()),
+    )
+    .await
+    .expect("create session");
+
+    let scope = super::workspace_scope::resolve(&session.id)
+        .await
+        .expect("missing project is a recoverable owner transition");
+
+    assert_eq!(scope, WorkspaceScope::Session(session.id.clone()));
+    super::agent_local::session_store::delete_one(&session.id)
+        .await
+        .expect("cleanup session");
+}

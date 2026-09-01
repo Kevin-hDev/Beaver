@@ -1,4 +1,4 @@
-use super::cwd_resolver::resolve_with;
+use super::cwd_resolver::{resolve, resolve_with};
 use std::path::Path;
 
 const INVALID: &str = "terminal-cwd-invalid";
@@ -57,6 +57,43 @@ async fn directoryless_session_group_uses_its_workspace_instead_of_the_global_ho
     .unwrap();
 
     assert_eq!(resolved, dunce::canonicalize(workspace).unwrap());
+}
+
+#[tokio::test]
+async fn session_group_survives_a_deleted_project_reference() {
+    let mut session = crate::services::agent_local::session_store::create_full(
+        "Deleted project terminal",
+        "model",
+        "provider",
+        false,
+        Some("deleted-project".into()),
+    )
+    .await
+    .expect("create session");
+    session.messages.push(
+        serde_json::from_value(serde_json::json!({
+            "id": uuid::Uuid::new_v4().to_string(),
+            "turn_id": uuid::Uuid::new_v4().to_string(),
+            "role": "user",
+            "content": "terminal workspace",
+            "files": [],
+            "timestamp": "2026-09-01T00:00:00Z",
+            "tokens": 0
+        }))
+        .expect("user message"),
+    );
+    crate::services::agent_local::session_store::save(&session)
+        .await
+        .expect("save session message");
+
+    let resolved = resolve(&format!("session:{}", session.id))
+        .await
+        .expect("terminal workspace remains available");
+
+    assert!(resolved.is_dir());
+    crate::services::agent_local::session_store::delete_one(&session.id)
+        .await
+        .expect("cleanup session");
 }
 
 #[tokio::test]

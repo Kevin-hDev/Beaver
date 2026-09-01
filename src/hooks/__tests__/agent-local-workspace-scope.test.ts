@@ -28,15 +28,15 @@ describe("terminalWorkspaceGroupKey", () => {
       session("two", { project_id: "project-a" }),
     ];
 
-    expect(terminalWorkspaceGroupKey(sessions[0], sessions)).toBe("project-a");
-    expect(terminalWorkspaceGroupKey(sessions[1], sessions)).toBe("project-a");
+    expect(terminalWorkspaceGroupKey(sessions[0], sessions, ["project-a"])).toBe("project-a");
+    expect(terminalWorkspaceGroupKey(sessions[1], sessions, ["project-a"])).toBe("project-a");
   });
 
   it("sépare deux discussions sans projet", () => {
     const sessions = [session("one"), session("two")];
 
-    expect(terminalWorkspaceGroupKey(sessions[0], sessions)).toBe("session:one");
-    expect(terminalWorkspaceGroupKey(sessions[1], sessions)).toBe("session:two");
+    expect(terminalWorkspaceGroupKey(sessions[0], sessions, [])).toBe("session:one");
+    expect(terminalWorkspaceGroupKey(sessions[1], sessions, [])).toBe("session:two");
   });
 
   it("rattache les clones et sous-agents sans projet à leur discussion racine", () => {
@@ -46,8 +46,15 @@ describe("terminalWorkspaceGroupKey", () => {
       session("child", { parent_session_id: "clone" }),
     ];
 
-    expect(terminalWorkspaceGroupKey(sessions[1], sessions)).toBe("session:root");
-    expect(terminalWorkspaceGroupKey(sessions[2], sessions)).toBe("session:root");
+    expect(terminalWorkspaceGroupKey(sessions[1], sessions, [])).toBe("session:root");
+    expect(terminalWorkspaceGroupKey(sessions[2], sessions, [])).toBe("session:root");
+  });
+
+  it("traite un projet supprimé comme absent pour le groupe actif et les groupes valides", () => {
+    const sessions = [session("orphan", { project_id: "deleted-project" })];
+
+    expect(terminalWorkspaceGroupKey(sessions[0], sessions, [])).toBe("session:orphan");
+    expect(terminalWorkspaceGroupKeys(sessions, [])).toEqual(["session:orphan"]);
   });
 
   it("ne conserve que les groupes des discussions racines et des projets existants", () => {

@@ -12,6 +12,7 @@ import {
   MAX_GROUPS,
   MAX_TABS_PER_GROUP,
   MAX_TOTAL_TABS,
+  DEFAULT_GROUP_KEY,
   normalizeTerminalLabel,
 } from "./terminal-types";
 import type { TerminalGroup, TerminalTab } from "./terminal-types";
@@ -79,6 +80,11 @@ export function useTerminal(
     // eslint-disable-next-line react-hooks/set-state-in-effect -- readiness authorizes one cleanup pass
     setGroups((previous) => {
       if ([...previous.keys()].every((key) => valid.has(key))) return previous;
+      if (previous.has(DEFAULT_GROUP_KEY) && !valid.has(DEFAULT_GROUP_KEY)) {
+        // L'ancien groupe était partagé entre toutes les discussions sans projet :
+        // l'attribuer à l'une d'elles recréerait la fuite que l'isolation supprime.
+        showToast(i18n.t("terminal.legacyTabsRemoved"), "info");
+      }
       const next = new Map(previous);
       for (const key of next.keys()) {
         if (!valid.has(key)) next.delete(key);

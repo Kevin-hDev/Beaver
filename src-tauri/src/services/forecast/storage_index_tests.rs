@@ -88,7 +88,10 @@ fn a_full_index_never_evicts_another_workspace() {
     inserted.id = uuid::Uuid::new_v4().to_string();
     inserted.workspace = ForecastWorkspace::Project("project-b".into());
 
-    assert!(upsert_entries(&mut entries, inserted).is_err());
+    assert_eq!(
+        upsert_entries(&mut entries, inserted),
+        Err("forecast-capacity-reached".to_string()),
+    );
     assert_eq!(
         entries
             .iter()

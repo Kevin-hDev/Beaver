@@ -1,4 +1,4 @@
-use super::session_store::{get, list, validate_session_id};
+use super::session_store::{get, validate_session_id};
 #[cfg(test)]
 use super::session_store::{lock_session, save};
 
@@ -60,7 +60,9 @@ where
     F: FnOnce() -> Fut,
     Fut: std::future::Future<Output = ()>,
 {
-    let all = list().await?;
+    // Les sessions archivées doivent être détachées elles aussi : elles peuvent
+    // être restaurées après la suppression du projet.
+    let all = super::session_index::read_index().await?;
     after_list().await;
     for meta in all {
         if meta.project_id.as_deref() == Some(project_id) {

@@ -8,6 +8,7 @@ use super::types::ForecastAnalysisMeta;
 use crate::services::workspace_scope::WorkspaceScope;
 
 const INDEX_SCHEMA_VERSION: u32 = 1;
+const CAPACITY_REACHED: &str = "forecast-capacity-reached";
 static INDEX_LOCK: Mutex<()> = Mutex::const_new(());
 
 #[derive(Serialize, Deserialize)]
@@ -181,7 +182,7 @@ fn upsert_entries(
         let position = entries
             .iter()
             .position(|entry| entry.workspace == meta.workspace)
-            .ok_or_else(|| "Capacité Forecast atteinte".to_string())?;
+            .ok_or_else(|| CAPACITY_REACHED.to_string())?;
         vec![entries.remove(position).id]
     } else {
         Vec::new()

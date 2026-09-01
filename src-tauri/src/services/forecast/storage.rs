@@ -14,13 +14,24 @@ pub use super::storage_scope::{
     save_for_session,
 };
 
-static SAVE_LOCK: Mutex<()> = Mutex::const_new(());
+pub(super) static SAVE_LOCK: Mutex<()> = Mutex::const_new(());
 
 pub async fn save(result: &mut ForecastResult) -> Result<(), String> {
+    let _lifecycle_guard = super::workspace_lifecycle::lock().await;
+    if result.workspace != crate::services::workspace_scope::WorkspaceScope::Legacy {
+        let snapshot = crate::services::workspace_scope::WorkspaceSnapshot::load().await?;
+        if !snapshot.is_live(&result.workspace) {
+            return Err("Espace de travail indisponible".into());
+        }
+    }
+    let _save_guard = SAVE_LOCK.lock().await;
+    save_locked(result).await
+}
+
+pub(super) async fn save_locked(result: &mut ForecastResult) -> Result<(), String> {
     validate_analysis_id(&result.id)?;
     result.name = validate_analysis_name(&result.name)?;
     validate_session_id(result.session_id.as_deref())?;
-    let _save_guard = SAVE_LOCK.lock().await;
     let target = analysis_path_for_write(&result.id).await?;
     let previous = read_existing(&target).await?;
     let stored_revision = previous
@@ -76,6 +87,7 @@ pub async fn exists(id: &str) -> Result<bool, String> {
 }
 
 pub async fn delete(id: &str) -> Result<(), String> {
+    let _lifecycle_guard = super::workspace_lifecycle::lock().await;
     validate_analysis_id(id)?;
     let _save_guard = SAVE_LOCK.lock().await;
     let target = analysis_path_for_write(id).await?;

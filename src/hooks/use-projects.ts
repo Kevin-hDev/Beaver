@@ -54,12 +54,14 @@ export function useProjects() {
   );
 
   const remove = useCallback(
-    async (id: string) => {
+    async (id: string): Promise<boolean> => {
       try {
         await invoke("delete_project", { id });
         await refresh();
+        return true;
       } catch (error) {
         showToast(localStoreErrorMessage(error, i18n.t), "error");
+        return false;
       }
     },
     [refresh],

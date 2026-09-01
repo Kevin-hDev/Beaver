@@ -72,6 +72,7 @@ pub(crate) fn typescript_bindings() -> String {
         session::ContinuityRequirement::decl(&config),
         session::ContinuityState::decl(&config),
         session::ContinuityCapability::decl(&config),
+        crate::services::workspace_scope::WorkspaceScope::decl(&config),
         session::AgentSessionView::decl(&config),
         SessionMetadataPatch::decl(&config),
         EditUserMessageInput::decl(&config),

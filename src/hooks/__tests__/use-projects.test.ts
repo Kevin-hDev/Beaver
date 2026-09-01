@@ -90,4 +90,17 @@ describe("useProjects", () => {
       "error",
     );
   });
+
+  it("indique si une suppression a réellement abouti", async () => {
+    vi.mocked(invoke)
+      .mockResolvedValueOnce([recovered])
+      .mockRejectedValueOnce("project-store-unavailable")
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce([]);
+    const { result } = renderHook(() => useProjects());
+    await waitFor(() => expect(result.current.projects).toEqual([recovered]));
+
+    await expect(result.current.remove(recovered.id)).resolves.toBe(false);
+    await expect(result.current.remove(recovered.id)).resolves.toBe(true);
+  });
 });

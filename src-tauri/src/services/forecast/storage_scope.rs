@@ -26,6 +26,8 @@ pub async fn save_for_session(session_id: &str, result: &mut ForecastResult) -> 
 }
 
 pub async fn list_for_session(session_id: &str) -> Result<Vec<ForecastAnalysisMeta>, String> {
+    crate::services::agent_local::session_store::validate_session_id(session_id)?;
+    repair_orphaned_owners().await?;
     let workspace = crate::services::workspace_scope::resolve(session_id).await?;
     let entries = super::storage_index::list().await?;
     let mut visible = Vec::new();
@@ -52,9 +54,93 @@ pub async fn list_for_session(session_id: &str) -> Result<Vec<ForecastAnalysisMe
     Ok(visible)
 }
 
+#[cfg(test)]
+pub(crate) async fn release_workspace(
+    workspace: &ForecastWorkspace,
+    deleted_session_ids: &[String],
+) -> Result<(), String> {
+    let _guard = super::workspace_lifecycle::lock().await;
+    release_workspace_locked(Some(workspace), deleted_session_ids).await
+}
+
+pub(crate) async fn release_workspace_locked(
+    workspace: Option<&ForecastWorkspace>,
+    deleted_session_ids: &[String],
+) -> Result<(), String> {
+    let workspaces = workspace.into_iter().cloned().collect::<Vec<_>>();
+    release_workspaces_locked(&workspaces, deleted_session_ids).await
+}
+
+async fn release_workspaces_locked(
+    workspaces: &[ForecastWorkspace],
+    deleted_session_ids: &[String],
+) -> Result<(), String> {
+    let mut staged_profiles = Vec::with_capacity(workspaces.len());
+    for workspace in workspaces {
+        staged_profiles.push((
+            workspace.clone(),
+            super::data_profiles_lifecycle::stage_release(workspace).await?,
+        ));
+    }
+    let released = workspaces.iter().collect::<std::collections::HashSet<_>>();
+    let deleted = deleted_session_ids
+        .iter()
+        .collect::<std::collections::HashSet<_>>();
+    let _save_guard = super::storage::SAVE_LOCK.lock().await;
+    for entry in super::storage_index::list().await? {
+        let releases_workspace = released.contains(&entry.workspace);
+        let releases_legacy_owner = entry.workspace == ForecastWorkspace::Legacy
+            && entry
+                .session_id
+                .as_ref()
+                .is_some_and(|session_id| deleted.contains(session_id));
+        if !releases_workspace && !releases_legacy_owner {
+            continue;
+        }
+        let mut analysis = super::storage::load(&entry.id).await?;
+        analysis.workspace = ForecastWorkspace::Legacy;
+        analysis.session_id = None;
+        super::storage::save_locked(&mut analysis).await?;
+    }
+    for (workspace, profile_ids) in staged_profiles {
+        super::data_profiles_lifecycle::commit_release(&workspace, &profile_ids).await?;
+    }
+    Ok(())
+}
+
+async fn repair_orphaned_owners() -> Result<(), String> {
+    let _guard = super::workspace_lifecycle::lock().await;
+    let snapshot = crate::services::workspace_scope::WorkspaceSnapshot::load().await?;
+    let entries = super::storage_index::list().await?;
+    let workspaces = entries
+        .iter()
+        .filter(|entry| {
+            entry.workspace != ForecastWorkspace::Legacy && !snapshot.is_live(&entry.workspace)
+        })
+        .map(|entry| entry.workspace.clone())
+        .collect::<std::collections::HashSet<_>>()
+        .into_iter()
+        .collect::<Vec<_>>();
+    let deleted_sessions = entries
+        .iter()
+        .filter(|entry| entry.workspace == ForecastWorkspace::Legacy)
+        .filter_map(|entry| entry.session_id.as_ref())
+        .filter(|session_id| !snapshot.contains_session(session_id))
+        .cloned()
+        .collect::<std::collections::HashSet<_>>()
+        .into_iter()
+        .collect::<Vec<_>>();
+    if workspaces.is_empty() && deleted_sessions.is_empty() {
+        return Ok(());
+    }
+    release_workspaces_locked(&workspaces, &deleted_sessions).await
+}
+
 pub async fn list_unassigned_for_session(
     session_id: &str,
 ) -> Result<Vec<ForecastAnalysisMeta>, String> {
+    crate::services::agent_local::session_store::validate_session_id(session_id)?;
+    repair_orphaned_owners().await?;
     crate::services::workspace_scope::resolve(session_id).await?;
     Ok(super::storage_index::list()
         .await?
@@ -137,3 +223,7 @@ pub async fn rename_for_session(
 fn access_error() -> String {
     "Analyse introuvable".into()
 }
+
+#[cfg(test)]
+#[path = "storage_scope_tests.rs"]
+mod tests;

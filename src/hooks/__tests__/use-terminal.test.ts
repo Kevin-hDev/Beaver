@@ -202,6 +202,21 @@ describe("useTerminal", () => {
     expect(saveMock).toHaveBeenCalledWith({ version: 1, groups: {} });
   });
 
+  it("signale la suppression des anciens onglets globaux devenus impossibles à attribuer", async () => {
+    loadMock.mockResolvedValue({
+      version: 1,
+      groups: { __default__: [{ label: "legacy" }] },
+    });
+    const { result } = renderHook(() => useTerminal("session:one", "", {
+      validGroupKeys: ["session:one"],
+      projectLoadState: "ready",
+    }));
+
+    await waitFor(() => expect(result.current.persistenceStatus).toBe("healthy"));
+    await waitFor(() => expect(saveMock).toHaveBeenCalledWith({ version: 1, groups: {} }));
+    expect(showToast).toHaveBeenCalledWith("terminal.legacyTabsRemoved", "info");
+  });
+
   it("normalise un renommage valide et refuse les libellés invalides", async () => {
     const { result } = renderHook(() => useTerminal(GROUP_KEY, DEFAULT_CWD, ready()));
     await waitFor(() => expect(result.current.persistenceStatus).toBe("healthy"));

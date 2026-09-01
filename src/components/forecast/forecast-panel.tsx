@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { showToast } from "@/lib/toast-emitter";
+import { forecastLaunchErrorKey } from "./forecast-errors";
 import { invoke } from "@tauri-apps/api/core";
 import type { ForecastSection } from "@/hooks/use-forecast-panel";
 import { ForecastHeader } from "./forecast-header";
@@ -120,8 +121,8 @@ function ForecastPanelContent({
       });
       setDraft(null);
       onLoadAnalysis(result.id);
-    } catch {
-      showToast(t("forecast.errors.launchFailed"), "error");
+    } catch (error) {
+      showToast(t(forecastLaunchErrorKey(error)), "error");
     } finally {
       setLaunching(false);
     }

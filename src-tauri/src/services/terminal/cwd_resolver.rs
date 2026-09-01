@@ -27,8 +27,12 @@ pub async fn resolve(group_key: &str) -> Result<PathBuf, String> {
 
 async fn session_directory(session_id: &str) -> Result<String, String> {
     let session = crate::services::agent_local::session_store::get(session_id).await?;
-    if session.project_id.is_some() {
-        return Err(invalid());
+    if let Some(project_id) = session.project_id.as_deref() {
+        match project_store::find(project_id).await {
+            Ok(Some(_)) => return Err(invalid()),
+            Ok(None) => {}
+            Err(_) => return Err(invalid()),
+        }
     }
     let path = if session.working_dir_managed || session.working_dir.trim().is_empty() {
         let workspace = crate::services::agent_local::session_workspace::ensure(&session).await?;

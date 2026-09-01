@@ -1223,6 +1223,7 @@
     "resizePanel": "Ajuster la hauteur du panneau",
     "tabsLoadFailed": "Impossible de restaurer les onglets du terminal. Redémarrez Beaver pour réessayer.",
     "tabsRecovered": "Impossible de restaurer les onglets du terminal. Une session vide a été ouverte.",
+    "legacyTabsRemoved": "Les anciens onglets partagés ne pouvaient pas être attribués sans risque et ont été retirés.",
     "tabsSaveFailed": "Impossible d’enregistrer les onglets du terminal. Redémarrez Beaver pour réessayer.",
     "tabLimitReached": "La limite d’onglets du terminal est atteinte.",
     "liveLimitReached": "La limite de terminaux actifs est atteinte. Fermez un onglet pour réessayer.",
@@ -2341,7 +2342,8 @@
     },
     "errors": {
       "importFailed": "Import impossible. Vérifie le format du fichier.",
-      "launchFailed": "Le calcul a échoué. Vérifie les colonnes, le modèle et la clé API."
+      "launchFailed": "Le calcul a échoué. Vérifie les colonnes, le modèle et la clé API.",
+      "capacityReached": "Le stockage Forecast est plein. Supprime d’anciennes analyses puis réessaie."
     },
     "modelConfig": {
       "sidebarTitle": "Config",

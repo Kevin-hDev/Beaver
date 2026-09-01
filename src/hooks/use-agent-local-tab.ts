@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useAgentSessions } from "@/hooks/use-agent-sessions";
 import { useProjects } from "@/hooks/use-projects";
 import { useTerminal } from "@/hooks/use-terminal";
+import { DEFAULT_GROUP_KEY } from "@/hooks/terminal-types";
 import { useDefaultModel } from "@/hooks/use-default-model";
 import { useAvailableModels } from "@/hooks/use-available-models";
 import { useSessionActions } from "@/hooks/use-session-actions";
@@ -47,15 +48,16 @@ export function useAgentLocalTab({
   const activeProject = activeSession?.project_id
     ? projectsHook.projects.find((p) => p.id === activeSession.project_id)
     : null;
+  const projectIds = useMemo(
+    () => projectsHook.projects.map((project) => project.id),
+    [projectsHook.projects],
+  );
   const terminalGroupKey = activeSession
-    ? terminalWorkspaceGroupKey(activeSession, sessions)
-    : "__default__";
+    ? terminalWorkspaceGroupKey(activeSession, sessions, projectIds)
+    : DEFAULT_GROUP_KEY;
   const terminalCwd = activeProject?.path || "";
   const terminalState = useTerminal(terminalGroupKey, terminalCwd, {
-    validGroupKeys: terminalWorkspaceGroupKeys(
-      sessions,
-      projectsHook.projects.map((project) => project.id),
-    ),
+    validGroupKeys: terminalWorkspaceGroupKeys(sessions, projectIds),
     projectLoadState: projectsHook.loadState,
     defaultLabel: activeProject?.name ?? activeSession?.name,
   });
@@ -180,13 +182,13 @@ export function useAgentLocalTab({
     focusActiveSelector: "[data-nav-zone='list'] [data-nav-active='true']",
   });
 
-  const handleDeleteProject = useCallback((projectId: string) => {
+  const handleDeleteProject = useCallback(async (projectId: string) => {
+    if (!(await projectsHook.remove(projectId))) return;
     const entries = terminalState.getGroupPtyEntries(projectId);
     for (const { id, token } of entries) {
       invoke("pty_kill", { id, token }).catch(() => {});
     }
     terminalState.removeGroup(projectId);
-    void projectsHook.remove(projectId);
   }, [terminalState, projectsHook]);
 
   const handleArchiveSession = useCallback(async (id: string) => {
@@ -196,7 +198,9 @@ export function useAgentLocalTab({
 
   const handleDeleteSession = useCallback(async (id: string) => {
     const session = sessions.find((candidate) => candidate.id === id);
-    const ownedGroup = session ? terminalWorkspaceGroupKey(session, sessions) : null;
+    const ownedGroup = session
+      ? terminalWorkspaceGroupKey(session, sessions, projectIds)
+      : null;
     await handleArchiveSession(id);
     if (ownedGroup === `session:${id}`) {
       for (const { id: ptyId, token } of terminalState.getGroupPtyEntries(ownedGroup)) {
@@ -205,7 +209,7 @@ export function useAgentLocalTab({
       terminalState.removeGroup(ownedGroup);
     }
     onSessionChange?.(null);
-  }, [handleArchiveSession, onSessionChange, sessions, terminalState]);
+  }, [handleArchiveSession, onSessionChange, projectIds, sessions, terminalState]);
 
   return {
     sessions, refresh, rename, reorderSessions, reorderPinned, remove, archive, togglePin,

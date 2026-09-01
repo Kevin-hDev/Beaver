@@ -14,6 +14,7 @@ mod client_quantiles;
 pub mod data_fingerprint;
 mod data_profile_migration;
 pub mod data_profiles;
+mod data_profiles_lifecycle;
 mod data_profiles_load;
 pub mod data_quality;
 mod dev_update_sources;
@@ -90,6 +91,7 @@ mod work_supervision;
 pub mod workbench_context;
 pub mod workbench_drafts;
 pub mod workbench_geometry;
+pub mod workspace_lifecycle;
 
 #[cfg(test)]
 mod auto_selection_request_tests;

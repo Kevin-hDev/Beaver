@@ -1171,6 +1171,7 @@
     "resizePanel": "Adjust panel height",
     "tabsLoadFailed": "Terminal tabs could not be restored. Restart Beaver to try again.",
     "tabsRecovered": "Terminal tabs could not be restored. An empty session was opened.",
+    "legacyTabsRemoved": "Old shared terminal tabs could not be assigned safely and were removed.",
     "tabsSaveFailed": "Terminal tabs could not be saved. Restart Beaver to try again.",
     "tabLimitReached": "The terminal tab limit has been reached.",
     "liveLimitReached": "The active terminal limit has been reached. Close a tab to try again.",
@@ -2289,7 +2290,8 @@
     },
     "errors": {
       "importFailed": "Import failed. Check the file format.",
-      "launchFailed": "The calculation failed. Check the columns, model, and API key."
+      "launchFailed": "The calculation failed. Check the columns, model, and API key.",
+      "capacityReached": "Forecast storage is full. Delete older analyses, then try again."
     },
     "modelConfig": {
       "sidebarTitle": "Config",
