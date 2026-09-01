@@ -2,7 +2,19 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { getForecastFamilyLabel } from "../forecast-model-meta";
 
-const LOCALES = ["fr", "en", "es", "de", "it", "zh", "ja"] as const;
+/* Chemins littéraux : la règle de sécurité du projet refuse une lecture de
+   fichier dont le chemin est assemblé à l'exécution. */
+const BUNDLES = {
+  fr: "src/i18n/fr.json",
+  en: "src/i18n/en.json",
+  es: "src/i18n/es.json",
+  de: "src/i18n/de.json",
+  it: "src/i18n/it.json",
+  zh: "src/i18n/zh.json",
+  ja: "src/i18n/ja.json",
+} as const;
+
+const LOCALES = Object.keys(BUNDLES) as (keyof typeof BUNDLES)[];
 
 /* Les familles viennent du registre Rust, seule autorité : une famille ajoutée
    là-bas sans son nom ici s'afficherait à l'écran sous son identifiant. */
@@ -15,8 +27,8 @@ function familiesFromRegistry(): string[] {
   return [...found];
 }
 
-function translations(locale: string): Record<string, string> {
-  const bundle = JSON.parse(readFileSync(`src/i18n/${locale}.json`, "utf8")) as {
+function translations(locale: keyof typeof BUNDLES): Record<string, string> {
+  const bundle = JSON.parse(readFileSync(BUNDLES[locale], "utf8")) as {
     forecast: { models: { families?: Record<string, string> } };
   };
   return bundle.forecast.models.families ?? {};

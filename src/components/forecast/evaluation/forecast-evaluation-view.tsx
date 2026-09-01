@@ -63,14 +63,14 @@ export function ForecastEvaluationView({ analysisId, mode }: ForecastEvaluationV
           )}
         </div>
         {mode === "evaluation" ? (
-          <button className="fcwe-run" type="button" disabled={running} onClick={() => void run()}>
+          <button className="btn btn-sm btn-primary fcwe-run" type="button" disabled={running} onClick={() => void run()}>
             {running
               ? t("forecast.workbench.evaluation.running")
               : t("forecast.workbench.evaluation.run")}
           </button>
         ) : successfulModels.length >= 2 ? (
           <button
-            className="fcwe-run"
+            className="btn btn-sm btn-primary fcwe-run"
             type="button"
             disabled={ensembleRunning}
             onClick={() => void createEnsemble()}

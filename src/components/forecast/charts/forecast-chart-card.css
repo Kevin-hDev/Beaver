@@ -34,25 +34,10 @@
   max-width: calc(50% - 40px);
 }
 
+/* Dans un en-tête de carte compact, plus bas qu'une rangée de boutons. */
 .fcrd-toggle {
-  width: 22px;
-  height: 22px;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-radius: var(--radius-xs);
-  background: transparent;
-  color: var(--ink-faint);
-  cursor: pointer;
-  transition: color var(--ease-smooth), background var(--ease-smooth);
-  flex-shrink: 0;
-}
-
-.fcrd-toggle:hover {
-  color: var(--ink);
-  background: var(--surface-hover);
+  width: var(--chrome-icon-lg);
+  height: var(--chrome-icon-lg);
 }
 
 .fcrd-chevron {

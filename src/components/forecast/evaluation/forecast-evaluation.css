@@ -51,26 +51,10 @@
   margin-bottom: var(--space-md);
 }
 
+/* Forme, couleurs et survol viennent de `.btn` : ne reste ici que la place
+   que ce bouton occupe dans sa barre. */
 .fcwe-run {
   flex: 0 0 auto;
-  border: 1px solid var(--pulse);
-  border-radius: var(--radius-sm);
-  padding: var(--space-sm) var(--space-md);
-  background: var(--pulse-muted);
-  color: var(--pulse);
-  font: inherit;
-  font-size: var(--text-sm);
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.fcwe-run:hover:not(:disabled) {
-  background: var(--surface-hover);
-}
-
-.fcwe-run:disabled {
-  opacity: 0.55;
-  cursor: wait;
 }
 
 .fcwe-warning {

@@ -95,7 +95,7 @@ export function ForecastConfig({
   return (
     <div className="fcc-root">
       <div className="fcc-header">
-        <button className="fcc-back" onClick={onBack}>{t("forecast.config.back")}</button>
+        <button className="btn btn-sm btn-ghost fcc-back" type="button" onClick={onBack}>{t("forecast.config.back")}</button>
         <span className="fcc-title">{t("forecast.config.title")}</span>
       </div>
       <div className="fcc-form">
@@ -185,7 +185,7 @@ export function ForecastConfig({
         )}
       </div>
       <div className="fcc-footer">
-        <button className="fcc-launch" disabled={!canLaunch || launching}
+        <button className="btn btn-sm btn-primary fcc-launch" disabled={!canLaunch || launching}
           onClick={() => onLaunch({
             targetColumn: target,
             dateColumn: dateCol,

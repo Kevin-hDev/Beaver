@@ -85,7 +85,7 @@ export function ForecastScenarioRow({
         <div ref={rootRef} className="fcs-row-actions">
           {confirmDelete && (
             <button
-              className="fcs-confirm-delete"
+              className="btn btn-sm btn-danger fcs-confirm-delete"
               type="button"
               onClick={() => {
                 onDelete(scenario.id);

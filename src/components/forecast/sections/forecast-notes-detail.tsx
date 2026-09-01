@@ -53,7 +53,7 @@ export function ForecastNotesDetail(props: ForecastNotesDetailProps) {
         <div className="fcn-detail-actions">
           {confirmDelete && (
             <button
-              className="fcn-confirm-delete"
+              className="btn btn-sm btn-danger fcn-confirm-delete"
               type="button"
               onClick={() => {
                 props.onDelete(props.note as ForecastNote);

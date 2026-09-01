@@ -177,7 +177,7 @@ export function ForecastChart(props: ForecastChartProps) {
       {!props.compact && (
         <div ref={controlsRef} className="fcc-chart-controls">
           <Tooltip label={i18n.t("forecast.chart.resetZoom")}>
-            <button className="fcc-chart-reset" type="button" onClick={handleResetZoom}>
+            <button className="icon-btn fcc-chart-reset" type="button" onClick={handleResetZoom}>
               <ArrowsClockwise size="var(--icon-13)" />
             </button>
           </Tooltip>

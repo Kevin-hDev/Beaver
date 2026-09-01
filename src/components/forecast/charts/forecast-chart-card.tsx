@@ -67,7 +67,7 @@ export function ForecastChartCard({
         {headerCenter ? <div className="fcrd-center">{headerCenter}</div> : null}
         <button
           type="button"
-          className="fcrd-toggle"
+          className="icon-btn fcrd-toggle"
           aria-label={t(open ? "forecast.chartCard.collapse" : "forecast.chartCard.expand")}
           aria-expanded={open}
           onClick={() => setOpen((current) => !current)}

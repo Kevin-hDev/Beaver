@@ -23,17 +23,8 @@
 }
 
 .fs-back {
-  background: none;
-  border: none;
-  color: var(--ink-muted);
-  cursor: pointer;
-  font-size: var(--text-xs);
-  padding: 0;
-  margin-bottom: 8px;
-}
-
-.fs-back:hover {
-  color: var(--ink);
+  margin-left: calc(var(--chrome-3) * -1);
+  margin-bottom: var(--chrome-2);
 }
 
 .fs-section-title {

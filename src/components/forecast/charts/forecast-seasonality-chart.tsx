@@ -164,12 +164,12 @@ export function ForecastSeasonalityChart({
           })}
           <button
             type="button"
-            className="fcse-action"
+            className="btn btn-ghost fcse-action"
             onClick={() => setVisible(model.years.map((year) => year.year))}
           >
             {t("forecast.companion.showAll")}
           </button>
-          <button type="button" className="fcse-action" onClick={() => setVisible([])}>
+          <button type="button" className="btn btn-ghost fcse-action" onClick={() => setVisible([])}>
             {t("forecast.companion.showNone")}
           </button>
         </div>

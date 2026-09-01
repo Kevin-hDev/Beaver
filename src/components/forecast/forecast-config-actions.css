@@ -4,34 +4,10 @@
   flex-shrink: 0;
 }
 
-/* Launch action — full-width alias of the shared .btn system
-   (src/styles/buttons.css) with the shared 28px geometry and primary colors. */
+/* Seule la pleine largeur lui est propre : c'est l'action unique du pied de
+   panneau. Le reste vient de `.btn`. */
 .fcc-launch {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--chrome-2);
   width: 100%;
-  height: 28px;
-  padding: 0 var(--chrome-3);
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  background: var(--pulse);
-  color: var(--ink-on-pulse);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background var(--ease-smooth), color var(--ease-smooth), border-color var(--ease-smooth);
-}
-
-.fcc-launch:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--pulse) 90%, white);
-}
-
-.fcc-launch:disabled {
-  opacity: 0.6;
-  cursor: default;
 }
 
 .fcc-error {

@@ -35,22 +35,11 @@
   pointer-events: auto;
 }
 
+/* Posé dans la barre de zoom sous le graphe, où la hauteur de bouton
+   courante écraserait la règle : seule sa taille lui est propre. */
 .fcc-chart-reset {
-  width: 16px;
-  height: 16px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: var(--ink-faint);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: color var(--ease-smooth);
-}
-
-.fcc-chart-reset:hover {
-  color: var(--ink);
+  width: var(--chrome-icon-md);
+  height: var(--chrome-icon-md);
 }
 
 .fcc-chart-zoom {
