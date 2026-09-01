@@ -117,13 +117,12 @@ export function TerminalPanel({
 
   useEffect(() => {
     const presentTabIds = new Set(allTabs.map(({ tab }) => tab.id));
-    setStartedTabIds((current) => {
-      const next = new Set([...current].filter((id) => presentTabIds.has(id)));
-      if (next.size === current.size) return current;
-      lastRejectedTabId.current = null;
-      return next;
-    });
-  }, [allTabs]);
+    const next = new Set([...startedTabIds].filter((id) => presentTabIds.has(id)));
+    if (next.size === startedTabIds.size) return;
+    lastRejectedTabId.current = null;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- la liste durable retire les instances disparues
+    setStartedTabIds(next);
+  }, [allTabs, startedTabIds]);
 
   const handleResizeStart = useCallback(
     (e: React.PointerEvent) => {

@@ -37,6 +37,12 @@ export function useAgentLocalControlledTerminal({ navState, terminalState, termi
     onNavChange?.({ terminalOpen: nextOpen });
   }, [addTab, navState.terminalOpen, onNavChange, terminalCwd, terminalState.tabs.length]);
 
+  useEffect(() => {
+    if (navState.terminalOpen && !terminalState.loaded) {
+      onNavChange?.({ terminalOpen: false });
+    }
+  }, [navState.terminalOpen, onNavChange, terminalState.loaded]);
+
   const previousGroup = useRef({
     groupKey: terminalState.groupKey,
     count: terminalState.tabs.length,

@@ -1137,6 +1137,7 @@
     "activity": "Nuovo output in questa scheda",
     "resizePanel": "Regola l'altezza del pannello",
     "tabsLoadFailed": "Impossibile ripristinare le schede del terminale. Riavvia Beaver per riprovare.",
+    "tabsRecovered": "Impossibile ripristinare le schede del terminale. È stata aperta una sessione vuota.",
     "tabsSaveFailed": "Impossibile salvare le schede del terminale. Riavvia Beaver per riprovare.",
     "tabLimitReached": "È stato raggiunto il limite di schede del terminale.",
     "liveLimitReached": "È stato raggiunto il limite di terminali attivi. Chiudi una scheda per riprovare.",

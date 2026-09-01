@@ -10,6 +10,7 @@ import zh from "./zh.json";
 const translations = { de, en, es, fr, it: italian, ja, zh };
 const keys = [
   "tabsLoadFailed",
+  "tabsRecovered",
   "tabsSaveFailed",
   "tabLimitReached",
   "liveLimitReached",
@@ -20,7 +21,7 @@ const keys = [
 ] as const;
 
 describe("traductions de la persistance terminal", () => {
-  it.each(Object.entries(translations))("définit les huit messages en %s", (_locale, value) => {
+  it.each(Object.entries(translations))("définit les neuf messages en %s", (_locale, value) => {
     const terminal = value.terminal as Record<string, string>;
     for (const key of keys) {
       const message = terminal[key];

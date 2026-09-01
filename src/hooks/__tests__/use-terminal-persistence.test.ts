@@ -13,6 +13,7 @@ const { loadMock, saveMock } = vi.hoisted(() => ({
 vi.mock("../terminal-persistence", () => ({
   loadSavedGroups: loadMock,
   saveGroups: saveMock,
+  TERMINAL_TABS_RECOVERED: "terminal-tabs-recovered",
 }));
 vi.mock("@/lib/toast-emitter", () => ({ showToast: vi.fn() }));
 vi.mock("@/i18n", () => ({ default: { t: (key: string) => key } }));
@@ -69,6 +70,26 @@ describe("useTerminalPersistence", () => {
     expect(saveMock).not.toHaveBeenCalled();
   });
 
+  it("ne sauvegarde pas une projection identique dont seuls les groupes changent d'ordre", async () => {
+    loadMock.mockResolvedValue({
+      version: 1,
+      groups: { alpha: [{ label: "one" }], beta: [{ label: "two" }] },
+    });
+    const { result } = renderHook(() => useHarness(true));
+    await waitFor(() => expect(result.current.persistenceStatus).toBe("healthy"));
+    saveMock.mockClear();
+
+    act(() => {
+      result.current.setGroups(new Map([
+        ["beta", result.current.groups.get("beta")!],
+        ["alpha", result.current.groups.get("alpha")!],
+      ]));
+    });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(saveMock).not.toHaveBeenCalled();
+  });
+
   it("bloque les sauvegardes et demande un redémarrage après une lecture invalide", async () => {
     loadMock.mockRejectedValue(new Error("terminal-tabs-invalid"));
     const { result } = renderHook(() => useHarness(true));
@@ -77,6 +98,17 @@ describe("useTerminalPersistence", () => {
     expect(result.current.loaded).toBe(false);
     expect(showToast).toHaveBeenCalledOnce();
     expect(showToast).toHaveBeenCalledWith("terminal.tabsLoadFailed", "error");
+    expect(saveMock).not.toHaveBeenCalled();
+  });
+
+  it("repart sainement d'une session vide après récupération du fichier invalide", async () => {
+    loadMock.mockRejectedValue(new Error("terminal-tabs-recovered"));
+    const { result } = renderHook(() => useHarness(true));
+
+    await waitFor(() => expect(result.current.persistenceStatus).toBe("healthy"));
+    expect(result.current.loaded).toBe(true);
+    expect(result.current.groups.size).toBe(0);
+    expect(showToast).toHaveBeenCalledWith("terminal.tabsRecovered", "error");
     expect(saveMock).not.toHaveBeenCalled();
   });
 

@@ -20,6 +20,7 @@ function terminalFixture(overrides: Record<string, unknown> = {}) {
     activeTabId: null as string | null,
     isOpen: false,
     panelHeight: 120,
+    loaded: true,
     persistenceStatus: "healthy" as const,
     allTabs: vi.fn(() => []),
     addTab: vi.fn((): string | null => "new-tab"),
@@ -110,6 +111,22 @@ describe("useAgentLocalControlledTerminal", () => {
     }));
 
     expect(result.current.activeTabId).toBe("runtime-tab");
+  });
+
+  it("referme une navigation restaurée tant que le document durable n'est pas chargé", async () => {
+    const onNavChange = vi.fn();
+    const terminalState = terminalFixture({ loaded: false, persistenceStatus: "loading" });
+
+    renderHook(() => useAgentLocalControlledTerminal({
+      navState: { ...DEFAULT_APP_NAV.agentLocal, terminalOpen: true },
+      terminalState,
+      terminalCwd: "/project",
+      onNavChange,
+    }));
+
+    await waitFor(() => {
+      expect(onNavChange).toHaveBeenCalledWith({ terminalOpen: false });
+    });
   });
 
   it("fermer le dernier onglet ferme aussi la navigation après le rendu", async () => {

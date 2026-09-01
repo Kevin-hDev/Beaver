@@ -13,9 +13,11 @@ const MAX_TOTAL_TABS: usize = 256;
 const MAX_GROUP_KEY_BYTES: usize = 128;
 const MAX_LABEL_BYTES: usize = 512;
 const INVALID: &str = "terminal-tabs-invalid";
+const RECOVERED: &str = "terminal-tabs-recovered";
 const UNAVAILABLE: &str = "terminal-tabs-unavailable";
 
 static TERMINAL_TABS_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+type LoadResult = Result<TerminalTabsDocument, String>;
 
 #[derive(Clone, Debug, serde::Deserialize, serde::Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -49,12 +51,62 @@ impl TerminalTabsDocument {
 #[allow(dead_code)]
 pub async fn load() -> Result<TerminalTabsDocument, String> {
     let _guard = TERMINAL_TABS_LOCK.lock().await;
-    match read_bounded_regular_classified_async(path(), MAX_FILE_BYTES).await {
+    load_from(path()).await
+}
+
+pub(super) async fn load_from(path: PathBuf) -> Result<TerminalTabsDocument, String> {
+    let pending = path.with_extension("json.recovery-pending");
+    if available(tokio::fs::try_exists(&pending).await)? {
+        let source = path.with_extension("json.recovery-source");
+        if available(tokio::fs::try_exists(source).await)?
+            || !available(tokio::fs::try_exists(&path).await)?
+        {
+            return Err(unavailable());
+        }
+        available(tokio::fs::remove_file(&pending).await)?;
+    }
+    match read_bounded_regular_classified_async(path.clone(), MAX_FILE_BYTES).await {
         Ok(BoundedFile::Missing) => Ok(TerminalTabsDocument::empty()),
-        Ok(BoundedFile::Content(content)) => parse_document(&content),
-        Err(BoundedReadFailure::TooLarge) => Err(invalid()),
+        Ok(BoundedFile::Content(content)) => match parse_document(&content) {
+            Ok(document) => Ok(document),
+            Err(_) => recover_invalid(path, content).await,
+        },
+        Err(BoundedReadFailure::TooLarge) => recover_oversized(path).await,
         Err(BoundedReadFailure::Unavailable) => Err(unavailable()),
     }
+}
+
+async fn recover_oversized(path: PathBuf) -> LoadResult {
+    let backup = path.with_extension("json.corrupted");
+    let pending = path.with_extension("json.recovery-pending");
+    let source = path.with_extension("json.recovery-source");
+    available(private_store::atomic_write_async(pending.clone(), b"pending".to_vec()).await)?;
+    available(tokio::fs::rename(&path, &source).await)?;
+    if backup.exists() {
+        available(tokio::fs::remove_file(&backup).await)?;
+    }
+    available(tokio::fs::rename(source, backup).await)?;
+    reset(path).await?;
+    available(tokio::fs::remove_file(pending).await)?;
+    log::error!("[terminal-tabs] oversized-document-backed-up-and-reset");
+    Err(RECOVERED.to_string())
+}
+
+async fn recover_invalid(path: PathBuf, corrupt_data: Vec<u8>) -> LoadResult {
+    let backup = path.with_extension("json.corrupted");
+    available(private_store::atomic_write_async(backup, corrupt_data).await)?;
+    reset(path).await?;
+    log::error!("[terminal-tabs] corrupt-document-backed-up-and-reset");
+    Err(RECOVERED.to_string())
+}
+
+async fn reset(path: PathBuf) -> Result<(), String> {
+    let empty = serialize_document(&TerminalTabsDocument::empty())?;
+    available(private_store::atomic_write_async(path, empty).await)
+}
+
+fn available<T, E>(result: Result<T, E>) -> Result<T, String> {
+    result.map_err(|_| unavailable())
 }
 
 #[allow(dead_code)]

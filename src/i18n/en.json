@@ -1170,6 +1170,7 @@
     "activity": "New output in this tab",
     "resizePanel": "Adjust panel height",
     "tabsLoadFailed": "Terminal tabs could not be restored. Restart Beaver to try again.",
+    "tabsRecovered": "Terminal tabs could not be restored. An empty session was opened.",
     "tabsSaveFailed": "Terminal tabs could not be saved. Restart Beaver to try again.",
     "tabLimitReached": "The terminal tab limit has been reached.",
     "liveLimitReached": "The active terminal limit has been reached. Close a tab to try again.",

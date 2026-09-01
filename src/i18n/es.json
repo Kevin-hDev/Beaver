@@ -1141,6 +1141,7 @@
     "activity": "Nueva salida en esta pestaña",
     "resizePanel": "Ajustar la altura del panel",
     "tabsLoadFailed": "No se pudieron restaurar las pestañas del terminal. Reinicia Beaver para volver a intentarlo.",
+    "tabsRecovered": "No se pudieron restaurar las pestañas del terminal. Se abrió una sesión vacía.",
     "tabsSaveFailed": "No se pudieron guardar las pestañas del terminal. Reinicia Beaver para volver a intentarlo.",
     "tabLimitReached": "Se ha alcanzado el límite de pestañas del terminal.",
     "liveLimitReached": "Se ha alcanzado el límite de terminales activos. Cierra una pestaña para volver a intentarlo.",

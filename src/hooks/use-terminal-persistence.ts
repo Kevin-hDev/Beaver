@@ -2,7 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import i18n from "@/i18n";
 import { showToast } from "@/lib/toast-emitter";
-import { loadSavedGroups, saveGroups } from "./terminal-persistence";
+import {
+  loadSavedGroups,
+  saveGroups,
+  TERMINAL_TABS_RECOVERED,
+} from "./terminal-persistence";
 import type { TerminalTabsDocument } from "./terminal-persistence";
 import { TerminalPersistenceQueue } from "./terminal-persistence-queue";
 import { generateId } from "./terminal-types";
@@ -41,6 +45,17 @@ function projectGroups(groups: Map<string, TerminalGroup>): TerminalTabsDocument
   return { version: 1, groups: durableGroups };
 }
 
+function projectionKey(document: TerminalTabsDocument): string {
+  const groups = Object.entries(document.groups)
+    .sort(([left], [right]) => left < right ? -1 : left > right ? 1 : 0);
+  return JSON.stringify([document.version, groups]);
+}
+
+function isRecovered(error: unknown): boolean {
+  return error === TERMINAL_TABS_RECOVERED
+    || error instanceof Error && error.message === TERMINAL_TABS_RECOVERED;
+}
+
 export function useTerminalPersistence({
   groups,
   setGroups,
@@ -59,11 +74,20 @@ export function useTerminalPersistence({
     if (loadStartedRef.current) return;
     loadStartedRef.current = true;
     void loadSavedGroups().then((document) => {
-      lastProjectionRef.current = JSON.stringify(document);
+      lastProjectionRef.current = projectionKey(document);
       setGroups(restoreGroups(document));
       setLoaded(true);
       setPersistenceStatus("healthy");
-    }).catch(() => {
+    }).catch((error: unknown) => {
+      if (isRecovered(error)) {
+        const empty: TerminalTabsDocument = { version: 1, groups: {} };
+        lastProjectionRef.current = projectionKey(empty);
+        setGroups(new Map());
+        setLoaded(true);
+        setPersistenceStatus("healthy");
+        showToast(i18n.t("terminal.tabsRecovered"), "error");
+        return;
+      }
       setPersistenceStatus("error");
       showToast(i18n.t("terminal.tabsLoadFailed"), "error");
     });
@@ -72,7 +96,7 @@ export function useTerminalPersistence({
   useEffect(() => {
     if (!loaded || !canSave || persistenceStatus !== "healthy") return;
     const document = projectGroups(groups);
-    const projection = JSON.stringify(document);
+    const projection = projectionKey(document);
     if (projection === lastProjectionRef.current) return;
     lastProjectionRef.current = projection;
     const queue = queueRef.current;

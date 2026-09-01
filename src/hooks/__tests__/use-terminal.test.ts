@@ -11,6 +11,7 @@ const { loadMock, saveMock } = vi.hoisted(() => ({
 vi.mock("../terminal-persistence", () => ({
   loadSavedGroups: loadMock,
   saveGroups: saveMock,
+  TERMINAL_TABS_RECOVERED: "terminal-tabs-recovered",
 }));
 vi.mock("@/lib/toast-emitter", () => ({ showToast: vi.fn() }));
 vi.mock("@/i18n", () => ({ default: { t: (key: string) => key } }));
@@ -21,6 +22,12 @@ const ready = (validGroupKeys = [GROUP_KEY]) => ({
   validGroupKeys,
   projectLoadState: "ready" as const,
 });
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((ok) => { resolve = ok; });
+  return { promise, resolve };
+}
 
 describe("useTerminal", () => {
   beforeEach(() => {
@@ -38,6 +45,32 @@ describe("useTerminal", () => {
     expect(result.current.activeTabId).toBeNull();
     expect(result.current).not.toHaveProperty("isOpen");
     expect(result.current).not.toHaveProperty("togglePanel");
+  });
+
+  it("refuse une création tant que la restauration initiale n'est pas résolue", async () => {
+    const pending = deferred<{ version: 1; groups: Record<string, never[]> }>();
+    loadMock.mockReturnValue(pending.promise);
+    const { result } = renderHook(() => useTerminal(GROUP_KEY, DEFAULT_CWD, ready()));
+
+    let id: string | null = "unexpected";
+    act(() => { id = result.current.addTab(); });
+
+    expect(id).toBeNull();
+    expect(result.current.tabs).toEqual([]);
+    pending.resolve({ version: 1, groups: {} });
+    await waitFor(() => expect(result.current.persistenceStatus).toBe("healthy"));
+  });
+
+  it("reste inerte après un échec non récupéré de restauration", async () => {
+    loadMock.mockRejectedValue(new Error("terminal-tabs-invalid"));
+    const { result } = renderHook(() => useTerminal(GROUP_KEY, DEFAULT_CWD, ready()));
+    await waitFor(() => expect(result.current.persistenceStatus).toBe("error"));
+
+    let id: string | null = "unexpected";
+    act(() => { id = result.current.addTab(); });
+
+    expect(id).toBeNull();
+    expect(result.current.tabs).toEqual([]);
   });
 
   it("utilise le dossier par défaut comme libellé sans conserver son chemin", async () => {
@@ -261,5 +294,43 @@ describe("useTerminal", () => {
     act(() => { result.current.closeTab(firstId); });
     expect(result.current.tabs).toHaveLength(1);
     expect(result.current.activeTabId).toBe(result.current.tabs[0].id);
+  });
+
+  it("ne ressuscite pas une fermeture mise en file avant une création", async () => {
+    const { result } = renderHook(() => useTerminal(GROUP_KEY, DEFAULT_CWD, ready()));
+    await waitFor(() => expect(result.current.persistenceStatus).toBe("healthy"));
+    act(() => { result.current.addTab("/old"); });
+    const closedId = result.current.tabs[0].id;
+
+    let addedId: string | null = null;
+    act(() => {
+      result.current.closeTab(closedId);
+      addedId = result.current.addTab("/new");
+    });
+
+    expect(addedId).not.toBeNull();
+    expect(result.current.tabs.map(({ id }) => id)).toEqual([addedId]);
+    expect(result.current.tabs[0].label).toBe("new");
+  });
+
+  it("accepte une création après fermeture à la limite dans le même batch sans résurrection", async () => {
+    const { result } = renderHook(() => useTerminal(GROUP_KEY, DEFAULT_CWD, ready()));
+    await waitFor(() => expect(result.current.persistenceStatus).toBe("healthy"));
+    for (let index = 0; index < 16; index += 1) {
+      act(() => { result.current.addTab(`/tab-${index}`); });
+    }
+    const closedId = result.current.tabs[0].id;
+
+    let addedId: string | null = null;
+    act(() => {
+      result.current.closeTab(closedId);
+      addedId = result.current.addTab("/replacement");
+    });
+
+    expect(addedId).not.toBeNull();
+    expect(result.current.tabs).toHaveLength(16);
+    expect(result.current.tabs.some(({ id }) => id === closedId)).toBe(false);
+    expect(result.current.tabs.some(({ id }) => id === addedId)).toBe(true);
+    expect(showToast).not.toHaveBeenCalled();
   });
 });

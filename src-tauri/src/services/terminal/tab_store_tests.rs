@@ -1,5 +1,5 @@
 use super::tab_store::{
-    parse_document, save_with, serialize_document, validate_document, TerminalSavedTab,
+    load_from, parse_document, save_with, serialize_document, validate_document, TerminalSavedTab,
     TerminalTabsDocument,
 };
 use std::collections::BTreeMap;
@@ -187,6 +187,107 @@ async fn concurrent_saves_are_serialized() {
     assert_eq!(first, Ok(()));
     assert_eq!(second, Ok(()));
     assert_eq!(max_active.load(Ordering::SeqCst), 1);
+}
+
+#[tokio::test]
+async fn invalid_document_is_backed_up_once_and_reset_atomically() {
+    let root = tempfile::tempdir().expect("temporary terminal store");
+    let path = root.path().join("terminal-tabs.json");
+    let corrupt = b"{broken";
+    std::fs::write(&path, corrupt).expect("corrupt fixture");
+
+    assert_eq!(
+        load_from(path.clone()).await,
+        Err("terminal-tabs-recovered".into())
+    );
+    assert_eq!(
+        std::fs::read(path.with_extension("json.corrupted")).expect("bounded backup"),
+        corrupt
+    );
+    let reset = std::fs::read(path).expect("reset terminal store");
+    assert_eq!(
+        parse_document(&reset).expect("valid reset document"),
+        TerminalTabsDocument::empty()
+    );
+}
+
+#[tokio::test]
+async fn oversized_document_is_moved_without_loading_and_reset_atomically() {
+    let root = tempfile::tempdir().expect("temporary terminal store");
+    let path = root.path().join("terminal-tabs.json");
+    let oversized_len = 1024 * 1024 + 1;
+    std::fs::File::create(&path)
+        .and_then(|file| file.set_len(oversized_len))
+        .expect("oversized fixture");
+
+    assert_eq!(
+        load_from(path.clone()).await,
+        Err("terminal-tabs-recovered".into())
+    );
+    assert_eq!(
+        std::fs::metadata(path.with_extension("json.corrupted"))
+            .expect("oversized backup")
+            .len(),
+        oversized_len
+    );
+    let reset = std::fs::read(&path).expect("reset terminal store");
+    assert_eq!(
+        parse_document(&reset).expect("valid reset document"),
+        TerminalTabsDocument::empty()
+    );
+    assert_eq!(
+        std::fs::read_dir(root.path())
+            .expect("bounded files")
+            .count(),
+        2
+    );
+}
+
+#[tokio::test]
+async fn interrupted_oversized_reset_stays_fail_closed_with_backup_intact() {
+    let root = tempfile::tempdir().expect("temporary terminal store");
+    let path = root.path().join("terminal-tabs.json");
+    let backup = path.with_extension("json.corrupted");
+    let pending = path.with_extension("json.recovery-pending");
+    std::fs::File::create(&backup)
+        .and_then(|file| file.set_len(1024 * 1024 + 1))
+        .expect("oversized backup");
+    std::fs::write(&pending, b"pending").expect("recovery marker");
+
+    assert_eq!(
+        load_from(path).await,
+        Err("terminal-tabs-unavailable".into())
+    );
+    assert_eq!(
+        std::fs::metadata(backup).expect("recoverable backup").len(),
+        1024 * 1024 + 1
+    );
+}
+
+#[tokio::test]
+async fn interrupted_before_move_retries_with_active_file_and_old_backup_intact() {
+    let root = tempfile::tempdir().expect("temporary terminal store");
+    let path = root.path().join("terminal-tabs.json");
+    let backup = path.with_extension("json.corrupted");
+    let pending = path.with_extension("json.recovery-pending");
+    std::fs::File::create(&path)
+        .and_then(|file| file.set_len(1024 * 1024 + 1))
+        .expect("active oversized file");
+    std::fs::write(&backup, b"older backup").expect("older backup");
+    std::fs::write(&pending, b"pending").expect("recovery marker");
+
+    assert_eq!(
+        load_from(path.clone()).await,
+        Err("terminal-tabs-recovered".into())
+    );
+    assert_eq!(
+        std::fs::metadata(backup).expect("current backup").len(),
+        1024 * 1024 + 1
+    );
+    assert!(!pending.exists());
+    assert!(!path.with_extension("json.recovery-source").exists());
+    let reset = std::fs::read(path).expect("reset terminal store");
+    assert_eq!(parse_document(&reset), Ok(TerminalTabsDocument::empty()));
 }
 
 fn document_with(group: impl Into<String>, label: impl Into<String>) -> TerminalTabsDocument {

@@ -14,6 +14,7 @@ const MAX_GROUPS = 128;
 const MAX_TABS_PER_GROUP = 16;
 const MAX_TOTAL_TABS = 256;
 const MAX_GROUP_KEY_BYTES = 128;
+export const TERMINAL_TABS_RECOVERED = "terminal-tabs-recovered";
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);

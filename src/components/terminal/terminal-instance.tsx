@@ -34,9 +34,15 @@ export function TerminalInstance({
      état figé de la visibilité et du rappel s'ils y étaient lus directement. */
   const visibleRef = useRef(isVisible);
   const activityRef = useRef(onActivity);
+  const readyRef = useRef(onPtyReady);
+  const exitRef = useRef(onExit);
+  const toggleRef = useRef(onTogglePanel);
   useEffect(() => {
     visibleRef.current = isVisible;
     activityRef.current = onActivity;
+    readyRef.current = onPtyReady;
+    exitRef.current = onExit;
+    toggleRef.current = onTogglePanel;
   });
 
   useEffect(() => {
@@ -65,7 +71,7 @@ export function TerminalInstance({
 
       const toggleMod = IS_MAC ? e.metaKey : e.ctrlKey;
       if (toggleMod && e.code === "KeyJ") {
-        onTogglePanel?.();
+        toggleRef.current?.();
         return false;
       }
 
@@ -92,8 +98,8 @@ export function TerminalInstance({
       groupKey,
       terminal: term,
       isVisible: () => visibleRef.current,
-      onPtyReady,
-      onExit,
+      onPtyReady: (id, ptyId, token) => readyRef.current(id, ptyId, token),
+      onExit: (id) => exitRef.current(id),
       onActivity: (id, hasActivity) => activityRef.current(id, hasActivity),
     });
     void bridge.start();
