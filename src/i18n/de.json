@@ -1762,6 +1762,10 @@
       "validate": "Bestätigen",
       "cancel": "Abbrechen",
       "renameFailed": "Analyse konnte nicht umbenannt werden.",
+      "unassigned": "Nicht zugeordnete frühere Prognosen",
+      "unassignedHelp": "Wählen Sie ausdrücklich, welchem Bereich ältere Prognosen zugeordnet werden sollen.",
+      "claim": "{{name}} diesem Bereich zuordnen",
+      "claimFailed": "Diese Prognose konnte nicht zugeordnet werden.",
       "deleteFailed": "Analyse konnte nicht gelöscht werden."
     },
     "view": {

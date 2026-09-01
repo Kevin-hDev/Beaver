@@ -5,9 +5,12 @@ use tauri::{AppHandle, State};
 #[tauri::command]
 pub async fn create_forecast_scenario(
     app: AppHandle,
+    session_id: String,
     request: scenarios::ScenarioRequest,
     chronos: State<'_, sidecar::ChronosSidecar>,
 ) -> Result<ForecastResult, String> {
+    crate::services::forecast::storage::authorize_for_session(&session_id, &request.analysis_id)
+        .await?;
     let sidecar = chronos.inner().clone();
     let operation_sidecar = sidecar.clone();
     let analysis = sidecar
@@ -22,9 +25,12 @@ pub async fn create_forecast_scenario(
 #[tauri::command]
 pub async fn update_forecast_scenario(
     app: AppHandle,
+    session_id: String,
     request: scenarios::ScenarioUpdateRequest,
     chronos: State<'_, sidecar::ChronosSidecar>,
 ) -> Result<ForecastResult, String> {
+    crate::services::forecast::storage::authorize_for_session(&session_id, &request.analysis_id)
+        .await?;
     let sidecar = chronos.inner().clone();
     let operation_sidecar = sidecar.clone();
     let analysis = sidecar
@@ -39,9 +45,11 @@ pub async fn update_forecast_scenario(
 #[tauri::command]
 pub async fn delete_forecast_scenario(
     app: AppHandle,
+    session_id: String,
     analysis_id: String,
     scenario_id: String,
 ) -> Result<ForecastResult, String> {
+    crate::services::forecast::storage::authorize_for_session(&session_id, &analysis_id).await?;
     let analysis = scenarios::delete(&analysis_id, &scenario_id).await?;
     emit_updated(&app, &analysis);
     Ok(analysis)

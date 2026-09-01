@@ -1761,6 +1761,10 @@
       "validate": "确认",
       "cancel": "取消",
       "renameFailed": "无法重命名分析。",
+      "unassigned": "未分配的旧预测",
+      "unassignedHelp": "请明确选择将在项目隔离前创建的预测关联到哪个工作区。",
+      "claim": "将 {{name}} 关联到此工作区",
+      "claimFailed": "无法关联此预测。",
       "deleteFailed": "无法删除分析。"
     },
     "view": {

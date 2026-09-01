@@ -116,6 +116,8 @@ macro_rules! generate_tail {
             crate::commands::list_oauth_provider_models,
             crate::commands::run_forecast,
             crate::commands::list_forecast_analyses,
+            crate::commands::list_unassigned_forecast_analyses,
+            crate::commands::claim_legacy_forecast_analysis,
             crate::commands::get_forecast_analysis,
             crate::commands::run_forecast_backtest,
             crate::commands::create_forecast_ensemble,

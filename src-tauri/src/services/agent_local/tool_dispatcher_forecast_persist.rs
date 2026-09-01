@@ -3,22 +3,23 @@ use crate::services::forecast::{data_profiles, storage};
 use tokio_util::sync::CancellationToken;
 
 pub async fn save(
+    session_id: &str,
     forecast: &mut ForecastResult,
     request: &ForecastRequest,
     cancel: &CancellationToken,
 ) -> Result<String, String> {
     ensure_active(cancel)?;
     if let Some(profile) = &forecast.data_profile {
-        data_profiles::save(profile, request)
+        data_profiles::save(session_id, profile, request)
             .await
             .map_err(|_| "Sauvegarde du profil de données échouée".to_string())?;
     }
     ensure_active(cancel)?;
-    storage::save(forecast)
+    storage::save_for_session(session_id, forecast)
         .await
         .map_err(|_| "Sauvegarde de la prévision échouée".to_string())?;
     if cancel.is_cancelled() {
-        storage::delete(&forecast.id)
+        storage::delete_for_session(session_id, &forecast.id)
             .await
             .map_err(|_| "Annulation de la prévision incomplète".to_string())?;
         return Err("Annulé".to_string());

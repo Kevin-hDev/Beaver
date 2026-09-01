@@ -34,8 +34,7 @@
 .agent-detail-session-switching .agent-detail-chat,
 .agent-detail-session-switching .asp-panel,
 .agent-detail-session-switching .asp-slide-wrapper,
-.agent-detail-session-switching .ft-panel,
-.agent-detail-session-switching .terminal-panel {
+.agent-detail-session-switching .ft-panel {
   transition: none !important;
 }
 

@@ -28,7 +28,7 @@ pub async fn verify(
     let models = listing["models"]
         .as_array()
         .ok_or("Catalogue Forecast indisponible")?;
-    let evidence = storage::comparable_backtests(profile).await?;
+    let evidence = storage::comparable_backtests(session_id, profile).await?;
     let requested_model = (request.selection_source
         == Some(
             crate::services::forecast::provenance_types::ForecastSelectionSource::ExplicitUserOverride,

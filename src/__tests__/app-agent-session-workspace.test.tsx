@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "@/App";
-import type { AgentLocalNavState, DeepPartial } from "@/types/navigation";
+import type { AgentLocalNavState, AgentLocalWorkspaceState } from "@/types/navigation";
 
 vi.mock("@tauri-apps/api/event", () => ({
   listen: vi.fn(() => Promise.resolve(() => {})),
@@ -52,7 +52,7 @@ vi.mock("@/components/agent-local/agent-local-tab", () => ({
   }: {
     navState: AgentLocalNavState;
     onSessionChange: (id: string) => void;
-    onNavChange: (partial: DeepPartial<AgentLocalNavState>) => void;
+    onNavChange: (partial: Partial<AgentLocalWorkspaceState>) => void;
   }) => (
     <>
       <button type="button" onClick={() => onSessionChange("session-a")}>Session A</button>

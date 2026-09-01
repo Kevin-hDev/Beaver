@@ -7,7 +7,6 @@ import { clampTerminalHeight, TERMINAL_DEFAULT_HEIGHT } from "./terminal-layout"
 import { useTerminalPersistence } from "./use-terminal-persistence";
 import { closeTabInGroup as closeGroupTab, updateTab } from "./terminal-groups";
 import {
-  DEFAULT_GROUP_KEY,
   folderName,
   generateId,
   MAX_GROUPS,
@@ -22,6 +21,7 @@ export type { TerminalGroup, TerminalTab };
 interface TerminalProjectState {
   validGroupKeys: string[];
   projectLoadState: ProjectLoadState;
+  defaultLabel?: string;
 }
 
 function addTabToGroups(
@@ -47,7 +47,7 @@ function addTabToGroups(
 export function useTerminal(
   groupKey: string,
   defaultCwd: string,
-  { validGroupKeys, projectLoadState }: TerminalProjectState,
+  { validGroupKeys, projectLoadState, defaultLabel }: TerminalProjectState,
 ) {
   const [groups, setGroups] = useState<Map<string, TerminalGroup>>(new Map());
   const groupsRef = useRef(groups);
@@ -75,7 +75,7 @@ export function useTerminal(
 
   useEffect(() => {
     if (!loaded || projectLoadState !== "ready") return;
-    const valid = new Set([...validGroupKeys, DEFAULT_GROUP_KEY]);
+    const valid = new Set(validGroupKeys);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- readiness authorizes one cleanup pass
     setGroups((previous) => {
       if ([...previous.keys()].every((key) => valid.has(key))) return previous;
@@ -105,7 +105,7 @@ export function useTerminal(
 
   const addTab = useCallback((cwd?: string): string | null => {
     if (!loaded || persistenceStatus !== "healthy") return null;
-    const label = normalizeTerminalLabel(folderName(cwd || resolvedCwd));
+    const label = normalizeTerminalLabel(folderName(cwd || defaultLabel || resolvedCwd));
     if (!label) {
       showToast(i18n.t("terminal.tabLimitReached"), "error");
       return null;
@@ -127,7 +127,7 @@ export function useTerminal(
     groupsRef.current = projected;
     setGroups((previous) => addTabToGroups(previous, groupKey, tab) ?? previous);
     return tab.id;
-  }, [groupKey, loaded, persistenceStatus, resolvedCwd]);
+  }, [defaultLabel, groupKey, loaded, persistenceStatus, resolvedCwd]);
 
   const closeTabInGroup = useCallback((key: string, id: string): void => {
     mutateGroups((previous) => closeGroupTab(previous, key, id).groups);

@@ -38,6 +38,28 @@ async fn project_group_uses_only_the_canonical_registry_path() {
 }
 
 #[tokio::test]
+async fn directoryless_session_group_uses_its_workspace_instead_of_the_global_home() {
+    let root = tempfile::tempdir().unwrap();
+    let workspace = root.path().join("session-workspace");
+    std::fs::create_dir_all(&workspace).unwrap();
+    let workspace_string = workspace.to_string_lossy().into_owned();
+    let session_id = "550e8400-e29b-41d4-a716-446655440000";
+
+    let resolved = resolve_with(
+        &format!("session:{session_id}"),
+        root.path(),
+        move |received| {
+            assert_eq!(received, session_id);
+            async move { Ok(Some(workspace_string)) }
+        },
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(resolved, dunce::canonicalize(workspace).unwrap());
+}
+
+#[tokio::test]
 async fn empty_group_key_is_invalid() {
     assert_invalid(resolve_with("", Path::new("/"), unreachable_find).await);
 }

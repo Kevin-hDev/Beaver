@@ -10,6 +10,7 @@ import type {
 } from "./forecast-workbench-types";
 import { useForecastWorkbenchContext } from "./use-forecast-workbench-context";
 import { ForecastWorkbenchSectionContent } from "./forecast-workbench-section";
+import { ForecastWorkspaceProvider } from "../forecast-workspace-context";
 import "./forecast-workbench.css";
 import "./forecast-workbench-responsive.css";
 
@@ -23,7 +24,11 @@ export function ForecastWorkbenchWindow() {
   if (failed || !snapshot) {
     return <div className="fcw-state fcw-state-error">{t("forecast.workbench.unavailable")}</div>;
   }
-  return <ForecastWorkbenchContent key={snapshot.context.revision} snapshot={snapshot} />;
+  return (
+    <ForecastWorkspaceProvider value={snapshot.context.session_id}>
+      <ForecastWorkbenchContent key={snapshot.context.revision} snapshot={snapshot} />
+    </ForecastWorkspaceProvider>
+  );
 }
 
 function ForecastWorkbenchContent({ snapshot }: { snapshot: ForecastWorkbenchSnapshot }) {

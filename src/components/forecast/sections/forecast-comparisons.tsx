@@ -28,6 +28,7 @@ import type {
 import "../forecast-view.css";
 import "./forecast-comparisons.css";
 import { MAX_FORECAST_COMPARISON_ANALYSES } from "../forecast-limits";
+import { useForecastSessionId } from "../forecast-workspace-context";
 
 
 interface ForecastComparisonsProps {
@@ -35,6 +36,7 @@ interface ForecastComparisonsProps {
 }
 
 export function ForecastComparisons({ analysisId }: ForecastComparisonsProps) {
+  const sessionId = useForecastSessionId();
   const { t, i18n } = useTranslation();
   const [current, setCurrent] = useState<ForecastComparisonAnalysis | null>(null);
   const [analyses, setAnalyses] = useState<ForecastComparisonAnalysis[]>([]);
@@ -46,7 +48,8 @@ export function ForecastComparisons({ analysisId }: ForecastComparisonsProps) {
 
   const load = useCallback(async () => {
     try {
-      const data = await runLatest(() => loadComparisonData(analysisId));
+      if (!sessionId) throw new Error("missing_forecast_session");
+      const data = await runLatest(() => loadComparisonData(sessionId, analysisId));
       if (data === undefined) return;
       setCurrent(data.current);
       setAnalyses(data.analyses);
@@ -55,7 +58,7 @@ export function ForecastComparisons({ analysisId }: ForecastComparisonsProps) {
     } catch {
       setError(t("forecast.comparisons.loadFailed"));
     }
-  }, [analysisId, runLatest, t]);
+  }, [analysisId, runLatest, sessionId, t]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
@@ -158,12 +161,18 @@ export function ForecastComparisons({ analysisId }: ForecastComparisonsProps) {
   );
 }
 
-async function loadComparisonData(analysisId: string) {
-  const current = await invoke<ForecastComparisonAnalysis>("get_forecast_analysis", { id: analysisId });
-  const metas = await invoke<ForecastComparisonMeta[]>("list_forecast_analyses");
+async function loadComparisonData(sessionId: string, analysisId: string) {
+  const current = await invoke<ForecastComparisonAnalysis>("get_forecast_analysis", {
+    sessionId,
+    id: analysisId,
+  });
+  const metas = await invoke<ForecastComparisonMeta[]>("list_forecast_analyses", { sessionId });
   const safeMetas = metas.slice(-MAX_FORECAST_COMPARISON_ANALYSES);
   const loaded = await Promise.allSettled(
-    safeMetas.map((meta) => invoke<ForecastComparisonAnalysis>("get_forecast_analysis", { id: meta.id })),
+    safeMetas.map((meta) => invoke<ForecastComparisonAnalysis>("get_forecast_analysis", {
+      sessionId,
+      id: meta.id,
+    })),
   );
   return {
     current,

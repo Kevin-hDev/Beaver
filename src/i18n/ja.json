@@ -1761,6 +1761,10 @@
       "validate": "確定",
       "cancel": "キャンセル",
       "renameFailed": "分析の名前を変更できませんでした。",
+      "unassigned": "未割り当ての旧予測",
+      "unassignedHelp": "プロジェクト分離前に作成された予測の割り当て先を明示的に選択してください。",
+      "claim": "{{name}} をこのワークスペースに割り当てる",
+      "claimFailed": "この予測を割り当てられませんでした。",
       "deleteFailed": "分析を削除できませんでした。"
     },
     "view": {

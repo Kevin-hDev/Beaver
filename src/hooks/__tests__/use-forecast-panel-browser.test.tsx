@@ -1,48 +1,41 @@
-import { renderHook } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { act, renderHook } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import { useForecastPanel } from "../use-forecast-panel";
+import { DEFAULT_AGENT_LOCAL_WORKSPACE } from "@/types/navigation";
 
-describe("useForecastPanel browser mode", () => {
-  it("restaure le navigateur séparément pour chaque conversation", () => {
-    localStorage.setItem("fc-panel-session-browser", JSON.stringify({
-      activeSection: "view",
-      navOpen: false,
-      currentAnalysisId: null,
+describe("useForecastPanel", () => {
+  it("reflète directement l'état détenu par le workspace", () => {
+    const { result } = renderHook(() => useForecastPanel({
+      ...DEFAULT_AGENT_LOCAL_WORKSPACE,
       panelMode: "browser",
+      forecastSection: "history",
+      forecastNavOpen: true,
+      forecastAnalysisId: "analysis-id",
     }));
 
-    const { result } = renderHook(() => useForecastPanel("session-browser"));
-
-    expect(result.current.panelMode).toBe("browser");
-  });
-
-  it("remplace l'ancien onglet Analyse par la vue principale", () => {
-    localStorage.setItem("fc-panel-session-analysis", JSON.stringify({
-      activeSection: "analysis",
-      navOpen: false,
+    expect(result.current).toMatchObject({
+      panelMode: "browser",
+      activeSection: "history",
+      navOpen: true,
       currentAnalysisId: "analysis-id",
-      panelMode: "forecast",
-    }));
-
-    const { result } = renderHook(() => useForecastPanel("session-analysis"));
-
-    expect(result.current.activeSection).toBe("view");
-    expect(result.current.currentAnalysisId).toBe("analysis-id");
+    });
   });
 
-  it.each(["scenarios", "notes"])(
-    "remplace l'ancien onglet %s par la vue principale",
-    (activeSection) => {
-      localStorage.setItem("fc-panel-session-moved", JSON.stringify({
-        activeSection,
-        navOpen: false,
-        currentAnalysisId: "analysis-id",
-        panelMode: "forecast",
-      }));
+  it("publie les changements forecast vers l'unique propriétaire", () => {
+    const onWorkspaceChange = vi.fn();
+    const { result } = renderHook(() => useForecastPanel(
+      DEFAULT_AGENT_LOCAL_WORKSPACE,
+      onWorkspaceChange,
+    ));
 
-      const { result } = renderHook(() => useForecastPanel("session-moved"));
+    act(() => result.current.loadAnalysis("analysis-id"));
+    expect(onWorkspaceChange).toHaveBeenCalledWith({
+      forecastAnalysisId: "analysis-id",
+      forecastSection: "view",
+      panelMode: "forecast",
+    });
 
-      expect(result.current.activeSection).toBe("view");
-    },
-  );
+    act(() => result.current.toggleNav());
+    expect(onWorkspaceChange).toHaveBeenCalledWith({ forecastNavOpen: true });
+  });
 });

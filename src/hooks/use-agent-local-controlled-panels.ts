@@ -2,15 +2,18 @@ import { useCallback, useEffect, useMemo } from "react";
 import { listen } from "@tauri-apps/api/event";
 import type { useFilePreview } from "@/hooks/use-file-preview";
 import type { useFileTree } from "@/hooks/use-file-tree";
-import type { ForecastSection, PanelMode, useForecastPanel } from "@/hooks/use-forecast-panel";
+import {
+  MAX_FORECAST_ANALYSIS_ID_LENGTH,
+  type ForecastSection,
+  type PanelMode,
+  type useForecastPanel,
+} from "@/hooks/use-forecast-panel";
 import { cleanupTauriListener } from "@/lib/tauri-listen";
 import {
   FORECAST_ANALYSIS_CREATED,
   type ForecastAnalysisEvent,
 } from "@/lib/forecast-analysis-events";
-import type { AgentLocalNavState, DeepPartial } from "@/types/navigation";
-
-const MAX_FORECAST_ANALYSIS_ID_LENGTH = 128;
+import type { AgentLocalNavState, AgentLocalWorkspaceState } from "@/types/navigation";
 
 interface Args {
   navState: AgentLocalNavState;
@@ -18,7 +21,7 @@ interface Args {
   filePreview: Pick<ReturnType<typeof useFilePreview>, "setOpen" | "setFullscreen">;
   fileTree: ReturnType<typeof useFileTree>;
   forecast: ReturnType<typeof useForecastPanel>;
-  onNavChange?: (partial: DeepPartial<AgentLocalNavState>) => void;
+  onNavChange?: (partial: Partial<AgentLocalWorkspaceState>) => void;
 }
 
 export function useAgentLocalControlledPanels({
@@ -44,17 +47,13 @@ export function useAgentLocalControlledPanels({
     forecast.setPanelMode(mode);
     if (mode === "forecast" && navState.previewFullscreen) {
       filePreview.setFullscreen(false);
+      onNavChange?.({ previewFullscreen: false });
     }
-    onNavChange?.({
-      panelMode: mode,
-      ...(mode === "forecast" ? { previewFullscreen: false } : {}),
-    });
   }, [filePreview, forecast, navState.previewFullscreen, onNavChange]);
 
   const setSection = useCallback((section: ForecastSection) => {
     forecast.setSection(section);
-    onNavChange?.({ forecastSection: section });
-  }, [forecast, onNavChange]);
+  }, [forecast]);
 
   const loadAnalysis = useCallback((id: string) => {
     forecast.loadAnalysis(id);
@@ -62,9 +61,6 @@ export function useAgentLocalControlledPanels({
     if (navState.previewFullscreen) filePreview.setFullscreen(false);
     onNavChange?.({
       previewOpen: true,
-      forecastAnalysisId: id,
-      forecastSection: "view",
-      panelMode: "forecast",
       previewFullscreen: false,
     });
   }, [filePreview, forecast, navState.previewFullscreen, onNavChange]);
@@ -89,13 +85,12 @@ export function useAgentLocalControlledPanels({
   const focusAnalysis = useCallback((id: string) => {
     forecast.focusAnalysis(id);
     if (navState.previewFullscreen) filePreview.setFullscreen(false);
-    onNavChange?.({ forecastAnalysisId: id, panelMode: "forecast", previewFullscreen: false });
+    if (navState.previewFullscreen) onNavChange?.({ previewFullscreen: false });
   }, [filePreview, forecast, navState.previewFullscreen, onNavChange]);
 
   const closeAnalysis = useCallback(() => {
     forecast.closeAnalysis();
-    onNavChange?.({ forecastAnalysisId: null });
-  }, [forecast, onNavChange]);
+  }, [forecast]);
 
   const forecastNav = useMemo(() => ({
     ...forecast,

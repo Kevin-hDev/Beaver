@@ -1762,6 +1762,10 @@
       "validate": "Conferma",
       "cancel": "Annulla",
       "renameFailed": "Impossibile rinominare l'analisi.",
+      "unassigned": "Previsioni precedenti non assegnate",
+      "unassignedHelp": "Scegli esplicitamente dove collegare le previsioni create prima dell'isolamento per progetto.",
+      "claim": "Collega {{name}} a questo spazio",
+      "claimFailed": "Impossibile collegare questa previsione.",
       "deleteFailed": "Impossibile eliminare l'analisi."
     },
     "view": {

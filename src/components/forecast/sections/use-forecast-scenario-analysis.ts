@@ -6,6 +6,7 @@ import {
   listenForecastAnalysisEvents,
 } from "@/lib/forecast-analysis-events";
 import type { ForecastScenarioAnalysis } from "./forecast-scenario-types";
+import { useForecastSessionId } from "../forecast-workspace-context";
 
 interface UseForecastScenarioAnalysisArgs {
   analysisId: string;
@@ -18,13 +19,21 @@ export function useForecastScenarioAnalysis({
   onLoaded,
   onFailed,
 }: UseForecastScenarioAnalysisArgs) {
+  const sessionId = useForecastSessionId();
   const runLatest = useLatestRequest();
 
   useEffect(() => {
     let active = true;
     const refresh = () => {
+      if (!sessionId) {
+        onFailed();
+        return;
+      }
       void runLatest(
-        () => invoke<ForecastScenarioAnalysis>("get_forecast_analysis", { id: analysisId }),
+        () => invoke<ForecastScenarioAnalysis>("get_forecast_analysis", {
+          sessionId,
+          id: analysisId,
+        }),
       )
         .then((analysis) => {
           if (active && analysis !== undefined) onLoaded(analysis);
@@ -41,5 +50,5 @@ export function useForecastScenarioAnalysis({
       active = false;
       cleanup();
     };
-  }, [analysisId, onFailed, onLoaded, runLatest]);
+  }, [analysisId, onFailed, onLoaded, runLatest, sessionId]);
 }

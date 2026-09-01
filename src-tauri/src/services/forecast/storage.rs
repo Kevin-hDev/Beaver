@@ -1,5 +1,5 @@
 use crate::services::forecast::limits::MAX_STORED_ANALYSIS_BYTES;
-use crate::services::forecast::types::{ForecastAnalysisMeta, ForecastResult};
+use crate::services::forecast::types::ForecastResult;
 use std::path::{Path, PathBuf};
 use tokio::sync::Mutex;
 
@@ -8,6 +8,11 @@ use super::storage_paths::{
 };
 
 pub use super::storage_load::{load, load_classified, ForecastLoadError};
+pub use super::storage_scope::{
+    authorize_for_session, claim_legacy_for_session, delete_for_session, list_for_session,
+    list_unassigned_for_session, load_classified_for_session, load_for_session, rename_for_session,
+    save_for_session,
+};
 
 static SAVE_LOCK: Mutex<()> = Mutex::const_new(());
 
@@ -89,23 +94,14 @@ pub async fn delete(id: &str) -> Result<(), String> {
     Ok(())
 }
 
-pub async fn rename(id: &str, name: &str) -> Result<ForecastResult, String> {
-    validate_analysis_id(id)?;
-    let next_name = validate_analysis_name(name)?;
-    let mut analysis = load(id).await?;
-    analysis.name = next_name;
-    save(&mut analysis).await?;
-    Ok(analysis)
-}
-
-pub async fn list() -> Result<Vec<ForecastAnalysisMeta>, String> {
-    super::storage_index::list().await
-}
-
 pub async fn comparable_backtests(
+    session_id: &str,
     profile: &super::data_quality::DataProfile,
 ) -> Result<Vec<super::evaluation::types::BacktestIndexSummary>, String> {
-    super::storage_backtests::comparable(super::storage_index::entries().await?, profile)
+    super::storage_backtests::comparable(
+        super::storage_scope::list_for_session(session_id).await?,
+        profile,
+    )
 }
 
 fn validate_session_id(session_id: Option<&str>) -> Result<(), String> {

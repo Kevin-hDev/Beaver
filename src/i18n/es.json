@@ -1766,6 +1766,10 @@
       "validate": "Validar",
       "cancel": "Cancelar",
       "renameFailed": "No se pudo renombrar el análisis.",
+      "unassigned": "Predicciones antiguas sin asignar",
+      "unassignedHelp": "Elige explícitamente dónde asociar las predicciones creadas antes del aislamiento por proyecto.",
+      "claim": "Asociar {{name}} a este espacio",
+      "claimFailed": "No se pudo asociar esta predicción.",
       "deleteFailed": "No se pudo eliminar el análisis."
     },
     "view": {

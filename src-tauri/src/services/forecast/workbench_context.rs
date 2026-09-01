@@ -32,7 +32,7 @@ pub async fn set(
     crate::services::agent_local::session_store::get(&session_id)
         .await
         .map_err(|_| context_error())?;
-    let analysis = load_analysis(analysis_id.as_deref()).await?;
+    let analysis = load_analysis(&session_id, analysis_id.as_deref()).await?;
     let mut active = ACTIVE_WORKBENCH.lock().await;
     if let Some(current) = active.as_ref() {
         super::workbench_drafts::save(&current.context, &current.draft).await?;
@@ -62,7 +62,11 @@ pub async fn get() -> Result<Option<ForecastWorkbenchSnapshot>, String> {
     crate::services::agent_local::session_store::get(&active.context.session_id)
         .await
         .map_err(|_| context_error())?;
-    let analysis = load_analysis(active.context.analysis_id.as_deref()).await?;
+    let analysis = load_analysis(
+        &active.context.session_id,
+        active.context.analysis_id.as_deref(),
+    )
+    .await?;
     Ok(Some(ForecastWorkbenchSnapshot {
         context: active.context,
         draft: active.draft,
@@ -83,13 +87,13 @@ pub async fn update_draft(
 }
 
 async fn load_analysis(
+    session_id: &str,
     analysis_id: Option<&str>,
 ) -> Result<Option<super::types::ForecastResult>, String> {
     let Some(analysis_id) = analysis_id else {
         return Ok(None);
     };
-    // L'historique est global : le chat actif peut consulter une analyse créée ailleurs.
-    let analysis = super::storage::load(analysis_id)
+    let analysis = super::storage::load_for_session(session_id, analysis_id)
         .await
         .map_err(|_| context_error())?;
     Ok(Some(analysis))

@@ -2,7 +2,7 @@ import { useCallback, useMemo, type SetStateAction } from "react";
 import type { useFilePreview } from "@/hooks/use-file-preview";
 import type { AgentPlanRun } from "@/types/agent";
 import type { FileOperation } from "@/types/file-preview";
-import type { AgentLocalNavState, DeepPartial } from "@/types/navigation";
+import type { AgentLocalNavState, AgentLocalWorkspaceState } from "@/types/navigation";
 
 function applyAction<T>(current: T, action: SetStateAction<T>): T {
   return typeof action === "function" ? (action as (value: T) => T)(current) : action;
@@ -11,7 +11,7 @@ function applyAction<T>(current: T, action: SetStateAction<T>): T {
 interface Args {
   navState: AgentLocalNavState;
   filePreviewState: ReturnType<typeof useFilePreview>;
-  onNavChange?: (partial: DeepPartial<AgentLocalNavState>) => void;
+  onNavChange?: (partial: Partial<AgentLocalWorkspaceState>) => void;
 }
 
 export function useAgentLocalControlledPreview({ navState, filePreviewState, onNavChange }: Args) {

@@ -9,8 +9,10 @@ import {
 } from "@/lib/forecast-analysis-events";
 import { preferNewestForecast } from "../forecast-revision";
 import type { EvaluationAnalysis } from "./forecast-evaluation-types";
+import { useForecastSessionId } from "../forecast-workspace-context";
 
 export function useForecastEvaluation(analysisId: string) {
+  const sessionId = useForecastSessionId();
   const [analysis, setAnalysis] = useState<EvaluationAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
@@ -21,8 +23,9 @@ export function useForecastEvaluation(analysisId: string) {
 
   const refresh = useCallback(async () => {
     try {
+      if (!sessionId) throw new Error("missing_forecast_session");
       const next = await runLatest(
-        () => invoke<EvaluationAnalysis>("get_forecast_analysis", { id: analysisId }),
+        () => invoke<EvaluationAnalysis>("get_forecast_analysis", { sessionId, id: analysisId }),
       );
       if (next === undefined) return;
       setAnalysis((current) => preferNewestForecast(current, next));
@@ -32,12 +35,14 @@ export function useForecastEvaluation(analysisId: string) {
     } finally {
       setLoading(false);
     }
-  }, [analysisId, runLatest]);
+  }, [analysisId, runLatest, sessionId]);
 
   const createEnsemble = useCallback(async () => {
     setEnsembleRunning(true);
     try {
+      if (!sessionId) throw new Error("missing_forecast_session");
       const next = await invoke<EvaluationAnalysis>("create_forecast_ensemble", {
+        sessionId,
         analysisId,
         modelIds: [],
       });
@@ -47,12 +52,14 @@ export function useForecastEvaluation(analysisId: string) {
     } finally {
       setEnsembleRunning(false);
     }
-  }, [analysisId, t]);
+  }, [analysisId, sessionId, t]);
 
   const run = useCallback(async () => {
     setRunning(true);
     try {
+      if (!sessionId) throw new Error("missing_forecast_session");
       const next = await invoke<EvaluationAnalysis>("run_forecast_backtest", {
+        sessionId,
         request: { analysis_id: analysisId, model_ids: [], max_windows: 3 },
       });
       setAnalysis((current) => preferNewestForecast(current, next));
@@ -61,7 +68,7 @@ export function useForecastEvaluation(analysisId: string) {
     } finally {
       setRunning(false);
     }
-  }, [analysisId, t]);
+  }, [analysisId, sessionId, t]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- backend hydration is intentional

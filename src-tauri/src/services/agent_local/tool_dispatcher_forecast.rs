@@ -19,24 +19,26 @@ pub async fn dispatch_forecast(
         "forecast_models" => Some(
             super::tool_dispatcher_forecast_models::handle(args, session_id).await,
         ),
-        "forecast_analyze" => Some(super::tool_dispatcher_forecast_analyze::handle(args).await),
-        "forecast_data_audit" => Some(
-            super::tool_dispatcher_forecast_data_audit::handle(args, working_dir).await,
+        "forecast_analyze" => Some(
+            super::tool_dispatcher_forecast_analyze::handle(args, session_id).await,
         ),
-        "forecast_read" => Some(handle_read(args).await),
+        "forecast_data_audit" => Some(
+            super::tool_dispatcher_forecast_data_audit::handle(args, working_dir, session_id).await,
+        ),
+        "forecast_read" => Some(handle_read(args, session_id).await),
         "forecast_backtest" => {
-            Some(super::tool_dispatcher_forecast_evaluation::backtest(args).await)
+            Some(super::tool_dispatcher_forecast_evaluation::backtest(args, session_id).await)
         }
         "forecast_compare_models" => {
-            Some(super::tool_dispatcher_forecast_evaluation::compare(args).await)
+            Some(super::tool_dispatcher_forecast_evaluation::compare(args, session_id).await)
         }
         _ => None,
     }
 }
 
-async fn handle_read(args: &Value) -> ToolResult {
+async fn handle_read(args: &Value, session_id: &str) -> ToolResult {
     match args["analysis_id"].as_str() {
-        Some(id) if !id.trim().is_empty() => match super::tool_dispatcher_forecast_load::load(id.trim()).await {
+        Some(id) if !id.trim().is_empty() => match super::tool_dispatcher_forecast_load::load(session_id, id.trim()).await {
             Ok(analysis) => {
                 let offset = args["offset"].as_u64().unwrap_or(0) as usize;
                 let limit = args["limit"].as_u64().unwrap_or(100) as usize;
@@ -48,7 +50,7 @@ async fn handle_read(args: &Value) -> ToolResult {
             }
             Err(error) => error,
         },
-        _ => match storage::list().await {
+        _ => match storage::list_for_session(session_id).await {
             Ok(list) => payload_result(
                 super::tool_dispatcher_forecast_output::list_payload(&list),
                 super::tool_dispatcher_forecast_output::list_is_truncated(list.len()),

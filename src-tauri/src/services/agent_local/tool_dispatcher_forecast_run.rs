@@ -55,7 +55,7 @@ pub async fn handle(
             )
         }
     };
-    if let Err(error) = data_profiles::hydrate_request_classified(&mut request).await {
+    if let Err(error) = data_profiles::hydrate_request_classified(session_id, &mut request).await {
         let (kind, message) = forecast_profile::classify(error);
         return model_error(
             kind,
@@ -185,6 +185,7 @@ pub async fn handle(
         );
     }
     match super::tool_dispatcher_forecast_persist::save(
+        session_id,
         &mut forecast,
         &request,
         &cancel,

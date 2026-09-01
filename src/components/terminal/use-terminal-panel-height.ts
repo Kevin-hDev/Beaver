@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 interface Options {
   isOpen: boolean;
@@ -15,7 +15,7 @@ export function useTerminalPanelHeight({
 }: Options) {
   const [animatedHeight, setAnimatedHeight] = useState(0);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (instantLayout) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- le changement de session doit être atomique à l'écran
       setAnimatedHeight(isOpen ? panelHeight : 0);

@@ -4,6 +4,7 @@ use super::selection_tickets::SelectionProof;
 use super::{auto_selection, hardware_profile, model_listing, selection_tickets, storage};
 
 pub async fn verify_choice(
+    session_id: &str,
     profile: &DataProfile,
     policy: &ForecastSelectionPolicy,
     model_id: &str,
@@ -12,7 +13,7 @@ pub async fn verify_choice(
     let models = listing["models"]
         .as_array()
         .ok_or("Catalogue Forecast indisponible")?;
-    let evidence = storage::comparable_backtests(profile).await?;
+    let evidence = storage::comparable_backtests(session_id, profile).await?;
     let selection = auto_selection::select_with_requested_model(
         models,
         profile,

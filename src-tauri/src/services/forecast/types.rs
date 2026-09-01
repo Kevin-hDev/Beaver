@@ -5,6 +5,8 @@ use super::input_data::InputSnapshot;
 use super::provenance_types::{ForecastProvenance, ForecastSelectionSource};
 use serde::{Deserialize, Serialize};
 
+pub use crate::services::workspace_scope::WorkspaceScope as ForecastWorkspace;
+
 pub const MAX_ANNOTATIONS: usize = 200;
 pub const MAX_SCENARIOS: usize = 50;
 pub const CURRENT_SCHEMA_VERSION: u32 = 3;
@@ -48,6 +50,8 @@ pub struct ForecastResult {
     #[serde(default)]
     pub target_column: String,
     pub created_at: String,
+    #[serde(default)]
+    pub workspace: ForecastWorkspace,
     pub session_id: Option<String>,
     pub model: String,
     pub provider: String,
@@ -143,6 +147,8 @@ pub struct ForecastAnalysisMeta {
     pub confidence_level: Option<f64>,
     pub points: usize,
     pub mape: Option<f64>,
+    #[serde(default)]
+    pub workspace: ForecastWorkspace,
     pub session_id: Option<String>,
     #[serde(default)]
     pub scenarios_count: usize,
@@ -167,6 +173,7 @@ impl ForecastResult {
             confidence_level: Some(self.confidence_level),
             points: self.input_summary.points,
             mape: self.metrics.as_ref().and_then(|m| m.mape),
+            workspace: self.workspace.clone(),
             session_id: self.session_id.clone(),
             scenarios_count: self.scenarios.len(),
             data_profile_id: self.data_profile.as_ref().map(|profile| profile.id.clone()),

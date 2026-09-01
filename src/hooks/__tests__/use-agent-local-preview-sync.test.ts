@@ -64,4 +64,24 @@ describe("useAgentLocalPreviewSync", () => {
 
     expect(filePreview.setOpen).toHaveBeenCalledWith(false);
   });
+
+  it("réapplique l'onglet sauvegardé quand le reset de session vise la même valeur apparente", () => {
+    const filePreview = preview(false, "operation-shared");
+    const { rerender } = renderHook(
+      ({ sessionId }) => useAgentLocalPreviewSync({
+        navState: {
+          ...DEFAULT_AGENT_LOCAL_NAV,
+          sessionId,
+          previewActiveTab: "operation-shared",
+        },
+        filePreview,
+      }),
+      { initialProps: { sessionId: "session-a" } },
+    );
+    filePreview.setActiveTab.mockClear();
+
+    rerender({ sessionId: "session-b" });
+
+    expect(filePreview.setActiveTab).toHaveBeenCalledWith("operation-shared");
+  });
 });

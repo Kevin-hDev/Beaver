@@ -83,6 +83,19 @@ describe("useTerminal", () => {
     expect(result.current.tabs[0]).not.toHaveProperty("cwd");
   });
 
+  it("nomme un terminal sans dossier d'après sa discussion", async () => {
+    const { result } = renderHook(() => useTerminal("session:one", "", {
+      ...ready(["session:one"]),
+      defaultLabel: "Discussion isolée",
+    }));
+    await waitFor(() => expect(result.current.persistenceStatus).toBe("healthy"));
+
+    act(() => { result.current.addTab(); });
+
+    expect(result.current.tabs[0].label).toBe("Discussion isolée");
+    expect(result.current.tabs[0]).not.toHaveProperty("cwd");
+  });
+
   it("ferme le dernier onglet", async () => {
     const { result } = renderHook(() => useTerminal(GROUP_KEY, DEFAULT_CWD, ready()));
     await waitFor(() => expect(result.current.persistenceStatus).toBe("healthy"));

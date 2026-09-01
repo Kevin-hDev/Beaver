@@ -2,7 +2,7 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { useCallback, useState } from "react";
 import { describe, expect, it, vi, type Mock } from "vitest";
 import { DEFAULT_AGENT_LOCAL_NAV } from "@/types/navigation";
-import type { AgentLocalNavState, DeepPartial } from "@/types/navigation";
+import type { AgentLocalWorkspaceState } from "@/types/navigation";
 import type { TerminalGroup, TerminalTab } from "../terminal-types";
 import { useAgentLocalControlledTerminal } from "../use-agent-local-controlled-terminal";
 
@@ -67,7 +67,7 @@ function renderStatefulControlled({
 }: {
   initialGroups: Map<string, TerminalGroup>;
   groupKey?: string;
-  onNavChange?: Mock<(partial: DeepPartial<AgentLocalNavState>) => void>;
+  onNavChange?: Mock<(partial: Partial<AgentLocalWorkspaceState>) => void>;
 }) {
   const rendered = renderHook(
     ({ activeGroupKey }) => {

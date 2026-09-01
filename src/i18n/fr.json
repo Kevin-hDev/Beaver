@@ -2099,6 +2099,10 @@
       "validate": "Valider",
       "cancel": "Annuler",
       "renameFailed": "Impossible de renommer l'analyse.",
+      "unassigned": "Anciennes prédictions non attribuées",
+      "unassignedHelp": "Choisissez explicitement où rattacher les prédictions créées avant l'isolation par projet.",
+      "claim": "Rattacher {{name}} à cet espace",
+      "claimFailed": "Impossible de rattacher cette prédiction.",
       "deleteFailed": "Impossible de supprimer l'analyse."
     },
     "view": {

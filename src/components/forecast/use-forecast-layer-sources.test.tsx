@@ -3,10 +3,15 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ForecastWorkspaceProvider } from "./forecast-workspace-context";
 import type { ForecastLayerState } from "./forecast-layer-matrix";
 import { useForecastLayerSources } from "./use-forecast-layer-sources";
 
 const ANALYSIS_ID = "550e8400-e29b-41d4-a716-446655440000";
+const SESSION_ID = "session-test";
+const wrapper = ({ children }: { children: React.ReactNode }) => (
+  <ForecastWorkspaceProvider value={SESSION_ID}>{children}</ForecastWorkspaceProvider>
+);
 
 describe("useForecastLayerSources", () => {
   beforeEach(() => {
@@ -27,7 +32,7 @@ describe("useForecastLayerSources", () => {
     const { result } = renderHook(() => {
       const [layers, setLayers] = useState<ForecastLayerState>({});
       return { layers, hook: useForecastLayerSources(ANALYSIS_ID, setLayers) };
-    });
+    }, { wrapper });
     await waitFor(() => expect(invoke).toHaveBeenCalledTimes(1));
 
     act(() => updated?.({ payload: { analysis_id: ANALYSIS_ID } }));

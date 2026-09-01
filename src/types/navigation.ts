@@ -1,8 +1,5 @@
 import type { FilePreviewActiveTab } from "@/types/file-preview";
-import {
-  type ForecastSection,
-  type PanelMode,
-} from "@/hooks/use-forecast-panel";
+import type { ForecastSection, PanelMode } from "@/types/forecast-panel";
 
 type MainTabId = "heartbeat" | "personality" | "agent-local" | "settings";
 export type SettingsSubTab =
@@ -25,6 +22,7 @@ export interface AgentLocalWorkspaceState {
   previewFullscreen: boolean;
   panelMode: PanelMode;
   forecastSection: ForecastSection;
+  forecastNavOpen: boolean;
   forecastAnalysisId: string | null;
   fileTreeOpen: boolean;
   terminalOpen: boolean;
@@ -32,9 +30,7 @@ export interface AgentLocalWorkspaceState {
 
 export type AgentLocalNavState = AgentLocalRouteState & AgentLocalWorkspaceState;
 
-type LegacyAgentLocalRouteState = AgentLocalRouteState & Partial<AgentLocalWorkspaceState> & {
-  terminalActiveTabId?: unknown;
-};
+type LegacyAgentLocalRouteState = AgentLocalRouteState & Partial<AgentLocalWorkspaceState>;
 
 export interface SettingsNavState {
   subTab: SettingsSubTab;
@@ -88,6 +84,7 @@ export const DEFAULT_AGENT_LOCAL_WORKSPACE: AgentLocalWorkspaceState = {
   previewFullscreen: false,
   panelMode: "preview",
   forecastSection: "view",
+  forecastNavOpen: false,
   forecastAnalysisId: null,
   fileTreeOpen: false,
   terminalOpen: false,

@@ -4,7 +4,7 @@ use crate::services::forecast::{data_profiles, data_quality, file_input, validat
 use serde_json::Value;
 use std::path::Path;
 
-pub async fn handle(args: &Value, working_dir: &Path) -> ToolResult {
+pub async fn handle(args: &Value, working_dir: &Path, session_id: &str) -> ToolResult {
     let mut request: ForecastRequest = match serde_json::from_value(args.clone()) {
         Ok(request) => request,
         Err(_) => return ToolResult::validation(
@@ -30,7 +30,7 @@ pub async fn handle(args: &Value, working_dir: &Path) -> ToolResult {
         Err(error) => return ToolResult::validation("forecast_audit_data_invalid", error),
     };
     if profile.valid {
-        if let Err(error) = data_profiles::save(&profile, &request).await {
+        if let Err(error) = data_profiles::save(session_id, &profile, &request).await {
             return ToolResult::internal(
                 "forecast_data_profile_save_failed",
                 error,

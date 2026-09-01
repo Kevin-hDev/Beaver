@@ -12,10 +12,14 @@ import { useAgentLocalShortcuts } from "@/hooks/use-agent-local-shortcuts";
 import { useAgentLocalPreviewSync } from "@/hooks/use-agent-local-preview-sync";
 import { useAgentLocalControlledPreview } from "@/hooks/use-agent-local-controlled-preview";
 import { useAgentLocalControlledTerminal } from "@/hooks/use-agent-local-controlled-terminal";
+import { useOwnedFileOperations } from "@/hooks/use-owned-file-operations";
+import {
+  terminalWorkspaceGroupKey,
+  terminalWorkspaceGroupKeys,
+} from "@/hooks/agent-local-workspace-scope";
 import { useArrowNavigation } from "@/hooks/use-arrow-navigation";
 import { useUnavailableModelFallback } from "@/hooks/use-unavailable-model-fallback";
-import type { FileOperationGroups } from "@/types/file-preview";
-import type { AgentLocalNavState, DeepPartial } from "@/types/navigation";
+import type { AgentLocalNavState, AgentLocalWorkspaceState } from "@/types/navigation";
 import {
   normalizeReasoningMode,
   reasoningModeOptions,
@@ -25,11 +29,14 @@ import {
 interface UseAgentLocalTabOpts {
   navState: AgentLocalNavState;
   onSessionChange?: (id: string | null) => void;
-  onNavChange?: (partial: DeepPartial<AgentLocalNavState>) => void;
+  onNavChange?: (partial: Partial<AgentLocalWorkspaceState>) => void;
+  onWorkspaceClear?: (sessionId: string) => void;
   listFocused: boolean;
 }
 
-export function useAgentLocalTab({ navState, onSessionChange, onNavChange, listFocused }: UseAgentLocalTabOpts) {
+export function useAgentLocalTab({
+  navState, onSessionChange, onNavChange, onWorkspaceClear, listFocused,
+}: UseAgentLocalTabOpts) {
   const { sessions, refresh, create, rename, reorder: reorderSessions, reorderPinned, remove, archive, togglePin, updateModel, updateReasoning } = useAgentSessions();
   const projectsHook = useProjects();
   const activeSessionId = navState.sessionId;
@@ -40,17 +47,26 @@ export function useAgentLocalTab({ navState, onSessionChange, onNavChange, listF
   const activeProject = activeSession?.project_id
     ? projectsHook.projects.find((p) => p.id === activeSession.project_id)
     : null;
-  const terminalGroupKey = activeProject?.id || "__default__";
+  const terminalGroupKey = activeSession
+    ? terminalWorkspaceGroupKey(activeSession, sessions)
+    : "__default__";
   const terminalCwd = activeProject?.path || "";
   const terminalState = useTerminal(terminalGroupKey, terminalCwd, {
-    validGroupKeys: projectsHook.projects.map((project) => project.id),
+    validGroupKeys: terminalWorkspaceGroupKeys(
+      sessions,
+      projectsHook.projects.map((project) => project.id),
+    ),
     projectLoadState: projectsHook.loadState,
+    defaultLabel: activeProject?.name ?? activeSession?.name,
   });
   const { model: defaultModel, provider: defaultProvider } = useDefaultModel();
   const [welcomeModel, setWelcomeModel] = useState<{ model: string; provider: string } | null>(null);
   const [welcomeReasoningMode, setWelcomeReasoningMode] = useState<string | null>(null);
   const [welcomeFastModeEnabled, setWelcomeFastModeEnabled] = useState(false);
-  const [fileOperations, setFileOperations] = useState<FileOperationGroups>({ all: [], latest: [] });
+  const {
+    operations: fileOperations,
+    setOperations: setFileOperations,
+  } = useOwnedFileOperations(activeSession ? terminalGroupKey : null);
 
   const { groups: availableModels } = useAvailableModels();
 
@@ -173,10 +189,23 @@ export function useAgentLocalTab({ navState, onSessionChange, onNavChange, listF
     void projectsHook.remove(projectId);
   }, [terminalState, projectsHook]);
 
-  const handleDeleteSession = useCallback(async (id: string) => {
+  const handleArchiveSession = useCallback(async (id: string) => {
     await archive(id);
+    onWorkspaceClear?.(id);
+  }, [archive, onWorkspaceClear]);
+
+  const handleDeleteSession = useCallback(async (id: string) => {
+    const session = sessions.find((candidate) => candidate.id === id);
+    const ownedGroup = session ? terminalWorkspaceGroupKey(session, sessions) : null;
+    await handleArchiveSession(id);
+    if (ownedGroup === `session:${id}`) {
+      for (const { id: ptyId, token } of terminalState.getGroupPtyEntries(ownedGroup)) {
+        invoke("pty_kill", { id: ptyId, token }).catch(() => {});
+      }
+      terminalState.removeGroup(ownedGroup);
+    }
     onSessionChange?.(null);
-  }, [archive, onSessionChange]);
+  }, [handleArchiveSession, onSessionChange, sessions, terminalState]);
 
   return {
     sessions, refresh, rename, reorderSessions, reorderPinned, remove, archive, togglePin,
@@ -186,6 +215,6 @@ export function useAgentLocalTab({ navState, onSessionChange, onNavChange, listF
     filePreview, fileOperations, setFileOperations,
     reasoningMode, setReasoningMode, welcomeModel, setWelcomeModel,
     welcomeFastModeEnabled, setWelcomeFastModeEnabled, setFastMode, isFastModePending,
-    sessionActions, handleSelectById, handleDeleteProject, handleDeleteSession,
+    sessionActions, handleSelectById, handleDeleteProject, handleArchiveSession, handleDeleteSession,
   };
 }

@@ -22,6 +22,8 @@
 }
 
 .terminal-panel-instant {
+  /* Cette classe suit la même prop que la hauteur JS : le panneau garde ainsi
+     une seule autorité pour sa bascule instantanée. */
   transition: none;
 }
 

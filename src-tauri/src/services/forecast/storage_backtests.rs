@@ -73,6 +73,7 @@ mod tests {
             confidence_level: Some(0.8),
             points: 20,
             mape: None,
+            workspace: Default::default(),
             session_id: None,
             scenarios_count: 0,
             data_profile_id: Some("550e8400-e29b-41d4-a716-446655440000".into()),

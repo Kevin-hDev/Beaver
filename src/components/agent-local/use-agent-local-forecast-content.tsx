@@ -81,6 +81,7 @@ export function useAgentLocalForecastContent({
 
   const forecastContent = useMemo(() => (
     <ForecastPanel
+      sessionId={sessionId}
       activeSection={forecastNav.activeSection}
       navOpen={forecastNav.navOpen}
       currentAnalysisId={forecastNav.currentAnalysisId}
@@ -90,7 +91,7 @@ export function useAgentLocalForecastContent({
       onCloseAnalysis={forecastNav.closeAnalysis}
       onOpenWorkbench={handleOpenForecastWorkbench}
     />
-  ), [forecastNav, handleOpenForecastWorkbench]);
+  ), [forecastNav, handleOpenForecastWorkbench, sessionId]);
 
   return {
     forecastContent, fullscreenSwitching, handleOpenForecastDocs, handlePreviewFullscreenChange,

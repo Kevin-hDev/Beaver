@@ -27,16 +27,19 @@ export const AgentLocalTab = memo(function AgentLocalTab({
   navState,
   onSessionChange,
   onNavChange,
+  onWorkspaceClear,
   listFocused = true,
 }: AgentLocalTabProps) {
-  const s = useAgentLocalTab({ navState, onSessionChange, onNavChange, listFocused });
-  const { sessions, refresh, archive, updateModel } = s;
+  const s = useAgentLocalTab({
+    navState, onSessionChange, onNavChange, onWorkspaceClear, listFocused,
+  });
+  const { sessions, refresh, updateModel } = s;
   const { projectsHook, terminal, activeSession, activeSessionId } = s;
   const { model, provider, currentDefault, activeProject } = s;
   const { filePreview, fileOperations, setFileOperations } = s;
   const { reasoningMode, setReasoningMode, setWelcomeModel } = s;
   const { welcomeFastModeEnabled, setWelcomeFastModeEnabled, setFastMode, isFastModePending } = s;
-  const { sessionActions, handleSelectById } = s;
+  const { sessionActions, handleSelectById, handleArchiveSession } = s;
   const {
     pendingMessage, setPendingMessage,
     pendingWorkingDir, setPendingWorkingDir,
@@ -64,8 +67,8 @@ export const AgentLocalTab = memo(function AgentLocalTab({
     sessionTabs,
   });
   const fileTree = useFileTree(displaySessionId, displayProject?.path);
-  const forecast = useForecastPanel(displaySessionId ?? null);
-  useAgentLocalPanelNav({ navState, fileTree, forecast });
+  const forecast = useForecastPanel(navState, onNavChange);
+  useAgentLocalPanelNav({ navState, fileTree });
   const { fileTreeNav, forecastNav } = useAgentLocalControlledPanels({
     navState, sessionId: displaySessionId ?? null, filePreview, fileTree, forecast, onNavChange,
   });
@@ -103,7 +106,7 @@ export const AgentLocalTab = memo(function AgentLocalTab({
           onRenameSessionTab={(id, label) => void sessionTabs.renameTab(id, label)}
           onOpenPlan={filePreview.openPlan}
           onOpenSubagent={(id) => void handleSelectById(id)}
-          onArchiveSubagent={(id) => void archive(id)}
+          onArchiveSubagent={(id) => void handleArchiveSession(id)}
           onOpenGitFile={(commit, file) => filePreview.openOperation(
             commitFileOperation(commit, file, summaryGit.currentBranch),
           )}
@@ -188,12 +191,12 @@ export const AgentLocalTab = memo(function AgentLocalTab({
       )}
     </div>
   ), [
-    activeSession?.name, activeSessionId, archive, currentDefault.model, currentDefault.provider, displayModel, displayProject?.path,
+    activeSession?.name, activeSessionId, currentDefault.model, currentDefault.provider, displayModel, displayProject?.path,
     displayProvider, displayReasoningMode, displayedFastMode, displayedFastPending, displaySession?.parent_session_id,
     displaySessionId,
     availablePanel, fileOperations, filePreview, fileTreeNav, forecastNav.setPanelMode, forecastContent, uncommittedFiles,
     fullscreenSwitching, handleAutoRename, handleCreateInProjectWithModel, handleCreateWithModel,
-    handleOpenForecastDocs, handlePreviewFullscreenChange, handleSelectById, handleWelcomeSend,
+    handleArchiveSession, handleOpenForecastDocs, handlePreviewFullscreenChange, handleSelectById, handleWelcomeSend,
     pendingFiles, pendingMessage, pendingSkills, pendingWorkingDir, projectsHook, refresh,
     sessionSummary, sessionTabs, setFileOperations, setPendingFiles, setPendingMessage, setPendingSkills, setPendingWorkingDir, setReasoningMode,
     setWelcomeModel, summaryGit, tabGit, terminal, reasoningMode, updateModel,

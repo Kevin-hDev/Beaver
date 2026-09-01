@@ -1,4 +1,4 @@
-import { useCallback, useState, type SetStateAction } from "react";
+import { useCallback, useMemo, useState, type SetStateAction } from "react";
 import {
   FILE_PREVIEW_DEFAULT_EXTRA_WIDTH,
   readStoredFilePreviewPanel,
@@ -36,11 +36,12 @@ function applyAction<T>(current: T, action: SetStateAction<T>): T {
 
 export function useFilePreviewPanelState(sessionId: string | null) {
   const key = stateKey(sessionId);
+  const loadedState = useMemo(() => loadPanelState(sessionId), [sessionId]);
   const [stored, setStored] = useState<KeyedPanelState>(() => ({
     key,
-    value: loadPanelState(sessionId),
+    value: loadedState,
   }));
-  const state = stored.key === key ? stored.value : loadPanelState(sessionId);
+  const state = stored.key === key ? stored.value : loadedState;
 
   const updatePanel = useCallback((updater: (current: PanelState) => PanelState) => {
     setStored((currentStored) => {

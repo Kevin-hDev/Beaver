@@ -70,7 +70,7 @@ pub async fn handle(args: &Value, session_id: &str) -> ToolResult {
                     "Profil de données requis pour le mode Auto",
                 );
             };
-            let profile = match super::tool_dispatcher_forecast_load::load_profile(profile_id).await {
+            let profile = match super::tool_dispatcher_forecast_load::load_profile(session_id, profile_id).await {
                 Ok(profile) => profile,
                 Err(error) => return error,
             };
@@ -81,7 +81,7 @@ pub async fn handle(args: &Value, session_id: &str) -> ToolResult {
                 );
             }
             let hardware = hardware_profile::detect();
-            let evidence = match storage::comparable_backtests(&profile).await {
+            let evidence = match storage::comparable_backtests(session_id, &profile).await {
                 Ok(evidence) => evidence,
                 Err(error) => return ToolResult::internal(
                     "forecast_backtest_evidence_unavailable",

@@ -1,6 +1,7 @@
 use super::data_quality::DataProfile;
 use super::limits::{MAX_DATA_PROFILES, MAX_INLINE_DATA_BYTES};
 use super::types::ForecastRequest;
+use crate::services::workspace_scope::WorkspaceScope;
 use std::path::{Path, PathBuf};
 use tokio::sync::Mutex;
 use uuid::Uuid;
@@ -13,7 +14,11 @@ pub use super::data_profiles_load::{
 const MAX_DIRECTORY_SCAN: usize = 1_000;
 static PROFILE_LOCK: Mutex<()> = Mutex::const_new(());
 
-pub async fn save(profile: &DataProfile, request: &ForecastRequest) -> Result<(), String> {
+pub async fn save(
+    session_id: &str,
+    profile: &DataProfile,
+    request: &ForecastRequest,
+) -> Result<(), String> {
     validate_id(&profile.id)?;
     if !profile.valid {
         return Err("Profil de données invalide".into());
@@ -22,14 +27,16 @@ pub async fn save(profile: &DataProfile, request: &ForecastRequest) -> Result<()
     if data.len() > MAX_INLINE_DATA_BYTES {
         return Err("Données trop volumineuses".into());
     }
+    let workspace = crate::services::workspace_scope::resolve(session_id).await?;
     let stored = super::data_profiles_load::StoredDataProfile {
         profile: profile.clone(),
         data: data.to_string(),
+        workspace: workspace.clone(),
     };
     let json =
         serde_json::to_vec_pretty(&stored).map_err(|_| "Profil de données invalide".to_string())?;
     let _guard = PROFILE_LOCK.lock().await;
-    let target = profile_path_for_write(&profile.id).await?;
+    let target = profile_path_for_write(&workspace, &profile.id).await?;
     let dir = target
         .parent()
         .ok_or("Sauvegarde du profil impossible")?
@@ -93,10 +100,32 @@ async fn cleanup(dir: &Path, keep: usize) -> Result<(), String> {
     Ok(())
 }
 
-async fn profile_path_for_write(id: &str) -> Result<PathBuf, String> {
-    crate::services::paths::data_file_for_write("forecast-data-profiles", &format!("{id}.json"))
+pub(super) async fn profile_path_for_read(
+    workspace: &WorkspaceScope,
+    id: &str,
+) -> std::io::Result<PathBuf> {
+    crate::services::paths::data_file_for_read(
+        &profile_directory(workspace)?,
+        &format!("{id}.json"),
+    )
+    .await
+}
+
+async fn profile_path_for_write(workspace: &WorkspaceScope, id: &str) -> Result<PathBuf, String> {
+    let directory =
+        profile_directory(workspace).map_err(|_| "Sauvegarde du profil impossible".to_string())?;
+    crate::services::paths::data_file_for_write(&directory, &format!("{id}.json"))
         .await
         .map_err(|_| "Sauvegarde du profil impossible".to_string())
+}
+
+fn profile_directory(workspace: &WorkspaceScope) -> std::io::Result<String> {
+    let value = match workspace {
+        WorkspaceScope::Project(id) => format!("forecast-data-profiles-project-{id}"),
+        WorkspaceScope::Session(id) => format!("forecast-data-profiles-session-{id}"),
+        WorkspaceScope::Legacy => return Err(std::io::ErrorKind::InvalidInput.into()),
+    };
+    Ok(value)
 }
 
 fn validate_id(id: &str) -> Result<(), String> {
@@ -123,5 +152,17 @@ mod tests {
             "550e8400-e29b-41d4-a716-446655440000.json"
         )));
         assert!(!is_profile_file(Path::new("../profile.json")));
+    }
+
+    #[test]
+    fn each_workspace_has_its_own_profile_directory() {
+        let project = WorkspaceScope::Project("project-a".into());
+        let session = WorkspaceScope::Session("session-a".into());
+
+        assert_ne!(
+            profile_directory(&project).unwrap(),
+            profile_directory(&session).unwrap()
+        );
+        assert!(profile_directory(&WorkspaceScope::Legacy).is_err());
     }
 }

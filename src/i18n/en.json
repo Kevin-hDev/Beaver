@@ -2047,6 +2047,10 @@
       "validate": "Confirm",
       "cancel": "Cancel",
       "renameFailed": "Could not rename the analysis.",
+      "unassigned": "Unassigned legacy forecasts",
+      "unassignedHelp": "Explicitly choose where to attach forecasts created before project isolation.",
+      "claim": "Attach {{name}} to this workspace",
+      "claimFailed": "Could not attach this forecast.",
       "deleteFailed": "Could not delete the analysis."
     },
     "view": {

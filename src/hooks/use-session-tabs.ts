@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import {
   clearSessionRunning,
@@ -41,11 +41,13 @@ export function useSessionTabs(
   const tabs = loadedTabs && loadedTabs.rootSessionId === rootSessionId ? loadedTabs.tabs : null;
 
   const setTabs = useCallback((next: SessionTabs) => {
-    if (!rootSessionId) return;
+    if (!rootSessionId || rootSessionIdRef.current !== rootSessionId) return;
     setLoadedTabs({ rootSessionId, tabs: next });
   }, [rootSessionId]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    // L'autorité change avant toute peinture : une ancienne promesse ne doit
+    // jamais pouvoir publier ses onglets dans la nouvelle conversation.
     rootSessionIdRef.current = rootSessionId;
   }, [rootSessionId]);
 

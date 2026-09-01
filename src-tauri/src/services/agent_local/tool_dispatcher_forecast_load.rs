@@ -4,14 +4,14 @@ use crate::services::forecast::data_quality::DataProfile;
 use crate::services::forecast::storage::ForecastLoadError;
 use crate::services::forecast::types::ForecastResult;
 
-pub(super) async fn load(id: &str) -> Result<ForecastResult, ToolResult> {
-    crate::services::forecast::storage::load_classified(id)
+pub(super) async fn load(session_id: &str, id: &str) -> Result<ForecastResult, ToolResult> {
+    crate::services::forecast::storage::load_classified_for_session(session_id, id)
         .await
         .map_err(map_error)
 }
 
-pub(super) async fn load_profile(id: &str) -> Result<DataProfile, ToolResult> {
-    crate::services::forecast::data_profiles::load_profile_classified(id)
+pub(super) async fn load_profile(session_id: &str, id: &str) -> Result<DataProfile, ToolResult> {
+    crate::services::forecast::data_profiles::load_profile_classified(session_id, id)
         .await
         .map_err(map_profile_error)
 }

@@ -4,7 +4,7 @@ use crate::services::forecast::sidecar::ChronosSidecar;
 use serde_json::Value;
 use tauri::Manager;
 
-pub async fn backtest(args: &Value) -> ToolResult {
+pub async fn backtest(args: &Value, session_id: &str) -> ToolResult {
     let request: BacktestRequest = match serde_json::from_value(args.clone()) {
         Ok(request) => request,
         Err(_) => {
@@ -14,6 +14,14 @@ pub async fn backtest(args: &Value) -> ToolResult {
             )
         }
     };
+    if let Err(error) = crate::services::forecast::storage::authorize_for_session(
+        session_id,
+        &request.analysis_id,
+    )
+    .await
+    {
+        return ToolResult::not_found("forecast_analysis_not_found", error);
+    }
     let Some(app) = super::app_handle_global::get() else {
         return ToolResult::unavailable(
             "forecast_backtest_unavailable",
@@ -40,7 +48,7 @@ pub async fn backtest(args: &Value) -> ToolResult {
     }
 }
 
-pub async fn compare(args: &Value) -> ToolResult {
+pub async fn compare(args: &Value, session_id: &str) -> ToolResult {
     let Some(id) = args["analysis_id"]
         .as_str()
         .filter(|id| !id.trim().is_empty())
@@ -50,7 +58,7 @@ pub async fn compare(args: &Value) -> ToolResult {
             "Identifiant d'analyse requis",
         );
     };
-    match super::tool_dispatcher_forecast_load::load(id.trim()).await {
+    match super::tool_dispatcher_forecast_load::load(session_id, id.trim()).await {
         Ok(analysis) => comparison_payload(&analysis),
         Err(error) => error,
     }

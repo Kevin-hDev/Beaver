@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { ChevronDown } from "@/components/ui/icons";
 import { useTranslation } from "react-i18next";
 import "./forecast-scenario-picker.css";
+import { useForecastSessionId } from "../forecast-workspace-context";
 
 interface AnalysisMeta {
   id: string;
@@ -25,13 +26,15 @@ export function ForecastScenarioPicker({
   currentAnalysisId,
   onSelectAnalysis,
 }: ForecastScenarioPickerProps) {
+  const sessionId = useForecastSessionId();
   const { t, i18n } = useTranslation();
   const [analyses, setAnalyses] = useState<AnalysisMeta[]>([]);
   const [openMonths, setOpenMonths] = useState<string[]>([]);
 
   useEffect(() => {
     let active = true;
-    void invoke<AnalysisMeta[]>("list_forecast_analyses")
+    if (!sessionId) return;
+    void invoke<AnalysisMeta[]>("list_forecast_analyses", { sessionId })
       .then((list) => {
         if (!active) return;
         const sorted = [...list].sort((a, b) => b.created_at.localeCompare(a.created_at));
@@ -45,7 +48,7 @@ export function ForecastScenarioPicker({
     return () => {
       active = false;
     };
-  }, [currentAnalysisId]);
+  }, [currentAnalysisId, sessionId]);
 
   const groups = useMemo(() => groupByMonth(analyses), [analyses]);
 

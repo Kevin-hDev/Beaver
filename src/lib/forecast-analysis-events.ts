@@ -1,9 +1,14 @@
 import { listen } from "@tauri-apps/api/event";
 import { cleanupTauriListener } from "@/lib/tauri-listen";
 
+export type ForecastWorkspace =
+  | { kind: "project" | "session"; id: string }
+  | { kind: "legacy" };
+
 export interface ForecastAnalysisEvent {
   analysis_id: string;
   session_id?: string | null;
+  workspace: ForecastWorkspace;
   revision?: number | null;
 }
 

@@ -7,6 +7,7 @@ import {
   listenForecastAnalysisEvents,
 } from "@/lib/forecast-analysis-events";
 import type { ForecastLayerItem, ForecastLayerState } from "./forecast-layer-matrix";
+import { useForecastSessionId } from "./forecast-workspace-context";
 
 interface ForecastLayerAnalysis {
   covariates_used?: string[];
@@ -39,18 +40,19 @@ export function useForecastLayerSources(
   analysisId: string | null,
   setLayers: Dispatch<SetStateAction<ForecastLayerState>>
 ) {
+  const sessionId = useForecastSessionId();
   const [sources, setSources] = useState<ForecastLayerSources>(EMPTY_SOURCES);
   const runLatest = useLatestRequest();
 
   const refresh = useCallback(async () => {
     try {
-      const nextSources = await runLatest(() => loadSources(analysisId));
+      const nextSources = await runLatest(() => loadSources(sessionId, analysisId));
       if (nextSources === undefined) return;
       applySources(nextSources, setSources, setLayers);
     } catch {
       applySources(EMPTY_SOURCES, setSources, setLayers);
     }
-  }, [analysisId, runLatest, setLayers]);
+  }, [analysisId, runLatest, sessionId, setLayers]);
 
   useEffect(() => {
     void refresh();
@@ -62,9 +64,15 @@ export function useForecastLayerSources(
   return { sources, refresh };
 }
 
-async function loadSources(analysisId: string | null): Promise<ForecastLayerSources> {
-  if (!analysisId) return EMPTY_SOURCES;
-  const analysis = await invoke<ForecastLayerAnalysis>("get_forecast_analysis", { id: analysisId });
+async function loadSources(
+  sessionId: string | null,
+  analysisId: string | null,
+): Promise<ForecastLayerSources> {
+  if (!sessionId || !analysisId) return EMPTY_SOURCES;
+  const analysis = await invoke<ForecastLayerAnalysis>("get_forecast_analysis", {
+    sessionId,
+    id: analysisId,
+  });
   const scenarioLayers: ForecastLayerItem[] = (analysis.scenarios ?? []).map((scenario) => ({
     id: `scenario-${scenario.id}`,
     label: scenario.name,

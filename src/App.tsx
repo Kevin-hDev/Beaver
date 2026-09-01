@@ -29,6 +29,7 @@ import {
   DEFAULT_APP_NAV,
   FILE_ACCESS_SETTINGS_NAV,
   type AgentLocalNavState,
+  type AgentLocalWorkspaceState,
   type DeepPartial,
   type SettingsNavState,
 } from "@/types/navigation";
@@ -71,7 +72,11 @@ function MainApp() {
   }, []);
 
   const activeTab: TabId = nav.tab;
-  const { workspace: agentWorkspace, updateWorkspace: updateAgentWorkspace } =
+  const {
+    workspace: agentWorkspace,
+    updateWorkspace: updateAgentWorkspace,
+    clearWorkspace: clearAgentWorkspace,
+  } =
     useAgentSessionWorkspace(nav.agentLocal.sessionId);
   const agentNavState = useMemo<AgentLocalNavState>(() => ({
     sessionId: nav.agentLocal.sessionId,
@@ -82,11 +87,9 @@ function MainApp() {
   const handleWakeupChange = useCallback((id: string | null) => pushNav({ heartbeat: { wakeupId: id } }), [pushNav]);
   const handlePathChange = useCallback((path: string | null) => pushNav({ personality: { path } }), [pushNav]);
   const handleSessionChange = useCallback((id: string | null) => pushNav({ agentLocal: { sessionId: id } }), [pushNav]);
-  const handleAgentNavChange = useCallback((partial: DeepPartial<AgentLocalNavState>) => {
-    const { sessionId, ...workspacePatch } = partial;
-    if (sessionId !== undefined) pushNav({ agentLocal: { sessionId } });
-    updateAgentWorkspace(workspacePatch);
-  }, [pushNav, updateAgentWorkspace]);
+  const handleAgentNavChange = useCallback((partial: Partial<AgentLocalWorkspaceState>) => {
+    updateAgentWorkspace(partial);
+  }, [updateAgentWorkspace]);
   const handleSettingsNavChange = useCallback((partial: DeepPartial<SettingsNavState>) => {
     pushNav({ settings: partial });
   }, [pushNav]);
@@ -191,6 +194,7 @@ function MainApp() {
               navState={agentNavState}
               onSessionChange={handleSessionChange}
               onNavChange={handleAgentNavChange}
+              onWorkspaceClear={clearAgentWorkspace}
               listFocused={listActive("agent-local")}
             />
           )}
