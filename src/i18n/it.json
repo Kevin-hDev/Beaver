@@ -2152,6 +2152,19 @@
       }
     },
     "models": {
+      "families": {
+        "chronos-bolt": "Chronos-Bolt",
+        "chronos-2": "Chronos-2",
+        "timesfm-2-5": "TimesFM 2.5",
+        "timegpt-2": "TimeGPT-2",
+        "toto-2": "Toto-2",
+        "moirai-2": "Moirai-2",
+        "flowstate": "FlowState",
+        "tabpfn-ts": "TabPFN-TS",
+        "tirex": "TiRex",
+        "kairos": "Kairos",
+        "sundial": "Sundial"
+      },
       "title": "Modelli Forecast",
       "sidebarTitle": "Models",
       "modelCapabilities": "Capacità del modello",

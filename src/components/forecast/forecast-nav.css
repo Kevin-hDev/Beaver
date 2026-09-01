@@ -27,10 +27,14 @@
   position: absolute;
   top: calc(100% + 8px);
   left: 0;
-  width: 143px;
+  /* Le menu se règle sur son plus long libellé plutôt que sur une largeur
+     fixée : « Vue principale » revenait à la ligne, et il change à chaque
+     langue. Le plancher garde un menu large même quand tout est court. */
+  width: max-content;
+  min-width: 100%;
   max-height: 0;
   overflow: hidden;
-  padding: 0 8px;
+  padding: 0 var(--list-gutter);
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
   background: var(--popover-bg, var(--shell));
@@ -47,7 +51,7 @@
 
 .fc-nav-panel.is-open {
   max-height: 260px;
-  padding: 8px;
+  padding: 4px var(--list-gutter);
   border-color: var(--edge);
   opacity: 1;
 }
@@ -73,6 +77,7 @@
   font-family: var(--font-sans);
   cursor: pointer;
   text-align: left;
+  white-space: nowrap;
   transition: background 100ms ease, color 100ms ease;
 }
 

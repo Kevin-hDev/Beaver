@@ -1,4 +1,5 @@
-import { useId } from "react";
+import { useMemo } from "react";
+import { CustomSelect } from "@/components/ui/custom-select";
 
 interface FieldSelectProps {
   label: string;
@@ -11,19 +12,18 @@ interface OptionalFieldSelectProps extends FieldSelectProps {
   emptyLabel: string;
 }
 
-export function FieldSelect({
-  label,
-  value,
-  onChange,
-  options,
-}: FieldSelectProps) {
-  const id = useId();
+/* Le libellé n'est plus un `<label for>` : la liste maison est un bouton, et un
+   `for` qui ne désigne aucun champ ne fait rien. C'est `ariaLabel` qui porte le
+   nom pour les lecteurs d'écran. */
+export function FieldSelect({ label, value, onChange, options }: FieldSelectProps) {
+  const items = useMemo(
+    () => options.map((option) => ({ value: option, label: option })),
+    [options],
+  );
   return (
     <div className="fcc-field">
-      <label className="fcc-label" htmlFor={id}>{label}</label>
-      <select className="field fcc-select" id={id} value={value} onChange={(e) => onChange(e.target.value)}>
-        {options.map((option) => <option key={option} value={option}>{option}</option>)}
-      </select>
+      <span className="fcc-label">{label}</span>
+      <CustomSelect options={items} value={value} onChange={onChange} ariaLabel={label} />
     </div>
   );
 }
@@ -35,14 +35,23 @@ export function OptionalFieldSelect({
   options,
   emptyLabel,
 }: OptionalFieldSelectProps) {
-  const id = useId();
+  const items = useMemo(
+    () => [
+      { value: "", label: emptyLabel },
+      ...options.map((option) => ({ value: option, label: option })),
+    ],
+    [emptyLabel, options],
+  );
   return (
     <div className="fcc-field">
-      <label className="fcc-label" htmlFor={id}>{label}</label>
-      <select className="field fcc-select" id={id} value={value} onChange={(e) => onChange(e.target.value)}>
-        <option value="">{emptyLabel}</option>
-        {options.map((option) => <option key={option} value={option}>{option}</option>)}
-      </select>
+      <span className="fcc-label">{label}</span>
+      <CustomSelect
+        options={items}
+        value={value}
+        onChange={onChange}
+        placeholder={emptyLabel}
+        ariaLabel={label}
+      />
     </div>
   );
 }

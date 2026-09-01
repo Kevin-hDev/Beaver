@@ -62,11 +62,14 @@
   margin: 0 0 6px;
 }
 
+/* Nom puis description, empilés comme dans la liste Historique : sur la
+   largeur de ce panneau, les deux côte à côte ne tiennent pas et c'est le nom
+   — le seul qui identifie l'analyse — qui se faisait tronquer. */
 .fc-recent-item {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1px;
   width: 100%;
   padding: 6px 8px;
   border: none;
@@ -85,6 +88,9 @@
   color: var(--ink);
 }
 
+/* Le nom identifie l'analyse, la métadonnée ne fait que la décrire : c'est
+   elle qui cède la place. Avant, elle refusait de rétrécir et le nom tombait
+   à trois lettres. */
 .fc-recent-name {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -92,9 +98,10 @@
 }
 
 .fc-recent-meta {
+  overflow: hidden;
   font-size: var(--text-xs);
   color: var(--ink-faint);
   font-family: var(--font-mono);
+  text-overflow: ellipsis;
   white-space: nowrap;
-  flex-shrink: 0;
 }

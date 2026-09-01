@@ -156,13 +156,6 @@
   letter-spacing: 0.04em;
 }
 
-/* Les options d'une liste native sont dessinées par le système, hors de la
-   portée du thème : leur fond se pose ici ou il reste blanc. */
-.fcc-select option {
-  background: var(--shell-opaque);
-  color: var(--ink);
-}
-
 .fcc-range {
   width: 100%;
   accent-color: var(--pulse);

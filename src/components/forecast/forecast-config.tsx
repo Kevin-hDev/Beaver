@@ -7,6 +7,7 @@ import { buildForecastConfidenceControl } from "./forecast-config-confidence";
 import { buildLaunchErrorKey } from "./forecast-config-validation";
 import { FieldSelect, OptionalFieldSelect } from "./forecast-config-fields";
 import { ForecastConfigModelPicker } from "./forecast-config-model-picker";
+import { CustomSelect } from "@/components/ui/custom-select";
 import { FORECAST_FREQUENCIES } from "./forecast-limits";
 import { useForecastConfigModels } from "./use-forecast-config-models";
 import "./forecast-config.css";
@@ -71,6 +72,10 @@ export function ForecastConfig({
     [models, model]
   );
   const confidenceControl = buildForecastConfidenceControl(selectedModel, confidence);
+  const frequencyOptions = useMemo(
+    () => FORECAST_FREQUENCIES.map((id) => ({ value: id, label: t(`forecast.frequency.${id}`) })),
+    [t]
+  );
   const contextProfile = useMemo(
     () =>
       buildForecastContextProfile(
@@ -145,10 +150,13 @@ export function ForecastConfig({
               value={horizon} onChange={(e) => setHorizon(Number(e.target.value))} />
           </div>
           <div className="fcc-field fcc-half">
-            <label className="fcc-label" htmlFor="fcc-freq">{t("forecast.config.frequency")}</label>
-            <select className="field fcc-select" id="fcc-freq" value={frequency} onChange={(e) => setFrequency(e.target.value)}>
-              {FORECAST_FREQUENCIES.map((f) => <option key={f} value={f}>{t(`forecast.frequency.${f}`)}</option>)}
-            </select>
+            <span className="fcc-label">{t("forecast.config.frequency")}</span>
+            <CustomSelect
+              options={frequencyOptions}
+              value={frequency}
+              onChange={setFrequency}
+              ariaLabel={t("forecast.config.frequency")}
+            />
           </div>
         </div>
         <div className="fcc-field">

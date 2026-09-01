@@ -103,6 +103,18 @@ export function getForecastFamilyKey(familyId: string): string {
   return `forecast.models.families.${familyId}`;
 }
 
+/* Autorité unique du nom d'une famille. Une famille servie par un fournisseur
+   cloud n'est pas au catalogue et n'a donc pas de traduction : sans ce repli,
+   c'est la clé qui s'affiche telle quelle à l'écran. */
+export function getForecastFamilyLabel(
+  familyId: string,
+  t: (key: string) => string,
+): string {
+  const key = getForecastFamilyKey(familyId);
+  const label = t(key);
+  return label === key ? familyId : label;
+}
+
 export function groupForecastModels(models: ForecastModelEntry[]): ForecastModelGroup[] {
   const grouped = new Map<string, ForecastModelEntry[]>();
   models.forEach((model) => {
