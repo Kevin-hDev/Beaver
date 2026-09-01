@@ -1,6 +1,5 @@
 import type { FilePreviewActiveTab } from "@/types/file-preview";
 import {
-  normalizeForecastSection,
   type ForecastSection,
   type PanelMode,
 } from "@/hooks/use-forecast-panel";
@@ -16,8 +15,11 @@ export type ProvidersSettingsSubTab = "api" | "oauth";
 export type ExtensionsSettingsSection = "plugins" | "custom" | "external" | "host";
 export type AdvancedSettingsTarget = "file-access" | null;
 
-export interface AgentLocalNavState {
+export interface AgentLocalRouteState {
   sessionId: string | null;
+}
+
+export interface AgentLocalWorkspaceState {
   previewOpen: boolean;
   previewActiveTab: FilePreviewActiveTab;
   previewFullscreen: boolean;
@@ -28,7 +30,9 @@ export interface AgentLocalNavState {
   terminalOpen: boolean;
 }
 
-type LegacyAgentLocalNavState = AgentLocalNavState & {
+export type AgentLocalNavState = AgentLocalRouteState & AgentLocalWorkspaceState;
+
+type LegacyAgentLocalRouteState = AgentLocalRouteState & Partial<AgentLocalWorkspaceState> & {
   terminalActiveTabId?: unknown;
 };
 
@@ -61,7 +65,7 @@ export type LlmNavState =
 
 export interface AppNavState {
   tab: MainTabId;
-  agentLocal: AgentLocalNavState;
+  agentLocal: AgentLocalRouteState;
   heartbeat: { wakeupId: string | null };
   personality: { path: string | null };
   settings: SettingsNavState;
@@ -78,19 +82,25 @@ export const FILE_ACCESS_SETTINGS_NAV: AppNavPatch = {
   settings: { subTab: "advanced", advancedTarget: "file-access" },
 };
 
+export const DEFAULT_AGENT_LOCAL_WORKSPACE: AgentLocalWorkspaceState = {
+  previewOpen: false,
+  previewActiveTab: "summary",
+  previewFullscreen: false,
+  panelMode: "preview",
+  forecastSection: "view",
+  forecastAnalysisId: null,
+  fileTreeOpen: false,
+  terminalOpen: false,
+};
+
+export const DEFAULT_AGENT_LOCAL_NAV: AgentLocalNavState = {
+  sessionId: null,
+  ...DEFAULT_AGENT_LOCAL_WORKSPACE,
+};
+
 export const DEFAULT_APP_NAV: AppNavState = {
   tab: "agent-local",
-  agentLocal: {
-    sessionId: null,
-    previewOpen: false,
-    previewActiveTab: "summary",
-    previewFullscreen: false,
-    panelMode: "preview",
-    forecastSection: "view",
-    forecastAnalysisId: null,
-    fileTreeOpen: false,
-    terminalOpen: false,
-  },
+  agentLocal: { sessionId: null },
   heartbeat: { wakeupId: null },
   personality: { path: null },
   settings: {
@@ -116,8 +126,7 @@ export const DEFAULT_APP_NAV: AppNavState = {
 };
 
 export function migrateAppNav(input: AppNavState): AppNavState {
-  const { terminalActiveTabId: _ignored, ...agentLocal } =
-    input.agentLocal as LegacyAgentLocalNavState;
+  const { sessionId = null } = input.agentLocal as LegacyAgentLocalRouteState;
   const settings = input.settings as Omit<SettingsNavState, "subTab"> & {
     subTab: SettingsSubTab | "api-keys";
     providersSubTab?: ProvidersSettingsSubTab;
@@ -129,10 +138,7 @@ export function migrateAppNav(input: AppNavState): AppNavState {
   const subTab: SettingsSubTab = settings.subTab === "api-keys" ? "providers" : settings.subTab;
   return {
     ...input,
-    agentLocal: {
-      ...agentLocal,
-      forecastSection: normalizeForecastSection(agentLocal.forecastSection),
-    },
+    agentLocal: { sessionId },
     settings: {
       ...settings,
       subTab,

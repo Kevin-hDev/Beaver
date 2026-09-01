@@ -19,6 +19,7 @@ interface PreviewSyncOpts {
 export function useAgentLocalPreviewSync({ navState, filePreview }: PreviewSyncOpts) {
   const restoredPreviewNavKey = useRef<string | null>(null);
   const previewNavKey = JSON.stringify([
+    navState.sessionId,
     navState.previewOpen,
     navState.previewActiveTab,
     navState.previewFullscreen,
@@ -37,5 +38,5 @@ export function useAgentLocalPreviewSync({ navState, filePreview }: PreviewSyncO
       filePreview.setFullscreen(navState.previewFullscreen);
     }
   }, [filePreview, navState.previewActiveTab, navState.previewFullscreen,
-    navState.previewOpen, previewNavKey]);
+    navState.previewOpen, navState.sessionId, previewNavKey]);
 }

@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { DEFAULT_APP_NAV } from "@/types/navigation";
+import { DEFAULT_AGENT_LOCAL_NAV } from "@/types/navigation";
 import { useAgentLocalTab } from "@/hooks/use-agent-local-tab";
 import type { ReasoningMode } from "@/lib/reasoning-modes";
 import { AgentLocalTab } from "../agent-local-tab";
@@ -138,7 +138,7 @@ vi.mock("../welcome-view", async () => {
   };
 });
 
-const navState = { ...DEFAULT_APP_NAV.agentLocal, sessionId: null };
+const navState = { ...DEFAULT_AGENT_LOCAL_NAV, sessionId: null };
 
 function OwnerActionsHarness() {
   const state = useAgentLocalTab({ navState, listFocused: false, onSessionChange: owner.onSessionChange });

@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { useCallback, useState } from "react";
 import { describe, expect, it, vi, type Mock } from "vitest";
-import { DEFAULT_APP_NAV } from "@/types/navigation";
+import { DEFAULT_AGENT_LOCAL_NAV } from "@/types/navigation";
 import type { AgentLocalNavState, DeepPartial } from "@/types/navigation";
 import type { TerminalGroup, TerminalTab } from "../terminal-types";
 import { useAgentLocalControlledTerminal } from "../use-agent-local-controlled-terminal";
@@ -87,7 +87,7 @@ function renderStatefulControlled({
         closeTabInGroup,
       });
       return useAgentLocalControlledTerminal({
-        navState: { ...DEFAULT_APP_NAV.agentLocal, terminalOpen: true },
+        navState: { ...DEFAULT_AGENT_LOCAL_NAV, terminalOpen: true },
         terminalState,
         terminalCwd: "/project",
         onNavChange,
@@ -101,7 +101,7 @@ function renderStatefulControlled({
 describe("useAgentLocalControlledTerminal", () => {
   it("ne remplace jamais l'onglet actif possédé par useTerminal", () => {
     const terminalState = terminalFixture({ activeTabId: "runtime-tab" });
-    const navState = { ...DEFAULT_APP_NAV.agentLocal, terminalOpen: true };
+    const navState = { ...DEFAULT_AGENT_LOCAL_NAV, terminalOpen: true };
 
     const { result } = renderHook(() => useAgentLocalControlledTerminal({
       navState,
@@ -118,7 +118,7 @@ describe("useAgentLocalControlledTerminal", () => {
     const terminalState = terminalFixture({ loaded: false, persistenceStatus: "loading" });
 
     renderHook(() => useAgentLocalControlledTerminal({
-      navState: { ...DEFAULT_APP_NAV.agentLocal, terminalOpen: true },
+      navState: { ...DEFAULT_AGENT_LOCAL_NAV, terminalOpen: true },
       terminalState,
       terminalCwd: "/project",
       onNavChange,
@@ -191,7 +191,7 @@ describe("useAgentLocalControlledTerminal", () => {
     const addTab = vi.fn(() => "new-tab");
     const terminalState = terminalFixture({ addTab });
     const { result } = renderHook(() => useAgentLocalControlledTerminal({
-      navState: DEFAULT_APP_NAV.agentLocal,
+      navState: DEFAULT_AGENT_LOCAL_NAV,
       terminalState,
       terminalCwd: "/project",
       onNavChange,
@@ -207,7 +207,7 @@ describe("useAgentLocalControlledTerminal", () => {
     const onNavChange = vi.fn();
     const terminalState = terminalFixture({ addTab: vi.fn(() => null) });
     const { result } = renderHook(() => useAgentLocalControlledTerminal({
-      navState: DEFAULT_APP_NAV.agentLocal,
+      navState: DEFAULT_AGENT_LOCAL_NAV,
       terminalState,
       terminalCwd: "/project",
       onNavChange,

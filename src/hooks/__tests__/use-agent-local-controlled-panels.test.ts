@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { useFilePreview } from "@/hooks/use-file-preview";
 import type { useFileTree } from "@/hooks/use-file-tree";
 import { useForecastPanel } from "@/hooks/use-forecast-panel";
-import { DEFAULT_APP_NAV } from "@/types/navigation";
+import { DEFAULT_AGENT_LOCAL_NAV } from "@/types/navigation";
 import { useAgentLocalControlledPanels } from "../use-agent-local-controlled-panels";
 
 function dependencies() {
@@ -35,7 +35,7 @@ describe("useAgentLocalControlledPanels", () => {
     const { result } = renderHook(() => useAgentLocalControlledPanels({
       ...deps,
       sessionId: null,
-      navState: { ...DEFAULT_APP_NAV.agentLocal, previewFullscreen: true },
+      navState: { ...DEFAULT_AGENT_LOCAL_NAV, previewFullscreen: true },
       onNavChange,
     }));
 
@@ -56,7 +56,7 @@ describe("useAgentLocalControlledPanels", () => {
       const { result } = renderHook(() => useAgentLocalControlledPanels({
         ...deps,
         sessionId: null,
-        navState: { ...DEFAULT_APP_NAV.agentLocal, panelMode, previewFullscreen: true },
+        navState: { ...DEFAULT_AGENT_LOCAL_NAV, panelMode, previewFullscreen: true },
         onNavChange,
       }));
 
@@ -82,7 +82,7 @@ describe("useAgentLocalControlledPanels", () => {
     const deps = dependencies();
     const onNavChange = vi.fn();
     const { result } = renderHook(() => {
-      const [navState, setNavState] = useState(DEFAULT_APP_NAV.agentLocal);
+      const [navState, setNavState] = useState(DEFAULT_AGENT_LOCAL_NAV);
       const forecast = useForecastPanel("session-id");
       return useAgentLocalControlledPanels({
         ...deps,
@@ -122,7 +122,7 @@ describe("useAgentLocalControlledPanels", () => {
     renderHook(() => useAgentLocalControlledPanels({
       ...deps,
       sessionId: "session-id",
-      navState: DEFAULT_APP_NAV.agentLocal,
+      navState: DEFAULT_AGENT_LOCAL_NAV,
       onNavChange,
     }));
 

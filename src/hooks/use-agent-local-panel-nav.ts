@@ -18,6 +18,7 @@ export function useAgentLocalPanelNav({
   const { open: fileTreeOpen, setOpen: setFileTreeOpen } = fileTree;
   const { panelMode, currentAnalysisId, activeSection, restorePanelState } = forecast;
   const navKey = JSON.stringify([
+    navState.sessionId,
     navState.fileTreeOpen,
     navState.panelMode,
     navState.forecastAnalysisId,
@@ -45,6 +46,6 @@ export function useAgentLocalPanelNav({
   }, [
     navKey, fileTreeOpen, setFileTreeOpen, panelMode, currentAnalysisId, activeSection,
     restorePanelState, navState.fileTreeOpen, navState.panelMode,
-    navState.forecastAnalysisId, navState.forecastSection,
+    navState.forecastAnalysisId, navState.forecastSection, navState.sessionId,
   ]);
 }

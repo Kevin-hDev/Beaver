@@ -1,7 +1,7 @@
 import { renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { useAgentLocalPanelNav } from "../use-agent-local-panel-nav";
-import { DEFAULT_APP_NAV } from "@/types/navigation";
+import { DEFAULT_AGENT_LOCAL_NAV } from "@/types/navigation";
 import type { useFileTree } from "../use-file-tree";
 import type { useForecastPanel } from "../use-forecast-panel";
 
@@ -28,7 +28,7 @@ describe("useAgentLocalPanelNav", () => {
 
     renderHook(() => useAgentLocalPanelNav({
       navState: {
-        ...DEFAULT_APP_NAV.agentLocal,
+        ...DEFAULT_AGENT_LOCAL_NAV,
         fileTreeOpen: true,
         panelMode: "forecast",
         forecastSection: "comparisons",
@@ -52,7 +52,7 @@ describe("useAgentLocalPanelNav", () => {
     const panel = forecast();
 
     renderHook(() => useAgentLocalPanelNav({
-      navState: DEFAULT_APP_NAV.agentLocal,
+      navState: DEFAULT_AGENT_LOCAL_NAV,
       fileTree: tree,
       forecast: panel,
     }));
@@ -65,7 +65,7 @@ describe("useAgentLocalPanelNav", () => {
     const setOpen = vi.fn();
     const tree = { ...fileTree(false), setOpen };
     const panel = forecast();
-    const navState = DEFAULT_APP_NAV.agentLocal;
+    const navState = DEFAULT_AGENT_LOCAL_NAV;
 
     const { rerender } = renderHook(
       ({ open }) => useAgentLocalPanelNav({
@@ -80,5 +80,22 @@ describe("useAgentLocalPanelNav", () => {
     rerender({ open: true });
 
     expect(setOpen).not.toHaveBeenCalledWith(false);
+  });
+
+  it("resynchronise l'arborescence quand la session change avec les mêmes valeurs", () => {
+    const setOpen = vi.fn();
+    const panel = forecast();
+    const { rerender } = renderHook(
+      ({ sessionId, open }) => useAgentLocalPanelNav({
+        navState: { ...DEFAULT_AGENT_LOCAL_NAV, sessionId },
+        fileTree: { ...fileTree(open), setOpen },
+        forecast: panel,
+      }),
+      { initialProps: { sessionId: "session-a", open: false } },
+    );
+
+    rerender({ sessionId: "session-b", open: true });
+
+    expect(setOpen).toHaveBeenCalledWith(false);
   });
 });

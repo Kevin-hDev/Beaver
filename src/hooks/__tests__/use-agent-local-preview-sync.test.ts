@@ -1,6 +1,6 @@
 import { renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { DEFAULT_APP_NAV } from "@/types/navigation";
+import { DEFAULT_AGENT_LOCAL_NAV } from "@/types/navigation";
 import { useAgentLocalPreviewSync } from "../use-agent-local-preview-sync";
 import type { FilePreviewActiveTab } from "@/types/file-preview";
 
@@ -21,7 +21,7 @@ describe("useAgentLocalPreviewSync", () => {
 
     const { rerender } = renderHook(
       ({ open }) => useAgentLocalPreviewSync({
-        navState: DEFAULT_APP_NAV.agentLocal,
+        navState: DEFAULT_AGENT_LOCAL_NAV,
         filePreview: { ...filePreview, open },
       }),
       { initialProps: { open: true } },
@@ -39,7 +39,7 @@ describe("useAgentLocalPreviewSync", () => {
 
     const { rerender } = renderHook(
       ({ open }) => useAgentLocalPreviewSync({
-        navState: DEFAULT_APP_NAV.agentLocal,
+        navState: DEFAULT_AGENT_LOCAL_NAV,
         filePreview: { ...filePreview, open },
       }),
       { initialProps: { open: false } },
@@ -48,5 +48,20 @@ describe("useAgentLocalPreviewSync", () => {
     rerender({ open: true });
 
     expect(filePreview.setOpen).not.toHaveBeenCalledWith(false);
+  });
+
+  it("resynchronise la preview quand la session change avec les mêmes valeurs", () => {
+    const filePreview = preview(false);
+    const { rerender } = renderHook(
+      ({ sessionId, open }) => useAgentLocalPreviewSync({
+        navState: { ...DEFAULT_AGENT_LOCAL_NAV, sessionId },
+        filePreview: { ...filePreview, open },
+      }),
+      { initialProps: { sessionId: "session-a", open: false } },
+    );
+
+    rerender({ sessionId: "session-b", open: true });
+
+    expect(filePreview.setOpen).toHaveBeenCalledWith(false);
   });
 });

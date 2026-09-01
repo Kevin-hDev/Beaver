@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { AppLayout } from "@/components/layout/app-layout";
 import { StartupWindowControls } from "@/components/layout/startup-window-controls";
@@ -21,6 +21,7 @@ import { ExtensionsProvider } from "@/hooks/use-extensions";
 import { usePlatformBodyClass } from "@/hooks/use-platform-body-class";
 import { AppNavigationActionsProvider } from "@/hooks/use-app-navigation-actions";
 import { useBrowserRecoveryNotice } from "@/hooks/use-browser-recovery-notice";
+import { useAgentSessionWorkspace } from "@/hooks/use-agent-session-workspace";
 import { UpdateProvider } from "@/hooks/update-context";
 import type { TabId } from "@/components/layout/nav-items";
 import "./App.css";
@@ -70,14 +71,22 @@ function MainApp() {
   }, []);
 
   const activeTab: TabId = nav.tab;
+  const { workspace: agentWorkspace, updateWorkspace: updateAgentWorkspace } =
+    useAgentSessionWorkspace(nav.agentLocal.sessionId);
+  const agentNavState = useMemo<AgentLocalNavState>(() => ({
+    sessionId: nav.agentLocal.sessionId,
+    ...agentWorkspace,
+  }), [agentWorkspace, nav.agentLocal.sessionId]);
   const listActive = (tab: TabId) => focusedPanel === "list" && activeTab === tab;
 
   const handleWakeupChange = useCallback((id: string | null) => pushNav({ heartbeat: { wakeupId: id } }), [pushNav]);
   const handlePathChange = useCallback((path: string | null) => pushNav({ personality: { path } }), [pushNav]);
   const handleSessionChange = useCallback((id: string | null) => pushNav({ agentLocal: { sessionId: id } }), [pushNav]);
   const handleAgentNavChange = useCallback((partial: DeepPartial<AgentLocalNavState>) => {
-    pushNav({ agentLocal: partial });
-  }, [pushNav]);
+    const { sessionId, ...workspacePatch } = partial;
+    if (sessionId !== undefined) pushNav({ agentLocal: { sessionId } });
+    updateAgentWorkspace(workspacePatch);
+  }, [pushNav, updateAgentWorkspace]);
   const handleSettingsNavChange = useCallback((partial: DeepPartial<SettingsNavState>) => {
     pushNav({ settings: partial });
   }, [pushNav]);
@@ -179,7 +188,7 @@ function MainApp() {
           )}
           {activeTab === "agent-local" && (
             <AgentLocalTab
-              navState={nav.agentLocal}
+              navState={agentNavState}
               onSessionChange={handleSessionChange}
               onNavChange={handleAgentNavChange}
               listFocused={listActive("agent-local")}

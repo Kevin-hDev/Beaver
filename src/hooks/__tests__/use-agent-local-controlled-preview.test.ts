@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { DEFAULT_APP_NAV } from "@/types/navigation";
+import { DEFAULT_AGENT_LOCAL_NAV } from "@/types/navigation";
 import type { AgentPlanRun } from "@/types/agent";
 import type { FileOperation } from "@/types/file-preview";
 import { useAgentLocalControlledPreview } from "../use-agent-local-controlled-preview";
@@ -56,7 +56,7 @@ describe("useAgentLocalControlledPreview", () => {
 
     const { result } = renderHook(() => useAgentLocalControlledPreview({
       navState: {
-        ...DEFAULT_APP_NAV.agentLocal,
+        ...DEFAULT_AGENT_LOCAL_NAV,
         previewOpen: true,
         fileTreeOpen: true,
       },
@@ -80,7 +80,7 @@ describe("useAgentLocalControlledPreview", () => {
 
     const { result } = renderHook(() => useAgentLocalControlledPreview({
       navState: {
-        ...DEFAULT_APP_NAV.agentLocal,
+        ...DEFAULT_AGENT_LOCAL_NAV,
         previewOpen: true,
         previewFullscreen: true,
         fileTreeOpen: true,
@@ -107,7 +107,7 @@ describe("useAgentLocalControlledPreview", () => {
       const preview = filePreviewState();
       const onNavChange = vi.fn();
       const { result } = renderHook(() => useAgentLocalControlledPreview({
-        navState: { ...DEFAULT_APP_NAV.agentLocal, panelMode },
+        navState: { ...DEFAULT_AGENT_LOCAL_NAV, panelMode },
         filePreviewState: preview,
         onNavChange,
       }));
@@ -128,7 +128,7 @@ describe("useAgentLocalControlledPreview", () => {
     const preview = filePreviewState();
     const onNavChange = vi.fn();
     const { result } = renderHook(() => useAgentLocalControlledPreview({
-      navState: { ...DEFAULT_APP_NAV.agentLocal, panelMode: "forecast" },
+      navState: { ...DEFAULT_AGENT_LOCAL_NAV, panelMode: "forecast" },
       filePreviewState: preview,
       onNavChange,
     }));
