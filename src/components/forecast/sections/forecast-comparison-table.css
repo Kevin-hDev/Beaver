@@ -21,8 +21,6 @@
   color: var(--ink-faint);
   font-family: var(--font-sans);
   font-size: var(--text-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 .fccmp-table-body {

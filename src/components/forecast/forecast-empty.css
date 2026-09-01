@@ -56,8 +56,6 @@
 .fc-recent-title {
   font-size: var(--text-xs);
   color: var(--ink-faint);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
   font-family: var(--font-sans);
   margin: 0 0 6px;
 }

@@ -53,8 +53,6 @@
   color: var(--ink-faint);
   font-family: var(--font-sans);
   font-size: var(--text-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 .fca-card-value {
@@ -110,8 +108,6 @@
 .fca-accordion-title {
   font-family: var(--font-sans);
   font-size: var(--text-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 .fca-accordion-subtitle {

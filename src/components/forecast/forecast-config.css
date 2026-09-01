@@ -24,8 +24,6 @@
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--ink);
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
 }
 
 .fcc-form {
@@ -75,8 +73,6 @@
   font-size: var(--text-xs);
   font-family: var(--font-sans);
   color: var(--ink-faint);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 .fcc-context-stat-value {
@@ -144,8 +140,6 @@
   font-size: var(--text-xs);
   font-family: var(--font-sans);
   color: var(--ink-faint);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 .fcc-range {
