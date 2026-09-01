@@ -23,6 +23,8 @@
   min-width: var(--forecast-series-menu-width);
 }
 
+/* Un déclencheur de menu est un contrôle, pas une carte : il garde le fond des
+   contrôles. Avec le fond des panneaux il se confond avec son support. */
 .fc-view-toolbar-menu .fcs-menu-trigger {
   background: var(--surface);
 }
@@ -30,28 +32,23 @@
 .fc-kpi-row {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 1px;
+  gap: var(--chrome-1);
   padding: 12px 14px;
   flex-shrink: 0;
-  background: var(--edge);
-  border-bottom: 1px solid var(--edge);
 }
 
+/* Même carte détachée que partout ailleurs. Les joints d'un pixel ne
+   dessinaient un cadre complet qu'aux deux extrémités de la rangée : les
+   cartes du milieu restaient à angle droit. */
 .fc-kpi-card {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 8px 10px;
-  background: var(--void);
   min-height: 48px;
-}
-
-.fc-kpi-card:first-child {
-  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
-}
-
-.fc-kpi-card:last-child {
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  padding: 8px 10px;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-sm);
+  background: var(--shell);
 }
 
 .fc-kpi-label {

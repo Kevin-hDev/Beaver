@@ -1,3 +1,7 @@
+.fcwe-root > .callout {
+  margin-bottom: var(--space-md);
+}
+
 .fcwe-root {
   container-type: inline-size;
   width: 100%;
@@ -55,24 +59,6 @@
    que ce bouton occupe dans sa barre. */
 .fcwe-run {
   flex: 0 0 auto;
-}
-
-.fcwe-warning {
-  margin: 0 0 var(--space-md);
-  border-left: var(--chrome-1) solid var(--signal-warning);
-  padding: var(--space-sm) var(--space-md);
-  background: var(--signal-warning-bg);
-  color: var(--ink-muted);
-  font-size: var(--text-sm);
-}
-
-.fcwe-ensemble-status {
-  margin: 0 0 var(--space-md);
-  border-left: var(--chrome-1) solid var(--pulse);
-  padding: var(--space-sm) var(--space-md);
-  background: var(--pulse-muted);
-  color: var(--ink-muted);
-  font-size: var(--text-sm);
 }
 
 /* Forme et fonds viennent de src/styles/data-table.css. Ne reste ici que la
@@ -147,10 +133,13 @@
   line-height: 1.35;
 }
 
+/* Le trait plein de la carte, pas un pointillé : dans le reste de Beaver le
+   pointillé marque un bouton d'action, et un cadre pointillé autour d'un
+   texte se lit comme une zone où déposer un fichier. */
 .fcwe-empty,
 .fcwe-state {
   padding: var(--space-xl);
-  border: 1px dashed var(--edge);
+  border: 1px solid var(--edge);
   border-radius: var(--radius-md);
   text-align: center;
 }

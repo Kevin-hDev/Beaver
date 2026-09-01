@@ -10,14 +10,13 @@
   margin-top: var(--space-lg);
 }
 
+/* Des cartes détachées, chacune avec son contour — comme celles de la page de
+   configuration et celles du rapport. Le joint d'un pixel sur fond `--edge`
+   dessinait un quadrillage qui n'existe nulle part ailleurs dans Beaver. */
 .fcwd-stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  overflow: hidden;
-  border: 1px solid var(--edge);
-  border-radius: var(--radius-md);
-  background: var(--edge);
-  gap: 1px;
+  gap: var(--chrome-2);
 }
 
 .fcwd-stat {
@@ -26,7 +25,9 @@
   flex-direction: column;
   gap: var(--space-xs);
   padding: var(--space-md);
-  background: var(--surface);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-md);
+  background: var(--shell);
 }
 
 .fcwd-stat span,
@@ -51,7 +52,7 @@
   padding: var(--space-md);
   border: 1px solid var(--edge);
   border-radius: var(--radius-md);
-  background: var(--surface);
+  background: var(--shell);
 }
 
 .fcwd-mapping > div,
@@ -62,24 +63,14 @@
   gap: var(--space-xs);
 }
 
+/* Fond, barre de couleur et arrondi viennent de src/styles/callout.css. Ne
+   reste ici que la disposition sur deux colonnes propre à ce bandeau. */
 .fcwd-quality {
-  display: flex;
+  flex-direction: row;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-lg);
   padding: var(--space-md);
-  border-left: var(--chrome-1) solid var(--edge);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-}
-
-.fcwd-quality.is-valid {
-  border-left-color: var(--signal-success);
-}
-
-.fcwd-quality.is-warning {
-  border-left-color: var(--signal-warning);
-  background: var(--signal-warning-bg);
 }
 
 .fcwd-quality strong {
@@ -99,7 +90,7 @@
   overflow: hidden;
   border: 1px solid var(--edge);
   border-radius: var(--radius-md);
-  background: var(--surface);
+  background: var(--shell);
 }
 
 .fcwd-section-heading {

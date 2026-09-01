@@ -58,9 +58,9 @@ export function ForecastConfigContext({
       )}
 
       {status && (
-        <div className={`fcc-callout fcc-callout-${status.tone}`}>
-          <span className="fcc-callout-title">{t(status.titleKey)}</span>
-          <span className="fcc-callout-body">
+        <div className={`callout callout-${status.tone}`}>
+          <span className="callout-title">{t(status.titleKey)}</span>
+          <span>
             {t(status.bodyKey, status.values)}
           </span>
         </div>

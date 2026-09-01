@@ -72,14 +72,14 @@ export function ForecastEvaluationView({ analysisId, mode }: ForecastEvaluationV
         ) : null}
       </div>
       {analysis.ensemble ? (
-        <p className="fcwe-ensemble-status">
+        <p className="callout callout-accent">
           {t("forecast.workbench.evaluation.ensembleReady", {
             count: analysis.ensemble.members.length,
           })}
         </p>
       ) : null}
       {evaluation?.warning ? (
-        <p className="fcwe-warning">
+        <p className="callout callout-warning">
           {t(`forecast.workbench.evaluation.planWarnings.${evaluation.warning}`, {
             defaultValue: t("forecast.workbench.evaluation.planWarnings.unavailable"),
           })}

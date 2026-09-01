@@ -15,6 +15,7 @@
 @import "./drag-reorder.css";
 @import "./fields.css";
 @import "./data-table.css";
+@import "./callout.css";
 
 /* Pas d'arrondi ici : tokens.css fait seul autorité. Ils y étaient déclarés
    une seconde fois et les deux listes divergeaient en silence. */

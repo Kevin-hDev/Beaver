@@ -71,8 +71,8 @@ export function ForecastWorkbenchData({ analysisId }: { analysisId: string }) {
           <strong>{covariates.length ? covariates.join(", ") : t("forecast.workbench.data.none")}</strong>
         </div>
       </section>
-      <section className={`fcwd-quality ${profile
-        ? profile.valid ? "is-valid" : "is-warning"
+      <section className={`callout fcwd-quality ${profile
+        ? profile.valid ? "callout-ok" : "callout-warning"
         : ""}`}>
         <div>
           <span>{t("forecast.workbench.data.quality")}</span>

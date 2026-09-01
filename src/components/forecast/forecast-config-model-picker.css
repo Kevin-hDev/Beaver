@@ -16,7 +16,7 @@
 .fcmp-group {
   border: 1px solid var(--edge);
   border-radius: var(--radius-sm);
-  background: var(--surface);
+  background: var(--shell);
   overflow: hidden;
 }
 
