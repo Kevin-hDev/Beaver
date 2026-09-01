@@ -1,6 +1,7 @@
 /* @vitest-environment jsdom */
-// Finding 7: a collapsed card body must leave the keyboard tab order and
-// the accessibility tree while staying mounted for the grid-rows animation.
+// Finding 7 : replié, le corps de la carte doit sortir de l'ordre de
+// tabulation et de l'arbre d'accessibilité tout en restant dans la page pour
+// pouvoir s'animer. Le dépliement lui-même est confié à <Collapsible>.
 import { cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ForecastChartCard } from "../forecast-chart-card";

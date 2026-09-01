@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronDown } from "@/components/ui/icons";
 import "./forecast-chart-card.css";
+import { Collapsible } from "@/components/ui/collapsible";
 
 const EXPAND_TRANSITION_MS = 380;
 
@@ -47,8 +48,11 @@ export function ForecastChartCard({
       onExpandedRef.current?.();
     };
     const timer = window.setTimeout(notify, EXPAND_TRANSITION_MS);
+    // <Collapsible> anime `height`, et l'événement remonte depuis sa propre
+    // région : la cible n'est donc pas ce conteneur, seule la propriété
+    // permet de reconnaître la fin du dépliement.
     const handleTransitionEnd = (event: TransitionEvent) => {
-      if (event.target === body && event.propertyName === "grid-template-rows") {
+      if (event.propertyName === "height") {
         window.clearTimeout(timer);
         notify();
       }
@@ -78,15 +82,12 @@ export function ForecastChartCard({
           />
         </button>
       </div>
-      <div
-        ref={bodyRef}
-        className={`fcrd-body ${open ? "is-open" : ""}`}
-        // Collapsed bodies stay in the DOM for the grid-rows animation but
-        // must leave the tab order and the accessibility tree.
-        inert={!open}
-        aria-hidden={!open}
-      >
-        <div className="fcrd-inner">{children}</div>
+      {/* Replié, le corps reste dans la page pour pouvoir s'animer, mais il
+          sort de l'ordre de tabulation et de l'arbre d'accessibilité. */}
+      <div ref={bodyRef} className="fcrd-body" inert={!open} aria-hidden={!open}>
+        <Collapsible open={open} innerClassName="fcrd-inner">
+          {children}
+        </Collapsible>
       </div>
     </section>
   );

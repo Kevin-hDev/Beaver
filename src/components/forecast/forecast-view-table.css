@@ -57,20 +57,9 @@
   transform: rotate(180deg);
 }
 
-.fc-table-collapse {
-  display: grid;
-  grid-template-rows: 0fr;
-  opacity: 0;
-  transition: grid-template-rows 350ms ease, opacity 350ms ease;
-}
-
-.fc-table-collapse.is-open {
-  grid-template-rows: 1fr;
-  opacity: 1;
-}
-
+/* Le dépliement vient de <Collapsible> : hauteur en pixels plutôt que piste
+   de grille en `fr`, que WebKit interpole par paliers. */
 .fc-table-collapse-inner {
-  overflow: hidden;
   min-height: 0;
 }
 

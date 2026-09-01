@@ -17,6 +17,7 @@ import {
 } from "./forecast-view-data";
 import "../forecast-view.css";
 import "../forecast-view-table.css";
+import { Collapsible } from "@/components/ui/collapsible";
 
 interface ForecastViewProps {
   analysisId: string;
@@ -165,35 +166,33 @@ export function ForecastView({
           className={`fc-table-toggle-chevron ${tableOpen ? "is-open" : ""}`}
         />
       </button>
-      <div className={`fc-table-collapse ${tableOpen ? "is-open" : ""}`}>
-        <div className="fc-table-collapse-inner">
-          <div className="fc-predictions-table">
-            <div className="fc-table-head">
-              <span>{t("forecast.view.period")}</span>
-              <span>{metric.columnTitle}</span>
-            </div>
-            <div className="fc-table-body">
-              {/* Rows mount only when the section opens: long horizons
-                  would otherwise render hundreds of hidden cells. */}
-              {tableOpen && filtered.predictions.map((p, i) => (
-                <div key={i} className="fc-table-row">
-                  <PeriodCell
-                    index={i}
-                    rawDate={p.date}
-                    endDate={data.input_summary.end}
-                    frequency={data.frequency}
-                    locale={i18n.language}
-                  />
-                  <ValueCell
-                    unitLabel={metric.unitLabel}
-                    formattedValue={formatForecastValue(p.value, i18n.language, metric)}
-                  />
-                </div>
-              ))}
-            </div>
+      <Collapsible open={tableOpen} innerClassName="fc-table-collapse-inner">
+        <div className="fc-predictions-table">
+          <div className="fc-table-head">
+            <span>{t("forecast.view.period")}</span>
+            <span>{metric.columnTitle}</span>
+          </div>
+          <div className="fc-table-body">
+            {/* Rows mount only when the section opens: long horizons
+                would otherwise render hundreds of hidden cells. */}
+            {tableOpen && filtered.predictions.map((p, i) => (
+              <div key={i} className="fc-table-row">
+                <PeriodCell
+                  index={i}
+                  rawDate={p.date}
+                  endDate={data.input_summary.end}
+                  frequency={data.frequency}
+                  locale={i18n.language}
+                />
+                <ValueCell
+                  unitLabel={metric.unitLabel}
+                  formattedValue={formatForecastValue(p.value, i18n.language, metric)}
+                />
+              </div>
+            ))}
           </div>
         </div>
-      </div>
+      </Collapsible>
     </div>
   );
 }

@@ -67,19 +67,7 @@
   color: var(--ink-faint);
 }
 
-.fcf-group-items {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows var(--ease-smooth);
-}
-
-.fcf-group-items.is-open {
-  grid-template-rows: 1fr;
-}
-
-.fcf-group-content {
-  overflow: hidden;
-}
+/* Le dépliement vient de <Collapsible>. */
 
 .fcf-group-chevron {
   color: var(--ink-faint);
@@ -90,8 +78,11 @@
   transform: rotate(180deg);
 }
 
-.fcf-group-items.is-open .fcf-group-content {
-  margin-top: 8px;
+/* Retrait intérieur et non marge : <Collapsible> mesure la hauteur du bloc,
+   qui inclut son padding mais pas ses marges — avec une marge, l'écart
+   dépasserait de la zone dépliée. */
+.fcf-group-content {
+  padding-top: var(--chrome-2);
 }
 
 .fcf-group-content > .fcf-item + .fcf-item {

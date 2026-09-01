@@ -72,17 +72,8 @@
   }
 }
 
-.fcrd-body {
-  display: grid;
-  grid-template-rows: 0fr;
-  opacity: 0;
-  transition: grid-template-rows 350ms ease, opacity 350ms ease;
-}
-
-.fcrd-body.is-open {
-  grid-template-rows: 1fr;
-  opacity: 1;
-}
+/* Le dépliement vient de <Collapsible> : hauteur en pixels plutôt que piste
+   de grille en `fr`, que WebKit interpole par paliers. */
 
 .fcrd-inner {
   overflow: hidden;
