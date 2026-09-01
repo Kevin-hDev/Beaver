@@ -1,12 +1,10 @@
+use super::limits::MAX_GROUP_KEY_BYTES;
 use crate::services::agent_local::project_store;
 use std::path::{Path, PathBuf};
 
 const DEFAULT_GROUP: &str = "__default__";
-const MAX_GROUP_KEY_BYTES: usize = 128;
 const INVALID: &str = "terminal-cwd-invalid";
 
-// The terminal spawn switches to this boundary atomically in Task 4.
-#[allow(dead_code)]
 pub async fn resolve(group_key: &str) -> Result<PathBuf, String> {
     let home = if group_key == DEFAULT_GROUP {
         dirs::home_dir().ok_or_else(invalid)?

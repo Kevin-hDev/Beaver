@@ -10,15 +10,14 @@ import {
   DEFAULT_GROUP_KEY,
   folderName,
   generateId,
+  MAX_GROUPS,
+  MAX_TABS_PER_GROUP,
+  MAX_TOTAL_TABS,
   normalizeTerminalLabel,
 } from "./terminal-types";
 import type { TerminalGroup, TerminalTab } from "./terminal-types";
 
 export type { TerminalGroup, TerminalTab };
-
-const MAX_GROUPS = 128;
-const MAX_TABS_PER_GROUP = 16;
-const MAX_TOTAL_TABS = 256;
 
 interface TerminalProjectState {
   validGroupKeys: string[];

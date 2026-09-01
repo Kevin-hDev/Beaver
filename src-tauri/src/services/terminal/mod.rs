@@ -59,9 +59,18 @@ fn generate_token() -> zeroize::Zeroizing<String> {
     use rand::RngCore;
     let mut bytes = [0_u8; 16];
     rand::rngs::OsRng.fill_bytes(&mut bytes);
-    let token = bytes.iter().map(|byte| format!("{byte:02x}")).collect();
-    bytes.fill(0);
-    zeroize::Zeroizing::new(token)
+    encode_token(&mut bytes)
+}
+
+fn encode_token(bytes: &mut [u8; 16]) -> zeroize::Zeroizing<String> {
+    use std::fmt::Write;
+    use zeroize::Zeroize;
+    let mut token = zeroize::Zeroizing::new(String::with_capacity(bytes.len() * 2));
+    for byte in bytes.iter() {
+        write!(&mut *token, "{byte:02x}").expect("String writes are infallible");
+    }
+    bytes.zeroize();
+    token
 }
 
 fn verify_token(expected: &str, provided: &str) -> Result<(), String> {
@@ -80,7 +89,17 @@ fn normalize_exit_code(code: Option<i32>) -> Option<u32> {
 
 #[cfg(test)]
 mod token_tests {
-    use super::{normalize_exit_code, verify_token};
+    use super::{encode_token, normalize_exit_code, verify_token};
+
+    #[test]
+    fn token_hex_zeroizes_its_source_buffer() {
+        let mut bytes = [0xab_u8; 16];
+
+        let token = encode_token(&mut bytes);
+
+        assert_eq!(&*token, "abababababababababababababababab");
+        assert_eq!(bytes, [0_u8; 16]);
+    }
 
     #[test]
     fn unknown_exit_code_is_not_invented_as_success() {

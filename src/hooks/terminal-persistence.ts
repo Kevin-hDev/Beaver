@@ -1,5 +1,11 @@
 import { invoke } from "@tauri-apps/api/core";
-import { isValidTerminalLabel } from "./terminal-types";
+import {
+  isValidTerminalLabel,
+  MAX_GROUP_KEY_BYTES,
+  MAX_GROUPS,
+  MAX_TABS_PER_GROUP,
+  MAX_TOTAL_TABS,
+} from "./terminal-types";
 
 export interface TerminalSavedTab {
   label: string;
@@ -10,10 +16,6 @@ export interface TerminalTabsDocument {
   groups: Record<string, TerminalSavedTab[]>;
 }
 
-const MAX_GROUPS = 128;
-const MAX_TABS_PER_GROUP = 16;
-const MAX_TOTAL_TABS = 256;
-const MAX_GROUP_KEY_BYTES = 128;
 export const TERMINAL_TABS_RECOVERED = "terminal-tabs-recovered";
 
 function isObject(value: unknown): value is Record<string, unknown> {

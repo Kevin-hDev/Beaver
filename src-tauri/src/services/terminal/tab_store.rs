@@ -1,3 +1,6 @@
+use super::limits::{
+    MAX_GROUPS, MAX_GROUP_KEY_BYTES, MAX_LABEL_BYTES, MAX_TABS_PER_GROUP, MAX_TOTAL_TABS,
+};
 use crate::services::private_store::{
     self, read_bounded_regular_classified_async, BoundedFile, BoundedReadFailure,
 };
@@ -7,11 +10,6 @@ use std::path::PathBuf;
 
 pub const TERMINAL_TABS_VERSION: u8 = 1;
 const MAX_FILE_BYTES: u64 = 1024 * 1024;
-const MAX_GROUPS: usize = 128;
-const MAX_TABS_PER_GROUP: usize = 16;
-const MAX_TOTAL_TABS: usize = 256;
-const MAX_GROUP_KEY_BYTES: usize = 128;
-const MAX_LABEL_BYTES: usize = 512;
 const INVALID: &str = "terminal-tabs-invalid";
 const RECOVERED: &str = "terminal-tabs-recovered";
 const UNAVAILABLE: &str = "terminal-tabs-unavailable";
@@ -47,8 +45,6 @@ impl TerminalTabsDocument {
     }
 }
 
-// This store boundary is wired to terminal IPC by the next remediation task.
-#[allow(dead_code)]
 pub async fn load() -> Result<TerminalTabsDocument, String> {
     let _guard = TERMINAL_TABS_LOCK.lock().await;
     load_from(path()).await
@@ -109,7 +105,6 @@ fn available<T, E>(result: Result<T, E>) -> Result<T, String> {
     result.map_err(|_| unavailable())
 }
 
-#[allow(dead_code)]
 pub async fn save(document: TerminalTabsDocument) -> Result<(), String> {
     save_with(document, private_store::atomic_write_async).await
 }

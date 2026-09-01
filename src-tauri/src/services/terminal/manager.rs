@@ -50,7 +50,9 @@ impl PtyManager {
         }
     }
 
-    pub fn spawn(
+    /// Sous Linux, la production passe par `spawn_linux` afin que le worker
+    /// durable arme le signal de mort du parent avant de créer le shell.
+    pub(crate) fn spawn(
         &self,
         owner: &TerminalOwner,
         on_output: Channel<PtyChannelEvent>,

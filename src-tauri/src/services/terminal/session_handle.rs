@@ -1,7 +1,7 @@
 use super::caller::TerminalOwner;
 use super::manager::PtyManager;
 use super::output_window::OutputWindow;
-use super::public_error::not_authorized;
+use super::public_error::{not_authorized, not_found, terminal_error};
 use super::verify_token;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
@@ -40,8 +40,8 @@ pub(super) struct ReaderFinishedGuard(pub(super) Arc<AtomicBool>);
 
 impl Drop for ReaderFinishedGuard {
     fn drop(&mut self) {
-        // Release publishes reader cleanup before SessionHandle observes the
-        // completion with Acquire and removes this session from the manager.
+        // Release publie le nettoyage du lecteur avant que SessionHandle ne
+        // l'observe avec Acquire et retire la session du gestionnaire.
         self.0.store(true, Ordering::Release);
     }
 }
@@ -95,8 +95,8 @@ impl SessionHandle {
     }
 
     pub(super) fn reader_finished(&self) -> bool {
-        // Acquire observes every reader action sequenced before the guard's
-        // Release store, so reaping cannot race past final reader cleanup.
+        // Acquire observe les actions précédant le Release du garde, afin que
+        // la récolte ne devance pas le nettoyage final du lecteur.
         self.control.reader_finished.load(Ordering::Acquire)
     }
 
@@ -201,12 +201,4 @@ impl Drop for SessionHandle {
     fn drop(&mut self) {
         self.close();
     }
-}
-
-fn not_found() -> String {
-    "terminal-not-found".to_string()
-}
-
-fn terminal_error() -> String {
-    "terminal-error".to_string()
 }
