@@ -1,6 +1,7 @@
-use super::output_window::{spawn_reader, OutputWindow};
+use super::output_window::OutputWindow;
 use super::pty_session::PtySession;
 use super::public_error::terminal_error;
+use super::reader::spawn_reader;
 use super::session_handle::{EmergencyStop, SessionControl, SessionOps};
 use super::PtyChannelEvent;
 use crate::services::work_registry::ServiceWorkAdmission;
@@ -94,12 +95,14 @@ impl SessionOps for OwnedSession {
 
     fn finish_close(self: Box<Self>) {
         let OwnedSession {
-            mut session,
+            session,
             reader,
             _admission,
         } = *self;
-        let _ = session.shutdown();
-        drop(session);
+        finish_close_once(|| {
+            drop(session);
+            Ok(())
+        });
         if reader.join().is_err() {
             ::log::warn!("[terminal] lecteur PTY interrompu");
         }
@@ -110,6 +113,11 @@ impl SessionOps for OwnedSession {
     fn process_id(&self) -> Option<u32> {
         self.session.process_id()
     }
+}
+
+// FnOnce interdit de relancer l'autorité de fermeture après un échec.
+pub(super) fn finish_close_once(close: impl FnOnce() -> Result<(), String>) {
+    let _ = close();
 }
 
 #[cfg(test)]

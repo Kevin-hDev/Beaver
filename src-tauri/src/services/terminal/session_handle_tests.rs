@@ -1,13 +1,15 @@
 use super::caller::{authorize, TerminalOwner};
 use super::manager::PtyManager;
 use super::output_window::OutputWindow;
-use super::owned_session::spawn_reader_for_test;
+use super::owned_session::{finish_close_once, spawn_reader_for_test};
+use super::reader::spawn_reader;
 use super::session_handle::{EmergencyStop, SessionControl, SessionHandle, SessionOps};
+use super::PtyChannelEvent;
 use crate::app_exit::AppExitCoordinator;
 use std::io::{Cursor, Read};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{mpsc, Arc, Barrier, Mutex};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 const TOKEN: &str = "0123456789abcdef0123456789abcdef";
 
@@ -224,6 +226,35 @@ fn close_is_once_and_control_paths_ignore_the_operations_mutex() {
     let _ = window.acknowledge(1);
 }
 
+#[test]
+fn finish_close_invokes_its_shutdown_authority_once_even_on_failure() {
+    let calls = AtomicUsize::new(0);
+
+    finish_close_once(|| {
+        calls.fetch_add(1, Ordering::AcqRel);
+        Err("terminal-error".to_string())
+    });
+
+    assert_eq!(calls.load(Ordering::Acquire), 1);
+}
+
+#[tokio::test]
+async fn failed_worker_stop_still_drains_every_session() {
+    let coordinator = AppExitCoordinator::initialize().unwrap();
+    let manager = PtyManager::new(coordinator.work_supervisor());
+    let f = fixture(false);
+    let finishes = Arc::clone(&f.finishes);
+    manager.insert_session_for_test(&main_owner(), f.ops, f.control, TOKEN);
+
+    let stopped = manager
+        .finish_stop(Instant::now() + Duration::from_secs(1), false)
+        .await;
+
+    assert!(!stopped);
+    assert_eq!(finishes.load(Ordering::Acquire), 1);
+    assert_eq!(manager.active_sessions_for_test(), 0);
+}
+
 struct GateReader(mpsc::SyncSender<()>, mpsc::Receiver<()>);
 
 impl Read for GateReader {
@@ -232,6 +263,85 @@ impl Read for GateReader {
         self.1.recv().unwrap();
         Ok(0)
     }
+}
+
+struct PanicReader;
+
+impl Read for PanicReader {
+    fn read(&mut self, _buf: &mut [u8]) -> std::io::Result<usize> {
+        panic!("private reader panic")
+    }
+}
+
+#[test]
+fn reader_panic_closes_output_stops_once_and_emits_one_unknown_exit() {
+    let finished = Arc::new(AtomicBool::new(false));
+    let window = Arc::new(OutputWindow::new());
+    let stop = Arc::new(TestStop {
+        release: Mutex::new(None),
+        stops: AtomicUsize::new(0),
+    });
+    let events = Arc::new(Mutex::new(Vec::new()));
+    let observed = Arc::clone(&events);
+    let reader = spawn_reader(
+        Box::new(PanicReader),
+        Arc::new(AtomicBool::new(false)),
+        Arc::clone(&finished),
+        Arc::clone(&window),
+        Arc::clone(&stop) as Arc<dyn EmergencyStop>,
+        Box::new(move |event| {
+            observed.lock().unwrap().push(event);
+            Ok(())
+        }),
+        Some(Box::new(|| PtyChannelEvent {
+            data: String::new(),
+            is_exit: true,
+            exit_code: Some(9),
+            sequence: None,
+        })),
+    )
+    .unwrap();
+
+    let _ = reader.join();
+
+    assert!(finished.load(Ordering::Acquire));
+    assert_eq!(stop.stops.load(Ordering::Acquire), 1);
+    assert_eq!(
+        window.reserve(1, &AtomicBool::new(false)),
+        Err("terminal-not-found".into())
+    );
+    let events = events.lock().unwrap();
+    assert_eq!(events.len(), 1);
+    assert!(events[0].is_exit);
+    assert_eq!(events[0].exit_code, None);
+}
+
+#[test]
+fn sink_panic_stops_once_without_retrying_the_sink() {
+    let stop = Arc::new(TestStop {
+        release: Mutex::new(None),
+        stops: AtomicUsize::new(0),
+    });
+    let calls = Arc::new(AtomicUsize::new(0));
+    let observed = Arc::clone(&calls);
+    let reader = spawn_reader(
+        Box::new(Cursor::new(b"data".to_vec())),
+        Arc::new(AtomicBool::new(false)),
+        Arc::new(AtomicBool::new(false)),
+        Arc::new(OutputWindow::new()),
+        Arc::clone(&stop) as Arc<dyn EmergencyStop>,
+        Box::new(move |_| {
+            observed.fetch_add(1, Ordering::AcqRel);
+            panic!("private sink panic")
+        }),
+        None,
+    )
+    .unwrap();
+
+    let _ = reader.join();
+
+    assert_eq!(calls.load(Ordering::Acquire), 1);
+    assert_eq!(stop.stops.load(Ordering::Acquire), 1);
 }
 
 #[test]

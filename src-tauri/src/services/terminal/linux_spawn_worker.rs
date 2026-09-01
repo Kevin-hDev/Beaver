@@ -7,6 +7,10 @@ use std::thread::JoinHandle;
 use std::time::Instant;
 use tokio::sync::oneshot;
 
+#[cfg(test)]
+#[path = "linux_spawn_worker_test_support.rs"]
+mod test_support;
+
 type SpawnResult = Result<(u32, String), String>;
 type SpawnOperation = Box<dyn FnOnce() -> SpawnResult + Send + 'static>;
 
@@ -17,12 +21,16 @@ enum SpawnRequest {
         Box<dyn FnOnce() -> usize + Send + 'static>,
         oneshot::Sender<Result<ProbeResult, String>>,
     ),
+    #[cfg(test)]
+    Terminate(oneshot::Sender<()>),
     Shutdown,
 }
 
 struct WorkerState {
     sender: Option<SyncSender<SpawnRequest>>,
     join: Option<JoinHandle<()>>,
+    // Un worker mort reste terminal : aucun redemarrage implicite n'est prouve sur Linux.
+    failed: bool,
 }
 
 pub(super) struct LinuxSpawnWorker {
@@ -46,6 +54,7 @@ impl LinuxSpawnWorker {
             state: Mutex::new(WorkerState {
                 sender: None,
                 join: None,
+                failed: false,
             }),
             closing: Arc::new(AtomicBool::new(false)),
         }
@@ -91,6 +100,17 @@ impl LinuxSpawnWorker {
             return Err(shutting_down());
         }
         let mut state = self.state.lock().map_err(|_| terminal_error())?;
+        if state.failed {
+            return Err(terminal_error());
+        }
+        if state.join.as_ref().is_some_and(JoinHandle::is_finished) {
+            state.sender.take();
+            if let Some(join) = state.join.take() {
+                let _ = join.join();
+            }
+            state.failed = true;
+            return Err(terminal_error());
+        }
         if let Some(sender) = &state.sender {
             return Ok(sender.clone());
         }
@@ -167,6 +187,11 @@ fn worker_loop(
                 };
                 let _ = completed.send(result);
             }
+            #[cfg(test)]
+            SpawnRequest::Terminate(completed) => {
+                let _ = completed.send(());
+                break;
+            }
             SpawnRequest::Shutdown => break,
         }
     }
@@ -175,7 +200,7 @@ fn worker_loop(
 fn map_send_error(error: TrySendError<SpawnRequest>) -> String {
     match error {
         TrySendError::Full(_) => terminal_error(),
-        TrySendError::Disconnected(_) => shutting_down(),
+        TrySendError::Disconnected(_) => terminal_error(),
     }
 }
 

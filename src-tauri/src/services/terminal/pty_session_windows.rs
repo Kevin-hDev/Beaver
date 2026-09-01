@@ -3,6 +3,7 @@ mod console;
 #[path = "pty_windows_output.rs"]
 mod output;
 
+use crate::services::terminal::exit_wait::{reap_child, wait_for_exit_code, ExitPoll};
 use crate::services::terminal::limits::MAX_PTY_WRITE_BYTES;
 use console::PseudoConsole;
 use output::{OutputControl, PtyReader};
@@ -26,13 +27,15 @@ pub(crate) struct PtyChildStatus(SharedChild);
 
 impl PtyChildStatus {
     pub(crate) fn exit_code(&self) -> Option<u32> {
-        self.0
-            .lock()
-            .ok()?
-            .try_wait()
-            .ok()
-            .flatten()
-            .and_then(exit_code)
+        wait_for_exit_code(|| match self.0.try_lock() {
+            Ok(mut child) => match child.try_wait() {
+                Ok(Some(status)) => ExitPoll::Exited(exit_code(status)),
+                Ok(None) => ExitPoll::Running,
+                Err(_) => ExitPoll::Failed,
+            },
+            Err(std::sync::TryLockError::WouldBlock) => ExitPoll::Running,
+            Err(std::sync::TryLockError::Poisoned(_)) => ExitPoll::Failed,
+        })
     }
 }
 
@@ -94,7 +97,7 @@ impl PtySession {
     }
 
     pub(crate) fn process_id(&self) -> Option<u32> {
-        self.child.lock().ok().map(|child| child.id())
+        self.child.try_lock().ok().map(|child| child.id())
     }
 
     pub(crate) fn child_status(&self) -> PtyChildStatus {
@@ -102,24 +105,40 @@ impl PtySession {
     }
 
     pub(crate) fn shutdown(&mut self) -> Result<u32, String> {
-        let pid = self.process_id().ok_or_else(terminal_error)?;
+        let exit = self.stop_child_within_budget();
+        let output_closed = self.output.close();
+        let input_closed = self.close_input();
+        self.console.close();
+        match (exit, output_closed, input_closed) {
+            (Some(code), Ok(()), Ok(())) => Ok(code),
+            _ => Err(terminal_error()),
+        }
+    }
+
+    fn stop_child_within_budget(&self) -> Option<u32> {
+        let pid = self.process_id()?;
         crate::services::process_tree::kill(
             pid,
             crate::services::process_tree::ProcessKind::Terminal,
         );
-        let mut child = self.child.lock().map_err(|_| terminal_error())?;
-        if child.try_wait().map_err(|_| terminal_error())?.is_none() {
-            // Tree termination is primary; root termination is the bounded
-            // fallback. A concurrent exit can make this return access denied;
-            // the following wait is the sole authority for final completion.
-            let _ = child.kill();
-        }
-        let status = child.wait().map_err(|_| terminal_error())?;
-        drop(child);
-        self.output.close()?;
-        self.close_input()?;
-        self.console.close();
-        exit_code(status).ok_or_else(terminal_error)
+        let mut root_killed = false;
+        reap_child(|| match self.child.try_lock() {
+            Ok(mut child) => match child.try_wait() {
+                Ok(Some(status)) => ExitPoll::Exited(exit_code(status)),
+                Ok(None) => {
+                    if !root_killed {
+                        // Le kill de l'arbre est prioritaire ; celui de la racine
+                        // est le repli quand la terminaison concurrente le permet.
+                        let _ = child.kill();
+                        root_killed = true;
+                    }
+                    ExitPoll::Running
+                }
+                Err(_) => ExitPoll::Failed,
+            },
+            Err(std::sync::TryLockError::WouldBlock) => ExitPoll::Running,
+            Err(std::sync::TryLockError::Poisoned(_)) => ExitPoll::Failed,
+        })
     }
 
     fn close_input(&self) -> Result<(), String> {

@@ -142,24 +142,36 @@ impl PtyManager {
             state.closing = true;
         }
         #[cfg(target_os = "linux")]
-        {
+        let worker_stopped = {
             self.linux_spawn.begin_closing();
-            if !self.linux_spawn.stop_and_wait(deadline).await {
-                return false;
-            }
-        }
-        let sessions: Vec<Arc<SessionHandle>> = {
-            let Ok(mut state) = self.state.lock() else {
-                return false;
-            };
-            state.sessions.drain().map(|(_, handle)| handle).collect()
+            self.linux_spawn.stop_and_wait(deadline).await
         };
-        let close = super::shutdown::run_until(deadline, move || {
-            for handle in sessions {
-                handle.close();
-            }
+        #[cfg(not(target_os = "linux"))]
+        let worker_stopped = true;
+        self.finish_stop(deadline, worker_stopped).await
+    }
+
+    pub(super) async fn finish_stop(&self, deadline: Instant, prior_stopped: bool) -> bool {
+        let sessions = self.state.lock().ok().map(|mut state| {
+            state
+                .sessions
+                .drain()
+                .map(|(_, handle)| handle)
+                .collect::<Vec<_>>()
         });
-        close.await && self.work.stop_and_wait(deadline).await
+        let sessions_drained = sessions.is_some();
+        let close_stopped = if let Some(sessions) = sessions {
+            super::shutdown::run_until(deadline, move || {
+                for handle in sessions {
+                    handle.close();
+                }
+            })
+            .await
+        } else {
+            false
+        };
+        let work_stopped = self.work.stop_and_wait(deadline).await;
+        prior_stopped && sessions_drained && close_stopped && work_stopped
     }
 
     fn reap_finished(&self) {

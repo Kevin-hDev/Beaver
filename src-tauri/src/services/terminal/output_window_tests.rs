@@ -31,7 +31,10 @@ fn assert_waiting(entered: &mpsc::Receiver<()>, result: &mpsc::Receiver<Result<u
     entered
         .recv_timeout(Duration::from_secs(1))
         .expect("reservation started");
-    assert_eq!(result.try_recv(), Err(mpsc::TryRecvError::Empty));
+    assert_eq!(
+        result.recv_timeout(Duration::from_millis(50)),
+        Err(mpsc::RecvTimeoutError::Timeout)
+    );
 }
 
 #[test]
