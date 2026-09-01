@@ -65,13 +65,17 @@
   letter-spacing: -0.01em;
 }
 
+/* Une colonne dont le graphe occupe toute la place restante — le même geste
+   que la carte « Horizon zoomé » (.fcwf-companion). L'alignement centré posé
+   ici ne le laissait pas s'étirer : il gardait la hauteur qu'il croyait avoir
+   et son bas passait sous le bord de la carte. */
 .fc-chart-area {
   flex: 0 0 400px;
   min-height: 400px;
   max-height: 400px;
   padding: 12px 14px;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   transition: height 180ms ease;
 }
 
@@ -79,16 +83,16 @@
   transition: none;
 }
 
+/* Ni contour ni fond : la carte qui accueille le graphe porte déjà les siens,
+   et deux cadres emboîtés pour un seul objet se lisent comme un défaut.
+   `flex: 1` plutôt que `height: 100%` — un pourcentage de hauteur dépend d'un
+   parent qui en a une, et se dérobe dès que ce n'est plus le cas. */
 .fc-chart-placeholder {
   position: relative;
   width: 100%;
-  height: 100%;
-  min-height: 140px;
-  border: 1px solid var(--edge);
-  border-radius: var(--radius-md);
-  background: var(--fc-chart-bg);
+  flex: 1;
+  min-height: 0;
   display: flex;
-  align-items: center;
   justify-content: center;
   overflow: hidden;
 }
