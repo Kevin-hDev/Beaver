@@ -21,6 +21,10 @@
   transition: none;
 }
 
+.terminal-panel-instant {
+  transition: none;
+}
+
 /* La poignée montre où saisir. Sans trait, c'est une bande transparente de
    quatre pixels qu'on ne trouve qu'en promenant la souris le long du bord. */
 .terminal-resize-handle {

@@ -29,6 +29,16 @@
   transition: none;
 }
 
+/* Une navigation remplace toute la géométrie d'un coup ; les animations restent
+   réservées aux ouvertures demandées explicitement dans la session courante. */
+.agent-detail-session-switching .agent-detail-chat,
+.agent-detail-session-switching .asp-panel,
+.agent-detail-session-switching .asp-slide-wrapper,
+.agent-detail-session-switching .ft-panel,
+.agent-detail-session-switching .terminal-panel {
+  transition: none !important;
+}
+
 body.al-panel-resizing {
   cursor: ew-resize;
   user-select: none;

@@ -4,6 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { TerminalTabBar } from "./terminal-tab-bar";
 import { TerminalInstance } from "./terminal-instance";
 import { useTerminalTheme } from "./use-terminal-theme";
+import { useTerminalPanelHeight } from "./use-terminal-panel-height";
 import type { TerminalTab } from "@/hooks/use-terminal";
 import { MAX_LIVE_TERMINALS } from "@/hooks/terminal-types";
 import { TERMINAL_MAX_VIEWPORT_RATIO } from "@/hooks/terminal-layout";
@@ -16,6 +17,7 @@ interface TerminalPanelProps {
   allTabs: { tab: TerminalTab; groupKey: string }[];
   activeGroupKey: string;
   isOpen: boolean;
+  instantLayout?: boolean;
   panelHeight: number;
   onAddTab: (cwd?: string) => void;
   onCloseTab: (id: string) => void;
@@ -37,6 +39,7 @@ export function TerminalPanel({
   allTabs,
   activeGroupKey,
   isOpen,
+  instantLayout = false,
   panelHeight,
   onAddTab,
   onCloseTab,
@@ -59,8 +62,13 @@ export function TerminalPanel({
      et abandonne toute tab retirée de la restauration. */
   const [startedTabIds, setStartedTabIds] = useState<Set<string>>(() => new Set());
   const lastRejectedTabId = useRef<string | null>(null);
-  const [animatedHeight, setAnimatedHeight] = useState(0);
   const [isResizing, setIsResizing] = useState(false);
+  const { animatedHeight, setAnimatedHeight } = useTerminalPanelHeight({
+    isOpen,
+    instantLayout,
+    isResizing,
+    panelHeight,
+  });
 
   useEffect(() => {
     const updateMax = () => {
@@ -70,28 +78,6 @@ export function TerminalPanel({
     window.addEventListener("resize", updateMax);
     return () => window.removeEventListener("resize", updateMax);
   }, [onSetMaxHeight]);
-
-  useEffect(() => {
-    if (isOpen) {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setAnimatedHeight(panelHeight);
-        });
-      });
-    } else {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- animation state management is intentional
-      setAnimatedHeight(0);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- animate only on isOpen toggle
-  }, [isOpen]);
-
-  const prevHeightRef = useRef(panelHeight);
-  useEffect(() => {
-    if (isOpen && !isResizing && prevHeightRef.current !== panelHeight) {
-      setAnimatedHeight(panelHeight);
-    }
-    prevHeightRef.current = panelHeight;
-  }, [panelHeight, isOpen, isResizing]);
 
   useEffect(() => {
     if (!isOpen || activeTabId === null
@@ -149,7 +135,7 @@ export function TerminalPanel({
       window.addEventListener("pointermove", onMove);
       window.addEventListener("pointerup", onUp);
     },
-    [panelHeight, onResize]
+    [panelHeight, onResize, setAnimatedHeight]
   );
 
   const handleTabClose = useCallback(
@@ -178,7 +164,7 @@ export function TerminalPanel({
   return (
     <div
       ref={panelRef}
-      className={`terminal-panel ${isResizing ? "resizing" : ""}`}
+      className={`terminal-panel ${isResizing ? "resizing" : ""} ${instantLayout ? "terminal-panel-instant" : ""}`}
       data-nav-zone="terminal"
       data-keyboard-scope="local"
       style={{ height: animatedHeight }}

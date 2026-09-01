@@ -23,30 +23,45 @@ interface CloneMessageOptions {
   shouldActivateOnComplete?: () => boolean;
 }
 
+interface LoadedTabs {
+  rootSessionId: string;
+  tabs: SessionTabs;
+}
+
 export function useSessionTabs(
   rootSessionId: string | null | undefined,
   onSessionsRefresh?: () => Promise<void> | void,
 ) {
-  const [tabs, setTabs] = useState<SessionTabs | null>(null);
+  const [loadedTabs, setLoadedTabs] = useState<LoadedTabs | null>(null);
   const [attentionTabs, setAttentionTabs] = useState<Record<string, string[]>>({});
   const rootSessionIdRef = useRef(rootSessionId);
+  const refreshRequestRef = useRef(0);
+  /* Les onglets ne valent que pour leur racine : garder leur propriétaire
+     empêche l'ancien chat de survivre pendant le chargement du suivant. */
+  const tabs = loadedTabs && loadedTabs.rootSessionId === rootSessionId ? loadedTabs.tabs : null;
+
+  const setTabs = useCallback((next: SessionTabs) => {
+    if (!rootSessionId) return;
+    setLoadedTabs({ rootSessionId, tabs: next });
+  }, [rootSessionId]);
 
   useEffect(() => {
     rootSessionIdRef.current = rootSessionId;
   }, [rootSessionId]);
 
   const refreshTabs = useCallback(async () => {
+    const requestId = ++refreshRequestRef.current;
     if (!rootSessionId) {
-      setTabs(null);
+      setLoadedTabs(null);
       return;
     }
     try {
       const next = await invoke<SessionTabs>("list_session_tabs", { sessionId: rootSessionId });
-      setTabs(next);
+      if (requestId === refreshRequestRef.current) setTabs(next);
     } catch {
-      setTabs(null);
+      if (requestId === refreshRequestRef.current) setLoadedTabs(null);
     }
-  }, [rootSessionId]);
+  }, [rootSessionId, setTabs]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- chargement externe lié au changement de session
@@ -77,7 +92,7 @@ export function useSessionTabs(
       tabs: next,
     });
     setTabs(saved);
-  }, [rootSessionId, tabs]);
+  }, [rootSessionId, setTabs, tabs]);
 
   const saveMainCheckpointBranch = useCallback(async (branchName: string) => {
     if (!rootSessionId || !tabs || tabs.main_checkpoint_branch === branchName) return;
@@ -88,7 +103,7 @@ export function useSessionTabs(
       tabs: next,
     });
     setTabs(saved);
-  }, [rootSessionId, tabs]);
+  }, [rootSessionId, setTabs, tabs]);
 
   const cloneMessage = useCallback(async (options: CloneMessageOptions) => {
     if (!rootSessionId) throw new Error("missing_session");
@@ -130,7 +145,7 @@ export function useSessionTabs(
       if (options.mode === "summary") clearSessionRunning(rootSessionId);
       throw error;
     }
-  }, [activeSessionId, onSessionsRefresh, refreshTabs, rootSessionId, tabs?.active_tab_id]);
+  }, [activeSessionId, onSessionsRefresh, refreshTabs, rootSessionId, setTabs, tabs?.active_tab_id]);
 
   const cancelCloneSummary = useCallback(async (operationId: string) => {
     await invoke("cancel_clone_summary", { operationId });
@@ -146,7 +161,7 @@ export function useSessionTabs(
     });
     await onSessionsRefresh?.();
     setTabs(next);
-  }, [onSessionsRefresh, rootSessionId]);
+  }, [onSessionsRefresh, rootSessionId, setTabs]);
 
   const renameTab = useCallback(async (tabId: string, label: string) => {
     if (!rootSessionId) return;
@@ -156,7 +171,7 @@ export function useSessionTabs(
       label,
     });
     setTabs(next);
-  }, [rootSessionId]);
+  }, [rootSessionId, setTabs]);
 
   useEffect(() => {
     if (!tabs) return;

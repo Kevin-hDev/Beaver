@@ -73,6 +73,7 @@ function panel(
   onCloseTab = vi.fn(),
   panelHeight = 200,
   onResize = vi.fn(),
+  instantLayout = false,
 ) {
   return (
     <TerminalPanel
@@ -81,6 +82,7 @@ function panel(
       allTabs={allTabs}
       activeGroupKey={activeGroupKey}
       isOpen={isOpen}
+      instantLayout={instantLayout}
       panelHeight={panelHeight}
       onAddTab={vi.fn()}
       onCloseTab={onCloseTab}
@@ -205,6 +207,19 @@ describe("durée de vie des shells du panneau", () => {
     rerender(panel(true));
 
     expect(screenOf(container)?.style.visibility).toBe("visible");
+  });
+
+  it("change de hauteur sans transition pendant un changement de session", () => {
+    const { container, rerender } = render(panel(true));
+    act(() => { vi.runAllTimers(); });
+
+    rerender(panel(false, undefined, undefined, undefined, undefined, 200, undefined, true));
+    const renderedPanel = container.querySelector(".terminal-panel") as HTMLElement;
+    expect(renderedPanel).toHaveClass("terminal-panel-instant");
+    expect(renderedPanel.style.height).toBe("0px");
+
+    rerender(panel(true, undefined, undefined, undefined, undefined, 200, undefined, true));
+    expect(renderedPanel.style.height).toBe("200px");
   });
 
   it("affiche exactement la hauteur bornée retournée pendant le drag", () => {

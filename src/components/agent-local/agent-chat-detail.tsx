@@ -17,8 +17,11 @@ import type { ReasoningMode } from "@/lib/reasoning-modes";
 import type { useGitBranch } from "@/hooks/use-git-branch";
 import { useTranslation } from "react-i18next";
 import type { SkillReference } from "@/types/agent-turn.generated";
+import { useSessionLayoutSwitch } from "@/hooks/use-session-layout-switch";
+import { cn } from "@/lib/utils";
 
 interface AgentChatDetailProps {
+  workspaceSessionId: string;
   sessionId: string;
   model: string;
   provider: string;
@@ -64,6 +67,7 @@ interface AgentChatDetailProps {
 
 export function AgentChatDetail(props: AgentChatDetailProps) {
   const { t } = useTranslation();
+  const sessionSwitching = useSessionLayoutSwitch(props.workspaceSessionId);
   const previewDesiredWidth = props.filePreview.width + props.filePreview.extraWidth;
   const previewFullscreen = props.panelMode !== "forecast" && props.filePreview.fullscreen;
   const openPreviewTarget = (target: string | FileOperation) => (
@@ -82,7 +86,11 @@ export function AgentChatDetail(props: AgentChatDetailProps) {
   } as CSSProperties;
 
   return (
-    <div className="agent-detail-with-preview" ref={containerRef} style={layoutStyle}>
+    <div
+      className={cn("agent-detail-with-preview", sessionSwitching && "agent-detail-session-switching")}
+      ref={containerRef}
+      style={layoutStyle}
+    >
       {props.parentSessionId && (
         <button
           className="btn btn-sm btn-secondary sa-parent-btn"
@@ -95,6 +103,7 @@ export function AgentChatDetail(props: AgentChatDetailProps) {
       <div className={`agent-detail-chat ${previewFullscreen ? "agent-detail-chat-fs" : ""} ${props.fullscreenSwitching ? "agent-detail-chat-instant" : ""}`}>
         <ChatView
           sessionId={props.sessionId}
+          instantLayout={sessionSwitching}
           model={props.model}
           provider={props.provider}
           projects={props.projects}

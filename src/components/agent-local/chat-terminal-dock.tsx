@@ -5,9 +5,10 @@ import { showToast } from "@/lib/toast-emitter";
 
 interface ChatTerminalDockProps {
   terminalState: ReturnType<typeof useAgentLocalControlledTerminal>;
+  instantLayout?: boolean;
 }
 
-export function ChatTerminalDock({ terminalState }: ChatTerminalDockProps) {
+export function ChatTerminalDock({ terminalState, instantLayout = false }: ChatTerminalDockProps) {
   return (
     <TerminalPanel
       tabs={terminalState.tabs}
@@ -15,6 +16,7 @@ export function ChatTerminalDock({ terminalState }: ChatTerminalDockProps) {
       allTabs={terminalState.allTabs()}
       activeGroupKey={terminalState.groupKey}
       isOpen={terminalState.isOpen}
+      instantLayout={instantLayout}
       panelHeight={terminalState.panelHeight}
       onAddTab={terminalState.addTab}
       onCloseTab={terminalState.closeTab}

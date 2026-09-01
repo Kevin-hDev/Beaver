@@ -112,6 +112,7 @@ export const AgentLocalTab = memo(function AgentLocalTab({
       </div>
       {displaySessionId ? (
         <AgentChatDetail
+          workspaceSessionId={activeSessionId ?? displaySessionId}
           sessionId={displaySessionId}
           model={displayModel}
           provider={displayProvider}
