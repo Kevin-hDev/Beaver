@@ -64,7 +64,10 @@ describe("terminal limits contract", () => {
       ["MAX_LABEL_BYTES", "512"],
     ]);
     const rustSources = filesBelow(TERMINAL_RUST, [".rs"]);
-    const frontendSources = filesBelow("src/hooks", [".ts", ".tsx"])
+    const frontendSources = [
+      ...filesBelow("src/hooks", [".ts", ".tsx"]),
+      ...filesBelow("src/components/terminal", [".ts", ".tsx"]),
+    ]
       .filter((path) => !path.includes("/__tests__/"));
 
     for (const [name, value] of expected) {

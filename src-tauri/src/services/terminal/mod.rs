@@ -14,6 +14,7 @@ mod session_handle;
 pub(crate) mod shell_helper;
 mod shutdown;
 pub mod tab_store;
+mod tab_store_recovery;
 mod utf8_decoder;
 
 pub use manager::PtyManager;

@@ -244,7 +244,7 @@ async fn oversized_document_is_moved_without_loading_and_reset_atomically() {
 }
 
 #[tokio::test]
-async fn interrupted_oversized_reset_stays_fail_closed_with_backup_intact() {
+async fn interrupted_after_backup_move_resets_the_store_and_clears_the_marker() {
     let root = tempfile::tempdir().expect("temporary terminal store");
     let path = root.path().join("terminal-tabs.json");
     let backup = path.with_extension("json.corrupted");
@@ -255,13 +255,46 @@ async fn interrupted_oversized_reset_stays_fail_closed_with_backup_intact() {
     std::fs::write(&pending, b"pending").expect("recovery marker");
 
     assert_eq!(
-        load_from(path).await,
-        Err("terminal-tabs-unavailable".into())
+        load_from(path.clone()).await,
+        Err("terminal-tabs-recovered".into())
     );
     assert_eq!(
-        std::fs::metadata(backup).expect("recoverable backup").len(),
+        std::fs::metadata(&backup)
+            .expect("recoverable backup")
+            .len(),
         1024 * 1024 + 1
     );
+    assert!(!pending.exists());
+    let reset = std::fs::read(path).expect("reset terminal store");
+    assert_eq!(parse_document(&reset), Ok(TerminalTabsDocument::empty()));
+}
+
+#[tokio::test]
+async fn interrupted_after_source_move_finishes_the_backup_and_resets_the_store() {
+    let root = tempfile::tempdir().expect("temporary terminal store");
+    let path = root.path().join("terminal-tabs.json");
+    let backup = path.with_extension("json.corrupted");
+    let pending = path.with_extension("json.recovery-pending");
+    let source = path.with_extension("json.recovery-source");
+    let oversized_len = 1024 * 1024 + 1;
+    std::fs::File::create(&source)
+        .and_then(|file| file.set_len(oversized_len))
+        .expect("oversized recovery source");
+    std::fs::write(&backup, b"older backup").expect("older backup");
+    std::fs::write(&pending, b"pending").expect("recovery marker");
+
+    assert_eq!(
+        load_from(path.clone()).await,
+        Err("terminal-tabs-recovered".into())
+    );
+    assert_eq!(
+        std::fs::metadata(&backup).expect("current backup").len(),
+        oversized_len
+    );
+    assert!(!pending.exists());
+    assert!(!source.exists());
+    let reset = std::fs::read(path).expect("reset terminal store");
+    assert_eq!(parse_document(&reset), Ok(TerminalTabsDocument::empty()));
 }
 
 #[tokio::test]
