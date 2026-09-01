@@ -170,6 +170,7 @@ describe("createTerminalPtyBridge", () => {
     expect(options.onExit).not.toHaveBeenCalled();
 
     terminal.completeNextWrite();
+    await Promise.resolve();
     expect(commands).toEqual(["pty_spawn", "pty_ack_output", "pty_kill"]);
     expect(options.onExit).not.toHaveBeenCalled();
 

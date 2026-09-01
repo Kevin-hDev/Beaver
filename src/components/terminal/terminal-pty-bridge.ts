@@ -46,7 +46,10 @@ class TauriTerminalPtyBridge implements TerminalPtyBridge {
   private ptyToken: string | null = null;
   private queue: TerminalInputQueue | null = null;
   private inputSubscription: Disposable | null = null;
+  // Une seule barrière de spawn évite toute file d'événements précoces.
+  private spawnRequest: Promise<SpawnResult> | null = null;
   private disposed = false;
+  private exitReceived = false;
   private queueFullShown = false;
   private inputFailed = false;
 
@@ -56,19 +59,21 @@ class TauriTerminalPtyBridge implements TerminalPtyBridge {
     const channel = new Channel<TerminalOutputEvent>();
     channel.onmessage = (event) => this.handleOutput(event);
     try {
-      const result = await invoke<SpawnResult>("pty_spawn", {
+      this.spawnRequest = invoke<SpawnResult>("pty_spawn", {
         groupKey: this.options.groupKey,
         cols: this.options.terminal.cols || 80,
         rows: this.options.terminal.rows || 24,
         onOutput: channel,
       });
+      const result = await this.spawnRequest;
       this.ptyId = result.id;
       this.ptyToken = result.token;
-      this.queue = new TerminalInputQueue((data) => this.writeInput(data));
       if (this.disposed) {
         this.closeQueueThenKill();
         return;
       }
+      if (this.exitReceived) return;
+      this.queue = new TerminalInputQueue((data) => this.writeInput(data));
       this.inputSubscription = this.options.terminal.onData((data) => this.enqueueInput(data));
       this.options.onPtyReady(this.options.tabId, result.id, result.token);
     } catch {
@@ -119,35 +124,49 @@ class TauriTerminalPtyBridge implements TerminalPtyBridge {
   private handleOutput(event: TerminalOutputEvent): void {
     if (this.disposed) return;
     if (!event.isExit) {
-      const id = this.ptyId;
-      const token = this.ptyToken;
-      if (id === null || token === null || event.sequence === null) return;
+      const sequence = event.sequence;
+      if (sequence === null) return;
       this.options.terminal.write(event.data, () => {
-        void invoke("pty_ack_output", { id, token, sequence: event.sequence }).catch(() => {
-          // Le backend garde les crédits afin de bloquer toute nouvelle sortie.
-        });
+        void this.acknowledgeOutput(sequence);
       });
       if (!this.options.isVisible()) this.options.onActivity(this.options.tabId, true);
       return;
     }
+    this.exitReceived = true;
     this.queue?.close();
     this.inputSubscription?.dispose();
     this.inputSubscription = null;
-    const id = this.ptyId;
-    const token = this.ptyToken;
     const message = event.exitCode === null
       ? i18n.t("terminal.processExitedUnknown")
       : i18n.t("terminal.processExited", { code: event.exitCode });
     this.options.terminal.write(
       `\r\n[${message}]`,
-      () => { void this.finishNaturalExit(id, token); },
+      () => { void this.finishNaturalExit(); },
     );
   }
 
-  private async finishNaturalExit(id: number | null, token: string | null): Promise<void> {
-    if (this.disposed || id === null || !token) return;
+  private async acknowledgeOutput(sequence: number): Promise<void> {
+    if (!this.spawnRequest) return;
     try {
-      await invoke("pty_kill", { id, token });
+      const { id, token } = await this.spawnRequest;
+      if (this.disposed) return;
+      await invoke("pty_ack_output", { id, token, sequence });
+    } catch {
+      // Le backend garde les crédits afin de bloquer toute nouvelle sortie.
+    }
+  }
+
+  private async finishNaturalExit(): Promise<void> {
+    if (this.disposed || !this.spawnRequest) return;
+    let result: SpawnResult;
+    try {
+      result = await this.spawnRequest;
+    } catch {
+      return;
+    }
+    if (this.disposed) return;
+    try {
+      await invoke("pty_kill", { id: result.id, token: result.token });
     } catch (error) {
       if (error !== "terminal-not-found") {
         this.options.terminal.write(`\r\n${i18n.t("terminal.failedToClose")}\r\n`);
