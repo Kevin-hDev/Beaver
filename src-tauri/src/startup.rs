@@ -78,6 +78,11 @@ pub fn run_shell_sandbox_helper() -> Option<i32> {
     super::services::agent_local::shell_sandbox::run_helper_if_requested()
 }
 
+/// Exécute le rôle terminal Linux avant l'initialisation de Tauri ou de CEF.
+pub fn run_terminal_shell_helper_if_requested() -> Option<i32> {
+    super::services::terminal::shell_helper::run_if_requested()
+}
+
 pub fn initialize_shell_environment() -> bool {
     super::services::agent_local::shell_environment::initialize()
 }

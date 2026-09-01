@@ -45,7 +45,7 @@ pub use startup::launch_windows_browser_host;
 pub use startup::prepare_macos_application;
 pub use startup::{
     configure_git_network_policy, initialize_shell_environment, prepare_browser_native_application,
-    run, run_shell_sandbox_helper,
+    run, run_shell_sandbox_helper, run_terminal_shell_helper_if_requested,
 };
 
 #[cfg(debug_assertions)]

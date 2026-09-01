@@ -288,6 +288,27 @@ mod tests {
         assert_eq!(manager.active_sessions_for_test(), 0);
     }
 
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn terminal_shell_dies_with_parent_macos() {
+        let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
+        let manager = PtyManager::new(coordinator.work_supervisor());
+        let owner = authorize("main").expect("main owner");
+        let (id, token) = manager
+            .spawn_for_test(&owner, None, 80, 24)
+            .expect("real PTY shell");
+        let pid = manager.process_id_for_test(id).expect("shell process id");
+        assert!(process_is_running(pid));
+
+        manager.kill(&owner, id, &token).expect("close PTY master");
+
+        let deadline = Instant::now() + Duration::from_secs(2);
+        while Instant::now() < deadline && process_is_running(pid) {
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        assert!(!process_is_running(pid));
+    }
+
     #[test]
     #[cfg(windows)]
     fn windows_terminal_process_is_confined_by_beaver() {

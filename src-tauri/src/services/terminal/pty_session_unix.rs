@@ -41,9 +41,7 @@ impl PtySession {
         let pair = NativePtySystem::default()
             .openpty(pty_size(cols, rows))
             .map_err(|_| terminal_error())?;
-        let shell = default_shell()?;
-        let mut command = CommandBuilder::new(&shell);
-        command.arg("-l");
+        let mut command = terminal_command()?;
         command.env("TERM", "xterm-256color");
         if std::env::var("EDITOR").is_ok_and(|editor| editor.contains("vi")) {
             command.env("EDITOR", "");
@@ -182,13 +180,23 @@ fn pty_size(cols: u16, rows: u16) -> PtySize {
     }
 }
 
-fn default_shell() -> Result<String, String> {
-    let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/bash".to_string());
-    let path = std::path::Path::new(&shell);
-    if !path.is_absolute() || !path.is_file() {
-        return Err("terminal-shell-invalid".to_string());
-    }
-    Ok(shell)
+fn terminal_command() -> Result<CommandBuilder, String> {
+    let shell = super::super::shell_helper::terminal_shell_executable()?;
+    #[cfg(all(target_os = "linux", not(test)))]
+    let mut command = {
+        let current = dunce::canonicalize(std::env::current_exe().map_err(|_| terminal_error())?)
+            .map_err(|_| terminal_error())?;
+        let mut command = CommandBuilder::new(current);
+        command.arg(super::super::shell_helper::ROLE_FLAG);
+        command.arg(std::process::id().to_string());
+        command.arg("--");
+        command.arg(shell);
+        command
+    };
+    #[cfg(any(not(target_os = "linux"), test))]
+    let mut command = CommandBuilder::new(shell);
+    command.arg("-l");
+    Ok(command)
 }
 
 fn validate_size(cols: u16, rows: u16) -> Result<(), String> {

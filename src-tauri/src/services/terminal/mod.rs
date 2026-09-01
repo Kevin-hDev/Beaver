@@ -9,6 +9,7 @@ mod owned_session;
 pub mod pty_session;
 mod public_error;
 mod session_handle;
+pub(crate) mod shell_helper;
 mod shutdown;
 pub mod tab_store;
 mod utf8_decoder;
@@ -40,6 +41,9 @@ mod linux_spawn_worker_tests;
 mod session_handle_tests;
 
 #[cfg(test)]
+mod shell_helper_tests;
+
+#[cfg(test)]
 mod tests;
 
 #[cfg(test)]
@@ -47,6 +51,9 @@ mod tab_store_tests;
 
 #[cfg(test)]
 mod utf8_decoder_tests;
+
+#[cfg(all(test, windows))]
+mod windows_parent_death_tests;
 
 fn generate_token() -> zeroize::Zeroizing<String> {
     use rand::RngCore;
