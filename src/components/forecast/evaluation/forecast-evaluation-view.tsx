@@ -16,8 +16,8 @@ interface ForecastEvaluationViewProps {
 export function ForecastEvaluationView({ analysisId, mode }: ForecastEvaluationViewProps) {
   const { t } = useTranslation();
   const {
-    analysis, loading, running, loadFailed, runFailed, run,
-    ensembleRunning, ensembleFailed, createEnsemble,
+    analysis, loading, running, loadFailed, run,
+    ensembleRunning, createEnsemble,
   } =
     useForecastEvaluation(analysisId);
   const [reliabilityResize, setReliabilityResize] = useState(0);
@@ -36,16 +36,6 @@ export function ForecastEvaluationView({ analysisId, mode }: ForecastEvaluationV
   }
   return (
     <div className="fcwe-root">
-      {runFailed ? (
-        <p className="fcwe-error" role="alert">
-          {t("forecast.workbench.evaluation.runFailed")}
-        </p>
-      ) : null}
-      {ensembleFailed ? (
-        <p className="fcwe-error" role="alert">
-          {t("forecast.workbench.evaluation.ensembleFailed")}
-        </p>
-      ) : null}
       <div className="fcwe-toolbar">
         <div className="fcwe-summary">
           {evaluation ? (

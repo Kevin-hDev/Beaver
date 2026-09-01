@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { showToast } from "@/lib/toast-emitter";
 import { invoke } from "@tauri-apps/api/core";
 import { useLatestRequest } from "@/hooks/use-latest-request";
 import {
@@ -31,6 +32,10 @@ export function ForecastHistory({ onLoadAnalysis }: ForecastHistoryProps) {
   const { t } = useTranslation();
   const [analyses, setAnalyses] = useState<AnalysisMeta[]>([]);
   const [search, setSearch] = useState("");
+  /* Ne porte que l'échec du chargement : c'est l'état de la liste, et il doit
+     rester visible sinon la zone est vide sans explication. Un renommage ou
+     une suppression qui échoue est une action — elle passe par une
+     notification qui s'efface. */
   const [error, setError] = useState<string | null>(null);
   const runLatest = useLatestRequest();
 
@@ -73,9 +78,8 @@ export function ForecastHistory({ onLoadAnalysis }: ForecastHistoryProps) {
     try {
       const renamed = await invoke<AnalysisMeta>("rename_forecast_analysis", { id, name });
       setAnalyses((items) => items.map((item) => (item.id === id ? renamed : item)));
-      setError(null);
     } catch {
-      setError(t("forecast.history.renameFailed"));
+      showToast(t("forecast.history.renameFailed"), "error");
     }
   };
 
@@ -83,9 +87,8 @@ export function ForecastHistory({ onLoadAnalysis }: ForecastHistoryProps) {
     try {
       await invoke("delete_forecast_analysis", { id });
       setAnalyses((items) => items.filter((item) => item.id !== id));
-      setError(null);
     } catch {
-      setError(t("forecast.history.deleteFailed"));
+      showToast(t("forecast.history.deleteFailed"), "error");
     }
   };
 

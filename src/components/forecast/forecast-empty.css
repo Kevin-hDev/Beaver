@@ -39,13 +39,6 @@
   max-width: 100%;
 }
 
-.fc-empty-error {
-  max-width: 260px;
-  margin: 0;
-  color: var(--signal-error);
-  font-size: var(--text-xs);
-}
-
 .fc-recent {
   width: 100%;
   max-width: 280px;

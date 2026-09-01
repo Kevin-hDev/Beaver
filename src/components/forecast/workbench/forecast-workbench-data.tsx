@@ -37,7 +37,7 @@ export function ForecastWorkbenchData({ analysisId }: { analysisId: string }) {
     analysisId,
     t("forecast.workbench.data.loadFailed"),
   );
-  if (error) return <div className="fcw-inline-error">{error}</div>;
+  if (error) return <div className="fcw-section-error">{error}</div>;
   if (!data) return <div className="fcwd-loading"><div className="fc-skeleton" /></div>;
 
   const profile = data.data_profile;

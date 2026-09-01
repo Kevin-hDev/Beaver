@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { showToast } from "@/lib/toast-emitter";
 import { invoke } from "@tauri-apps/api/core";
 import type { ForecastSection } from "@/hooks/use-forecast-panel";
 import { ForecastHeader } from "./forecast-header";
@@ -42,7 +43,6 @@ export function ForecastPanel({
   const hasAnalysis = currentAnalysisId !== null;
   const [draft, setDraft] = useState<ForecastDraftData | null>(null);
   const [launching, setLaunching] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [layers, setLayers] = useState<ForecastLayerState>(createInitialLayerState);
   const handleExport = useForecastExport();
   const {
@@ -61,11 +61,10 @@ export function ForecastPanel({
   );
 
   const handleImportFile = async (path: string) => {
-    setError(null);
     try {
       setDraft(await loadForecastDraftFromFile(path));
     } catch {
-      setError(t("forecast.errors.importFailed"));
+      showToast(t("forecast.errors.importFailed"), "error");
     }
   };
 
@@ -76,7 +75,6 @@ export function ForecastPanel({
   const handleLaunch = async (config: LaunchConfig) => {
     if (!draft) return;
     setLaunching(true);
-    setError(null);
     try {
       const result = await invoke<{ id: string }>("run_forecast", {
         request: {
@@ -95,7 +93,7 @@ export function ForecastPanel({
       setDraft(null);
       onLoadAnalysis(result.id);
     } catch {
-      setError(t("forecast.errors.launchFailed"));
+      showToast(t("forecast.errors.launchFailed"), "error");
     } finally {
       setLaunching(false);
     }
@@ -128,7 +126,6 @@ export function ForecastPanel({
           <ForecastConfig
             draft={draft}
             launching={launching}
-            error={error}
             defaultModelId={policy.mode === "manual" ? selectedModelId : ""}
             selectFallbackModel={policy.mode === "manual"}
             onModelChange={handleSelectModel}
@@ -137,7 +134,6 @@ export function ForecastPanel({
           />
         ) : !hasAnalysis ? (
           <ForecastEmpty
-            error={error}
             onLoadAnalysis={onLoadAnalysis}
             onImportFile={(path) => void handleImportFile(path)}
           />

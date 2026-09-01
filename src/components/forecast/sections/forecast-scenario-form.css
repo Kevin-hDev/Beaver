@@ -75,12 +75,6 @@
   color: var(--ink);
 }
 
-.fcs-error {
-  margin: 0;
-  color: var(--signal-error);
-  font-size: var(--text-xs);
-}
-
 .fcs-hint {
   margin: 0;
   color: var(--ink-faint);

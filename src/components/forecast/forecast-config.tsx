@@ -16,7 +16,6 @@ import "./forecast-config-actions.css";
 interface ForecastConfigProps {
   draft: ForecastDraftData;
   launching: boolean;
-  error: string | null;
   defaultModelId: string;
   selectFallbackModel: boolean;
   onModelChange: (modelId: string) => void;
@@ -38,7 +37,6 @@ export interface LaunchConfig {
 export function ForecastConfig({
   draft,
   launching,
-  error,
   defaultModelId,
   selectFallbackModel,
   onModelChange,
@@ -178,9 +176,9 @@ export function ForecastConfig({
             step={confidenceControl.limited ? confidenceControl.step : 0.01}
             value={confidenceControl.effective} onChange={(e) => setConfidence(Number(e.target.value))} />
         </div>
-        {(configError || error) && (
+        {configError && (
           <p className="fcc-error">
-            {configError ? t(configError, { future: contextProfile.futureRows, horizon, max: horizonMax }) : error}
+            {t(configError, { future: contextProfile.futureRows, horizon, max: horizonMax })}
           </p>
         )}
       </div>

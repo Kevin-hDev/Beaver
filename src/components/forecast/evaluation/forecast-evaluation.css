@@ -66,12 +66,6 @@
   font-size: var(--text-sm);
 }
 
-.fcwe-error {
-  margin: 0 0 var(--space-md);
-  color: var(--signal-error);
-  font-size: var(--text-sm);
-}
-
 .fcwe-ensemble-status {
   margin: 0 0 var(--space-md);
   border-left: var(--chrome-1) solid var(--pulse);

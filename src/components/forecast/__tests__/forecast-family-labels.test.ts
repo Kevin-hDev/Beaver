@@ -5,14 +5,14 @@ import { getForecastFamilyLabel } from "../forecast-model-meta";
 /* Chemins littéraux : la règle de sécurité du projet refuse une lecture de
    fichier dont le chemin est assemblé à l'exécution. */
 const BUNDLES = {
-  fr: "src/i18n/fr.json",
-  en: "src/i18n/en.json",
-  es: "src/i18n/es.json",
-  de: "src/i18n/de.json",
-  it: "src/i18n/it.json",
-  zh: "src/i18n/zh.json",
-  ja: "src/i18n/ja.json",
-} as const;
+  fr: readFileSync("src/i18n/fr.json", "utf8"),
+  en: readFileSync("src/i18n/en.json", "utf8"),
+  es: readFileSync("src/i18n/es.json", "utf8"),
+  de: readFileSync("src/i18n/de.json", "utf8"),
+  it: readFileSync("src/i18n/it.json", "utf8"),
+  zh: readFileSync("src/i18n/zh.json", "utf8"),
+  ja: readFileSync("src/i18n/ja.json", "utf8"),
+};
 
 const LOCALES = Object.keys(BUNDLES) as (keyof typeof BUNDLES)[];
 
@@ -28,7 +28,7 @@ function familiesFromRegistry(): string[] {
 }
 
 function translations(locale: keyof typeof BUNDLES): Record<string, string> {
-  const bundle = JSON.parse(readFileSync(BUNDLES[locale], "utf8")) as {
+  const bundle = JSON.parse(BUNDLES[locale]) as {
     forecast: { models: { families?: Record<string, string> } };
   };
   return bundle.forecast.models.families ?? {};

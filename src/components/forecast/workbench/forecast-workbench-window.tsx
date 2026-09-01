@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
+import { showToast } from "@/lib/toast-emitter";
 import { ForecastWorkbenchModelControl } from "./forecast-workbench-model-control";
 import { ForecastWorkbenchNav } from "./forecast-workbench-nav";
 import type {
@@ -28,14 +29,12 @@ export function ForecastWorkbenchWindow() {
 function ForecastWorkbenchContent({ snapshot }: { snapshot: ForecastWorkbenchSnapshot }) {
   const { t } = useTranslation();
   const [section, setSection] = useState<ForecastWorkbenchSection>(snapshot.draft.section);
-  const [saveFailed, setSaveFailed] = useState(false);
   const changeSection = async (next: ForecastWorkbenchSection) => {
     try {
       await invoke("update_forecast_workbench_draft", { section: next });
       setSection(next);
-      setSaveFailed(false);
     } catch {
-      setSaveFailed(true);
+      showToast(t("forecast.workbench.draftSaveFailed"), "error");
     }
   };
 
@@ -51,11 +50,6 @@ function ForecastWorkbenchContent({ snapshot }: { snapshot: ForecastWorkbenchSna
         </aside>
         <section className="fcw-workspace">
           <div className="fcw-content" aria-labelledby="fcw-section-title">
-            {saveFailed ? (
-              <p className="fcw-inline-error" role="alert">
-                {t("forecast.workbench.draftSaveFailed")}
-              </p>
-            ) : null}
             <div className="fcw-content-heading">
               <span className="fcw-step">{t("forecast.workbench.workspace")}</span>
               <h2 id="fcw-section-title">{t(`forecast.workbench.sections.${section}`)}</h2>
