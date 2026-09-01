@@ -17,8 +17,6 @@
   font-size: var(--text-xs);
   font-family: var(--font-sans);
   color: var(--ink-faint);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 .fcs-series-menu {
@@ -44,8 +42,6 @@
   font-size: var(--text-xs);
   font-family: var(--font-mono);
   color: var(--ink-faint);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 .fcs-preview-meta {

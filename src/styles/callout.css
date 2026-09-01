@@ -1,0 +1,47 @@
+/* Bandeau de message — un bloc qui explique quelque chose à l'utilisateur
+   sans être une erreur bloquante ni une notification.
+
+   Un seul motif : fond teinté et barre de couleur à gauche. Le contour coloré
+   complet a été écarté — il cerne le bloc et crie plus fort que le message
+   qu'il porte, alors qu'une barre latérale le marque sans l'entourer. */
+
+.callout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  margin: 0;
+  padding: var(--chrome-2) var(--chrome-3);
+  border-left: var(--chrome-1) solid var(--callout-accent, var(--edge));
+  border-radius: var(--radius-sm);
+  background: var(--callout-bg, var(--surface));
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+}
+
+.callout-title {
+  color: var(--ink);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.callout-info {
+  --callout-accent: var(--signal-info);
+  --callout-bg: var(--signal-info-bg);
+}
+
+.callout-warning {
+  --callout-accent: var(--signal-warning);
+  --callout-bg: var(--signal-warning-bg);
+}
+
+.callout-ok {
+  --callout-accent: var(--signal-ok);
+  --callout-bg: var(--signal-ok-bg);
+}
+
+/* Un rappel qui n'annonce ni un risque ni une réussite : la couleur d'accent
+   de l'application, sur son fond atténué. */
+.callout-accent {
+  --callout-accent: var(--pulse);
+  --callout-bg: var(--pulse-muted);
+}

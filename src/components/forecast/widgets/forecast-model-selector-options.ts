@@ -1,7 +1,7 @@
 import type { AvailableModel } from "@/hooks/use-available-models";
 import {
   getForecastFamilyId,
-  getForecastFamilyKey,
+  getForecastFamilyLabel,
   groupForecastModels,
   getForecastModelReadiness,
   isForecastModelSelectable,
@@ -22,7 +22,7 @@ export function buildForecastSelectorGroups(
     : models;
   const mapped = new Map<string, AvailableModel[]>();
   for (const group of groupForecastModels(visible)) {
-    const familyName = t(group.titleKey);
+    const familyName = getForecastFamilyLabel(group.id, t);
     mapped.set(group.id, group.models.map((model) => {
       const disabled = !isForecastModelSelectable(model);
       const updateRequired = getForecastModelReadiness(model) === "update_required";
@@ -30,7 +30,7 @@ export function buildForecastSelectorGroups(
         id: model.id,
         display_name: model.display_name,
         provider_id: getForecastFamilyId(model),
-        provider_name: familyName === getForecastFamilyKey(group.id) ? group.id : familyName,
+        provider_name: familyName,
         is_local: !model.is_cloud,
         supports_tools: false,
         supports_vision: false,

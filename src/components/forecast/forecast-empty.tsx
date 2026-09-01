@@ -12,10 +12,9 @@ import "./forecast-empty.css";
 interface ForecastEmptyProps {
   onLoadAnalysis: (id: string) => void;
   onImportFile?: (path: string) => void;
-  error?: string | null;
 }
 
-export function ForecastEmpty({ onLoadAnalysis, onImportFile, error }: ForecastEmptyProps) {
+export function ForecastEmpty({ onLoadAnalysis, onImportFile }: ForecastEmptyProps) {
   const { t } = useTranslation();
   const [recent, setRecent] = useState<ForecastAnalysisMeta[]>([]);
 
@@ -45,7 +44,6 @@ export function ForecastEmpty({ onLoadAnalysis, onImportFile, error }: ForecastE
       </div>
       <p className="fc-empty-title">{t("forecast.noAnalysis")}</p>
       <p className="fc-empty-sub">{t("forecast.askAgent")}</p>
-      {error && <p className="fc-empty-error">{error}</p>}
       <div className="fc-empty-actions">
         <button className="btn btn-sm btn-primary" onClick={() => void handleImport()}>
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"

@@ -1,0 +1,80 @@
+/* Tableau de données — autorité unique de l'apparence.
+   Référence : les tableaux que l'agent produit dans ses réponses.
+
+   Cellules détachées plutôt que quadrillage : à densité égale, l'œil suit
+   mieux des blocs séparés qu'une grille de traits, et le tableau ne se
+   confond pas avec le contour de la carte qui le porte. */
+
+[data-theme] {
+  --table-gap: 3px;
+  --table-cell-padding: var(--chrome-2) var(--chrome-3);
+  --table-head-bg: var(--surface-overlay);
+  --table-cell-bg: var(--surface-glass);
+}
+
+/* Les deux listes sont identiques : le markdown des réponses ne peut pas
+   porter de classe sur ses `<table>`, ils sont produits par le rendu. */
+.data-table,
+.chat-md table {
+  width: 100%;
+  border: none;
+  border-collapse: separate;
+  border-spacing: var(--table-gap);
+  table-layout: auto;
+  margin: 0;
+  font-size: var(--text-xs);
+  white-space: normal;
+}
+
+.data-table th,
+.data-table td,
+.chat-md th,
+.chat-md td {
+  padding: var(--table-cell-padding);
+  border-radius: var(--radius-xs);
+  text-align: left;
+  vertical-align: top;
+  line-height: 1.35;
+  white-space: normal;
+  word-break: normal;
+  overflow-wrap: break-word;
+}
+
+.data-table th,
+.chat-md th {
+  background: var(--table-head-bg);
+  color: var(--ink-muted);
+  font-size: 0.85em;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.data-table td,
+.chat-md td {
+  background: var(--table-cell-bg);
+}
+
+/* La ligne s'éclaire sans changer de teinte : deux fonds voisins pour la même
+   ligne survolée et l'œil ne saurait plus laquelle il regarde. */
+.data-table tbody tr:hover td,
+.chat-md tbody tr:hover td {
+  filter: brightness(1.08);
+}
+
+/* Un en-tête qui reste visible pendant le défilement du corps. Il faut un
+   fond opaque : les cellules glissent sous lui, et `--table-head-bg` est
+   translucide. */
+.data-table-sticky thead th {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  background: var(--shell-opaque);
+}
+
+/* Un tableau plus large que sa carte défile dans son propre cadre, jamais en
+   poussant la page. */
+.data-table-scroll {
+  max-width: 100%;
+  overflow: auto;
+  scrollbar-width: thin;
+}

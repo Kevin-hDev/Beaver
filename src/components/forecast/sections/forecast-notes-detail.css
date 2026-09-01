@@ -30,21 +30,6 @@
    28px geometry; keeps its danger colors and pulse animation. */
 .fcn-confirm-delete {
   position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--chrome-2);
-  height: 28px;
-  padding: 0 var(--chrome-3);
-  border: 1px solid var(--signal-error);
-  border-radius: var(--radius-sm);
-  background: var(--signal-error);
-  color: var(--ink-on-danger);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background var(--ease-smooth), color var(--ease-smooth), border-color var(--ease-smooth);
 }
 
 .fcn-confirm-delete::after {

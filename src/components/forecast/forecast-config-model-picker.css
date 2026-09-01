@@ -16,7 +16,7 @@
 .fcmp-group {
   border: 1px solid var(--edge);
   border-radius: var(--radius-sm);
-  background: var(--surface);
+  background: var(--shell);
   overflow: hidden;
 }
 
@@ -44,8 +44,6 @@
   font-size: var(--text-xs);
   font-family: var(--font-sans);
   color: var(--ink-faint);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 .fcmp-group-count {

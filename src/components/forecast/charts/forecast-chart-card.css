@@ -6,7 +6,7 @@
   overflow: hidden;
   border: 1px solid var(--edge);
   border-radius: var(--radius-md);
-  background: var(--surface);
+  background: var(--shell);
   box-shadow: var(--shadow-sm);
 }
 
@@ -25,8 +25,6 @@
   font-size: var(--text-xs);
   font-family: var(--font-sans);
   color: var(--ink-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -34,25 +32,10 @@
   max-width: calc(50% - 40px);
 }
 
+/* Dans un en-tête de carte compact, plus bas qu'une rangée de boutons. */
 .fcrd-toggle {
-  width: 22px;
-  height: 22px;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-radius: var(--radius-xs);
-  background: transparent;
-  color: var(--ink-faint);
-  cursor: pointer;
-  transition: color var(--ease-smooth), background var(--ease-smooth);
-  flex-shrink: 0;
-}
-
-.fcrd-toggle:hover {
-  color: var(--ink);
-  background: var(--surface-hover);
+  width: var(--chrome-icon-lg);
+  height: var(--chrome-icon-lg);
 }
 
 .fcrd-chevron {
@@ -89,19 +72,13 @@
   }
 }
 
-.fcrd-body {
-  display: grid;
-  grid-template-rows: 0fr;
-  opacity: 0;
-  transition: grid-template-rows 350ms ease, opacity 350ms ease;
-}
+/* Le dépliement vient de <Collapsible> : hauteur en pixels plutôt que piste
+   de grille en `fr`, que WebKit interpole par paliers. */
 
-.fcrd-body.is-open {
-  grid-template-rows: 1fr;
-  opacity: 1;
-}
-
+/* Pas d'`overflow: hidden` ici : c'était un reste de l'ancienne piste de
+   grille, qui devait retenir le contenu pendant l'animation. <Collapsible>
+   s'en charge sur sa propre région et le relâche une fois ouvert ; le garder
+   ne faisait plus que trancher ce qui dépassait. */
 .fcrd-inner {
-  overflow: hidden;
   min-height: 0;
 }

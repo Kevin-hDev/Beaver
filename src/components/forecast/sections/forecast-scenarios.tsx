@@ -28,6 +28,8 @@ export function ForecastScenarios(props: ForecastScenariosProps) {
   const [data, setData] = useState<ForecastScenarioAnalysis | null>(null);
   const [activeScenarioId, setActiveScenarioId] = useState<string | null>(null);
   const [selectedSeries, setSelectedSeries] = useState("");
+  /* Ne porte que l'échec du chargement : c'est l'état de la zone. Les échecs
+     d'enregistrement et de suppression passent par une notification. */
   const [error, setError] = useState<string | null>(null);
   const chart = useForecastChartResize();
   const form = useForecastScenarioForm({
@@ -35,11 +37,11 @@ export function ForecastScenarios(props: ForecastScenariosProps) {
     onAnalysisChanged,
     setData,
     setActiveScenarioId,
-    setError,
     t,
   });
 
   const handleLoaded = useCallback((analysis: ForecastScenarioAnalysis) => {
+    setError(null);
     setData(analysis);
     setActiveScenarioId((current) =>
       current && analysis.scenarios.some((scenario) => scenario.id === current)
@@ -63,6 +65,7 @@ export function ForecastScenarios(props: ForecastScenariosProps) {
 
   return (
     <div className="fcs-root">
+      {error && <p className="fc-error">{error}</p>}
       <div className={`fcs-shell ${pickerOpen ? "is-picker-open" : ""}`}>
         <div className="fcs-content fcs-main">
         {data && (
@@ -105,7 +108,6 @@ export function ForecastScenarios(props: ForecastScenariosProps) {
             contextAdjustments={form.contextAdjustments}
             editing={Boolean(form.editingScenarioId)}
             saving={form.saving}
-            error={error}
             onNameChange={form.setName}
             onDescriptionChange={form.setDescription}
             onAdjustmentChange={form.setAdjustment}

@@ -97,34 +97,32 @@ export function ForecastComparisons({ analysisId }: ForecastComparisonsProps) {
         className={`fc-chart-area ${chart.isResizing ? "is-resizing" : ""}`}
         style={{ height: chart.chartHeight, minHeight: chart.chartHeight, maxHeight: chart.chartHeight }}
       >
-        <div className="fc-chart-placeholder">
-          <ForecastChart
-            history={filterComparisonPoints(current.input_data.history, selectedSeries)}
-            predictions={basePredictions}
-            scenarios={selectedOption ? [{
-              id: "compare",
-              name: selectedOption.label,
-              predictions: selectedOption.predictions,
-            }] : []}
-            variables={[]}
-            quantiles={quantiles}
-            frequency={current.frequency}
-            endDate={current.input_summary.end}
-            locale={i18n.language}
-            targetColumn={current.target_column}
-            fallbackName={current.name}
-            labels={{
-              history: t("forecast.view.historySeries"),
-              forecast: current.name,
-              confidence: t("forecast.view.confidenceRange"),
-              forecastStart: t("forecast.chart.forecastStart"),
-              annotationUser: t("forecast.notes.userSource"),
-              annotationLlm: t("forecast.notes.llmSource"),
-            }}
-            layers={{ history: true, forecast: true, confidence: true, "scenario-compare": true }}
-            mode="comparison"
-          />
-        </div>
+        <ForecastChart
+          history={filterComparisonPoints(current.input_data.history, selectedSeries)}
+          predictions={basePredictions}
+          scenarios={selectedOption ? [{
+            id: "compare",
+            name: selectedOption.label,
+            predictions: selectedOption.predictions,
+          }] : []}
+          variables={[]}
+          quantiles={quantiles}
+          frequency={current.frequency}
+          endDate={current.input_summary.end}
+          locale={i18n.language}
+          targetColumn={current.target_column}
+          fallbackName={current.name}
+          labels={{
+            history: t("forecast.view.historySeries"),
+            forecast: current.name,
+            confidence: t("forecast.view.confidenceRange"),
+            forecastStart: t("forecast.chart.forecastStart"),
+            annotationUser: t("forecast.notes.userSource"),
+            annotationLlm: t("forecast.notes.llmSource"),
+          }}
+          layers={{ history: true, forecast: true, confidence: true, "scenario-compare": true }}
+          mode="comparison"
+        />
       </div>
       <div className="fc-chart-resize" onPointerDown={chart.startResize} onDoubleClick={chart.resetHeight} />
       <div className="fccmp-scroll">

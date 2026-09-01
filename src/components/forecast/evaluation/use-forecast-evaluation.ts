@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
+import { showToast } from "@/lib/toast-emitter";
 import { useLatestRequest } from "@/hooks/use-latest-request";
 import {
   FORECAST_ANALYSIS_UPDATED,
@@ -13,10 +15,9 @@ export function useForecastEvaluation(analysisId: string) {
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
-  const [runFailed, setRunFailed] = useState(false);
   const [ensembleRunning, setEnsembleRunning] = useState(false);
-  const [ensembleFailed, setEnsembleFailed] = useState(false);
   const runLatest = useLatestRequest();
+  const { t } = useTranslation();
 
   const refresh = useCallback(async () => {
     try {
@@ -34,7 +35,6 @@ export function useForecastEvaluation(analysisId: string) {
   }, [analysisId, runLatest]);
 
   const createEnsemble = useCallback(async () => {
-    setEnsembleFailed(false);
     setEnsembleRunning(true);
     try {
       const next = await invoke<EvaluationAnalysis>("create_forecast_ensemble", {
@@ -43,27 +43,25 @@ export function useForecastEvaluation(analysisId: string) {
       });
       setAnalysis((current) => preferNewestForecast(current, next));
     } catch {
-      setEnsembleFailed(true);
+      showToast(t("forecast.workbench.evaluation.ensembleFailed"), "error");
     } finally {
       setEnsembleRunning(false);
     }
-  }, [analysisId]);
+  }, [analysisId, t]);
 
   const run = useCallback(async () => {
-    setRunFailed(false);
     setRunning(true);
     try {
       const next = await invoke<EvaluationAnalysis>("run_forecast_backtest", {
         request: { analysis_id: analysisId, model_ids: [], max_windows: 3 },
       });
       setAnalysis((current) => preferNewestForecast(current, next));
-      setRunFailed(false);
     } catch {
-      setRunFailed(true);
+      showToast(t("forecast.workbench.evaluation.runFailed"), "error");
     } finally {
       setRunning(false);
     }
-  }, [analysisId]);
+  }, [analysisId, t]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- backend hydration is intentional
@@ -78,9 +76,7 @@ export function useForecastEvaluation(analysisId: string) {
     loading,
     running,
     loadFailed,
-    runFailed,
     ensembleRunning,
-    ensembleFailed,
     run,
     createEnsemble,
   };

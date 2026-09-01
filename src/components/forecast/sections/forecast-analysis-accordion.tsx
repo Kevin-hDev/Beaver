@@ -1,5 +1,6 @@
 import type React from "react";
 import { CaretDown } from "@/components/ui/icons";
+import { Collapsible } from "@/components/ui/collapsible";
 
 interface ForecastAnalysisAccordionProps {
   title: string;
@@ -25,9 +26,9 @@ export function ForecastAnalysisAccordion({
         </span>
         <CaretDown size="var(--icon-sm)" className="fca-accordion-caret" />
       </button>
-      <div className="fca-accordion-panel">
-        <div className="fca-accordion-content">{children}</div>
-      </div>
+      <Collapsible open={open} innerClassName="fca-accordion-content">
+        {children}
+      </Collapsible>
     </section>
   );
 }

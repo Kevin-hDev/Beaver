@@ -82,30 +82,28 @@ export function ForecastScenarioPreview({
         className={`fc-chart-area ${isResizing ? "is-resizing" : ""}`}
         style={{ height: chartHeight, minHeight: chartHeight, maxHeight: chartHeight }}
       >
-        <div className="fc-chart-placeholder">
-          <ForecastChart
-            history={filtered.history}
-            predictions={filtered.predictions}
-            scenarios={chartScenarios}
-            variables={variableLines}
-            quantiles={filtered.quantiles}
-            frequency={analysis.frequency}
-            endDate={analysis.input_summary.end}
-            locale={i18n.language}
-            targetColumn={analysis.target_column}
-            fallbackName={previewName}
-            labels={{
-              history: t("forecast.view.historySeries"),
-              forecast: t("forecast.view.forecastSeries"),
-              confidence: t("forecast.view.confidenceRange"),
-              forecastStart: t("forecast.chart.forecastStart"),
-              annotationUser: t("forecast.notes.userSource"),
-              annotationLlm: t("forecast.notes.llmSource"),
-            }}
-            layers={previewLayers}
-            mode="scenario"
-          />
-        </div>
+        <ForecastChart
+          history={filtered.history}
+          predictions={filtered.predictions}
+          scenarios={chartScenarios}
+          variables={variableLines}
+          quantiles={filtered.quantiles}
+          frequency={analysis.frequency}
+          endDate={analysis.input_summary.end}
+          locale={i18n.language}
+          targetColumn={analysis.target_column}
+          fallbackName={previewName}
+          labels={{
+            history: t("forecast.view.historySeries"),
+            forecast: t("forecast.view.forecastSeries"),
+            confidence: t("forecast.view.confidenceRange"),
+            forecastStart: t("forecast.chart.forecastStart"),
+            annotationUser: t("forecast.notes.userSource"),
+            annotationLlm: t("forecast.notes.llmSource"),
+          }}
+          layers={previewLayers}
+          mode="scenario"
+        />
       </div>
     </div>
   );

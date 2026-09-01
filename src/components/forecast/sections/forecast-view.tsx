@@ -17,6 +17,7 @@ import {
 } from "./forecast-view-data";
 import "../forecast-view.css";
 import "../forecast-view-table.css";
+import { Collapsible } from "@/components/ui/collapsible";
 
 interface ForecastViewProps {
   analysisId: string;
@@ -26,6 +27,8 @@ interface ForecastViewProps {
   onSelectedSeriesChange?: (seriesId: string) => void;
   onZoomWindowChange?: (window: { start: number; end: number }) => void;
   zoomJump?: { start: number; seq: number } | null;
+  /** Incrémenté par la carte quand elle finit de se déplier. */
+  resizeSignal?: number;
 }
 
 export function ForecastView({
@@ -35,6 +38,7 @@ export function ForecastView({
   onSelectedSeriesChange,
   onZoomWindowChange,
   zoomJump,
+  resizeSignal = 0,
 }: ForecastViewProps) {
   const { t, i18n } = useTranslation();
   const { data, error } = useForecastResult<ForecastViewResult>(analysisId, t("forecast.noAnalysis"));
@@ -124,26 +128,28 @@ export function ForecastView({
         className={`fc-chart-area ${chart.isResizing ? "is-resizing" : ""}`}
         style={{ height: chart.chartHeight, minHeight: chart.chartHeight, maxHeight: chart.chartHeight }}
       >
-        <div className="fc-chart-placeholder">
-          <ForecastChart
-            history={filtered.history}
-            predictions={filtered.predictions}
-            scenarios={filtered.scenarios}
-            variables={variables}
-            annotations={annotations}
-            quantiles={quantiles}
-            frequency={data.frequency}
-            endDate={data.input_summary.end}
-            locale={i18n.language}
-            targetColumn={data.target_column}
-            fallbackName={data.name}
-            labels={labels}
-            layers={layers}
-            mode="main"
-            onZoomWindowChange={onZoomWindowChange}
-            zoomJump={zoomJump}
-          />
-        </div>
+        {/* La clé reconstruit le graphe après un dépliement : replié, il est
+            mesuré à une taille qui n'est pas la sienne et la garde. C'est le
+            geste déjà employé par la carte « Horizon zoomé ». */}
+        <ForecastChart
+          key={resizeSignal}
+          history={filtered.history}
+          predictions={filtered.predictions}
+          scenarios={filtered.scenarios}
+          variables={variables}
+          annotations={annotations}
+          quantiles={quantiles}
+          frequency={data.frequency}
+          endDate={data.input_summary.end}
+          locale={i18n.language}
+          targetColumn={data.target_column}
+          fallbackName={data.name}
+          labels={labels}
+          layers={layers}
+          mode="main"
+          onZoomWindowChange={onZoomWindowChange}
+          zoomJump={zoomJump}
+        />
       </div>
       <div
         className="fc-chart-resize"
@@ -165,35 +171,33 @@ export function ForecastView({
           className={`fc-table-toggle-chevron ${tableOpen ? "is-open" : ""}`}
         />
       </button>
-      <div className={`fc-table-collapse ${tableOpen ? "is-open" : ""}`}>
-        <div className="fc-table-collapse-inner">
-          <div className="fc-predictions-table">
-            <div className="fc-table-head">
-              <span>{t("forecast.view.period")}</span>
-              <span>{metric.columnTitle}</span>
-            </div>
-            <div className="fc-table-body">
-              {/* Rows mount only when the section opens: long horizons
-                  would otherwise render hundreds of hidden cells. */}
-              {tableOpen && filtered.predictions.map((p, i) => (
-                <div key={i} className="fc-table-row">
-                  <PeriodCell
-                    index={i}
-                    rawDate={p.date}
-                    endDate={data.input_summary.end}
-                    frequency={data.frequency}
-                    locale={i18n.language}
-                  />
-                  <ValueCell
-                    unitLabel={metric.unitLabel}
-                    formattedValue={formatForecastValue(p.value, i18n.language, metric)}
-                  />
-                </div>
-              ))}
-            </div>
+      <Collapsible open={tableOpen} innerClassName="fc-table-collapse-inner">
+        <div className="fc-predictions-table">
+          <div className="fc-table-head">
+            <span>{t("forecast.view.period")}</span>
+            <span>{metric.columnTitle}</span>
+          </div>
+          <div className="fc-table-body">
+            {/* Rows mount only when the section opens: long horizons
+                would otherwise render hundreds of hidden cells. */}
+            {tableOpen && filtered.predictions.map((p, i) => (
+              <div key={i} className="fc-table-row">
+                <PeriodCell
+                  index={i}
+                  rawDate={p.date}
+                  endDate={data.input_summary.end}
+                  frequency={data.frequency}
+                  locale={i18n.language}
+                />
+                <ValueCell
+                  unitLabel={metric.unitLabel}
+                  formattedValue={formatForecastValue(p.value, i18n.language, metric)}
+                />
+              </div>
+            ))}
           </div>
         </div>
-      </div>
+      </Collapsible>
     </div>
   );
 }

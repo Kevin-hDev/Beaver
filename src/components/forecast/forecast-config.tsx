@@ -7,6 +7,7 @@ import { buildForecastConfidenceControl } from "./forecast-config-confidence";
 import { buildLaunchErrorKey } from "./forecast-config-validation";
 import { FieldSelect, OptionalFieldSelect } from "./forecast-config-fields";
 import { ForecastConfigModelPicker } from "./forecast-config-model-picker";
+import { CustomSelect } from "@/components/ui/custom-select";
 import { FORECAST_FREQUENCIES } from "./forecast-limits";
 import { useForecastConfigModels } from "./use-forecast-config-models";
 import "./forecast-config.css";
@@ -15,7 +16,6 @@ import "./forecast-config-actions.css";
 interface ForecastConfigProps {
   draft: ForecastDraftData;
   launching: boolean;
-  error: string | null;
   defaultModelId: string;
   selectFallbackModel: boolean;
   onModelChange: (modelId: string) => void;
@@ -37,7 +37,6 @@ export interface LaunchConfig {
 export function ForecastConfig({
   draft,
   launching,
-  error,
   defaultModelId,
   selectFallbackModel,
   onModelChange,
@@ -71,6 +70,10 @@ export function ForecastConfig({
     [models, model]
   );
   const confidenceControl = buildForecastConfidenceControl(selectedModel, confidence);
+  const frequencyOptions = useMemo(
+    () => FORECAST_FREQUENCIES.map((id) => ({ value: id, label: t(`forecast.frequency.${id}`) })),
+    [t]
+  );
   const contextProfile = useMemo(
     () =>
       buildForecastContextProfile(
@@ -90,7 +93,7 @@ export function ForecastConfig({
   return (
     <div className="fcc-root">
       <div className="fcc-header">
-        <button className="fcc-back" onClick={onBack}>{t("forecast.config.back")}</button>
+        <button className="btn btn-sm btn-ghost fcc-back" type="button" onClick={onBack}>{t("forecast.config.back")}</button>
         <span className="fcc-title">{t("forecast.config.title")}</span>
       </div>
       <div className="fcc-form">
@@ -145,10 +148,13 @@ export function ForecastConfig({
               value={horizon} onChange={(e) => setHorizon(Number(e.target.value))} />
           </div>
           <div className="fcc-field fcc-half">
-            <label className="fcc-label" htmlFor="fcc-freq">{t("forecast.config.frequency")}</label>
-            <select className="field fcc-select" id="fcc-freq" value={frequency} onChange={(e) => setFrequency(e.target.value)}>
-              {FORECAST_FREQUENCIES.map((f) => <option key={f} value={f}>{t(`forecast.frequency.${f}`)}</option>)}
-            </select>
+            <span className="fcc-label">{t("forecast.config.frequency")}</span>
+            <CustomSelect
+              options={frequencyOptions}
+              value={frequency}
+              onChange={setFrequency}
+              ariaLabel={t("forecast.config.frequency")}
+            />
           </div>
         </div>
         <div className="fcc-field">
@@ -170,14 +176,14 @@ export function ForecastConfig({
             step={confidenceControl.limited ? confidenceControl.step : 0.01}
             value={confidenceControl.effective} onChange={(e) => setConfidence(Number(e.target.value))} />
         </div>
-        {(configError || error) && (
+        {configError && (
           <p className="fcc-error">
-            {configError ? t(configError, { future: contextProfile.futureRows, horizon, max: horizonMax }) : error}
+            {t(configError, { future: contextProfile.futureRows, horizon, max: horizonMax })}
           </p>
         )}
       </div>
       <div className="fcc-footer">
-        <button className="fcc-launch" disabled={!canLaunch || launching}
+        <button className="btn btn-sm btn-primary fcc-launch" disabled={!canLaunch || launching}
           onClick={() => onLaunch({
             targetColumn: target,
             dateColumn: dateCol,

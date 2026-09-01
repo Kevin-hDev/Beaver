@@ -39,34 +39,30 @@
   max-width: 100%;
 }
 
-.fc-empty-error {
-  max-width: 260px;
-  margin: 0;
-  color: var(--signal-error);
-  font-size: var(--text-xs);
-}
-
+/* Cet écran est entièrement centré : une liste alignée à gauche y décroche,
+   même quand son bloc est lui-même centré. */
 .fc-recent {
   width: 100%;
   max-width: 280px;
   margin-top: 16px;
-  text-align: left;
+  padding: 0 var(--list-gutter);
 }
 
 .fc-recent-title {
   font-size: var(--text-xs);
   color: var(--ink-faint);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
   font-family: var(--font-sans);
   margin: 0 0 6px;
 }
 
+/* Nom puis description, empilés comme dans la liste Historique : sur la
+   largeur de ce panneau, les deux côte à côte ne tiennent pas et c'est le nom
+   — le seul qui identifie l'analyse — qui se faisait tronquer. */
 .fc-recent-item {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 1px;
   width: 100%;
   padding: 6px 8px;
   border: none;
@@ -85,16 +81,22 @@
   color: var(--ink);
 }
 
+/* Le nom identifie l'analyse, la métadonnée ne fait que la décrire : c'est
+   elle qui cède la place. Avant, elle refusait de rétrécir et le nom tombait
+   à trois lettres. */
 .fc-recent-name {
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .fc-recent-meta {
+  max-width: 100%;
+  overflow: hidden;
   font-size: var(--text-xs);
   color: var(--ink-faint);
   font-family: var(--font-mono);
+  text-overflow: ellipsis;
   white-space: nowrap;
-  flex-shrink: 0;
 }

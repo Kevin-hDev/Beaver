@@ -69,7 +69,7 @@ export function ModelSpecs({ model, provider, onBack, onRefresh }: ModelSpecsPro
   return (
     <div className="mp-root">
       <div className="mp-inner">
-        <button className="fs-back" onClick={onBack}>
+        <button className="btn btn-sm btn-ghost fs-back" type="button" onClick={onBack}>
           ← {t("settings.llm.back")}
         </button>
         <div className="mp-header">

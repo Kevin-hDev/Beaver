@@ -1,9 +1,22 @@
-/* Hauteur et overflow sont pilotés en style inline par <Collapsible> : cette
-   feuille ne pose que l'état fermé au repos et la transition. */
+/* Hauteur et overflow sont pilotés en style inline par <Collapsible> pendant
+   l'animation. Cette feuille pose les deux états de repos, que le composant
+   annonce par `data-open` dès le rendu — un effet arriverait après ceux des
+   enfants, trop tard pour un contenu qui se mesure lui-même. */
 .cps-region {
+  transition: height var(--ease-gentle);
+}
+
+.cps-region[data-open="false"] {
   height: 0;
   overflow: hidden;
-  transition: height var(--ease-gentle);
+}
+
+/* Ouvert, la hauteur redevient automatique pour suivre un contenu qui grandit
+   ensuite, et l'overflow est relâché pour ne pas trancher les couches
+   flottantes qu'il contient. */
+.cps-region[data-open="true"] {
+  height: auto;
+  overflow: visible;
 }
 
 /* flow-root empêche les marges des enfants de s'échapper du conteneur : sans

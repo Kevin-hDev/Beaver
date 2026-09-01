@@ -1,3 +1,7 @@
+.fcwe-root > .callout {
+  margin-bottom: var(--space-md);
+}
+
 .fcwe-root {
   container-type: inline-size;
   width: 100%;
@@ -51,84 +55,34 @@
   margin-bottom: var(--space-md);
 }
 
+/* Forme, couleurs et survol viennent de `.btn` : ne reste ici que la place
+   que ce bouton occupe dans sa barre. */
 .fcwe-run {
   flex: 0 0 auto;
-  border: 1px solid var(--pulse);
-  border-radius: var(--radius-sm);
-  padding: var(--space-sm) var(--space-md);
-  background: var(--pulse-muted);
-  color: var(--pulse);
-  font: inherit;
-  font-size: var(--text-sm);
-  font-weight: 600;
-  cursor: pointer;
 }
 
-.fcwe-run:hover:not(:disabled) {
-  background: var(--surface-hover);
-}
-
-.fcwe-run:disabled {
-  opacity: 0.55;
-  cursor: wait;
-}
-
-.fcwe-warning {
-  margin: 0 0 var(--space-md);
-  border-left: var(--chrome-1) solid var(--signal-warning);
-  padding: var(--space-sm) var(--space-md);
-  background: var(--signal-warning-bg);
-  color: var(--ink-muted);
-  font-size: var(--text-sm);
-}
-
-.fcwe-error {
-  margin: 0 0 var(--space-md);
-  color: var(--signal-error);
-  font-size: var(--text-sm);
-}
-
-.fcwe-ensemble-status {
-  margin: 0 0 var(--space-md);
-  border-left: var(--chrome-1) solid var(--pulse);
-  padding: var(--space-sm) var(--space-md);
-  background: var(--pulse-muted);
-  color: var(--ink-muted);
-  font-size: var(--text-sm);
-}
-
-.fcwe-table {
-  overflow-x: auto;
-  border: 1px solid var(--edge);
-  border-radius: var(--radius-md);
-  background: var(--surface);
-}
-
-.fcwe-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1.5fr) repeat(5, minmax(0, 0.7fr)) minmax(0, 1fr);
-  align-items: center;
-  gap: var(--space-sm);
+/* Forme et fonds viennent de src/styles/data-table.css. Ne reste ici que la
+   largeur des colonnes et la mise en forme des valeurs. */
+.fcwe-grid {
   min-width: var(--forecast-evaluation-table-min-width);
-  min-height: var(--nav-item-height);
-  padding: var(--space-sm) var(--space-md);
 }
 
-.fcwe-table-head {
-  color: var(--ink-faint);
-  font-size: var(--text-xs);
-  font-weight: 600;
-  text-transform: uppercase;
+/* La largeur se pose sur l'en-tête, seul endroit où le navigateur la lit pour
+   dimensionner une colonne. Le flex reste à l'intérieur de la cellule : posé
+   sur le `<td>` lui-même, il le sort du calcul de largeur du tableau et la
+   colonne s'écrase au plus étroit. */
+.fcwe-grid th:first-child {
+  width: 26%;
+  min-width: 11rem;
 }
 
-.fcwe-model {
+.fcwe-model-inner {
   display: flex;
-  min-width: 0;
   align-items: center;
   gap: var(--space-sm);
 }
 
-.fcwe-model > span:last-child {
+.fcwe-model-name {
   display: flex;
   min-width: 0;
   flex-direction: column;
@@ -142,8 +96,7 @@
   white-space: nowrap;
 }
 
-.fcwe-model small,
-.fcwe-metric small {
+.fcwe-model small {
   color: var(--ink-faint);
   font-size: var(--text-2xs);
 }
@@ -160,10 +113,18 @@
   font: 600 var(--text-2xs) var(--font-mono);
 }
 
+/* L'en-tête suit l'alignement de sa colonne, sinon le titre part à gauche
+   pendant que les chiffres se rangent à droite. */
+.fcwe-grid th:nth-child(n + 2):nth-child(-n + 6) {
+  text-align: right;
+}
+
+/* Chiffres en chasse fixe, alignés à droite : c'est ce qui permet de comparer
+   deux mesures d'un coup d'œil d'une ligne à l'autre. */
 .fcwe-metric {
-  display: flex;
-  flex-direction: column;
   font: var(--text-xs) var(--font-mono);
+  text-align: right;
+  white-space: nowrap;
 }
 
 .fcwe-status {
@@ -172,10 +133,13 @@
   line-height: 1.35;
 }
 
+/* Le trait plein de la carte, pas un pointillé : dans le reste de Beaver le
+   pointillé marque un bouton d'action, et un cadre pointillé autour d'un
+   texte se lit comme une zone où déposer un fichier. */
 .fcwe-empty,
 .fcwe-state {
   padding: var(--space-xl);
-  border: 1px dashed var(--edge);
+  border: 1px solid var(--edge);
   border-radius: var(--radius-md);
   text-align: center;
 }

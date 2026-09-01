@@ -3,6 +3,7 @@ import { ChevronDown } from "@/components/ui/icons";
 import { useTranslation } from "react-i18next";
 import { useLocalListNavigation, type LocalListNavItem } from "@/hooks/use-local-list-navigation";
 import {
+  getForecastFamilyLabel,
   getForecastHardwareKey,
   getForecastModelSummaryKey,
   groupForecastModels,
@@ -73,7 +74,7 @@ export function ForecastConfigModelPicker({
               onKeyDown={listProps.onKeyDown}
               onClick={() => toggleFamily(group.id)}
             >
-              <span className="fcmp-group-label">{t(group.titleKey)}</span>
+              <span className="fcmp-group-label">{getForecastFamilyLabel(group.id, t)}</span>
               <span className="fcmp-group-count">{group.models.length}</span>
               <ChevronDown
                 size="var(--icon-sm)"

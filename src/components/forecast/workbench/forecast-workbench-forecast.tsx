@@ -28,6 +28,7 @@ export function ForecastWorkbenchForecast({ analysisId }: { analysisId: string }
   const { t } = useTranslation();
   const [layers, setLayers] = useState<ForecastLayerState>(createInitialLayerState);
   const [fanResize, setFanResize] = useState(0);
+  const [mainResize, setMainResize] = useState(0);
   const [seasonalityResize, setSeasonalityResize] = useState(0);
   const [mainZoomWindow, setMainZoomWindow] = useState({ start: 0, end: 100 });
   const [fanZoomWindow, setFanZoomWindow] = useState({ start: 0, end: 100 });
@@ -83,12 +84,14 @@ export function ForecastWorkbenchForecast({ analysisId }: { analysisId: string }
       <div className="fcwf-stack">
         <ForecastChartCard
           title={t("forecast.chartCard.main")}
+          onExpanded={() => setMainResize((value) => value + 1)}
           headerCenter={
             <ForecastZoomJumpBars window={mainZoomWindow} onJump={handleMainJump} />
           }
         >
           <ForecastView
             analysisId={analysisId}
+            resizeSignal={mainResize}
             layers={layers}
             selectedSeries={selectedSeries}
             onSelectedSeriesChange={setSelectedSeries}

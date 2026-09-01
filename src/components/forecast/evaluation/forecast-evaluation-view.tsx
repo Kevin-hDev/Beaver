@@ -16,8 +16,8 @@ interface ForecastEvaluationViewProps {
 export function ForecastEvaluationView({ analysisId, mode }: ForecastEvaluationViewProps) {
   const { t } = useTranslation();
   const {
-    analysis, loading, running, loadFailed, runFailed, run,
-    ensembleRunning, ensembleFailed, createEnsemble,
+    analysis, loading, running, loadFailed, run,
+    ensembleRunning, createEnsemble,
   } =
     useForecastEvaluation(analysisId);
   const [reliabilityResize, setReliabilityResize] = useState(0);
@@ -36,16 +36,6 @@ export function ForecastEvaluationView({ analysisId, mode }: ForecastEvaluationV
   }
   return (
     <div className="fcwe-root">
-      {runFailed ? (
-        <p className="fcwe-error" role="alert">
-          {t("forecast.workbench.evaluation.runFailed")}
-        </p>
-      ) : null}
-      {ensembleFailed ? (
-        <p className="fcwe-error" role="alert">
-          {t("forecast.workbench.evaluation.ensembleFailed")}
-        </p>
-      ) : null}
       <div className="fcwe-toolbar">
         <div className="fcwe-summary">
           {evaluation ? (
@@ -63,14 +53,14 @@ export function ForecastEvaluationView({ analysisId, mode }: ForecastEvaluationV
           )}
         </div>
         {mode === "evaluation" ? (
-          <button className="fcwe-run" type="button" disabled={running} onClick={() => void run()}>
+          <button className="btn btn-sm btn-primary fcwe-run" type="button" disabled={running} onClick={() => void run()}>
             {running
               ? t("forecast.workbench.evaluation.running")
               : t("forecast.workbench.evaluation.run")}
           </button>
         ) : successfulModels.length >= 2 ? (
           <button
-            className="fcwe-run"
+            className="btn btn-sm btn-primary fcwe-run"
             type="button"
             disabled={ensembleRunning}
             onClick={() => void createEnsemble()}
@@ -82,14 +72,14 @@ export function ForecastEvaluationView({ analysisId, mode }: ForecastEvaluationV
         ) : null}
       </div>
       {analysis.ensemble ? (
-        <p className="fcwe-ensemble-status">
+        <p className="callout callout-accent">
           {t("forecast.workbench.evaluation.ensembleReady", {
             count: analysis.ensemble.members.length,
           })}
         </p>
       ) : null}
       {evaluation?.warning ? (
-        <p className="fcwe-warning">
+        <p className="callout callout-warning">
           {t(`forecast.workbench.evaluation.planWarnings.${evaluation.warning}`, {
             defaultValue: t("forecast.workbench.evaluation.planWarnings.unavailable"),
           })}

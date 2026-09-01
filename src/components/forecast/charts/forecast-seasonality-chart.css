@@ -41,19 +41,10 @@
   flex-shrink: 0;
 }
 
+/* Rangés parmi les puces d'années, pas dans une barre d'actions : ils
+   prennent la géométrie de ces puces, pas la hauteur de bouton courante. */
 .fcse-action {
   padding: 1px 7px;
-  border: none;
-  border-radius: var(--radius-xs);
-  background: transparent;
   color: var(--ink-faint);
   font-size: var(--text-xs);
-  font-family: var(--font-sans);
-  cursor: pointer;
-  transition: color var(--ease-smooth), background var(--ease-smooth);
-}
-
-.fcse-action:hover {
-  color: var(--ink);
-  background: var(--surface-hover);
 }

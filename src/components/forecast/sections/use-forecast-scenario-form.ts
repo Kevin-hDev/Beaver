@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { showToast } from "@/lib/toast-emitter";
 import { useState } from "react";
 import type {
   ForecastScenario,
@@ -13,7 +14,6 @@ interface UseForecastScenarioFormArgs {
   onAnalysisChanged: () => void;
   setData: (value: ForecastScenarioAnalysis) => void;
   setActiveScenarioId: (value: string | null | ((current: string | null) => string | null)) => void;
-  setError: (value: string | null) => void;
   t: (key: string) => string;
 }
 
@@ -37,7 +37,6 @@ export function useForecastScenarioForm(args: UseForecastScenarioFormArgs) {
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
-    args.setError(null);
     try {
       const request = {
         analysis_id: args.analysisId,
@@ -60,8 +59,9 @@ export function useForecastScenarioForm(args: UseForecastScenarioFormArgs) {
       reset();
       args.onAnalysisChanged();
     } catch {
-      args.setError(
+      showToast(
         editingScenarioId ? args.t("forecast.scenarios.updateFailed") : args.t("forecast.scenarios.saveFailed"),
+        "error",
       );
     } finally {
       setSaving(false);
@@ -70,7 +70,6 @@ export function useForecastScenarioForm(args: UseForecastScenarioFormArgs) {
 
   async function removeScenario(scenarioId: string) {
     setSaving(true);
-    args.setError(null);
     try {
       const updated = await invoke<ForecastScenarioAnalysis>("delete_forecast_scenario", {
         analysisId: args.analysisId,
@@ -83,7 +82,7 @@ export function useForecastScenarioForm(args: UseForecastScenarioFormArgs) {
       if (editingScenarioId === scenarioId) reset();
       args.onAnalysisChanged();
     } catch {
-      args.setError(args.t("forecast.scenarios.deleteFailed"));
+      showToast(args.t("forecast.scenarios.deleteFailed"), "error");
     } finally {
       setSaving(false);
     }
@@ -102,7 +101,6 @@ export function useForecastScenarioForm(args: UseForecastScenarioFormArgs) {
     setAdjustment(String(scenario.params_modified?.adjustment_percent ?? 0));
     setContextAdjustments(scenario.params_modified?.covariate_adjustments ?? []);
     setTargetSeriesId(scenario.params_modified?.target_series_id ?? "");
-    args.setError(null);
   }
 
   function reset() {

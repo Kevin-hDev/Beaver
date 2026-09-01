@@ -90,7 +90,6 @@
   font-size: var(--text-2xs);
   font-weight: 650;
   letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .fcw-nav {
@@ -153,12 +152,15 @@
 }
 
 .fcw-content-heading,
-.fcw-inline-error,
+.fcw-section-error,
 .fcw-foundation {
   max-width: var(--forecast-workbench-copy-width);
 }
 
-.fcw-inline-error {
+/* Une section qui n'a pas pu charger. Le message reste : sans lui, la zone
+   est vide et rien n'en dit la raison. `.fcw-state-error` couvre l'autre
+   échelle — la fenêtre entière indisponible. */
+.fcw-section-error {
   margin: 0 0 var(--space-lg);
   color: var(--signal-error);
   font-size: var(--text-sm);
@@ -182,7 +184,7 @@
   padding: var(--space-lg);
   border: 1px solid var(--edge);
   border-radius: var(--radius-md);
-  background: var(--surface);
+  background: var(--shell);
   box-shadow: var(--shadow-sm);
 }
 

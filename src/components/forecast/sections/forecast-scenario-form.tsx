@@ -16,7 +16,6 @@ interface ForecastScenarioFormProps {
   contextAdjustments: ForecastScenarioCovariateAdjustment[];
   editing: boolean;
   saving: boolean;
-  error: string | null;
   onNameChange: (value: string) => void;
   onDescriptionChange: (value: string) => void;
   onAdjustmentChange: (value: string) => void;
@@ -110,7 +109,6 @@ export function ForecastScenarioForm(props: ForecastScenarioFormProps) {
           </button>
         )}
       </div>
-      {props.error && <p className="fcs-error">{props.error}</p>}
     </form>
   );
 }

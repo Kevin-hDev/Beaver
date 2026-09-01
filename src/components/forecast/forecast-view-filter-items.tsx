@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { ChevronDown } from "@/components/ui/icons";
 import type { useLocalListNavigation } from "@/hooks/use-local-list-navigation";
 import type { ForecastFilterChip } from "./forecast-filter-chip";
+import { Collapsible } from "@/components/ui/collapsible";
 
 type NavApi = ReturnType<typeof useLocalListNavigation>;
 
@@ -40,9 +41,9 @@ export function FilterGroup({
         <span className="fcf-group-title">{title}</span>
         <ChevronDown size="var(--icon-sm)" className={`fcf-group-chevron ${open ? "is-open" : ""}`} />
       </button>
-      <div className={`fcf-group-items ${open ? "is-open" : ""}`}>
-        <div className="fcf-group-content">{children}</div>
-      </div>
+      <Collapsible open={open} innerClassName="fcf-group-content">
+        {children}
+      </Collapsible>
     </div>
   );
 }

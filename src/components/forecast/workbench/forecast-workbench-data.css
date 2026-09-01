@@ -10,14 +10,13 @@
   margin-top: var(--space-lg);
 }
 
+/* Des cartes détachées, chacune avec son contour — comme celles de la page de
+   configuration et celles du rapport. Le joint d'un pixel sur fond `--edge`
+   dessinait un quadrillage qui n'existe nulle part ailleurs dans Beaver. */
 .fcwd-stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  overflow: hidden;
-  border: 1px solid var(--edge);
-  border-radius: var(--radius-md);
-  background: var(--edge);
-  gap: 1px;
+  gap: var(--chrome-2);
 }
 
 .fcwd-stat {
@@ -26,7 +25,9 @@
   flex-direction: column;
   gap: var(--space-xs);
   padding: var(--space-md);
-  background: var(--surface);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-md);
+  background: var(--shell);
 }
 
 .fcwd-stat span,
@@ -51,7 +52,7 @@
   padding: var(--space-md);
   border: 1px solid var(--edge);
   border-radius: var(--radius-md);
-  background: var(--surface);
+  background: var(--shell);
 }
 
 .fcwd-mapping > div,
@@ -62,24 +63,14 @@
   gap: var(--space-xs);
 }
 
+/* Fond, barre de couleur et arrondi viennent de src/styles/callout.css. Ne
+   reste ici que la disposition sur deux colonnes propre à ce bandeau. */
 .fcwd-quality {
-  display: flex;
+  flex-direction: row;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-lg);
   padding: var(--space-md);
-  border-left: var(--chrome-1) solid var(--edge);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-}
-
-.fcwd-quality.is-valid {
-  border-left-color: var(--signal-success);
-}
-
-.fcwd-quality.is-warning {
-  border-left-color: var(--signal-warning);
-  background: var(--signal-warning-bg);
 }
 
 .fcwd-quality strong {
@@ -99,7 +90,7 @@
   overflow: hidden;
   border: 1px solid var(--edge);
   border-radius: var(--radius-md);
-  background: var(--surface);
+  background: var(--shell);
 }
 
 .fcwd-section-heading {
@@ -108,7 +99,6 @@
   justify-content: space-between;
   gap: var(--space-md);
   padding: var(--space-md);
-  border-bottom: 1px solid var(--edge);
 }
 
 .fcwd-section-heading h3 {
@@ -123,36 +113,28 @@
   font-size: var(--text-xs);
 }
 
+/* Le retrait reprend celui de l'en-tête de la carte, moins l'écart que le
+   tableau pose déjà lui-même autour de ses cellules. */
 .fcwd-table-scroll {
-  max-width: 100%;
-  overflow: auto;
+  padding: 0 calc(var(--space-md) - var(--table-gap))
+    calc(var(--space-md) - var(--table-gap));
 }
 
+/* Forme, fonds et survol viennent de src/styles/data-table.css. Ne reste ici
+   que ce qui tient à cet aperçu : une largeur de cellule bornée, du texte qui
+   ne revient pas à la ligne, et des valeurs en chasse fixe pour que les
+   chiffres s'alignent d'une ligne à l'autre. */
 .fcwd-table {
   width: max-content;
   min-width: 100%;
-  border-collapse: collapse;
-  font-size: var(--text-xs);
 }
 
 .fcwd-table th,
 .fcwd-table td {
   max-width: var(--forecast-workbench-table-cell-width);
-  padding: var(--space-sm) var(--space-md);
   overflow: hidden;
-  border-right: 1px solid var(--edge);
-  border-bottom: 1px solid var(--edge);
-  text-align: left;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.fcwd-table th {
-  position: sticky;
-  top: 0;
-  background: var(--shell-opaque);
-  color: var(--ink-faint);
-  font-weight: 600;
 }
 
 .fcwd-table td {

@@ -53,8 +53,6 @@
   color: var(--ink-faint);
   font-family: var(--font-sans);
   font-size: var(--text-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 .fca-card-value {
@@ -76,7 +74,7 @@
 .fca-accordion {
   border: 1px solid var(--edge);
   border-radius: var(--radius-sm);
-  background: var(--surface);
+  background: var(--shell);
   overflow: hidden;
 }
 
@@ -110,8 +108,6 @@
 .fca-accordion-title {
   font-family: var(--font-sans);
   font-size: var(--text-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 .fca-accordion-subtitle {
@@ -129,12 +125,6 @@
   transform: rotate(180deg);
 }
 
-.fca-accordion-panel {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows var(--ease-smooth);
-}
-
-.fca-accordion.is-open .fca-accordion-panel {
-  grid-template-rows: 1fr;
-}
+/* Le dépliement vient de <Collapsible> : il anime une hauteur en pixels, là
+   où une piste de grille en `fr` s'interpole par paliers dans WebKit — le
+   moteur de rendu de l'application. */

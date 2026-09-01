@@ -13,18 +13,10 @@
   flex-shrink: 0;
 }
 
+/* Serré contre le bord de l'en-tête : la marge courante d'un bouton le
+   décalerait du titre qui le suit. */
 .fcc-back {
-  border: none;
-  background: none;
-  color: var(--ink-faint);
-  font-size: var(--text-xs);
-  font-family: var(--font-sans);
-  cursor: pointer;
-  padding: 2px 4px;
-}
-
-.fcc-back:hover {
-  color: var(--ink);
+  margin-left: calc(var(--chrome-3) * -1);
 }
 
 .fcc-title {
@@ -32,8 +24,6 @@
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--ink);
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
 }
 
 .fcc-form {
@@ -76,15 +66,13 @@
   padding: 10px;
   border: 1px solid var(--edge);
   border-radius: var(--radius-sm);
-  background: var(--surface);
+  background: var(--shell);
 }
 
 .fcc-context-stat-label {
   font-size: var(--text-xs);
   font-family: var(--font-sans);
   color: var(--ink-faint);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 .fcc-context-stat-value {
@@ -115,7 +103,7 @@
   padding: 6px 10px;
   border: 1px solid var(--edge);
   border-radius: var(--radius-xs);
-  background: var(--surface);
+  background: var(--shell);
   color: var(--ink-muted);
   font-size: var(--text-xs);
   font-family: var(--font-sans);
@@ -152,15 +140,6 @@
   font-size: var(--text-xs);
   font-family: var(--font-sans);
   color: var(--ink-faint);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-/* Les options d'une liste native sont dessinées par le système, hors de la
-   portée du thème : leur fond se pose ici ou il reste blanc. */
-.fcc-select option {
-  background: var(--shell-opaque);
-  color: var(--ink);
 }
 
 .fcc-range {

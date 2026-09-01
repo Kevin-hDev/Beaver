@@ -22,8 +22,8 @@ export function ForecastWorkbenchDataTable({ columns, rows, totalRows, truncated
         </span>
       </div>
       {columns.length && rows.length ? (
-        <div className="fcwd-table-scroll">
-          <table className="fcwd-table">
+        <div className="data-table-scroll fcwd-table-scroll">
+          <table className="data-table data-table-sticky fcwd-table">
             <thead>
               <tr>{columns.map((column) => <th key={column}>{column}</th>)}</tr>
             </thead>

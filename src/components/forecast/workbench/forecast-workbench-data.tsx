@@ -37,7 +37,7 @@ export function ForecastWorkbenchData({ analysisId }: { analysisId: string }) {
     analysisId,
     t("forecast.workbench.data.loadFailed"),
   );
-  if (error) return <div className="fcw-inline-error">{error}</div>;
+  if (error) return <div className="fcw-section-error">{error}</div>;
   if (!data) return <div className="fcwd-loading"><div className="fc-skeleton" /></div>;
 
   const profile = data.data_profile;
@@ -71,8 +71,8 @@ export function ForecastWorkbenchData({ analysisId }: { analysisId: string }) {
           <strong>{covariates.length ? covariates.join(", ") : t("forecast.workbench.data.none")}</strong>
         </div>
       </section>
-      <section className={`fcwd-quality ${profile
-        ? profile.valid ? "is-valid" : "is-warning"
+      <section className={`callout fcwd-quality ${profile
+        ? profile.valid ? "callout-ok" : "callout-warning"
         : ""}`}>
         <div>
           <span>{t("forecast.workbench.data.quality")}</span>
