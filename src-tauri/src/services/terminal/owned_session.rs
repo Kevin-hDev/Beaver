@@ -4,6 +4,7 @@ use super::public_error::terminal_error;
 use super::session_handle::{EmergencyStop, SessionControl, SessionOps};
 use super::PtyChannelEvent;
 use crate::services::work_registry::ServiceWorkAdmission;
+#[cfg(test)]
 use std::io::Read;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};

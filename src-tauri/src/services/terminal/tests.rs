@@ -1,5 +1,6 @@
 use super::manager::{PtyManager, NEXT_ID};
 use super::session_handle::{SessionControl, SessionHandle, SessionOps};
+use super::PtyChannelEvent;
 use std::path::Path;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
@@ -12,6 +13,16 @@ impl PtyManager {
         rows: u16,
     ) -> Result<(u32, String), String> {
         self.spawn_with_sink(cwd, cols, rows, |_| Ok(()))
+    }
+
+    pub(crate) fn spawn_with_test_sink(
+        &self,
+        cwd: Option<&Path>,
+        cols: u16,
+        rows: u16,
+        sink: impl Fn(PtyChannelEvent) -> Result<(), ()> + Send + 'static,
+    ) -> Result<(u32, String), String> {
+        self.spawn_with_sink(cwd, cols, rows, sink)
     }
 
     pub(in crate::services::terminal) fn insert_session_for_test(
@@ -51,9 +62,11 @@ impl PtyManager {
 mod tests {
     use crate::app_exit::AppExitCoordinator;
     use crate::services::terminal::cwd_resolver::resolve_with;
+    use crate::services::terminal::limits::MAX_IN_FLIGHT_FRAMES;
     use crate::services::terminal::pty_session::PtySession;
     use crate::services::terminal::shutdown;
     use crate::services::terminal::PtyManager;
+    use std::collections::VecDeque;
     use std::io::Read;
     use std::path::Path;
     use std::sync::{Arc, Condvar, Mutex};
@@ -67,6 +80,26 @@ mod tests {
             true,
         );
         system.process(Pid::from_u32(pid)).is_some()
+    }
+
+    #[cfg(unix)]
+    fn continuous_output_command() -> &'static [u8] {
+        b"yes x\n"
+    }
+
+    #[cfg(windows)]
+    fn continuous_output_command() -> &'static [u8] {
+        b"while ($true) { Write-Output 'x' }\r\n"
+    }
+
+    #[cfg(unix)]
+    fn final_output_command() -> &'static [u8] {
+        b"i=0; while [ \"$i\" -lt 10000 ]; do printf 'line\\n'; i=$((i+1)); done; printf 'BEAVER_FINAL_\\360\\237\\246\\253\\n'; exit\n"
+    }
+
+    #[cfg(windows)]
+    fn final_output_command() -> &'static [u8] {
+        b"1..10000 | ForEach-Object { Write-Output 'line' }; Write-Output ('BEAVER_FINAL_' + [char]::ConvertFromUtf32(0x1F9AB)); exit\r\n"
     }
 
     /// Ferme une session dans l'ordre que l'application produit : le lecteur,
@@ -329,5 +362,97 @@ mod tests {
         runtime_owner.join().expect("runtime owner");
 
         assert!(runtime_dropped.is_ok(), "Tokio waited for timed-out close");
+    }
+
+    #[test]
+    fn terminal_close_stays_bounded_when_output_window_is_full() {
+        let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
+        let manager = PtyManager::new(coordinator.work_supervisor());
+        let (saturated_tx, saturated) = std::sync::mpsc::sync_channel(1);
+        let (id, token) = manager
+            .spawn_with_test_sink(None, 80, 24, move |event| {
+                if event.sequence == Some(MAX_IN_FLIGHT_FRAMES as u32) {
+                    let _ = saturated_tx.try_send(());
+                }
+                Ok(())
+            })
+            .expect("terminal with test sink");
+        let pid = manager
+            .process_id_for_test(id)
+            .expect("terminal process id");
+        manager
+            .write(id, &token, continuous_output_command())
+            .expect("start continuous output");
+        saturated
+            .recv_timeout(Duration::from_secs(10))
+            .expect("output window reaches 256 unacknowledged frames");
+
+        let (closed_tx, closed) = std::sync::mpsc::sync_channel(1);
+        let closer = {
+            let manager = manager.clone();
+            let token = token.clone();
+            std::thread::spawn(move || {
+                closed_tx
+                    .send(manager.kill(id, &token))
+                    .expect("report terminal close");
+            })
+        };
+
+        assert_eq!(closed.recv_timeout(Duration::from_secs(3)), Ok(Ok(())));
+        closer.join().expect("terminal close worker");
+        assert!(!process_is_running(pid));
+        assert_eq!(manager.active_sessions_for_test(), 0);
+    }
+
+    #[test]
+    fn final_output_precedes_exit_event() {
+        const MARKER: &str = "BEAVER_FINAL_🦫";
+        let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
+        let manager = PtyManager::new(coordinator.work_supervisor());
+        let (events_tx, events) = std::sync::mpsc::sync_channel(256);
+        let (id, token) = manager
+            .spawn_with_test_sink(None, 80, 24, move |event| {
+                events_tx.send(event).map_err(|_| ())
+            })
+            .expect("terminal with output channel");
+        let pid = manager
+            .process_id_for_test(id)
+            .expect("terminal process id");
+        manager
+            .write(id, &token, final_output_command())
+            .expect("start finite output");
+
+        let marker_length = MARKER.chars().count();
+        let mut suffix = VecDeque::with_capacity(marker_length);
+        let mut marker_seen = false;
+        let deadline = Instant::now() + Duration::from_secs(20);
+        loop {
+            let event = events
+                .recv_timeout(deadline.saturating_duration_since(Instant::now()))
+                .expect("terminal emits final output and exit");
+            if event.is_exit {
+                assert_eq!(event.sequence, None);
+                assert!(marker_seen, "Unicode marker must precede exit");
+                break;
+            }
+            for character in event.data.chars() {
+                if suffix.len() == marker_length {
+                    suffix.pop_front();
+                }
+                suffix.push_back(character);
+                marker_seen |= suffix.iter().copied().eq(MARKER.chars());
+            }
+            manager
+                .acknowledge(id, &token, event.sequence.expect("data sequence"))
+                .expect("acknowledge terminal output");
+        }
+
+        manager.kill(id, &token).expect("close completed terminal");
+        assert!(matches!(
+            events.try_recv(),
+            Err(std::sync::mpsc::TryRecvError::Empty | std::sync::mpsc::TryRecvError::Disconnected)
+        ));
+        assert!(!process_is_running(pid));
+        assert_eq!(manager.active_sessions_for_test(), 0);
     }
 }

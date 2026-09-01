@@ -28,7 +28,9 @@ vi.mock("@xterm/xterm", () => ({
     focus() {}
     dispose() {}
     onData() {}
-    onResize() {}
+    onResize() {
+      return { dispose() {} };
+    }
     attachCustomKeyEventHandler() {}
     getSelection() {
       return "";
@@ -150,7 +152,7 @@ describe("durée de vie des shells du panneau", () => {
 
   it("n'envoie jamais cwd dans la charge utile pty_spawn", () => {
     const source = readFileSync(
-      "src/components/terminal/terminal-instance.tsx",
+      "src/components/terminal/terminal-pty-bridge.ts",
       "utf8",
     );
     const payload = source.match(
