@@ -26,7 +26,13 @@ pub(crate) struct PtyChildStatus(SharedChild);
 
 impl PtyChildStatus {
     pub(crate) fn exit_code(&self) -> Option<u32> {
-        self.0.lock().ok()?.try_wait().ok().flatten().map(exit_code)
+        self.0
+            .lock()
+            .ok()?
+            .try_wait()
+            .ok()
+            .flatten()
+            .and_then(exit_code)
     }
 }
 
@@ -113,7 +119,7 @@ impl PtySession {
         self.output.close()?;
         self.close_input()?;
         self.console.close();
-        Ok(exit_code(status))
+        exit_code(status).ok_or_else(terminal_error)
     }
 
     fn close_input(&self) -> Result<(), String> {
@@ -129,11 +135,8 @@ impl Drop for PtySession {
     }
 }
 
-fn exit_code(status: ExitStatus) -> u32 {
-    status
-        .code()
-        .map(|code| u32::from_ne_bytes(code.to_ne_bytes()))
-        .unwrap_or_default()
+fn exit_code(status: ExitStatus) -> Option<u32> {
+    super::super::normalize_exit_code(status.code())
 }
 
 fn terminal_command() -> Result<windows_spawn::Command, String> {

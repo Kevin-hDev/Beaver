@@ -73,9 +73,20 @@ fn verify_token(expected: &str, provided: &str) -> Result<(), String> {
         .ok_or_else(|| "terminal-access-denied".to_string())
 }
 
+#[cfg(any(test, windows))]
+fn normalize_exit_code(code: Option<i32>) -> Option<u32> {
+    code.map(|value| u32::from_ne_bytes(value.to_ne_bytes()))
+}
+
 #[cfg(test)]
 mod token_tests {
-    use super::verify_token;
+    use super::{normalize_exit_code, verify_token};
+
+    #[test]
+    fn unknown_exit_code_is_not_invented_as_success() {
+        assert_eq!(normalize_exit_code(None), None);
+        assert_eq!(normalize_exit_code(Some(0)), Some(0));
+    }
 
     #[test]
     fn terminal_token_accepts_only_the_exact_value() {
