@@ -1,6 +1,7 @@
 use super::linux_spawn_worker::LinuxSpawnWorker;
 use crate::app_exit::AppExitCoordinator;
 use crate::services::work_registry::ServiceWorkSupervisor;
+use std::os::unix::process::ExitStatusExt;
 use std::time::{Duration, Instant};
 
 const READY_ENV: &str = "BEAVER_LINUX_WORKER_PARENT_DEATH_READY";
@@ -118,21 +119,32 @@ async fn child_outlives_fifteen_seconds_on_the_durable_worker_then_dies() {
     let temp = tempfile::tempdir().unwrap();
     let ready = temp.path().join("ready");
     let child_ready = ready.clone();
-    let pid = worker
-        .run_test_probe(move || spawn_parent_death_probe(&child_ready) as usize)
+    let (completed, status) = std::sync::mpsc::sync_channel(1);
+    worker
+        .run_test_probe(move || {
+            spawn_parent_death_probe(&child_ready, completed);
+            0
+        })
         .await
-        .unwrap()
-        .value as u32;
-    wait_for_path(&ready, Duration::from_secs(2));
+        .unwrap();
 
     tokio::time::sleep(Duration::from_secs(16)).await;
-    assert!(process_is_running(pid));
+    assert!(matches!(
+        status.try_recv(),
+        Err(std::sync::mpsc::TryRecvError::Empty)
+    ));
     assert!(
         worker
             .stop_and_wait(Instant::now() + Duration::from_secs(2))
             .await
     );
-    assert!(wait_until_dead(pid, Duration::from_secs(2)));
+    assert_eq!(
+        status
+            .recv_timeout(Duration::from_secs(2))
+            .unwrap()
+            .signal(),
+        Some(libc::SIGKILL)
+    );
 }
 
 #[test]
@@ -140,11 +152,17 @@ fn child_dies_when_its_ephemeral_creator_thread_exits() {
     let temp = tempfile::tempdir().unwrap();
     let ready = temp.path().join("ready");
     let child_ready = ready.clone();
-    let pid = std::thread::spawn(move || spawn_parent_death_probe(&child_ready))
+    let (completed, status) = std::sync::mpsc::sync_channel(1);
+    std::thread::spawn(move || spawn_parent_death_probe(&child_ready, completed))
         .join()
         .unwrap();
-    wait_for_path(&ready, Duration::from_secs(2));
-    assert!(wait_until_dead(pid, Duration::from_secs(2)));
+    assert_eq!(
+        status
+            .recv_timeout(Duration::from_secs(2))
+            .unwrap()
+            .signal(),
+        Some(libc::SIGKILL)
+    );
 }
 
 #[test]
@@ -156,12 +174,11 @@ fn parent_death_child_probe() {
     std::thread::sleep(Duration::from_secs(30));
 }
 
-#[expect(
-    clippy::zombie_processes,
-    reason = "the probe must stay owned by its creator thread until PDEATHSIG fires"
-)]
-fn spawn_parent_death_probe(ready: &std::path::Path) -> u32 {
-    let child = std::process::Command::new(std::env::current_exe().unwrap())
+fn spawn_parent_death_probe(
+    ready: &std::path::Path,
+    completed: std::sync::mpsc::SyncSender<std::process::ExitStatus>,
+) {
+    let mut child = std::process::Command::new(std::env::current_exe().unwrap())
         .args(["--ignored", "--exact", CHILD_TEST, "--nocapture"])
         .env(READY_ENV, ready)
         .env(EXPECTED_PARENT_ENV, std::process::id().to_string())
@@ -170,9 +187,11 @@ fn spawn_parent_death_probe(ready: &std::path::Path) -> u32 {
         .stderr(std::process::Stdio::null())
         .spawn()
         .unwrap();
-    let pid = child.id();
     wait_for_path(ready, Duration::from_secs(2));
-    pid
+    std::thread::spawn(move || {
+        let status = child.wait().unwrap();
+        completed.send(status).unwrap();
+    });
 }
 
 fn required_path(name: &str) -> std::path::PathBuf {
@@ -185,19 +204,4 @@ fn wait_for_path(path: &std::path::Path, timeout: Duration) {
         std::thread::sleep(Duration::from_millis(20));
     }
     assert!(path.exists());
-}
-
-fn process_is_running(pid: u32) -> bool {
-    unsafe { libc::kill(pid as i32, 0) == 0 }
-}
-
-fn wait_until_dead(pid: u32, timeout: Duration) -> bool {
-    let deadline = Instant::now() + timeout;
-    while Instant::now() < deadline {
-        if !process_is_running(pid) {
-            return true;
-        }
-        std::thread::sleep(Duration::from_millis(20));
-    }
-    false
 }
