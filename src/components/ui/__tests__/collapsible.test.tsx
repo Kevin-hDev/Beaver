@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render } from "@testing-library/react";
 import { useLayoutEffect, useState } from "react";
 import { Collapsible } from "../collapsible";
@@ -102,6 +102,34 @@ describe("Collapsible", () => {
       </Collapsible>,
     );
     expect(container.querySelector(".cps-region")?.getAttribute("data-open")).toBe("false");
+  });
+
+  it("ne reste pas figé quand la hauteur d'arrivée est celle de départ", () => {
+    /* Défaut trouvé sur le graphe de forecast : la région s'était fixée à
+       240px pendant le chargement et ne les a jamais relâchés, alors que son
+       contenu passait à 430px. Une transition ne démarre pas si la valeur ne
+       change pas, donc `transitionend` n'arrivait jamais. */
+    const styleReel = window.getComputedStyle.bind(window);
+    const animee = vi.spyOn(window, "getComputedStyle").mockImplementation(
+      (element, pseudo) => {
+        const style = styleReel(element, pseudo);
+        return new Proxy(style, {
+          get: (cible, clef) =>
+            clef === "transitionDuration" ? "300ms" : Reflect.get(cible, clef) as unknown,
+        });
+      },
+    );
+    // jsdom ne fait aucune mise en page : toutes les hauteurs valent 0, donc
+    // la hauteur d'arrivée est bien égale à celle de départ.
+    try {
+      const { container, getByRole } = render(<Harness />);
+      fireEvent.click(getByRole("button"));
+      const region = container.querySelector<HTMLElement>(".cps-region");
+      expect(region?.style.height).toBe("auto");
+      expect(region?.style.overflow).toBe("visible");
+    } finally {
+      animee.mockRestore();
+    }
   });
 
   it("ignore une fin de transition remontée par un enfant", () => {

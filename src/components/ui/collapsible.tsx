@@ -82,7 +82,12 @@ export function Collapsible({
     void region.offsetHeight;
     region.style.height = `${to}px`;
 
-    if (!willAnimate(region)) finish();
+    /* Une transition ne démarre que si la valeur change vraiment. Quand la
+     * hauteur d'arrivée est celle de départ, `transitionend` n'arrive jamais
+     * et la région reste bloquée sur cette hauteur, même lorsque son contenu
+     * grandit ensuite — c'est ce qui rognait le graphe de forecast, figé à
+     * la taille qu'il avait pendant son chargement. */
+    if (!willAnimate(region) || Math.abs(to - from) < 0.5) finish();
     // `finish` est recréé à chaque rendu et lit donc déjà le `open` courant ;
     // le déclarer en dépendance relancerait l'animation à chaque rendu du parent.
     // eslint-disable-next-line react-hooks/exhaustive-deps

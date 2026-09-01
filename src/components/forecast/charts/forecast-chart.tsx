@@ -195,3 +195,4 @@ export function ForecastChart(props: ForecastChartProps) {
     </div>
   );
 }
+
