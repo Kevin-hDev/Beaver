@@ -45,6 +45,9 @@ mod linux_spawn_worker_tests;
 #[cfg(test)]
 mod linux_spawn_worker_lifecycle_tests;
 
+#[cfg(all(test, target_os = "macos"))]
+mod macos_parent_death_tests;
+
 #[cfg(test)]
 mod session_handle_tests;
 
