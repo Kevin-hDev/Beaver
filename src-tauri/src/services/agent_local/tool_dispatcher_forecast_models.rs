@@ -1,11 +1,11 @@
+use super::tool_dispatcher_forecast_models_support::{
+    compact_model, model_sort_key, requested_model_id,
+};
 use crate::services::agent_local::types_tools::ToolResult;
 use crate::services::forecast::{
     hardware_profile, limits, model_listing, selection_policy, selection_tickets, storage,
 };
 use serde_json::Value;
-use super::tool_dispatcher_forecast_models_support::{
-    compact_model, model_sort_key, requested_model_id,
-};
 
 pub async fn handle(args: &Value, session_id: &str) -> ToolResult {
     let listing = model_listing::list_models();
@@ -18,11 +18,9 @@ pub async fn handle(args: &Value, session_id: &str) -> ToolResult {
     };
     let policy = match selection_policy::get() {
         Ok(policy) => policy,
-        Err(error) => return ToolResult::internal(
-            "forecast_selection_policy_unavailable",
-            error,
-            true,
-        ),
+        Err(error) => {
+            return ToolResult::internal("forecast_selection_policy_unavailable", error, true)
+        }
     };
     let forced_model = (policy.mode == selection_policy::ForecastSelectionMode::Manual)
         .then_some(policy.manual_model_id.as_deref())
@@ -70,10 +68,13 @@ pub async fn handle(args: &Value, session_id: &str) -> ToolResult {
                     "Profil de données requis pour le mode Auto",
                 );
             };
-            let profile = match super::tool_dispatcher_forecast_load::load_profile(session_id, profile_id).await {
-                Ok(profile) => profile,
-                Err(error) => return error,
-            };
+            let profile =
+                match super::tool_dispatcher_forecast_load::load_profile(session_id, profile_id)
+                    .await
+                {
+                    Ok(profile) => profile,
+                    Err(error) => return error,
+                };
             if profile.confidence_level.is_none() {
                 return ToolResult::conflict(
                     "forecast_data_profile_stale",
@@ -83,21 +84,21 @@ pub async fn handle(args: &Value, session_id: &str) -> ToolResult {
             let hardware = hardware_profile::detect();
             let evidence = match storage::comparable_backtests(session_id, &profile).await {
                 Ok(evidence) => evidence,
-                Err(error) => return ToolResult::internal(
-                    "forecast_backtest_evidence_unavailable",
-                    error,
-                    true,
-                ),
+                Err(error) => {
+                    return ToolResult::internal(
+                        "forecast_backtest_evidence_unavailable",
+                        error,
+                        true,
+                    )
+                }
             };
             let requested_model_id = match requested_model_id(args) {
                 Ok(requested) => requested,
-                Err(error) => return ToolResult::validation(
-                    "forecast_requested_model_invalid",
-                    error,
-                ),
+                Err(error) => {
+                    return ToolResult::validation("forecast_requested_model_invalid", error)
+                }
             };
-            let selection =
-                crate::services::forecast::auto_selection::select_with_requested_model(
+            let selection = crate::services::forecast::auto_selection::select_with_requested_model(
                 models,
                 &profile,
                 policy.allow_cloud_in_auto,
@@ -164,8 +165,8 @@ pub async fn handle(args: &Value, session_id: &str) -> ToolResult {
             })
         }
     };
-    let result_truncated = policy.mode == selection_policy::ForecastSelectionMode::Manual
-        && compact_truncated;
+    let result_truncated =
+        policy.mode == selection_policy::ForecastSelectionMode::Manual && compact_truncated;
     match serde_json::to_string_pretty(&payload) {
         Ok(json) => {
             let mut result = ToolResult::ok(json);
@@ -181,8 +182,8 @@ pub async fn handle(args: &Value, session_id: &str) -> ToolResult {
 }
 
 #[cfg(test)]
-#[path = "tool_dispatcher_forecast_models_tests.rs"]
-mod tests;
-#[cfg(test)]
 #[path = "tool_dispatcher_forecast_models_request_tests.rs"]
 mod request_tests;
+#[cfg(test)]
+#[path = "tool_dispatcher_forecast_models_tests.rs"]
+mod tests;

@@ -64,11 +64,11 @@ async fn project_cleanup_detaches_archived_sessions_too() {
         .await
         .expect("archive session");
 
-    clear_project_id(&project_id)
-        .await
-        .expect("clear project");
+    clear_project_id(&project_id).await.expect("clear project");
 
-    let stored = session_store::get(&session.id).await.expect("reload session");
+    let stored = session_store::get(&session.id)
+        .await
+        .expect("reload session");
     assert_eq!(stored.project_id, None);
     session_store::delete_one(&session.id)
         .await

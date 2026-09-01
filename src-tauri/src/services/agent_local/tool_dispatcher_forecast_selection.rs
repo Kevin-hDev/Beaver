@@ -15,7 +15,10 @@ pub async fn verify(
     if policy.mode == ForecastSelectionMode::Manual {
         return Ok(None);
     }
-    let selection_id = request.selection_id.as_deref().ok_or("Sélection Auto requise")?;
+    let selection_id = request
+        .selection_id
+        .as_deref()
+        .ok_or("Sélection Auto requise")?;
     let model_id = request.model.as_deref().ok_or("Modèle Auto requis")?;
     let mut proof = selection_tickets::consume(
         selection_id,
@@ -58,9 +61,9 @@ pub fn complete_provenance(
     proof: Option<&SelectionProof>,
     duration_ms: u64,
 ) -> Result<(), String> {
-    let source = request.selection_source.unwrap_or(
-        crate::services::forecast::provenance_types::ForecastSelectionSource::Manual,
-    );
+    let source = request
+        .selection_source
+        .unwrap_or(crate::services::forecast::provenance_types::ForecastSelectionSource::Manual);
     crate::services::forecast::provenance::complete(
         forecast,
         request,

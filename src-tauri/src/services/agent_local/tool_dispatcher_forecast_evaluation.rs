@@ -14,11 +14,9 @@ pub async fn backtest(args: &Value, session_id: &str) -> ToolResult {
             )
         }
     };
-    if let Err(error) = crate::services::forecast::storage::authorize_for_session(
-        session_id,
-        &request.analysis_id,
-    )
-    .await
+    if let Err(error) =
+        crate::services::forecast::storage::authorize_for_session(session_id, &request.analysis_id)
+            .await
     {
         return ToolResult::not_found("forecast_analysis_not_found", error);
     }

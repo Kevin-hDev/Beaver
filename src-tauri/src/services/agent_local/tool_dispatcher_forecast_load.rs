@@ -18,55 +18,42 @@ pub(super) async fn load_profile(session_id: &str, id: &str) -> Result<DataProfi
 
 fn map_error(error: ForecastLoadError) -> ToolResult {
     match error {
-        ForecastLoadError::InvalidId => ToolResult::validation(
-            "forecast_analysis_id_invalid",
-            error.message(),
-        ),
-        ForecastLoadError::NotFound => ToolResult::not_found(
-            "forecast_analysis_not_found",
-            error.message(),
-        )
-        .with_error_hint(
-            "Utiliser forecast_read sans analysis_id pour relire les analyses disponibles.",
-        ),
-        ForecastLoadError::Unavailable => ToolResult::unavailable(
-            "forecast_analysis_unavailable",
-            error.message(),
-            true,
-        ),
-        ForecastLoadError::Corrupt => ToolResult::internal(
-            "forecast_analysis_corrupt",
-            error.message(),
-            false,
-        )
-        .with_error_hint(
-            "Utiliser forecast_read sans analysis_id et choisir une autre analyse exploitable.",
-        ),
+        ForecastLoadError::InvalidId => {
+            ToolResult::validation("forecast_analysis_id_invalid", error.message())
+        }
+        ForecastLoadError::NotFound => {
+            ToolResult::not_found("forecast_analysis_not_found", error.message()).with_error_hint(
+                "Utiliser forecast_read sans analysis_id pour relire les analyses disponibles.",
+            )
+        }
+        ForecastLoadError::Unavailable => {
+            ToolResult::unavailable("forecast_analysis_unavailable", error.message(), true)
+        }
+        ForecastLoadError::Corrupt => {
+            ToolResult::internal("forecast_analysis_corrupt", error.message(), false)
+                .with_error_hint(
+                "Utiliser forecast_read sans analysis_id et choisir une autre analyse exploitable.",
+            )
+        }
     }
 }
 
 fn map_profile_error(error: DataProfileLoadError) -> ToolResult {
     match error {
-        DataProfileLoadError::InvalidId => ToolResult::validation(
-            "forecast_data_profile_id_invalid",
-            error.message(),
-        ),
-        DataProfileLoadError::NotFound => ToolResult::not_found(
-            "forecast_data_profile_not_found",
-            error.message(),
-        )
-        .with_error_hint("Relancer forecast_data_audit pour créer un profil à jour."),
-        DataProfileLoadError::Unavailable => ToolResult::unavailable(
-            "forecast_data_profile_unavailable",
-            error.message(),
-            true,
-        ),
-        DataProfileLoadError::Corrupt => ToolResult::internal(
-            "forecast_data_profile_corrupt",
-            error.message(),
-            false,
-        )
-        .with_error_hint("Relancer forecast_data_audit pour remplacer le profil invalide."),
+        DataProfileLoadError::InvalidId => {
+            ToolResult::validation("forecast_data_profile_id_invalid", error.message())
+        }
+        DataProfileLoadError::NotFound => {
+            ToolResult::not_found("forecast_data_profile_not_found", error.message())
+                .with_error_hint("Relancer forecast_data_audit pour créer un profil à jour.")
+        }
+        DataProfileLoadError::Unavailable => {
+            ToolResult::unavailable("forecast_data_profile_unavailable", error.message(), true)
+        }
+        DataProfileLoadError::Corrupt => {
+            ToolResult::internal("forecast_data_profile_corrupt", error.message(), false)
+                .with_error_hint("Relancer forecast_data_audit pour remplacer le profil invalide.")
+        }
     }
 }
 
@@ -81,7 +68,10 @@ mod tests {
         let missing = map_error(ForecastLoadError::NotFound);
         let corrupt = map_error(ForecastLoadError::Corrupt);
 
-        assert_eq!(invalid.error.unwrap().category, ToolErrorCategory::Validation);
+        assert_eq!(
+            invalid.error.unwrap().category,
+            ToolErrorCategory::Validation
+        );
         assert_eq!(missing.error.unwrap().category, ToolErrorCategory::NotFound);
         assert!(!corrupt.error.unwrap().retryable);
     }
@@ -92,7 +82,10 @@ mod tests {
         let missing = map_profile_error(DataProfileLoadError::NotFound);
         let corrupt = map_profile_error(DataProfileLoadError::Corrupt);
 
-        assert_eq!(invalid.error.unwrap().category, ToolErrorCategory::Validation);
+        assert_eq!(
+            invalid.error.unwrap().category,
+            ToolErrorCategory::Validation
+        );
         assert_eq!(missing.error.unwrap().category, ToolErrorCategory::NotFound);
         assert!(!corrupt.error.unwrap().retryable);
     }

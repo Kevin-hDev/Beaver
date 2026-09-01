@@ -50,7 +50,9 @@ pub async fn delete_family(id: &str) -> Result<(), String> {
         crate::services::workspace_scope::WorkspaceScope::Session(root_id)
             if targets.iter().any(|target| target == &root_id) =>
         {
-            Some(crate::services::workspace_scope::WorkspaceScope::Session(root_id))
+            Some(crate::services::workspace_scope::WorkspaceScope::Session(
+                root_id,
+            ))
         }
         _ => None,
     };
