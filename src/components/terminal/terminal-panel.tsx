@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { TerminalTabBar } from "./terminal-tab-bar";
 import { TerminalInstance } from "./terminal-instance";
+import { useTerminalTheme } from "./use-terminal-theme";
 import type { TerminalTab } from "@/hooks/use-terminal";
 import { MAX_LIVE_TERMINALS } from "@/hooks/terminal-types";
 import { TERMINAL_MAX_VIEWPORT_RATIO } from "@/hooks/terminal-layout";
@@ -51,6 +52,7 @@ export function TerminalPanel({
   onSetMaxHeight,
 }: TerminalPanelProps) {
   const { t } = useTranslation();
+  const theme = useTerminalTheme();
   const panelRef = useRef<HTMLDivElement>(null);
   const resizing = useRef(false);
   /* Autorité unique des PTY déjà lancés : elle reste bornée comme le backend
@@ -205,6 +207,7 @@ export function TerminalPanel({
                 key={tab.id}
                 tabId={tab.id}
                 groupKey={groupKey}
+                theme={theme}
                 /* Replié, aucun écran n'est actif : un terminal invisible qui
                  garde le focus avalerait les touches frappées ailleurs. */
               isVisible={isOpen && groupKey === activeGroupKey && tab.id === activeTabId}

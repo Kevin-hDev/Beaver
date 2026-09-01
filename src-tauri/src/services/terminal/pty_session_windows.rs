@@ -38,13 +38,7 @@ impl PtySession {
     ) -> Result<(Self, Box<dyn Read + Send>), String> {
         validate_size(cols, rows)?;
         let (console, input, output_file) = PseudoConsole::create(cols, rows)?;
-        let powershell =
-            crate::services::system_executable::powershell().map_err(|_| terminal_error())?;
-        let mut command = windows_spawn::Command::new(powershell);
-        command.env("TERM", "xterm-256color");
-        if std::env::var("EDITOR").is_ok_and(|editor| editor.contains("vi")) {
-            command.env("EDITOR", "");
-        }
+        let mut command = terminal_command()?;
         if let Some(directory) = validated_cwd(cwd)? {
             command.current_dir(directory);
         }
@@ -63,6 +57,12 @@ impl PtySession {
             },
             Box::new(reader),
         ))
+    }
+
+    #[cfg(test)]
+    pub(in crate::services::terminal) fn terminal_command_for_test(
+    ) -> Result<windows_spawn::Command, String> {
+        terminal_command()
     }
 
     pub fn write(&self, data: &[u8]) -> Result<(), String> {
@@ -134,6 +134,14 @@ fn exit_code(status: ExitStatus) -> u32 {
         .code()
         .map(|code| u32::from_ne_bytes(code.to_ne_bytes()))
         .unwrap_or_default()
+}
+
+fn terminal_command() -> Result<windows_spawn::Command, String> {
+    let powershell =
+        crate::services::system_executable::powershell().map_err(|_| terminal_error())?;
+    let mut command = windows_spawn::Command::new(powershell);
+    command.env("TERM", "xterm-256color");
+    Ok(command)
 }
 
 fn validate_size(cols: u16, rows: u16) -> Result<(), String> {

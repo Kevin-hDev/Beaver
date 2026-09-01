@@ -42,10 +42,6 @@ impl PtySession {
             .openpty(pty_size(cols, rows))
             .map_err(|_| terminal_error())?;
         let mut command = terminal_command()?;
-        command.env("TERM", "xterm-256color");
-        if std::env::var("EDITOR").is_ok_and(|editor| editor.contains("vi")) {
-            command.env("EDITOR", "");
-        }
         if let Some(directory) = validated_cwd(cwd)? {
             command.cwd(directory);
         }
@@ -77,6 +73,12 @@ impl PtySession {
             },
             reader,
         ))
+    }
+
+    #[cfg(test)]
+    pub(in crate::services::terminal) fn terminal_command_for_test(
+    ) -> Result<CommandBuilder, String> {
+        terminal_command()
     }
 
     pub fn write(&self, data: &[u8]) -> Result<(), String> {
@@ -196,6 +198,7 @@ fn terminal_command() -> Result<CommandBuilder, String> {
     #[cfg(any(not(target_os = "linux"), test))]
     let mut command = CommandBuilder::new(shell);
     command.arg("-l");
+    command.env("TERM", "xterm-256color");
     Ok(command)
 }
 

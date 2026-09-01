@@ -1,14 +1,15 @@
 import { useEffect, useRef } from "react";
-import { Terminal } from "@xterm/xterm";
+import { Terminal, type ITheme } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { IS_MAC } from "@/lib/platform";
 import { createTerminalPtyBridge } from "./terminal-pty-bridge";
-import { readTerminalTheme, readTerminalFont } from "./terminal-theme";
+import { readTerminalFont } from "./terminal-theme";
 import "@xterm/xterm/css/xterm.css";
 
 interface TerminalInstanceProps {
   tabId: string;
   groupKey: string;
+  theme: ITheme;
   isVisible: boolean;
   onPtyReady: (tabId: string, ptyId: number, ptyToken: string) => void;
   onExit: (tabId: string) => void;
@@ -19,6 +20,7 @@ interface TerminalInstanceProps {
 export function TerminalInstance({
   tabId,
   groupKey,
+  theme,
   isVisible,
   onPtyReady,
   onExit,
@@ -41,13 +43,12 @@ export function TerminalInstance({
     if (!containerRef.current) return;
 
     const term = new Terminal({
-      theme: readTerminalTheme(),
+      theme,
       fontFamily: readTerminalFont(),
       fontSize: 13,
       cursorBlink: true,
       cursorStyle: "bar",
       cursorWidth: 2,
-      allowProposedApi: true,
       rightClickSelectsWord: true,
     });
 
@@ -137,17 +138,8 @@ export function TerminalInstance({
   }, [isVisible, tabId, onActivity]);
 
   useEffect(() => {
-    const observer = new MutationObserver(() => {
-      if (termRef.current) {
-        termRef.current.options.theme = readTerminalTheme();
-      }
-    });
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["data-theme"],
-    });
-    return () => observer.disconnect();
-  }, []);
+    if (termRef.current) termRef.current.options.theme = theme;
+  }, [theme]);
 
   return (
     <div

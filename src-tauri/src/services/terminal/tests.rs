@@ -76,11 +76,41 @@ mod tests {
     use crate::services::terminal::shutdown;
     use crate::services::terminal::PtyManager;
     use std::collections::VecDeque;
+    use std::ffi::OsString;
     use std::io::Read;
     use std::path::Path;
     use std::sync::{Arc, Condvar, Mutex};
     use std::time::{Duration, Instant};
     use sysinfo::{Pid, System};
+
+    static ENV_LOCK: Mutex<()> = Mutex::new(());
+
+    struct EnvironmentGuard {
+        name: &'static str,
+        previous: Option<OsString>,
+    }
+
+    impl EnvironmentGuard {
+        fn set(name: &'static str, value: &str) -> Self {
+            let previous = std::env::var_os(name);
+            // SAFETY: ENV_LOCK serializes this test's mutation and the guard
+            // restores the process environment even if the assertion panics.
+            unsafe { std::env::set_var(name, value) };
+            Self { name, previous }
+        }
+    }
+
+    impl Drop for EnvironmentGuard {
+        fn drop(&mut self) {
+            // SAFETY: the guard is dropped while ENV_LOCK is still held.
+            unsafe {
+                match self.previous.take() {
+                    Some(value) => std::env::set_var(self.name, value),
+                    None => std::env::remove_var(self.name),
+                }
+            }
+        }
+    }
 
     fn process_is_running(pid: u32) -> bool {
         let mut system = System::new();
@@ -137,6 +167,36 @@ mod tests {
         let (session, reader) =
             PtySession::spawn(Some(tmp.path()), 80, 24).expect("spawn with cwd");
         close_session(session, reader);
+    }
+
+    #[test]
+    fn terminal_preserves_editor_environment() {
+        let _lock = ENV_LOCK.lock().unwrap_or_else(|error| error.into_inner());
+        let _editor = EnvironmentGuard::set("EDITOR", "/usr/bin/vim");
+
+        #[cfg(unix)]
+        {
+            let command = PtySession::terminal_command_for_test().expect("terminal command");
+            assert_eq!(
+                command.get_env("EDITOR"),
+                Some(std::ffi::OsStr::new("/usr/bin/vim"))
+            );
+        }
+
+        #[cfg(windows)]
+        {
+            let mut command = PtySession::terminal_command_for_test().expect("terminal command");
+            command.args([
+                "-NoLogo",
+                "-NoProfile",
+                "-NonInteractive",
+                "-Command",
+                "[Console]::Out.Write($env:EDITOR)",
+            ]);
+            let output = command.output().expect("PowerShell environment");
+            assert!(output.status.success());
+            assert_eq!(output.stdout, b"/usr/bin/vim");
+        }
     }
 
     #[test]

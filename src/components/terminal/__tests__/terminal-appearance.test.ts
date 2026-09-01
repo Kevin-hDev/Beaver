@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -18,6 +18,12 @@ function read(relative: string): string {
   /* eslint-disable-next-line security/detect-non-literal-fs-filename -- les
      chemins sont écrits dans ce fichier, aucun ne vient de l'extérieur. */
   return readFileSync(join(ROOT, relative), "utf8");
+}
+
+function readOptional(relative: string): string {
+  /* eslint-disable-next-line security/detect-non-literal-fs-filename -- même
+     racine de test et mêmes chemins écrits localement que read(). */
+  return existsSync(join(ROOT, relative)) ? read(relative) : "";
 }
 
 describe("apparence du terminal", () => {
@@ -44,9 +50,34 @@ describe("apparence du terminal", () => {
 
   it("le terminal ne nomme aucune couleur lui-même", () => {
     const instance = read("src/components/terminal/terminal-instance.tsx");
+    const hook = readOptional("src/components/terminal/use-terminal-theme.ts");
 
-    expect(instance).toContain("theme: readTerminalTheme()");
+    expect(instance).toContain("theme,");
+    expect(instance).toContain("termRef.current.options.theme = theme");
+    expect(hook).toContain("readTerminalTheme()");
     expect(instance).not.toMatch(/#[0-9a-fA-F]{3,8}\b|rgba?\(/);
+  });
+
+  it("un seul hook possède l'observateur de thème du domaine", () => {
+    const directory = join(ROOT, "src/components/terminal");
+    const constructor = ["new", "MutationObserver"].join(" ");
+    /* eslint-disable-next-line security/detect-non-literal-fs-filename -- le
+       dossier terminal est une constante du dépôt, sans entrée extérieure. */
+    const owners = readdirSync(directory)
+      .filter((name) => /\.tsx?$/.test(name))
+      .filter((name) => read(`src/components/terminal/${name}`).includes(constructor));
+    const panel = read("src/components/terminal/terminal-panel.tsx");
+    const instance = read("src/components/terminal/terminal-instance.tsx");
+
+    expect(owners).toEqual(["use-terminal-theme.ts"]);
+    expect(panel.match(/useTerminalTheme\(\)/g)).toHaveLength(1);
+    expect(instance).not.toContain("MutationObserver");
+  });
+
+  it("n'active aucune API xterm proposée", () => {
+    const instance = read("src/components/terminal/terminal-instance.tsx");
+
+    expect(instance).not.toContain("allowProposedApi: true");
   });
 
   it("le collage naturel de xterm suit l'unique file d'entrée bornée", () => {
