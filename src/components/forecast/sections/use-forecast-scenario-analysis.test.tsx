@@ -2,9 +2,13 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ForecastWorkspaceProvider } from "../forecast-workspace-context";
 import { useForecastScenarioAnalysis } from "./use-forecast-scenario-analysis";
 
 const ANALYSIS_ID = "550e8400-e29b-41d4-a716-446655440000";
+const wrapper = ({ children }: { children: React.ReactNode }) => (
+  <ForecastWorkspaceProvider value="session-test">{children}</ForecastWorkspaceProvider>
+);
 
 describe("useForecastScenarioAnalysis", () => {
   beforeEach(() => {
@@ -24,11 +28,10 @@ describe("useForecastScenarioAnalysis", () => {
     const onLoaded = vi.fn();
     const onFailed = vi.fn();
 
-    renderHook(() => useForecastScenarioAnalysis({
-      analysisId: ANALYSIS_ID,
-      onLoaded,
-      onFailed,
-    }));
+    renderHook(
+      () => useForecastScenarioAnalysis({ analysisId: ANALYSIS_ID, onLoaded, onFailed }),
+      { wrapper },
+    );
     await waitFor(() => expect(onLoaded).toHaveBeenCalledTimes(1));
 
     act(() => updated?.({ payload: { analysis_id: ANALYSIS_ID } }));

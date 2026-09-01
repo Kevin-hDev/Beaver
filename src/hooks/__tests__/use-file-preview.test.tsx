@@ -24,6 +24,20 @@ afterEach(() => {
 });
 
 describe("useFilePreview", () => {
+  it("ne restaure pas une ancienne visibilité globale depuis le stockage", () => {
+    localStorage.setItem("clgo-file-preview-panel:session-1", JSON.stringify({
+      open: true,
+      fullscreen: true,
+      width: 420,
+    }));
+
+    const { result } = renderHook(() => useFilePreview("session-1", []));
+
+    expect(result.current.open).toBe(false);
+    expect(result.current.fullscreen).toBe(false);
+    expect(result.current.width).toBe(420);
+  });
+
   it("ouvre le fichier complet sans réutiliser une diff du même chemin", () => {
     const path = "/repo/src/test_ui_card.tsx";
     const operations = [

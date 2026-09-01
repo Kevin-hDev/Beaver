@@ -8,6 +8,7 @@ import {
   type ForecastAnalysisMeta,
 } from "./forecast-empty-recent";
 import "./forecast-empty.css";
+import { useForecastSessionId } from "./forecast-workspace-context";
 
 interface ForecastEmptyProps {
   onLoadAnalysis: (id: string) => void;
@@ -15,14 +16,16 @@ interface ForecastEmptyProps {
 }
 
 export function ForecastEmpty({ onLoadAnalysis, onImportFile }: ForecastEmptyProps) {
+  const sessionId = useForecastSessionId();
   const { t } = useTranslation();
   const [recent, setRecent] = useState<ForecastAnalysisMeta[]>([]);
 
   useEffect(() => {
-    invoke<ForecastAnalysisMeta[]>("list_forecast_analyses")
+    if (!sessionId) return;
+    invoke<ForecastAnalysisMeta[]>("list_forecast_analyses", { sessionId })
       .then(setRecent)
       .catch(() => setRecent([]));
-  }, []);
+  }, [sessionId]);
 
   const handleImport = useCallback(async () => {
     const path = await open({

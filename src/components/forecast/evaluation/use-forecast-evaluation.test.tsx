@@ -3,12 +3,17 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { showToast } from "@/lib/toast-emitter";
+import { ForecastWorkspaceProvider } from "../forecast-workspace-context";
 import type { EvaluationAnalysis } from "./forecast-evaluation-types";
 import { useForecastEvaluation } from "./use-forecast-evaluation";
 
 vi.mock("@/lib/toast-emitter", () => ({ showToast: vi.fn() }));
 
 const ANALYSIS_ID = "550e8400-e29b-41d4-a716-446655440000";
+const SESSION_ID = "session-test";
+const wrapper = ({ children }: { children: React.ReactNode }) => (
+  <ForecastWorkspaceProvider value={SESSION_ID}>{children}</ForecastWorkspaceProvider>
+);
 const INITIAL: EvaluationAnalysis = { id: ANALYSIS_ID, model: "model-a", evaluation: null };
 const WITH_ENSEMBLE: EvaluationAnalysis = {
   ...INITIAL,
@@ -32,12 +37,13 @@ describe("useForecastEvaluation", () => {
     vi.mocked(invoke)
       .mockResolvedValueOnce(INITIAL)
       .mockResolvedValueOnce(WITH_ENSEMBLE);
-    const { result } = renderHook(() => useForecastEvaluation(ANALYSIS_ID));
+    const { result } = renderHook(() => useForecastEvaluation(ANALYSIS_ID), { wrapper });
     await waitFor(() => expect(result.current.analysis).toEqual(INITIAL));
 
     await act(async () => result.current.createEnsemble());
 
     expect(invoke).toHaveBeenLastCalledWith("create_forecast_ensemble", {
+      sessionId: SESSION_ID,
       analysisId: ANALYSIS_ID,
       modelIds: [],
     });
@@ -49,7 +55,7 @@ describe("useForecastEvaluation", () => {
     vi.mocked(invoke)
       .mockResolvedValueOnce(INITIAL)
       .mockRejectedValueOnce(new Error("internal path"));
-    const { result } = renderHook(() => useForecastEvaluation(ANALYSIS_ID));
+    const { result } = renderHook(() => useForecastEvaluation(ANALYSIS_ID), { wrapper });
     await waitFor(() => expect(result.current.analysis).toEqual(INITIAL));
 
     await act(async () => result.current.createEnsemble());

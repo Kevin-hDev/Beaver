@@ -1,5 +1,4 @@
 use crate::services::agent_local::project_store::{self, Project};
-use crate::services::agent_local::session_store;
 
 #[tauri::command]
 pub async fn list_projects() -> Result<Vec<Project>, String> {
@@ -25,8 +24,7 @@ pub async fn rename_project(id: String, name: String) -> Result<(), String> {
 
 #[tauri::command]
 pub async fn delete_project(id: String) -> Result<(), String> {
-    project_store::delete(&id).await?;
-    session_store::clear_project_id(&id).await
+    crate::services::forecast::workspace_lifecycle::delete_project(&id).await
 }
 
 #[tauri::command]

@@ -21,6 +21,12 @@
   transition: none;
 }
 
+.terminal-panel-instant {
+  /* Cette classe suit la même prop que la hauteur JS : le panneau garde ainsi
+     une seule autorité pour sa bascule instantanée. */
+  transition: none;
+}
+
 /* La poignée montre où saisir. Sans trait, c'est une bande transparente de
    quatre pixels qu'on ne trouve qu'en promenant la souris le long du bord. */
 .terminal-resize-handle {

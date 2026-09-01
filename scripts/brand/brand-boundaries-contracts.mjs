@@ -9,7 +9,8 @@ export const EXPECTED_INTERNAL_REFERENCE_COUNTS = Object.freeze({
   CLGO: 32,
   // Le test Linux nomme le binaire cl-go-dash une fois de plus.
   "cl-go-dash": 258,
-  clgo: 114,
+  // Le test d'isolation des apercus rejoue la cle persistante historique.
+  clgo: 115,
   "cl-go": 72,
   // Les deux branches main appellent explicitement la bibliothèque Rust.
   cl_go_dash: 48,

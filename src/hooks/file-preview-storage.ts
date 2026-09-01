@@ -6,8 +6,6 @@ export const CHAT_MIN_WIDTH = 360;
 const MAX_STORED_TABS = 6;
 
 export interface StoredFilePreviewPanel {
-  open: boolean;
-  fullscreen: boolean;
   width: number;
 }
 
@@ -61,14 +59,10 @@ export function readStoredFilePreviewPanel(sessionId: string | null): StoredFile
     if (!parsed || typeof parsed !== "object") throw new Error("invalid");
     const state = parsed as Partial<StoredFilePreviewPanel>;
     return {
-      open: state.open === true,
-      fullscreen: state.fullscreen === true,
       width: clampFilePreviewWidth(state.width),
     };
   } catch {
     return {
-      open: false,
-      fullscreen: false,
       width: FILE_PREVIEW_DEFAULT_WIDTH,
     };
   }

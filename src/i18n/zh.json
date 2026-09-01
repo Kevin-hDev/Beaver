@@ -1137,6 +1137,7 @@
     "resizePanel": "调整面板高度",
     "tabsLoadFailed": "无法恢复终端标签页。请重启 Beaver 后重试。",
     "tabsRecovered": "无法恢复终端标签页。已打开一个空会话。",
+    "legacyTabsRemoved": "旧的共享终端标签页无法安全归属，已被移除。",
     "tabsSaveFailed": "无法保存终端标签页。请重启 Beaver 后重试。",
     "tabLimitReached": "已达到终端标签页数量上限。",
     "liveLimitReached": "已达到活动终端数量上限。请关闭一个标签页后重试。",
@@ -1761,6 +1762,10 @@
       "validate": "确认",
       "cancel": "取消",
       "renameFailed": "无法重命名分析。",
+      "unassigned": "未分配的旧预测",
+      "unassignedHelp": "请明确选择将在项目隔离前创建的预测关联到哪个工作区。",
+      "claim": "将 {{name}} 关联到此工作区",
+      "claimFailed": "无法关联此预测。",
       "deleteFailed": "无法删除分析。"
     },
     "view": {
@@ -1992,7 +1997,8 @@
     },
     "errors": {
       "importFailed": "导入失败。请检查文件格式。",
-      "launchFailed": "计算失败。请检查列、模型和 API 密钥。"
+      "launchFailed": "计算失败。请检查列、模型和 API 密钥。",
+      "capacityReached": "Forecast 存储空间已满。请删除较旧的分析后重试。"
     },
     "modelConfig": {
       "sidebarTitle": "配置",

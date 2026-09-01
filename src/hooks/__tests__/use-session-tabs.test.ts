@@ -34,6 +34,12 @@ const cloneResult: CloneSessionResult = {
   tabs: cloneTabs,
 };
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((complete) => { resolve = complete; });
+  return { promise, resolve };
+}
+
 describe("useSessionTabs", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -45,6 +51,104 @@ describe("useSessionTabs", () => {
       }
       return Promise.resolve(rootTabs);
     });
+  });
+
+  it("n'expose jamais les onglets de l'ancienne racine pendant le changement de session", async () => {
+    const nextTabs = deferred<SessionTabs>();
+    vi.mocked(invoke).mockImplementation((command: string, args?: unknown) => {
+      if (command !== "list_session_tabs") return Promise.resolve(rootTabs);
+      const sessionId = (args as { sessionId: string }).sessionId;
+      return sessionId === "root" ? Promise.resolve(cloneTabs) : nextTabs.promise;
+    });
+
+    const { result, rerender } = renderHook(
+      ({ sessionId }) => useSessionTabs(sessionId),
+      { initialProps: { sessionId: "root" } },
+    );
+    await waitFor(() => expect(result.current.activeSessionId).toBe("clone"));
+
+    rerender({ sessionId: "next-root" });
+
+    expect(result.current.tabs).toBeNull();
+    expect(result.current.activeSessionId).toBe("next-root");
+
+    await act(async () => {
+      nextTabs.resolve({
+        active_tab_id: "main",
+        tabs: [{ tab_id: "main", session_id: "next-root", label: "Main", is_main: true }],
+      });
+      await nextTabs.promise;
+    });
+    await waitFor(() => expect(result.current.tabs?.tabs[0]?.session_id).toBe("next-root"));
+  });
+
+  it("ignore une sauvegarde de l'ancienne racine terminée après le chargement de la nouvelle", async () => {
+    const staleSave = deferred<SessionTabs>();
+    const nextRootTabs: SessionTabs = {
+      active_tab_id: "main",
+      tabs: [{ tab_id: "main", session_id: "next-root", label: "Main", is_main: true }],
+    };
+    vi.mocked(invoke).mockImplementation((command: string, args?: unknown) => {
+      if (command === "list_session_tabs") {
+        const sessionId = (args as { sessionId: string }).sessionId;
+        return Promise.resolve(sessionId === "root" ? cloneTabs : nextRootTabs);
+      }
+      if (command === "save_session_tabs") return staleSave.promise;
+      return Promise.resolve(rootTabs);
+    });
+
+    const { result, rerender } = renderHook(
+      ({ sessionId }) => useSessionTabs(sessionId),
+      { initialProps: { sessionId: "root" } },
+    );
+    await waitFor(() => expect(result.current.tabs).toEqual(cloneTabs));
+
+    let pendingSelection!: Promise<void>;
+    act(() => {
+      pendingSelection = result.current.selectTab("main");
+    });
+    rerender({ sessionId: "next-root" });
+    await waitFor(() => expect(result.current.tabs).toEqual(nextRootTabs));
+
+    await act(async () => {
+      staleSave.resolve({ ...cloneTabs, active_tab_id: "main" });
+      await pendingSelection;
+    });
+
+    expect(result.current.tabs).toEqual(nextRootTabs);
+  });
+
+  it("ignore une lecture de l'ancienne racine résolue après celle de la nouvelle", async () => {
+    const oldRequest = deferred<SessionTabs>();
+    const nextRequest = deferred<SessionTabs>();
+    vi.mocked(invoke).mockImplementation((command: string, args?: unknown) => {
+      if (command !== "list_session_tabs") return Promise.resolve(rootTabs);
+      const sessionId = (args as { sessionId: string }).sessionId;
+      return sessionId === "root" ? oldRequest.promise : nextRequest.promise;
+    });
+
+    const { result, rerender } = renderHook(
+      ({ sessionId }) => useSessionTabs(sessionId),
+      { initialProps: { sessionId: "root" } },
+    );
+    rerender({ sessionId: "next-root" });
+
+    const nextRootTabs: SessionTabs = {
+      active_tab_id: "main",
+      tabs: [{ tab_id: "main", session_id: "next-root", label: "Main", is_main: true }],
+    };
+    await act(async () => {
+      nextRequest.resolve(nextRootTabs);
+      await nextRequest.promise;
+    });
+    await waitFor(() => expect(result.current.tabs).toEqual(nextRootTabs));
+
+    await act(async () => {
+      oldRequest.resolve(cloneTabs);
+      await oldRequest.promise;
+    });
+
+    expect(result.current.tabs).toEqual(nextRootTabs);
   });
 
   it("garde l'onglet actif précédent quand le résumé finit en arrière-plan", async () => {

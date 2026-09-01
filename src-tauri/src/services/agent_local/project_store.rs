@@ -84,6 +84,12 @@ pub async fn find(id: &str) -> Result<Option<Project>, String> {
         .find(|project| project.id == id))
 }
 
+pub(crate) fn validate_project_id(id: &str) -> Result<(), String> {
+    bounded_text(id, MAX_PROJECT_ID_BYTES)
+        .then_some(())
+        .ok_or_else(|| PROJECT_STORE_UNAVAILABLE.to_string())
+}
+
 pub async fn add(path: &str) -> Result<Project, String> {
     let _guard = PROJECT_STORE_LOCK.lock().await;
     let canonical = canonical_existing_dir(Path::new(path))?;

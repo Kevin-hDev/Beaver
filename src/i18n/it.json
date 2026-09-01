@@ -1138,6 +1138,7 @@
     "resizePanel": "Regola l'altezza del pannello",
     "tabsLoadFailed": "Impossibile ripristinare le schede del terminale. Riavvia Beaver per riprovare.",
     "tabsRecovered": "Impossibile ripristinare le schede del terminale. È stata aperta una sessione vuota.",
+    "legacyTabsRemoved": "Le vecchie schede del terminale condivise non potevano essere assegnate in sicurezza e sono state rimosse.",
     "tabsSaveFailed": "Impossibile salvare le schede del terminale. Riavvia Beaver per riprovare.",
     "tabLimitReached": "È stato raggiunto il limite di schede del terminale.",
     "liveLimitReached": "È stato raggiunto il limite di terminali attivi. Chiudi una scheda per riprovare.",
@@ -1762,6 +1763,10 @@
       "validate": "Conferma",
       "cancel": "Annulla",
       "renameFailed": "Impossibile rinominare l'analisi.",
+      "unassigned": "Previsioni precedenti non assegnate",
+      "unassignedHelp": "Scegli esplicitamente dove collegare le previsioni create prima dell'isolamento per progetto.",
+      "claim": "Collega {{name}} a questo spazio",
+      "claimFailed": "Impossibile collegare questa previsione.",
       "deleteFailed": "Impossibile eliminare l'analisi."
     },
     "view": {
@@ -1993,7 +1998,8 @@
     },
     "errors": {
       "importFailed": "Importazione non riuscita. Controlla il formato del file.",
-      "launchFailed": "Il calcolo non è riuscito. Controlla colonne, modello e chiave API."
+      "launchFailed": "Il calcolo non è riuscito. Controlla colonne, modello e chiave API.",
+      "capacityReached": "Lo spazio Forecast è pieno. Elimina le analisi meno recenti e riprova."
     },
     "modelConfig": {
       "sidebarTitle": "Config",

@@ -36,7 +36,7 @@ import { ChatTranscript } from "./chat-transcript";
 import type { ChatViewProps } from "./chat-view-types";
 import "./chat.css";
 export function ChatView({
-  sessionId, model, provider, projects, git, onAddProject,
+  sessionId, instantLayout, model, provider, projects, git, onAddProject,
   onSessionsRefresh, onApplySwitch, onNewSession, onNewSessionInProject, onAutoRename,
   initialMessage, initialWorkingDir, initialSkills, initialFiles,
   reasoningMode, fastModeEnabled, fastModePending, onReasoningModeChange, onFastModeChange, onInitialMessageSent,
@@ -207,7 +207,7 @@ export function ChatView({
             </div>
           </div>
         )} {/* La vue de chat possède le dock : la quitter ferme volontairement ses PTY. */}
-        {!isSubagent && <ChatTerminalDock terminalState={terminalState} />}
+        {!isSubagent && <ChatTerminalDock terminalState={terminalState} instantLayout={instantLayout} />}
       </div>
       <ChatOverlays
         preview={preview} currentModel={model} pendingSwitch={pendingSwitch}

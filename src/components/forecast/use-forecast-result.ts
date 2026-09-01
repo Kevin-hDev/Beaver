@@ -5,15 +5,18 @@ import {
   FORECAST_ANALYSIS_UPDATED,
   listenForecastAnalysisEvents,
 } from "@/lib/forecast-analysis-events";
+import { useForecastSessionId } from "./forecast-workspace-context";
 
 export function useForecastResult<T>(analysisId: string, errorMessage: string) {
+  const sessionId = useForecastSessionId();
   const [result, setResult] = useState<{ analysisId: string; data: T } | null>(null);
   const [failure, setFailure] = useState<{ analysisId: string; message: string } | null>(null);
   const runLatest = useLatestRequest();
   const refresh = useCallback(async () => {
     try {
+      if (!sessionId) throw new Error("missing_forecast_session");
       const next = await runLatest(
-        () => invoke<T>("get_forecast_analysis", { id: analysisId }),
+        () => invoke<T>("get_forecast_analysis", { sessionId, id: analysisId }),
       );
       if (next === undefined) return;
       setResult({ analysisId, data: next });
@@ -21,7 +24,7 @@ export function useForecastResult<T>(analysisId: string, errorMessage: string) {
     } catch {
       setFailure({ analysisId, message: errorMessage });
     }
-  }, [analysisId, errorMessage, runLatest]);
+  }, [analysisId, errorMessage, runLatest, sessionId]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- backend hydration is intentional

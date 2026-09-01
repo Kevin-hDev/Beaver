@@ -23,8 +23,10 @@ import "./forecast-scenario-menu.css";
 import "./forecast-notes.css";
 import "./forecast-notes-detail.css";
 import "./forecast-notes-markdown.css";
+import { useForecastSessionId } from "../forecast-workspace-context";
 
 export function ForecastNotes({ analysisId }: ForecastNotesProps) {
+  const sessionId = useForecastSessionId();
   const { t, i18n } = useTranslation();
   const [analysis, setAnalysis] = useState<ForecastNotesAnalysis | null>(null);
   const [notes, setNotes] = useState<ForecastNote[]>([]);
@@ -43,9 +45,10 @@ export function ForecastNotes({ analysisId }: ForecastNotesProps) {
 
   const load = useCallback(async () => {
     try {
+      if (!sessionId) throw new Error("missing_forecast_session");
       const loaded = await runLatest(() => Promise.all([
-          invoke<ForecastNotesAnalysis>("get_forecast_analysis", { id: analysisId }),
-          invoke<ForecastNote[]>("list_forecast_notes", { analysisId }),
+          invoke<ForecastNotesAnalysis>("get_forecast_analysis", { sessionId, id: analysisId }),
+          invoke<ForecastNote[]>("list_forecast_notes", { sessionId, analysisId }),
         ]));
       if (loaded === undefined) return;
       const [nextAnalysis, nextNotes] = loaded;
@@ -56,7 +59,7 @@ export function ForecastNotes({ analysisId }: ForecastNotesProps) {
     } catch {
       setError(t("forecast.notes.loadFailed"));
     }
-  }, [analysisId, runLatest, t]);
+  }, [analysisId, runLatest, sessionId, t]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
@@ -98,11 +101,12 @@ export function ForecastNotes({ analysisId }: ForecastNotesProps) {
     if (!draft || !draft.title.trim()) return;
     setSaving(true);
     try {
+      if (!sessionId) throw new Error("missing_forecast_session");
       const command = draft.id ? "update_forecast_note" : "create_forecast_note";
       const request = draft.id
         ? { analysis_id: analysisId, note_id: draft.id, ...draft }
         : { analysis_id: analysisId, ...draft };
-      const saved = await invoke<ForecastNote>(command, { request });
+      const saved = await invoke<ForecastNote>(command, { sessionId, request });
       setDraft(null);
       setSelectedId(saved.id);
       await load();
@@ -115,7 +119,8 @@ export function ForecastNotes({ analysisId }: ForecastNotesProps) {
 
   const deleteNote = async (note: ForecastNote) => {
     try {
-      await invoke("delete_forecast_note", { analysisId, noteId: note.id });
+      if (!sessionId) throw new Error("missing_forecast_session");
+      await invoke("delete_forecast_note", { sessionId, analysisId, noteId: note.id });
       setSelectedId(null);
       await load();
     } catch {
@@ -125,7 +130,8 @@ export function ForecastNotes({ analysisId }: ForecastNotesProps) {
 
   const openNote = async (note: ForecastNote) => {
     try {
-      await invoke("open_forecast_note", { analysisId, noteId: note.id });
+      if (!sessionId) throw new Error("missing_forecast_session");
+      await invoke("open_forecast_note", { sessionId, analysisId, noteId: note.id });
     } catch {
       setError(t("forecast.notes.openFailed"));
     }

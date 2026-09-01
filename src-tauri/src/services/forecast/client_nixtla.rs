@@ -56,6 +56,7 @@ fn parse_response(
         name: format!("Forecast {}", request.target_column),
         target_column: request.target_column.clone(),
         created_at: Utc::now().to_rfc3339(),
+        workspace: Default::default(),
         session_id: session_id.map(|s| s.to_string()),
         model: model_name.to_string(),
         provider: "nixtla".to_string(),

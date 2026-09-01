@@ -30,6 +30,7 @@ fn result(request: &ForecastRequest) -> ForecastResult {
         name: "test".into(),
         target_column: "value".into(),
         created_at: "2026-01-01T00:00:00Z".into(),
+        workspace: Default::default(),
         session_id: None,
         model: "chronos-bolt-small".into(),
         provider: "chronos-bolt".into(),

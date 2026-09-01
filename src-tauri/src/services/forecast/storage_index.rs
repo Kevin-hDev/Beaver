@@ -5,8 +5,10 @@ use tokio::sync::Mutex;
 use super::limits::{MAX_ANALYSIS_INDEX_BYTES, MAX_BACKTEST_RESULTS, MAX_STORED_ANALYSES};
 use super::storage_paths::{index_path, validate_analysis_id, validate_analysis_name};
 use super::types::ForecastAnalysisMeta;
+use crate::services::workspace_scope::WorkspaceScope;
 
 const INDEX_SCHEMA_VERSION: u32 = 1;
+const CAPACITY_REACHED: &str = "forecast-capacity-reached";
 static INDEX_LOCK: Mutex<()> = Mutex::const_new(());
 
 #[derive(Serialize, Deserialize)]
@@ -38,9 +40,15 @@ pub(super) async fn list() -> Result<Vec<ForecastAnalysisMeta>, String> {
     Ok(state.entries)
 }
 
-pub(super) async fn entries() -> Result<Vec<ForecastAnalysisMeta>, String> {
-    let _guard = INDEX_LOCK.lock().await;
-    Ok(read().await?.entries)
+#[cfg(test)]
+fn visible_entries(
+    entries: Vec<ForecastAnalysisMeta>,
+    workspace: &super::types::ForecastWorkspace,
+) -> Vec<ForecastAnalysisMeta> {
+    entries
+        .into_iter()
+        .filter(|entry| &entry.workspace == workspace)
+        .collect()
 }
 
 pub(super) async fn upsert(meta: ForecastAnalysisMeta) -> Result<Vec<String>, String> {
@@ -51,7 +59,7 @@ pub(super) async fn upsert(meta: ForecastAnalysisMeta) -> Result<Vec<String>, St
         hydrate_legacy(&mut state.entries).await;
     }
     let mut entries = state.entries;
-    let removed_ids = upsert_entries(&mut entries, meta);
+    let removed_ids = upsert_entries(&mut entries, meta)?;
     write(&entries).await?;
     Ok(removed_ids)
 }
@@ -139,12 +147,23 @@ fn validate_entries(entries: &[ForecastAnalysisMeta]) -> Result<(), String> {
 fn validate_entry(entry: &ForecastAnalysisMeta) -> Result<(), String> {
     validate_analysis_id(&entry.id).map_err(|_| "Index forecast corrompu".to_string())?;
     validate_analysis_name(&entry.name).map_err(|_| "Index forecast corrompu".to_string())?;
-    if entry.session_id.as_deref().is_some_and(|id| {
-        crate::services::agent_local::session_store::validate_session_id(id).is_err()
-    }) || entry
-        .backtest
-        .as_ref()
-        .is_some_and(|backtest| backtest.results.len() > MAX_BACKTEST_RESULTS)
+    let invalid_workspace = match &entry.workspace {
+        WorkspaceScope::Project(id) => {
+            crate::services::agent_local::project_store::validate_project_id(id).is_err()
+        }
+        WorkspaceScope::Session(id) => {
+            crate::services::agent_local::session_store::validate_session_id(id).is_err()
+        }
+        WorkspaceScope::Legacy => false,
+    };
+    if invalid_workspace
+        || entry.session_id.as_deref().is_some_and(|id| {
+            crate::services::agent_local::session_store::validate_session_id(id).is_err()
+        })
+        || entry
+            .backtest
+            .as_ref()
+            .is_some_and(|backtest| backtest.results.len() > MAX_BACKTEST_RESULTS)
     {
         return Err("Index forecast corrompu".into());
     }
@@ -154,14 +173,22 @@ fn validate_entry(entry: &ForecastAnalysisMeta) -> Result<(), String> {
 fn upsert_entries(
     entries: &mut Vec<ForecastAnalysisMeta>,
     meta: ForecastAnalysisMeta,
-) -> Vec<String> {
+) -> Result<Vec<String>, String> {
     if let Some(position) = entries.iter().position(|entry| entry.id == meta.id) {
         entries[position] = meta;
-        return Vec::new();
+        return Ok(Vec::new());
     }
+    let evicted = if entries.len() >= MAX_STORED_ANALYSES {
+        let position = entries
+            .iter()
+            .position(|entry| entry.workspace == meta.workspace)
+            .ok_or_else(|| CAPACITY_REACHED.to_string())?;
+        vec![entries.remove(position).id]
+    } else {
+        Vec::new()
+    };
     entries.push(meta);
-    let overflow = entries.len().saturating_sub(MAX_STORED_ANALYSES);
-    entries.drain(0..overflow).map(|entry| entry.id).collect()
+    Ok(evicted)
 }
 
 #[cfg(test)]

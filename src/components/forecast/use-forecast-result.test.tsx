@@ -2,9 +2,14 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ForecastWorkspaceProvider } from "./forecast-workspace-context";
 import { useForecastResult } from "./use-forecast-result";
 
 const ANALYSIS_ID = "550e8400-e29b-41d4-a716-446655440000";
+const SESSION_ID = "session-test";
+const wrapper = ({ children }: { children: React.ReactNode }) => (
+  <ForecastWorkspaceProvider value={SESSION_ID}>{children}</ForecastWorkspaceProvider>
+);
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -33,6 +38,7 @@ describe("useForecastResult", () => {
     });
     const { result } = renderHook(
       () => useForecastResult<{ value: string }>(ANALYSIS_ID, "failed"),
+      { wrapper },
     );
     await waitFor(() => expect(invoke).toHaveBeenCalledTimes(1));
     act(() => updated?.({ payload: { analysis_id: ANALYSIS_ID } }));
@@ -59,7 +65,7 @@ describe("useForecastResult", () => {
     vi.mocked(listen).mockResolvedValue(() => {});
     const { result, rerender } = renderHook(
       ({ id }) => useForecastResult<{ value: string }>(id, "failed"),
-      { initialProps: { id: "analysis-a" } },
+      { initialProps: { id: "analysis-a" }, wrapper },
     );
     await waitFor(() => expect(result.current.data?.value).toBe("first"));
 

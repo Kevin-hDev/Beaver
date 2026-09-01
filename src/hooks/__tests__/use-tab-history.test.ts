@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { useTabHistory } from "../use-tab-history";
-import { DEFAULT_APP_NAV, FILE_ACCESS_SETTINGS_NAV, migrateAppNav } from "@/types/navigation";
+import { DEFAULT_AGENT_LOCAL_NAV, DEFAULT_APP_NAV, FILE_ACCESS_SETTINGS_NAV, migrateAppNav } from "@/types/navigation";
 
 describe("useTabHistory", () => {
   it("migre l'ancien onglet api-keys vers Providers", () => {
@@ -16,22 +16,22 @@ describe("useTabHistory", () => {
     expect(result.current.current.settings.providersSubTab).toBe("api");
   });
 
-  it("migre les anciens onglets Forecast déplacés vers la vue principale", () => {
+  it("retire les anciens états visuels globaux de la navigation", () => {
     const legacy = {
       ...DEFAULT_APP_NAV,
-      agentLocal: { ...DEFAULT_APP_NAV.agentLocal, forecastSection: "notes" },
+      agentLocal: { ...DEFAULT_AGENT_LOCAL_NAV, forecastSection: "notes" },
     } as unknown as typeof DEFAULT_APP_NAV;
 
     const { result } = renderHook(() => useTabHistory(legacy));
 
-    expect(result.current.current.agentLocal.forecastSection).toBe("view");
+    expect(result.current.current.agentLocal).toEqual({ sessionId: null });
   });
 
   it("retire l'ancien onglet terminal actif sans republier sa valeur", () => {
     const legacy = {
       ...DEFAULT_APP_NAV,
       agentLocal: {
-        ...DEFAULT_APP_NAV.agentLocal,
+        ...DEFAULT_AGENT_LOCAL_NAV,
         terminalOpen: true,
         terminalActiveTabId: "stale",
       },
@@ -40,7 +40,7 @@ describe("useTabHistory", () => {
     const migrated = migrateAppNav(legacy);
 
     expect("terminalActiveTabId" in migrated.agentLocal).toBe(false);
-    expect(migrated.agentLocal.terminalOpen).toBe(true);
+    expect("terminalOpen" in migrated.agentLocal).toBe(false);
   });
 
   it("ignore les push identiques", () => {

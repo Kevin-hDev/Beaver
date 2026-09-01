@@ -4,13 +4,15 @@ use crate::services::forecast::{data_profiles, data_quality, file_input, validat
 use serde_json::Value;
 use std::path::Path;
 
-pub async fn handle(args: &Value, working_dir: &Path) -> ToolResult {
+pub async fn handle(args: &Value, working_dir: &Path, session_id: &str) -> ToolResult {
     let mut request: ForecastRequest = match serde_json::from_value(args.clone()) {
         Ok(request) => request,
-        Err(_) => return ToolResult::validation(
-            "forecast_audit_request_invalid",
-            "Paramètres d'audit invalides",
-        ),
+        Err(_) => {
+            return ToolResult::validation(
+                "forecast_audit_request_invalid",
+                "Paramètres d'audit invalides",
+            )
+        }
     };
     crate::services::forecast::request_normalize::normalize_request(&mut request);
     if request.data_profile_id.is_some() {
@@ -30,13 +32,9 @@ pub async fn handle(args: &Value, working_dir: &Path) -> ToolResult {
         Err(error) => return ToolResult::validation("forecast_audit_data_invalid", error),
     };
     if profile.valid {
-        if let Err(error) = data_profiles::save(&profile, &request).await {
-            return ToolResult::internal(
-                "forecast_data_profile_save_failed",
-                error,
-                false,
-            )
-            .with_error_hint(
+        if let Err(error) = data_profiles::save(session_id, &profile, &request).await {
+            return ToolResult::internal("forecast_data_profile_save_failed", error, false)
+                .with_error_hint(
                 "Vérifier les profils Forecast avant de relancer l'audit : le profil peut exister.",
             );
         }
@@ -51,15 +49,14 @@ pub async fn handle(args: &Value, working_dir: &Path) -> ToolResult {
             "Correct every error issue, then run forecast_data_audit again."
         }
     });
-    serde_json::to_string_pretty(&payload)
-        .map_or_else(
-            |_| {
-                ToolResult::internal(
-                    "forecast_audit_serialization_failed",
-                    "Résultat d'audit invalide",
-                    false,
-                )
-            },
-            ToolResult::ok,
-        )
+    serde_json::to_string_pretty(&payload).map_or_else(
+        |_| {
+            ToolResult::internal(
+                "forecast_audit_serialization_failed",
+                "Résultat d'audit invalide",
+                false,
+            )
+        },
+        ToolResult::ok,
+    )
 }

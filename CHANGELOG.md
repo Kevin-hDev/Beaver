@@ -32,6 +32,7 @@
 ### Embedded terminal reliability
 
 - **Durable project terminal tabs** — terminal groups and labels are restored without persisting frontend-supplied working directories, while legacy data migrates safely and concurrent tab creation or closure cannot overwrite another update.
+- **Project and conversation isolation** — terminal docks, file operations, Forecast history, notes, and reusable data profiles now follow their owning project or root conversation; deleting that owner leaves recoverable data instead of inaccessible records, and unattributable legacy terminal labels are removed with an in-app notice.
 - **Crash-safe terminal recovery** — bounded, versioned terminal state is written atomically; malformed or oversized files are preserved for diagnosis, reset safely, and an interrupted recovery resumes from its durable marker on the next launch.
 - **Lazy project-aware shells** — restored tabs do not start processes until they are opened, and Beaver resolves each shell directory from the canonical project registry instead of trusting a path sent by the interface.
 - **Stable terminal controls** — active tabs, panel height, collapse and reopen behavior, project switching, and targeted tab closure now share one lifecycle without losing a live shell or reviving a closed tab.

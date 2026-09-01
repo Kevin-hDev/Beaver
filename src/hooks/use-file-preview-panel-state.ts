@@ -1,4 +1,4 @@
-import { useCallback, useState, type SetStateAction } from "react";
+import { useCallback, useMemo, useState, type SetStateAction } from "react";
 import {
   FILE_PREVIEW_DEFAULT_EXTRA_WIDTH,
   readStoredFilePreviewPanel,
@@ -7,7 +7,14 @@ import {
 } from "./file-preview-storage";
 
 interface PanelState extends StoredFilePreviewPanel {
+  open: boolean;
+  fullscreen: boolean;
   extraWidth: number;
+}
+
+interface KeyedPanelState {
+  key: string;
+  value: PanelState;
 }
 
 function stateKey(sessionId: string | null): string {
@@ -17,6 +24,8 @@ function stateKey(sessionId: string | null): string {
 function loadPanelState(sessionId: string | null): PanelState {
   return {
     ...readStoredFilePreviewPanel(sessionId),
+    open: false,
+    fullscreen: false,
     extraWidth: FILE_PREVIEW_DEFAULT_EXTRA_WIDTH,
   };
 }
@@ -27,27 +36,29 @@ function applyAction<T>(current: T, action: SetStateAction<T>): T {
 
 export function useFilePreviewPanelState(sessionId: string | null) {
   const key = stateKey(sessionId);
-  const [states, setStates] = useState<Record<string, PanelState>>(() => ({
-    [key]: loadPanelState(sessionId),
+  const loadedState = useMemo(() => loadPanelState(sessionId), [sessionId]);
+  const [stored, setStored] = useState<KeyedPanelState>(() => ({
+    key,
+    value: loadedState,
   }));
-  const state = states[key] ?? loadPanelState(sessionId);
+  const state = stored.key === key ? stored.value : loadedState;
 
   const updatePanel = useCallback((updater: (current: PanelState) => PanelState) => {
-    setStates((currentStates) => {
-      const current = currentStates[key] ?? loadPanelState(sessionId);
+    setStored((currentStored) => {
+      const current = currentStored.key === key
+        ? currentStored.value
+        : loadPanelState(sessionId);
       const next = updater(current);
       if (
         next.open === current.open &&
         next.fullscreen === current.fullscreen &&
         next.width === current.width &&
         next.extraWidth === current.extraWidth
-      ) return currentStates;
+      ) return currentStored;
       writeStoredFilePreviewPanel(sessionId, {
-        open: next.open,
-        fullscreen: next.fullscreen,
         width: next.width,
       });
-      return { ...currentStates, [key]: next };
+      return { key, value: next };
     });
   }, [key, sessionId]);
 

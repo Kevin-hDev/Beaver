@@ -2,26 +2,29 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { homeDir } from "@tauri-apps/api/path";
 import i18n from "@/i18n";
 import { showToast } from "@/lib/toast-emitter";
+import type { AgentSessionLoadState } from "./use-agent-sessions";
 import type { ProjectLoadState } from "./use-projects";
 import { clampTerminalHeight, TERMINAL_DEFAULT_HEIGHT } from "./terminal-layout";
 import { useTerminalPersistence } from "./use-terminal-persistence";
 import { closeTabInGroup as closeGroupTab, updateTab } from "./terminal-groups";
 import {
-  DEFAULT_GROUP_KEY,
   folderName,
   generateId,
   MAX_GROUPS,
   MAX_TABS_PER_GROUP,
   MAX_TOTAL_TABS,
+  DEFAULT_GROUP_KEY,
   normalizeTerminalLabel,
 } from "./terminal-types";
 import type { TerminalGroup, TerminalTab } from "./terminal-types";
 
 export type { TerminalGroup, TerminalTab };
 
-interface TerminalProjectState {
+interface TerminalOwnerState {
   validGroupKeys: string[];
   projectLoadState: ProjectLoadState;
+  sessionLoadState: AgentSessionLoadState;
+  defaultLabel?: string;
 }
 
 function addTabToGroups(
@@ -47,17 +50,19 @@ function addTabToGroups(
 export function useTerminal(
   groupKey: string,
   defaultCwd: string,
-  { validGroupKeys, projectLoadState }: TerminalProjectState,
+  { validGroupKeys, projectLoadState, sessionLoadState, defaultLabel }: TerminalOwnerState,
 ) {
   const [groups, setGroups] = useState<Map<string, TerminalGroup>>(new Map());
   const groupsRef = useRef(groups);
   const [panelHeight, setPanelHeight] = useState(TERMINAL_DEFAULT_HEIGHT);
   const [resolvedCwd, setResolvedCwd] = useState(defaultCwd);
   const maxHeightRef = useRef(0);
+  const legacyNoticeShownRef = useRef(false);
+  const ownersReady = projectLoadState === "ready" && sessionLoadState === "ready";
   const { loaded, persistenceStatus } = useTerminalPersistence({
     groups,
     setGroups,
-    canSave: projectLoadState === "ready",
+    canSave: ownersReady,
   });
 
   useEffect(() => { groupsRef.current = groups; }, [groups]);
@@ -74,8 +79,13 @@ export function useTerminal(
   }, [defaultCwd]);
 
   useEffect(() => {
-    if (!loaded || projectLoadState !== "ready") return;
-    const valid = new Set([...validGroupKeys, DEFAULT_GROUP_KEY]);
+    if (!loaded || !ownersReady) return;
+    const valid = new Set(validGroupKeys);
+    if (groupsRef.current.has(DEFAULT_GROUP_KEY) && !valid.has(DEFAULT_GROUP_KEY)
+      && !legacyNoticeShownRef.current) {
+      legacyNoticeShownRef.current = true;
+      showToast(i18n.t("terminal.legacyTabsRemoved"), "info");
+    }
     // eslint-disable-next-line react-hooks/set-state-in-effect -- readiness authorizes one cleanup pass
     setGroups((previous) => {
       if ([...previous.keys()].every((key) => valid.has(key))) return previous;
@@ -85,7 +95,7 @@ export function useTerminal(
       }
       return next;
     });
-  }, [loaded, projectLoadState, setGroups, validGroupKeys]);
+  }, [loaded, ownersReady, setGroups, validGroupKeys]);
 
   const currentGroup = groups.get(groupKey) ?? { tabs: [], activeTabId: null };
 
@@ -105,7 +115,7 @@ export function useTerminal(
 
   const addTab = useCallback((cwd?: string): string | null => {
     if (!loaded || persistenceStatus !== "healthy") return null;
-    const label = normalizeTerminalLabel(folderName(cwd || resolvedCwd));
+    const label = normalizeTerminalLabel(folderName(cwd || defaultLabel || resolvedCwd));
     if (!label) {
       showToast(i18n.t("terminal.tabLimitReached"), "error");
       return null;
@@ -127,7 +137,7 @@ export function useTerminal(
     groupsRef.current = projected;
     setGroups((previous) => addTabToGroups(previous, groupKey, tab) ?? previous);
     return tab.id;
-  }, [groupKey, loaded, persistenceStatus, resolvedCwd]);
+  }, [defaultLabel, groupKey, loaded, persistenceStatus, resolvedCwd]);
 
   const closeTabInGroup = useCallback((key: string, id: string): void => {
     mutateGroups((previous) => closeGroupTab(previous, key, id).groups);

@@ -6,6 +6,7 @@ import type {
   ForecastScenarioAnalysis,
   ForecastScenarioCovariateAdjustment,
 } from "./forecast-scenario-types";
+import { useForecastSessionId } from "../forecast-workspace-context";
 
 type ScenarioMode = "percent_adjustment" | "context_adjustment";
 
@@ -18,6 +19,7 @@ interface UseForecastScenarioFormArgs {
 }
 
 export function useForecastScenarioForm(args: UseForecastScenarioFormArgs) {
+  const sessionId = useForecastSessionId();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [adjustment, setAdjustment] = useState("10");
@@ -38,6 +40,7 @@ export function useForecastScenarioForm(args: UseForecastScenarioFormArgs) {
     event.preventDefault();
     setSaving(true);
     try {
+      if (!sessionId) throw new Error("missing_forecast_session");
       const request = {
         analysis_id: args.analysisId,
         name,
@@ -49,9 +52,13 @@ export function useForecastScenarioForm(args: UseForecastScenarioFormArgs) {
       };
       const updated = editingScenarioId
         ? await invoke<ForecastScenarioAnalysis>("update_forecast_scenario", {
+            sessionId,
             request: { ...request, scenario_id: editingScenarioId },
           })
-        : await invoke<ForecastScenarioAnalysis>("create_forecast_scenario", { request });
+        : await invoke<ForecastScenarioAnalysis>("create_forecast_scenario", {
+            sessionId,
+            request,
+          });
       args.setData(updated);
       args.setActiveScenarioId(
         editingScenarioId ?? updated.scenarios[updated.scenarios.length - 1]?.id ?? null,
@@ -71,7 +78,9 @@ export function useForecastScenarioForm(args: UseForecastScenarioFormArgs) {
   async function removeScenario(scenarioId: string) {
     setSaving(true);
     try {
+      if (!sessionId) throw new Error("missing_forecast_session");
       const updated = await invoke<ForecastScenarioAnalysis>("delete_forecast_scenario", {
+        sessionId,
         analysisId: args.analysisId,
         scenarioId,
       });

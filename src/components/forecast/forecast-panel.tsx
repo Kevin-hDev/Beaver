@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { showToast } from "@/lib/toast-emitter";
+import { forecastLaunchErrorKey } from "./forecast-errors";
 import { invoke } from "@tauri-apps/api/core";
 import type { ForecastSection } from "@/hooks/use-forecast-panel";
 import { ForecastHeader } from "./forecast-header";
@@ -23,8 +24,13 @@ import { useCurrentForecastAnalysisName } from "./use-current-forecast-analysis-
 import { useForecastExport } from "./use-forecast-export";
 import { useForecastSelectionPolicy } from "./model-selection/use-forecast-selection-policy";
 import "./forecast-panel.css";
+import {
+  ForecastWorkspaceProvider,
+  useForecastSessionId,
+} from "./forecast-workspace-context";
 
 interface ForecastPanelProps {
+  sessionId: string | null;
   activeSection: ForecastSection;
   navOpen: boolean;
   currentAnalysisId: string | null;
@@ -36,10 +42,32 @@ interface ForecastPanelProps {
 }
 
 export function ForecastPanel({
+  sessionId,
   activeSection, navOpen, currentAnalysisId,
   onSectionChange, onToggleNav, onLoadAnalysis, onCloseAnalysis, onOpenWorkbench,
 }: ForecastPanelProps) {
+  return (
+    <ForecastWorkspaceProvider value={sessionId}>
+      <ForecastPanelContent
+        activeSection={activeSection}
+        navOpen={navOpen}
+        currentAnalysisId={currentAnalysisId}
+        onSectionChange={onSectionChange}
+        onToggleNav={onToggleNav}
+        onLoadAnalysis={onLoadAnalysis}
+        onCloseAnalysis={onCloseAnalysis}
+        onOpenWorkbench={onOpenWorkbench}
+      />
+    </ForecastWorkspaceProvider>
+  );
+}
+
+function ForecastPanelContent({
+  activeSection, navOpen, currentAnalysisId,
+  onSectionChange, onToggleNav, onLoadAnalysis, onCloseAnalysis, onOpenWorkbench,
+}: Omit<ForecastPanelProps, "sessionId">) {
   const { t } = useTranslation();
+  const sessionId = useForecastSessionId();
   const hasAnalysis = currentAnalysisId !== null;
   const [draft, setDraft] = useState<ForecastDraftData | null>(null);
   const [launching, setLaunching] = useState(false);
@@ -77,6 +105,7 @@ export function ForecastPanel({
     setLaunching(true);
     try {
       const result = await invoke<{ id: string }>("run_forecast", {
+        sessionId,
         request: {
           data: draft.dataJson,
           file_path: null,
@@ -92,8 +121,8 @@ export function ForecastPanel({
       });
       setDraft(null);
       onLoadAnalysis(result.id);
-    } catch {
-      showToast(t("forecast.errors.launchFailed"), "error");
+    } catch (error) {
+      showToast(t(forecastLaunchErrorKey(error)), "error");
     } finally {
       setLaunching(false);
     }

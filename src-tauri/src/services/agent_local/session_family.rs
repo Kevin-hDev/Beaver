@@ -42,8 +42,26 @@ pub async fn restore_with_parent(id: &str) -> Result<(), String> {
 
 pub async fn delete_family(id: &str) -> Result<(), String> {
     validate_session_id(id)?;
+    let _lifecycle_guard = crate::services::forecast::workspace_lifecycle::lock().await;
     let metas = super::session_index::read_index().await?;
-    for session_id in delete_targets(&metas, id) {
+    let targets = delete_targets(&metas, id);
+    let snapshot = crate::services::workspace_scope::WorkspaceSnapshot::load().await?;
+    let workspace = match snapshot.resolve(id)? {
+        crate::services::workspace_scope::WorkspaceScope::Session(root_id)
+            if targets.iter().any(|target| target == &root_id) =>
+        {
+            Some(crate::services::workspace_scope::WorkspaceScope::Session(
+                root_id,
+            ))
+        }
+        _ => None,
+    };
+    crate::services::forecast::workspace_lifecycle::release_session_family_locked(
+        workspace.as_ref(),
+        &targets,
+    )
+    .await?;
+    for session_id in targets {
         if session_id == id {
             super::session_store::delete_one(&session_id).await?;
             let _ = super::session_tabs::remove_session_from_tabs(&session_id).await;

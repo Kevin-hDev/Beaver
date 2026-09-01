@@ -1,9 +1,8 @@
 import { renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { useAgentLocalPanelNav } from "../use-agent-local-panel-nav";
-import { DEFAULT_APP_NAV } from "@/types/navigation";
+import { DEFAULT_AGENT_LOCAL_NAV } from "@/types/navigation";
 import type { useFileTree } from "../use-file-tree";
-import type { useForecastPanel } from "../use-forecast-panel";
 
 function fileTree(open: boolean) {
   return {
@@ -12,66 +11,37 @@ function fileTree(open: boolean) {
   } as unknown as ReturnType<typeof useFileTree>;
 }
 
-function forecast() {
-  return {
-    panelMode: "preview",
-    activeSection: "view",
-    currentAnalysisId: null,
-    restorePanelState: vi.fn(),
-  } as unknown as ReturnType<typeof useForecastPanel>;
-}
-
 describe("useAgentLocalPanelNav", () => {
-  it("restaure file tree et forecast panel depuis la navigation", () => {
+  it("restaure l'arborescence depuis le workspace", () => {
     const tree = fileTree(false);
-    const panel = forecast();
 
     renderHook(() => useAgentLocalPanelNav({
-      navState: {
-        ...DEFAULT_APP_NAV.agentLocal,
-        fileTreeOpen: true,
-        panelMode: "forecast",
-        forecastSection: "comparisons",
-        forecastAnalysisId: "a1",
-      },
+      navState: { ...DEFAULT_AGENT_LOCAL_NAV, fileTreeOpen: true },
       fileTree: tree,
-      forecast: panel,
     }));
 
     expect(tree.setOpen).toHaveBeenCalledWith(true);
-    expect(panel.restorePanelState).toHaveBeenCalledWith({
-      activeSection: "comparisons",
-      navOpen: false,
-      currentAnalysisId: "a1",
-      panelMode: "forecast",
-    });
   });
 
-  it("n'applique rien quand l'état local correspond déjà à la navigation", () => {
+  it("n'applique rien quand l'état local correspond déjà au workspace", () => {
     const tree = fileTree(false);
-    const panel = forecast();
 
     renderHook(() => useAgentLocalPanelNav({
-      navState: DEFAULT_APP_NAV.agentLocal,
+      navState: DEFAULT_AGENT_LOCAL_NAV,
       fileTree: tree,
-      forecast: panel,
     }));
 
     expect(tree.setOpen).not.toHaveBeenCalled();
-    expect(panel.restorePanelState).not.toHaveBeenCalled();
   });
 
-  it("ne referme pas un panneau ouvert localement avant le push nav", () => {
+  it("ne referme pas une arborescence ouverte localement avant la publication du workspace", () => {
     const setOpen = vi.fn();
     const tree = { ...fileTree(false), setOpen };
-    const panel = forecast();
-    const navState = DEFAULT_APP_NAV.agentLocal;
 
     const { rerender } = renderHook(
       ({ open }) => useAgentLocalPanelNav({
-        navState,
+        navState: DEFAULT_AGENT_LOCAL_NAV,
         fileTree: { ...tree, open },
-        forecast: panel,
       }),
       { initialProps: { open: false } },
     );
@@ -80,5 +50,20 @@ describe("useAgentLocalPanelNav", () => {
     rerender({ open: true });
 
     expect(setOpen).not.toHaveBeenCalledWith(false);
+  });
+
+  it("resynchronise l'arborescence quand la session change avec les mêmes valeurs", () => {
+    const setOpen = vi.fn();
+    const { rerender } = renderHook(
+      ({ sessionId, open }) => useAgentLocalPanelNav({
+        navState: { ...DEFAULT_AGENT_LOCAL_NAV, sessionId },
+        fileTree: { ...fileTree(open), setOpen },
+      }),
+      { initialProps: { sessionId: "session-a", open: false } },
+    );
+
+    rerender({ sessionId: "session-b", open: true });
+
+    expect(setOpen).toHaveBeenCalledWith(false);
   });
 });

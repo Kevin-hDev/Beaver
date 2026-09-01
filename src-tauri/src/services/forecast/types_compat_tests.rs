@@ -1,4 +1,4 @@
-use super::types::{default_revision, default_schema_version, ForecastResult};
+use super::types::{default_revision, default_schema_version, ForecastResult, ForecastWorkspace};
 
 #[test]
 fn legacy_analysis_gets_explicit_defaults() {
@@ -20,6 +20,7 @@ fn legacy_analysis_gets_explicit_defaults() {
     assert_eq!(analysis.revision, default_revision());
     assert!(analysis.advanced_analytics.is_none());
     assert!(analysis.ensemble.is_none());
+    assert_eq!(analysis.workspace, ForecastWorkspace::Legacy);
     assert_eq!(
         analysis.provenance.selection_source,
         super::provenance_types::ForecastSelectionSource::Manual

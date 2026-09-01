@@ -36,7 +36,7 @@ export function useAgentLocalConversationList(
       onDelete={(id) => void handleDeleteSession(id)}
       onNewSessionInProject={(id) => void handleCreateInProject(id)}
       onRenameProject={(id, name) => void projectsHook.rename(id, name)}
-      onDeleteProject={handleDeleteProject}
+      onDeleteProject={(id) => void handleDeleteProject(id)}
       onOpenFolder={(path) => void projectsHook.openFolder(path)}
       onAddProject={() => void handleAddProject()}
       onReorderProjects={(ids) => void projectsHook.reorder(ids)}

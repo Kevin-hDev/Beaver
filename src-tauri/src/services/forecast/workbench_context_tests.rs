@@ -47,7 +47,7 @@ fn context_names_are_sanitized_and_bounded() {
 }
 
 #[tokio::test]
-async fn current_session_can_open_a_historical_analysis() {
+async fn current_session_cannot_open_another_discussions_analysis() {
     let session = crate::services::agent_local::session_store::create_full(
         "Session active",
         "model",
@@ -62,9 +62,31 @@ async fn current_session_can_open_a_historical_analysis() {
         .await
         .expect("save analysis");
 
+    let result = super::set(session.id, Some(analysis.id)).await;
+
+    assert!(result.is_err());
+}
+
+#[tokio::test]
+async fn current_session_can_open_its_legacy_analysis() {
+    let session = crate::services::agent_local::session_store::create_full(
+        "Session active",
+        "model",
+        "provider",
+        false,
+        None,
+    )
+    .await
+    .expect("create session");
+    let mut analysis = historical_analysis();
+    analysis.session_id = Some(session.id.clone());
+    super::super::storage::save(&mut analysis)
+        .await
+        .expect("save analysis");
+
     let snapshot = super::set(session.id.clone(), Some(analysis.id.clone()))
         .await
-        .expect("open historical analysis");
+        .expect("open owned historical analysis");
 
     assert_eq!(snapshot.context.session_id, session.id);
     assert_eq!(
@@ -81,6 +103,7 @@ fn historical_analysis() -> ForecastResult {
         name: "Analyse historique".into(),
         target_column: "value".into(),
         created_at: "2026-07-21T00:00:00Z".into(),
+        workspace: Default::default(),
         session_id: Some(uuid::Uuid::new_v4().to_string()),
         model: "model".into(),
         provider: "provider".into(),

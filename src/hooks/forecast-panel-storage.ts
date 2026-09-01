@@ -39,7 +39,9 @@ export function saveForecastPanelValue(sessionId: string, value: unknown): void 
   if (!SAFE_SESSION_ID.test(sessionId)) return;
   const key = storageKey(sessionId);
   try {
-    localStorage.setItem(key, JSON.stringify(value));
+    const serialized = JSON.stringify(value);
+    if (serialized.length > MAX_PANEL_STATE_CHARS) return;
+    localStorage.setItem(key, serialized);
     const order = loadOrder().filter((id) => id !== sessionId);
     order.push(sessionId);
     const removed = order.splice(0, Math.max(0, order.length - MAX_STORED_PANEL_SESSIONS));
@@ -54,12 +56,13 @@ export function saveForecastPanelValue(sessionId: string, value: unknown): void 
   }
 }
 
-export function withBoundedPanelState<T>(
-  states: Record<string, T>,
-  key: string,
-  value: T,
-): Record<string, T> {
-  const entries = Object.entries(states).filter(([candidate]) => candidate !== key);
-  entries.push([key, value]);
-  return Object.fromEntries(entries.slice(-MAX_STORED_PANEL_SESSIONS));
+export function removeForecastPanelValue(sessionId: string): void {
+  if (!SAFE_SESSION_ID.test(sessionId)) return;
+  try {
+    localStorage.removeItem(storageKey(sessionId));
+    const order = loadOrder().filter((id) => id !== sessionId);
+    localStorage.setItem(PANEL_STORAGE_ORDER_KEY, JSON.stringify(order));
+  } catch {
+    return;
+  }
 }

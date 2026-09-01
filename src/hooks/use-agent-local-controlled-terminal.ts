@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { useTerminal } from "@/hooks/use-terminal";
-import type { AgentLocalNavState, DeepPartial } from "@/types/navigation";
+import type { AgentLocalNavState, AgentLocalWorkspaceState } from "@/types/navigation";
 
 interface Args {
   navState: AgentLocalNavState;
   terminalState: ReturnType<typeof useTerminal>;
   terminalCwd: string;
-  onNavChange?: (partial: DeepPartial<AgentLocalNavState>) => void;
+  onNavChange?: (partial: Partial<AgentLocalWorkspaceState>) => void;
 }
 
 export function useAgentLocalControlledTerminal({ navState, terminalState, terminalCwd, onNavChange }: Args) {

@@ -9,6 +9,7 @@ import type { SkillReference } from "@/types/agent-turn.generated";
 
 export interface ChatViewProps {
   sessionId: string;
+  instantLayout: boolean;
   model: string;
   provider: string;
   projects: Project[];

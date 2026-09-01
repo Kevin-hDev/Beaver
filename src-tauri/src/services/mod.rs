@@ -106,3 +106,6 @@ pub mod vault;
 pub mod work_registry;
 #[cfg(test)]
 mod work_registry_tests;
+pub mod workspace_scope;
+#[cfg(test)]
+mod workspace_scope_tests;

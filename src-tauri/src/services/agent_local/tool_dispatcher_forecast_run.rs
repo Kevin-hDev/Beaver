@@ -6,7 +6,9 @@ mod forecast_profile;
 use self::forecast_error::{model_error, ForecastErrorKind as ErrorKind};
 use crate::services::agent_local::types_tools::ToolResult;
 use crate::services::forecast::types::ForecastRequest;
-use crate::services::forecast::{data_profiles, registry, selected_model, selection_policy, validation};
+use crate::services::forecast::{
+    data_profiles, registry, selected_model, selection_policy, validation,
+};
 use serde_json::Value;
 use std::path::Path;
 use std::time::Instant;
@@ -24,22 +26,26 @@ pub async fn handle(
     let started_at = Instant::now();
     let mut request: ForecastRequest = match serde_json::from_value(args.clone()) {
         Ok(request) => request,
-        Err(_) => return ToolResult::validation(
-            "forecast_request_invalid",
-            "Paramètres Forecast invalides",
-        ),
+        Err(_) => {
+            return ToolResult::validation(
+                "forecast_request_invalid",
+                "Paramètres Forecast invalides",
+            )
+        }
     };
     let requested_model = request.model.clone();
     crate::services::forecast::request_normalize::normalize_request(&mut request);
     let policy = match selection_policy::get() {
         Ok(policy) => policy,
-        Err(error) => return model_error(
-            ErrorKind::Internal("forecast_policy_unavailable", true),
-            None,
-            "",
-            requested_model.as_deref(),
-            &error,
-        ),
+        Err(error) => {
+            return model_error(
+                ErrorKind::Internal("forecast_policy_unavailable", true),
+                None,
+                "",
+                requested_model.as_deref(),
+                &error,
+            )
+        }
     };
     let selection_mode = policy.mode;
     let policy_model = policy.manual_model_id.clone().unwrap_or_default();
@@ -55,7 +61,7 @@ pub async fn handle(
             )
         }
     };
-    if let Err(error) = data_profiles::hydrate_request_classified(&mut request).await {
+    if let Err(error) = data_profiles::hydrate_request_classified(session_id, &mut request).await {
         let (kind, message) = forecast_profile::classify(error);
         return model_error(
             kind,
@@ -127,21 +133,19 @@ pub async fn handle(
             )
         }
     };
-    let (model_id, runtime) = match super::tool_dispatcher_forecast_runtime::resolve(
-        &request,
-        &data_profile,
-    ) {
-        Ok(runtime) => runtime,
-        Err(error) => {
-            return model_error(
-                ErrorKind::Unavailable("forecast_runtime_unavailable", true),
-                Some(selection_mode),
-                &selected,
-                requested_model.as_deref(),
-                &error,
-            )
-        }
-    };
+    let (model_id, runtime) =
+        match super::tool_dispatcher_forecast_runtime::resolve(&request, &data_profile) {
+            Ok(runtime) => runtime,
+            Err(error) => {
+                return model_error(
+                    ErrorKind::Unavailable("forecast_runtime_unavailable", true),
+                    Some(selection_mode),
+                    &selected,
+                    requested_model.as_deref(),
+                    &error,
+                )
+            }
+        };
 
     let result = if registry::is_cloud(runtime) {
         super::tool_dispatcher_forecast_execute::run_cloud(&request, session_id, cancel.clone())
@@ -185,6 +189,7 @@ pub async fn handle(
         );
     }
     match super::tool_dispatcher_forecast_persist::save(
+        session_id,
         &mut forecast,
         &request,
         &cancel,

@@ -4,7 +4,7 @@ use crate::services::forecast::{scenarios, sidecar, storage};
 use serde_json::Value;
 use tauri::Manager;
 
-pub async fn handle(args: &Value) -> ToolResult {
+pub async fn handle(args: &Value, session_id: &str) -> ToolResult {
     let analysis_id = match args["analysis_id"].as_str() {
         Some(id) => id,
         None => {
@@ -24,13 +24,13 @@ pub async fn handle(args: &Value) -> ToolResult {
         }
     };
 
-    let analysis = match super::tool_dispatcher_forecast_load::load(analysis_id).await {
+    let analysis = match super::tool_dispatcher_forecast_load::load(session_id, analysis_id).await {
         Ok(a) => a,
         Err(error) => return error,
     };
 
     match action {
-        "annotate" => annotate(analysis, args).await,
+        "annotate" => annotate(session_id, analysis, args).await,
         "scenario" => scenario_create(analysis_id, &args["params"]).await,
         "scenario_update" => scenario_update(analysis_id, &args["params"]).await,
         "scenario_delete" => scenario_delete(analysis_id, &args["params"]).await,
@@ -42,6 +42,7 @@ pub async fn handle(args: &Value) -> ToolResult {
 }
 
 async fn annotate(
+    session_id: &str,
     mut analysis: crate::services::forecast::types::ForecastResult,
     args: &Value,
 ) -> ToolResult {
@@ -78,7 +79,7 @@ async fn annotate(
             note_created_at: None,
             note_updated_at: None,
         });
-    match storage::save(&mut analysis).await {
+    match storage::save_for_session(session_id, &mut analysis).await {
         Ok(_) => ToolResult::ok("Annotation ajoutée"),
         Err(error) => ToolResult::internal(
             "forecast_annotation_save_failed",

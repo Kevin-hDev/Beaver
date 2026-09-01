@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { useFilePreview } from "@/hooks/use-file-preview";
 import type { useFileTree } from "@/hooks/use-file-tree";
 import { useForecastPanel } from "@/hooks/use-forecast-panel";
-import { DEFAULT_APP_NAV } from "@/types/navigation";
+import { DEFAULT_AGENT_LOCAL_NAV } from "@/types/navigation";
 import { useAgentLocalControlledPanels } from "../use-agent-local-controlled-panels";
 
 function dependencies() {
@@ -35,15 +35,15 @@ describe("useAgentLocalControlledPanels", () => {
     const { result } = renderHook(() => useAgentLocalControlledPanels({
       ...deps,
       sessionId: null,
-      navState: { ...DEFAULT_APP_NAV.agentLocal, previewFullscreen: true },
+      navState: { ...DEFAULT_AGENT_LOCAL_NAV, previewFullscreen: true },
       onNavChange,
     }));
 
     act(() => result.current.forecastNav.setPanelMode("forecast"));
 
     expect(deps.filePreview.setFullscreen).toHaveBeenCalledWith(false);
+    expect(deps.forecast.setPanelMode).toHaveBeenCalledWith("forecast");
     expect(onNavChange).toHaveBeenCalledWith({
-      panelMode: "forecast",
       previewFullscreen: false,
     });
   });
@@ -56,7 +56,7 @@ describe("useAgentLocalControlledPanels", () => {
       const { result } = renderHook(() => useAgentLocalControlledPanels({
         ...deps,
         sessionId: null,
-        navState: { ...DEFAULT_APP_NAV.agentLocal, panelMode, previewFullscreen: true },
+        navState: { ...DEFAULT_AGENT_LOCAL_NAV, panelMode, previewFullscreen: true },
         onNavChange,
       }));
 
@@ -65,9 +65,6 @@ describe("useAgentLocalControlledPanels", () => {
       expect(deps.forecast.loadAnalysis).toHaveBeenCalledWith("analysis-id");
       expect(onNavChange).toHaveBeenCalledWith({
         previewOpen: true,
-        forecastAnalysisId: "analysis-id",
-        forecastSection: "view",
-        panelMode: "forecast",
         previewFullscreen: false,
       });
     },
@@ -82,17 +79,17 @@ describe("useAgentLocalControlledPanels", () => {
     const deps = dependencies();
     const onNavChange = vi.fn();
     const { result } = renderHook(() => {
-      const [navState, setNavState] = useState(DEFAULT_APP_NAV.agentLocal);
-      const forecast = useForecastPanel("session-id");
+      const [navState, setNavState] = useState(DEFAULT_AGENT_LOCAL_NAV);
+      const forecast = useForecastPanel(navState, (patch) => {
+        onNavChange(patch);
+        setNavState((current) => ({ ...current, ...patch }));
+      });
       return useAgentLocalControlledPanels({
         ...deps,
         forecast,
         sessionId: "session-id",
         navState,
-        onNavChange: (patch) => {
-          onNavChange(patch);
-          setNavState((current) => ({ ...current, ...patch }));
-        },
+        onNavChange: (patch) => setNavState((current) => ({ ...current, ...patch })),
       });
     });
 
@@ -103,11 +100,9 @@ describe("useAgentLocalControlledPanels", () => {
     expect(result.current.forecastNav.currentAnalysisId).toBe("llm-analysis-id");
     expect(deps.filePreview.setOpen).toHaveBeenCalledWith(true);
     expect(onNavChange).toHaveBeenCalledWith({
-      previewOpen: true,
       forecastAnalysisId: "llm-analysis-id",
       forecastSection: "view",
       panelMode: "forecast",
-      previewFullscreen: false,
     });
   });
 
@@ -122,7 +117,7 @@ describe("useAgentLocalControlledPanels", () => {
     renderHook(() => useAgentLocalControlledPanels({
       ...deps,
       sessionId: "session-id",
-      navState: DEFAULT_APP_NAV.agentLocal,
+      navState: DEFAULT_AGENT_LOCAL_NAV,
       onNavChange,
     }));
 

@@ -1,13 +1,16 @@
 use super::data_quality::DataProfile;
 use super::limits::MAX_INLINE_DATA_BYTES;
 use super::types::ForecastRequest;
+use crate::services::workspace_scope::WorkspaceScope;
 use serde::{Deserialize, Serialize};
 use tokio::io::AsyncReadExt;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub(super) struct StoredDataProfile {
     pub profile: DataProfile,
     pub data: String,
+    #[serde(default)]
+    pub workspace: WorkspaceScope,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -46,13 +49,17 @@ impl DataProfileHydrateError {
     }
 }
 
-pub async fn hydrate_request(request: &mut ForecastRequest) -> Result<(), String> {
-    hydrate_request_classified(request)
+pub async fn hydrate_request(
+    session_id: &str,
+    request: &mut ForecastRequest,
+) -> Result<(), String> {
+    hydrate_request_classified(session_id, request)
         .await
         .map_err(|error| error.message().to_string())
 }
 
 pub async fn hydrate_request_classified(
+    session_id: &str,
     request: &mut ForecastRequest,
 ) -> Result<(), DataProfileHydrateError> {
     let Some(id) = request.data_profile_id.as_deref() else {
@@ -61,7 +68,9 @@ pub async fn hydrate_request_classified(
     if request.data.is_some() || request.file_path.is_some() {
         return Err(DataProfileHydrateError::Ambiguous);
     }
-    let stored = load(id).await.map_err(DataProfileHydrateError::Load)?;
+    let stored = load(session_id, id)
+        .await
+        .map_err(DataProfileHydrateError::Load)?;
     if !matches_request(&stored.profile, request) {
         return Err(DataProfileHydrateError::Incompatible);
     }
@@ -69,17 +78,43 @@ pub async fn hydrate_request_classified(
     Ok(())
 }
 
-pub async fn load_profile_classified(id: &str) -> Result<DataProfile, DataProfileLoadError> {
-    load(id).await.map(|stored| stored.profile)
+pub async fn load_profile_classified(
+    session_id: &str,
+    id: &str,
+) -> Result<DataProfile, DataProfileLoadError> {
+    load(session_id, id).await.map(|stored| stored.profile)
 }
 
-async fn load(id: &str) -> Result<StoredDataProfile, DataProfileLoadError> {
+async fn load(session_id: &str, id: &str) -> Result<StoredDataProfile, DataProfileLoadError> {
     uuid::Uuid::parse_str(id).map_err(|_| DataProfileLoadError::InvalidId)?;
+    let _lifecycle_guard = super::workspace_lifecycle::lock().await;
+    let workspace = crate::services::workspace_scope::resolve(session_id)
+        .await
+        .map_err(|_| DataProfileLoadError::Unavailable)?;
+    let stored = match super::data_profiles::profile_path_for_read(&workspace, id).await {
+        Ok(path) => match read_stored(&path, id).await {
+            Ok(stored) => stored,
+            Err(DataProfileLoadError::NotFound) => {
+                super::data_profiles_lifecycle::claim_legacy(&workspace, id).await?
+            }
+            Err(error) => return Err(error),
+        },
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            super::data_profiles_lifecycle::claim_legacy(&workspace, id).await?
+        }
+        Err(_) => return Err(DataProfileLoadError::Unavailable),
+    };
+    if stored.workspace != workspace {
+        return Err(DataProfileLoadError::Corrupt);
+    }
+    Ok(stored)
+}
+
+pub(super) async fn read_stored(
+    path: &std::path::Path,
+    id: &str,
+) -> Result<StoredDataProfile, DataProfileLoadError> {
     let max_bytes = MAX_INLINE_DATA_BYTES.saturating_add(64 * 1024);
-    let path =
-        crate::services::paths::data_file_for_read("forecast-data-profiles", &format!("{id}.json"))
-            .await
-            .map_err(classify_io)?;
     let file = tokio::fs::File::open(path).await.map_err(classify_io)?;
     let mut data = Vec::with_capacity(max_bytes.min(64 * 1024));
     file.take((max_bytes + 1) as u64)
@@ -120,20 +155,5 @@ fn matches_request(profile: &DataProfile, request: &ForecastRequest) -> bool {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[tokio::test]
-    async fn invalid_and_missing_profiles_have_distinct_failures() {
-        assert_eq!(
-            load_profile_classified("not-a-uuid").await.unwrap_err(),
-            DataProfileLoadError::InvalidId
-        );
-        assert_eq!(
-            load_profile_classified(&uuid::Uuid::new_v4().to_string())
-                .await
-                .unwrap_err(),
-            DataProfileLoadError::NotFound
-        );
-    }
-}
+#[path = "data_profiles_load_tests.rs"]
+mod tests;
