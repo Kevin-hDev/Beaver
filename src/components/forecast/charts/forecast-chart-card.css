@@ -75,7 +75,10 @@
 /* Le dépliement vient de <Collapsible> : hauteur en pixels plutôt que piste
    de grille en `fr`, que WebKit interpole par paliers. */
 
+/* Pas d'`overflow: hidden` ici : c'était un reste de l'ancienne piste de
+   grille, qui devait retenir le contenu pendant l'animation. <Collapsible>
+   s'en charge sur sa propre région et le relâche une fois ouvert ; le garder
+   ne faisait plus que trancher ce qui dépassait. */
 .fcrd-inner {
-  overflow: hidden;
   min-height: 0;
 }

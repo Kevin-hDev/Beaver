@@ -27,6 +27,8 @@ interface ForecastViewProps {
   onSelectedSeriesChange?: (seriesId: string) => void;
   onZoomWindowChange?: (window: { start: number; end: number }) => void;
   zoomJump?: { start: number; seq: number } | null;
+  /** Incrémenté par la carte quand elle finit de se déplier. */
+  resizeSignal?: number;
 }
 
 export function ForecastView({
@@ -36,6 +38,7 @@ export function ForecastView({
   onSelectedSeriesChange,
   onZoomWindowChange,
   zoomJump,
+  resizeSignal = 0,
 }: ForecastViewProps) {
   const { t, i18n } = useTranslation();
   const { data, error } = useForecastResult<ForecastViewResult>(analysisId, t("forecast.noAnalysis"));
@@ -126,7 +129,11 @@ export function ForecastView({
         style={{ height: chart.chartHeight, minHeight: chart.chartHeight, maxHeight: chart.chartHeight }}
       >
         <div className="fc-chart-placeholder">
+          {/* La clé reconstruit le graphe après un dépliement : replié, il est
+              mesuré à une taille qui n'est pas la sienne et la garde. C'est le
+              geste déjà employé par la carte « Horizon zoomé ». */}
           <ForecastChart
+            key={resizeSignal}
             history={filtered.history}
             predictions={filtered.predictions}
             scenarios={filtered.scenarios}
