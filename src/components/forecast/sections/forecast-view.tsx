@@ -128,30 +128,28 @@ export function ForecastView({
         className={`fc-chart-area ${chart.isResizing ? "is-resizing" : ""}`}
         style={{ height: chart.chartHeight, minHeight: chart.chartHeight, maxHeight: chart.chartHeight }}
       >
-        <div className="fc-chart-placeholder">
-          {/* La clé reconstruit le graphe après un dépliement : replié, il est
-              mesuré à une taille qui n'est pas la sienne et la garde. C'est le
-              geste déjà employé par la carte « Horizon zoomé ». */}
-          <ForecastChart
-            key={resizeSignal}
-            history={filtered.history}
-            predictions={filtered.predictions}
-            scenarios={filtered.scenarios}
-            variables={variables}
-            annotations={annotations}
-            quantiles={quantiles}
-            frequency={data.frequency}
-            endDate={data.input_summary.end}
-            locale={i18n.language}
-            targetColumn={data.target_column}
-            fallbackName={data.name}
-            labels={labels}
-            layers={layers}
-            mode="main"
-            onZoomWindowChange={onZoomWindowChange}
-            zoomJump={zoomJump}
-          />
-        </div>
+        {/* La clé reconstruit le graphe après un dépliement : replié, il est
+            mesuré à une taille qui n'est pas la sienne et la garde. C'est le
+            geste déjà employé par la carte « Horizon zoomé ». */}
+        <ForecastChart
+          key={resizeSignal}
+          history={filtered.history}
+          predictions={filtered.predictions}
+          scenarios={filtered.scenarios}
+          variables={variables}
+          annotations={annotations}
+          quantiles={quantiles}
+          frequency={data.frequency}
+          endDate={data.input_summary.end}
+          locale={i18n.language}
+          targetColumn={data.target_column}
+          fallbackName={data.name}
+          labels={labels}
+          layers={layers}
+          mode="main"
+          onZoomWindowChange={onZoomWindowChange}
+          zoomJump={zoomJump}
+        />
       </div>
       <div
         className="fc-chart-resize"
