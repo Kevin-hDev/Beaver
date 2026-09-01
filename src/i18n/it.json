@@ -1131,6 +1131,7 @@
     "newTab": "Nuova scheda",
     "closePanel": "Chiudi pannello",
     "processExited": "Processo terminato con codice {{code}}",
+    "processExitedUnknown": "Processo terminato, codice di uscita non disponibile",
     "failedToStart": "Impossibile avviare il Terminal",
     "closeTab": "Chiudi la scheda",
     "activity": "Nuovo output in questa scheda",

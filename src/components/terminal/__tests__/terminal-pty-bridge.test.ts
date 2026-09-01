@@ -4,7 +4,7 @@ import { createTerminalPtyBridge, type TerminalPort } from "../terminal-pty-brid
 interface OutputEvent {
   data: string;
   isExit: boolean;
-  exitCode: number;
+  exitCode: number | null;
 }
 
 const mocks = vi.hoisted(() => ({
@@ -42,6 +42,7 @@ function terminalPort() {
   let input: ((data: string) => void) | null = null;
   let disposed = false;
   const writes: string[] = [];
+  const writeCallbacks: Array<(() => void) | undefined> = [];
   const port: TerminalPort = {
     cols: 92,
     rows: 31,
@@ -49,8 +50,9 @@ function terminalPort() {
       input = callback;
       return { dispose: () => { disposed = true; } };
     },
-    write(data) {
+    write(data, callback) {
       writes.push(data);
+      writeCallbacks.push(callback);
     },
   };
   return {
@@ -58,6 +60,7 @@ function terminalPort() {
     writes,
     emitInput: (data: string) => input?.(data),
     inputDisposed: () => disposed,
+    completeNextWrite: () => writeCallbacks.shift()?.(),
   };
 }
 
@@ -134,10 +137,17 @@ describe("createTerminalPtyBridge", () => {
     expect(maxActive).toBe(1);
   });
 
-  it("route les sorties et la fin par les callbacks métier", async () => {
+  it("attend les écritures xterm puis le kill avant de fermer", async () => {
     const terminal = terminalPort();
     const options = bridgeOptions(terminal.port);
-    mocks.invoke.mockResolvedValueOnce({ id: 9, token: "token-9" });
+    const kill = deferred();
+    const commands: string[] = [];
+    mocks.invoke.mockImplementation((command: string) => {
+      commands.push(command);
+      if (command === "pty_spawn") return Promise.resolve({ id: 9, token: "token-9" });
+      if (command === "pty_kill") return kill.promise;
+      return Promise.resolve();
+    });
     await createTerminalPtyBridge(options).start();
 
     mocks.channels[0].onmessage?.({ data: "résultat", isExit: false, exitCode: 0 });
@@ -145,8 +155,68 @@ describe("createTerminalPtyBridge", () => {
 
     expect(terminal.writes).toEqual(["résultat", "\r\n[terminal.processExited:3]"]);
     expect(options.onActivity).toHaveBeenCalledWith("tab-1", true);
+    expect(commands).toEqual(["pty_spawn"]);
+    expect(options.onExit).not.toHaveBeenCalled();
+
+    terminal.completeNextWrite();
+    await Promise.resolve();
+    expect(commands).toEqual(["pty_spawn"]);
+    expect(options.onExit).not.toHaveBeenCalled();
+
+    terminal.completeNextWrite();
+    expect(commands).toEqual(["pty_spawn", "pty_kill"]);
+    expect(commands).not.toContain("pty_ack_output");
+    expect(options.onExit).not.toHaveBeenCalled();
+
+    kill.resolve();
+    await Promise.resolve();
     expect(options.onExit).toHaveBeenCalledWith("tab-1");
     expect(terminal.inputDisposed()).toBe(true);
+  });
+
+  it("distingue un code de succès nul d'un code inconnu", async () => {
+    mocks.invoke.mockImplementation((command: string) => {
+      if (command === "pty_spawn") return Promise.resolve({ id: 13, token: "token-13" });
+      return Promise.resolve();
+    });
+    const success = terminalPort();
+    await createTerminalPtyBridge(bridgeOptions(success.port)).start();
+    mocks.channels[0].onmessage?.({ data: "", isExit: true, exitCode: 0 });
+
+    const unknown = terminalPort();
+    await createTerminalPtyBridge(bridgeOptions(unknown.port)).start();
+    mocks.channels[1].onmessage?.({ data: "", isExit: true, exitCode: null });
+
+    expect(success.writes).toEqual(["\r\n[terminal.processExited:0]"]);
+    expect(unknown.writes).toEqual(["\r\n[terminal.processExitedUnknown]"]);
+  });
+
+  it("ferme après terminal-not-found mais conserve la tab pour les autres erreurs", async () => {
+    const missingTerminal = terminalPort();
+    const missingOptions = bridgeOptions(missingTerminal.port);
+    mocks.invoke.mockImplementationOnce(() => Promise.resolve({ id: 14, token: "token-14" }));
+    mocks.invoke.mockRejectedValueOnce("terminal-not-found");
+    await createTerminalPtyBridge(missingOptions).start();
+    mocks.channels[0].onmessage?.({ data: "", isExit: true, exitCode: null });
+    missingTerminal.completeNextWrite();
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    expect(missingOptions.onExit).toHaveBeenCalledWith("tab-1");
+
+    const failedTerminal = terminalPort();
+    const failedOptions = bridgeOptions(failedTerminal.port);
+    mocks.invoke.mockImplementationOnce(() => Promise.resolve({ id: 15, token: "token-15" }));
+    mocks.invoke.mockRejectedValueOnce(new Error("/internal/path"));
+    await createTerminalPtyBridge(failedOptions).start();
+    mocks.channels[1].onmessage?.({ data: "", isExit: true, exitCode: 4 });
+    failedTerminal.completeNextWrite();
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+    expect(failedOptions.onExit).not.toHaveBeenCalled();
+    expect(failedTerminal.writes).toEqual([
+      "\r\n[terminal.processExited:4]",
+      "\r\nterminal.failedToClose\r\n",
+    ]);
+    expect(failedTerminal.writes.join("")).not.toContain("internal");
   });
 
   it("ferme la file avant le kill et ne lance plus les entrées en attente", async () => {

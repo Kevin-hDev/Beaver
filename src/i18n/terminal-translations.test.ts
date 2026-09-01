@@ -16,10 +16,11 @@ const keys = [
   "failedToClose",
   "inputQueueFull",
   "inputFailed",
+  "processExitedUnknown",
 ] as const;
 
 describe("traductions de la persistance terminal", () => {
-  it.each(Object.entries(translations))("définit les sept messages en %s", (_locale, value) => {
+  it.each(Object.entries(translations))("définit les huit messages en %s", (_locale, value) => {
     const terminal = value.terminal as Record<string, string>;
     for (const key of keys) {
       const message = terminal[key];

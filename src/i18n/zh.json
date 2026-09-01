@@ -1130,6 +1130,7 @@
     "newTab": "新标签页",
     "closePanel": "关闭面板",
     "processExited": "进程已退出，退出码 {{code}}",
+    "processExitedUnknown": "进程已退出，退出码不可用",
     "failedToStart": "Terminal 启动失败",
     "closeTab": "关闭标签页",
     "activity": "此标签页有新输出",

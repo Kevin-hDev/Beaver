@@ -10,6 +10,7 @@ mod public_error;
 mod session_handle;
 mod shutdown;
 pub mod tab_store;
+mod utf8_decoder;
 
 pub use manager::{PtyChannelEvent, PtyManager};
 
@@ -30,6 +31,9 @@ mod tests;
 
 #[cfg(test)]
 mod tab_store_tests;
+
+#[cfg(test)]
+mod utf8_decoder_tests;
 
 fn generate_token() -> zeroize::Zeroizing<String> {
     use rand::RngCore;

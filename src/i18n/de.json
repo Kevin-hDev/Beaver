@@ -1131,6 +1131,7 @@
     "newTab": "Neuer Tab",
     "closePanel": "Panel schließen",
     "processExited": "Prozess mit Code {{code}} beendet",
+    "processExitedUnknown": "Prozess beendet, Exit-Code nicht verfügbar",
     "failedToStart": "Terminal konnte nicht gestartet werden",
     "closeTab": "Tab schließen",
     "activity": "Neue Ausgabe in diesem Tab",

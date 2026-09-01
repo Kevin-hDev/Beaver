@@ -2,6 +2,7 @@ use super::manager::PtyChannelEvent;
 use super::output_window::OutputWindow;
 use super::pty_session::PtySession;
 use super::session_handle::{EmergencyStop, SessionControl, SessionOps};
+use super::utf8_decoder::Utf8StreamDecoder;
 use crate::services::work_registry::ServiceWorkAdmission;
 use std::io::Read;
 use std::path::Path;
@@ -66,7 +67,7 @@ impl OwnedSession {
             Some(Box::new(move || PtyChannelEvent {
                 data: String::new(),
                 is_exit: true,
-                exit_code: status.exit_code().unwrap_or(0),
+                exit_code: status.exit_code(),
             })),
         )?;
         let control = SessionControl {
@@ -140,6 +141,7 @@ fn reader_loop(
 ) {
     let _finished = ReaderFinishedGuard(finished);
     let mut buffer = [0_u8; 4096];
+    let mut decoder = Utf8StreamDecoder::new();
     loop {
         if cancelled.load(Ordering::Acquire) {
             break;
@@ -147,10 +149,14 @@ fn reader_loop(
         match output.read(&mut buffer) {
             Ok(0) | Err(_) => break,
             Ok(read) if !cancelled.load(Ordering::Acquire) => {
+                let data = decoder.push(&buffer[..read]);
+                if data.is_empty() {
+                    continue;
+                }
                 if sink(PtyChannelEvent {
-                    data: String::from_utf8_lossy(&buffer[..read]).to_string(),
+                    data,
                     is_exit: false,
-                    exit_code: 0,
+                    exit_code: None,
                 })
                 .is_err()
                 {
@@ -161,6 +167,17 @@ fn reader_loop(
         }
     }
     if !cancelled.load(Ordering::Acquire) {
+        let final_data = decoder.finish();
+        if !final_data.is_empty()
+            && sink(PtyChannelEvent {
+                data: final_data,
+                is_exit: false,
+                exit_code: None,
+            })
+            .is_err()
+        {
+            return;
+        }
         if let Some(exit_event) = exit_event {
             let _ = sink(exit_event());
         }
@@ -180,6 +197,28 @@ pub(super) fn spawn_reader_for_test(
         Arc::clone(&finished),
         Box::new(sink),
         None,
+    )
+    .expect("test reader thread");
+    (finished, reader)
+}
+
+#[cfg(test)]
+pub(super) fn spawn_reader_with_exit_for_test(
+    output: Box<dyn Read + Send>,
+    sink: impl Fn(PtyChannelEvent) -> Result<(), ()> + Send + 'static,
+    exit_code: Option<u32>,
+) -> (Arc<AtomicBool>, JoinHandle<()>) {
+    let finished = Arc::new(AtomicBool::new(false));
+    let reader = spawn_reader(
+        output,
+        Arc::new(AtomicBool::new(false)),
+        Arc::clone(&finished),
+        Box::new(sink),
+        Some(Box::new(move || PtyChannelEvent {
+            data: String::new(),
+            is_exit: true,
+            exit_code,
+        })),
     )
     .expect("test reader thread");
     (finished, reader)

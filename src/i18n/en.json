@@ -1164,6 +1164,7 @@
     "newTab": "New tab",
     "closePanel": "Close panel",
     "processExited": "Process exited with code {{code}}",
+    "processExitedUnknown": "Process exited, exit code unavailable",
     "failedToStart": "Terminal failed to start",
     "closeTab": "Close tab",
     "activity": "New output in this tab",

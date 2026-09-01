@@ -21,7 +21,7 @@ type TerminalWork = ServiceWorkSupervisor<16>;
 pub struct PtyChannelEvent {
     pub data: String,
     pub is_exit: bool,
-    pub exit_code: u32,
+    pub exit_code: Option<u32>,
 }
 
 pub(super) struct PtyState {

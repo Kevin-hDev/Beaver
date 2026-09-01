@@ -10,13 +10,13 @@ export interface TerminalPort {
   readonly cols: number;
   readonly rows: number;
   onData(callback: (data: string) => void): Disposable;
-  write(data: string): void;
+  write(data: string, callback?: () => void): void;
 }
 
 interface TerminalOutputEvent {
   data: string;
   isExit: boolean;
-  exitCode: number;
+  exitCode: number | null;
 }
 
 interface TerminalPtyBridgeOptions {
@@ -125,11 +125,29 @@ class TauriTerminalPtyBridge implements TerminalPtyBridge {
     this.queue?.close();
     this.inputSubscription?.dispose();
     this.inputSubscription = null;
+    const id = this.ptyId;
+    const token = this.ptyToken;
+    const message = event.exitCode === null
+      ? i18n.t("terminal.processExitedUnknown")
+      : i18n.t("terminal.processExited", { code: event.exitCode });
+    this.options.terminal.write(
+      `\r\n[${message}]`,
+      () => { void this.finishNaturalExit(id, token); },
+    );
+  }
+
+  private async finishNaturalExit(id: number | null, token: string | null): Promise<void> {
+    if (this.disposed || id === null || !token) return;
+    try {
+      await invoke("pty_kill", { id, token });
+    } catch (error) {
+      if (error !== "terminal-not-found") {
+        this.options.terminal.write(`\r\n${i18n.t("terminal.failedToClose")}\r\n`);
+        return;
+      }
+    }
     this.ptyId = null;
     this.ptyToken = null;
-    this.options.terminal.write(
-      `\r\n[${i18n.t("terminal.processExited", { code: event.exitCode })}]`,
-    );
     this.options.onExit(this.options.tabId);
   }
 

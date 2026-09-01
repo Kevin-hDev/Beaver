@@ -1216,6 +1216,7 @@
     "newTab": "Nouvel onglet",
     "closePanel": "Fermer le panneau",
     "processExited": "Processus terminé avec le code {{code}}",
+    "processExitedUnknown": "Processus terminé, code de sortie indisponible",
     "failedToStart": "Le terminal n'a pas pu démarrer",
     "closeTab": "Fermer l'onglet",
     "activity": "Nouvelle sortie dans cet onglet",

@@ -1135,6 +1135,7 @@
     "newTab": "Nueva pestaña",
     "closePanel": "Cerrar panel",
     "processExited": "El proceso finalizó con código {{code}}",
+    "processExitedUnknown": "El proceso finalizó, código de salida no disponible",
     "failedToStart": "El Terminal no pudo iniciarse",
     "closeTab": "Cerrar la pestaña",
     "activity": "Nueva salida en esta pestaña",

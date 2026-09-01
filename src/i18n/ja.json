@@ -1130,6 +1130,7 @@
     "newTab": "新しいタブ",
     "closePanel": "パネルを閉じる",
     "processExited": "プロセスがコード {{code}} で終了しました",
+    "processExitedUnknown": "プロセスが終了しました。終了コードは取得できません",
     "failedToStart": "Terminal を起動できませんでした",
     "closeTab": "タブを閉じる",
     "activity": "このタブに新しい出力があります",
