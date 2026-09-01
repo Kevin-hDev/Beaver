@@ -50,6 +50,7 @@ macro_rules! generate_tail {
             crate::commands::pty_spawn,
             crate::commands::pty_write,
             crate::commands::pty_resize,
+            crate::commands::pty_ack_output,
             crate::commands::pty_kill,
             crate::commands::check_app_update,
             crate::commands::download_app_update,

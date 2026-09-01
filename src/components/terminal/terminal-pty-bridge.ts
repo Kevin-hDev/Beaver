@@ -17,6 +17,7 @@ interface TerminalOutputEvent {
   data: string;
   isExit: boolean;
   exitCode: number | null;
+  sequence: number | null;
 }
 
 interface TerminalPtyBridgeOptions {
@@ -118,7 +119,14 @@ class TauriTerminalPtyBridge implements TerminalPtyBridge {
   private handleOutput(event: TerminalOutputEvent): void {
     if (this.disposed) return;
     if (!event.isExit) {
-      this.options.terminal.write(event.data);
+      const id = this.ptyId;
+      const token = this.ptyToken;
+      if (id === null || token === null || event.sequence === null) return;
+      this.options.terminal.write(event.data, () => {
+        void invoke("pty_ack_output", { id, token, sequence: event.sequence }).catch(() => {
+          // Le backend garde les crédits afin de bloquer toute nouvelle sortie.
+        });
+      });
       if (!this.options.isVisible()) this.options.onActivity(this.options.tabId, true);
       return;
     }

@@ -1,17 +1,14 @@
-use super::manager::PtyChannelEvent;
-use super::output_window::OutputWindow;
+use super::output_window::{spawn_reader, OutputWindow};
 use super::pty_session::PtySession;
+use super::public_error::terminal_error;
 use super::session_handle::{EmergencyStop, SessionControl, SessionOps};
-use super::utf8_decoder::Utf8StreamDecoder;
+use super::PtyChannelEvent;
 use crate::services::work_registry::ServiceWorkAdmission;
 use std::io::Read;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread::JoinHandle;
-
-type EventSink = Box<dyn Fn(PtyChannelEvent) -> Result<(), ()> + Send + 'static>;
-type ExitEvent = Box<dyn FnOnce() -> PtyChannelEvent + Send + 'static>;
 
 pub(super) struct OwnedSession {
     session: PtySession,
@@ -36,16 +33,6 @@ impl EmergencyStop for ProcessEmergencyStop {
     }
 }
 
-struct ReaderFinishedGuard(Arc<AtomicBool>);
-
-impl Drop for ReaderFinishedGuard {
-    fn drop(&mut self) {
-        // Release publishes reader cleanup before SessionHandle observes the
-        // completion with Acquire and removes this session from the manager.
-        self.0.store(true, Ordering::Release);
-    }
-}
-
 impl OwnedSession {
     pub(super) fn spawn(
         admission: ServiceWorkAdmission<16>,
@@ -59,25 +46,30 @@ impl OwnedSession {
         let status = session.child_status();
         let reader_cancelled = Arc::new(AtomicBool::new(false));
         let reader_finished = Arc::new(AtomicBool::new(false));
+        let output_window = Arc::new(OutputWindow::new());
+        let emergency_stop: Arc<dyn EmergencyStop> = Arc::new(ProcessEmergencyStop {
+            pid,
+            stopped: AtomicBool::new(false),
+        });
         let reader = spawn_reader(
             output,
             Arc::clone(&reader_cancelled),
             Arc::clone(&reader_finished),
+            Arc::clone(&output_window),
+            Arc::clone(&emergency_stop),
             Box::new(sink),
             Some(Box::new(move || PtyChannelEvent {
                 data: String::new(),
                 is_exit: true,
                 exit_code: status.exit_code(),
+                sequence: None,
             })),
         )?;
         let control = SessionControl {
-            output_window: Arc::new(OutputWindow::new()),
+            output_window,
             reader_cancelled,
             reader_finished,
-            emergency_stop: Arc::new(ProcessEmergencyStop {
-                pid,
-                stopped: AtomicBool::new(false),
-            }),
+            emergency_stop,
         };
         Ok((
             Self {
@@ -119,71 +111,6 @@ impl SessionOps for OwnedSession {
     }
 }
 
-fn spawn_reader(
-    output: Box<dyn Read + Send>,
-    cancelled: Arc<AtomicBool>,
-    finished: Arc<AtomicBool>,
-    sink: EventSink,
-    exit_event: Option<ExitEvent>,
-) -> Result<JoinHandle<()>, String> {
-    std::thread::Builder::new()
-        .name("beaver-pty-reader".to_string())
-        .spawn(move || reader_loop(output, cancelled, finished, sink, exit_event))
-        .map_err(|_| terminal_error())
-}
-
-fn reader_loop(
-    mut output: Box<dyn Read + Send>,
-    cancelled: Arc<AtomicBool>,
-    finished: Arc<AtomicBool>,
-    sink: EventSink,
-    exit_event: Option<ExitEvent>,
-) {
-    let _finished = ReaderFinishedGuard(finished);
-    let mut buffer = [0_u8; 4096];
-    let mut decoder = Utf8StreamDecoder::new();
-    loop {
-        if cancelled.load(Ordering::Acquire) {
-            break;
-        }
-        match output.read(&mut buffer) {
-            Ok(0) | Err(_) => break,
-            Ok(read) if !cancelled.load(Ordering::Acquire) => {
-                let data = decoder.push(&buffer[..read]);
-                if data.is_empty() {
-                    continue;
-                }
-                if sink(PtyChannelEvent {
-                    data,
-                    is_exit: false,
-                    exit_code: None,
-                })
-                .is_err()
-                {
-                    break;
-                }
-            }
-            Ok(_) => break,
-        }
-    }
-    if !cancelled.load(Ordering::Acquire) {
-        let final_data = decoder.finish();
-        if !final_data.is_empty()
-            && sink(PtyChannelEvent {
-                data: final_data,
-                is_exit: false,
-                exit_code: None,
-            })
-            .is_err()
-        {
-            return;
-        }
-        if let Some(exit_event) = exit_event {
-            let _ = sink(exit_event());
-        }
-    }
-}
-
 #[cfg(test)]
 pub(super) fn spawn_reader_for_test(
     output: Box<dyn Read + Send>,
@@ -195,6 +122,8 @@ pub(super) fn spawn_reader_for_test(
         output,
         cancelled,
         Arc::clone(&finished),
+        Arc::new(OutputWindow::new()),
+        Arc::new(super::session_handle::NoopEmergencyStop),
         Box::new(sink),
         None,
     )
@@ -213,17 +142,16 @@ pub(super) fn spawn_reader_with_exit_for_test(
         output,
         Arc::new(AtomicBool::new(false)),
         Arc::clone(&finished),
+        Arc::new(OutputWindow::new()),
+        Arc::new(super::session_handle::NoopEmergencyStop),
         Box::new(sink),
         Some(Box::new(move || PtyChannelEvent {
             data: String::new(),
             is_exit: true,
             exit_code,
+            sequence: None,
         })),
     )
     .expect("test reader thread");
     (finished, reader)
-}
-
-fn terminal_error() -> String {
-    "terminal-error".to_string()
 }

@@ -4,6 +4,7 @@ use super::linux_spawn_worker::LinuxSpawnWorker;
 use super::owned_session::OwnedSession;
 use super::public_error::{map_admission_error, not_found, shutting_down, terminal_error};
 use super::session_handle::SessionHandle;
+use super::PtyChannelEvent;
 use crate::app_exit::AppWorkSupervisor;
 use crate::services::work_registry::ServiceWorkSupervisor;
 use std::collections::HashMap;
@@ -15,14 +16,6 @@ use tauri::ipc::Channel;
 
 pub(super) static NEXT_ID: AtomicU32 = AtomicU32::new(1);
 type TerminalWork = ServiceWorkSupervisor<16>;
-
-#[derive(Clone, serde::Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PtyChannelEvent {
-    pub data: String,
-    pub is_exit: bool,
-    pub exit_code: Option<u32>,
-}
 
 pub(super) struct PtyState {
     pub(super) closing: bool,
@@ -137,6 +130,10 @@ impl PtyManager {
     pub fn resize(&self, id: u32, token: &str, cols: u16, rows: u16) -> Result<(), String> {
         self.session(id, token)?
             .with_live(|session| session.resize(cols, rows))
+    }
+
+    pub fn acknowledge(&self, id: u32, token: &str, sequence: u32) -> Result<(), String> {
+        self.session(id, token)?.acknowledge(sequence)
     }
 
     pub fn kill(&self, id: u32, token: &str) -> Result<(), String> {

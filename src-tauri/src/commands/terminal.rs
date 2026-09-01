@@ -66,6 +66,16 @@ pub async fn pty_resize(
 }
 
 #[tauri::command]
+pub async fn pty_ack_output(
+    id: u32,
+    token: String,
+    sequence: u32,
+    state: State<'_, PtyManager>,
+) -> Result<(), String> {
+    state.acknowledge(id, &token, sequence)
+}
+
+#[tauri::command]
 pub async fn pty_kill(id: u32, token: String, state: State<'_, PtyManager>) -> Result<(), String> {
     let manager = state.inner().clone();
     super::terminal_blocking::run(move || manager.kill(id, &token)).await

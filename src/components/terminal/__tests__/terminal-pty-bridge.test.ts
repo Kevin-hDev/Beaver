@@ -5,6 +5,7 @@ interface OutputEvent {
   data: string;
   isExit: boolean;
   exitCode: number | null;
+  sequence: number | null;
 }
 
 const mocks = vi.hoisted(() => ({
@@ -150,8 +151,13 @@ describe("createTerminalPtyBridge", () => {
     });
     await createTerminalPtyBridge(options).start();
 
-    mocks.channels[0].onmessage?.({ data: "résultat", isExit: false, exitCode: 0 });
-    mocks.channels[0].onmessage?.({ data: "", isExit: true, exitCode: 3 });
+    mocks.channels[0].onmessage?.({
+      data: "résultat",
+      isExit: false,
+      exitCode: null,
+      sequence: 1,
+    });
+    mocks.channels[0].onmessage?.({ data: "", isExit: true, exitCode: 3, sequence: null });
 
     expect(terminal.writes).toEqual(["résultat", "\r\n[terminal.processExited:3]"]);
     expect(options.onActivity).toHaveBeenCalledWith("tab-1", true);
@@ -160,12 +166,11 @@ describe("createTerminalPtyBridge", () => {
 
     terminal.completeNextWrite();
     await Promise.resolve();
-    expect(commands).toEqual(["pty_spawn"]);
+    expect(commands).toEqual(["pty_spawn", "pty_ack_output"]);
     expect(options.onExit).not.toHaveBeenCalled();
 
     terminal.completeNextWrite();
-    expect(commands).toEqual(["pty_spawn", "pty_kill"]);
-    expect(commands).not.toContain("pty_ack_output");
+    expect(commands).toEqual(["pty_spawn", "pty_ack_output", "pty_kill"]);
     expect(options.onExit).not.toHaveBeenCalled();
 
     kill.resolve();
@@ -181,11 +186,11 @@ describe("createTerminalPtyBridge", () => {
     });
     const success = terminalPort();
     await createTerminalPtyBridge(bridgeOptions(success.port)).start();
-    mocks.channels[0].onmessage?.({ data: "", isExit: true, exitCode: 0 });
+    mocks.channels[0].onmessage?.({ data: "", isExit: true, exitCode: 0, sequence: null });
 
     const unknown = terminalPort();
     await createTerminalPtyBridge(bridgeOptions(unknown.port)).start();
-    mocks.channels[1].onmessage?.({ data: "", isExit: true, exitCode: null });
+    mocks.channels[1].onmessage?.({ data: "", isExit: true, exitCode: null, sequence: null });
 
     expect(success.writes).toEqual(["\r\n[terminal.processExited:0]"]);
     expect(unknown.writes).toEqual(["\r\n[terminal.processExitedUnknown]"]);
@@ -197,7 +202,7 @@ describe("createTerminalPtyBridge", () => {
     mocks.invoke.mockImplementationOnce(() => Promise.resolve({ id: 14, token: "token-14" }));
     mocks.invoke.mockRejectedValueOnce("terminal-not-found");
     await createTerminalPtyBridge(missingOptions).start();
-    mocks.channels[0].onmessage?.({ data: "", isExit: true, exitCode: null });
+    mocks.channels[0].onmessage?.({ data: "", isExit: true, exitCode: null, sequence: null });
     missingTerminal.completeNextWrite();
     await new Promise<void>((resolve) => setTimeout(resolve, 0));
     expect(missingOptions.onExit).toHaveBeenCalledWith("tab-1");
@@ -207,7 +212,7 @@ describe("createTerminalPtyBridge", () => {
     mocks.invoke.mockImplementationOnce(() => Promise.resolve({ id: 15, token: "token-15" }));
     mocks.invoke.mockRejectedValueOnce(new Error("/internal/path"));
     await createTerminalPtyBridge(failedOptions).start();
-    mocks.channels[1].onmessage?.({ data: "", isExit: true, exitCode: 4 });
+    mocks.channels[1].onmessage?.({ data: "", isExit: true, exitCode: 4, sequence: null });
     failedTerminal.completeNextWrite();
     await new Promise<void>((resolve) => setTimeout(resolve, 0));
 

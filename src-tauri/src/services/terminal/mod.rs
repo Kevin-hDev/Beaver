@@ -12,7 +12,16 @@ mod shutdown;
 pub mod tab_store;
 mod utf8_decoder;
 
-pub use manager::{PtyChannelEvent, PtyManager};
+pub use manager::PtyManager;
+
+#[derive(Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PtyChannelEvent {
+    pub data: String,
+    pub is_exit: bool,
+    pub exit_code: Option<u32>,
+    pub sequence: Option<u32>,
+}
 
 #[cfg(test)]
 mod cwd_resolver_tests;

@@ -18,11 +18,29 @@ pub(super) trait EmergencyStop: Send + Sync {
     fn stop(&self);
 }
 
+#[cfg(test)]
+pub(super) struct NoopEmergencyStop;
+
+#[cfg(test)]
+impl EmergencyStop for NoopEmergencyStop {
+    fn stop(&self) {}
+}
+
 pub(super) struct SessionControl {
     pub(super) output_window: Arc<OutputWindow>,
     pub(super) reader_cancelled: Arc<AtomicBool>,
     pub(super) reader_finished: Arc<AtomicBool>,
     pub(super) emergency_stop: Arc<dyn EmergencyStop>,
+}
+
+pub(super) struct ReaderFinishedGuard(pub(super) Arc<AtomicBool>);
+
+impl Drop for ReaderFinishedGuard {
+    fn drop(&mut self) {
+        // Release publishes reader cleanup before SessionHandle observes the
+        // completion with Acquire and removes this session from the manager.
+        self.0.store(true, Ordering::Release);
+    }
 }
 
 pub(super) struct SessionHandle {
@@ -70,10 +88,6 @@ impl SessionHandle {
         self.control.reader_finished.load(Ordering::Acquire)
     }
 
-    #[allow(
-        dead_code,
-        reason = "wired to the IPC acknowledgement command in Task 4"
-    )]
     pub(super) fn acknowledge(&self, sequence: u32) -> Result<(), String> {
         self.control.output_window.acknowledge(sequence)
     }
