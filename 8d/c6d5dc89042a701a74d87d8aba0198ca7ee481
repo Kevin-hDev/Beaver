@@ -1,0 +1,29 @@
+Problème
+Le périmètre projet/discussion introduit par 5026cbe1 corrigeait l’isolation, mais ne définissait pas complètement le devenir des ressources lorsque leur propriétaire disparaissait. Une analyse Legacy avec un propriétaire supprimé pouvait bloquer toute la liste Forecast, la suppression d’un projet rendait ses analyses inaccessibles, les profils antérieurs au mécanisme n’étaient plus lus et une discussion rattachée à un projet supprimé gardait un terminal visible mais inutilisable.
+
+Objectif
+Donner un cycle de vie unique, récupérable et borné aux analyses, notes, profils Forecast, groupes terminal et sessions, sans revenir au partage global ni modifier les invariants de sécurité du terminal.
+
+Décisions
+- Un verrou de cycle de vie sérialise sauvegarde, chargement, suppression et libération des ressources scopées.
+- La suppression d’un projet ou d’une discussion racine libère d’abord analyses et profils vers Legacy, puis retire le propriétaire. Les notes suivent l’autorisation de leur analyse.
+- Les opérations sont durables et rejouables : les profils sont d’abord copiés vers un marqueur Legacy, puis leur source est retirée et le marqueur finalisé.
+- Les analyses dont le propriétaire historique a disparu sont réparées vers la liste non attribuée au lieu de bloquer toutes les sessions.
+- Un profil créé avant l’isolation est revendiqué atomiquement par un seul workspace; les autres workspaces le voient comme absent.
+- Les sessions archivées sont aussi détachées lors de la suppression d’un projet.
+- Un project_id orphelin est traité comme absent côté UI et terminal Rust; une ascendance corrompue reste fail-closed côté Rust.
+- Les terminaux d’un projet ne sont tués et retirés côté UI qu’après confirmation de la suppression backend.
+- Les scans de profils sont bornés sur toutes les entrées et ignorent les JSON qui ne sont pas des profils UUID valides.
+- WorkspaceScope Rust génère le type TypeScript de frontière; la capacité Forecast utilise un code stable traduit avec une action utilisateur.
+- Les anciens onglets __default__ ne sont pas attribués arbitrairement à une discussion : leur retrait est annoncé dans les sept langues et documenté au changelog.
+
+Preuves de régression
+- Tests red/green pour propriétaire Legacy supprimé, projet libéré, discussion racine supprimée, profil pré-scope revendiqué une seule fois, profil libéré, marqueur concurrent, projet terminal orphelin, sessions archivées, suppression frontend échouée et fichier JSON étranger.
+- Test de mutation : retirer commit_release fait échouer deleting_a_root_session_releases_its_profile_before_removal; le test repasse après restauration.
+- npm test : 524 fichiers Vitest / 2829 tests, plus build scripts, CI scripts, CEF, E2E runner, extension host et reasoning fixtures, 0 échec.
+- cargo test : 4556 réussis, 9 ignorés, 0 échec.
+- npx tsc --noEmit, npm run lint, npm run contracts:check, cargo check, cargo clippy --all-targets -- -D warnings, cargo fmt --check et git diff --check : réussis.
+- graphify update . : réussi, graphe de code à 36811 nœuds et 81640 relations. La mise à jour sémantique documentaire séparée n’a pas été lancée car ce lot excluait les sous-agents.
+
+Focus reviewer
+Vérifier l’ordre des verrous lifecycle -> PROFILE/SAVE, la reprise stage/commit des profils, le reclassement Legacy sans perte, le fallback terminal après suppression de projet, le refus d’écraser un marqueur appartenant à un autre workspace et l’absence de nettoyage UI avant confirmation backend.
