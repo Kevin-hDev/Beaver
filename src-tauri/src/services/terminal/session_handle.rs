@@ -1,4 +1,7 @@
+use super::caller::TerminalOwner;
+use super::manager::PtyManager;
 use super::output_window::OutputWindow;
+use super::public_error::not_authorized;
 use super::verify_token;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
@@ -44,6 +47,7 @@ impl Drop for ReaderFinishedGuard {
 }
 
 pub(super) struct SessionHandle {
+    owner: TerminalOwner,
     token: zeroize::Zeroizing<String>,
     operations: Mutex<Option<Box<dyn SessionOps>>>,
     control: SessionControl,
@@ -52,16 +56,24 @@ pub(super) struct SessionHandle {
 
 impl SessionHandle {
     pub(super) fn new(
+        owner: TerminalOwner,
         operations: Box<dyn SessionOps>,
         control: SessionControl,
         token: zeroize::Zeroizing<String>,
     ) -> Self {
         Self {
+            owner,
             token,
             operations: Mutex::new(Some(operations)),
             control,
             closing: AtomicBool::new(false),
         }
+    }
+
+    pub(super) fn verify_owner(&self, owner: &TerminalOwner) -> Result<(), String> {
+        (&self.owner == owner)
+            .then_some(())
+            .ok_or_else(not_authorized)
     }
 
     pub(super) fn verify_token(&self, token: &str) -> Result<(), String> {
@@ -118,6 +130,70 @@ impl SessionHandle {
         self.with_live(|operations| Ok(operations.process_id()))
             .ok()
             .flatten()
+    }
+}
+
+impl PtyManager {
+    pub fn write(
+        &self,
+        owner: &TerminalOwner,
+        id: u32,
+        token: &str,
+        data: &[u8],
+    ) -> Result<(), String> {
+        self.session(owner, id, token)?
+            .with_live(|session| session.write(data))
+    }
+
+    pub fn resize(
+        &self,
+        owner: &TerminalOwner,
+        id: u32,
+        token: &str,
+        cols: u16,
+        rows: u16,
+    ) -> Result<(), String> {
+        self.session(owner, id, token)?
+            .with_live(|session| session.resize(cols, rows))
+    }
+
+    pub fn acknowledge(
+        &self,
+        owner: &TerminalOwner,
+        id: u32,
+        token: &str,
+        sequence: u32,
+    ) -> Result<(), String> {
+        self.session(owner, id, token)?.acknowledge(sequence)
+    }
+
+    pub fn kill(&self, owner: &TerminalOwner, id: u32, token: &str) -> Result<(), String> {
+        let handle = self.session(owner, id, token)?;
+        let removed = self
+            .lock_state()?
+            .sessions
+            .remove(&id)
+            .ok_or_else(not_found)?;
+        debug_assert!(Arc::ptr_eq(&handle, &removed));
+        removed.close();
+        Ok(())
+    }
+
+    fn session(
+        &self,
+        owner: &TerminalOwner,
+        id: u32,
+        token: &str,
+    ) -> Result<Arc<SessionHandle>, String> {
+        let handle = self
+            .lock_state()?
+            .sessions
+            .get(&id)
+            .cloned()
+            .ok_or_else(not_found)?;
+        handle.verify_owner(owner)?;
+        handle.verify_token(token)?;
+        Ok(handle)
     }
 }
 

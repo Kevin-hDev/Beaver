@@ -1,3 +1,4 @@
+use super::caller::TerminalOwner;
 use super::manager::{PtyManager, NEXT_ID};
 use super::session_handle::{SessionControl, SessionHandle, SessionOps};
 use super::PtyChannelEvent;
@@ -8,25 +9,28 @@ use std::sync::Arc;
 impl PtyManager {
     pub(in crate::services::terminal) fn spawn_for_test(
         &self,
+        owner: &TerminalOwner,
         cwd: Option<&Path>,
         cols: u16,
         rows: u16,
     ) -> Result<(u32, String), String> {
-        self.spawn_with_sink(cwd, cols, rows, |_| Ok(()))
+        self.spawn_with_sink(owner, cwd, cols, rows, |_| Ok(()))
     }
 
     pub(crate) fn spawn_with_test_sink(
         &self,
+        owner: &TerminalOwner,
         cwd: Option<&Path>,
         cols: u16,
         rows: u16,
         sink: impl Fn(PtyChannelEvent) -> Result<(), ()> + Send + 'static,
     ) -> Result<(u32, String), String> {
-        self.spawn_with_sink(cwd, cols, rows, sink)
+        self.spawn_with_sink(owner, cwd, cols, rows, sink)
     }
 
     pub(in crate::services::terminal) fn insert_session_for_test(
         &self,
+        owner: &TerminalOwner,
         operations: Box<dyn SessionOps>,
         control: SessionControl,
         token: &str,
@@ -34,11 +38,15 @@ impl PtyManager {
         let id = NEXT_ID.fetch_add(1, Ordering::Relaxed);
         let token = zeroize::Zeroizing::new(token.to_string());
         let token_copy = token.to_string();
-        self.state
-            .lock()
-            .unwrap()
-            .sessions
-            .insert(id, Arc::new(SessionHandle::new(operations, control, token)));
+        self.state.lock().unwrap().sessions.insert(
+            id,
+            Arc::new(SessionHandle::new(
+                owner.clone(),
+                operations,
+                control,
+                token,
+            )),
+        );
         (id, token_copy)
     }
 
@@ -61,6 +69,7 @@ impl PtyManager {
 #[cfg(test)]
 mod tests {
     use crate::app_exit::AppExitCoordinator;
+    use crate::services::terminal::caller::{authorize, TerminalOwner};
     use crate::services::terminal::cwd_resolver::resolve_with;
     use crate::services::terminal::limits::MAX_IN_FLIGHT_FRAMES;
     use crate::services::terminal::pty_session::PtySession;
@@ -152,9 +161,10 @@ mod tests {
         .unwrap();
         let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
         let manager = PtyManager::new(coordinator.work_supervisor());
+        let owner = authorize("main").expect("main owner");
 
         manager
-            .spawn_for_test(Some(resolved.as_path()), 80, 24)
+            .spawn_for_test(&owner, Some(resolved.as_path()), 80, 24)
             .expect("spawn in resolved project");
 
         assert!(
@@ -261,8 +271,9 @@ mod tests {
     async fn shutdown_reaps_a_real_shell_and_waits_for_terminal_threads() {
         let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
         let manager = PtyManager::new(coordinator.work_supervisor());
+        let owner = authorize("main").expect("main owner");
         let (id, _) = manager
-            .spawn_for_test(None, 80, 24)
+            .spawn_for_test(&owner, None, 80, 24)
             .expect("real PTY shell");
         let pid = manager.process_id_for_test(id).expect("shell process id");
         assert!(process_is_running(pid));
@@ -314,6 +325,7 @@ mod tests {
     async fn shutdown_permanently_refuses_new_terminal_sessions() {
         let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
         let manager = PtyManager::new(coordinator.work_supervisor());
+        let owner = authorize("main").expect("main owner");
 
         assert!(
             manager
@@ -321,7 +333,7 @@ mod tests {
                 .await
         );
         assert_eq!(
-            manager.spawn_for_test(None, 80, 24).unwrap_err(),
+            manager.spawn_for_test(&owner, None, 80, 24).unwrap_err(),
             "terminal-shutting-down"
         );
     }
@@ -329,6 +341,41 @@ mod tests {
     #[test]
     fn terminal_capacity_remains_sixteen_sessions() {
         assert_eq!(PtyManager::MAX_PTY_SESSIONS, 16);
+    }
+
+    #[test]
+    fn terminal_owner_rejects_every_operation_from_another_window() {
+        let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
+        let manager = PtyManager::new(coordinator.work_supervisor());
+        let main = authorize("main").expect("main owner");
+        let other = TerminalOwner::for_test("secondary").expect("secondary owner");
+        let (id, token) = manager
+            .spawn_for_test(&main, None, 80, 24)
+            .expect("terminal owned by main");
+
+        assert_eq!(
+            manager.write(&other, id, &token, b"forbidden"),
+            Err("terminal-not-authorized".to_string())
+        );
+        assert_eq!(manager.active_sessions_for_test(), 1);
+        assert_eq!(
+            manager.resize(&other, id, &token, 40, 10),
+            Err("terminal-not-authorized".to_string())
+        );
+        assert_eq!(manager.active_sessions_for_test(), 1);
+        assert_eq!(
+            manager.acknowledge(&other, id, &token, 1),
+            Err("terminal-not-authorized".to_string())
+        );
+        assert_eq!(manager.active_sessions_for_test(), 1);
+        assert_eq!(
+            manager.kill(&other, id, &token),
+            Err("terminal-not-authorized".to_string())
+        );
+        assert_eq!(manager.active_sessions_for_test(), 1);
+
+        assert_eq!(manager.kill(&main, id, &token), Ok(()));
+        assert_eq!(manager.active_sessions_for_test(), 0);
     }
 
     #[test]
@@ -368,9 +415,10 @@ mod tests {
     fn terminal_close_stays_bounded_when_output_window_is_full() {
         let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
         let manager = PtyManager::new(coordinator.work_supervisor());
+        let owner = authorize("main").expect("main owner");
         let (saturated_tx, saturated) = std::sync::mpsc::sync_channel(1);
         let (id, token) = manager
-            .spawn_with_test_sink(None, 80, 24, move |event| {
+            .spawn_with_test_sink(&owner, None, 80, 24, move |event| {
                 if event.sequence == Some(MAX_IN_FLIGHT_FRAMES as u32) {
                     let _ = saturated_tx.try_send(());
                 }
@@ -381,7 +429,7 @@ mod tests {
             .process_id_for_test(id)
             .expect("terminal process id");
         manager
-            .write(id, &token, continuous_output_command())
+            .write(&owner, id, &token, continuous_output_command())
             .expect("start continuous output");
         saturated
             .recv_timeout(Duration::from_secs(10))
@@ -390,10 +438,11 @@ mod tests {
         let (closed_tx, closed) = std::sync::mpsc::sync_channel(1);
         let closer = {
             let manager = manager.clone();
+            let owner = owner.clone();
             let token = token.clone();
             std::thread::spawn(move || {
                 closed_tx
-                    .send(manager.kill(id, &token))
+                    .send(manager.kill(&owner, id, &token))
                     .expect("report terminal close");
             })
         };
@@ -409,9 +458,10 @@ mod tests {
         const MARKER: &str = "BEAVER_FINAL_🦫";
         let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
         let manager = PtyManager::new(coordinator.work_supervisor());
+        let owner = authorize("main").expect("main owner");
         let (events_tx, events) = std::sync::mpsc::sync_channel(256);
         let (id, token) = manager
-            .spawn_with_test_sink(None, 80, 24, move |event| {
+            .spawn_with_test_sink(&owner, None, 80, 24, move |event| {
                 events_tx.send(event).map_err(|_| ())
             })
             .expect("terminal with output channel");
@@ -419,7 +469,7 @@ mod tests {
             .process_id_for_test(id)
             .expect("terminal process id");
         manager
-            .write(id, &token, final_output_command())
+            .write(&owner, id, &token, final_output_command())
             .expect("start finite output");
 
         let marker_length = MARKER.chars().count();
@@ -443,11 +493,13 @@ mod tests {
                 marker_seen |= suffix.iter().copied().eq(MARKER.chars());
             }
             manager
-                .acknowledge(id, &token, event.sequence.expect("data sequence"))
+                .acknowledge(&owner, id, &token, event.sequence.expect("data sequence"))
                 .expect("acknowledge terminal output");
         }
 
-        manager.kill(id, &token).expect("close completed terminal");
+        manager
+            .kill(&owner, id, &token)
+            .expect("close completed terminal");
         assert!(matches!(
             events.try_recv(),
             Err(std::sync::mpsc::TryRecvError::Empty | std::sync::mpsc::TryRecvError::Disconnected)

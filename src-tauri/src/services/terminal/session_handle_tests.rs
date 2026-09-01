@@ -1,3 +1,4 @@
+use super::caller::{authorize, TerminalOwner};
 use super::manager::PtyManager;
 use super::output_window::OutputWindow;
 use super::owned_session::spawn_reader_for_test;
@@ -12,6 +13,10 @@ const TOKEN: &str = "0123456789abcdef0123456789abcdef";
 
 fn token() -> zeroize::Zeroizing<String> {
     zeroize::Zeroizing::new(TOKEN.to_string())
+}
+
+fn main_owner() -> TerminalOwner {
+    authorize("main").expect("main owner")
 }
 
 struct GateOps {
@@ -110,22 +115,24 @@ fn blocked_write_releases_map_and_kill_stops_before_waiting_for_operations() {
     let finishes = Arc::clone(&f.finishes);
     let reader_finished = Arc::clone(&f.control.reader_finished);
     let output_window = Arc::clone(&f.control.output_window);
-    let (id, token) = manager.insert_session_for_test(f.ops, f.control, TOKEN);
+    let owner = main_owner();
+    let (id, token) = manager.insert_session_for_test(&owner, f.ops, f.control, TOKEN);
     assert_eq!(
-        manager.write(id, "incorrect", b"forbidden"),
+        manager.write(&owner, id, "incorrect", b"forbidden"),
         Err("terminal-access-denied".to_string())
     );
     let writer = {
         let manager = manager.clone();
+        let owner = owner.clone();
         let token = token.clone();
-        std::thread::spawn(move || manager.write(id, &token, b"blocked"))
+        std::thread::spawn(move || manager.write(&owner, id, &token, b"blocked"))
     };
     f.entered.recv_timeout(Duration::from_secs(1)).unwrap();
     assert!(manager.manager_lock_is_available_for_test());
     assert!(!reader_finished.load(Ordering::Acquire));
     let _ = output_window.acknowledge(1);
     let (done, result) = mpsc::sync_channel(1);
-    let killer = std::thread::spawn(move || done.send(manager.kill(id, &token)).unwrap());
+    let killer = std::thread::spawn(move || done.send(manager.kill(&owner, id, &token)).unwrap());
     assert_eq!(result.recv_timeout(Duration::from_secs(3)), Ok(Ok(())));
     writer.join().unwrap().unwrap();
     killer.join().unwrap();
@@ -136,7 +143,12 @@ fn blocked_write_releases_map_and_kill_stops_before_waiting_for_operations() {
 #[test]
 fn operations_serialize_per_handle_but_not_between_handles() {
     let first = fixture(false);
-    let handle = Arc::new(SessionHandle::new(first.ops, first.control, token()));
+    let handle = Arc::new(SessionHandle::new(
+        main_owner(),
+        first.ops,
+        first.control,
+        token(),
+    ));
     let one = {
         let handle = Arc::clone(&handle);
         std::thread::spawn(move || handle.with_live(|ops| ops.write(b"one")))
@@ -159,8 +171,18 @@ fn operations_serialize_per_handle_but_not_between_handles() {
 
     let left = fixture(false);
     let right = fixture(false);
-    let left_handle = Arc::new(SessionHandle::new(left.ops, left.control, token()));
-    let right_handle = Arc::new(SessionHandle::new(right.ops, right.control, token()));
+    let left_handle = Arc::new(SessionHandle::new(
+        main_owner(),
+        left.ops,
+        left.control,
+        token(),
+    ));
+    let right_handle = Arc::new(SessionHandle::new(
+        main_owner(),
+        right.ops,
+        right.control,
+        token(),
+    ));
     let left_thread = std::thread::spawn(move || left_handle.with_live(|ops| ops.write(b"l")));
     let right_thread = std::thread::spawn(move || right_handle.with_live(|ops| ops.write(b"r")));
     left.entered.recv_timeout(Duration::from_secs(1)).unwrap();
@@ -177,7 +199,7 @@ fn close_is_once_and_control_paths_ignore_the_operations_mutex() {
     let finished = Arc::clone(&f.control.reader_finished);
     let window = Arc::clone(&f.control.output_window);
     let finishes = Arc::clone(&f.finishes);
-    let handle = Arc::new(SessionHandle::new(f.ops, f.control, token()));
+    let handle = Arc::new(SessionHandle::new(main_owner(), f.ops, f.control, token()));
     let barrier = Arc::new(Barrier::new(3));
     let threads = (0..2)
         .map(|_| {

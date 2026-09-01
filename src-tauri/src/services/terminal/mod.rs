@@ -1,3 +1,4 @@
+pub(crate) mod caller;
 pub mod cwd_resolver;
 mod limits;
 #[cfg(target_os = "linux")]
@@ -22,6 +23,9 @@ pub struct PtyChannelEvent {
     pub exit_code: Option<u32>,
     pub sequence: Option<u32>,
 }
+
+#[cfg(test)]
+mod caller_tests;
 
 #[cfg(test)]
 mod cwd_resolver_tests;
