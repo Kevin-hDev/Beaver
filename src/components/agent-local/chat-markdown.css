@@ -28,64 +28,22 @@
   scrollbar-width: thin;
 }
 
-/* Tables — cellules séparées, mais colonnes pilotées par leur rôle */
+/* L'apparence du tableau vient de src/styles/data-table.css. Elle n'était
+   posée ici que pour les thèmes Sombre et Clair : sur les quatre autres, les
+   cellules n'avaient pas de fond. Ne restent que les mesures propres au
+   markdown d'une réponse. */
 .chat-md table {
-  border-collapse: separate;
-  border-spacing: 3px;
-  width: 100%;
   min-width: min(38rem, 100%);
-  table-layout: auto;
-  margin: 0;
-  font-size: var(--text-xs);
-  white-space: normal;
-  border: none;
 }
 
 .chat-md th,
 .chat-md td {
-  padding: 8px 12px;
   min-width: 4rem;
-  text-align: left;
-  border-radius: var(--radius-xs);
-  vertical-align: top;
-  line-height: 1.35;
-  white-space: normal;
-  word-break: normal;
-  overflow-wrap: break-word;
 }
 
 .chat-md .chat-md-cell-list-break {
   display: block;
   margin-top: 0.35em;
-}
-
-.chat-md th {
-  font-weight: 600;
-  color: var(--ink-muted);
-  font-size: 0.85em;
-  letter-spacing: 0.02em;
-}
-
-/* Dark */
-[data-theme="dark"] .chat-md th {
-  background: var(--surface-overlay);
-}
-
-[data-theme="dark"] .chat-md td {
-  background: var(--surface-glass);
-}
-
-/* Light */
-[data-theme="light"] .chat-md th {
-  background: var(--surface-overlay);
-}
-
-[data-theme="light"] .chat-md td {
-  background: var(--surface-glass);
-}
-
-.chat-md tbody tr:hover td {
-  filter: brightness(1.08);
 }
 
 /* Lists */

@@ -20,24 +20,30 @@ export function ForecastEvaluationTable({
   t,
 }: ForecastEvaluationTableProps) {
   return (
-    <div className="fcwe-table" role="table">
-      <div className="fcwe-row fcwe-table-head" role="row">
-        <span>{t("forecast.workbench.evaluation.model")}</span>
-        <span>MASE</span>
-        <span>sMAPE</span>
-        <span>MAE</span>
-        <span>{t("forecast.workbench.evaluation.coverage")}</span>
-        <span>{t("forecast.workbench.evaluation.duration")}</span>
-        <span>{t("forecast.workbench.evaluation.status")}</span>
-      </div>
-      {rankedResults(results).map((result) => (
-        <EvaluationRow
-          key={`${result.kind}:${result.model_id}`}
-          result={result}
-          currentModel={currentModel}
-          t={t}
-        />
-      ))}
+    <div className="data-table-scroll fcwe-table">
+      <table className="data-table fcwe-grid">
+        <thead>
+          <tr>
+            <th>{t("forecast.workbench.evaluation.model")}</th>
+            <th>MASE</th>
+            <th>sMAPE</th>
+            <th>MAE</th>
+            <th>{t("forecast.workbench.evaluation.coverage")}</th>
+            <th>{t("forecast.workbench.evaluation.duration")}</th>
+            <th>{t("forecast.workbench.evaluation.status")}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rankedResults(results).map((result) => (
+            <EvaluationRow
+              key={`${result.kind}:${result.model_id}`}
+              result={result}
+              currentModel={currentModel}
+              t={t}
+            />
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -54,50 +60,36 @@ function EvaluationRow({
   const baselineKey = baselineTranslationKey(result.model_id);
   const label = baselineKey ? t(baselineKey) : result.model_id;
   return (
-    <div className="fcwe-row" role="row">
-      <div className="fcwe-model" role="cell">
-        <span className="fcwe-rank">{result.rank ?? "—"}</span>
-        <span>
-          <strong>{label}</strong>
-          <small>
-            {result.kind === "baseline"
-              ? t("forecast.workbench.evaluation.baseline")
-              : t("forecast.workbench.evaluation.modelKind")}
-            {result.model_id === currentModel
-              ? ` · ${t("forecast.workbench.evaluation.current")}`
-              : ""}
-          </small>
-        </span>
-      </div>
-      <MetricCell label="MASE" value={formatMetric(result.metrics?.mase)} />
-      <MetricCell
-        label="sMAPE"
-        value={result.metrics ? `${formatMetric(result.metrics.smape)}%` : "—"}
-      />
-      <MetricCell label="MAE" value={formatMetric(result.metrics?.mae)} />
-      <MetricCell
-        label={t("forecast.workbench.evaluation.coverage")}
-        value={result.calibration
+    <tr>
+      <td className="fcwe-model">
+        <div className="fcwe-model-inner">
+          <span className="fcwe-rank">{result.rank ?? "—"}</span>
+          <span className="fcwe-model-name">
+            <strong>{label}</strong>
+            <small>
+              {result.kind === "baseline"
+                ? t("forecast.workbench.evaluation.baseline")
+                : t("forecast.workbench.evaluation.modelKind")}
+              {result.model_id === currentModel
+                ? ` · ${t("forecast.workbench.evaluation.current")}`
+                : ""}
+            </small>
+          </span>
+        </div>
+      </td>
+      <td className="fcwe-metric">{formatMetric(result.metrics?.mase)}</td>
+      <td className="fcwe-metric">
+        {result.metrics ? `${formatMetric(result.metrics.smape)}%` : "—"}
+      </td>
+      <td className="fcwe-metric">{formatMetric(result.metrics?.mae)}</td>
+      <td className="fcwe-metric">
+        {result.calibration
           ? `${formatCoverage(result.calibration.measured_coverage)} / ${formatCoverage(result.calibration.theoretical_coverage)}`
           : "—"}
-      />
-      <MetricCell
-        label={t("forecast.workbench.evaluation.duration")}
-        value={formatDuration(result.duration_ms)}
-      />
-      <div className="fcwe-status" role="cell">
-        {statusLabel(result, t)}
-      </div>
-    </div>
-  );
-}
-
-function MetricCell({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="fcwe-metric" role="cell">
-      <small>{label}</small>
-      <span>{value}</span>
-    </div>
+      </td>
+      <td className="fcwe-metric">{formatDuration(result.duration_ms)}</td>
+      <td className="fcwe-status">{statusLabel(result, t)}</td>
+    </tr>
   );
 }
 
