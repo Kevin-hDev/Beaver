@@ -1,6 +1,6 @@
 import type { CloneMessageHandler } from "@/hooks/use-chat-clone";
 import type { DroppedFile } from "@/hooks/use-file-drop";
-import type { useTerminal } from "@/hooks/use-terminal";
+import type { useAgentLocalControlledTerminal } from "@/hooks/use-agent-local-controlled-terminal";
 import type { Project, SessionTab } from "@/types/agent";
 import type { FileOperation, FileOperationGroups } from "@/types/file-preview";
 import type { ReasoningMode } from "@/lib/reasoning-modes";
@@ -29,7 +29,7 @@ export interface ChatViewProps {
   onReasoningModeChange: (mode: ReasoningMode) => void;
   onFastModeChange: (enabled: boolean) => void;
   onInitialMessageSent?: () => void;
-  terminalState: ReturnType<typeof useTerminal>;
+  terminalState: ReturnType<typeof useAgentLocalControlledTerminal>;
   onFileOperationsChange?: (operations: FileOperationGroups) => void;
   onFilePreviewPath?: (target: string | FileOperation) => void;
   onOpenSubagent?: (sessionId: string) => void;

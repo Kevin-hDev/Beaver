@@ -6,14 +6,20 @@ import i18n from "@/i18n";
 import type { Project } from "@/types/agent";
 import { AGENT_SESSIONS_CHANGED } from "./agent-session-events";
 
+export type ProjectLoadState = "loading" | "ready" | "error";
+
 export function useProjects() {
   const [projects, setProjects] = useState<Project[]>([]);
+  const [loadState, setLoadState] = useState<ProjectLoadState>("loading");
 
   const refresh = useCallback(async () => {
+    setLoadState("loading");
     try {
       const list = await invoke<Project[]>("list_projects");
       setProjects(list.sort((a, b) => a.order - b.order));
+      setLoadState("ready");
     } catch (error) {
+      setLoadState("error");
       showToast(localStoreErrorMessage(error, i18n.t), "error");
     }
   }, []);
@@ -79,5 +85,14 @@ export function useProjects() {
     }
   }, []);
 
-  return { projects, refresh, add, rename, remove, reorder, openFolder };
+  return {
+    projects,
+    loadState,
+    refresh,
+    add,
+    rename,
+    remove,
+    reorder,
+    openFolder,
+  };
 }

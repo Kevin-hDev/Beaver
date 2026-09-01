@@ -3,10 +3,6 @@ import { matchesAppShortcut } from "@/lib/app-shortcuts";
 
 interface AgentLocalShortcutsParams {
   activeSessionId?: string | null;
-  terminalOpen: boolean;
-  terminalTabsCount: number;
-  terminalCwd: string;
-  onAddTerminalTab: (cwd: string) => void;
   onToggleTerminal: () => void;
   onTogglePreview: () => void;
 }
@@ -14,10 +10,6 @@ interface AgentLocalShortcutsParams {
 export function useAgentLocalShortcuts(params: AgentLocalShortcutsParams) {
   const {
     activeSessionId,
-    terminalOpen,
-    terminalTabsCount,
-    terminalCwd,
-    onAddTerminalTab,
     onToggleTerminal,
     onTogglePreview,
   } = params;
@@ -34,17 +26,12 @@ export function useAgentLocalShortcuts(params: AgentLocalShortcutsParams) {
       }
       if (!toggleTerminal) return;
       event.preventDefault();
-      if (!terminalOpen && terminalTabsCount === 0) {
-        onAddTerminalTab(terminalCwd);
-      } else {
-        onToggleTerminal();
-      }
+      onToggleTerminal();
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [
-    activeSessionId, onAddTerminalTab, onTogglePreview, onToggleTerminal,
-    terminalCwd, terminalOpen, terminalTabsCount,
+    activeSessionId, onTogglePreview, onToggleTerminal,
   ]);
 }
 

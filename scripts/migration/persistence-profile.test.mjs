@@ -106,6 +106,33 @@ test("les identités historiques restent inchangées", () => {
   });
 });
 
+test("le profil terminal conserve le contrat historique et atteste la migration Rust IPC", () => {
+  const terminal = loadManifest().domains.find(({ id }) => id === "terminal");
+  assert.deepEqual(terminal.contracts, [
+    {
+      file: "src/hooks/terminal-persistence.ts",
+      snippets: ["\"cl-go-dash\"", "\"terminal-tabs.json\""],
+    },
+    {
+      file: "src-tauri/src/services/terminal/tab_store.rs",
+      scope: "migration",
+      snippets: [".join(\"terminal-tabs.json\")", "const MAX_FILE_BYTES"],
+      replaces: ["\"terminal-tabs.json\""],
+    },
+    {
+      file: "src/hooks/terminal-persistence.ts",
+      scope: "migration",
+      snippets: ["\"load_terminal_tabs\"", "\"save_terminal_tabs\""],
+      replaces: ["\"cl-go-dash\""],
+    },
+  ]);
+  assert.deepEqual(terminal.evidence, [
+    "src-tauri/src/services/terminal/tab_store_tests.rs",
+    "src/hooks/__tests__/terminal-persistence.test.ts",
+    "src/hooks/__tests__/use-terminal.test.ts",
+  ]);
+});
+
 test("chaque chemin de profil est borné, relatif et conserve le nom CL-GO", () => {
   const paths = loadManifest().domains.flatMap(({ profilePaths }) => profilePaths);
   assert.ok(paths.length > 0 && paths.length <= MAX_PROFILE_PATHS);

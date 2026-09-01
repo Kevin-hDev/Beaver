@@ -1135,10 +1135,19 @@
     "newTab": "Nueva pestaña",
     "closePanel": "Cerrar panel",
     "processExited": "El proceso finalizó con código {{code}}",
+    "processExitedUnknown": "El proceso finalizó, código de salida no disponible",
     "failedToStart": "El Terminal no pudo iniciarse",
     "closeTab": "Cerrar la pestaña",
     "activity": "Nueva salida en esta pestaña",
-    "resizePanel": "Ajustar la altura del panel"
+    "resizePanel": "Ajustar la altura del panel",
+    "tabsLoadFailed": "No se pudieron restaurar las pestañas del terminal. Reinicia Beaver para volver a intentarlo.",
+    "tabsRecovered": "No se pudieron restaurar las pestañas del terminal. Se abrió una sesión vacía.",
+    "tabsSaveFailed": "No se pudieron guardar las pestañas del terminal. Reinicia Beaver para volver a intentarlo.",
+    "tabLimitReached": "Se ha alcanzado el límite de pestañas del terminal.",
+    "liveLimitReached": "Se ha alcanzado el límite de terminales activos. Cierra una pestaña para volver a intentarlo.",
+    "failedToClose": "No se pudo cerrar el terminal. Inténtalo de nuevo.",
+    "inputQueueFull": "El terminal aún está procesando demasiados datos. Espera y vuelve a intentarlo.",
+    "inputFailed": "No se pudo enviar la entrada al terminal. Inténtalo de nuevo."
   },
   "skills": {
     "sourceBuiltIn": "Integrado",

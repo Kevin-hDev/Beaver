@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { useTerminal } from "@/hooks/use-terminal";
 import type { AgentLocalNavState, DeepPartial } from "@/types/navigation";
 
@@ -12,35 +12,62 @@ interface Args {
 export function useAgentLocalControlledTerminal({ navState, terminalState, terminalCwd, onNavChange }: Args) {
   const setActiveTab = useCallback((id: string) => {
     terminalState.setActiveTab(id);
-    onNavChange?.({ terminalActiveTabId: id });
-  }, [onNavChange, terminalState]);
+  }, [terminalState]);
 
   const addTab = useCallback((cwd?: string) => {
     const id = terminalState.addTab(cwd);
-    onNavChange?.({ terminalOpen: true, terminalActiveTabId: id });
+    if (id !== null) onNavChange?.({ terminalOpen: true });
     return id;
   }, [onNavChange, terminalState]);
+
+  const closeTab = useCallback((id: string): void => {
+    terminalState.closeTab(id);
+  }, [terminalState]);
+
+  const closeTabInGroup = useCallback((groupKey: string, id: string): void => {
+    terminalState.closeTabInGroup(groupKey, id);
+  }, [terminalState]);
 
   const togglePanel = useCallback(() => {
     const nextOpen = !navState.terminalOpen;
     if (nextOpen && terminalState.tabs.length === 0) {
-      const id = terminalState.addTab(terminalCwd);
-      onNavChange?.({ terminalOpen: true, terminalActiveTabId: id });
+      addTab(terminalCwd);
       return;
     }
-    terminalState.togglePanel();
     onNavChange?.({ terminalOpen: nextOpen });
-  }, [navState.terminalOpen, onNavChange, terminalCwd, terminalState]);
+  }, [addTab, navState.terminalOpen, onNavChange, terminalCwd, terminalState.tabs.length]);
+
+  useEffect(() => {
+    if (navState.terminalOpen && !terminalState.loaded) {
+      onNavChange?.({ terminalOpen: false });
+    }
+  }, [navState.terminalOpen, onNavChange, terminalState.loaded]);
+
+  const previousGroup = useRef({
+    groupKey: terminalState.groupKey,
+    count: terminalState.tabs.length,
+  });
+  useEffect(() => {
+    const previous = previousGroup.current;
+    const current = { groupKey: terminalState.groupKey, count: terminalState.tabs.length };
+    previousGroup.current = current;
+    if (navState.terminalOpen && previous.groupKey === current.groupKey
+      && previous.count > 0 && current.count === 0) {
+      onNavChange?.({ terminalOpen: false });
+    }
+  }, [navState.terminalOpen, onNavChange, terminalState.groupKey, terminalState.tabs.length]);
 
   return useMemo(() => ({
     ...terminalState,
     isOpen: navState.terminalOpen,
-    activeTabId: navState.terminalActiveTabId,
+    activeTabId: terminalState.activeTabId,
     addTab,
+    closeTab,
+    closeTabInGroup,
     setActiveTab,
     togglePanel,
   }), [
-    addTab, navState.terminalActiveTabId, navState.terminalOpen,
+    addTab, closeTab, closeTabInGroup, navState.terminalOpen,
     setActiveTab, terminalState, togglePanel,
   ]);
 }

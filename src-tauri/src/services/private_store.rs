@@ -17,6 +17,7 @@ mod cache;
 
 #[path = "private_store/bounded_read.rs"]
 mod bounded_read;
+pub(crate) use bounded_read::{read_bounded_regular_classified_async, BoundedReadFailure};
 
 #[path = "private_store/atomic_write.rs"]
 mod private_store_atomic;

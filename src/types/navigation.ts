@@ -26,8 +26,11 @@ export interface AgentLocalNavState {
   forecastAnalysisId: string | null;
   fileTreeOpen: boolean;
   terminalOpen: boolean;
-  terminalActiveTabId: string | null;
 }
+
+type LegacyAgentLocalNavState = AgentLocalNavState & {
+  terminalActiveTabId?: unknown;
+};
 
 export interface SettingsNavState {
   subTab: SettingsSubTab;
@@ -87,7 +90,6 @@ export const DEFAULT_APP_NAV: AppNavState = {
     forecastAnalysisId: null,
     fileTreeOpen: false,
     terminalOpen: false,
-    terminalActiveTabId: null,
   },
   heartbeat: { wakeupId: null },
   personality: { path: null },
@@ -114,6 +116,8 @@ export const DEFAULT_APP_NAV: AppNavState = {
 };
 
 export function migrateAppNav(input: AppNavState): AppNavState {
+  const { terminalActiveTabId: _ignored, ...agentLocal } =
+    input.agentLocal as LegacyAgentLocalNavState;
   const settings = input.settings as Omit<SettingsNavState, "subTab"> & {
     subTab: SettingsSubTab | "api-keys";
     providersSubTab?: ProvidersSettingsSubTab;
@@ -126,8 +130,8 @@ export function migrateAppNav(input: AppNavState): AppNavState {
   return {
     ...input,
     agentLocal: {
-      ...input.agentLocal,
-      forecastSection: normalizeForecastSection(input.agentLocal.forecastSection),
+      ...agentLocal,
+      forecastSection: normalizeForecastSection(agentLocal.forecastSection),
     },
     settings: {
       ...settings,

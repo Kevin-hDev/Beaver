@@ -1131,10 +1131,19 @@
     "newTab": "Nuova scheda",
     "closePanel": "Chiudi pannello",
     "processExited": "Processo terminato con codice {{code}}",
+    "processExitedUnknown": "Processo terminato, codice di uscita non disponibile",
     "failedToStart": "Impossibile avviare il Terminal",
     "closeTab": "Chiudi la scheda",
     "activity": "Nuovo output in questa scheda",
-    "resizePanel": "Regola l'altezza del pannello"
+    "resizePanel": "Regola l'altezza del pannello",
+    "tabsLoadFailed": "Impossibile ripristinare le schede del terminale. Riavvia Beaver per riprovare.",
+    "tabsRecovered": "Impossibile ripristinare le schede del terminale. È stata aperta una sessione vuota.",
+    "tabsSaveFailed": "Impossibile salvare le schede del terminale. Riavvia Beaver per riprovare.",
+    "tabLimitReached": "È stato raggiunto il limite di schede del terminale.",
+    "liveLimitReached": "È stato raggiunto il limite di terminali attivi. Chiudi una scheda per riprovare.",
+    "failedToClose": "Impossibile chiudere il terminale. Riprova.",
+    "inputQueueFull": "Il terminale sta ancora elaborando troppi dati. Attendi e riprova.",
+    "inputFailed": "Impossibile inviare l’input al terminale. Riprova."
   },
   "skills": {
     "sourceBuiltIn": "Integrato",

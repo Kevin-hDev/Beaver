@@ -1,6 +1,9 @@
 #[cfg(any(unix, windows))]
 use super::repair_path;
-use super::{atomic_write, read_bounded_regular, BoundedFile};
+use super::{
+    atomic_write, read_bounded_regular, read_bounded_regular_classified_async, BoundedFile,
+    BoundedReadFailure,
+};
 use super::{CachedStore, StoreErrorCodes, StoreFailure, StoreLoad};
 use rand::RngCore;
 
@@ -114,6 +117,32 @@ fn bounded_read_rejects_content_larger_than_the_limit() {
     assert_eq!(
         read_bounded_regular(&path, 4),
         Err("private-store-unavailable".to_string())
+    );
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[tokio::test]
+async fn classified_bounded_read_reports_too_large_separately() {
+    let root = test_dir();
+    let path = root.join("private.json");
+    std::fs::create_dir_all(&root).unwrap();
+    std::fs::write(&path, b"too large").unwrap();
+
+    assert_eq!(
+        read_bounded_regular_classified_async(path, 4).await,
+        Err(BoundedReadFailure::TooLarge)
+    );
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[tokio::test]
+async fn classified_bounded_read_reports_unavailable_separately() {
+    let root = test_dir();
+    std::fs::create_dir_all(&root).unwrap();
+
+    assert_eq!(
+        read_bounded_regular_classified_async(root.clone(), 4).await,
+        Err(BoundedReadFailure::Unavailable)
     );
     let _ = std::fs::remove_dir_all(root);
 }

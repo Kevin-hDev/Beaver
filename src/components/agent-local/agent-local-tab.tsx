@@ -54,7 +54,6 @@ export const AgentLocalTab = memo(function AgentLocalTab({
   const displayReasoningMode = resolveDisplayReasoningMode(displaySession, reasoningMode);
   const displayedFastMode = displaySession?.fast_mode_enabled ?? welcomeFastModeEnabled;
   const displayedFastPending = displaySessionId ? isFastModePending(displaySessionId) : false;
-  const terminalCwd = displayProject?.path || "";
   const sessionSummary = useSessionSummary(displaySessionId ?? null);
   const summaryGit = useGitBranch(displayProject?.path);
   const uncommittedFiles = useGitUncommittedFiles(summaryGit);
@@ -108,13 +107,7 @@ export const AgentLocalTab = memo(function AgentLocalTab({
           onOpenGitFile={(commit, file) => filePreview.openOperation(
             commitFileOperation(commit, file, summaryGit.currentBranch),
           )}
-          onToggleTerminal={() => {
-            if (!terminal.isOpen && terminal.tabs.length === 0) {
-              terminal.addTab(terminalCwd);
-            } else {
-              terminal.togglePanel();
-            }
-          }}
+          onToggleTerminal={terminal.togglePanel}
         />
       </div>
       {displaySessionId ? (
@@ -202,7 +195,7 @@ export const AgentLocalTab = memo(function AgentLocalTab({
     handleOpenForecastDocs, handlePreviewFullscreenChange, handleSelectById, handleWelcomeSend,
     pendingFiles, pendingMessage, pendingSkills, pendingWorkingDir, projectsHook, refresh,
     sessionSummary, sessionTabs, setFileOperations, setPendingFiles, setPendingMessage, setPendingSkills, setPendingWorkingDir, setReasoningMode,
-    setWelcomeModel, summaryGit, tabGit, terminal, terminalCwd, reasoningMode, updateModel,
+    setWelcomeModel, summaryGit, tabGit, terminal, reasoningMode, updateModel,
     setFastMode, welcomeFastModeEnabled, setWelcomeFastModeEnabled,
   ]);
 

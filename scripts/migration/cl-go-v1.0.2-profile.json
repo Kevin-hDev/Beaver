@@ -624,10 +624,26 @@
         {
           "file": "src/hooks/terminal-persistence.ts",
           "snippets": ["\"cl-go-dash\"", "\"terminal-tabs.json\""]
+        },
+        {
+          "file": "src-tauri/src/services/terminal/tab_store.rs",
+          "scope": "migration",
+          "snippets": [".join(\"terminal-tabs.json\")", "const MAX_FILE_BYTES"],
+          "replaces": ["\"terminal-tabs.json\""]
+        },
+        {
+          "file": "src/hooks/terminal-persistence.ts",
+          "scope": "migration",
+          "snippets": ["\"load_terminal_tabs\"", "\"save_terminal_tabs\""],
+          "replaces": ["\"cl-go-dash\""]
         }
       ],
-      "evidence": ["src/hooks/__tests__/use-terminal.test.ts"],
-      "manualGates": ["Rouvre un onglet pointant vers un dossier réel."]
+      "evidence": [
+        "src-tauri/src/services/terminal/tab_store_tests.rs",
+        "src/hooks/__tests__/terminal-persistence.test.ts",
+        "src/hooks/__tests__/use-terminal.test.ts"
+      ],
+      "manualGates": ["Rouvre les libellés des onglets terminal après un redémarrage."]
     },
     {
       "id": "mascot",

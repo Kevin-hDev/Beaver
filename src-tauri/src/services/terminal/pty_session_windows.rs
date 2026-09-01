@@ -3,10 +3,13 @@ mod console;
 #[path = "pty_windows_output.rs"]
 mod output;
 
+use crate::services::terminal::exit_wait::{reap_child, wait_for_exit_code, ExitPoll};
+use crate::services::terminal::limits::MAX_PTY_WRITE_BYTES;
 use console::PseudoConsole;
 use output::{OutputControl, PtyReader};
 use std::fs::File;
 use std::io::{Read, Write};
+use std::path::Path;
 use std::process::ExitStatus;
 use std::sync::{Arc, Mutex};
 
@@ -24,25 +27,27 @@ pub(crate) struct PtyChildStatus(SharedChild);
 
 impl PtyChildStatus {
     pub(crate) fn exit_code(&self) -> Option<u32> {
-        self.0.lock().ok()?.try_wait().ok().flatten().map(exit_code)
+        wait_for_exit_code(|| match self.0.try_lock() {
+            Ok(mut child) => match child.try_wait() {
+                Ok(Some(status)) => ExitPoll::Exited(exit_code(status)),
+                Ok(None) => ExitPoll::Running,
+                Err(_) => ExitPoll::Failed,
+            },
+            Err(std::sync::TryLockError::WouldBlock) => ExitPoll::Running,
+            Err(std::sync::TryLockError::Poisoned(_)) => ExitPoll::Failed,
+        })
     }
 }
 
 impl PtySession {
     pub fn spawn(
-        cwd: Option<&str>,
+        cwd: Option<&Path>,
         cols: u16,
         rows: u16,
     ) -> Result<(Self, Box<dyn Read + Send>), String> {
         validate_size(cols, rows)?;
         let (console, input, output_file) = PseudoConsole::create(cols, rows)?;
-        let powershell =
-            crate::services::system_executable::powershell().map_err(|_| terminal_error())?;
-        let mut command = windows_spawn::Command::new(powershell);
-        command.env("TERM", "xterm-256color");
-        if std::env::var("EDITOR").is_ok_and(|editor| editor.contains("vi")) {
-            command.env("EDITOR", "");
-        }
+        let mut command = terminal_command()?;
         if let Some(directory) = validated_cwd(cwd)? {
             command.current_dir(directory);
         }
@@ -63,10 +68,14 @@ impl PtySession {
         ))
     }
 
-    const MAX_WRITE_BYTES: usize = 65_536;
+    #[cfg(test)]
+    pub(in crate::services::terminal) fn terminal_command_for_test(
+    ) -> Result<windows_spawn::Command, String> {
+        terminal_command()
+    }
 
     pub fn write(&self, data: &[u8]) -> Result<(), String> {
-        if data.len() > Self::MAX_WRITE_BYTES {
+        if data.len() > MAX_PTY_WRITE_BYTES {
             return Err("terminal-write-too-large".to_string());
         }
         let mut writer = self.writer.lock().map_err(|_| terminal_error())?;
@@ -88,7 +97,7 @@ impl PtySession {
     }
 
     pub(crate) fn process_id(&self) -> Option<u32> {
-        self.child.lock().ok().map(|child| child.id())
+        self.child.try_lock().ok().map(|child| child.id())
     }
 
     pub(crate) fn child_status(&self) -> PtyChildStatus {
@@ -96,24 +105,40 @@ impl PtySession {
     }
 
     pub(crate) fn shutdown(&mut self) -> Result<u32, String> {
-        let pid = self.process_id().ok_or_else(terminal_error)?;
+        let exit = self.stop_child_within_budget();
+        let output_closed = self.output.close();
+        let input_closed = self.close_input();
+        self.console.close();
+        match (exit, output_closed, input_closed) {
+            (Some(code), Ok(()), Ok(())) => Ok(code),
+            _ => Err(terminal_error()),
+        }
+    }
+
+    fn stop_child_within_budget(&self) -> Option<u32> {
+        let pid = self.process_id()?;
         crate::services::process_tree::kill(
             pid,
             crate::services::process_tree::ProcessKind::Terminal,
         );
-        let mut child = self.child.lock().map_err(|_| terminal_error())?;
-        if child.try_wait().map_err(|_| terminal_error())?.is_none() {
-            // Tree termination is primary; root termination is the bounded
-            // fallback. A concurrent exit can make this return access denied;
-            // the following wait is the sole authority for final completion.
-            let _ = child.kill();
-        }
-        let status = child.wait().map_err(|_| terminal_error())?;
-        drop(child);
-        self.output.close()?;
-        self.close_input()?;
-        self.console.close();
-        Ok(exit_code(status))
+        let mut root_killed = false;
+        reap_child(|| match self.child.try_lock() {
+            Ok(mut child) => match child.try_wait() {
+                Ok(Some(status)) => ExitPoll::Exited(exit_code(status)),
+                Ok(None) => {
+                    if !root_killed {
+                        // Le kill de l'arbre est prioritaire ; celui de la racine
+                        // est le repli quand la terminaison concurrente le permet.
+                        let _ = child.kill();
+                        root_killed = true;
+                    }
+                    ExitPoll::Running
+                }
+                Err(_) => ExitPoll::Failed,
+            },
+            Err(std::sync::TryLockError::WouldBlock) => ExitPoll::Running,
+            Err(std::sync::TryLockError::Poisoned(_)) => ExitPoll::Failed,
+        })
     }
 
     fn close_input(&self) -> Result<(), String> {
@@ -129,11 +154,16 @@ impl Drop for PtySession {
     }
 }
 
-fn exit_code(status: ExitStatus) -> u32 {
-    status
-        .code()
-        .map(|code| u32::from_ne_bytes(code.to_ne_bytes()))
-        .unwrap_or_default()
+fn exit_code(status: ExitStatus) -> Option<u32> {
+    super::super::normalize_exit_code(status.code())
+}
+
+fn terminal_command() -> Result<windows_spawn::Command, String> {
+    let powershell =
+        crate::services::system_executable::powershell().map_err(|_| terminal_error())?;
+    let mut command = windows_spawn::Command::new(powershell);
+    command.env("TERM", "xterm-256color");
+    Ok(command)
 }
 
 fn validate_size(cols: u16, rows: u16) -> Result<(), String> {
@@ -144,15 +174,14 @@ fn validate_size(cols: u16, rows: u16) -> Result<(), String> {
     }
 }
 
-fn validated_cwd(cwd: Option<&str>) -> Result<Option<&std::path::Path>, String> {
+fn validated_cwd(cwd: Option<&Path>) -> Result<Option<&Path>, String> {
     let Some(directory) = cwd else {
         return Ok(None);
     };
-    let path = std::path::Path::new(directory);
-    if !path.is_absolute() || !path.is_dir() {
+    if !directory.is_absolute() || !directory.is_dir() {
         Err("terminal-cwd-invalid".to_string())
     } else {
-        Ok(Some(path))
+        Ok(Some(directory))
     }
 }
 

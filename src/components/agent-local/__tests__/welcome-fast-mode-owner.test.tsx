@@ -56,7 +56,7 @@ vi.mock("@/hooks/use-available-models", () => ({
 }));
 vi.mock("@/hooks/use-file-preview", () => ({ useFilePreview: () => ({}) }));
 vi.mock("@/hooks/use-agent-local-shortcuts", () => ({ useAgentLocalShortcuts: vi.fn() }));
-vi.mock("@/hooks/use-agent-local-tab-panel-sync", () => ({ useAgentLocalTabPanelSync: vi.fn() }));
+vi.mock("@/hooks/use-agent-local-preview-sync", () => ({ useAgentLocalPreviewSync: vi.fn() }));
 vi.mock("@/hooks/use-agent-local-controlled-preview", () => ({
   useAgentLocalControlledPreview: () => ({ open: false, toggleOpen: vi.fn(), openPlan: vi.fn(), openOperation: vi.fn() }),
 }));

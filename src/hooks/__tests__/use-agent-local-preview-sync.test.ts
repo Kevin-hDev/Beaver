@@ -1,7 +1,7 @@
 import { renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { DEFAULT_APP_NAV } from "@/types/navigation";
-import { useAgentLocalTabPanelSync } from "../use-agent-local-tab-panel-sync";
+import { useAgentLocalPreviewSync } from "../use-agent-local-preview-sync";
 import type { FilePreviewActiveTab } from "@/types/file-preview";
 
 function preview(open: boolean, activeTab: FilePreviewActiveTab = "summary") {
@@ -15,25 +15,14 @@ function preview(open: boolean, activeTab: FilePreviewActiveTab = "summary") {
   };
 }
 
-function terminal(open = false) {
-  return {
-    isOpen: open,
-    activeTabId: null,
-    togglePanel: vi.fn(),
-    setActiveTab: vi.fn(),
-  };
-}
-
-describe("useAgentLocalTabPanelSync", () => {
+describe("useAgentLocalPreviewSync", () => {
   it("ne republie pas un état preview obsolète pendant une restauration", () => {
     const filePreview = preview(true);
-    const terminalPanel = terminal();
 
     const { rerender } = renderHook(
-      ({ open }) => useAgentLocalTabPanelSync({
+      ({ open }) => useAgentLocalPreviewSync({
         navState: DEFAULT_APP_NAV.agentLocal,
         filePreview: { ...filePreview, open },
-        terminal: terminalPanel,
       }),
       { initialProps: { open: true } },
     );
@@ -47,13 +36,11 @@ describe("useAgentLocalTabPanelSync", () => {
 
   it("publie une ouverture locale sans la refermer", () => {
     const filePreview = preview(false);
-    const terminalPanel = terminal();
 
     const { rerender } = renderHook(
-      ({ open }) => useAgentLocalTabPanelSync({
+      ({ open }) => useAgentLocalPreviewSync({
         navState: DEFAULT_APP_NAV.agentLocal,
         filePreview: { ...filePreview, open },
-        terminal: terminalPanel,
       }),
       { initialProps: { open: false } },
     );

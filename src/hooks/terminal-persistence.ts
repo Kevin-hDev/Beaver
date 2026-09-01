@@ -1,55 +1,56 @@
-import { homeDir, join } from "@tauri-apps/api/path";
-import { readTextFile, remove, rename, writeTextFile } from "@tauri-apps/plugin-fs";
-import { DEFAULT_GROUP_KEY, type TerminalGroup } from "./terminal-types";
+import { invoke } from "@tauri-apps/api/core";
+import {
+  isValidTerminalLabel,
+  MAX_GROUP_KEY_BYTES,
+  MAX_GROUPS,
+  MAX_TABS_PER_GROUP,
+  MAX_TOTAL_TABS,
+} from "./terminal-types";
 
-interface SavedGroups {
-  [groupKey: string]: { label: string; cwd: string }[];
+export interface TerminalSavedTab {
+  label: string;
 }
 
-async function getTabsPath(): Promise<string> {
-  const home = await homeDir();
-  return join(home, ".local", "share", "cl-go-dash", "terminal-tabs.json");
+export interface TerminalTabsDocument {
+  version: 1;
+  groups: Record<string, TerminalSavedTab[]>;
 }
 
-export async function loadSavedGroups(): Promise<SavedGroups> {
-  try {
-    const path = await getTabsPath();
-    const text = await readTextFile(path);
-    const parsed = JSON.parse(text) as unknown;
-    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-      return parsed as SavedGroups;
+export const TERMINAL_TABS_RECOVERED = "terminal-tabs-recovered";
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isValidGroupKey(value: string): boolean {
+  return value.length > 0
+    && new TextEncoder().encode(value).length <= MAX_GROUP_KEY_BYTES
+    && !/[\0\r\n]/u.test(value);
+}
+
+function isTerminalTabsDocument(value: unknown): value is TerminalTabsDocument {
+  if (!isObject(value) || value.version !== 1 || !isObject(value.groups)) return false;
+  const groups = Object.entries(value.groups);
+  if (groups.length > MAX_GROUPS) return false;
+  let totalTabs = 0;
+  for (const [groupKey, tabs] of groups) {
+    if (!isValidGroupKey(groupKey) || !Array.isArray(tabs) || tabs.length > MAX_TABS_PER_GROUP) {
+      return false;
     }
-    if (Array.isArray(parsed) && parsed.length > 0) {
-      return { [DEFAULT_GROUP_KEY]: parsed as SavedGroups[string] };
+    totalTabs += tabs.length;
+    if (totalTabs > MAX_TOTAL_TABS) return false;
+    if (tabs.some((tab) => !isObject(tab) || !isValidTerminalLabel(tab.label))) {
+      return false;
     }
-    return {};
-  } catch {
-    return {};
   }
+  return true;
 }
 
-export async function saveGroups(groups: Map<string, TerminalGroup>): Promise<void> {
-  try {
-    const path = await getTabsPath();
-    const data: SavedGroups = {};
-    for (const [key, group] of groups) {
-      if (group.tabs.length > 0) {
-        data[key] = group.tabs.map(({ label, cwd }) => ({ label, cwd }));
-      }
-    }
-    /* Écriture directe = JSON tronqué si l'app meurt au milieu : on écrit un
-       fichier temporaire puis on le renomme, opération atomique sur le même
-       volume. Windows refuse de renommer par-dessus un fichier existant :
-       on le retire d'abord, la fenêtre de risque y est réduite mais pas nulle. */
-    const tmpPath = `${path}.tmp`;
-    await writeTextFile(tmpPath, JSON.stringify(data));
-    try {
-      await rename(tmpPath, path);
-    } catch {
-      await remove(path).catch(() => {});
-      await rename(tmpPath, path);
-    }
-  } catch {
-    console.warn("[terminal-tabs] failed to save");
-  }
+export async function loadSavedGroups(): Promise<TerminalTabsDocument> {
+  const value: unknown = await invoke("load_terminal_tabs");
+  if (!isTerminalTabsDocument(value)) throw new Error("terminal-tabs-invalid");
+  return value;
 }
+
+export const saveGroups = (document: TerminalTabsDocument): Promise<void> =>
+  invoke<void>("save_terminal_tabs", { document });

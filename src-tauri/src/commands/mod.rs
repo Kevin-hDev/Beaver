@@ -129,6 +129,7 @@ pub mod subagents_tests;
 pub(crate) mod subagents_validation;
 pub mod system_prompts;
 pub mod terminal;
+pub(crate) mod terminal_blocking;
 pub mod update_notifications;
 
 pub use agent_chat::*;

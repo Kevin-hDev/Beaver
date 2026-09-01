@@ -1,4 +1,6 @@
 use super::SharedChild;
+use crate::services::terminal::exit_wait::{reap_child, ExitPoll};
+use crate::services::terminal::normalize_exit_code;
 use std::fs::File;
 use std::io::{self, Read};
 use std::os::windows::io::AsRawHandle;
@@ -117,28 +119,44 @@ impl Read for PtyReader {
 
 impl Drop for PtyReader {
     fn drop(&mut self) {
-        let process = self.child.lock().ok().and_then(|mut child| {
-            child
-                .try_wait()
-                .ok()
-                .flatten()
-                .is_none()
-                .then_some(child.id())
-        });
-        if let Some(pid) = process {
-            // A reader failure must fail closed: an unreadable terminal cannot
-            // leave its shell executable behind the UI.
-            crate::services::process_tree::kill(
-                pid,
-                crate::services::process_tree::ProcessKind::Terminal,
-            );
-            if let Ok(mut child) = self.child.lock() {
-                if child.try_wait().ok().flatten().is_none() {
-                    let _ = child.kill();
+        let mut tree_killed = false;
+        let mut root_killed = false;
+        let _ = reap_child(|| match self.child.try_lock() {
+            Ok(mut child) => match child.try_wait() {
+                Ok(Some(status)) => ExitPoll::Exited(normalize_exit_code(status.code())),
+                Ok(None) => {
+                    if !tree_killed {
+                        // Un lecteur illisible ne doit pas laisser son shell vivant.
+                        crate::services::process_tree::kill(
+                            child.id(),
+                            crate::services::process_tree::ProcessKind::Terminal,
+                        );
+                        tree_killed = true;
+                    }
+                    if !root_killed {
+                        let _ = child.kill();
+                        root_killed = true;
+                    }
+                    ExitPoll::Running
                 }
-                let _ = child.wait();
-            }
-        }
+                Err(_) => {
+                    if !tree_killed {
+                        crate::services::process_tree::kill(
+                            child.id(),
+                            crate::services::process_tree::ProcessKind::Terminal,
+                        );
+                        tree_killed = true;
+                    }
+                    if !root_killed {
+                        let _ = child.kill();
+                        root_killed = true;
+                    }
+                    ExitPoll::Failed
+                }
+            },
+            Err(std::sync::TryLockError::WouldBlock) => ExitPoll::Running,
+            Err(std::sync::TryLockError::Poisoned(_)) => ExitPoll::Failed,
+        });
         let _ = self.output.close();
     }
 }

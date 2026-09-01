@@ -14,6 +14,10 @@ pub(super) fn not_found() -> String {
     "terminal-not-found".to_string()
 }
 
+pub(super) fn not_authorized() -> String {
+    "terminal-not-authorized".to_string()
+}
+
 pub(super) fn terminal_error() -> String {
     "terminal-error".to_string()
 }

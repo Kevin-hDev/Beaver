@@ -1216,10 +1216,19 @@
     "newTab": "Nouvel onglet",
     "closePanel": "Fermer le panneau",
     "processExited": "Processus terminé avec le code {{code}}",
+    "processExitedUnknown": "Processus terminé, code de sortie indisponible",
     "failedToStart": "Le terminal n'a pas pu démarrer",
     "closeTab": "Fermer l'onglet",
     "activity": "Nouvelle sortie dans cet onglet",
-    "resizePanel": "Ajuster la hauteur du panneau"
+    "resizePanel": "Ajuster la hauteur du panneau",
+    "tabsLoadFailed": "Impossible de restaurer les onglets du terminal. Redémarrez Beaver pour réessayer.",
+    "tabsRecovered": "Impossible de restaurer les onglets du terminal. Une session vide a été ouverte.",
+    "tabsSaveFailed": "Impossible d’enregistrer les onglets du terminal. Redémarrez Beaver pour réessayer.",
+    "tabLimitReached": "La limite d’onglets du terminal est atteinte.",
+    "liveLimitReached": "La limite de terminaux actifs est atteinte. Fermez un onglet pour réessayer.",
+    "failedToClose": "Impossible de fermer le terminal. Réessayez.",
+    "inputQueueFull": "Le terminal traite encore trop de données. Patientez puis réessayez.",
+    "inputFailed": "Impossible d’envoyer la saisie au terminal. Réessayez."
   },
   "skills": {
     "sourceBuiltIn": "Intégré",

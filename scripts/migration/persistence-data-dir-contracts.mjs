@@ -102,6 +102,7 @@ export const EXPECTED_DATA_DIR_REFERENCES = Object.freeze([
   ["src-tauri/src/services/searxng/process.rs", 2],
   ["src-tauri/src/services/searxng/process_receipt.rs", 1],
   ["src-tauri/src/services/security_cleanup.rs", 1],
+  ["src-tauri/src/services/terminal/tab_store.rs", 1],
   ["src-tauri/src/services/update_health.rs", 1],
   ["src-tauri/src/services/update_notifications.rs", 1],
   ["src-tauri/src/services/vault.rs", 1],

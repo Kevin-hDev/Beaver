@@ -1,74 +1,152 @@
-import { describe, it, expect } from "vitest";
-import { renderHook, act } from "@testing-library/react";
+import { createElement, type ComponentProps } from "react";
+import { act, render, renderHook, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { useProjects } from "@/hooks/use-projects";
 import { useTerminal } from "@/hooks/use-terminal";
+import type { Project } from "@/types/agent";
+import { ChatTerminalDock } from "../chat-terminal-dock";
+
+interface DockPanelProps {
+  onProcessExit: (tabId: string, groupKey: string) => void;
+}
+
+const { invokeMock, panelHarness } = vi.hoisted(() => ({
+  invokeMock: vi.fn(),
+  panelHarness: { props: null as DockPanelProps | null },
+}));
+
+vi.mock("@tauri-apps/api/core", () => ({ invoke: invokeMock }));
+vi.mock("@/components/terminal/terminal-panel", () => ({
+  TerminalPanel: (props: DockPanelProps) => {
+    panelHarness.props = props;
+    return null;
+  },
+}));
+
+const ready = (groupKey: string) => ({
+  validGroupKeys: [groupKey],
+  projectLoadState: "ready" as const,
+});
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((ok) => { resolve = ok; });
+  return { promise, resolve };
+}
+
+function useTerminalWithProjects() {
+  const projects = useProjects();
+  const terminal = useTerminal("project-a", "/a", {
+    validGroupKeys: projects.projects.map((project) => project.id),
+    projectLoadState: projects.loadState,
+  });
+  return { terminal, projectLoadState: projects.loadState };
+}
 
 describe("terminal integration - isolation par projet", () => {
-  it("tabs are isolated per groupKey", () => {
-    const { result } = renderHook(() => useTerminal("project-a", "/a"));
+  beforeEach(() => {
+    invokeMock.mockReset();
+    invokeMock.mockImplementation((command: string) => Promise.resolve(
+      command === "load_terminal_tabs" ? { version: 1, groups: {} } : undefined,
+    ));
+  });
+
+  it("isole les onglets par groupKey", async () => {
+    const { result } = renderHook(() => useTerminal("project-a", "/a", ready("project-a")));
+    await waitFor(() => expect(result.current.persistenceStatus).toBe("healthy"));
 
     act(() => { result.current.addTab("/a/dir"); });
+
     expect(result.current.tabs).toHaveLength(1);
-
-    const allTabs = result.current.allTabs();
-    expect(allTabs).toHaveLength(1);
-    expect(allTabs[0].groupKey).toBe("project-a");
+    expect(result.current.allTabs()).toHaveLength(1);
+    expect(result.current.allTabs()[0].groupKey).toBe("project-a");
   });
 
-  it("multiple addTab calls create distinct tabs", () => {
-    const { result } = renderHook(() => useTerminal("test", "/test"));
-    act(() => { result.current.addTab("/a"); });
-    act(() => { result.current.addTab("/b"); });
-    act(() => { result.current.addTab("/c"); });
+  it("achemine la fin d'un PTY vers le groupe qui l'a démarré", () => {
+    const closeTabInGroup = vi.fn();
+    const terminalState = {
+      tabs: [], activeTabId: null, allTabs: () => [], groupKey: "project-a",
+      isOpen: true, panelHeight: 200, addTab: vi.fn(), closeTab: vi.fn(),
+      closeTabInGroup, setActiveTab: vi.fn(), renameTab: vi.fn(),
+      reorderTabs: vi.fn(), togglePanel: vi.fn(), setPtyId: vi.fn(),
+      setTabActivity: vi.fn(), resizePanel: vi.fn(), setMaxHeight: vi.fn(),
+    } as unknown as ComponentProps<typeof ChatTerminalDock>["terminalState"];
+    render(createElement(ChatTerminalDock, { terminalState }));
 
-    const ids = result.current.tabs.map((t) => t.id);
-    const unique = new Set(ids);
-    expect(unique.size).toBe(3);
+    panelHarness.props?.onProcessExit("b1", "project-b");
+
+    expect(closeTabInGroup).toHaveBeenCalledWith("project-b", "b1");
   });
 
-  it("reorder does not lose tabs", () => {
-    const { result } = renderHook(() => useTerminal("test", "/test"));
-    act(() => { result.current.addTab("/a"); });
-    act(() => { result.current.addTab("/b"); });
-    act(() => { result.current.addTab("/c"); });
+  it("crée des identifiants distincts sans perdre d'onglet au réordonnancement", async () => {
+    const { result } = renderHook(() => useTerminal("test", "/test", ready("test")));
+    await waitFor(() => expect(result.current.persistenceStatus).toBe("healthy"));
+    for (const cwd of ["/a", "/b", "/c"]) {
+      act(() => { result.current.addTab(cwd); });
+    }
+    const before = result.current.tabs.map((tab) => tab.id).sort();
 
-    const before = result.current.tabs.map((t) => t.id).sort();
     act(() => { result.current.reorderTabs(0, 2); });
-    const after = result.current.tabs.map((t) => t.id).sort();
-    expect(after).toEqual(before);
+
+    expect(new Set(before).size).toBe(3);
+    expect(result.current.tabs.map((tab) => tab.id).sort()).toEqual(before);
   });
 
-  it("default panel height is 120px", () => {
-    const { result } = renderHook(() => useTerminal("test", "/test"));
+  it("conserve les opérations de hauteur et de groupe", async () => {
+    const { result } = renderHook(() => useTerminal("test", "/test", ready("test")));
+    await waitFor(() => expect(result.current.persistenceStatus).toBe("healthy"));
     expect(result.current.panelHeight).toBe(120);
-  });
+    expect(result.current.getGroupPtyIds("nonexistent")).toEqual([]);
 
-  it("removeGroup deletes a group", () => {
-    const { result } = renderHook(() => useTerminal("to-delete", "/tmp"));
-    act(() => { result.current.addTab("/tmp"); });
-    expect(result.current.tabs).toHaveLength(1);
-
-    act(() => { result.current.removeGroup("to-delete"); });
+    act(() => { result.current.addTab("/test"); });
+    act(() => { result.current.removeGroup("test"); });
     expect(result.current.tabs).toHaveLength(0);
   });
 
-  it("getGroupPtyIds returns empty for unknown group", () => {
-    const { result } = renderHook(() => useTerminal("test", "/test"));
-    expect(result.current.getGroupPtyIds("nonexistent")).toEqual([]);
+  it("place la persistance en erreur sans écrire après une réponse IPC mal formée", async () => {
+    invokeMock.mockImplementation((command: string) => Promise.resolve(
+      command === "load_terminal_tabs" ? undefined : undefined,
+    ));
+    const { result } = renderHook(() => useTerminal("test", "/test", ready("test")));
+
+    await waitFor(() => expect(result.current.persistenceStatus).toBe("error"));
+
+    expect(invokeMock).not.toHaveBeenCalledWith("save_terminal_tabs", expect.anything());
   });
 
-  it("closing last tab closes panel", () => {
-    const { result } = renderHook(() => useTerminal("test", "/test"));
-    act(() => { result.current.addTab("/test"); });
-    expect(result.current.isOpen).toBe(true);
+  it("conserve project-a pendant deux cycles avant la réponse de list_projects", async () => {
+    const pendingProjects = deferred<Project[]>();
+    invokeMock.mockImplementation((command: string) => {
+      if (command === "load_terminal_tabs") {
+        return Promise.resolve({ version: 1, groups: { "project-a": [{ label: "build" }] } });
+      }
+      if (command === "list_projects") return pendingProjects.promise;
+      return Promise.resolve(undefined);
+    });
+    const { result, rerender } = renderHook(() => useTerminalWithProjects());
+    await waitFor(() => expect(result.current.terminal.persistenceStatus).toBe("healthy"));
 
-    const tabId = result.current.tabs[0].id;
-    act(() => { result.current.closeTab(tabId); });
-    expect(result.current.isOpen).toBe(false);
-  });
+    rerender();
+    expect(result.current.terminal.tabs).toHaveLength(1);
+    rerender();
+    expect(result.current.terminal.tabs).toHaveLength(1);
+    expect(result.current.projectLoadState).toBe("loading");
+    expect(invokeMock).not.toHaveBeenCalledWith("save_terminal_tabs", expect.anything());
 
-  it("toggle on empty group does not open panel", () => {
-    const { result } = renderHook(() => useTerminal("empty", "/test"));
-    act(() => { result.current.togglePanel(); });
-    expect(result.current.isOpen).toBe(false);
+    await act(async () => {
+      pendingProjects.resolve([{
+        id: "project-a",
+        name: "Project A",
+        path: "/a",
+        order: 0,
+        created_at: "2026-08-31T00:00:00Z",
+      }]);
+      await pendingProjects.promise;
+    });
+
+    await waitFor(() => expect(result.current.projectLoadState).toBe("ready"));
+    expect(result.current.terminal.tabs).toHaveLength(1);
+    expect(result.current.terminal.tabs[0].label).toBe("build");
+    expect(invokeMock).not.toHaveBeenCalledWith("save_terminal_tabs", expect.anything());
   });
 });

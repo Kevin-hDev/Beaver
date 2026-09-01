@@ -16,7 +16,7 @@ describe("first launch", () => {
     assert.ok(await settingsTabs.length >= 3);
     await settingsTabs[2].click();
 
-    await $(".scs-root").waitForDisplayed();
+    await $(".scs-row").waitForDisplayed();
     const rows = $$(".scs-row");
     assert.equal(await rows.length, APP_SHORTCUTS.length);
   });

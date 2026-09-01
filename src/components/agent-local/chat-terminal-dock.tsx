@@ -1,8 +1,10 @@
 import { TerminalPanel } from "@/components/terminal/terminal-panel";
-import type { useTerminal } from "@/hooks/use-terminal";
+import type { useAgentLocalControlledTerminal } from "@/hooks/use-agent-local-controlled-terminal";
+import i18n from "@/i18n";
+import { showToast } from "@/lib/toast-emitter";
 
 interface ChatTerminalDockProps {
-  terminalState: ReturnType<typeof useTerminal>;
+  terminalState: ReturnType<typeof useAgentLocalControlledTerminal>;
 }
 
 export function ChatTerminalDock({ terminalState }: ChatTerminalDockProps) {
@@ -22,6 +24,10 @@ export function ChatTerminalDock({ terminalState }: ChatTerminalDockProps) {
       onTogglePanel={terminalState.togglePanel}
       onPtyReady={terminalState.setPtyId}
       onTabActivity={terminalState.setTabActivity}
+      onProcessExit={(tabId, groupKey) => terminalState.closeTabInGroup(groupKey, tabId)}
+      onLiveLimitReached={() => {
+        showToast(i18n.t("terminal.liveLimitReached"), "warning");
+      }}
       onResize={terminalState.resizePanel}
       onSetMaxHeight={terminalState.setMaxHeight}
     />

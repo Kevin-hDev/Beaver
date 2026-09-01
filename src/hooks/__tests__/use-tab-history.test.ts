@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { useTabHistory } from "../use-tab-history";
-import { DEFAULT_APP_NAV, FILE_ACCESS_SETTINGS_NAV } from "@/types/navigation";
+import { DEFAULT_APP_NAV, FILE_ACCESS_SETTINGS_NAV, migrateAppNav } from "@/types/navigation";
 
 describe("useTabHistory", () => {
   it("migre l'ancien onglet api-keys vers Providers", () => {
@@ -25,6 +25,22 @@ describe("useTabHistory", () => {
     const { result } = renderHook(() => useTabHistory(legacy));
 
     expect(result.current.current.agentLocal.forecastSection).toBe("view");
+  });
+
+  it("retire l'ancien onglet terminal actif sans republier sa valeur", () => {
+    const legacy = {
+      ...DEFAULT_APP_NAV,
+      agentLocal: {
+        ...DEFAULT_APP_NAV.agentLocal,
+        terminalOpen: true,
+        terminalActiveTabId: "stale",
+      },
+    } as unknown as typeof DEFAULT_APP_NAV;
+
+    const migrated = migrateAppNav(legacy);
+
+    expect("terminalActiveTabId" in migrated.agentLocal).toBe(false);
+    expect(migrated.agentLocal.terminalOpen).toBe(true);
   });
 
   it("ignore les push identiques", () => {

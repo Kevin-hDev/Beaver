@@ -7,10 +7,12 @@ export const EXPECTED_INTERNAL_REFERENCE_COUNTS = Object.freeze({
   "CL-GO-DASH": 3,
   "CL-GO": 38,
   CLGO: 32,
-  "cl-go-dash": 255,
+  // Le test Linux nomme le binaire cl-go-dash une fois de plus.
+  "cl-go-dash": 258,
   clgo: 114,
   "cl-go": 72,
-  cl_go_dash: 46,
+  // Les deux branches main appellent explicitement la bibliothèque Rust.
+  cl_go_dash: 48,
 });
 
 export const COMPATIBILITY_CONTRACTS = Object.freeze([

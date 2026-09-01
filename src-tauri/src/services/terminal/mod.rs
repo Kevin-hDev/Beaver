@@ -1,21 +1,88 @@
+pub(crate) mod caller;
+pub mod cwd_resolver;
+mod exit_wait;
+mod limits;
+#[cfg(any(target_os = "linux", test))]
+mod linux_spawn_worker;
 mod manager;
+mod output_window;
 mod owned_session;
 pub mod pty_session;
 mod public_error;
+mod reader;
+mod session_handle;
+pub(crate) mod shell_helper;
 mod shutdown;
+pub mod tab_store;
+mod tab_store_recovery;
+mod utf8_decoder;
 
-pub use manager::{PtyChannelEvent, PtyManager};
+pub use manager::PtyManager;
+
+#[derive(Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PtyChannelEvent {
+    pub data: String,
+    pub is_exit: bool,
+    pub exit_code: Option<u32>,
+    pub sequence: Option<u32>,
+}
+
+#[cfg(test)]
+mod caller_tests;
+
+#[cfg(test)]
+mod cwd_resolver_tests;
+
+#[cfg(test)]
+mod exit_wait_tests;
+
+#[cfg(test)]
+mod output_window_tests;
+
+#[cfg(all(test, target_os = "linux"))]
+mod linux_spawn_worker_tests;
+
+#[cfg(test)]
+mod linux_spawn_worker_lifecycle_tests;
+
+#[cfg(all(test, target_os = "macos"))]
+mod macos_parent_death_tests;
+
+#[cfg(test)]
+mod session_handle_tests;
+
+#[cfg(test)]
+mod shell_helper_tests;
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod tab_store_tests;
+
+#[cfg(test)]
+mod utf8_decoder_tests;
+
+#[cfg(all(test, windows))]
+mod windows_parent_death_tests;
 
 fn generate_token() -> zeroize::Zeroizing<String> {
     use rand::RngCore;
     let mut bytes = [0_u8; 16];
     rand::rngs::OsRng.fill_bytes(&mut bytes);
-    let token = bytes.iter().map(|byte| format!("{byte:02x}")).collect();
-    bytes.fill(0);
-    zeroize::Zeroizing::new(token)
+    encode_token(&mut bytes)
+}
+
+fn encode_token(bytes: &mut [u8; 16]) -> zeroize::Zeroizing<String> {
+    use std::fmt::Write;
+    use zeroize::Zeroize;
+    let mut token = zeroize::Zeroizing::new(String::with_capacity(bytes.len() * 2));
+    for byte in bytes.iter() {
+        write!(&mut *token, "{byte:02x}").expect("String writes are infallible");
+    }
+    bytes.zeroize();
+    token
 }
 
 fn verify_token(expected: &str, provided: &str) -> Result<(), String> {
@@ -27,9 +94,30 @@ fn verify_token(expected: &str, provided: &str) -> Result<(), String> {
         .ok_or_else(|| "terminal-access-denied".to_string())
 }
 
+#[cfg(any(test, windows))]
+fn normalize_exit_code(code: Option<i32>) -> Option<u32> {
+    code.map(|value| u32::from_ne_bytes(value.to_ne_bytes()))
+}
+
 #[cfg(test)]
 mod token_tests {
-    use super::verify_token;
+    use super::{encode_token, normalize_exit_code, verify_token};
+
+    #[test]
+    fn token_hex_zeroizes_its_source_buffer() {
+        let mut bytes = [0xab_u8; 16];
+
+        let token = encode_token(&mut bytes);
+
+        assert_eq!(&*token, "abababababababababababababababab");
+        assert_eq!(bytes, [0_u8; 16]);
+    }
+
+    #[test]
+    fn unknown_exit_code_is_not_invented_as_success() {
+        assert_eq!(normalize_exit_code(None), None);
+        assert_eq!(normalize_exit_code(Some(0)), Some(0));
+    }
 
     #[test]
     fn terminal_token_accepts_only_the_exact_value() {

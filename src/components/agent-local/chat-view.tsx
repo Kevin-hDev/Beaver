@@ -206,7 +206,7 @@ export function ChatView({
               />
             </div>
           </div>
-        )}
+        )} {/* La vue de chat possède le dock : la quitter ferme volontairement ses PTY. */}
         {!isSubagent && <ChatTerminalDock terminalState={terminalState} />}
       </div>
       <ChatOverlays

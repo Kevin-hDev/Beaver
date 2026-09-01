@@ -11,6 +11,9 @@ fn main() {
     if let Some(code) = cl_go_dash_lib::run_shell_sandbox_helper() {
         std::process::exit(code);
     }
+    if let Some(code) = cl_go_dash_lib::run_terminal_shell_helper_if_requested() {
+        std::process::exit(code);
+    }
     // SAFETY: le helper éventuel ne crée aucun thread et remplace le processus
     // avec exec ; cet appel reste donc antérieur à CEF, Tauri et tout thread.
     if !unsafe { cl_go_dash_lib::configure_git_network_policy() } {
@@ -46,6 +49,9 @@ fn main() {
 #[cfg(target_os = "windows")]
 fn main() {
     if let Some(code) = cl_go_dash_lib::run_shell_sandbox_helper() {
+        std::process::exit(code);
+    }
+    if let Some(code) = cl_go_dash_lib::run_terminal_shell_helper_if_requested() {
         std::process::exit(code);
     }
     std::process::exit(cl_go_dash_lib::launch_windows_browser_host());
