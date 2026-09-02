@@ -1,0 +1,9 @@
+CI correction follow-up for PR #53.
+
+Root causes closed: the differential Rust formatter had not been applied to all Rust files introduced by the branch; Windows Clippy saw root_pid as unused because the extra PID check is Unix-only; the generated SDK README assertion compared LF content with a CRLF checkout; npm audit resolved browserslist 4.28.2 to a vulnerable release.
+
+Implementation: applied the repository rustfmt command to every Rust file changed from base 9ad343ffc451c9500452dc6c751e6cb0819b4810; kept the Windows Job Object check and explicitly documented the platform-only PID use; normalized the checked-in README to LF at the test boundary; refreshed the lockfile to browserslist 4.28.8 and its transitive browser-data packages.
+
+Review evidence: all non-target Rust diffs are formatting-only (git diff -w is empty). No application behavior or generated extension contract artifact changed.
+
+Fresh local validation: npm run lint; npx tsc --noEmit; npm test (528 Vitest files / 2867 tests, build scripts 56, CI scripts 16, CEF 45 plus 1 Windows-only skip, E2E runner 70, extension host 57, reasoning fixtures 10); npm audit --audit-level=high (0 vulnerabilities); cargo fmt --check; differential rustfmt check against 9ad343f; cargo check; cargo clippy --all-targets -- -D warnings; cargo test (4727 passed, 10 ignored, 0 failed); Windows GNU cargo check with unused variables denied; graphify update .
