@@ -4,6 +4,29 @@
 
 ---
 
+## v1.2.1
+
+### Official Beaver plugins
+
+- **Office plugin suite** — Documents, PDF, Spreadsheets, and Presentations are now delivered as official Beaver plugins, distinct from the built-in Tools and independently configurable from Settings.
+- **Accessible chat shortcuts** — users can choose which enabled plugins appear in the composer menu, with a bounded, scrollable shortcut list that does not change which tools the agent can use.
+
+### Custom extensions
+
+- **Local, Git, and npm installation** — JavaScript and TypeScript extensions can be added from local files or folders, validated HTTPS or SSH Git sources, and packages from the official npm registry.
+- **Versioned extension API** — extensions can register tools, subscribe to supported lifecycle events, and use bounded APIs for sessions, projects, MCP connectors, channels, and explicitly requested user secrets.
+- **Scalable tool discovery** — Agent mode keeps complete plugin toolsets visible while they fit within the context budget, then uses a bounded discovery tool without exposing agentic extensions to regular Chat mode.
+- **Managed updates and removal** — Beaver validates manifests before registry changes, stages managed updates safely, revokes trust after source changes, and removes only files managed by Beaver.
+
+### Isolation, trust, and recovery
+
+- **Dedicated third-party hosts** — every enabled custom extension runs in its own managed Node.js and Jiti host process, while audited official plugins share a separate Beaver-owned host.
+- **Explicit trust boundaries** — first activation requires approval, executable files receive bounded SHA-256 fingerprints, sensitive tool effects follow Beaver's permission policy, and changed code is blocked before loading.
+- **Reliable lifecycle and diagnostics** — bounded restarts, crash markers, safe recovery actions, translated errors, access diagnostics, and host status reporting keep one faulty extension from taking down Beaver or its neighbors.
+- **Cross-platform foundation** — the extension runtime, installation paths, process supervision, UI states, and recovery flows are covered across macOS, Linux, and Windows. Interface extensions and external applications remain future work.
+
+---
+
 ## v1.2.0
 
 ### Security audit skills

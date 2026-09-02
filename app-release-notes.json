@@ -1,53 +1,53 @@
 {
-  "1.2.0": {
+  "1.2.1": {
     "fr": [
-      "Beaver inclut désormais onze parcours d’audit de sécurité fondés sur des preuves pour le code, l’authentification, les dépendances, les secrets et les releases.",
-      "Les profils de compression sont personnalisables globalement ou par conversation, avec des sauvegardes, migrations et reprises plus sûres.",
-      "Les onglets du terminal sont restaurés par projet ou conversation, et les shells ne démarrent que lorsque vous les ouvrez.",
-      "Les commandes du terminal sont authentifiées et bornées, et les shells s’arrêtent avec Beaver sur macOS, Linux et Windows sans blocage.",
-      "Les panneaux, fichiers, analyses Forecast, notes et profils de données sont isolés par projet ou conversation et restent récupérables après suppression du propriétaire."
+      "Les extensions JavaScript et TypeScript peuvent maintenant être ajoutées depuis des fichiers locaux, des dépôts Git et des packages npm.",
+      "Documents, PDF, Feuilles de calcul et Présentations fonctionnent maintenant comme plugins officiels, séparés des Tools intégrés.",
+      "Chaque extension tierce utilise son propre processus géré avec approbation, empreinte des fichiers, permissions bornées et reprise après panne.",
+      "L’API d’extension donne accès aux outils, événements, sessions, projets, connecteurs MCP, canaux et secrets approuvés par l’utilisateur.",
+      "Les réglages proposent maintenant l’activation, les mises à jour, les priorités, les diagnostics et la récupération des extensions."
     ],
     "en": [
-      "Beaver now includes eleven evidence-led security audit workflows for code, authentication, dependencies, secrets, and release integrity.",
-      "Compression profiles can be customized globally or per conversation, with safer checkpoints, migrations, recovery, and bounded context retention.",
-      "Terminal tabs restore by project or conversation, and shells start only when you open them.",
-      "Terminal commands are authenticated and bounded, while shells shut down with Beaver on macOS, Linux, and Windows without deadlocks.",
-      "Panels, files, Forecast analyses, notes, and data profiles are isolated per project or conversation and remain recoverable after their owner is removed."
+      "JavaScript and TypeScript extensions can now be added from local files, Git repositories, and npm packages.",
+      "Documents, PDF, Spreadsheets, and Presentations now run as official plugins, separate from the built-in Tools.",
+      "Each third-party extension uses its own managed process with approval, file fingerprints, bounded permissions, and crash recovery.",
+      "The extension API provides tools, events, sessions, projects, MCP connectors, channels, and user-approved secrets.",
+      "Settings now provides extension activation, updates, priorities, diagnostics, and recovery."
     ],
     "es": [
-      "Beaver incluye ahora once flujos de auditoría de seguridad basados en pruebas para código, autenticación, dependencias, secretos e integridad de versiones.",
-      "Los perfiles de compresión se pueden personalizar globalmente o por conversación, con puntos de control, migraciones y recuperación más seguros.",
-      "Las pestañas del terminal se restauran por proyecto o conversación, y los shells solo se inician al abrirlos.",
-      "Los comandos del terminal están autenticados y limitados, y los shells se cierran con Beaver en macOS, Linux y Windows sin bloqueos.",
-      "Los paneles, archivos, análisis Forecast, notas y perfiles de datos se aíslan por proyecto o conversación y siguen siendo recuperables tras eliminar su propietario."
+      "Las extensiones JavaScript y TypeScript ya se pueden añadir desde archivos locales, repositorios Git y paquetes npm.",
+      "Documentos, PDF, Hojas de cálculo y Presentaciones funcionan ahora como plugins oficiales, separados de las Tools integradas.",
+      "Cada extensión de terceros usa su propio proceso gestionado con aprobación, huellas de archivos, permisos limitados y recuperación.",
+      "La API de extensiones ofrece herramientas, eventos, sesiones, proyectos, conectores MCP, canales y secretos aprobados por el usuario.",
+      "Los ajustes permiten ahora activar, actualizar, priorizar, diagnosticar y recuperar extensiones."
     ],
     "de": [
-      "Beaver enthält jetzt elf evidenzbasierte Sicherheitsprüfungen für Code, Authentifizierung, Abhängigkeiten, Geheimnisse und Release-Integrität.",
-      "Komprimierungsprofile lassen sich global oder je Unterhaltung anpassen und bieten sicherere Prüfpunkte, Migrationen und Wiederherstellung.",
-      "Terminal-Tabs werden je Projekt oder Unterhaltung wiederhergestellt, und Shells starten erst beim Öffnen.",
-      "Terminalbefehle sind authentifiziert und begrenzt, während Shells mit Beaver unter macOS, Linux und Windows ohne Blockaden beendet werden.",
-      "Panels, Dateien, Forecast-Analysen, Notizen und Datenprofile sind je Projekt oder Unterhaltung isoliert und bleiben nach dem Löschen des Besitzers wiederherstellbar."
+      "JavaScript- und TypeScript-Erweiterungen lassen sich jetzt aus lokalen Dateien, Git-Repositorys und npm-Paketen hinzufügen.",
+      "Dokumente, PDF, Tabellen und Präsentationen laufen jetzt als offizielle Plugins, getrennt von den integrierten Tools.",
+      "Jede Drittanbieter-Erweiterung nutzt einen eigenen verwalteten Prozess mit Freigabe, Dateiprüfsummen, Grenzen und Wiederherstellung.",
+      "Die Erweiterungs-API bietet Werkzeuge, Ereignisse, Sitzungen, Projekte, MCP-Konnektoren, Kanäle und freigegebene Geheimnisse.",
+      "In den Einstellungen lassen sich Erweiterungen jetzt aktivieren, aktualisieren, priorisieren, diagnostizieren und wiederherstellen."
     ],
     "it": [
-      "Beaver include ora undici procedure di audit della sicurezza basate su prove per codice, autenticazione, dipendenze, segreti e integrità delle release.",
-      "I profili di compressione sono personalizzabili globalmente o per conversazione, con checkpoint, migrazioni e ripristino più sicuri.",
-      "Le schede del terminale vengono ripristinate per progetto o conversazione e le shell si avviano solo quando vengono aperte.",
-      "I comandi del terminale sono autenticati e limitati, mentre le shell si chiudono con Beaver su macOS, Linux e Windows senza blocchi.",
-      "Pannelli, file, analisi Forecast, note e profili dati sono isolati per progetto o conversazione e restano recuperabili dopo la rimozione del proprietario."
+      "Le estensioni JavaScript e TypeScript possono ora essere aggiunte da file locali, repository Git e pacchetti npm.",
+      "Documenti, PDF, Fogli di calcolo e Presentazioni ora funzionano come plugin ufficiali, separati dai Tools integrati.",
+      "Ogni estensione di terze parti usa un processo gestito separato con approvazione, impronte dei file, limiti e ripristino.",
+      "L’API delle estensioni offre strumenti, eventi, sessioni, progetti, connettori MCP, canali e segreti approvati dall’utente.",
+      "Le impostazioni consentono ora di attivare, aggiornare, ordinare, diagnosticare e ripristinare le estensioni."
     ],
     "zh": [
-      "Beaver 现提供十一套基于证据的安全审计流程，覆盖代码、身份验证、依赖项、密钥与发布完整性。",
-      "压缩配置可在全局或单个对话中自定义，并提供更安全的检查点、迁移、恢复和有界上下文保留。",
-      "终端标签页会按项目或对话恢复，shell 仅在打开标签页时启动。",
-      "终端命令经过身份验证并受到容量限制，shell 会在 macOS、Linux 和 Windows 上随 Beaver 安全退出且不会死锁。",
-      "面板、文件、Forecast 分析、笔记和数据配置按项目或对话隔离，所属对象删除后仍可恢复。"
+      "现在可以从本地文件、Git 仓库和 npm 包添加 JavaScript 与 TypeScript 扩展。",
+      "文档、PDF、电子表格和演示文稿现作为官方插件运行，并与内置 Tools 分开管理。",
+      "每个第三方扩展都使用独立的托管进程，并具备明确授权、文件指纹、权限限制和崩溃恢复。",
+      "扩展 API 提供工具、事件、会话、项目、MCP 连接器、通道以及用户批准的密钥访问。",
+      "设置中现可管理扩展的启用、更新、优先级、诊断和恢复。"
     ],
     "ja": [
-      "Beaver に、コード、認証、依存関係、秘密情報、リリース整合性を対象とする、証拠重視の11種類のセキュリティ監査ワークフローが追加されました。",
-      "圧縮プロファイルを全体または会話ごとに設定でき、チェックポイント、移行、復旧、コンテキスト保持がより安全になりました。",
-      "ターミナルタブはプロジェクトまたは会話ごとに復元され、シェルはタブを開いたときだけ起動します。",
-      "ターミナルコマンドは認証と上限設定で保護され、macOS、Linux、Windows で Beaver の終了時にデッドロックなくシェルも終了します。",
-      "パネル、ファイル、Forecast 分析、ノート、データプロファイルはプロジェクトまたは会話ごとに分離され、所有元の削除後も復旧できます。"
+      "JavaScript と TypeScript の拡張機能を、ローカルファイル、Git リポジトリ、npm パッケージから追加できるようになりました。",
+      "文書、PDF、スプレッドシート、プレゼンテーションが、内蔵 Tools とは別の公式プラグインとして動作します。",
+      "各サードパーティ拡張機能は、承認、ファイル指紋、権限制限、障害復旧を備えた専用プロセスで動作します。",
+      "拡張 API からツール、イベント、セッション、プロジェクト、MCP コネクタ、チャンネル、承認済み秘密情報を利用できます。",
+      "設定画面で拡張機能の有効化、更新、優先順位、診断、復旧を管理できるようになりました。"
     ]
   }
 }

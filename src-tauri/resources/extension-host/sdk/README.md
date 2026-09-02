@@ -4,7 +4,7 @@ Beaver extensions are trusted local code. They run in a separate Node.js host wi
 
 `access` and `apiLevel` describe compatibility and intended use. They are not process-isolation or security boundaries. Beaver validates registered contributions again in Rust, but extension code remains fully trusted code.
 
-Approval is associated with the extension identity and source, not with a content hash. Editing a local extension does not request approval again. A Git or npm update managed by Beaver disables the extension and requests trust again before its next activation. Users remain responsible for auditing every source and update.
+Approval is associated with the extension identity, source, and current bounded file fingerprint. Editing fingerprinted local, Git, or npm content revokes approval, disables the extension, and clears its session permissions before the next load. A Git or npm update managed by Beaver also requests trust again before its next activation. Users remain responsible for auditing every source and update.
 
 ## Installation sources
 
@@ -102,7 +102,7 @@ beaver.unstable.registerReplacement({
 
 Core calls reject with a `BeaverExtensionError`. Use `isBeaverExtensionError(error)` to read its bounded `code`, `reason`, and `retryable` fields. A `core_busy` or `core_request_timeout` error is retryable; an unavailable method is not.
 
-The host is shared by the enabled local extensions. Changing the enabled set restarts the host so that removed or disabled code is terminated; other extensions are therefore activated again.
+Enabled official plugins share Beaver's official host. Each enabled third-party extension runs in its own managed host process, so disabling or stopping it terminates its code without sharing an identity or failure domain with other third-party extensions.
 
 Secrets are zeroized by Beaver on the Rust side after transfer. Once a secret crosses into JavaScript, immutable strings and the JavaScript garbage collector prevent Beaver from guaranteeing immediate memory erasure.
 
