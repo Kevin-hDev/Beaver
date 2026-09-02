@@ -1,5 +1,6 @@
 use super::core_bridge::CoreResponse;
 use super::host_channel::{self, PendingRequests, SharedWriter};
+use super::host_load_tracker::HostLoadTracker;
 use super::protocol::{RpcError, RpcErrorBody, RpcResult};
 use super::types::MAX_MESSAGE_BYTES;
 use crate::services::work_registry::ServiceWorkCancellation;
@@ -14,6 +15,7 @@ pub async fn run(
     writer: SharedWriter,
     pending: PendingRequests,
     alive: Arc<AtomicBool>,
+    load_tracker: Arc<HostLoadTracker>,
     work: super::work_supervision::ExtensionWorkServices,
     cancellation: ServiceWorkCancellation,
 ) {
@@ -26,11 +28,15 @@ pub async fn run(
                 Err(_) => break,
             },
         };
-        if receive(&bytes, &writer, &pending, &work).await.is_err() {
+        if receive(&bytes, &writer, &pending, &load_tracker, &work)
+            .await
+            .is_err()
+        {
             break;
         }
     }
     alive.store(false, Ordering::Release);
+    load_tracker.clear().await;
     host_channel::fail_all(&pending).await;
 }
 
@@ -38,20 +44,28 @@ async fn receive(
     bytes: &[u8],
     writer: &SharedWriter,
     pending: &PendingRequests,
+    load_tracker: &HostLoadTracker,
     work: &super::work_supervision::ExtensionWorkServices,
 ) -> Result<(), String> {
     let message: Value = serde_json::from_slice(bytes)
         .map_err(|_| "Réponse de l'hôte d'extensions invalide.".to_string())?;
     super::validation::message(&message)?;
     let object = super::protocol::envelope(&message)?;
+    if let Some(method) = object.get("method").and_then(Value::as_str) {
+        if object.get("id").is_none() {
+            return receive_notification(method, object.get("params"), load_tracker).await;
+        }
+        let id = object
+            .get("id")
+            .and_then(Value::as_str)
+            .ok_or_else(|| "Réponse de l'hôte d'extensions invalide.".to_string())?;
+        let params = object.get("params").cloned();
+        return spawn_core_call(id.to_string(), method.to_string(), params, writer, work).await;
+    }
     let id = object
         .get("id")
         .and_then(Value::as_str)
         .ok_or_else(|| "Réponse de l'hôte d'extensions invalide.".to_string())?;
-    if let Some(method) = object.get("method").and_then(Value::as_str) {
-        let params = object.get("params").cloned();
-        return spawn_core_call(id.to_string(), method.to_string(), params, writer, work).await;
-    }
     let Some(sender) = pending.lock().await.remove(id) else {
         return Ok(());
     };
@@ -65,6 +79,25 @@ async fn receive(
     };
     let _ = sender.send(result);
     Ok(())
+}
+
+async fn receive_notification(
+    method: &str,
+    params: Option<&Value>,
+    load_tracker: &HostLoadTracker,
+) -> Result<(), String> {
+    if method != "host.load.stage" {
+        return Err("Réponse de l'hôte d'extensions invalide.".to_string());
+    }
+    let params = params
+        .and_then(Value::as_object)
+        .filter(|params| params.len() == 1)
+        .ok_or_else(|| "Réponse de l'hôte d'extensions invalide.".to_string())?;
+    let stage = params
+        .get("stage")
+        .and_then(Value::as_str)
+        .ok_or_else(|| "Réponse de l'hôte d'extensions invalide.".to_string())?;
+    load_tracker.advance(stage).await.map(|_| ())
 }
 
 async fn spawn_core_call(

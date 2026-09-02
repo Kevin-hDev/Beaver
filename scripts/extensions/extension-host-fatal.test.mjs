@@ -3,7 +3,7 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
-import { createHost } from "./host-test-client.mjs";
+import { createHost, resetAndLoad } from "./host-test-client.mjs";
 import { hostScript } from "./office-test-helpers.mjs";
 
 test("answers the active request before a fatal host shutdown", async () => {
@@ -26,13 +26,11 @@ test("answers the active request before a fatal host shutdown", async () => {
   );
   const host = createHost(hostScript);
   try {
-    await host.request("host.sync", {
-      extensions: [{
+    await resetAndLoad(host, [{
         id: "com.beaver.fatal-test",
         mainPath: source,
         manifest: { apiLevel: "stable" },
-      }],
-    });
+      }]);
     await assert.rejects(
       host.request("tool.call", {
         name: "com.beaver.fatal-test.fatal",

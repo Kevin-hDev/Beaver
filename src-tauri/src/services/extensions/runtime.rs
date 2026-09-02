@@ -1,6 +1,6 @@
 use super::host_paths::HostPaths;
 use super::host_process::HostProcess;
-use super::protocol::{HelloResult, SyncResult};
+use super::protocol::{HelloResult, LoadResult};
 use super::types::{ExtensionDiagnostic, ExtensionHostStatus, HostState, BEAVER_API_VERSION};
 use crate::app_exit::AppWorkSupervisor;
 use serde_json::{json, Value};
@@ -72,11 +72,17 @@ impl ExtensionRuntime {
             .directory
             .as_path();
         let build = super::runtime_sync::build_specs(records, directory)?;
-        let response = process
-            .request("host.sync", json!({"extensions": build.specs}))
-            .await
-            .and_then(parse::<SyncResult>)?;
-        let applied = super::runtime_sync::apply(response, &build)?;
+        process.request("host.reset", json!({})).await?;
+        let mut responses = Vec::with_capacity(build.specs.len());
+        for specification in &build.specs {
+            responses.push(
+                process
+                    .load(specification)
+                    .await
+                    .and_then(parse::<LoadResult>)?,
+            );
+        }
+        let applied = super::runtime_sync::apply(responses, &build)?;
         self.set_running(hello, applied.active, applied.diagnostics);
         Ok(())
     }

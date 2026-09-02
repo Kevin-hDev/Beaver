@@ -72,6 +72,15 @@ describe("parseExtensionRecords", () => {
       .toThrow("invalid_extension_response");
   });
 
+  it("ignore les anciens événements inconnus sans perdre le registre", () => {
+    const input = backendRecord();
+    input.contributions.events = ["session.legacy", "session.turn.started"];
+
+    const [record] = parseExtensionRecords([input]);
+
+    expect(record.contributions.events).toEqual(["session.turn.started"]);
+  });
+
   it("valide la provenance Git ou npm exposée par le registre", () => {
     const input = {
       ...backendRecord(),

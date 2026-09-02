@@ -1,9 +1,7 @@
+use super::types::{HOST_RESTART_WINDOW_SECONDS, MAX_HOST_RESTARTS_PER_WINDOW};
 use std::collections::VecDeque;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
-
-const AUTO_RESTART_LIMIT: usize = 3;
-const AUTO_RESTART_WINDOW: Duration = Duration::from_secs(300);
 
 #[derive(Default)]
 pub struct RestartBudget {
@@ -16,13 +14,12 @@ impl RestartBudget {
             return false;
         };
         let now = Instant::now();
-        while attempts
-            .front()
-            .is_some_and(|attempt| now.duration_since(*attempt) >= AUTO_RESTART_WINDOW)
-        {
+        while attempts.front().is_some_and(|attempt| {
+            now.duration_since(*attempt) >= Duration::from_secs(HOST_RESTART_WINDOW_SECONDS as u64)
+        }) {
             attempts.pop_front();
         }
-        if attempts.len() >= AUTO_RESTART_LIMIT {
+        if attempts.len() >= MAX_HOST_RESTARTS_PER_WINDOW {
             return false;
         }
         attempts.push_back(now);

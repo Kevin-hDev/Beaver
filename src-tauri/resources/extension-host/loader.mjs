@@ -1,8 +1,9 @@
 import { createJiti } from "jiti";
 import { fileURLToPath } from "node:url";
-import { LIMITS } from "./contract.mjs";
+import { LIMITS, LOAD_STAGES, supportsEvent, TIMEOUTS } from "./contract.mjs";
 import { createExtensionApi } from "./extension-api.mjs";
 import { createDiagnostic } from "./diagnostics.mjs";
+import { notifyCore } from "./protocol.mjs";
 
 const sdkPath = fileURLToPath(new URL("./sdk/index.mjs", import.meta.url));
 const jiti = createJiti(import.meta.url, {
@@ -12,17 +13,12 @@ const jiti = createJiti(import.meta.url, {
   moduleCache: false,
   sourceMaps: false,
 });
-const TOOL_TIMEOUT_MS = 55_000;
 const extensions = new Map();
 const tools = new Map();
 
-export async function syncExtensions(specifications) {
+export async function resetExtensions() {
   await deactivateAll();
-  const loaded = [];
-  for (const specification of specifications) {
-    loaded.push(await loadExtension(specification));
-  }
-  return { extensions: loaded };
+  return { reset: true };
 }
 
 export async function callExtensionTool(name, arguments_, context) {
@@ -33,7 +29,10 @@ export async function callExtensionTool(name, arguments_, context) {
   const raw = await Promise.race([
     Promise.resolve().then(() => entry.execute(arguments_ ?? {}, executionContext)),
     new Promise((_, reject) => {
-      timer = setTimeout(() => reject(new Error("tool_timeout")), TOOL_TIMEOUT_MS);
+      timer = setTimeout(
+        () => reject(new Error("tool_timeout")),
+        TIMEOUTS.toolCallTimeoutMs,
+      );
       timer.unref();
     }),
   ]).finally(() => clearTimeout(timer));
@@ -96,6 +95,7 @@ function isLowSurrogate(value) {
 }
 
 export async function emitExtensionEvent(event, payload) {
+  if (!supportsEvent(event)) throw new Error("invalid_event_name");
   for (const extension of extensions.values()) {
     try {
       await extension.context.emit(event, payload);
@@ -106,12 +106,17 @@ export async function emitExtensionEvent(event, payload) {
   return { delivered: extensions.size };
 }
 
-async function loadExtension(specification) {
-  let stage = "import";
+export async function loadExtension(specification) {
+  let stage = LOAD_STAGES[0];
   try {
+    if (!specification || typeof specification !== "object") {
+      throw new Error("invalid_extension_specification");
+    }
+    notifyCore("host.load.stage", { stage });
     const context = createExtensionApi(specification);
     const module = await jiti.import(specification.mainPath, { default: true });
-    stage = "activate";
+    stage = LOAD_STAGES[1];
+    notifyCore("host.load.stage", { stage });
     const activate =
       typeof module === "function"
         ? module
@@ -120,7 +125,8 @@ async function loadExtension(specification) {
           : null;
     if (!activate) throw new Error("activate_missing");
     await activate(context.api);
-    stage = "register";
+    stage = LOAD_STAGES[2];
+    notifyCore("host.load.stage", { stage });
     ensureUniqueTools(context.tools);
     for (const tool of context.tools) {
       tools.set(tool.metadata.name, {

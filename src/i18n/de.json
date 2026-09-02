@@ -2443,7 +2443,18 @@
         "extensions_storage_failed": "Der lokale Erweiterungsspeicher ist nicht verfügbar.",
         "extensions_update_identity_changed": "Die Aktualisierung änderte die Identität der Erweiterung und wurde abgelehnt.",
         "extensions_update_unavailable": "Beaver kann diese Erweiterung nicht aktualisieren.",
-        "extensions_cleanup_failed": "Einige alte Erweiterungsdateien konnten nicht bereinigt werden."
+        "extensions_cleanup_failed": "Einige alte Erweiterungsdateien konnten nicht bereinigt werden.",
+        "extensions_operation_failed": "Der Erweiterungsvorgang konnte nicht abgeschlossen werden.",
+        "extensions_fingerprint_changed": "Die Erweiterungsdateien wurden geändert und müssen erneut geprüft werden.",
+        "extensions_fingerprint_failed": "Die Erweiterungsdateien konnten nicht überprüft werden.",
+        "extensions_stop_unconfirmed": "Der Erweiterungshost hat das Beenden nicht bestätigt.",
+        "extensions_registry_entry_ignored": "Ein ungültiger Erweiterungseintrag wurde ignoriert.",
+        "extensions_registry_migration_failed": "Das Erweiterungsregister konnte nicht aktualisiert werden.",
+        "extensions_recovery_marker_invalid": "Die Wiederherstellungsinformationen der Erweiterung sind ungültig.",
+        "extensions_load_interrupted": "Das Laden der Erweiterung wurde unterbrochen.",
+        "extensions_activation_confirmation_required": "Diese Erweiterung muss vor der Aktivierung erneut genehmigt werden.",
+        "extensions_not_found": "Die Erweiterung wurde nicht gefunden.",
+        "extensions_host_incompatible": "Der Erweiterungshost ist mit dieser Beaver-Version nicht kompatibel."
       }
     },
     "diagnostics": {

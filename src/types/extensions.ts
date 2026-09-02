@@ -1,3 +1,25 @@
+import type {
+  ExtensionEffectClass,
+  ExtensionEvent,
+  HostLoadStage,
+} from "./extension-contract.generated";
+
+export {
+  ADVANCED_HOST_TO_CORE_REQUEST_METHODS,
+  CORE_TO_HOST_METHODS,
+  EXTENSION_API_VERSION,
+  EXTENSION_BACKEND_ERROR_CODES,
+  EXTENSION_CAPABILITIES,
+  EXTENSION_EFFECT_CLASSES,
+  EXTENSION_EVENTS,
+  HOST_LOAD_STAGES,
+  HOST_TO_CORE_NOTIFICATION_METHODS,
+  LIMITS,
+  PROTOCOL_ERROR_REASONS,
+  STABLE_HOST_TO_CORE_REQUEST_METHODS,
+  TIMEOUTS,
+} from "./extension-contract.generated";
+
 export type ExtensionKind = "builtin" | "local" | "external";
 export type ExtensionOriginKind = "local" | "git" | "npm";
 export type ExtensionStatus = "active" | "inactive" | "loading" | "error" | "incompatible";
@@ -24,12 +46,13 @@ export interface ExtensionTool {
   name: string;
   description: string;
   parameters: Record<string, unknown>;
+  effect: ExtensionEffectClass;
   replacesCore: boolean;
 }
 
 export interface ExtensionContributions {
   tools: ExtensionTool[];
-  events: string[];
+  events: ExtensionEvent[];
 }
 
 export interface ExtensionOrigin {
@@ -54,7 +77,7 @@ export interface ExtensionRecord {
 
 export interface ExtensionDiagnostic {
   extensionId: string;
-  stage: "import" | "activate" | "register";
+  stage: HostLoadStage;
   code: string;
   file?: string;
   line?: number;
@@ -74,3 +97,15 @@ export interface ExtensionHostStatus {
 export interface ExtensionDiscoveryPreferences {
   protectedPluginIds: string[];
 }
+export type {
+  AdvancedHostToCoreRequestMethod,
+  CoreToHostMethod,
+  ExtensionBackendErrorCode,
+  ExtensionCapability,
+  ExtensionEffectClass,
+  ExtensionEvent,
+  ExtensionProtocolErrorReason,
+  HostLoadStage,
+  HostToCoreNotificationMethod,
+  StableHostToCoreRequestMethod,
+} from "./extension-contract.generated";

@@ -22,12 +22,7 @@ pub struct HelloResult {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct SyncResult {
-    pub extensions: Vec<LoadedExtension>,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct LoadedExtension {
+pub struct LoadResult {
     pub id: String,
     pub contributions: Option<ExtensionContributions>,
     pub error: Option<String>,
@@ -86,8 +81,14 @@ pub fn envelope(value: &Value) -> Result<&Map<String, Value>, String> {
     let object = value
         .as_object()
         .ok_or_else(|| "Réponse de l'hôte d'extensions invalide.".to_string())?;
+    let identifier = object.get("id");
+    let method = object.get("method");
+    let valid_identifier = identifier.is_some_and(|value| value.as_str().is_some());
+    let valid_method = method.is_some_and(|value| value.as_str().is_some());
     if object.get("jsonrpc").and_then(Value::as_str) != Some("2.0")
-        || object.get("id").and_then(Value::as_str).is_none()
+        || identifier.is_some_and(|_| !valid_identifier)
+        || method.is_some_and(|_| !valid_method)
+        || (!valid_identifier && !valid_method)
     {
         return Err("Réponse de l'hôte d'extensions invalide.".to_string());
     }

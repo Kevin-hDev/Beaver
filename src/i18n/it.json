@@ -2443,7 +2443,18 @@
         "extensions_storage_failed": "L’archivio locale delle estensioni non è disponibile.",
         "extensions_update_identity_changed": "L’aggiornamento ha cambiato l’identità dell’estensione ed è stato rifiutato.",
         "extensions_update_unavailable": "Beaver non può aggiornare questa estensione.",
-        "extensions_cleanup_failed": "Non è stato possibile pulire alcuni vecchi file di estensione."
+        "extensions_cleanup_failed": "Non è stato possibile pulire alcuni vecchi file di estensione.",
+        "extensions_operation_failed": "Non è stato possibile completare l’operazione dell’estensione.",
+        "extensions_fingerprint_changed": "I file dell’estensione sono cambiati e devono essere verificati di nuovo.",
+        "extensions_fingerprint_failed": "Non è stato possibile verificare i file dell’estensione.",
+        "extensions_stop_unconfirmed": "L’host delle estensioni non ha confermato l’arresto.",
+        "extensions_registry_entry_ignored": "Una voce di estensione non valida è stata ignorata.",
+        "extensions_registry_migration_failed": "Non è stato possibile aggiornare il registro delle estensioni.",
+        "extensions_recovery_marker_invalid": "Le informazioni di ripristino dell’estensione non sono valide.",
+        "extensions_load_interrupted": "Il caricamento dell’estensione è stato interrotto.",
+        "extensions_activation_confirmation_required": "Questa estensione deve essere approvata di nuovo prima dell’attivazione.",
+        "extensions_not_found": "L’estensione non è stata trovata.",
+        "extensions_host_incompatible": "L’host delle estensioni non è compatibile con questa versione di Beaver."
       }
     },
     "diagnostics": {

@@ -1,3 +1,12 @@
+import type {
+  AdvancedHostToCoreRequestMethod,
+  ExtensionEffectClass,
+  ExtensionEvent,
+  StableHostToCoreRequestMethod,
+} from "./contract";
+
+export * from "./contract";
+
 export type JsonValue =
   | null
   | boolean
@@ -28,6 +37,7 @@ export interface BeaverTool {
   name: string;
   description: string;
   parameters: Record<string, JsonValue>;
+  effect: ExtensionEffectClass;
   execute(
     arguments_: Record<string, JsonValue>,
     context: BeaverToolContext,
@@ -39,8 +49,8 @@ export interface BeaverExtensionApi {
   readonly manifest: Record<string, JsonValue>;
   info(): Promise<JsonValue>;
   registerTool(tool: BeaverTool): void;
-  on(event: string, handler: (payload: JsonValue) => void | Promise<void>): () => void;
-  call(method: string, params?: Record<string, JsonValue>): Promise<JsonValue>;
+  on(event: ExtensionEvent, handler: (payload: JsonValue) => void | Promise<void>): () => void;
+  call(method: StableHostToCoreRequestMethod, params?: Record<string, JsonValue>): Promise<JsonValue>;
   readonly sessions: {
     list(): Promise<JsonValue>;
     get(sessionId: string): Promise<JsonValue>;
@@ -66,7 +76,7 @@ export interface BeaverExtensionApi {
     getChannelToken(channelId: string, accountId: string, kind?: string): Promise<string>;
   };
   readonly unstable: {
-    call(method: string, params?: Record<string, JsonValue>): Promise<JsonValue>;
+    call(method: AdvancedHostToCoreRequestMethod, params?: Record<string, JsonValue>): Promise<JsonValue>;
     registerReplacement(tool: BeaverTool): void;
   };
 }

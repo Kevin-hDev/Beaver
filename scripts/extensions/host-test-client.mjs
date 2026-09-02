@@ -15,6 +15,10 @@ export function createHost(hostScript, options = {}) {
   lines.on("line", (line) => {
     const message = JSON.parse(line);
     if (typeof message.method === "string") {
+      if (message.id === undefined) {
+        options.onNotification?.(message);
+        return;
+      }
       const response = options.respondToCore?.(message)
         ?? (message.method === "app.info"
           ? { result: { apiVersion: "1" } }
@@ -75,4 +79,13 @@ export function createHost(hostScript, options = {}) {
     },
     exited,
   };
+}
+
+export async function resetAndLoad(host, extensions) {
+  await host.request("host.reset", {});
+  const loaded = [];
+  for (const extension of extensions) {
+    loaded.push(await host.request("host.load", { extension }));
+  }
+  return { extensions: loaded };
 }

@@ -1,9 +1,10 @@
 import { fatalProtocolExit, startProtocol } from "./protocol.mjs";
-import { LIMITS } from "./contract.mjs";
+import { API_VERSION, LIMITS } from "./contract.mjs";
 import {
   callExtensionTool,
   emitExtensionEvent,
-  syncExtensions,
+  loadExtension,
+  resetExtensions,
 } from "./loader.mjs";
 import { JITI_VERSION } from "./versions.mjs";
 
@@ -15,20 +16,25 @@ process.stdout.write = () => true;
 process.on("uncaughtException", fatalProtocolExit);
 process.on("unhandledRejection", fatalProtocolExit);
 
+let loadedSinceReset = 0;
+
 startProtocol(async (method, params) => {
   switch (method) {
     case "host.hello":
       return {
-        apiVersion: "1",
+        apiVersion: API_VERSION,
         jitiVersion: JITI_VERSION,
         nodeVersion: process.version,
       };
-    case "host.sync": {
-      const specifications = Array.isArray(params.extensions) ? params.extensions : [];
-      if (specifications.length > LIMITS.maxExtensions) {
+    case "host.reset":
+      loadedSinceReset = 0;
+      return resetExtensions();
+    case "host.load": {
+      if (loadedSinceReset >= LIMITS.maxExtensions) {
         throw new Error("too_many_extensions");
       }
-      return syncExtensions(specifications);
+      loadedSinceReset += 1;
+      return loadExtension(params.extension);
     }
     case "tool.call":
       return callExtensionTool(
@@ -38,9 +44,6 @@ startProtocol(async (method, params) => {
       );
     case "event.emit":
       return emitExtensionEvent(String(params.event ?? ""), params.payload ?? null);
-    case "host.shutdown":
-      setTimeout(() => process.exit(0), 0);
-      return { stopping: true };
     default:
       throw new Error("unknown_method");
   }

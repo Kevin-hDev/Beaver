@@ -27,6 +27,7 @@ async fn echo_host() -> (Child, SharedWriter, BufReader<ChildStdout>) {
 async fn ignores_response_for_expired_request() {
     let (mut child, writer, _reader) = echo_host().await;
     let pending = Arc::new(tokio::sync::Mutex::new(HashMap::new()));
+    let tracker = super::super::host_load_tracker::HostLoadTracker::default();
     let work = extension_work();
     let message = serde_json::to_vec(&json!({
         "jsonrpc": "2.0",
@@ -35,7 +36,9 @@ async fn ignores_response_for_expired_request() {
     }))
     .unwrap();
 
-    assert!(receive(&message, &writer, &pending, &work).await.is_ok());
+    assert!(receive(&message, &writer, &pending, &tracker, &work)
+        .await
+        .is_ok());
 
     let _ = child.start_kill();
     let _ = child.wait().await;
@@ -45,6 +48,7 @@ async fn ignores_response_for_expired_request() {
 async fn rejects_saturated_core_without_stopping_reader() {
     let (mut child, writer, mut reader) = echo_host().await;
     let pending = Arc::new(tokio::sync::Mutex::new(HashMap::new()));
+    let tracker = super::super::host_load_tracker::HostLoadTracker::default();
     let work = extension_work();
     let admissions = (0..super::super::work_supervision::MAX_EXTENSION_CORE_CALLS)
         .map(|_| work.try_admit_core_call().unwrap())
@@ -57,13 +61,67 @@ async fn rejects_saturated_core_without_stopping_reader() {
     }))
     .unwrap();
 
-    assert!(receive(&message, &writer, &pending, &work).await.is_ok());
+    assert!(receive(&message, &writer, &pending, &tracker, &work)
+        .await
+        .is_ok());
     let mut response = String::new();
     reader.read_line(&mut response).await.unwrap();
     let response: Value = serde_json::from_str(&response).unwrap();
     assert_eq!(response["id"], "busy");
     assert_eq!(response["error"]["code"], -32000);
     drop(admissions);
+
+    let _ = child.start_kill();
+    let _ = child.wait().await;
+}
+
+#[tokio::test]
+async fn accepts_ordered_load_notifications_without_responding() {
+    let (mut child, writer, mut reader) = echo_host().await;
+    let pending = Arc::new(tokio::sync::Mutex::new(HashMap::new()));
+    let tracker = super::super::host_load_tracker::HostLoadTracker::default();
+    let work = extension_work();
+    tracker.arm("com.beaver.loading").await.unwrap();
+
+    for stage in ["import", "activate", "register"] {
+        let message = serde_json::to_vec(&json!({
+            "jsonrpc": "2.0",
+            "method": "host.load.stage",
+            "params": {"stage": stage}
+        }))
+        .unwrap();
+        assert!(receive(&message, &writer, &pending, &tracker, &work)
+            .await
+            .is_ok());
+    }
+    let mut response = String::new();
+    assert!(tokio::time::timeout(
+        std::time::Duration::from_millis(20),
+        reader.read_line(&mut response)
+    )
+    .await
+    .is_err());
+
+    let _ = child.start_kill();
+    let _ = child.wait().await;
+}
+
+#[tokio::test]
+async fn rejects_load_notification_outside_the_active_order() {
+    let (mut child, writer, _reader) = echo_host().await;
+    let pending = Arc::new(tokio::sync::Mutex::new(HashMap::new()));
+    let tracker = super::super::host_load_tracker::HostLoadTracker::default();
+    let work = extension_work();
+    let message = serde_json::to_vec(&json!({
+        "jsonrpc": "2.0",
+        "method": "host.load.stage",
+        "params": {"stage": "activate"}
+    }))
+    .unwrap();
+
+    assert!(receive(&message, &writer, &pending, &tracker, &work)
+        .await
+        .is_err());
 
     let _ = child.start_kill();
     let _ = child.wait().await;

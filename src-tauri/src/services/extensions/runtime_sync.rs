@@ -1,4 +1,4 @@
-use super::protocol::{HostExtensionSpec, SyncResult};
+use super::protocol::{HostExtensionSpec, LoadResult};
 use super::types::{
     ExtensionApiLevel, ExtensionContributions, ExtensionDiagnostic, ExtensionKind,
     DIAGNOSTIC_ADVANCED_REQUIRED, DIAGNOSTIC_ENTRY_UNAVAILABLE, DIAGNOSTIC_HOST_MISSING_RESPONSE,
@@ -49,8 +49,8 @@ pub fn build_specs(
     })
 }
 
-pub fn apply(response: SyncResult, build: &BuildSpecs) -> Result<ApplyResult, String> {
-    if response.extensions.len() > MAX_EXTENSIONS {
+pub fn apply(responses: Vec<LoadResult>, build: &BuildSpecs) -> Result<ApplyResult, String> {
+    if responses.len() > MAX_EXTENSIONS {
         return Err("Réponse de l'hôte d'extensions invalide.".to_string());
     }
     let requested: HashMap<&str, &HostExtensionSpec> = build
@@ -61,7 +61,7 @@ pub fn apply(response: SyncResult, build: &BuildSpecs) -> Result<ApplyResult, St
     let mut received = HashSet::new();
     let mut successful = HashMap::new();
     let mut diagnostics = build.diagnostics.clone();
-    for loaded in response.extensions.into_iter().take(MAX_EXTENSIONS) {
+    for loaded in responses.into_iter().take(MAX_EXTENSIONS) {
         if loaded
             .error
             .as_deref()

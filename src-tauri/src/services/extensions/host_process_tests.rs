@@ -7,6 +7,35 @@ fn extension_work() -> super::super::work_supervision::ExtensionWorkServices {
     super::super::work_supervision::ExtensionWorkServices::new(coordinator.work_supervisor())
 }
 
+#[tokio::test]
+async fn load_tracker_accepts_one_ordered_load_and_clears_it() {
+    let tracker = HostLoadTracker::default();
+
+    tracker.arm("com.beaver.first").await.unwrap();
+    assert!(tracker.arm("com.beaver.second").await.is_err());
+    assert_eq!(tracker.advance("import").await.unwrap(), "com.beaver.first");
+    assert_eq!(
+        tracker.advance("activate").await.unwrap(),
+        "com.beaver.first"
+    );
+    assert_eq!(
+        tracker.advance("register").await.unwrap(),
+        "com.beaver.first"
+    );
+    tracker.clear().await;
+    assert!(tracker.arm("com.beaver.second").await.is_ok());
+}
+
+#[tokio::test]
+async fn load_tracker_rejects_notifications_outside_or_out_of_order() {
+    let tracker = HostLoadTracker::default();
+
+    assert!(tracker.advance("import").await.is_err());
+    tracker.arm("com.beaver.first").await.unwrap();
+    assert!(tracker.advance("activate").await.is_err());
+    assert!(tracker.advance("unknown").await.is_err());
+}
+
 #[test]
 fn reader_admission_precedes_host_process_creation() {
     let source = include_str!("host_process.rs");

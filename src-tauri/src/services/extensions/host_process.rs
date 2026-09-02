@@ -1,9 +1,10 @@
 use super::error_codes;
 use super::host_channel::{self, PendingRequests, SharedWriter};
+use super::host_load_tracker::HostLoadTracker;
 use super::host_paths::HostPaths;
-use super::protocol::RpcRequest;
-use super::types::MAX_PENDING_REQUESTS;
-use serde_json::Value;
+use super::protocol::{HostExtensionSpec, RpcRequest};
+use super::types::{HOST_REQUEST_TIMEOUT_MS, HOST_STOP_TIMEOUT_MS, MAX_PENDING_REQUESTS};
+use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::process::Stdio;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -12,15 +13,14 @@ use std::time::{Duration, Instant};
 use tokio::process::{Child, Command};
 use tokio::sync::Mutex;
 
-const REQUEST_TIMEOUT: Duration = Duration::from_secs(60);
 const READER_STOP_TIMEOUT: Duration = Duration::from_secs(1);
-pub(super) const HOST_STOP_TIMEOUT: Duration = Duration::from_secs(5);
 
 pub struct HostProcess {
     child: Mutex<Child>,
     writer: SharedWriter,
     pending: PendingRequests,
     alive: Arc<AtomicBool>,
+    load_tracker: Arc<HostLoadTracker>,
     reader_done: Mutex<Option<tokio::sync::oneshot::Receiver<()>>>,
 }
 
@@ -64,10 +64,12 @@ impl HostProcess {
         let writer = Arc::new(Mutex::new(stdin));
         let pending = Arc::new(Mutex::new(HashMap::new()));
         let alive = Arc::new(AtomicBool::new(true));
+        let load_tracker = Arc::new(HostLoadTracker::default());
         let run_work = work.clone();
         let run_writer = writer.clone();
         let run_pending = pending.clone();
         let run_alive = alive.clone();
+        let run_load_tracker = load_tracker.clone();
         let reader_finished =
             match reader_admission.spawn_with_completion(move |cancel| async move {
                 super::host_reader::run(
@@ -75,6 +77,7 @@ impl HostProcess {
                     run_writer,
                     run_pending,
                     run_alive,
+                    run_load_tracker,
                     run_work,
                     cancel,
                 )
@@ -95,6 +98,7 @@ impl HostProcess {
             writer,
             pending,
             alive,
+            load_tracker,
             reader_done: Mutex::new(Some(reader_finished)),
         })
     }
@@ -126,7 +130,12 @@ impl HostProcess {
             self.pending.lock().await.remove(&id);
             return Err(error);
         }
-        match tokio::time::timeout(REQUEST_TIMEOUT, receiver).await {
+        match tokio::time::timeout(
+            Duration::from_millis(HOST_REQUEST_TIMEOUT_MS as u64),
+            receiver,
+        )
+        .await
+        {
             Ok(Ok(result)) => result,
             Ok(Err(_)) => Err(error_codes::HOST_UNAVAILABLE.to_string()),
             Err(_) => {
@@ -134,6 +143,15 @@ impl HostProcess {
                 Err(error_codes::HOST_TIMEOUT.to_string())
             }
         }
+    }
+
+    pub async fn load(&self, specification: &HostExtensionSpec) -> Result<Value, String> {
+        self.load_tracker.arm(&specification.id).await?;
+        let result = self
+            .request("host.load", json!({"extension": specification}))
+            .await;
+        self.load_tracker.clear().await;
+        result
     }
 
     pub async fn kill(&self, deadline: Instant) -> bool {
@@ -191,7 +209,7 @@ pub(super) async fn wait_reader_done(
 }
 
 pub(super) fn stop_deadline() -> Instant {
-    Instant::now() + HOST_STOP_TIMEOUT
+    Instant::now() + Duration::from_millis(HOST_STOP_TIMEOUT_MS as u64)
 }
 
 #[cfg(test)]

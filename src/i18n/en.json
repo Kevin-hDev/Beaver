@@ -1774,7 +1774,18 @@
         "extensions_storage_failed": "Local extension storage is unavailable.",
         "extensions_update_identity_changed": "The update changed the extension identity and was rejected.",
         "extensions_update_unavailable": "Beaver cannot update this extension.",
-        "extensions_cleanup_failed": "Some old extension files could not be cleaned up."
+        "extensions_cleanup_failed": "Some old extension files could not be cleaned up.",
+        "extensions_operation_failed": "The extension operation could not be completed.",
+        "extensions_fingerprint_changed": "The extension files changed and must be reviewed again.",
+        "extensions_fingerprint_failed": "The extension files could not be verified.",
+        "extensions_stop_unconfirmed": "The extension host did not confirm that it stopped.",
+        "extensions_registry_entry_ignored": "An invalid extension entry was ignored.",
+        "extensions_registry_migration_failed": "The extension registry could not be updated.",
+        "extensions_recovery_marker_invalid": "The extension recovery information is invalid.",
+        "extensions_load_interrupted": "Extension loading was interrupted.",
+        "extensions_activation_confirmation_required": "This extension must be approved again before activation.",
+        "extensions_not_found": "The extension could not be found.",
+        "extensions_host_incompatible": "The extension host is not compatible with this version of Beaver."
       }
     },
     "diagnostics": {

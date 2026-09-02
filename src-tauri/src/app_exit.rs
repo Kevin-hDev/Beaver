@@ -22,6 +22,8 @@ pub(crate) use policy::OLLAMA_REAP_RESERVE_TIMEOUT;
 mod presentation;
 mod raw_exit;
 mod registry;
+#[cfg(test)]
+pub(crate) use registry::REGISTRY_CAPACITY;
 mod registry_admission;
 mod request_api;
 mod request_flow;

@@ -1,15 +1,66 @@
 import assert from "node:assert/strict";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { test } from "node:test";
-import { fileURLToPath } from "node:url";
-import { LIMITS } from "../../src-tauri/resources/extension-host/contract.mjs";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import {
+  API_VERSION,
+  BOOTSTRAP_FILE_MAX_BYTES,
+  LIMITS,
+  MAX_BOOTSTRAPPED_CONTRACT_BYTES,
+  TIMEOUTS,
+} from "../../src-tauri/resources/extension-host/contract.mjs";
 import { OFFICE_LIMITS } from "../../src-tauri/resources/extension-host/builtin-plugins/common/constants.mjs";
-import { createHost } from "./host-test-client.mjs";
+import { createHost, resetAndLoad } from "./host-test-client.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const hostScript = join(root, "src-tauri/target/extension-host/host.mjs");
+
+test("loads the bootstrapped contract and its large shared limits", () => {
+  assert.equal(API_VERSION, "1");
+  assert.equal(BOOTSTRAP_FILE_MAX_BYTES, 256);
+  assert.equal(MAX_BOOTSTRAPPED_CONTRACT_BYTES, 1_048_576);
+  assert.equal(LIMITS.fingerprintMaxTotalBytes, 33_554_432);
+  assert.equal(TIMEOUTS.toolCallTimeoutMs, 55_000);
+  assert.ok(TIMEOUTS.toolCallTimeoutMs < TIMEOUTS.hostRequestTimeoutMs);
+});
+
+test("bounds bootstrap and contract bytes before Node deserialization", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "beaver-extension-contract-"));
+  const modulePath = join(directory, "contract.mjs");
+  await copyFile(
+    join(root, "src-tauri/resources/extension-host/contract.mjs"),
+    modulePath,
+  );
+  try {
+    await writeFile(
+      join(directory, "contract-bootstrap.json"),
+      " ".repeat(BOOTSTRAP_FILE_MAX_BYTES + 1),
+      { mode: 0o600 },
+    );
+    await writeFile(join(directory, "contract.json"), "{}", { mode: 0o600 });
+    await assert.rejects(
+      import(`${pathToFileURL(modulePath).href}?oversized-bootstrap`),
+      /invalid_extension_contract/,
+    );
+
+    await writeFile(
+      join(directory, "contract-bootstrap.json"),
+      JSON.stringify({ maxContractBytes: 8_192 }),
+      { mode: 0o600 },
+    );
+    await writeFile(join(directory, "contract.json"), " ".repeat(8_193), {
+      mode: 0o600,
+    });
+    await assert.rejects(
+      import(`${pathToFileURL(modulePath).href}?oversized-contract`),
+      /invalid_extension_contract/,
+    );
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
 
 test("isolates only the extension that exceeds the shared global tool limit", async () => {
   const directory = await mkdtemp(join(tmpdir(), "beaver-extension-limits-"));
@@ -42,7 +93,7 @@ test("isolates only the extension that exceeds the shared global tool limit", as
   const host = createHost(hostScript);
 
   try {
-    const sync = await host.request("host.sync", { extensions: specifications });
+    const sync = await resetAndLoad(host, specifications);
     const active = sync.extensions.filter((extension) => !extension.error);
     const rejected = sync.extensions.filter((extension) => extension.error);
 
@@ -79,13 +130,11 @@ test("shares and enforces one working-directory limit across the host", async ()
   );
   const host = createHost(hostScript);
   try {
-    await host.request("host.sync", {
-      extensions: [{
+    await resetAndLoad(host, [{
         id: "com.beaver.context-limit",
         mainPath: source,
         manifest: { apiLevel: "stable" },
-      }],
-    });
+      }]);
     await assert.rejects(
       host.request("tool.call", {
         name: "com.beaver.context-limit.context",

@@ -1,11 +1,8 @@
+use super::types::{MAX_PROJECT_RESULTS, MAX_SESSION_RESULTS, MCP_TOOL_TIMEOUT_MS};
 use serde::Serialize;
 use serde_json::{json, Value};
 use std::time::Duration;
 use zeroize::Zeroizing;
-
-const MAX_SESSION_RESULTS: usize = 500;
-const MAX_PROJECT_RESULTS: usize = 500;
-const MCP_CALL_TIMEOUT: Duration = Duration::from_secs(25);
 
 pub enum CoreResponse {
     Json(Value),
@@ -123,7 +120,7 @@ async fn call_mcp_tool(params: &Value) -> Result<CoreResponse, ()> {
     crate::services::mcp_bridge::arguments::validate(&arguments, tool.input_schema.as_ref())
         .map_err(|_| ())?;
     let result = tokio::time::timeout(
-        MCP_CALL_TIMEOUT,
+        Duration::from_millis(MCP_TOOL_TIMEOUT_MS as u64),
         connector.transport.call_tool(&tool.name, arguments),
     )
     .await

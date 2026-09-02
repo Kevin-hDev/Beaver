@@ -30,6 +30,7 @@ const extension: ExtensionRecord = {
       description: "Custom search behavior",
       parameters: { type: "object" },
       replacesCore: true,
+      effect: "unknown",
     }],
     events: [],
   },

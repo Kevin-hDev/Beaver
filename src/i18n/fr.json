@@ -1826,7 +1826,18 @@
         "extensions_storage_failed": "Le stockage local des extensions est indisponible.",
         "extensions_update_identity_changed": "La mise à jour a changé l’identité de l’extension et a été refusée.",
         "extensions_update_unavailable": "Cette extension ne peut pas être mise à jour par Beaver.",
-        "extensions_cleanup_failed": "Des anciens fichiers d’extension n’ont pas pu être nettoyés."
+        "extensions_cleanup_failed": "Des anciens fichiers d’extension n’ont pas pu être nettoyés.",
+        "extensions_operation_failed": "L’opération sur l’extension n’a pas pu être terminée.",
+        "extensions_fingerprint_changed": "Les fichiers de l’extension ont changé et doivent être vérifiés à nouveau.",
+        "extensions_fingerprint_failed": "Les fichiers de l’extension n’ont pas pu être vérifiés.",
+        "extensions_stop_unconfirmed": "L’hôte d’extensions n’a pas confirmé son arrêt.",
+        "extensions_registry_entry_ignored": "Une entrée d’extension invalide a été ignorée.",
+        "extensions_registry_migration_failed": "Le registre des extensions n’a pas pu être mis à jour.",
+        "extensions_recovery_marker_invalid": "Les informations de récupération de l’extension sont invalides.",
+        "extensions_load_interrupted": "Le chargement de l’extension a été interrompu.",
+        "extensions_activation_confirmation_required": "Cette extension doit être approuvée à nouveau avant son activation.",
+        "extensions_not_found": "L’extension est introuvable.",
+        "extensions_host_incompatible": "L’hôte d’extensions n’est pas compatible avec cette version de Beaver."
       }
     },
     "diagnostics": {

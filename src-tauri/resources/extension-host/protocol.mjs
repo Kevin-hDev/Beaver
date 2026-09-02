@@ -1,8 +1,12 @@
 import { randomUUID } from "node:crypto";
-import { LIMITS } from "./contract.mjs";
+import {
+  LIMITS,
+  methodKind,
+  PROTOCOL_ERROR_REASONS,
+  TIMEOUTS,
+} from "./contract.mjs";
 import { encodeProtocolMessage } from "./protocol-output.mjs";
 
-const REQUEST_TIMEOUT_MS = 30_000;
 const MAX_REQUEST_ID_CHARS = 128;
 const ERROR_REASON_PATTERN = /^[a-z][a-z0-9_]{0,63}$/;
 const RETRYABLE_REASONS = new Set([
@@ -34,7 +38,7 @@ export function callCore(method, params = {}) {
     const timer = setTimeout(() => {
       pending.delete(id);
       reject(coreError(-32_000, "core_request_timeout"));
-    }, REQUEST_TIMEOUT_MS);
+    }, TIMEOUTS.coreRequestTimeoutMs);
     timer.unref();
     pending.set(id, { resolve, reject, timer });
     try {
@@ -45,6 +49,13 @@ export function callCore(method, params = {}) {
       reject(coreError(-32_000, "core_transport_failed"));
     }
   });
+}
+
+export function notifyCore(method, params = {}) {
+  if (methodKind(method) !== "notification") {
+    throw new Error("core_method_unavailable");
+  }
+  send({ jsonrpc: "2.0", method, params });
 }
 
 export function fatalProtocolExit() {
@@ -161,7 +172,9 @@ function coreError(code, reason) {
       ? code
       : -32_000;
   const safeReason =
-    typeof reason === "string" && ERROR_REASON_PATTERN.test(reason)
+    typeof reason === "string"
+      && ERROR_REASON_PATTERN.test(reason)
+      && PROTOCOL_ERROR_REASONS.includes(reason)
       ? reason
       : "core_request_failed";
   const error = new Error(safeReason);

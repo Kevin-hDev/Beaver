@@ -9,12 +9,19 @@ import type {
   ExtensionStatus,
   ExtensionTool,
 } from "@/types/extensions";
+import {
+  EXTENSION_EFFECT_CLASSES,
+  EXTENSION_EVENTS,
+  LIMITS,
+  type ExtensionEffectClass,
+  type ExtensionEvent,
+} from "@/types/extension-contract.generated";
 import { EXTENSION_INSTALL_LIMITS } from "./extension-install";
 
 export const EXTENSION_VIEW_LIMITS = Object.freeze({
-  records: 132,
-  toolsPerExtension: 64,
-  eventsPerExtension: 64,
+  records: LIMITS.maxExtensions,
+  toolsPerExtension: LIMITS.maxToolsPerExtension,
+  eventsPerExtension: LIMITS.maxEventsPerExtension,
 });
 
 const MAX_ID_CHARS = 96;
@@ -108,11 +115,16 @@ function manifest(value: unknown): ExtensionManifest {
 function tool(value: unknown): ExtensionTool {
   const input = object(value);
   if (typeof input.replacesCore !== "boolean") invalid();
+  const effect = typeof input.effect === "string"
+    && EXTENSION_EFFECT_CLASSES.includes(input.effect as ExtensionEffectClass)
+    ? input.effect as ExtensionEffectClass
+    : "unknown";
   return {
     name: identifier(input.name),
     description: text(input.description, MAX_TEXT_CHARS),
     parameters: object(input.parameters),
     replacesCore: input.replacesCore,
+    effect,
   };
 }
 
@@ -128,7 +140,10 @@ function contributions(value: unknown): ExtensionContributions {
   }
   return {
     tools: input.tools.map(tool),
-    events: input.events.map(identifier),
+    events: input.events
+      .map(identifier)
+      .filter((event): event is ExtensionEvent =>
+        EXTENSION_EVENTS.includes(event as ExtensionEvent)),
   };
 }
 

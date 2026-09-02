@@ -10,6 +10,7 @@ mod git_checkout;
 mod git_package;
 mod git_source;
 mod host_channel;
+mod host_load_tracker;
 mod host_paths;
 mod host_process;
 mod host_reader;
@@ -59,6 +60,9 @@ mod view;
 mod work_supervision;
 #[cfg(test)]
 mod work_supervision_tests;
+
+#[cfg(test)]
+mod contract_artifact_tests;
 
 pub use types::{ExtensionHostStatus, ExtensionKind};
 pub use view::ExtensionView;

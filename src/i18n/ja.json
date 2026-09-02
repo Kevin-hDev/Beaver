@@ -2442,7 +2442,18 @@
         "extensions_storage_failed": "ローカルの拡張機能ストレージを利用できません。",
         "extensions_update_identity_changed": "更新によって拡張機能の識別情報が変わったため拒否されました。",
         "extensions_update_unavailable": "Beaver はこの拡張機能を更新できません。",
-        "extensions_cleanup_failed": "一部の古い拡張機能ファイルを削除できませんでした。"
+        "extensions_cleanup_failed": "一部の古い拡張機能ファイルを削除できませんでした。",
+        "extensions_operation_failed": "拡張機能の操作を完了できませんでした。",
+        "extensions_fingerprint_changed": "拡張機能のファイルが変更されたため、再確認が必要です。",
+        "extensions_fingerprint_failed": "拡張機能のファイルを検証できませんでした。",
+        "extensions_stop_unconfirmed": "拡張機能ホストの停止を確認できませんでした。",
+        "extensions_registry_entry_ignored": "無効な拡張機能の項目を無視しました。",
+        "extensions_registry_migration_failed": "拡張機能レジストリを更新できませんでした。",
+        "extensions_recovery_marker_invalid": "拡張機能の復旧情報が無効です。",
+        "extensions_load_interrupted": "拡張機能の読み込みが中断されました。",
+        "extensions_activation_confirmation_required": "有効化する前に、この拡張機能を再承認してください。",
+        "extensions_not_found": "拡張機能が見つかりません。",
+        "extensions_host_incompatible": "拡張機能ホストはこのバージョンの Beaver と互換性がありません。"
       }
     },
     "diagnostics": {
