@@ -42,7 +42,7 @@ Porte finale documentaire
 - Le document privé EXTENSION_API_V1.md porte la date du 2 septembre 2026 et le commit exact 216788c9ddfe190119b1f7cec9cafc5b294f937a.
 - Son texte décrit désormais l’isolation par Hôte tiers, l’identité du canal, les empreintes, les permissions par effet, la reprise et le retrait de la valeur external.
 - Sa section générée possède exactement le même SHA-256 que la section du README SDK issue de contract.json.
-- EXTENSIONS_PRIORITY_SCOPE.md relie désormais chaque lot à son commit et conserve la validation visuelle comme seule porte ouverte.
+- EXTENSIONS_PRIORITY_SCOPE.md relie désormais chaque lot à son commit et distingue les parcours natifs observés des scénarios destructifs ou de largeur réduite couverts uniquement par les tests.
 - La maintenance sémantique Graphify globale a été arrêtée sans fusion: le manifeste du checkout principal signalait 1 609 fichiers nouveaux ou modifiés, dont des maquettes et images hors scope. Le graphe AST de la branche reste à jour; l’indexation du document privé devra être reprise sans absorber ces travaux tiers.
 
 Hors périmètre préservé
