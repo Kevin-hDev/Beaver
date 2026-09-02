@@ -2,7 +2,7 @@ use super::installer::{blocking, extension_runtime, is_managed};
 use super::OperationFailure;
 use crate::services::work_registry::ServiceWorkCancellation;
 
-pub async fn uninstall(id: &str) -> Result<(), OperationFailure> {
+pub async fn uninstall(id: &str) -> Result<bool, OperationFailure> {
     let current = super::registry::find(id).map_err(|_| OperationFailure::UninstallFailed)?;
     let id = id.to_string();
     let runtime = extension_runtime()?;
@@ -10,18 +10,14 @@ pub async fn uninstall(id: &str) -> Result<(), OperationFailure> {
     let work = runtime.work.clone();
     work.run_operation(move |cancel| async move {
         ensure_uninstall_active(&cancel)?;
-        let stopped = tokio::select! {
-            _ = cancel.cancelled() => return Err(OperationFailure::HostUnavailable),
-            stopped = runtime.stop_channel(&identity, None) => stopped,
-        };
-        ensure_uninstall_active(&cancel)?;
+        let reminder =
+            super::registry::remove(&id).map_err(|_| OperationFailure::UninstallFailed)?;
+        // Après persistance, la révocation et le nettoyage doivent aller au bout.
+        let stopped = runtime.revoke_extension(&identity).await;
         super::host_stop_boundary::after_confirmed_stop(
             stopped,
             OperationFailure::HostUnavailable,
             async move {
-                if super::registry::remove(&id).is_err() {
-                    return Err(OperationFailure::UninstallFailed);
-                }
                 let result = if is_managed(&current) {
                     let record = current.clone();
                     blocking(
@@ -35,7 +31,7 @@ pub async fn uninstall(id: &str) -> Result<(), OperationFailure> {
                 } else {
                     Ok(())
                 };
-                result
+                result.map(|_| reminder)
             },
         )
         .await

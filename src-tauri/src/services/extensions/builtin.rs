@@ -40,6 +40,7 @@ pub fn records() -> Result<Vec<ExtensionRecord>, String> {
             status: ExtensionStatus::Inactive,
             last_error: None,
             last_activated_at: None,
+            sensitive_access_granted: false,
             contributions: ExtensionContributions::default(),
         })
         .collect::<Vec<_>>();

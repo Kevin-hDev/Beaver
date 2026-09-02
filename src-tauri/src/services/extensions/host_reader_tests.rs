@@ -136,8 +136,9 @@ async fn revoked_channel_cannot_start_a_new_core_call() {
     let tracker = super::super::host_load_tracker::HostLoadTracker::default();
     let work = extension_work();
     let alive = AtomicBool::new(false);
-    let channel_cancel = tokio_util::sync::CancellationToken::new();
-    channel_cancel.cancel();
+    let revoked = tokio_util::sync::CancellationToken::new();
+    let reader_cancel = tokio_util::sync::CancellationToken::new();
+    revoked.cancel();
     let message = serde_json::to_vec(&json!({
         "jsonrpc": "2.0",
         "id": "revoked",
@@ -151,11 +152,65 @@ async fn revoked_channel_cannot_start_a_new_core_call() {
         pending: &pending,
         load_tracker: &tracker,
         alive: &alive,
-        channel_cancel: &channel_cancel,
+        revoked: &revoked,
+        reader_cancel: &reader_cancel,
+        call_context: Some(super::super::call_context::ExtensionCallContext::for_test(
+            HostIdentity::ThirdParty("com.example.revoked".to_string()),
+            ExtensionApiLevel::Stable,
+        )),
     };
     let authority = HostAuthority {
         identity: HostIdentity::ThirdParty("com.example.revoked".to_string()),
-        api_level: ExtensionApiLevel::Stable,
+        generation: 1,
+    };
+    assert!(receive_bound(&message, &context, &work, &authority)
+        .await
+        .is_err());
+    let mut response = String::new();
+    assert!(tokio::time::timeout(
+        std::time::Duration::from_millis(20),
+        reader.read_line(&mut response)
+    )
+    .await
+    .is_err());
+
+    let _ = child.start_kill();
+    let _ = child.wait().await;
+}
+
+#[tokio::test]
+async fn stopped_reader_cannot_start_a_new_core_call() {
+    let (mut child, writer, mut reader) = echo_host().await;
+    let pending = Arc::new(tokio::sync::Mutex::new(HashMap::new()));
+    let tracker = super::super::host_load_tracker::HostLoadTracker::default();
+    let work = extension_work();
+    let alive = AtomicBool::new(true);
+    let revoked = tokio_util::sync::CancellationToken::new();
+    let reader_cancel = tokio_util::sync::CancellationToken::new();
+    reader_cancel.cancel();
+    let message = serde_json::to_vec(&json!({
+        "jsonrpc": "2.0",
+        "id": "stopped-reader",
+        "method": "app.info",
+        "params": {}
+    }))
+    .unwrap();
+
+    let context = HostReaderContext {
+        writer: &writer,
+        pending: &pending,
+        load_tracker: &tracker,
+        alive: &alive,
+        revoked: &revoked,
+        reader_cancel: &reader_cancel,
+        call_context: Some(super::super::call_context::ExtensionCallContext::for_test(
+            HostIdentity::ThirdParty("com.example.stopped".to_string()),
+            ExtensionApiLevel::Stable,
+        )),
+    };
+    let authority = HostAuthority {
+        identity: HostIdentity::ThirdParty("com.example.stopped".to_string()),
+        generation: 1,
     };
     assert!(receive_bound(&message, &context, &work, &authority)
         .await

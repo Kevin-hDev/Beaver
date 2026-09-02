@@ -2343,6 +2343,7 @@
     "showInChatFor": "{{name}} im Chat anzeigen",
     "enableFor": "{{name}} aktivieren",
     "fullAccessWarning": "Diese Erweiterung wird nicht von Beaver geprüft und kann auf Daten, Geheimnisse und Funktionen deines Kontos zugreifen.",
+    "sensitiveAccessReminder": "Ändere vorsichtshalber beim jeweiligen Anbieter die von dieser Erweiterung verwendeten Zugangsdaten.",
     "updateTrustWarning": "Die Aktualisierung deaktiviert die Erweiterung. Prüfe die neue Version, bevor du ihr erneut vertraust.",
     "detail": {
       "status": "Status",

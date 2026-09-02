@@ -1,5 +1,9 @@
+mod access_log;
+mod bounded_jsonl;
 mod builtin;
+mod call_context;
 mod core_bridge;
+mod core_secrets;
 pub(crate) mod discovery;
 mod discovery_catalog;
 mod discovery_limits;
@@ -41,6 +45,7 @@ mod process_environment;
 mod process_runner;
 mod protocol;
 mod registry;
+mod registry_access;
 mod registry_index;
 mod registry_managed;
 mod registry_mutation_error;
@@ -50,6 +55,7 @@ mod runtime;
 mod runtime_channel_sync;
 mod runtime_diagnostics;
 mod runtime_dispatch;
+mod runtime_host_storage;
 mod runtime_hosts;
 mod runtime_lifecycle;
 mod runtime_restart;
@@ -105,6 +111,12 @@ pub(crate) fn record_tool_invocation(tool_name: &str) -> Result<(), String> {
     discovery_usage::record_invocation(tool_name)
 }
 
+pub(crate) async fn revoke_extension(id: &str) -> Result<(), String> {
+    let record = registry::find(id)?;
+    let identity = host_identity::HostIdentity::from_record(&record)?;
+    runtime::revoke_extension(&identity).await
+}
+
 pub(crate) const MAX_DISCOVERED_PLUGINS: usize = types::MAX_EXTENSIONS;
 pub(crate) const MAX_EXTENSION_TOOLS: usize = types::MAX_TOOLS;
 
@@ -117,6 +129,10 @@ pub(crate) use operation_error::{report as report_operation_error, Operation};
 pub(crate) use operation_failure::OperationFailure;
 pub(crate) use validation::identifier as validate_identifier;
 
+#[cfg(test)]
+mod access_log_tests;
+#[cfg(test)]
+mod bounded_jsonl_tests;
 #[cfg(test)]
 mod builtin_tests;
 #[cfg(test)]

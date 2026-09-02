@@ -2342,6 +2342,7 @@
     "showInChatFor": "{{name}} をチャットに表示",
     "enableFor": "{{name}} を有効化",
     "fullAccessWarning": "この拡張機能は Beaver による監査を受けておらず、アカウントのデータ、シークレット、機能へアクセスできます。",
+    "sensitiveAccessReminder": "念のため、この拡張機能が使用したアクセス認証情報を各提供元で変更してください。",
     "updateTrustWarning": "更新すると拡張機能は無効になります。再度信頼する前に新しいバージョンを確認してください。",
     "detail": {
       "status": "状態",

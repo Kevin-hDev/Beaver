@@ -83,7 +83,11 @@ pub fn envelope(value: &Value) -> Result<&Map<String, Value>, String> {
         .ok_or_else(|| "Réponse de l'hôte d'extensions invalide.".to_string())?;
     let identifier = object.get("id");
     let method = object.get("method");
-    let valid_identifier = identifier.is_some_and(|value| value.as_str().is_some());
+    let valid_identifier = identifier.is_some_and(|value| {
+        value
+            .as_str()
+            .is_some_and(super::host_channel::valid_request_id)
+    });
     let valid_method = method.is_some_and(|value| value.as_str().is_some());
     if object.get("jsonrpc").and_then(Value::as_str) != Some("2.0")
         || identifier.is_some_and(|_| !valid_identifier)

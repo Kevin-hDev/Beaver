@@ -5,7 +5,7 @@ pub fn render(contract: &Value) -> Result<String, String> {
     let errors = object(contract, "errors")?;
     let mut output = format!(
         "#[allow(dead_code)]\npub const BEAVER_API_VERSION: &str = {:?};\n",
-        string(contract, "apiVersion")?
+        root_string(contract, "apiVersion")?
     );
     render_numbers(&mut output, object(contract, "limits")?)?;
     render_numbers(&mut output, object(contract, "timeouts")?)?;
@@ -43,7 +43,39 @@ pub fn render(contract: &Value) -> Result<String, String> {
     ] {
         render_slice(&mut output, name, values)?;
     }
+    render_host_methods(
+        &mut output,
+        array(object(contract, "methods")?, "hostToCore")?,
+    )?;
     Ok(output)
+}
+
+fn render_host_methods(output: &mut String, methods: &[Value]) -> Result<(), String> {
+    let mut rendered = Vec::with_capacity(methods.len());
+    for method in methods {
+        let method = method
+            .as_object()
+            .ok_or_else(|| "invalid host method contract".to_string())?;
+        let name = string(method, "name")?;
+        let level = string(method, "level")?;
+        let kind = string(method, "kind")?;
+        let budget = match method.get("rustBudgetMs") {
+            Some(Value::Null) => "None".to_string(),
+            Some(value) => format!(
+                "Some({})",
+                value
+                    .as_u64()
+                    .ok_or_else(|| "invalid host method budget".to_string())?
+            ),
+            None => return Err("missing host method budget".to_string()),
+        };
+        rendered.push(format!("({name:?}, {level:?}, {kind:?}, {budget})"));
+    }
+    output.push_str(&format!(
+        "#[allow(dead_code)]\npub const HOST_TO_CORE_METHODS: &[(&str, &str, &str, Option<usize>)] = &[{}];\n",
+        rendered.join(", ")
+    ));
+    Ok(())
 }
 
 fn render_numbers(output: &mut String, values: &Map<String, Value>) -> Result<(), String> {
@@ -111,6 +143,13 @@ fn object<'a>(value: &'a Value, name: &str) -> Result<&'a Map<String, Value>, St
         .ok_or_else(|| format!("missing extension contract object: {name}"))
 }
 
+fn string<'a>(value: &'a Map<String, Value>, name: &str) -> Result<&'a str, String> {
+    value
+        .get(name)
+        .and_then(Value::as_str)
+        .ok_or_else(|| format!("missing extension contract string: {name}"))
+}
+
 fn array<'a>(value: &'a Map<String, Value>, name: &str) -> Result<&'a [Value], String> {
     value
         .get(name)
@@ -127,7 +166,7 @@ fn array_value<'a>(value: &'a Value, name: &str) -> Result<&'a [Value], String> 
         .ok_or_else(|| format!("missing extension contract array: {name}"))
 }
 
-fn string<'a>(value: &'a Value, name: &str) -> Result<&'a str, String> {
+fn root_string<'a>(value: &'a Value, name: &str) -> Result<&'a str, String> {
     value
         .get(name)
         .and_then(Value::as_str)

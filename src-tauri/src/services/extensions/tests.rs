@@ -159,13 +159,11 @@ fn directory_manifest_cannot_escape_through_a_symlink() {
 
 #[tokio::test]
 async fn unknown_core_calls_fail_closed() {
-    let result = super::core_bridge::call(
-        &super::host_identity::HostIdentity::Official,
-        &super::types::ExtensionApiLevel::Stable,
-        "unknown.method",
-        None,
-    )
-    .await;
+    let context = super::call_context::ExtensionCallContext::for_test(
+        super::host_identity::HostIdentity::Official,
+        super::types::ExtensionApiLevel::Stable,
+    );
+    let result = super::core_bridge::call(&context, "unknown.method", None).await;
 
     assert!(result.is_err());
 }
@@ -186,6 +184,12 @@ fn host_protocol_requires_a_json_rpc_envelope() {
     .is_err());
     assert!(super::protocol::envelope(&json!({
         "jsonrpc": "2.0",
+        "result": {}
+    }))
+    .is_err());
+    assert!(super::protocol::envelope(&json!({
+        "jsonrpc": "2.0",
+        "id": "x".repeat(129),
         "result": {}
     }))
     .is_err());

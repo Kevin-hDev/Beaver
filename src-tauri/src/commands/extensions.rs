@@ -53,22 +53,18 @@ pub async fn install_npm_extension(
 }
 
 #[tauri::command]
-pub async fn update_extension(
-    app: tauri::AppHandle,
-    extension_id: String,
-) -> Result<ExtensionView, String> {
+pub async fn update_extension(app: tauri::AppHandle, extension_id: String) -> Result<bool, String> {
     let record = extensions::update_managed_extension(&app, &extension_id)
         .await
         .map_err(|error| {
             extensions::report_operation_error(extensions::Operation::Update, error)
         })?;
-    let view = ExtensionView::from(record);
     emit_changed(&app);
-    Ok(view)
+    Ok(record.sensitive_access_granted)
 }
 
 #[tauri::command]
-pub async fn remove_extension(app: tauri::AppHandle, extension_id: String) -> Result<(), String> {
+pub async fn remove_extension(app: tauri::AppHandle, extension_id: String) -> Result<bool, String> {
     let result = extensions::uninstall_extension(&extension_id)
         .await
         .map_err(|error| {
@@ -84,11 +80,15 @@ pub async fn set_extension_enabled(
     extension_id: String,
     enabled: bool,
     trust_confirmed: bool,
-) -> Result<(), String> {
-    extensions::set_enabled(&extension_id, enabled, trust_confirmed)?;
-    let result = extensions::restart().await;
+) -> Result<bool, String> {
+    let reminder = extensions::set_enabled(&extension_id, enabled, trust_confirmed)?;
+    let result = if enabled {
+        extensions::restart().await
+    } else {
+        extensions::revoke_extension(&extension_id).await
+    };
     emit_changed(&app);
-    result
+    result.map(|_| reminder)
 }
 
 #[tauri::command]
@@ -127,11 +127,11 @@ pub async fn set_extension_discovery_preferences(
 }
 
 #[tauri::command]
-pub async fn recover_extension_host(app: tauri::AppHandle) -> Result<(), String> {
-    extensions::disable_hosted_extensions()?;
+pub async fn recover_extension_host(app: tauri::AppHandle) -> Result<bool, String> {
+    let reminder = extensions::disable_hosted_extensions()?;
     let result = extensions::restart().await;
     emit_changed(&app);
-    result
+    result.map(|_| reminder)
 }
 
 #[tauri::command]

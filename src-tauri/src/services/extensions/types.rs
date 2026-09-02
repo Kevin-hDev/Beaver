@@ -127,6 +127,8 @@ pub struct ExtensionRecord {
     pub last_error: Option<String>,
     pub last_activated_at: Option<String>,
     #[serde(skip)]
+    pub sensitive_access_granted: bool,
+    #[serde(skip)]
     pub contributions: ExtensionContributions,
 }
 

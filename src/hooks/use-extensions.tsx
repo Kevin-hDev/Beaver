@@ -80,7 +80,10 @@ function useExtensionsState() {
     setExtensions((current) =>
       current.map((record) => record.manifest.id === id ? optimistic(record) : record));
     try {
-      await invoke(command, payload);
+      const reminder = await invoke<boolean | void>(command, payload);
+      if (reminder === true) {
+        setOperationError("extensions.sensitiveAccessReminder");
+      }
     } catch (error) {
       setOperationError(extensionErrorKey(error, "extensions.errors.operation"));
     } finally {
@@ -130,7 +133,10 @@ function useExtensionsState() {
   const run = useCallback(async (command: string, payload: Record<string, unknown> = {}) => {
     setOperationError(null);
     try {
-      await invoke(command, payload);
+      const reminder = await invoke<boolean | void>(command, payload);
+      if (reminder === true) {
+        setOperationError("extensions.sensitiveAccessReminder");
+      }
     } catch (error) {
       setOperationError(extensionErrorKey(error, "extensions.errors.operation"));
     } finally {

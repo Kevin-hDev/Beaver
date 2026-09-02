@@ -17,7 +17,7 @@ pub struct HostProcess {
     writer: SharedWriter,
     pending: PendingRequests,
     alive: Arc<AtomicBool>,
-    channel_cancel: tokio_util::sync::CancellationToken,
+    reader_cancel: tokio_util::sync::CancellationToken,
     load_tracker: Arc<HostLoadTracker>,
     reader_done: Mutex<Option<tokio::sync::oneshot::Receiver<()>>>,
     process_scope: crate::services::owned_process::OwnedProcessScope,
@@ -87,7 +87,7 @@ impl HostProcess {
 
     pub async fn kill(&self, deadline: Instant) -> bool {
         self.alive.store(false, Ordering::Release);
-        self.channel_cancel.cancel();
+        self.reader_cancel.cancel();
         let Ok(mut child) =
             tokio::time::timeout_at(tokio::time::Instant::from_std(deadline), self.child.lock())
                 .await

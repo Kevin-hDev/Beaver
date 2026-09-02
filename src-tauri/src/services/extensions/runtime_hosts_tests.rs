@@ -36,6 +36,7 @@ fn record(id: &str, kind: ExtensionKind) -> ExtensionRecord {
         status: ExtensionStatus::Inactive,
         last_error: None,
         last_activated_at: None,
+        sensitive_access_granted: false,
         contributions: ExtensionContributions::default(),
     }
 }
@@ -77,6 +78,20 @@ fn official_host_reserves_capacity_and_the_thirty_second_third_party_is_refused(
         plan.failures.get("com.example.local31").map(String::as_str),
         Some(super::error_codes::LIMIT_REACHED)
     );
+}
+
+#[test]
+fn rejected_handshake_reservation_is_revoked_before_process_cleanup() {
+    let workspace = tempfile::tempdir().unwrap();
+    let mut hosts = RuntimeHosts::new(workspace.path().join("channels")).unwrap();
+    let reservation = hosts
+        .reserve(HostIdentity::ThirdParty("rejected-handshake".to_string()))
+        .unwrap();
+    let revoked = reservation.revoked();
+
+    hosts.revoke_reservation(&reservation);
+
+    assert!(revoked.is_cancelled());
 }
 
 #[test]
@@ -160,7 +175,8 @@ lines.on("line", (line) => {{
             },
             work,
             identity,
-            ExtensionApiLevel::Stable,
+            reservation.generation(),
+            reservation.revoked(),
             reservation.temporary_directory(),
         )
         .await
@@ -193,6 +209,83 @@ async fn unconfirmed_stop_keeps_the_current_channel_bound() {
     assert!(hosts.snapshot(&identity).is_some());
 
     assert!(process.kill(super::host_process::stop_deadline()).await);
+}
+
+#[tokio::test]
+async fn bound_channel_issues_unique_contexts_and_runtime_hosts_alone_revokes_them() {
+    let workspace = tempfile::tempdir().unwrap();
+    let mut hosts = RuntimeHosts::new(workspace.path().join("channels")).unwrap();
+    let work = extension_work();
+    let identity = HostIdentity::ThirdParty("context-owner".to_string());
+    let process = bind_fixture_identity(
+        &mut hosts,
+        workspace.path(),
+        "context-owner",
+        "reply",
+        identity.clone(),
+        &work,
+    )
+    .await;
+    let (_, generation, _) = hosts.snapshot(&identity).unwrap();
+
+    let first = hosts.call_context(&identity, generation).unwrap();
+    let second = hosts.call_context(&identity, generation).unwrap();
+    assert!(hosts.usable_snapshot(&identity).is_some());
+    assert_eq!(first.identity(), &identity);
+    assert_eq!(first.generation(), generation);
+    assert_ne!(first.correlation_id(), second.correlation_id());
+    assert!(!first.revoked().is_cancelled());
+
+    assert!(hosts.revoke("context-owner"));
+    assert!(first.revoked().is_cancelled());
+    assert!(hosts.call_context(&identity, generation).is_none());
+    assert!(hosts.usable_snapshot(&identity).is_none());
+    assert!(hosts.snapshot(&identity).is_some());
+
+    assert!(process.kill(super::host_process::stop_deadline()).await);
+}
+
+#[tokio::test]
+async fn global_stop_revokes_every_context_before_process_waiting_begins() {
+    let workspace = tempfile::tempdir().unwrap();
+    let mut hosts = RuntimeHosts::new(workspace.path().join("channels")).unwrap();
+    let work = extension_work();
+    let first_identity = HostIdentity::ThirdParty("stop-first".to_string());
+    let second_identity = HostIdentity::ThirdParty("stop-second".to_string());
+    let first = bind_fixture_identity(
+        &mut hosts,
+        workspace.path(),
+        "stop-first",
+        "reply",
+        first_identity.clone(),
+        &work,
+    )
+    .await;
+    let second = bind_fixture_identity(
+        &mut hosts,
+        workspace.path(),
+        "stop-second",
+        "reply",
+        second_identity.clone(),
+        &work,
+    )
+    .await;
+    let (_, first_generation, _) = hosts.snapshot(&first_identity).unwrap();
+    let (_, second_generation, _) = hosts.snapshot(&second_identity).unwrap();
+    let first_context = hosts
+        .call_context(&first_identity, first_generation)
+        .unwrap();
+    let second_context = hosts
+        .call_context(&second_identity, second_generation)
+        .unwrap();
+
+    let snapshots = hosts.revoke_all();
+
+    assert_eq!(snapshots.len(), 2);
+    assert!(first_context.revoked().is_cancelled());
+    assert!(second_context.revoked().is_cancelled());
+    assert!(first.kill(super::host_process::stop_deadline()).await);
+    assert!(second.kill(super::host_process::stop_deadline()).await);
 }
 
 #[tokio::test]

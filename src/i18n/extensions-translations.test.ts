@@ -31,6 +31,7 @@ describe("extensions translations", () => {
       expect(locale.settings.tabs.extensions.trim()).not.toBe("");
       expect(locale.chatMenu.noPlugins.trim()).not.toBe("");
       expect(locale.extensions.fullAccessWarning.length).toBeGreaterThan(30);
+      expect(locale.extensions.sensitiveAccessReminder.length).toBeGreaterThan(15);
     }
   });
 

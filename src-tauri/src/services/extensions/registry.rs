@@ -4,8 +4,9 @@ use super::types::{
 };
 use std::sync::{LazyLock, Mutex, RwLock};
 
-static RECORDS: LazyLock<RwLock<Vec<ExtensionRecord>>> = LazyLock::new(|| RwLock::new(Vec::new()));
-static MUTATIONS: Mutex<()> = Mutex::new(());
+pub(super) static RECORDS: LazyLock<RwLock<Vec<ExtensionRecord>>> =
+    LazyLock::new(|| RwLock::new(Vec::new()));
+pub(super) static MUTATIONS: Mutex<()> = Mutex::new(());
 
 pub fn init() -> Result<(), String> {
     let stored = super::storage::load()?;
@@ -61,8 +62,9 @@ pub fn add_local(record: ExtensionRecord) -> Result<(), String> {
     })
 }
 
-pub fn remove(id: &str) -> Result<(), String> {
+pub fn remove(id: &str) -> Result<bool, String> {
     super::validation::identifier(id)?;
+    let mut reminder = false;
     mutate(|records| {
         let index = records
             .iter()
@@ -71,21 +73,23 @@ pub fn remove(id: &str) -> Result<(), String> {
         if records[index].kind == ExtensionKind::Builtin {
             return Err("Un plugin Beaver ne peut pas être supprimé.".to_string());
         }
-        records.remove(index);
+        reminder = records.remove(index).sensitive_access_granted;
         Ok(())
-    })
+    })?;
+    Ok(reminder)
 }
 
 pub fn replace_user(
     expected: &ExtensionRecord,
-    replacement: ExtensionRecord,
-) -> Result<(), String> {
+    mut replacement: ExtensionRecord,
+) -> Result<bool, String> {
     let id = expected.manifest.id.as_str();
     super::validation::identifier(id)?;
     super::validation::records(std::slice::from_ref(&replacement))?;
     if replacement.kind != ExtensionKind::Local || replacement.manifest.id != id {
         return Err("Mise à jour d'extension invalide.".to_string());
     }
+    let mut reminder = false;
     mutate(|records| {
         let record = records
             .iter_mut()
@@ -97,12 +101,15 @@ pub fn replace_user(
         if record.source != expected.source || record.origin != expected.origin {
             return Err("L'extension a changé pendant sa mise à jour.".to_string());
         }
+        reminder = super::installer_record::carry_sensitive_access(record, &mut replacement);
         *record = replacement;
         Ok(())
-    })
+    })?;
+    Ok(reminder)
 }
 
-pub fn set_enabled(id: &str, enabled: bool, trust_confirmed: bool) -> Result<(), String> {
+pub fn set_enabled(id: &str, enabled: bool, trust_confirmed: bool) -> Result<bool, String> {
+    let mut reminder = false;
     update(id, |record| {
         if enabled && record.kind != ExtensionKind::Builtin && !record.trusted && !trust_confirmed {
             return Err("Confirmation d'activation requise.".to_string());
@@ -116,10 +123,12 @@ pub fn set_enabled(id: &str, enabled: bool, trust_confirmed: bool) -> Result<(),
         if enabled {
             record.last_activated_at = Some(chrono::Utc::now().to_rfc3339());
         } else {
+            reminder = record.sensitive_access_granted;
             record.contributions = ExtensionContributions::default();
         }
         Ok(())
-    })
+    })?;
+    Ok(reminder)
 }
 
 pub fn set_show_in_chat(id: &str, show: bool) -> Result<(), String> {
@@ -129,11 +138,16 @@ pub fn set_show_in_chat(id: &str, show: bool) -> Result<(), String> {
     })
 }
 
-pub fn disable_hosted_extensions() -> Result<(), String> {
+pub fn disable_hosted_extensions() -> Result<bool, String> {
+    let mut reminder = false;
     mutate(|records| {
+        reminder = records.iter().any(|record| {
+            record.kind != ExtensionKind::External && record.sensitive_access_granted
+        });
         disable_hosted_records(records);
-        Ok(())
-    })
+        Ok::<(), String>(())
+    })?;
+    Ok(reminder)
 }
 
 pub(super) fn disable_hosted_records(records: &mut [ExtensionRecord]) {

@@ -71,6 +71,25 @@ describe("useExtensions", () => {
     });
   });
 
+  it("affiche le rappel traduit après révocation d’un accès sensible", async () => {
+    vi.mocked(invoke).mockImplementation((command) => {
+      if (command === "list_extensions") return Promise.resolve([record]);
+      if (command === "get_extension_host_status") return Promise.resolve(host);
+      if (command === "get_extension_discovery_preferences") {
+        return Promise.resolve({ protectedPluginIds: [] });
+      }
+      if (command === "set_extension_enabled") return Promise.resolve(true);
+      return Promise.resolve(undefined);
+    });
+    const view = renderHook(() => useExtensions(), { wrapper: ExtensionsProvider });
+    await waitFor(() => expect(view.result.current.loading).toBe(false));
+
+    await act(() => view.result.current.setEnabled(record.manifest.id, false));
+
+    expect(view.result.current.operationError)
+      .toBe("extensions.sensitiveAccessReminder");
+  });
+
   it("expose une erreur traduisible sans afficher le détail Rust", async () => {
     vi.mocked(invoke).mockImplementation((command) => {
       if (command === "list_extensions") {

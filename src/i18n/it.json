@@ -2343,6 +2343,7 @@
     "showInChatFor": "Mostra {{name}} nella chat",
     "enableFor": "Attiva {{name}}",
     "fullAccessWarning": "Questa estensione non è verificata da Beaver e può accedere a dati, segreti e funzioni del tuo account.",
+    "sensitiveAccessReminder": "Per precauzione, modifica presso il relativo fornitore gli accessi usati da questa estensione.",
     "updateTrustWarning": "L’aggiornamento disattiverà l’estensione. Controlla la nuova versione prima di considerarla nuovamente attendibile.",
     "detail": {
       "status": "Stato",

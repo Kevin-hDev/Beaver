@@ -12,6 +12,13 @@ use zeroize::Zeroizing;
 pub type PendingSender = oneshot::Sender<Result<Value, String>>;
 pub type PendingRequests = Arc<Mutex<HashMap<String, PendingSender>>>;
 pub type SharedWriter = Arc<Mutex<ChildStdin>>;
+pub(super) const MAX_REQUEST_ID_CHARS: usize = 128;
+
+pub(super) fn valid_request_id(value: &str) -> bool {
+    !value.is_empty()
+        && value.chars().count() <= MAX_REQUEST_ID_CHARS
+        && !value.chars().any(char::is_control)
+}
 
 pub async fn write(writer: &SharedWriter, message: &impl Serialize) -> Result<(), String> {
     let mut bytes = Zeroizing::new(

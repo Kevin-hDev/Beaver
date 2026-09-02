@@ -59,17 +59,29 @@ impl ExtensionRuntime {
             let _ = self.stop_channel(&identity, None).await;
             return Err(super::error_codes::HOST_UNAVAILABLE.to_string());
         }
-        let (api_level, generation, process) = self
-            .hosts
-            .lock()
-            .await
-            .snapshot(&identity)
-            .ok_or_else(|| super::error_codes::HOST_UNAVAILABLE.to_string())?;
+        let (api_level, generation, process) =
+            self.hosts
+                .lock()
+                .await
+                .usable_snapshot(&identity)
+                .ok_or_else(|| super::error_codes::HOST_UNAVAILABLE.to_string())?;
         if api_level != record.manifest.api_level || !process.is_alive() {
             let _ = self.stop_channel(&identity, Some(&process)).await;
             return Err(super::error_codes::HOST_UNAVAILABLE.to_string());
         }
         Ok((identity, generation, process))
+    }
+
+    pub(super) async fn call_context(
+        &self,
+        identity: &HostIdentity,
+        generation: u64,
+    ) -> Result<super::call_context::ExtensionCallContext, String> {
+        self.hosts
+            .lock()
+            .await
+            .call_context(identity, generation)
+            .ok_or_else(|| super::error_codes::HOST_UNAVAILABLE.to_string())
     }
 
     pub(super) async fn stop_channel(
@@ -83,6 +95,30 @@ impl ExtensionRuntime {
         if expected.is_some_and(|expected| !Arc::ptr_eq(expected, &process)) {
             return false;
         }
+        if !self.hosts.lock().await.revoke_current(identity, generation) {
+            return false;
+        }
+        if !process.kill(super::host_process::stop_deadline()).await {
+            return false;
+        }
+        self.hosts.lock().await.remove_current(identity, generation)
+    }
+
+    pub(super) async fn revoke_extension(&self, identity: &HostIdentity) -> bool {
+        let snapshot = {
+            let mut hosts = self.hosts.lock().await;
+            let Some((_, generation, process)) = hosts.snapshot(identity) else {
+                return true;
+            };
+            let revoked = match identity {
+                HostIdentity::ThirdParty(id) => hosts.revoke(id),
+                HostIdentity::Official => hosts.revoke_current(identity, generation),
+            };
+            revoked.then_some((generation, process))
+        };
+        let Some((generation, process)) = snapshot else {
+            return false;
+        };
         if !process.kill(super::host_process::stop_deadline()).await {
             return false;
         }
@@ -115,6 +151,21 @@ impl ExtensionRuntime {
                 status.diagnostics.clear();
             }
         }
+    }
+}
+
+pub(super) async fn call_context(
+    identity: &HostIdentity,
+    generation: u64,
+) -> Result<super::call_context::ExtensionCallContext, String> {
+    global()?.call_context(identity, generation).await
+}
+
+pub(super) async fn revoke_extension(identity: &HostIdentity) -> Result<(), String> {
+    if global()?.revoke_extension(identity).await {
+        Ok(())
+    } else {
+        Err(super::error_codes::HOST_UNAVAILABLE.to_string())
     }
 }
 

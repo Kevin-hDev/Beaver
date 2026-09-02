@@ -11,14 +11,15 @@ pub(super) struct HostReaderChannel {
     pub(super) writer: SharedWriter,
     pub(super) pending: PendingRequests,
     pub(super) alive: Arc<AtomicBool>,
-    pub(super) channel_cancel: tokio_util::sync::CancellationToken,
+    pub(super) revoked: tokio_util::sync::CancellationToken,
+    pub(super) reader_cancel: tokio_util::sync::CancellationToken,
     pub(super) load_tracker: Arc<HostLoadTracker>,
 }
 
 #[derive(Clone)]
 pub(super) struct HostAuthority {
     pub(super) identity: super::host_identity::HostIdentity,
-    pub(super) api_level: super::types::ExtensionApiLevel,
+    pub(super) generation: u64,
 }
 
 struct HostReaderContext<'a> {
@@ -26,7 +27,10 @@ struct HostReaderContext<'a> {
     pending: &'a PendingRequests,
     load_tracker: &'a HostLoadTracker,
     alive: &'a AtomicBool,
-    channel_cancel: &'a tokio_util::sync::CancellationToken,
+    revoked: &'a tokio_util::sync::CancellationToken,
+    reader_cancel: &'a tokio_util::sync::CancellationToken,
+    #[cfg(test)]
+    call_context: Option<super::call_context::ExtensionCallContext>,
 }
 
 pub async fn run(
@@ -40,7 +44,8 @@ pub async fn run(
     loop {
         let bytes = tokio::select! {
             biased;
-            _ = channel.channel_cancel.cancelled() => break,
+            _ = channel.revoked.cancelled() => break,
+            _ = channel.reader_cancel.cancelled() => break,
             _ = cancellation.cancelled() => break,
             line = super::host_reader_line::read_bounded_line(&mut reader) => match line {
                 Ok(line) => line,
@@ -52,7 +57,10 @@ pub async fn run(
             pending: &channel.pending,
             load_tracker: &channel.load_tracker,
             alive: &channel.alive,
-            channel_cancel: &channel.channel_cancel,
+            revoked: &channel.revoked,
+            reader_cancel: &channel.reader_cancel,
+            #[cfg(test)]
+            call_context: None,
         };
         if receive_bound(&bytes, &context, &work, &authority)
             .await
@@ -62,7 +70,7 @@ pub async fn run(
         }
     }
     channel.alive.store(false, Ordering::Release);
-    channel.channel_cancel.cancel();
+    channel.reader_cancel.cancel();
     channel.load_tracker.clear().await;
     host_channel::fail_all(&channel.pending).await;
 }
@@ -73,7 +81,10 @@ async fn receive_bound(
     work: &super::work_supervision::ExtensionWorkServices,
     authority: &HostAuthority,
 ) -> Result<(), String> {
-    if !context.alive.load(Ordering::Acquire) || context.channel_cancel.is_cancelled() {
+    if !context.alive.load(Ordering::Acquire)
+        || context.revoked.is_cancelled()
+        || context.reader_cancel.is_cancelled()
+    {
         return Err(super::error_codes::HOST_UNAVAILABLE.to_string());
     }
     let message: Value = serde_json::from_slice(bytes)
@@ -89,14 +100,15 @@ async fn receive_bound(
             .and_then(Value::as_str)
             .ok_or_else(|| "Réponse de l'hôte d'extensions invalide.".to_string())?;
         let params = object.get("params").cloned();
+        let call_context = context_for_call(context, authority).await?;
         return super::host_core_call::spawn(
             id.to_string(),
             method.to_string(),
             params,
             context.writer,
             work,
-            authority.clone(),
-            context.channel_cancel,
+            call_context,
+            context.reader_cancel,
         )
         .await;
     }
@@ -128,19 +140,36 @@ async fn receive(
     work: &super::work_supervision::ExtensionWorkServices,
 ) -> Result<(), String> {
     let alive = AtomicBool::new(true);
-    let channel_cancel = tokio_util::sync::CancellationToken::new();
+    let revoked = tokio_util::sync::CancellationToken::new();
+    let reader_cancel = tokio_util::sync::CancellationToken::new();
     let context = HostReaderContext {
         writer,
         pending,
         load_tracker,
         alive: &alive,
-        channel_cancel: &channel_cancel,
+        revoked: &revoked,
+        reader_cancel: &reader_cancel,
+        call_context: Some(super::call_context::ExtensionCallContext::for_test(
+            super::host_identity::HostIdentity::Official,
+            super::types::ExtensionApiLevel::Stable,
+        )),
     };
     let authority = HostAuthority {
         identity: super::host_identity::HostIdentity::Official,
-        api_level: super::types::ExtensionApiLevel::Stable,
+        generation: 1,
     };
     receive_bound(bytes, &context, work, &authority).await
+}
+
+async fn context_for_call(
+    _context: &HostReaderContext<'_>,
+    authority: &HostAuthority,
+) -> Result<super::call_context::ExtensionCallContext, String> {
+    #[cfg(test)]
+    if let Some(call_context) = &_context.call_context {
+        return Ok(call_context.clone());
+    }
+    super::runtime::call_context(&authority.identity, authority.generation).await
 }
 
 async fn receive_notification(

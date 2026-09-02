@@ -1726,6 +1726,7 @@
     "showInChatFor": "Afficher {{name}} dans le chat",
     "enableFor": "Activer {{name}}",
     "fullAccessWarning": "Cette extension n’est pas auditée par Beaver et peut accéder aux données, secrets et fonctions de votre compte.",
+    "sensitiveAccessReminder": "Par précaution, changez auprès de leur fournisseur les accès utilisés par cette extension.",
     "updateTrustWarning": "La mise à jour désactivera l’extension. Examinez sa nouvelle version avant de lui refaire confiance.",
     "detail": {
       "status": "État",

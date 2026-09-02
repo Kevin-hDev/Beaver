@@ -62,10 +62,12 @@ impl ExtensionRuntime {
     ) -> Result<Arc<HostProcess>, String> {
         let current = {
             let hosts = self.hosts.lock().await;
-            hosts.snapshot(&identity)
+            hosts
+                .snapshot(&identity)
+                .map(|snapshot| (snapshot, hosts.usable_snapshot(&identity).is_some()))
         };
-        if let Some((current_level, _, process)) = current {
-            if current_level == api_level && process.is_alive() {
+        if let Some(((current_level, _, process), usable)) = current {
+            if usable && current_level == api_level && process.is_alive() {
                 return Ok(process);
             }
             if !self.stop_channel(&identity, Some(&process)).await {
@@ -82,12 +84,14 @@ impl ExtensionRuntime {
                 paths,
                 &self.work,
                 identity,
-                api_level.clone(),
+                reservation.generation(),
+                reservation.revoked(),
                 reservation.temporary_directory(),
             )
             .await?,
         );
         let Ok(hello) = validate_hello(&process).await else {
+            self.hosts.lock().await.revoke_reservation(&reservation);
             let _ = process.kill(super::host_process::stop_deadline()).await;
             return Err(super::error_codes::HOST_UNAVAILABLE.to_string());
         };

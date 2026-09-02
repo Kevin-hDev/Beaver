@@ -5,23 +5,35 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+mod snapshots;
+
 pub(super) struct BoundHostChannel {
     pub(super) identity: HostIdentity,
     pub(super) api_level: ExtensionApiLevel,
     pub(super) generation: u64,
     pub(super) process: Arc<HostProcess>,
+    revoked: tokio_util::sync::CancellationToken,
     _temporary_directory: tempfile::TempDir,
 }
 
 pub(super) struct HostReservation {
     identity: HostIdentity,
     generation: u64,
+    revoked: tokio_util::sync::CancellationToken,
     temporary_directory: tempfile::TempDir,
 }
 
 impl HostReservation {
     pub(super) fn temporary_directory(&self) -> &Path {
         self.temporary_directory.path()
+    }
+
+    pub(super) fn generation(&self) -> u64 {
+        self.generation
+    }
+
+    pub(super) fn revoked(&self) -> tokio_util::sync::CancellationToken {
+        self.revoked.clone()
     }
 }
 
@@ -34,7 +46,7 @@ pub(super) struct RuntimeHosts {
 
 impl RuntimeHosts {
     pub(super) fn new(temporary_root: PathBuf) -> Result<Self, String> {
-        purge_orphaned_directories(&temporary_root)?;
+        super::runtime_host_storage::purge_orphaned_directories(&temporary_root)?;
         Ok(Self {
             official: None,
             third_party: BTreeMap::new(),
@@ -63,8 +75,13 @@ impl RuntimeHosts {
         Ok(HostReservation {
             identity,
             generation,
+            revoked: tokio_util::sync::CancellationToken::new(),
             temporary_directory,
         })
+    }
+
+    pub(super) fn revoke_reservation(&self, reservation: &HostReservation) {
+        reservation.revoked.cancel();
     }
 
     pub(super) fn bind(
@@ -81,6 +98,7 @@ impl RuntimeHosts {
             api_level,
             generation: reservation.generation,
             process,
+            revoked: reservation.revoked,
             _temporary_directory: reservation.temporary_directory,
         };
         match &reservation.identity {
@@ -99,31 +117,12 @@ impl RuntimeHosts {
         }
     }
 
-    pub(super) fn snapshots(&self) -> Vec<(HostIdentity, u64, Arc<HostProcess>)> {
-        self.official
-            .iter()
-            .chain(self.third_party.values())
-            .map(|channel| {
-                (
-                    channel.identity.clone(),
-                    channel.generation,
-                    Arc::clone(&channel.process),
-                )
-            })
-            .collect()
-    }
-
-    pub(super) fn snapshot(
-        &self,
-        identity: &HostIdentity,
-    ) -> Option<(ExtensionApiLevel, u64, Arc<HostProcess>)> {
-        self.channel(identity).map(|channel| {
-            (
-                channel.api_level.clone(),
-                channel.generation,
-                Arc::clone(&channel.process),
-            )
-        })
+    pub(super) fn revoke_all(&mut self) -> Vec<(HostIdentity, u64, Arc<HostProcess>)> {
+        let snapshots = self.snapshots();
+        for (identity, generation, _) in &snapshots {
+            let _ = self.revoke_current(identity, *generation);
+        }
+        snapshots
     }
 
     pub(super) fn remove_current(&mut self, identity: &HostIdentity, generation: u64) -> bool {
@@ -133,10 +132,32 @@ impl RuntimeHosts {
         {
             return false;
         }
+        if let Some(channel) = self.channel(identity) {
+            channel.revoked.cancel();
+        }
         match identity {
             HostIdentity::Official => self.official.take(),
             HostIdentity::ThirdParty(id) => self.third_party.remove(id),
         };
+        true
+    }
+
+    pub(super) fn revoke(&mut self, extension_id: &str) -> bool {
+        let Some(channel) = self.third_party.get(extension_id) else {
+            return false;
+        };
+        channel.revoked.cancel();
+        true
+    }
+
+    pub(super) fn revoke_current(&mut self, identity: &HostIdentity, generation: u64) -> bool {
+        let Some(channel) = self
+            .channel(identity)
+            .filter(|channel| channel.generation == generation)
+        else {
+            return false;
+        };
+        channel.revoked.cancel();
         true
     }
 
@@ -159,10 +180,13 @@ impl RuntimeHosts {
     }
 }
 
-fn purge_orphaned_directories(root: &Path) -> Result<(), String> {
-    if root.exists() {
-        std::fs::remove_dir_all(root)
-            .map_err(|_| super::error_codes::HOST_UNAVAILABLE.to_string())?;
+impl BoundHostChannel {
+    fn call_context(&self) -> super::call_context::ExtensionCallContext {
+        super::call_context::ExtensionCallContext::from_bound_channel(
+            self.identity.clone(),
+            self.api_level.clone(),
+            self.generation,
+            self.revoked.clone(),
+        )
     }
-    std::fs::create_dir_all(root).map_err(|_| super::error_codes::HOST_UNAVAILABLE.to_string())
 }

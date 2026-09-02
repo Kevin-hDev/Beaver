@@ -95,7 +95,7 @@ impl ExtensionRuntime {
     }
 
     pub(super) async fn stop_hosts(&self, deadline: Instant) -> bool {
-        let snapshots = self.hosts.lock().await.snapshots();
+        let snapshots = self.hosts.lock().await.revoke_all();
         let mut results = Vec::with_capacity(snapshots.len());
         for (_, _, process) in &snapshots {
             results.push(process.kill(deadline).await);

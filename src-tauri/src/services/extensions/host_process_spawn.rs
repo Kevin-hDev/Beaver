@@ -4,7 +4,6 @@ use crate::services::extensions::host_channel::PendingRequests;
 use crate::services::extensions::host_identity::HostIdentity;
 use crate::services::extensions::host_load_tracker::HostLoadTracker;
 use crate::services::extensions::host_paths::HostPaths;
-use crate::services::extensions::types::ExtensionApiLevel;
 use std::collections::HashMap;
 use std::process::Stdio;
 use std::sync::atomic::AtomicBool;
@@ -17,10 +16,20 @@ impl HostProcess {
         paths: &HostPaths,
         work: &crate::services::extensions::work_supervision::ExtensionWorkServices,
         identity: HostIdentity,
-        api_level: ExtensionApiLevel,
+        generation: u64,
+        revoked: tokio_util::sync::CancellationToken,
         temporary_directory: &std::path::Path,
     ) -> Result<Self, String> {
-        Self::spawn_inner(paths, work, identity, api_level, temporary_directory, None).await
+        Self::spawn_inner(
+            paths,
+            work,
+            identity,
+            generation,
+            revoked,
+            temporary_directory,
+            None,
+        )
+        .await
     }
 
     #[cfg(test)]
@@ -35,7 +44,8 @@ impl HostProcess {
             paths,
             work,
             HostIdentity::Official,
-            ExtensionApiLevel::Stable,
+            1,
+            tokio_util::sync::CancellationToken::new(),
             &path,
             Some(temporary),
         )
@@ -46,7 +56,8 @@ impl HostProcess {
         paths: &HostPaths,
         work: &crate::services::extensions::work_supervision::ExtensionWorkServices,
         identity: HostIdentity,
-        api_level: ExtensionApiLevel,
+        generation: u64,
+        revoked: tokio_util::sync::CancellationToken,
         temporary_directory: &std::path::Path,
         owned_temporary_directory: Option<tempfile::TempDir>,
     ) -> Result<Self, String> {
@@ -87,14 +98,15 @@ impl HostProcess {
         let writer = Arc::new(Mutex::new(stdin));
         let pending: PendingRequests = Arc::new(Mutex::new(HashMap::new()));
         let alive = Arc::new(AtomicBool::new(true));
-        let channel_cancel = tokio_util::sync::CancellationToken::new();
+        let reader_cancel = tokio_util::sync::CancellationToken::new();
         let load_tracker = Arc::new(HostLoadTracker::default());
         let reader_finished = match reader_admission.spawn_with_completion({
             let work = work.clone();
             let writer = writer.clone();
             let pending = pending.clone();
             let alive = alive.clone();
-            let channel_cancel = channel_cancel.clone();
+            let revoked = revoked.clone();
+            let reader_cancel = reader_cancel.clone();
             let load_tracker = load_tracker.clone();
             move |cancel| async move {
                 crate::services::extensions::host_reader::run(
@@ -103,14 +115,15 @@ impl HostProcess {
                         writer,
                         pending,
                         alive,
-                        channel_cancel,
+                        revoked,
+                        reader_cancel,
                         load_tracker,
                     },
                     work,
                     cancel,
                     crate::services::extensions::host_reader::HostAuthority {
                         identity,
-                        api_level,
+                        generation,
                     },
                 )
                 .await;
@@ -132,7 +145,7 @@ impl HostProcess {
             writer,
             pending,
             alive,
-            channel_cancel,
+            reader_cancel,
             load_tracker,
             reader_done: Mutex::new(Some(reader_finished)),
             process_scope,

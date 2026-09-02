@@ -113,28 +113,27 @@ async fn replace_current(
 ) -> Result<ExtensionRecord, OperationFailure> {
     let replacement = super::installer_record::for_update(&current, prepared.record);
     let identity = super::host_identity::HostIdentity::ThirdParty(current.manifest.id.clone());
-    let stopped = runtime.stop_channel(&identity, None).await;
-    super::host_stop_boundary::after_confirmed_stop(
-        stopped,
-        OperationFailure::HostUnavailable,
-        async move {
-            if super::registry::replace_user(&current, replacement.clone()).is_err() {
-                cleanup(&replacement).await;
-                return Err(OperationFailure::UpdateFailed);
-            }
-            let old = current.clone();
-            let _ = blocking(
-                move || {
-                    super::managed_store::remove_record(&old)
-                        .map_err(|_| OperationFailure::StorageFailed)
-                },
-                OperationFailure::UpdateFailed,
-            )
-            .await;
-            Ok(replacement)
+    let reminder = match super::registry::replace_user(&current, replacement.clone()) {
+        Ok(reminder) => reminder,
+        Err(_) => {
+            cleanup(&replacement).await;
+            return Err(OperationFailure::UpdateFailed);
+        }
+    };
+    let mut replacement = replacement;
+    replacement.sensitive_access_granted |= reminder;
+    if !runtime.revoke_extension(&identity).await {
+        return Err(OperationFailure::HostUnavailable);
+    }
+    let old = current.clone();
+    let _ = blocking(
+        move || {
+            super::managed_store::remove_record(&old).map_err(|_| OperationFailure::StorageFailed)
         },
+        OperationFailure::UpdateFailed,
     )
-    .await
+    .await;
+    Ok(replacement)
 }
 
 async fn cleanup(record: &ExtensionRecord) {

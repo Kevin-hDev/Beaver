@@ -1,6 +1,5 @@
 use super::core_bridge::CoreResponse;
 use super::host_channel::{self, SharedWriter};
-use super::host_reader::HostAuthority;
 use super::protocol::{RpcError, RpcErrorBody, RpcResult};
 use serde_json::Value;
 
@@ -10,52 +9,58 @@ pub(super) async fn spawn(
     params: Option<Value>,
     writer: &SharedWriter,
     work: &super::work_supervision::ExtensionWorkServices,
-    authority: HostAuthority,
-    channel_cancel: &tokio_util::sync::CancellationToken,
+    context: super::call_context::ExtensionCallContext,
+    reader_cancel: &tokio_util::sync::CancellationToken,
 ) -> Result<(), String> {
     let output = writer.clone();
-    let task_cancel = channel_cancel.clone();
+    let task_cancel = context.revoked().clone();
+    let spawn_cancel = task_cancel.clone();
+    let reader_cancel = reader_cancel.clone();
     let task_id = id.clone();
     let spawn = work.spawn_core_call(move |cancel| async move {
         let response = tokio::select! {
             biased;
-            _ = task_cancel.cancelled() => return,
+            _ = spawn_cancel.cancelled() => return,
+            _ = reader_cancel.cancelled() => return,
             _ = cancel.cancelled() => return,
             response = super::core_bridge::call(
-                &authority.identity,
-                &authority.api_level,
+                &context,
                 &method,
                 params.as_ref(),
             ) => response,
         };
-        if task_cancel.is_cancelled() {
+        if spawn_cancel.is_cancelled() || reader_cancel.is_cancelled() {
             return;
         }
         match response {
             Ok(CoreResponse::Json(result)) => {
-                let _ = host_channel::write(
+                let _ = write_unrevoked(
                     &output,
                     &RpcResult {
                         jsonrpc: "2.0",
                         id: &task_id,
                         result,
                     },
+                    &spawn_cancel,
+                    &reader_cancel,
                 )
                 .await;
             }
             Ok(CoreResponse::Secret(secret)) => {
-                let _ = host_channel::write(
+                let _ = write_unrevoked(
                     &output,
                     &RpcResult {
                         jsonrpc: "2.0",
                         id: &task_id,
                         result: secret.as_str(),
                     },
+                    &spawn_cancel,
+                    &reader_cancel,
                 )
                 .await;
             }
-            Err(()) => {
-                let _ = host_channel::write(
+            Err(_) => {
+                let _ = write_unrevoked(
                     &output,
                     &RpcError {
                         jsonrpc: "2.0",
@@ -65,13 +70,15 @@ pub(super) async fn spawn(
                             message: "core_method_unavailable",
                         },
                     },
+                    &spawn_cancel,
+                    &reader_cancel,
                 )
                 .await;
             }
         }
     });
     if spawn.is_err() {
-        if channel_cancel.is_cancelled() {
+        if task_cancel.is_cancelled() {
             return Err(super::error_codes::HOST_UNAVAILABLE.to_string());
         }
         return host_channel::write(
@@ -88,4 +95,18 @@ pub(super) async fn spawn(
         .await;
     }
     Ok(())
+}
+
+async fn write_unrevoked(
+    writer: &SharedWriter,
+    message: &impl serde::Serialize,
+    revoked: &tokio_util::sync::CancellationToken,
+    reader_cancel: &tokio_util::sync::CancellationToken,
+) -> Result<(), String> {
+    tokio::select! {
+        biased;
+        _ = revoked.cancelled() => Ok(()),
+        _ = reader_cancel.cancelled() => Ok(()),
+        result = host_channel::write(writer, message) => result,
+    }
 }

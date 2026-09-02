@@ -2342,6 +2342,7 @@
     "showInChatFor": "在聊天中显示 {{name}}",
     "enableFor": "启用 {{name}}",
     "fullAccessWarning": "此扩展未经 Beaver 审核，并且可以访问你账户中的数据、密钥和功能。",
+    "sensitiveAccessReminder": "为安全起见，请直接向相应服务提供商更改此扩展使用的访问凭据。",
     "updateTrustWarning": "更新会停用此扩展。请先检查新版本，再重新信任并启用。",
     "detail": {
       "status": "状态",
