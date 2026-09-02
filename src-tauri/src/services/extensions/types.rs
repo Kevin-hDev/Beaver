@@ -132,15 +132,6 @@ pub struct ExtensionDiagnostic {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
-pub enum HostState {
-    Stopped,
-    Starting,
-    Running,
-    Error,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
 pub struct ExtensionHostStatus {
     pub state: HostState,
     pub node_version: Option<String>,

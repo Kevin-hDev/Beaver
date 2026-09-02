@@ -6,6 +6,8 @@ mod artifacts;
 mod document;
 #[path = "extension_contract_effect.rs"]
 mod effect_renderer;
+#[path = "extension_contract_enum.rs"]
+mod enum_renderer;
 #[path = "extension_contract_io.rs"]
 mod io;
 #[path = "extension_contract_rust.rs"]

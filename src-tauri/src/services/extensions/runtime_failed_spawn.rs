@@ -18,11 +18,13 @@ pub(super) async fn terminate_or_retain(
     if process.kill(deadline).await {
         return super::error_codes::HOST_UNAVAILABLE.to_string();
     }
-    runtime
+    let exit = runtime
         .hosts
         .lock()
         .await
         .retain_failed(reservation, api_level, process);
+    // Publier après avoir relâché le verrou permet au moniteur de récolter le canal.
+    exit.notify().await;
     runtime.mark_stop_unconfirmed(identity).await;
     super::error_codes::HOST_UNAVAILABLE.to_string()
 }

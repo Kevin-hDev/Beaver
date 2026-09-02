@@ -3,6 +3,7 @@ import type {
   ExtensionEvent,
   HostDiagnosticCode,
   HostLoadStage,
+  ExtensionHostState,
   RuntimeDiagnosticCode,
 } from "./extension-contract.generated";
 
@@ -14,6 +15,7 @@ export {
   EXTENSION_CAPABILITIES,
   EXTENSION_EFFECT_CLASSES,
   EXTENSION_EVENTS,
+  EXTENSION_HOST_STATES,
   HOST_LOAD_STAGES,
   HOST_DIAGNOSTIC_CODES,
   RUNTIME_DIAGNOSTIC_CODES,
@@ -28,7 +30,6 @@ export type ExtensionKind = "builtin" | "local";
 export type ExtensionOriginKind = "local" | "git" | "npm";
 export type ExtensionStatus = "active" | "inactive" | "loading" | "error" | "incompatible";
 export type ExtensionApiLevel = "stable" | "advanced";
-export type ExtensionHostState = "stopped" | "starting" | "running" | "error";
 
 export interface ExtensionManifest {
   id: string;
@@ -118,6 +119,7 @@ export type {
   ExtensionCapability,
   ExtensionEffectClass,
   ExtensionEvent,
+  ExtensionHostState,
   ExtensionProtocolErrorReason,
   HostLoadStage,
   HostDiagnosticCode,

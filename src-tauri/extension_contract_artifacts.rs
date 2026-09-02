@@ -28,6 +28,10 @@ pub fn render_typescript(contract: &Value) -> Result<String, String> {
             array_value(contract, "events")?.to_vec(),
         ),
         (
+            "EXTENSION_HOST_STATES",
+            array_value(contract, "hostStates")?.to_vec(),
+        ),
+        (
             "HOST_LOAD_STAGES",
             array_value(contract, "loadStages")?.to_vec(),
         ),
@@ -81,6 +85,7 @@ pub fn render_typescript(contract: &Value) -> Result<String, String> {
             "HOST_TO_CORE_NOTIFICATION_METHODS",
         ),
         ("ExtensionEvent", "EXTENSION_EVENTS"),
+        ("ExtensionHostState", "EXTENSION_HOST_STATES"),
         ("HostLoadStage", "HOST_LOAD_STAGES"),
         ("ExtensionEffectClass", "EXTENSION_EFFECT_CLASSES"),
         ("ExtensionProtocolErrorReason", "PROTOCOL_ERROR_REASONS"),

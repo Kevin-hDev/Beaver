@@ -215,9 +215,9 @@ async fn a_retained_pre_bind_process_is_reaped_after_its_reader_exits() {
     let work =
         super::super::work_supervision::ExtensionWorkServices::new(coordinator.work_supervisor());
     let temporary_root = directory.path().join("channels");
-    let (mut hosts, receiver) = RuntimeHosts::new_monitored(temporary_root).unwrap();
+    let (mut hosts, mut receiver) = RuntimeHosts::new_monitored(temporary_root).unwrap();
     let identity = HostIdentity::ThirdParty("com.example.prebind".to_string());
-    let reservation = hosts.reserve(identity).unwrap();
+    let reservation = hosts.reserve(identity.clone()).unwrap();
     let channel_directory = reservation.temporary_directory().to_path_buf();
     let process = Arc::new(
         HostProcess::spawn_bound(
@@ -230,7 +230,18 @@ async fn a_retained_pre_bind_process_is_reaped_after_its_reader_exits() {
         .await
         .unwrap(),
     );
-    hosts.retain_failed(reservation, ExtensionApiLevel::Stable, process);
+    hosts.revoke_reservation(&reservation);
+    let original_notice = tokio::time::timeout(Duration::from_secs(2), receiver.recv())
+        .await
+        .expect("the reader must report its pre-bind exit")
+        .expect("the exit monitor channel must remain open");
+    assert_eq!(original_notice.identity, identity);
+    assert_eq!(
+        original_notice.kind,
+        super::super::runtime_host_generation::HostExitKind::Unexpected
+    );
+    let retained_exit = hosts.retain_failed(reservation, ExtensionApiLevel::Stable, process);
+    retained_exit.notify().await;
     let runtime = Arc::new(ExtensionRuntime {
         paths: Some(paths),
         hosts: Mutex::new(hosts),

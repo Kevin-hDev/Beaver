@@ -85,6 +85,7 @@ fn validate_strings(contract: &Value) -> Result<(), String> {
         "/capabilities",
         "/methods/coreToHost",
         "/events",
+        "/hostStates",
         "/loadStages",
         "/effectClasses",
         "/diagnostics/hostCodes",

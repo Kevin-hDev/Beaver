@@ -3,7 +3,10 @@ use std::sync::Arc;
 use super::super::host_identity::HostIdentity;
 use super::super::host_process::HostProcess;
 use super::super::types::{ExtensionApiLevel, MAX_HOST_PROCESSES};
-use super::{BoundHostChannel, HostGeneration, HostReservation, RuntimeHosts};
+use super::{
+    BoundHostChannel, HostExitNotice, HostGeneration, HostReservation, RetainedHostExit,
+    RuntimeHosts,
+};
 
 impl RuntimeHosts {
     pub(in crate::services::extensions) fn reserve(
@@ -73,9 +76,11 @@ impl RuntimeHosts {
         reservation: HostReservation,
         api_level: ExtensionApiLevel,
         process: Arc<HostProcess>,
-    ) {
+    ) -> RetainedHostExit {
         reservation.revoked.cancel();
         reservation.generation.begin_stop(false);
+        let notice = HostExitNotice::capture(reservation.identity.clone(), &reservation.generation);
+        let sender = reservation.exit_sender.clone();
         self.failed.push(BoundHostChannel {
             identity: reservation.identity,
             api_level,
@@ -85,6 +90,8 @@ impl RuntimeHosts {
             _temporary_directory: reservation.temporary_directory,
         });
         debug_assert!(self.len() <= MAX_HOST_PROCESSES);
+        // Le lecteur a pu signaler sa sortie avant que ce canal retenu existe.
+        RetainedHostExit { sender, notice }
     }
 
     pub(in crate::services::extensions) fn channel(

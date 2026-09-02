@@ -33,6 +33,14 @@ pub(super) fn complete_at(
         return write_at(marker_path, &retry, false);
     }
     if !applied_ids.contains(&current.extension_id) {
+        if matches!(
+            preserved.state,
+            MarkerRead::Valid(ref marker) if marker.extension_id != current.extension_id
+        ) {
+            if let Some(bytes) = preserved.bytes {
+                return write_bytes_at(marker_path, &bytes, false);
+            }
+        }
         return Ok(());
     }
     match preserved.bytes {

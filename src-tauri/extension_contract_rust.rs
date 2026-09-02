@@ -38,6 +38,11 @@ pub fn render(contract: &Value) -> Result<String, String> {
     ] {
         render_slice(&mut output, name, values)?;
     }
+    super::enum_renderer::render(
+        &mut output,
+        "HostState",
+        array_value(contract, "hostStates")?,
+    )?;
     render_named_strings(
         &mut output,
         array_value(contract, "loadStages")?,

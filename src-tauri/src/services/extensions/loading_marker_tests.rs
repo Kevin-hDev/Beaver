@@ -172,6 +172,28 @@ fn successful_unrelated_load_restores_the_interrupted_marker() {
 }
 
 #[test]
+fn failed_last_load_restores_the_original_interruption_marker() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("extension-loading.json");
+    loading_marker::start_at(&path, ID, 1).unwrap();
+    let preserved = loading_marker::preserve_at(&path);
+    loading_marker::start_at(&path, "com.example.failed-last", 1).unwrap();
+
+    loading_marker::complete_at(
+        &path,
+        preserved,
+        &HashSet::from(["com.example.safe".to_string()]),
+        None,
+    )
+    .unwrap();
+
+    let MarkerRead::Valid(marker) = loading_marker::read_at(&path) else {
+        panic!("original interruption marker expected");
+    };
+    assert_eq!(marker.extension_id, ID);
+}
+
+#[test]
 fn a_failed_retry_keeps_its_incremented_attempt_after_a_neighbor_succeeds() {
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path().join("extension-loading.json");

@@ -161,6 +161,8 @@ fn checked_in_typescript_matches_the_extension_contract() {
         include_str!("../../../../src/types/extension-contract.generated.ts").replace("\r\n", "\n");
 
     assert_eq!(checked_in, generator::render_typescript(&contract).unwrap());
+    assert!(checked_in.contains("export const EXTENSION_HOST_STATES"));
+    assert!(checked_in.contains("export type ExtensionHostState"));
     assert!(checked_in.contains("export const HOST_DIAGNOSTIC_CODES"));
     assert!(checked_in.contains("export const RUNTIME_DIAGNOSTIC_CODES"));
 }
@@ -193,6 +195,7 @@ fn generated_rust_names_the_unique_load_stage_notification() {
     let generated = include_str!(concat!(env!("OUT_DIR"), "/extension_contract.rs"));
 
     assert!(generated.contains("pub const HOST_LOAD_STAGE_METHOD: &str = \"host.load.stage\";"));
+    assert!(generated.contains("pub enum HostState"));
 }
 
 #[test]

@@ -437,7 +437,8 @@ async fn an_unconfirmed_pre_bind_process_keeps_its_channel_directory_owned() {
         .unwrap(),
     );
 
-    hosts.retain_failed(reservation, ExtensionApiLevel::Stable, Arc::clone(&process));
+    let _retained_exit =
+        hosts.retain_failed(reservation, ExtensionApiLevel::Stable, Arc::clone(&process));
     let generation = hosts.snapshots()[0].1;
     assert!(temporary_directory.exists());
     assert!(hosts.usable_snapshot(&identity).is_none());

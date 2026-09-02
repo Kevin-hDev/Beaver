@@ -29,6 +29,17 @@ impl HostExitNotice {
     }
 }
 
+pub(super) struct RetainedHostExit {
+    sender: tokio::sync::mpsc::Sender<HostExitNotice>,
+    notice: HostExitNotice,
+}
+
+impl RetainedHostExit {
+    pub(super) async fn notify(self) {
+        let _ = self.sender.send(self.notice).await;
+    }
+}
+
 #[path = "runtime_hosts_lifecycle.rs"]
 mod lifecycle;
 #[path = "runtime_hosts_registry.rs"]

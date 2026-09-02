@@ -99,6 +99,7 @@ if (
 export const CAPABILITIES = strings(contract.capabilities);
 export const CORE_TO_HOST_METHODS = strings(contract?.methods?.coreToHost);
 export const EVENTS = strings(contract.events);
+export const HOST_STATES = strings(contract.hostStates);
 export const LOAD_STAGES = strings(contract.loadStages);
 export const EFFECT_CLASSES = strings(contract.effectClasses);
 export const HOST_DIAGNOSTIC_CODES = strings(contract?.diagnostics?.hostCodes, 32);

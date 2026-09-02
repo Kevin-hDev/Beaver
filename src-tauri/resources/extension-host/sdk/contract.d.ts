@@ -7,6 +7,7 @@ export declare const STABLE_HOST_TO_CORE_REQUEST_METHODS: readonly ["app.info","
 export declare const ADVANCED_HOST_TO_CORE_REQUEST_METHODS: readonly [];
 export declare const HOST_TO_CORE_NOTIFICATION_METHODS: readonly ["host.load.stage"];
 export declare const EXTENSION_EVENTS: readonly ["session.turn.started"];
+export declare const EXTENSION_HOST_STATES: readonly ["stopped","starting","running","error"];
 export declare const HOST_LOAD_STAGES: readonly ["import","activate","register"];
 export declare const EXTENSION_EFFECT_CLASSES: readonly ["read-only","local-write","external-read","external-write","process","secret","unknown"];
 export declare const PROTOCOL_ERROR_REASONS: readonly ["core_busy","core_request_timeout","core_transport_failed","core_method_unavailable","core_request_failed","extension_host_busy","extension_host_request_failed","extension_host_fatal"];
@@ -21,6 +22,7 @@ export type StableHostToCoreRequestMethod = typeof STABLE_HOST_TO_CORE_REQUEST_M
 export type AdvancedHostToCoreRequestMethod = typeof ADVANCED_HOST_TO_CORE_REQUEST_METHODS[number];
 export type HostToCoreNotificationMethod = typeof HOST_TO_CORE_NOTIFICATION_METHODS[number];
 export type ExtensionEvent = typeof EXTENSION_EVENTS[number];
+export type ExtensionHostState = typeof EXTENSION_HOST_STATES[number];
 export type HostLoadStage = typeof HOST_LOAD_STAGES[number];
 export type ExtensionEffectClass = typeof EXTENSION_EFFECT_CLASSES[number];
 export type ExtensionProtocolErrorReason = typeof PROTOCOL_ERROR_REASONS[number];

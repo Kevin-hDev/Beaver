@@ -1,5 +1,7 @@
 import {
   EXTENSION_BACKEND_ERROR_CODES,
+  EXTENSION_API_VERSION,
+  EXTENSION_HOST_STATES,
   HOST_DIAGNOSTIC_CODES,
   HOST_LOAD_STAGES,
   LIMITS,
@@ -7,19 +9,9 @@ import {
   type HostDiagnosticCode,
   type RuntimeDiagnosticCode,
 } from "@/types/extension-contract.generated";
-import type {
-  ExtensionDiagnostic,
-  ExtensionHostState,
-  ExtensionHostStatus,
-} from "@/types/extensions";
+import type { ExtensionDiagnostic, ExtensionHostStatus } from "@/types/extensions";
 import { isExtensionIdentifier } from "./extension-records";
 
-const HOST_STATES: readonly ExtensionHostState[] = [
-  "stopped",
-  "starting",
-  "running",
-  "error",
-];
 const MAX_VERSION_CHARS = 128;
 const MAX_DIAGNOSTIC_FILE_CHARS = 128;
 const MAX_DIAGNOSTIC_POSITION = 10_000_000;
@@ -27,7 +19,7 @@ const MAX_DIAGNOSTIC_POSITION = 10_000_000;
 export const EMPTY_EXTENSION_HOST: ExtensionHostStatus = {
   state: "stopped",
   jitiVersion: "",
-  apiVersion: "1",
+  apiVersion: EXTENSION_API_VERSION,
   activeExtensions: 0,
   diagnostics: [],
 };
@@ -37,7 +29,7 @@ export function parseExtensionHostStatus(value: unknown): ExtensionHostStatus {
   if (!Array.isArray(input.diagnostics)
     || input.diagnostics.length > LIMITS.maxExtensions) invalid();
   return {
-    state: oneOf(input.state, HOST_STATES),
+    state: oneOf(input.state, EXTENSION_HOST_STATES),
     nodeVersion: optionalText(input.nodeVersion, MAX_VERSION_CHARS),
     jitiVersion: text(input.jitiVersion, MAX_VERSION_CHARS, true),
     apiVersion: text(input.apiVersion, MAX_VERSION_CHARS),

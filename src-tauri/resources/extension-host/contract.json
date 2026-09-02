@@ -19,6 +19,7 @@
     ]
   },
   "events": ["session.turn.started"],
+  "hostStates": ["stopped", "starting", "running", "error"],
   "loadStages": ["import", "activate", "register"],
   "effectClasses": ["read-only", "local-write", "external-read", "external-write", "process", "secret", "unknown"],
   "limits": {
