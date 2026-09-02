@@ -1,4 +1,4 @@
-use super::types::{MAX_IN_FLIGHT_REQUESTS, MAX_PENDING_REQUESTS};
+use super::types::{MAX_HOST_PROCESSES, MAX_IN_FLIGHT_REQUESTS, MAX_PENDING_REQUESTS};
 use crate::app_exit::AppWorkSupervisor;
 #[cfg(test)]
 use crate::services::work_registry::ServiceWorkDiagnostics;
@@ -8,13 +8,13 @@ use crate::services::work_registry::{
 use std::future::Future;
 use std::time::Instant;
 
-const EXTENSION_HOST_READERS: usize = 1;
 pub(super) const MAX_EXTENSION_OPERATIONS: usize = MAX_PENDING_REQUESTS;
 pub(super) const MAX_EXTENSION_CORE_CALLS: usize = MAX_IN_FLIGHT_REQUESTS;
 
-type ExtensionReaderWork = ServiceWorkSupervisor<EXTENSION_HOST_READERS>;
+type ExtensionReaderWork = ServiceWorkSupervisor<MAX_HOST_PROCESSES>;
 type ExtensionOperationWork = ServiceWorkSupervisor<MAX_EXTENSION_OPERATIONS>;
 type ExtensionCoreCallWork = ServiceWorkSupervisor<MAX_EXTENSION_CORE_CALLS>;
+type ExtensionLifecycleWork = ServiceWorkSupervisor<1>;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum ExtensionWorkAdmissionError {
@@ -43,6 +43,7 @@ pub(super) struct ExtensionWorkServices {
     readers: ExtensionReaderWork,
     operations: ExtensionOperationWork,
     core_calls: ExtensionCoreCallWork,
+    lifecycle: ExtensionLifecycleWork,
 }
 
 impl ExtensionWorkServices {
@@ -50,7 +51,8 @@ impl ExtensionWorkServices {
         Self {
             readers: ExtensionReaderWork::new(app.clone()),
             operations: ExtensionOperationWork::new(app.clone()),
-            core_calls: ExtensionCoreCallWork::new(app),
+            core_calls: ExtensionCoreCallWork::new(app.clone()),
+            lifecycle: ExtensionLifecycleWork::new(app),
         }
     }
 
@@ -62,7 +64,7 @@ impl ExtensionWorkServices {
 
     pub(super) fn try_admit_reader(
         &self,
-    ) -> Result<ServiceWorkAdmission<EXTENSION_HOST_READERS>, ExtensionWorkAdmissionError> {
+    ) -> Result<ServiceWorkAdmission<MAX_HOST_PROCESSES>, ExtensionWorkAdmissionError> {
         self.readers.try_admit().map_err(map_admission_error)
     }
 
@@ -117,12 +119,24 @@ impl ExtensionWorkServices {
         self.core_calls.spawn(work).map_err(map_admission_error)
     }
 
+    pub(super) fn spawn_lifecycle<Factory, Task>(
+        &self,
+        work: Factory,
+    ) -> Result<(), ExtensionWorkAdmissionError>
+    where
+        Factory: FnOnce(ServiceWorkCancellation) -> Task + Send + 'static,
+        Task: Future + Send + 'static,
+    {
+        self.lifecycle.spawn(work).map_err(map_admission_error)
+    }
+
     pub(super) fn begin_closing(&self) {
         // Les trois producteurs ferment avant que l'hôte ne soit tué : aucun
         // lecteur, appel ou redémarrage ne peut franchir cette frontière.
         self.readers.begin_closing();
         self.operations.begin_closing();
         self.core_calls.begin_closing();
+        self.lifecycle.begin_closing();
     }
 
     pub(super) fn is_open(&self) -> bool {
@@ -131,12 +145,13 @@ impl ExtensionWorkServices {
 
     pub(super) async fn stop_and_wait(&self, deadline: Instant) -> bool {
         self.begin_closing();
-        let (readers, operations, core_calls) = tokio::join!(
+        let (readers, operations, core_calls, lifecycle) = tokio::join!(
             self.readers.stop_and_wait(deadline),
             self.operations.stop_and_wait(deadline),
             self.core_calls.stop_and_wait(deadline),
+            self.lifecycle.stop_and_wait(deadline),
         );
-        readers && operations && core_calls
+        readers && operations && core_calls && lifecycle
     }
 
     #[cfg(test)]

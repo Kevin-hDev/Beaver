@@ -5,6 +5,14 @@ use windows_sys::Win32::System::Diagnostics::ToolHelp::{
 
 const MAX_TREE_PROCESSES: usize = 256;
 
+pub(super) fn terminate_scope(scope: &crate::services::owned_process::OwnedProcessScope) -> bool {
+    scope.terminate()
+}
+
+pub(super) fn scope_is_empty(scope: &crate::services::owned_process::OwnedProcessScope) -> bool {
+    scope.is_empty()
+}
+
 struct ProcessSnapshot(HANDLE);
 
 impl ProcessSnapshot {

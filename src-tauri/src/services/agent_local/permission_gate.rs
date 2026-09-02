@@ -6,7 +6,57 @@ use std::sync::LazyLock;
 use tokio::sync::{oneshot, Mutex};
 use tokio_util::sync::CancellationToken;
 
-pub use super::permission_allow_cache::{clear_session, is_allowed, mark_allowed};
+pub async fn clear_session(session_id: &str) {
+    super::permission_allow_cache::clear_session(session_id).await;
+}
+
+pub async fn is_allowed(session_id: &str, tool_name: &str) -> bool {
+    match crate::services::extensions::indexed_tool(tool_name) {
+        Some(indexed) => {
+            super::permission_allow_cache::is_extension_allowed(
+                session_id,
+                &indexed.extension_id,
+                tool_name,
+            )
+            .await
+        }
+        None => super::permission_allow_cache::is_allowed(session_id, tool_name).await,
+    }
+}
+
+pub async fn mark_allowed(session_id: &str, tool_name: &str) {
+    match crate::services::extensions::indexed_tool(tool_name) {
+        Some(indexed)
+            if super::permission_policy::extension_effect_policy(indexed.tool.effect)
+                .allow_session_cache =>
+        {
+            super::permission_allow_cache::mark_extension_allowed(
+                session_id,
+                &indexed.extension_id,
+                tool_name,
+            )
+            .await;
+        }
+        Some(_) => {}
+        None => super::permission_allow_cache::mark_allowed(session_id, tool_name).await,
+    }
+}
+
+pub(crate) async fn clear_extension(extension_id: &str) {
+    super::permission_allow_cache::clear_extension(extension_id).await;
+}
+
+pub(crate) async fn clear_all_extensions() {
+    super::permission_allow_cache::clear_all_extensions().await;
+}
+
+pub(crate) async fn is_extension_allowed(
+    session_id: &str,
+    extension_id: &str,
+    tool_name: &str,
+) -> bool {
+    super::permission_allow_cache::is_extension_allowed(session_id, extension_id, tool_name).await
+}
 
 #[derive(Debug, Clone, Copy)]
 pub enum PermissionDecision {
@@ -31,6 +81,12 @@ const GATED_TOOLS: &[&str] = &[
 ];
 
 pub fn requires_permission(tool_name: &str, args: &serde_json::Value) -> bool {
+    if let Some(indexed) = crate::services::extensions::indexed_tool(tool_name) {
+        // external-read réutilise la décision et le dialogue de web_fetch, jamais son filtre
+        // anti-SSRF : le code Node approuvé garde son accès réseau direct.
+        return super::permission_policy::extension_effect_policy(indexed.tool.effect)
+            .requires_confirmation;
+    }
     match tool_name {
         "bash" => {
             let cmd = args["command"].as_str().unwrap_or("");
@@ -104,11 +160,20 @@ pub async fn request(
         pending.insert(id.clone(), tx);
     }
 
-    let _ = on_event.send(StreamEvent::PermissionRequest {
-        id: id.clone(),
-        tool_name: tool_name.to_string(),
-        arguments: arguments.clone(),
-    });
+    let request = crate::services::extensions::indexed_tool(tool_name).map_or_else(
+        || super::permission_request::native(id.clone(), tool_name, arguments),
+        |indexed| {
+            super::permission_request::for_extension(
+                id.clone(),
+                &indexed.extension_id,
+                &indexed.extension_name,
+                tool_name,
+                indexed.tool.effect,
+                arguments,
+            )
+        },
+    );
+    let _ = on_event.send(StreamEvent::PermissionRequest(request));
     log_diagnostic("request", Some(tool_name), Some("permission_prompt_sent"));
 
     tokio::select! {

@@ -1,14 +1,11 @@
 import { useState, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { agentStreamManager } from "./agent-stream-manager";
+import type { PermissionRequestState } from "./agent-chat-stream-types";
 
 const MAX_PERMISSION_QUEUE = 32;
 
-export interface PermissionRequest {
-  id: string;
-  toolName: string;
-  arguments: Record<string, unknown>;
-}
+export type PermissionRequest = PermissionRequestState;
 
 export type PermissionDecision = "allow" | "allow_session" | "deny";
 

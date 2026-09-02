@@ -34,6 +34,8 @@ pub mod conversation_skills;
 pub mod conversation_transition;
 #[cfg(test)]
 mod conversation_transition_tests;
+mod extension_tool_correlation;
+mod extension_tool_diagnostic;
 pub mod generation_metrics;
 pub mod session_archive;
 mod session_artifacts;

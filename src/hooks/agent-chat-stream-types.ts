@@ -6,6 +6,7 @@ import type {
   RetryIndicatorState,
   TokenPhase,
 } from "@/types/agent";
+import type { AgentPermissionRequest } from "@/types/agent-stream";
 import type { ActiveStreamItem } from "./active-stream-item";
 import type { ContextTokenBuckets } from "./context-usage-buckets";
 
@@ -59,9 +60,7 @@ export interface ChatState {
   planModeEnabled?: boolean;
 }
 
-export interface PermissionRequestState {
-  id: string; toolName: string; arguments: Record<string, unknown>;
-}
+export type PermissionRequestState = AgentPermissionRequest;
 
 export interface ManagedStreamState extends ChatState {
   pendingPermissions: PermissionRequestState[];

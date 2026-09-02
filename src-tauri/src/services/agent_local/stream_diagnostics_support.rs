@@ -7,7 +7,9 @@ use super::types_todo::AgentTodoStatus;
 
 pub(crate) const MAX_STREAM_FAILURES: usize = 20;
 pub(crate) const MAX_DIAGNOSTIC_RUNS: usize = 20;
-pub(crate) const MAX_DIAGNOSTIC_EVENTS: usize = 12;
+// One bound retains a complete parallel discovery batch and its compact refresh link.
+pub(crate) const MAX_DIAGNOSTIC_EVENTS: usize =
+    4 * super::tool_executor_parallel_batch::MAX_PARALLEL;
 const MAX_TEXT: usize = 200;
 
 pub(crate) fn active_todo(session: &AgentSession) -> Option<AgentDiagnosticTodo> {
@@ -59,6 +61,7 @@ pub(crate) fn event(
         message: clip(message),
         tool_name: tool_name.map(clip),
         error_type: error_type.map(str::to_string),
+        extension: None,
     }
 }
 

@@ -2,26 +2,28 @@ use super::installer::{blocking, extension_runtime, is_managed};
 use super::OperationFailure;
 use crate::services::work_registry::ServiceWorkCancellation;
 
-pub async fn uninstall(id: &str) -> Result<(), OperationFailure> {
+pub async fn uninstall(id: &str, deadline: std::time::Instant) -> Result<bool, OperationFailure> {
     let current = super::registry::find(id).map_err(|_| OperationFailure::UninstallFailed)?;
     let id = id.to_string();
     let runtime = extension_runtime()?;
+    let identity = super::host_identity::HostIdentity::ThirdParty(id.clone());
     let work = runtime.work.clone();
     work.run_operation(move |cancel| async move {
         ensure_uninstall_active(&cancel)?;
-        let stopped = tokio::select! {
-            _ = cancel.cancelled() => return Err(OperationFailure::HostUnavailable),
-            stopped = runtime.stop_host(super::host_process::stop_deadline()) => stopped,
-        };
-        ensure_uninstall_active(&cancel)?;
+        crate::services::agent_local::permission_gate::clear_extension(&id).await;
+        let reminder = current.sensitive_access_granted;
+        // La désactivation persiste avant l'arrêt afin qu'un arbre non confirmé
+        // ne puisse jamais être remplacé ni redevenir actif au redémarrage.
+        super::registry::set_enabled(&id, false, false)
+            .await
+            .map_err(|_| OperationFailure::UninstallFailed)?;
+        let stopped = runtime.revoke_extension(&identity, deadline).await;
         super::host_stop_boundary::after_confirmed_stop(
             stopped,
             OperationFailure::HostUnavailable,
             async move {
-                if super::registry::remove(&id).is_err() {
-                    let _ = runtime.start_untracked().await;
-                    return Err(OperationFailure::UninstallFailed);
-                }
+                let persisted_reminder =
+                    super::registry::remove(&id).map_err(|_| OperationFailure::UninstallFailed)?;
                 let result = if is_managed(&current) {
                     let record = current.clone();
                     blocking(
@@ -35,8 +37,7 @@ pub async fn uninstall(id: &str) -> Result<(), OperationFailure> {
                 } else {
                     Ok(())
                 };
-                let _ = runtime.start_untracked().await;
-                result
+                result.map(|_| reminder || persisted_reminder)
             },
         )
         .await

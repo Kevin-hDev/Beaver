@@ -556,6 +556,16 @@
   },
   "permissionDialog": {
     "title": "{{action}} erlauben?",
+    "extensionAction": "{{extension}} eine Aktion ausführen lassen",
+    "effects": {
+      "read-only": "Nur Lesen",
+      "local-write": "Lokales Schreiben",
+      "external-read": "Externes Lesen",
+      "external-write": "Externes Schreiben",
+      "process": "Prozessausführung",
+      "secret": "Sensible Daten",
+      "unknown": "Nicht klassifizierte Aktion"
+    },
     "allow": "Einmal erlauben",
     "allowSession": "Immer erlauben",
     "deny": "Ablehnen",
@@ -2244,7 +2254,6 @@
     "sections": {
       "plugins": "Plugins",
       "custom": "Erweiterungen",
-      "external": "Externe Anwendungen",
       "host": "Host"
     },
     "pages": {
@@ -2255,10 +2264,6 @@
       "custom": {
         "description": "Füge lokalen Code hinzu oder installiere eine Erweiterung von Git oder npm.",
         "empty": "Keine eigenen Erweiterungen."
-      },
-      "external": {
-        "description": "Unabhängige Programme, die über das Beaver-Erweiterungsprotokoll verbunden sind.",
-        "empty": "Keine externen Anwendungen verbunden."
       }
     },
     "discovery": {
@@ -2330,9 +2335,11 @@
     },
     "kinds": {
       "builtin": "Offizielles Plugin",
-      "local": "Lokale Erweiterung",
-      "external": "Externe Anwendung"
+      "local": "Lokale Erweiterung"
     },
+    "enabled": { "yes": "Aktiviert", "no": "Deaktiviert" },
+    "apiLevels": { "stable": "Stabil", "advanced": "Erweitert" },
+    "effects": { "read-only": "Nur Lesen", "local-write": "Lokales Schreiben", "external-read": "Externes Lesen", "external-write": "Externes Schreiben", "process": "Prozess", "secret": "Zugriff auf Geheimnisse", "unknown": "Unbekannter Effekt" },
     "origins": {
       "local": "Lokale Datei oder Ordner",
       "git": "Git-Repository",
@@ -2343,15 +2350,21 @@
     "showInChatFor": "{{name}} im Chat anzeigen",
     "enableFor": "{{name}} aktivieren",
     "fullAccessWarning": "Diese Erweiterung wird nicht von Beaver geprüft und kann auf Daten, Geheimnisse und Funktionen deines Kontos zugreifen.",
+    "sensitiveAccessReminder": "Ändere vorsichtshalber beim jeweiligen Anbieter die von dieser Erweiterung verwendeten Zugangsdaten.",
     "updateTrustWarning": "Die Aktualisierung deaktiviert die Erweiterung. Prüfe die neue Version, bevor du ihr erneut vertraust.",
     "detail": {
+      "enabled": "Aktivierung",
       "status": "Status",
+      "apiLevel": "API-Stufe",
       "runtime": "Runtime",
       "api": "Beaver-API",
       "author": "Autor",
       "installSource": "Installationsquelle",
       "source": "Quelle",
       "revision": "Git-Revision",
+      "lastActivatedAt": "Zuletzt aktiviert",
+      "trustedAt": "Vertrauenswürdig seit",
+      "lastError": "Letzter Fehler",
       "unknown": "Nicht angegeben",
     "contributions": "Registrierte Beiträge",
     "replacesCore": "Ersetzt ein integriertes Tool"
@@ -2361,6 +2374,7 @@
     "description": "Diese Erweiterung erhält vollen Zugriff auf Daten, Geheimnisse und Funktionen deines Kontos. Beaver hat sie nicht geprüft.",
     "confirm": "Vertrauen und aktivieren"
   },
+  "recovery": { "title": "Laden der Erweiterung unterbrochen", "description": "Beaver wurde beim Laden einer Erweiterung beendet. Prüfe sie, bevor du fortfährst.", "invalid": "Die Wiederherstellungsdaten sind ungültig und können verworfen werden.", "openDetail": "Details öffnen", "keepDisabled": "Deaktiviert lassen", "retry": "Laden erneut versuchen", "discard": "Wiederherstellung verwerfen", "restore": "Vorheriges Register wiederherstellen" },
     "add": {
       "title": "Erweiterung hinzufügen",
       "fullAccessWarning": "Der ausgewählte Code wird mit den Rechten deines Benutzerkontos ausgeführt. Installiere nur Erweiterungen, denen du vertrauen möchtest.",
@@ -2396,7 +2410,8 @@
         "error": "Fehler"
       },
       "recoveryTitle": "Wiederherstellungsmodus",
-      "recoveryDescription": "Deaktiviert Beaver-Plugins und lokale Erweiterungen, damit Beaver wieder funktioniert."
+      "recoveryDescription": "Deaktiviert Beaver-Plugins und lokale Erweiterungen, damit Beaver wieder funktioniert.",
+      "quitAndRestartHint": "Beenden Sie Beaver vollständig und starten Sie es neu, bevor Sie diese Erweiterung wieder aktivieren."
     },
     "errors": {
       "load": "Erweiterungen konnten nicht geladen werden.",
@@ -2443,7 +2458,18 @@
         "extensions_storage_failed": "Der lokale Erweiterungsspeicher ist nicht verfügbar.",
         "extensions_update_identity_changed": "Die Aktualisierung änderte die Identität der Erweiterung und wurde abgelehnt.",
         "extensions_update_unavailable": "Beaver kann diese Erweiterung nicht aktualisieren.",
-        "extensions_cleanup_failed": "Einige alte Erweiterungsdateien konnten nicht bereinigt werden."
+        "extensions_cleanup_failed": "Einige alte Erweiterungsdateien konnten nicht bereinigt werden.",
+        "extensions_operation_failed": "Der Erweiterungsvorgang konnte nicht abgeschlossen werden.",
+        "extensions_fingerprint_changed": "Die Erweiterungsdateien wurden geändert und müssen erneut geprüft werden.",
+        "extensions_fingerprint_failed": "Die Erweiterungsdateien konnten nicht überprüft werden.",
+        "extensions_stop_unconfirmed": "Der Erweiterungshost hat das Beenden nicht bestätigt.",
+        "extensions_registry_entry_ignored": "Ein ungültiger Erweiterungseintrag wurde ignoriert.",
+        "extensions_registry_migration_failed": "Das Erweiterungsregister konnte nicht aktualisiert werden.",
+        "extensions_recovery_marker_invalid": "Die Wiederherstellungsinformationen der Erweiterung sind ungültig.",
+        "extensions_load_interrupted": "Das Laden der Erweiterung wurde unterbrochen.",
+        "extensions_activation_confirmation_required": "Diese Erweiterung muss vor der Aktivierung erneut genehmigt werden.",
+        "extensions_not_found": "Die Erweiterung wurde nicht gefunden.",
+        "extensions_host_incompatible": "Der Erweiterungshost ist mit dieser Beaver-Version nicht kompatibel."
       }
     },
     "diagnostics": {

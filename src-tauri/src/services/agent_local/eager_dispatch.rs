@@ -8,7 +8,7 @@ use std::path::PathBuf;
 use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 
-const MAX_EAGER: usize = 10;
+const MAX_EAGER: usize = super::tool_executor_parallel_batch::MAX_PARALLEL;
 
 pub async fn collect_eager_results(
     rx: mpsc::UnboundedReceiver<(usize, String, serde_json::Value)>,
@@ -25,12 +25,13 @@ pub async fn collect_eager_results(
         request_id,
         chat_mode,
         cancel,
-        |name, args, working_dir, session_id, cancel, chat_mode| async move {
+        |name, args, working_dir, session_id, request_id, cancel, chat_mode| async move {
             tool_dispatcher::dispatch_for_mode(
                 &name,
                 &args,
                 &working_dir,
                 &session_id,
+                Some(&request_id),
                 cancel,
                 chat_mode,
             )
@@ -50,7 +51,15 @@ async fn collect_eager_results_with<Dispatch, DispatchFuture>(
     dispatch: Dispatch,
 ) -> HashMap<usize, ToolResult>
 where
-    Dispatch: Fn(String, serde_json::Value, PathBuf, String, CancellationToken, bool) -> DispatchFuture
+    Dispatch: Fn(
+            String,
+            serde_json::Value,
+            PathBuf,
+            String,
+            String,
+            CancellationToken,
+            bool,
+        ) -> DispatchFuture
         + Clone
         + Send
         + 'static,
@@ -60,7 +69,7 @@ where
     let mut count = 0;
 
     while let Some((idx, name, args)) = rx.recv().await {
-        if !is_read_only(&name) || count >= MAX_EAGER {
+        if !is_read_only(&name) || extension_requires_confirmation(&name) || count >= MAX_EAGER {
             continue;
         }
         if matches!(run_pre_hooks(&name, &args), PreHookDecision::Deny(_)) {
@@ -83,8 +92,16 @@ where
                 None,
             )
             .await;
-            let result =
-                task_dispatch(name.clone(), args, wd, sid.clone(), task_cancel, chat_mode).await;
+            let result = task_dispatch(
+                name.clone(),
+                args,
+                wd,
+                sid.clone(),
+                rid.clone(),
+                task_cancel,
+                chat_mode,
+            )
+            .await;
             super::stream_diagnostics::record_tool(
                 &sid,
                 &rid,
@@ -105,6 +122,12 @@ where
         }
     }
     results
+}
+
+fn extension_requires_confirmation(name: &str) -> bool {
+    crate::services::extensions::indexed_tool(name).is_some_and(|indexed| {
+        super::permission_policy::extension_effect_policy(indexed.tool.effect).requires_confirmation
+    })
 }
 
 #[cfg(test)]

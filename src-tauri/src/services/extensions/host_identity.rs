@@ -1,0 +1,25 @@
+use super::types::{ExtensionKind, ExtensionRecord};
+
+pub(super) const OFFICIAL_IDENTITY: &str = "beaver.official";
+
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub(super) enum HostIdentity {
+    Official,
+    ThirdParty(String),
+}
+
+impl HostIdentity {
+    pub(super) fn from_record(record: &ExtensionRecord) -> Result<Self, String> {
+        match record.kind {
+            ExtensionKind::Builtin => Ok(Self::Official),
+            ExtensionKind::Local => Ok(Self::ThirdParty(record.manifest.id.clone())),
+        }
+    }
+
+    pub(super) fn label(&self) -> &str {
+        match self {
+            Self::Official => OFFICIAL_IDENTITY,
+            Self::ThirdParty(id) => id,
+        }
+    }
+}

@@ -46,6 +46,53 @@ fn operation_and_core_call_registries_have_fixed_capacities() {
     }
 }
 
+#[test]
+fn reader_capacity_is_the_generated_host_process_limit() {
+    let work = extension_work();
+    let readers = (0..super::types::MAX_HOST_PROCESSES)
+        .map(|_| work.try_admit_reader().expect("reader slot"))
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        work.try_admit_reader()
+            .expect_err("reader capacity must match maxHostProcesses"),
+        ExtensionWorkAdmissionError::Busy
+    );
+    drop(readers);
+}
+
+#[test]
+fn lifecycle_monitor_does_not_consume_user_operation_capacity() {
+    let work = extension_work();
+    work.spawn_lifecycle(|cancel| async move { cancel.cancelled().await })
+        .expect("lifecycle monitor starts");
+
+    let operations = (0..MAX_EXTENSION_OPERATIONS)
+        .map(|_| work.try_admit_operation().expect("operation slot"))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        work.try_admit_operation()
+            .expect_err("all user operation slots remain independently bounded"),
+        ExtensionWorkAdmissionError::Busy
+    );
+
+    drop(operations);
+    work.begin_closing();
+}
+
+#[test]
+fn restarting_one_host_never_closes_shared_work_supervisors() {
+    let work = extension_work();
+    let generation = super::runtime_host_generation::HostGeneration::new(3);
+
+    generation.begin_stop(true);
+
+    assert!(generation.is_restarting());
+    assert_eq!(work.reader_phase(), ServiceWorkPhase::Open);
+    assert_eq!(work.operation_phase(), ServiceWorkPhase::Open);
+    assert_eq!(work.core_call_phase(), ServiceWorkPhase::Open);
+}
+
 #[tokio::test]
 async fn stop_cancels_and_awaits_reader_operation_and_core_call() {
     let work = extension_work();

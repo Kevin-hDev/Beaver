@@ -14,7 +14,7 @@ use tokio_util::sync::CancellationToken;
 pub(super) use super::registry_admission::AdmissionKey;
 pub use super::registry_admission::TrackedAdmission;
 
-pub(super) const REGISTRY_CAPACITY: usize = 128;
+pub(crate) const REGISTRY_CAPACITY: usize = 128;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum AdmissionError {

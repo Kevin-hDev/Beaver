@@ -31,6 +31,7 @@ describe("extensions translations", () => {
       expect(locale.settings.tabs.extensions.trim()).not.toBe("");
       expect(locale.chatMenu.noPlugins.trim()).not.toBe("");
       expect(locale.extensions.fullAccessWarning.length).toBeGreaterThan(30);
+      expect(locale.extensions.sensitiveAccessReminder.length).toBeGreaterThan(15);
     }
   });
 
@@ -40,6 +41,14 @@ describe("extensions translations", () => {
       expect("tabPlugins" in locale.connectors.browse).toBe(false);
       expect("pluginsEmpty" in locale.connectors.browse).toBe(false);
       expect("pluginsEmpty" in locale.chatMenu).toBe(false);
+    }
+  });
+
+  it("retire les vestiges d’applications externes de la page Extensions", () => {
+    for (const locale of locales) {
+      expect("external" in locale.extensions.sections).toBe(false);
+      expect("external" in locale.extensions.pages).toBe(false);
+      expect("external" in locale.extensions.kinds).toBe(false);
     }
   });
 

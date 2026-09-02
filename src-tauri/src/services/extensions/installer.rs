@@ -4,12 +4,14 @@ use super::types::{ExtensionOriginKind, ExtensionRecord};
 use super::OperationFailure;
 use crate::services::work_registry::ServiceWorkCancellation;
 use std::sync::Arc;
+use std::time::Instant;
 
 pub use super::installer_uninstall::uninstall;
 
 pub async fn install_git(
     app: &tauri::AppHandle,
     locator: &str,
+    _deadline: Instant,
 ) -> Result<ExtensionRecord, OperationFailure> {
     let source =
         super::source_validation::git(locator).map_err(|_| OperationFailure::SourceInvalid)?;
@@ -30,6 +32,7 @@ pub async fn install_git(
 pub async fn install_npm(
     app: &tauri::AppHandle,
     locator: &str,
+    _deadline: Instant,
 ) -> Result<ExtensionRecord, OperationFailure> {
     let source =
         super::source_validation::npm(locator).map_err(|_| OperationFailure::PackageInvalid)?;
@@ -47,7 +50,11 @@ pub async fn install_npm(
     .map_err(|error| error.operation_failure())?
 }
 
-pub async fn update(app: &tauri::AppHandle, id: &str) -> Result<ExtensionRecord, OperationFailure> {
+pub async fn update(
+    app: &tauri::AppHandle,
+    id: &str,
+    deadline: Instant,
+) -> Result<ExtensionRecord, OperationFailure> {
     let current = super::registry::find(id).map_err(|_| OperationFailure::UpdateUnavailable)?;
     let origin = current
         .origin
@@ -63,7 +70,7 @@ pub async fn update(app: &tauri::AppHandle, id: &str) -> Result<ExtensionRecord,
             cleanup(&prepared.record).await;
             return Err(OperationFailure::UpdateIdentityChanged);
         }
-        replace_current(&runtime, current, prepared).await
+        replace_current(&runtime, current, prepared, deadline).await
     })
     .await
     .map_err(|error| error.operation_failure())?
@@ -110,34 +117,33 @@ async fn replace_current(
     runtime: &ExtensionRuntime,
     current: ExtensionRecord,
     prepared: PreparedInstall,
+    deadline: Instant,
 ) -> Result<ExtensionRecord, OperationFailure> {
     let replacement = super::installer_record::for_update(&current, prepared.record);
-    let stopped = runtime
-        .stop_host(super::host_process::stop_deadline())
-        .await;
-    super::host_stop_boundary::after_confirmed_stop(
-        stopped,
-        OperationFailure::HostUnavailable,
-        async move {
-            if super::registry::replace_user(&current, replacement.clone()).is_err() {
-                cleanup(&replacement).await;
-                let _ = runtime.start_untracked().await;
-                return Err(OperationFailure::UpdateFailed);
-            }
-            let old = current.clone();
-            let _ = blocking(
-                move || {
-                    super::managed_store::remove_record(&old)
-                        .map_err(|_| OperationFailure::StorageFailed)
-                },
-                OperationFailure::UpdateFailed,
-            )
-            .await;
-            let _ = runtime.start_untracked().await;
-            Ok(replacement)
+    let identity = super::host_identity::HostIdentity::ThirdParty(current.manifest.id.clone());
+    crate::services::agent_local::permission_gate::clear_extension(&current.manifest.id).await;
+    // Remplacer d'abord le registre ferme le routage avant de révoquer l'ancien canal.
+    let reminder = match super::registry::replace_user(&current, replacement.clone()) {
+        Ok(reminder) => reminder,
+        Err(_) => {
+            cleanup(&replacement).await;
+            return Err(OperationFailure::UpdateFailed);
+        }
+    };
+    let mut replacement = replacement;
+    replacement.sensitive_access_granted |= reminder;
+    if !runtime.revoke_extension(&identity, deadline).await {
+        return Err(OperationFailure::HostUnavailable);
+    }
+    let old = current.clone();
+    let _ = blocking(
+        move || {
+            super::managed_store::remove_record(&old).map_err(|_| OperationFailure::StorageFailed)
         },
+        OperationFailure::UpdateFailed,
     )
-    .await
+    .await;
+    Ok(replacement)
 }
 
 async fn cleanup(record: &ExtensionRecord) {

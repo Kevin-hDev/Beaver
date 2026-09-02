@@ -1,4 +1,8 @@
 pub fn is_read_only(name: &str) -> bool {
+    if let Some(indexed) = crate::services::extensions::indexed_tool(name) {
+        return super::permission_policy::extension_effect_policy(indexed.tool.effect)
+            .parallel_read;
+    }
     matches!(
         name,
         "read_file"

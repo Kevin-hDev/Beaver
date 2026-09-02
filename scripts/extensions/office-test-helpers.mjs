@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { createHost } from "./host-test-client.mjs";
+import { createHost, resetAndLoad } from "./host-test-client.mjs";
 
 export const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 export const hostDirectory = join(root, "src-tauri/target/extension-host");
@@ -16,13 +16,11 @@ export async function syncOfficePlugins(host) {
   const catalog = JSON.parse(
     await readFile(join(hostDirectory, "builtin-plugins/catalog.json"), "utf8"),
   );
-  return host.request("host.sync", {
-    extensions: catalog.plugins.map(({ manifest }) => ({
+  return resetAndLoad(host, catalog.plugins.map(({ manifest }) => ({
       id: manifest.id,
       mainPath: join(hostDirectory, manifest.main),
       manifest,
-    })),
-  });
+    })));
 }
 
 export function callOffice(host, workspace, name, arguments_) {

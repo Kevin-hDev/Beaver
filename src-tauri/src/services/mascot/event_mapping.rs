@@ -20,7 +20,7 @@ pub(super) fn animation_for_event(
         StreamEvent::Compressing { .. } | StreamEvent::SubagentSpawned { .. } => {
             persistent(MascotAnimation::WorkLaptop)
         }
-        StreamEvent::PermissionRequest { .. } | StreamEvent::InteractiveChoiceRequest { .. } => {
+        StreamEvent::PermissionRequest(..) | StreamEvent::InteractiveChoiceRequest { .. } => {
             persistent(MascotAnimation::Waiting)
         }
         StreamEvent::Done { .. } => Some((MascotAnimation::Success, Some(SUCCESS_DURATION), false)),

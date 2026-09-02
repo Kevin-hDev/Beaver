@@ -2,27 +2,80 @@ use super::subagent_tool_profile::SubagentToolProfile;
 use serde_json::Value;
 use std::path::{Component, Path, PathBuf};
 
+const SESSION_TOOL_UNAVAILABLE: &str = "Session d'outil indisponible.";
+const EXTENSION_AUTH_UNAVAILABLE: &str = "Autorisation d'extension indisponible.";
+const SUBAGENT_TOOL_UNAVAILABLE: &str = "Outil indisponible pour ce sous-agent.";
+
 pub async fn validate_for_session(
     session_id: &str,
     tool_name: &str,
     args: &Value,
     working_dir: &Path,
 ) -> Result<Option<SubagentToolProfile>, String> {
-    let profile = profile_for_session(session_id).await?;
-    let Some(profile) = profile else {
+    let session = super::session_store::get(session_id)
+        .await
+        .map_err(|_| SESSION_TOOL_UNAVAILABLE.to_string())?;
+    let is_child = session.parent_session_id.is_some() || session.subagent_type.is_some();
+    if !is_child {
         return Ok(None);
-    };
+    }
+    let profile = SubagentToolProfile::from_session_type(session.subagent_type.as_deref())?;
+    if let Some(indexed) = crate::services::extensions::indexed_tool(tool_name) {
+        let parent_id = session
+            .parent_session_id
+            .as_deref()
+            .ok_or_else(|| EXTENSION_AUTH_UNAVAILABLE.to_string())?;
+        let parent_mode = super::session_permission_state::load(parent_id)
+            .await
+            .map_err(|_| EXTENSION_AUTH_UNAVAILABLE.to_string())?
+            .permission_mode
+            .as_str();
+        let cached = super::permission_gate::is_extension_allowed(
+            parent_id,
+            &indexed.extension_id,
+            tool_name,
+        )
+        .await;
+        return match child_extension_decision(profile, indexed.tool.effect, parent_mode, cached) {
+            ChildExtensionDecision::Allow => Ok(Some(profile)),
+            ChildExtensionDecision::Deny => Err(SUBAGENT_TOOL_UNAVAILABLE.to_string()),
+        };
+    }
     let skills_enabled = super::agent_settings::is_tool_enabled("load_skill").await;
     validate_for_profile(profile, skills_enabled, tool_name, args, working_dir)?;
     Ok(Some(profile))
 }
 
-pub async fn profile_for_session(
-    session_id: &str,
-) -> Result<Option<SubagentToolProfile>, String> {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ChildExtensionDecision {
+    Allow,
+    Deny,
+}
+
+pub fn child_extension_decision(
+    profile: SubagentToolProfile,
+    effect: crate::services::extensions::ExtensionEffect,
+    parent_mode: &str,
+    parent_cached: bool,
+) -> ChildExtensionDecision {
+    use crate::services::extensions::ExtensionEffect;
+    if !profile.allows_extension(effect) {
+        return ChildExtensionDecision::Deny;
+    }
+    if effect == ExtensionEffect::ReadOnly
+        || parent_mode == "auto"
+        || (parent_mode == "manual" && parent_cached)
+    {
+        ChildExtensionDecision::Allow
+    } else {
+        ChildExtensionDecision::Deny
+    }
+}
+
+pub async fn profile_for_session(session_id: &str) -> Result<Option<SubagentToolProfile>, String> {
     let session = super::session_store::get(session_id)
         .await
-        .map_err(|_| "Session d'outil indisponible.".to_string())?;
+        .map_err(|_| SESSION_TOOL_UNAVAILABLE.to_string())?;
     let is_child = session.parent_session_id.is_some() || session.subagent_type.is_some();
     if !is_child {
         return Ok(None);
@@ -38,7 +91,7 @@ pub fn validate_for_profile(
     working_dir: &Path,
 ) -> Result<(), String> {
     if !profile.allows(tool_name, skills_enabled) {
-        return Err("Outil indisponible pour ce sous-agent.".to_string());
+        return Err(SUBAGENT_TOOL_UNAVAILABLE.to_string());
     }
     if super::memory_tool::is_memory_operation(tool_name, args, Some(working_dir))? {
         return if tool_name == "read_file" {
@@ -127,7 +180,9 @@ fn validate_bash(
         .and_then(Value::as_str)
         .ok_or_else(|| "Commande invalide.".to_string())?;
     match profile {
-        SubagentToolProfile::Explorer => super::subagent_explorer_bash::validate(command, working_dir),
+        SubagentToolProfile::Explorer => {
+            super::subagent_explorer_bash::validate(command, working_dir)
+        }
         SubagentToolProfile::Coder => validate_coder_bash(command, working_dir),
     }
 }
@@ -145,11 +200,15 @@ fn validate_coder_bash(command: &str, working_dir: &Path) -> Result<(), String> 
         if token == ".." || token.starts_with("../") || token.contains("/../") {
             return Err("Commande hors du worktree refusée.".to_string());
         }
-        let is_system_executable = index == 0 && (token.starts_with("/bin/") || token.starts_with("/usr/bin/"));
+        let is_system_executable =
+            index == 0 && (token.starts_with("/bin/") || token.starts_with("/usr/bin/"));
         if Path::new(path_token).is_absolute() && !is_system_executable {
             validate_confined_path(path_token, working_dir)?;
         }
-        if matches!(tokens.get(index.wrapping_sub(1)), Some(&"-C" | &"cd" | &"pushd")) {
+        if matches!(
+            tokens.get(index.wrapping_sub(1)),
+            Some(&"-C" | &"cd" | &"pushd")
+        ) {
             validate_confined_path(token, working_dir)?;
         }
     }

@@ -60,4 +60,17 @@ mod tests {
             .unwrap_or_default()
             .contains("- Documents : Create files"));
     }
+
+    #[test]
+    fn real_catalog_keeps_every_bounded_one_line_entry_visible() {
+        let catalog = crate::services::extensions::catalog_snapshot();
+        let definition = extension_discovery_definition();
+        let description = definition["function"]["description"]
+            .as_str()
+            .unwrap_or_default();
+
+        for line in catalog.text.lines() {
+            assert!(description.lines().any(|candidate| candidate == line));
+        }
+    }
 }

@@ -1,9 +1,12 @@
-#![expect(clippy::too_many_arguments, reason = "orchestration boundary keeps related runtime context explicit")]
+#![expect(
+    clippy::too_many_arguments,
+    reason = "orchestration boundary keeps related runtime context explicit"
+)]
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::tool_dispatcher;
 use crate::services::agent_local::tool_hooks::{run_post_hooks, run_pre_hooks, PreHookDecision};
-use crate::services::agent_local::types_tools::ToolResult;
 use crate::services::agent_local::tool_result_contract::ToolErrorCategory;
+use crate::services::agent_local::types_tools::ToolResult;
 use crate::services::agent_local::write_guard::WriteGuard;
 use crate::services::agent_local::{permission_gate, permission_policy, sensitive_data};
 use serde_json::Value;
@@ -19,6 +22,7 @@ pub(super) async fn execute_write(
     mode: &str,
     write_guard: &mut WriteGuard,
     session_id: &str,
+    request_id: &str,
     cancel: CancellationToken,
     plan_mode_active: bool,
     tool_call_index: Option<usize>,
@@ -29,6 +33,7 @@ pub(super) async fn execute_write(
             args,
             working_dir,
             session_id,
+            Some(request_id),
             cancel,
             true,
         )
@@ -135,7 +140,10 @@ pub(super) async fn execute_write(
                     name,
                     args,
                     working_dir,
-                    session_id,
+                    super::tool_dispatch_trace::DispatchTrace {
+                        session_id,
+                        request_id: Some(request_id),
+                    },
                     cancel.clone(),
                     tool_call_index,
                 )

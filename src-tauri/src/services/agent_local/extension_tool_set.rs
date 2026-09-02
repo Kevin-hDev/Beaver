@@ -1,11 +1,9 @@
 use serde_json::Value;
-use std::collections::HashSet;
 
 use super::extension_session_state::DiscoveryEpoch;
 use super::extension_tool_selection::decide_for_catalog;
 use super::extension_tool_set_apply::{
-    active_definitions, append_capacity_notice, base_tool_count, definition_name,
-    plugin_descriptors,
+    active_definitions, append_capacity_notice, base_tool_count, plugin_descriptors,
 };
 
 pub struct PrepareContext<'a> {
@@ -14,6 +12,15 @@ pub struct PrepareContext<'a> {
     pub model: &'a str,
     pub context_window: u64,
     pub preserve_dynamic_tools: bool,
+}
+
+pub(super) struct DiagnosticContext<'a> {
+    pub definitions: &'a [Value],
+    pub plugins: &'a [super::extension_tool_selection::PluginDescriptor],
+    pub active_plugin_ids: &'a [String],
+    pub discovered_plugin_ids: &'a [String],
+    pub masked: bool,
+    pub provider_id: &'a str,
 }
 
 pub struct ExtensionToolSet {
@@ -25,6 +32,8 @@ pub struct ExtensionToolSet {
     plugin_tool_capacity: usize,
     plugin_descriptors: Vec<super::extension_tool_selection::PluginDescriptor>,
     active_plugin_ids: Vec<String>,
+    discovered_plugin_ids: Vec<String>,
+    provider_id: String,
     pub(super) omitted_plugin_ids: Vec<String>,
     pub(super) omitted_tool_names: Vec<String>,
     pub(super) additional_omitted_tools: usize,
@@ -41,6 +50,8 @@ impl ExtensionToolSet {
             plugin_tool_capacity: 0,
             plugin_descriptors: Vec::new(),
             active_plugin_ids: Vec::new(),
+            discovered_plugin_ids: Vec::new(),
+            provider_id: String::new(),
             omitted_plugin_ids: Vec::new(),
             omitted_tool_names: Vec::new(),
             additional_omitted_tools: 0,
@@ -86,6 +97,8 @@ impl ExtensionToolSet {
             plugin_tool_capacity,
             plugin_descriptors: descriptors,
             active_plugin_ids: Vec::new(),
+            discovered_plugin_ids: Vec::new(),
+            provider_id: context.provider.to_string(),
             omitted_plugin_ids: Vec::new(),
             omitted_tool_names: Vec::new(),
             additional_omitted_tools: 0,
@@ -96,26 +109,6 @@ impl ExtensionToolSet {
 
     pub fn active(&self) -> &[Value] {
         &self.active
-    }
-
-    pub fn selected_extension_names(&self) -> Vec<String> {
-        if !self.managed {
-            return Vec::new();
-        }
-        let active = self
-            .active_plugin_ids
-            .iter()
-            .map(String::as_str)
-            .collect::<HashSet<_>>();
-        self.all
-            .iter()
-            .filter_map(definition_name)
-            .filter(|name| {
-                crate::services::extensions::plugin_id_for_tool(name)
-                    .is_some_and(|plugin_id| active.contains(plugin_id.as_str()))
-            })
-            .map(str::to_string)
-            .collect()
     }
 
     pub async fn refresh_from_session(&mut self, session_id: &str) -> Result<(), String> {
@@ -140,6 +133,7 @@ impl ExtensionToolSet {
             discovered_plugin_ids,
         );
         self.active_plugin_ids = decision.active_plugin_ids.clone();
+        self.discovered_plugin_ids = discovered_plugin_ids.to_vec();
         let active = active_definitions(&self.all, &decision, self.provider_tool_limit);
         self.active = active.tools;
         self.omitted_plugin_ids = decision.omitted_plugin_ids;
@@ -151,6 +145,17 @@ impl ExtensionToolSet {
             &self.omitted_tool_names,
             self.additional_omitted_tools,
         );
+    }
+
+    pub(super) fn diagnostic_context(&self) -> DiagnosticContext<'_> {
+        DiagnosticContext {
+            definitions: &self.all,
+            plugins: &self.plugin_descriptors,
+            active_plugin_ids: &self.active_plugin_ids,
+            discovered_plugin_ids: &self.discovered_plugin_ids,
+            masked: self.masked,
+            provider_id: &self.provider_id,
+        }
     }
 }
 

@@ -32,12 +32,25 @@ export function PermissionDialog({ request, onDecide }: Props) {
   }, [request.id, onDecide]);
 
   const target = extractTarget(request.arguments);
-  const action = t(`permissionDialog.tools.${request.toolName}`, { defaultValue: request.toolName });
+  const externalRead = request.effectClass === "external-read";
+  const allowSession = request.extensionId
+    ? request.allowSession === true
+    : request.allowSession !== false;
+  const action = externalRead
+    ? t("permissionDialog.tools.web_fetch")
+    : request.extensionName
+      ? t("permissionDialog.extensionAction", { extension: request.extensionName })
+      : t(`permissionDialog.tools.${request.toolName}`, { defaultValue: request.toolName });
   const title = t("permissionDialog.title", { action });
 
   return (
     <div className="perm-card" role="dialog" aria-modal="false">
       <div className="perm-card-title">{title}</div>
+      {externalRead && request.extensionName && <div>{request.extensionName}</div>}
+      {request.effectClass && (
+        <div>{t(`permissionDialog.effects.${request.effectClass}`)}</div>
+      )}
+      {request.actionSummary && <pre className="perm-card-target">{request.actionSummary}</pre>}
       {target && <pre className="perm-card-target">{target}</pre>}
       <div className="perm-card-actions">
         <button
@@ -53,17 +66,20 @@ export function PermissionDialog({ request, onDecide }: Props) {
           type="button"
           className="btn btn-sm btn-secondary"
           onClick={() => onDecide(request.id, "allow")}
+          autoFocus={!allowSession}
         >
           {t("permissionDialog.allow")}
         </button>
-        <button
-          type="button"
-          className="btn btn-sm btn-primary"
-          onClick={() => onDecide(request.id, "allow_session")}
-          autoFocus
-        >
-          {t("permissionDialog.allowSession")}
-        </button>
+        {allowSession && (
+          <button
+            type="button"
+            className="btn btn-sm btn-primary"
+            onClick={() => onDecide(request.id, "allow_session")}
+            autoFocus
+          >
+            {t("permissionDialog.allowSession")}
+          </button>
+        )}
       </div>
     </div>
   );

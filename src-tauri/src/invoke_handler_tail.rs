@@ -162,6 +162,11 @@ macro_rules! generate_tail {
             crate::commands::get_extension_discovery_preferences,
             crate::commands::set_extension_discovery_preferences,
             crate::commands::recover_extension_host,
+            crate::commands::get_extension_recovery_state,
+            crate::commands::keep_extension_disabled,
+            crate::commands::retry_extension_load,
+            crate::commands::discard_extension_loading_marker,
+            crate::commands::restore_extension_recovery_snapshot,
             crate::commands::open_extension_source,
         ]
     };

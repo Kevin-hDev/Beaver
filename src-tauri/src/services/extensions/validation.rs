@@ -1,12 +1,11 @@
 use super::types::{
     ExtensionApiLevel, ExtensionKind, ExtensionManifest, ExtensionRecord, ExtensionTool,
-    MAX_EVENTS_PER_EXTENSION, MAX_EXTENSIONS, MAX_TOOLS_PER_EXTENSION,
+    MAX_EVENTS_PER_EXTENSION, MAX_EXTENSIONS, MAX_IDENTIFIER_CHARS, MAX_TOOLS_PER_EXTENSION,
 };
 use serde_json::Value;
 use std::collections::HashSet;
 use std::path::{Component, Path};
 
-const MAX_ID_CHARS: usize = 96;
 const MAX_NAME_CHARS: usize = 100;
 const MAX_TEXT_CHARS: usize = 2_000;
 const MAX_PATH_CHARS: usize = 4_096;
@@ -90,7 +89,7 @@ pub fn contributions(tools: &[ExtensionTool], events: &[String]) -> Result<(), S
 
 pub fn identifier(value: &str) -> Result<(), String> {
     let valid = !value.is_empty()
-        && value.chars().count() <= MAX_ID_CHARS
+        && value.chars().count() <= MAX_IDENTIFIER_CHARS
         && value
             .chars()
             .all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '.' | '_' | '-'))

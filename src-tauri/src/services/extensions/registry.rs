@@ -2,30 +2,32 @@ use super::types::{
     ExtensionContributions, ExtensionKind, ExtensionRecord, ExtensionStatus, MAX_EXTENSIONS,
     MAX_USER_EXTENSIONS,
 };
-use std::sync::{LazyLock, Mutex, RwLock};
+use std::collections::BTreeMap;
+use std::sync::Mutex;
 
-static RECORDS: LazyLock<RwLock<Vec<ExtensionRecord>>> = LazyLock::new(|| RwLock::new(Vec::new()));
-static MUTATIONS: Mutex<()> = Mutex::new(());
+pub(super) static MUTATIONS: Mutex<()> = Mutex::new(());
 
 pub fn init() -> Result<(), String> {
-    let stored = super::storage::load()?;
-    let records = super::builtin::merge(super::registry_state::reset_hosted_runtime(stored))?;
+    let loaded = super::storage::load()?;
+    let format = loaded.format;
+    let recovery_snapshot = loaded.recovery_snapshot;
+    let records = super::builtin::merge(super::registry_state::reset_hosted_runtime(
+        loaded.extensions,
+    ))?;
     super::validation::records(&records)?;
-    super::storage::save(&records)?;
+    super::storage::save(&records, &recovery_snapshot)?;
     if super::managed_cleanup::unreferenced(&records).is_err() {
         super::operation_error::report(
             super::operation_error::Operation::Cleanup,
             super::OperationFailure::CleanupFailed,
         );
     }
-    replace(records)
+    super::registry_memory::replace(records, recovery_snapshot)?;
+    super::storage::finish_successful_startup(&super::storage::path(), format)
 }
 
 pub fn list() -> Result<Vec<ExtensionRecord>, String> {
-    RECORDS
-        .read()
-        .map(|records| records.clone())
-        .map_err(|_| "Registre d'extensions indisponible.".to_string())
+    super::registry_memory::records()
 }
 
 pub(super) fn refresh_index() -> Result<(), String> {
@@ -37,7 +39,7 @@ pub fn find(id: &str) -> Result<ExtensionRecord, String> {
     list()?
         .into_iter()
         .find(|record| record.manifest.id == id)
-        .ok_or_else(|| "Extension introuvable.".to_string())
+        .ok_or_else(|| super::error_codes::NOT_FOUND.to_string())
 }
 
 pub fn add_local(record: ExtensionRecord) -> Result<(), String> {
@@ -61,65 +63,81 @@ pub fn add_local(record: ExtensionRecord) -> Result<(), String> {
     })
 }
 
-pub fn remove(id: &str) -> Result<(), String> {
+pub fn remove(id: &str) -> Result<bool, String> {
     super::validation::identifier(id)?;
+    let mut reminder = false;
     mutate(|records| {
         let index = records
             .iter()
             .position(|record| record.manifest.id == id)
-            .ok_or_else(|| "Extension introuvable.".to_string())?;
+            .ok_or_else(|| super::error_codes::NOT_FOUND.to_string())?;
         if records[index].kind == ExtensionKind::Builtin {
             return Err("Un plugin Beaver ne peut pas être supprimé.".to_string());
         }
-        records.remove(index);
+        reminder = records.remove(index).sensitive_access_granted;
         Ok(())
-    })
+    })?;
+    Ok(reminder)
 }
 
 pub fn replace_user(
     expected: &ExtensionRecord,
-    replacement: ExtensionRecord,
-) -> Result<(), String> {
+    mut replacement: ExtensionRecord,
+) -> Result<bool, String> {
     let id = expected.manifest.id.as_str();
     super::validation::identifier(id)?;
     super::validation::records(std::slice::from_ref(&replacement))?;
     if replacement.kind != ExtensionKind::Local || replacement.manifest.id != id {
         return Err("Mise à jour d'extension invalide.".to_string());
     }
+    let mut reminder = false;
     mutate(|records| {
         let record = records
             .iter_mut()
             .find(|record| record.manifest.id == id)
-            .ok_or_else(|| "Extension introuvable.".to_string())?;
+            .ok_or_else(|| super::error_codes::NOT_FOUND.to_string())?;
         if record.kind == ExtensionKind::Builtin {
             return Err("Un plugin Beaver ne peut pas être remplacé.".to_string());
         }
         if record.source != expected.source || record.origin != expected.origin {
             return Err("L'extension a changé pendant sa mise à jour.".to_string());
         }
+        reminder = super::installer_record::carry_sensitive_access(record, &mut replacement);
         *record = replacement;
         Ok(())
-    })
+    })?;
+    Ok(reminder)
 }
 
-pub fn set_enabled(id: &str, enabled: bool, trust_confirmed: bool) -> Result<(), String> {
+pub async fn set_enabled(id: &str, enabled: bool, trust_confirmed: bool) -> Result<bool, String> {
+    let mut reminder = false;
     update(id, |record| {
         if enabled && record.kind != ExtensionKind::Builtin && !record.trusted && !trust_confirmed {
-            return Err("Confirmation d'activation requise.".to_string());
+            return Err(super::error_codes::ACTIVATION_CONFIRMATION_REQUIRED.to_string());
         }
-        if enabled && trust_confirmed {
-            record.trusted = true;
+        let activated_at = chrono::Utc::now().to_rfc3339();
+        if enabled && trust_confirmed && record.kind == ExtensionKind::Local {
+            super::registry_state::approve_local(record, &activated_at)?;
         }
+        let preserve_revocation =
+            !enabled && super::registry_state::preserve_revocation_on_disable(record);
         record.enabled = enabled;
-        record.status = ExtensionStatus::Inactive;
-        record.last_error = None;
+        if !preserve_revocation {
+            record.status = ExtensionStatus::Inactive;
+            record.last_error = None;
+        }
         if enabled {
-            record.last_activated_at = Some(chrono::Utc::now().to_rfc3339());
+            record.last_activated_at = Some(activated_at);
         } else {
+            reminder = record.sensitive_access_granted;
             record.contributions = ExtensionContributions::default();
         }
         Ok(())
-    })
+    })?;
+    if !enabled {
+        crate::services::agent_local::permission_gate::clear_extension(id).await;
+    }
+    Ok(reminder)
 }
 
 pub fn set_show_in_chat(id: &str, show: bool) -> Result<(), String> {
@@ -129,29 +147,16 @@ pub fn set_show_in_chat(id: &str, show: bool) -> Result<(), String> {
     })
 }
 
-pub fn disable_hosted_extensions() -> Result<(), String> {
-    mutate(|records| {
-        disable_hosted_records(records);
-        Ok(())
-    })
-}
-
-pub(super) fn disable_hosted_records(records: &mut [ExtensionRecord]) {
-    for record in records {
-        if record.kind != ExtensionKind::External {
-            record.enabled = false;
-            record.status = ExtensionStatus::Inactive;
-            record.last_error = None;
-            record.contributions = ExtensionContributions::default();
-        }
+pub(super) fn revoke_fingerprints(revocations: &BTreeMap<String, String>) -> Result<bool, String> {
+    if revocations.is_empty() {
+        return Ok(false);
     }
-}
-
-pub fn enabled_hosted() -> Result<Vec<ExtensionRecord>, String> {
-    Ok(list()?
-        .into_iter()
-        .filter(|record| record.kind != ExtensionKind::External && record.enabled)
-        .collect())
+    let mut reminder = false;
+    mutate(|records| {
+        reminder = super::registry_state::revoke_fingerprints(records, revocations);
+        Ok::<(), String>(())
+    })?;
+    Ok(reminder)
 }
 
 fn update(
@@ -163,7 +168,7 @@ fn update(
         let record = records
             .iter_mut()
             .find(|record| record.manifest.id == id)
-            .ok_or_else(|| "Extension introuvable.".to_string())?;
+            .ok_or_else(|| super::error_codes::NOT_FOUND.to_string())?;
         update(record)?;
         Ok(())
     })
@@ -175,18 +180,20 @@ pub(super) fn mutate<E>(
 where
     E: super::registry_mutation_error::MutationError,
 {
-    let _guard = MUTATIONS.lock().map_err(|_| E::storage())?;
-    let mut candidate = list().map_err(|_| E::storage())?;
-    operation(&mut candidate)?;
-    super::storage::save(&candidate).map_err(|_| E::storage())?;
-    replace(candidate).map_err(|_| E::storage())
+    mutate_state(|records, _| operation(records))
 }
 
-fn replace(records: Vec<ExtensionRecord>) -> Result<(), String> {
-    let mut state = RECORDS
-        .write()
-        .map_err(|_| "Registre d'extensions indisponible.".to_string())?;
-    super::registry_index::rebuild(&records)?;
-    *state = records;
-    Ok(())
+pub(super) fn mutate_state<E>(
+    operation: impl FnOnce(&mut Vec<ExtensionRecord>, &mut Option<Vec<String>>) -> Result<(), E>,
+) -> Result<(), E>
+where
+    E: super::registry_mutation_error::MutationError,
+{
+    let _guard = MUTATIONS.lock().map_err(|_| E::storage())?;
+    let mut candidate = super::registry_memory::snapshot().map_err(|_| E::storage())?;
+    operation(&mut candidate.records, &mut candidate.recovery_snapshot)?;
+    super::storage::save(&candidate.records, &candidate.recovery_snapshot)
+        .map_err(|_| E::storage())?;
+    super::registry_memory::replace(candidate.records, candidate.recovery_snapshot)
+        .map_err(|_| E::storage())
 }

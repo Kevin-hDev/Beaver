@@ -1,4 +1,5 @@
 use super::subagent_tool_profile::SubagentToolProfile;
+use crate::services::extensions::ExtensionEffect;
 
 #[test]
 fn explorer_profile_has_exact_capabilities() {
@@ -53,10 +54,31 @@ fn definitions_and_prompt_names_match_executable_names() {
 
 #[test]
 fn invalid_or_nested_profiles_fail_closed() {
-    assert_eq!(SubagentToolProfile::from_session_type(Some("explorer")), Ok(SubagentToolProfile::Explorer));
-    assert_eq!(SubagentToolProfile::from_session_type(Some("coder")), Ok(SubagentToolProfile::Coder));
+    assert_eq!(
+        SubagentToolProfile::from_session_type(Some("explorer")),
+        Ok(SubagentToolProfile::Explorer)
+    );
+    assert_eq!(
+        SubagentToolProfile::from_session_type(Some("coder")),
+        Ok(SubagentToolProfile::Coder)
+    );
     assert!(SubagentToolProfile::from_session_type(None).is_err());
     assert!(SubagentToolProfile::from_session_type(Some("unknown")).is_err());
     assert!(!SubagentToolProfile::Coder.allows("delegate_task", true));
     assert!(!SubagentToolProfile::Explorer.allows("load_skill", true));
+}
+
+#[test]
+fn explorer_only_sees_read_only_extensions_while_coder_sees_every_effect() {
+    for effect in ExtensionEffect::ALL {
+        assert_eq!(
+            SubagentToolProfile::Explorer.allows_extension(effect),
+            effect == ExtensionEffect::ReadOnly,
+            "{effect:?}",
+        );
+        assert!(
+            SubagentToolProfile::Coder.allows_extension(effect),
+            "{effect:?}"
+        );
+    }
 }

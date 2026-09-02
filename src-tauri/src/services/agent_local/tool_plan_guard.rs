@@ -25,12 +25,19 @@ pub const PLAN_MODE_ALLOWED_TOOL_NAMES: &[&str] = &[
 pub const PLAN_MODE_ALLOWED_ACTIONS_TEXT: &str = "read_file, list_dir, grep, glob, web_search, web_fetch, search_extension_tools, read_spreadsheet, read_document, bash_control, load_skill, todo_history, todo_pause, todo_resume, todo_delete, ask_user_choice, plan_mode, forecast_read, forecast_models, safe bash exploration and validation commands (including tests and builds), and search_mcp_tools without MCP calls";
 
 pub fn is_allowed_in_plan_mode(tool_name: &str, args: &Value) -> bool {
+    if let Some(indexed) = crate::services::extensions::indexed_tool(tool_name) {
+        return is_extension_effect_allowed(indexed.tool.effect);
+    }
     match tool_name {
         "bash" => !super::permission_gate::requires_permission("bash", args),
         "transform_image" => args["operations"].as_array().is_some_and(Vec::is_empty),
         "search_mcp_tools" => args.get("mode").and_then(Value::as_str) != Some("call"),
         _ => PLAN_MODE_ALLOWED_TOOL_NAMES.contains(&tool_name),
     }
+}
+
+fn is_extension_effect_allowed(effect: crate::services::extensions::ExtensionEffect) -> bool {
+    super::permission_policy::extension_effect_policy(effect).allowed_in_plan
 }
 
 pub fn ensure_allowed(tool_name: &str, args: &Value, plan_mode_active: bool) -> Result<(), String> {
@@ -50,8 +57,7 @@ pub async fn ensure_allowed_for_session(
         .await
         .map(|session| session.plan_mode_enabled)
         .unwrap_or(false);
-    let plan_mode_active =
-        effective_plan_mode(fallback_plan_mode_active, session_plan_mode_active);
+    let plan_mode_active = effective_plan_mode(fallback_plan_mode_active, session_plan_mode_active);
     ensure_allowed(tool_name, args, plan_mode_active)
 }
 
@@ -61,6 +67,7 @@ fn effective_plan_mode(batch_started_in_plan_mode: bool, current_plan_mode: bool
 
 #[cfg(test)]
 mod tests {
+    use crate::services::extensions::ExtensionEffect;
     use serde_json::json;
 
     #[test]
@@ -70,6 +77,17 @@ mod tests {
         assert!(super::ensure_allowed("todo_write", &json!({}), true).is_err());
         assert!(super::ensure_allowed("create_branch", &json!({}), true).is_err());
         assert!(super::ensure_allowed("delegate_task", &json!({}), true).is_err());
+    }
+
+    #[test]
+    fn only_read_only_extensions_are_allowed_in_plan_mode() {
+        for effect in ExtensionEffect::ALL {
+            assert_eq!(
+                super::is_extension_effect_allowed(effect),
+                effect == ExtensionEffect::ReadOnly,
+                "{effect:?}",
+            );
+        }
     }
 
     #[test]
@@ -96,12 +114,9 @@ mod tests {
             true
         )
         .is_err());
-        assert!(super::ensure_allowed(
-            "bash_control",
-            &json!({"session_id": "session"}),
-            true
-        )
-        .is_ok());
+        assert!(
+            super::ensure_allowed("bash_control", &json!({"session_id": "session"}), true).is_ok()
+        );
         assert!(super::ensure_allowed(
             "bash_control",
             &json!({"session_id": "session", "stop": true}),
@@ -125,7 +140,9 @@ mod tests {
         assert!(super::ensure_allowed("bash", &json!({"command": "cargo check"}), true).is_ok());
         assert!(super::ensure_allowed("bash", &json!({"command": "npm run build"}), true).is_ok());
         assert!(super::ensure_allowed("bash", &json!({"command": "npm test"}), true).is_ok());
-        assert!(super::ensure_allowed("bash", &json!({"command": "npx tsc --noEmit"}), true).is_ok());
+        assert!(
+            super::ensure_allowed("bash", &json!({"command": "npx tsc --noEmit"}), true).is_ok()
+        );
     }
 
     #[test]

@@ -12,13 +12,9 @@ pub async fn execute_tracked_write(
     args: &Value,
     ctx: WriteExecContext<'_>,
 ) -> ToolResult {
-    let summary = super::tool_executor_diagnostics::started(
-        ctx.session_id,
-        name,
-        args,
-        ctx.working_dir,
-    )
-    .await;
+    let summary =
+        super::tool_executor_diagnostics::started(ctx.session_id, name, args, ctx.working_dir)
+            .await;
     if let Err(msg) = super::tool_plan_guard::ensure_allowed_for_session(
         name,
         args,
@@ -27,10 +23,7 @@ pub async fn execute_tracked_write(
     )
     .await
     {
-        let result = super::tool_executor_errors::permission(
-            msg,
-            "tool_not_allowed_in_plan",
-        );
+        let result = super::tool_executor_errors::permission(msg, "tool_not_allowed_in_plan");
         super::tool_executor_diagnostics::completed(
             ctx.session_id,
             ctx.request_id,
@@ -49,6 +42,7 @@ pub async fn execute_tracked_write(
         ctx.mode,
         ctx.write_guard,
         ctx.session_id,
+        ctx.request_id,
         ctx.cancel,
         ctx.plan_mode_active,
         Some(ctx.tool_call_index),

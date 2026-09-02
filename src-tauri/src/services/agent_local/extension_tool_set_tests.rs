@@ -1,7 +1,7 @@
+use super::super::extension_tool_selection::CapacityDecision;
 use super::super::extension_tool_set_apply::{
     active_definitions_with, append_capacity_notice, definition_name,
 };
-use super::super::extension_tool_selection::CapacityDecision;
 use super::ExtensionToolSet;
 use serde_json::json;
 
@@ -13,7 +13,6 @@ fn passthrough_never_manages_chat_tools_as_extensions() {
     tools.apply(&["example.replacement".to_string()]);
 
     assert_eq!(tools.active(), definitions);
-    assert!(tools.selected_extension_names().is_empty());
 }
 
 #[test]
@@ -46,12 +45,7 @@ fn capacity_notice_is_added_only_when_needed() {
         }
     })];
 
-    append_capacity_notice(
-        &mut tools,
-        &["example.large".to_string()],
-        &[],
-        0,
-    );
+    append_capacity_notice(&mut tools, &["example.large".to_string()], &[], 0);
 
     let description = tools[0]["function"]["description"]
         .as_str()
@@ -68,12 +62,9 @@ fn an_inactive_replacement_restores_the_native_definition() {
         },
         "function": {"name": "read_file", "description": "plugin"}
     })];
-    let selected = active_definitions_with(
-        &tools,
-        &CapacityDecision::default(),
-        1,
-        |_| Some("example.replacement".to_string()),
-    );
+    let selected = active_definitions_with(&tools, &CapacityDecision::default(), 1, |_| {
+        Some("example.replacement".to_string())
+    });
 
     assert_eq!(selected.tools[0]["function"]["description"], "native");
     assert!(selected.tools[0].get("_beaverCoreFallback").is_none());

@@ -556,6 +556,16 @@
   },
   "permissionDialog": {
     "title": "Autorizzare {{action}}?",
+    "extensionAction": "a {{extension}} di eseguire un’azione",
+    "effects": {
+      "read-only": "Sola lettura",
+      "local-write": "Scrittura locale",
+      "external-read": "Lettura esterna",
+      "external-write": "Scrittura esterna",
+      "process": "Esecuzione di processi",
+      "secret": "Dati sensibili",
+      "unknown": "Azione non classificata"
+    },
     "allow": "Consenti una volta",
     "allowSession": "Consenti sempre",
     "deny": "Nega",
@@ -2244,7 +2254,6 @@
     "sections": {
       "plugins": "Plugin",
       "custom": "Estensioni",
-      "external": "Applicazioni esterne",
       "host": "Host"
     },
     "pages": {
@@ -2255,10 +2264,6 @@
       "custom": {
         "description": "Aggiungi codice locale o installa un’estensione da Git o npm.",
         "empty": "Nessuna estensione personalizzata."
-      },
-      "external": {
-        "description": "Programmi indipendenti collegati tramite il protocollo di estensione Beaver.",
-        "empty": "Nessuna applicazione esterna collegata."
       }
     },
     "discovery": {
@@ -2330,9 +2335,11 @@
     },
     "kinds": {
       "builtin": "Plugin ufficiale",
-      "local": "Estensione locale",
-      "external": "Applicazione esterna"
+      "local": "Estensione locale"
     },
+    "enabled": { "yes": "Attivata", "no": "Disattivata" },
+    "apiLevels": { "stable": "Stabile", "advanced": "Avanzato" },
+    "effects": { "read-only": "Sola lettura", "local-write": "Scrittura locale", "external-read": "Lettura esterna", "external-write": "Scrittura esterna", "process": "Processo", "secret": "Accesso ai segreti", "unknown": "Effetto sconosciuto" },
     "origins": {
       "local": "File o cartella locale",
       "git": "Repository Git",
@@ -2343,15 +2350,21 @@
     "showInChatFor": "Mostra {{name}} nella chat",
     "enableFor": "Attiva {{name}}",
     "fullAccessWarning": "Questa estensione non è verificata da Beaver e può accedere a dati, segreti e funzioni del tuo account.",
+    "sensitiveAccessReminder": "Per precauzione, modifica presso il relativo fornitore gli accessi usati da questa estensione.",
     "updateTrustWarning": "L’aggiornamento disattiverà l’estensione. Controlla la nuova versione prima di considerarla nuovamente attendibile.",
     "detail": {
+      "enabled": "Attivazione",
       "status": "Stato",
+      "apiLevel": "Livello API",
       "runtime": "Runtime",
       "api": "API Beaver",
       "author": "Autore",
       "installSource": "Origine installazione",
       "source": "Origine",
       "revision": "Revisione Git",
+      "lastActivatedAt": "Ultima attivazione",
+      "trustedAt": "Autorizzata dal",
+      "lastError": "Ultimo errore",
       "unknown": "Non indicato",
     "contributions": "Contributi registrati",
     "replacesCore": "Sostituisce uno strumento integrato"
@@ -2361,6 +2374,7 @@
     "description": "Questa estensione avrà accesso completo ai dati, ai segreti e alle funzioni del tuo account. Beaver non l’ha verificata.",
     "confirm": "Considera attendibile e attiva"
   },
+  "recovery": { "title": "Caricamento estensione interrotto", "description": "Beaver si è arrestato durante il caricamento di un’estensione. Esaminala prima di continuare.", "invalid": "Le informazioni di ripristino non sono valide e possono essere eliminate.", "openDetail": "Apri dettagli", "keepDisabled": "Mantieni disattivata", "retry": "Riprova caricamento", "discard": "Elimina ripristino", "restore": "Ripristina registro precedente" },
     "add": {
       "title": "Aggiungi un’estensione",
       "fullAccessWarning": "Il codice selezionato verrà eseguito con i diritti del tuo account utente. Installa solo un’estensione di cui scegli di fidarti.",
@@ -2396,7 +2410,8 @@
         "error": "Errore"
       },
       "recoveryTitle": "Modalità di recupero",
-      "recoveryDescription": "Disattiva i plugin Beaver e le estensioni locali per ripristinare il funzionamento di Beaver."
+      "recoveryDescription": "Disattiva i plugin Beaver e le estensioni locali per ripristinare il funzionamento di Beaver.",
+      "quitAndRestartHint": "Chiudi completamente Beaver e riavvialo prima di riattivare questa estensione."
     },
     "errors": {
       "load": "Impossibile caricare le estensioni.",
@@ -2443,7 +2458,18 @@
         "extensions_storage_failed": "L’archivio locale delle estensioni non è disponibile.",
         "extensions_update_identity_changed": "L’aggiornamento ha cambiato l’identità dell’estensione ed è stato rifiutato.",
         "extensions_update_unavailable": "Beaver non può aggiornare questa estensione.",
-        "extensions_cleanup_failed": "Non è stato possibile pulire alcuni vecchi file di estensione."
+        "extensions_cleanup_failed": "Non è stato possibile pulire alcuni vecchi file di estensione.",
+        "extensions_operation_failed": "Non è stato possibile completare l’operazione dell’estensione.",
+        "extensions_fingerprint_changed": "I file dell’estensione sono cambiati e devono essere verificati di nuovo.",
+        "extensions_fingerprint_failed": "Non è stato possibile verificare i file dell’estensione.",
+        "extensions_stop_unconfirmed": "L’host delle estensioni non ha confermato l’arresto.",
+        "extensions_registry_entry_ignored": "Una voce di estensione non valida è stata ignorata.",
+        "extensions_registry_migration_failed": "Non è stato possibile aggiornare il registro delle estensioni.",
+        "extensions_recovery_marker_invalid": "Le informazioni di ripristino dell’estensione non sono valide.",
+        "extensions_load_interrupted": "Il caricamento dell’estensione è stato interrotto.",
+        "extensions_activation_confirmation_required": "Questa estensione deve essere approvata di nuovo prima dell’attivazione.",
+        "extensions_not_found": "L’estensione non è stata trovata.",
+        "extensions_host_incompatible": "L’host delle estensioni non è compatibile con questa versione di Beaver."
       }
     },
     "diagnostics": {

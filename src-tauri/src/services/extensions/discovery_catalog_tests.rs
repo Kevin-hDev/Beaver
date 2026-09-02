@@ -13,6 +13,7 @@ fn plugin(id: &str, name: &str, description: Option<&str>, essential: bool) -> I
             name: format!("{id}.run"),
             description: "Run".to_string(),
             parameters: json!({"type": "object"}),
+            effect: crate::services::extensions::ExtensionEffect::Unknown,
             replaces_core: false,
         }],
     }

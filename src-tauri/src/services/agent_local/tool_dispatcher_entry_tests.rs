@@ -1,3 +1,4 @@
+use super::super::tool_dispatch_trace::DispatchTrace;
 use super::*;
 use serde_json::json;
 
@@ -26,6 +27,7 @@ async fn chat_rejects_an_agentic_call_before_dispatch() {
         &json!({"command": "pwd"}),
         std::path::Path::new("."),
         "test-session",
+        None,
         CancellationToken::new(),
         true,
     )
@@ -33,4 +35,46 @@ async fn chat_rejects_an_agentic_call_before_dispatch() {
 
     assert!(result.is_error);
     assert_eq!(result.content, "Outil indisponible dans ce mode.");
+}
+
+#[tokio::test]
+async fn chat_rejects_an_extension_call_before_dispatch() {
+    let result = dispatch_for_mode(
+        "beaver.office.documents.create",
+        &json!({}),
+        std::path::Path::new("."),
+        "test-session",
+        None,
+        CancellationToken::new(),
+        true,
+    )
+    .await;
+
+    assert!(result.is_error);
+    assert_eq!(
+        result.error.as_ref().map(|error| error.code.as_ref()),
+        Some("tool_unavailable_in_mode"),
+    );
+}
+
+#[tokio::test]
+async fn discovery_without_an_exact_request_correlation_fails_closed() {
+    let result = super::super::tool_dispatcher::dispatch_inner(
+        crate::services::extensions::SEARCH_TOOL_NAME,
+        &json!({"query": "documents"}),
+        std::path::Path::new("."),
+        DispatchTrace {
+            session_id: "test-session",
+            request_id: None,
+        },
+        CancellationToken::new(),
+        None,
+        None,
+    )
+    .await;
+
+    assert_eq!(
+        result.error.as_ref().map(|error| error.code.as_ref()),
+        Some("plugin_search_unavailable")
+    );
 }

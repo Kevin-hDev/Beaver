@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import { LIMITS } from "../../src-tauri/resources/extension-host/contract.mjs";
-import { createHost } from "./host-test-client.mjs";
+import { createHost, resetAndLoad } from "./host-test-client.mjs";
 import { hostScript } from "./office-test-helpers.mjs";
 
 test("truncates oversized third-party tool output without stopping the host", async () => {
@@ -24,13 +24,11 @@ test("truncates oversized third-party tool output without stopping the host", as
   );
   const host = createHost(hostScript);
   try {
-    await host.request("host.sync", {
-      extensions: [{
+    await resetAndLoad(host, [{
         id: "com.beaver.large-output",
         mainPath: source,
         manifest: { apiLevel: "stable" },
-      }],
-    });
+      }]);
     const result = await host.request("tool.call", {
       name: "com.beaver.large-output.large",
       arguments: {},

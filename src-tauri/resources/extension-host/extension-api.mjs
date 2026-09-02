@@ -1,9 +1,19 @@
 import { callCore } from "./protocol.mjs";
-import { LIMITS } from "./contract.mjs";
+import {
+  LIMITS,
+  methodKind,
+  methodLevel,
+  supportsEffect,
+  supportsEvent,
+  TIMEOUTS,
+} from "./contract.mjs";
 
-const EVENT_TIMEOUT_MS = 5_000;
 const inFlightHandlers = new Set();
-const IDENTIFIER = /^[a-zA-Z0-9](?:[a-zA-Z0-9._-]{0,94}[a-zA-Z0-9])?$/;
+function validIdentifier(value) {
+  return typeof value === "string"
+    && value.length <= LIMITS.maxIdentifierChars
+    && /^[a-zA-Z0-9](?:[a-zA-Z0-9._-]*[a-zA-Z0-9])?$/.test(value);
+}
 
 export function createExtensionApi(specification) {
   const tools = [];
@@ -28,10 +38,12 @@ export function createExtensionApi(specification) {
       name: publicName,
       description: String(definition.description ?? ""),
       parameters: definition.parameters ?? { type: "object" },
+      // Rust revalidates this value; normalization here only keeps host output stable.
+      effect: supportsEffect(definition.effect) ? definition.effect : "unknown",
       replacesCore,
     };
     if (
-      !IDENTIFIER.test(tool.name)
+      !validIdentifier(tool.name)
       || !tool.description.trim()
       || tool.description.length > 2_000
       || !tool.parameters
@@ -51,7 +63,9 @@ export function createExtensionApi(specification) {
       throw new Error("invalid_event_handler");
     }
     const event = String(eventName);
-    if (!IDENTIFIER.test(event)) throw new Error("invalid_event_name");
+    if (!validIdentifier(event) || !supportsEvent(event)) {
+      throw new Error("invalid_event_name");
+    }
     const current = handlers.get(event) ?? [];
     current.push(eventHandler);
     handlers.set(event, current);
@@ -73,7 +87,7 @@ export function createExtensionApi(specification) {
     info: () => callCore("app.info"),
     registerTool: (definition) => registerTool(definition, false),
     on,
-    call: callCore,
+    call: (method, params = {}) => callAtLevel("stable", method, params),
     sessions: Object.freeze({
       list: () => callCore("sessions.list"),
       get: (sessionId) => callCore("sessions.get", { sessionId: String(sessionId) }),
@@ -111,7 +125,12 @@ export function createExtensionApi(specification) {
         }),
     }),
     unstable: Object.freeze({
-      call: (method, params = {}) => callCore(`unstable.${String(method)}`, params),
+      call: (method, params = {}) => {
+        if (specification.manifest.apiLevel !== "advanced") {
+          throw new Error("advanced_api_required");
+        }
+        return callAtLevel("advanced", method, params);
+      },
       registerReplacement: (definition) => {
         if (specification.manifest.apiLevel !== "advanced") {
           throw new Error("advanced_api_required");
@@ -145,11 +164,19 @@ async function runEventHandler(handler, payload) {
     await Promise.race([
       execution,
       new Promise((resolve) => {
-        timer = setTimeout(resolve, EVENT_TIMEOUT_MS);
+        timer = setTimeout(resolve, TIMEOUTS.eventHandlerTimeoutMs);
         timer.unref();
       }),
     ]);
   } finally {
     clearTimeout(timer);
   }
+}
+
+function callAtLevel(level, method, params) {
+  const requested = String(method);
+  if (methodLevel(requested) !== level || methodKind(requested) !== "request") {
+    return Promise.reject(new Error("core_method_unavailable"));
+  }
+  return callCore(requested, params);
 }

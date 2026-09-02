@@ -1,50 +1,6 @@
-//! Codes d'erreur du domaine extensions, traduits côté interface.
-//! Chaque code ajouté ici doit être déclaré dans `EXTENSION_BACKEND_ERROR_CODES`
-//! (`src/lib/extension-errors.ts`) et traduit dans les sept langues.
+//! Codes d'erreur du domaine Extensions générés depuis le contrat exécutable.
 
-macro_rules! declare_error_codes {
-    ($($name:ident => $value:literal),+ $(,)?) => {
-        $(pub const $name: &str = $value;)+
-        #[cfg(test)]
-        pub const ALL: &[&str] = &[$($name),+];
-    };
-}
-
-declare_error_codes! {
-    HOST_UNAVAILABLE => "extensions_host_unavailable",
-    HOST_BUSY => "extensions_host_busy",
-    HOST_TIMEOUT => "extensions_host_timeout",
-    REQUEST_TOO_LARGE => "extensions_request_too_large",
-    REQUEST_INVALID => "extensions_request_invalid",
-    TOOL_UNAVAILABLE => "extensions_tool_unavailable",
-    TOOL_ARGUMENTS_INVALID => "extensions_tool_arguments_invalid",
-    BUILTIN_CATALOG_INVALID => "extensions_builtin_catalog_invalid",
-    BUILTIN_CATALOG_UNAVAILABLE => "extensions_builtin_catalog_unavailable",
-    BUILTIN_PLUGIN_INVALID => "extensions_builtin_plugin_invalid",
-    BUILTIN_ENTRY_MISSING => "extensions_builtin_entry_missing",
-    BUILTIN_ENTRY_UNAVAILABLE => "extensions_builtin_entry_unavailable",
-    BUILTIN_ENTRY_INVALID => "extensions_builtin_entry_invalid",
-    INSTALL_FAILED => "extensions_install_failed",
-    UPDATE_FAILED => "extensions_update_failed",
-    UNINSTALL_FAILED => "extensions_uninstall_failed",
-    SOURCE_INVALID => "extensions_source_invalid",
-    PACKAGE_INVALID => "extensions_package_invalid",
-    GIT_DOWNLOAD_FAILED => "extensions_git_download_failed",
-    GIT_TIMEOUT => "extensions_git_timeout",
-    RUNTIME_UNAVAILABLE => "extensions_runtime_unavailable",
-    ENVIRONMENT_INVALID => "extensions_environment_invalid",
-    DEPENDENCY_INSTALL_FAILED => "extensions_dependency_install_failed",
-    MANIFEST_INVALID => "extensions_manifest_invalid",
-    NOT_BEAVER_EXTENSION => "extensions_not_beaver_extension",
-    API_INCOMPATIBLE => "extensions_api_incompatible",
-    SYMLINK_UNSUPPORTED => "extensions_symlink_unsupported",
-    ALREADY_INSTALLED => "extensions_already_installed",
-    LIMIT_REACHED => "extensions_limit_reached",
-    STORAGE_FAILED => "extensions_storage_failed",
-    UPDATE_IDENTITY_CHANGED => "extensions_update_identity_changed",
-    UPDATE_UNAVAILABLE => "extensions_update_unavailable",
-    CLEANUP_FAILED => "extensions_cleanup_failed",
-}
+pub use super::types::backend_error_codes::*;
 
 #[cfg(test)]
 mod tests {
@@ -91,5 +47,15 @@ mod tests {
                 "forme invalide: {code}"
             );
         }
+    }
+
+    #[test]
+    fn malformed_host_payload_uses_the_incompatible_host_code() {
+        let error = super::super::runtime::parse::<Vec<String>>(serde_json::Value::String(
+            "invalid payload".to_string(),
+        ))
+        .unwrap_err();
+
+        assert_eq!(error, HOST_INCOMPATIBLE);
     }
 }

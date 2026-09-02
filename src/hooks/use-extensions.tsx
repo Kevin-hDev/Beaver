@@ -3,6 +3,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -10,30 +11,29 @@ import { invoke } from "@tauri-apps/api/core";
 import { useFsEvent } from "@/hooks/use-fs-event";
 import { useExtensionInstall } from "@/hooks/use-extension-install";
 import { useExtensionPriorities } from "@/hooks/use-extension-priorities";
+import { useExtensionRecovery } from "@/hooks/use-extension-recovery";
 import { ExtensionActivationDialog } from "@/components/extensions/extension-activation-dialog";
 import { extensionErrorKey } from "@/lib/extension-errors";
+import {
+  EMPTY_EXTENSION_HOST,
+  parseExtensionHostStatus,
+} from "@/lib/extension-host-status";
 import { parseExtensionRecords } from "@/lib/extension-records";
 import type { ExtensionHostStatus, ExtensionRecord } from "@/types/extensions";
 
-const EMPTY_HOST: ExtensionHostStatus = {
-  state: "stopped",
-  jitiVersion: "",
-  apiVersion: "1",
-  activeExtensions: 0,
-  diagnostics: [],
-};
-
 function useExtensionsState() {
   const [extensions, setExtensions] = useState<ExtensionRecord[]>([]);
-  const [host, setHost] = useState<ExtensionHostStatus>(EMPTY_HOST);
+  const [host, setHost] = useState<ExtensionHostStatus>(EMPTY_EXTENSION_HOST);
+  const [hostLoaded, setHostLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [operationError, setOperationError] = useState<string | null>(null);
+  const [hostOperations, setHostOperations] = useState(0);
+  const refreshGeneration = useRef(0);
   const {
     protectedPluginIds,
     priorityBusy,
     applyValue: applyPriorityValue,
-    reset: resetPriorities,
     setPriorityPlugins,
   } = useExtensionPriorities(setOperationError);
   const [busyIds, setBusyIds] = useState<Set<string>>(() => new Set());
@@ -41,25 +41,28 @@ function useExtensionsState() {
     useState<ExtensionRecord | null>(null);
 
   const refresh = useCallback(async () => {
+    const generation = ++refreshGeneration.current;
+    setLoading(true);
+    setLoadError(null);
     try {
       const [records, status, preferences] = await Promise.all([
         invoke<unknown>("list_extensions"),
-        invoke<ExtensionHostStatus>("get_extension_host_status"),
+        invoke<unknown>("get_extension_host_status"),
         invoke<unknown>("get_extension_discovery_preferences"),
       ]);
+      if (generation !== refreshGeneration.current) return;
       setExtensions(parseExtensionRecords(records));
-      setHost(status);
+      setHost(parseExtensionHostStatus(status));
+      setHostLoaded(true);
       applyPriorityValue(preferences);
       setLoadError(null);
     } catch (error) {
-      setExtensions([]);
-      setHost(EMPTY_HOST);
-      resetPriorities();
+      if (generation !== refreshGeneration.current) return;
       setLoadError(extensionErrorKey(error, "extensions.errors.load"));
     } finally {
-      setLoading(false);
+      if (generation === refreshGeneration.current) setLoading(false);
     }
-  }, [applyPriorityValue, resetPriorities]);
+  }, [applyPriorityValue]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- refresh synchronise le registre possédé par Rust
@@ -75,16 +78,24 @@ function useExtensionsState() {
     payload: Record<string, unknown>,
     optimistic: (record: ExtensionRecord) => ExtensionRecord,
   ) => {
+    const ownsHost = command === "set_extension_enabled";
     setOperationError(null);
+    if (ownsHost) setHostOperations((count) => count + 1);
     setBusyIds((current) => new Set([...current, id]));
     setExtensions((current) =>
       current.map((record) => record.manifest.id === id ? optimistic(record) : record));
     try {
-      await invoke(command, payload);
+      const reminder = await invoke<boolean | void>(command, payload);
+      if (reminder === true) {
+        setOperationError("extensions.sensitiveAccessReminder");
+      }
+      return true;
     } catch (error) {
       setOperationError(extensionErrorKey(error, "extensions.errors.operation"));
+      return false;
     } finally {
       await refresh();
+      if (ownsHost) setHostOperations((count) => Math.max(0, count - 1));
       setBusyIds((current) => {
         const next = new Set(current);
         next.delete(id);
@@ -108,17 +119,18 @@ function useExtensionsState() {
   const setEnabled = useCallback((id: string, enabled: boolean) => {
     const extension = extensions.find((record) => record.manifest.id === id);
     if (enabled && extension && extension.kind !== "builtin" && !extension.trusted) {
+      setOperationError(null);
       setPendingActivation(extension);
       return Promise.resolve();
     }
-    return applyEnabled(id, enabled);
+    return applyEnabled(id, enabled).then(() => undefined);
   }, [applyEnabled, extensions]);
 
   const confirmActivation = useCallback(async () => {
     if (!pendingActivation) return;
     const id = pendingActivation.manifest.id;
-    await applyEnabled(id, true, true);
-    setPendingActivation(null);
+    const succeeded = await applyEnabled(id, true, true);
+    if (succeeded) setPendingActivation(null);
   }, [applyEnabled, pendingActivation]);
 
   const setShowInChat = useCallback((id: string, showInChat: boolean) =>
@@ -130,7 +142,10 @@ function useExtensionsState() {
   const run = useCallback(async (command: string, payload: Record<string, unknown> = {}) => {
     setOperationError(null);
     try {
-      await invoke(command, payload);
+      const reminder = await invoke<boolean | void>(command, payload);
+      if (reminder === true) {
+        setOperationError("extensions.sensitiveAccessReminder");
+      }
     } catch (error) {
       setOperationError(extensionErrorKey(error, "extensions.errors.operation"));
     } finally {
@@ -138,12 +153,24 @@ function useExtensionsState() {
     }
   }, [refresh]);
 
+  const runHost = useCallback(async (operation: () => Promise<void>) => {
+    setHostOperations((count) => count + 1);
+    try {
+      await operation();
+    } finally {
+      setHostOperations((count) => Math.max(0, count - 1));
+    }
+  }, []);
+  const recovery = useExtensionRecovery(run, runHost, setOperationError);
+
   return {
     extensions,
     host,
+    hostLoaded,
     loading,
     loadError,
     operationError,
+    hostBusy: hostOperations > 0 || recovery.recoveryBusy,
     busyIds,
     protectedPluginIds,
     priorityBusy,
@@ -165,9 +192,10 @@ function useExtensionsState() {
       (record) => record,
     ),
     remove: (id: string) => run("remove_extension", { extensionId: id }),
-    reload: () => run("reload_extension_host"),
-    recover: () => run("recover_extension_host"),
+    reload: () => runHost(() => run("reload_extension_host")),
+    recover: () => runHost(() => run("recover_extension_host")),
     openSource: (id: string) => run("open_extension_source", { extensionId: id }),
+    ...recovery,
   };
 }
 
@@ -183,6 +211,7 @@ export function ExtensionsProvider({ children }: { children: ReactNode }) {
         <ExtensionActivationDialog
           extension={value.pendingActivation}
           busy={value.busyIds.has(value.pendingActivation.manifest.id)}
+          errorKey={value.operationError}
           onCancel={value.cancelActivation}
           onConfirm={() => void value.confirmActivation()}
         />

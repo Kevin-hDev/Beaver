@@ -93,12 +93,7 @@ pub enum StreamEvent {
         start_line: Option<usize>,
     },
     TurnEnd {},
-    #[serde(rename_all = "camelCase")]
-    PermissionRequest {
-        id: String,
-        tool_name: String,
-        arguments: serde_json::Value,
-    },
+    PermissionRequest(super::permission_request::PermissionRequest),
     #[serde(rename_all = "camelCase")]
     Done {
         eval_count: Option<u32>,

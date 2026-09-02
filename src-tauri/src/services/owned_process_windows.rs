@@ -8,6 +8,8 @@ pub(super) use termination::recover_exact_with_cancel;
 mod support;
 use std::os::windows::io::{AsHandle, AsRawHandle};
 use std::sync::OnceLock;
+pub(super) use support::resume_suspended_process;
+pub(super) use support::DedicatedJob;
 use windows_sys::Win32::Foundation::{CloseHandle, FILETIME, HANDLE, STILL_ACTIVE};
 use windows_sys::Win32::System::JobObjects::{AssignProcessToJobObject, IsProcessInJob};
 use windows_sys::Win32::System::Threading::{

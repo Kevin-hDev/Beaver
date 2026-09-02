@@ -39,6 +39,13 @@ pub fn configure_tokio(command: &mut tokio::process::Command) {
     let _ = command;
 }
 
+#[cfg(windows)]
+pub fn configure_tokio_with_extra_flags(command: &mut tokio::process::Command, extra: u32) {
+    command
+        .as_std_mut()
+        .creation_flags(CREATE_NO_WINDOW | extra);
+}
+
 #[cfg(all(test, windows))]
 #[path = "background_command_windows_tests.rs"]
 mod windows_tests;

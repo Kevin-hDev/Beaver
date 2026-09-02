@@ -121,8 +121,7 @@ export function applyStreamEvent(
       next.segmentStartedAt = null;
       break;
     case "permissionRequest":
-      next.pendingPermissions = addPermission(next.pendingPermissions, { id: event.data.id,
-        toolName: event.data.toolName, arguments: event.data.arguments });
+      next.pendingPermissions = addPermission(next.pendingPermissions, { ...event.data });
       break;
     case "sessionSnapshot":
       break;

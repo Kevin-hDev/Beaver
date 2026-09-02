@@ -1,0 +1,22 @@
+[
+  {
+    "manifest": { "id": "beaver.office.documents", "name": "Documents", "version": "1.0.0", "beaverApi": "1", "runtime": "node", "main": "builtin-plugins/documents/index.mjs", "ui": null, "access": "full", "apiLevel": "stable", "essential": false, "author": "Beaver", "homepage": null, "description": "Create and update editable Microsoft Word DOCX documents." },
+    "kind": "builtin", "source": "/neutral/builtin", "origin": null, "enabled": false, "trusted": true, "showInChat": true, "status": "inactive", "lastError": null, "lastActivatedAt": "2026-08-28T22:04:19.991058+00:00"
+  },
+  {
+    "manifest": { "id": "beaver.office.pdf", "name": "PDF", "version": "1.0.0", "beaverApi": "1", "runtime": "node", "main": "builtin-plugins/pdf/index.mjs", "ui": null, "access": "full", "apiLevel": "stable", "essential": false, "author": "Beaver", "homepage": null, "description": "Read, create, merge, and verify PDF files." },
+    "kind": "builtin", "source": "/neutral/builtin", "origin": null, "enabled": false, "trusted": true, "showInChat": true, "status": "inactive", "lastError": null, "lastActivatedAt": "2026-08-20T09:42:31.026010+00:00"
+  },
+  {
+    "manifest": { "id": "beaver.office.spreadsheets", "name": "Spreadsheets", "version": "1.0.0", "beaverApi": "1", "runtime": "node", "main": "builtin-plugins/spreadsheets/index.mjs", "ui": null, "access": "full", "apiLevel": "stable", "essential": false, "author": "Beaver", "homepage": null, "description": "Create, inspect, and update Microsoft Excel XLSX workbooks." },
+    "kind": "builtin", "source": "/neutral/builtin", "origin": null, "enabled": false, "trusted": true, "showInChat": true, "status": "inactive", "lastError": null, "lastActivatedAt": "2026-08-20T09:42:30.258898+00:00"
+  },
+  {
+    "manifest": { "id": "beaver.office.presentations", "name": "Presentations", "version": "1.0.0", "beaverApi": "1", "runtime": "node", "main": "builtin-plugins/presentations/index.mjs", "ui": null, "access": "full", "apiLevel": "stable", "essential": false, "author": "Beaver", "homepage": null, "description": "Create editable Microsoft PowerPoint PPTX presentations." },
+    "kind": "builtin", "source": "/neutral/builtin", "origin": null, "enabled": false, "trusted": true, "showInChat": true, "status": "inactive", "lastError": null, "lastActivatedAt": "2026-08-20T09:42:25.735828+00:00"
+  },
+  {
+    "manifest": { "id": "com.example.git-fixture", "name": "Git Fixture", "version": "1.2.3", "beaverApi": "1", "runtime": "node", "main": "index.mjs", "ui": null, "access": "full", "apiLevel": "stable", "essential": false, "author": "Fixture Author", "homepage": "https://example.invalid/fixture", "description": "A migration fixture produced in the Beaver v1.2.0 record shape." },
+    "kind": "local", "source": "/neutral/local", "origin": { "kind": "git", "locator": "https://example.com/example/fixture.git", "revision": "0123456789abcdef0123456789abcdef01234567" }, "enabled": true, "trusted": true, "showInChat": false, "status": "error", "lastError": "previous_safe_error", "lastActivatedAt": "2026-08-30T12:34:56Z"
+  }
+]

@@ -57,6 +57,7 @@ fn contributions_are_bounded_and_require_object_schemas() {
         name: "com.example.invalid".to_string(),
         description: "Invalid schema".to_string(),
         parameters: json!({"type": "string"}),
+        effect: super::types::ExtensionEffect::Unknown,
         replaces_core: false,
     };
     assert!(super::validation::contributions(&[invalid], &[]).is_err());
@@ -66,6 +67,7 @@ fn contributions_are_bounded_and_require_object_schemas() {
             name: format!("com.example.tool{index}"),
             description: "Tool".to_string(),
             parameters: json!({"type": "object"}),
+            effect: super::types::ExtensionEffect::Unknown,
             replaces_core: false,
         })
         .collect::<Vec<_>>();
@@ -85,10 +87,10 @@ fn storage_round_trip_is_bounded() {
     let path = directory.path().join("extensions.json");
     let records = Vec::new();
 
-    super::storage::save_to(&path, &records).unwrap();
+    super::storage::save_to(&path, &records, &None).unwrap();
     let loaded = super::storage::load_from(&path).unwrap();
 
-    assert_eq!(loaded, records);
+    assert_eq!(loaded.extensions, records);
 }
 
 #[test]
@@ -104,13 +106,14 @@ fn runtime_contributions_are_not_persisted() {
         name: "com.example.runtime".to_string(),
         description: "Runtime only".to_string(),
         parameters: json!({"type": "object"}),
+        effect: super::types::ExtensionEffect::Unknown,
         replaces_core: false,
     });
 
-    super::storage::save_to(&storage, &[record]).unwrap();
+    super::storage::save_to(&storage, &[record], &None).unwrap();
     let loaded = super::storage::load_from(&storage).unwrap();
 
-    assert!(loaded[0].contributions.tools.is_empty());
+    assert!(loaded.extensions[0].contributions.tools.is_empty());
 }
 
 #[test]
@@ -156,7 +159,11 @@ fn directory_manifest_cannot_escape_through_a_symlink() {
 
 #[tokio::test]
 async fn unknown_core_calls_fail_closed() {
-    let result = super::core_bridge::call("unknown.method", None).await;
+    let context = super::call_context::ExtensionCallContext::for_test(
+        super::host_identity::HostIdentity::Official,
+        super::types::ExtensionApiLevel::Stable,
+    );
+    let result = super::core_bridge::call(&context, "unknown.method", None).await;
 
     assert!(result.is_err());
 }
@@ -177,6 +184,12 @@ fn host_protocol_requires_a_json_rpc_envelope() {
     .is_err());
     assert!(super::protocol::envelope(&json!({
         "jsonrpc": "2.0",
+        "result": {}
+    }))
+    .is_err());
+    assert!(super::protocol::envelope(&json!({
+        "jsonrpc": "2.0",
+        "id": "x".repeat(129),
         "result": {}
     }))
     .is_err());

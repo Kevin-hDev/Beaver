@@ -1,5 +1,5 @@
 use super::discovery_catalog::CatalogSnapshot;
-use super::types::{ExtensionKind, ExtensionRecord, ExtensionTool};
+use super::types::{ExtensionRecord, ExtensionTool};
 use std::collections::{BTreeMap, HashSet};
 use std::sync::{LazyLock, RwLock};
 
@@ -16,6 +16,7 @@ pub(crate) struct IndexedPlugin {
 #[derive(Clone)]
 pub(crate) struct IndexedTool {
     pub extension_id: String,
+    pub extension_name: String,
     pub tool: ExtensionTool,
 }
 
@@ -35,7 +36,7 @@ pub fn rebuild(records: &[ExtensionRecord]) -> Result<(), String> {
     let preferences = super::discovery_preferences::sanitize(records)?;
     let plugins = records
         .iter()
-        .filter(|record| record.kind != ExtensionKind::External && record.enabled)
+        .filter(|record| record.enabled && record.trusted)
         .map(|record| IndexedPlugin {
             id: record.manifest.id.clone(),
             name: record.manifest.name.clone(),
@@ -50,6 +51,7 @@ pub fn rebuild(records: &[ExtensionRecord]) -> Result<(), String> {
         .flat_map(|plugin| {
             plugin.tools.iter().cloned().map(|tool| IndexedTool {
                 extension_id: plugin.id.clone(),
+                extension_name: plugin.name.clone(),
                 tool,
             })
         })
@@ -170,6 +172,16 @@ pub fn dynamic_tool(tool_name: &str) -> Option<ExtensionTool> {
             .iter()
             .find(|indexed| indexed.tool.name == tool_name)
             .map(|indexed| indexed.tool.clone())
+    })
+}
+
+pub(crate) fn indexed_tool(tool_name: &str) -> Option<IndexedTool> {
+    INDEX.read().ok().and_then(|index| {
+        index
+            .tools
+            .iter()
+            .find(|indexed| indexed.tool.name == tool_name)
+            .cloned()
     })
 }
 

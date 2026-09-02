@@ -1,33 +1,54 @@
 import { useTranslation } from "react-i18next";
 import { ArrowsClockwise, ShieldWarning } from "@/components/ui/icons";
 import { SettingsCard } from "@/components/settings/settings-card";
+import { extensionErrorKey } from "@/lib/extension-errors";
 import type { ExtensionHostStatus } from "@/types/extensions";
 import "./extensions-host-panel.css";
 
 interface ExtensionsHostPanelProps {
   host: ExtensionHostStatus;
+  loaded: boolean;
+  loading: boolean;
+  loadError: string | null;
+  busy: boolean;
   onRestart: () => void;
   onRecover: () => void;
 }
 
 export function ExtensionsHostPanel({
   host,
+  loaded,
+  loading,
+  loadError,
+  busy,
   onRestart,
   onRecover,
 }: ExtensionsHostPanelProps) {
   const { t } = useTranslation();
+  const stopUnconfirmed = host.lastError === "extensions_stop_unconfirmed";
   return (
     <>
       <p className="settings-panel-description">{t("extensions.host.description")}</p>
-      <SettingsCard className="extp-lines">
-        <InfoLine label={t("extensions.host.state")} value={t(`extensions.host.states.${host.state}`)} />
-        <InfoLine label={t("extensions.host.node")} value={host.nodeVersion ?? t("extensions.host.unavailable")} />
-        <InfoLine label={t("extensions.host.jiti")} value={host.jitiVersion || t("extensions.host.unavailable")} />
-        <InfoLine label={t("extensions.host.api")} value={host.apiVersion} />
-        <InfoLine label={t("extensions.host.active")} value={String(host.activeExtensions)} />
-      </SettingsCard>
+      {loadError && (
+        <div className="extp-message extp-message-error" role="alert">
+          {t(loadError)}
+        </div>
+      )}
+      {!loaded && loading && <p role="status">{t("extensions.loading")}</p>}
+      {loaded && (
+        <SettingsCard className="extp-lines">
+          <InfoLine label={t("extensions.host.state")} value={t(`extensions.host.states.${host.state}`)} />
+          <InfoLine label={t("extensions.host.node")} value={host.nodeVersion ?? t("extensions.host.unavailable")} />
+          <InfoLine label={t("extensions.host.jiti")} value={host.jitiVersion || t("extensions.host.unavailable")} />
+          <InfoLine label={t("extensions.host.api")} value={host.apiVersion} />
+          <InfoLine label={t("extensions.host.active")} value={String(host.activeExtensions)} />
+        </SettingsCard>
+      )}
       {host.lastError && (
-        <div className="extp-message extp-message-error">{t("extensions.errors.host")}</div>
+        <div className="extp-message extp-message-error" role="alert">
+          {t(extensionErrorKey(host.lastError, "extensions.errors.host"))}
+          {stopUnconfirmed && <p>{t("extensions.host.quitAndRestartHint")}</p>}
+        </div>
       )}
       {host.diagnostics.length > 0 && (
         <section className="exth-diagnostics">
@@ -47,7 +68,7 @@ export function ExtensionsHostPanel({
         </section>
       )}
       <div className="extp-actions">
-        <button type="button" className="btn btn-sm btn-secondary" onClick={onRestart}>
+        <button type="button" className="btn btn-sm btn-secondary" disabled={busy} onClick={onRestart}>
           <ArrowsClockwise size="var(--icon-sm)" />
           {t("extensions.actions.restartHost")}
         </button>
@@ -58,7 +79,7 @@ export function ExtensionsHostPanel({
           <strong>{t("extensions.host.recoveryTitle")}</strong>
           <p>{t("extensions.host.recoveryDescription")}</p>
         </div>
-        <button type="button" className="btn btn-sm btn-secondary" onClick={onRecover}>
+        <button type="button" className="btn btn-sm btn-secondary" disabled={busy} onClick={onRecover}>
           {t("extensions.actions.recovery")}
         </button>
       </div>

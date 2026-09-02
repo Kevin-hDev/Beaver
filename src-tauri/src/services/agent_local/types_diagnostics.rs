@@ -1,6 +1,6 @@
+use super::tool_result_contract::{ToolErrorCategory, ToolResultStatus};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use super::tool_result_contract::{ToolErrorCategory, ToolResultStatus};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(test, derive(ts_rs::TS))]
@@ -92,6 +92,34 @@ pub struct AgentDiagnosticEvent {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[cfg_attr(test, ts(optional))]
     pub error_type: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(test, ts(optional))]
+    pub extension: Option<AgentExtensionDiagnostic>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+pub struct AgentExtensionDiagnostic {
+    pub origin: String,
+    pub reason: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(test, ts(optional))]
+    pub correlation_id: Option<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[cfg_attr(test, ts(optional, as = "Option<_>"))]
+    pub related_search_ids: Vec<String>,
+    pub plugin_count: usize,
+    pub plugin_ids: String,
+    pub tool_count: usize,
+    pub canonical_tool_names: String,
+    pub provider_aliases: String,
+    pub tool_delta: usize,
+    pub discovery_result_count: usize,
+    pub discovery_result_plugin_ids: String,
+    pub provider_capacity_count: usize,
+    pub provider_capacity_plugin_ids: String,
+    pub global_capacity_count: usize,
+    pub global_capacity_plugin_ids: String,
 }
 
 #[cfg(test)]
@@ -106,9 +134,11 @@ pub(crate) fn typescript_bindings() -> String {
          export {}\n\n\
          export {}\n\n\
          export {}\n\n\
+         export {}\n\n\
          export {}\n",
         AgentDiagnosticTool::decl(&config),
         AgentDiagnosticTodo::decl(&config),
+        AgentExtensionDiagnostic::decl(&config),
         AgentDiagnosticEvent::decl(&config),
         AgentDiagnosticRun::decl(&config),
     )

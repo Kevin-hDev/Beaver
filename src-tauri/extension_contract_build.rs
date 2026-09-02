@@ -1,133 +1,149 @@
+#[path = "extension_contract_artifacts.rs"]
+#[allow(dead_code)]
+mod artifacts;
+#[path = "extension_contract_document.rs"]
+#[allow(dead_code)]
+mod document;
+#[path = "extension_contract_effect.rs"]
+mod effect_renderer;
+#[path = "extension_contract_enum.rs"]
+mod enum_renderer;
+#[path = "extension_contract_io.rs"]
+mod io;
+#[path = "extension_contract_rust.rs"]
+mod rust_renderer;
+#[path = "extension_contract_validation.rs"]
+mod validation;
+
 use serde_json::{Map, Value};
-use std::collections::BTreeSet;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 const CONTRACT_PATH: &str = "resources/extension-host/contract.json";
+const CONTRACT_BOOTSTRAP_PATH: &str = "resources/extension-host/contract-bootstrap.json";
+pub const BOOTSTRAP_FILE_MAX_BYTES: usize = 256;
+pub const MAX_BOOTSTRAPPED_CONTRACT_BYTES: usize = 1_048_576;
+const GENERATED_BEGIN: &str = "<!-- BEGIN GENERATED EXTENSION CONTRACT -->";
+const GENERATED_END: &str = "<!-- END GENERATED EXTENSION CONTRACT -->";
+
+#[allow(unused_imports)]
+pub use artifacts::{render_sdk_contract, render_typescript};
+#[allow(unused_imports)]
+pub use document::generated_document_section;
 
 pub fn generate() {
     println!("cargo:rerun-if-changed={CONTRACT_PATH}");
-    let raw =
-        std::fs::read_to_string(CONTRACT_PATH).expect("cannot read the Beaver extension contract");
-    assert!(
-        raw.len() <= 8_192,
-        "Beaver extension contract exceeds its size limit"
-    );
-    let contract: Value =
-        serde_json::from_str(&raw).expect("invalid Beaver extension contract JSON");
-    let limits = object(&contract, "limits");
-    let diagnostics = object(&contract, "diagnostics");
-    let host_codes = codes(diagnostics, "hostCodes");
-    let runtime_codes = codes(diagnostics, "runtimeCodes");
-    validate_unique_codes(&host_codes, &runtime_codes);
-
-    let mut output = String::new();
-    for (json_name, rust_name) in [
-        ("maxExtensions", "MAX_EXTENSIONS"),
-        ("maxUserExtensions", "MAX_USER_EXTENSIONS"),
-        ("maxTools", "MAX_TOOLS"),
-        ("maxToolsPerExtension", "MAX_TOOLS_PER_EXTENSION"),
-        ("maxEventsPerExtension", "MAX_EVENTS_PER_EXTENSION"),
-        ("maxPendingRequests", "MAX_PENDING_REQUESTS"),
-        ("maxInFlightRequests", "MAX_IN_FLIGHT_REQUESTS"),
-        ("maxWorkingDirectoryChars", "MAX_WORKING_DIRECTORY_CHARS"),
-        ("maxGitLocatorChars", "MAX_GIT_LOCATOR_CHARS"),
-        ("maxNpmSpecChars", "MAX_NPM_SPEC_CHARS"),
-        ("maxMessageBytes", "MAX_MESSAGE_BYTES"),
-    ] {
-        let value = limit(limits, json_name);
-        output.push_str(&format!("pub const {rust_name}: usize = {value};\n"));
-    }
-    for code in host_codes.iter().chain(&runtime_codes) {
-        output.push_str(&format!(
-            "pub const {}: &str = {code:?};\n",
-            code_constant(code)
-        ));
-    }
-    output.push_str(&code_slice("HOST_DIAGNOSTIC_CODES", &host_codes));
-    output.push_str(&code_slice("RUNTIME_DIAGNOSTIC_CODES", &runtime_codes));
-    let all_codes = host_codes
-        .into_iter()
-        .chain(runtime_codes)
-        .collect::<Vec<_>>();
-    output.push_str("#[cfg(test)]\n");
-    output.push_str(&code_slice("DIAGNOSTIC_CODES", &all_codes));
-
+    println!("cargo:rerun-if-changed={CONTRACT_BOOTSTRAP_PATH}");
+    println!("cargo:rerun-if-changed=resources/extension-host/builtin-plugins/catalog.json");
+    let directory = Path::new("resources/extension-host");
+    let contract = load_contract(directory).unwrap_or_else(|error| panic!("{error}"));
+    validate_contract(&contract, directory).unwrap_or_else(|error| panic!("{error}"));
+    let output = rust_renderer::render(&contract).unwrap_or_else(|error| panic!("{error}"));
     let out_dir = std::env::var_os("OUT_DIR").expect("missing Cargo OUT_DIR");
     std::fs::write(Path::new(&out_dir).join("extension_contract.rs"), output)
         .expect("cannot generate the Beaver extension contract");
 }
 
-fn object<'a>(value: &'a Value, name: &str) -> &'a Map<String, Value> {
-    value
-        .get(name)
-        .and_then(Value::as_object)
-        .unwrap_or_else(|| panic!("missing extension contract object: {name}"))
-}
-
-fn limit(limits: &Map<String, Value>, name: &str) -> usize {
-    let value = limits
-        .get(name)
-        .and_then(Value::as_u64)
-        .unwrap_or_else(|| panic!("invalid extension contract limit: {name}"));
-    assert!(
-        (1..=16_777_216).contains(&value),
-        "extension contract limit out of range: {name}"
-    );
-    usize::try_from(value).expect("extension contract limit exceeds usize")
-}
-
-fn codes(diagnostics: &Map<String, Value>, name: &str) -> Vec<String> {
-    let values = diagnostics
-        .get(name)
-        .and_then(Value::as_array)
-        .unwrap_or_else(|| panic!("missing extension diagnostic codes: {name}"));
-    assert!(
-        (1..=32).contains(&values.len()),
-        "invalid extension diagnostic code count: {name}"
-    );
-    values
-        .iter()
-        .map(|value| {
-            let code = value
-                .as_str()
-                .unwrap_or_else(|| panic!("invalid extension diagnostic code: {name}"));
-            assert!(
-                valid_code(code),
-                "invalid extension diagnostic code: {code}"
-            );
-            code.to_string()
-        })
-        .collect()
-}
-
-fn validate_unique_codes(host: &[String], runtime: &[String]) {
-    let mut unique = BTreeSet::new();
-    for code in host.iter().chain(runtime) {
-        assert!(
-            unique.insert(code),
-            "duplicate extension diagnostic code: {code}"
-        );
+pub fn load_contract(directory: &Path) -> Result<Value, String> {
+    let bootstrap = io::read_bounded(
+        &directory.join("contract-bootstrap.json"),
+        BOOTSTRAP_FILE_MAX_BYTES,
+        "Beaver extension contract bootstrap exceeds its size limit",
+    )?;
+    let bootstrap: Map<String, Value> = serde_json::from_slice(&bootstrap)
+        .map_err(|_| "invalid Beaver extension contract bootstrap JSON".to_string())?;
+    if bootstrap.len() != 1 {
+        return Err("invalid Beaver extension contract bootstrap".to_string());
     }
+    let max_contract_bytes = bootstrap
+        .get("maxContractBytes")
+        .and_then(Value::as_u64)
+        .and_then(|value| usize::try_from(value).ok())
+        .filter(|value| (1..=MAX_BOOTSTRAPPED_CONTRACT_BYTES).contains(value))
+        .ok_or_else(|| "invalid Beaver extension contract bootstrap".to_string())?;
+    let raw = io::read_bounded(
+        &directory.join("contract.json"),
+        max_contract_bytes,
+        "Beaver extension contract exceeds its size limit",
+    )?;
+    serde_json::from_slice(&raw).map_err(|_| "invalid Beaver extension contract JSON".to_string())
 }
 
-fn valid_code(code: &str) -> bool {
-    !code.is_empty()
-        && code.len() <= 64
-        && code.as_bytes()[0].is_ascii_lowercase()
-        && code
-            .bytes()
-            .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'_')
+pub fn validate_contract(contract: &Value, directory: &Path) -> Result<(), String> {
+    validation::validate(contract, directory)
 }
 
-fn code_constant(code: &str) -> String {
-    format!("DIAGNOSTIC_{}", code.to_ascii_uppercase())
+#[allow(dead_code)]
+pub fn export_artifacts(manifest_root: &Path) -> Result<(), String> {
+    let directory = manifest_root.join("resources/extension-host");
+    let contract = load_contract(&directory)?;
+    validate_contract(&contract, &directory)?;
+    write(
+        &manifest_root.join("../src/types/extension-contract.generated.ts"),
+        &artifacts::render_typescript(&contract)?,
+    )?;
+    write(
+        &directory.join("sdk/contract.d.ts"),
+        &artifacts::render_sdk_contract(&contract)?,
+    )?;
+    update_document(
+        &directory.join("sdk/README.md"),
+        &document::generated_document_section(&contract)?,
+    )?;
+    update_private_document_if_present(
+        &private_api_path(manifest_root)?,
+        &document::generated_document_section(&contract)?,
+    )
 }
 
-fn code_slice(name: &str, codes: &[String]) -> String {
-    let values = codes
-        .iter()
-        .map(|code| code_constant(code))
-        .collect::<Vec<_>>()
-        .join(", ");
-    format!("pub const {name}: &[&str] = &[{values}];\n")
+pub fn update_private_document_if_present(path: &Path, section: &str) -> Result<(), String> {
+    // The private planning documentation is intentionally ignored by Git, so
+    // contract generation must also work in a clean clone where it is absent.
+    if !path.exists() {
+        return Ok(());
+    }
+    update_document(path, section)
+}
+
+fn update_document(path: &Path, section: &str) -> Result<(), String> {
+    let source = io::read_bounded(path, 1_048_576, "generated document exceeds its size limit")?;
+    let source = String::from_utf8(source)
+        .map_err(|_| "generated document is not valid UTF-8".to_string())?;
+    let updated = if let (Some(begin), Some(end)) =
+        (source.find(GENERATED_BEGIN), source.find(GENERATED_END))
+    {
+        let after = end + GENERATED_END.len();
+        format!("{}{}{}", &source[..begin], section, &source[after..])
+    } else {
+        format!("{}\n\n{}\n", source.trim_end(), section)
+    };
+    write(path, &updated)
+}
+
+fn write(path: &Path, content: &str) -> Result<(), String> {
+    std::fs::write(path, content)
+        .map_err(|_| format!("cannot write generated artifact: {}", path.display()))
+}
+
+pub fn private_api_path(manifest_root: &Path) -> Result<PathBuf, String> {
+    let checkout = manifest_root
+        .parent()
+        .ok_or_else(|| "invalid manifest root".to_string())?;
+    let git = checkout.join(".git");
+    let repository = if git.is_dir() {
+        checkout.to_path_buf()
+    } else {
+        let pointer = std::fs::read_to_string(&git)
+            .map_err(|_| "cannot resolve private documentation root".to_string())?;
+        let git_dir = pointer
+            .trim()
+            .strip_prefix("gitdir: ")
+            .ok_or_else(|| "cannot resolve private documentation root".to_string())?;
+        let marker = "/.git/worktrees/";
+        let root = git_dir
+            .find(marker)
+            .map(|index| &git_dir[..index])
+            .ok_or_else(|| "cannot resolve private documentation root".to_string())?;
+        PathBuf::from(root)
+    };
+    Ok(repository.join("docs/fonctionnalites/extension/EXTENSION_API_V1.md"))
 }

@@ -563,6 +563,16 @@
   },
   "permissionDialog": {
     "title": "Autoriser à {{action}} ?",
+    "extensionAction": "{{extension}} effectuer une action",
+    "effects": {
+      "read-only": "Lecture seule",
+      "local-write": "Écriture locale",
+      "external-read": "Lecture externe",
+      "external-write": "Écriture externe",
+      "process": "Exécution d’un processus",
+      "secret": "Données sensibles",
+      "unknown": "Action non classée"
+    },
     "allow": "Autoriser une fois",
     "allowSession": "Toujours autoriser",
     "deny": "Refuser",
@@ -1627,7 +1637,6 @@
     "sections": {
       "plugins": "Plugins",
       "custom": "Extensions",
-      "external": "Applications externes",
       "host": "Hôte"
     },
     "pages": {
@@ -1638,10 +1647,6 @@
       "custom": {
         "description": "Ajoutez du code local ou installez une extension depuis Git ou npm.",
         "empty": "Aucune extension personnalisée."
-      },
-      "external": {
-        "description": "Programmes indépendants reliés au protocole d’extension Beaver.",
-        "empty": "Aucune application externe connectée."
       }
     },
     "discovery": {
@@ -1713,8 +1718,13 @@
     },
     "kinds": {
       "builtin": "Plugin officiel",
-      "local": "Extension locale",
-      "external": "Application externe"
+      "local": "Extension locale"
+    },
+    "enabled": { "yes": "Activée", "no": "Désactivée" },
+    "apiLevels": { "stable": "Stable", "advanced": "Avancé" },
+    "effects": {
+      "read-only": "Lecture seule", "local-write": "Écriture locale", "external-read": "Lecture externe",
+      "external-write": "Écriture externe", "process": "Processus", "secret": "Accès aux secrets", "unknown": "Effet inconnu"
     },
     "origins": {
       "local": "Fichier ou dossier local",
@@ -1726,15 +1736,21 @@
     "showInChatFor": "Afficher {{name}} dans le chat",
     "enableFor": "Activer {{name}}",
     "fullAccessWarning": "Cette extension n’est pas auditée par Beaver et peut accéder aux données, secrets et fonctions de votre compte.",
+    "sensitiveAccessReminder": "Par précaution, changez auprès de leur fournisseur les accès utilisés par cette extension.",
     "updateTrustWarning": "La mise à jour désactivera l’extension. Examinez sa nouvelle version avant de lui refaire confiance.",
     "detail": {
+      "enabled": "Activation",
       "status": "État",
+      "apiLevel": "Niveau d’API",
       "runtime": "Runtime",
       "api": "API Beaver",
       "author": "Auteur",
       "installSource": "Mode d’installation",
       "source": "Source",
       "revision": "Révision Git",
+      "lastActivatedAt": "Dernière activation",
+      "trustedAt": "Approuvée depuis",
+      "lastError": "Dernière erreur",
       "unknown": "Non indiqué",
     "contributions": "Contributions enregistrées",
     "replacesCore": "Remplace un outil intégré"
@@ -1743,6 +1759,16 @@
     "title": "Activer {{name}} ?",
     "description": "Cette extension aura un accès total aux données, secrets et fonctions de votre compte. Beaver ne l’a pas auditée.",
     "confirm": "Faire confiance et activer"
+  },
+  "recovery": {
+    "title": "Chargement d’extension interrompu",
+    "description": "Beaver s’est arrêté pendant le chargement d’une extension. Examinez-la avant de choisir la suite.",
+    "invalid": "Les informations de reprise sont invalides et peuvent être supprimées sans risque.",
+    "openDetail": "Ouvrir la fiche",
+    "keepDisabled": "Garder désactivée",
+    "retry": "Réessayer le chargement",
+    "discard": "Supprimer les informations de reprise",
+    "restore": "Restaurer le registre précédent"
   },
     "add": {
       "title": "Ajouter une extension",
@@ -1779,7 +1805,8 @@
         "error": "Erreur"
       },
       "recoveryTitle": "Mode de récupération",
-      "recoveryDescription": "Désactive les plugins Beaver et les extensions locales afin de retrouver un Beaver fonctionnel."
+      "recoveryDescription": "Désactive les plugins Beaver et les extensions locales afin de retrouver un Beaver fonctionnel.",
+      "quitAndRestartHint": "Quittez complètement Beaver, puis relancez-le avant de réactiver cette extension."
     },
     "errors": {
       "load": "Impossible de charger les extensions.",
@@ -1826,7 +1853,18 @@
         "extensions_storage_failed": "Le stockage local des extensions est indisponible.",
         "extensions_update_identity_changed": "La mise à jour a changé l’identité de l’extension et a été refusée.",
         "extensions_update_unavailable": "Cette extension ne peut pas être mise à jour par Beaver.",
-        "extensions_cleanup_failed": "Des anciens fichiers d’extension n’ont pas pu être nettoyés."
+        "extensions_cleanup_failed": "Des anciens fichiers d’extension n’ont pas pu être nettoyés.",
+        "extensions_operation_failed": "L’opération sur l’extension n’a pas pu être terminée.",
+        "extensions_fingerprint_changed": "Les fichiers de l’extension ont changé et doivent être vérifiés à nouveau.",
+        "extensions_fingerprint_failed": "Les fichiers de l’extension n’ont pas pu être vérifiés.",
+        "extensions_stop_unconfirmed": "L’hôte d’extensions n’a pas confirmé son arrêt.",
+        "extensions_registry_entry_ignored": "Une entrée d’extension invalide a été ignorée.",
+        "extensions_registry_migration_failed": "Le registre des extensions n’a pas pu être mis à jour.",
+        "extensions_recovery_marker_invalid": "Les informations de récupération de l’extension sont invalides.",
+        "extensions_load_interrupted": "Le chargement de l’extension a été interrompu.",
+        "extensions_activation_confirmation_required": "Cette extension doit être approuvée à nouveau avant son activation.",
+        "extensions_not_found": "L’extension est introuvable.",
+        "extensions_host_incompatible": "L’hôte d’extensions n’est pas compatible avec cette version de Beaver."
       }
     },
     "diagnostics": {

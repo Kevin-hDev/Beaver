@@ -1,58 +1,128 @@
-use super::core_bridge::CoreResponse;
 use super::host_channel::{self, PendingRequests, SharedWriter};
-use super::protocol::{RpcError, RpcErrorBody, RpcResult};
-use super::types::MAX_MESSAGE_BYTES;
+use super::host_load_tracker::HostLoadTracker;
 use crate::services::work_registry::ServiceWorkCancellation;
 use serde_json::Value;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio::io::BufReader;
 use tokio::process::ChildStdout;
+
+pub(super) struct HostReaderChannel {
+    pub(super) writer: SharedWriter,
+    pub(super) pending: PendingRequests,
+    pub(super) alive: Arc<AtomicBool>,
+    pub(super) revoked: tokio_util::sync::CancellationToken,
+    pub(super) reader_cancel: tokio_util::sync::CancellationToken,
+    pub(super) load_tracker: Arc<HostLoadTracker>,
+}
+
+#[derive(Clone)]
+pub(super) struct HostAuthority {
+    pub(super) identity: super::host_identity::HostIdentity,
+    pub(super) generation: Arc<super::runtime_hosts::HostGeneration>,
+    pub(super) exit_sender: tokio::sync::mpsc::Sender<super::runtime_hosts::HostExitNotice>,
+}
+
+struct HostReaderContext<'a> {
+    writer: &'a SharedWriter,
+    pending: &'a PendingRequests,
+    load_tracker: &'a HostLoadTracker,
+    alive: &'a AtomicBool,
+    revoked: &'a tokio_util::sync::CancellationToken,
+    reader_cancel: &'a tokio_util::sync::CancellationToken,
+    #[cfg(test)]
+    call_context: Option<super::call_context::ExtensionCallContext>,
+}
 
 pub async fn run(
     stdout: ChildStdout,
-    writer: SharedWriter,
-    pending: PendingRequests,
-    alive: Arc<AtomicBool>,
+    channel: HostReaderChannel,
     work: super::work_supervision::ExtensionWorkServices,
     cancellation: ServiceWorkCancellation,
+    authority: HostAuthority,
 ) {
     let mut reader = BufReader::new(stdout);
     loop {
         let bytes = tokio::select! {
+            biased;
+            _ = channel.revoked.cancelled() => break,
+            _ = channel.reader_cancel.cancelled() => break,
             _ = cancellation.cancelled() => break,
-            line = read_bounded_line(&mut reader) => match line {
+            line = super::host_reader_line::read_bounded_line(&mut reader) => match line {
                 Ok(line) => line,
                 Err(_) => break,
             },
         };
-        if receive(&bytes, &writer, &pending, &work).await.is_err() {
+        let context = HostReaderContext {
+            writer: &channel.writer,
+            pending: &channel.pending,
+            load_tracker: &channel.load_tracker,
+            alive: &channel.alive,
+            revoked: &channel.revoked,
+            reader_cancel: &channel.reader_cancel,
+            #[cfg(test)]
+            call_context: None,
+        };
+        if receive_bound(&bytes, &context, &work, &authority)
+            .await
+            .is_err()
+        {
             break;
         }
     }
-    alive.store(false, Ordering::Release);
-    host_channel::fail_all(&pending).await;
+    let exit_notice = super::runtime_hosts::HostExitNotice::capture(
+        authority.identity.clone(),
+        &authority.generation,
+    );
+    channel.alive.store(false, Ordering::Release);
+    channel.reader_cancel.cancel();
+    channel.load_tracker.clear().await;
+    host_channel::fail_all(&channel.pending);
+    let _ = authority.exit_sender.send(exit_notice).await;
 }
 
-async fn receive(
+async fn receive_bound(
     bytes: &[u8],
-    writer: &SharedWriter,
-    pending: &PendingRequests,
+    context: &HostReaderContext<'_>,
     work: &super::work_supervision::ExtensionWorkServices,
+    authority: &HostAuthority,
 ) -> Result<(), String> {
+    if !context.alive.load(Ordering::Acquire)
+        || context.revoked.is_cancelled()
+        || context.reader_cancel.is_cancelled()
+    {
+        return Err(super::error_codes::HOST_UNAVAILABLE.to_string());
+    }
     let message: Value = serde_json::from_slice(bytes)
         .map_err(|_| "Réponse de l'hôte d'extensions invalide.".to_string())?;
     super::validation::message(&message)?;
     let object = super::protocol::envelope(&message)?;
+    if let Some(method) = object.get("method").and_then(Value::as_str) {
+        if object.get("id").is_none() {
+            return receive_notification(method, object.get("params"), context.load_tracker).await;
+        }
+        let id = object
+            .get("id")
+            .and_then(Value::as_str)
+            .ok_or_else(|| "Réponse de l'hôte d'extensions invalide.".to_string())?;
+        let params = object.get("params").cloned();
+        let call_context = context_for_call(context, authority).await?;
+        return super::host_core_call::spawn(
+            id.to_string(),
+            method.to_string(),
+            params,
+            context.writer,
+            work,
+            call_context,
+            context.reader_cancel,
+        )
+        .await;
+    }
     let id = object
         .get("id")
         .and_then(Value::as_str)
         .ok_or_else(|| "Réponse de l'hôte d'extensions invalide.".to_string())?;
-    if let Some(method) = object.get("method").and_then(Value::as_str) {
-        let params = object.get("params").cloned();
-        return spawn_core_call(id.to_string(), method.to_string(), params, writer, work).await;
-    }
-    let Some(sender) = pending.lock().await.remove(id) else {
+    let Some(sender) = host_channel::remove(context.pending, id) else {
         return Ok(());
     };
     let result = if object.contains_key("error") {
@@ -67,102 +137,68 @@ async fn receive(
     Ok(())
 }
 
-async fn spawn_core_call(
-    id: String,
-    method: String,
-    params: Option<Value>,
+#[cfg(test)]
+async fn receive(
+    bytes: &[u8],
     writer: &SharedWriter,
+    pending: &PendingRequests,
+    load_tracker: &HostLoadTracker,
     work: &super::work_supervision::ExtensionWorkServices,
 ) -> Result<(), String> {
-    let output = writer.clone();
-    let task_id = id.clone();
-    let spawn = work.spawn_core_call(move |cancel| async move {
-        let response = tokio::select! {
-            _ = cancel.cancelled() => return,
-            response = super::core_bridge::call(&method, params.as_ref()) => response,
-        };
-        match response {
-            Ok(CoreResponse::Json(result)) => {
-                let _ = host_channel::write(
-                    &output,
-                    &RpcResult {
-                        jsonrpc: "2.0",
-                        id: &task_id,
-                        result,
-                    },
-                )
-                .await;
-            }
-            Ok(CoreResponse::Secret(secret)) => {
-                let _ = host_channel::write(
-                    &output,
-                    &RpcResult {
-                        jsonrpc: "2.0",
-                        id: &task_id,
-                        result: secret.as_str(),
-                    },
-                )
-                .await;
-            }
-            Err(()) => {
-                let _ = host_channel::write(
-                    &output,
-                    &RpcError {
-                        jsonrpc: "2.0",
-                        id: &task_id,
-                        error: RpcErrorBody {
-                            code: -32601,
-                            message: "core_method_unavailable",
-                        },
-                    },
-                )
-                .await;
-            }
-        }
-    });
-    if spawn.is_err() {
-        return host_channel::write(
-            writer,
-            &RpcError {
-                jsonrpc: "2.0",
-                id: &id,
-                error: RpcErrorBody {
-                    code: -32000,
-                    message: "core_busy",
-                },
-            },
-        )
-        .await;
+    let alive = AtomicBool::new(true);
+    let revoked = tokio_util::sync::CancellationToken::new();
+    let reader_cancel = tokio_util::sync::CancellationToken::new();
+    let context = HostReaderContext {
+        writer,
+        pending,
+        load_tracker,
+        alive: &alive,
+        revoked: &revoked,
+        reader_cancel: &reader_cancel,
+        call_context: Some(super::call_context::ExtensionCallContext::for_test(
+            super::host_identity::HostIdentity::Official,
+            super::types::ExtensionApiLevel::Stable,
+        )),
+    };
+    let authority = HostAuthority {
+        identity: super::host_identity::HostIdentity::Official,
+        generation: Arc::new(super::runtime_hosts::HostGeneration::new(1)),
+        exit_sender: tokio::sync::mpsc::channel(1).0,
+    };
+    receive_bound(bytes, &context, work, &authority).await
+}
+
+async fn context_for_call(
+    _context: &HostReaderContext<'_>,
+    authority: &HostAuthority,
+) -> Result<super::call_context::ExtensionCallContext, String> {
+    #[cfg(test)]
+    if let Some(call_context) = &_context.call_context {
+        return Ok(call_context.clone());
     }
-    Ok(())
+    super::runtime::call_context(&authority.identity, authority.generation.number).await
+}
+
+async fn receive_notification(
+    method: &str,
+    params: Option<&Value>,
+    load_tracker: &HostLoadTracker,
+) -> Result<(), String> {
+    if method != super::types::HOST_LOAD_STAGE_METHOD {
+        return Err("Réponse de l'hôte d'extensions invalide.".to_string());
+    }
+    let params = params
+        .and_then(Value::as_object)
+        .filter(|params| params.len() == 1)
+        .ok_or_else(|| "Réponse de l'hôte d'extensions invalide.".to_string())?;
+    let stage = params
+        .get("stage")
+        .and_then(Value::as_str)
+        .ok_or_else(|| "Réponse de l'hôte d'extensions invalide.".to_string())?;
+    let extension_id = load_tracker.advance(stage).await?;
+    super::loading_marker::advance(&extension_id, stage)
 }
 
 #[cfg(test)]
 #[path = "host_reader_tests.rs"]
 mod tests;
-
-async fn read_bounded_line(reader: &mut BufReader<ChildStdout>) -> Result<Vec<u8>, String> {
-    let mut line = Vec::new();
-    loop {
-        let available = reader
-            .fill_buf()
-            .await
-            .map_err(|_| "Hôte d'extensions indisponible.".to_string())?;
-        if available.is_empty() {
-            return Err("L'hôte d'extensions s'est arrêté.".to_string());
-        }
-        let take = available
-            .iter()
-            .position(|byte| *byte == b'\n')
-            .map_or(available.len(), |index| index + 1);
-        if line.len().saturating_add(take) > MAX_MESSAGE_BYTES {
-            return Err("Réponse de l'hôte d'extensions trop volumineuse.".to_string());
-        }
-        line.extend_from_slice(&available[..take]);
-        reader.consume(take);
-        if line.last() == Some(&b'\n') {
-            line.pop();
-            return Ok(line);
-        }
-    }
-}

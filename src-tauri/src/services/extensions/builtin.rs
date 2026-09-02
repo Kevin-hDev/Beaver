@@ -36,10 +36,13 @@ pub fn records() -> Result<Vec<ExtensionRecord>, String> {
             origin: None,
             enabled: definition.enabled,
             trusted: true,
+            fingerprint: None,
+            trusted_at: None,
             show_in_chat: definition.show_in_chat,
             status: ExtensionStatus::Inactive,
             last_error: None,
             last_activated_at: None,
+            sensitive_access_granted: false,
             contributions: ExtensionContributions::default(),
         })
         .collect::<Vec<_>>();

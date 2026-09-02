@@ -71,11 +71,7 @@ impl AgentEventEmitter {
     pub fn start_mascot_session(&self) -> Option<crate::services::mascot::MascotSession> {
         let app = self.app()?;
         self.generation.map(|generation| {
-            crate::services::mascot::MascotSession::start(
-                app,
-                self.session_id.clone(),
-                generation,
-            )
+            crate::services::mascot::MascotSession::start(app, self.session_id.clone(), generation)
         })
     }
 
@@ -117,7 +113,7 @@ impl AgentEventEmitter {
 }
 
 fn is_permission_request(event: &StreamEvent) -> bool {
-    matches!(event, StreamEvent::PermissionRequest { .. })
+    matches!(event, StreamEvent::PermissionRequest(..))
 }
 
 #[cfg(test)]
@@ -126,11 +122,13 @@ mod tests {
 
     #[test]
     fn only_permission_requests_use_the_parent_route() {
-        assert!(is_permission_request(&StreamEvent::PermissionRequest {
-            id: "request".into(),
-            tool_name: "bash".into(),
-            arguments: serde_json::json!({}),
-        }));
+        assert!(is_permission_request(&StreamEvent::PermissionRequest(
+            super::super::permission_request::native(
+                "request".into(),
+                "bash",
+                &serde_json::json!({}),
+            ),
+        )));
         assert!(!is_permission_request(&StreamEvent::Notice {
             message_key: "child-content".into(),
         }));

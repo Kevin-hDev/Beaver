@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
-import { createHost } from "./host-test-client.mjs";
+import { createHost, resetAndLoad } from "./host-test-client.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const hostScript = join(root, "src-tauri/target/extension-host/host.mjs");
@@ -69,13 +69,11 @@ test("extensions receive bounded structured core errors with retry guidance", as
   });
 
   try {
-    await host.request("host.sync", {
-      extensions: [{
+    await resetAndLoad(host, [{
         id: "com.beaver.errors",
         mainPath: source,
         manifest: { apiLevel: "stable" },
-      }],
-    });
+      }]);
     const result = await host.request("tool.call", {
       name: "com.beaver.errors.errors",
       arguments: {},
@@ -99,6 +97,65 @@ test("extensions receive bounded structured core errors with retry guidance", as
         retryable: false,
       },
     ]);
+  } finally {
+    host.stop();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("enforces the generated method level for stable and advanced calls", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "beaver-extension-levels-"));
+  const source = join(directory, "index.ts");
+  await writeFile(
+    source,
+    `export default function (api: any) {
+      api.registerTool({
+        name: "levels",
+        description: "Check generated method levels",
+        parameters: { type: "object" },
+        async execute() {
+          const stable = await api.call("app.info");
+          let advancedRejected = false;
+          try { await api.unstable.call("app.info"); }
+          catch (error) { advancedRejected = error.message === "core_method_unavailable"; }
+          let notificationRejected = false;
+          try { await api.call("host.load.stage", { stage: "import" }); }
+          catch (error) { notificationRejected = error.message === "core_method_unavailable"; }
+          return JSON.stringify({ stable, advancedRejected, notificationRejected });
+        }
+      });
+    }`,
+    { mode: 0o600 },
+  );
+  let forwardedInternalNotification = 0;
+  const host = createHost(hostScript, {
+    respondToCore(message) {
+      if (message.method === "host.load.stage") {
+        forwardedInternalNotification += 1;
+        return { result: "unexpected" };
+      }
+      return message.method === "app.info"
+        ? { result: { apiVersion: "1" } }
+        : { error: { code: -32_601, message: "core_method_unavailable" } };
+    },
+  });
+  try {
+    await resetAndLoad(host, [{
+      id: "com.beaver.levels",
+      mainPath: source,
+      manifest: { apiLevel: "advanced" },
+    }]);
+    const result = await host.request("tool.call", {
+      name: "com.beaver.levels.levels",
+      arguments: {},
+      context: { workingDirectory: directory },
+    });
+    assert.deepEqual(JSON.parse(result.content), {
+      stable: { apiVersion: "1" },
+      advancedRejected: true,
+      notificationRejected: true,
+    });
+    assert.equal(forwardedInternalNotification, 0);
   } finally {
     host.stop();
     await rm(directory, { recursive: true, force: true });

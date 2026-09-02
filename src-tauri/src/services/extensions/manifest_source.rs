@@ -1,6 +1,9 @@
 use super::types::{ExtensionApiLevel, ExtensionManifest, BEAVER_API_VERSION};
 use std::path::{Path, PathBuf};
 
+pub(super) const MANIFEST_FILES: &[&str] =
+    &["beaver-extension.json", "beaver.json", "package.json"];
+
 const SOURCE_EXTENSIONS: &[&str] = &[
     "js", "mjs", "cjs", "jsx", "ts", "mts", "cts", "tsx", "mtsx", "ctsx",
 ];
@@ -57,4 +60,11 @@ pub fn is_source_file(path: &Path) -> bool {
     path.extension()
         .and_then(|value| value.to_str())
         .is_some_and(|value| SOURCE_EXTENSIONS.contains(&value.to_ascii_lowercase().as_str()))
+}
+
+pub fn manifest_path(root: &Path) -> Option<PathBuf> {
+    MANIFEST_FILES
+        .iter()
+        .map(|name| root.join(name))
+        .find(|path| path.is_file())
 }

@@ -563,6 +563,16 @@
   },
   "permissionDialog": {
     "title": "Allow {{action}}?",
+    "extensionAction": "{{extension}} to perform an action",
+    "effects": {
+      "read-only": "Read only",
+      "local-write": "Local write",
+      "external-read": "External read",
+      "external-write": "External write",
+      "process": "Process execution",
+      "secret": "Sensitive data",
+      "unknown": "Unclassified action"
+    },
     "allow": "Allow once",
     "allowSession": "Always allow",
     "deny": "Deny",
@@ -1575,7 +1585,6 @@
     "sections": {
       "plugins": "Plugins",
       "custom": "Extensions",
-      "external": "External Applications",
       "host": "Host"
     },
     "pages": {
@@ -1586,10 +1595,6 @@
       "custom": {
         "description": "Add local code or install an extension from Git or npm.",
         "empty": "No custom extensions."
-      },
-      "external": {
-        "description": "Independent programs connected through the Beaver extension protocol.",
-        "empty": "No external applications connected."
       }
     },
     "discovery": {
@@ -1661,8 +1666,13 @@
     },
     "kinds": {
       "builtin": "Official plugin",
-      "local": "Local extension",
-      "external": "External application"
+      "local": "Local extension"
+    },
+    "enabled": { "yes": "Enabled", "no": "Disabled" },
+    "apiLevels": { "stable": "Stable", "advanced": "Advanced" },
+    "effects": {
+      "read-only": "Read only", "local-write": "Local write", "external-read": "External read",
+      "external-write": "External write", "process": "Process", "secret": "Secret access", "unknown": "Unknown effect"
     },
     "origins": {
       "local": "Local file or folder",
@@ -1674,15 +1684,21 @@
     "showInChatFor": "Show {{name}} in chat",
     "enableFor": "Enable {{name}}",
     "fullAccessWarning": "This extension is not audited by Beaver and can access your account’s data, secrets, and features.",
+    "sensitiveAccessReminder": "As a precaution, change the access credentials used by this extension directly with their provider.",
     "updateTrustWarning": "Updating will disable the extension. Review the new version before trusting it again.",
     "detail": {
+      "enabled": "Activation",
       "status": "Status",
+      "apiLevel": "API level",
       "runtime": "Runtime",
       "api": "Beaver API",
       "author": "Author",
       "installSource": "Installation source",
       "source": "Source",
       "revision": "Git revision",
+      "lastActivatedAt": "Last activated",
+      "trustedAt": "Trusted since",
+      "lastError": "Last error",
       "unknown": "Not provided",
     "contributions": "Registered contributions",
     "replacesCore": "Replaces a built-in tool"
@@ -1691,6 +1707,16 @@
     "title": "Enable {{name}}?",
     "description": "This extension will have full access to your account data, secrets, and features. Beaver has not audited it.",
     "confirm": "Trust and enable"
+  },
+  "recovery": {
+    "title": "Interrupted extension loading",
+    "description": "Beaver stopped while loading an extension. Review it before choosing what to do.",
+    "invalid": "The recovery information is invalid and can be safely discarded.",
+    "openDetail": "Open detail",
+    "keepDisabled": "Keep disabled",
+    "retry": "Retry loading",
+    "discard": "Discard recovery information",
+    "restore": "Restore previous registry"
   },
     "add": {
       "title": "Add an extension",
@@ -1727,7 +1753,8 @@
         "error": "Error"
       },
       "recoveryTitle": "Recovery mode",
-      "recoveryDescription": "Disables Beaver plugins and local extensions so Beaver can return to a working state."
+      "recoveryDescription": "Disables Beaver plugins and local extensions so Beaver can return to a working state.",
+      "quitAndRestartHint": "Quit Beaver completely, then relaunch it before re-enabling this extension."
     },
     "errors": {
       "load": "Unable to load extensions.",
@@ -1774,7 +1801,18 @@
         "extensions_storage_failed": "Local extension storage is unavailable.",
         "extensions_update_identity_changed": "The update changed the extension identity and was rejected.",
         "extensions_update_unavailable": "Beaver cannot update this extension.",
-        "extensions_cleanup_failed": "Some old extension files could not be cleaned up."
+        "extensions_cleanup_failed": "Some old extension files could not be cleaned up.",
+        "extensions_operation_failed": "The extension operation could not be completed.",
+        "extensions_fingerprint_changed": "The extension files changed and must be reviewed again.",
+        "extensions_fingerprint_failed": "The extension files could not be verified.",
+        "extensions_stop_unconfirmed": "The extension host did not confirm that it stopped.",
+        "extensions_registry_entry_ignored": "An invalid extension entry was ignored.",
+        "extensions_registry_migration_failed": "The extension registry could not be updated.",
+        "extensions_recovery_marker_invalid": "The extension recovery information is invalid.",
+        "extensions_load_interrupted": "Extension loading was interrupted.",
+        "extensions_activation_confirmation_required": "This extension must be approved again before activation.",
+        "extensions_not_found": "The extension could not be found.",
+        "extensions_host_incompatible": "The extension host is not compatible with this version of Beaver."
       }
     },
     "diagnostics": {

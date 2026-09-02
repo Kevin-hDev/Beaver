@@ -1,0 +1,766 @@
+use super::host_identity::HostIdentity;
+use super::host_paths::HostPaths;
+use super::host_process::HostProcess;
+use super::runtime_hosts::RuntimeHosts;
+use super::types::{
+    ExtensionApiLevel, ExtensionContributions, ExtensionKind, ExtensionManifest, ExtensionRecord,
+    ExtensionStatus,
+};
+use serde_json::json;
+use std::sync::Arc;
+use std::time::Duration;
+
+#[test]
+fn host_generation_classifies_exit_before_and_after_requested_stop() {
+    let running = super::runtime_hosts::HostGeneration::new(7);
+    assert_eq!(
+        running.exit_kind(),
+        super::runtime_host_generation::HostExitKind::Unexpected
+    );
+
+    running.begin_stop(false);
+    assert_eq!(
+        running.exit_kind(),
+        super::runtime_host_generation::HostExitKind::Requested
+    );
+    assert!(running.is_stopping());
+    assert!(!running.is_restarting());
+
+    let restarting = super::runtime_hosts::HostGeneration::new(8);
+    restarting.begin_stop(true);
+    assert!(restarting.is_restarting());
+}
+
+#[test]
+fn exit_notice_keeps_the_classification_observed_when_the_reader_finished() {
+    let generation = Arc::new(super::runtime_hosts::HostGeneration::new(9));
+    let notice = super::runtime_hosts::HostExitNotice::capture(
+        HostIdentity::ThirdParty("finished-before-stop".to_string()),
+        &generation,
+    );
+
+    generation.begin_stop(true);
+
+    assert_eq!(
+        notice.kind,
+        super::runtime_host_generation::HostExitKind::Unexpected
+    );
+}
+
+#[test]
+fn one_hosts_restart_budget_never_consumes_anothers_budget() {
+    let workspace = tempfile::tempdir().unwrap();
+    let mut hosts = RuntimeHosts::new(workspace.path().join("channels")).unwrap();
+    let first = HostIdentity::ThirdParty("first-budget".to_string());
+    let second = HostIdentity::ThirdParty("second-budget".to_string());
+
+    assert!(hosts.allow_restart(&first));
+    assert!(hosts.allow_restart(&first));
+    assert!(hosts.allow_restart(&first));
+    assert!(!hosts.allow_restart(&first));
+    assert!(hosts.allow_restart(&second));
+}
+
+#[test]
+fn removed_hosts_release_restart_budget_capacity_for_new_identities() {
+    let workspace = tempfile::tempdir().unwrap();
+    let mut hosts = RuntimeHosts::new(workspace.path().join("channels")).unwrap();
+
+    for index in 0..(super::types::MAX_HOST_PROCESSES * 2) {
+        let identity = HostIdentity::ThirdParty(format!("rotating-{index}"));
+        assert!(hosts.allow_restart(&identity));
+        hosts.forget_restart_budget(&identity);
+    }
+}
+
+fn record(id: &str, kind: ExtensionKind) -> ExtensionRecord {
+    ExtensionRecord {
+        manifest: ExtensionManifest {
+            id: id.to_string(),
+            name: id.to_string(),
+            version: "1.0.0".to_string(),
+            beaver_api: "1".to_string(),
+            runtime: "node".to_string(),
+            main: Some("index.mjs".to_string()),
+            ui: None,
+            access: "full".to_string(),
+            api_level: ExtensionApiLevel::Stable,
+            essential: false,
+            author: None,
+            homepage: None,
+            description: None,
+        },
+        kind,
+        source: "test".to_string(),
+        origin: None,
+        enabled: true,
+        trusted: true,
+        fingerprint: None,
+        trusted_at: None,
+        show_in_chat: true,
+        status: ExtensionStatus::Inactive,
+        last_error: None,
+        last_activated_at: None,
+        sensitive_access_granted: false,
+        contributions: ExtensionContributions::default(),
+    }
+}
+
+#[test]
+fn rust_registry_assigns_one_official_identity_and_distinct_third_party_identities() {
+    let first_builtin =
+        HostIdentity::from_record(&record("com.beaver.office.word", ExtensionKind::Builtin))
+            .unwrap();
+    let second_builtin =
+        HostIdentity::from_record(&record("com.beaver.office.excel", ExtensionKind::Builtin))
+            .unwrap();
+    let first_local =
+        HostIdentity::from_record(&record("com.example.first", ExtensionKind::Local)).unwrap();
+    let second_local =
+        HostIdentity::from_record(&record("com.example.second", ExtensionKind::Local)).unwrap();
+
+    assert_eq!(first_builtin, HostIdentity::Official);
+    assert_eq!(second_builtin, HostIdentity::Official);
+    assert_eq!(
+        first_local,
+        HostIdentity::ThirdParty("com.example.first".to_string())
+    );
+    assert_ne!(first_local, second_local);
+}
+
+#[test]
+fn official_host_reserves_capacity_and_the_thirty_second_third_party_is_refused() {
+    let mut records = vec![record("com.beaver.official", ExtensionKind::Builtin)];
+    records.extend(
+        (0..32).map(|index| record(&format!("com.example.local{index}"), ExtensionKind::Local)),
+    );
+
+    let plan = super::runtime_plan::records(records);
+
+    assert_eq!(plan.official.len(), 1);
+    assert_eq!(plan.third_party.len(), 31);
+    assert_eq!(
+        plan.failures.get("com.example.local31").map(String::as_str),
+        Some(super::error_codes::LIMIT_REACHED)
+    );
+}
+
+#[test]
+fn rejected_handshake_reservation_is_revoked_before_process_cleanup() {
+    let workspace = tempfile::tempdir().unwrap();
+    let mut hosts = RuntimeHosts::new(workspace.path().join("channels")).unwrap();
+    let reservation = hosts
+        .reserve(HostIdentity::ThirdParty("rejected-handshake".to_string()))
+        .unwrap();
+    let revoked = reservation.revoked();
+
+    hosts.revoke_reservation(&reservation);
+
+    assert!(revoked.is_cancelled());
+}
+
+#[test]
+fn the_thirty_second_third_party_is_refused_even_without_an_active_builtin() {
+    let records = (0..32)
+        .map(|index| {
+            record(
+                &format!("com.example.only-local{index}"),
+                ExtensionKind::Local,
+            )
+        })
+        .collect();
+
+    let plan = super::runtime_plan::records(records);
+
+    assert!(plan.official.is_empty());
+    assert_eq!(plan.third_party.len(), 31);
+    assert_eq!(
+        plan.failures
+            .get("com.example.only-local31")
+            .map(String::as_str),
+        Some(super::error_codes::LIMIT_REACHED)
+    );
+}
+
+fn extension_work() -> super::work_supervision::ExtensionWorkServices {
+    let coordinator = crate::app_exit::AppExitCoordinator::initialize().unwrap();
+    super::work_supervision::ExtensionWorkServices::new(coordinator.work_supervisor())
+}
+
+async fn bind_fixture(
+    hosts: &mut RuntimeHosts,
+    root: &std::path::Path,
+    id: &str,
+    behavior: &str,
+    work: &super::work_supervision::ExtensionWorkServices,
+) -> Arc<HostProcess> {
+    bind_fixture_identity(
+        hosts,
+        root,
+        id,
+        behavior,
+        HostIdentity::ThirdParty(id.to_string()),
+        work,
+    )
+    .await
+}
+
+async fn bind_fixture_identity(
+    hosts: &mut RuntimeHosts,
+    root: &std::path::Path,
+    id: &str,
+    behavior: &str,
+    identity: HostIdentity,
+    work: &super::work_supervision::ExtensionWorkServices,
+) -> Arc<HostProcess> {
+    let directory = root.join(id);
+    std::fs::create_dir(&directory).unwrap();
+    let script = directory.join("host.mjs");
+    std::fs::write(
+        &script,
+        format!(
+            r#"import readline from "node:readline";
+const lines = readline.createInterface({{ input: process.stdin }});
+lines.on("line", (line) => {{
+  const message = JSON.parse(line);
+  if ("{behavior}" === "crash") process.exit(23);
+  if ("{behavior}" === "block") while (true) {{}}
+  process.stdout.write(JSON.stringify({{jsonrpc:"2.0", id:message.id, result:{{id:"{id}"}}}}) + "\n");
+}});"#
+        ),
+    )
+    .unwrap();
+    let reservation = hosts.reserve(identity.clone()).unwrap();
+    let process = Arc::new(
+        HostProcess::spawn_bound(
+            &HostPaths {
+                node: which::which("node").unwrap().canonicalize().unwrap(),
+                script,
+                directory,
+            },
+            work,
+            reservation.spawn_binding(),
+            super::runtime_lifecycle::new_stop_deadline(),
+            reservation.temporary_directory(),
+        )
+        .await
+        .unwrap(),
+    );
+    hosts
+        .bind(reservation, ExtensionApiLevel::Stable, Arc::clone(&process))
+        .unwrap();
+    process
+}
+
+#[tokio::test]
+async fn unconfirmed_stop_keeps_the_current_channel_bound() {
+    let workspace = tempfile::tempdir().unwrap();
+    let mut hosts = RuntimeHosts::new(workspace.path().join("channels")).unwrap();
+    let work = extension_work();
+    let identity = HostIdentity::ThirdParty("current".to_string());
+    let process = bind_fixture_identity(
+        &mut hosts,
+        workspace.path(),
+        "current",
+        "reply",
+        identity.clone(),
+        &work,
+    )
+    .await;
+    let (_, generation, _) = hosts.snapshot(&identity).unwrap();
+
+    assert!(!hosts.remove_stopped(&identity, generation, false));
+    assert!(hosts.snapshot(&identity).is_some());
+
+    assert!(
+        process
+            .kill(super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
+}
+
+#[tokio::test]
+async fn third_party_load_requires_the_bound_rust_identity_and_process() {
+    let workspace = tempfile::tempdir().unwrap();
+    let mut hosts = RuntimeHosts::new(workspace.path().join("channels")).unwrap();
+    let work = extension_work();
+    let process = bind_fixture(
+        &mut hosts,
+        workspace.path(),
+        "com.example.bound",
+        "reply",
+        &work,
+    )
+    .await;
+    let other_process = bind_fixture(
+        &mut hosts,
+        workspace.path(),
+        "com.example.other-process",
+        "reply",
+        &work,
+    )
+    .await;
+
+    assert!(hosts
+        .authorize_load(
+            &HostIdentity::ThirdParty("com.example.bound".to_string()),
+            &process,
+            "com.example.bound",
+        )
+        .is_ok());
+    assert!(hosts
+        .authorize_load(
+            &HostIdentity::ThirdParty("com.example.bound".to_string()),
+            &process,
+            "com.example.spoofed",
+        )
+        .is_err());
+    assert!(hosts
+        .authorize_load(
+            &HostIdentity::ThirdParty("com.example.bound".to_string()),
+            &other_process,
+            "com.example.bound",
+        )
+        .is_err());
+
+    assert!(
+        process
+            .kill(super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
+    assert!(
+        other_process
+            .kill(super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
+}
+
+#[tokio::test]
+async fn a_restarting_generation_refuses_work_and_replacement_until_removed() {
+    let workspace = tempfile::tempdir().unwrap();
+    let mut hosts = RuntimeHosts::new(workspace.path().join("channels")).unwrap();
+    let work = extension_work();
+    let identity = HostIdentity::ThirdParty("restarting".to_string());
+    let process = bind_fixture_identity(
+        &mut hosts,
+        workspace.path(),
+        "restarting",
+        "reply",
+        identity.clone(),
+        &work,
+    )
+    .await;
+    let (_, generation, _) = hosts.snapshot(&identity).unwrap();
+
+    assert!(hosts.begin_stop(&identity, generation, true));
+    assert!(hosts.usable_snapshot(&identity).is_none());
+    assert!(hosts.usable_snapshots().is_empty());
+    assert!(!hosts.allow_restart(&identity));
+    assert_eq!(
+        hosts.reserve(identity.clone()).err(),
+        Some(super::error_codes::LIMIT_REACHED.to_string())
+    );
+
+    assert!(
+        process
+            .kill(super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
+    assert!(hosts.remove_current(&identity, generation));
+}
+
+#[tokio::test]
+async fn a_restart_marker_cannot_be_downgraded_by_a_concurrent_stop() {
+    let workspace = tempfile::tempdir().unwrap();
+    let mut hosts = RuntimeHosts::new(workspace.path().join("channels")).unwrap();
+    let work = extension_work();
+    let identity = HostIdentity::ThirdParty("restart-kind".to_string());
+    let process = bind_fixture(&mut hosts, workspace.path(), "restart-kind", "reply", &work).await;
+    let (_, generation, _) = hosts.snapshot(&identity).unwrap();
+
+    assert!(hosts.begin_stop(&identity, generation, true));
+    assert!(hosts.begin_stop(&identity, generation, false));
+    assert!(hosts.channel(&identity).unwrap().generation.is_restarting());
+
+    assert!(
+        process
+            .kill(super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
+}
+
+#[tokio::test]
+async fn a_completed_stop_stays_confirmed_when_another_owner_removed_the_generation() {
+    let workspace = tempfile::tempdir().unwrap();
+    let mut hosts = RuntimeHosts::new(workspace.path().join("channels")).unwrap();
+    let work = extension_work();
+    let identity = HostIdentity::ThirdParty("stop-race".to_string());
+    let process = bind_fixture(&mut hosts, workspace.path(), "stop-race", "reply", &work).await;
+    let (_, generation, _) = hosts.snapshot(&identity).unwrap();
+
+    assert!(!hosts.stop_is_confirmed(&identity, generation));
+    assert!(hosts.remove_current(&identity, generation));
+    assert!(hosts.stop_is_confirmed(&identity, generation));
+
+    assert!(
+        process
+            .kill(super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
+}
+
+#[tokio::test]
+async fn an_unconfirmed_pre_bind_process_keeps_its_channel_directory_owned() {
+    let workspace = tempfile::tempdir().unwrap();
+    let mut hosts = RuntimeHosts::new(workspace.path().join("channels")).unwrap();
+    let work = extension_work();
+    let identity = HostIdentity::ThirdParty("failed-pre-bind".to_string());
+    let directory = workspace.path().join("failed-pre-bind");
+    std::fs::create_dir(&directory).unwrap();
+    let script = directory.join("host.mjs");
+    std::fs::write(&script, "setInterval(() => {}, 1000);").unwrap();
+    let reservation = hosts.reserve(identity.clone()).unwrap();
+    let temporary_directory = reservation.temporary_directory().to_path_buf();
+    let process = Arc::new(
+        HostProcess::spawn_bound(
+            &HostPaths {
+                node: which::which("node").unwrap().canonicalize().unwrap(),
+                script,
+                directory,
+            },
+            &work,
+            reservation.spawn_binding(),
+            super::runtime_lifecycle::new_stop_deadline(),
+            reservation.temporary_directory(),
+        )
+        .await
+        .unwrap(),
+    );
+
+    let _retained_exit =
+        hosts.retain_failed(reservation, ExtensionApiLevel::Stable, Arc::clone(&process));
+    let generation = hosts.snapshots()[0].1;
+    assert!(temporary_directory.exists());
+    assert!(hosts.usable_snapshot(&identity).is_none());
+    assert!(hosts.snapshot(&identity).is_some());
+    assert_eq!(hosts.snapshots().len(), 1);
+
+    assert!(
+        process
+            .kill(super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
+    assert!(hosts.remove_stopped(&identity, generation, true));
+    assert!(!temporary_directory.exists());
+}
+
+#[test]
+fn automatic_spawn_admission_is_bounded_but_manual_start_is_not_debited() {
+    let workspace = tempfile::tempdir().unwrap();
+    let mut hosts = RuntimeHosts::new(workspace.path().join("channels")).unwrap();
+    let identity = HostIdentity::ThirdParty("restart-budget".to_string());
+
+    for _ in 0..super::types::MAX_HOST_RESTARTS_PER_WINDOW {
+        assert!(hosts.admit_spawn(&identity, super::runtime_hosts::HostStartReason::Automatic));
+    }
+    assert!(!hosts.admit_spawn(&identity, super::runtime_hosts::HostStartReason::Automatic));
+    assert!(hosts.admit_spawn(
+        &identity,
+        super::runtime_hosts::HostStartReason::InitialOrManual
+    ));
+}
+
+#[tokio::test]
+async fn bound_channel_issues_unique_contexts_and_runtime_hosts_alone_revokes_them() {
+    let workspace = tempfile::tempdir().unwrap();
+    let mut hosts = RuntimeHosts::new(workspace.path().join("channels")).unwrap();
+    let work = extension_work();
+    let identity = HostIdentity::ThirdParty("context-owner".to_string());
+    let process = bind_fixture_identity(
+        &mut hosts,
+        workspace.path(),
+        "context-owner",
+        "reply",
+        identity.clone(),
+        &work,
+    )
+    .await;
+    let (_, generation, _) = hosts.snapshot(&identity).unwrap();
+
+    let first = hosts.call_context(&identity, generation).unwrap();
+    let second = hosts.call_context(&identity, generation).unwrap();
+    assert!(hosts.usable_snapshot(&identity).is_some());
+    assert_eq!(first.identity(), &identity);
+    assert_eq!(first.generation(), generation);
+    assert_ne!(first.correlation_id(), second.correlation_id());
+    assert!(!first.revoked().is_cancelled());
+
+    assert!(hosts.revoke("context-owner"));
+    assert!(first.revoked().is_cancelled());
+    assert!(hosts.call_context(&identity, generation).is_none());
+    assert!(hosts.usable_snapshot(&identity).is_none());
+    assert!(hosts.snapshot(&identity).is_some());
+
+    assert!(
+        process
+            .kill(super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
+}
+
+#[tokio::test]
+async fn global_stop_revokes_every_context_before_process_waiting_begins() {
+    let workspace = tempfile::tempdir().unwrap();
+    let mut hosts = RuntimeHosts::new(workspace.path().join("channels")).unwrap();
+    let work = extension_work();
+    let first_identity = HostIdentity::ThirdParty("stop-first".to_string());
+    let second_identity = HostIdentity::ThirdParty("stop-second".to_string());
+    let first = bind_fixture_identity(
+        &mut hosts,
+        workspace.path(),
+        "stop-first",
+        "reply",
+        first_identity.clone(),
+        &work,
+    )
+    .await;
+    let second = bind_fixture_identity(
+        &mut hosts,
+        workspace.path(),
+        "stop-second",
+        "reply",
+        second_identity.clone(),
+        &work,
+    )
+    .await;
+    let (_, first_generation, _) = hosts.snapshot(&first_identity).unwrap();
+    let (_, second_generation, _) = hosts.snapshot(&second_identity).unwrap();
+    let first_context = hosts
+        .call_context(&first_identity, first_generation)
+        .unwrap();
+    let second_context = hosts
+        .call_context(&second_identity, second_generation)
+        .unwrap();
+
+    let snapshots = hosts.revoke_all();
+
+    assert_eq!(snapshots.len(), 2);
+    assert!(first_context.revoked().is_cancelled());
+    assert!(second_context.revoked().is_cancelled());
+    assert!(
+        first
+            .kill(super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
+    assert!(
+        second
+            .kill(super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
+}
+
+#[tokio::test]
+async fn a_stale_generation_never_removes_the_newer_channel() {
+    let workspace = tempfile::tempdir().unwrap();
+    let mut hosts = RuntimeHosts::new(workspace.path().join("channels")).unwrap();
+    let work = extension_work();
+    let identity = HostIdentity::ThirdParty("current".to_string());
+    let stale = bind_fixture_identity(
+        &mut hosts,
+        workspace.path(),
+        "stale",
+        "reply",
+        identity.clone(),
+        &work,
+    )
+    .await;
+    let (_, stale_generation, _) = hosts.snapshot(&identity).unwrap();
+    assert!(
+        stale
+            .kill(super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
+    assert!(hosts.remove_current(&identity, stale_generation));
+
+    let current = bind_fixture_identity(
+        &mut hosts,
+        workspace.path(),
+        "current",
+        "reply",
+        identity.clone(),
+        &work,
+    )
+    .await;
+
+    assert!(!hosts.remove_current(&identity, stale_generation));
+    assert_eq!(
+        current.request("fixture", json!({})).await.unwrap()["id"],
+        "current"
+    );
+    assert!(
+        current
+            .kill(super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
+}
+
+#[tokio::test]
+async fn a_process_exit_in_one_third_party_host_does_not_stop_another() {
+    let workspace = tempfile::tempdir().unwrap();
+    let mut hosts = RuntimeHosts::new(workspace.path().join("channels")).unwrap();
+    let work = extension_work();
+    let crashing = bind_fixture(&mut hosts, workspace.path(), "crashing", "crash", &work).await;
+    let healthy = bind_fixture(&mut hosts, workspace.path(), "healthy", "reply", &work).await;
+
+    assert!(crashing.request("fixture", json!({})).await.is_err());
+    assert_eq!(
+        healthy.request("fixture", json!({})).await.unwrap()["id"],
+        "healthy"
+    );
+
+    assert!(
+        crashing
+            .kill(super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
+    assert!(
+        healthy
+            .kill(super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
+}
+
+#[tokio::test]
+async fn a_blocked_third_party_event_loop_does_not_delay_another_host() {
+    let workspace = tempfile::tempdir().unwrap();
+    let mut hosts = RuntimeHosts::new(workspace.path().join("channels")).unwrap();
+    let work = extension_work();
+    let blocked = bind_fixture(&mut hosts, workspace.path(), "blocked", "block", &work).await;
+    let healthy = bind_fixture(&mut hosts, workspace.path(), "responsive", "reply", &work).await;
+    let blocked_request = {
+        let blocked = Arc::clone(&blocked);
+        tokio::spawn(async move { blocked.request("fixture", json!({})).await })
+    };
+    tokio::time::sleep(Duration::from_millis(50)).await;
+
+    let response = tokio::time::timeout(
+        Duration::from_secs(2),
+        healthy.request("fixture", json!({})),
+    )
+    .await
+    .expect("healthy host must not wait for the blocked host")
+    .unwrap();
+    assert_eq!(response["id"], "responsive");
+
+    assert!(
+        blocked
+            .kill(super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
+    assert!(blocked_request.await.unwrap().is_err());
+    assert!(
+        healthy
+            .kill(super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
+}
+
+#[tokio::test]
+async fn targeted_update_or_uninstall_stop_preserves_official_and_other_third_party_hosts() {
+    let workspace = tempfile::tempdir().unwrap();
+    let mut hosts = RuntimeHosts::new(workspace.path().join("channels")).unwrap();
+    let work = extension_work();
+    let official = bind_fixture_identity(
+        &mut hosts,
+        workspace.path(),
+        "official",
+        "reply",
+        HostIdentity::Official,
+        &work,
+    )
+    .await;
+    let target = bind_fixture(&mut hosts, workspace.path(), "target", "reply", &work).await;
+    let other = bind_fixture(&mut hosts, workspace.path(), "other", "reply", &work).await;
+    let runtime = super::runtime::ExtensionRuntime {
+        paths: None,
+        hosts: tokio::sync::Mutex::new(hosts),
+        sync: tokio::sync::Mutex::new(()),
+        status: std::sync::RwLock::new(super::types::ExtensionHostStatus::default()),
+        work,
+    };
+
+    assert_eq!(
+        runtime
+            .stop_host_if_current(
+                &HostIdentity::ThirdParty("target".to_string()),
+                Some(&target),
+                std::time::Instant::now() + Duration::from_secs(5),
+                false,
+            )
+            .await,
+        super::runtime::StopHostOutcome::Confirmed
+    );
+    assert!(target.request("fixture", json!({})).await.is_err());
+    assert_eq!(
+        official.request("fixture", json!({})).await.unwrap()["id"],
+        "official"
+    );
+    assert_eq!(
+        other.request("fixture", json!({})).await.unwrap()["id"],
+        "other"
+    );
+
+    assert!(
+        official
+            .kill(super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
+    assert!(
+        other
+            .kill(super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
+}
+
+#[tokio::test]
+async fn real_host_table_refuses_the_thirty_second_third_party_without_reader_starvation() {
+    let workspace = tempfile::tempdir().unwrap();
+    let mut hosts = RuntimeHosts::new(workspace.path().join("channels")).unwrap();
+    let work = extension_work();
+    let mut processes = Vec::new();
+    processes.push(
+        bind_fixture_identity(
+            &mut hosts,
+            workspace.path(),
+            "official-capacity",
+            "reply",
+            HostIdentity::Official,
+            &work,
+        )
+        .await,
+    );
+    for index in 0..31 {
+        let id = format!("local-capacity-{index}");
+        processes.push(bind_fixture(&mut hosts, workspace.path(), &id, "reply", &work).await);
+    }
+
+    assert_eq!(hosts.len(), super::types::MAX_HOST_PROCESSES);
+    assert_eq!(
+        hosts
+            .reserve(HostIdentity::ThirdParty("local-capacity-31".to_string()))
+            .err(),
+        Some(super::error_codes::LIMIT_REACHED.to_string())
+    );
+    assert_eq!(
+        processes[1].request("fixture", json!({})).await.unwrap()["id"],
+        "local-capacity-0"
+    );
+
+    for process in processes {
+        assert!(
+            process
+                .kill(super::runtime_lifecycle::new_stop_deadline())
+                .await
+        );
+    }
+}

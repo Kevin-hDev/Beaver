@@ -1,32 +1,41 @@
+use crate::services::agent_local::tool_result_contract::ToolErrorCategory;
 use crate::services::agent_local::tool_skill_loader;
 use crate::services::agent_local::types_tools::ToolResult;
-use crate::services::agent_local::tool_result_contract::ToolErrorCategory;
-use crate::services::agent_local::{tool_files, tool_glob, tool_grep, tool_web_fetch, tool_web_search};
+use crate::services::agent_local::{
+    tool_files, tool_glob, tool_grep, tool_web_fetch, tool_web_search,
+};
 use serde_json::Value;
 use std::path::Path;
 
-pub use crate::services::agent_local::tool_definitions::get_tool_definitions;
-pub use crate::services::agent_local::tool_definitions_chat::get_chat_tool_definitions;
 #[cfg(test)]
 pub use super::tool_dispatcher_entry::dispatch;
 pub(crate) use super::tool_dispatcher_entry::dispatch_for_mode;
 pub(crate) use super::tool_dispatcher_entry::dispatch_with_progress;
 #[cfg(test)]
 pub(crate) use super::tool_dispatcher_error::enrich as enrich_error;
+pub use crate::services::agent_local::tool_definitions::get_tool_definitions;
+pub use crate::services::agent_local::tool_definitions_chat::get_chat_tool_definitions;
 
 pub(super) async fn dispatch_inner(
     tool_name: &str,
     args: &Value,
     working_dir: &Path,
-    session_id: &str,
+    trace: super::tool_dispatch_trace::DispatchTrace<'_>,
     cancel: tokio_util::sync::CancellationToken,
     profile: Option<super::subagent_tool_profile::SubagentToolProfile>,
     progress: Option<super::tool_bash_progress::ShellProgress>,
 ) -> ToolResult {
+    let session_id = trace.session_id;
     match tool_name {
         "bash" | "bash_control" => {
             super::tool_dispatcher_shell::dispatch(
-                tool_name, args, working_dir, session_id, cancel, profile, progress,
+                tool_name,
+                args,
+                working_dir,
+                session_id,
+                cancel,
+                profile,
+                progress,
             )
             .await
         }
@@ -85,9 +94,16 @@ pub(super) async fn dispatch_inner(
                 Err(error) => super::tool_web_error::fetch(error),
             }
         }
-        "search_extension_tools" => {
-            super::tool_extension_discovery::execute(args, session_id).await
-        }
+        "search_extension_tools" => match trace.request_id {
+            Some(request_id) => {
+                super::tool_extension_discovery::execute(args, session_id, request_id).await
+            }
+            None => ToolResult::unavailable(
+                "plugin_search_unavailable",
+                "Recherche de plugins indisponible.",
+                true,
+            ),
+        },
         "todo_write" => super::tool_todo::execute(args, session_id).await,
         "todo_history" => super::tool_todo::execute_history(args, session_id).await,
         "todo_pause" => super::tool_todo::execute_pause(args, session_id).await,
@@ -116,9 +132,7 @@ pub(super) async fn dispatch_inner(
                 Err(error) => super::tool_dispatcher_error::skill_load(error),
             }
         }
-        "manage_automation" => {
-            super::tool_automation::execute(args, working_dir, session_id).await
-        }
+        "manage_automation" => super::tool_automation::execute(args, working_dir, session_id).await,
         "create_branch" => {
             let branch_name = args["branch_name"].as_str().unwrap_or("");
             if branch_name.is_empty() {
@@ -153,13 +167,15 @@ pub(super) async fn dispatch_inner(
             super::tool_dispatcher_delegate::dispatch_delegate(args, session_id, cancel.clone())
                 .await
         }
-        _ => super::tool_dispatcher_fallback::dispatch(
-            tool_name,
-            args,
-            working_dir,
-            session_id,
-            cancel,
-        )
-        .await,
+        _ => {
+            super::tool_dispatcher_fallback::dispatch(
+                tool_name,
+                args,
+                working_dir,
+                session_id,
+                cancel,
+            )
+            .await
+        }
     }
 }

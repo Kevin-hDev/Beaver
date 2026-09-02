@@ -48,8 +48,8 @@ export function ChatView({
   const permissions = usePermissionRequests();
   const permMode = usePermissionMode(sessionId, !isSubagent);
   const selectedModelCaps = useSelectedModelCapabilities(provider, model);
-  const chat = useAgentChat(sessionId, model, provider, (id, toolName, args) =>
-    permissions.enqueue({ id, toolName, arguments: args }),
+  const chat = useAgentChat(
+    sessionId, model, provider, permissions.enqueue,
     selectedModelCaps?.supports_tools,
     selectedModelCaps?.supports_thinking,
     selectedModelCaps?.supports_vision,

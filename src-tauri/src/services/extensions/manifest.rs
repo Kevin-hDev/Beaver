@@ -5,8 +5,6 @@ use super::types::{
 use serde_json::{Map, Value};
 use std::path::{Path, PathBuf};
 
-const MANIFEST_FILES: &[&str] = &["beaver-extension.json", "beaver.json", "package.json"];
-
 #[derive(Clone, Copy)]
 enum ManifestFailure {
     Invalid,
@@ -65,7 +63,7 @@ fn load(input: &str) -> ManifestResult<LocalExtension> {
         .to_str()
         .ok_or_else(|| invalid("Source d'extension invalide."))?;
     manifest.main = Some(relative_main.to_string());
-    let record = ExtensionRecord {
+    let mut record = ExtensionRecord {
         manifest,
         kind: ExtensionKind::Local,
         source: source.to_string(),
@@ -76,12 +74,19 @@ fn load(input: &str) -> ManifestResult<LocalExtension> {
         }),
         enabled: false,
         trusted: false,
+        fingerprint: None,
+        trusted_at: None,
         show_in_chat: false,
         status: ExtensionStatus::Inactive,
         last_error: None,
         last_activated_at: None,
+        sensitive_access_granted: false,
         contributions: ExtensionContributions::default(),
     };
+    record.fingerprint = Some(
+        super::fingerprint::calculate(&record)
+            .map_err(|_| invalid(super::error_codes::FINGERPRINT_FAILED))?,
+    );
     Ok(LocalExtension { record })
 }
 
@@ -92,7 +97,7 @@ pub fn resolve_record_entry(record: &ExtensionRecord) -> Result<PathBuf, String>
 }
 
 fn from_directory(root: &Path) -> ManifestResult<(PathBuf, ExtensionManifest)> {
-    for file_name in MANIFEST_FILES {
+    for file_name in super::manifest_source::MANIFEST_FILES {
         let path = root.join(file_name);
         if path.is_file() {
             let manifest_path = dunce::canonicalize(path)

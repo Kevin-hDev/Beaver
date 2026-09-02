@@ -11,6 +11,7 @@ fn ipc_view_includes_runtime_contributions_while_storage_record_omits_them() {
         name: "beaver.test.tool".to_string(),
         description: "Runtime contribution".to_string(),
         parameters: json!({ "type": "object" }),
+        effect: super::types::ExtensionEffect::Unknown,
         replaces_core: false,
     });
 

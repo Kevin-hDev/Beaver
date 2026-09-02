@@ -9,7 +9,7 @@ export type SettingsSubTab =
 type OllamaSettingsSubTab = "modelfile" | "models";
 type ForecastSettingsSubTab = "config" | "models";
 export type ProvidersSettingsSubTab = "api" | "oauth";
-export type ExtensionsSettingsSection = "plugins" | "custom" | "external" | "host";
+export type ExtensionsSettingsSection = "plugins" | "custom" | "host";
 export type AdvancedSettingsTarget = "file-access" | null;
 
 export interface AgentLocalRouteState {
@@ -124,11 +124,11 @@ export const DEFAULT_APP_NAV: AppNavState = {
 
 export function migrateAppNav(input: AppNavState): AppNavState {
   const { sessionId = null } = input.agentLocal as LegacyAgentLocalRouteState;
-  const settings = input.settings as Omit<SettingsNavState, "subTab"> & {
+  const settings = input.settings as Omit<SettingsNavState, "subTab" | "extensionsSection"> & {
     subTab: SettingsSubTab | "api-keys";
     providersSubTab?: ProvidersSettingsSubTab;
     oauthProviderId?: string | null;
-    extensionsSection?: ExtensionsSettingsSection;
+    extensionsSection?: ExtensionsSettingsSection | "external";
     extensionId?: string | null;
     advancedTarget?: AdvancedSettingsTarget;
   };
@@ -142,7 +142,9 @@ export function migrateAppNav(input: AppNavState): AppNavState {
       advancedTarget: settings.advancedTarget ?? null,
       providersSubTab: settings.providersSubTab ?? "api",
       oauthProviderId: settings.oauthProviderId ?? null,
-      extensionsSection: settings.extensionsSection ?? "plugins",
+      extensionsSection: settings.extensionsSection === "external"
+        ? "custom"
+        : settings.extensionsSection ?? "plugins",
       extensionId: settings.extensionId ?? null,
     },
   };

@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
-import { createHost } from "./host-test-client.mjs";
+import { createHost, resetAndLoad } from "./host-test-client.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const hostScript = join(root, "src-tauri/target/extension-host/host.mjs");
@@ -15,13 +15,11 @@ test("reports safe structured diagnostics for syntax errors", async () => {
   await writeFile(source, "export default function ( {", { mode: 0o600 });
   const host = createHost(hostScript);
   try {
-    const sync = await host.request("host.sync", {
-      extensions: [{
+    const sync = await resetAndLoad(host, [{
         id: "com.beaver.broken",
         mainPath: source,
         manifest: { apiLevel: "stable" },
-      }],
-    });
+      }]);
 
     assert.equal(sync.extensions[0].error, "load_failed");
     assert.equal(sync.extensions[0].diagnostic.stage, "import");

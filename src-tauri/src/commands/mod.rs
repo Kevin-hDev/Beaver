@@ -59,6 +59,7 @@ pub mod directory_access;
 #[cfg(feature = "e2e")]
 mod e2e;
 pub mod extensions;
+pub mod extensions_recovery;
 pub mod favorite_models;
 pub mod file_preview;
 pub mod file_preview_editors;
@@ -156,6 +157,7 @@ pub use directory_access::*;
 #[cfg(feature = "e2e")]
 pub use e2e::*;
 pub use extensions::*;
+pub use extensions_recovery::*;
 pub use favorite_models::*;
 pub use file_preview::*;
 pub use file_preview_office::*;

@@ -1,9 +1,10 @@
+use super::host_identity::HostIdentity;
 use super::host_paths::HostPaths;
 use super::host_process::HostProcess;
-use super::protocol::{HelloResult, SyncResult};
-use super::types::{ExtensionDiagnostic, ExtensionHostStatus, HostState, BEAVER_API_VERSION};
+use super::runtime_hosts::RuntimeHosts;
+use super::types::{ExtensionDiagnostic, ExtensionHostStatus, HostState};
 use crate::app_exit::AppWorkSupervisor;
-use serde_json::{json, Value};
+use serde_json::Value;
 use std::sync::{Arc, OnceLock, RwLock};
 use tokio::sync::Mutex;
 
@@ -11,10 +12,17 @@ static RUNTIME: OnceLock<Arc<ExtensionRuntime>> = OnceLock::new();
 
 pub struct ExtensionRuntime {
     pub(super) paths: Option<HostPaths>,
-    pub(super) process: Mutex<Option<Arc<HostProcess>>>,
+    pub(super) hosts: Mutex<RuntimeHosts>,
+    pub(super) sync: Mutex<()>,
     pub(super) status: RwLock<ExtensionHostStatus>,
-    pub(super) auto_restarts: super::runtime_restart::RestartBudget,
     pub(super) work: super::work_supervision::ExtensionWorkServices,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum StopHostOutcome {
+    Absent,
+    Confirmed,
+    Unconfirmed,
 }
 
 pub fn init(app: &tauri::AppHandle, app_work: AppWorkSupervisor) -> Result<(), String> {
@@ -23,18 +31,21 @@ pub fn init(app: &tauri::AppHandle, app_work: AppWorkSupervisor) -> Result<(), S
     let mut status = ExtensionHostStatus::default();
     if paths.is_none() {
         status.state = HostState::Error;
-        status.last_error = Some("Runtime Node.js indisponible.".to_string());
+        status.last_error = Some(super::error_codes::RUNTIME_UNAVAILABLE.to_string());
     }
+    let temporary_root = crate::services::paths::data_dir().join("extension-host-channels");
+    let (hosts, exit_receiver) = RuntimeHosts::with_app(temporary_root, app.clone())?;
     let runtime = Arc::new(ExtensionRuntime {
         paths,
-        process: Mutex::new(None),
+        hosts: Mutex::new(hosts),
+        sync: Mutex::new(()),
         status: RwLock::new(status),
-        auto_restarts: super::runtime_restart::RestartBudget::default(),
         work: super::work_supervision::ExtensionWorkServices::new(app_work),
     });
+    runtime.start_exit_monitor(exit_receiver)?;
     RUNTIME
         .set(runtime)
-        .map_err(|_| "Hôte d'extensions déjà initialisé.".to_string())
+        .map_err(|_| super::error_codes::OPERATION_FAILED.to_string())
 }
 
 pub fn status() -> ExtensionHostStatus {
@@ -45,81 +56,171 @@ pub fn status() -> ExtensionHostStatus {
 }
 
 impl ExtensionRuntime {
-    pub(super) async fn sync_locked(
+    pub(super) async fn process_for_extension(
         &self,
-        slot: &mut Option<Arc<HostProcess>>,
-    ) -> Result<(), String> {
-        if slot.is_none() {
-            let paths = self
-                .paths
-                .as_ref()
-                .ok_or_else(|| "Runtime Node.js indisponible.".to_string())?;
-            *slot = Some(Arc::new(HostProcess::spawn(paths, &self.work).await?));
+        extension_id: &str,
+        deadline: std::time::Instant,
+    ) -> Result<(HostIdentity, u64, Arc<HostProcess>), String> {
+        let record = super::registry::find(extension_id)?;
+        let identity = HostIdentity::from_record(&record)?;
+        if !record.enabled || !record.trusted {
+            let _ = self.stop_host(&identity, deadline).await;
+            return Err(super::error_codes::HOST_UNAVAILABLE.to_string());
         }
-        let process = slot
-            .as_ref()
-            .ok_or_else(|| "Hôte d'extensions indisponible.".to_string())?;
-        let hello = parse::<HelloResult>(process.request("host.hello", json!({})).await?)?;
-        if hello.api_version != BEAVER_API_VERSION {
-            return Err("Version de l'hôte d'extensions incompatible.".to_string());
+        let (api_level, generation, process) =
+            self.hosts
+                .lock()
+                .await
+                .usable_snapshot(&identity)
+                .ok_or_else(|| super::error_codes::HOST_UNAVAILABLE.to_string())?;
+        if api_level != record.manifest.api_level || !process.is_alive() {
+            let _ = self
+                .stop_host_if_current(&identity, Some(&process), deadline, false)
+                .await;
+            return Err(super::error_codes::HOST_UNAVAILABLE.to_string());
         }
-        let records = super::registry::enabled_hosted()?;
-        super::runtime_version::validate_node(&hello.node_version)?;
-        let directory = self
-            .paths
-            .as_ref()
-            .ok_or_else(|| "Hôte d'extensions indisponible.".to_string())?
-            .directory
-            .as_path();
-        let build = super::runtime_sync::build_specs(records, directory)?;
-        let response = process
-            .request("host.sync", json!({"extensions": build.specs}))
-            .await
-            .and_then(parse::<SyncResult>)?;
-        let applied = super::runtime_sync::apply(response, &build)?;
-        self.set_running(hello, applied.active, applied.diagnostics);
-        Ok(())
+        Ok((identity, generation, process))
     }
 
-    fn set_running(
+    pub(super) async fn call_context(
         &self,
-        hello: HelloResult,
-        active: usize,
-        diagnostics: Vec<ExtensionDiagnostic>,
-    ) {
+        identity: &HostIdentity,
+        generation: u64,
+    ) -> Result<super::call_context::ExtensionCallContext, String> {
+        self.hosts
+            .lock()
+            .await
+            .call_context(identity, generation)
+            .ok_or_else(|| super::error_codes::HOST_UNAVAILABLE.to_string())
+    }
+
+    pub(super) async fn stop_host(
+        &self,
+        identity: &HostIdentity,
+        deadline: std::time::Instant,
+    ) -> StopHostOutcome {
+        self.stop_host_if_current(identity, None, deadline, false)
+            .await
+    }
+
+    pub(super) async fn stop_host_if_current(
+        &self,
+        identity: &HostIdentity,
+        expected: Option<&Arc<HostProcess>>,
+        deadline: std::time::Instant,
+        restarting: bool,
+    ) -> StopHostOutcome {
+        let snapshot = {
+            let mut hosts = self.hosts.lock().await;
+            let Some((_, generation, process)) = hosts.snapshot(identity) else {
+                return StopHostOutcome::Absent;
+            };
+            if expected.is_some_and(|expected| !Arc::ptr_eq(expected, &process))
+                || !hosts.begin_stop(identity, generation, restarting)
+            {
+                return StopHostOutcome::Unconfirmed;
+            }
+            (generation, process)
+        };
+        if !snapshot.1.kill(deadline).await {
+            self.mark_stop_unconfirmed(identity).await;
+            return StopHostOutcome::Unconfirmed;
+        }
+        let mut hosts = self.hosts.lock().await;
+        if hosts.remove_current(identity, snapshot.0)
+            || hosts.stop_is_confirmed(identity, snapshot.0)
+        {
+            StopHostOutcome::Confirmed
+        } else {
+            StopHostOutcome::Unconfirmed
+        }
+    }
+
+    pub(super) async fn revoke_extension(
+        &self,
+        identity: &HostIdentity,
+        deadline: std::time::Instant,
+    ) -> bool {
+        let stopped = matches!(
+            self.stop_host(identity, deadline).await,
+            StopHostOutcome::Absent | StopHostOutcome::Confirmed
+        );
+        if stopped {
+            // Une révocation appelée par l'utilisateur termine la série de
+            // reprises de cet Hôte. Son futur démarrage repart donc à zéro.
+            self.hosts.lock().await.forget_restart_budget(identity);
+        }
+        stopped
+    }
+
+    pub(super) async fn mark_stop_unconfirmed(&self, identity: &HostIdentity) {
+        let ids = super::registry_sync::mark_identity_stop_unconfirmed(identity);
+        for id in ids {
+            crate::services::agent_local::permission_gate::clear_extension(&id).await;
+        }
+        self.set_state(
+            HostState::Error,
+            Some(super::error_codes::STOP_UNCONFIRMED.to_string()),
+            0,
+        );
+        self.hosts.lock().await.emit_changed();
+    }
+
+    pub(super) fn set_running(&self, active: usize, diagnostics: Vec<ExtensionDiagnostic>) {
         if let Ok(mut status) = self.status.write() {
             status.state = HostState::Running;
-            status.node_version = Some(hello.node_version);
-            status.jiti_version = hello.jiti_version;
-            status.api_version = hello.api_version;
             status.active_extensions = active;
             status.last_error = None;
             status.diagnostics = diagnostics;
         }
     }
 
+    pub(super) fn set_host_version(&self, hello: &super::protocol::HelloResult) {
+        if let Ok(mut status) = self.status.write() {
+            status.node_version = Some(hello.node_version.clone());
+            status.jiti_version = hello.jiti_version.clone();
+            status.api_version = hello.api_version.clone();
+        }
+    }
+
     pub(super) fn set_state(&self, state: HostState, error: Option<String>, active: usize) {
         if let Ok(mut status) = self.status.write() {
-            let running = state == HostState::Running;
-            status.state = state;
+            status.state = state.clone();
             status.active_extensions = active;
             status.last_error = error;
-            if !running {
+            if state != HostState::Running {
                 status.diagnostics.clear();
             }
         }
     }
 }
 
+pub(super) async fn call_context(
+    identity: &HostIdentity,
+    generation: u64,
+) -> Result<super::call_context::ExtensionCallContext, String> {
+    global()?.call_context(identity, generation).await
+}
+
+pub(super) async fn revoke_extension(
+    identity: &HostIdentity,
+    deadline: std::time::Instant,
+) -> Result<(), String> {
+    if global()?.revoke_extension(identity, deadline).await {
+        Ok(())
+    } else {
+        Err(super::error_codes::HOST_UNAVAILABLE.to_string())
+    }
+}
+
 pub(super) fn parse<T: serde::de::DeserializeOwned>(value: Value) -> Result<T, String> {
-    serde_json::from_value(value)
-        .map_err(|_| "Réponse de l'hôte d'extensions invalide.".to_string())
+    serde_json::from_value(value).map_err(|_| super::error_codes::HOST_INCOMPATIBLE.to_string())
 }
 
 pub(super) fn global() -> Result<&'static Arc<ExtensionRuntime>, String> {
     RUNTIME
         .get()
-        .ok_or_else(|| "Hôte d'extensions indisponible.".to_string())
+        .ok_or_else(|| super::error_codes::HOST_UNAVAILABLE.to_string())
 }
 
 pub(super) fn mark_enabled_extensions_error() {

@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
-import { createHost } from "./host-test-client.mjs";
+import { createHost, resetAndLoad } from "./host-test-client.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const hostScript = join(root, "src-tauri/target/extension-host/host.mjs");
@@ -42,13 +42,11 @@ test("loads TypeScript tools, events and core calls through Jiti", async () => {
     assert.equal(hello.apiVersion, "1");
     assert.equal(hello.jitiVersion, "2.7.0");
 
-    const sync = await host.request("host.sync", {
-      extensions: [{
+    const sync = await resetAndLoad(host, [{
         id: "com.beaver.test",
         mainPath: source,
         manifest: { apiLevel: "stable" },
-      }],
-    });
+      }]);
     assert.equal(sync.extensions[0].contributions.tools[0].name, "com.beaver.test.echo");
     assert.deepEqual(sync.extensions[0].contributions.events, ["session.turn.started"]);
 
@@ -90,8 +88,7 @@ test("isolates a failed extension and supports explicit advanced replacements", 
 
   const host = createHost(hostScript);
   try {
-    const sync = await host.request("host.sync", {
-      extensions: [
+    const sync = await resetAndLoad(host, [
         {
           id: "com.beaver.invalid",
           mainPath: invalidSource,
@@ -102,8 +99,7 @@ test("isolates a failed extension and supports explicit advanced replacements", 
           mainPath: advancedSource,
           manifest: { apiLevel: "advanced" },
         },
-      ],
-    });
+      ]);
     assert.equal(sync.extensions[0].error, "load_failed");
     assert.equal(sync.extensions[0].diagnostic.stage, "activate");
     assert.equal(sync.extensions[0].diagnostic.code, "activation_failed");
@@ -116,6 +112,35 @@ test("isolates a failed extension and supports explicit advanced replacements", 
       context: { workingDirectory: directory },
     });
     assert.equal(result.content, "custom");
+  } finally {
+    host.stop();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("rejects events outside the generated contract without killing the host", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "beaver-extension-event-test-"));
+  const source = join(directory, "index.ts");
+  await writeFile(
+    source,
+    `export default function (api: any) {
+      api.on("session.unknown", async () => {});
+    }`,
+    { mode: 0o600 },
+  );
+  const host = createHost(hostScript);
+  try {
+    const sync = await resetAndLoad(host, [{
+      id: "com.beaver.invalid-event",
+      mainPath: source,
+      manifest: { apiLevel: "stable" },
+    }]);
+    assert.equal(sync.extensions[0].error, "load_failed");
+    await assert.rejects(host.request("event.emit", {
+      event: "session.unknown",
+      payload: {},
+    }));
+    assert.equal((await host.request("host.hello", {})).apiVersion, "1");
   } finally {
     host.stop();
     await rm(directory, { recursive: true, force: true });

@@ -1,11 +1,14 @@
+import { useEffect, useId, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { ShieldWarning } from "@/components/ui/icons";
+import { DialogPortal } from "@/components/ui/dialog-portal";
 import type { ExtensionRecord } from "@/types/extensions";
 import "./extension-activation-dialog.css";
 
 interface ExtensionActivationDialogProps {
   extension: ExtensionRecord;
   busy: boolean;
+  errorKey: string | null;
   onCancel: () => void;
   onConfirm: () => void;
 }
@@ -13,55 +16,75 @@ interface ExtensionActivationDialogProps {
 export function ExtensionActivationDialog({
   extension,
   busy,
+  errorKey,
   onCancel,
   onConfirm,
 }: ExtensionActivationDialogProps) {
   const { t } = useTranslation();
+  const titleId = useId();
+  const descriptionId = useId();
+  const cancelRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null;
+    cancelRef.current?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !busy) onCancel();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      previous?.focus();
+    };
+  }, [busy, onCancel]);
   return (
-    <div
-      className="wk-dialog-overlay"
-      role="button"
-      tabIndex={-1}
-      aria-label={t("extensions.actions.cancel")}
-      onClick={(event) => {
-        if (event.target === event.currentTarget && !busy) onCancel();
-      }}
-      onKeyDown={(event) => {
-        if (event.key === "Escape" && !busy) onCancel();
-      }}
-    >
+    <DialogPortal>
       <div
-        className="wk-dialog extc-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="extc-title"
+        className="wk-dialog-overlay"
+        role="presentation"
+        onClick={(event) => {
+          if (event.target === event.currentTarget && !busy) onCancel();
+        }}
       >
-        <h3 id="extc-title">
-          {t("extensions.activation.title", { name: extension.manifest.name })}
-        </h3>
-        <div className="extc-warning">
-          <ShieldWarning size="var(--icon-xl)" weight="fill" />
-          <p>{t("extensions.activation.description")}</p>
-        </div>
-        <div className="wk-dialog-footer">
-          <button
-            type="button"
-            className="btn btn-sm btn-secondary"
-            disabled={busy}
-            onClick={onCancel}
-          >
-            {t("extensions.actions.cancel")}
-          </button>
-          <button
-            type="button"
-            className="btn btn-sm btn-primary"
-            disabled={busy}
-            onClick={onConfirm}
-          >
-            {t("extensions.activation.confirm")}
-          </button>
+        <div
+          className="wk-dialog extc-dialog"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+          aria-describedby={descriptionId}
+        >
+          <h3 id={titleId}>
+            {t("extensions.activation.title", { name: extension.manifest.name })}
+          </h3>
+          <div className="extc-warning">
+            <ShieldWarning size="var(--icon-xl)" weight="fill" />
+            <p id={descriptionId}>{t("extensions.activation.description")}</p>
+          </div>
+          {errorKey && (
+            <p className="extp-message extp-message-error" role="alert">
+              {t(errorKey)}
+            </p>
+          )}
+          <div className="wk-dialog-footer">
+            <button
+              ref={cancelRef}
+              type="button"
+              className="btn btn-sm btn-secondary"
+              disabled={busy}
+              onClick={onCancel}
+            >
+              {t("extensions.actions.cancel")}
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm btn-primary"
+              disabled={busy}
+              onClick={onConfirm}
+            >
+              {t("extensions.activation.confirm")}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </DialogPortal>
   );
 }

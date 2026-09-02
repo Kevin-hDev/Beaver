@@ -1,7 +1,10 @@
-#![expect(clippy::too_many_arguments, reason = "orchestration boundary keeps related runtime context explicit")]
+#![expect(
+    clippy::too_many_arguments,
+    reason = "orchestration boundary keeps related runtime context explicit"
+)]
 use crate::services::agent_local::tool_hooks::run_post_hooks;
-use crate::services::agent_local::types_tools::ToolResult;
 use crate::services::agent_local::tool_result_contract::ToolErrorCategory;
+use crate::services::agent_local::types_tools::ToolResult;
 use crate::services::agent_local::write_guard::WriteGuard;
 use futures_util::future::join_all;
 use serde_json::Value;
@@ -11,7 +14,7 @@ use tokio_util::sync::CancellationToken;
 
 use super::tool_executor_helpers::post_record_read;
 
-const MAX_PARALLEL: usize = 10;
+pub(crate) const MAX_PARALLEL: usize = 10;
 const READ_BATCH_TIMEOUT: Duration = Duration::from_secs(600);
 
 pub(super) struct BatchEntry<'a> {
@@ -65,13 +68,7 @@ pub(super) async fn flush_read_batch<'a>(
             let futs: Vec<_> = pending_indices
                 .iter()
                 .map(|&pos| {
-                    dispatch_pending(
-                        &chunk[pos],
-                        working_dir,
-                        session_id,
-                        request_id,
-                        chat_mode,
-                    )
+                    dispatch_pending(&chunk[pos], working_dir, session_id, request_id, chat_mode)
                 })
                 .collect();
             let dispatched = tokio::select! {
@@ -109,20 +106,18 @@ pub(super) async fn flush_read_batch<'a>(
         }
 
         for (pos, entry) in chunk.iter().enumerate() {
-            let tr = chunk_results[pos]
-                .take()
-                .unwrap_or_else(|| {
-                    if cancel.is_cancelled() {
-                        ToolResult::cancelled("Annulé.")
-                    } else {
-                        ToolResult::error(
-                            "Résultat de lecture indisponible.",
-                            "read_batch_result_missing",
-                            ToolErrorCategory::Internal,
-                            true,
-                        )
-                    }
-                });
+            let tr = chunk_results[pos].take().unwrap_or_else(|| {
+                if cancel.is_cancelled() {
+                    ToolResult::cancelled("Annulé.")
+                } else {
+                    ToolResult::error(
+                        "Résultat de lecture indisponible.",
+                        "read_batch_result_missing",
+                        ToolErrorCategory::Internal,
+                        true,
+                    )
+                }
+            });
             indexed_results[entry.global_idx] = Some((entry.name, tr));
         }
     }

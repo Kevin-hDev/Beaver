@@ -1,4 +1,7 @@
-#![expect(clippy::too_many_arguments, reason = "orchestration boundary keeps related runtime context explicit")]
+#![expect(
+    clippy::too_many_arguments,
+    reason = "orchestration boundary keeps related runtime context explicit"
+)]
 use super::permission_gate::{self, PermissionDecision};
 use super::stream_events::AgentEventEmitter;
 use super::tool_execution_outcome::ToolExecutionOutcome;
@@ -21,30 +24,20 @@ pub(super) async fn initial_validation(
     if let Err(message) =
         super::subagent_tool_guard::validate_for_session(session_id, name, args, working_dir).await
     {
-        let result = super::tool_executor_errors::permission(
-            message,
-            "tool_not_allowed_for_session",
-        );
-        super::tool_executor_diagnostics::completed(
-            session_id, request_id, name, summary, &result,
-        )
-        .await;
+        let result =
+            super::tool_executor_errors::permission(message, "tool_not_allowed_for_session");
+        super::tool_executor_diagnostics::completed(session_id, request_id, name, summary, &result)
+            .await;
         return Err(result);
     }
-    if let Err(message) = super::tool_plan_guard::ensure_allowed_for_session(
-        name,
-        args,
-        session_id,
-        plan_mode_active,
-    )
-    .await
+    if let Err(message) =
+        super::tool_plan_guard::ensure_allowed_for_session(name, args, session_id, plan_mode_active)
+            .await
     {
-        return Err(
-            super::tool_executor_plan::denied_with_summary(
-                session_id, request_id, name, message, summary,
-            )
-            .await,
-        );
+        return Err(super::tool_executor_plan::denied_with_summary(
+            session_id, request_id, name, message, summary,
+        )
+        .await);
     }
     Ok(summary)
 }
@@ -86,6 +79,16 @@ pub(super) async fn check_allowed(
     session_id: &str,
     cancel: CancellationToken,
 ) -> bool {
+    if crate::services::extensions::indexed_tool(name).is_some()
+        && matches!(
+            super::subagent_tool_guard::profile_for_session(session_id).await,
+            Ok(Some(_))
+        )
+    {
+        // Le garde enfant vient de valider le mode/cache exacts du parent. Refaire une
+        // demande ici la livrerait au parent après un refus ou sous la mauvaise identité.
+        return true;
+    }
     if !permission_gate::requires_permission(name, args) {
         return true;
     }

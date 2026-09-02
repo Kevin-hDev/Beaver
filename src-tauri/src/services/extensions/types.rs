@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-pub const BEAVER_API_VERSION: &str = "1";
 pub const MINIMUM_NODE_MAJOR: u64 = 20;
 include!(concat!(env!("OUT_DIR"), "/extension_contract.rs"));
 
@@ -10,7 +9,6 @@ include!(concat!(env!("OUT_DIR"), "/extension_contract.rs"));
 pub enum ExtensionKind {
     Builtin,
     Local,
-    External,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -91,6 +89,8 @@ pub struct ExtensionTool {
     pub description: String,
     pub parameters: Value,
     #[serde(default)]
+    pub effect: ExtensionEffect,
+    #[serde(default)]
     pub replaces_core: bool,
 }
 
@@ -105,10 +105,16 @@ pub struct ExtensionRecord {
     pub enabled: bool,
     #[serde(default)]
     pub trusted: bool,
+    #[serde(default)]
+    pub fingerprint: Option<String>,
+    #[serde(default)]
+    pub trusted_at: Option<String>,
     pub show_in_chat: bool,
     pub status: ExtensionStatus,
     pub last_error: Option<String>,
     pub last_activated_at: Option<String>,
+    #[serde(default)]
+    pub sensitive_access_granted: bool,
     #[serde(skip)]
     pub contributions: ExtensionContributions,
 }
@@ -122,15 +128,6 @@ pub struct ExtensionDiagnostic {
     pub file: Option<String>,
     pub line: Option<u64>,
     pub column: Option<u64>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub enum HostState {
-    Stopped,
-    Starting,
-    Running,
-    Error,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

@@ -12,11 +12,12 @@ import { replaceSessionMessage } from "./agent-chat-turn-revision";
 import { restoredFailureState } from "./agent-chat-restored-failure";
 import type { AgentMessage, AgentSession } from "@/types/agent";
 import type { TurnStart } from "@/types/agent-turn.generated";
+import type { PermissionRequestState } from "./agent-chat-stream-types";
 export function useAgentChat(
   sessionId: string | null,
   model: string,
   provider: string,
-  onPermissionRequest?: (id: string, toolName: string, args: Record<string, unknown>) => void,
+  onPermissionRequest?: (request: PermissionRequestState) => void,
   supportsTools?: boolean,
   supportsThinking?: boolean,
   supportsVision?: boolean,
@@ -73,7 +74,7 @@ export function useAgentChat(
       applyPlanStreamEnabled(chatState.planModeEnabled);
       setSessionLoading(false);
       for (const request of pendingPermissions) {
-        permissions.deliver(request.id, request.toolName, request.arguments);
+        permissions.deliver(request);
       }
     };
     const unsubscribe = subscribeToStream(sessionId, applySnapshot);

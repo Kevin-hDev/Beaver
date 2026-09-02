@@ -1,9 +1,8 @@
 use serde::Serialize;
 use std::path::Path;
 
+#[cfg(not(test))]
 const FILE_NAME: &str = "extension-install.jsonl";
-const MAX_LOG_BYTES: usize = 64 * 1024;
-const MAX_EXISTING_BYTES: u64 = MAX_LOG_BYTES as u64;
 
 #[derive(Serialize)]
 struct Entry<'a> {
@@ -13,7 +12,9 @@ struct Entry<'a> {
     reason: &'a str,
 }
 
+#[cfg(not(test))]
 pub fn write(operation: &str, code: &str, reason: &str) {
+    let reason = safe_reason(reason);
     if write_at(&log_path(), operation, code, reason).is_err() {
         ::log::error!("[extensions] operation failed; diagnostic log unavailable");
     } else {
@@ -21,6 +22,12 @@ pub fn write(operation: &str, code: &str, reason: &str) {
     }
 }
 
+#[cfg(test)]
+pub fn write(operation: &str, code: &str, reason: &str) {
+    let _ = (operation, code, reason);
+}
+
+#[cfg(not(test))]
 fn log_path() -> std::path::PathBuf {
     crate::services::paths::data_dir()
         .join("logs")
@@ -28,40 +35,22 @@ fn log_path() -> std::path::PathBuf {
 }
 
 fn write_at(path: &Path, operation: &str, code: &str, reason: &str) -> Result<(), String> {
+    let reason = safe_reason(reason);
     let entry = Entry {
         timestamp: chrono::Utc::now().to_rfc3339(),
         operation,
         code,
         reason,
     };
-    let mut next = bounded_existing(path)?;
-    let mut line =
-        serde_json::to_vec(&entry).map_err(|_| "journal d'extensions indisponible".to_string())?;
-    line.push(b'\n');
-    if line.len() > MAX_LOG_BYTES {
-        return Err("journal d'extensions indisponible".to_string());
-    }
-    while next.len() + line.len() > MAX_LOG_BYTES {
-        let Some(position) = next.iter().position(|byte| *byte == b'\n') else {
-            next.clear();
-            break;
-        };
-        next.drain(..=position);
-    }
-    next.extend_from_slice(&line);
-    crate::services::private_store::atomic_write(path, &next)
+    super::bounded_jsonl::write(path, &entry)
 }
 
-fn bounded_existing(path: &Path) -> Result<Vec<u8>, String> {
-    if !path.exists() {
-        return Ok(Vec::new());
+fn safe_reason(reason: &str) -> &str {
+    if super::operation_error::is_safe_reason(reason) {
+        reason
+    } else {
+        "operation_failed"
     }
-    let metadata =
-        std::fs::metadata(path).map_err(|_| "journal d'extensions indisponible".to_string())?;
-    if !metadata.is_file() || metadata.len() > MAX_EXISTING_BYTES {
-        return Ok(Vec::new());
-    }
-    std::fs::read(path).map_err(|_| "journal d'extensions indisponible".to_string())
 }
 
 #[cfg(test)]
@@ -74,19 +63,22 @@ mod tests {
         let path = temporary.path().join("operations.jsonl");
         let line =
             "{\"timestamp\":\"safe\",\"operation\":\"install_git\",\"code\":\"extensions_install_failed\"}\n";
-        let initial = line.repeat(MAX_LOG_BYTES / line.len());
+        let initial = line.repeat(super::super::bounded_jsonl::MAX_LOG_BYTES / line.len());
         std::fs::write(&path, initial).unwrap();
         write_at(
             &path,
             "install_git",
             "extensions_git_download_failed",
-            "operation_failed",
+            "secret-sentinel https://private /Users/private\nstack backtrace",
         )
         .unwrap();
         let bytes = std::fs::read(path).unwrap();
-        assert!(bytes.len() <= MAX_LOG_BYTES);
+        assert!(bytes.len() <= super::super::bounded_jsonl::MAX_LOG_BYTES);
         let text = String::from_utf8(bytes).unwrap();
         assert!(!text.contains("https://"));
         assert!(!text.contains("/Users/"));
+        assert!(!text.contains("secret-sentinel"));
+        assert!(!text.contains("stack"));
+        assert!(text.contains("operation_failed"));
     }
 }
