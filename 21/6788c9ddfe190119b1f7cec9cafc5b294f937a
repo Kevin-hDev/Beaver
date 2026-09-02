@@ -31,11 +31,12 @@ Preuves observées
 - npm run lint, npx tsc --noEmit, cargo check, Clippy strict, cargo fmt, contracts:check et git diff --check: exit 0.
 - Graphify: 42 223 nœuds, 88 207 arêtes, 2 433 communautés; sortie lue, exit 0.
 
-Validation visuelle non déclarée verte
-- Le lancement natif utilisait un nouveau CL_GO_CEF_TEST_DATA_DIR sous le vrai répertoire temporaire macOS et la feature cef-test-profile.
-- Beaver n’a pas atteint son interface: répétition de browser-helper setup failed (cef-supervision-object), puis FATAL GPU process isn't usable. Goodbye.
-- Le profil fichier réel n’a pas été touché. Le profil temporaire exact a été déplacé de manière récupérable dans la Corbeille et les chemins source/destination ont été vérifiés.
-- Cette panne CEF locale empêche de déclarer observés les thèmes sombre/clair, l’allemand, le responsive et les scénarios runtime; elle n’est pas maquillée en succès P1.5.
+Validation visuelle native après le commit
+- Le premier lancement isolé avait échoué avant l’interface avec cef-supervision-object puis GPU process isn't usable. Après validation explicite du trousseau macOS par l’utilisateur, Beaver est resté ouvert sans nouvelle disparition de WebView; les erreurs CEF/GPU sont donc consignées comme symptômes en aval du démarrage bloqué, pas comme une panne GPU démontrée.
+- Parcours réellement observés: liste, fiche Documents, état vide personnalisé, panneau Hôte, thèmes sombre/clair et interface française/allemande.
+- Cycle runtime réversible observé: activation de Documents, Hôte à une extension active avec Node.js v24.18.0 et Jiti 2.7.0, puis désactivation et vérification du retour à l’état initial.
+- Français, thème sombre et Documents désactivé ont été restaurés. Aucune récupération globale, installation, suppression ou mutation d’extension personnalisée n’a été déclenchée.
+- La bordure native n’a pas accepté le redimensionnement piloté; une largeur inférieure et les fixtures Hôte mort/reprise ne sont pas revendiquées comme observées sur les données réelles. Elles restent couvertes par les tests ciblés.
 
 Porte finale documentaire
 - Le document privé EXTENSION_API_V1.md porte la date du 2 septembre 2026 et le commit exact 216788c9ddfe190119b1f7cec9cafc5b294f937a.
