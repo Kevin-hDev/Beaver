@@ -32,6 +32,8 @@ fn record(id: &str, kind: ExtensionKind) -> ExtensionRecord {
         origin: None,
         enabled: true,
         trusted: true,
+        fingerprint: None,
+        trusted_at: None,
         show_in_chat: true,
         status: ExtensionStatus::Inactive,
         last_error: None,
@@ -70,7 +72,7 @@ fn official_host_reserves_capacity_and_the_thirty_second_third_party_is_refused(
         (0..32).map(|index| record(&format!("com.example.local{index}"), ExtensionKind::Local)),
     );
 
-    let plan = super::runtime_sync::plan_records(records);
+    let plan = super::runtime_plan::records(records);
 
     assert_eq!(plan.official.len(), 1);
     assert_eq!(plan.third_party.len(), 31);
@@ -105,7 +107,7 @@ fn the_thirty_second_third_party_is_refused_even_without_an_active_builtin() {
         })
         .collect();
 
-    let plan = super::runtime_sync::plan_records(records);
+    let plan = super::runtime_plan::records(records);
 
     assert!(plan.official.is_empty());
     assert_eq!(plan.third_party.len(), 31);

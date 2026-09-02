@@ -8,14 +8,15 @@ use std::collections::BTreeSet;
 use std::sync::Arc;
 
 impl ExtensionRuntime {
-    pub(super) async fn sync_hosts(&self) -> Result<(), String> {
+    pub(super) async fn sync_hosts(&self) -> Result<bool, String> {
         let _sync = self.sync.lock().await;
         let paths = self
             .paths
             .as_ref()
             .ok_or_else(|| super::error_codes::HOST_UNAVAILABLE.to_string())?;
         let build =
-            super::runtime_sync::build_specs(super::registry::enabled_hosted()?, &paths.directory)?;
+            super::runtime_sync::build_specs(super::registry::enabled_hosted()?, &paths.directory)
+                .await?;
         self.close_stale_channels(&build).await;
         let mut responses =
             Vec::with_capacity(build.official_specs.len() + build.third_party_specs.len());
@@ -52,7 +53,7 @@ impl ExtensionRuntime {
         }
         let applied = super::runtime_sync::apply(responses, &build)?;
         self.set_running(applied.active, applied.diagnostics);
-        Ok(())
+        Ok(build.sensitive_access_reminder)
     }
 
     async fn ensure_channel(
@@ -127,7 +128,7 @@ impl ExtensionRuntime {
     }
 }
 
-async fn load_specs(
+pub(super) async fn load_specs(
     process: &HostProcess,
     specs: &[super::protocol::HostExtensionSpec],
     responses: &mut Vec<LoadResult>,

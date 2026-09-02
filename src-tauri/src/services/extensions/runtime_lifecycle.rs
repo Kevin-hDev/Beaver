@@ -6,7 +6,7 @@ use std::sync::Arc;
 use std::time::Instant;
 use tauri::Emitter;
 
-pub async fn restart() -> Result<(), String> {
+pub async fn restart() -> Result<bool, String> {
     let runtime = Arc::clone(super::runtime::global()?);
     let work = runtime.work.clone();
     work.run_operation(move |cancel| async move {
@@ -61,7 +61,7 @@ pub(super) async fn ensure_running(extension_id: &str) -> Result<Arc<HostProcess
         return Err(error_codes::HOST_UNAVAILABLE.to_string());
     }
     runtime.set_state(HostState::Starting, None, 0);
-    runtime.sync_hosts().await?;
+    let _ = runtime.sync_hosts().await?;
     runtime
         .process_for_extension(extension_id)
         .await
@@ -69,7 +69,7 @@ pub(super) async fn ensure_running(extension_id: &str) -> Result<Arc<HostProcess
 }
 
 impl ExtensionRuntime {
-    pub(super) async fn start_untracked(&self) -> Result<(), String> {
+    pub(super) async fn start_untracked(&self) -> Result<bool, String> {
         if !self.work.is_open() {
             return Err(error_codes::HOST_UNAVAILABLE.to_string());
         }
@@ -81,7 +81,7 @@ impl ExtensionRuntime {
         result
     }
 
-    async fn restart_untracked(&self) -> Result<(), String> {
+    async fn restart_untracked(&self) -> Result<bool, String> {
         let stopped = self.stop_hosts(super::host_process::stop_deadline()).await;
         super::host_stop_boundary::after_confirmed_stop(
             stopped,

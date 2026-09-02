@@ -2,6 +2,7 @@ use super::types::{
     ExtensionContributions, ExtensionKind, ExtensionRecord, ExtensionStatus, MAX_EXTENSIONS,
     MAX_USER_EXTENSIONS,
 };
+use std::collections::BTreeMap;
 use std::sync::{LazyLock, Mutex, RwLock};
 
 pub(super) static RECORDS: LazyLock<RwLock<Vec<ExtensionRecord>>> =
@@ -9,17 +10,22 @@ pub(super) static RECORDS: LazyLock<RwLock<Vec<ExtensionRecord>>> =
 pub(super) static MUTATIONS: Mutex<()> = Mutex::new(());
 
 pub fn init() -> Result<(), String> {
-    let stored = super::storage::load()?;
-    let records = super::builtin::merge(super::registry_state::reset_hosted_runtime(stored))?;
+    let loaded = super::storage::load()?;
+    let format = loaded.format;
+    super::registry_state::replace_recovery_snapshot(loaded.recovery_snapshot)?;
+    let records = super::builtin::merge(super::registry_state::reset_hosted_runtime(
+        loaded.extensions,
+    ))?;
     super::validation::records(&records)?;
-    super::storage::save(&records)?;
+    super::storage::save(&records, &super::registry_state::recovery_snapshot()?)?;
     if super::managed_cleanup::unreferenced(&records).is_err() {
         super::operation_error::report(
             super::operation_error::Operation::Cleanup,
             super::OperationFailure::CleanupFailed,
         );
     }
-    replace(records)
+    replace(records)?;
+    super::storage::finish_successful_startup(&super::storage::path(), format)
 }
 
 pub fn list() -> Result<Vec<ExtensionRecord>, String> {
@@ -114,14 +120,15 @@ pub async fn set_enabled(id: &str, enabled: bool, trust_confirmed: bool) -> Resu
         if enabled && record.kind != ExtensionKind::Builtin && !record.trusted && !trust_confirmed {
             return Err("Confirmation d'activation requise.".to_string());
         }
-        if enabled && trust_confirmed {
-            record.trusted = true;
+        let activated_at = chrono::Utc::now().to_rfc3339();
+        if enabled && trust_confirmed && record.kind == ExtensionKind::Local {
+            super::registry_state::approve_local(record, &activated_at)?;
         }
         record.enabled = enabled;
         record.status = ExtensionStatus::Inactive;
         record.last_error = None;
         if enabled {
-            record.last_activated_at = Some(chrono::Utc::now().to_rfc3339());
+            record.last_activated_at = Some(activated_at);
         } else {
             reminder = record.sensitive_access_granted;
             record.contributions = ExtensionContributions::default();
@@ -144,9 +151,7 @@ pub fn set_show_in_chat(id: &str, show: bool) -> Result<(), String> {
 pub async fn disable_hosted_extensions() -> Result<bool, String> {
     let mut reminder = false;
     mutate(|records| {
-        reminder = records.iter().any(|record| {
-            record.kind != ExtensionKind::External && record.sensitive_access_granted
-        });
+        reminder = records.iter().any(|record| record.sensitive_access_granted);
         disable_hosted_records(records);
         Ok::<(), String>(())
     })?;
@@ -156,20 +161,30 @@ pub async fn disable_hosted_extensions() -> Result<bool, String> {
 
 pub(super) fn disable_hosted_records(records: &mut [ExtensionRecord]) {
     for record in records {
-        if record.kind != ExtensionKind::External {
-            record.enabled = false;
-            record.status = ExtensionStatus::Inactive;
-            record.last_error = None;
-            record.contributions = ExtensionContributions::default();
-        }
+        record.enabled = false;
+        record.status = ExtensionStatus::Inactive;
+        record.last_error = None;
+        record.contributions = ExtensionContributions::default();
     }
 }
 
 pub fn enabled_hosted() -> Result<Vec<ExtensionRecord>, String> {
     Ok(list()?
         .into_iter()
-        .filter(|record| record.kind != ExtensionKind::External && record.enabled && record.trusted)
+        .filter(|record| record.enabled && record.trusted)
         .collect())
+}
+
+pub(super) fn revoke_fingerprints(revocations: &BTreeMap<String, String>) -> Result<bool, String> {
+    if revocations.is_empty() {
+        return Ok(false);
+    }
+    let mut reminder = false;
+    mutate(|records| {
+        reminder = super::registry_state::revoke_fingerprints(records, revocations);
+        Ok::<(), String>(())
+    })?;
+    Ok(reminder)
 }
 
 fn update(
@@ -196,7 +211,8 @@ where
     let _guard = MUTATIONS.lock().map_err(|_| E::storage())?;
     let mut candidate = list().map_err(|_| E::storage())?;
     operation(&mut candidate)?;
-    super::storage::save(&candidate).map_err(|_| E::storage())?;
+    let recovery_snapshot = super::registry_state::recovery_snapshot().map_err(|_| E::storage())?;
+    super::storage::save(&candidate, &recovery_snapshot).map_err(|_| E::storage())?;
     replace(candidate).map_err(|_| E::storage())
 }
 

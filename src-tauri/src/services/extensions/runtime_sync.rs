@@ -1,8 +1,8 @@
 use super::protocol::{HostExtensionSpec, LoadResult};
 use super::types::{
-    ExtensionApiLevel, ExtensionContributions, ExtensionDiagnostic, ExtensionKind,
-    DIAGNOSTIC_ADVANCED_REQUIRED, DIAGNOSTIC_ENTRY_UNAVAILABLE, DIAGNOSTIC_HOST_MISSING_RESPONSE,
-    DIAGNOSTIC_LOAD_FAILED, MAX_EXTENSIONS, RUNTIME_DIAGNOSTIC_CODES,
+    ExtensionApiLevel, ExtensionContributions, ExtensionDiagnostic, DIAGNOSTIC_ADVANCED_REQUIRED,
+    DIAGNOSTIC_ENTRY_UNAVAILABLE, DIAGNOSTIC_HOST_MISSING_RESPONSE, DIAGNOSTIC_LOAD_FAILED,
+    MAX_EXTENSIONS, RUNTIME_DIAGNOSTIC_CODES,
 };
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path::Path;
@@ -13,6 +13,7 @@ pub struct BuildSpecs {
     pub enabled_ids: HashSet<String>,
     pub diagnostics: Vec<ExtensionDiagnostic>,
     pub failures: BTreeMap<String, String>,
+    pub sensitive_access_reminder: bool,
 }
 
 pub struct ApplyResult {
@@ -20,61 +21,30 @@ pub struct ApplyResult {
     pub diagnostics: Vec<ExtensionDiagnostic>,
 }
 
-pub(super) struct HostPlan {
-    pub(super) official: Vec<super::types::ExtensionRecord>,
-    pub(super) third_party: Vec<super::types::ExtensionRecord>,
-    pub(super) failures: std::collections::BTreeMap<String, String>,
-}
-
-pub(super) fn plan_records(records: Vec<super::types::ExtensionRecord>) -> HostPlan {
-    let mut official = Vec::new();
-    let mut candidates = Vec::new();
-    for record in records
-        .into_iter()
-        .filter(|record| record.enabled && record.trusted)
-    {
-        match record.kind {
-            ExtensionKind::Builtin => official.push(record),
-            ExtensionKind::Local => candidates.push(record),
-            ExtensionKind::External => {}
-        }
-    }
-    // Le dernier emplacement reste réservé à l'autorité officielle, même si aucun Builtin
-    // n'est actif pendant cette synchronisation : la 32e extension tierce échoue toujours pareil.
-    let third_party_capacity = super::types::MAX_HOST_PROCESSES.saturating_sub(1);
-    let mut failures = std::collections::BTreeMap::new();
-    for record in candidates.iter().skip(third_party_capacity) {
-        failures.insert(
-            record.manifest.id.clone(),
-            super::error_codes::LIMIT_REACHED.to_string(),
-        );
-    }
-    candidates.truncate(third_party_capacity);
-    HostPlan {
-        official,
-        third_party: candidates,
-        failures,
-    }
-}
-
-pub fn build_specs(
+pub async fn build_specs(
     records: Vec<super::types::ExtensionRecord>,
     host_directory: &Path,
 ) -> Result<BuildSpecs, String> {
-    super::registry_sync::mark_enabled_loading()?;
-    let enabled_ids = records
+    let verified = super::fingerprint::verify_records(records);
+    let sensitive_access_reminder = super::registry::revoke_fingerprints(&verified.revocations)?;
+    for extension_id in verified.revocations.keys() {
+        crate::services::agent_local::permission_gate::clear_extension(extension_id).await;
+    }
+    let enabled_ids = verified
+        .eligible
         .iter()
         .filter(|record| record.enabled && record.trusted)
         .take(MAX_EXTENSIONS)
         .map(|record| record.manifest.id.clone())
         .collect();
-    let plan = plan_records(records);
+    super::registry_sync::mark_loading(&enabled_ids)?;
+    let plan = super::runtime_plan::records(verified.eligible);
     let mut official_specs = Vec::new();
     let mut third_party_specs = BTreeMap::new();
     let mut diagnostics = Vec::new();
     for record in plan.official.into_iter().take(MAX_EXTENSIONS) {
         let extension_id = record.manifest.id.clone();
-        if let Some(specification) = build_spec(record, host_directory) {
+        if let Some(specification) = super::runtime_plan::specification(record, host_directory) {
             official_specs.push(specification);
         } else {
             diagnostics.push(runtime_diagnostic(
@@ -86,7 +56,7 @@ pub fn build_specs(
     }
     for record in plan.third_party.into_iter().take(MAX_EXTENSIONS) {
         let extension_id = record.manifest.id.clone();
-        if let Some(specification) = build_spec(record, host_directory) {
+        if let Some(specification) = super::runtime_plan::specification(record, host_directory) {
             third_party_specs.insert(extension_id, specification);
         } else {
             diagnostics.push(runtime_diagnostic(
@@ -102,6 +72,7 @@ pub fn build_specs(
         enabled_ids,
         diagnostics,
         failures: plan.failures,
+        sensitive_access_reminder,
     })
 }
 
@@ -193,24 +164,6 @@ fn runtime_diagnostic(
         line: None,
         column: None,
     }
-}
-
-fn build_spec(
-    record: super::types::ExtensionRecord,
-    host_directory: &Path,
-) -> Option<HostExtensionSpec> {
-    let main = match record.kind {
-        ExtensionKind::Builtin => super::builtin::resolve_entry(host_directory, &record),
-        ExtensionKind::Local => super::manifest::resolve_record_entry(&record),
-        ExtensionKind::External => return None,
-    }
-    .ok()?;
-    let main_path = main.to_str()?;
-    Some(HostExtensionSpec {
-        id: record.manifest.id.clone(),
-        main_path: main_path.to_string(),
-        manifest: record.manifest,
-    })
 }
 
 pub(super) fn accepts_contributions(

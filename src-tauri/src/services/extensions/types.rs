@@ -9,7 +9,6 @@ include!(concat!(env!("OUT_DIR"), "/extension_contract.rs"));
 pub enum ExtensionKind {
     Builtin,
     Local,
-    External,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -106,11 +105,15 @@ pub struct ExtensionRecord {
     pub enabled: bool,
     #[serde(default)]
     pub trusted: bool,
+    #[serde(default)]
+    pub fingerprint: Option<String>,
+    #[serde(default)]
+    pub trusted_at: Option<String>,
     pub show_in_chat: bool,
     pub status: ExtensionStatus,
     pub last_error: Option<String>,
     pub last_activated_at: Option<String>,
-    #[serde(skip)]
+    #[serde(default)]
     pub sensitive_access_granted: bool,
     #[serde(skip)]
     pub contributions: ExtensionContributions,

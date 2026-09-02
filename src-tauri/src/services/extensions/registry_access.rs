@@ -30,15 +30,11 @@ pub(super) fn mark_sensitive_access(identity: &HostIdentity) -> Result<(), Strin
     if let HostIdentity::ThirdParty(id) = identity {
         super::validation::identifier(id)?;
     }
-    let _guard = super::registry::MUTATIONS
-        .lock()
-        .map_err(|_| unavailable())?;
-    let mut records = super::registry::RECORDS
-        .write()
-        .map_err(|_| unavailable())?;
-    mark_sensitive_identity(&mut records, identity)
-        .then_some(())
-        .ok_or_else(unavailable)
+    super::registry::mutate(|records| {
+        mark_sensitive_identity(records, identity)
+            .then_some(())
+            .ok_or_else(unavailable)
+    })
 }
 
 pub(super) fn mark_sensitive_identity(

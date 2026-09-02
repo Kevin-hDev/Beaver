@@ -13,7 +13,6 @@ impl HostIdentity {
         match record.kind {
             ExtensionKind::Builtin => Ok(Self::Official),
             ExtensionKind::Local => Ok(Self::ThirdParty(record.manifest.id.clone())),
-            ExtensionKind::External => Err(super::error_codes::HOST_UNAVAILABLE.to_string()),
         }
     }
 

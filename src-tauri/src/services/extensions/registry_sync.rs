@@ -3,16 +3,21 @@ use super::types::{
 };
 use std::collections::{BTreeMap, HashMap, HashSet};
 
-pub fn mark_enabled_loading() -> Result<(), String> {
+pub fn mark_loading(eligible_ids: &HashSet<String>) -> Result<(), String> {
     super::registry::mutate(|records| {
-        for record in records.iter_mut().filter(|record| {
-            record.kind != ExtensionKind::External && record.enabled && record.trusted
-        }) {
-            record.status = ExtensionStatus::Loading;
-            record.last_error = None;
-        }
+        mark_loading_records(records, eligible_ids);
         Ok::<(), String>(())
     })
+}
+
+fn mark_loading_records(records: &mut [ExtensionRecord], eligible_ids: &HashSet<String>) {
+    for record in records
+        .iter_mut()
+        .filter(|record| eligible_ids.contains(&record.manifest.id))
+    {
+        record.status = ExtensionStatus::Loading;
+        record.last_error = None;
+    }
 }
 
 pub fn apply_results(
@@ -98,10 +103,7 @@ fn accept_unique_tools<'a>(
 
 pub fn mark_all_enabled_error() {
     let _ = super::registry::mutate(|records| {
-        for record in records
-            .iter_mut()
-            .filter(|record| record.kind != ExtensionKind::External && record.enabled)
-        {
+        for record in records.iter_mut().filter(|record| record.enabled) {
             record.status = ExtensionStatus::Error;
             record.last_error = Some("host_unavailable".to_string());
         }
@@ -170,6 +172,8 @@ mod tests {
             origin: None,
             enabled: true,
             trusted: true,
+            fingerprint: None,
+            trusted_at: None,
             show_in_chat: true,
             status: ExtensionStatus::Loading,
             last_error: None,
@@ -188,7 +192,6 @@ mod tests {
         let enabled = HashSet::from(["plugin-a".to_string(), "plugin-b".to_string()]);
         let mut records = vec![record("plugin-a"), record("plugin-b")];
         let mut active = 0;
-
         super::apply_loaded_results(
             &mut records,
             &enabled,
@@ -196,11 +199,31 @@ mod tests {
             &BTreeMap::new(),
             &mut active,
         );
-
         assert_eq!(active, 1);
         assert_eq!(records[0].status, ExtensionStatus::Active);
         assert_eq!(records[1].status, ExtensionStatus::Error);
         assert_eq!(records[1].last_error.as_deref(), Some("load_failed"));
         assert!(records[1].contributions.tools.is_empty());
+    }
+
+    #[test]
+    fn loading_transition_only_clears_errors_for_eligible_records() {
+        let mut eligible = record("eligible");
+        eligible.status = ExtensionStatus::Error;
+        eligible.last_error = Some("previous".to_string());
+        let mut revoked = record("revoked");
+        revoked.status = ExtensionStatus::Error;
+        revoked.last_error = Some("extensions_fingerprint_changed".to_string());
+        let mut records = vec![eligible, revoked];
+
+        mark_loading_records(&mut records, &HashSet::from(["eligible".to_string()]));
+
+        assert_eq!(records[0].status, ExtensionStatus::Loading);
+        assert!(records[0].last_error.is_none());
+        assert_eq!(records[1].status, ExtensionStatus::Error);
+        assert_eq!(
+            records[1].last_error.as_deref(),
+            Some("extensions_fingerprint_changed")
+        );
     }
 }

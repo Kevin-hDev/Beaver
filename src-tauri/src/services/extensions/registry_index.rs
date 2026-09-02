@@ -1,5 +1,5 @@
 use super::discovery_catalog::CatalogSnapshot;
-use super::types::{ExtensionKind, ExtensionRecord, ExtensionTool};
+use super::types::{ExtensionRecord, ExtensionTool};
 use std::collections::{BTreeMap, HashSet};
 use std::sync::{LazyLock, RwLock};
 
@@ -36,7 +36,7 @@ pub fn rebuild(records: &[ExtensionRecord]) -> Result<(), String> {
     let preferences = super::discovery_preferences::sanitize(records)?;
     let plugins = records
         .iter()
-        .filter(|record| record.kind != ExtensionKind::External && record.enabled && record.trusted)
+        .filter(|record| record.enabled && record.trusted)
         .map(|record| IndexedPlugin {
             id: record.manifest.id.clone(),
             name: record.manifest.name.clone(),

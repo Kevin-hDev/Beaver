@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use std::sync::{LazyLock, Mutex};
 
 use super::discovery_limits::{DISCOVERY_STORE_MAX_BYTES, MAX_USER_PRIORITY_PLUGINS};
-use super::types::{ExtensionKind, ExtensionRecord};
+use super::types::ExtensionRecord;
 
 static STORE_LOCK: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
 
@@ -82,7 +82,7 @@ fn validate_requested(plugin_ids: &[String]) -> Result<(), String> {
 fn enabled_ids(records: &[ExtensionRecord]) -> HashSet<String> {
     records
         .iter()
-        .filter(|record| record.kind != ExtensionKind::External && record.enabled)
+        .filter(|record| record.enabled)
         .map(|record| record.manifest.id.clone())
         .collect()
 }

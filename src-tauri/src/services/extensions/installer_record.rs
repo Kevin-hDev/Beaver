@@ -3,6 +3,8 @@ use super::types::{ExtensionRecord, ExtensionStatus};
 pub fn for_update(current: &ExtensionRecord, mut replacement: ExtensionRecord) -> ExtensionRecord {
     replacement.enabled = false;
     replacement.trusted = false;
+    replacement.fingerprint = None;
+    replacement.trusted_at = None;
     replacement.show_in_chat = current.show_in_chat;
     replacement.status = ExtensionStatus::Inactive;
     replacement.last_error = None;
@@ -30,6 +32,8 @@ mod tests {
             .remove(0);
         current.enabled = true;
         current.trusted = true;
+        current.fingerprint = Some("ab".repeat(32));
+        current.trusted_at = Some("2026-07-28T00:00:00Z".to_string());
         current.show_in_chat = true;
         current.last_activated_at = Some("2026-07-28T00:00:00Z".to_string());
         current.sensitive_access_granted = true;
@@ -40,13 +44,15 @@ mod tests {
 
         assert!(!replacement.enabled);
         assert!(!replacement.trusted);
+        assert!(replacement.fingerprint.is_none());
+        assert!(replacement.trusted_at.is_none());
         assert!(replacement.show_in_chat);
         assert_eq!(replacement.last_activated_at, current.last_activated_at);
         assert!(replacement.sensitive_access_granted);
-        assert!(serde_json::to_value(&replacement)
-            .unwrap()
-            .get("sensitiveAccessGranted")
-            .is_none());
+        assert_eq!(
+            serde_json::to_value(&replacement).unwrap()["sensitiveAccessGranted"],
+            true
+        );
     }
 
     #[test]

@@ -10,6 +10,8 @@ mod discovery_limits;
 mod discovery_preferences;
 mod discovery_usage;
 mod error_codes;
+mod fingerprint;
+mod fingerprint_paths;
 mod git_checkout;
 mod git_package;
 mod git_source;
@@ -58,6 +60,7 @@ mod runtime_dispatch;
 mod runtime_host_storage;
 mod runtime_hosts;
 mod runtime_lifecycle;
+mod runtime_plan;
 mod runtime_restart;
 mod runtime_sync;
 mod runtime_version;
@@ -137,6 +140,8 @@ mod bounded_jsonl_tests;
 #[cfg(test)]
 mod builtin_tests;
 #[cfg(test)]
+mod fingerprint_tests;
+#[cfg(test)]
 mod git_dependencies_tests;
 #[cfg(test)]
 mod git_policy_tests;
@@ -156,6 +161,8 @@ mod runtime_hosts_tests;
 mod runtime_sync_tests;
 #[cfg(test)]
 mod source_validation_tests;
+#[cfg(test)]
+mod storage_migration_tests;
 #[cfg(test)]
 mod tests;
 #[cfg(test)]

@@ -87,10 +87,10 @@ fn storage_round_trip_is_bounded() {
     let path = directory.path().join("extensions.json");
     let records = Vec::new();
 
-    super::storage::save_to(&path, &records).unwrap();
+    super::storage::save_to(&path, &records, &None).unwrap();
     let loaded = super::storage::load_from(&path).unwrap();
 
-    assert_eq!(loaded, records);
+    assert_eq!(loaded.extensions, records);
 }
 
 #[test]
@@ -110,10 +110,10 @@ fn runtime_contributions_are_not_persisted() {
         replaces_core: false,
     });
 
-    super::storage::save_to(&storage, &[record]).unwrap();
+    super::storage::save_to(&storage, &[record], &None).unwrap();
     let loaded = super::storage::load_from(&storage).unwrap();
 
-    assert!(loaded[0].contributions.tools.is_empty());
+    assert!(loaded.extensions[0].contributions.tools.is_empty());
 }
 
 #[test]

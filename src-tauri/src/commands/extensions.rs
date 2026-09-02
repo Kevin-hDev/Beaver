@@ -85,10 +85,12 @@ pub async fn set_extension_enabled(
     let result = if enabled {
         extensions::restart().await
     } else {
-        extensions::revoke_extension(&extension_id).await
+        extensions::revoke_extension(&extension_id)
+            .await
+            .map(|_| false)
     };
     emit_changed(&app);
-    result.map(|_| reminder)
+    result.map(|runtime_reminder| reminder || runtime_reminder)
 }
 
 #[tauri::command]
@@ -103,7 +105,7 @@ pub async fn set_extension_show_in_chat(
 }
 
 #[tauri::command]
-pub async fn reload_extension_host(app: tauri::AppHandle) -> Result<(), String> {
+pub async fn reload_extension_host(app: tauri::AppHandle) -> Result<bool, String> {
     let result = extensions::restart().await;
     emit_changed(&app);
     result
@@ -131,7 +133,7 @@ pub async fn recover_extension_host(app: tauri::AppHandle) -> Result<bool, Strin
     let reminder = extensions::disable_hosted_extensions().await?;
     let result = extensions::restart().await;
     emit_changed(&app);
-    result.map(|_| reminder)
+    result.map(|runtime_reminder| reminder || runtime_reminder)
 }
 
 #[tauri::command]
