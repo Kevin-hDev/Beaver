@@ -164,4 +164,37 @@ describe("ExtensionsPage", () => {
 
     expect(onSelectSection).toHaveBeenCalledWith("host");
   });
+
+  it("propose de quitter et relancer après un arrêt non confirmé", () => {
+    render(
+      <ExtensionsPage
+        section="host"
+        selected={null}
+        onSelectSection={vi.fn()}
+        records={records}
+        host={{ ...host, state: "error", lastError: "extensions_stop_unconfirmed" }}
+        loading={false}
+        loadError={null}
+        operationError={null}
+        busyIds={new Set()}
+        protectedPluginIds={[]}
+        priorityBusy={false}
+        onSelect={vi.fn()}
+        onAdd={vi.fn()}
+        onEnabled={vi.fn()}
+        onShowInChat={vi.fn()}
+        onOpenSource={vi.fn()}
+        onUpdate={vi.fn()}
+        onRemove={vi.fn()}
+        onReload={vi.fn()}
+        onRecover={vi.fn()}
+        onPrioritySave={vi.fn(() => Promise.resolve(true))}
+      />,
+    );
+
+    expect(screen.getByText(
+      "extensions.errors.codes.extensions_stop_unconfirmed",
+    )).toBeInTheDocument();
+    expect(screen.getByText("extensions.host.quitAndRestartHint")).toBeInTheDocument();
+  });
 });

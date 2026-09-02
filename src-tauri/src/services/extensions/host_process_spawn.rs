@@ -11,25 +11,41 @@ use std::sync::Arc;
 use tokio::process::Command;
 use tokio::sync::Mutex;
 
+pub(in crate::services::extensions) struct HostSpawnBinding {
+    identity: HostIdentity,
+    generation: Arc<crate::services::extensions::runtime_hosts::HostGeneration>,
+    revoked: tokio_util::sync::CancellationToken,
+    exit_sender:
+        tokio::sync::mpsc::Sender<crate::services::extensions::runtime_hosts::HostExitNotice>,
+}
+
+impl HostSpawnBinding {
+    pub(in crate::services::extensions) fn new(
+        identity: HostIdentity,
+        generation: Arc<crate::services::extensions::runtime_hosts::HostGeneration>,
+        revoked: tokio_util::sync::CancellationToken,
+        exit_sender: tokio::sync::mpsc::Sender<
+            crate::services::extensions::runtime_hosts::HostExitNotice,
+        >,
+    ) -> Self {
+        Self {
+            identity,
+            generation,
+            revoked,
+            exit_sender,
+        }
+    }
+}
+
 impl HostProcess {
     pub async fn spawn_bound(
         paths: &HostPaths,
         work: &crate::services::extensions::work_supervision::ExtensionWorkServices,
-        identity: HostIdentity,
-        generation: u64,
-        revoked: tokio_util::sync::CancellationToken,
+        binding: HostSpawnBinding,
+        deadline: std::time::Instant,
         temporary_directory: &std::path::Path,
     ) -> Result<Self, String> {
-        Self::spawn_inner(
-            paths,
-            work,
-            identity,
-            generation,
-            revoked,
-            temporary_directory,
-            None,
-        )
-        .await
+        Self::spawn_inner(paths, work, binding, deadline, temporary_directory, None).await
     }
 
     #[cfg(test)]
@@ -43,9 +59,13 @@ impl HostProcess {
         Self::spawn_inner(
             paths,
             work,
-            HostIdentity::Official,
-            1,
-            tokio_util::sync::CancellationToken::new(),
+            HostSpawnBinding::new(
+                HostIdentity::Official,
+                Arc::new(crate::services::extensions::runtime_hosts::HostGeneration::new(1)),
+                tokio_util::sync::CancellationToken::new(),
+                tokio::sync::mpsc::channel(1).0,
+            ),
+            crate::services::extensions::runtime_lifecycle::new_stop_deadline(),
             &path,
             Some(temporary),
         )
@@ -55,12 +75,18 @@ impl HostProcess {
     async fn spawn_inner(
         paths: &HostPaths,
         work: &crate::services::extensions::work_supervision::ExtensionWorkServices,
-        identity: HostIdentity,
-        generation: u64,
-        revoked: tokio_util::sync::CancellationToken,
+        binding: HostSpawnBinding,
+        deadline: std::time::Instant,
         temporary_directory: &std::path::Path,
         owned_temporary_directory: Option<tempfile::TempDir>,
     ) -> Result<Self, String> {
+        let HostSpawnBinding {
+            identity,
+            generation,
+            revoked,
+            exit_sender,
+        } = binding;
+        let generation_number = generation.number;
         let reader_admission = work
             .try_admit_reader()
             .map_err(|error| error.public_code().to_string())?;
@@ -87,6 +113,9 @@ impl HostProcess {
             )
             .await
             .map_err(|_| error_codes::HOST_UNAVAILABLE.to_string())?;
+        let pid = child
+            .id()
+            .ok_or_else(|| error_codes::HOST_UNAVAILABLE.to_string())?;
         let stdin = child
             .stdin
             .take()
@@ -96,10 +125,11 @@ impl HostProcess {
             .take()
             .ok_or_else(|| error_codes::HOST_UNAVAILABLE.to_string())?;
         let writer = Arc::new(Mutex::new(stdin));
-        let pending: PendingRequests = Arc::new(Mutex::new(HashMap::new()));
+        let pending: PendingRequests = Arc::new(std::sync::Mutex::new(HashMap::new()));
         let alive = Arc::new(AtomicBool::new(true));
         let reader_cancel = tokio_util::sync::CancellationToken::new();
         let load_tracker = Arc::new(HostLoadTracker::default());
+        let log_identity = identity.clone();
         let reader_finished = match reader_admission.spawn_with_completion({
             let work = work.clone();
             let writer = writer.clone();
@@ -124,6 +154,7 @@ impl HostProcess {
                     crate::services::extensions::host_reader::HostAuthority {
                         identity,
                         generation,
+                        exit_sender,
                     },
                 )
                 .await;
@@ -135,11 +166,18 @@ impl HostProcess {
                     &mut child,
                     crate::services::process_tree::ProcessKind::ExtensionHost,
                     &process_scope,
+                    pid,
+                    deadline,
                 )
                 .await;
                 return Err(error_codes::HOST_UNAVAILABLE.to_string());
             }
         };
+        crate::services::extensions::access_log::write_host_started(
+            log_identity,
+            generation_number,
+            pid,
+        );
         Ok(Self {
             child: Mutex::new(child),
             writer,
@@ -149,6 +187,7 @@ impl HostProcess {
             load_tracker,
             reader_done: Mutex::new(Some(reader_finished)),
             process_scope,
+            root_pid: pid,
             _test_temporary_directory: owned_temporary_directory,
         })
     }

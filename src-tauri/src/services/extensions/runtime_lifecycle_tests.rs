@@ -2,7 +2,7 @@ use super::super::host_identity::HostIdentity;
 use super::super::host_paths::HostPaths;
 use super::super::host_process::HostProcess;
 use super::super::runtime_hosts::RuntimeHosts;
-use super::super::types::{ExtensionApiLevel, ExtensionHostStatus};
+use super::super::types::{ExtensionApiLevel, ExtensionHostStatus, HostState};
 use super::*;
 use std::sync::Arc;
 use std::time::Duration;
@@ -15,7 +15,6 @@ fn runtime(work: super::super::work_supervision::ExtensionWorkServices) -> Exten
         hosts: Mutex::new(RuntimeHosts::new(temporary).unwrap()),
         sync: Mutex::new(()),
         status: std::sync::RwLock::new(ExtensionHostStatus::default()),
-        auto_restarts: super::super::runtime_restart::RestartBudget::default(),
         work,
     }
 }
@@ -29,7 +28,9 @@ async fn internal_start_cannot_bypass_closed_admission() {
     let runtime = runtime(work);
 
     assert_eq!(
-        runtime.start_untracked().await,
+        runtime
+            .start_untracked(Instant::now() + Duration::from_secs(1))
+            .await,
         Err(error_codes::HOST_UNAVAILABLE.to_string())
     );
     assert_eq!(runtime.hosts.lock().await.len(), 0);
@@ -73,7 +74,6 @@ async fn runtime_with_real_host() -> (tempfile::TempDir, ExtensionRuntime, Arc<H
         hosts: Mutex::new(hosts),
         sync: Mutex::new(()),
         status: std::sync::RwLock::new(ExtensionHostStatus::default()),
-        auto_restarts: super::super::runtime_restart::RestartBudget::default(),
         work,
     };
     (directory, runtime, process)
@@ -85,9 +85,73 @@ async fn stop_runtime_reaps_real_host_reader_and_closes_admission() {
 
     assert!(stop_runtime(&runtime, Instant::now() + Duration::from_secs(5)).await);
     assert_eq!(runtime.hosts.lock().await.len(), 0);
+    assert_eq!(runtime.status.read().unwrap().state, HostState::Stopped);
     assert_eq!(
         runtime.work.reader_phase(),
         crate::services::work_registry::ServiceWorkPhase::Closed
+    );
+}
+
+#[tokio::test]
+async fn spontaneous_process_exit_marks_error_without_a_user_call() {
+    let directory = tempfile::tempdir().unwrap();
+    let script = directory.path().join("crash.mjs");
+    std::fs::write(&script, "setTimeout(() => process.exit(23), 50);").unwrap();
+    let paths = HostPaths {
+        node: which::which("node").unwrap().canonicalize().unwrap(),
+        script,
+        directory: directory.path().to_path_buf(),
+    };
+    let coordinator = crate::app_exit::AppExitCoordinator::initialize().unwrap();
+    let work =
+        super::super::work_supervision::ExtensionWorkServices::new(coordinator.work_supervisor());
+    let (mut hosts, receiver) =
+        RuntimeHosts::new_monitored(directory.path().join("channels")).unwrap();
+    let identity = HostIdentity::ThirdParty("com.example.crash".to_string());
+    let reservation = hosts.reserve(identity.clone()).unwrap();
+    let deadline = Instant::now() + Duration::from_secs(5);
+    let process = Arc::new(
+        HostProcess::spawn_bound(
+            &paths,
+            &work,
+            reservation.spawn_binding(),
+            deadline,
+            reservation.temporary_directory(),
+        )
+        .await
+        .unwrap(),
+    );
+    hosts
+        .bind(reservation, ExtensionApiLevel::Stable, process)
+        .unwrap();
+    let runtime = Arc::new(ExtensionRuntime {
+        paths: Some(paths),
+        hosts: Mutex::new(hosts),
+        sync: Mutex::new(()),
+        status: std::sync::RwLock::new(ExtensionHostStatus::default()),
+        work,
+    });
+    runtime.start_exit_monitor(receiver).unwrap();
+
+    tokio::time::timeout(Duration::from_secs(2), async {
+        loop {
+            if runtime.status.read().unwrap().state == HostState::Error
+                && runtime.hosts.lock().await.len() == 0
+            {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+    })
+    .await
+    .expect("spontaneous exit must be observed");
+
+    runtime.work.begin_closing();
+    assert!(
+        runtime
+            .work
+            .stop_and_wait(Instant::now() + Duration::from_secs(2))
+            .await
     );
 }
 
@@ -96,10 +160,16 @@ async fn an_unconfirmed_stop_retains_the_real_channel() {
     let (_directory, runtime, process) = runtime_with_real_host().await;
     let child_guard = process.hold_child_for_test().await;
 
-    assert!(
-        !runtime
-            .stop_channel(&HostIdentity::Official, Some(&process))
-            .await
+    assert_eq!(
+        runtime
+            .stop_host_if_current(
+                &HostIdentity::Official,
+                Some(&process),
+                Instant::now() + Duration::from_millis(20),
+                false,
+            )
+            .await,
+        super::super::runtime::StopHostOutcome::Unconfirmed
     );
     assert!(!process.is_alive());
     assert!(runtime
@@ -111,4 +181,25 @@ async fn an_unconfirmed_stop_retains_the_real_channel() {
 
     drop(child_guard);
     assert!(process.kill(Instant::now() + Duration::from_secs(5)).await);
+}
+
+#[tokio::test]
+async fn confirmed_user_revocation_releases_its_restart_budget() {
+    let (_directory, runtime, _process) = runtime_with_real_host().await;
+    let identity = HostIdentity::Official;
+    {
+        let mut hosts = runtime.hosts.lock().await;
+        assert!(hosts.allow_restart(&identity));
+        assert!(hosts.allow_restart(&identity));
+        assert!(hosts.allow_restart(&identity));
+        assert!(!hosts.allow_restart(&identity));
+    }
+
+    assert!(
+        runtime
+            .revoke_extension(&identity, Instant::now() + Duration::from_secs(5))
+            .await
+    );
+
+    assert!(runtime.hosts.lock().await.allow_restart(&identity));
 }

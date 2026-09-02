@@ -2411,7 +2411,8 @@
         "error": "Error"
       },
       "recoveryTitle": "Modo de recuperación",
-      "recoveryDescription": "Desactiva los plugins de Beaver y las extensiones locales para recuperar un Beaver funcional."
+      "recoveryDescription": "Desactiva los plugins de Beaver y las extensiones locales para recuperar un Beaver funcional.",
+      "quitAndRestartHint": "Cierra Beaver por completo y vuelve a abrirlo antes de reactivar esta extensión."
     },
     "errors": {
       "load": "No se pudieron cargar las extensiones.",

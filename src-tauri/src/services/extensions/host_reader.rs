@@ -19,7 +19,8 @@ pub(super) struct HostReaderChannel {
 #[derive(Clone)]
 pub(super) struct HostAuthority {
     pub(super) identity: super::host_identity::HostIdentity,
-    pub(super) generation: u64,
+    pub(super) generation: Arc<super::runtime_hosts::HostGeneration>,
+    pub(super) exit_sender: tokio::sync::mpsc::Sender<super::runtime_hosts::HostExitNotice>,
 }
 
 struct HostReaderContext<'a> {
@@ -69,10 +70,15 @@ pub async fn run(
             break;
         }
     }
+    let exit_notice = super::runtime_hosts::HostExitNotice::capture(
+        authority.identity.clone(),
+        &authority.generation,
+    );
     channel.alive.store(false, Ordering::Release);
     channel.reader_cancel.cancel();
     channel.load_tracker.clear().await;
-    host_channel::fail_all(&channel.pending).await;
+    host_channel::fail_all(&channel.pending);
+    let _ = authority.exit_sender.send(exit_notice).await;
 }
 
 async fn receive_bound(
@@ -116,7 +122,7 @@ async fn receive_bound(
         .get("id")
         .and_then(Value::as_str)
         .ok_or_else(|| "Réponse de l'hôte d'extensions invalide.".to_string())?;
-    let Some(sender) = context.pending.lock().await.remove(id) else {
+    let Some(sender) = host_channel::remove(context.pending, id) else {
         return Ok(());
     };
     let result = if object.contains_key("error") {
@@ -156,7 +162,8 @@ async fn receive(
     };
     let authority = HostAuthority {
         identity: super::host_identity::HostIdentity::Official,
-        generation: 1,
+        generation: Arc::new(super::runtime_hosts::HostGeneration::new(1)),
+        exit_sender: tokio::sync::mpsc::channel(1).0,
     };
     receive_bound(bytes, &context, work, &authority).await
 }
@@ -169,7 +176,7 @@ async fn context_for_call(
     if let Some(call_context) = &_context.call_context {
         return Ok(call_context.clone());
     }
-    super::runtime::call_context(&authority.identity, authority.generation).await
+    super::runtime::call_context(&authority.identity, authority.generation.number).await
 }
 
 async fn receive_notification(

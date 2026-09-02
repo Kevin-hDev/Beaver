@@ -58,6 +58,52 @@ pub(super) fn collect_group_members(group: u32) -> (Vec<UnixProcessIdentity>, bo
     (result, complete)
 }
 
+pub(super) fn group_is_empty(group: u32) -> bool {
+    let (members, complete) = collect_group_members(group);
+    complete && members.is_empty()
+}
+
+pub(super) async fn terminate_group_members(group: u32, deadline: std::time::Instant) -> bool {
+    let (members, complete) = collect_group_members(group);
+    if !complete {
+        return false;
+    }
+    if members.is_empty() {
+        return true;
+    }
+    signal_group_members(&members, group, libc::SIGTERM);
+    let pause = deadline
+        .saturating_duration_since(std::time::Instant::now())
+        .min(std::time::Duration::from_millis(100));
+    tokio::time::sleep(pause).await;
+    signal_group_members(&members, group, libc::SIGKILL);
+    loop {
+        if members
+            .iter()
+            .copied()
+            .all(|member| !is_current_group_member(member, group))
+        {
+            return true;
+        }
+        if std::time::Instant::now() >= deadline {
+            return false;
+        }
+        tokio::time::sleep(super::POLL_INTERVAL).await;
+    }
+}
+
+fn signal_group_members(members: &[UnixProcessIdentity], group: u32, signal: libc::c_int) {
+    super::after_parent::signal_members_with(
+        members,
+        group,
+        signal,
+        is_current_group_member,
+        |pid, signal| unsafe {
+            libc::kill(pid, signal);
+        },
+    );
+}
+
 pub(super) fn is_current(identity: UnixProcessIdentity) -> bool {
     let mut system = System::new();
     system.refresh_processes(sysinfo::ProcessesToUpdate::Some(&[identity.pid()]), true);

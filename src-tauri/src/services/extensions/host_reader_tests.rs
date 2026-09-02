@@ -28,7 +28,7 @@ async fn echo_host() -> (Child, SharedWriter, BufReader<ChildStdout>) {
 #[tokio::test]
 async fn ignores_response_for_expired_request() {
     let (mut child, writer, _reader) = echo_host().await;
-    let pending = Arc::new(tokio::sync::Mutex::new(HashMap::new()));
+    let pending = Arc::new(std::sync::Mutex::new(HashMap::new()));
     let tracker = super::super::host_load_tracker::HostLoadTracker::default();
     let work = extension_work();
     let message = serde_json::to_vec(&json!({
@@ -49,7 +49,7 @@ async fn ignores_response_for_expired_request() {
 #[tokio::test]
 async fn rejects_saturated_core_without_stopping_reader() {
     let (mut child, writer, mut reader) = echo_host().await;
-    let pending = Arc::new(tokio::sync::Mutex::new(HashMap::new()));
+    let pending = Arc::new(std::sync::Mutex::new(HashMap::new()));
     let tracker = super::super::host_load_tracker::HostLoadTracker::default();
     let work = extension_work();
     let admissions = (0..super::super::work_supervision::MAX_EXTENSION_CORE_CALLS)
@@ -80,7 +80,7 @@ async fn rejects_saturated_core_without_stopping_reader() {
 #[tokio::test]
 async fn accepts_ordered_load_notifications_without_responding() {
     let (mut child, writer, mut reader) = echo_host().await;
-    let pending = Arc::new(tokio::sync::Mutex::new(HashMap::new()));
+    let pending = Arc::new(std::sync::Mutex::new(HashMap::new()));
     let tracker = super::super::host_load_tracker::HostLoadTracker::default();
     let work = extension_work();
     tracker.arm("com.beaver.loading").await.unwrap();
@@ -111,7 +111,7 @@ async fn accepts_ordered_load_notifications_without_responding() {
 #[tokio::test]
 async fn rejects_load_notification_outside_the_active_order() {
     let (mut child, writer, _reader) = echo_host().await;
-    let pending = Arc::new(tokio::sync::Mutex::new(HashMap::new()));
+    let pending = Arc::new(std::sync::Mutex::new(HashMap::new()));
     let tracker = super::super::host_load_tracker::HostLoadTracker::default();
     let work = extension_work();
     let message = serde_json::to_vec(&json!({
@@ -132,7 +132,7 @@ async fn rejects_load_notification_outside_the_active_order() {
 #[tokio::test]
 async fn revoked_channel_cannot_start_a_new_core_call() {
     let (mut child, writer, mut reader) = echo_host().await;
-    let pending = Arc::new(tokio::sync::Mutex::new(HashMap::new()));
+    let pending = Arc::new(std::sync::Mutex::new(HashMap::new()));
     let tracker = super::super::host_load_tracker::HostLoadTracker::default();
     let work = extension_work();
     let alive = AtomicBool::new(false);
@@ -161,7 +161,8 @@ async fn revoked_channel_cannot_start_a_new_core_call() {
     };
     let authority = HostAuthority {
         identity: HostIdentity::ThirdParty("com.example.revoked".to_string()),
-        generation: 1,
+        generation: Arc::new(super::super::runtime_hosts::HostGeneration::new(1)),
+        exit_sender: tokio::sync::mpsc::channel(1).0,
     };
     assert!(receive_bound(&message, &context, &work, &authority)
         .await
@@ -181,7 +182,7 @@ async fn revoked_channel_cannot_start_a_new_core_call() {
 #[tokio::test]
 async fn stopped_reader_cannot_start_a_new_core_call() {
     let (mut child, writer, mut reader) = echo_host().await;
-    let pending = Arc::new(tokio::sync::Mutex::new(HashMap::new()));
+    let pending = Arc::new(std::sync::Mutex::new(HashMap::new()));
     let tracker = super::super::host_load_tracker::HostLoadTracker::default();
     let work = extension_work();
     let alive = AtomicBool::new(true);
@@ -210,7 +211,8 @@ async fn stopped_reader_cannot_start_a_new_core_call() {
     };
     let authority = HostAuthority {
         identity: HostIdentity::ThirdParty("com.example.stopped".to_string()),
-        generation: 1,
+        generation: Arc::new(super::super::runtime_hosts::HostGeneration::new(1)),
+        exit_sender: tokio::sync::mpsc::channel(1).0,
     };
     assert!(receive_bound(&message, &context, &work, &authority)
         .await

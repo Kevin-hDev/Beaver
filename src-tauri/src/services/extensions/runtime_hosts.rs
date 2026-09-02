@@ -5,12 +5,34 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+pub(super) use super::runtime_host_generation::HostGeneration;
+
+pub(super) struct HostExitNotice {
+    pub(super) identity: HostIdentity,
+    pub(super) generation: u64,
+    pub(super) kind: super::runtime_host_generation::HostExitKind,
+}
+
+impl HostExitNotice {
+    pub(super) fn capture(identity: HostIdentity, generation: &Arc<HostGeneration>) -> Self {
+        Self {
+            identity,
+            generation: generation.number,
+            kind: generation.exit_kind(),
+        }
+    }
+}
+
+#[path = "runtime_hosts_lifecycle.rs"]
+mod lifecycle;
+#[path = "runtime_hosts_restart.rs"]
+mod restart;
 mod snapshots;
 
 pub(super) struct BoundHostChannel {
     pub(super) identity: HostIdentity,
     pub(super) api_level: ExtensionApiLevel,
-    pub(super) generation: u64,
+    pub(super) generation: Arc<HostGeneration>,
     pub(super) process: Arc<HostProcess>,
     revoked: tokio_util::sync::CancellationToken,
     _temporary_directory: tempfile::TempDir,
@@ -18,9 +40,10 @@ pub(super) struct BoundHostChannel {
 
 pub(super) struct HostReservation {
     identity: HostIdentity,
-    generation: u64,
+    generation: Arc<HostGeneration>,
     revoked: tokio_util::sync::CancellationToken,
     temporary_directory: tempfile::TempDir,
+    exit_sender: tokio::sync::mpsc::Sender<HostExitNotice>,
 }
 
 impl HostReservation {
@@ -28,12 +51,18 @@ impl HostReservation {
         self.temporary_directory.path()
     }
 
-    pub(super) fn generation(&self) -> u64 {
-        self.generation
-    }
-
+    #[cfg(test)]
     pub(super) fn revoked(&self) -> tokio_util::sync::CancellationToken {
         self.revoked.clone()
+    }
+
+    pub(super) fn spawn_binding(&self) -> super::host_process::HostSpawnBinding {
+        super::host_process::HostSpawnBinding::new(
+            self.identity.clone(),
+            Arc::clone(&self.generation),
+            self.revoked.clone(),
+            self.exit_sender.clone(),
+        )
     }
 }
 
@@ -42,17 +71,49 @@ pub(super) struct RuntimeHosts {
     pub(super) third_party: BTreeMap<String, BoundHostChannel>,
     temporary_root: PathBuf,
     next_generation: u64,
+    restart_budgets: BTreeMap<HostIdentity, super::runtime_restart::RestartBudget>,
+    exit_sender: tokio::sync::mpsc::Sender<HostExitNotice>,
+    app: Option<tauri::AppHandle>,
 }
 
 impl RuntimeHosts {
+    #[cfg(test)]
     pub(super) fn new(temporary_root: PathBuf) -> Result<Self, String> {
+        Self::build(temporary_root, None).map(|(hosts, _)| hosts)
+    }
+
+    #[cfg(test)]
+    pub(super) fn new_monitored(
+        temporary_root: PathBuf,
+    ) -> Result<(Self, tokio::sync::mpsc::Receiver<HostExitNotice>), String> {
+        Self::build(temporary_root, None)
+    }
+
+    pub(super) fn with_app(
+        temporary_root: PathBuf,
+        app: tauri::AppHandle,
+    ) -> Result<(Self, tokio::sync::mpsc::Receiver<HostExitNotice>), String> {
+        Self::build(temporary_root, Some(app))
+    }
+
+    fn build(
+        temporary_root: PathBuf,
+        app: Option<tauri::AppHandle>,
+    ) -> Result<(Self, tokio::sync::mpsc::Receiver<HostExitNotice>), String> {
         super::runtime_host_storage::purge_orphaned_directories(&temporary_root)?;
-        Ok(Self {
-            official: None,
-            third_party: BTreeMap::new(),
-            temporary_root,
-            next_generation: 1,
-        })
+        let (exit_sender, exit_receiver) = tokio::sync::mpsc::channel(MAX_HOST_PROCESSES);
+        Ok((
+            Self {
+                official: None,
+                third_party: BTreeMap::new(),
+                temporary_root,
+                next_generation: 1,
+                restart_budgets: BTreeMap::new(),
+                exit_sender,
+                app,
+            },
+            exit_receiver,
+        ))
     }
 
     pub(super) fn reserve(&mut self, identity: HostIdentity) -> Result<HostReservation, String> {
@@ -67,7 +128,7 @@ impl RuntimeHosts {
             .prefix(prefix)
             .tempdir_in(&self.temporary_root)
             .map_err(|_| super::error_codes::HOST_UNAVAILABLE.to_string())?;
-        let generation = self.next_generation;
+        let generation = Arc::new(HostGeneration::new(self.next_generation));
         self.next_generation = self
             .next_generation
             .checked_add(1)
@@ -77,6 +138,7 @@ impl RuntimeHosts {
             generation,
             revoked: tokio_util::sync::CancellationToken::new(),
             temporary_directory,
+            exit_sender: self.exit_sender.clone(),
         })
     }
 
@@ -96,7 +158,7 @@ impl RuntimeHosts {
         let channel = BoundHostChannel {
             identity: reservation.identity.clone(),
             api_level,
-            generation: reservation.generation,
+            generation: Arc::clone(&reservation.generation),
             process,
             revoked: reservation.revoked,
             _temporary_directory: reservation.temporary_directory,
@@ -117,62 +179,15 @@ impl RuntimeHosts {
         }
     }
 
-    pub(super) fn revoke_all(&mut self) -> Vec<(HostIdentity, u64, Arc<HostProcess>)> {
-        let snapshots = self.snapshots();
-        for (identity, generation, _) in &snapshots {
-            let _ = self.revoke_current(identity, *generation);
-        }
-        snapshots
-    }
-
-    pub(super) fn remove_current(&mut self, identity: &HostIdentity, generation: u64) -> bool {
-        if self
-            .channel(identity)
-            .is_none_or(|channel| channel.generation != generation)
-        {
-            return false;
-        }
-        if let Some(channel) = self.channel(identity) {
-            channel.revoked.cancel();
-        }
-        match identity {
-            HostIdentity::Official => self.official.take(),
-            HostIdentity::ThirdParty(id) => self.third_party.remove(id),
-        };
-        true
-    }
-
-    pub(super) fn revoke(&mut self, extension_id: &str) -> bool {
-        let Some(channel) = self.third_party.get(extension_id) else {
-            return false;
-        };
-        channel.revoked.cancel();
-        true
-    }
-
-    pub(super) fn revoke_current(&mut self, identity: &HostIdentity, generation: u64) -> bool {
-        let Some(channel) = self
-            .channel(identity)
-            .filter(|channel| channel.generation == generation)
-        else {
-            return false;
-        };
-        channel.revoked.cancel();
-        true
-    }
-
-    pub(super) fn remove_stopped(
-        &mut self,
-        identity: &HostIdentity,
-        generation: u64,
-        stopped: bool,
-    ) -> bool {
-        // Un canal reste autoritatif tant que la mort de son processus n'est pas confirmée.
-        stopped && self.remove_current(identity, generation)
-    }
-
     pub(super) fn len(&self) -> usize {
         usize::from(self.official.is_some()) + self.third_party.len()
+    }
+
+    pub(super) fn emit_changed(&self) {
+        if let Some(app) = &self.app {
+            use tauri::Emitter;
+            let _ = app.emit(super::runtime_lifecycle::CHANGED_EVENT, ());
+        }
     }
 
     fn contains(&self, identity: &HostIdentity) -> bool {
@@ -185,7 +200,7 @@ impl BoundHostChannel {
         super::call_context::ExtensionCallContext::from_bound_channel(
             self.identity.clone(),
             self.api_level.clone(),
-            self.generation,
+            self.generation.number,
             self.revoked.clone(),
         )
     }

@@ -321,7 +321,11 @@ readline.createInterface({{ input: process.stdin }}).on("line", (line) => {{
         std::fs::read_to_string(&loaded_ids).unwrap(),
         "com.example.healthy-load\n"
     );
-    assert!(process.kill(super::host_process::stop_deadline()).await);
+    assert!(
+        process
+            .kill(super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
 }
 
 #[test]

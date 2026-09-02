@@ -2406,7 +2406,8 @@
         "error": "错误"
       },
       "recoveryTitle": "恢复模式",
-      "recoveryDescription": "禁用 Beaver 插件和本地扩展，让 Beaver 恢复正常运行。"
+      "recoveryDescription": "禁用 Beaver 插件和本地扩展，让 Beaver 恢复正常运行。",
+      "quitAndRestartHint": "请完全退出 Beaver，然后重新启动，再重新启用此扩展。"
     },
     "errors": {
       "load": "无法加载扩展。",

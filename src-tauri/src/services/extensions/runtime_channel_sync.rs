@@ -6,9 +6,10 @@ use super::types::ExtensionApiLevel;
 use serde_json::json;
 use std::collections::BTreeSet;
 use std::sync::Arc;
+use std::time::Instant;
 
 impl ExtensionRuntime {
-    pub(super) async fn sync_hosts(&self) -> Result<bool, String> {
+    pub(super) async fn sync_hosts(&self, deadline: Instant) -> Result<bool, String> {
         let _sync = self.sync.lock().await;
         let paths = self
             .paths
@@ -17,18 +18,26 @@ impl ExtensionRuntime {
         let build =
             super::runtime_sync::build_specs(super::registry::enabled_hosted()?, &paths.directory)
                 .await?;
-        self.close_stale_channels(&build).await;
+        self.close_stale_channels(&build, deadline).await;
         let mut responses =
             Vec::with_capacity(build.official_specs.len() + build.third_party_specs.len());
         if !build.official_specs.is_empty() {
             let api_level = official_api_level(&build.official_specs);
-            if let Ok(process) = self.ensure_channel(HostIdentity::Official, api_level).await {
+            if let Ok(process) = self
+                .ensure_channel(HostIdentity::Official, api_level, deadline)
+                .await
+            {
                 if load_specs(&process, &build.official_specs, &mut responses)
                     .await
                     .is_err()
                 {
                     let _ = self
-                        .stop_channel(&HostIdentity::Official, Some(&process))
+                        .stop_host_if_current(
+                            &HostIdentity::Official,
+                            Some(&process),
+                            deadline,
+                            false,
+                        )
                         .await;
                 }
             }
@@ -36,7 +45,7 @@ impl ExtensionRuntime {
         for (id, specification) in &build.third_party_specs {
             let identity = HostIdentity::ThirdParty(id.clone());
             let api_level = specification.manifest.api_level.clone();
-            let Ok(process) = self.ensure_channel(identity, api_level).await else {
+            let Ok(process) = self.ensure_channel(identity, api_level, deadline).await else {
                 continue;
             };
             if load_specs(
@@ -48,7 +57,9 @@ impl ExtensionRuntime {
             .is_err()
             {
                 let identity = HostIdentity::ThirdParty(id.clone());
-                let _ = self.stop_channel(&identity, Some(&process)).await;
+                let _ = self
+                    .stop_host_if_current(&identity, Some(&process), deadline, false)
+                    .await;
             }
         }
         let applied = super::runtime_sync::apply(responses, &build)?;
@@ -60,6 +71,7 @@ impl ExtensionRuntime {
         &self,
         identity: HostIdentity,
         api_level: ExtensionApiLevel,
+        deadline: Instant,
     ) -> Result<Arc<HostProcess>, String> {
         let current = {
             let hosts = self.hosts.lock().await;
@@ -71,7 +83,11 @@ impl ExtensionRuntime {
             if usable && current_level == api_level && process.is_alive() {
                 return Ok(process);
             }
-            if !self.stop_channel(&identity, Some(&process)).await {
+            if self
+                .stop_host_if_current(&identity, Some(&process), deadline, true)
+                .await
+                == super::runtime::StopHostOutcome::Unconfirmed
+            {
                 return Err(super::error_codes::HOST_UNAVAILABLE.to_string());
             }
         }
@@ -84,16 +100,15 @@ impl ExtensionRuntime {
             HostProcess::spawn_bound(
                 paths,
                 &self.work,
-                identity,
-                reservation.generation(),
-                reservation.revoked(),
+                reservation.spawn_binding(),
+                deadline,
                 reservation.temporary_directory(),
             )
             .await?,
         );
         let Ok(hello) = validate_hello(&process).await else {
             self.hosts.lock().await.revoke_reservation(&reservation);
-            let _ = process.kill(super::host_process::stop_deadline()).await;
+            let _ = process.kill(deadline).await;
             return Err(super::error_codes::HOST_UNAVAILABLE.to_string());
         };
         self.set_host_version(&hello);
@@ -104,7 +119,11 @@ impl ExtensionRuntime {
         Ok(process)
     }
 
-    async fn close_stale_channels(&self, build: &super::runtime_sync::BuildSpecs) {
+    async fn close_stale_channels(
+        &self,
+        build: &super::runtime_sync::BuildSpecs,
+        deadline: Instant,
+    ) {
         let mut desired = build
             .third_party_specs
             .keys()
@@ -123,7 +142,9 @@ impl ExtensionRuntime {
             .filter(|(identity, _, _)| !desired.contains(identity))
             .collect::<Vec<_>>();
         for (identity, _, process) in stale {
-            let _ = self.stop_channel(&identity, Some(&process)).await;
+            let _ = self
+                .stop_host_if_current(&identity, Some(&process), deadline, false)
+                .await;
         }
     }
 }

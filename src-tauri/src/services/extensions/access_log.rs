@@ -39,8 +39,10 @@ enum Event<'a> {
         method: &'a str,
         correlation_id: Uuid,
     },
-    #[allow(dead_code)] // Le cycle de vie sera émis par le lot P1.1.
-    HostStarted { generation: u64, pid: u32 },
+    HostStarted {
+        generation: u64,
+        pid: u32,
+    },
 }
 
 pub(super) fn write_core(context: &ExtensionCallContext, method: &str, result: AccessResult) {
@@ -69,7 +71,20 @@ pub(super) fn write_core_at(
     super::bounded_jsonl::write(path, &entry)
 }
 
-#[allow(dead_code)] // Le chemin de production est activé avec le cycle de vie P1.1.
+pub(super) fn write_host_started(identity: HostIdentity, generation: u64, pid: u32) {
+    if write_host_started_at(
+        &log_path(),
+        identity,
+        generation,
+        pid,
+        AccessResult::Granted,
+    )
+    .is_err()
+    {
+        ::log::error!("[extensions] access journal unavailable");
+    }
+}
+
 pub(super) fn write_host_started_at(
     path: &Path,
     identity: HostIdentity,

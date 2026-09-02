@@ -4,13 +4,14 @@ use serde::Serialize;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::sync::Mutex as StdMutex;
 use tokio::io::AsyncWriteExt;
 use tokio::process::ChildStdin;
 use tokio::sync::{oneshot, Mutex};
 use zeroize::Zeroizing;
 
 pub type PendingSender = oneshot::Sender<Result<Value, String>>;
-pub type PendingRequests = Arc<Mutex<HashMap<String, PendingSender>>>;
+pub type PendingRequests = Arc<StdMutex<HashMap<String, PendingSender>>>;
 pub type SharedWriter = Arc<Mutex<ChildStdin>>;
 pub(super) const MAX_REQUEST_ID_CHARS: usize = 128;
 
@@ -39,9 +40,37 @@ pub async fn write(writer: &SharedWriter, message: &impl Serialize) -> Result<()
         .map_err(|_| error_codes::HOST_UNAVAILABLE.to_string())
 }
 
-pub async fn fail_all(pending: &PendingRequests) {
-    let requests = std::mem::take(&mut *pending.lock().await);
+pub(super) fn insert(
+    pending: &PendingRequests,
+    id: String,
+    sender: PendingSender,
+) -> Result<(), String> {
+    let mut requests = pending.lock().unwrap_or_else(|error| error.into_inner());
+    if requests.len() >= super::types::MAX_PENDING_REQUESTS {
+        return Err(error_codes::HOST_BUSY.to_string());
+    }
+    requests.insert(id, sender);
+    Ok(())
+}
+
+pub(super) fn remove(pending: &PendingRequests, id: &str) -> Option<PendingSender> {
+    pending
+        .lock()
+        .unwrap_or_else(|error| error.into_inner())
+        .remove(id)
+}
+
+pub fn fail_all(pending: &PendingRequests) {
+    let requests = std::mem::take(&mut *pending.lock().unwrap_or_else(|error| error.into_inner()));
     for (_, sender) in requests {
         let _ = sender.send(Err(error_codes::HOST_UNAVAILABLE.to_string()));
     }
+}
+
+#[cfg(test)]
+pub(super) fn len(pending: &PendingRequests) -> usize {
+    pending
+        .lock()
+        .unwrap_or_else(|error| error.into_inner())
+        .len()
 }

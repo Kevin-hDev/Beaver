@@ -40,7 +40,8 @@ async fn dispatch_tracked(
     arguments: &Value,
     working_directory: &Path,
 ) -> ToolResult {
-    let host = match super::runtime_lifecycle::ensure_running(extension_id).await {
+    let deadline = super::runtime_lifecycle::new_stop_deadline();
+    let host = match super::runtime_lifecycle::ensure_running(extension_id, deadline).await {
         Ok(host) => host,
         Err(_) => return super::tool_result::unavailable(),
     };
@@ -62,9 +63,11 @@ async fn dispatch_tracked(
         .await
         .and_then(super::runtime::parse::<HostToolResult>);
     if response.is_err() {
-        if let Ok((identity, _, current)) = runtime.process_for_extension(extension_id).await {
+        if let Ok((identity, _, current)) =
+            runtime.process_for_extension(extension_id, deadline).await
+        {
             if Arc::ptr_eq(&current, &host) {
-                invalidate(runtime, identity, host).await;
+                invalidate(runtime, identity, host, deadline).await;
             }
         }
     }
@@ -110,7 +113,13 @@ async fn emit_tracked(
     }
     while let Some(Ok((identity, process, succeeded))) = calls.join_next().await {
         if !succeeded {
-            invalidate(&runtime, identity, process).await;
+            invalidate(
+                &runtime,
+                identity,
+                process,
+                super::runtime_lifecycle::new_stop_deadline(),
+            )
+            .await;
         }
     }
 }
@@ -159,9 +168,14 @@ async fn invalidate(
     runtime: &super::runtime::ExtensionRuntime,
     identity: HostIdentity,
     failed: Arc<HostProcess>,
+    deadline: std::time::Instant,
 ) {
-    if runtime.stop_channel(&identity, Some(&failed)).await {
-        super::registry_sync::mark_identity_error(&identity);
+    if runtime
+        .stop_host_if_current(&identity, Some(&failed), deadline, false)
+        .await
+        != super::runtime::StopHostOutcome::Unconfirmed
+    {
+        let _ = super::registry_sync::mark_identity_error(&identity);
     }
 }
 

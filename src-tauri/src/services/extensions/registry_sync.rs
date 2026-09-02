@@ -1,6 +1,4 @@
-use super::types::{
-    ExtensionContributions, ExtensionKind, ExtensionRecord, ExtensionStatus, MAX_TOOLS,
-};
+use super::types::{ExtensionContributions, ExtensionRecord, ExtensionStatus, MAX_TOOLS};
 use std::collections::{BTreeMap, HashMap, HashSet};
 
 pub fn mark_loading(eligible_ids: &HashSet<String>) -> Result<(), String> {
@@ -111,29 +109,13 @@ pub fn mark_all_enabled_error() {
     });
 }
 
-pub fn mark_identity_error(identity: &super::host_identity::HostIdentity) {
-    let _ = super::registry::mutate(|records| {
-        for record in records.iter_mut().filter(|record| match identity {
-            super::host_identity::HostIdentity::Official => {
-                record.kind == ExtensionKind::Builtin && record.enabled
-            }
-            super::host_identity::HostIdentity::ThirdParty(id) => {
-                record.manifest.id == *id && record.enabled
-            }
-        }) {
-            record.status = ExtensionStatus::Error;
-            record.last_error = Some("host_unavailable".to_string());
-            record.contributions = ExtensionContributions::default();
-        }
-        Ok::<(), String>(())
-    });
-}
+pub(super) use super::registry_failure::{mark_identity_error, mark_identity_stop_unconfirmed};
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::services::extensions::types::{
-        ExtensionApiLevel, ExtensionEffect, ExtensionManifest, ExtensionTool,
+        ExtensionApiLevel, ExtensionEffect, ExtensionKind, ExtensionManifest, ExtensionTool,
     };
     use serde_json::json;
 

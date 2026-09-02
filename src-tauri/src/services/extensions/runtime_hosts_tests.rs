@@ -10,6 +10,69 @@ use serde_json::json;
 use std::sync::Arc;
 use std::time::Duration;
 
+#[test]
+fn host_generation_classifies_exit_before_and_after_requested_stop() {
+    let running = super::runtime_hosts::HostGeneration::new(7);
+    assert_eq!(
+        running.exit_kind(),
+        super::runtime_host_generation::HostExitKind::Unexpected
+    );
+
+    running.begin_stop(false);
+    assert_eq!(
+        running.exit_kind(),
+        super::runtime_host_generation::HostExitKind::Requested
+    );
+    assert!(running.is_stopping());
+    assert!(!running.is_restarting());
+
+    let restarting = super::runtime_hosts::HostGeneration::new(8);
+    restarting.begin_stop(true);
+    assert!(restarting.is_restarting());
+}
+
+#[test]
+fn exit_notice_keeps_the_classification_observed_when_the_reader_finished() {
+    let generation = Arc::new(super::runtime_hosts::HostGeneration::new(9));
+    let notice = super::runtime_hosts::HostExitNotice::capture(
+        HostIdentity::ThirdParty("finished-before-stop".to_string()),
+        &generation,
+    );
+
+    generation.begin_stop(true);
+
+    assert_eq!(
+        notice.kind,
+        super::runtime_host_generation::HostExitKind::Unexpected
+    );
+}
+
+#[test]
+fn one_hosts_restart_budget_never_consumes_anothers_budget() {
+    let workspace = tempfile::tempdir().unwrap();
+    let mut hosts = RuntimeHosts::new(workspace.path().join("channels")).unwrap();
+    let first = HostIdentity::ThirdParty("first-budget".to_string());
+    let second = HostIdentity::ThirdParty("second-budget".to_string());
+
+    assert!(hosts.allow_restart(&first));
+    assert!(hosts.allow_restart(&first));
+    assert!(hosts.allow_restart(&first));
+    assert!(!hosts.allow_restart(&first));
+    assert!(hosts.allow_restart(&second));
+}
+
+#[test]
+fn removed_hosts_release_restart_budget_capacity_for_new_identities() {
+    let workspace = tempfile::tempdir().unwrap();
+    let mut hosts = RuntimeHosts::new(workspace.path().join("channels")).unwrap();
+
+    for index in 0..(super::types::MAX_HOST_PROCESSES * 2) {
+        let identity = HostIdentity::ThirdParty(format!("rotating-{index}"));
+        assert!(hosts.allow_restart(&identity));
+        hosts.forget_restart_budget(&identity);
+    }
+}
+
 fn record(id: &str, kind: ExtensionKind) -> ExtensionRecord {
     ExtensionRecord {
         manifest: ExtensionManifest {
@@ -176,9 +239,8 @@ lines.on("line", (line) => {{
                 directory,
             },
             work,
-            identity,
-            reservation.generation(),
-            reservation.revoked(),
+            reservation.spawn_binding(),
+            super::runtime_lifecycle::new_stop_deadline(),
             reservation.temporary_directory(),
         )
         .await
@@ -210,7 +272,44 @@ async fn unconfirmed_stop_keeps_the_current_channel_bound() {
     assert!(!hosts.remove_stopped(&identity, generation, false));
     assert!(hosts.snapshot(&identity).is_some());
 
-    assert!(process.kill(super::host_process::stop_deadline()).await);
+    assert!(
+        process
+            .kill(super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
+}
+
+#[tokio::test]
+async fn a_restarting_generation_refuses_work_and_replacement_until_removed() {
+    let workspace = tempfile::tempdir().unwrap();
+    let mut hosts = RuntimeHosts::new(workspace.path().join("channels")).unwrap();
+    let work = extension_work();
+    let identity = HostIdentity::ThirdParty("restarting".to_string());
+    let process = bind_fixture_identity(
+        &mut hosts,
+        workspace.path(),
+        "restarting",
+        "reply",
+        identity.clone(),
+        &work,
+    )
+    .await;
+    let (_, generation, _) = hosts.snapshot(&identity).unwrap();
+
+    assert!(hosts.begin_stop(&identity, generation, true));
+    assert!(hosts.usable_snapshot(&identity).is_none());
+    assert!(!hosts.allow_restart(&identity));
+    assert_eq!(
+        hosts.reserve(identity.clone()).err(),
+        Some(super::error_codes::LIMIT_REACHED.to_string())
+    );
+
+    assert!(
+        process
+            .kill(super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
+    assert!(hosts.remove_current(&identity, generation));
 }
 
 #[tokio::test]
@@ -244,7 +343,11 @@ async fn bound_channel_issues_unique_contexts_and_runtime_hosts_alone_revokes_th
     assert!(hosts.usable_snapshot(&identity).is_none());
     assert!(hosts.snapshot(&identity).is_some());
 
-    assert!(process.kill(super::host_process::stop_deadline()).await);
+    assert!(
+        process
+            .kill(super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
 }
 
 #[tokio::test]
@@ -286,8 +389,16 @@ async fn global_stop_revokes_every_context_before_process_waiting_begins() {
     assert_eq!(snapshots.len(), 2);
     assert!(first_context.revoked().is_cancelled());
     assert!(second_context.revoked().is_cancelled());
-    assert!(first.kill(super::host_process::stop_deadline()).await);
-    assert!(second.kill(super::host_process::stop_deadline()).await);
+    assert!(
+        first
+            .kill(super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
+    assert!(
+        second
+            .kill(super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
 }
 
 #[tokio::test]
@@ -306,7 +417,11 @@ async fn a_stale_generation_never_removes_the_newer_channel() {
     )
     .await;
     let (_, stale_generation, _) = hosts.snapshot(&identity).unwrap();
-    assert!(stale.kill(super::host_process::stop_deadline()).await);
+    assert!(
+        stale
+            .kill(super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
     assert!(hosts.remove_current(&identity, stale_generation));
 
     let current = bind_fixture_identity(
@@ -324,7 +439,11 @@ async fn a_stale_generation_never_removes_the_newer_channel() {
         current.request("fixture", json!({})).await.unwrap()["id"],
         "current"
     );
-    assert!(current.kill(super::host_process::stop_deadline()).await);
+    assert!(
+        current
+            .kill(super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
 }
 
 #[tokio::test]
@@ -341,8 +460,16 @@ async fn a_process_exit_in_one_third_party_host_does_not_stop_another() {
         "healthy"
     );
 
-    assert!(crashing.kill(super::host_process::stop_deadline()).await);
-    assert!(healthy.kill(super::host_process::stop_deadline()).await);
+    assert!(
+        crashing
+            .kill(super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
+    assert!(
+        healthy
+            .kill(super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
 }
 
 #[tokio::test]
@@ -367,9 +494,17 @@ async fn a_blocked_third_party_event_loop_does_not_delay_another_host() {
     .unwrap();
     assert_eq!(response["id"], "responsive");
 
-    assert!(blocked.kill(super::host_process::stop_deadline()).await);
+    assert!(
+        blocked
+            .kill(super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
     assert!(blocked_request.await.unwrap().is_err());
-    assert!(healthy.kill(super::host_process::stop_deadline()).await);
+    assert!(
+        healthy
+            .kill(super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
 }
 
 #[tokio::test]
@@ -393,17 +528,19 @@ async fn targeted_update_or_uninstall_stop_preserves_official_and_other_third_pa
         hosts: tokio::sync::Mutex::new(hosts),
         sync: tokio::sync::Mutex::new(()),
         status: std::sync::RwLock::new(super::types::ExtensionHostStatus::default()),
-        auto_restarts: super::runtime_restart::RestartBudget::default(),
         work,
     };
 
-    assert!(
+    assert_eq!(
         runtime
-            .stop_channel(
+            .stop_host_if_current(
                 &HostIdentity::ThirdParty("target".to_string()),
                 Some(&target),
+                std::time::Instant::now() + Duration::from_secs(5),
+                false,
             )
-            .await
+            .await,
+        super::runtime::StopHostOutcome::Confirmed
     );
     assert!(target.request("fixture", json!({})).await.is_err());
     assert_eq!(
@@ -415,8 +552,16 @@ async fn targeted_update_or_uninstall_stop_preserves_official_and_other_third_pa
         "other"
     );
 
-    assert!(official.kill(super::host_process::stop_deadline()).await);
-    assert!(other.kill(super::host_process::stop_deadline()).await);
+    assert!(
+        official
+            .kill(super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
+    assert!(
+        other
+            .kill(super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
 }
 
 #[tokio::test]
@@ -454,6 +599,10 @@ async fn real_host_table_refuses_the_thirty_second_third_party_without_reader_st
     );
 
     for process in processes {
-        assert!(process.kill(super::host_process::stop_deadline()).await);
+        assert!(
+            process
+                .kill(super::runtime_lifecycle::new_stop_deadline())
+                .await
+        );
     }
 }

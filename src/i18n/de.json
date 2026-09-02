@@ -2407,7 +2407,8 @@
         "error": "Fehler"
       },
       "recoveryTitle": "Wiederherstellungsmodus",
-      "recoveryDescription": "Deaktiviert Beaver-Plugins und lokale Erweiterungen, damit Beaver wieder funktioniert."
+      "recoveryDescription": "Deaktiviert Beaver-Plugins und lokale Erweiterungen, damit Beaver wieder funktioniert.",
+      "quitAndRestartHint": "Beenden Sie Beaver vollständig und starten Sie es neu, bevor Sie diese Erweiterung wieder aktivieren."
     },
     "errors": {
       "load": "Erweiterungen konnten nicht geladen werden.",

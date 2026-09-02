@@ -104,7 +104,10 @@ lines.on("line", (line) => {
 
     assert_eq!(slow.unwrap(), json!("slow"));
     assert_eq!(fast.unwrap(), json!("fast"));
-    assert!(host.kill(super::stop_deadline()).await);
+    assert!(
+        host.kill(super::super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
     assert!(host.request("test", json!({})).await.is_err());
 }
 
@@ -117,7 +120,10 @@ async fn bundled_extension_host_answers_hello() {
 
     assert_eq!(hello["apiVersion"], "1");
     assert!(hello["nodeVersion"].as_str().is_some());
-    assert!(host.kill(super::stop_deadline()).await);
+    assert!(
+        host.kill(super::super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
 }
 
 #[tokio::test]
@@ -140,6 +146,61 @@ async fn repeated_host_restarts_reuse_the_single_reader_slot() {
         let host = HostProcess::spawn(&paths, &work)
             .await
             .expect("reader slot must be reusable after kill");
-        assert!(host.kill(super::stop_deadline()).await);
+        assert!(
+            host.kill(super::super::runtime_lifecycle::new_stop_deadline())
+                .await
+        );
     }
+}
+
+#[tokio::test]
+async fn cancelling_a_request_immediately_removes_its_pending_sender() {
+    let directory = tempfile::tempdir().unwrap();
+    let script = directory.path().join("host.mjs");
+    std::fs::write(
+        &script,
+        r#"import readline from "node:readline";
+const lines = readline.createInterface({ input: process.stdin });
+lines.on("line", (line) => {
+  const message = JSON.parse(line);
+  setTimeout(() => process.stdout.write(JSON.stringify({
+    jsonrpc: "2.0", id: message.id, result: "late"
+  }) + "\n"), message.params.delay);
+});"#,
+    )
+    .unwrap();
+    let paths = HostPaths {
+        node: which::which("node").unwrap(),
+        script,
+        directory: directory.path().to_path_buf(),
+    };
+    let work = extension_work();
+    let host = Arc::new(HostProcess::spawn(&paths, &work).await.unwrap());
+    let request = {
+        let host = Arc::clone(&host);
+        tokio::spawn(async move { host.request("fixture", json!({"delay": 100})).await })
+    };
+    tokio::time::sleep(Duration::from_millis(50)).await;
+    assert_eq!(host.pending_len_for_test(), 1);
+
+    request.abort();
+    let _ = request.await;
+
+    assert_eq!(host.pending_len_for_test(), 0);
+    tokio::time::sleep(Duration::from_millis(150)).await;
+    assert_eq!(host.pending_len_for_test(), 0);
+
+    let pending = {
+        let host = Arc::clone(&host);
+        tokio::spawn(async move { host.request("fixture", json!({"delay": 10000})).await })
+    };
+    tokio::time::sleep(Duration::from_millis(50)).await;
+    assert_eq!(host.pending_len_for_test(), 1);
+    super::super::host_channel::fail_all(&host.pending);
+    assert_eq!(
+        pending.await.unwrap(),
+        Err(error_codes::HOST_UNAVAILABLE.to_string())
+    );
+    assert_eq!(host.pending_len_for_test(), 0);
+    assert!(host.kill(Instant::now() + Duration::from_secs(5)).await);
 }

@@ -69,7 +69,7 @@ readline.createInterface({ input: process.stdin }).on("line", (line) => {
     assert!(responses.is_empty());
     assert!(
         process
-            .kill(crate::services::extensions::host_process::stop_deadline())
+            .kill(crate::services::extensions::runtime_lifecycle::new_stop_deadline())
             .await
     );
 }

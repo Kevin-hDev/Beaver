@@ -14,7 +14,7 @@ impl RuntimeHosts {
             .map(|channel| {
                 (
                     channel.identity.clone(),
-                    channel.generation,
+                    channel.generation.number,
                     Arc::clone(&channel.process),
                 )
             })
@@ -43,7 +43,9 @@ impl RuntimeHosts {
         generation: u64,
     ) -> Option<crate::services::extensions::call_context::ExtensionCallContext> {
         self.channel(identity)
-            .filter(|channel| channel.generation == generation && !channel.revoked.is_cancelled())
+            .filter(|channel| {
+                channel.generation.number == generation && !channel.revoked.is_cancelled()
+            })
             .map(BoundHostChannel::call_context)
     }
 }
@@ -51,7 +53,7 @@ impl RuntimeHosts {
 fn channel_snapshot(channel: &BoundHostChannel) -> (ExtensionApiLevel, u64, Arc<HostProcess>) {
     (
         channel.api_level.clone(),
-        channel.generation,
+        channel.generation.number,
         Arc::clone(&channel.process),
     )
 }

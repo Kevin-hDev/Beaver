@@ -2407,7 +2407,8 @@
         "error": "Errore"
       },
       "recoveryTitle": "Modalità di recupero",
-      "recoveryDescription": "Disattiva i plugin Beaver e le estensioni locali per ripristinare il funzionamento di Beaver."
+      "recoveryDescription": "Disattiva i plugin Beaver e le estensioni locali per ripristinare il funzionamento di Beaver.",
+      "quitAndRestartHint": "Chiudi completamente Beaver e riavvialo prima di riattivare questa estensione."
     },
     "errors": {
       "load": "Impossibile caricare le estensioni.",

@@ -48,6 +48,9 @@ mod process_runner;
 mod protocol;
 mod registry;
 mod registry_access;
+mod registry_failure;
+#[cfg(test)]
+mod registry_failure_tests;
 mod registry_index;
 mod registry_managed;
 mod registry_mutation_error;
@@ -57,6 +60,7 @@ mod runtime;
 mod runtime_channel_sync;
 mod runtime_diagnostics;
 mod runtime_dispatch;
+mod runtime_host_generation;
 mod runtime_host_storage;
 mod runtime_hosts;
 mod runtime_lifecycle;
@@ -95,6 +99,7 @@ pub(crate) use registry_index::{
 pub use registry_index::{is_dynamic_tool, is_replacement};
 pub use runtime::status;
 pub use runtime_dispatch::{dispatch_tool, emit_event};
+pub(crate) use runtime_lifecycle::{new_stop_deadline, CHANGED_EVENT};
 pub use runtime_lifecycle::{restart, stop_and_wait};
 pub use startup::initialize_on_startup;
 pub(crate) use tool_bridge::definitions as extension_tool_definitions;
@@ -114,10 +119,10 @@ pub(crate) fn record_tool_invocation(tool_name: &str) -> Result<(), String> {
     discovery_usage::record_invocation(tool_name)
 }
 
-pub(crate) async fn revoke_extension(id: &str) -> Result<(), String> {
+pub(crate) async fn revoke_extension(id: &str, deadline: std::time::Instant) -> Result<(), String> {
     let record = registry::find(id)?;
     let identity = host_identity::HostIdentity::from_record(&record)?;
-    runtime::revoke_extension(&identity).await
+    runtime::revoke_extension(&identity, deadline).await
 }
 
 pub(crate) const MAX_DISCOVERED_PLUGINS: usize = types::MAX_EXTENSIONS;

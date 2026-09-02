@@ -2406,7 +2406,8 @@
         "error": "エラー"
       },
       "recoveryTitle": "復旧モード",
-      "recoveryDescription": "Beaver プラグインとローカル拡張機能を無効にして、Beaver を動作可能な状態へ戻します。"
+      "recoveryDescription": "Beaver プラグインとローカル拡張機能を無効にして、Beaver を動作可能な状態へ戻します。",
+      "quitAndRestartHint": "Beaver を完全に終了して再起動してから、この拡張機能を再度有効にしてください。"
     },
     "errors": {
       "load": "拡張機能を読み込めません。",

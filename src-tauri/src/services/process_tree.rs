@@ -8,6 +8,8 @@ mod after_parent;
 pub(crate) use after_parent::kill_pipe_holders_after_parent_exit;
 #[path = "process_tree_scope.rs"]
 mod scope;
+#[path = "process_tree_tokio.rs"]
+mod tokio_process;
 #[cfg(unix)]
 #[path = "process_tree_unix.rs"]
 mod unix;
@@ -15,6 +17,7 @@ mod unix;
 #[path = "process_tree_windows.rs"]
 mod windows;
 pub use scope::terminate_tokio_scoped;
+pub use tokio_process::terminate_tokio;
 
 const GRACEFUL_STOP_TIMEOUT: Duration = Duration::from_millis(500);
 const POLL_INTERVAL: Duration = Duration::from_millis(25);
@@ -103,33 +106,6 @@ pub fn terminate(child: &mut Child, kind: ProcessKind) {
     force_tree(pid);
     let _ = child.kill();
     let _ = child.wait();
-    crate::services::owned_process::release(pid);
-    ::log::warn!("[{}] arrêt forcé arbre pid={pid}", kind.label());
-}
-
-pub async fn terminate_tokio(child: &mut tokio::process::Child, kind: ProcessKind) {
-    if child.try_wait().ok().flatten().is_some() {
-        if let Some(pid) = child.id() {
-            crate::services::owned_process::release(pid);
-        }
-        return;
-    }
-    let Some(pid) = child.id() else {
-        return;
-    };
-    signal_tree(pid, false);
-    let deadline = tokio::time::Instant::now() + GRACEFUL_STOP_TIMEOUT;
-    while tokio::time::Instant::now() < deadline {
-        if child.try_wait().ok().flatten().is_some() {
-            crate::services::owned_process::release(pid);
-            ::log::info!("[{}] arbre pid={pid} arrêté", kind.label());
-            return;
-        }
-        tokio::time::sleep(POLL_INTERVAL).await;
-    }
-    force_tree(pid);
-    let _ = child.start_kill();
-    let _ = child.wait().await;
     crate::services::owned_process::release(pid);
     ::log::warn!("[{}] arrêt forcé arbre pid={pid}", kind.label());
 }

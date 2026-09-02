@@ -42,6 +42,11 @@ impl OwnedProcessScope {
         true
     }
 
+    #[cfg(windows)]
+    pub(crate) fn is_empty(&self) -> bool {
+        self.job.is_empty().unwrap_or(false)
+    }
+
     #[cfg(all(test, windows))]
     pub(crate) fn contains(&self, pid: u32) -> bool {
         self.job.contains(pid)

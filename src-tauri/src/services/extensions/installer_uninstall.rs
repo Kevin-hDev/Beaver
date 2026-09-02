@@ -2,7 +2,7 @@ use super::installer::{blocking, extension_runtime, is_managed};
 use super::OperationFailure;
 use crate::services::work_registry::ServiceWorkCancellation;
 
-pub async fn uninstall(id: &str) -> Result<bool, OperationFailure> {
+pub async fn uninstall(id: &str, deadline: std::time::Instant) -> Result<bool, OperationFailure> {
     let current = super::registry::find(id).map_err(|_| OperationFailure::UninstallFailed)?;
     let id = id.to_string();
     let runtime = extension_runtime()?;
@@ -11,14 +11,19 @@ pub async fn uninstall(id: &str) -> Result<bool, OperationFailure> {
     work.run_operation(move |cancel| async move {
         ensure_uninstall_active(&cancel)?;
         crate::services::agent_local::permission_gate::clear_extension(&id).await;
-        let reminder =
-            super::registry::remove(&id).map_err(|_| OperationFailure::UninstallFailed)?;
-        // Après persistance, la révocation et le nettoyage doivent aller au bout.
-        let stopped = runtime.revoke_extension(&identity).await;
+        let reminder = current.sensitive_access_granted;
+        // La désactivation persiste avant l'arrêt afin qu'un arbre non confirmé
+        // ne puisse jamais être remplacé ni redevenir actif au redémarrage.
+        super::registry::set_enabled(&id, false, false)
+            .await
+            .map_err(|_| OperationFailure::UninstallFailed)?;
+        let stopped = runtime.revoke_extension(&identity, deadline).await;
         super::host_stop_boundary::after_confirmed_stop(
             stopped,
             OperationFailure::HostUnavailable,
             async move {
+                let persisted_reminder =
+                    super::registry::remove(&id).map_err(|_| OperationFailure::UninstallFailed)?;
                 let result = if is_managed(&current) {
                     let record = current.clone();
                     blocking(
@@ -32,7 +37,7 @@ pub async fn uninstall(id: &str) -> Result<bool, OperationFailure> {
                 } else {
                     Ok(())
                 };
-                result.map(|_| reminder)
+                result.map(|_| reminder || persisted_reminder)
             },
         )
         .await

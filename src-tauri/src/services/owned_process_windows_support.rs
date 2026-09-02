@@ -2,6 +2,10 @@ use super::OwnedProcessError;
 use super::{job, ProcessHandle};
 use windows_sys::Win32::Foundation::WAIT_OBJECT_0;
 use windows_sys::Win32::System::JobObjects::IsProcessInJob;
+use windows_sys::Win32::System::JobObjects::{
+    JobObjectBasicAccountingInformation, QueryInformationJobObject,
+    JOBOBJECT_BASIC_ACCOUNTING_INFORMATION,
+};
 use windows_sys::Win32::System::Threading::{TerminateProcess, WaitForSingleObject};
 
 pub(super) struct DedicatedJob(super::GlobalJob);
@@ -39,6 +43,24 @@ impl DedicatedJob {
             != 0)
             .then_some(())
             .ok_or(OwnedProcessError::Admission)
+    }
+
+    pub(super) fn is_empty(&self) -> Result<bool, OwnedProcessError> {
+        let mut accounting = JOBOBJECT_BASIC_ACCOUNTING_INFORMATION::default();
+        let mut returned = 0_u32;
+        let ok = unsafe {
+            QueryInformationJobObject(
+                self.0.raw(),
+                JobObjectBasicAccountingInformation,
+                (&raw mut accounting).cast(),
+                std::mem::size_of_val(&accounting) as u32,
+                &raw mut returned,
+            )
+        };
+        if ok == 0 {
+            return Err(OwnedProcessError::Admission);
+        }
+        Ok(accounting.ActiveProcesses == 0)
     }
 
     #[cfg(test)]

@@ -1738,7 +1738,8 @@
         "error": "Error"
       },
       "recoveryTitle": "Recovery mode",
-      "recoveryDescription": "Disables Beaver plugins and local extensions so Beaver can return to a working state."
+      "recoveryDescription": "Disables Beaver plugins and local extensions so Beaver can return to a working state.",
+      "quitAndRestartHint": "Quit Beaver completely, then relaunch it before re-enabling this extension."
     },
     "errors": {
       "load": "Unable to load extensions.",

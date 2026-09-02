@@ -9,6 +9,10 @@ pub(super) fn terminate_scope(scope: &crate::services::owned_process::OwnedProce
     scope.terminate()
 }
 
+pub(super) fn scope_is_empty(scope: &crate::services::owned_process::OwnedProcessScope) -> bool {
+    scope.is_empty()
+}
+
 struct ProcessSnapshot(HANDLE);
 
 impl ProcessSnapshot {

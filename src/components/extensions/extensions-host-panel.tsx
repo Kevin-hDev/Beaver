@@ -16,6 +16,7 @@ export function ExtensionsHostPanel({
   onRecover,
 }: ExtensionsHostPanelProps) {
   const { t } = useTranslation();
+  const stopUnconfirmed = host.lastError === "extensions_stop_unconfirmed";
   return (
     <>
       <p className="settings-panel-description">{t("extensions.host.description")}</p>
@@ -27,7 +28,12 @@ export function ExtensionsHostPanel({
         <InfoLine label={t("extensions.host.active")} value={String(host.activeExtensions)} />
       </SettingsCard>
       {host.lastError && (
-        <div className="extp-message extp-message-error">{t("extensions.errors.host")}</div>
+        <div className="extp-message extp-message-error">
+          {t(stopUnconfirmed
+            ? "extensions.errors.codes.extensions_stop_unconfirmed"
+            : "extensions.errors.host")}
+          {stopUnconfirmed && <p>{t("extensions.host.quitAndRestartHint")}</p>}
+        </div>
       )}
       {host.diagnostics.length > 0 && (
         <section className="exth-diagnostics">
