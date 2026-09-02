@@ -58,10 +58,11 @@ test("chaque racine Rust persistante est classée ou explicitement transitoire",
   }
   const unknown = findings.filter(({ root }) => !allowed.has(root));
   assert.deepEqual(unknown, []);
+  // Les canaux d'Hôte sont recréés à chaque lancement et ne portent aucune donnée durable.
   for (const root of MANIFEST.transientRoots) {
     assert.match(
       root,
-      /(?:\.pid$|^cef-supervision$|^reasoning-fixture-(?:reports|runtime)$|^update-health$)/u,
+      /(?:\.pid$|^cef-supervision$|^extension-host-channels$|^reasoning-fixture-(?:reports|runtime)$|^update-health$)/u,
     );
   }
 });

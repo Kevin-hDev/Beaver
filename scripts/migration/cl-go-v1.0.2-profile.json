@@ -11,6 +11,7 @@
   "transientRoots": [
     "cef-supervision",
     "chronos-sidecar.pid",
+    "extension-host-channels",
     "ollama-sidecar.pid",
     "reasoning-fixture-reports",
     "reasoning-fixture-runtime",
