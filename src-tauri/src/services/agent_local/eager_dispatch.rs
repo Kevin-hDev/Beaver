@@ -60,7 +60,7 @@ where
     let mut count = 0;
 
     while let Some((idx, name, args)) = rx.recv().await {
-        if !is_read_only(&name) || count >= MAX_EAGER {
+        if !is_read_only(&name) || extension_requires_confirmation(&name) || count >= MAX_EAGER {
             continue;
         }
         if matches!(run_pre_hooks(&name, &args), PreHookDecision::Deny(_)) {
@@ -105,6 +105,13 @@ where
         }
     }
     results
+}
+
+fn extension_requires_confirmation(name: &str) -> bool {
+    crate::services::extensions::indexed_tool(name).is_some_and(|indexed| {
+        super::permission_policy::extension_effect_policy(indexed.tool.effect)
+            .requires_confirmation
+    })
 }
 
 #[cfg(test)]

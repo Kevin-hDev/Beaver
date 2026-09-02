@@ -57,7 +57,7 @@ fn contributions_are_bounded_and_require_object_schemas() {
         name: "com.example.invalid".to_string(),
         description: "Invalid schema".to_string(),
         parameters: json!({"type": "string"}),
-        effect: "unknown".to_string(),
+        effect: super::types::ExtensionEffect::Unknown,
         replaces_core: false,
     };
     assert!(super::validation::contributions(&[invalid], &[]).is_err());
@@ -67,7 +67,7 @@ fn contributions_are_bounded_and_require_object_schemas() {
             name: format!("com.example.tool{index}"),
             description: "Tool".to_string(),
             parameters: json!({"type": "object"}),
-            effect: "unknown".to_string(),
+            effect: super::types::ExtensionEffect::Unknown,
             replaces_core: false,
         })
         .collect::<Vec<_>>();
@@ -106,7 +106,7 @@ fn runtime_contributions_are_not_persisted() {
         name: "com.example.runtime".to_string(),
         description: "Runtime only".to_string(),
         parameters: json!({"type": "object"}),
-        effect: "unknown".to_string(),
+        effect: super::types::ExtensionEffect::Unknown,
         replaces_core: false,
     });
 

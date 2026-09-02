@@ -37,6 +37,7 @@ export interface BeaverTool {
   name: string;
   description: string;
   parameters: Record<string, JsonValue>;
+  /** Older runtime definitions missing this field fail closed as `unknown`. */
   effect: ExtensionEffectClass;
   execute(
     arguments_: Record<string, JsonValue>,

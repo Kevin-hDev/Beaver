@@ -2,6 +2,7 @@ use super::subagent_explorer_bash;
 use super::subagent_tool_guard;
 use super::subagent_tool_profile::SubagentToolProfile;
 use serde_json::json;
+use crate::services::extensions::ExtensionEffect;
 
 #[test]
 fn explorer_bash_accepts_only_informational_commands() {
@@ -195,4 +196,63 @@ fn outgoing_symlink_is_rejected() {
         root.path(),
     )
     .is_err());
+}
+
+#[test]
+fn child_extension_access_uses_the_parent_mode_and_exact_cache() {
+    use super::subagent_tool_guard::ChildExtensionDecision::{Allow, Deny};
+    assert_eq!(
+        super::subagent_tool_guard::child_extension_decision(
+            SubagentToolProfile::Explorer,
+            ExtensionEffect::ReadOnly,
+            "manual",
+            false,
+        ),
+        Allow,
+    );
+    assert_eq!(
+        super::subagent_tool_guard::child_extension_decision(
+            SubagentToolProfile::Coder,
+            ExtensionEffect::ReadOnly,
+            "manual",
+            false,
+        ),
+        Allow,
+    );
+    assert_eq!(
+        super::subagent_tool_guard::child_extension_decision(
+            SubagentToolProfile::Explorer,
+            ExtensionEffect::Secret,
+            "auto",
+            true,
+        ),
+        Deny,
+    );
+    assert_eq!(
+        super::subagent_tool_guard::child_extension_decision(
+            SubagentToolProfile::Coder,
+            ExtensionEffect::Secret,
+            "auto",
+            false,
+        ),
+        Allow,
+    );
+    assert_eq!(
+        super::subagent_tool_guard::child_extension_decision(
+            SubagentToolProfile::Coder,
+            ExtensionEffect::Secret,
+            "manual",
+            false,
+        ),
+        Deny,
+    );
+    assert_eq!(
+        super::subagent_tool_guard::child_extension_decision(
+            SubagentToolProfile::Coder,
+            ExtensionEffect::Secret,
+            "manual",
+            true,
+        ),
+        Allow,
+    );
 }

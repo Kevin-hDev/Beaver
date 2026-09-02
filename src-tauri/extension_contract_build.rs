@@ -4,6 +4,8 @@ mod artifacts;
 #[path = "extension_contract_document.rs"]
 #[allow(dead_code)]
 mod document;
+#[path = "extension_contract_effect.rs"]
+mod effect_renderer;
 #[path = "extension_contract_io.rs"]
 mod io;
 #[path = "extension_contract_rust.rs"]

@@ -556,6 +556,16 @@
   },
   "permissionDialog": {
     "title": "{{action}} を許可しますか？",
+    "extensionAction": "{{extension}} に操作を実行させること",
+    "effects": {
+      "read-only": "読み取り専用",
+      "local-write": "ローカル書き込み",
+      "external-read": "外部読み取り",
+      "external-write": "外部書き込み",
+      "process": "プロセス実行",
+      "secret": "機密データ",
+      "unknown": "未分類の操作"
+    },
     "allow": "一度だけ許可",
     "allowSession": "常に許可",
     "deny": "拒否",

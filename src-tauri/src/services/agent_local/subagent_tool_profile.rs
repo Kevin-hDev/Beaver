@@ -7,6 +7,13 @@ pub enum SubagentToolProfile {
 }
 
 impl SubagentToolProfile {
+    pub fn allows_extension(
+        self,
+        effect: crate::services::extensions::ExtensionEffect,
+    ) -> bool {
+        self == Self::Coder || effect == crate::services::extensions::ExtensionEffect::ReadOnly
+    }
+
     pub fn from_session_type(value: Option<&str>) -> Result<Self, String> {
         match value {
             Some("explorer") => Ok(Self::Explorer),
@@ -47,7 +54,7 @@ impl SubagentToolProfile {
 
     pub fn definitions(self, skills_enabled: bool) -> Vec<Value> {
         let allowed = self.tool_names(skills_enabled);
-        super::tool_definitions::get_tool_definitions()
+        let mut definitions = super::tool_definitions::get_tool_definitions()
             .into_iter()
             .filter(|definition| {
                 definition_name(definition)
@@ -61,7 +68,17 @@ impl SubagentToolProfile {
                 }
                 definition
             })
-            .collect()
+            .collect::<Vec<_>>();
+        definitions.extend(
+            crate::services::extensions::extension_tool_definitions()
+                .into_iter()
+                .filter(|definition| {
+                    definition_name(definition)
+                        .and_then(crate::services::extensions::indexed_tool)
+                        .is_some_and(|indexed| self.allows_extension(indexed.tool.effect))
+                }),
+        );
+        definitions
     }
 
     #[cfg(test)]
@@ -80,7 +97,10 @@ impl SubagentToolProfile {
     }
 
     pub fn allows(self, tool_name: &str, skills_enabled: bool) -> bool {
-        self.tool_names(skills_enabled).contains(&tool_name)
+        crate::services::extensions::indexed_tool(tool_name).map_or_else(
+            || self.tool_names(skills_enabled).contains(&tool_name),
+            |indexed| self.allows_extension(indexed.tool.effect),
+        )
     }
 
     pub fn prompt_tools(self, skills_enabled: bool) -> String {

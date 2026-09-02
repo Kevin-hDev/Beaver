@@ -175,6 +175,14 @@ fn checked_in_sdk_contract_matches_the_extension_contract() {
 }
 
 #[test]
+fn sdk_requires_new_tools_to_declare_their_effect() {
+    let sdk = include_str!("../../../resources/extension-host/sdk/index.d.ts");
+
+    assert!(sdk.contains("effect: ExtensionEffectClass;"));
+    assert!(!sdk.contains("effect?: ExtensionEffectClass;"));
+}
+
+#[test]
 fn absent_private_document_is_allowed_for_a_clean_clone() {
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path().join("docs/private.md");

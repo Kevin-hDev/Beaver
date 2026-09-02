@@ -76,7 +76,7 @@ mod work_supervision_tests;
 #[cfg(test)]
 mod contract_artifact_tests;
 
-pub use types::{ExtensionHostStatus, ExtensionKind};
+pub use types::{ExtensionEffect, ExtensionHostStatus, ExtensionKind};
 pub use view::ExtensionView;
 
 pub(crate) use discovery::PluginMatch;
@@ -87,7 +87,7 @@ pub(crate) use discovery_catalog::CatalogSnapshot;
 pub use discovery_preferences::DiscoveryPreferences;
 pub use registry::{add_local, disable_hosted_extensions, list, set_enabled, set_show_in_chat};
 pub(crate) use registry_index::{
-    catalog_snapshot, dynamic_tool_names, indexed_plugins, plugin_id_for_tool,
+    catalog_snapshot, dynamic_tool_names, indexed_plugins, indexed_tool, plugin_id_for_tool,
 };
 pub use registry_index::{is_dynamic_tool, is_replacement};
 pub use runtime::status;
@@ -119,6 +119,7 @@ pub(crate) async fn revoke_extension(id: &str) -> Result<(), String> {
 
 pub(crate) const MAX_DISCOVERED_PLUGINS: usize = types::MAX_EXTENSIONS;
 pub(crate) const MAX_EXTENSION_TOOLS: usize = types::MAX_TOOLS;
+pub(crate) const MAX_PERMISSION_SUMMARY_CHARS: usize = types::MAX_PERMISSION_SUMMARY_CHARS;
 
 pub(crate) use installer::{
     install_git as install_git_source, install_npm as install_npm_source,

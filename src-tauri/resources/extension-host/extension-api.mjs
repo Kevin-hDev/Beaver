@@ -34,6 +34,7 @@ export function createExtensionApi(specification) {
       name: publicName,
       description: String(definition.description ?? ""),
       parameters: definition.parameters ?? { type: "object" },
+      // Rust revalidates this value; normalization here only keeps host output stable.
       effect: supportsEffect(definition.effect) ? definition.effect : "unknown",
       replacesCore,
     };

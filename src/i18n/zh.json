@@ -556,6 +556,16 @@
   },
   "permissionDialog": {
     "title": "允许 {{action}}？",
+    "extensionAction": "让 {{extension}} 执行操作",
+    "effects": {
+      "read-only": "只读",
+      "local-write": "本地写入",
+      "external-read": "外部读取",
+      "external-write": "外部写入",
+      "process": "进程执行",
+      "secret": "敏感数据",
+      "unknown": "未分类操作"
+    },
     "allow": "允许一次",
     "allowSession": "始终允许",
     "deny": "拒绝",

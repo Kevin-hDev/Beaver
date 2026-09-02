@@ -16,6 +16,7 @@ pub(crate) struct IndexedPlugin {
 #[derive(Clone)]
 pub(crate) struct IndexedTool {
     pub extension_id: String,
+    pub extension_name: String,
     pub tool: ExtensionTool,
 }
 
@@ -50,6 +51,7 @@ pub fn rebuild(records: &[ExtensionRecord]) -> Result<(), String> {
         .flat_map(|plugin| {
             plugin.tools.iter().cloned().map(|tool| IndexedTool {
                 extension_id: plugin.id.clone(),
+                extension_name: plugin.name.clone(),
                 tool,
             })
         })
@@ -170,6 +172,16 @@ pub fn dynamic_tool(tool_name: &str) -> Option<ExtensionTool> {
             .iter()
             .find(|indexed| indexed.tool.name == tool_name)
             .map(|indexed| indexed.tool.clone())
+    })
+}
+
+pub(crate) fn indexed_tool(tool_name: &str) -> Option<IndexedTool> {
+    INDEX.read().ok().and_then(|index| {
+        index
+            .tools
+            .iter()
+            .find(|indexed| indexed.tool.name == tool_name)
+            .cloned()
     })
 }
 

@@ -36,13 +36,12 @@ pub fn render(contract: &Value) -> Result<String, String> {
         ),
         ("EXTENSION_EVENTS", array_value(contract, "events")?),
         ("HOST_LOAD_STAGES", array_value(contract, "loadStages")?),
-        (
-            "EXTENSION_EFFECT_CLASSES",
-            array_value(contract, "effectClasses")?,
-        ),
     ] {
         render_slice(&mut output, name, values)?;
     }
+    let effects = array_value(contract, "effectClasses")?;
+    render_slice(&mut output, "EXTENSION_EFFECT_CLASSES", effects)?;
+    super::effect_renderer::render(&mut output, effects)?;
     render_host_methods(
         &mut output,
         array(object(contract, "methods")?, "hostToCore")?,

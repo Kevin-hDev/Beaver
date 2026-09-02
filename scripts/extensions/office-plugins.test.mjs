@@ -45,6 +45,15 @@ test("the bundled Office suite loads and creates real local artifacts", async ()
       ),
       10,
     );
+    const effects = new Map(sync.extensions.flatMap((extension) =>
+      extension.contributions.tools.map((tool) => [tool.name, tool.effect])));
+    for (const [name, effect] of effects) {
+      assert.equal(
+        effect,
+        name.endsWith(".inspect") ? "read-only" : "local-write",
+        name,
+      );
+    }
 
     const createdDocument = await call(
       host,

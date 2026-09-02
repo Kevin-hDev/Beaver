@@ -81,7 +81,7 @@ pub async fn set_extension_enabled(
     enabled: bool,
     trust_confirmed: bool,
 ) -> Result<bool, String> {
-    let reminder = extensions::set_enabled(&extension_id, enabled, trust_confirmed)?;
+    let reminder = extensions::set_enabled(&extension_id, enabled, trust_confirmed).await?;
     let result = if enabled {
         extensions::restart().await
     } else {
@@ -128,7 +128,7 @@ pub async fn set_extension_discovery_preferences(
 
 #[tauri::command]
 pub async fn recover_extension_host(app: tauri::AppHandle) -> Result<bool, String> {
-    let reminder = extensions::disable_hosted_extensions()?;
+    let reminder = extensions::disable_hosted_extensions().await?;
     let result = extensions::restart().await;
     emit_changed(&app);
     result.map(|_| reminder)

@@ -242,3 +242,56 @@ fn diagnostic_entry_omits_arguments() {
     assert!(entry.get("args").is_none());
     assert!(entry.get("command").is_none());
 }
+
+#[test]
+fn every_channel_revocation_clears_extension_permissions_at_the_required_boundary() {
+    let registry = include_str!("../extensions/registry.rs");
+    let installer = include_str!("../extensions/installer.rs");
+    let uninstall = include_str!("../extensions/installer_uninstall.rs");
+    let lifecycle = include_str!("../extensions/runtime_lifecycle.rs");
+
+    let disabled = registry.find("if !enabled {").expect("disable branch");
+    let disable_clear = registry[disabled..]
+        .find("permission_gate::clear_extension(id).await")
+        .expect("disable clear");
+    assert!(disable_clear > 0);
+
+    let update_clear = installer
+        .find("permission_gate::clear_extension(&current.manifest.id).await")
+        .expect("update clear");
+    let replace = installer
+        .find("registry::replace_user(&current")
+        .expect("registry replacement");
+    assert!(update_clear < replace);
+
+    let uninstall_clear = uninstall
+        .find("permission_gate::clear_extension(&id).await")
+        .expect("uninstall clear");
+    let remove = uninstall.find("registry::remove(&id)").expect("registry removal");
+    assert!(uninstall_clear < remove);
+
+    assert!(lifecycle.contains("permission_gate::clear_all_extensions().await"));
+
+    let commands = include_str!("../../commands/extensions.rs");
+    let recovery = commands
+        .find("recover_extension_host")
+        .expect("global recovery command");
+    assert!(commands[recovery..].contains("disable_hosted_extensions().await"));
+}
+
+#[test]
+fn denied_child_extensions_cannot_reach_the_permission_request_path() {
+    let sequential = include_str!("tool_executor_sequential.rs");
+    let support = include_str!("tool_executor_sequential_support.rs");
+    let guard = sequential.find("initial_validation(").expect("child guard");
+    let request = sequential.find("check_allowed(").expect("permission check");
+    assert!(guard < request);
+
+    let child_bypass = support
+        .find("subagent_tool_guard::profile_for_session(session_id)")
+        .expect("validated child bypass");
+    let prompt = support
+        .find("permission_gate::request(on_event")
+        .expect("permission request");
+    assert!(child_bypass < prompt);
+}

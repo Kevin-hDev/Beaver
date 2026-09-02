@@ -108,7 +108,7 @@ pub fn replace_user(
     Ok(reminder)
 }
 
-pub fn set_enabled(id: &str, enabled: bool, trust_confirmed: bool) -> Result<bool, String> {
+pub async fn set_enabled(id: &str, enabled: bool, trust_confirmed: bool) -> Result<bool, String> {
     let mut reminder = false;
     update(id, |record| {
         if enabled && record.kind != ExtensionKind::Builtin && !record.trusted && !trust_confirmed {
@@ -128,6 +128,9 @@ pub fn set_enabled(id: &str, enabled: bool, trust_confirmed: bool) -> Result<boo
         }
         Ok(())
     })?;
+    if !enabled {
+        crate::services::agent_local::permission_gate::clear_extension(id).await;
+    }
     Ok(reminder)
 }
 
@@ -138,7 +141,7 @@ pub fn set_show_in_chat(id: &str, show: bool) -> Result<(), String> {
     })
 }
 
-pub fn disable_hosted_extensions() -> Result<bool, String> {
+pub async fn disable_hosted_extensions() -> Result<bool, String> {
     let mut reminder = false;
     mutate(|records| {
         reminder = records.iter().any(|record| {
@@ -147,6 +150,7 @@ pub fn disable_hosted_extensions() -> Result<bool, String> {
         disable_hosted_records(records);
         Ok::<(), String>(())
     })?;
+    crate::services::agent_local::permission_gate::clear_all_extensions().await;
     Ok(reminder)
 }
 

@@ -14,7 +14,7 @@ fn plugin(name: &str, description: &str) -> IndexedPlugin {
             name: format!("example.{}.create", name.to_lowercase()),
             description: description.to_string(),
             parameters: json!({"type": "object"}),
-            effect: "unknown".to_string(),
+            effect: crate::services::extensions::ExtensionEffect::Unknown,
             replaces_core: false,
         }],
     }
@@ -59,7 +59,7 @@ fn any_tool_description_can_match_its_complete_plugin() {
         name: "example.sheets.inspect".to_string(),
         description: "Audit workbook formulas".to_string(),
         parameters: json!({"type": "object"}),
-        effect: "unknown".to_string(),
+        effect: crate::services::extensions::ExtensionEffect::Unknown,
         replaces_core: false,
     });
 

@@ -25,6 +25,10 @@ pub const PLAN_MODE_ALLOWED_TOOL_NAMES: &[&str] = &[
 pub const PLAN_MODE_ALLOWED_ACTIONS_TEXT: &str = "read_file, list_dir, grep, glob, web_search, web_fetch, search_extension_tools, read_spreadsheet, read_document, bash_control, load_skill, todo_history, todo_pause, todo_resume, todo_delete, ask_user_choice, plan_mode, forecast_read, forecast_models, safe bash exploration and validation commands (including tests and builds), and search_mcp_tools without MCP calls";
 
 pub fn is_allowed_in_plan_mode(tool_name: &str, args: &Value) -> bool {
+    if let Some(indexed) = crate::services::extensions::indexed_tool(tool_name) {
+        return super::permission_policy::extension_effect_policy(indexed.tool.effect)
+            .allowed_in_plan;
+    }
     match tool_name {
         "bash" => !super::permission_gate::requires_permission("bash", args),
         "transform_image" => args["operations"].as_array().is_some_and(Vec::is_empty),

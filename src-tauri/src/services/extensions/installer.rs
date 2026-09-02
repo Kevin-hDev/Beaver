@@ -113,6 +113,7 @@ async fn replace_current(
 ) -> Result<ExtensionRecord, OperationFailure> {
     let replacement = super::installer_record::for_update(&current, prepared.record);
     let identity = super::host_identity::HostIdentity::ThirdParty(current.manifest.id.clone());
+    crate::services::agent_local::permission_gate::clear_extension(&current.manifest.id).await;
     let reminder = match super::registry::replace_user(&current, replacement.clone()) {
         Ok(reminder) => reminder,
         Err(_) => {

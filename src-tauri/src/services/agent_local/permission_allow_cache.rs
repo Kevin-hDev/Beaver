@@ -8,11 +8,33 @@ const MAX_ALLOWED_SESSIONS: usize = 64;
 const MAX_ALLOWED_TOOLS_PER_SESSION: usize = 16;
 const NO_SESSION_ALLOW: &[&str] = &["bash", "bash_control", "search_mcp_tools"];
 
-static ALLOWED: LazyLock<Mutex<HashMap<String, HashMap<String, Instant>>>> =
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+struct AllowedTool {
+    extension_id: String,
+    tool_name: String,
+}
+
+static ALLOWED: LazyLock<Mutex<HashMap<String, HashMap<AllowedTool, Instant>>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
 
 pub async fn is_allowed(session_id: &str, tool: &str) -> bool {
-    if NO_SESSION_ALLOW.contains(&tool) {
+    is_allowed_key(session_id, "", tool).await
+}
+
+pub(super) async fn is_extension_allowed(
+    session_id: &str,
+    extension_id: &str,
+    tool_name: &str,
+) -> bool {
+    is_allowed_key(session_id, extension_id, tool_name).await
+}
+
+async fn is_allowed_key(session_id: &str, extension_id: &str, tool_name: &str) -> bool {
+    let key = AllowedTool {
+        extension_id: extension_id.to_string(),
+        tool_name: tool_name.to_string(),
+    };
+    if extension_id.is_empty() && NO_SESSION_ALLOW.contains(&tool_name) {
         return false;
     }
     let mut guard = ALLOWED.lock().await;
@@ -21,10 +43,10 @@ pub async fn is_allowed(session_id: &str, tool: &str) -> bool {
         Some(map) => map,
         None => return false,
     };
-    match session_map.get(tool) {
+    match session_map.get(&key) {
         Some(granted_at) if granted_at.elapsed() < SESSION_ALLOW_TTL => true,
         Some(_) => {
-            session_map.remove(tool);
+            session_map.remove(&key);
             false
         }
         None => false,
@@ -32,7 +54,23 @@ pub async fn is_allowed(session_id: &str, tool: &str) -> bool {
 }
 
 pub async fn mark_allowed(session_id: &str, tool: &str) {
-    if NO_SESSION_ALLOW.contains(&tool) || !valid_key(session_id) || !valid_key(tool) {
+    mark_allowed_key(session_id, "", tool).await;
+}
+
+pub(super) async fn mark_extension_allowed(
+    session_id: &str,
+    extension_id: &str,
+    tool_name: &str,
+) {
+    mark_allowed_key(session_id, extension_id, tool_name).await;
+}
+
+async fn mark_allowed_key(session_id: &str, extension_id: &str, tool_name: &str) {
+    if (extension_id.is_empty() && NO_SESSION_ALLOW.contains(&tool_name))
+        || !valid_key(session_id)
+        || (!extension_id.is_empty() && !valid_key(extension_id))
+        || !valid_key(tool_name)
+    {
         return;
     }
     let mut allowed = ALLOWED.lock().await;
@@ -41,17 +79,46 @@ pub async fn mark_allowed(session_id: &str, tool: &str) {
         return;
     }
     let tools = allowed.entry(session_id.to_string()).or_default();
-    if !tools.contains_key(tool) && tools.len() >= MAX_ALLOWED_TOOLS_PER_SESSION {
+    let key = AllowedTool {
+        extension_id: extension_id.to_string(),
+        tool_name: tool_name.to_string(),
+    };
+    if !tools.contains_key(&key) && tools.len() >= MAX_ALLOWED_TOOLS_PER_SESSION {
         return;
     }
-    tools.insert(tool.to_string(), Instant::now());
+    tools.insert(key, Instant::now());
 }
 
 pub async fn clear_session(session_id: &str) {
     ALLOWED.lock().await.remove(session_id);
 }
 
-fn prune_expired(allowed: &mut HashMap<String, HashMap<String, Instant>>) {
+pub(super) async fn clear_extension(extension_id: &str) {
+    if !valid_key(extension_id) {
+        return;
+    }
+    let mut allowed = ALLOWED.lock().await;
+    allowed.retain(|_, tools| {
+        tools.retain(|key, _| key.extension_id != extension_id);
+        !tools.is_empty()
+    });
+}
+
+pub(super) async fn clear_all_extensions() {
+    let mut allowed = ALLOWED.lock().await;
+    clear_all_extensions_in(&mut allowed);
+}
+
+fn clear_all_extensions_in(
+    allowed: &mut HashMap<String, HashMap<AllowedTool, Instant>>,
+) {
+    allowed.retain(|_, tools| {
+        tools.retain(|key, _| key.extension_id.is_empty());
+        !tools.is_empty()
+    });
+}
+
+fn prune_expired(allowed: &mut HashMap<String, HashMap<AllowedTool, Instant>>) {
     allowed.retain(|_, tools| {
         tools.retain(|_, granted_at| granted_at.elapsed() < SESSION_ALLOW_TTL);
         !tools.is_empty()

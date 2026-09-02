@@ -5,6 +5,7 @@ import type { AgentPlanPreview } from "./agent-plan";
 import type { SubagentStatus } from "./agent-session";
 import type { AgentTodoItem } from "./agent-todo";
 import type { ToolErrorInfo, ToolResultStatus } from "./agent-tool-result";
+import type { ExtensionEffectClass } from "./extension-contract.generated";
 
 interface AgentErrorDiagnosticSummary {
   requestId: string;
@@ -12,6 +13,17 @@ interface AgentErrorDiagnosticSummary {
   errorType: string;
   lastToolName?: string;
   safeSummary: string;
+}
+
+export interface AgentPermissionRequest {
+  id: string;
+  toolName: string;
+  arguments: Record<string, unknown>;
+  extensionId?: string;
+  extensionName?: string;
+  effectClass?: ExtensionEffectClass;
+  actionSummary?: string;
+  allowSession?: boolean;
 }
 
 export interface ContextCapacityDetails {
@@ -54,7 +66,7 @@ export type StreamEvent =
   | { event: "toolOutput"; data: { toolCallIndex: number; content: string; elapsedMs: number } }
   | { event: "toolResult"; data: { name: string; content: string; isError: boolean; status?: ToolResultStatus; error?: ToolErrorInfo; warnings?: string[]; truncated?: boolean; displaySummary?: string; toolCallIndex: number; toolCallId?: string; resolvedPath?: string; domain?: "memory"; affectedPaths?: string[]; fileChanges?: ToolFileChangeRecord[]; startLine?: number } }
   | { event: "turnEnd"; data: Record<string, never> }
-  | { event: "permissionRequest"; data: { id: string; toolName: string; arguments: Record<string, unknown> } }
+  | { event: "permissionRequest"; data: AgentPermissionRequest }
   | { event: "done"; data: { evalCount: number | null; evalDurationNs: number; finalTps: number; tpsEstimated?: boolean; promptTokens: number | null; contextTokens: number | null } }
   | {
     event: "error";

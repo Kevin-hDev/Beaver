@@ -556,6 +556,16 @@
   },
   "permissionDialog": {
     "title": "{{action}} erlauben?",
+    "extensionAction": "{{extension}} eine Aktion ausführen lassen",
+    "effects": {
+      "read-only": "Nur Lesen",
+      "local-write": "Lokales Schreiben",
+      "external-read": "Externes Lesen",
+      "external-write": "Externes Schreiben",
+      "process": "Prozessausführung",
+      "secret": "Sensible Daten",
+      "unknown": "Nicht klassifizierte Aktion"
+    },
     "allow": "Einmal erlauben",
     "allowSession": "Immer erlauben",
     "deny": "Ablehnen",

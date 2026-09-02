@@ -76,7 +76,7 @@ impl ExtensionRuntime {
         self.set_state(HostState::Starting, None, 0);
         let result = self.sync_hosts().await;
         if result.is_err() {
-            self.mark_unavailable();
+            self.mark_unavailable().await;
         }
         result
     }
@@ -113,7 +113,10 @@ impl ExtensionRuntime {
         true
     }
 
-    fn mark_unavailable(&self) {
+    async fn mark_unavailable(&self) {
+        // Une panne globale invalide tous les canaux. Effacer toutes les autorisations
+        // d'extension reste fermé même si le registre est lui-même illisible.
+        crate::services::agent_local::permission_gate::clear_all_extensions().await;
         self.set_state(
             HostState::Error,
             Some("Hôte d'extensions indisponible.".to_string()),

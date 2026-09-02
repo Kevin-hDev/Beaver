@@ -86,6 +86,16 @@ pub(super) async fn check_allowed(
     session_id: &str,
     cancel: CancellationToken,
 ) -> bool {
+    if crate::services::extensions::indexed_tool(name).is_some()
+        && matches!(
+            super::subagent_tool_guard::profile_for_session(session_id).await,
+            Ok(Some(_))
+        )
+    {
+        // Le garde enfant vient de valider le mode/cache exacts du parent. Refaire une
+        // demande ici la livrerait au parent après un refus ou sous la mauvaise identité.
+        return true;
+    }
     if !permission_gate::requires_permission(name, args) {
         return true;
     }

@@ -117,7 +117,7 @@ impl AgentEventEmitter {
 }
 
 fn is_permission_request(event: &StreamEvent) -> bool {
-    matches!(event, StreamEvent::PermissionRequest { .. })
+    matches!(event, StreamEvent::PermissionRequest(..))
 }
 
 #[cfg(test)]
@@ -126,11 +126,13 @@ mod tests {
 
     #[test]
     fn only_permission_requests_use_the_parent_route() {
-        assert!(is_permission_request(&StreamEvent::PermissionRequest {
-            id: "request".into(),
-            tool_name: "bash".into(),
-            arguments: serde_json::json!({}),
-        }));
+        assert!(is_permission_request(&StreamEvent::PermissionRequest(
+            super::super::permission_request::native(
+                "request".into(),
+                "bash",
+                &serde_json::json!({}),
+            ),
+        )));
         assert!(!is_permission_request(&StreamEvent::Notice {
             message_key: "child-content".into(),
         }));

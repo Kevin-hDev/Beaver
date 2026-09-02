@@ -237,6 +237,16 @@ describe("permissionRequest", () => {
     expect(s.pendingPermissions).toHaveLength(32);
     expect(s.pendingPermissions[31].id).toBe("req-new");
   });
+  it("conserve les informations d’affichage fournies par Rust", () => {
+    const data = {
+      id: "req-extension", toolName: "shared.tool", arguments: {},
+      extensionId: "plugin-a", extensionName: "Plugin A",
+      effectClass: "external-write" as const, actionSummary: "{\"target\":\"safe\"}",
+    };
+    const { state } = applyStreamEvent(makeState(), { event: "permissionRequest", data });
+
+    expect(state.pendingPermissions[0]).toEqual(data);
+  });
 });
 
 describe("toolResult — cas limites", () => {

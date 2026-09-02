@@ -10,6 +10,7 @@ pub async fn uninstall(id: &str) -> Result<bool, OperationFailure> {
     let work = runtime.work.clone();
     work.run_operation(move |cancel| async move {
         ensure_uninstall_active(&cancel)?;
+        crate::services::agent_local::permission_gate::clear_extension(&id).await;
         let reminder =
             super::registry::remove(&id).map_err(|_| OperationFailure::UninstallFailed)?;
         // Après persistance, la révocation et le nettoyage doivent aller au bout.

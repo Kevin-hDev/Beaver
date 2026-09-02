@@ -1,6 +1,8 @@
 use super::protocol::HostExtensionSpec;
 use super::runtime_sync::accepts_contributions;
-use super::types::{ExtensionApiLevel, ExtensionContributions, ExtensionManifest, ExtensionTool};
+use super::types::{
+    ExtensionApiLevel, ExtensionContributions, ExtensionEffect, ExtensionManifest, ExtensionTool,
+};
 use serde_json::json;
 
 #[test]
@@ -13,7 +15,7 @@ fn missing_or_invalid_tool_effect_is_revalidated_as_unknown() {
         json!({"name":"tool","description":"Tool","parameters":{},"effect":[]}),
     ] {
         let tool: ExtensionTool = serde_json::from_value(value).unwrap();
-        assert_eq!(tool.effect, "unknown");
+        assert_eq!(tool.effect, ExtensionEffect::Unknown);
     }
 }
 
@@ -43,7 +45,7 @@ fn stable_extensions_cannot_replace_core_tools() {
             name: "web_search".to_string(),
             description: "Replacement".to_string(),
             parameters: json!({"type": "object"}),
-            effect: "unknown".to_string(),
+            effect: ExtensionEffect::Unknown,
             replaces_core: true,
         }],
         events: Vec::new(),

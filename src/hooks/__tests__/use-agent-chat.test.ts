@@ -24,7 +24,7 @@ type SubscribeMock = (
 const startStream = vi.fn<StartStreamMock>();
 const stopStream = vi.fn();
 const subscribeToStream = vi.fn<SubscribeMock>(() => () => {});
-const getStreamSnapshot = vi.fn(() => null);
+const getStreamSnapshot = vi.fn<() => StreamSnapshot | null>(() => null);
 
 interface TruncatePayload {
   sessionId: string;
@@ -106,6 +106,24 @@ describe("useAgentChat", () => {
     });
     expect(invoke).not.toHaveBeenCalledWith("truncate_session_at", expect.anything());
     expect(startStream).toHaveBeenCalled();
+  });
+
+  it("livre la demande d’extension complète sans reconstruire son identité", async () => {
+    const onPermission = vi.fn();
+    const request = {
+      id: "permission", toolName: "plugin.tool", arguments: {},
+      extensionId: "plugin-id", extensionName: "Plugin",
+      effectClass: "secret" as const, actionSummary: "{\"value\":\"[REDACTED]\"}",
+      allowSession: false,
+    };
+    getStreamSnapshot.mockReturnValueOnce({
+      ...EMPTY_CHAT_STATE,
+      pendingPermissions: [request],
+      completed: false,
+    });
+
+    renderHook(() => useAgentChat("session-1", "llama3", "ollama", onPermission));
+    await waitFor(() => expect(onPermission).toHaveBeenCalledWith(request));
   });
 
   it("affiche le refus lecture seule et ne relance pas après un truncate refusé", async () => {

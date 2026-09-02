@@ -1,4 +1,4 @@
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 pub const MINIMUM_NODE_MAJOR: u64 = 20;
@@ -89,26 +89,10 @@ pub struct ExtensionTool {
     pub name: String,
     pub description: String,
     pub parameters: Value,
-    #[serde(default = "default_effect", deserialize_with = "deserialize_effect")]
-    pub effect: String,
+    #[serde(default)]
+    pub effect: ExtensionEffect,
     #[serde(default)]
     pub replaces_core: bool,
-}
-
-fn default_effect() -> String {
-    "unknown".to_string()
-}
-
-fn deserialize_effect<'de, D>(deserializer: D) -> Result<String, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let effect = Value::deserialize(deserializer)?;
-    Ok(effect
-        .as_str()
-        .filter(|effect| EXTENSION_EFFECT_CLASSES.contains(effect))
-        .unwrap_or("unknown")
-        .to_string())
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

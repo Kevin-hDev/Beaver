@@ -14,18 +14,21 @@ import {
 export default defineExtension((api) => {
   api.registerTool({
     name: "create",
+    effect: "local-write",
     description: "Create an editable Microsoft Excel XLSX workbook with one or more sheets.",
     parameters: createSpreadsheetSchema,
     execute: safeTool(createSpreadsheet),
   });
   api.registerTool({
     name: "inspect",
+    effect: "read-only",
     description: "Inspect bounded cell previews and dimensions from a Microsoft Excel XLSX workbook.",
     parameters: inspectSpreadsheetSchema,
     execute: safeTool(inspectSpreadsheet),
   });
   api.registerTool({
     name: "update",
+    effect: "local-write",
     description: "Update selected cells while preserving the existing Microsoft Excel XLSX workbook.",
     parameters: updateSpreadsheetSchema,
     execute: safeTool(updateSpreadsheet),
