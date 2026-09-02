@@ -258,6 +258,7 @@ fn fingerprint_enforces_the_total_source_budget() {
 
 #[tokio::test]
 async fn changed_extension_never_reaches_a_host_load_request() {
+    let _marker_lock = super::loading_marker::test_lock().await;
     let (changed_directory, mut changed) = source_tree();
     changed.manifest.id = "com.example.changed-load".to_string();
     changed.enabled = true;
@@ -313,9 +314,16 @@ readline.createInterface({{ input: process.stdin }}).on("line", (line) => {{
         .collect::<Vec<_>>();
     let mut responses = Vec::new();
 
-    super::runtime_channel_sync::load_specs(&process, &specs, &mut responses)
-        .await
-        .unwrap();
+    let _ = super::loading_marker::discard();
+    super::runtime_channel_sync::load_specs(
+        &process,
+        &specs,
+        &mut responses,
+        &super::runtime_sync::RecoveryPreflight::Normal,
+    )
+    .await
+    .unwrap();
+    super::loading_marker::discard().unwrap();
 
     assert_eq!(
         std::fs::read_to_string(&loaded_ids).unwrap(),
@@ -331,7 +339,10 @@ readline.createInterface({{ input: process.stdin }}).on("line", (line) => {{
 #[test]
 fn runtime_revokes_and_clears_permissions_before_loading_or_building_specs() {
     let source = include_str!("runtime_sync.rs");
-    let verified = source.find("verify_records(records)").unwrap();
+    let recovered = source
+        .find("let recovered = filter_for_recovery(records, recovery)")
+        .unwrap();
+    let verified = source.find("fingerprint::verify_records").unwrap();
     let revoked = source
         .find("revoke_fingerprints(&verified.revocations)")
         .unwrap();
@@ -339,6 +350,7 @@ fn runtime_revokes_and_clears_permissions_before_loading_or_building_specs() {
     let loading = source.find("registry_sync::mark_loading").unwrap();
     let planned = source.find("runtime_plan::records").unwrap();
 
+    assert!(recovered < verified);
     assert!(verified < revoked);
     assert!(revoked < cleared);
     assert!(cleared < loading);

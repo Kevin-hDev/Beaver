@@ -3,36 +3,31 @@ use super::types::{
     MAX_USER_EXTENSIONS,
 };
 use std::collections::BTreeMap;
-use std::sync::{LazyLock, Mutex, RwLock};
+use std::sync::Mutex;
 
-pub(super) static RECORDS: LazyLock<RwLock<Vec<ExtensionRecord>>> =
-    LazyLock::new(|| RwLock::new(Vec::new()));
 pub(super) static MUTATIONS: Mutex<()> = Mutex::new(());
 
 pub fn init() -> Result<(), String> {
     let loaded = super::storage::load()?;
     let format = loaded.format;
-    super::registry_state::replace_recovery_snapshot(loaded.recovery_snapshot)?;
+    let recovery_snapshot = loaded.recovery_snapshot;
     let records = super::builtin::merge(super::registry_state::reset_hosted_runtime(
         loaded.extensions,
     ))?;
     super::validation::records(&records)?;
-    super::storage::save(&records, &super::registry_state::recovery_snapshot()?)?;
+    super::storage::save(&records, &recovery_snapshot)?;
     if super::managed_cleanup::unreferenced(&records).is_err() {
         super::operation_error::report(
             super::operation_error::Operation::Cleanup,
             super::OperationFailure::CleanupFailed,
         );
     }
-    replace(records)?;
+    super::registry_memory::replace(records, recovery_snapshot)?;
     super::storage::finish_successful_startup(&super::storage::path(), format)
 }
 
 pub fn list() -> Result<Vec<ExtensionRecord>, String> {
-    RECORDS
-        .read()
-        .map(|records| records.clone())
-        .map_err(|_| "Registre d'extensions indisponible.".to_string())
+    super::registry_memory::records()
 }
 
 pub(super) fn refresh_index() -> Result<(), String> {
@@ -148,26 +143,6 @@ pub fn set_show_in_chat(id: &str, show: bool) -> Result<(), String> {
     })
 }
 
-pub async fn disable_hosted_extensions() -> Result<bool, String> {
-    let mut reminder = false;
-    mutate(|records| {
-        reminder = records.iter().any(|record| record.sensitive_access_granted);
-        disable_hosted_records(records);
-        Ok::<(), String>(())
-    })?;
-    crate::services::agent_local::permission_gate::clear_all_extensions().await;
-    Ok(reminder)
-}
-
-pub(super) fn disable_hosted_records(records: &mut [ExtensionRecord]) {
-    for record in records {
-        record.enabled = false;
-        record.status = ExtensionStatus::Inactive;
-        record.last_error = None;
-        record.contributions = ExtensionContributions::default();
-    }
-}
-
 pub fn enabled_hosted() -> Result<Vec<ExtensionRecord>, String> {
     Ok(list()?
         .into_iter()
@@ -208,19 +183,20 @@ pub(super) fn mutate<E>(
 where
     E: super::registry_mutation_error::MutationError,
 {
-    let _guard = MUTATIONS.lock().map_err(|_| E::storage())?;
-    let mut candidate = list().map_err(|_| E::storage())?;
-    operation(&mut candidate)?;
-    let recovery_snapshot = super::registry_state::recovery_snapshot().map_err(|_| E::storage())?;
-    super::storage::save(&candidate, &recovery_snapshot).map_err(|_| E::storage())?;
-    replace(candidate).map_err(|_| E::storage())
+    mutate_state(|records, _| operation(records))
 }
 
-fn replace(records: Vec<ExtensionRecord>) -> Result<(), String> {
-    let mut state = RECORDS
-        .write()
-        .map_err(|_| "Registre d'extensions indisponible.".to_string())?;
-    super::registry_index::rebuild(&records)?;
-    *state = records;
-    Ok(())
+pub(super) fn mutate_state<E>(
+    operation: impl FnOnce(&mut Vec<ExtensionRecord>, &mut Option<Vec<String>>) -> Result<(), E>,
+) -> Result<(), E>
+where
+    E: super::registry_mutation_error::MutationError,
+{
+    let _guard = MUTATIONS.lock().map_err(|_| E::storage())?;
+    let mut candidate = super::registry_memory::snapshot().map_err(|_| E::storage())?;
+    operation(&mut candidate.records, &mut candidate.recovery_snapshot)?;
+    super::storage::save(&candidate.records, &candidate.recovery_snapshot)
+        .map_err(|_| E::storage())?;
+    super::registry_memory::replace(candidate.records, candidate.recovery_snapshot)
+        .map_err(|_| E::storage())
 }

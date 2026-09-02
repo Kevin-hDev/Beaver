@@ -280,6 +280,62 @@ async fn unconfirmed_stop_keeps_the_current_channel_bound() {
 }
 
 #[tokio::test]
+async fn third_party_load_requires_the_bound_rust_identity_and_process() {
+    let workspace = tempfile::tempdir().unwrap();
+    let mut hosts = RuntimeHosts::new(workspace.path().join("channels")).unwrap();
+    let work = extension_work();
+    let process = bind_fixture(
+        &mut hosts,
+        workspace.path(),
+        "com.example.bound",
+        "reply",
+        &work,
+    )
+    .await;
+    let other_process = bind_fixture(
+        &mut hosts,
+        workspace.path(),
+        "com.example.other-process",
+        "reply",
+        &work,
+    )
+    .await;
+
+    assert!(hosts
+        .authorize_load(
+            &HostIdentity::ThirdParty("com.example.bound".to_string()),
+            &process,
+            "com.example.bound",
+        )
+        .is_ok());
+    assert!(hosts
+        .authorize_load(
+            &HostIdentity::ThirdParty("com.example.bound".to_string()),
+            &process,
+            "com.example.spoofed",
+        )
+        .is_err());
+    assert!(hosts
+        .authorize_load(
+            &HostIdentity::ThirdParty("com.example.bound".to_string()),
+            &other_process,
+            "com.example.bound",
+        )
+        .is_err());
+
+    assert!(
+        process
+            .kill(super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
+    assert!(
+        other_process
+            .kill(super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
+}
+
+#[tokio::test]
 async fn a_restarting_generation_refuses_work_and_replacement_until_removed() {
     let workspace = tempfile::tempdir().unwrap();
     let mut hosts = RuntimeHosts::new(workspace.path().join("channels")).unwrap();

@@ -195,7 +195,8 @@ async fn receive_notification(
         .get("stage")
         .and_then(Value::as_str)
         .ok_or_else(|| "Réponse de l'hôte d'extensions invalide.".to_string())?;
-    load_tracker.advance(stage).await.map(|_| ())
+    let extension_id = load_tracker.advance(stage).await?;
+    super::loading_marker::advance(&extension_id, stage)
 }
 
 #[cfg(test)]

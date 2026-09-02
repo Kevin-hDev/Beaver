@@ -37,6 +37,24 @@ async fn internal_start_cannot_bypass_closed_admission() {
 }
 
 #[tokio::test]
+async fn failed_cautious_retry_never_leaves_the_runtime_stuck_as_starting() {
+    let coordinator = crate::app_exit::AppExitCoordinator::initialize().unwrap();
+    let runtime = runtime(super::super::work_supervision::ExtensionWorkServices::new(
+        coordinator.work_supervisor(),
+    ));
+
+    assert!(runtime
+        .retry_untracked(
+            "com.example.missing".to_string(),
+            2,
+            Instant::now() + Duration::from_secs(1),
+        )
+        .await
+        .is_err());
+    assert_eq!(runtime.status.read().unwrap().state, HostState::Error);
+}
+
+#[tokio::test]
 async fn stop_with_no_channels_is_confirmed_without_waiting() {
     let coordinator = crate::app_exit::AppExitCoordinator::initialize().unwrap();
     let runtime = runtime(super::super::work_supervision::ExtensionWorkServices::new(

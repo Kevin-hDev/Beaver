@@ -157,6 +157,10 @@ pub async fn open_extension_source(extension_id: String) -> Result<(), String> {
     open::that_detached(source).map_err(|_| "Impossible d'ouvrir la source.".to_string())
 }
 
-fn emit_changed(app: &tauri::AppHandle) {
+pub(super) fn emit_changed(app: &tauri::AppHandle) {
     let _ = app.emit(extensions::CHANGED_EVENT, ());
 }
+
+#[cfg(test)]
+#[path = "extensions_tests.rs"]
+mod tests;

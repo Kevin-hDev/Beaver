@@ -1,24 +1,5 @@
 use super::types::{ExtensionContributions, ExtensionKind, ExtensionRecord, ExtensionStatus};
 use std::collections::BTreeMap;
-use std::sync::{LazyLock, RwLock};
-
-static RECOVERY_SNAPSHOT: LazyLock<RwLock<Option<Vec<String>>>> =
-    LazyLock::new(|| RwLock::new(None));
-
-pub fn recovery_snapshot() -> Result<Option<Vec<String>>, String> {
-    RECOVERY_SNAPSHOT
-        .read()
-        .map(|snapshot| snapshot.clone())
-        .map_err(|_| "Registre d'extensions indisponible.".to_string())
-}
-
-pub fn replace_recovery_snapshot(snapshot: Option<Vec<String>>) -> Result<(), String> {
-    let mut current = RECOVERY_SNAPSHOT
-        .write()
-        .map_err(|_| "Registre d'extensions indisponible.".to_string())?;
-    *current = snapshot;
-    Ok(())
-}
 
 pub fn approve_local(record: &mut ExtensionRecord, trusted_at: &str) -> Result<(), String> {
     if record.kind != ExtensionKind::Local {

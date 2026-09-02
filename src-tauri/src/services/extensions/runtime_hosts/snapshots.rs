@@ -5,6 +5,38 @@ use crate::services::extensions::types::ExtensionApiLevel;
 use std::sync::Arc;
 
 impl RuntimeHosts {
+    pub(in crate::services::extensions) fn authorize_loads(
+        &self,
+        identity: &HostIdentity,
+        process: &Arc<HostProcess>,
+        specifications: &[super::super::protocol::HostExtensionSpec],
+    ) -> Result<(), String> {
+        for specification in specifications {
+            self.authorize_load(identity, process, &specification.id)?;
+        }
+        Ok(())
+    }
+
+    pub(in crate::services::extensions) fn authorize_load(
+        &self,
+        identity: &HostIdentity,
+        process: &Arc<HostProcess>,
+        extension_id: &str,
+    ) -> Result<(), String> {
+        let channel = self
+            .channel(identity)
+            .filter(|channel| {
+                !channel.revoked.is_cancelled() && Arc::ptr_eq(&channel.process, process)
+            })
+            .ok_or_else(|| super::super::error_codes::HOST_UNAVAILABLE.to_string())?;
+        if channel.identity != *identity
+            || matches!(identity, HostIdentity::ThirdParty(id) if id != extension_id)
+        {
+            return Err(super::super::error_codes::REQUEST_INVALID.to_string());
+        }
+        Ok(())
+    }
+
     pub(in crate::services::extensions) fn snapshots(
         &self,
     ) -> Vec<(HostIdentity, u64, Arc<HostProcess>)> {

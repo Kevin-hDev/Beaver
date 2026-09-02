@@ -21,6 +21,23 @@ pub async fn restart(deadline: Instant) -> Result<bool, String> {
     .map_err(|error| error.public_code().to_string())?
 }
 
+pub async fn retry_load(
+    extension_id: String,
+    attempts: u8,
+    deadline: Instant,
+) -> Result<bool, String> {
+    let runtime = Arc::clone(super::runtime::global()?);
+    let work = runtime.work.clone();
+    work.run_operation(move |cancel| async move {
+        tokio::select! {
+            _ = cancel.cancelled() => Err(error_codes::HOST_UNAVAILABLE.to_string()),
+            result = runtime.retry_untracked(extension_id, attempts, deadline) => result,
+        }
+    })
+    .await
+    .map_err(|error| error.public_code().to_string())?
+}
+
 pub async fn stop_and_wait(deadline: Instant) -> bool {
     let Ok(runtime) = super::runtime::global() else {
         return true;
@@ -97,6 +114,21 @@ impl ExtensionRuntime {
             async { self.start_untracked(deadline).await },
         )
         .await
+    }
+
+    async fn retry_untracked(
+        &self,
+        extension_id: String,
+        attempts: u8,
+        deadline: Instant,
+    ) -> Result<bool, String> {
+        self.hosts.lock().await.reset_restart_budgets();
+        self.set_state(HostState::Starting, None, 0);
+        let result = self.retry_host_load(extension_id, attempts, deadline).await;
+        if result.is_err() {
+            self.mark_unavailable().await;
+        }
+        result
     }
 
     pub(super) async fn stop_hosts(&self, deadline: Instant) -> bool {

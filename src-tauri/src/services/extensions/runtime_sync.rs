@@ -19,13 +19,29 @@ pub struct BuildSpecs {
 pub struct ApplyResult {
     pub active: usize,
     pub diagnostics: Vec<ExtensionDiagnostic>,
+    pub completed_ids: HashSet<String>,
 }
+
+pub(super) use super::runtime_recovery_preflight::{filter_for_recovery, RecoveryPreflight};
 
 pub async fn build_specs(
     records: Vec<super::types::ExtensionRecord>,
     host_directory: &Path,
+    recovery: &RecoveryPreflight,
 ) -> Result<BuildSpecs, String> {
-    let verified = super::fingerprint::verify_records(records);
+    if matches!(recovery, RecoveryPreflight::Invalid) {
+        // Sans identité authentifiable, on conserve le registre et on ne journalise
+        // que le code générique, jamais le contenu ni le chemin du marqueur.
+        ::log::warn!(
+            "[extensions] {}",
+            super::error_codes::RECOVERY_MARKER_INVALID
+        );
+    }
+    if let RecoveryPreflight::Interrupted(extension_id) = recovery {
+        super::registry_interruption::mark_interrupted(extension_id)?;
+    }
+    let recovered = filter_for_recovery(records, recovery);
+    let verified = super::fingerprint::verify_records(recovered);
     let sensitive_access_reminder = super::registry::revoke_fingerprints(&verified.revocations)?;
     for extension_id in verified.revocations.keys() {
         crate::services::agent_local::permission_gate::clear_extension(extension_id).await;
@@ -147,6 +163,7 @@ pub fn apply(responses: Vec<LoadResult>, build: &BuildSpecs) -> Result<ApplyResu
     Ok(ApplyResult {
         active,
         diagnostics,
+        completed_ids: received,
     })
 }
 

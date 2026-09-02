@@ -79,11 +79,14 @@ async fn rejects_saturated_core_without_stopping_reader() {
 
 #[tokio::test]
 async fn accepts_ordered_load_notifications_without_responding() {
+    let _marker_lock = super::super::loading_marker::test_lock().await;
+    let _ = super::super::loading_marker::discard();
     let (mut child, writer, mut reader) = echo_host().await;
     let pending = Arc::new(std::sync::Mutex::new(HashMap::new()));
     let tracker = super::super::host_load_tracker::HostLoadTracker::default();
     let work = extension_work();
     tracker.arm("com.beaver.loading").await.unwrap();
+    super::super::loading_marker::start("com.beaver.loading", 1).unwrap();
 
     for stage in ["import", "activate", "register"] {
         let message = serde_json::to_vec(&json!({
@@ -103,6 +106,7 @@ async fn accepts_ordered_load_notifications_without_responding() {
     )
     .await
     .is_err());
+    super::super::loading_marker::discard().unwrap();
 
     let _ = child.start_kill();
     let _ = child.wait().await;

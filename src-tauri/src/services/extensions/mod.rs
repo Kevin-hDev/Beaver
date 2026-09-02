@@ -10,6 +10,7 @@ mod discovery_limits;
 mod discovery_preferences;
 mod discovery_usage;
 mod error_codes;
+pub(crate) mod extension_recovery;
 mod fingerprint;
 mod fingerprint_paths;
 mod git_checkout;
@@ -30,6 +31,8 @@ mod install_preparation;
 mod installer;
 mod installer_record;
 mod installer_uninstall;
+pub(crate) mod loading_marker;
+mod loading_marker_format;
 mod managed_cleanup;
 mod managed_store;
 mod managed_tree;
@@ -52,8 +55,11 @@ mod registry_failure;
 #[cfg(test)]
 mod registry_failure_tests;
 mod registry_index;
+mod registry_interruption;
 mod registry_managed;
+mod registry_memory;
 mod registry_mutation_error;
+pub(crate) mod registry_recovery;
 mod registry_state;
 mod registry_sync;
 mod runtime;
@@ -61,10 +67,12 @@ mod runtime_channel_sync;
 mod runtime_diagnostics;
 mod runtime_dispatch;
 mod runtime_host_generation;
+mod runtime_host_load;
 mod runtime_host_storage;
 mod runtime_hosts;
 mod runtime_lifecycle;
 mod runtime_plan;
+mod runtime_recovery_preflight;
 mod runtime_restart;
 mod runtime_sync;
 mod runtime_version;
@@ -73,7 +81,7 @@ mod startup;
 mod storage;
 mod tool_bridge;
 mod tool_result;
-mod types;
+pub(crate) mod types;
 mod validation;
 mod view;
 mod work_supervision;
@@ -83,6 +91,7 @@ mod work_supervision_tests;
 #[cfg(test)]
 mod contract_artifact_tests;
 
+pub use extension_recovery::ExtensionRecoveryState;
 pub use types::{ExtensionEffect, ExtensionHostStatus, ExtensionKind};
 pub use view::ExtensionView;
 
@@ -92,11 +101,12 @@ pub(crate) use discovery::{
 };
 pub(crate) use discovery_catalog::CatalogSnapshot;
 pub use discovery_preferences::DiscoveryPreferences;
-pub use registry::{add_local, disable_hosted_extensions, list, set_enabled, set_show_in_chat};
+pub use registry::{add_local, list, set_enabled, set_show_in_chat};
 pub(crate) use registry_index::{
     catalog_snapshot, dynamic_tool_names, indexed_plugins, indexed_tool, plugin_id_for_tool,
 };
 pub use registry_index::{is_dynamic_tool, is_replacement};
+pub use registry_recovery::{disable_hosted_extensions, restore_recovery_snapshot};
 pub use runtime::status;
 pub use runtime_dispatch::{dispatch_tool, emit_event};
 pub(crate) use runtime_lifecycle::{new_stop_deadline, CHANGED_EVENT};
@@ -154,6 +164,8 @@ mod git_policy_tests;
 mod git_source_reference_tests;
 #[cfg(test)]
 mod git_source_tests;
+#[cfg(test)]
+mod loading_marker_tests;
 #[cfg(test)]
 mod managed_install_error_tests;
 #[cfg(test)]

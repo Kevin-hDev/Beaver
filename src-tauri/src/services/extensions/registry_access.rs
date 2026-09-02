@@ -3,9 +3,9 @@ use super::host_identity::HostIdentity;
 use super::types::{ExtensionApiLevel, ExtensionKind, ExtensionRecord};
 
 pub(super) fn authorize_call(context: &ExtensionCallContext) -> Result<bool, String> {
-    let records = super::registry::RECORDS.read().map_err(|_| unavailable())?;
     debug_assert!(context.generation() > 0);
-    Ok(authorized_records(&records, context))
+    super::registry_memory::with_records(|records| authorized_records(records, context))
+        .map_err(|_| unavailable())
 }
 
 pub(super) fn authorized_records(

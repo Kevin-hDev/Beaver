@@ -49,7 +49,7 @@ fn recovery_disables_builtin_and_local_extensions() {
     local.manifest.id = "com.example.local".to_string();
     records.push(local);
 
-    super::registry::disable_hosted_records(&mut records);
+    super::registry_recovery::disable_hosted_records(&mut records);
 
     assert!(records.iter().all(|record| !record.enabled));
 }

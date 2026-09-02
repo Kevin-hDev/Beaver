@@ -77,8 +77,16 @@ impl HostProcess {
         }
     }
 
-    pub async fn load(&self, specification: &HostExtensionSpec) -> Result<Value, String> {
+    pub async fn load(
+        &self,
+        specification: &HostExtensionSpec,
+        attempts: u8,
+    ) -> Result<Value, String> {
         self.load_tracker.arm(&specification.id).await?;
+        if let Err(error) = super::loading_marker::start(&specification.id, attempts) {
+            self.load_tracker.clear().await;
+            return Err(error);
+        }
         let result = self
             .request("host.load", json!({"extension": specification}))
             .await;
