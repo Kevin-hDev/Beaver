@@ -111,7 +111,6 @@ export function ChatInputActionsRow({
       {planModeEnabled && <PlanModeBadge onDisable={() => onPlanModeChange?.(false)} />}
       <div className="chat-input-spacer" />
       <ModelControls
-        sessionId={sessionId}
         selectedModel={modelName}
         selectedProvider={providerName}
         onSelect={onModelChange}

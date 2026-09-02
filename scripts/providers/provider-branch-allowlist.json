@@ -42,7 +42,6 @@
   { "path": "src-tauri/src/services/reasoning_continuity/contract.rs", "owner": "reasoning_contract", "reason": "Résolution de l'identifiant canonique au sein du contrat fermé de continuité.", "max_decisions": 1 },
   { "path": "src-tauri/src/services/reasoning_continuity/registry.rs", "owner": "reasoning_contract", "reason": "Résolution fermée du contrat Model Studio, avec refus explicite du rejeu non documenté.", "max_decisions": 1 },
   { "path": "src-tauri/src/services/scheduler/fire.rs", "owner": "scheduler", "reason": "Conservation du modèle local choisi pour un réveil Ollama déjà admis.", "max_decisions": 1 },
-  { "path": "src/components/agent-local/model-controls.tsx", "owner": "provider_ui", "reason": "Comparaison d'identité entre la sélection courante et la session rechargée, sans décision de transport.", "max_decisions": 2 },
   { "path": "src/components/agent-local/model-selector-list.tsx", "owner": "provider_ui", "reason": "Comparaison d'identité pour marquer le modèle sélectionné, sans décision de transport.", "max_decisions": 2 },
   { "path": "src/components/heartbeat/wakeup-details.tsx", "owner": "provider_ui", "reason": "Présentation locale du badge Ollama dans les détails d'un réveil.", "max_decisions": 1 },
   { "path": "src/components/heartbeat/wakeup-row.tsx", "owner": "provider_ui", "reason": "Présentation locale du badge Ollama dans la ligne d'un réveil.", "max_decisions": 1 },
