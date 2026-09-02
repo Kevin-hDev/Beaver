@@ -97,7 +97,10 @@ pub fn structured(
             .saturating_add(diagnostic.additional_tool_count),
         canonical_tool_names: bounded_join(&tool_names),
         provider_aliases: bounded_join(
-            &provider_aliases.iter().map(String::as_str).collect::<Vec<_>>(),
+            &provider_aliases
+                .iter()
+                .map(String::as_str)
+                .collect::<Vec<_>>(),
         ),
         tool_delta: diagnostic.added_tool_count,
         discovery_result_count: discovery_result.len(),

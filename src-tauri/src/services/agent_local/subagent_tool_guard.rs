@@ -72,9 +72,7 @@ pub fn child_extension_decision(
     }
 }
 
-pub async fn profile_for_session(
-    session_id: &str,
-) -> Result<Option<SubagentToolProfile>, String> {
+pub async fn profile_for_session(session_id: &str) -> Result<Option<SubagentToolProfile>, String> {
     let session = super::session_store::get(session_id)
         .await
         .map_err(|_| SESSION_TOOL_UNAVAILABLE.to_string())?;
@@ -182,7 +180,9 @@ fn validate_bash(
         .and_then(Value::as_str)
         .ok_or_else(|| "Commande invalide.".to_string())?;
     match profile {
-        SubagentToolProfile::Explorer => super::subagent_explorer_bash::validate(command, working_dir),
+        SubagentToolProfile::Explorer => {
+            super::subagent_explorer_bash::validate(command, working_dir)
+        }
         SubagentToolProfile::Coder => validate_coder_bash(command, working_dir),
     }
 }
@@ -200,11 +200,15 @@ fn validate_coder_bash(command: &str, working_dir: &Path) -> Result<(), String> 
         if token == ".." || token.starts_with("../") || token.contains("/../") {
             return Err("Commande hors du worktree refusée.".to_string());
         }
-        let is_system_executable = index == 0 && (token.starts_with("/bin/") || token.starts_with("/usr/bin/"));
+        let is_system_executable =
+            index == 0 && (token.starts_with("/bin/") || token.starts_with("/usr/bin/"));
         if Path::new(path_token).is_absolute() && !is_system_executable {
             validate_confined_path(path_token, working_dir)?;
         }
-        if matches!(tokens.get(index.wrapping_sub(1)), Some(&"-C" | &"cd" | &"pushd")) {
+        if matches!(
+            tokens.get(index.wrapping_sub(1)),
+            Some(&"-C" | &"cd" | &"pushd")
+        ) {
             validate_confined_path(token, working_dir)?;
         }
     }

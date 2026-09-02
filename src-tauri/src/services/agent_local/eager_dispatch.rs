@@ -126,8 +126,7 @@ where
 
 fn extension_requires_confirmation(name: &str) -> bool {
     crate::services::extensions::indexed_tool(name).is_some_and(|indexed| {
-        super::permission_policy::extension_effect_policy(indexed.tool.effect)
-            .requires_confirmation
+        super::permission_policy::extension_effect_policy(indexed.tool.effect).requires_confirmation
     })
 }
 

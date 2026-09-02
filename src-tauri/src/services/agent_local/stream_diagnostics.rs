@@ -105,7 +105,13 @@ pub async fn record_extension_tools(
 ) {
     let extension = super::extension_tool_diagnostic::structured(&diagnostic);
     let _ = support::update_run(session_id, request_id, |_session, run| {
-        support::push_event(run, diagnostic.origin.as_str(), "Extension tools.", None, None);
+        support::push_event(
+            run,
+            diagnostic.origin.as_str(),
+            "Extension tools.",
+            None,
+            None,
+        );
         if let Some(event) = run.events.last_mut() {
             event.extension = Some(extension.clone());
         }

@@ -57,11 +57,7 @@ pub async fn mark_allowed(session_id: &str, tool: &str) {
     mark_allowed_key(session_id, "", tool).await;
 }
 
-pub(super) async fn mark_extension_allowed(
-    session_id: &str,
-    extension_id: &str,
-    tool_name: &str,
-) {
+pub(super) async fn mark_extension_allowed(session_id: &str, extension_id: &str, tool_name: &str) {
     mark_allowed_key(session_id, extension_id, tool_name).await;
 }
 
@@ -109,9 +105,7 @@ pub(super) async fn clear_all_extensions() {
     clear_all_extensions_in(&mut allowed);
 }
 
-fn clear_all_extensions_in(
-    allowed: &mut HashMap<String, HashMap<AllowedTool, Instant>>,
-) {
+fn clear_all_extensions_in(allowed: &mut HashMap<String, HashMap<AllowedTool, Instant>>) {
     allowed.retain(|_, tools| {
         tools.retain(|key, _| key.extension_id.is_empty());
         !tools.is_empty()
@@ -131,11 +125,7 @@ fn valid_key(value: &str) -> bool {
 
 #[cfg(test)]
 pub async fn allowed_tool_count_for_test(session_id: &str) -> usize {
-    ALLOWED
-        .lock()
-        .await
-        .get(session_id)
-        .map_or(0, HashMap::len)
+    ALLOWED.lock().await.get(session_id).map_or(0, HashMap::len)
 }
 
 #[cfg(test)]

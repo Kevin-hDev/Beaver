@@ -54,8 +54,14 @@ fn definitions_and_prompt_names_match_executable_names() {
 
 #[test]
 fn invalid_or_nested_profiles_fail_closed() {
-    assert_eq!(SubagentToolProfile::from_session_type(Some("explorer")), Ok(SubagentToolProfile::Explorer));
-    assert_eq!(SubagentToolProfile::from_session_type(Some("coder")), Ok(SubagentToolProfile::Coder));
+    assert_eq!(
+        SubagentToolProfile::from_session_type(Some("explorer")),
+        Ok(SubagentToolProfile::Explorer)
+    );
+    assert_eq!(
+        SubagentToolProfile::from_session_type(Some("coder")),
+        Ok(SubagentToolProfile::Coder)
+    );
     assert!(SubagentToolProfile::from_session_type(None).is_err());
     assert!(SubagentToolProfile::from_session_type(Some("unknown")).is_err());
     assert!(!SubagentToolProfile::Coder.allows("delegate_task", true));
@@ -70,6 +76,9 @@ fn explorer_only_sees_read_only_extensions_while_coder_sees_every_effect() {
             effect == ExtensionEffect::ReadOnly,
             "{effect:?}",
         );
-        assert!(SubagentToolProfile::Coder.allows_extension(effect), "{effect:?}");
+        assert!(
+            SubagentToolProfile::Coder.allows_extension(effect),
+            "{effect:?}"
+        );
     }
 }

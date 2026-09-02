@@ -32,13 +32,22 @@ fn selection_reasons_follow_the_contractual_precedence() {
         discovered_plugin_ids: &discovered,
     };
 
-    assert_eq!(selection_reason("plugin.protected", &evidence).as_str(), "protected");
-    assert_eq!(selection_reason("plugin.essential", &evidence).as_str(), "essential");
+    assert_eq!(
+        selection_reason("plugin.protected", &evidence).as_str(),
+        "protected"
+    );
+    assert_eq!(
+        selection_reason("plugin.essential", &evidence).as_str(),
+        "essential"
+    );
     assert_eq!(
         selection_reason("plugin.discovered", &evidence).as_str(),
         "previously_discovered"
     );
-    assert_eq!(selection_reason("plugin.masked", &evidence).as_str(), "masked");
+    assert_eq!(
+        selection_reason("plugin.masked", &evidence).as_str(),
+        "masked"
+    );
     assert_eq!(
         selection_reason("plugin.capacity", &evidence).as_str(),
         "provider_capacity"
@@ -98,8 +107,7 @@ fn diagnostic_groups_are_derived_from_reachable_selection_states() {
 
     assert_eq!(masked_groups.len(), 4);
     assert!(masked_groups.iter().any(|group| {
-        group.reason == ExtensionDiagnosticReason::Masked
-            && group.plugin_ids == ["plugin.masked"]
+        group.reason == ExtensionDiagnosticReason::Masked && group.plugin_ids == ["plugin.masked"]
     }));
 
     let capacity_plugins = vec![plugin("plugin.catalog"), plugin("plugin.capacity")];

@@ -71,11 +71,7 @@ impl AgentEventEmitter {
     pub fn start_mascot_session(&self) -> Option<crate::services::mascot::MascotSession> {
         let app = self.app()?;
         self.generation.map(|generation| {
-            crate::services::mascot::MascotSession::start(
-                app,
-                self.session_id.clone(),
-                generation,
-            )
+            crate::services::mascot::MascotSession::start(app, self.session_id.clone(), generation)
         })
     }
 

@@ -60,11 +60,7 @@ fn selection_reason(
         .any(|id| id == plugin_id)
     {
         ExtensionDiagnosticReason::PreviouslyDiscovered
-    } else if evidence
-        .active_plugin_ids
-        .iter()
-        .any(|id| id == plugin_id)
-    {
+    } else if evidence.active_plugin_ids.iter().any(|id| id == plugin_id) {
         ExtensionDiagnosticReason::CatalogVisible
     } else if evidence.masked {
         ExtensionDiagnosticReason::Masked
@@ -121,10 +117,7 @@ pub async fn record_selection(
     .await;
 }
 
-fn tool_names_for_plugins(
-    definitions: &[serde_json::Value],
-    plugin_ids: &[String],
-) -> Vec<String> {
+fn tool_names_for_plugins(definitions: &[serde_json::Value], plugin_ids: &[String]) -> Vec<String> {
     definitions
         .iter()
         .filter_map(super::extension_tool_set_apply::definition_name)
@@ -181,7 +174,8 @@ pub async fn refresh_and_record(
     session_id: &str,
     request_id: &str,
 ) -> Result<(), String> {
-    let pending = super::stream_diagnostics::pending_extension_searches(session_id, request_id).await;
+    let pending =
+        super::stream_diagnostics::pending_extension_searches(session_id, request_id).await;
     let before = tools.active().to_vec();
     tools.refresh_from_session(session_id).await?;
     let added_names = added_definition_names(&before, tools.active());

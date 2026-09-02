@@ -257,7 +257,9 @@ fn checked_in_sdk_readme_tables_match_the_contract() {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
     let contract = generator::load_contract(&root.join("resources/extension-host")).unwrap();
     let expected = generator::generated_document_section(&contract).unwrap();
-    let sdk = include_str!("../../../resources/extension-host/sdk/README.md");
+    // Git extrait les fichiers texte en CRLF sur certains runners Windows ;
+    // le contrat porte le contenu, pas le séparateur de lignes de la copie.
+    let sdk = include_str!("../../../resources/extension-host/sdk/README.md").replace("\r\n", "\n");
 
     assert!(sdk.contains(&expected));
 }

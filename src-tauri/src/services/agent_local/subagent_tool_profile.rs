@@ -7,10 +7,7 @@ pub enum SubagentToolProfile {
 }
 
 impl SubagentToolProfile {
-    pub fn allows_extension(
-        self,
-        effect: crate::services::extensions::ExtensionEffect,
-    ) -> bool {
+    pub fn allows_extension(self, effect: crate::services::extensions::ExtensionEffect) -> bool {
         self == Self::Coder || effect == crate::services::extensions::ExtensionEffect::ReadOnly
     }
 
@@ -57,8 +54,7 @@ impl SubagentToolProfile {
         let mut definitions = super::tool_definitions::get_tool_definitions()
             .into_iter()
             .filter(|definition| {
-                definition_name(definition)
-                    .is_some_and(|name| allowed.contains(&name))
+                definition_name(definition).is_some_and(|name| allowed.contains(&name))
             })
             .map(|mut definition| {
                 if let Some(name) = definition_name(&definition) {

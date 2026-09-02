@@ -205,14 +205,8 @@ async fn extension_diagnostics_keep_only_bounded_canonical_metadata() {
             origin: super::stream_diagnostics::ExtensionDiagnosticOrigin::Selected,
             reason: super::stream_diagnostics::ExtensionDiagnosticReason::Protected,
             correlation_id: None,
-            plugin_ids: &[
-                "beaver.office.documents".to_string(),
-                sentinel.clone(),
-            ],
-            tool_names: &[
-                "search".to_string(),
-                sentinel.clone(),
-            ],
+            plugin_ids: &["beaver.office.documents".to_string(), sentinel.clone()],
+            tool_names: &["search".to_string(), sentinel.clone()],
             provider_id: "qwen",
             alias_context: &[serde_json::json!({"function": {"name": "search"}})],
             outcomes: &[],
@@ -295,11 +289,8 @@ async fn one_refresh_keeps_every_parallel_search_correlation() {
         .await;
     }
 
-    let pending = super::stream_diagnostics::pending_extension_searches(
-        &session.id,
-        &request_id,
-    )
-    .await;
+    let pending =
+        super::stream_diagnostics::pending_extension_searches(&session.id, &request_id).await;
     let added_names = vec!["search".to_string()];
     let alias_context = vec![serde_json::json!({"function": {"name": "search"}})];
     super::stream_diagnostics::record_extension_refreshes(

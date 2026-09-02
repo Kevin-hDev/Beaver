@@ -87,7 +87,9 @@ mod tests {
         assert_eq!(value["allowSession"], false);
         let summary = value["actionSummary"].as_str().expect("summary");
         assert!(!summary.contains(sensitive_value));
-        assert!(summary.chars().count() <= crate::services::extensions::MAX_PERMISSION_SUMMARY_CHARS);
+        assert!(
+            summary.chars().count() <= crate::services::extensions::MAX_PERMISSION_SUMMARY_CHARS
+        );
         assert!(summary.is_char_boundary(summary.len()));
     }
 

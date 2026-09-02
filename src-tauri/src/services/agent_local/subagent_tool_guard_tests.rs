@@ -1,8 +1,8 @@
 use super::subagent_explorer_bash;
 use super::subagent_tool_guard;
 use super::subagent_tool_profile::SubagentToolProfile;
-use serde_json::json;
 use crate::services::extensions::ExtensionEffect;
+use serde_json::json;
 
 #[test]
 fn explorer_bash_accepts_only_informational_commands() {

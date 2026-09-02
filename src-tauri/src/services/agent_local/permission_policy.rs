@@ -44,11 +44,7 @@ pub fn uses_auto_bypass(mode: &str) -> bool {
     matches!(mode, "auto" | "subagent")
 }
 
-pub fn requires_sensitive_bash_prompt(
-    mode: &str,
-    tool_name: &str,
-    args: &Value,
-) -> bool {
+pub fn requires_sensitive_bash_prompt(mode: &str, tool_name: &str, args: &Value) -> bool {
     if uses_auto_bypass(mode) {
         return false;
     }

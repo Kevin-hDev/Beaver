@@ -109,7 +109,8 @@ fn real_diagnostic_deserialization_bounds_and_validates_search_ids() {
         "provider_capacity_plugin_ids": "",
         "global_capacity_count": 0,
         "global_capacity_plugin_ids": ""
-    })).unwrap();
+    }))
+    .unwrap();
 
     assert_eq!(
         diagnostic.related_search_ids.len(),

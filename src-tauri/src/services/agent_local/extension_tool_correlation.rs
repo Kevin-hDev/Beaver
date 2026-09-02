@@ -70,10 +70,8 @@ pub async fn record_extension_refreshes(
         added_tool_count: added_names.len(),
     });
     extension.related_search_ids = related_search_ids;
-    let _ = super::stream_diagnostics_support::update_run(
-        session_id,
-        request_id,
-        |_session, run| {
+    let _ =
+        super::stream_diagnostics_support::update_run(session_id, request_id, |_session, run| {
             super::stream_diagnostics_support::push_event(
                 run,
                 ExtensionDiagnosticOrigin::Refreshed.as_str(),
@@ -84,7 +82,6 @@ pub async fn record_extension_refreshes(
             if let Some(event) = run.events.last_mut() {
                 event.extension = Some(extension.clone());
             }
-        },
-    )
-    .await;
+        })
+        .await;
 }

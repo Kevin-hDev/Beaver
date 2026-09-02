@@ -267,7 +267,9 @@ fn every_channel_revocation_clears_extension_permissions_at_the_required_boundar
     let uninstall_clear = uninstall
         .find("permission_gate::clear_extension(&id).await")
         .expect("uninstall clear");
-    let remove = uninstall.find("registry::remove(&id)").expect("registry removal");
+    let remove = uninstall
+        .find("registry::remove(&id)")
+        .expect("registry removal");
     assert!(uninstall_clear < remove);
 
     assert!(lifecycle.contains("permission_gate::clear_all_extensions().await"));

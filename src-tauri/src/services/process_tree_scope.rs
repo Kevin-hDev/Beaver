@@ -41,15 +41,20 @@ pub(super) async fn confirm_scope_absent(
     )
     .await;
     #[cfg(windows)]
-    loop {
-        let empty = super::windows::scope_is_empty(scope);
-        if empty {
-            return true;
+    {
+        // Windows confirme le Job Object complet ; le PID racine n'est utile
+        // qu'au contrôle supplémentaire des groupes de processus Unix.
+        let _ = root_pid;
+        loop {
+            let empty = super::windows::scope_is_empty(scope);
+            if empty {
+                return true;
+            }
+            if std::time::Instant::now() >= deadline {
+                return false;
+            }
+            tokio::time::sleep(super::POLL_INTERVAL).await;
         }
-        if std::time::Instant::now() >= deadline {
-            return false;
-        }
-        tokio::time::sleep(super::POLL_INTERVAL).await;
     }
 }
 

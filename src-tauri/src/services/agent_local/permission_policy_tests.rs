@@ -17,9 +17,7 @@ fn full_access_never_prompts_for_sensitive_bash() {
     let args = json!({"command": "cat ~/.ssh/id_ed25519"});
 
     assert!(!requires_sensitive_bash_prompt("auto", "bash", &args));
-    assert!(!requires_sensitive_bash_prompt(
-        "subagent", "bash", &args
-    ));
+    assert!(!requires_sensitive_bash_prompt("subagent", "bash", &args));
     assert!(requires_sensitive_bash_prompt("manual", "bash", &args));
 }
 

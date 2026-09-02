@@ -1,5 +1,5 @@
-use super::*;
 use super::super::tool_dispatch_trace::DispatchTrace;
+use super::*;
 use serde_json::json;
 
 #[test]

@@ -11,9 +11,7 @@ pub(super) enum DiscoveryStatus {
 }
 
 impl DiscoveryStatus {
-    pub(super) fn diagnostic_reason(
-        self,
-    ) -> super::stream_diagnostics::ExtensionDiagnosticReason {
+    pub(super) fn diagnostic_reason(self) -> super::stream_diagnostics::ExtensionDiagnosticReason {
         match self {
             Self::ProviderLimit => {
                 super::stream_diagnostics::ExtensionDiagnosticReason::ProviderCapacity

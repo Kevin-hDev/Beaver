@@ -1,6 +1,6 @@
+use super::tool_result_contract::{ToolErrorCategory, ToolResultStatus};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use super::tool_result_contract::{ToolErrorCategory, ToolResultStatus};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(test, derive(ts_rs::TS))]

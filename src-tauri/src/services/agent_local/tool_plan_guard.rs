@@ -57,8 +57,7 @@ pub async fn ensure_allowed_for_session(
         .await
         .map(|session| session.plan_mode_enabled)
         .unwrap_or(false);
-    let plan_mode_active =
-        effective_plan_mode(fallback_plan_mode_active, session_plan_mode_active);
+    let plan_mode_active = effective_plan_mode(fallback_plan_mode_active, session_plan_mode_active);
     ensure_allowed(tool_name, args, plan_mode_active)
 }
 
@@ -115,12 +114,9 @@ mod tests {
             true
         )
         .is_err());
-        assert!(super::ensure_allowed(
-            "bash_control",
-            &json!({"session_id": "session"}),
-            true
-        )
-        .is_ok());
+        assert!(
+            super::ensure_allowed("bash_control", &json!({"session_id": "session"}), true).is_ok()
+        );
         assert!(super::ensure_allowed(
             "bash_control",
             &json!({"session_id": "session", "stop": true}),
@@ -144,7 +140,9 @@ mod tests {
         assert!(super::ensure_allowed("bash", &json!({"command": "cargo check"}), true).is_ok());
         assert!(super::ensure_allowed("bash", &json!({"command": "npm run build"}), true).is_ok());
         assert!(super::ensure_allowed("bash", &json!({"command": "npm test"}), true).is_ok());
-        assert!(super::ensure_allowed("bash", &json!({"command": "npx tsc --noEmit"}), true).is_ok());
+        assert!(
+            super::ensure_allowed("bash", &json!({"command": "npx tsc --noEmit"}), true).is_ok()
+        );
     }
 
     #[test]

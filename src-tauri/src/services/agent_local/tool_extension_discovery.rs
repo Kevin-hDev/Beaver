@@ -1,19 +1,20 @@
 use serde_json::Value;
 
 use super::extension_session_state::ExtensionSessionState;
-use super::extension_tool_selection::{
-    decide_for_catalog, PluginDescriptor,
-};
+use super::extension_tool_selection::{decide_for_catalog, PluginDescriptor};
+use super::tool_extension_discovery_result::{discovery_result, DiscoveryLine, DiscoveryStatus};
 use super::types_tools::ToolResult;
-use super::tool_extension_discovery_result::{
-    discovery_result, DiscoveryLine, DiscoveryStatus,
-};
 
 pub async fn execute(args: &Value, session_id: &str, request_id: &str) -> ToolResult {
     let search_id = uuid::Uuid::new_v4().to_string();
     let Some(query) = args.get("query").and_then(Value::as_str) else {
         super::tool_extension_discovery_diagnostics::record(
-            session_id, request_id, &search_id, &[], "", 0,
+            session_id,
+            request_id,
+            &search_id,
+            &[],
+            "",
+            0,
         )
         .await;
         return ToolResult::validation(
@@ -23,7 +24,12 @@ pub async fn execute(args: &Value, session_id: &str, request_id: &str) -> ToolRe
     };
     if query.chars().count() > crate::services::extensions::MAX_SEARCH_QUERY_CHARS {
         super::tool_extension_discovery_diagnostics::record(
-            session_id, request_id, &search_id, &[], "", 0,
+            session_id,
+            request_id,
+            &search_id,
+            &[],
+            "",
+            0,
         )
         .await;
         return ToolResult::validation(
@@ -37,7 +43,12 @@ pub async fn execute(args: &Value, session_id: &str, request_id: &str) -> ToolRe
     );
     if matches.is_empty() {
         super::tool_extension_discovery_diagnostics::record(
-            session_id, request_id, &search_id, &[], "", 0,
+            session_id,
+            request_id,
+            &search_id,
+            &[],
+            "",
+            0,
         )
         .await;
         return ToolResult::ok("Aucun plugin activé ne correspond à cette recherche.");
@@ -70,7 +81,12 @@ async fn execute_matches(
         }
         Err(_) => {
             super::tool_extension_discovery_diagnostics::record(
-                session_id, request_id, search_id, &[], "", 0,
+                session_id,
+                request_id,
+                search_id,
+                &[],
+                "",
+                0,
             )
             .await;
             ToolResult::unavailable(
@@ -97,7 +113,13 @@ fn discover_matches(
     let mut discovered = state.discovered_plugin_ids.clone();
     let mut lines = Vec::with_capacity(matches.len());
     for candidate in matches {
-        let current = selection(&plugins, &catalog, masked, state.plugin_tool_capacity, &discovered);
+        let current = selection(
+            &plugins,
+            &catalog,
+            masked,
+            state.plugin_tool_capacity,
+            &discovered,
+        );
         let descriptor = plugins
             .iter()
             .find(|plugin| plugin.id == candidate.extension_id);

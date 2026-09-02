@@ -1,7 +1,7 @@
-use super::types_tools::ToolResult;
-use super::tool_dispatcher_route::{dynamic_route, is_chat_tool};
 use super::tool_dispatch_trace::DispatchTrace;
+use super::tool_dispatcher_route::{dynamic_route, is_chat_tool};
 use super::tool_result_contract::ToolErrorCategory;
+use super::types_tools::ToolResult;
 use serde_json::Value;
 use std::path::Path;
 use tokio_util::sync::CancellationToken;
@@ -77,8 +77,7 @@ pub async fn dispatch_with_progress(
         )
         .await;
     }
-    let registered_dynamic =
-        !chat_mode && crate::services::extensions::is_dynamic_tool(tool_name);
+    let registered_dynamic = !chat_mode && crate::services::extensions::is_dynamic_tool(tool_name);
     let replacement = crate::services::extensions::is_replacement(tool_name);
     let active_dynamic = if registered_dynamic {
         match super::extension_session_plugins::is_tool_active(session_id, tool_name).await {
@@ -110,11 +109,7 @@ pub async fn dispatch_with_progress(
     };
     let enabled_by_settings = !super::tool_catalog::is_optional_tool(tool_name)
         || super::agent_settings::is_tool_enabled(tool_name).await;
-    if !super::tool_availability::available(
-        enabled_by_settings,
-        dynamic_tool,
-        replacement,
-    ) {
+    if !super::tool_availability::available(enabled_by_settings, dynamic_tool, replacement) {
         return finalize_result(
             ToolResult::error(
                 "Outil désactivé dans les paramètres.",
@@ -178,7 +173,8 @@ pub async fn dispatch_with_progress(
             .await
             .unwrap_or_else(crate::services::extensions::unavailable_tool_result)
     } else {
-        match super::memory_tool::dispatch_if_memory(tool_name, &args, working_dir, session_id).await
+        match super::memory_tool::dispatch_if_memory(tool_name, &args, working_dir, session_id)
+            .await
         {
             Some(result) => result,
             None => {

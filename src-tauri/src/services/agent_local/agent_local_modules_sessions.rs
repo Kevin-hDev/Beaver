@@ -34,6 +34,8 @@ pub mod conversation_skills;
 pub mod conversation_transition;
 #[cfg(test)]
 mod conversation_transition_tests;
+mod extension_tool_correlation;
+mod extension_tool_diagnostic;
 pub mod generation_metrics;
 pub mod session_archive;
 mod session_artifacts;
@@ -92,8 +94,6 @@ mod skill_manifest_read_tests;
 pub mod skill_parser;
 pub mod stream_buffer;
 pub mod stream_diagnostics;
-mod extension_tool_diagnostic;
-mod extension_tool_correlation;
 pub mod stream_diagnostics_failure;
 pub mod stream_diagnostics_model;
 pub mod stream_diagnostics_payload;

@@ -64,7 +64,10 @@ fn clearing_all_extensions_preserves_native_authorizations() {
     };
     let mut allowed = HashMap::from([(
         "session".to_string(),
-        HashMap::from([(native.clone(), Instant::now()), (extension, Instant::now())]),
+        HashMap::from([
+            (native.clone(), Instant::now()),
+            (extension, Instant::now()),
+        ]),
     )]);
 
     clear_all_extensions_in(&mut allowed);

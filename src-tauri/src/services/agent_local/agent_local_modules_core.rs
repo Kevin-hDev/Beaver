@@ -118,10 +118,10 @@ pub(crate) mod parent_message_inbox;
 mod permission_allow_cache;
 pub mod permission_bash;
 pub mod permission_gate;
-mod permission_request;
 #[cfg(test)]
 pub mod permission_gate_tests;
 pub mod permission_policy;
+mod permission_request;
 pub mod plan_mode_controller;
 pub mod plan_mode_debug;
 pub mod private_data_access;

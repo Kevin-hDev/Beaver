@@ -1,15 +1,18 @@
-#![expect(clippy::too_many_arguments, reason = "orchestration boundary keeps related runtime context explicit")]
+#![expect(
+    clippy::too_many_arguments,
+    reason = "orchestration boundary keeps related runtime context explicit"
+)]
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::tool_hooks::{run_post_hooks, run_pre_hooks, PreHookDecision};
 use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::agent_local::write_guard::WriteGuard;
 use tokio_util::sync::CancellationToken;
 
+use super::tool_execution_outcome::ToolExecutionOutcome;
+use super::tool_executor_compression::ToolCompression;
 use super::tool_executor_helpers::{
     check_write_guard, dispatch_or_interactive, post_record_read, post_record_write,
 };
-use super::tool_executor_compression::ToolCompression;
-use super::tool_execution_outcome::ToolExecutionOutcome;
 use super::tool_executor_sequential_support::{
     check_allowed, initial_validation, push_and_compress,
 };
@@ -29,13 +32,8 @@ pub async fn run_sequential(
 ) -> ToolExecutionOutcome {
     let mut outcome = ToolExecutionOutcome::default();
     for (idx, (name, args)) in tool_calls.iter().enumerate() {
-        let arg_summary = super::tool_executor_diagnostics::started(
-            session_id,
-            name,
-            args,
-            working_dir,
-        )
-        .await;
+        let arg_summary =
+            super::tool_executor_diagnostics::started(session_id, name, args, working_dir).await;
         let arg_summary = match initial_validation(
             session_id,
             request_id,
@@ -49,18 +47,20 @@ pub async fn run_sequential(
         {
             Ok(summary) => summary,
             Err(tr) => {
-                outcome.merge(push_and_compress(
-                    on_event,
-                    messages,
-                    name,
-                    args,
-                    working_dir,
-                    tr,
-                    idx,
-                    tool_call_ids,
-                    compression,
-                )
-                .await);
+                outcome.merge(
+                    push_and_compress(
+                        on_event,
+                        messages,
+                        name,
+                        args,
+                        working_dir,
+                        tr,
+                        idx,
+                        tool_call_ids,
+                        compression,
+                    )
+                    .await,
+                );
                 continue;
             }
         };
@@ -75,18 +75,20 @@ pub async fn run_sequential(
                     &tr,
                 )
                 .await;
-                outcome.merge(push_and_compress(
-                    on_event,
-                    messages,
-                    name,
-                    args,
-                    working_dir,
-                    tr,
-                    idx,
-                    tool_call_ids,
-                    compression,
-                )
-                .await);
+                outcome.merge(
+                    push_and_compress(
+                        on_event,
+                        messages,
+                        name,
+                        args,
+                        working_dir,
+                        tr,
+                        idx,
+                        tool_call_ids,
+                        compression,
+                    )
+                    .await,
+                );
                 continue;
             }
             PreHookDecision::Allow => {}
@@ -102,18 +104,20 @@ pub async fn run_sequential(
                 &tr,
             )
             .await;
-            outcome.merge(push_and_compress(
-                on_event,
-                messages,
-                name,
-                args,
-                working_dir,
-                tr,
-                idx,
-                tool_call_ids,
-                compression,
-            )
-            .await);
+            outcome.merge(
+                push_and_compress(
+                    on_event,
+                    messages,
+                    name,
+                    args,
+                    working_dir,
+                    tr,
+                    idx,
+                    tool_call_ids,
+                    compression,
+                )
+                .await,
+            );
             continue;
         }
 
@@ -150,26 +154,22 @@ pub async fn run_sequential(
         let tr = run_post_hooks(name, args, tr);
         post_record_read(name, args, working_dir, &tr, write_guard);
         post_record_write(name, args, working_dir, &tr, write_guard);
-        super::tool_executor_diagnostics::completed(
-            session_id,
-            request_id,
-            name,
-            arg_summary,
-            &tr,
-        )
-        .await;
-        outcome.merge(push_and_compress(
-            on_event,
-            messages,
-            name,
-            args,
-            working_dir,
-            tr,
-            idx,
-            tool_call_ids,
-            compression,
-        )
-        .await);
+        super::tool_executor_diagnostics::completed(session_id, request_id, name, arg_summary, &tr)
+            .await;
+        outcome.merge(
+            push_and_compress(
+                on_event,
+                messages,
+                name,
+                args,
+                working_dir,
+                tr,
+                idx,
+                tool_call_ids,
+                compression,
+            )
+            .await,
+        );
     }
     outcome
 }

@@ -72,10 +72,7 @@ fn discovery_limit_is_reported_separately() {
 
 #[test]
 fn a_plugin_without_tools_is_never_reported_as_available() {
-    assert_eq!(
-        existing_status(0, true),
-        Some(DiscoveryStatus::NoTools)
-    );
+    assert_eq!(existing_status(0, true), Some(DiscoveryStatus::NoTools));
 }
 
 #[test]
@@ -112,8 +109,7 @@ async fn every_search_has_a_distinct_diagnostic_id_without_query_text() {
     )
     .await
     .unwrap();
-    let request_id =
-        super::super::stream_diagnostics::start_request(&session.id, 1).await;
+    let request_id = super::super::stream_diagnostics::start_request(&session.id, 1).await;
     let query = serde_json::json!({
         "query": "SENTINEL_USER_MESSAGE_WITH_NO_PLUGIN_MATCH_92c879e8"
     });
@@ -156,7 +152,9 @@ async fn every_search_has_a_distinct_diagnostic_id_without_query_text() {
             .len(),
         4
     );
-    assert!(!serde_json::to_string(run).unwrap().contains("SENTINEL_USER_MESSAGE"));
+    assert!(!serde_json::to_string(run)
+        .unwrap()
+        .contains("SENTINEL_USER_MESSAGE"));
     super::super::session_store::delete_one(&session.id)
         .await
         .unwrap();
@@ -181,13 +179,7 @@ async fn unavailable_discovery_state_still_records_the_search_correlation() {
         score: 1,
     }];
 
-    let result = execute_matches(
-        &session.id,
-        &request_id,
-        &search_id,
-        &matches,
-    )
-    .await;
+    let result = execute_matches(&session.id, &request_id, &search_id, &matches).await;
 
     assert_eq!(
         result.error.as_ref().map(|error| error.code.as_ref()),
@@ -202,5 +194,7 @@ async fn unavailable_discovery_state_still_records_the_search_correlation() {
         .unwrap();
     assert_eq!(search.correlation_id.as_deref(), Some(search_id.as_str()));
     assert_eq!(search.reason, "discovery_result");
-    super::super::session_store::delete_one(&session.id).await.unwrap();
+    super::super::session_store::delete_one(&session.id)
+        .await
+        .unwrap();
 }
