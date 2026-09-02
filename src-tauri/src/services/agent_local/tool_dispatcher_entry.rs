@@ -1,5 +1,6 @@
 use super::types_tools::ToolResult;
 use super::tool_dispatcher_route::{dynamic_route, is_chat_tool};
+use super::tool_dispatch_trace::DispatchTrace;
 use super::tool_result_contract::ToolErrorCategory;
 use serde_json::Value;
 use std::path::Path;
@@ -13,7 +14,19 @@ pub async fn dispatch(
     session_id: &str,
     cancel: CancellationToken,
 ) -> ToolResult {
-    dispatch_with_progress(tool_name, args, working_dir, session_id, cancel, false, None).await
+    dispatch_with_progress(
+        tool_name,
+        args,
+        working_dir,
+        DispatchTrace {
+            session_id,
+            request_id: None,
+        },
+        cancel,
+        false,
+        None,
+    )
+    .await
 }
 
 pub async fn dispatch_for_mode(
@@ -21,21 +34,35 @@ pub async fn dispatch_for_mode(
     args: &Value,
     working_dir: &Path,
     session_id: &str,
+    request_id: Option<&str>,
     cancel: CancellationToken,
     chat_mode: bool,
 ) -> ToolResult {
-    dispatch_with_progress(tool_name, args, working_dir, session_id, cancel, chat_mode, None).await
+    dispatch_with_progress(
+        tool_name,
+        args,
+        working_dir,
+        DispatchTrace {
+            session_id,
+            request_id,
+        },
+        cancel,
+        chat_mode,
+        None,
+    )
+    .await
 }
 
 pub async fn dispatch_with_progress(
     tool_name: &str,
     args: &Value,
     working_dir: &Path,
-    session_id: &str,
+    trace: DispatchTrace<'_>,
     cancel: CancellationToken,
     chat_mode: bool,
     progress: Option<super::tool_bash_progress::ShellProgress>,
 ) -> ToolResult {
+    let session_id = trace.session_id;
     if chat_mode && !is_chat_tool(tool_name) {
         return finalize_result(
             ToolResult::error(
@@ -159,7 +186,7 @@ pub async fn dispatch_with_progress(
                     tool_name,
                     &args,
                     working_dir,
-                    session_id,
+                    trace,
                     cancel,
                     profile,
                     progress,

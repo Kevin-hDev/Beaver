@@ -13,6 +13,14 @@ impl Drop for DropMarker {
     }
 }
 
+#[test]
+fn eager_capacity_uses_the_parallel_batch_authority() {
+    assert_eq!(
+        super::MAX_EAGER,
+        super::super::tool_executor_parallel_batch::MAX_PARALLEL
+    );
+}
+
 #[tokio::test]
 async fn eager_children_are_aborted_with_their_collector() {
     let (tx, rx) = mpsc::unbounded_channel();
@@ -31,7 +39,7 @@ async fn eager_children_are_aborted_with_their_collector() {
         "request".to_string(),
         false,
         CancellationToken::new(),
-        move |_, _, _, _, _, _| {
+        move |_, _, _, _, _, _, _| {
             let marker = DropMarker(Arc::clone(&task_dropped));
             let signal = Arc::clone(&started);
             async move {

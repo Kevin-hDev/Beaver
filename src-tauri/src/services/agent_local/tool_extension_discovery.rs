@@ -5,30 +5,27 @@ use super::extension_tool_selection::{
     decide_for_catalog, PluginDescriptor,
 };
 use super::types_tools::ToolResult;
+use super::tool_extension_discovery_result::{
+    discovery_result, DiscoveryLine, DiscoveryStatus,
+};
 
-#[derive(Debug, PartialEq, Eq)]
-enum DiscoveryStatus {
-    Loaded,
-    AlreadyAvailable,
-    NoTools,
-    ProviderLimit,
-    DiscoveryLimit,
-    Unavailable,
-}
-
-struct DiscoveryLine {
-    plugin_name: String,
-    status: DiscoveryStatus,
-}
-
-pub async fn execute(args: &Value, session_id: &str) -> ToolResult {
+pub async fn execute(args: &Value, session_id: &str, request_id: &str) -> ToolResult {
+    let search_id = uuid::Uuid::new_v4().to_string();
     let Some(query) = args.get("query").and_then(Value::as_str) else {
+        super::tool_extension_discovery_diagnostics::record(
+            session_id, request_id, &search_id, &[], "", 0,
+        )
+        .await;
         return ToolResult::validation(
             "plugin_search_query_invalid",
             "Recherche de plugins invalide.",
         );
     };
     if query.chars().count() > crate::services::extensions::MAX_SEARCH_QUERY_CHARS {
+        super::tool_extension_discovery_diagnostics::record(
+            session_id, request_id, &search_id, &[], "", 0,
+        )
+        .await;
         return ToolResult::validation(
             "plugin_search_query_invalid",
             "Recherche de plugins invalide.",
@@ -39,51 +36,62 @@ pub async fn execute(args: &Value, session_id: &str) -> ToolResult {
         crate::services::extensions::MAX_SEARCH_RESULTS,
     );
     if matches.is_empty() {
+        super::tool_extension_discovery_diagnostics::record(
+            session_id, request_id, &search_id, &[], "", 0,
+        )
+        .await;
         return ToolResult::ok("Aucun plugin activé ne correspond à cette recherche.");
     }
+    execute_matches(session_id, request_id, &search_id, &matches).await
+}
+
+async fn execute_matches(
+    session_id: &str,
+    request_id: &str,
+    search_id: &str,
+    matches: &[crate::services::extensions::PluginMatch],
+) -> ToolResult {
     let result = super::extension_session_state::mutate(session_id, |state| {
-        discover_matches(state, &matches)
+        discover_matches(state, matches)
     })
     .await;
     match result {
-        Ok(lines) => discovery_result(lines),
-        Err(_) => ToolResult::unavailable(
-            "plugin_search_unavailable",
-            "Recherche de plugins indisponible.",
-            true,
-        ),
-    }
-}
-
-fn discovery_result(lines: Vec<DiscoveryLine>) -> ToolResult {
-    let incomplete = lines.iter().any(|line| {
-        matches!(
-            line.status,
-            DiscoveryStatus::ProviderLimit
-                | DiscoveryStatus::DiscoveryLimit
-                | DiscoveryStatus::Unavailable
-        )
-    });
-    let output = render(lines);
-    if incomplete {
-        ToolResult::partial(
-            output,
-            ["Certains outils correspondants n'ont pas pu être chargés."],
-        )
-    } else {
-        ToolResult::ok(output)
+        Ok((lines, provider_id)) => {
+            super::tool_extension_discovery_diagnostics::record(
+                session_id,
+                request_id,
+                search_id,
+                &lines,
+                &provider_id,
+                0,
+            )
+            .await;
+            discovery_result(lines)
+        }
+        Err(_) => {
+            super::tool_extension_discovery_diagnostics::record(
+                session_id, request_id, search_id, &[], "", 0,
+            )
+            .await;
+            ToolResult::unavailable(
+                "plugin_search_unavailable",
+                "Recherche de plugins indisponible.",
+                true,
+            )
+        }
     }
 }
 
 fn discover_matches(
     state: &mut ExtensionSessionState,
     matches: &[crate::services::extensions::PluginMatch],
-) -> Result<Vec<DiscoveryLine>, String> {
-    let masked = state
+) -> Result<(Vec<DiscoveryLine>, String), String> {
+    let epoch = state
         .epoch
         .as_ref()
-        .ok_or_else(|| "État de découverte absent.".to_string())?
-        .masked;
+        .ok_or_else(|| "État de découverte absent.".to_string())?;
+    let masked = epoch.masked;
+    let provider_id = epoch.provider.clone();
     let plugins = state.plugin_descriptors.clone();
     let catalog = crate::services::extensions::catalog_snapshot();
     let mut discovered = state.discovered_plugin_ids.clone();
@@ -95,6 +103,7 @@ fn discover_matches(
             .find(|plugin| plugin.id == candidate.extension_id);
         let Some(descriptor) = descriptor else {
             lines.push(DiscoveryLine {
+                plugin_id: candidate.extension_id.clone(),
                 plugin_name: candidate.extension_name.clone(),
                 status: DiscoveryStatus::Unavailable,
             });
@@ -108,6 +117,7 @@ fn discover_matches(
                 && !push_unique(&mut discovered, &candidate.extension_id)
             {
                 lines.push(DiscoveryLine {
+                    plugin_id: candidate.extension_id.clone(),
                     plugin_name: candidate.extension_name.clone(),
                     status: DiscoveryStatus::DiscoveryLimit,
                 });
@@ -118,6 +128,7 @@ fn discover_matches(
             let mut proposed = discovered.clone();
             if !push_unique(&mut proposed, &candidate.extension_id) {
                 lines.push(DiscoveryLine {
+                    plugin_id: candidate.extension_id.clone(),
                     plugin_name: candidate.extension_name.clone(),
                     status: DiscoveryStatus::DiscoveryLimit,
                 });
@@ -138,11 +149,12 @@ fn discover_matches(
             }
         };
         lines.push(DiscoveryLine {
+            plugin_id: candidate.extension_id.clone(),
             plugin_name: candidate.extension_name.clone(),
             status,
         });
     }
-    state.active_plugin_ids = selection(
+    let next_active = selection(
         &plugins,
         &catalog,
         masked,
@@ -150,8 +162,9 @@ fn discover_matches(
         &discovered,
     )
     .active_plugin_ids;
+    state.active_plugin_ids = next_active;
     state.discovered_plugin_ids = discovered;
-    Ok(lines)
+    Ok((lines, provider_id))
 }
 
 fn existing_status(tool_count: usize, active: bool) -> Option<DiscoveryStatus> {
@@ -189,37 +202,6 @@ fn push_unique(values: &mut Vec<String>, value: &str) -> bool {
     }
     values.push(value.to_string());
     true
-}
-
-fn render(lines: Vec<DiscoveryLine>) -> String {
-    lines
-        .into_iter()
-        .map(|line| match line.status {
-            DiscoveryStatus::Loaded => {
-                format!("- {} : outils chargés pour le prochain tour.", line.plugin_name)
-            }
-            DiscoveryStatus::AlreadyAvailable => {
-                format!("- {} : outils déjà disponibles.", line.plugin_name)
-            }
-            DiscoveryStatus::NoTools => format!(
-                "- {} : plugin actif, sans outil appelable.",
-                line.plugin_name
-            ),
-            DiscoveryStatus::ProviderLimit => format!(
-                "- {} : non chargé, car le plafond d'outils du fournisseur serait dépassé.",
-                line.plugin_name
-            ),
-            DiscoveryStatus::DiscoveryLimit => format!(
-                "- {} : non chargé, car la limite de plugins découverts pour cette session est atteinte.",
-                line.plugin_name
-            ),
-            DiscoveryStatus::Unavailable => format!(
-                "- {} : outils indisponibles dans cette requête.",
-                line.plugin_name
-            ),
-        })
-        .collect::<Vec<_>>()
-        .join("\n")
 }
 
 #[cfg(test)]

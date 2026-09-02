@@ -18,6 +18,7 @@ pub async fn dispatch_read(
         args,
         working_dir,
         session_id,
+        Some(request_id),
         tokio_util::sync::CancellationToken::new(),
         chat_mode,
     )

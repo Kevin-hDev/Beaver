@@ -18,11 +18,12 @@ pub(super) async fn dispatch_inner(
     tool_name: &str,
     args: &Value,
     working_dir: &Path,
-    session_id: &str,
+    trace: super::tool_dispatch_trace::DispatchTrace<'_>,
     cancel: tokio_util::sync::CancellationToken,
     profile: Option<super::subagent_tool_profile::SubagentToolProfile>,
     progress: Option<super::tool_bash_progress::ShellProgress>,
 ) -> ToolResult {
+    let session_id = trace.session_id;
     match tool_name {
         "bash" | "bash_control" => {
             super::tool_dispatcher_shell::dispatch(
@@ -86,7 +87,16 @@ pub(super) async fn dispatch_inner(
             }
         }
         "search_extension_tools" => {
-            super::tool_extension_discovery::execute(args, session_id).await
+            match trace.request_id {
+                Some(request_id) => {
+                    super::tool_extension_discovery::execute(args, session_id, request_id).await
+                }
+                None => ToolResult::unavailable(
+                    "plugin_search_unavailable",
+                    "Recherche de plugins indisponible.",
+                    true,
+                ),
+            }
         }
         "todo_write" => super::tool_todo::execute(args, session_id).await,
         "todo_history" => super::tool_todo::execute_history(args, session_id).await,

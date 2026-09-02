@@ -31,6 +31,20 @@ mod tests {
     }
 
     #[test]
+    fn ten_percent_boundary_masks_only_when_strictly_exceeded() {
+        let definitions = vec![json!({"description": "fixed boundary payload"})];
+        let tokens = crate::services::token_counting::estimate_text_tokens(
+            &definitions[0].to_string(),
+        ) as u64;
+
+        assert!(!should_mask(&definitions, tokens.saturating_mul(10)));
+        assert!(should_mask(
+            &definitions,
+            tokens.saturating_mul(10).saturating_sub(1)
+        ));
+    }
+
+    #[test]
     fn unknown_context_uses_the_absolute_fallback() {
         let small = vec![json!({"description": "x".repeat(1_000)})];
         let large = vec![json!({"description": "x".repeat(90_000)})];

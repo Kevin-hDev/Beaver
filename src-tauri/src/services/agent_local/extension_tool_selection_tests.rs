@@ -93,3 +93,63 @@ fn usage_ranking_only_changes_selection_when_capacity_overflows() {
 
     assert_eq!(decision.active_plugin_ids, vec!["example.frequent"]);
 }
+
+#[test]
+fn unmasked_selection_exposes_the_complete_catalog_in_stable_order() {
+    let plugins = vec![
+        plugin("example.protected", 1),
+        plugin("example.essential", 1),
+        plugin("example.discovered", 1),
+        plugin("example.catalog", 1),
+    ];
+    let order = vec![
+        "example.protected".to_string(),
+        "example.essential".to_string(),
+        "example.discovered".to_string(),
+        "example.catalog".to_string(),
+    ];
+    let decision = decide(
+        &plugins,
+        SelectionPolicy {
+            masked: false,
+            tool_capacity: 4,
+            ordered_plugin_ids: &order,
+            capacity_plugin_ids: &order,
+            protected_plugin_ids: &order[0..1],
+            essential_plugin_ids: &order[1..2],
+            discovered_plugin_ids: &order[2..3],
+        },
+    );
+
+    assert_eq!(decision.active_plugin_ids, order);
+    assert!(decision.omitted_plugin_ids.is_empty());
+}
+
+#[test]
+fn masked_selection_keeps_only_protected_essential_and_discovered_plugins() {
+    let plugins = vec![
+        plugin("example.protected", 1),
+        plugin("example.essential", 1),
+        plugin("example.discovered", 1),
+        plugin("example.catalog", 1),
+    ];
+    let order = plugins
+        .iter()
+        .map(|plugin| plugin.id.clone())
+        .collect::<Vec<_>>();
+    let decision = decide(
+        &plugins,
+        SelectionPolicy {
+            masked: true,
+            tool_capacity: 4,
+            ordered_plugin_ids: &order,
+            capacity_plugin_ids: &order,
+            protected_plugin_ids: &order[0..1],
+            essential_plugin_ids: &order[1..2],
+            discovered_plugin_ids: &order[2..3],
+        },
+    );
+
+    assert_eq!(decision.active_plugin_ids, order[..3]);
+    assert!(!decision.active_plugin_ids.contains(&order[3]));
+}

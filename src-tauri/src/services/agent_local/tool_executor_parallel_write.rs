@@ -49,6 +49,7 @@ pub async fn execute_tracked_write(
         ctx.mode,
         ctx.write_guard,
         ctx.session_id,
+        ctx.request_id,
         ctx.cancel,
         ctx.plan_mode_active,
         Some(ctx.tool_call_index),

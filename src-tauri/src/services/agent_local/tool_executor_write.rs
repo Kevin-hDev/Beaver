@@ -19,6 +19,7 @@ pub(super) async fn execute_write(
     mode: &str,
     write_guard: &mut WriteGuard,
     session_id: &str,
+    request_id: &str,
     cancel: CancellationToken,
     plan_mode_active: bool,
     tool_call_index: Option<usize>,
@@ -29,6 +30,7 @@ pub(super) async fn execute_write(
             args,
             working_dir,
             session_id,
+            Some(request_id),
             cancel,
             true,
         )
@@ -135,7 +137,10 @@ pub(super) async fn execute_write(
                     name,
                     args,
                     working_dir,
-                    session_id,
+                    super::tool_dispatch_trace::DispatchTrace {
+                        session_id,
+                        request_id: Some(request_id),
+                    },
                     cancel.clone(),
                     tool_call_index,
                 )

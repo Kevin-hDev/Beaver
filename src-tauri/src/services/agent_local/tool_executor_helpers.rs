@@ -140,10 +140,11 @@ pub async fn dispatch_or_interactive(
     name: &str,
     args: &serde_json::Value,
     working_dir: &std::path::Path,
-    session_id: &str,
+    trace: super::tool_dispatch_trace::DispatchTrace<'_>,
     cancel: CancellationToken,
     tool_call_index: Option<usize>,
 ) -> ToolResult {
+    let session_id = trace.session_id;
     if super::tool_catalog::is_optional_tool(name)
         && !super::agent_settings::is_tool_enabled(name).await
     {
@@ -167,7 +168,7 @@ pub async fn dispatch_or_interactive(
         name,
         args,
         working_dir,
-        session_id,
+        trace,
         cancel,
         false,
         progress,

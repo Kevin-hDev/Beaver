@@ -134,7 +134,10 @@ pub async fn run_sequential(
                     name,
                     args,
                     working_dir,
-                    session_id,
+                    super::tool_dispatch_trace::DispatchTrace {
+                        session_id,
+                        request_id: Some(request_id),
+                    },
                     cancel.clone(),
                     Some(idx),
                 )

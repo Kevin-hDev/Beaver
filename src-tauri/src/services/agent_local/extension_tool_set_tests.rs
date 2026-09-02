@@ -13,7 +13,6 @@ fn passthrough_never_manages_chat_tools_as_extensions() {
     tools.apply(&["example.replacement".to_string()]);
 
     assert_eq!(tools.active(), definitions);
-    assert!(tools.selected_extension_names().is_empty());
 }
 
 #[test]

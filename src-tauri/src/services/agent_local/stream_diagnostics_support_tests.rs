@@ -7,7 +7,8 @@ use chrono::Utc;
 #[test]
 fn diagnostic_events_are_bounded() {
     let mut run = test_run();
-    for i in 0..20 {
+    let max = super::stream_diagnostics_support::MAX_DIAGNOSTIC_EVENTS;
+    for i in 0..max + 8 {
         push_event(
             &mut run,
             "tool_execution",
@@ -16,7 +17,7 @@ fn diagnostic_events_are_bounded() {
             None,
         );
     }
-    assert_eq!(run.events.len(), 12);
+    assert_eq!(run.events.len(), max);
     assert_eq!(run.events[0].message, "event 8");
 }
 

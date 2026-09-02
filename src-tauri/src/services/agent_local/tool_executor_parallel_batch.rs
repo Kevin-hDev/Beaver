@@ -11,7 +11,7 @@ use tokio_util::sync::CancellationToken;
 
 use super::tool_executor_helpers::post_record_read;
 
-const MAX_PARALLEL: usize = 10;
+pub(crate) const MAX_PARALLEL: usize = 10;
 const READ_BATCH_TIMEOUT: Duration = Duration::from_secs(600);
 
 pub(super) struct BatchEntry<'a> {

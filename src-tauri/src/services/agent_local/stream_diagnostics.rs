@@ -1,6 +1,14 @@
 use chrono::Utc;
 use uuid::Uuid;
 
+pub use super::extension_tool_correlation::{
+    pending_extension_searches, record_extension_refreshes,
+};
+pub use super::extension_tool_diagnostic::{
+    ExtensionDiagnosticOrigin, ExtensionDiagnosticOutcome, ExtensionDiagnosticReason,
+    ExtensionToolDiagnostic,
+};
+
 use super::stream_diagnostics_failure as failure;
 use super::stream_diagnostics_support as support;
 use super::types_diagnostics::{AgentDiagnosticRun, AgentErrorDiagnosticSummary};
@@ -93,30 +101,14 @@ pub async fn record_retry(session_id: &str, request_id: &str, message: &str) {
 pub async fn record_extension_tools(
     session_id: &str,
     request_id: &str,
-    phase: &str,
-    names: &[String],
+    diagnostic: ExtensionToolDiagnostic<'_>,
 ) {
-    let total = names.len();
-    let max_items = super::provider_tool_limits::MAX_CAPACITY_DIAGNOSTIC_ITEMS;
-    let names = names
-        .iter()
-        .take(max_items)
-        .cloned()
-        .collect::<Vec<_>>()
-        .join(", ");
-    let suffix = if total > max_items {
-        format!(" (+{} more)", total - max_items)
-    } else {
-        String::new()
-    };
-    let label = if phase == "extension_plugins_omitted" {
-        "Extension plugins omitted by provider capacity"
-    } else {
-        "Extension tools selected"
-    };
-    let message = format!("{label}: {names}{suffix}");
+    let extension = super::extension_tool_diagnostic::structured(&diagnostic);
     let _ = support::update_run(session_id, request_id, |_session, run| {
-        support::push_event(run, phase, &message, None, None);
+        support::push_event(run, diagnostic.origin.as_str(), "Extension tools.", None, None);
+        if let Some(event) = run.events.last_mut() {
+            event.extension = Some(extension.clone());
+        }
     })
     .await;
 }
