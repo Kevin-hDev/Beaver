@@ -1585,7 +1585,6 @@
     "sections": {
       "plugins": "Plugins",
       "custom": "Extensions",
-      "external": "External Applications",
       "host": "Host"
     },
     "pages": {
@@ -1596,10 +1595,6 @@
       "custom": {
         "description": "Add local code or install an extension from Git or npm.",
         "empty": "No custom extensions."
-      },
-      "external": {
-        "description": "Independent programs connected through the Beaver extension protocol.",
-        "empty": "No external applications connected."
       }
     },
     "discovery": {
@@ -1671,8 +1666,13 @@
     },
     "kinds": {
       "builtin": "Official plugin",
-      "local": "Local extension",
-      "external": "External application"
+      "local": "Local extension"
+    },
+    "enabled": { "yes": "Enabled", "no": "Disabled" },
+    "apiLevels": { "stable": "Stable", "advanced": "Advanced" },
+    "effects": {
+      "read-only": "Read only", "local-write": "Local write", "external-read": "External read",
+      "external-write": "External write", "process": "Process", "secret": "Secret access", "unknown": "Unknown effect"
     },
     "origins": {
       "local": "Local file or folder",
@@ -1687,13 +1687,18 @@
     "sensitiveAccessReminder": "As a precaution, change the access credentials used by this extension directly with their provider.",
     "updateTrustWarning": "Updating will disable the extension. Review the new version before trusting it again.",
     "detail": {
+      "enabled": "Activation",
       "status": "Status",
+      "apiLevel": "API level",
       "runtime": "Runtime",
       "api": "Beaver API",
       "author": "Author",
       "installSource": "Installation source",
       "source": "Source",
       "revision": "Git revision",
+      "lastActivatedAt": "Last activated",
+      "trustedAt": "Trusted since",
+      "lastError": "Last error",
       "unknown": "Not provided",
     "contributions": "Registered contributions",
     "replacesCore": "Replaces a built-in tool"
@@ -1702,6 +1707,16 @@
     "title": "Enable {{name}}?",
     "description": "This extension will have full access to your account data, secrets, and features. Beaver has not audited it.",
     "confirm": "Trust and enable"
+  },
+  "recovery": {
+    "title": "Interrupted extension loading",
+    "description": "Beaver stopped while loading an extension. Review it before choosing what to do.",
+    "invalid": "The recovery information is invalid and can be safely discarded.",
+    "openDetail": "Open detail",
+    "keepDisabled": "Keep disabled",
+    "retry": "Retry loading",
+    "discard": "Discard recovery information",
+    "restore": "Restore previous registry"
   },
     "add": {
       "title": "Add an extension",

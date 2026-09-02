@@ -3,10 +3,11 @@ import { useTranslation } from "react-i18next";
 import { Plus } from "@/components/ui/icons";
 import { SettingsPanel } from "@/components/settings/shell/settings-panel";
 import { SettingsTabbar } from "@/components/settings/shell/settings-tabbar";
-import type { ExtensionHostStatus, ExtensionRecord } from "@/types/extensions";
+import type { ExtensionHostStatus, ExtensionRecord, ExtensionRecoveryState } from "@/types/extensions";
 import type { ExtensionsSettingsSection } from "@/types/navigation";
 import { EXTENSION_SECTIONS } from "./extension-sections";
 import { ExtensionDetail } from "./extension-detail";
+import { ExtensionRecoveryBanner } from "./extension-recovery-banner";
 import { ExtensionsHostPanel } from "./extensions-host-panel";
 import { ExtensionsSectionView } from "./extensions-section-view";
 import "./extensions-page.css";
@@ -19,6 +20,8 @@ interface ExtensionsPageProps {
   loading: boolean;
   loadError: string | null;
   operationError: string | null;
+  recovery: ExtensionRecoveryState;
+  hostBusy: boolean;
   busyIds: Set<string>;
   protectedPluginIds: string[];
   priorityBusy: boolean;
@@ -32,6 +35,10 @@ interface ExtensionsPageProps {
   onRemove: (id: string) => void;
   onReload: () => void;
   onRecover: () => void;
+  onKeepDisabled: (id: string) => void;
+  onRetryLoad: (id: string) => void;
+  onDiscardMarker: () => void;
+  onRestoreSnapshot: () => void;
   onPrioritySave: (ids: string[]) => Promise<boolean>;
 }
 
@@ -47,13 +54,26 @@ export function ExtensionsPage(props: ExtensionsPageProps) {
     })),
     [t],
   );
+  const recoveryBanner = (
+    <ExtensionRecoveryBanner
+      state={props.recovery}
+      busy={props.hostBusy}
+      onOpen={props.onSelect}
+      onKeepDisabled={props.onKeepDisabled}
+      onRetry={props.onRetryLoad}
+      onDiscard={props.onDiscardMarker}
+      onRestore={props.onRestoreSnapshot}
+    />
+  );
 
   if (selected) {
     return (
       <SettingsPanel wide>
+        <OperationError errorKey={props.operationError} />
+        {recoveryBanner}
         <ExtensionDetail
           extension={selected}
-          busy={props.busyIds.has(selected.manifest.id)}
+          busy={props.hostBusy || props.busyIds.has(selected.manifest.id)}
           onBack={() => props.onSelect(null)}
           onEnabled={(enabled) => props.onEnabled(selected.manifest.id, enabled)}
           onShowInChat={(show) => props.onShowInChat(selected.manifest.id, show)}
@@ -84,19 +104,18 @@ export function ExtensionsPage(props: ExtensionsPageProps) {
         onChange={props.onSelectSection}
       />
 
-      {props.operationError && (
-        <div className="extp-message extp-message-error">{t(props.operationError)}</div>
-      )}
+      <OperationError errorKey={props.operationError} />
+      {recoveryBanner}
 
       {section === "host" ? (
-        <ExtensionsHostPanel host={props.host} onRestart={props.onReload} onRecover={props.onRecover} />
+        <ExtensionsHostPanel host={props.host} busy={props.hostBusy} onRestart={props.onReload} onRecover={props.onRecover} />
       ) : (
         <ExtensionsSectionView
           section={section}
           records={props.records}
           loading={props.loading}
           loadError={props.loadError}
-          busyIds={props.busyIds}
+          busyIds={props.hostBusy ? new Set(props.records.map((record) => record.manifest.id)) : props.busyIds}
           protectedPluginIds={props.protectedPluginIds}
           priorityBusy={props.priorityBusy}
           onSelect={props.onSelect}
@@ -108,4 +127,13 @@ export function ExtensionsPage(props: ExtensionsPageProps) {
       )}
     </SettingsPanel>
   );
+}
+
+function OperationError({ errorKey }: { errorKey: string | null }) {
+  const { t } = useTranslation();
+  return errorKey ? (
+    <div className="extp-message extp-message-error" role="alert">
+      {t(errorKey)}
+    </div>
+  ) : null;
 }

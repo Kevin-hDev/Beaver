@@ -28,7 +28,7 @@ const MAX_ID_CHARS = 96;
 const MAX_NAME_CHARS = 100;
 const MAX_TEXT_CHARS = 2_000;
 const MAX_PATH_CHARS = 4_096;
-const KINDS: readonly ExtensionKind[] = ["builtin", "local", "external"];
+const KINDS: readonly ExtensionKind[] = ["builtin", "local"];
 const ORIGIN_KINDS: readonly ExtensionOriginKind[] = ["local", "git", "npm"];
 const STATUSES: readonly ExtensionStatus[] = [
   "active",
@@ -65,13 +65,17 @@ function optionalText(value: unknown, maxChars: number): string | undefined {
 
 function identifier(value: unknown): string {
   const parsed = text(value, MAX_ID_CHARS);
-  const characters = Array.from(parsed);
-  const valid = asciiAlphanumeric(characters[0])
+  if (!isExtensionIdentifier(parsed)) invalid();
+  return parsed;
+}
+
+export function isExtensionIdentifier(value: string): boolean {
+  const characters = Array.from(value);
+  return characters.length <= MAX_ID_CHARS
+    && asciiAlphanumeric(characters[0])
     && asciiAlphanumeric(characters[characters.length - 1])
     && characters.every((character) =>
       asciiAlphanumeric(character) || [".", "_", "-"].includes(character));
-  if (!valid) invalid();
-  return parsed;
 }
 
 function asciiAlphanumeric(character: string | undefined): boolean {
@@ -192,6 +196,7 @@ function record(value: unknown): ExtensionRecord {
     status: oneOf(input.status, STATUSES),
     lastError: optionalText(input.lastError, MAX_TEXT_CHARS),
     lastActivatedAt: optionalText(input.lastActivatedAt, 64),
+    trustedAt: optionalText(input.trustedAt, 64),
     contributions: contributions(input.contributions),
   };
 }

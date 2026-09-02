@@ -14,8 +14,6 @@ export function useExtensionPriorities(
       parseExtensionDiscoveryPreferences(value).protectedPluginIds,
     );
   }, []);
-  const reset = useCallback(() => setProtectedPluginIds([]), []);
-
   const setPriorityPlugins = useCallback(async (pluginIds: string[]) => {
     setOperationError(null);
     setPriorityBusy(true);
@@ -37,7 +35,6 @@ export function useExtensionPriorities(
     protectedPluginIds,
     priorityBusy,
     applyValue,
-    reset,
     setPriorityPlugins,
   };
 }

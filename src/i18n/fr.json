@@ -1637,7 +1637,6 @@
     "sections": {
       "plugins": "Plugins",
       "custom": "Extensions",
-      "external": "Applications externes",
       "host": "Hôte"
     },
     "pages": {
@@ -1648,10 +1647,6 @@
       "custom": {
         "description": "Ajoutez du code local ou installez une extension depuis Git ou npm.",
         "empty": "Aucune extension personnalisée."
-      },
-      "external": {
-        "description": "Programmes indépendants reliés au protocole d’extension Beaver.",
-        "empty": "Aucune application externe connectée."
       }
     },
     "discovery": {
@@ -1723,8 +1718,13 @@
     },
     "kinds": {
       "builtin": "Plugin officiel",
-      "local": "Extension locale",
-      "external": "Application externe"
+      "local": "Extension locale"
+    },
+    "enabled": { "yes": "Activée", "no": "Désactivée" },
+    "apiLevels": { "stable": "Stable", "advanced": "Avancé" },
+    "effects": {
+      "read-only": "Lecture seule", "local-write": "Écriture locale", "external-read": "Lecture externe",
+      "external-write": "Écriture externe", "process": "Processus", "secret": "Accès aux secrets", "unknown": "Effet inconnu"
     },
     "origins": {
       "local": "Fichier ou dossier local",
@@ -1739,13 +1739,18 @@
     "sensitiveAccessReminder": "Par précaution, changez auprès de leur fournisseur les accès utilisés par cette extension.",
     "updateTrustWarning": "La mise à jour désactivera l’extension. Examinez sa nouvelle version avant de lui refaire confiance.",
     "detail": {
+      "enabled": "Activation",
       "status": "État",
+      "apiLevel": "Niveau d’API",
       "runtime": "Runtime",
       "api": "API Beaver",
       "author": "Auteur",
       "installSource": "Mode d’installation",
       "source": "Source",
       "revision": "Révision Git",
+      "lastActivatedAt": "Dernière activation",
+      "trustedAt": "Approuvée depuis",
+      "lastError": "Dernière erreur",
       "unknown": "Non indiqué",
     "contributions": "Contributions enregistrées",
     "replacesCore": "Remplace un outil intégré"
@@ -1754,6 +1759,16 @@
     "title": "Activer {{name}} ?",
     "description": "Cette extension aura un accès total aux données, secrets et fonctions de votre compte. Beaver ne l’a pas auditée.",
     "confirm": "Faire confiance et activer"
+  },
+  "recovery": {
+    "title": "Chargement d’extension interrompu",
+    "description": "Beaver s’est arrêté pendant le chargement d’une extension. Examinez-la avant de choisir la suite.",
+    "invalid": "Les informations de reprise sont invalides et peuvent être supprimées sans risque.",
+    "openDetail": "Ouvrir la fiche",
+    "keepDisabled": "Garder désactivée",
+    "retry": "Réessayer le chargement",
+    "discard": "Supprimer les informations de reprise",
+    "restore": "Restaurer le registre précédent"
   },
     "add": {
       "title": "Ajouter une extension",

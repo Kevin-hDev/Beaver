@@ -2253,7 +2253,6 @@
     "sections": {
       "plugins": "プラグイン",
       "custom": "拡張機能",
-      "external": "外部アプリケーション",
       "host": "ホスト"
     },
     "pages": {
@@ -2264,10 +2263,6 @@
       "custom": {
         "description": "ローカルコードを追加するか、Git または npm から拡張機能をインストールします。",
         "empty": "カスタム拡張機能はありません。"
-      },
-      "external": {
-        "description": "Beaver 拡張プロトコルで接続された独立プログラムです。",
-        "empty": "接続された外部アプリケーションはありません。"
       }
     },
     "discovery": {
@@ -2339,9 +2334,11 @@
     },
     "kinds": {
       "builtin": "公式プラグイン",
-      "local": "ローカル拡張機能",
-      "external": "外部アプリケーション"
+      "local": "ローカル拡張機能"
     },
+    "enabled": { "yes": "有効", "no": "無効" },
+    "apiLevels": { "stable": "安定", "advanced": "高度" },
+    "effects": { "read-only": "読み取り専用", "local-write": "ローカル書き込み", "external-read": "外部読み取り", "external-write": "外部書き込み", "process": "プロセス", "secret": "機密情報へのアクセス", "unknown": "不明な影響" },
     "origins": {
       "local": "ローカルファイルまたはフォルダー",
       "git": "Git リポジトリ",
@@ -2355,13 +2352,18 @@
     "sensitiveAccessReminder": "念のため、この拡張機能が使用したアクセス認証情報を各提供元で変更してください。",
     "updateTrustWarning": "更新すると拡張機能は無効になります。再度信頼する前に新しいバージョンを確認してください。",
     "detail": {
+      "enabled": "有効化",
       "status": "状態",
+      "apiLevel": "API レベル",
       "runtime": "ランタイム",
       "api": "Beaver API",
       "author": "作者",
       "installSource": "インストール元",
       "source": "ソース",
       "revision": "Git リビジョン",
+      "lastActivatedAt": "最終有効化",
+      "trustedAt": "信頼開始日時",
+      "lastError": "前回のエラー",
       "unknown": "未記載",
     "contributions": "登録された拡張項目",
     "replacesCore": "内蔵ツールを置き換えます"
@@ -2371,6 +2373,7 @@
     "description": "この拡張機能はアカウントのデータ、シークレット、機能へ完全にアクセスできます。Beaver は監査していません。",
     "confirm": "信頼して有効化"
   },
+  "recovery": { "title": "拡張機能の読み込みが中断されました", "description": "拡張機能の読み込み中に Beaver が停止しました。続行前に確認してください。", "invalid": "復旧情報が無効です。安全に破棄できます。", "openDetail": "詳細を開く", "keepDisabled": "無効のままにする", "retry": "読み込みを再試行", "discard": "復旧情報を破棄", "restore": "以前のレジストリを復元" },
     "add": {
       "title": "拡張機能を追加",
       "fullAccessWarning": "選択したコードはユーザーアカウントの権限で実行されます。信頼すると決めた拡張機能だけをインストールしてください。",

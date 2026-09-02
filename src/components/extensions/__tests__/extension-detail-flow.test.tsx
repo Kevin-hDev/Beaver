@@ -31,20 +31,22 @@ const record = parseExtensionRecords([{
   trusted: true,
   showInChat: true,
   status: "active",
-  lastError: null,
-  lastActivatedAt: null,
+  lastError: "extensions_host_timeout",
+  lastActivatedAt: "2026-09-01T10:00:00Z",
+  trustedAt: "2026-08-31T09:00:00Z",
   contributions: {
     tools: [{
       name: "beaver.office.documents.create",
       description: "Create a document.",
       parameters: { type: "object" },
+      effect: "secret",
       replacesCore: false,
     }],
     events: [],
   },
 }])[0];
 
-function SelectablePage() {
+function SelectablePage({ operationError = null }: { operationError?: string | null }) {
   const [selected, setSelected] = useState<ExtensionRecord | null>(null);
   return (
     <ExtensionsPage
@@ -61,7 +63,9 @@ function SelectablePage() {
       }}
       loading={false}
       loadError={null}
-      operationError={null}
+      operationError={operationError}
+      recovery={{ extensionId: null, stage: null, attempts: null, canRetry: false, markerInvalid: false, recoverySnapshotAvailable: false }}
+      hostBusy={false}
       busyIds={new Set()}
       protectedPluginIds={[]}
       priorityBusy={false}
@@ -74,6 +78,10 @@ function SelectablePage() {
       onRemove={vi.fn()}
       onReload={vi.fn()}
       onRecover={vi.fn()}
+      onKeepDisabled={vi.fn()}
+      onRetryLoad={vi.fn()}
+      onDiscardMarker={vi.fn()}
+      onRestoreSnapshot={vi.fn()}
       onPrioritySave={vi.fn(() => Promise.resolve(true))}
     />
   );
@@ -91,5 +99,39 @@ describe("Extension detail flow", () => {
       .toBeInTheDocument();
     expect(screen.getByText("beaver.office.documents.create"))
       .toBeInTheDocument();
+  });
+
+  it("affiche l'erreur d'opération au-dessus de la fiche ouverte", () => {
+    render(
+      <SelectablePage
+        operationError="extensions.errors.codes.extensions_operation_failed"
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", {
+      name: /extensions\.official\.documents\.name/,
+    }));
+
+    const alert = screen.getByRole("alert");
+    expect(alert).toHaveTextContent(
+      "extensions.errors.codes.extensions_operation_failed",
+    );
+    expect(alert.compareDocumentPosition(screen.getByText("extensions.detail.status")))
+      .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it("distingue activation, chargement, Hôte et effets sensibles", () => {
+    render(<SelectablePage />);
+    fireEvent.click(screen.getByRole("button", {
+      name: /extensions\.official\.documents\.name/,
+    }));
+
+    expect(screen.getByText("extensions.detail.enabled")).toBeInTheDocument();
+    expect(screen.getByText("extensions.detail.apiLevel")).toBeInTheDocument();
+    expect(screen.getByText("2026-09-01T10:00:00Z")).toBeInTheDocument();
+    expect(screen.getByText("2026-08-31T09:00:00Z")).toBeInTheDocument();
+    expect(screen.getByText("extensions.errors.codes.extensions_host_timeout"))
+      .toBeInTheDocument();
+    expect(screen.getByText("extensions.effects.secret")).toBeInTheDocument();
   });
 });

@@ -26,21 +26,25 @@ interface ExtensionsSectionViewProps {
 const KIND_BY_SECTION: Record<ExtensionListSection, ExtensionRecord["kind"]> = {
   plugins: "builtin",
   custom: "local",
-  external: "external",
 };
 
 export function ExtensionsSectionView(props: ExtensionsSectionViewProps) {
   const { t } = useTranslation();
   const visible = props.records.filter((record) => record.kind === KIND_BY_SECTION[props.section]);
-  const emptyKey = props.loadError
-    ? props.loadError
-    : props.loading
-      ? "extensions.loading"
-      : `extensions.pages.${props.section}.empty`;
-
   return (
     <>
       <p className="settings-panel-description">{t(`extensions.pages.${props.section}.description`)}</p>
+
+      {props.loading && visible.length > 0 && (
+        <p className="settings-panel-description" role="status">
+          {t("extensions.loading")}
+        </p>
+      )}
+      {props.loadError && visible.length > 0 && (
+        <div className="extp-message extp-message-error" role="alert">
+          {t(props.loadError)}
+        </div>
+      )}
 
       {visible.length > 0 ? (
         <SettingsCard className="extp-list">
@@ -56,8 +60,16 @@ export function ExtensionsSectionView(props: ExtensionsSectionViewProps) {
             />
           ))}
         </SettingsCard>
+      ) : props.loadError ? (
+        <div className="extp-message extp-message-error" role="alert">
+          {t(props.loadError)}
+        </div>
+      ) : props.loading ? (
+        <p className="settings-panel-description" role="status">
+          {t("extensions.loading")}
+        </p>
       ) : (
-        <EmptyState message={t(emptyKey)} />
+        <EmptyState message={t(`extensions.pages.${props.section}.empty`)} />
       )}
 
       {props.section === "plugins" && !props.loading && !props.loadError && (

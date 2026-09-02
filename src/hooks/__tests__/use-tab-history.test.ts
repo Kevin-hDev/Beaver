@@ -43,6 +43,15 @@ describe("useTabHistory", () => {
     expect("terminalOpen" in migrated.agentLocal).toBe(false);
   });
 
+  it("migre l'ancien onglet Applications externes vers Extensions", () => {
+    const legacy = {
+      ...DEFAULT_APP_NAV,
+      settings: { ...DEFAULT_APP_NAV.settings, extensionsSection: "external" },
+    } as unknown as typeof DEFAULT_APP_NAV;
+
+    expect(migrateAppNav(legacy).settings.extensionsSection).toBe("custom");
+  });
+
   it("ignore les push identiques", () => {
     const { result } = renderHook(() => useTabHistory(DEFAULT_APP_NAV));
 

@@ -2258,7 +2258,6 @@
     "sections": {
       "plugins": "Plugins",
       "custom": "Extensiones",
-      "external": "Aplicaciones externas",
       "host": "Host"
     },
     "pages": {
@@ -2269,10 +2268,6 @@
       "custom": {
         "description": "Añade código local o instala una extensión desde Git o npm.",
         "empty": "No hay extensiones personalizadas."
-      },
-      "external": {
-        "description": "Programas independientes conectados mediante el protocolo de extensiones de Beaver.",
-        "empty": "No hay aplicaciones externas conectadas."
       }
     },
     "discovery": {
@@ -2344,9 +2339,11 @@
     },
     "kinds": {
       "builtin": "Plugin oficial",
-      "local": "Extensión local",
-      "external": "Aplicación externa"
+      "local": "Extensión local"
     },
+    "enabled": { "yes": "Activada", "no": "Desactivada" },
+    "apiLevels": { "stable": "Estable", "advanced": "Avanzado" },
+    "effects": { "read-only": "Solo lectura", "local-write": "Escritura local", "external-read": "Lectura externa", "external-write": "Escritura externa", "process": "Proceso", "secret": "Acceso a secretos", "unknown": "Efecto desconocido" },
     "origins": {
       "local": "Archivo o carpeta local",
       "git": "Repositorio Git",
@@ -2360,13 +2357,18 @@
     "sensitiveAccessReminder": "Como precaución, cambia con su proveedor los accesos utilizados por esta extensión.",
     "updateTrustWarning": "La actualización desactivará la extensión. Revisa la nueva versión antes de volver a confiar en ella.",
     "detail": {
+      "enabled": "Activación",
       "status": "Estado",
+      "apiLevel": "Nivel de API",
       "runtime": "Runtime",
       "api": "API de Beaver",
       "author": "Autor",
       "installSource": "Origen de instalación",
       "source": "Fuente",
       "revision": "Revisión Git",
+      "lastActivatedAt": "Última activación",
+      "trustedAt": "Aprobada desde",
+      "lastError": "Último error",
       "unknown": "No indicado",
     "contributions": "Contribuciones registradas",
     "replacesCore": "Sustituye una herramienta integrada"
@@ -2376,6 +2378,7 @@
     "description": "Esta extensión tendrá acceso total a los datos, secretos y funciones de tu cuenta. Beaver no la ha auditado.",
     "confirm": "Confiar y activar"
   },
+  "recovery": { "title": "Carga de extensión interrumpida", "description": "Beaver se detuvo al cargar una extensión. Revísala antes de continuar.", "invalid": "La información de recuperación no es válida y se puede descartar.", "openDetail": "Abrir detalle", "keepDisabled": "Mantener desactivada", "retry": "Reintentar carga", "discard": "Descartar recuperación", "restore": "Restaurar registro anterior" },
     "add": {
       "title": "Añadir una extensión",
       "fullAccessWarning": "El código seleccionado se ejecutará con los derechos de tu cuenta de usuario. Instala solo una extensión en la que decidas confiar.",

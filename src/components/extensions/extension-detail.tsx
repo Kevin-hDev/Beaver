@@ -3,6 +3,7 @@ import { ChatCircleDots, ShieldWarning } from "@/components/ui/icons";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { SettingsCard } from "@/components/settings/settings-card";
 import { SettingsDetailHeader } from "@/components/settings/shell/settings-detail-header";
+import { extensionErrorKey } from "@/lib/extension-errors";
 import type { ExtensionRecord } from "@/types/extensions";
 import { ExtensionIcon } from "./extension-icon";
 import { ExtensionActions } from "./extension-actions";
@@ -55,7 +56,9 @@ export function ExtensionDetail(props: ExtensionDetailProps) {
       )}
 
       <SettingsCard className="extp-lines">
+        <DetailLine label={t("extensions.detail.enabled")} value={t(extension.enabled ? "extensions.enabled.yes" : "extensions.enabled.no")} />
         <DetailLine label={t("extensions.detail.status")} value={t(`extensions.status.${extension.status}`)} />
+        <DetailLine label={t("extensions.detail.apiLevel")} value={t(`extensions.apiLevels.${extension.manifest.apiLevel}`)} />
         <DetailLine label={t("extensions.detail.runtime")} value={extension.manifest.runtime} />
         <DetailLine label={t("extensions.detail.api")} value={extension.manifest.beaverApi} />
         <DetailLine label={t("extensions.detail.author")} value={extension.manifest.author ?? t("extensions.detail.unknown")} />
@@ -73,6 +76,9 @@ export function ExtensionDetail(props: ExtensionDetailProps) {
             mono
           />
         )}
+        {extension.lastActivatedAt && <DetailLine label={t("extensions.detail.lastActivatedAt")} value={extension.lastActivatedAt} />}
+        {extension.trustedAt && <DetailLine label={t("extensions.detail.trustedAt")} value={extension.trustedAt} />}
+        {extension.lastError && <DetailLine label={t("extensions.detail.lastError")} value={t(extensionErrorKey(extension.lastError, "extensions.errors.operation"))} />}
         <div className="extp-info-line">
           <span className="extd-chat-label">
             <ChatCircleDots size="var(--icon-sm)" />
@@ -130,6 +136,7 @@ function Contributions({ extension }: { extension: ExtensionRecord }) {
             <div className="extd-tool-row" key={tool.name}>
               <div className="extd-tool-heading">
                 <code>{tool.name}</code>
+                <span className="extd-effect">{t(`extensions.effects.${tool.effect}`)}</span>
                 {tool.replacesCore && (
                   <span className="extd-replacement">
                     {t("extensions.detail.replacesCore")}

@@ -33,6 +33,8 @@ export function useExtensionsTabContent({
           loading={registry.loading}
           loadError={registry.loadError}
           operationError={registry.operationError}
+          recovery={registry.recovery}
+          hostBusy={registry.hostBusy}
           busyIds={registry.busyIds}
           protectedPluginIds={registry.protectedPluginIds}
           priorityBusy={registry.priorityBusy}
@@ -48,6 +50,10 @@ export function useExtensionsTabContent({
           }}
           onReload={() => void registry.reload()}
           onRecover={() => void registry.recover()}
+          onKeepDisabled={(id) => void registry.keepDisabled(id)}
+          onRetryLoad={(id) => void registry.retryLoad(id)}
+          onDiscardMarker={() => void registry.discardLoadingMarker()}
+          onRestoreSnapshot={() => void registry.restoreRecoverySnapshot()}
           onPrioritySave={registry.setPriorityPlugins}
         />
       </ExtensionsErrorBoundary>

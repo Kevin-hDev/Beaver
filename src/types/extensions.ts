@@ -20,7 +20,7 @@ export {
   TIMEOUTS,
 } from "./extension-contract.generated";
 
-export type ExtensionKind = "builtin" | "local" | "external";
+export type ExtensionKind = "builtin" | "local";
 export type ExtensionOriginKind = "local" | "git" | "npm";
 export type ExtensionStatus = "active" | "inactive" | "loading" | "error" | "incompatible";
 export type ExtensionApiLevel = "stable" | "advanced";
@@ -72,6 +72,7 @@ export interface ExtensionRecord {
   status: ExtensionStatus;
   lastError?: string;
   lastActivatedAt?: string;
+  trustedAt?: string;
   contributions: ExtensionContributions;
 }
 
@@ -96,6 +97,15 @@ export interface ExtensionHostStatus {
 
 export interface ExtensionDiscoveryPreferences {
   protectedPluginIds: string[];
+}
+
+export interface ExtensionRecoveryState {
+  extensionId: string | null;
+  stage: HostLoadStage | null;
+  attempts: number | null;
+  canRetry: boolean;
+  markerInvalid: boolean;
+  recoverySnapshotAvailable: boolean;
 }
 export type {
   AdvancedHostToCoreRequestMethod,

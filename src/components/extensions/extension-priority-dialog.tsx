@@ -24,9 +24,7 @@ export function ExtensionPriorityDialog({
 }: ExtensionPriorityDialogProps) {
   const { t } = useTranslation();
   const [selected, setSelected] = useState(selectedIds);
-  const eligible = records.filter(
-    (record) => record.kind !== "external" && record.enabled,
-  );
+  const eligible = records.filter((record) => record.enabled);
   const toggle = (id: string) => {
     setSelected((current) => {
       if (current.includes(id)) return current.filter((value) => value !== id);

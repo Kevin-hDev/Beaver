@@ -34,6 +34,7 @@ describe("ExtensionActivationDialog", () => {
       <ExtensionActivationDialog
         extension={extension}
         busy={false}
+        errorKey={null}
         onCancel={vi.fn()}
         onConfirm={onConfirm}
       />,
@@ -44,5 +45,41 @@ describe("ExtensionActivationDialog", () => {
       name: "extensions.activation.confirm",
     }));
     expect(onConfirm).toHaveBeenCalledOnce();
+  });
+
+  it("affiche l'erreur d'activation dans la fenêtre", () => {
+    render(
+      <ExtensionActivationDialog
+        extension={extension}
+        busy={false}
+        errorKey="extensions.errors.codes.extensions_fingerprint_changed"
+        onCancel={vi.fn()}
+        onConfirm={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("alert"))
+      .toHaveTextContent("extensions.errors.codes.extensions_fingerprint_changed");
+    expect(screen.getByRole("button", { name: "extensions.activation.confirm" }))
+      .toBeEnabled();
+  });
+
+  it("place le focus et se ferme avec Échap", () => {
+    const onCancel = vi.fn();
+    render(
+      <ExtensionActivationDialog
+        extension={extension}
+        busy={false}
+        errorKey={null}
+        onCancel={onCancel}
+        onConfirm={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("extensions.actions.cancel")).toHaveFocus();
+    expect(document.body.querySelector(".wk-dialog-overlay"))
+      .toHaveAttribute("role", "presentation");
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(onCancel).toHaveBeenCalledOnce();
   });
 });

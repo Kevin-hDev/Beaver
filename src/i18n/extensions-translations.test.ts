@@ -44,6 +44,14 @@ describe("extensions translations", () => {
     }
   });
 
+  it("retire les vestiges d’applications externes de la page Extensions", () => {
+    for (const locale of locales) {
+      expect("external" in locale.extensions.sections).toBe(false);
+      expect("external" in locale.extensions.pages).toBe(false);
+      expect("external" in locale.extensions.kinds).toBe(false);
+    }
+  });
+
   it("partage la limite des plugins prioritaires avec l'interface", () => {
     for (const locale of locales) {
       expect(locale.extensions.discovery.count).toContain("{{max}}");

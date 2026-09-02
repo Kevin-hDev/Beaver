@@ -2253,7 +2253,6 @@
     "sections": {
       "plugins": "插件",
       "custom": "扩展",
-      "external": "外部应用",
       "host": "宿主"
     },
     "pages": {
@@ -2264,10 +2263,6 @@
       "custom": {
         "description": "添加本地代码，或从 Git 或 npm 安装扩展。",
         "empty": "没有自定义扩展。"
-      },
-      "external": {
-        "description": "通过 Beaver 扩展协议连接的独立程序。",
-        "empty": "没有已连接的外部应用。"
       }
     },
     "discovery": {
@@ -2339,9 +2334,11 @@
     },
     "kinds": {
       "builtin": "官方插件",
-      "local": "本地扩展",
-      "external": "外部应用"
+      "local": "本地扩展"
     },
+    "enabled": { "yes": "已启用", "no": "已停用" },
+    "apiLevels": { "stable": "稳定", "advanced": "高级" },
+    "effects": { "read-only": "只读", "local-write": "本地写入", "external-read": "外部读取", "external-write": "外部写入", "process": "进程", "secret": "机密访问", "unknown": "未知影响" },
     "origins": {
       "local": "本地文件或文件夹",
       "git": "Git 仓库",
@@ -2355,13 +2352,18 @@
     "sensitiveAccessReminder": "为安全起见，请直接向相应服务提供商更改此扩展使用的访问凭据。",
     "updateTrustWarning": "更新会停用此扩展。请先检查新版本，再重新信任并启用。",
     "detail": {
+      "enabled": "启用状态",
       "status": "状态",
+      "apiLevel": "API 级别",
       "runtime": "运行时",
       "api": "Beaver API",
       "author": "作者",
       "installSource": "安装来源",
       "source": "来源",
       "revision": "Git 修订版本",
+      "lastActivatedAt": "上次启用",
+      "trustedAt": "信任时间",
+      "lastError": "上次错误",
       "unknown": "未提供",
     "contributions": "已注册的扩展项",
     "replacesCore": "替换内置工具"
@@ -2371,6 +2373,7 @@
     "description": "此扩展将完全访问你账户中的数据、密钥和功能。Beaver 未对其进行审核。",
     "confirm": "信任并启用"
   },
+  "recovery": { "title": "扩展加载已中断", "description": "Beaver 在加载扩展时停止。请先检查扩展再继续。", "invalid": "恢复信息无效，可以安全丢弃。", "openDetail": "打开详情", "keepDisabled": "保持停用", "retry": "重试加载", "discard": "丢弃恢复信息", "restore": "恢复以前的注册表" },
     "add": {
       "title": "添加扩展",
       "fullAccessWarning": "所选代码将以你的用户账户权限运行。请只安装你决定信任的扩展。",

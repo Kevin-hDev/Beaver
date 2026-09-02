@@ -2254,7 +2254,6 @@
     "sections": {
       "plugins": "Plugins",
       "custom": "Erweiterungen",
-      "external": "Externe Anwendungen",
       "host": "Host"
     },
     "pages": {
@@ -2265,10 +2264,6 @@
       "custom": {
         "description": "Füge lokalen Code hinzu oder installiere eine Erweiterung von Git oder npm.",
         "empty": "Keine eigenen Erweiterungen."
-      },
-      "external": {
-        "description": "Unabhängige Programme, die über das Beaver-Erweiterungsprotokoll verbunden sind.",
-        "empty": "Keine externen Anwendungen verbunden."
       }
     },
     "discovery": {
@@ -2340,9 +2335,11 @@
     },
     "kinds": {
       "builtin": "Offizielles Plugin",
-      "local": "Lokale Erweiterung",
-      "external": "Externe Anwendung"
+      "local": "Lokale Erweiterung"
     },
+    "enabled": { "yes": "Aktiviert", "no": "Deaktiviert" },
+    "apiLevels": { "stable": "Stabil", "advanced": "Erweitert" },
+    "effects": { "read-only": "Nur Lesen", "local-write": "Lokales Schreiben", "external-read": "Externes Lesen", "external-write": "Externes Schreiben", "process": "Prozess", "secret": "Zugriff auf Geheimnisse", "unknown": "Unbekannter Effekt" },
     "origins": {
       "local": "Lokale Datei oder Ordner",
       "git": "Git-Repository",
@@ -2356,13 +2353,18 @@
     "sensitiveAccessReminder": "Ändere vorsichtshalber beim jeweiligen Anbieter die von dieser Erweiterung verwendeten Zugangsdaten.",
     "updateTrustWarning": "Die Aktualisierung deaktiviert die Erweiterung. Prüfe die neue Version, bevor du ihr erneut vertraust.",
     "detail": {
+      "enabled": "Aktivierung",
       "status": "Status",
+      "apiLevel": "API-Stufe",
       "runtime": "Runtime",
       "api": "Beaver-API",
       "author": "Autor",
       "installSource": "Installationsquelle",
       "source": "Quelle",
       "revision": "Git-Revision",
+      "lastActivatedAt": "Zuletzt aktiviert",
+      "trustedAt": "Vertrauenswürdig seit",
+      "lastError": "Letzter Fehler",
       "unknown": "Nicht angegeben",
     "contributions": "Registrierte Beiträge",
     "replacesCore": "Ersetzt ein integriertes Tool"
@@ -2372,6 +2374,7 @@
     "description": "Diese Erweiterung erhält vollen Zugriff auf Daten, Geheimnisse und Funktionen deines Kontos. Beaver hat sie nicht geprüft.",
     "confirm": "Vertrauen und aktivieren"
   },
+  "recovery": { "title": "Laden der Erweiterung unterbrochen", "description": "Beaver wurde beim Laden einer Erweiterung beendet. Prüfe sie, bevor du fortfährst.", "invalid": "Die Wiederherstellungsdaten sind ungültig und können verworfen werden.", "openDetail": "Details öffnen", "keepDisabled": "Deaktiviert lassen", "retry": "Laden erneut versuchen", "discard": "Wiederherstellung verwerfen", "restore": "Vorheriges Register wiederherstellen" },
     "add": {
       "title": "Erweiterung hinzufügen",
       "fullAccessWarning": "Der ausgewählte Code wird mit den Rechten deines Benutzerkontos ausgeführt. Installiere nur Erweiterungen, denen du vertrauen möchtest.",

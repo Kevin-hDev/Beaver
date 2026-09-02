@@ -1,7 +1,4 @@
-import {
-  Link,
-  PuzzlePiece,
-} from "@/components/ui/icons";
+import { PuzzlePiece } from "@/components/ui/icons";
 import documentsIcon from "@/assets/extensions/office/documents.svg";
 import pdfIcon from "@/assets/extensions/office/pdf.svg";
 import presentationsIcon from "@/assets/extensions/office/presentations.svg";
@@ -19,9 +16,6 @@ export function ExtensionIcon({ extension }: ExtensionIconProps) {
     return <img className="exti-artwork" src={officialIcon} alt="" aria-hidden="true" />;
   }
   const size = "var(--icon-lg)";
-  if (extension.kind === "external") {
-    return <Link size={size} weight="regular" />;
-  }
   return <PuzzlePiece size={size} weight="fill" />;
 }
 
