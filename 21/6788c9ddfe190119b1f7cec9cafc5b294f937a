@@ -1,0 +1,42 @@
+Lot P1.5 — interface Extensions alignée sur l’état runtime
+
+Périmètre livré
+- L’interface conserve le dernier registre valide pendant un rafraîchissement et distingue vide, chargement, erreur et contenu.
+- Les erreurs d’opération apparaissent dans la liste, la fiche et le dialogue d’activation avec les codes i18n fermés de P1.4.
+- Un refus d’activation garde le dialogue ouvert; seule une confirmation backend réussie le ferme.
+- hostBusy couvre rechargement, récupération, activation/désactivation, retry de chargement et restauration du snapshot. RuntimeHosts reste l’unique autorité de sérialisation.
+- La fiche expose activation, statut runtime, niveau/API, auteur, provenance, dates, dernière erreur, contributions et classes d’effet.
+- Le bandeau de reprise consomme les cinq commandes P1.2. Ouvrir la fiche reste une navigation locale.
+- Les présentations et types courants d’applications externes sont retirés. La valeur external subsiste uniquement à la frontière de migration de l’ancienne navigation; external-read et external-write restent des classes d’effet.
+- Les sept langues et les tokens CSS existants sont utilisés; aucune couleur ni chaîne visible n’est codée en dur.
+
+Contre-revue contrôleur et corrections TDD
+1. Un échec du refresh de reprise masquait le bandeau: dernier état conservé et erreur traduite affichée.
+2. Une réponse de registre obsolète pouvait écraser la plus récente: génération de refresh ajoutée.
+3. Une erreur ancienne contaminait un nouveau dialogue d’activation: erreur effacée à l’ouverture.
+4. Les états initiaux chargement/erreur n’avaient pas de rôles accessibles: status/alert ajoutés.
+5. Le fond du dialogue était un bouton contenant des boutons: rôle présentation, DialogPortal, identifiants uniques, focus restauré et Échap global.
+6. Le CSS du bandeau dépendait du panneau Hôte: styles déplacés vers l’autorité parent extensions-page.css.
+7. Une ancienne erreur de chargement restait visible pendant un nouveau refresh: effacement au démarrage.
+8. La reprise avait la même course de réponses obsolètes: génération de refresh ajoutée.
+9. Le parseur acceptait toute étape: validation contre HOST_LOAD_STAGES généré depuis le contrat.
+
+Preuves observées
+- Première vague contrôleur: 6 échecs rouges / 26 succès, puis 32 succès.
+- Deuxième vague contrôleur: 3 échecs rouges / 15 succès, puis 35 succès.
+- Tests ciblés finaux: UI/i18n 38/38; hook/parsing/navigation 34/34.
+- Vitest complet: 527 fichiers, 2 858 tests réussis.
+- npm test complet: exit 0, Vitest et toutes les suites secondaires réussis.
+- Rust complet: 4 709 réussis, 10 ignorés; intégration 1/1.
+- npm run lint, npx tsc --noEmit, cargo check, Clippy strict, cargo fmt, contracts:check et git diff --check: exit 0.
+- Graphify: 42 223 nœuds, 88 207 arêtes, 2 433 communautés; sortie lue, exit 0.
+
+Validation visuelle non déclarée verte
+- Le lancement natif utilisait un nouveau CL_GO_CEF_TEST_DATA_DIR sous le vrai répertoire temporaire macOS et la feature cef-test-profile.
+- Beaver n’a pas atteint son interface: répétition de browser-helper setup failed (cef-supervision-object), puis FATAL GPU process isn't usable. Goodbye.
+- Le profil fichier réel n’a pas été touché. Le profil temporaire exact a été déplacé de manière récupérable dans la Corbeille et les chemins source/destination ont été vérifiés.
+- Cette panne CEF locale empêche de déclarer observés les thèmes sombre/clair, l’allemand, le responsive et les scénarios runtime; elle n’est pas maquillée en succès P1.5.
+
+Hors périmètre préservé
+- Aucun changement des capacités Office, MCP, de la politique de sélection à 10 %, ni du futur transport d’applications externes.
+- Aucun commit, push ou note créé par le sous-agent; revue, corrections, validation, commit et présente note appartiennent au contrôleur.
