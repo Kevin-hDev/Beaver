@@ -39,7 +39,7 @@ pub fn find(id: &str) -> Result<ExtensionRecord, String> {
     list()?
         .into_iter()
         .find(|record| record.manifest.id == id)
-        .ok_or_else(|| "Extension introuvable.".to_string())
+        .ok_or_else(|| super::error_codes::NOT_FOUND.to_string())
 }
 
 pub fn add_local(record: ExtensionRecord) -> Result<(), String> {
@@ -70,7 +70,7 @@ pub fn remove(id: &str) -> Result<bool, String> {
         let index = records
             .iter()
             .position(|record| record.manifest.id == id)
-            .ok_or_else(|| "Extension introuvable.".to_string())?;
+            .ok_or_else(|| super::error_codes::NOT_FOUND.to_string())?;
         if records[index].kind == ExtensionKind::Builtin {
             return Err("Un plugin Beaver ne peut pas être supprimé.".to_string());
         }
@@ -95,7 +95,7 @@ pub fn replace_user(
         let record = records
             .iter_mut()
             .find(|record| record.manifest.id == id)
-            .ok_or_else(|| "Extension introuvable.".to_string())?;
+            .ok_or_else(|| super::error_codes::NOT_FOUND.to_string())?;
         if record.kind == ExtensionKind::Builtin {
             return Err("Un plugin Beaver ne peut pas être remplacé.".to_string());
         }
@@ -113,7 +113,7 @@ pub async fn set_enabled(id: &str, enabled: bool, trust_confirmed: bool) -> Resu
     let mut reminder = false;
     update(id, |record| {
         if enabled && record.kind != ExtensionKind::Builtin && !record.trusted && !trust_confirmed {
-            return Err("Confirmation d'activation requise.".to_string());
+            return Err(super::error_codes::ACTIVATION_CONFIRMATION_REQUIRED.to_string());
         }
         let activated_at = chrono::Utc::now().to_rfc3339();
         if enabled && trust_confirmed && record.kind == ExtensionKind::Local {
@@ -171,7 +171,7 @@ fn update(
         let record = records
             .iter_mut()
             .find(|record| record.manifest.id == id)
-            .ok_or_else(|| "Extension introuvable.".to_string())?;
+            .ok_or_else(|| super::error_codes::NOT_FOUND.to_string())?;
         update(record)?;
         Ok(())
     })

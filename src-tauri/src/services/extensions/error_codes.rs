@@ -48,4 +48,14 @@ mod tests {
             );
         }
     }
+
+    #[test]
+    fn malformed_host_payload_uses_the_incompatible_host_code() {
+        let error = super::super::runtime::parse::<Vec<String>>(serde_json::Value::String(
+            "invalid payload".to_string(),
+        ))
+        .unwrap_err();
+
+        assert_eq!(error, HOST_INCOMPATIBLE);
+    }
 }

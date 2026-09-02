@@ -94,7 +94,7 @@ pub async fn build_specs(
 
 pub fn apply(responses: Vec<LoadResult>, build: &BuildSpecs) -> Result<ApplyResult, String> {
     if responses.len() > MAX_EXTENSIONS {
-        return Err("Réponse de l'hôte d'extensions invalide.".to_string());
+        return Err(super::error_codes::HOST_INCOMPATIBLE.to_string());
     }
     let requested: HashMap<&str, &HostExtensionSpec> = build
         .official_specs
@@ -112,13 +112,13 @@ pub fn apply(responses: Vec<LoadResult>, build: &BuildSpecs) -> Result<ApplyResu
             .is_some_and(|error| error != "load_failed")
             || (loaded.diagnostic.is_some() && loaded.error.is_none())
         {
-            return Err("Réponse de l'hôte d'extensions invalide.".to_string());
+            return Err(super::error_codes::HOST_INCOMPATIBLE.to_string());
         }
         let Some(spec) = requested.get(loaded.id.as_str()) else {
-            return Err("Réponse de l'hôte d'extensions invalide.".to_string());
+            return Err(super::error_codes::HOST_INCOMPATIBLE.to_string());
         };
         if !received.insert(loaded.id.clone()) {
-            return Err("Réponse de l'hôte d'extensions invalide.".to_string());
+            return Err(super::error_codes::HOST_INCOMPATIBLE.to_string());
         }
         let failed = loaded.error.is_some();
         let has_diagnostic = loaded.diagnostic.is_some();

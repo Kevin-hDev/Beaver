@@ -9,7 +9,7 @@ mod discovery_catalog;
 mod discovery_limits;
 mod discovery_preferences;
 mod discovery_usage;
-mod error_codes;
+pub(crate) mod error_codes;
 pub(crate) mod extension_recovery;
 mod fingerprint;
 mod fingerprint_paths;
@@ -147,6 +147,10 @@ pub(crate) use manifest::load_local as install_local;
 pub(crate) use operation_error::{report as report_operation_error, Operation};
 pub(crate) use operation_failure::OperationFailure;
 pub(crate) use validation::identifier as validate_identifier;
+
+pub(crate) fn close_command_error(operation: &str, error: String) -> String {
+    operation_error::close(operation, error)
+}
 
 #[cfg(test)]
 mod access_log_tests;

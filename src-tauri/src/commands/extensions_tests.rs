@@ -1,6 +1,82 @@
 use crate::services::extensions::{extension_recovery, loading_marker, registry_recovery};
 
 #[test]
+fn every_extension_command_closes_unknown_errors() {
+    let generated = crate::services::extensions::error_codes::ALL;
+
+    assert_eq!(super::command_error::ExtensionCommand::ALL.len(), 19);
+    for command in super::command_error::ExtensionCommand::ALL {
+        let error = super::command_error::close(
+            command,
+            Err::<(), _>("secret sentinel at /Users/private https://internal\nstack".to_string()),
+        )
+        .unwrap_err();
+        assert!(generated.contains(&error.as_str()), "{command:?}: {error}");
+        assert_eq!(error, "extensions_operation_failed");
+        assert!(!error.contains("sentinel"));
+        assert!(!error.contains("/Users/"));
+        assert!(!error.contains("https://"));
+        assert!(!error.contains("stack"));
+    }
+}
+
+#[test]
+fn r0_boundary_codes_remain_declared_and_preserved() {
+    let codes = [
+        "extensions_operation_failed",
+        "extensions_fingerprint_changed",
+        "extensions_fingerprint_failed",
+        "extensions_stop_unconfirmed",
+        "extensions_registry_entry_ignored",
+        "extensions_registry_migration_failed",
+        "extensions_recovery_marker_invalid",
+        "extensions_load_interrupted",
+        "extensions_activation_confirmation_required",
+        "extensions_not_found",
+        "extensions_host_incompatible",
+    ];
+    for code in codes {
+        assert!(crate::services::extensions::error_codes::ALL.contains(&code));
+        assert_eq!(
+            super::command_error::close(
+                super::command_error::ExtensionCommand::List,
+                Err::<(), _>(code.to_string()),
+            ),
+            Err(code.to_string())
+        );
+    }
+}
+
+#[test]
+fn extension_command_inventory_names_all_nineteen_boundaries() {
+    let actual = super::command_error::ExtensionCommand::ALL.map(|command| command.label());
+    assert_eq!(
+        actual,
+        [
+            "list_extensions",
+            "add_local_extension",
+            "install_git_extension",
+            "install_npm_extension",
+            "update_extension",
+            "remove_extension",
+            "set_extension_enabled",
+            "set_extension_show_in_chat",
+            "reload_extension_host",
+            "get_extension_host_status",
+            "get_extension_discovery_preferences",
+            "set_extension_discovery_preferences",
+            "recover_extension_host",
+            "open_extension_source",
+            "get_extension_recovery_state",
+            "keep_extension_disabled",
+            "retry_extension_load",
+            "discard_extension_loading_marker",
+            "restore_extension_recovery_snapshot",
+        ]
+    );
+}
+
+#[test]
 fn recovery_state_is_bounded_and_retry_stops_after_three_attempts() {
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path().join("extension-loading.json");

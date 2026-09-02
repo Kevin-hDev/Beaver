@@ -30,7 +30,7 @@ pub fn apply_results(
             Ok::<usize, String>(total.saturating_add(contributions.tools.len()))
         })?;
     if total_tools > MAX_TOOLS {
-        return Err("Nombre maximal d'outils d'extension atteint.".to_string());
+        return Err(super::error_codes::LIMIT_REACHED.to_string());
     }
     let mut active = 0;
     super::registry::mutate(|records| {
@@ -101,12 +101,16 @@ fn accept_unique_tools<'a>(
 
 pub fn mark_all_enabled_error() {
     let _ = super::registry::mutate(|records| {
-        for record in records.iter_mut().filter(|record| record.enabled) {
-            record.status = ExtensionStatus::Error;
-            record.last_error = Some("host_unavailable".to_string());
-        }
+        apply_all_enabled_error(records);
         Ok::<(), String>(())
     });
+}
+
+fn apply_all_enabled_error(records: &mut [ExtensionRecord]) {
+    for record in records.iter_mut().filter(|record| record.enabled) {
+        record.status = ExtensionStatus::Error;
+        record.last_error = Some(super::error_codes::HOST_UNAVAILABLE.to_string());
+    }
 }
 
 pub(super) use super::registry_failure::{mark_identity_error, mark_identity_stop_unconfirmed};
@@ -163,6 +167,19 @@ mod tests {
             sensitive_access_granted: false,
             contributions: ExtensionContributions::default(),
         }
+    }
+
+    #[test]
+    fn unavailable_host_uses_the_canonical_last_error_code() {
+        let mut records = vec![record("com.example.enabled")];
+        records[0].enabled = true;
+
+        apply_all_enabled_error(&mut records);
+
+        assert_eq!(
+            records[0].last_error.as_deref(),
+            Some(super::super::error_codes::HOST_UNAVAILABLE)
+        );
     }
 
     #[test]

@@ -1,6 +1,7 @@
 use serde::Serialize;
 use std::path::Path;
 
+#[cfg(not(test))]
 const FILE_NAME: &str = "extension-install.jsonl";
 
 #[derive(Serialize)]
@@ -11,6 +12,7 @@ struct Entry<'a> {
     reason: &'a str,
 }
 
+#[cfg(not(test))]
 pub fn write(operation: &str, code: &str, reason: &str) {
     if write_at(&log_path(), operation, code, reason).is_err() {
         ::log::error!("[extensions] operation failed; diagnostic log unavailable");
@@ -19,6 +21,12 @@ pub fn write(operation: &str, code: &str, reason: &str) {
     }
 }
 
+#[cfg(test)]
+pub fn write(operation: &str, code: &str, reason: &str) {
+    let _ = (operation, code, reason);
+}
+
+#[cfg(not(test))]
 fn log_path() -> std::path::PathBuf {
     crate::services::paths::data_dir()
         .join("logs")
@@ -26,6 +34,11 @@ fn log_path() -> std::path::PathBuf {
 }
 
 fn write_at(path: &Path, operation: &str, code: &str, reason: &str) -> Result<(), String> {
+    let reason = if super::operation_error::is_safe_reason(reason) {
+        reason
+    } else {
+        "operation_failed"
+    };
     let entry = Entry {
         timestamp: chrono::Utc::now().to_rfc3339(),
         operation,
@@ -51,7 +64,7 @@ mod tests {
             &path,
             "install_git",
             "extensions_git_download_failed",
-            "operation_failed",
+            "secret-sentinel https://private /Users/private\nstack backtrace",
         )
         .unwrap();
         let bytes = std::fs::read(path).unwrap();
@@ -59,5 +72,8 @@ mod tests {
         let text = String::from_utf8(bytes).unwrap();
         assert!(!text.contains("https://"));
         assert!(!text.contains("/Users/"));
+        assert!(!text.contains("secret-sentinel"));
+        assert!(!text.contains("stack"));
+        assert!(text.contains("operation_failed"));
     }
 }

@@ -31,7 +31,7 @@ pub fn init(app: &tauri::AppHandle, app_work: AppWorkSupervisor) -> Result<(), S
     let mut status = ExtensionHostStatus::default();
     if paths.is_none() {
         status.state = HostState::Error;
-        status.last_error = Some("Runtime Node.js indisponible.".to_string());
+        status.last_error = Some(super::error_codes::RUNTIME_UNAVAILABLE.to_string());
     }
     let temporary_root = crate::services::paths::data_dir().join("extension-host-channels");
     let (hosts, exit_receiver) = RuntimeHosts::with_app(temporary_root, app.clone())?;
@@ -45,7 +45,7 @@ pub fn init(app: &tauri::AppHandle, app_work: AppWorkSupervisor) -> Result<(), S
     runtime.start_exit_monitor(exit_receiver)?;
     RUNTIME
         .set(runtime)
-        .map_err(|_| "Hôte d'extensions déjà initialisé.".to_string())
+        .map_err(|_| super::error_codes::OPERATION_FAILED.to_string())
 }
 
 pub fn status() -> ExtensionHostStatus {
@@ -211,14 +211,13 @@ pub(super) async fn revoke_extension(
 }
 
 pub(super) fn parse<T: serde::de::DeserializeOwned>(value: Value) -> Result<T, String> {
-    serde_json::from_value(value)
-        .map_err(|_| "Réponse de l'hôte d'extensions invalide.".to_string())
+    serde_json::from_value(value).map_err(|_| super::error_codes::HOST_INCOMPATIBLE.to_string())
 }
 
 pub(super) fn global() -> Result<&'static Arc<ExtensionRuntime>, String> {
     RUNTIME
         .get()
-        .ok_or_else(|| "Hôte d'extensions indisponible.".to_string())
+        .ok_or_else(|| super::error_codes::HOST_UNAVAILABLE.to_string())
 }
 
 pub(super) fn mark_enabled_extensions_error() {

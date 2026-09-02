@@ -208,7 +208,7 @@ impl ExtensionRuntime {
         crate::services::agent_local::permission_gate::clear_all_extensions().await;
         self.set_state(
             HostState::Error,
-            Some("Hôte d'extensions indisponible.".to_string()),
+            Some(error_codes::HOST_UNAVAILABLE.to_string()),
             0,
         );
         super::runtime::mark_enabled_extensions_error();
