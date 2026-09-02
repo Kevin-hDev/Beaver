@@ -7,6 +7,9 @@ import "./extensions-host-panel.css";
 
 interface ExtensionsHostPanelProps {
   host: ExtensionHostStatus;
+  loaded: boolean;
+  loading: boolean;
+  loadError: string | null;
   busy: boolean;
   onRestart: () => void;
   onRecover: () => void;
@@ -14,6 +17,9 @@ interface ExtensionsHostPanelProps {
 
 export function ExtensionsHostPanel({
   host,
+  loaded,
+  loading,
+  loadError,
   busy,
   onRestart,
   onRecover,
@@ -23,13 +29,21 @@ export function ExtensionsHostPanel({
   return (
     <>
       <p className="settings-panel-description">{t("extensions.host.description")}</p>
-      <SettingsCard className="extp-lines">
-        <InfoLine label={t("extensions.host.state")} value={t(`extensions.host.states.${host.state}`)} />
-        <InfoLine label={t("extensions.host.node")} value={host.nodeVersion ?? t("extensions.host.unavailable")} />
-        <InfoLine label={t("extensions.host.jiti")} value={host.jitiVersion || t("extensions.host.unavailable")} />
-        <InfoLine label={t("extensions.host.api")} value={host.apiVersion} />
-        <InfoLine label={t("extensions.host.active")} value={String(host.activeExtensions)} />
-      </SettingsCard>
+      {loadError && (
+        <div className="extp-message extp-message-error" role="alert">
+          {t(loadError)}
+        </div>
+      )}
+      {!loaded && loading && <p role="status">{t("extensions.loading")}</p>}
+      {loaded && (
+        <SettingsCard className="extp-lines">
+          <InfoLine label={t("extensions.host.state")} value={t(`extensions.host.states.${host.state}`)} />
+          <InfoLine label={t("extensions.host.node")} value={host.nodeVersion ?? t("extensions.host.unavailable")} />
+          <InfoLine label={t("extensions.host.jiti")} value={host.jitiVersion || t("extensions.host.unavailable")} />
+          <InfoLine label={t("extensions.host.api")} value={host.apiVersion} />
+          <InfoLine label={t("extensions.host.active")} value={String(host.activeExtensions)} />
+        </SettingsCard>
+      )}
       {host.lastError && (
         <div className="extp-message extp-message-error" role="alert">
           {t(extensionErrorKey(host.lastError, "extensions.errors.host"))}

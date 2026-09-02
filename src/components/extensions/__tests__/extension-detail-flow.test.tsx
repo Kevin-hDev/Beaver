@@ -6,7 +6,7 @@ import type { ExtensionRecord } from "@/types/extensions";
 import { ExtensionsPage } from "../extensions-page";
 
 vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
+  useTranslation: () => ({ t: (key: string) => key, i18n: { language: "fr" } }),
 }));
 
 const record = parseExtensionRecords([{
@@ -61,6 +61,7 @@ function SelectablePage({ operationError = null }: { operationError?: string | n
         activeExtensions: 1,
         diagnostics: [],
       }}
+      hostLoaded
       loading={false}
       loadError={null}
       operationError={operationError}
@@ -128,8 +129,14 @@ describe("Extension detail flow", () => {
 
     expect(screen.getByText("extensions.detail.enabled")).toBeInTheDocument();
     expect(screen.getByText("extensions.detail.apiLevel")).toBeInTheDocument();
-    expect(screen.getByText("2026-09-01T10:00:00Z")).toBeInTheDocument();
-    expect(screen.getByText("2026-08-31T09:00:00Z")).toBeInTheDocument();
+    const formatter = new Intl.DateTimeFormat("fr", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+    expect(screen.getByText(formatter.format(new Date("2026-09-01T10:00:00Z"))))
+      .toBeInTheDocument();
+    expect(screen.getByText(formatter.format(new Date("2026-08-31T09:00:00Z"))))
+      .toBeInTheDocument();
     expect(screen.getByText("extensions.errors.codes.extensions_host_timeout"))
       .toBeInTheDocument();
     expect(screen.getByText("extensions.effects.secret")).toBeInTheDocument();

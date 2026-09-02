@@ -42,6 +42,7 @@ fn validate_timeout_order(contract: &Value) -> Result<(), String> {
 }
 
 fn validate_method_budgets(contract: &Value) -> Result<(), String> {
+    let maximum_name_chars = contract_code_limit(contract)?;
     let core_timeout = contract["timeouts"]["coreRequestTimeoutMs"]
         .as_u64()
         .ok_or_else(|| "invalid core request timeout".to_string())?;
@@ -55,7 +56,7 @@ fn validate_method_budgets(contract: &Value) -> Result<(), String> {
     for method in methods {
         let name = method["name"]
             .as_str()
-            .filter(|name| valid_name(name))
+            .filter(|name| valid_name(name, maximum_name_chars))
             .ok_or_else(|| "invalid host to core method".to_string())?;
         if !names.insert(name) || !matches!(method["level"].as_str(), Some("stable" | "advanced")) {
             return Err("invalid host to core method".to_string());
@@ -79,6 +80,7 @@ fn validate_method_budgets(contract: &Value) -> Result<(), String> {
 }
 
 fn validate_strings(contract: &Value) -> Result<(), String> {
+    let maximum_name_chars = contract_code_limit(contract)?;
     for pointer in [
         "/capabilities",
         "/methods/coreToHost",
@@ -102,7 +104,11 @@ fn validate_strings(contract: &Value) -> Result<(), String> {
             .map(Value::as_str)
             .collect::<Option<BTreeSet<_>>>()
             .ok_or_else(|| format!("invalid extension contract list: {pointer}"))?;
-        if strings.len() != values.len() || strings.iter().any(|value| !valid_name(value)) {
+        if strings.len() != values.len()
+            || strings
+                .iter()
+                .any(|value| !valid_name(value, maximum_name_chars))
+        {
             return Err(format!("invalid extension contract list: {pointer}"));
         }
     }
@@ -132,10 +138,19 @@ fn validate_catalog_count(contract: &Value, directory: &Path) -> Result<(), Stri
     Ok(())
 }
 
-fn valid_name(value: &str) -> bool {
-    !value.is_empty()
-        && value.len() <= 96
-        && value
-            .bytes()
-            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'_' | b'-' | b'.'))
+fn contract_code_limit(contract: &Value) -> Result<usize, String> {
+    contract["limits"]["maxContractCodeChars"]
+        .as_u64()
+        .and_then(|value| usize::try_from(value).ok())
+        .filter(|value| *value > 0)
+        .ok_or_else(|| "invalid extension contract code limit".to_string())
+}
+
+fn valid_name(value: &str, maximum_chars: usize) -> bool {
+    let mut bytes = value.bytes();
+    bytes.next().is_some_and(|byte| byte.is_ascii_lowercase())
+        && value.len() <= maximum_chars
+        && bytes.all(|byte| {
+            byte.is_ascii_lowercase() || byte.is_ascii_digit() || matches!(byte, b'_' | b'-' | b'.')
+        })
 }

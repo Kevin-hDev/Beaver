@@ -1,5 +1,5 @@
 use super::host_identity::HostIdentity;
-use super::registry_failure::apply_identity_failure;
+use super::registry_failure::{apply_identity_failure, identity_error_code};
 use super::types::{
     ExtensionApiLevel, ExtensionContributions, ExtensionKind, ExtensionManifest, ExtensionRecord,
     ExtensionStatus,
@@ -36,6 +36,27 @@ fn record(id: &str) -> ExtensionRecord {
         sensitive_access_granted: false,
         contributions: ExtensionContributions::default(),
     }
+}
+
+#[test]
+fn unavailable_host_uses_the_canonical_last_error_code() {
+    assert_eq!(identity_error_code(), super::error_codes::HOST_UNAVAILABLE);
+    let mut records = vec![record("target")];
+    let mut affected = Vec::new();
+
+    apply_identity_failure(
+        &mut records,
+        &HostIdentity::ThirdParty("target".to_string()),
+        super::error_codes::HOST_UNAVAILABLE,
+        false,
+        &mut affected,
+    );
+
+    assert_eq!(
+        records[0].last_error.as_deref(),
+        Some(super::error_codes::HOST_UNAVAILABLE)
+    );
+    assert!(super::error_codes::ALL.contains(&records[0].last_error.as_deref().unwrap()));
 }
 
 #[test]

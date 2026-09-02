@@ -10,14 +10,6 @@ pub struct ExtensionEffectPolicy {
     pub allow_session_cache: bool,
 }
 
-#[cfg(test)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ExtensionModeDecision {
-    Allow,
-    Confirm,
-    Deny,
-}
-
 pub fn extension_effect_policy(effect: ExtensionEffect) -> ExtensionEffectPolicy {
     use ExtensionEffect::*;
     match effect {
@@ -30,7 +22,7 @@ pub fn extension_effect_policy(effect: ExtensionEffect) -> ExtensionEffectPolicy
         ExternalRead => ExtensionEffectPolicy {
             requires_confirmation: true,
             parallel_read: true,
-            allowed_in_plan: true,
+            allowed_in_plan: false,
             allow_session_cache: true,
         },
         LocalWrite | ExternalWrite => ExtensionEffectPolicy {
@@ -45,21 +37,6 @@ pub fn extension_effect_policy(effect: ExtensionEffect) -> ExtensionEffectPolicy
             allowed_in_plan: false,
             allow_session_cache: false,
         },
-    }
-}
-
-#[cfg(test)]
-pub fn extension_mode_decision(effect: ExtensionEffect, mode: &str) -> ExtensionModeDecision {
-    let policy = extension_effect_policy(effect);
-    match mode {
-        "chat" => ExtensionModeDecision::Deny,
-        "manual" if policy.requires_confirmation => ExtensionModeDecision::Confirm,
-        "manual" | "auto" => ExtensionModeDecision::Allow,
-        "plan" if policy.allowed_in_plan => ExtensionModeDecision::Allow,
-        "plan" => ExtensionModeDecision::Deny,
-        "subagent" if effect == ExtensionEffect::ReadOnly => ExtensionModeDecision::Allow,
-        "subagent" => ExtensionModeDecision::Deny,
-        _ => ExtensionModeDecision::Deny,
     }
 }
 

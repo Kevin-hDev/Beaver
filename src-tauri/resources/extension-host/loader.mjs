@@ -1,6 +1,6 @@
 import { createJiti } from "jiti";
 import { fileURLToPath } from "node:url";
-import { LIMITS, LOAD_STAGES, supportsEvent, TIMEOUTS } from "./contract.mjs";
+import { HOST_LOAD_STAGE_METHOD, LIMITS, LOAD_STAGES, supportsEvent, TIMEOUTS } from "./contract.mjs";
 import { createExtensionApi } from "./extension-api.mjs";
 import { createDiagnostic } from "./diagnostics.mjs";
 import { notifyCore } from "./protocol.mjs";
@@ -112,11 +112,11 @@ export async function loadExtension(specification) {
     if (!specification || typeof specification !== "object") {
       throw new Error("invalid_extension_specification");
     }
-    notifyCore("host.load.stage", { stage });
+    notifyCore(HOST_LOAD_STAGE_METHOD, { stage });
     const context = createExtensionApi(specification);
     const module = await jiti.import(specification.mainPath, { default: true });
     stage = LOAD_STAGES[1];
-    notifyCore("host.load.stage", { stage });
+    notifyCore(HOST_LOAD_STAGE_METHOD, { stage });
     const activate =
       typeof module === "function"
         ? module
@@ -126,7 +126,7 @@ export async function loadExtension(specification) {
     if (!activate) throw new Error("activate_missing");
     await activate(context.api);
     stage = LOAD_STAGES[2];
-    notifyCore("host.load.stage", { stage });
+    notifyCore(HOST_LOAD_STAGE_METHOD, { stage });
     ensureUniqueTools(context.tools);
     for (const tool of context.tools) {
       tools.set(tool.metadata.name, {

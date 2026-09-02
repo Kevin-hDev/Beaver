@@ -30,6 +30,11 @@ pub(super) fn mark_sensitive_access(identity: &HostIdentity) -> Result<(), Strin
     if let HostIdentity::ThirdParty(id) = identity {
         super::validation::identifier(id)?;
     }
+    if super::registry_memory::with_records(|records| {
+        sensitive_identity_is_marked(records, identity)
+    })? {
+        return Ok(());
+    }
     super::registry::mutate(|records| {
         mark_sensitive_identity(records, identity)
             .then_some(())
@@ -37,25 +42,47 @@ pub(super) fn mark_sensitive_access(identity: &HostIdentity) -> Result<(), Strin
     })
 }
 
+pub(super) fn sensitive_identity_is_marked(
+    records: &[ExtensionRecord],
+    identity: &HostIdentity,
+) -> bool {
+    let matching = records
+        .iter()
+        .filter(|record| matches_identity(record, identity));
+    let mut found = false;
+    for record in matching {
+        found = true;
+        if !record.sensitive_access_granted {
+            return false;
+        }
+    }
+    found
+}
+
 pub(super) fn mark_sensitive_identity(
     records: &mut [ExtensionRecord],
     identity: &HostIdentity,
 ) -> bool {
     let mut marked = false;
-    for record in records.iter_mut().filter(|record| {
-        record.enabled
-            && record.trusted
-            && match identity {
-                HostIdentity::Official => record.kind == ExtensionKind::Builtin,
-                HostIdentity::ThirdParty(id) => {
-                    record.kind == ExtensionKind::Local && record.manifest.id == *id
-                }
-            }
-    }) {
+    for record in records
+        .iter_mut()
+        .filter(|record| matches_identity(record, identity))
+    {
         record.sensitive_access_granted = true;
         marked = true;
     }
     marked
+}
+
+fn matches_identity(record: &ExtensionRecord, identity: &HostIdentity) -> bool {
+    record.enabled
+        && record.trusted
+        && match identity {
+            HostIdentity::Official => record.kind == ExtensionKind::Builtin,
+            HostIdentity::ThirdParty(id) => {
+                record.kind == ExtensionKind::Local && record.manifest.id == *id
+            }
+        }
 }
 
 fn official_level(records: &[ExtensionRecord]) -> Option<ExtensionApiLevel> {

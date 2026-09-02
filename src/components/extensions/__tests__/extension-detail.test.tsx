@@ -4,7 +4,7 @@ import type { ExtensionRecord } from "@/types/extensions";
 import { ExtensionDetail } from "../extension-detail";
 
 vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
+  useTranslation: () => ({ t: (key: string) => key, i18n: { language: "fr" } }),
 }));
 
 const extension: ExtensionRecord = {
@@ -110,5 +110,35 @@ describe("ExtensionDetail", () => {
     fireEvent.click(screen.getByText("extensions.actions.update"));
     fireEvent.click(screen.getByText("extensions.actions.confirmUpdate"));
     expect(onUpdate).toHaveBeenCalledTimes(1);
+  });
+
+  it("formate les dates persistées dans la langue de l'interface", () => {
+    const dated = {
+      ...extension,
+      lastActivatedAt: "2026-09-02T15:59:35Z",
+      trustedAt: "date-invalide",
+    };
+    const expected = new Intl.DateTimeFormat("fr", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(new Date(dated.lastActivatedAt));
+
+    render(
+      <ExtensionDetail
+        extension={dated}
+        busy={false}
+        onBack={vi.fn()}
+        onEnabled={vi.fn()}
+        onShowInChat={vi.fn()}
+        onOpenSource={vi.fn()}
+        onUpdate={vi.fn()}
+        onReload={vi.fn()}
+        onRemove={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText(expected)).toBeInTheDocument();
+    expect(screen.getByText("date-invalide")).toBeInTheDocument();
+    expect(screen.queryByText(dated.lastActivatedAt)).not.toBeInTheDocument();
   });
 });

@@ -33,7 +33,9 @@ export function PermissionDialog({ request, onDecide }: Props) {
 
   const target = extractTarget(request.arguments);
   const externalRead = request.effectClass === "external-read";
-  const allowSession = request.allowSession !== false;
+  const allowSession = request.extensionId
+    ? request.allowSession === true
+    : request.allowSession !== false;
   const action = externalRead
     ? t("permissionDialog.tools.web_fetch")
     : request.extensionName

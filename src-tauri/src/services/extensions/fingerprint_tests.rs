@@ -366,3 +366,23 @@ fn symlinks_are_rejected_even_when_their_name_would_be_excluded() {
 
     assert!(fingerprint::calculate(&record).is_err());
 }
+
+#[test]
+fn reserved_in_memory_manifest_name_cannot_hide_the_real_entry_file() {
+    let (directory, mut record) = source_tree();
+    std::fs::write(directory.path().join("@manifest"), "export default {};").unwrap();
+    record.manifest.main = Some("@manifest".to_string());
+
+    assert!(fingerprint::calculate(&record).is_err());
+}
+
+#[test]
+fn disabling_preserves_a_fingerprint_revocation_reason() {
+    let (_directory, mut record) = source_tree();
+    record.status = super::types::ExtensionStatus::Error;
+    record.last_error = Some(super::error_codes::FINGERPRINT_CHANGED.to_string());
+
+    assert!(super::registry_state::preserve_revocation_on_disable(
+        &record
+    ));
+}

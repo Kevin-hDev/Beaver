@@ -79,13 +79,9 @@ pub(super) async fn ensure_running(
     if let Ok((_, _, process)) = runtime.process_for_extension(extension_id, deadline).await {
         return Ok(process);
     }
-    let record = super::registry::find(extension_id)?;
-    let identity = super::host_identity::HostIdentity::from_record(&record)?;
-    if !runtime.hosts.lock().await.allow_restart(&identity) {
-        return Err(error_codes::HOST_UNAVAILABLE.to_string());
-    }
+    let _ = super::registry::find(extension_id)?;
     runtime.set_state(HostState::Starting, None, 0);
-    let _ = runtime.sync_hosts(deadline).await?;
+    let _ = runtime.sync_hosts_automatically(deadline).await?;
     runtime
         .process_for_extension(extension_id, deadline)
         .await
@@ -161,45 +157,6 @@ impl ExtensionRuntime {
         }
         self.set_state(HostState::Stopped, None, 0);
         true
-    }
-
-    pub(super) fn start_exit_monitor(
-        self: &Arc<Self>,
-        mut receiver: tokio::sync::mpsc::Receiver<super::runtime_hosts::HostExitNotice>,
-    ) -> Result<(), String> {
-        let runtime = Arc::clone(self);
-        self.work
-            .spawn_lifecycle(move |cancel| async move {
-                loop {
-                    let notice = tokio::select! {
-                        _ = cancel.cancelled() => break,
-                        notice = receiver.recv() => match notice {
-                            Some(notice) => notice,
-                            None => break,
-                        },
-                    };
-                    runtime.handle_host_exit(notice).await;
-                }
-            })
-            .map_err(|error| error.public_code().to_string())
-    }
-
-    async fn handle_host_exit(&self, notice: super::runtime_hosts::HostExitNotice) {
-        let kind = self.hosts.lock().await.exit_kind(&notice);
-        if kind != Some(super::runtime_host_generation::HostExitKind::Unexpected) {
-            return;
-        }
-        self.set_state(
-            HostState::Error,
-            Some(error_codes::HOST_UNAVAILABLE.to_string()),
-            0,
-        );
-        let ids = super::registry_sync::mark_identity_error(&notice.identity);
-        for id in ids {
-            crate::services::agent_local::permission_gate::clear_extension(&id).await;
-        }
-        self.hosts.lock().await.emit_changed();
-        let _ = self.stop_host(&notice.identity, new_stop_deadline()).await;
     }
 
     async fn mark_unavailable(&self) {

@@ -131,13 +131,20 @@ fn valid_identifiers(values: &[String]) -> Vec<&str> {
 }
 
 fn bounded_join(values: &[&str]) -> String {
-    values
+    const MAX_CHARS: usize = 200;
+    let mut joined = String::with_capacity(MAX_CHARS);
+    for value in values
         .iter()
         .take(super::provider_tool_limits::MAX_CAPACITY_DIAGNOSTIC_ITEMS)
-        .copied()
-        .collect::<Vec<_>>()
-        .join(",")
-        .chars()
-        .take(200)
-        .collect::<String>()
+    {
+        let separator_chars = usize::from(!joined.is_empty());
+        if joined.chars().count() + separator_chars + value.chars().count() > MAX_CHARS {
+            break;
+        }
+        if separator_chars == 1 {
+            joined.push(',');
+        }
+        joined.push_str(value);
+    }
+    joined
 }

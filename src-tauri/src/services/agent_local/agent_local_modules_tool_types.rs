@@ -1,4 +1,5 @@
 pub mod types_diagnostics;
+mod types_diagnostics_deserialize;
 pub mod types_interactive;
 pub mod types_message;
 mod types_message_validation;

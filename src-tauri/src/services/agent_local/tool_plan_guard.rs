@@ -26,8 +26,7 @@ pub const PLAN_MODE_ALLOWED_ACTIONS_TEXT: &str = "read_file, list_dir, grep, glo
 
 pub fn is_allowed_in_plan_mode(tool_name: &str, args: &Value) -> bool {
     if let Some(indexed) = crate::services::extensions::indexed_tool(tool_name) {
-        return super::permission_policy::extension_effect_policy(indexed.tool.effect)
-            .allowed_in_plan;
+        return is_extension_effect_allowed(indexed.tool.effect);
     }
     match tool_name {
         "bash" => !super::permission_gate::requires_permission("bash", args),
@@ -35,6 +34,10 @@ pub fn is_allowed_in_plan_mode(tool_name: &str, args: &Value) -> bool {
         "search_mcp_tools" => args.get("mode").and_then(Value::as_str) != Some("call"),
         _ => PLAN_MODE_ALLOWED_TOOL_NAMES.contains(&tool_name),
     }
+}
+
+fn is_extension_effect_allowed(effect: crate::services::extensions::ExtensionEffect) -> bool {
+    super::permission_policy::extension_effect_policy(effect).allowed_in_plan
 }
 
 pub fn ensure_allowed(tool_name: &str, args: &Value, plan_mode_active: bool) -> Result<(), String> {
@@ -65,6 +68,7 @@ fn effective_plan_mode(batch_started_in_plan_mode: bool, current_plan_mode: bool
 
 #[cfg(test)]
 mod tests {
+    use crate::services::extensions::ExtensionEffect;
     use serde_json::json;
 
     #[test]
@@ -74,6 +78,17 @@ mod tests {
         assert!(super::ensure_allowed("todo_write", &json!({}), true).is_err());
         assert!(super::ensure_allowed("create_branch", &json!({}), true).is_err());
         assert!(super::ensure_allowed("delegate_task", &json!({}), true).is_err());
+    }
+
+    #[test]
+    fn only_read_only_extensions_are_allowed_in_plan_mode() {
+        for effect in ExtensionEffect::ALL {
+            assert_eq!(
+                super::is_extension_effect_allowed(effect),
+                effect == ExtensionEffect::ReadOnly,
+                "{effect:?}",
+            );
+        }
     }
 
     #[test]

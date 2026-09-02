@@ -202,6 +202,66 @@ async fn an_unconfirmed_stop_retains_the_real_channel() {
 }
 
 #[tokio::test]
+async fn a_retained_pre_bind_process_is_reaped_after_its_reader_exits() {
+    let directory = tempfile::tempdir().unwrap();
+    let script = directory.path().join("host.mjs");
+    std::fs::write(&script, "setInterval(() => {}, 1000);").unwrap();
+    let paths = HostPaths {
+        node: which::which("node").unwrap().canonicalize().unwrap(),
+        script,
+        directory: directory.path().to_path_buf(),
+    };
+    let coordinator = crate::app_exit::AppExitCoordinator::initialize().unwrap();
+    let work =
+        super::super::work_supervision::ExtensionWorkServices::new(coordinator.work_supervisor());
+    let temporary_root = directory.path().join("channels");
+    let (mut hosts, receiver) = RuntimeHosts::new_monitored(temporary_root).unwrap();
+    let identity = HostIdentity::ThirdParty("com.example.prebind".to_string());
+    let reservation = hosts.reserve(identity).unwrap();
+    let channel_directory = reservation.temporary_directory().to_path_buf();
+    let process = Arc::new(
+        HostProcess::spawn_bound(
+            &paths,
+            &work,
+            reservation.spawn_binding(),
+            Instant::now() + Duration::from_secs(5),
+            reservation.temporary_directory(),
+        )
+        .await
+        .unwrap(),
+    );
+    hosts.retain_failed(reservation, ExtensionApiLevel::Stable, process);
+    let runtime = Arc::new(ExtensionRuntime {
+        paths: Some(paths),
+        hosts: Mutex::new(hosts),
+        sync: Mutex::new(()),
+        status: std::sync::RwLock::new(ExtensionHostStatus::default()),
+        work,
+    });
+    runtime.start_exit_monitor(receiver).unwrap();
+
+    tokio::time::timeout(Duration::from_secs(2), async {
+        loop {
+            if runtime.hosts.lock().await.len() == 0 {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+    })
+    .await
+    .expect("retained pre-bind process must be reaped");
+
+    assert!(!channel_directory.exists());
+    runtime.work.begin_closing();
+    assert!(
+        runtime
+            .work
+            .stop_and_wait(Instant::now() + Duration::from_secs(2))
+            .await
+    );
+}
+
+#[tokio::test]
 async fn confirmed_user_revocation_releases_its_restart_budget() {
     let (_directory, runtime, _process) = runtime_with_real_host().await;
     let identity = HostIdentity::Official;

@@ -36,17 +36,20 @@ pub fn reset_hosted_runtime(mut records: Vec<ExtensionRecord>) -> Vec<ExtensionR
         if record.kind == ExtensionKind::Local && !record.trusted {
             record.enabled = false;
         }
-        let fingerprint_revoked = record.last_error.as_deref().is_some_and(|error| {
-            matches!(
-                error,
-                super::error_codes::FINGERPRINT_CHANGED | super::error_codes::FINGERPRINT_FAILED
-            )
-        });
-        if !fingerprint_revoked {
+        if !preserve_revocation_on_disable(record) {
             record.status = ExtensionStatus::Inactive;
             record.last_error = None;
         }
         record.contributions = ExtensionContributions::default();
     }
     records
+}
+
+pub fn preserve_revocation_on_disable(record: &ExtensionRecord) -> bool {
+    record.last_error.as_deref().is_some_and(|error| {
+        matches!(
+            error,
+            super::error_codes::FINGERPRINT_CHANGED | super::error_codes::FINGERPRINT_FAILED
+        )
+    })
 }

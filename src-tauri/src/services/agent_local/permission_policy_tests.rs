@@ -1,6 +1,5 @@
 use crate::services::agent_local::permission_policy::{
-    extension_effect_policy, extension_mode_decision, requires_sensitive_bash_prompt,
-    uses_auto_bypass, ExtensionModeDecision,
+    extension_effect_policy, requires_sensitive_bash_prompt, uses_auto_bypass,
 };
 use crate::services::extensions::ExtensionEffect;
 use serde_json::json;
@@ -55,7 +54,7 @@ fn sensitive_bash_control_input_is_redacted_before_manual_approval() {
 fn every_extension_effect_has_an_explicit_policy() {
     let cases = [
         (ExtensionEffect::ReadOnly, false, true, true, false),
-        (ExtensionEffect::ExternalRead, true, true, true, true),
+        (ExtensionEffect::ExternalRead, true, true, false, true),
         (ExtensionEffect::LocalWrite, true, false, false, true),
         (ExtensionEffect::ExternalWrite, true, false, false, true),
         (ExtensionEffect::Process, true, false, false, false),
@@ -70,49 +69,4 @@ fn every_extension_effect_has_an_explicit_policy() {
         assert_eq!(policy.allowed_in_plan, plan, "{effect:?}");
         assert_eq!(policy.allow_session_cache, cache, "{effect:?}");
     }
-}
-
-#[test]
-fn extension_effect_mode_matrix_is_exhaustive() {
-    use ExtensionModeDecision::{Allow, Confirm, Deny};
-
-    let effects = ExtensionEffect::ALL;
-    let modes = ["chat", "manual", "auto", "plan", "subagent"];
-    let expected = [
-        [Deny, Allow, Allow, Allow, Allow],
-        [Deny, Confirm, Allow, Deny, Deny],
-        [Deny, Confirm, Allow, Allow, Deny],
-        [Deny, Confirm, Allow, Deny, Deny],
-        [Deny, Confirm, Allow, Deny, Deny],
-        [Deny, Confirm, Allow, Deny, Deny],
-        [Deny, Confirm, Allow, Deny, Deny],
-    ];
-
-    for (effect_index, effect) in effects.into_iter().enumerate() {
-        for (mode_index, mode) in modes.into_iter().enumerate() {
-            assert_eq!(
-                extension_mode_decision(effect, mode),
-                expected[effect_index][mode_index],
-                "effect={effect:?} mode={mode}",
-            );
-        }
-    }
-}
-
-#[test]
-fn office_effects_and_replacements_follow_effect_not_tool_name() {
-    assert_eq!(
-        extension_mode_decision(ExtensionEffect::ReadOnly, "manual"),
-        ExtensionModeDecision::Allow,
-    );
-    assert_eq!(
-        extension_mode_decision(ExtensionEffect::LocalWrite, "manual"),
-        ExtensionModeDecision::Confirm,
-    );
-    // Un remplacement nommé read_file reste une écriture externe : le nom natif
-    // ne peut jamais abaisser la classe fournie par le registre validé.
-    assert_eq!(
-        extension_mode_decision(ExtensionEffect::ExternalWrite, "manual"),
-        ExtensionModeDecision::Confirm,
-    );
 }

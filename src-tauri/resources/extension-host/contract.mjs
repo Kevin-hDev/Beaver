@@ -2,8 +2,6 @@ import { closeSync, openSync, readSync } from "node:fs";
 
 export const BOOTSTRAP_FILE_MAX_BYTES = 256;
 export const MAX_BOOTSTRAPPED_CONTRACT_BYTES = 1_048_576;
-const CODE_PATTERN = /^[a-z][a-z0-9_.-]{0,95}$/;
-
 function readBounded(url, maximum) {
   const descriptor = openSync(url, "r");
   const bytes = Buffer.allocUnsafe(maximum + 1);
@@ -72,12 +70,17 @@ function strings(values, maximumCount = 128) {
     throw new Error("invalid_extension_contract");
   }
   if (
-    values.some((value) => typeof value !== "string" || !CODE_PATTERN.test(value))
+    values.some((value) => !validContractCode(value))
     || new Set(values).size !== values.length
   ) {
     throw new Error("invalid_extension_contract");
   }
   return Object.freeze([...values]);
+}
+
+function validContractCode(value) {
+  if (typeof value !== "string" || value.length > LIMITS.maxContractCodeChars) return false;
+  return /^[a-z][a-z0-9_.-]*$/.test(value);
 }
 
 export const API_VERSION = contract.apiVersion;
@@ -113,7 +116,7 @@ for (const method of hostMethods) {
   if (
     !method
     || typeof method !== "object"
-    || !CODE_PATTERN.test(method.name)
+    || !validContractCode(method.name)
     || !["stable", "advanced"].includes(method.level)
     || !["request", "notification"].includes(method.kind)
     || method.name in methodLevels
@@ -136,6 +139,11 @@ for (const method of hostMethods) {
 }
 export const HOST_TO_CORE_METHOD_LEVELS = Object.freeze(methodLevels);
 export const HOST_TO_CORE_METHOD_KINDS = Object.freeze(methodKinds);
+const notificationMethods = Object.entries(methodKinds)
+  .filter(([, kind]) => kind === "notification")
+  .map(([name]) => name);
+if (notificationMethods.length !== 1) throw new Error("invalid_extension_contract");
+export const HOST_LOAD_STAGE_METHOD = notificationMethods[0];
 
 const diagnosticCodes = [...HOST_DIAGNOSTIC_CODES, ...RUNTIME_DIAGNOSTIC_CODES];
 if (new Set(diagnosticCodes).size !== diagnosticCodes.length) {

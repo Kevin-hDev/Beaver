@@ -87,3 +87,24 @@ fn concurrent_writers_do_not_overwrite_each_others_records() {
         assert!(text.contains(&format!("\"sequence\":{sequence},")));
     }
 }
+
+#[test]
+fn an_unreadable_oversized_journal_is_replaced_by_a_fresh_bounded_log() {
+    let temporary = tempfile::tempdir().unwrap();
+    let path = temporary.path().join("corrupt.jsonl");
+    std::fs::write(&path, vec![b'x'; super::bounded_jsonl::MAX_LOG_BYTES + 1]).unwrap();
+
+    super::bounded_jsonl::write(
+        &path,
+        &Entry {
+            sequence: 1,
+            value: "recovered",
+        },
+    )
+    .unwrap();
+
+    assert_eq!(
+        std::fs::read_to_string(path).unwrap(),
+        "{\"sequence\":1,\"value\":\"recovered\"}\n"
+    );
+}

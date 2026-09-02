@@ -172,6 +172,46 @@ fn successful_unrelated_load_restores_the_interrupted_marker() {
 }
 
 #[test]
+fn a_failed_retry_keeps_its_incremented_attempt_after_a_neighbor_succeeds() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("extension-loading.json");
+    loading_marker::start_at(&path, ID, 1).unwrap();
+    let preserved = loading_marker::preserve_at(&path);
+    loading_marker::start_at(&path, ID, 2).unwrap();
+    loading_marker::start_at(&path, "com.example.safe", 1).unwrap();
+
+    loading_marker::complete_at(
+        &path,
+        preserved,
+        &HashSet::from(["com.example.safe".to_string()]),
+        Some((ID, 2)),
+    )
+    .unwrap();
+
+    let MarkerRead::Valid(marker) = loading_marker::read_at(&path) else {
+        panic!("retry marker expected");
+    };
+    assert_eq!(marker.extension_id, ID);
+    assert_eq!(marker.attempts, 2);
+}
+
+#[test]
+fn an_oversized_marker_can_only_be_removed_by_explicit_discard() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("extension-loading.json");
+    let oversized = vec![b'x'; loading_marker::MAX_MARKER_BYTES + 1];
+    std::fs::write(&path, &oversized).unwrap();
+
+    assert!(loading_marker::start_at(&path, "beaver.official.word", 1).is_err());
+    assert_eq!(std::fs::read(&path).unwrap(), oversized);
+    loading_marker::discard_at(&path).unwrap();
+    assert!(matches!(
+        loading_marker::read_at(&path),
+        MarkerRead::Missing
+    ));
+}
+
+#[test]
 fn successful_builtin_load_restores_a_regular_corrupt_marker() {
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path().join("extension-loading.json");

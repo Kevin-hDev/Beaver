@@ -2,7 +2,11 @@ use super::host_identity::HostIdentity;
 use super::types::{ExtensionContributions, ExtensionKind, ExtensionRecord, ExtensionStatus};
 
 pub(super) fn mark_identity_error(identity: &HostIdentity) -> Vec<String> {
-    mark_identity_failure(identity, "host_unavailable", false)
+    mark_identity_failure(identity, identity_error_code(), false)
+}
+
+pub(super) fn identity_error_code() -> &'static str {
+    super::error_codes::HOST_UNAVAILABLE
 }
 
 pub(super) fn mark_identity_stop_unconfirmed(identity: &HostIdentity) -> Vec<String> {

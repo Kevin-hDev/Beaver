@@ -30,6 +30,7 @@ export function useExtensionsTabContent({
             onNavReplace({ extensionsSection, extensionId: null })}
           records={registry.extensions}
           host={registry.host}
+          hostLoaded={registry.hostLoaded}
           loading={registry.loading}
           loadError={registry.loadError}
           operationError={registry.operationError}

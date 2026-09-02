@@ -1,6 +1,4 @@
-use super::types::{
-    CORE_REQUEST_TIMEOUT_MS, MAX_PROJECT_RESULTS, MAX_SESSION_RESULTS, MCP_TOOL_TIMEOUT_MS,
-};
+use super::types::{CORE_REQUEST_TIMEOUT_MS, MAX_PROJECT_RESULTS, MAX_SESSION_RESULTS};
 use serde::Serialize;
 use serde_json::{json, Value};
 use std::time::Duration;
@@ -186,13 +184,11 @@ async fn call_mcp_tool(params: &Value) -> Result<CoreResponse, ()> {
             .map_err(|_| ())?;
     crate::services::mcp_bridge::arguments::validate(&arguments, tool.input_schema.as_ref())
         .map_err(|_| ())?;
-    let result = tokio::time::timeout(
-        Duration::from_millis(MCP_TOOL_TIMEOUT_MS as u64),
-        connector.transport.call_tool(&tool.name, arguments),
-    )
-    .await
-    .map_err(|_| ())?
-    .map_err(|_| ())?;
+    let result = connector
+        .transport
+        .call_tool(&tool.name, arguments)
+        .await
+        .map_err(|_| ())?;
     if result.is_error {
         return Err(());
     }

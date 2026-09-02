@@ -10,7 +10,8 @@ pub(super) fn reject_symlink(path: &Path) -> Result<std::fs::Metadata, String> {
 
 pub(super) fn clean_relative(value: &str) -> Result<&Path, String> {
     let path = Path::new(value);
-    if path.is_absolute()
+    if value == "@manifest"
+        || path.is_absolute()
         || path
             .components()
             .any(|component| !matches!(component, Component::Normal(_)))

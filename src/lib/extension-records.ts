@@ -24,7 +24,6 @@ export const EXTENSION_VIEW_LIMITS = Object.freeze({
   eventsPerExtension: LIMITS.maxEventsPerExtension,
 });
 
-const MAX_ID_CHARS = 96;
 const MAX_NAME_CHARS = 100;
 const MAX_TEXT_CHARS = 2_000;
 const MAX_PATH_CHARS = 4_096;
@@ -64,14 +63,14 @@ function optionalText(value: unknown, maxChars: number): string | undefined {
 }
 
 function identifier(value: unknown): string {
-  const parsed = text(value, MAX_ID_CHARS);
+  const parsed = text(value, LIMITS.maxIdentifierChars);
   if (!isExtensionIdentifier(parsed)) invalid();
   return parsed;
 }
 
 export function isExtensionIdentifier(value: string): boolean {
   const characters = Array.from(value);
-  return characters.length <= MAX_ID_CHARS
+  return characters.length <= LIMITS.maxIdentifierChars
     && asciiAlphanumeric(characters[0])
     && asciiAlphanumeric(characters[characters.length - 1])
     && characters.every((character) =>

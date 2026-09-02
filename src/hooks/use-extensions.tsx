@@ -14,20 +14,17 @@ import { useExtensionPriorities } from "@/hooks/use-extension-priorities";
 import { useExtensionRecovery } from "@/hooks/use-extension-recovery";
 import { ExtensionActivationDialog } from "@/components/extensions/extension-activation-dialog";
 import { extensionErrorKey } from "@/lib/extension-errors";
+import {
+  EMPTY_EXTENSION_HOST,
+  parseExtensionHostStatus,
+} from "@/lib/extension-host-status";
 import { parseExtensionRecords } from "@/lib/extension-records";
 import type { ExtensionHostStatus, ExtensionRecord } from "@/types/extensions";
 
-const EMPTY_HOST: ExtensionHostStatus = {
-  state: "stopped",
-  jitiVersion: "",
-  apiVersion: "1",
-  activeExtensions: 0,
-  diagnostics: [],
-};
-
 function useExtensionsState() {
   const [extensions, setExtensions] = useState<ExtensionRecord[]>([]);
-  const [host, setHost] = useState<ExtensionHostStatus>(EMPTY_HOST);
+  const [host, setHost] = useState<ExtensionHostStatus>(EMPTY_EXTENSION_HOST);
+  const [hostLoaded, setHostLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [operationError, setOperationError] = useState<string | null>(null);
@@ -50,12 +47,13 @@ function useExtensionsState() {
     try {
       const [records, status, preferences] = await Promise.all([
         invoke<unknown>("list_extensions"),
-        invoke<ExtensionHostStatus>("get_extension_host_status"),
+        invoke<unknown>("get_extension_host_status"),
         invoke<unknown>("get_extension_discovery_preferences"),
       ]);
       if (generation !== refreshGeneration.current) return;
       setExtensions(parseExtensionRecords(records));
-      setHost(status);
+      setHost(parseExtensionHostStatus(status));
+      setHostLoaded(true);
       applyPriorityValue(preferences);
       setLoadError(null);
     } catch (error) {
@@ -168,10 +166,11 @@ function useExtensionsState() {
   return {
     extensions,
     host,
+    hostLoaded,
     loading,
     loadError,
     operationError,
-    hostBusy: hostOperations > 0,
+    hostBusy: hostOperations > 0 || recovery.recoveryBusy,
     busyIds,
     protectedPluginIds,
     priorityBusy,

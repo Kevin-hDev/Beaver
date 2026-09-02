@@ -133,6 +133,29 @@ fn extension_counts_precede_bounded_display_truncation() {
     assert_eq!(diagnostic.canonical_tool_names.split(',').count(), 8);
 }
 
+#[test]
+fn extension_diagnostic_identifiers_are_never_cut_mid_value() {
+    let plugin_ids = ["a", "b", "c"]
+        .map(|prefix| format!("{prefix}{}", "x".repeat(95)))
+        .to_vec();
+    let diagnostic = super::extension_tool_diagnostic::structured(
+        &super::stream_diagnostics::ExtensionToolDiagnostic {
+            origin: super::stream_diagnostics::ExtensionDiagnosticOrigin::Selected,
+            reason: super::stream_diagnostics::ExtensionDiagnosticReason::Protected,
+            correlation_id: None,
+            plugin_ids: &plugin_ids,
+            tool_names: &[],
+            provider_id: "ollama",
+            alias_context: &[],
+            outcomes: &[],
+            additional_tool_count: 0,
+            added_tool_count: 0,
+        },
+    );
+
+    assert_eq!(diagnostic.plugin_ids, plugin_ids[..2].join(","));
+}
+
 #[tokio::test]
 async fn a_started_request_accepts_exactly_one_terminal_transition() {
     let session =

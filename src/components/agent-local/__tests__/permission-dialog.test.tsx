@@ -60,4 +60,14 @@ describe("PermissionDialog", () => {
     expect(screen.queryByText("permissionDialog.allowSession")).toBeNull();
     expect(screen.getByText("permissionDialog.allow")).toBeTruthy();
   });
+
+  it("requires an explicit cache grant for extension tools", () => {
+    render(<PermissionDialog request={{
+      id: "request", toolName: "plugin.process", arguments: {},
+      extensionId: "plugin-id", extensionName: "Plugin",
+      effectClass: "process", actionSummary: "{}",
+    }} onDecide={vi.fn()} />);
+
+    expect(screen.queryByText("permissionDialog.allowSession")).toBeNull();
+  });
 });

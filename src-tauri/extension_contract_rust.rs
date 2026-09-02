@@ -35,10 +35,15 @@ pub fn render(contract: &Value) -> Result<String, String> {
             array(object(contract, "methods")?, "coreToHost")?,
         ),
         ("EXTENSION_EVENTS", array_value(contract, "events")?),
-        ("HOST_LOAD_STAGES", array_value(contract, "loadStages")?),
     ] {
         render_slice(&mut output, name, values)?;
     }
+    render_named_strings(
+        &mut output,
+        array_value(contract, "loadStages")?,
+        "HOST_LOAD_STAGE_",
+        "HOST_LOAD_STAGES",
+    )?;
     let effects = array_value(contract, "effectClasses")?;
     render_slice(&mut output, "EXTENSION_EFFECT_CLASSES", effects)?;
     super::effect_renderer::render(&mut output, effects)?;
@@ -73,6 +78,20 @@ fn render_host_methods(output: &mut String, methods: &[Value]) -> Result<(), Str
     output.push_str(&format!(
         "#[allow(dead_code)]\npub const HOST_TO_CORE_METHODS: &[(&str, &str, &str, Option<usize>)] = &[{}];\n",
         rendered.join(", ")
+    ));
+    let notifications = methods
+        .iter()
+        .filter(|method| method["kind"] == "notification")
+        .collect::<Vec<_>>();
+    if notifications.len() != 1 {
+        return Err("expected one host load stage notification".to_string());
+    }
+    let notification = notifications[0]
+        .as_object()
+        .ok_or_else(|| "invalid host method contract".to_string())?;
+    output.push_str(&format!(
+        "#[allow(dead_code)]\npub const HOST_LOAD_STAGE_METHOD: &str = {:?};\n",
+        string(notification, "name")?
     ));
     Ok(())
 }

@@ -1,5 +1,6 @@
 use super::*;
 use crate::services::extensions::host_paths::HostPaths;
+use crate::services::extensions::host_process::HostProcess;
 use crate::services::extensions::protocol::HostExtensionSpec;
 use crate::services::extensions::types::{ExtensionApiLevel, ExtensionManifest};
 

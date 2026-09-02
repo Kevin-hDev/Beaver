@@ -126,7 +126,10 @@ impl ExtensionRuntime {
             self.mark_stop_unconfirmed(identity).await;
             return StopHostOutcome::Unconfirmed;
         }
-        if self.hosts.lock().await.remove_current(identity, snapshot.0) {
+        let mut hosts = self.hosts.lock().await;
+        if hosts.remove_current(identity, snapshot.0)
+            || hosts.stop_is_confirmed(identity, snapshot.0)
+        {
             StopHostOutcome::Confirmed
         } else {
             StopHostOutcome::Unconfirmed

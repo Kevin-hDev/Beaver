@@ -7,6 +7,12 @@ use std::sync::Arc;
 
 pub(super) use super::runtime_host_generation::HostGeneration;
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum HostStartReason {
+    InitialOrManual,
+    Automatic,
+}
+
 pub(super) struct HostExitNotice {
     pub(super) identity: HostIdentity,
     pub(super) generation: u64,
@@ -25,6 +31,8 @@ impl HostExitNotice {
 
 #[path = "runtime_hosts_lifecycle.rs"]
 mod lifecycle;
+#[path = "runtime_hosts_registry.rs"]
+mod registry;
 #[path = "runtime_hosts_restart.rs"]
 mod restart;
 mod snapshots;
@@ -38,6 +46,7 @@ pub(super) struct BoundHostChannel {
     _temporary_directory: tempfile::TempDir,
 }
 
+#[derive(Debug)]
 pub(super) struct HostReservation {
     identity: HostIdentity,
     generation: Arc<HostGeneration>,
@@ -69,6 +78,7 @@ impl HostReservation {
 pub(super) struct RuntimeHosts {
     pub(super) official: Option<BoundHostChannel>,
     pub(super) third_party: BTreeMap<String, BoundHostChannel>,
+    failed: Vec<BoundHostChannel>,
     temporary_root: PathBuf,
     next_generation: u64,
     restart_budgets: BTreeMap<HostIdentity, super::runtime_restart::RestartBudget>,
@@ -106,6 +116,7 @@ impl RuntimeHosts {
             Self {
                 official: None,
                 third_party: BTreeMap::new(),
+                failed: Vec::new(),
                 temporary_root,
                 next_generation: 1,
                 restart_budgets: BTreeMap::new(),
@@ -116,82 +127,11 @@ impl RuntimeHosts {
         ))
     }
 
-    pub(super) fn reserve(&mut self, identity: HostIdentity) -> Result<HostReservation, String> {
-        if self.len() >= MAX_HOST_PROCESSES || self.contains(&identity) {
-            return Err(super::error_codes::LIMIT_REACHED.to_string());
-        }
-        let prefix = match identity {
-            HostIdentity::Official => "official-",
-            HostIdentity::ThirdParty(_) => "third-party-",
-        };
-        let temporary_directory = tempfile::Builder::new()
-            .prefix(prefix)
-            .tempdir_in(&self.temporary_root)
-            .map_err(|_| super::error_codes::HOST_UNAVAILABLE.to_string())?;
-        let generation = Arc::new(HostGeneration::new(self.next_generation));
-        self.next_generation = self
-            .next_generation
-            .checked_add(1)
-            .ok_or_else(|| super::error_codes::HOST_UNAVAILABLE.to_string())?;
-        Ok(HostReservation {
-            identity,
-            generation,
-            revoked: tokio_util::sync::CancellationToken::new(),
-            temporary_directory,
-            exit_sender: self.exit_sender.clone(),
-        })
-    }
-
-    pub(super) fn revoke_reservation(&self, reservation: &HostReservation) {
-        reservation.revoked.cancel();
-    }
-
-    pub(super) fn bind(
-        &mut self,
-        reservation: HostReservation,
-        api_level: ExtensionApiLevel,
-        process: Arc<HostProcess>,
-    ) -> Result<(), String> {
-        if self.len() >= MAX_HOST_PROCESSES || self.contains(&reservation.identity) {
-            return Err(super::error_codes::LIMIT_REACHED.to_string());
-        }
-        let channel = BoundHostChannel {
-            identity: reservation.identity.clone(),
-            api_level,
-            generation: Arc::clone(&reservation.generation),
-            process,
-            revoked: reservation.revoked,
-            _temporary_directory: reservation.temporary_directory,
-        };
-        match &reservation.identity {
-            HostIdentity::Official => self.official = Some(channel),
-            HostIdentity::ThirdParty(id) => {
-                self.third_party.insert(id.clone(), channel);
-            }
-        }
-        Ok(())
-    }
-
-    pub(super) fn channel(&self, identity: &HostIdentity) -> Option<&BoundHostChannel> {
-        match identity {
-            HostIdentity::Official => self.official.as_ref(),
-            HostIdentity::ThirdParty(id) => self.third_party.get(id),
-        }
-    }
-
-    pub(super) fn len(&self) -> usize {
-        usize::from(self.official.is_some()) + self.third_party.len()
-    }
-
     pub(super) fn emit_changed(&self) {
         if let Some(app) = &self.app {
             use tauri::Emitter;
             let _ = app.emit(super::runtime_lifecycle::CHANGED_EVENT, ());
         }
-    }
-
-    fn contains(&self, identity: &HostIdentity) -> bool {
-        self.channel(identity).is_some()
     }
 }
 

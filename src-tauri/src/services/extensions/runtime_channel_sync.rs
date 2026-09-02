@@ -1,14 +1,18 @@
 use super::host_identity::HostIdentity;
-use super::host_process::HostProcess;
 use super::runtime::ExtensionRuntime;
-use super::types::ExtensionApiLevel;
+use super::runtime_hosts::HostStartReason;
 use std::collections::BTreeSet;
-use std::sync::Arc;
 use std::time::Instant;
 
 impl ExtensionRuntime {
     pub(super) async fn sync_hosts(&self, deadline: Instant) -> Result<bool, String> {
-        self.sync_hosts_with_recovery(deadline, None).await
+        self.sync_hosts_with_recovery(deadline, None, HostStartReason::InitialOrManual)
+            .await
+    }
+
+    pub(super) async fn sync_hosts_automatically(&self, deadline: Instant) -> Result<bool, String> {
+        self.sync_hosts_with_recovery(deadline, None, HostStartReason::Automatic)
+            .await
     }
 
     pub(super) async fn retry_host_load(
@@ -23,6 +27,7 @@ impl ExtensionRuntime {
                 extension_id,
                 attempts,
             )),
+            HostStartReason::InitialOrManual,
         )
         .await
     }
@@ -31,6 +36,7 @@ impl ExtensionRuntime {
         &self,
         deadline: Instant,
         forced_recovery: Option<super::runtime_sync::RecoveryPreflight>,
+        start_reason: HostStartReason,
     ) -> Result<bool, String> {
         let _sync = self.sync.lock().await;
         let paths = self
@@ -50,16 +56,21 @@ impl ExtensionRuntime {
             }
         });
         recovery.validate_retry_marker(&preserved_marker.state)?;
-        let records = super::registry::enabled_hosted()?;
-        let recovery = recovery.resolve_for(&records)?;
+        let all_records = super::registry::list()?;
+        let recovery = recovery.resolve_for(&all_records)?;
+        let records = all_records
+            .into_iter()
+            .filter(|record| record.enabled && record.trusted)
+            .collect();
         let build = super::runtime_sync::build_specs(records, &paths.directory, &recovery).await?;
         self.close_stale_channels(&build, deadline).await;
+        let mut unavailable_ids = Vec::new();
         let mut responses =
             Vec::with_capacity(build.official_specs.len() + build.third_party_specs.len());
         if !build.official_specs.is_empty() {
             let api_level = super::runtime_host_load::official_api_level(&build.official_specs);
             if let Ok(process) = self
-                .ensure_channel(HostIdentity::Official, api_level, deadline)
+                .ensure_channel(HostIdentity::Official, api_level, deadline, start_reason)
                 .await
             {
                 let authorized = self.hosts.lock().await.authorize_loads(
@@ -86,12 +97,23 @@ impl ExtensionRuntime {
                         )
                         .await;
                 }
+            } else {
+                unavailable_ids.extend(
+                    build
+                        .official_specs
+                        .iter()
+                        .map(|specification| specification.id.clone()),
+                );
             }
         }
         for (id, specification) in &build.third_party_specs {
             let identity = HostIdentity::ThirdParty(id.clone());
             let api_level = specification.manifest.api_level.clone();
-            let Ok(process) = self.ensure_channel(identity, api_level, deadline).await else {
+            let Ok(process) = self
+                .ensure_channel(identity, api_level, deadline, start_reason)
+                .await
+            else {
+                unavailable_ids.push(id.clone());
                 continue;
             };
             let identity = HostIdentity::ThirdParty(id.clone());
@@ -116,66 +138,20 @@ impl ExtensionRuntime {
                     .await;
             }
         }
+        let mut build = build;
+        for id in unavailable_ids {
+            build
+                .failures
+                .insert(id, super::error_codes::HOST_UNAVAILABLE.to_string());
+        }
         let applied = super::runtime_sync::apply(responses, &build)?;
         super::loading_marker::complete(
             preserved_marker,
             &applied.completed_ids,
-            recovery.retry_id(),
+            recovery.retry_details(),
         )?;
         self.set_running(applied.active, applied.diagnostics);
         Ok(build.sensitive_access_reminder)
-    }
-
-    async fn ensure_channel(
-        &self,
-        identity: HostIdentity,
-        api_level: ExtensionApiLevel,
-        deadline: Instant,
-    ) -> Result<Arc<HostProcess>, String> {
-        let current = {
-            let hosts = self.hosts.lock().await;
-            hosts
-                .snapshot(&identity)
-                .map(|snapshot| (snapshot, hosts.usable_snapshot(&identity).is_some()))
-        };
-        if let Some(((current_level, _, process), usable)) = current {
-            if usable && current_level == api_level && process.is_alive() {
-                return Ok(process);
-            }
-            if self
-                .stop_host_if_current(&identity, Some(&process), deadline, true)
-                .await
-                == super::runtime::StopHostOutcome::Unconfirmed
-            {
-                return Err(super::error_codes::HOST_UNAVAILABLE.to_string());
-            }
-        }
-        let reservation = self.hosts.lock().await.reserve(identity.clone())?;
-        let paths = self
-            .paths
-            .as_ref()
-            .ok_or_else(|| super::error_codes::HOST_UNAVAILABLE.to_string())?;
-        let process = Arc::new(
-            HostProcess::spawn_bound(
-                paths,
-                &self.work,
-                reservation.spawn_binding(),
-                deadline,
-                reservation.temporary_directory(),
-            )
-            .await?,
-        );
-        let Ok(hello) = super::runtime_host_load::validate_hello(&process).await else {
-            self.hosts.lock().await.revoke_reservation(&reservation);
-            let _ = process.kill(deadline).await;
-            return Err(super::error_codes::HOST_UNAVAILABLE.to_string());
-        };
-        self.set_host_version(&hello);
-        self.hosts
-            .lock()
-            .await
-            .bind(reservation, api_level, Arc::clone(&process))?;
-        Ok(process)
     }
 
     async fn close_stale_channels(
@@ -196,7 +172,7 @@ impl ExtensionRuntime {
             .hosts
             .lock()
             .await
-            .snapshots()
+            .bound_snapshots()
             .into_iter()
             .filter(|(identity, _, _)| !desired.contains(identity))
             .collect::<Vec<_>>();

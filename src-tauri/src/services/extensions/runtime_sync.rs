@@ -2,7 +2,7 @@ use super::protocol::{HostExtensionSpec, LoadResult};
 use super::types::{
     ExtensionApiLevel, ExtensionContributions, ExtensionDiagnostic, DIAGNOSTIC_ADVANCED_REQUIRED,
     DIAGNOSTIC_ENTRY_UNAVAILABLE, DIAGNOSTIC_HOST_MISSING_RESPONSE, DIAGNOSTIC_LOAD_FAILED,
-    MAX_EXTENSIONS, RUNTIME_DIAGNOSTIC_CODES,
+    HOST_LOAD_STAGE_IMPORT, HOST_LOAD_STAGE_REGISTER, MAX_EXTENSIONS, RUNTIME_DIAGNOSTIC_CODES,
 };
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path::Path;
@@ -65,7 +65,7 @@ pub async fn build_specs(
         } else {
             diagnostics.push(runtime_diagnostic(
                 &extension_id,
-                "import",
+                HOST_LOAD_STAGE_IMPORT,
                 DIAGNOSTIC_ENTRY_UNAVAILABLE,
             ));
         }
@@ -77,7 +77,7 @@ pub async fn build_specs(
         } else {
             diagnostics.push(runtime_diagnostic(
                 &extension_id,
-                "import",
+                HOST_LOAD_STAGE_IMPORT,
                 DIAGNOSTIC_ENTRY_UNAVAILABLE,
             ));
         }
@@ -131,7 +131,7 @@ pub fn apply(responses: Vec<LoadResult>, build: &BuildSpecs) -> Result<ApplyResu
         if failed && !has_diagnostic {
             diagnostics.push(runtime_diagnostic(
                 &loaded.id,
-                "import",
+                HOST_LOAD_STAGE_IMPORT,
                 DIAGNOSTIC_LOAD_FAILED,
             ));
         }
@@ -143,7 +143,7 @@ pub fn apply(responses: Vec<LoadResult>, build: &BuildSpecs) -> Result<ApplyResu
         } else {
             diagnostics.push(runtime_diagnostic(
                 &loaded.id,
-                "register",
+                HOST_LOAD_STAGE_REGISTER,
                 DIAGNOSTIC_ADVANCED_REQUIRED,
             ));
         }
@@ -154,7 +154,7 @@ pub fn apply(responses: Vec<LoadResult>, build: &BuildSpecs) -> Result<ApplyResu
     {
         diagnostics.push(runtime_diagnostic(
             missing,
-            "import",
+            HOST_LOAD_STAGE_IMPORT,
             DIAGNOSTIC_HOST_MISSING_RESPONSE,
         ));
     }

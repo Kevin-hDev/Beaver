@@ -18,6 +18,10 @@ impl OwnedProcessScope {
         #[cfg(windows)]
         {
             super::process_tree::configure_tokio(command);
+            crate::services::background_command::configure_tokio_with_extra_flags(
+                command,
+                windows_sys::Win32::System::Threading::CREATE_SUSPENDED,
+            );
             let job = super::platform::DedicatedJob::new()?;
             let mut child = command
                 .spawn()
@@ -28,6 +32,11 @@ impl OwnedProcessScope {
             };
             if job.admit(pid).is_err() {
                 let _ = child.start_kill();
+                let _ = child.wait().await;
+                return Err(OwnedProcessError::Admission);
+            }
+            if super::platform::resume_suspended_process(pid).is_err() {
+                let _ = job.terminate();
                 let _ = child.wait().await;
                 return Err(OwnedProcessError::Admission);
             }

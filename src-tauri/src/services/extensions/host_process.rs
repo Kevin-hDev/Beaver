@@ -117,8 +117,7 @@ impl HostProcess {
         .is_ok_and(|scope_terminated| scope_terminated);
         drop(child);
         host_channel::fail_all(&self.pending);
-        let pending_failed = true;
-        terminated && pending_failed && wait_reader_done(&self.reader_done, deadline).await
+        terminated && wait_reader_done(&self.reader_done, deadline).await
     }
 
     #[cfg(test)]

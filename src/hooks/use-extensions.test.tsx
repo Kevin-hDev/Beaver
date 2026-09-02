@@ -67,6 +67,7 @@ describe("useExtensions", () => {
 
     expect(view.result.current.extensions).toEqual([record]);
     expect(view.result.current.host).toEqual(host);
+    expect(view.result.current.hostLoaded).toBe(true);
   });
 
   it("garde enabled et showInChat comme deux mutations indépendantes", async () => {
@@ -439,6 +440,56 @@ describe("useExtensions", () => {
     expect(view.result.current.extensions).toEqual([]);
     expect(view.result.current.host.state).toBe("stopped");
     expect(view.result.current.loadError).toBe("extensions.errors.load");
+  });
+
+  it("refuse un statut Hôte inconnu et conserve le dernier statut validé", async () => {
+    let invalidHost = false;
+    vi.mocked(invoke).mockImplementation((command) => {
+      if (command === "list_extensions") return Promise.resolve([record]);
+      if (command === "get_extension_host_status") {
+        return Promise.resolve(invalidHost ? { ...host, state: "unknown" } : host);
+      }
+      if (command === "get_extension_discovery_preferences") {
+        return Promise.resolve({ protectedPluginIds: [] });
+      }
+      if (command === "get_extension_recovery_state") return Promise.resolve(emptyRecovery);
+      return Promise.resolve(undefined);
+    });
+    const view = renderHook(() => useExtensions(), { wrapper: ExtensionsProvider });
+    await waitFor(() => expect(view.result.current.hostLoaded).toBe(true));
+    invalidHost = true;
+
+    await act(() => view.result.current.refresh());
+
+    expect(view.result.current.host).toEqual(host);
+    expect(view.result.current.loadError).toBe("extensions.errors.load");
+  });
+
+  it("sérialise les actions de reprise déclenchées simultanément", async () => {
+    let finishKeep!: () => void;
+    const keep = new Promise<void>((resolve) => { finishKeep = resolve; });
+    vi.mocked(invoke).mockImplementation((command) => {
+      if (command === "list_extensions") return Promise.resolve([record]);
+      if (command === "get_extension_host_status") return Promise.resolve(host);
+      if (command === "get_extension_discovery_preferences") {
+        return Promise.resolve({ protectedPluginIds: [] });
+      }
+      if (command === "get_extension_recovery_state") return Promise.resolve(emptyRecovery);
+      if (command === "keep_extension_disabled") return keep;
+      return Promise.resolve(undefined);
+    });
+    const view = renderHook(() => useExtensions(), { wrapper: ExtensionsProvider });
+    await waitFor(() => expect(view.result.current.loading).toBe(false));
+
+    act(() => { void view.result.current.keepDisabled(record.manifest.id); });
+    await waitFor(() => expect(view.result.current.recoveryBusy).toBe(true));
+    await act(() => view.result.current.retryLoad(record.manifest.id));
+
+    expect(invoke).not.toHaveBeenCalledWith("retry_extension_load", {
+      extensionId: record.manifest.id,
+    });
+    finishKeep();
+    await waitFor(() => expect(view.result.current.recoveryBusy).toBe(false));
   });
 
   it("installe Git et npm avec des commandes distinctes et validées au retour", async () => {

@@ -10,10 +10,12 @@ pub(super) enum RecoveryPreflight {
 
 impl RecoveryPreflight {
     pub(super) fn resolve_for(self, records: &[ExtensionRecord]) -> Result<Self, String> {
-        let target_exists = |id: &str| records.iter().any(|record| record.manifest.id == id);
+        let target = |id: &str| records.iter().find(|record| record.manifest.id == id);
         match self {
-            Self::Interrupted(id) if !target_exists(&id) => Ok(Self::Invalid),
-            Self::Retry(id, _) if !target_exists(&id) => {
+            Self::Interrupted(id) if target(&id).is_none() => Ok(Self::Invalid),
+            Self::Retry(id, _)
+                if target(&id).is_none_or(|record| !record.enabled || !record.trusted) =>
+            {
                 Err(super::error_codes::RECOVERY_MARKER_INVALID.to_string())
             }
             recovery => Ok(recovery),
@@ -46,9 +48,9 @@ impl RecoveryPreflight {
         }
     }
 
-    pub(super) fn retry_id(&self) -> Option<&str> {
+    pub(super) fn retry_details(&self) -> Option<(&str, u8)> {
         match self {
-            Self::Retry(id, _) => Some(id),
+            Self::Retry(id, attempts) => Some((id, *attempts)),
             _ => None,
         }
     }

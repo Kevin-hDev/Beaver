@@ -117,6 +117,18 @@ fn contract_validates_shared_limits_timeouts_and_builtin_count() {
                 .unwrap(),
         crate::app_exit::REGISTRY_CAPACITY as u64
     );
+    assert_eq!(contract["limits"]["maxIdentifierChars"], 96);
+}
+
+#[test]
+fn contract_rejects_names_that_the_node_host_would_reject() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let directory = root.join("resources/extension-host");
+    let contract = generator::load_contract(&directory).unwrap();
+    let mut invalid = contract.clone();
+    invalid["capabilities"][0] = serde_json::json!("Tools");
+
+    assert!(generator::validate_contract(&invalid, &directory).is_err());
 }
 
 #[test]
@@ -149,6 +161,8 @@ fn checked_in_typescript_matches_the_extension_contract() {
         include_str!("../../../../src/types/extension-contract.generated.ts").replace("\r\n", "\n");
 
     assert_eq!(checked_in, generator::render_typescript(&contract).unwrap());
+    assert!(checked_in.contains("export const HOST_DIAGNOSTIC_CODES"));
+    assert!(checked_in.contains("export const RUNTIME_DIAGNOSTIC_CODES"));
 }
 
 #[test]
@@ -172,6 +186,13 @@ fn checked_in_sdk_contract_matches_the_extension_contract() {
     assert!(
         checked_in.contains("HOST_TO_CORE_NOTIFICATION_METHODS: readonly [\"host.load.stage\"]")
     );
+}
+
+#[test]
+fn generated_rust_names_the_unique_load_stage_notification() {
+    let generated = include_str!(concat!(env!("OUT_DIR"), "/extension_contract.rs"));
+
+    assert!(generated.contains("pub const HOST_LOAD_STAGE_METHOD: &str = \"host.load.stage\";"));
 }
 
 #[test]

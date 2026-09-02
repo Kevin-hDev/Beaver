@@ -1,5 +1,6 @@
 import {
   HOST_LOAD_STAGES,
+  LIMITS,
   type ExtensionRecoveryState,
   type HostLoadStage,
 } from "@/types/extensions";
@@ -8,7 +9,7 @@ import { isExtensionIdentifier } from "@/lib/extension-records";
 export function parseExtensionRecoveryState(value: unknown): ExtensionRecoveryState {
   if (!value || typeof value !== "object" || Array.isArray(value)) throwInvalid();
   const input = value as Record<string, unknown>;
-  const extensionId = optionalText(input.extensionId, 96);
+  const extensionId = optionalText(input.extensionId, LIMITS.maxIdentifierChars);
   const stage = optionalStage(input.stage);
   const attempts = input.attempts === null
     ? null

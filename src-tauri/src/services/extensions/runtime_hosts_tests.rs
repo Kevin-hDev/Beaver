@@ -354,6 +354,7 @@ async fn a_restarting_generation_refuses_work_and_replacement_until_removed() {
 
     assert!(hosts.begin_stop(&identity, generation, true));
     assert!(hosts.usable_snapshot(&identity).is_none());
+    assert!(hosts.usable_snapshots().is_empty());
     assert!(!hosts.allow_restart(&identity));
     assert_eq!(
         hosts.reserve(identity.clone()).err(),
@@ -366,6 +367,106 @@ async fn a_restarting_generation_refuses_work_and_replacement_until_removed() {
             .await
     );
     assert!(hosts.remove_current(&identity, generation));
+}
+
+#[tokio::test]
+async fn a_restart_marker_cannot_be_downgraded_by_a_concurrent_stop() {
+    let workspace = tempfile::tempdir().unwrap();
+    let mut hosts = RuntimeHosts::new(workspace.path().join("channels")).unwrap();
+    let work = extension_work();
+    let identity = HostIdentity::ThirdParty("restart-kind".to_string());
+    let process = bind_fixture(&mut hosts, workspace.path(), "restart-kind", "reply", &work).await;
+    let (_, generation, _) = hosts.snapshot(&identity).unwrap();
+
+    assert!(hosts.begin_stop(&identity, generation, true));
+    assert!(hosts.begin_stop(&identity, generation, false));
+    assert!(hosts.channel(&identity).unwrap().generation.is_restarting());
+
+    assert!(
+        process
+            .kill(super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
+}
+
+#[tokio::test]
+async fn a_completed_stop_stays_confirmed_when_another_owner_removed_the_generation() {
+    let workspace = tempfile::tempdir().unwrap();
+    let mut hosts = RuntimeHosts::new(workspace.path().join("channels")).unwrap();
+    let work = extension_work();
+    let identity = HostIdentity::ThirdParty("stop-race".to_string());
+    let process = bind_fixture(&mut hosts, workspace.path(), "stop-race", "reply", &work).await;
+    let (_, generation, _) = hosts.snapshot(&identity).unwrap();
+
+    assert!(!hosts.stop_is_confirmed(&identity, generation));
+    assert!(hosts.remove_current(&identity, generation));
+    assert!(hosts.stop_is_confirmed(&identity, generation));
+
+    assert!(
+        process
+            .kill(super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
+}
+
+#[tokio::test]
+async fn an_unconfirmed_pre_bind_process_keeps_its_channel_directory_owned() {
+    let workspace = tempfile::tempdir().unwrap();
+    let mut hosts = RuntimeHosts::new(workspace.path().join("channels")).unwrap();
+    let work = extension_work();
+    let identity = HostIdentity::ThirdParty("failed-pre-bind".to_string());
+    let directory = workspace.path().join("failed-pre-bind");
+    std::fs::create_dir(&directory).unwrap();
+    let script = directory.join("host.mjs");
+    std::fs::write(&script, "setInterval(() => {}, 1000);").unwrap();
+    let reservation = hosts.reserve(identity.clone()).unwrap();
+    let temporary_directory = reservation.temporary_directory().to_path_buf();
+    let process = Arc::new(
+        HostProcess::spawn_bound(
+            &HostPaths {
+                node: which::which("node").unwrap().canonicalize().unwrap(),
+                script,
+                directory,
+            },
+            &work,
+            reservation.spawn_binding(),
+            super::runtime_lifecycle::new_stop_deadline(),
+            reservation.temporary_directory(),
+        )
+        .await
+        .unwrap(),
+    );
+
+    hosts.retain_failed(reservation, ExtensionApiLevel::Stable, Arc::clone(&process));
+    let generation = hosts.snapshots()[0].1;
+    assert!(temporary_directory.exists());
+    assert!(hosts.usable_snapshot(&identity).is_none());
+    assert!(hosts.snapshot(&identity).is_some());
+    assert_eq!(hosts.snapshots().len(), 1);
+
+    assert!(
+        process
+            .kill(super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
+    assert!(hosts.remove_stopped(&identity, generation, true));
+    assert!(!temporary_directory.exists());
+}
+
+#[test]
+fn automatic_spawn_admission_is_bounded_but_manual_start_is_not_debited() {
+    let workspace = tempfile::tempdir().unwrap();
+    let mut hosts = RuntimeHosts::new(workspace.path().join("channels")).unwrap();
+    let identity = HostIdentity::ThirdParty("restart-budget".to_string());
+
+    for _ in 0..super::types::MAX_HOST_RESTARTS_PER_WINDOW {
+        assert!(hosts.admit_spawn(&identity, super::runtime_hosts::HostStartReason::Automatic));
+    }
+    assert!(!hosts.admit_spawn(&identity, super::runtime_hosts::HostStartReason::Automatic));
+    assert!(hosts.admit_spawn(
+        &identity,
+        super::runtime_hosts::HostStartReason::InitialOrManual
+    ));
 }
 
 #[tokio::test]

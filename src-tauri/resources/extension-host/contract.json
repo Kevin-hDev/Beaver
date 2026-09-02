@@ -44,7 +44,9 @@
     "fingerprintMaxDepth": 16,
     "maxSessionResults": 500,
     "maxProjectResults": 500,
-    "maxPermissionSummaryChars": 512
+    "maxPermissionSummaryChars": 512,
+    "maxIdentifierChars": 96,
+    "maxContractCodeChars": 96
   },
   "timeouts": {
     "coreRequestTimeoutMs": 30000,

@@ -1,12 +1,11 @@
 use super::protocol::HostDiagnostic;
-use super::types::{ExtensionDiagnostic, HOST_DIAGNOSTIC_CODES};
+use super::types::{ExtensionDiagnostic, HOST_DIAGNOSTIC_CODES, HOST_LOAD_STAGES};
 
 pub fn from_host(
     extension_id: String,
     diagnostic: HostDiagnostic,
 ) -> Result<ExtensionDiagnostic, String> {
-    const STAGES: &[&str] = &["import", "activate", "register"];
-    if !STAGES.contains(&diagnostic.stage.as_str())
+    if !HOST_LOAD_STAGES.contains(&diagnostic.stage.as_str())
         || !HOST_DIAGNOSTIC_CODES.contains(&diagnostic.code.as_str())
         || diagnostic
             .file

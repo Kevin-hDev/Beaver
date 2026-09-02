@@ -43,6 +43,14 @@ pub fn render_typescript(contract: &Value) -> Result<String, String> {
             "EXTENSION_BACKEND_ERROR_CODES",
             array(object(contract, "errors")?, "backendCodes")?.to_vec(),
         ),
+        (
+            "HOST_DIAGNOSTIC_CODES",
+            array(object(contract, "diagnostics")?, "hostCodes")?.to_vec(),
+        ),
+        (
+            "RUNTIME_DIAGNOSTIC_CODES",
+            array(object(contract, "diagnostics")?, "runtimeCodes")?.to_vec(),
+        ),
     ] {
         output.push_str(&format!(
             "export const {name} = {} as const;\n",
@@ -77,6 +85,8 @@ pub fn render_typescript(contract: &Value) -> Result<String, String> {
         ("ExtensionEffectClass", "EXTENSION_EFFECT_CLASSES"),
         ("ExtensionProtocolErrorReason", "PROTOCOL_ERROR_REASONS"),
         ("ExtensionBackendErrorCode", "EXTENSION_BACKEND_ERROR_CODES"),
+        ("HostDiagnosticCode", "HOST_DIAGNOSTIC_CODES"),
+        ("RuntimeDiagnosticCode", "RUNTIME_DIAGNOSTIC_CODES"),
     ] {
         output.push_str(&format!(
             "export type {type_name} = typeof {constant}[number];\n"

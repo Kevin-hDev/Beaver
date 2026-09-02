@@ -22,6 +22,8 @@ export function useExtensionRecovery(
   setOperationError: (value: string | null) => void,
 ) {
   const [recovery, setRecovery] = useState(EMPTY_EXTENSION_RECOVERY);
+  const [recoveryBusy, setRecoveryBusy] = useState(false);
+  const recoveryBusyRef = useRef(false);
   const refreshGeneration = useRef(0);
   const refreshRecovery = useCallback(async () => {
     const generation = ++refreshGeneration.current;
@@ -43,14 +45,23 @@ export function useExtensionRecovery(
     payload: Record<string, unknown> = {},
     ownsHost = false,
   ) => {
-    const operation = () => run(command, payload);
-    if (ownsHost) await runHost(operation);
-    else await operation();
-    await refreshRecovery();
+    if (recoveryBusyRef.current) return;
+    recoveryBusyRef.current = true;
+    setRecoveryBusy(true);
+    try {
+      const operation = () => run(command, payload);
+      if (ownsHost) await runHost(operation);
+      else await operation();
+      await refreshRecovery();
+    } finally {
+      recoveryBusyRef.current = false;
+      setRecoveryBusy(false);
+    }
   }, [refreshRecovery, run, runHost]);
 
   return {
     recovery,
+    recoveryBusy,
     refreshRecovery,
     keepDisabled: (extensionId: string) =>
       runRecovery("keep_extension_disabled", { extensionId }),

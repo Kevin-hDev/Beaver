@@ -31,6 +31,12 @@ impl RuntimeHosts {
         identity: &HostIdentity,
         generation: u64,
     ) -> bool {
+        if let Some(position) = self.failed.iter().position(|channel| {
+            channel.identity == *identity && channel.generation.number == generation
+        }) {
+            self.failed.remove(position);
+            return true;
+        }
         if self
             .channel(identity)
             .is_none_or(|channel| channel.generation.number != generation)
@@ -65,6 +71,11 @@ impl RuntimeHosts {
         let Some(channel) = self
             .channel(identity)
             .filter(|channel| channel.generation.number == generation)
+            .or_else(|| {
+                self.failed.iter().find(|channel| {
+                    channel.identity == *identity && channel.generation.number == generation
+                })
+            })
         else {
             return false;
         };
@@ -77,7 +88,7 @@ impl RuntimeHosts {
         &self,
         notice: &HostExitNotice,
     ) -> Option<crate::services::extensions::runtime_host_generation::HostExitKind> {
-        self.channel(&notice.identity)
+        self.owned_channel(&notice.identity)
             .filter(|channel| channel.generation.number == notice.generation)
             .map(|_| notice.kind)
     }

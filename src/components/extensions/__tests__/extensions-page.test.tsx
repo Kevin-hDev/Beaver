@@ -52,7 +52,7 @@ const records = [
 ];
 
 function renderPage(
-  section: "plugins" | "custom",
+  section: "plugins" | "custom" | "host",
   items = records,
   onSelectSection = vi.fn(),
   state: {
@@ -60,6 +60,7 @@ function renderPage(
     loadError?: string | null;
     recovery?: ExtensionRecoveryState;
     hostBusy?: boolean;
+    hostLoaded?: boolean;
   } = {},
 ) {
   return render(
@@ -69,6 +70,7 @@ function renderPage(
       onSelectSection={onSelectSection}
       records={items}
       host={host}
+      hostLoaded={state.hostLoaded ?? true}
       loading={state.loading ?? false}
       loadError={state.loadError ?? null}
       operationError={null}
@@ -164,6 +166,23 @@ describe("ExtensionsPage", () => {
       .not.toBeInTheDocument();
   });
 
+  it("ne présente pas le statut Hôte par défaut comme une donnée chargée", () => {
+    renderPage("host", [], vi.fn(), { loading: true, hostLoaded: false });
+
+    expect(screen.getByRole("status")).toHaveTextContent("extensions.loading");
+    expect(screen.queryByText("extensions.host.states.running")).not.toBeInTheDocument();
+  });
+
+  it("affiche l'erreur Hôte et conserve le dernier statut réel", () => {
+    renderPage("host", [], vi.fn(), {
+      loadError: "extensions.errors.load",
+      hostLoaded: true,
+    });
+
+    expect(screen.getByRole("alert")).toHaveTextContent("extensions.errors.load");
+    expect(screen.getByText("extensions.host.states.running")).toBeInTheDocument();
+  });
+
   it("affiche la clé d’erreur précise fournie par le registre", () => {
     render(
       <ExtensionsPage
@@ -172,6 +191,7 @@ describe("ExtensionsPage", () => {
         onSelectSection={vi.fn()}
         records={records}
         host={host}
+        hostLoaded
         loading={false}
         loadError={null}
         operationError="extensions.errors.codes.extensions_host_unavailable"
@@ -233,6 +253,7 @@ describe("ExtensionsPage", () => {
         onSelectSection={vi.fn()}
         records={records}
         host={host}
+        hostLoaded
         loading={false}
         loadError={null}
         operationError={null}
@@ -276,6 +297,7 @@ describe("ExtensionsPage", () => {
         onSelectSection={vi.fn()}
         records={records}
         host={{ ...host, state: "error", lastError: "extensions_stop_unconfirmed" }}
+        hostLoaded
         loading={false}
         loadError={null}
         operationError={null}
@@ -315,6 +337,7 @@ describe("ExtensionsPage", () => {
         onSelectSection={vi.fn()}
         records={records}
         host={{ ...host, state: "error", lastError: "extensions_host_unavailable" }}
+        hostLoaded
         loading={false}
         loadError={null}
         operationError={null}

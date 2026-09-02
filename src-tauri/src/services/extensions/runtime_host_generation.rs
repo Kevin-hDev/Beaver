@@ -6,6 +6,7 @@ pub(super) enum HostExitKind {
     Unexpected,
 }
 
+#[derive(Debug)]
 pub(super) struct HostGeneration {
     pub(super) number: u64,
     pub(super) stopping: AtomicBool,
@@ -22,7 +23,8 @@ impl HostGeneration {
     }
 
     pub(super) fn begin_stop(&self, restarting: bool) {
-        self.restarting.store(restarting, Ordering::Release);
+        // Un arrêt concurrent ne doit jamais dégrader un redémarrage déjà demandé.
+        self.restarting.fetch_or(restarting, Ordering::AcqRel);
         self.stopping.store(true, Ordering::Release);
     }
 

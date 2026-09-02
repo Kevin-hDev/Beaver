@@ -1,5 +1,8 @@
 use std::path::{Path, PathBuf};
 
+#[path = "loading_marker_completion.rs"]
+mod completion;
+
 const FILE_NAME: &str = "extension-loading.json";
 pub(super) const MAX_MARKER_BYTES: usize = 1_024;
 pub(crate) use super::loading_marker_format::LoadingMarker;
@@ -60,44 +63,19 @@ pub(super) fn next_retry_attempt_at(marker_path: &Path, extension_id: &str) -> R
 pub(super) fn complete(
     preserved: PreservedMarker,
     applied_ids: &std::collections::HashSet<String>,
-    resolved_recovery_id: Option<&str>,
+    resolved_recovery: Option<(&str, u8)>,
 ) -> Result<(), String> {
-    complete_at(&path(), preserved, applied_ids, resolved_recovery_id)
+    completion::complete_at(&path(), preserved, applied_ids, resolved_recovery)
 }
 
+#[cfg(test)]
 pub(super) fn complete_at(
     marker_path: &Path,
     preserved: PreservedMarker,
     applied_ids: &std::collections::HashSet<String>,
-    resolved_recovery_id: Option<&str>,
+    resolved_recovery: Option<(&str, u8)>,
 ) -> Result<(), String> {
-    let current = match read_at(marker_path) {
-        MarkerRead::Valid(current) => current,
-        MarkerRead::Missing if applied_ids.is_empty() => return Ok(()),
-        MarkerRead::Invalid
-            if applied_ids.is_empty() && matches!(preserved.state, MarkerRead::Invalid) =>
-        {
-            return Ok(())
-        }
-        MarkerRead::Missing | MarkerRead::Invalid => return Err(marker_error()),
-    };
-    if !applied_ids.contains(&current.extension_id) {
-        return Ok(());
-    }
-    if resolved_recovery_id.is_some_and(|id| applied_ids.contains(id)) {
-        return discard_at(marker_path);
-    }
-    match preserved.bytes {
-        Some(bytes)
-            if !matches!(
-                preserved.state,
-                MarkerRead::Valid(ref marker) if marker.extension_id == current.extension_id
-            ) =>
-        {
-            write_bytes_at(marker_path, &bytes, false)
-        }
-        _ => discard_at(marker_path),
-    }
+    completion::complete_at(marker_path, preserved, applied_ids, resolved_recovery)
 }
 
 pub(crate) fn read_at(path: &Path) -> MarkerRead {
@@ -178,7 +156,11 @@ pub(super) fn discard_invalid_at(path: &Path) -> Result<(), String> {
     discard_at(path)
 }
 
-fn write_at(path: &Path, marker: &LoadingMarker, fail_before_replace: bool) -> Result<(), String> {
+pub(super) fn write_at(
+    path: &Path,
+    marker: &LoadingMarker,
+    fail_before_replace: bool,
+) -> Result<(), String> {
     ensure_safe_destination(path)?;
     let bytes = super::loading_marker_format::serialize(marker)?;
     if bytes.len() > MAX_MARKER_BYTES {
@@ -187,7 +169,11 @@ fn write_at(path: &Path, marker: &LoadingMarker, fail_before_replace: bool) -> R
     write_bytes_at(path, &bytes, fail_before_replace)
 }
 
-fn write_bytes_at(path: &Path, bytes: &[u8], fail_before_replace: bool) -> Result<(), String> {
+pub(super) fn write_bytes_at(
+    path: &Path,
+    bytes: &[u8],
+    fail_before_replace: bool,
+) -> Result<(), String> {
     ensure_safe_destination(path)?;
     if bytes.len() > MAX_MARKER_BYTES {
         return Err(marker_error());
@@ -207,15 +193,23 @@ fn read_bytes_at(path: &Path) -> Result<crate::services::private_store::BoundedF
 
 fn ensure_safe_destination(path: &Path) -> Result<(), String> {
     match crate::services::private_store::open_regular_single_link(path) {
-        Ok(None) | Ok(Some(_)) => Ok(()),
+        Ok(None) => Ok(()),
+        Ok(Some(file))
+            if file
+                .metadata()
+                .is_ok_and(|metadata| metadata.len() <= MAX_MARKER_BYTES as u64) =>
+        {
+            Ok(())
+        }
+        Ok(Some(_)) => Err(marker_error()),
         Err(_) => Err(marker_error()),
     }
 }
 
-fn path() -> PathBuf {
+pub(super) fn path() -> PathBuf {
     crate::services::paths::data_dir().join(FILE_NAME)
 }
 
-fn marker_error() -> String {
+pub(super) fn marker_error() -> String {
     super::error_codes::RECOVERY_MARKER_INVALID.to_string()
 }

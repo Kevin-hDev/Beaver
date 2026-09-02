@@ -4,6 +4,7 @@ import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { SettingsCard } from "@/components/settings/settings-card";
 import { SettingsDetailHeader } from "@/components/settings/shell/settings-detail-header";
 import { extensionErrorKey } from "@/lib/extension-errors";
+import { formatExtensionDate } from "@/lib/extension-date";
 import type { ExtensionRecord } from "@/types/extensions";
 import { ExtensionIcon } from "./extension-icon";
 import { ExtensionActions } from "./extension-actions";
@@ -26,7 +27,7 @@ interface ExtensionDetailProps {
 }
 
 export function ExtensionDetail(props: ExtensionDetailProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { extension } = props;
   const name = extensionDisplayName(t, extension);
   const managed = extension.origin?.kind === "git" || extension.origin?.kind === "npm";
@@ -76,8 +77,8 @@ export function ExtensionDetail(props: ExtensionDetailProps) {
             mono
           />
         )}
-        {extension.lastActivatedAt && <DetailLine label={t("extensions.detail.lastActivatedAt")} value={extension.lastActivatedAt} />}
-        {extension.trustedAt && <DetailLine label={t("extensions.detail.trustedAt")} value={extension.trustedAt} />}
+        {extension.lastActivatedAt && <DetailLine label={t("extensions.detail.lastActivatedAt")} value={formatExtensionDate(extension.lastActivatedAt, i18n.language)} />}
+        {extension.trustedAt && <DetailLine label={t("extensions.detail.trustedAt")} value={formatExtensionDate(extension.trustedAt, i18n.language)} />}
         {extension.lastError && <DetailLine label={t("extensions.detail.lastError")} value={t(extensionErrorKey(extension.lastError, "extensions.errors.operation"))} />}
         <div className="extp-info-line">
           <span className="extd-chat-label">

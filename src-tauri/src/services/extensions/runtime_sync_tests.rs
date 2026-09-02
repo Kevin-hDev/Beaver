@@ -206,6 +206,37 @@ fn orphaned_interruption_is_treated_as_invalid_instead_of_loading_all_locals() {
 }
 
 #[test]
+fn an_installed_but_disabled_interruption_stays_attributed_without_blocking_neighbors() {
+    let mut interrupted = record(
+        "com.example.interrupted",
+        super::types::ExtensionKind::Local,
+    );
+    interrupted.enabled = false;
+    interrupted.trusted = false;
+    let all_records = vec![
+        interrupted,
+        record("com.example.neighbor", super::types::ExtensionKind::Local),
+    ];
+
+    let recovery =
+        super::runtime_sync::RecoveryPreflight::Interrupted("com.example.interrupted".to_string())
+            .resolve_for(&all_records)
+            .unwrap();
+    assert!(matches!(
+        recovery,
+        super::runtime_sync::RecoveryPreflight::Interrupted(_)
+    ));
+
+    let eligible = all_records
+        .into_iter()
+        .filter(|record| record.enabled && record.trusted)
+        .collect();
+    let filtered = super::runtime_sync::filter_for_recovery(eligible, &recovery);
+    assert_eq!(filtered.len(), 1);
+    assert_eq!(filtered[0].manifest.id, "com.example.neighbor");
+}
+
+#[test]
 fn retry_refuses_a_marker_target_that_is_no_longer_enabled_and_trusted() {
     let records = vec![record(
         "com.example.other",

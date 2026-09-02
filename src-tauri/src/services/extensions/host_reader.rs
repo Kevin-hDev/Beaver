@@ -184,7 +184,7 @@ async fn receive_notification(
     params: Option<&Value>,
     load_tracker: &HostLoadTracker,
 ) -> Result<(), String> {
-    if method != "host.load.stage" {
+    if method != super::types::HOST_LOAD_STAGE_METHOD {
         return Err("Réponse de l'hôte d'extensions invalide.".to_string());
     }
     let params = params

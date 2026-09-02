@@ -1,6 +1,4 @@
-use super::types::{
-    ExtensionKind, ExtensionRecord, ExtensionStatus, MAX_EXTENSIONS, MAX_MESSAGE_BYTES,
-};
+use super::types::{ExtensionRecord, MAX_EXTENSIONS, MAX_MESSAGE_BYTES};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashSet;
@@ -25,7 +23,7 @@ pub(crate) struct LoadedRegistry {
 }
 
 #[derive(Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
 struct RawEnvelope {
     version: u8,
     extensions: Vec<Value>,
@@ -66,7 +64,7 @@ pub(crate) fn load_from(path: &Path) -> Result<LoadedRegistry, String> {
     let bytes = read_registry(path)?;
     let value: Value = serde_json::from_slice(&bytes).map_err(|_| migration_error())?;
     match value {
-        Value::Array(entries) => migrate_v0(path, &bytes, entries),
+        Value::Array(entries) => super::storage_migration::migrate_v0(path, &bytes, entries),
         Value::Object(_) => load_v1(value),
         _ => Err(migration_error()),
     }
@@ -88,38 +86,6 @@ fn read_registry(path: &Path) -> Result<Vec<u8>, String> {
     Ok(bytes)
 }
 
-fn migrate_v0(path: &Path, bytes: &[u8], entries: Vec<Value>) -> Result<LoadedRegistry, String> {
-    if entries.len() > MAX_EXTENSIONS {
-        return Err(migration_error());
-    }
-    crate::services::private_store::atomic_write(&v0_backup_path(path), bytes)
-        .map_err(|_| migration_error())?;
-    let mut extensions = parse_entries(entries)?;
-    for record in extensions
-        .iter_mut()
-        .filter(|record| record.kind == ExtensionKind::Local)
-    {
-        record.trusted_at = None;
-        record.sensitive_access_granted = false;
-        match super::fingerprint::calculate(record) {
-            Ok(fingerprint) => record.fingerprint = Some(fingerprint),
-            Err(_) => {
-                record.fingerprint = None;
-                record.enabled = false;
-                record.trusted = false;
-                record.status = ExtensionStatus::Error;
-                record.last_error = Some(super::error_codes::FINGERPRINT_FAILED.to_string());
-            }
-        }
-    }
-    save_to(path, &extensions, &None).map_err(|_| migration_error())?;
-    Ok(LoadedRegistry {
-        extensions,
-        recovery_snapshot: None,
-        format: LoadedFormat::MigratedV0,
-    })
-}
-
 fn load_v1(value: Value) -> Result<LoadedRegistry, String> {
     let raw: RawEnvelope = serde_json::from_value(value).map_err(|_| migration_error())?;
     if raw.version != VERSION || raw.extensions.len() > MAX_EXTENSIONS {
@@ -134,7 +100,7 @@ fn load_v1(value: Value) -> Result<LoadedRegistry, String> {
     })
 }
 
-fn parse_entries(entries: Vec<Value>) -> Result<Vec<ExtensionRecord>, String> {
+pub(super) fn parse_entries(entries: Vec<Value>) -> Result<Vec<ExtensionRecord>, String> {
     let mut records = Vec::with_capacity(entries.len());
     for entry in entries {
         let supported = matches!(
@@ -158,6 +124,15 @@ pub(crate) fn save_to(
     records: &[ExtensionRecord],
     recovery_snapshot: &Option<Vec<String>>,
 ) -> Result<(), String> {
+    let bytes = serialize_envelope(records, recovery_snapshot)?;
+    crate::services::private_store::atomic_write(path, &bytes)
+        .map_err(|_| "Registre d'extensions indisponible.".to_string())
+}
+
+pub(super) fn serialize_envelope(
+    records: &[ExtensionRecord],
+    recovery_snapshot: &Option<Vec<String>>,
+) -> Result<Vec<u8>, String> {
     if records.len() > MAX_EXTENSIONS {
         return Err("Trop d'extensions enregistrées.".to_string());
     }
@@ -171,8 +146,7 @@ pub(crate) fn save_to(
     if bytes.len() > MAX_MESSAGE_BYTES {
         return Err("Registre d'extensions trop volumineux.".to_string());
     }
-    crate::services::private_store::atomic_write(path, &bytes)
-        .map_err(|_| "Registre d'extensions indisponible.".to_string())
+    Ok(bytes)
 }
 
 fn validate_recovery_snapshot(snapshot: &Option<Vec<String>>) -> Result<(), String> {
@@ -204,6 +178,6 @@ pub(crate) fn finish_successful_startup(path: &Path, format: LoadedFormat) -> Re
     Ok(())
 }
 
-fn migration_error() -> String {
+pub(super) fn migration_error() -> String {
     super::error_codes::REGISTRY_MIGRATION_FAILED.to_string()
 }

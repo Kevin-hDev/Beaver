@@ -1,7 +1,9 @@
 import type {
   ExtensionEffectClass,
   ExtensionEvent,
+  HostDiagnosticCode,
   HostLoadStage,
+  RuntimeDiagnosticCode,
 } from "./extension-contract.generated";
 
 export {
@@ -13,6 +15,8 @@ export {
   EXTENSION_EFFECT_CLASSES,
   EXTENSION_EVENTS,
   HOST_LOAD_STAGES,
+  HOST_DIAGNOSTIC_CODES,
+  RUNTIME_DIAGNOSTIC_CODES,
   HOST_TO_CORE_NOTIFICATION_METHODS,
   LIMITS,
   PROTOCOL_ERROR_REASONS,
@@ -79,7 +83,7 @@ export interface ExtensionRecord {
 export interface ExtensionDiagnostic {
   extensionId: string;
   stage: HostLoadStage;
-  code: string;
+  code: HostDiagnosticCode | RuntimeDiagnosticCode;
   file?: string;
   line?: number;
   column?: number;
@@ -116,6 +120,8 @@ export type {
   ExtensionEvent,
   ExtensionProtocolErrorReason,
   HostLoadStage,
+  HostDiagnosticCode,
+  RuntimeDiagnosticCode,
   HostToCoreNotificationMethod,
   StableHostToCoreRequestMethod,
 } from "./extension-contract.generated";

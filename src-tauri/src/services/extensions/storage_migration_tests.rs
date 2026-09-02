@@ -190,3 +190,18 @@ fn v1_recovery_snapshot_is_preserved_and_bounded() {
         super::error_codes::RECOVERY_MARKER_INVALID
     );
 }
+
+#[test]
+fn v1_envelope_ignores_unknown_fields_for_forward_compatibility() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("extensions.json");
+    std::fs::write(
+        &path,
+        br#"{"version":1,"extensions":[],"recoverySnapshot":null,"futureField":{"enabled":true}}"#,
+    )
+    .unwrap();
+
+    let loaded = storage::load_from(&path).unwrap();
+    assert!(loaded.extensions.is_empty());
+    assert_eq!(loaded.format, storage::LoadedFormat::V1);
+}

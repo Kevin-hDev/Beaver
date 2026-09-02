@@ -1,8 +1,16 @@
-use super::RuntimeHosts;
+use super::{HostStartReason, RuntimeHosts};
 use crate::services::extensions::host_identity::HostIdentity;
 use crate::services::extensions::types::MAX_HOST_PROCESSES;
 
 impl RuntimeHosts {
+    pub(in crate::services::extensions) fn admit_spawn(
+        &mut self,
+        identity: &HostIdentity,
+        reason: HostStartReason,
+    ) -> bool {
+        reason == HostStartReason::InitialOrManual || self.allow_restart(identity)
+    }
+
     pub(in crate::services::extensions) fn allow_restart(
         &mut self,
         identity: &HostIdentity,

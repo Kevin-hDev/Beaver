@@ -99,7 +99,7 @@ async fn emit_tracked(
     name: String,
     payload: Value,
 ) {
-    let snapshots = runtime.hosts.lock().await.snapshots();
+    let snapshots = runtime.hosts.lock().await.usable_snapshots();
     let mut calls = tokio::task::JoinSet::new();
     for (identity, _, process) in snapshots {
         let event = name.clone();
@@ -170,6 +170,18 @@ async fn invalidate(
     failed: Arc<HostProcess>,
     deadline: std::time::Instant,
 ) {
+    let should_invalidate = runtime
+        .hosts
+        .lock()
+        .await
+        .channel(&identity)
+        .is_some_and(|channel| {
+            Arc::ptr_eq(&channel.process, &failed)
+                && should_invalidate_generation(&channel.generation)
+        });
+    if !should_invalidate {
+        return;
+    }
     if runtime
         .stop_host_if_current(&identity, Some(&failed), deadline, false)
         .await
@@ -177,6 +189,10 @@ async fn invalidate(
     {
         let _ = super::registry_sync::mark_identity_error(&identity);
     }
+}
+
+fn should_invalidate_generation(generation: &super::runtime_hosts::HostGeneration) -> bool {
+    !generation.is_stopping()
 }
 
 #[cfg(test)]
@@ -202,5 +218,13 @@ mod tests {
         }));
         assert!(result.is_error);
         assert_eq!(result.error.unwrap().code.as_ref(), "extension_tool_error");
+    }
+
+    #[test]
+    fn stopping_generations_are_owned_by_the_stop_path() {
+        let generation = super::super::runtime_hosts::HostGeneration::new(1);
+        assert!(should_invalidate_generation(&generation));
+        generation.begin_stop(true);
+        assert!(!should_invalidate_generation(&generation));
     }
 }

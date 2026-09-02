@@ -119,9 +119,13 @@ pub async fn set_enabled(id: &str, enabled: bool, trust_confirmed: bool) -> Resu
         if enabled && trust_confirmed && record.kind == ExtensionKind::Local {
             super::registry_state::approve_local(record, &activated_at)?;
         }
+        let preserve_revocation =
+            !enabled && super::registry_state::preserve_revocation_on_disable(record);
         record.enabled = enabled;
-        record.status = ExtensionStatus::Inactive;
-        record.last_error = None;
+        if !preserve_revocation {
+            record.status = ExtensionStatus::Inactive;
+            record.last_error = None;
+        }
         if enabled {
             record.last_activated_at = Some(activated_at);
         } else {
@@ -141,13 +145,6 @@ pub fn set_show_in_chat(id: &str, show: bool) -> Result<(), String> {
         record.show_in_chat = show;
         Ok(())
     })
-}
-
-pub fn enabled_hosted() -> Result<Vec<ExtensionRecord>, String> {
-    Ok(list()?
-        .into_iter()
-        .filter(|record| record.enabled && record.trusted)
-        .collect())
 }
 
 pub(super) fn revoke_fingerprints(revocations: &BTreeMap<String, String>) -> Result<bool, String> {

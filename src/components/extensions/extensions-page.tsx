@@ -17,6 +17,7 @@ interface ExtensionsPageProps {
   selected: ExtensionRecord | null;
   records: ExtensionRecord[];
   host: ExtensionHostStatus;
+  hostLoaded: boolean;
   loading: boolean;
   loadError: string | null;
   operationError: string | null;
@@ -108,7 +109,15 @@ export function ExtensionsPage(props: ExtensionsPageProps) {
       {recoveryBanner}
 
       {section === "host" ? (
-        <ExtensionsHostPanel host={props.host} busy={props.hostBusy} onRestart={props.onReload} onRecover={props.onRecover} />
+        <ExtensionsHostPanel
+          host={props.host}
+          loaded={props.hostLoaded}
+          loading={props.loading}
+          loadError={props.loadError}
+          busy={props.hostBusy}
+          onRestart={props.onReload}
+          onRecover={props.onRecover}
+        />
       ) : (
         <ExtensionsSectionView
           section={section}

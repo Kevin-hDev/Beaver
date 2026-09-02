@@ -9,7 +9,11 @@ import {
 } from "./contract.mjs";
 
 const inFlightHandlers = new Set();
-const IDENTIFIER = /^[a-zA-Z0-9](?:[a-zA-Z0-9._-]{0,94}[a-zA-Z0-9])?$/;
+function validIdentifier(value) {
+  return typeof value === "string"
+    && value.length <= LIMITS.maxIdentifierChars
+    && /^[a-zA-Z0-9](?:[a-zA-Z0-9._-]*[a-zA-Z0-9])?$/.test(value);
+}
 
 export function createExtensionApi(specification) {
   const tools = [];
@@ -39,7 +43,7 @@ export function createExtensionApi(specification) {
       replacesCore,
     };
     if (
-      !IDENTIFIER.test(tool.name)
+      !validIdentifier(tool.name)
       || !tool.description.trim()
       || tool.description.length > 2_000
       || !tool.parameters
@@ -59,7 +63,7 @@ export function createExtensionApi(specification) {
       throw new Error("invalid_event_handler");
     }
     const event = String(eventName);
-    if (!IDENTIFIER.test(event) || !supportsEvent(event)) {
+    if (!validIdentifier(event) || !supportsEvent(event)) {
       throw new Error("invalid_event_name");
     }
     const current = handlers.get(event) ?? [];

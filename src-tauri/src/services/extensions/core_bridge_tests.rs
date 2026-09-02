@@ -180,3 +180,16 @@ fn successful_sensitive_access_marks_only_the_bound_record_in_memory() {
         .skip(1)
         .all(|record| !record.sensitive_access_granted));
 }
+
+#[test]
+fn an_already_marked_sensitive_identity_needs_no_registry_rewrite() {
+    let mut records = super::super::builtin::records().unwrap();
+    for record in &mut records {
+        record.sensitive_access_granted = true;
+    }
+
+    assert!(super::super::registry_access::sensitive_identity_is_marked(
+        &records,
+        &super::super::host_identity::HostIdentity::Official,
+    ));
+}

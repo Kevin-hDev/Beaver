@@ -148,11 +148,13 @@ The extension author and user are responsible for any secret, file, process, or 
 | `fingerprintMaxFiles` | 2000 |
 | `fingerprintMaxTotalBytes` | 33554432 |
 | `hostRestartWindowSeconds` | 300 |
+| `maxContractCodeChars` | 96 |
 | `maxEventsPerExtension` | 64 |
 | `maxExtensions` | 132 |
 | `maxGitLocatorChars` | 2048 |
 | `maxHostProcesses` | 32 |
 | `maxHostRestartsPerWindow` | 3 |
+| `maxIdentifierChars` | 96 |
 | `maxInFlightHandlers` | 64 |
 | `maxInFlightRequests` | 64 |
 | `maxMessageBytes` | 1048576 |

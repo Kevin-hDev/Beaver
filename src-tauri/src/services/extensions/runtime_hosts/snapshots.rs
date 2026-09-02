@@ -43,6 +43,23 @@ impl RuntimeHosts {
         self.official
             .iter()
             .chain(self.third_party.values())
+            .chain(self.failed.iter())
+            .map(|channel| {
+                (
+                    channel.identity.clone(),
+                    channel.generation.number,
+                    Arc::clone(&channel.process),
+                )
+            })
+            .collect()
+    }
+
+    pub(in crate::services::extensions) fn bound_snapshots(
+        &self,
+    ) -> Vec<(HostIdentity, u64, Arc<HostProcess>)> {
+        self.official
+            .iter()
+            .chain(self.third_party.values())
             .map(|channel| {
                 (
                     channel.identity.clone(),
@@ -57,7 +74,7 @@ impl RuntimeHosts {
         &self,
         identity: &HostIdentity,
     ) -> Option<(ExtensionApiLevel, u64, Arc<HostProcess>)> {
-        self.channel(identity).map(channel_snapshot)
+        self.owned_channel(identity).map(channel_snapshot)
     }
 
     pub(in crate::services::extensions) fn usable_snapshot(
@@ -65,8 +82,37 @@ impl RuntimeHosts {
         identity: &HostIdentity,
     ) -> Option<(ExtensionApiLevel, u64, Arc<HostProcess>)> {
         self.channel(identity)
-            .filter(|channel| !channel.revoked.is_cancelled())
+            .filter(|channel| !channel.revoked.is_cancelled() && !channel.generation.is_stopping())
             .map(channel_snapshot)
+    }
+
+    pub(in crate::services::extensions) fn usable_snapshots(
+        &self,
+    ) -> Vec<(HostIdentity, u64, Arc<HostProcess>)> {
+        self.official
+            .iter()
+            .chain(self.third_party.values())
+            .filter(|channel| !channel.revoked.is_cancelled() && !channel.generation.is_stopping())
+            .map(|channel| {
+                (
+                    channel.identity.clone(),
+                    channel.generation.number,
+                    Arc::clone(&channel.process),
+                )
+            })
+            .collect()
+    }
+
+    pub(in crate::services::extensions) fn stop_is_confirmed(
+        &self,
+        identity: &HostIdentity,
+        generation: u64,
+    ) -> bool {
+        self.channel(identity)
+            .is_none_or(|channel| channel.generation.number != generation)
+            && !self.failed.iter().any(|channel| {
+                channel.identity == *identity && channel.generation.number == generation
+            })
     }
 
     pub(in crate::services::extensions) fn call_context(
