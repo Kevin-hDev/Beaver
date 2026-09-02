@@ -1,0 +1,13 @@
+Lot P1.3 — diagnostics de découverte sans changement de sélection.
+
+Décisions: Beaver conserve le seuil strict de 10 %, le catalogue borné toujours visible, la sélection de plugins complets, les priorités protected/essential/previously_discovered et le mode Chat limité à web_search/web_fetch. Aucun discoveryTerms, index lexical ou choix fondé sur les mots de la demande utilisateur.
+
+Implémentation: diagnostics structurés avec origine, raison stable, identifiants et comptes bornés, noms canoniques, alias issus de ToolNameMap et delta réel après rafraîchissement. Chaque search_extension_tools crée exactement un UUID v4 et le rafraîchissement relie jusqu’aux dix recherches parallèles via l’identité exacte de la requête propagée aux chemins eager, parallèle et séquentiel.
+
+Revue indépendante: le contrôleur a détecté puis corrigé un chemin où une recherche valide avec état de découverte indisponible retournait plugin_search_unavailable sans persister son UUID. Test rouge: execute_matches absent (E0425, exit 101); test vert après correction. La revue a aussi corrigé le décompte documentaire du registre de 128 vers l’autorité générée 132. Le premier Clippy strict a ensuite refusé un emprunt inutile introduit par cette correction; il a été corrigé puis Clippy a été relancé vert.
+
+Validations exactes du plan: extension_tool 19/19, stream_diagnostics 31/31, tool_extension_discovery 8/8, tool_dispatcher_entry 5/5, tool_definitions_chat 1/1. Suite Rust complète: 4702 passed, 0 failed, 10 ignored, intégration prelogger 1/1. npm test: 526 fichiers et 2835 tests Vitest, build 56, CI 16, CEF 45 plus 1 test Windows ignoré, E2E 70, extension host 57, reasoning 10; tout vert.
+
+Contrôles finaux: npm run lint, npx tsc --noEmit, npm run contracts:check, cargo clippy --all-targets -- -D warnings, cargo fmt -- --check et git diff --check sortent 0. Graphify update sort 0 et confirme 42184 nœuds, 88118 arêtes, 2385 communautés, sans dérive restante. Seul avertissement connu: linker macOS __eh_frame, préexistant et non bloquant.
+
+Périmètre: aucun changement Office, MCP, UI, i18n, application externe ou documentation privée. Tests exécutés sur macOS; les comportements spécifiques Windows/Linux restent couverts par la logique portable et la CI.
