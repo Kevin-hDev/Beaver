@@ -159,7 +159,13 @@ fn directory_manifest_cannot_escape_through_a_symlink() {
 
 #[tokio::test]
 async fn unknown_core_calls_fail_closed() {
-    let result = super::core_bridge::call("unknown.method", None).await;
+    let result = super::core_bridge::call(
+        &super::host_identity::HostIdentity::Official,
+        &super::types::ExtensionApiLevel::Stable,
+        "unknown.method",
+        None,
+    )
+    .await;
 
     assert!(result.is_err());
 }

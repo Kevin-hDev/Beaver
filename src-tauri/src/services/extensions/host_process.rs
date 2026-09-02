@@ -1,16 +1,13 @@
 use super::error_codes;
 use super::host_channel::{self, PendingRequests, SharedWriter};
 use super::host_load_tracker::HostLoadTracker;
-use super::host_paths::HostPaths;
 use super::protocol::{HostExtensionSpec, RpcRequest};
 use super::types::{HOST_REQUEST_TIMEOUT_MS, HOST_STOP_TIMEOUT_MS, MAX_PENDING_REQUESTS};
 use serde_json::{json, Value};
-use std::collections::HashMap;
-use std::process::Stdio;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use tokio::process::{Child, Command};
+use tokio::process::Child;
 use tokio::sync::Mutex;
 
 const READER_STOP_TIMEOUT: Duration = Duration::from_secs(1);
@@ -20,91 +17,25 @@ pub struct HostProcess {
     writer: SharedWriter,
     pending: PendingRequests,
     alive: Arc<AtomicBool>,
+    channel_cancel: tokio_util::sync::CancellationToken,
     load_tracker: Arc<HostLoadTracker>,
     reader_done: Mutex<Option<tokio::sync::oneshot::Receiver<()>>>,
+    process_scope: crate::services::owned_process::OwnedProcessScope,
+    _test_temporary_directory: Option<tempfile::TempDir>,
 }
 
 impl HostProcess {
+    pub(super) fn is_alive(&self) -> bool {
+        self.alive.load(Ordering::Acquire)
+    }
+
     #[cfg(test)]
     pub(super) async fn hold_child_for_test(&self) -> tokio::sync::MutexGuard<'_, Child> {
         self.child.lock().await
     }
 
-    pub async fn spawn(
-        paths: &HostPaths,
-        work: &super::work_supervision::ExtensionWorkServices,
-    ) -> Result<Self, String> {
-        // L'admission précède le spawn : pendant Closing, aucun enfant Node
-        // transitoire ne doit franchir la frontière de fermeture.
-        let reader_admission = work
-            .try_admit_reader()
-            .map_err(|error| error.public_code().to_string())?;
-        let mut command = Command::new(&paths.node);
-        command
-            .arg(&paths.script)
-            .current_dir(&paths.directory)
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::null())
-            .kill_on_drop(true);
-        let mut child = crate::services::owned_process::OwnedProcess::spawn_tokio(
-            &mut command,
-            crate::services::process_tree::ProcessKind::ExtensionHost,
-        )
-        .await
-        .map_err(|_| error_codes::HOST_UNAVAILABLE.to_string())?;
-        let stdin = child
-            .stdin
-            .take()
-            .ok_or_else(|| error_codes::HOST_UNAVAILABLE.to_string())?;
-        let stdout = child
-            .stdout
-            .take()
-            .ok_or_else(|| error_codes::HOST_UNAVAILABLE.to_string())?;
-        let writer = Arc::new(Mutex::new(stdin));
-        let pending = Arc::new(Mutex::new(HashMap::new()));
-        let alive = Arc::new(AtomicBool::new(true));
-        let load_tracker = Arc::new(HostLoadTracker::default());
-        let run_work = work.clone();
-        let run_writer = writer.clone();
-        let run_pending = pending.clone();
-        let run_alive = alive.clone();
-        let run_load_tracker = load_tracker.clone();
-        let reader_finished =
-            match reader_admission.spawn_with_completion(move |cancel| async move {
-                super::host_reader::run(
-                    stdout,
-                    run_writer,
-                    run_pending,
-                    run_alive,
-                    run_load_tracker,
-                    run_work,
-                    cancel,
-                )
-                .await;
-            }) {
-                Ok(completion) => completion,
-                Err(_) => {
-                    crate::services::process_tree::terminate_tokio(
-                        &mut child,
-                        crate::services::process_tree::ProcessKind::ExtensionHost,
-                    )
-                    .await;
-                    return Err(error_codes::HOST_UNAVAILABLE.to_string());
-                }
-            };
-        Ok(Self {
-            child: Mutex::new(child),
-            writer,
-            pending,
-            alive,
-            load_tracker,
-            reader_done: Mutex::new(Some(reader_finished)),
-        })
-    }
-
     pub async fn request(&self, method: &str, params: Value) -> Result<Value, String> {
-        if !self.alive.load(Ordering::Acquire) {
+        if !self.is_alive() {
             return Err(error_codes::HOST_UNAVAILABLE.to_string());
         }
         let id = uuid::Uuid::new_v4().to_string();
@@ -116,7 +47,7 @@ impl HostProcess {
             }
             pending.insert(id.clone(), sender);
         }
-        if !self.alive.load(Ordering::Acquire) {
+        if !self.is_alive() {
             self.pending.lock().await.remove(&id);
             return Err(error_codes::HOST_UNAVAILABLE.to_string());
         }
@@ -156,6 +87,7 @@ impl HostProcess {
 
     pub async fn kill(&self, deadline: Instant) -> bool {
         self.alive.store(false, Ordering::Release);
+        self.channel_cancel.cancel();
         let Ok(mut child) =
             tokio::time::timeout_at(tokio::time::Instant::from_std(deadline), self.child.lock())
                 .await
@@ -164,13 +96,14 @@ impl HostProcess {
         };
         let terminated = tokio::time::timeout_at(
             tokio::time::Instant::from_std(deadline),
-            crate::services::process_tree::terminate_tokio(
+            crate::services::process_tree::terminate_tokio_scoped(
                 &mut child,
                 crate::services::process_tree::ProcessKind::ExtensionHost,
+                &self.process_scope,
             ),
         )
         .await
-        .is_ok();
+        .is_ok_and(|scope_terminated| scope_terminated);
         drop(child);
         let pending_failed = tokio::time::timeout_at(
             tokio::time::Instant::from_std(deadline),
@@ -181,6 +114,9 @@ impl HostProcess {
         terminated && pending_failed && wait_reader_done(&self.reader_done, deadline).await
     }
 }
+
+#[path = "host_process_spawn.rs"]
+mod spawn;
 
 pub(super) async fn wait_reader_done(
     reader_done: &Mutex<Option<tokio::sync::oneshot::Receiver<()>>>,

@@ -1,4 +1,4 @@
-use super::types::{MAX_IN_FLIGHT_REQUESTS, MAX_PENDING_REQUESTS};
+use super::types::{MAX_HOST_PROCESSES, MAX_IN_FLIGHT_REQUESTS, MAX_PENDING_REQUESTS};
 use crate::app_exit::AppWorkSupervisor;
 #[cfg(test)]
 use crate::services::work_registry::ServiceWorkDiagnostics;
@@ -8,11 +8,10 @@ use crate::services::work_registry::{
 use std::future::Future;
 use std::time::Instant;
 
-const EXTENSION_HOST_READERS: usize = 1;
 pub(super) const MAX_EXTENSION_OPERATIONS: usize = MAX_PENDING_REQUESTS;
 pub(super) const MAX_EXTENSION_CORE_CALLS: usize = MAX_IN_FLIGHT_REQUESTS;
 
-type ExtensionReaderWork = ServiceWorkSupervisor<EXTENSION_HOST_READERS>;
+type ExtensionReaderWork = ServiceWorkSupervisor<MAX_HOST_PROCESSES>;
 type ExtensionOperationWork = ServiceWorkSupervisor<MAX_EXTENSION_OPERATIONS>;
 type ExtensionCoreCallWork = ServiceWorkSupervisor<MAX_EXTENSION_CORE_CALLS>;
 
@@ -62,7 +61,7 @@ impl ExtensionWorkServices {
 
     pub(super) fn try_admit_reader(
         &self,
-    ) -> Result<ServiceWorkAdmission<EXTENSION_HOST_READERS>, ExtensionWorkAdmissionError> {
+    ) -> Result<ServiceWorkAdmission<MAX_HOST_PROCESSES>, ExtensionWorkAdmissionError> {
         self.readers.try_admit().map_err(map_admission_error)
     }
 

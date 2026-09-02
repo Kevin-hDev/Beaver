@@ -4,6 +4,53 @@ use windows_sys::Win32::Foundation::WAIT_OBJECT_0;
 use windows_sys::Win32::System::JobObjects::IsProcessInJob;
 use windows_sys::Win32::System::Threading::{TerminateProcess, WaitForSingleObject};
 
+pub(super) struct DedicatedJob(super::GlobalJob);
+
+impl DedicatedJob {
+    pub(super) fn new() -> Result<Self, OwnedProcessError> {
+        super::GlobalJob::new().map(Self)
+    }
+
+    pub(super) fn admit(&self, pid: u32) -> Result<(), OwnedProcessError> {
+        if pid < 2 {
+            return Err(OwnedProcessError::Admission);
+        }
+        let process = ProcessHandle::open(
+            pid,
+            super::PROCESS_SET_QUOTA
+                | super::PROCESS_TERMINATE
+                | super::PROCESS_QUERY_LIMITED_INFORMATION,
+        )?;
+        if unsafe {
+            windows_sys::Win32::System::JobObjects::AssignProcessToJobObject(
+                self.0.raw(),
+                process.0,
+            )
+        } == 0
+        {
+            Err(OwnedProcessError::Admission)
+        } else {
+            Ok(())
+        }
+    }
+
+    pub(super) fn terminate(&self) -> Result<(), OwnedProcessError> {
+        (unsafe { windows_sys::Win32::System::JobObjects::TerminateJobObject(self.0.raw(), 1) }
+            != 0)
+            .then_some(())
+            .ok_or(OwnedProcessError::Admission)
+    }
+
+    #[cfg(test)]
+    pub(super) fn contains(&self, pid: u32) -> bool {
+        let Ok(process) = ProcessHandle::open(pid, super::PROCESS_QUERY_LIMITED_INFORMATION) else {
+            return false;
+        };
+        let mut contained = 0;
+        (unsafe { IsProcessInJob(process.0, self.0.raw(), &mut contained) }) != 0 && contained != 0
+    }
+}
+
 pub(super) fn spawn_conpty<T: windows_spawn::AsPseudoConsole>(
     command: &mut windows_spawn::Command,
     pseudoconsole: &T,

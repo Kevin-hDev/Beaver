@@ -10,10 +10,13 @@ mod git_checkout;
 mod git_package;
 mod git_source;
 mod host_channel;
+mod host_core_call;
+mod host_identity;
 mod host_load_tracker;
 mod host_paths;
 mod host_process;
 mod host_reader;
+mod host_reader_line;
 mod host_stop_boundary;
 #[cfg(test)]
 mod host_stop_boundary_tests;
@@ -34,6 +37,7 @@ mod operation_error;
 mod operation_failure;
 mod operation_log;
 mod origin_validation;
+mod process_environment;
 mod process_runner;
 mod protocol;
 mod registry;
@@ -43,8 +47,10 @@ mod registry_mutation_error;
 mod registry_state;
 mod registry_sync;
 mod runtime;
+mod runtime_channel_sync;
 mod runtime_diagnostics;
 mod runtime_dispatch;
+mod runtime_hosts;
 mod runtime_lifecycle;
 mod runtime_restart;
 mod runtime_sync;
@@ -127,6 +133,8 @@ mod managed_install_error_tests;
 mod managed_store_tests;
 #[cfg(test)]
 mod npm_runner_tests;
+#[cfg(test)]
+mod runtime_hosts_tests;
 #[cfg(test)]
 mod runtime_sync_tests;
 #[cfg(test)]

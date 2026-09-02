@@ -9,8 +9,19 @@ pub enum CoreResponse {
     Secret(Zeroizing<String>),
 }
 
-pub async fn call(method: &str, params: Option<&Value>) -> Result<CoreResponse, ()> {
+pub async fn call(
+    _identity: &super::host_identity::HostIdentity,
+    api_level: &super::types::ExtensionApiLevel,
+    method: &str,
+    params: Option<&Value>,
+) -> Result<CoreResponse, ()> {
     let params = params.unwrap_or(&Value::Null);
+    if params.get("extensionId").is_some()
+        || (method.starts_with("unstable.")
+            && *api_level != super::types::ExtensionApiLevel::Advanced)
+    {
+        return Err(());
+    }
     let normalized = method.strip_prefix("unstable.").unwrap_or(method);
     match normalized {
         "app.info" => Ok(CoreResponse::Json(json!({
@@ -143,3 +154,7 @@ fn json_response(value: impl Serialize) -> Result<CoreResponse, ()> {
         .map(CoreResponse::Json)
         .map_err(|_| ())
 }
+
+#[cfg(test)]
+#[path = "core_bridge_tests.rs"]
+mod tests;

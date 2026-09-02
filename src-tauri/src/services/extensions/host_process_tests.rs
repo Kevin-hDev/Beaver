@@ -1,3 +1,4 @@
+use super::super::host_paths::HostPaths;
 use super::*;
 use serde_json::json;
 use std::time::{Duration, Instant};
@@ -38,7 +39,7 @@ async fn load_tracker_rejects_notifications_outside_or_out_of_order() {
 
 #[test]
 fn reader_admission_precedes_host_process_creation() {
-    let source = include_str!("host_process.rs");
+    let source = include_str!("host_process_spawn.rs");
     let admission = source
         .find("try_admit_reader")
         .expect("reader admission boundary");

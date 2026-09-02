@@ -112,16 +112,14 @@ async fn replace_current(
     prepared: PreparedInstall,
 ) -> Result<ExtensionRecord, OperationFailure> {
     let replacement = super::installer_record::for_update(&current, prepared.record);
-    let stopped = runtime
-        .stop_host(super::host_process::stop_deadline())
-        .await;
+    let identity = super::host_identity::HostIdentity::ThirdParty(current.manifest.id.clone());
+    let stopped = runtime.stop_channel(&identity, None).await;
     super::host_stop_boundary::after_confirmed_stop(
         stopped,
         OperationFailure::HostUnavailable,
         async move {
             if super::registry::replace_user(&current, replacement.clone()).is_err() {
                 cleanup(&replacement).await;
-                let _ = runtime.start_untracked().await;
                 return Err(OperationFailure::UpdateFailed);
             }
             let old = current.clone();
@@ -133,7 +131,6 @@ async fn replace_current(
                 OperationFailure::UpdateFailed,
             )
             .await;
-            let _ = runtime.start_untracked().await;
             Ok(replacement)
         },
     )

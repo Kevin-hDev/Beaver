@@ -1,6 +1,7 @@
+use super::host_identity::HostIdentity;
 use super::host_process::HostProcess;
 use super::protocol::HostToolResult;
-use super::types::{HostState, MAX_WORKING_DIRECTORY_CHARS};
+use super::types::MAX_WORKING_DIRECTORY_CHARS;
 use crate::services::agent_local::tool_result_contract::ToolErrorCategory;
 use crate::services::agent_local::types_tools::ToolResult;
 use serde_json::{json, Value};
@@ -12,9 +13,7 @@ pub async fn dispatch_tool(
     arguments: &Value,
     working_directory: &Path,
 ) -> Option<ToolResult> {
-    if !super::registry_index::is_dynamic_tool(name) {
-        return None;
-    }
+    let extension_id = super::registry_index::plugin_id_for_tool(name)?;
     let runtime = match super::runtime::global() {
         Ok(runtime) => Arc::clone(runtime),
         Err(_) => return Some(super::tool_result::unavailable()),
@@ -27,15 +26,21 @@ pub async fn dispatch_tool(
         .run_operation(move |cancel| async move {
             tokio::select! {
                 _ = cancel.cancelled() => super::tool_result::unavailable(),
-                result = dispatch_tracked(&name, &arguments, &working_directory) => result,
+                result = dispatch_tracked(&runtime, &extension_id, &name, &arguments, &working_directory) => result,
             }
         })
         .await;
     Some(result.unwrap_or_else(|_| super::tool_result::unavailable()))
 }
 
-async fn dispatch_tracked(name: &str, arguments: &Value, working_directory: &Path) -> ToolResult {
-    let host = match super::runtime_lifecycle::ensure_running().await {
+async fn dispatch_tracked(
+    runtime: &Arc<super::runtime::ExtensionRuntime>,
+    extension_id: &str,
+    name: &str,
+    arguments: &Value,
+    working_directory: &Path,
+) -> ToolResult {
+    let host = match super::runtime_lifecycle::ensure_running(extension_id).await {
         Ok(host) => host,
         Err(_) => return super::tool_result::unavailable(),
     };
@@ -57,7 +62,11 @@ async fn dispatch_tracked(name: &str, arguments: &Value, working_directory: &Pat
         .await
         .and_then(super::runtime::parse::<HostToolResult>);
     if response.is_err() {
-        invalidate(&host).await;
+        if let Ok((identity, _, current)) = runtime.process_for_extension(extension_id).await {
+            if Arc::ptr_eq(&current, &host) {
+                invalidate(runtime, identity, host).await;
+            }
+        }
     }
     to_tool_result(response)
 }
@@ -76,28 +85,33 @@ pub async fn emit_event(name: &str, payload: Value) {
         .run_operation(move |cancel| async move {
             tokio::select! {
                 _ = cancel.cancelled() => {},
-                _ = emit_tracked(&runtime, &name, payload) => {},
+                _ = emit_tracked(runtime, name, payload) => {},
             }
         })
         .await;
 }
 
-async fn emit_tracked(runtime: &Arc<super::runtime::ExtensionRuntime>, name: &str, payload: Value) {
-    let host = {
-        let Ok(process) = runtime.process.try_lock() else {
-            return;
-        };
-        process.as_ref().cloned()
-    };
-    let Some(host) = host else {
-        return;
-    };
-    if host
-        .request("event.emit", json!({"event": name, "payload": payload}))
-        .await
-        .is_err()
-    {
-        invalidate(&host).await;
+async fn emit_tracked(
+    runtime: Arc<super::runtime::ExtensionRuntime>,
+    name: String,
+    payload: Value,
+) {
+    let snapshots = runtime.hosts.lock().await.snapshots();
+    let mut calls = tokio::task::JoinSet::new();
+    for (identity, _, process) in snapshots {
+        let event = name.clone();
+        let body = payload.clone();
+        calls.spawn(async move {
+            let result = process
+                .request("event.emit", json!({"event": event, "payload": body}))
+                .await;
+            (identity, process, result.is_ok())
+        });
+    }
+    while let Some(Ok((identity, process, succeeded))) = calls.join_next().await {
+        if !succeeded {
+            invalidate(&runtime, identity, process).await;
+        }
     }
 }
 
@@ -141,23 +155,13 @@ fn extension_context_unavailable() -> ToolResult {
     )
 }
 
-async fn invalidate(failed: &Arc<HostProcess>) {
-    let Ok(runtime) = super::runtime::global() else {
-        return;
-    };
-    let outcome = super::runtime_lifecycle::stop_host_slot(
-        &runtime.process,
-        Some(failed),
-        super::host_process::stop_deadline(),
-    )
-    .await;
-    if outcome != super::runtime_lifecycle::StopHostOutcome::NotCurrent {
-        runtime.set_state(
-            HostState::Error,
-            Some("Hôte d'extensions indisponible.".to_string()),
-            0,
-        );
-        super::runtime::mark_enabled_extensions_error();
+async fn invalidate(
+    runtime: &super::runtime::ExtensionRuntime,
+    identity: HostIdentity,
+    failed: Arc<HostProcess>,
+) {
+    if runtime.stop_channel(&identity, Some(&failed)).await {
+        super::registry_sync::mark_identity_error(&identity);
     }
 }
 
@@ -169,7 +173,6 @@ mod tests {
     fn uncertain_host_failure_never_recommends_a_blind_retry() {
         let result = to_tool_result(Err("host disconnected".to_string()));
         let error = result.error.expect("structured extension error");
-
         assert_eq!(error.code.as_ref(), "extension_host_failed");
         assert!(!error.retryable);
         assert!(error.hint.is_some());
@@ -183,7 +186,6 @@ mod tests {
             truncated: false,
             display_summary: None,
         }));
-
         assert!(result.is_error);
         assert_eq!(result.error.unwrap().code.as_ref(), "extension_tool_error");
     }

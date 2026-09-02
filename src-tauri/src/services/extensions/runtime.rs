@@ -1,9 +1,10 @@
+use super::host_identity::HostIdentity;
 use super::host_paths::HostPaths;
 use super::host_process::HostProcess;
-use super::protocol::{HelloResult, LoadResult};
-use super::types::{ExtensionDiagnostic, ExtensionHostStatus, HostState, BEAVER_API_VERSION};
+use super::runtime_hosts::RuntimeHosts;
+use super::types::{ExtensionDiagnostic, ExtensionHostStatus, HostState};
 use crate::app_exit::AppWorkSupervisor;
-use serde_json::{json, Value};
+use serde_json::Value;
 use std::sync::{Arc, OnceLock, RwLock};
 use tokio::sync::Mutex;
 
@@ -11,7 +12,8 @@ static RUNTIME: OnceLock<Arc<ExtensionRuntime>> = OnceLock::new();
 
 pub struct ExtensionRuntime {
     pub(super) paths: Option<HostPaths>,
-    pub(super) process: Mutex<Option<Arc<HostProcess>>>,
+    pub(super) hosts: Mutex<RuntimeHosts>,
+    pub(super) sync: Mutex<()>,
     pub(super) status: RwLock<ExtensionHostStatus>,
     pub(super) auto_restarts: super::runtime_restart::RestartBudget,
     pub(super) work: super::work_supervision::ExtensionWorkServices,
@@ -25,9 +27,11 @@ pub fn init(app: &tauri::AppHandle, app_work: AppWorkSupervisor) -> Result<(), S
         status.state = HostState::Error;
         status.last_error = Some("Runtime Node.js indisponible.".to_string());
     }
+    let temporary_root = crate::services::paths::data_dir().join("extension-host-channels");
     let runtime = Arc::new(ExtensionRuntime {
         paths,
-        process: Mutex::new(None),
+        hosts: Mutex::new(RuntimeHosts::new(temporary_root)?),
+        sync: Mutex::new(()),
         status: RwLock::new(status),
         auto_restarts: super::runtime_restart::RestartBudget::default(),
         work: super::work_supervision::ExtensionWorkServices::new(app_work),
@@ -45,72 +49,69 @@ pub fn status() -> ExtensionHostStatus {
 }
 
 impl ExtensionRuntime {
-    pub(super) async fn sync_locked(
+    pub(super) async fn process_for_extension(
         &self,
-        slot: &mut Option<Arc<HostProcess>>,
-    ) -> Result<(), String> {
-        if slot.is_none() {
-            let paths = self
-                .paths
-                .as_ref()
-                .ok_or_else(|| "Runtime Node.js indisponible.".to_string())?;
-            *slot = Some(Arc::new(HostProcess::spawn(paths, &self.work).await?));
+        extension_id: &str,
+    ) -> Result<(HostIdentity, u64, Arc<HostProcess>), String> {
+        let record = super::registry::find(extension_id)?;
+        let identity = HostIdentity::from_record(&record)?;
+        if !record.enabled || !record.trusted {
+            let _ = self.stop_channel(&identity, None).await;
+            return Err(super::error_codes::HOST_UNAVAILABLE.to_string());
         }
-        let process = slot
-            .as_ref()
-            .ok_or_else(|| "Hôte d'extensions indisponible.".to_string())?;
-        let hello = parse::<HelloResult>(process.request("host.hello", json!({})).await?)?;
-        if hello.api_version != BEAVER_API_VERSION {
-            return Err("Version de l'hôte d'extensions incompatible.".to_string());
+        let (api_level, generation, process) = self
+            .hosts
+            .lock()
+            .await
+            .snapshot(&identity)
+            .ok_or_else(|| super::error_codes::HOST_UNAVAILABLE.to_string())?;
+        if api_level != record.manifest.api_level || !process.is_alive() {
+            let _ = self.stop_channel(&identity, Some(&process)).await;
+            return Err(super::error_codes::HOST_UNAVAILABLE.to_string());
         }
-        let records = super::registry::enabled_hosted()?;
-        super::runtime_version::validate_node(&hello.node_version)?;
-        let directory = self
-            .paths
-            .as_ref()
-            .ok_or_else(|| "Hôte d'extensions indisponible.".to_string())?
-            .directory
-            .as_path();
-        let build = super::runtime_sync::build_specs(records, directory)?;
-        process.request("host.reset", json!({})).await?;
-        let mut responses = Vec::with_capacity(build.specs.len());
-        for specification in &build.specs {
-            responses.push(
-                process
-                    .load(specification)
-                    .await
-                    .and_then(parse::<LoadResult>)?,
-            );
-        }
-        let applied = super::runtime_sync::apply(responses, &build)?;
-        self.set_running(hello, applied.active, applied.diagnostics);
-        Ok(())
+        Ok((identity, generation, process))
     }
 
-    fn set_running(
+    pub(super) async fn stop_channel(
         &self,
-        hello: HelloResult,
-        active: usize,
-        diagnostics: Vec<ExtensionDiagnostic>,
-    ) {
+        identity: &HostIdentity,
+        expected: Option<&Arc<HostProcess>>,
+    ) -> bool {
+        let Some((_, generation, process)) = self.hosts.lock().await.snapshot(identity) else {
+            return true;
+        };
+        if expected.is_some_and(|expected| !Arc::ptr_eq(expected, &process)) {
+            return false;
+        }
+        if !process.kill(super::host_process::stop_deadline()).await {
+            return false;
+        }
+        self.hosts.lock().await.remove_current(identity, generation)
+    }
+
+    pub(super) fn set_running(&self, active: usize, diagnostics: Vec<ExtensionDiagnostic>) {
         if let Ok(mut status) = self.status.write() {
             status.state = HostState::Running;
-            status.node_version = Some(hello.node_version);
-            status.jiti_version = hello.jiti_version;
-            status.api_version = hello.api_version;
             status.active_extensions = active;
             status.last_error = None;
             status.diagnostics = diagnostics;
         }
     }
 
+    pub(super) fn set_host_version(&self, hello: &super::protocol::HelloResult) {
+        if let Ok(mut status) = self.status.write() {
+            status.node_version = Some(hello.node_version.clone());
+            status.jiti_version = hello.jiti_version.clone();
+            status.api_version = hello.api_version.clone();
+        }
+    }
+
     pub(super) fn set_state(&self, state: HostState, error: Option<String>, active: usize) {
         if let Ok(mut status) = self.status.write() {
-            let running = state == HostState::Running;
-            status.state = state;
+            status.state = state.clone();
             status.active_extensions = active;
             status.last_error = error;
-            if !running {
+            if state != HostState::Running {
                 status.diagnostics.clear();
             }
         }

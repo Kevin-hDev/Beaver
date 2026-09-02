@@ -36,6 +36,10 @@ pub(crate) enum OwnedProcessInspection {
 
 pub struct OwnedProcess;
 
+#[path = "owned_process_scope.rs"]
+mod scope;
+pub(crate) use scope::OwnedProcessScope;
+
 impl OwnedProcess {
     #[cfg(unix)]
     pub(crate) fn adopt_existing(pid: u32) -> Result<(), OwnedProcessError> {
@@ -118,6 +122,13 @@ impl OwnedProcess {
             return Err(OwnedProcessError::Admission);
         }
         Ok(child)
+    }
+
+    pub async fn spawn_tokio_scoped(
+        command: &mut tokio::process::Command,
+        kind: ProcessKind,
+    ) -> Result<(tokio::process::Child, OwnedProcessScope), OwnedProcessError> {
+        OwnedProcessScope::spawn_tokio(command, kind).await
     }
 
     #[cfg(windows)]

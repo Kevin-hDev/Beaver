@@ -4,18 +4,57 @@ use super::types::{
     DIAGNOSTIC_ADVANCED_REQUIRED, DIAGNOSTIC_ENTRY_UNAVAILABLE, DIAGNOSTIC_HOST_MISSING_RESPONSE,
     DIAGNOSTIC_LOAD_FAILED, MAX_EXTENSIONS, RUNTIME_DIAGNOSTIC_CODES,
 };
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path::Path;
 
 pub struct BuildSpecs {
-    pub specs: Vec<HostExtensionSpec>,
+    pub official_specs: Vec<HostExtensionSpec>,
+    pub third_party_specs: BTreeMap<String, HostExtensionSpec>,
     pub enabled_ids: HashSet<String>,
     pub diagnostics: Vec<ExtensionDiagnostic>,
+    pub failures: BTreeMap<String, String>,
 }
 
 pub struct ApplyResult {
     pub active: usize,
     pub diagnostics: Vec<ExtensionDiagnostic>,
+}
+
+pub(super) struct HostPlan {
+    pub(super) official: Vec<super::types::ExtensionRecord>,
+    pub(super) third_party: Vec<super::types::ExtensionRecord>,
+    pub(super) failures: std::collections::BTreeMap<String, String>,
+}
+
+pub(super) fn plan_records(records: Vec<super::types::ExtensionRecord>) -> HostPlan {
+    let mut official = Vec::new();
+    let mut candidates = Vec::new();
+    for record in records
+        .into_iter()
+        .filter(|record| record.enabled && record.trusted)
+    {
+        match record.kind {
+            ExtensionKind::Builtin => official.push(record),
+            ExtensionKind::Local => candidates.push(record),
+            ExtensionKind::External => {}
+        }
+    }
+    // Le dernier emplacement reste réservé à l'autorité officielle, même si aucun Builtin
+    // n'est actif pendant cette synchronisation : la 32e extension tierce échoue toujours pareil.
+    let third_party_capacity = super::types::MAX_HOST_PROCESSES.saturating_sub(1);
+    let mut failures = std::collections::BTreeMap::new();
+    for record in candidates.iter().skip(third_party_capacity) {
+        failures.insert(
+            record.manifest.id.clone(),
+            super::error_codes::LIMIT_REACHED.to_string(),
+        );
+    }
+    candidates.truncate(third_party_capacity);
+    HostPlan {
+        official,
+        third_party: candidates,
+        failures,
+    }
 }
 
 pub fn build_specs(
@@ -25,15 +64,30 @@ pub fn build_specs(
     super::registry_sync::mark_enabled_loading()?;
     let enabled_ids = records
         .iter()
+        .filter(|record| record.enabled && record.trusted)
         .take(MAX_EXTENSIONS)
         .map(|record| record.manifest.id.clone())
         .collect();
-    let mut specs = Vec::new();
+    let plan = plan_records(records);
+    let mut official_specs = Vec::new();
+    let mut third_party_specs = BTreeMap::new();
     let mut diagnostics = Vec::new();
-    for record in records.into_iter().take(MAX_EXTENSIONS) {
+    for record in plan.official.into_iter().take(MAX_EXTENSIONS) {
         let extension_id = record.manifest.id.clone();
         if let Some(specification) = build_spec(record, host_directory) {
-            specs.push(specification);
+            official_specs.push(specification);
+        } else {
+            diagnostics.push(runtime_diagnostic(
+                &extension_id,
+                "import",
+                DIAGNOSTIC_ENTRY_UNAVAILABLE,
+            ));
+        }
+    }
+    for record in plan.third_party.into_iter().take(MAX_EXTENSIONS) {
+        let extension_id = record.manifest.id.clone();
+        if let Some(specification) = build_spec(record, host_directory) {
+            third_party_specs.insert(extension_id, specification);
         } else {
             diagnostics.push(runtime_diagnostic(
                 &extension_id,
@@ -43,9 +97,11 @@ pub fn build_specs(
         }
     }
     Ok(BuildSpecs {
-        specs,
+        official_specs,
+        third_party_specs,
         enabled_ids,
         diagnostics,
+        failures: plan.failures,
     })
 }
 
@@ -54,8 +110,9 @@ pub fn apply(responses: Vec<LoadResult>, build: &BuildSpecs) -> Result<ApplyResu
         return Err("Réponse de l'hôte d'extensions invalide.".to_string());
     }
     let requested: HashMap<&str, &HostExtensionSpec> = build
-        .specs
+        .official_specs
         .iter()
+        .chain(build.third_party_specs.values())
         .map(|spec| (spec.id.as_str(), spec))
         .collect();
     let mut received = HashSet::new();
@@ -114,7 +171,8 @@ pub fn apply(responses: Vec<LoadResult>, build: &BuildSpecs) -> Result<ApplyResu
             DIAGNOSTIC_HOST_MISSING_RESPONSE,
         ));
     }
-    let active = super::registry_sync::apply_results(&build.enabled_ids, successful)?;
+    let active =
+        super::registry_sync::apply_results(&build.enabled_ids, successful, &build.failures)?;
     Ok(ApplyResult {
         active,
         diagnostics,

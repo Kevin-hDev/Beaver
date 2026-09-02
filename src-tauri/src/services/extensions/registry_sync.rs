@@ -1,12 +1,11 @@
 use super::types::{ExtensionContributions, ExtensionKind, ExtensionStatus, MAX_TOOLS};
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 pub fn mark_enabled_loading() -> Result<(), String> {
     super::registry::mutate(|records| {
-        for record in records
-            .iter_mut()
-            .filter(|record| record.kind != ExtensionKind::External && record.enabled)
-        {
+        for record in records.iter_mut().filter(|record| {
+            record.kind != ExtensionKind::External && record.enabled && record.trusted
+        }) {
             record.status = ExtensionStatus::Loading;
             record.last_error = None;
         }
@@ -17,6 +16,7 @@ pub fn mark_enabled_loading() -> Result<(), String> {
 pub fn apply_results(
     enabled_ids: &HashSet<String>,
     successful: HashMap<String, ExtensionContributions>,
+    failures: &BTreeMap<String, String>,
 ) -> Result<usize, String> {
     let total_tools = successful
         .values()
@@ -40,7 +40,12 @@ pub fn apply_results(
             } else {
                 record.contributions = ExtensionContributions::default();
                 record.status = ExtensionStatus::Error;
-                record.last_error = Some("load_failed".to_string());
+                record.last_error = Some(
+                    failures
+                        .get(&record.manifest.id)
+                        .cloned()
+                        .unwrap_or_else(|| "load_failed".to_string()),
+                );
             }
         }
         Ok::<(), String>(())
@@ -56,6 +61,24 @@ pub fn mark_all_enabled_error() {
         {
             record.status = ExtensionStatus::Error;
             record.last_error = Some("host_unavailable".to_string());
+        }
+        Ok::<(), String>(())
+    });
+}
+
+pub fn mark_identity_error(identity: &super::host_identity::HostIdentity) {
+    let _ = super::registry::mutate(|records| {
+        for record in records.iter_mut().filter(|record| match identity {
+            super::host_identity::HostIdentity::Official => {
+                record.kind == ExtensionKind::Builtin && record.enabled
+            }
+            super::host_identity::HostIdentity::ThirdParty(id) => {
+                record.manifest.id == *id && record.enabled
+            }
+        }) {
+            record.status = ExtensionStatus::Error;
+            record.last_error = Some("host_unavailable".to_string());
+            record.contributions = ExtensionContributions::default();
         }
         Ok::<(), String>(())
     });

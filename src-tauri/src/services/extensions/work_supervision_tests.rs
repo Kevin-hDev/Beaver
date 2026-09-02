@@ -46,6 +46,21 @@ fn operation_and_core_call_registries_have_fixed_capacities() {
     }
 }
 
+#[test]
+fn reader_capacity_is_the_generated_host_process_limit() {
+    let work = extension_work();
+    let readers = (0..super::types::MAX_HOST_PROCESSES)
+        .map(|_| work.try_admit_reader().expect("reader slot"))
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        work.try_admit_reader()
+            .expect_err("reader capacity must match maxHostProcesses"),
+        ExtensionWorkAdmissionError::Busy
+    );
+    drop(readers);
+}
+
 #[tokio::test]
 async fn stop_cancels_and_awaits_reader_operation_and_core_call() {
     let work = extension_work();

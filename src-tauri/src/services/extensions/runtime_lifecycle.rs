@@ -27,12 +27,10 @@ pub async fn stop_and_wait(deadline: Instant) -> bool {
 }
 
 async fn stop_runtime(runtime: &ExtensionRuntime, deadline: Instant) -> bool {
-    // L'admission ferme avant la destruction du processus afin qu'une
-    // requête concurrente ne puisse pas recréer l'hôte pendant l'arrêt.
     runtime.work.begin_closing();
-    let host_stopped = runtime.stop_host(deadline).await;
+    let hosts_stopped = runtime.stop_hosts(deadline).await;
     crate::services::shutdown_completion::combine_with_work(
-        host_stopped,
+        hosts_stopped,
         runtime.work.stop_and_wait(deadline),
     )
     .await
@@ -51,28 +49,23 @@ pub(super) fn start_background(app: tauri::AppHandle) -> Result<(), String> {
     .map_err(|error| error.public_code().to_string())
 }
 
-pub(super) async fn ensure_running() -> Result<Arc<HostProcess>, String> {
+pub(super) async fn ensure_running(extension_id: &str) -> Result<Arc<HostProcess>, String> {
     let runtime = super::runtime::global()?;
     if !runtime.work.is_open() {
         return Err(error_codes::HOST_UNAVAILABLE.to_string());
     }
-    let mut slot = runtime.process.lock().await;
-    if let Some(process) = slot.as_ref() {
-        return Ok(process.clone());
+    if let Ok((_, _, process)) = runtime.process_for_extension(extension_id).await {
+        return Ok(process);
     }
     if !runtime.auto_restarts.allow() {
         return Err(error_codes::HOST_UNAVAILABLE.to_string());
     }
     runtime.set_state(HostState::Starting, None, 0);
-    if let Err(error) = runtime.sync_locked(&mut slot).await {
-        drop(slot);
-        let _ = stop_host_slot(&runtime.process, None, super::host_process::stop_deadline()).await;
-        runtime.mark_unavailable();
-        return Err(error);
-    }
-    slot.as_ref()
-        .cloned()
-        .ok_or_else(|| error_codes::HOST_UNAVAILABLE.to_string())
+    runtime.sync_hosts().await?;
+    runtime
+        .process_for_extension(extension_id)
+        .await
+        .map(|(_, _, process)| process)
 }
 
 impl ExtensionRuntime {
@@ -81,18 +74,15 @@ impl ExtensionRuntime {
             return Err(error_codes::HOST_UNAVAILABLE.to_string());
         }
         self.set_state(HostState::Starting, None, 0);
-        let mut process = self.process.lock().await;
-        let result = self.sync_locked(&mut process).await;
+        let result = self.sync_hosts().await;
         if result.is_err() {
-            drop(process);
-            let _ = stop_host_slot(&self.process, None, super::host_process::stop_deadline()).await;
             self.mark_unavailable();
         }
         result
     }
 
     async fn restart_untracked(&self) -> Result<(), String> {
-        let stopped = self.stop_host(super::host_process::stop_deadline()).await;
+        let stopped = self.stop_hosts(super::host_process::stop_deadline()).await;
         super::host_stop_boundary::after_confirmed_stop(
             stopped,
             error_codes::HOST_UNAVAILABLE.to_string(),
@@ -104,8 +94,19 @@ impl ExtensionRuntime {
         .await
     }
 
-    pub(super) async fn stop_host(&self, deadline: Instant) -> bool {
-        if stop_host_slot(&self.process, None, deadline).await != StopHostOutcome::Confirmed {
+    pub(super) async fn stop_hosts(&self, deadline: Instant) -> bool {
+        let snapshots = self.hosts.lock().await.snapshots();
+        let mut results = Vec::with_capacity(snapshots.len());
+        for (_, _, process) in &snapshots {
+            results.push(process.kill(deadline).await);
+        }
+        let mut hosts = self.hosts.lock().await;
+        let mut all_stopped = true;
+        for ((identity, generation, _), stopped) in snapshots.into_iter().zip(results) {
+            all_stopped &= hosts.remove_stopped(&identity, generation, stopped);
+        }
+        drop(hosts);
+        if !all_stopped {
             return false;
         }
         self.set_state(HostState::Stopped, None, 0);
@@ -120,51 +121,6 @@ impl ExtensionRuntime {
         );
         super::runtime::mark_enabled_extensions_error();
     }
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) enum StopHostOutcome {
-    Confirmed,
-    Incomplete,
-    NotCurrent,
-}
-
-pub(super) async fn stop_host_slot(
-    slot: &tokio::sync::Mutex<Option<Arc<HostProcess>>>,
-    expected: Option<&Arc<HostProcess>>,
-    deadline: Instant,
-) -> StopHostOutcome {
-    let Ok(current) =
-        tokio::time::timeout_at(tokio::time::Instant::from_std(deadline), slot.lock()).await
-    else {
-        return StopHostOutcome::Incomplete;
-    };
-    let Some(process) = current.as_ref().cloned() else {
-        return StopHostOutcome::Confirmed;
-    };
-    if expected.is_some_and(|expected| !Arc::ptr_eq(expected, &process)) {
-        return StopHostOutcome::NotCurrent;
-    }
-    drop(current);
-    if !process.kill(deadline).await {
-        return StopHostOutcome::Incomplete;
-    }
-    let Ok(mut current) =
-        tokio::time::timeout_at(tokio::time::Instant::from_std(deadline), slot.lock()).await
-    else {
-        return StopHostOutcome::Incomplete;
-    };
-    // Le slot reste occupé jusqu'à la confirmation de mort, mais le verrou
-    // est libéré pendant l'attente afin de ne pas bloquer tout le runtime.
-    if current
-        .as_ref()
-        .is_some_and(|candidate| Arc::ptr_eq(candidate, &process))
-    {
-        current.take();
-    } else if expected.is_some() {
-        return StopHostOutcome::NotCurrent;
-    }
-    StopHostOutcome::Confirmed
 }
 
 #[cfg(test)]

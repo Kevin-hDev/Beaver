@@ -6,12 +6,13 @@ pub async fn uninstall(id: &str) -> Result<(), OperationFailure> {
     let current = super::registry::find(id).map_err(|_| OperationFailure::UninstallFailed)?;
     let id = id.to_string();
     let runtime = extension_runtime()?;
+    let identity = super::host_identity::HostIdentity::ThirdParty(id.clone());
     let work = runtime.work.clone();
     work.run_operation(move |cancel| async move {
         ensure_uninstall_active(&cancel)?;
         let stopped = tokio::select! {
             _ = cancel.cancelled() => return Err(OperationFailure::HostUnavailable),
-            stopped = runtime.stop_host(super::host_process::stop_deadline()) => stopped,
+            stopped = runtime.stop_channel(&identity, None) => stopped,
         };
         ensure_uninstall_active(&cancel)?;
         super::host_stop_boundary::after_confirmed_stop(
@@ -19,7 +20,6 @@ pub async fn uninstall(id: &str) -> Result<(), OperationFailure> {
             OperationFailure::HostUnavailable,
             async move {
                 if super::registry::remove(&id).is_err() {
-                    let _ = runtime.start_untracked().await;
                     return Err(OperationFailure::UninstallFailed);
                 }
                 let result = if is_managed(&current) {
@@ -35,7 +35,6 @@ pub async fn uninstall(id: &str) -> Result<(), OperationFailure> {
                 } else {
                     Ok(())
                 };
-                let _ = runtime.start_untracked().await;
                 result
             },
         )

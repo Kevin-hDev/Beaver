@@ -35,7 +35,7 @@ pub fn rebuild(records: &[ExtensionRecord]) -> Result<(), String> {
     let preferences = super::discovery_preferences::sanitize(records)?;
     let plugins = records
         .iter()
-        .filter(|record| record.kind != ExtensionKind::External && record.enabled)
+        .filter(|record| record.kind != ExtensionKind::External && record.enabled && record.trusted)
         .map(|record| IndexedPlugin {
             id: record.manifest.id.clone(),
             name: record.manifest.name.clone(),

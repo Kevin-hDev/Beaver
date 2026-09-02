@@ -6,12 +6,15 @@ use std::os::unix::process::CommandExt;
 #[path = "process_tree_after_parent.rs"]
 mod after_parent;
 pub(crate) use after_parent::kill_pipe_holders_after_parent_exit;
+#[path = "process_tree_scope.rs"]
+mod scope;
 #[cfg(unix)]
 #[path = "process_tree_unix.rs"]
 mod unix;
 #[cfg(windows)]
 #[path = "process_tree_windows.rs"]
 mod windows;
+pub use scope::terminate_tokio_scoped;
 
 const GRACEFUL_STOP_TIMEOUT: Duration = Duration::from_millis(500);
 const POLL_INTERVAL: Duration = Duration::from_millis(25);

@@ -150,7 +150,7 @@ pub(super) fn disable_hosted_records(records: &mut [ExtensionRecord]) {
 pub fn enabled_hosted() -> Result<Vec<ExtensionRecord>, String> {
     Ok(list()?
         .into_iter()
-        .filter(|record| record.kind != ExtensionKind::External && record.enabled)
+        .filter(|record| record.kind != ExtensionKind::External && record.enabled && record.trusted)
         .collect())
 }
 
