@@ -69,6 +69,17 @@ fn refuses_unsorted_or_mismatched_manifests() {
     assert!(super::ui_artifact::validate(&artifact).is_err());
 }
 
+#[test]
+fn cleanup_preserves_an_active_staging_artifact() {
+    let staging = super::ui_artifact_store::prepare().unwrap();
+    let sentinel = staging.output().join("active.js");
+    std::fs::write(&sentinel, b"active").unwrap();
+
+    super::ui_artifact_store::unreferenced(&[]).unwrap();
+
+    assert!(sentinel.is_file());
+}
+
 #[cfg(unix)]
 #[test]
 fn artifact_path_refuses_a_symlinked_extension_directory() {

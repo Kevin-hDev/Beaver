@@ -1,12 +1,16 @@
 use rand::RngCore;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
+use std::sync::{LazyLock, Mutex};
 
 use super::types::{ExtensionRecord, ExtensionUiArtifact, MAX_USER_EXTENSIONS};
 
 const DIRECTORY: &str = "extensions-ui";
 const MAX_ROOT_ENTRIES: usize = MAX_USER_EXTENSIONS + 32;
 const MAX_ARTIFACTS_PER_EXTENSION: usize = 32;
+const MAX_ACTIVE_STAGING_ARTIFACTS: usize = MAX_ROOT_ENTRIES - MAX_USER_EXTENSIONS;
+static ACTIVE_STAGING: LazyLock<Mutex<HashSet<PathBuf>>> =
+    LazyLock::new(|| Mutex::new(HashSet::new()));
 
 pub(super) struct StagingArtifact {
     path: PathBuf,
@@ -16,6 +20,10 @@ pub(super) struct StagingArtifact {
 }
 
 pub(super) fn prepare() -> Result<StagingArtifact, String> {
+    let mut active = ACTIVE_STAGING.lock().map_err(|_| invalid())?;
+    if active.len() >= MAX_ACTIVE_STAGING_ARTIFACTS {
+        return Err(invalid());
+    }
     let root = root();
     crate::services::private_store::ensure_private_dir(&root).map_err(|_| invalid())?;
     let mut random = [0_u8; 16];
@@ -27,6 +35,9 @@ pub(super) fn prepare() -> Result<StagingArtifact, String> {
     let temporary = path.join("tmp");
     crate::services::private_store::ensure_private_dir(&output).map_err(|_| invalid())?;
     crate::services::private_store::ensure_private_dir(&temporary).map_err(|_| invalid())?;
+    if !active.insert(path.clone()) {
+        return Err(invalid());
+    }
     Ok(StagingArtifact {
         path,
         output,
@@ -63,6 +74,7 @@ pub(super) fn remove(record: &ExtensionRecord) -> Result<(), String> {
 }
 
 pub(super) fn unreferenced(records: &[ExtensionRecord]) -> Result<(), String> {
+    let active = ACTIVE_STAGING.lock().map_err(|_| invalid())?;
     let root = root();
     if !root.exists() {
         return Ok(());
@@ -81,7 +93,7 @@ pub(super) fn unreferenced(records: &[ExtensionRecord]) -> Result<(), String> {
             return Err(invalid());
         }
         let path = entry.map_err(|_| invalid())?.path();
-        cleanup_entry(&path, &referenced)?;
+        cleanup_entry(&path, &referenced, &active)?;
     }
     Ok(())
 }
@@ -145,19 +157,29 @@ fn validate_directory_if_present(path: &Path, expected_root: Option<&Path>) -> R
 
 impl Drop for StagingArtifact {
     fn drop(&mut self) {
-        if !self.committed {
-            let _ = std::fs::remove_dir_all(&self.path);
+        if let Ok(mut active) = ACTIVE_STAGING.lock() {
+            if !self.committed {
+                let _ = std::fs::remove_dir_all(&self.path);
+            }
+            active.remove(&self.path);
         }
     }
 }
 
-fn cleanup_entry(path: &Path, referenced: &HashSet<PathBuf>) -> Result<(), String> {
+fn cleanup_entry(
+    path: &Path,
+    referenced: &HashSet<PathBuf>,
+    active: &HashSet<PathBuf>,
+) -> Result<(), String> {
     let metadata = std::fs::symlink_metadata(path).map_err(|_| invalid())?;
     let name = path
         .file_name()
         .and_then(|value| value.to_str())
         .unwrap_or("");
     if metadata.is_dir() && name.starts_with(".staging-") {
+        if active.contains(path) {
+            return Ok(());
+        }
         return std::fs::remove_dir_all(path).map_err(|_| invalid());
     }
     if !metadata.is_dir() || super::validation::identifier(name).is_err() {
