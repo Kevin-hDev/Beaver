@@ -1,45 +1,29 @@
 UI-R0 — note de revue finale
 
 Objectif et portée
-- Définit uniquement UI-R0 : contrat UI machine-readable, générateurs Rust/TypeScript/Node/SDK, bundler navigateur, protocole custom limité à la fixture E2E et preuve runtime réelle. UI-P0 et les lots suivants ne sont pas anticipés.
+- UI-R0 uniquement : contrat UI machine-readable, générateurs Rust/TypeScript/Node/SDK, bundler navigateur, protocole custom limité à la fixture E2E et preuve runtime. UI-P0 et les lots suivants restent hors périmètre.
 
 Décisions et raisons
-- `src-tauri/resources/extension-ui/contract.json` est l’autorité unique. Son schéma est fermé à la racine et pour `placements`, `protectedOccupants` et `validation`, afin qu’une future propriété inconnue échoue au lieu d’être ignorée.
-- Toutes les sémantiques sont projetées depuis ce JSON : structures Rust complètes, constantes TypeScript/Node/SDK, documentation générée entre marqueurs. Cela interdit une deuxième autorité manuelle.
-- esbuild est fixé exactement à 0.28.1 dans l’hôte empaqueté et les dépendances racine, afin que préparation, build et tests utilisent la même version.
-- Le protocole `beaver-extension:` ne sert que la fixture isolée quand la feature `e2e` est active ; hors E2E il ne sert aucun artefact, car l’activation utilisateur appartient à UI-P5.
-- La CSP reste stricte et n’autorise que le schéma attendu. WebKit pouvant omettre `Origin` lors d’un import natif, l’origine CORS est alors dérivée uniquement après validation de la webview, du schéma et de l’autorité ; toute origine étrangère explicitement fournie reste refusée.
-- Le bundler utilise l’API esbuild sans shell, avec `write: false`, aucune configuration ni plugin externe, et valide/b borne entrées et sorties avant écriture.
+- `src-tauri/resources/extension-ui/contract.json` est l’autorité unique. Le schéma est fermé à la racine et dans `placements`, `protectedOccupants` et `validation` pour refuser tout ajout non projeté.
+- Rust reçoit les structures complètes générées ; TypeScript, Node, SDK et la documentation sont également générés depuis le même JSON. Aucune seconde autorité manuelle.
+- esbuild est fixé exactement à 0.28.1 dans l’hôte empaqueté et à la racine afin que préparation, build et tests utilisent la même version.
+- `beaver-extension:` ne sert que la fixture isolée avec la feature `e2e`; hors E2E, aucun artefact n’est servi, car l’activation utilisateur appartient à UI-P5.
+- La CSP reste stricte. Quand WebKit omet `Origin`, l’origine CORS est dérivée seulement après validation de la webview, du schéma et de l’autorité ; toute origine étrangère fournie reste refusée.
+- Le bundler utilise esbuild sans shell, avec `write: false`, aucune configuration ni plugin externe, et valide/borne les entrées et sorties avant écriture.
 
-Corrections demandées par la revue contrôleur
-- Ajout des locales, opérations de placement, placements complets, occupants protégés et validation dans la génération Rust structurée.
-- Ajout de `UI_VALIDATION` aux artefacts TypeScript, Node et SDK.
-- Ajout d’une couverture exhaustive des 15 clés racine et des clés internes ; les clés inconnues sont refusées.
-- Ajout de tests unitaires directs et déterministes pour les branches macOS et Linux de `preparePackagedApp`, avec listing Linux injecté.
+Corrections de la revue contrôleur
+- Projection Rust ajoutée pour locales, opérations, placements complets, occupants protégés et validation ; `UI_VALIDATION` ajouté aux artefacts TypeScript/Node/SDK.
+- Couverture exhaustive des 15 clés racine et des clés internes ; les clés inconnues sont refusées.
+- Tests unitaires directs et déterministes ajoutés pour macOS et Linux dans `preparePackagedApp`, avec listing Linux injecté.
 - Tous les fichiers source de production restent sous 230 lignes.
 
-Preuves TDD rouges
-- Contrat UI Rust : 0/6, exit 101 ; artefacts initiaux : 16 réussis, 2 échoués, 1 ignoré, exit 101.
-- Bundler absent puis 3/4 ; protocole absent, exit 101 ; E2E process 19/23 ; préparation release 3/5 ; hôte 60/61.
-- Première preuve runtime : 3/4, l’import WebKit sans `Origin` était refusé.
-- Revue contrôleur : projection exhaustive Rust 0/1, exit 101 ; schéma fermé 0/1, exit 101 ; packaged-app 7/8, exit 1.
+TDD rouge puis vert
+- Rouges initiaux : contrat UI Rust 0/6 (exit 101) ; artefacts 16 réussis, 2 échoués, 1 ignoré (exit 101) ; bundler absent puis 3/4 ; protocole absent (exit 101) ; E2E process 19/23 ; préparation release 3/5 ; hôte 60/61 ; première preuve runtime 3/4 à cause de l’absence d’`Origin` WebKit.
+- Rouges de revue : projection exhaustive 0/1 (exit 101), schéma fermé 0/1 (exit 101), packaged-app 7/8 (exit 1).
+- Verts : `contracts:check` 10/10 ; hôte 61/61 ; bundler 4/4 ; Vitest 1/1 ; filtre UI listé à 7 puis 7/7 ; filtre artefacts listé à 22 puis 20 réussis/2 exports ignorés ; protocole 3/3 ; packaged-app + e2e-process 31/31, et 36/36 avec préparation release ; clippy strict exit 0 ; tsc exit 0 ; `git diff --check` exit 0 ; Graphify exit 0 (42 580 nœuds, 88 930 arêtes).
 
-Validations vertes observées
-- `npm run contracts:check` : 10/10 contrôles, exit 0.
-- `npm run test:extensions-host` : 61/61, exit 0.
-- `node --test scripts/extensions/ui-build.test.mjs` : 4/4, exit 0.
-- `npx vitest run src/types/__tests__/extension-ui-contract.test.ts` : 1/1, exit 0.
-- Filtre Rust `ui_contract_tests` listé à 7 puis exécuté : 7/7, exit 0.
-- Filtre Rust `contract_artifact_tests` listé à 22 puis exécuté : 20 réussis, 2 exports développeur ignorés, exit 0.
-- Tests Rust du protocole : 3/3, exit 0.
-- `packaged-app` + `e2e-process` : 31/31 ; avec préparation release : 36/36, exit 0.
-- `cargo clippy --all-targets -- -D warnings` avec les overrides CEF/CMake absolus : exit 0.
-- `npx tsc --noEmit` : exit 0.
-- `git diff --check` avant commit et sur l’index : exit 0.
-- `graphify update .` : exit 0, 42 580 nœuds et 88 930 arêtes.
-
-Preuve E2E et limites
-- macOS réel, parcours normal : 4/4 ; macOS réel, application empaquetée : 4/4. Les deux prouvent l’import ESM par `beaver-extension:`.
-- Windows et Linux sont câblés dans la CI mais n’ont pas été exécutés localement depuis ce Mac ; ne pas considérer les trois OS comme validés localement.
-- Le linker macOS affiche l’avertissement préexistant `__eh_frame section too large`; il est non bloquant et le clippy strict est vert.
-- Aucun changement final ne subsiste dans les documents privés du checkout principal. La résolution du document privé reste bornée au checkout actif.
+E2E et limites
+- macOS réel normal : 4/4. macOS réel empaqueté : 4/4. Les deux prouvent l’import ESM par `beaver-extension:`.
+- Windows et Linux sont seulement câblés dans la CI et n’ont pas été exécutés localement depuis ce Mac. Les trois OS ne sont donc pas validés localement.
+- L’avertissement linker macOS préexistant `__eh_frame section too large` est non bloquant ; le clippy strict est vert.
+- Aucun changement final ne subsiste dans les documents privés du checkout principal ; la résolution du document privé est bornée au checkout actif.
