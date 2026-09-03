@@ -1,0 +1,25 @@
+Windows extension-host CI diagnostic and gate hardening.
+
+Why:
+- The packaged Windows CEF journey failed twice after 1h19 with the host stuck before running, while the complete Rust suite passed on windows-2022.
+- The previous 15s WebDriver wait expired before the contract-owned 60s host request timeout and then produced 42 misleading Acceptance selector failures.
+- The failed job retained neither its installer nor a bounded host-start category.
+
+What:
+- Adds a parallel windows-latest smoke job that prepares Beaver's verified bundled Node runtime, proves host.hello directly, then proves the same runtime through Rust OwnedProcess and Windows Job Object admission.
+- Moves extension-host bootstrap into the Mocha before hook so bootstrap failure skips dependent acceptance cases.
+- Derives the E2E wait from generated contract timeouts and reports only bounded state/error/version fields.
+- Fixes the two CodeQL findings: reads fixture metadata and bytes through one file handle, rejects non-file fixture entries during inventory, and removes the unused UI icon copy.
+
+Validation observed locally:
+- npm run test:extensions-runtime-smoke: 1 passed.
+- node --test scripts/extensions/*.test.mjs: 90 passed.
+- npm run test:e2e-runner: 77 passed.
+- npx tsc --noEmit: passed.
+- npm run lint: passed.
+- cargo fmt --check: passed.
+- targeted prepared-runtime Rust smoke: 1 passed, 4822 filtered.
+- cargo clippy --all-targets -- -D warnings: passed.
+- graphify update .: completed (43823 nodes, 92357 edges).
+
+The Windows root cause is intentionally not guessed here. The new two-boundary job determines whether failure is in the bundled runtime/protocol or in Rust process ownership; if both pass, the remaining boundary is packaged resource resolution/startup.
