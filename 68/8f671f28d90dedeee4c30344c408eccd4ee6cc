@@ -1,0 +1,38 @@
+UI-P2 review — declarative extension UI bridge
+
+Scope
+- Adds the standard SDK UI registration/action API, Node host transport, Rust attribution/validation/catalog and bounded IPC projection.
+- Migrates extensions.json from v1 to v2 with a complete backup, unknown-field preservation and inert legacy UI diagnostics.
+- Does not render third-party UI yet; rendering begins in UI-P3.
+
+Security and ownership
+- HostIdentity plus host generation is the identity authority; extension-supplied IDs cannot select another owner.
+- Official shared-host plugins remain distinct; third-party hosts can publish only their own ID.
+- Contributions, trees, text, locales, fields, options, actions, payloads, results, diagnostics, tombstones and global snapshots are bounded and revalidated in Rust.
+- UI failure is isolated from valid tools; visible action failures stay generic while internal reasons are bounded and sanitized.
+- Disable/stop/restart retires the catalog generation; late action responses cannot mutate a reloaded catalog.
+
+Review corrections applied before commit
+- Measure bytes after ID normalization.
+- Enforce dynamic actions per extension, not per contribution.
+- Bound Rust depth/node traversal before recursion.
+- Reject stale same-host action results by catalog revision.
+- Deduplicate UI diagnostics while validating every received code.
+- Keep advanced UI inert until UI-P5 and omit standard entry instead of serializing null.
+- Extend generated contract authorities for modes, contribution types, primitives and theme bases.
+- Update the complete-capability assertion to include ui.
+
+Executed validation
+- npm run contracts:check: passed.
+- npm run test:extensions-host: 75 passed, 0 failed.
+- node --test scripts/extensions/ui-runtime-security.test.mjs: 14 passed, 0 failed.
+- cargo test services::extensions::ui_validation_tests -- --nocapture: 5 passed.
+- cargo test services::extensions::ui_dispatch_tests -- --nocapture: 12 passed.
+- cargo test services::extensions::runtime_sync_tests -- --nocapture: 12 passed.
+- cargo test services::extensions:: --quiet: 296 passed, 2 ignored, 0 failed.
+- Targeted frontend Vitest: 17 passed, 0 failed.
+- npx tsc --noEmit, npm run lint, cargo fmt --check and cargo clippy -D warnings: passed.
+- graphify update .: passed.
+
+Known environment warning
+- macOS ld still reports the pre-existing __eh_frame compact-unwind size warning; compilation, Clippy and tests complete successfully.
