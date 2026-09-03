@@ -1,0 +1,7 @@
+CI root cause: the unreferenced artifact cleanup could delete a live .staging-* directory while another parallel Rust test or production build was still writing it.
+
+Correction: a single bounded registry tracks up to 32 active staging artifacts, derived from the existing root-entry reserve. Cleanup skips active paths but still removes abandoned staging directories; Drop unregisters and cleans incomplete builds.
+
+Regression coverage: cleanup_preserves_an_active_staging_artifact failed deterministically before the implementation and passes after it. The previously flaky advanced install scenario also passes.
+
+Validation: cargo test --lib (4811 passed, 0 failed, 11 ignored); targeted artifact and advanced-install tests; cargo clippy --all-targets -- -D warnings; cargo fmt --check; changed-file rustfmt gate; git diff --check; graphify update .
