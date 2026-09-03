@@ -1,0 +1,51 @@
+UI-P0 — objectif et portée
+
+Ajoute le démarrage sûr et le journal de reprise v2 pour les interfaces d’extensions. Rust demeure l’autorité fail-closed avant la construction Tauri et pendant toute récupération. Les rapports de tâche et de revue sous .superpowers sont privés, ignorés par Git et ne font pas partie du commit.
+
+Décisions et raisons
+
+- Journal v2 unique : extension-loading.json étend le mécanisme existant pour l’Hôte et l’UI ; aucun second journal ni seconde reprise.
+- Mutations sérialisées : une transaction unique verrouille, lit, modifie et publie afin qu’une mutation Hôte/UI, completion ou clear ne puisse en écraser une autre.
+- État Rust fail-closed : le frontend projette la décision backend et ne peut pas rouvrir l’UI tierce depuis un fallback IPC ou parsing.
+- Retry ciblé : conserve l’identité fautive, l’étape et attempts+1, avec plafond 3 ; il ne rouvre jamais le catalogue entier.
+- Shift plateforme : lecture macOS et Windows avant CEF, X11 et confirmation différée Wayland ; pendant l’attente, aucun chargement tiers n’est autorisé et le journal reste résolu par Rust.
+- Enfant CEF Windows : l’autorité de lancement retire uniquement le switch exact central --safe-mode avant d’ajouter l’admission. Les formes avec valeur ou dérivées restent refusées, ainsi qu’un helper lancé directement avec ce switch.
+- Ack exact : entrée IPC [u8; 32], token CSPRNG via OsRng.try_fill_bytes, comparaison temps constant, usage unique et zeroize ; les tailles 31 et 33 sont refusées avant traitement.
+- Arguments bornés : 128 arguments maximum et 2 048 caractères par argument avant croissance de la collection.
+- Focus visible : largeur et décalage viennent des tokens centraux --focus-visible-ring-width et --focus-visible-ring-offset ; aucune valeur 2px locale dans le dialogue.
+- Les textes UI-P0 ont une parité exacte dans les sept langues fr, en, es, de, it, zh et ja.
+
+Corrections issues de la revue contrôleur
+
+La revue a fait corriger : reprise qui perdait identité/étape/tentative ; préparation Windows trop tardive ; fermeture du dialogue InvalidMarker ; erreurs async visibles sans navigation après échec ; résolution du journal après Wayland false et annulation du timeout ; refus de continue depuis Normal ; RNG fallible ; feature Windows KeyboardAndMouse ; retrait exact de safe-mode pour les enfants CEF ; sérialisation interprocessus du read-modify-write avec tests concurrents déterministes ; séquences clavier réelles ; entrée ack exactement bornée ; collecte args bornée ; matrice visuelle six thèmes ; centralisation des deux mesures de focus CSS.
+
+Preuves TDD et validations exécutées
+
+Rouges observés : journal v2 exit 101 avec 17 API manquantes ; frontend exit 1 avec 2 suites absentes ; projection IPC 7/8 ; compatibilité marqueur 13/14 ; durcissements revue exit 101 avec 11 erreurs racines ; test CSS focus 1/1 rouge faute de tokens. Les filtres ayant listé 0 test ont été rejetés.
+
+Verts finaux, avec les overrides CEF absolus imposés pour Cargo :
+- loading_journal_tests : --list 8, puis 8/8, 4 770 filtrés, exit 0.
+- ui_startup_tests : --list 16, puis 16/16, 4 762 filtrés, exit 0.
+- commands::extensions::tests : --list 9, puis 9/9, 4 769 filtrés, exit 0.
+- loading_marker historique : --list 14, puis 14/14, 4 764 filtrés, exit 0.
+- app_build::tests : --list 2, puis 2/2, 4 776 filtrés, exit 0.
+- Frontend UI ciblé : 3 fichiers, 9/9, exit 0.
+- i18n : 1 fichier, 6/6, exit 0, parité des sept langues.
+- npm run lint : exit 0, frontières provider 55 fichiers, aucune erreur.
+- npx tsc --noEmit : exit 0.
+- cargo clippy --all-targets -- -D warnings : exit 0, 43,63 s.
+- cargo build --features e2e --target-dir target/e2e : exit 0, reconstruction finale 16,92 s.
+- git diff --check : exit 0.
+- graphify update . : exit 0, 42 788 nœuds, 89 447 arêtes, 2 452 communautés.
+
+Preuves réelles macOS
+
+- Lancement --safe-mode sur profil isolé : état safe/argument, bootstrap résolu, bannière sûre visible, thirdPartyLoadingAllowed=false, aucune marque UI tierce.
+- Fixture journal v2 valide interrompue à l’étape activate : état pendingInterruptedUi pour com.example.interrupted, attempts=1, dialogue visible, retry disponible, chargement tiers bloqué, journal conservé.
+- WebDriver réel : 24 vues couvrant dialogue et bannière dans 6 thèmes, aux largeurs normale et compacte ; aucun clipping ou débordement, contraste minimal 5,38:1, focus sûr visible et thirdPartyLoadingAllowed=false.
+
+Limites explicites
+
+- Le geste Shift physique macOS n’a pas été validé localement : l’injection synthétique n’a pas été reconnue comme modificateur maintenu. Seuls les tests injectés couvrent ce chemin.
+- Windows et Linux n’ont pas été exécutés localement ; leur câblage et leurs branches sont couverts par tests, sans prétendre à une validation réelle.
+- Le warning linker préexistant __eh_frame section too large apparaît sur les commandes Cargo concernées mais reste non bloquant ; Clippy strict est vert.
