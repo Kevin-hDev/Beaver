@@ -166,6 +166,7 @@ pub async fn set_enabled(id: &str, enabled: bool, trust_confirmed: bool) -> Resu
     })?;
     if !enabled {
         crate::services::agent_local::permission_gate::clear_extension(id).await;
+        super::loading_marker::ui_clear_if_matches(id)?;
     }
     Ok(reminder)
 }

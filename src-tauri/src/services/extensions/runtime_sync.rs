@@ -122,6 +122,7 @@ pub(super) fn runtime_diagnostic(
         extension_id: extension_id.to_string(),
         stage: stage.to_string(),
         code: code.to_string(),
+        occurred_at: super::diagnostic_time::now(),
         file: None,
         line: None,
         column: None,

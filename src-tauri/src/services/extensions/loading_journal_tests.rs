@@ -60,6 +60,25 @@ fn host_and_ui_updates_preserve_each_other_and_remove_only_when_both_empty() {
 }
 
 #[test]
+fn disabling_only_clears_the_matching_ui_incident() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("extension-loading.json");
+    loading_marker::ui_start_at(&path, UI_ID, 1).unwrap();
+
+    loading_marker::ui_clear_if_matches_at(&path, "com.example.other").unwrap();
+    let JournalRead::Valid(journal) = loading_marker::read_journal_at(&path) else {
+        panic!("UI incident must remain");
+    };
+    assert_eq!(journal.ui().unwrap().extension_id, UI_ID);
+
+    loading_marker::ui_clear_if_matches_at(&path, UI_ID).unwrap();
+    assert!(matches!(
+        loading_marker::read_journal_at(&path),
+        JournalRead::Missing
+    ));
+}
+
+#[test]
 fn concurrent_host_and_ui_transactions_cannot_publish_stale_copies() {
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path().join("extension-loading.json");

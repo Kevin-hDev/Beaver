@@ -1,10 +1,17 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ExtensionHostStatus, ExtensionRecord, ExtensionRecoveryState } from "@/types/extensions";
 import { ExtensionsPage } from "../extensions-page";
 
+const uiStartup = vi.hoisted(() => ({
+  current: null as null | Record<string, unknown>,
+}));
+
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
+}));
+vi.mock("@/hooks/use-extension-ui-startup", () => ({
+  useExtensionUiStartupContext: () => uiStartup.current,
 }));
 
 const host: ExtensionHostStatus = {
@@ -61,6 +68,7 @@ function renderPage(
     recovery?: ExtensionRecoveryState;
     hostBusy?: boolean;
     hostLoaded?: boolean;
+    onEnabled?: (id: string, enabled: boolean) => Promise<boolean>;
   } = {},
 ) {
   return render(
@@ -81,7 +89,7 @@ function renderPage(
       priorityBusy={false}
       onSelect={vi.fn()}
       onAdd={vi.fn()}
-      onEnabled={vi.fn()}
+      onEnabled={state.onEnabled ?? vi.fn(() => Promise.resolve(true))}
       onShowInChat={vi.fn()}
       onOpenSource={vi.fn()}
       onUpdate={vi.fn()}
@@ -98,6 +106,9 @@ function renderPage(
 }
 
 describe("ExtensionsPage", () => {
+  beforeEach(() => {
+    uiStartup.current = null;
+  });
   it("sépare strictement les plugins officiels des extensions locales", () => {
     renderPage("custom");
 
@@ -287,6 +298,68 @@ describe("ExtensionsPage", () => {
       .toBeDisabled();
     expect(screen.getByRole("switch", { name: "extensions.enableFor" }))
       .toBeDisabled();
+  });
+
+  it("rend l'incident UI actionnable sans réactiver les interfaces tierces", async () => {
+    const discardInterrupted = vi.fn(() => Promise.resolve(true));
+    const resolveIncident = vi.fn();
+    const onEnabled = vi.fn(() => Promise.resolve(true));
+    uiStartup.current = {
+      state: { showSafeBanner: true },
+      incident: {
+        extensionId: "com.example.custom",
+        stage: "mount",
+        startedAt: "2026-09-03T10:00:00Z",
+        attempts: 1,
+      },
+      busy: false,
+      error: false,
+      discardInterrupted,
+      resolveIncident,
+    };
+    renderPage("custom", [{ ...records[1], enabled: true }], vi.fn(), { onEnabled });
+
+    expect(screen.getByText("extensions.uiRecovery.interruptedTitle"))
+      .toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", {
+      name: "extensions.uiRecovery.discardInterrupted",
+    }));
+    expect(discardInterrupted).toHaveBeenCalledWith("com.example.custom");
+    expect(screen.getByText("extensions.uiRecovery.safeBannerTitle"))
+      .toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", {
+      name: "extensions.recovery.keepDisabled",
+    }));
+    await waitFor(() => expect(onEnabled).toHaveBeenCalledWith("com.example.custom", false));
+    expect(resolveIncident).toHaveBeenCalledWith("com.example.custom");
+  });
+
+  it("conserve l'incident UI lorsque la désactivation échoue", async () => {
+    const resolveIncident = vi.fn();
+    const onEnabled = vi.fn(() => Promise.resolve(false));
+    uiStartup.current = {
+      state: { showSafeBanner: true },
+      incident: {
+        extensionId: "com.example.custom",
+        stage: "mount",
+        startedAt: "2026-09-03T10:00:00Z",
+        attempts: 1,
+      },
+      busy: false,
+      error: false,
+      resolveIncident,
+    };
+    renderPage("custom", [{ ...records[1], enabled: true }], vi.fn(), { onEnabled });
+
+    fireEvent.click(screen.getByRole("button", {
+      name: "extensions.recovery.keepDisabled",
+    }));
+
+    await waitFor(() => expect(onEnabled).toHaveBeenCalled());
+    expect(resolveIncident).not.toHaveBeenCalled();
+    expect(screen.getByText("extensions.uiRecovery.interruptedTitle"))
+      .toBeInTheDocument();
   });
 
   it("propose de quitter et relancer après un arrêt non confirmé", () => {

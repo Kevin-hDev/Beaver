@@ -5,6 +5,7 @@ fn diagnostic(extension_id: &str, code: &str) -> ExtensionDiagnostic {
         extension_id: extension_id.to_string(),
         stage: HOST_LOAD_STAGE_REGISTER.to_string(),
         code: code.to_string(),
+        occurred_at: "2026-09-03T10:00:00Z".to_string(),
         file: None,
         line: None,
         column: None,
@@ -22,6 +23,7 @@ fn ui_diagnostics_are_validated_then_projected_once_per_extension() {
     super::runtime_sync_apply::push_ui_diagnostic_once(&mut diagnostics, first).unwrap();
     super::runtime_sync_apply::push_ui_diagnostic_once(&mut diagnostics, second).unwrap();
     assert_eq!(diagnostics.len(), 1);
+    assert!(chrono::DateTime::parse_from_rfc3339(&diagnostics[0].occurred_at).is_ok());
     assert!(super::runtime_sync_apply::ui_diagnostic("com.example.ui", "unknown").is_err());
 }
 

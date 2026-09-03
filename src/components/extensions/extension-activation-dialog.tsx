@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ShieldWarning } from "@/components/ui/icons";
 import { DialogPortal } from "@/components/ui/dialog-portal";
@@ -24,6 +24,8 @@ export function ExtensionActivationDialog({
   const titleId = useId();
   const descriptionId = useId();
   const cancelRef = useRef<HTMLButtonElement>(null);
+  const advanced = extension.manifest.ui?.mode === "advanced";
+  const [advancedConfirmed, setAdvancedConfirmed] = useState(false);
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
     cancelRef.current?.focus();
@@ -59,6 +61,20 @@ export function ExtensionActivationDialog({
             <ShieldWarning size="var(--icon-xl)" weight="fill" />
             <p id={descriptionId}>{t("extensions.activation.description")}</p>
           </div>
+          {advanced && (
+            <div className="extc-advanced">
+              <p>{t("extensions.activation.advancedDescription")}</p>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={advancedConfirmed}
+                  disabled={busy}
+                  onChange={(event) => setAdvancedConfirmed(event.target.checked)}
+                />
+                <span>{t("extensions.activation.advancedConfirmation")}</span>
+              </label>
+            </div>
+          )}
           {errorKey && (
             <p className="extp-message extp-message-error" role="alert">
               {t(errorKey)}
@@ -77,7 +93,7 @@ export function ExtensionActivationDialog({
             <button
               type="button"
               className="btn btn-sm btn-primary"
-              disabled={busy}
+              disabled={busy || (advanced && !advancedConfirmed)}
               onClick={onConfirm}
             >
               {t("extensions.activation.confirm")}

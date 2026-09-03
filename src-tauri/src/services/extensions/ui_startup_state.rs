@@ -25,6 +25,7 @@ pub(crate) enum UiStartupMode {
     PendingInterruptedUi {
         extension_id: String,
         stage: String,
+        started_at: String,
         attempts: u8,
     },
     RetryInterruptedUi {

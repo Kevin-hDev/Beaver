@@ -8,11 +8,13 @@ import ja from "./ja.json";
 import zh from "./zh.json";
 import extensionContract from "../../src-tauri/resources/extension-host/contract.json";
 import { EXTENSION_BACKEND_ERROR_CODES } from "@/lib/extension-errors";
+import { UI_DIAGNOSTIC_CODES } from "@/types/extension-ui-contract.generated";
 
 const locales = [fr, en, es, de, itJson, zh, ja];
 const diagnosticCodes = [
   ...extensionContract.diagnostics.hostCodes,
   ...extensionContract.diagnostics.runtimeCodes,
+  ...UI_DIAGNOSTIC_CODES,
 ].sort();
 
 function leafPaths(value: unknown, prefix = ""): string[] {

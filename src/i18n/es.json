@@ -2328,7 +2328,8 @@
       "confirmRemove": "Confirmar",
       "confirmUpdate": "Confirmar actualización",
       "restartHost": "Reiniciar host",
-      "recovery": "Desactivar extensiones alojadas"
+      "recovery": "Desactivar extensiones alojadas",
+      "retry": "Reintentar"
     },
     "status": {
       "active": "Activa",
@@ -2343,6 +2344,8 @@
     },
     "enabled": { "yes": "Activada", "no": "Desactivada" },
     "apiLevels": { "stable": "Estable", "advanced": "Avanzado" },
+    "uiModes": { "standard": "Interfaz estándar", "advanced": "Interfaz avanzada" },
+    "uiPlacements": { "app_navigation_primary": "Navegación principal", "settings_navigation_preferences": "Ajustes de preferencias", "settings_navigation_agent": "Ajustes del agente", "settings_navigation_models": "Ajustes de modelos", "settings_navigation_integrations": "Ajustes de integraciones", "settings_navigation_application": "Ajustes de la aplicación", "app_toolbar_primary": "Barra de herramientas principal", "agent_composer_leading": "Campo de entrada del agente" },
     "effects": { "read-only": "Solo lectura", "local-write": "Escritura local", "external-read": "Lectura externa", "external-write": "Escritura externa", "process": "Proceso", "secret": "Acceso a secretos", "unknown": "Efecto desconocido" },
     "origins": {
       "local": "Archivo o carpeta local",
@@ -2370,16 +2373,28 @@
       "trustedAt": "Aprobada desde",
       "lastError": "Último error",
       "unknown": "No indicado",
+    "uiTitle": "Interfaz",
+    "uiLevel": "Nivel de interfaz",
+    "uiArtifact": "Módulo avanzado",
+    "uiArtifactReady": "Verificado y listo",
+    "uiArtifactMissing": "No disponible",
+    "uiAdvancedWarning": "Este módulo avanzado se ejecuta en la interfaz principal de Beaver y puede modificar o romper cualquier parte.",
+    "uiLoading": "Cargando contribuciones de interfaz…",
+    "uiError": "No se pudieron cargar las contribuciones de interfaz.",
+    "uiEmpty": "No hay ninguna contribución de interfaz declarada.",
+    "uiTheme": "Tema",
     "contributions": "Contribuciones registradas",
     "replacesCore": "Sustituye una herramienta integrada"
   },
   "activation": {
     "title": "¿Activar {{name}}?",
     "description": "Esta extensión tendrá acceso total a los datos, secretos y funciones de tu cuenta. Beaver no la ha auditado.",
+    "advancedDescription": "Su módulo de interfaz avanzada se ejecuta directamente en Beaver y puede modificar, consultar o romper toda la interfaz.",
+    "advancedConfirmation": "Entiendo y apruebo explícitamente este módulo de interfaz avanzada.",
     "confirm": "Confiar y activar"
   },
   "recovery": { "title": "Carga de extensión interrumpida", "description": "Beaver se detuvo al cargar una extensión. Revísala antes de continuar.", "invalid": "La información de recuperación no es válida y se puede descartar.", "openDetail": "Abrir detalle", "keepDisabled": "Mantener desactivada", "retry": "Reintentar carga", "discard": "Descartar recuperación", "restore": "Restaurar registro anterior" },
-  "uiRecovery": { "title": "Inicio seguro de interfaces de extensión", "description": "Beaver se detuvo al cargar una interfaz de extensión. No se cargó ninguna interfaz de terceros.", "invalidDescription": "La información de recuperación no es válida. Beaver bloqueó todas las interfaces de terceros.", "safe": "Continuar sin interfaz de terceros", "open": "Abrir los detalles de la extensión", "retry": "Reintentar esta interfaz", "discard": "Descartar la recuperación no válida", "error": "No se pudo completar esta acción. El modo seguro sigue activo.", "safeBannerTitle": "Interfaces de extensión desactivadas", "safeBannerDescription": "Este inicio permanece en modo seguro y no muestra interfaces de terceros." },
+  "uiRecovery": { "title": "Inicio seguro de interfaces de extensión", "description": "Beaver se detuvo al cargar una interfaz de extensión. No se cargó ninguna interfaz de terceros.", "invalidDescription": "La información de recuperación no es válida. Beaver bloqueó todas las interfaces de terceros.", "safe": "Continuar sin interfaz de terceros", "open": "Abrir los detalles de la extensión", "retry": "Reintentar esta interfaz", "discard": "Descartar la recuperación no válida", "error": "No se pudo completar esta acción. El modo seguro sigue activo.", "safeBannerTitle": "Interfaces de extensión desactivadas", "safeBannerDescription": "Este inicio permanece en modo seguro y no muestra interfaces de terceros.", "interruptedTitle": "Interfaz de extensión interrumpida", "interruptedDescription": "Beaver se detuvo al cargar la interfaz de {{name}}. Revísala antes del próximo inicio normal.", "discardInterrupted": "Descartar incidente" },
   "ui": { "catalogError": "No se pudieron actualizar las interfaces de extensión.", "themeUnavailable": "El tema de extensión guardado ya no está disponible. Se ha restaurado el tema del sistema.", "actionError": "No se pudo completar la acción de la extensión.", "emptyPanel": "Esta extensión no tiene contenido para este panel." },
     "add": {
       "title": "Añadir una extensión",
@@ -2490,7 +2505,25 @@
         "load_failed": "No se pudo cargar la extensión",
         "host_missing_response": "El host no confirmó la carga de esta extensión",
         "advanced_required": "Se requiere el modo avanzado para sustituir una herramienta integrada",
-        "ui_manifest_legacy": "Se ignoró la declaración de interfaz antigua; las herramientas siguen disponibles"
+        "ui_manifest_legacy": "Se ignoró la declaración de interfaz antigua; las herramientas siguen disponibles",
+        "ui_contract_invalid": "El contrato de interfaz no es válido",
+        "ui_contribution_invalid": "Una contribución de interfaz no es válida",
+        "ui_reference_missing": "Falta una referencia de interfaz",
+        "ui_reference_incompatible": "Una referencia de interfaz es incompatible",
+        "ui_mutation_conflict": "Hay cambios de interfaz en conflicto",
+        "ui_protected_occupant": "No se puede modificar un elemento protegido de Beaver",
+        "ui_limit_exceeded": "La interfaz supera un límite permitido",
+        "ui_bundle_failed": "No se pudo preparar la interfaz avanzada",
+        "ui_node_import_denied": "La interfaz avanzada usa una importación de Node.js prohibida",
+        "ui_artifact_invalid": "No se pudieron verificar los archivos de la interfaz avanzada",
+        "ui_protocol_request_denied": "Se rechazó la solicitud del archivo de interfaz",
+        "ui_protocol_hash_mismatch": "Los archivos de interfaz cambiaron después de la aprobación",
+        "ui_protocol_file_missing": "Falta un archivo de interfaz aprobado",
+        "ui_protocol_file_too_large": "Un archivo de interfaz es demasiado grande",
+        "ui_advanced_approval_required": "La interfaz avanzada debe aprobarse de nuevo",
+        "ui_activation_failed": "No se pudo iniciar la interfaz avanzada",
+        "ui_mount_failed": "No se pudo mostrar la interfaz",
+        "ui_theme_unavailable": "El tema de la extensión no está disponible"
       }
     }
   },

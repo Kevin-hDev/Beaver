@@ -80,8 +80,10 @@ fn startup_decision_is_fixed_before_ui_loading() {
     let pending = ui_startup::decide_at(&path, false, false).unwrap();
     assert!(matches!(
         pending.mode(),
-        UiStartupMode::PendingInterruptedUi { extension_id, stage, attempts }
-            if extension_id == UI_ID && stage == "contract" && attempts == 2
+        UiStartupMode::PendingInterruptedUi { extension_id, stage, started_at, attempts }
+            if extension_id == UI_ID && stage == "contract"
+                && chrono::DateTime::parse_from_rfc3339(&started_at).is_ok()
+                && attempts == 2
     ));
     assert!(!pending.third_party_loading_allowed());
 

@@ -64,8 +64,26 @@ pub(crate) fn ui_advance(extension_id: &str, stage: &str) -> Result<(), String> 
     ui_advance_at(&path(), extension_id, stage)
 }
 
-pub(super) fn ui_complete(extension_id: &str) -> Result<(), String> {
+pub(crate) fn ui_complete(extension_id: &str) -> Result<(), String> {
     ui_complete_at(&path(), extension_id)
+}
+
+pub(super) fn ui_clear_if_matches(extension_id: &str) -> Result<(), String> {
+    ui_clear_if_matches_at(&path(), extension_id)
+}
+
+pub(super) fn ui_clear_if_matches_at(path: &Path, extension_id: &str) -> Result<(), String> {
+    super::validation::identifier(extension_id)?;
+    match read_journal_at(path) {
+        JournalRead::Missing => Ok(()),
+        JournalRead::Invalid => Err(marker_error()),
+        JournalRead::Valid(journal) => match journal.ui() {
+            Some(marker) if marker.extension_id == extension_id => {
+                ui_complete_at(path, extension_id)
+            }
+            Some(_) | None => Ok(()),
+        },
+    }
 }
 
 #[allow(

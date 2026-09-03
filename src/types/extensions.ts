@@ -113,6 +113,7 @@ export interface ExtensionDiagnostic {
   extensionId: string;
   stage: HostLoadStage;
   code: HostDiagnosticCode | RuntimeDiagnosticCode | ExtensionUiDiagnosticCode;
+  occurredAt: string;
   file?: string;
   line?: number;
   column?: number;
@@ -166,6 +167,7 @@ export type ExtensionUiStartupMode =
     kind: "pendingInterruptedUi";
     extensionId: string;
     stage: ExtensionUiLoadingStage;
+    startedAt: string;
     attempts: number;
   }
   | { kind: "retryInterruptedUi"; extensionId: string; attempts: number }
@@ -178,6 +180,13 @@ export interface ExtensionUiStartupState {
   showRecoveryDialog: boolean;
   showSafeBanner: boolean;
   canRetry: boolean;
+}
+
+export interface ExtensionUiIncident {
+  extensionId: string;
+  stage: ExtensionUiLoadingStage;
+  startedAt: string;
+  attempts: number;
 }
 export type {
   AdvancedHostToCoreRequestMethod,

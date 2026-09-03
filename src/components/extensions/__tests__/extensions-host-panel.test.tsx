@@ -20,6 +20,7 @@ describe("ExtensionsHostPanel", () => {
             extensionId: "com.example.ui",
             stage: "register",
             code: "ui_contribution_invalid",
+            occurredAt: "2026-09-03T10:00:00Z",
           }],
         }}
         loaded
@@ -49,6 +50,7 @@ describe("ExtensionsHostPanel", () => {
             extensionId: "com.example.legacy",
             stage: "register",
             code: "ui_manifest_legacy",
+            occurredAt: "2026-09-03T10:00:00Z",
           }],
         }}
         loaded

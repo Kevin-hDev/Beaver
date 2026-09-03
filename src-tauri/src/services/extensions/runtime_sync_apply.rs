@@ -196,6 +196,7 @@ pub(super) fn ui_diagnostic(extension_id: &str, code: &str) -> Result<ExtensionD
         extension_id: extension_id.to_string(),
         stage: HOST_LOAD_STAGE_REGISTER.to_string(),
         code: code.to_string(),
+        occurred_at: super::diagnostic_time::now(),
         file: None,
         line: None,
         column: None,

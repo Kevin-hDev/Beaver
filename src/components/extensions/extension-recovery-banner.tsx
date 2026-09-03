@@ -1,16 +1,18 @@
 import { useTranslation } from "react-i18next";
 import { ShieldWarning } from "@/components/ui/icons";
-import type { ExtensionRecoveryState } from "@/types/extensions";
+import type { ExtensionRecord, ExtensionRecoveryState } from "@/types/extensions";
 import { useExtensionUiStartupContext } from "@/hooks/use-extension-ui-startup";
 
 interface ExtensionRecoveryBannerProps {
   state: ExtensionRecoveryState;
+  records: ExtensionRecord[];
   busy: boolean;
   onOpen: (id: string) => void;
   onKeepDisabled: (id: string) => void;
   onRetry: (id: string) => void;
   onDiscard: () => void;
   onRestore: () => void;
+  onDisableUi: (id: string) => Promise<boolean>;
 }
 
 export function ExtensionRecoveryBanner(props: ExtensionRecoveryBannerProps) {
@@ -18,7 +20,18 @@ export function ExtensionRecoveryBanner(props: ExtensionRecoveryBannerProps) {
   const uiStartup = useExtensionUiStartupContext();
   const { state } = props;
   const uiSafe = uiStartup?.state.showSafeBanner === true;
-  if (!uiSafe && !state.extensionId && !state.markerInvalid && !state.recoverySnapshotAvailable) {
+  const incident = uiStartup?.incident ?? null;
+  const incidentRecord = incident
+    ? props.records.find((record) => record.manifest.id === incident.extensionId)
+    : undefined;
+  const visibleIncident = incident && incidentRecord?.enabled !== false ? incident : null;
+  const disableInterrupted = async (extensionId: string) => {
+    if (await props.onDisableUi(extensionId)) {
+      uiStartup?.resolveIncident(extensionId);
+    }
+  };
+  if (!uiSafe && !visibleIncident
+    && !state.extensionId && !state.markerInvalid && !state.recoverySnapshotAvailable) {
     return null;
   }
   return (
@@ -29,6 +42,35 @@ export function ExtensionRecoveryBanner(props: ExtensionRecoveryBannerProps) {
           <div>
             <strong id="extrb-ui-title">{t("extensions.uiRecovery.safeBannerTitle")}</strong>
             <p>{t("extensions.uiRecovery.safeBannerDescription")}</p>
+          </div>
+        </section>
+      )}
+      {visibleIncident && (
+        <section className="extp-recovery" aria-labelledby="extrb-ui-incident-title">
+          <ShieldWarning size="var(--icon-lg)" />
+          <div>
+            <strong id="extrb-ui-incident-title">
+              {t("extensions.uiRecovery.interruptedTitle")}
+            </strong>
+            <p>{t("extensions.uiRecovery.interruptedDescription", {
+              name: incidentRecord?.manifest.name ?? visibleIncident.extensionId,
+            })}</p>
+            {uiStartup?.error && (
+              <p className="extp-recovery-error" role="alert">
+                {t("extensions.uiRecovery.error")}
+              </p>
+            )}
+            <div className="extp-actions">
+              <button type="button" className="btn btn-sm btn-secondary" onClick={() => props.onOpen(visibleIncident.extensionId)}>
+                {t("extensions.recovery.openDetail")}
+              </button>
+              <button type="button" className="btn btn-sm btn-secondary" disabled={props.busy || uiStartup?.busy} onClick={() => void disableInterrupted(visibleIncident.extensionId)}>
+                {t("extensions.recovery.keepDisabled")}
+              </button>
+              <button type="button" className="btn btn-sm btn-secondary" disabled={props.busy || uiStartup?.busy} onClick={() => void uiStartup?.discardInterrupted(visibleIncident.extensionId)}>
+                {t("extensions.uiRecovery.discardInterrupted")}
+              </button>
+            </div>
           </div>
         </section>
       )}

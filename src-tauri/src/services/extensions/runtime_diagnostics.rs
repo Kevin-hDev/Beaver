@@ -20,6 +20,7 @@ pub fn from_host(
         extension_id,
         stage: diagnostic.stage,
         code: diagnostic.code,
+        occurred_at: super::diagnostic_time::now(),
         file: diagnostic.file,
         line: diagnostic.line,
         column: diagnostic.column,

@@ -40,12 +40,64 @@ describe("extension UI startup boundary", () => {
     expect(() => parseExtensionUiStartupState({ ...normal, extra: true })).toThrow();
     expect(() => parseExtensionUiStartupState({
       ...normal,
-      mode: { kind: "pendingInterruptedUi", extensionId: "../escape", stage: "mount", attempts: 1 },
+      mode: { kind: "pendingInterruptedUi", extensionId: "../escape", stage: "mount", attempts: 1, startedAt: "2026-09-03T10:00:00Z" },
     })).toThrow();
     expect(() => parseExtensionUiStartupState({
       ...normal,
-      mode: { kind: "pendingInterruptedUi", extensionId: "com.example.ui", stage: "register", attempts: 1 },
+      mode: { kind: "pendingInterruptedUi", extensionId: "com.example.ui", stage: "register", attempts: 1, startedAt: "2026-09-03T10:00:00Z" },
     })).toThrow();
+    expect(() => parseExtensionUiStartupState({
+      ...normal,
+      mode: {
+        kind: "pendingInterruptedUi",
+        extensionId: "com.example.ui",
+        stage: "mount",
+        attempts: 1,
+        startedAt: "not-a-date",
+      },
+    })).toThrow();
+    expect(() => parseExtensionUiStartupState({
+      ...normal,
+      mode: {
+        kind: "pendingInterruptedUi",
+        extensionId: "com.example.ui",
+        stage: "mount",
+        attempts: 1,
+        startedAt: "2026-09-03",
+      },
+    })).toThrow();
+  });
+
+  it("preserves the bounded incident until it is explicitly discarded", async () => {
+    const pending = parseExtensionUiStartupState({
+      ...normal,
+      mode: {
+        kind: "pendingInterruptedUi",
+        extensionId: "com.example.ui",
+        stage: "mount",
+        attempts: 1,
+        startedAt: "2026-09-03T10:00:00Z",
+      },
+      thirdPartyLoadingAllowed: false,
+      showRecoveryDialog: true,
+    });
+    vi.mocked(invoke).mockResolvedValueOnce({
+      ...normal,
+      mode: { kind: "safe", reason: "recoveryChoice" },
+      thirdPartyLoadingAllowed: false,
+      showSafeBanner: true,
+    });
+    const view = renderHook(() => useExtensionUiStartup(pending));
+
+    expect(view.result.current.incident?.extensionId).toBe("com.example.ui");
+    await act(async () => {
+      expect(await view.result.current.discardInterrupted("com.example.ui"))
+        .toBe(true);
+    });
+    expect(invoke).toHaveBeenCalledWith("discard_interrupted_extension_ui_marker", {
+      extensionId: "com.example.ui",
+    });
+    expect(view.result.current.incident).toBeNull();
   });
 
   it("captures Shift before resolution and removes the listener", async () => {

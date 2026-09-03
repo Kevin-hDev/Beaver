@@ -14,6 +14,7 @@ const pending: ExtensionUiStartupState = {
     kind: "pendingInterruptedUi",
     extensionId: "com.example.ui",
     stage: "mount",
+    startedAt: "2026-09-03T10:00:00Z",
     attempts: 2,
   },
   bootstrapResolved: true,

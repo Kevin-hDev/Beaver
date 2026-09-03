@@ -178,6 +178,7 @@ pub struct ExtensionDiagnostic {
     pub extension_id: String,
     pub stage: String,
     pub code: String,
+    pub occurred_at: String,
     pub file: Option<String>,
     pub line: Option<u64>,
     pub column: Option<u64>,

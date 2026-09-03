@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { UI_LOADING_STAGES } from "@/types/extension-ui-contract.generated";
 import { LIMITS, type ExtensionUiStartupMode, type ExtensionUiStartupState } from "@/types/extensions";
 import { isExtensionIdentifier } from "@/lib/extension-records";
+import { isExtensionTimestamp } from "@/lib/extension-timestamp";
 
 const CAPTURE_TIMEOUT_MS = 1_500;
 const ROOT_KEYS = [
@@ -56,9 +57,12 @@ function parseMode(value: unknown): ExtensionUiStartupMode {
     return { kind, reason: input.reason as typeof SAFE_REASONS[number] };
   }
   if (kind === "pendingInterruptedUi") {
-    const input = objectWithKeys(value, ["kind", "extensionId", "stage", "attempts"]);
+    const input = objectWithKeys(value, [
+      "kind", "extensionId", "stage", "startedAt", "attempts",
+    ]);
     validateIdentityAndAttempt(input);
     if (!UI_LOADING_STAGES.includes(input.stage as typeof UI_LOADING_STAGES[number])) throwInvalid();
+    if (!isExtensionTimestamp(input.startedAt)) throwInvalid();
     return input as ExtensionUiStartupMode;
   }
   if (kind === "retryInterruptedUi") {

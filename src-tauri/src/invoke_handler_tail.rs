@@ -176,6 +176,7 @@ macro_rules! generate_tail {
             crate::commands::continue_without_extension_ui,
             crate::commands::retry_interrupted_extension_ui,
             crate::commands::discard_invalid_extension_ui_marker,
+            crate::commands::discard_interrupted_extension_ui_marker,
             crate::commands::begin_extension_ui_load,
             crate::commands::advance_extension_ui_load,
             crate::commands::acknowledge_extension_ui_load,

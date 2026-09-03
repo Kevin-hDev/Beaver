@@ -94,6 +94,15 @@ pub fn discard_invalid_extension_ui_marker(
 }
 
 #[tauri::command]
+pub fn discard_interrupted_extension_ui_marker(
+    state: tauri::State<'_, UiStartupState>,
+    extension_id: String,
+) -> Result<ExtensionUiStartupProjection, String> {
+    extensions::loading_marker::ui_complete(&extension_id)?;
+    Ok(project(state.inner()))
+}
+
+#[tauri::command]
 pub fn begin_extension_ui_load(
     state: tauri::State<'_, UiStartupState>,
     acknowledger: tauri::State<'_, UiLoadAcknowledger>,

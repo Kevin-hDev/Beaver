@@ -100,6 +100,10 @@
   font-size: var(--text-xs);
 }
 
+.extp-recovery .extp-recovery-error {
+  color: var(--signal-error);
+}
+
 @media (max-width: 48rem) {
   .extp-recovery {
     align-items: stretch;

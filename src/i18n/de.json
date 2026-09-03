@@ -2324,7 +2324,8 @@
       "confirmRemove": "Bestätigen",
       "confirmUpdate": "Aktualisierung bestätigen",
       "restartHost": "Host neu starten",
-      "recovery": "Gehostete Erweiterungen deaktivieren"
+      "recovery": "Gehostete Erweiterungen deaktivieren",
+      "retry": "Erneut versuchen"
     },
     "status": {
       "active": "Aktiv",
@@ -2339,6 +2340,8 @@
     },
     "enabled": { "yes": "Aktiviert", "no": "Deaktiviert" },
     "apiLevels": { "stable": "Stabil", "advanced": "Erweitert" },
+    "uiModes": { "standard": "Standardoberfläche", "advanced": "Erweiterte Oberfläche" },
+    "uiPlacements": { "app_navigation_primary": "Hauptnavigation", "settings_navigation_preferences": "Einstellungen für Präferenzen", "settings_navigation_agent": "Agent-Einstellungen", "settings_navigation_models": "Modelleinstellungen", "settings_navigation_integrations": "Integrationseinstellungen", "settings_navigation_application": "Anwendungseinstellungen", "app_toolbar_primary": "Hauptwerkzeugleiste", "agent_composer_leading": "Agent-Eingabefeld" },
     "effects": { "read-only": "Nur Lesen", "local-write": "Lokales Schreiben", "external-read": "Externes Lesen", "external-write": "Externes Schreiben", "process": "Prozess", "secret": "Zugriff auf Geheimnisse", "unknown": "Unbekannter Effekt" },
     "origins": {
       "local": "Lokale Datei oder Ordner",
@@ -2366,16 +2369,28 @@
       "trustedAt": "Vertrauenswürdig seit",
       "lastError": "Letzter Fehler",
       "unknown": "Nicht angegeben",
+    "uiTitle": "Oberfläche",
+    "uiLevel": "Oberflächenstufe",
+    "uiArtifact": "Erweitertes Modul",
+    "uiArtifactReady": "Geprüft und bereit",
+    "uiArtifactMissing": "Nicht verfügbar",
+    "uiAdvancedWarning": "Dieses erweiterte Modul läuft in Beavers Hauptoberfläche und kann jeden Teil davon verändern oder beschädigen.",
+    "uiLoading": "Oberflächenbeiträge werden geladen…",
+    "uiError": "Die Oberflächenbeiträge konnten nicht geladen werden.",
+    "uiEmpty": "Derzeit ist kein Oberflächenbeitrag deklariert.",
+    "uiTheme": "Design",
     "contributions": "Registrierte Beiträge",
     "replacesCore": "Ersetzt ein integriertes Tool"
   },
   "activation": {
     "title": "{{name}} aktivieren?",
     "description": "Diese Erweiterung erhält vollen Zugriff auf Daten, Geheimnisse und Funktionen deines Kontos. Beaver hat sie nicht geprüft.",
+    "advancedDescription": "Ihr erweitertes Oberflächenmodul läuft direkt in Beaver und kann die gesamte Oberfläche verändern, einsehen oder beschädigen.",
+    "advancedConfirmation": "Ich verstehe dies und genehmige dieses erweiterte Oberflächenmodul ausdrücklich.",
     "confirm": "Vertrauen und aktivieren"
   },
   "recovery": { "title": "Laden der Erweiterung unterbrochen", "description": "Beaver wurde beim Laden einer Erweiterung beendet. Prüfe sie, bevor du fortfährst.", "invalid": "Die Wiederherstellungsdaten sind ungültig und können verworfen werden.", "openDetail": "Details öffnen", "keepDisabled": "Deaktiviert lassen", "retry": "Laden erneut versuchen", "discard": "Wiederherstellung verwerfen", "restore": "Vorheriges Register wiederherstellen" },
-  "uiRecovery": { "title": "Sicherer Start für Erweiterungsoberflächen", "description": "Beaver wurde beim Laden einer Erweiterungsoberfläche beendet. Keine Drittanbieter-Oberfläche wurde geladen.", "invalidDescription": "Die Wiederherstellungsdaten sind ungültig. Beaver hat alle Drittanbieter-Oberflächen blockiert.", "safe": "Ohne Drittanbieter-Oberfläche fortfahren", "open": "Erweiterungsdetails öffnen", "retry": "Diese Oberfläche erneut versuchen", "discard": "Ungültige Wiederherstellung verwerfen", "error": "Diese Aktion konnte nicht abgeschlossen werden. Der sichere Modus bleibt aktiv.", "safeBannerTitle": "Erweiterungsoberflächen deaktiviert", "safeBannerDescription": "Dieser Start bleibt im sicheren Modus und zeigt keine Drittanbieter-Oberfläche." },
+  "uiRecovery": { "title": "Sicherer Start für Erweiterungsoberflächen", "description": "Beaver wurde beim Laden einer Erweiterungsoberfläche beendet. Keine Drittanbieter-Oberfläche wurde geladen.", "invalidDescription": "Die Wiederherstellungsdaten sind ungültig. Beaver hat alle Drittanbieter-Oberflächen blockiert.", "safe": "Ohne Drittanbieter-Oberfläche fortfahren", "open": "Erweiterungsdetails öffnen", "retry": "Diese Oberfläche erneut versuchen", "discard": "Ungültige Wiederherstellung verwerfen", "error": "Diese Aktion konnte nicht abgeschlossen werden. Der sichere Modus bleibt aktiv.", "safeBannerTitle": "Erweiterungsoberflächen deaktiviert", "safeBannerDescription": "Dieser Start bleibt im sicheren Modus und zeigt keine Drittanbieter-Oberfläche.", "interruptedTitle": "Erweiterungsoberfläche unterbrochen", "interruptedDescription": "Beaver wurde beim Laden der Oberfläche von {{name}} beendet. Prüfe sie vor dem nächsten normalen Start.", "discardInterrupted": "Vorfall verwerfen" },
   "ui": { "catalogError": "Die Erweiterungsoberflächen konnten nicht aktualisiert werden.", "themeUnavailable": "Das gespeicherte Erweiterungsdesign ist nicht mehr verfügbar. Das Systemdesign wurde wiederhergestellt.", "actionError": "Die Erweiterungsaktion konnte nicht abgeschlossen werden.", "emptyPanel": "Diese Erweiterung hat keinen Inhalt für diesen Bereich." },
     "add": {
       "title": "Erweiterung hinzufügen",
@@ -2486,7 +2501,25 @@
         "load_failed": "Die Erweiterung konnte nicht geladen werden",
         "host_missing_response": "Der Host hat das Laden dieser Erweiterung nicht bestätigt",
         "advanced_required": "Zum Ersetzen eines integrierten Tools ist der erweiterte Modus erforderlich",
-        "ui_manifest_legacy": "Die alte Oberflächendeklaration wurde ignoriert; die Tools bleiben verfügbar"
+        "ui_manifest_legacy": "Die alte Oberflächendeklaration wurde ignoriert; die Tools bleiben verfügbar",
+        "ui_contract_invalid": "Der Oberflächenvertrag ist ungültig",
+        "ui_contribution_invalid": "Ein Oberflächenbeitrag ist ungültig",
+        "ui_reference_missing": "Eine Oberflächenreferenz fehlt",
+        "ui_reference_incompatible": "Eine Oberflächenreferenz ist inkompatibel",
+        "ui_mutation_conflict": "Oberflächenänderungen stehen in Konflikt",
+        "ui_protected_occupant": "Ein geschütztes Beaver-Element kann nicht geändert werden",
+        "ui_limit_exceeded": "Die Oberfläche überschreitet eine zulässige Grenze",
+        "ui_bundle_failed": "Die erweiterte Oberfläche konnte nicht vorbereitet werden",
+        "ui_node_import_denied": "Die erweiterte Oberfläche verwendet einen verbotenen Node.js-Import",
+        "ui_artifact_invalid": "Die Dateien der erweiterten Oberfläche konnten nicht geprüft werden",
+        "ui_protocol_request_denied": "Die Anfrage nach der Oberflächendatei wurde abgelehnt",
+        "ui_protocol_hash_mismatch": "Die Oberflächendateien wurden nach der Genehmigung geändert",
+        "ui_protocol_file_missing": "Eine genehmigte Oberflächendatei fehlt",
+        "ui_protocol_file_too_large": "Eine Oberflächendatei ist zu groß",
+        "ui_advanced_approval_required": "Die erweiterte Oberfläche muss erneut genehmigt werden",
+        "ui_activation_failed": "Die erweiterte Oberfläche konnte nicht gestartet werden",
+        "ui_mount_failed": "Die Oberfläche konnte nicht angezeigt werden",
+        "ui_theme_unavailable": "Das Erweiterungsdesign ist nicht verfügbar"
       }
     }
   },

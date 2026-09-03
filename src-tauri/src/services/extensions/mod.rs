@@ -4,6 +4,7 @@ mod builtin;
 mod call_context;
 mod core_bridge;
 mod core_secrets;
+mod diagnostic_time;
 pub(crate) mod discovery;
 mod discovery_catalog;
 mod discovery_limits;

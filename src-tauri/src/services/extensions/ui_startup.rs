@@ -128,6 +128,7 @@ fn mode_from_journal(journal: JournalRead) -> UiStartupMode {
             UiStartupMode::PendingInterruptedUi {
                 extension_id: ui.extension_id.clone(),
                 stage: ui.stage.clone(),
+                started_at: ui.started_at.clone(),
                 attempts: ui.attempts,
             }
         }),

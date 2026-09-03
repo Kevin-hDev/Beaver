@@ -29,7 +29,7 @@ interface ExtensionsPageProps {
   onSelectSection: (section: ExtensionsSettingsSection) => void;
   onSelect: (id: string | null) => void;
   onAdd: () => void;
-  onEnabled: (id: string, enabled: boolean) => void;
+  onEnabled: (id: string, enabled: boolean) => Promise<boolean>;
   onShowInChat: (id: string, show: boolean) => void;
   onOpenSource: (id: string) => void;
   onUpdate: (id: string) => void;
@@ -58,12 +58,14 @@ export function ExtensionsPage(props: ExtensionsPageProps) {
   const recoveryBanner = (
     <ExtensionRecoveryBanner
       state={props.recovery}
+      records={props.records}
       busy={props.hostBusy}
       onOpen={props.onSelect}
       onKeepDisabled={props.onKeepDisabled}
       onRetry={props.onRetryLoad}
       onDiscard={props.onDiscardMarker}
       onRestore={props.onRestoreSnapshot}
+      onDisableUi={(id) => props.onEnabled(id, false)}
     />
   );
 
@@ -74,9 +76,10 @@ export function ExtensionsPage(props: ExtensionsPageProps) {
         {recoveryBanner}
         <ExtensionDetail
           extension={selected}
+          diagnostics={props.host.diagnostics}
           busy={props.hostBusy || props.busyIds.has(selected.manifest.id)}
           onBack={() => props.onSelect(null)}
-          onEnabled={(enabled) => props.onEnabled(selected.manifest.id, enabled)}
+          onEnabled={(enabled) => void props.onEnabled(selected.manifest.id, enabled)}
           onShowInChat={(show) => props.onShowInChat(selected.manifest.id, show)}
           onOpenSource={() => props.onOpenSource(selected.manifest.id)}
           onUpdate={() => props.onUpdate(selected.manifest.id)}
@@ -129,7 +132,7 @@ export function ExtensionsPage(props: ExtensionsPageProps) {
           priorityBusy={props.priorityBusy}
           onSelect={props.onSelect}
           onAdd={props.onAdd}
-          onEnabled={props.onEnabled}
+          onEnabled={(id, enabled) => void props.onEnabled(id, enabled)}
           onShowInChat={props.onShowInChat}
           onPrioritySave={props.onPrioritySave}
         />

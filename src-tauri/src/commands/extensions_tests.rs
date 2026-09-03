@@ -113,6 +113,7 @@ fn ui_startup_projection_is_bounded_and_contains_no_internal_data() {
         crate::services::extensions::UiStartupMode::PendingInterruptedUi {
             extension_id: "com.example.ui".to_string(),
             stage: "mount".to_string(),
+            started_at: "2026-09-03T10:00:00Z".to_string(),
             attempts: 2,
         },
     );
@@ -121,6 +122,7 @@ fn ui_startup_projection_is_bounded_and_contains_no_internal_data() {
 
     assert_eq!(json["mode"]["kind"], "pendingInterruptedUi");
     assert_eq!(json["mode"]["extensionId"], "com.example.ui");
+    assert_eq!(json["mode"]["startedAt"], "2026-09-03T10:00:00Z");
     assert_eq!(json["canRetry"], true);
     assert_eq!(json["thirdPartyLoadingAllowed"], false);
     let visible = json.to_string();

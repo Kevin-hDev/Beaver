@@ -1707,7 +1707,8 @@
       "confirmRemove": "Confirmer",
       "confirmUpdate": "Confirmer la mise à jour",
       "restartHost": "Redémarrer l’hôte",
-      "recovery": "Désactiver les extensions hébergées"
+      "recovery": "Désactiver les extensions hébergées",
+      "retry": "Réessayer"
     },
     "status": {
       "active": "Actif",
@@ -1722,6 +1723,17 @@
     },
     "enabled": { "yes": "Activée", "no": "Désactivée" },
     "apiLevels": { "stable": "Stable", "advanced": "Avancé" },
+    "uiModes": { "standard": "Interface standard", "advanced": "Interface avancée" },
+    "uiPlacements": {
+      "app_navigation_primary": "Navigation principale",
+      "settings_navigation_preferences": "Réglages des préférences",
+      "settings_navigation_agent": "Réglages de l’agent",
+      "settings_navigation_models": "Réglages des modèles",
+      "settings_navigation_integrations": "Réglages des intégrations",
+      "settings_navigation_application": "Réglages de l’application",
+      "app_toolbar_primary": "Barre d’outils principale",
+      "agent_composer_leading": "Champ de saisie Agent"
+    },
     "effects": {
       "read-only": "Lecture seule", "local-write": "Écriture locale", "external-read": "Lecture externe",
       "external-write": "Écriture externe", "process": "Processus", "secret": "Accès aux secrets", "unknown": "Effet inconnu"
@@ -1752,12 +1764,24 @@
       "trustedAt": "Approuvée depuis",
       "lastError": "Dernière erreur",
       "unknown": "Non indiqué",
+    "uiTitle": "Interface",
+    "uiLevel": "Niveau d’interface",
+    "uiArtifact": "Module avancé",
+    "uiArtifactReady": "Vérifié et prêt",
+    "uiArtifactMissing": "Indisponible",
+    "uiAdvancedWarning": "Ce module avancé s’exécute dans l’interface principale de Beaver et peut en modifier ou casser n’importe quelle partie.",
+    "uiLoading": "Chargement des contributions d’interface…",
+    "uiError": "Les contributions d’interface n’ont pas pu être chargées.",
+    "uiEmpty": "Aucune contribution d’interface n’est actuellement déclarée.",
+    "uiTheme": "Thème",
     "contributions": "Contributions enregistrées",
     "replacesCore": "Remplace un outil intégré"
   },
   "activation": {
     "title": "Activer {{name}} ?",
     "description": "Cette extension aura un accès total aux données, secrets et fonctions de votre compte. Beaver ne l’a pas auditée.",
+    "advancedDescription": "Son module d’interface avancé s’exécute directement dans Beaver et peut modifier, consulter ou casser toute l’interface.",
+    "advancedConfirmation": "Je comprends et j’approuve explicitement ce module d’interface avancé.",
     "confirm": "Faire confiance et activer"
   },
   "recovery": {
@@ -1780,7 +1804,10 @@
     "discard": "Écarter les informations invalides",
     "error": "Cette action n’a pas pu être effectuée. Le mode sûr reste actif.",
     "safeBannerTitle": "Interfaces d’extension désactivées",
-    "safeBannerDescription": "Ce lancement reste en mode sûr et n’affiche aucune interface tierce."
+    "safeBannerDescription": "Ce lancement reste en mode sûr et n’affiche aucune interface tierce.",
+    "interruptedTitle": "Interface d’extension interrompue",
+    "interruptedDescription": "Beaver s’est arrêté pendant le chargement de l’interface de {{name}}. Vérifiez-la avant le prochain lancement normal.",
+    "discardInterrupted": "Écarter l’incident"
   },
   "ui": {
     "catalogError": "Les interfaces d’extension n’ont pas pu être actualisées.",
@@ -1897,7 +1924,25 @@
         "load_failed": "Le chargement de l’extension a échoué",
         "host_missing_response": "L’hôte n’a pas confirmé le chargement de cette extension",
         "advanced_required": "Le mode avancé est requis pour remplacer un outil intégré",
-        "ui_manifest_legacy": "L’ancienne déclaration d’interface a été ignorée ; les outils restent disponibles"
+        "ui_manifest_legacy": "L’ancienne déclaration d’interface a été ignorée ; les outils restent disponibles",
+        "ui_contract_invalid": "Le contrat d’interface est invalide",
+        "ui_contribution_invalid": "Une contribution d’interface est invalide",
+        "ui_reference_missing": "Une référence d’interface est absente",
+        "ui_reference_incompatible": "Une référence d’interface est incompatible",
+        "ui_mutation_conflict": "Des modifications d’interface sont en conflit",
+        "ui_protected_occupant": "Un élément protégé de Beaver ne peut pas être modifié",
+        "ui_limit_exceeded": "L’interface dépasse une limite autorisée",
+        "ui_bundle_failed": "L’interface avancée n’a pas pu être préparée",
+        "ui_node_import_denied": "L’interface avancée utilise un import Node.js interdit",
+        "ui_artifact_invalid": "Les fichiers de l’interface avancée n’ont pas pu être vérifiés",
+        "ui_protocol_request_denied": "La demande de fichier d’interface a été refusée",
+        "ui_protocol_hash_mismatch": "Les fichiers d’interface ont changé après l’approbation",
+        "ui_protocol_file_missing": "Un fichier d’interface approuvé est absent",
+        "ui_protocol_file_too_large": "Un fichier d’interface est trop volumineux",
+        "ui_advanced_approval_required": "L’interface avancée doit être approuvée de nouveau",
+        "ui_activation_failed": "L’interface avancée n’a pas pu démarrer",
+        "ui_mount_failed": "L’interface n’a pas pu être affichée",
+        "ui_theme_unavailable": "Le thème de l’extension est indisponible"
       }
     }
   },
