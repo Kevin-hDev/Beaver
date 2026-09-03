@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { vi } from "vitest";
 import { SettingsTab } from "../settings-tab";
 import { PanelSlotProvider, PanelSlotTarget } from "@/components/layout/panel-slots";
+import { SlotProvider } from "@/features/extension-ui/slot-provider";
 import { DEFAULT_APP_NAV, type DeepPartial, type SettingsNavState } from "@/types/navigation";
 import { resetMascotSettingsMock } from "./settings-tab-test-mascot";
 
@@ -163,18 +164,20 @@ export function SettingsHarness() {
   }, []);
 
   return (
-    <PanelSlotProvider>
-      <SettingsTab
-        themeChoice="dark"
-        onThemeChange={noop}
-        navState={navState}
-        onNavChange={handleNavChange}
-        onNavReplace={handleNavChange}
-        listFocused={false}
-      />
-      <div data-testid="settings-list"><PanelSlotTarget name="list" /></div>
-      <div data-testid="settings-detail"><PanelSlotTarget name="detail" /></div>
-    </PanelSlotProvider>
+    <SlotProvider>
+      <PanelSlotProvider>
+        <SettingsTab
+          themeChoice="dark"
+          onThemeChange={noop}
+          navState={navState}
+          onNavChange={handleNavChange}
+          onNavReplace={handleNavChange}
+          listFocused={false}
+        />
+        <div data-testid="settings-list"><PanelSlotTarget name="list" /></div>
+        <div data-testid="settings-detail"><PanelSlotTarget name="detail" /></div>
+      </PanelSlotProvider>
+    </SlotProvider>
   );
 }
 

@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { SETTINGS_SECTIONS } from "./settings-sections";
+import { useResolvedSettingsSections } from "./settings-sections";
 import type { SubTabDef } from "./settings-sections";
 import type { SettingsSubTab } from "@/types/navigation";
 
@@ -10,9 +10,10 @@ interface SettingsSubTabListProps {
 
 export function SettingsSubTabList({ active, onSelect }: SettingsSubTabListProps) {
   const { t } = useTranslation();
+  const sections = useResolvedSettingsSections();
   return (
     <div className="settings-subtab-list">
-      {SETTINGS_SECTIONS.map((section) => (
+      {sections.map((section) => (
         <div key={section.i18n} className="settings-subtab-group">
           {/* L'en-tête décrit le groupe sans être une destination : ni rôle de
               bouton, ni tabIndex, sous peine que la navigation aux flèches et

@@ -15,9 +15,11 @@ import { AboutSettings } from "./about-settings";
 import { UpdatesSettings } from "./updates-settings";
 import { MascotSettings } from "./mascot-settings";
 import { LlmExplorer } from "./llm-explorer";
-import { SETTINGS_TAB_IDS } from "./settings-sections";
+import { useResolvedSettingsSections } from "./settings-sections";
 import { SettingsSubTabList } from "./settings-subtab-list";
 import { PanelSlot } from "@/components/layout/panel-slots";
+import { useSlotOccupantByTarget } from "@/features/extension-ui/slot-contexts";
+import { SlotRenderer } from "@/features/extension-ui/slot-renderer";
 import type { DeepPartial, SettingsNavState, SettingsSubTab } from "@/types/navigation";
 import {
   SettingsChildSlots,
@@ -53,8 +55,14 @@ export const SettingsTab = memo(function SettingsTab({
     onNavReplace({ advancedTarget: null });
   }, [onNavReplace]);
   const subTab = navState.subTab;
+  const selectedOccupant = useSlotOccupantByTarget(subTab, "settingsTab");
+  const sections = useResolvedSettingsSections();
+  const tabIds = useMemo(
+    () => sections.flatMap((section) => section.tabs).map((tab) => tab.id),
+    [sections],
+  );
   useArrowNavigation({
-    items: SETTINGS_TAB_IDS,
+    items: tabIds,
     selectedId: subTab,
     onSelect: setSubTab,
     enabled: listFocused,
@@ -68,7 +76,7 @@ export const SettingsTab = memo(function SettingsTab({
     [setSubTab, subTab],
   );
 
-  const detail = useMemo(() => {
+  const detailContent = useMemo(() => {
     if (subTab === "general") {
       return (
         <GeneralSettings
@@ -116,6 +124,14 @@ export const SettingsTab = memo(function SettingsTab({
     if (subTab === "about") return <AboutSettings />;
     return null;
   }, [activeSessionId, handleAdvancedFocusTarget, navState, onNavChange, onNavReplace, onThemeChange, settings, subTab, themeChoice]);
+  const detail = selectedOccupant ? (
+    <SlotRenderer
+      placement={selectedOccupant.placement}
+      occupantId={selectedOccupant.id}
+      context={detailContent}
+      render={(_occupant, content) => content}
+    />
+  ) : null;
 
   return (
     <>

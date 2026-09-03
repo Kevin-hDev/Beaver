@@ -4,6 +4,7 @@ import { DEFAULT_AGENT_LOCAL_NAV } from "@/types/navigation";
 import type { AgentSessionMeta } from "@/types/agent";
 import { useAgentLocalTab } from "@/hooks/use-agent-local-tab";
 import { useSessionTabs } from "@/hooks/use-session-tabs";
+import { SlotProvider } from "@/features/extension-ui/slot-provider";
 import { AgentLocalTab } from "../agent-local-tab";
 
 vi.mock("@/hooks/use-agent-local-tab", () => ({ useAgentLocalTab: vi.fn() }));
@@ -217,7 +218,15 @@ function localTabState() {
 }
 
 function renderTab() {
-  return render(<AgentLocalTab navState={{ ...DEFAULT_AGENT_LOCAL_NAV, sessionId: "root" }} />);
+  return render(tab());
+}
+
+function tab(sessionId: string | null = "root") {
+  return (
+    <SlotProvider>
+      <AgentLocalTab navState={{ ...DEFAULT_AGENT_LOCAL_NAV, sessionId }} />
+    </SlotProvider>
+  );
 }
 
 describe("AgentLocalTab Rapide", () => {
@@ -254,7 +263,7 @@ describe("AgentLocalTab Rapide", () => {
     expect(setFastMode).toHaveBeenCalledWith("clone", false);
 
     displayedSessionId = "root";
-    view.rerender(<AgentLocalTab navState={{ ...DEFAULT_AGENT_LOCAL_NAV, sessionId: "root" }} />);
+    view.rerender(tab());
     const rootSwitch = screen.getByRole("switch", { name: "Rapide" });
     expect(rootSwitch).not.toBeChecked();
     expect(rootSwitch).not.toBeDisabled();
@@ -277,7 +286,7 @@ describe("AgentLocalTab Rapide", () => {
     expect(screen.getByRole("switch", { name: "Rapide" })).toBeChecked();
 
     displayedSessions = [rootSession, { ...cloneSession, fast_mode_enabled: false }];
-    view.rerender(<AgentLocalTab navState={{ ...DEFAULT_AGENT_LOCAL_NAV, sessionId: "root" }} />);
+    view.rerender(tab());
 
     expect(screen.getByRole("switch", { name: "Rapide" })).not.toBeChecked();
   });
@@ -291,7 +300,7 @@ describe("AgentLocalTab Rapide", () => {
     fireEvent.click(welcomeSwitch);
     expect(setWelcomeFastModeEnabled).toHaveBeenCalledWith(true);
 
-    view.rerender(<AgentLocalTab navState={{ ...DEFAULT_AGENT_LOCAL_NAV, sessionId: null }} />);
+    view.rerender(tab(null));
     expect(screen.getByRole("switch", { name: "Rapide" })).toBeChecked();
   });
 });

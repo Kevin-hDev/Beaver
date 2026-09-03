@@ -3,6 +3,7 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ListPanelFooter } from "../list-panel-footer";
 import { NAV_ITEMS } from "../nav-items";
+import { SlotProvider } from "@/features/extension-ui/slot-provider";
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -20,7 +21,7 @@ afterEach(() => {
 
 describe("rangée de navigation du panneau liste", () => {
   it("expose une entrée par section", () => {
-    render(<ListPanelFooter activeTab="agent-local" onTabChange={() => {}} />);
+    renderFooter("agent-local");
 
     expect(screen.getAllByRole("button")).toHaveLength(NAV_ITEMS.length);
     for (const item of NAV_ITEMS) {
@@ -37,7 +38,7 @@ describe("rangée de navigation du panneau liste", () => {
   it("marque la section active pour la mise au point clavier", () => {
     /* App.tsx vise [data-nav-zone="sidebar"] [data-nav-active="true"] : les deux
        attributs doivent survivre au passage du rail à la rangée. */
-    render(<ListPanelFooter activeTab="heartbeat" onTabChange={() => {}} />);
+    renderFooter("heartbeat");
 
     const zone = document.querySelector('[data-nav-zone="sidebar"]');
     const active = zone?.querySelectorAll('[data-nav-active="true"]');
@@ -48,7 +49,7 @@ describe("rangée de navigation du panneau liste", () => {
 
   it("signale la section demandée au clic", () => {
     const onTabChange = vi.fn();
-    render(<ListPanelFooter activeTab="agent-local" onTabChange={onTabChange} />);
+    renderFooter("agent-local", onTabChange);
 
     fireEvent.click(screen.getByLabelText("nav.personality"));
 
@@ -62,7 +63,7 @@ describe("rangée de navigation du panneau liste", () => {
   it("ouvre les infobulles vers le haut", () => {
     vi.useFakeTimers();
     try {
-      render(<ListPanelFooter activeTab="agent-local" onTabChange={() => {}} />);
+      renderFooter("agent-local");
 
       act(() => {
         fireEvent.mouseEnter(document.querySelectorAll(".tooltip-wrapper")[1]);
@@ -81,8 +82,19 @@ describe("rangée de navigation du panneau liste", () => {
   });
 
   it("garde le badge GPU sur la rangée", () => {
-    render(<ListPanelFooter activeTab="agent-local" onTabChange={() => {}} />);
+    renderFooter("agent-local");
 
     expect(screen.getByTestId("gpu-badge")).toBeTruthy();
   });
 });
+
+function renderFooter(
+  activeTab: "agent-local" | "heartbeat",
+  onTabChange: (tab: (typeof NAV_ITEMS)[number]["id"]) => void = () => {},
+) {
+  return render(
+    <SlotProvider>
+      <ListPanelFooter activeTab={activeTab} onTabChange={onTabChange} />
+    </SlotProvider>,
+  );
+}

@@ -2,8 +2,14 @@ import { BeaverIcon, HeartbeatIcon, SettingsIcon } from "./nav-tab-icons";
 import { SessionIcon } from "@/components/ui/session-icon";
 import type { InlineIconProps } from "@/components/ui/inline-icon";
 import type { ComponentType } from "react";
+import { coreOccupantsFor } from "@/features/extension-ui/core-occupants";
+import type {
+  CoreMainTabId,
+  MainTabId,
+  SlotOccupant,
+} from "@/features/extension-ui/slot-types";
 
-export type TabId = "heartbeat" | "personality" | "agent-local" | "settings";
+export type TabId = MainTabId;
 
 export interface NavItem {
   id: TabId;
@@ -11,11 +17,24 @@ export interface NavItem {
   i18nKey: string;
 }
 
-/* Les Réglages ferment la rangée au même titre que les sections. Ils vivaient à
-   part dans le rail, qui les collait en bas d'une colonne verticale. */
-export const NAV_ITEMS: NavItem[] = [
-  { id: "agent-local", icon: SessionIcon, i18nKey: "nav.agentLocal" },
-  { id: "heartbeat", icon: HeartbeatIcon, i18nKey: "nav.heartbeat" },
-  { id: "personality", icon: BeaverIcon, i18nKey: "nav.personality" },
-  { id: "settings", icon: SettingsIcon, i18nKey: "nav.settings" },
-];
+export const NAV_ITEMS: readonly NavItem[] = coreOccupantsFor("app.navigation.primary")
+  .map(navItemFromOccupant);
+
+export function navItemFromOccupant(occupant: SlotOccupant): NavItem {
+  if (occupant.source.kind !== "core" || !occupant.labelKey || !occupant.iconKey) {
+    throw new Error("Invalid core navigation occupant.");
+  }
+  return {
+    id: occupant.target as CoreMainTabId,
+    icon: navIcon(occupant.iconKey),
+    i18nKey: occupant.labelKey,
+  };
+}
+
+function navIcon(iconKey: string): ComponentType<InlineIconProps> {
+  if (iconKey === "agent-local") return SessionIcon;
+  if (iconKey === "heartbeat") return HeartbeatIcon;
+  if (iconKey === "personality") return BeaverIcon;
+  if (iconKey === "settings") return SettingsIcon;
+  throw new Error("Unknown core navigation icon.");
+}

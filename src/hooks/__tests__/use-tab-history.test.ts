@@ -2,6 +2,8 @@ import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { useTabHistory } from "../use-tab-history";
 import { DEFAULT_AGENT_LOCAL_NAV, DEFAULT_APP_NAV, FILE_ACCESS_SETTINGS_NAV, migrateAppNav } from "@/types/navigation";
+import { CORE_NAVIGATION_AVAILABILITY } from "@/features/extension-ui/slot-navigation";
+import type { NavigationAvailability } from "@/features/extension-ui/slot-navigation";
 
 describe("useTabHistory", () => {
   it("migre l'ancien onglet api-keys vers Providers", () => {
@@ -117,5 +119,33 @@ describe("useTabHistory", () => {
     expect(result.current.canGoForward).toBe(true);
     act(() => result.current.goForward());
     expect(result.current.current.agentLocal.sessionId).toBe("s1");
+  });
+
+  it("remplace une extension disparue sans détruire le reste de l'historique", () => {
+    const extensionTab = "extension:acme:dashboard" as const;
+    const available: NavigationAvailability = {
+      ...CORE_NAVIGATION_AVAILABILITY,
+      mainTabs: [...CORE_NAVIGATION_AVAILABILITY.mainTabs, extensionTab],
+    };
+    const view = renderHook(
+      ({ availability }: { availability: NavigationAvailability }) =>
+        useTabHistory(DEFAULT_APP_NAV, availability),
+      { initialProps: { availability: available } },
+    );
+
+    act(() => view.result.current.pushNav({
+      tab: extensionTab,
+      heartbeat: { wakeupId: "kept" },
+    }));
+    expect(view.result.current.current.tab).toBe(extensionTab);
+
+    view.rerender({ availability: CORE_NAVIGATION_AVAILABILITY });
+    expect(view.result.current.current.tab).toBe("agent-local");
+    expect(view.result.current.current.heartbeat.wakeupId).toBe("kept");
+
+    act(() => view.result.current.goBack());
+    act(() => view.result.current.goForward());
+    expect(view.result.current.current.tab).toBe("agent-local");
+    expect(view.result.current.current.heartbeat.wakeupId).toBe("kept");
   });
 });

@@ -9,10 +9,7 @@ import { useTheme } from "@/hooks/use-theme";
 import { useTabHistory } from "@/hooks/use-tab-history";
 import { useArrowNavigation } from "@/hooks/use-arrow-navigation";
 import { usePanelFocus } from "@/hooks/use-panel-focus";
-import { HeartbeatTab } from "@/components/heartbeat/heartbeat-tab";
-import { PersonalityTab } from "@/components/personality/personality-tab";
-import { AgentLocalTab } from "@/components/agent-local/agent-local-tab";
-import { SettingsTab } from "@/components/settings/settings-tab";
+import { CoreMainTabContent } from "@/components/layout/core-main-tab-content";
 import { ForecastDocsWindow } from "@/components/forecast-docs/forecast-docs-window";
 import { ForecastWorkbenchApp } from "@/components/forecast/workbench/forecast-workbench-app";
 import { cleanupTauriListener } from "@/lib/tauri-listen";
@@ -27,6 +24,8 @@ import { useBrowserRecoveryNotice } from "@/hooks/use-browser-recovery-notice";
 import { useAgentSessionWorkspace } from "@/hooks/use-agent-session-workspace";
 import { UpdateProvider } from "@/hooks/update-context";
 import type { TabId } from "@/components/layout/nav-items";
+import { SlotProvider } from "@/features/extension-ui/slot-provider";
+import { useNavigationAvailability } from "@/features/extension-ui/slot-contexts";
 import "./App.css";
 import {
   DEFAULT_APP_NAV,
@@ -43,7 +42,11 @@ export default function App({ initialExtensionUiStartup = NORMAL_EXTENSION_UI_ST
 
   if (window.location.hash === "#/forecast-docs") return <ForecastDocsApp />;
   if (window.location.hash === "#/forecast-workbench") return <ForecastWorkbenchApp />;
-  return <MainApp initialExtensionUiStartup={initialExtensionUiStartup} />;
+  return (
+    <SlotProvider>
+      <MainApp initialExtensionUiStartup={initialExtensionUiStartup} />
+    </SlotProvider>
+  );
 }
 
 function ForecastDocsApp() {
@@ -60,8 +63,9 @@ function ForecastDocsApp() {
 
 function MainApp({ initialExtensionUiStartup }: { initialExtensionUiStartup: ExtensionUiStartupState }) {
   useBrowserRecoveryNotice();
+  const navigationAvailability = useNavigationAvailability();
   const { current: nav, pushNav, replaceNav, goBack, goForward, canGoBack, canGoForward } =
-    useTabHistory(DEFAULT_APP_NAV);
+    useTabHistory(DEFAULT_APP_NAV, navigationAvailability);
 
   const { choice, setTheme } = useTheme();
   const [vaultError, setVaultError] = useState(false);
@@ -86,8 +90,6 @@ function MainApp({ initialExtensionUiStartup }: { initialExtensionUiStartup: Ext
     sessionId: nav.agentLocal.sessionId,
     ...agentWorkspace,
   }), [agentWorkspace, nav.agentLocal.sessionId]);
-  const listActive = (tab: TabId) => focusedPanel === "list" && activeTab === tab;
-
   const handleWakeupChange = useCallback((id: string | null) => pushNav({ heartbeat: { wakeupId: id } }), [pushNav]);
   const handlePathChange = useCallback((path: string | null) => pushNav({ personality: { path } }), [pushNav]);
   const handleSessionChange = useCallback((id: string | null) => pushNav({ agentLocal: { sessionId: id } }), [pushNav]);
@@ -104,9 +106,8 @@ function MainApp({ initialExtensionUiStartup }: { initialExtensionUiStartup: Ext
     pushNav(FILE_ACCESS_SETTINGS_NAV);
   }, [pushNav]);
 
-  const ALL_TABS: TabId[] = ["agent-local", "heartbeat", "personality", "settings"];
   useArrowNavigation({
-    items: ALL_TABS,
+    items: navigationAvailability.mainTabs,
     selectedId: activeTab,
     onSelect: (t) => pushNav({ tab: t }),
     enabled: focusedPanel === "sidebar",
@@ -186,40 +187,21 @@ function MainApp({ initialExtensionUiStartup }: { initialExtensionUiStartup: Ext
           onSearchSelect={handleSearchSelect}
           onNewSession={handleShowWelcome}
         >
-          {activeTab === "heartbeat" && (
-            <HeartbeatTab
-              activeWakeupId={nav.heartbeat.wakeupId}
-              onWakeupChange={handleWakeupChange}
-              listFocused={listActive("heartbeat")}
-            />
-          )}
-          {activeTab === "personality" && (
-            <PersonalityTab
-              activePath={nav.personality.path}
-              onPathChange={handlePathChange}
-              listFocused={listActive("personality")}
-            />
-          )}
-          {activeTab === "agent-local" && (
-            <AgentLocalTab
-              navState={agentNavState}
-              onSessionChange={handleSessionChange}
-              onNavChange={handleAgentNavChange}
-              onWorkspaceClear={clearAgentWorkspace}
-              listFocused={listActive("agent-local")}
-            />
-          )}
-          {activeTab === "settings" && (
-            <SettingsTab
-              themeChoice={choice}
-              onThemeChange={setTheme}
-              navState={nav.settings}
-              onNavChange={handleSettingsNavChange}
-              onNavReplace={handleSettingsNavReplace}
-              listFocused={listActive("settings")}
-              activeSessionId={nav.agentLocal.sessionId}
-            />
-          )}
+          <CoreMainTabContent
+            activeTab={activeTab}
+            nav={nav}
+            agentNavState={agentNavState}
+            themeChoice={choice}
+            focusedPanel={focusedPanel}
+            onWakeupChange={handleWakeupChange}
+            onPathChange={handlePathChange}
+            onSessionChange={handleSessionChange}
+            onAgentNavChange={handleAgentNavChange}
+            onWorkspaceClear={clearAgentWorkspace}
+            onThemeChange={setTheme}
+            onSettingsNavChange={handleSettingsNavChange}
+            onSettingsNavReplace={handleSettingsNavReplace}
+          />
         </AppLayout>
         </AppNavigationActionsProvider>
       </UpdateProvider>

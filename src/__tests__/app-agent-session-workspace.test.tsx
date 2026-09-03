@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "@/App";
+import { useArrowNavigation } from "@/hooks/use-arrow-navigation";
 import type { AgentLocalNavState, AgentLocalWorkspaceState } from "@/types/navigation";
 
 vi.mock("@tauri-apps/api/event", () => ({
@@ -92,6 +93,14 @@ describe("état visuel des sessions Agent Local", () => {
     fireEvent.click(screen.getByRole("button", { name: "Session A" }));
     expect(screen.getByRole("status", { name: "terminal ouvert" })).toHaveTextContent("true");
     expect(screen.getByRole("status", { name: "panneau ouvert" })).toHaveTextContent("true");
+  });
+
+  it("donne à la navigation clavier l'ordre résolu du registre", () => {
+    render(<App />);
+
+    expect(vi.mocked(useArrowNavigation)).toHaveBeenCalledWith(expect.objectContaining({
+      items: ["agent-local", "heartbeat", "personality", "settings"],
+    }));
   });
 
   it("conserve les états par session pendant retour et suivant", () => {

@@ -1,28 +1,24 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { SETTINGS_SECTIONS, SETTINGS_TAB_IDS } from "../settings-sections";
-import type { SettingsSubTab } from "@/types/navigation";
+import type { CoreSettingsTabId } from "@/features/extension-ui/slot-types";
 
-/* Les onglets ne sont plus déclarés dans une liste unique mais répartis en
-   sections. Un onglet oublié lors de l'ajout d'une section n'apparaît nulle
-   part dans la colonne, sans que rien ne le signale — d'où ces gardes. */
+/* Le test fige la surface historique attendue ; la production la projette
+   désormais depuis l'autorité unique des occupants cœur. */
 
-const NAV_TYPES = readFileSync("src/types/navigation.ts", "utf8");
 const FR = JSON.parse(readFileSync("src/i18n/fr.json", "utf8")) as {
   settings: { sections: Record<string, string> };
 };
 
-function declaredSubTabs(): SettingsSubTab[] {
-  const union = /export type SettingsSubTab\s*=\s*([^;]+);/.exec(NAV_TYPES)?.[1] ?? "";
-  return [...union.matchAll(/"([^"]+)"/g)].map((match) => match[1] as SettingsSubTab);
-}
+const EXPECTED_CORE_TABS = [
+  "general", "mascot", "shortcuts", "memory", "system-prompt", "tools", "advanced",
+  "ollama", "forecast", "llm", "providers", "connectors", "channels", "extensions",
+  "updates", "archived-chats", "about",
+] as const satisfies readonly CoreSettingsTabId[];
 
 describe("sections des Réglages", () => {
   it("range chaque onglet déclaré dans exactement une section", () => {
-    const declared = declaredSubTabs();
-
-    expect(declared.length).toBeGreaterThan(0);
-    expect([...SETTINGS_TAB_IDS].sort()).toEqual([...declared].sort());
+    expect(SETTINGS_TAB_IDS).toEqual(EXPECTED_CORE_TABS);
   });
 
   it("ne place aucun onglet dans deux sections", () => {
