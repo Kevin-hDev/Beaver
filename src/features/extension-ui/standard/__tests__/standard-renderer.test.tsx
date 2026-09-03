@@ -273,7 +273,7 @@ describe("standard UI renderer", () => {
     expect(screen.queryByText("Stale content")).toBeNull();
   });
 
-  it("ports a composer result above the trigger and closes it with Escape or its button", async () => {
+  it("ports a composer result above the trigger and closes it by every supported input", async () => {
     vi.mocked(invoke).mockImplementation((command) => {
       if (command === "get_extension_ui_catalog") return Promise.resolve(actionSnapshot(1));
       if (command === "invoke_extension_ui_action") {
@@ -295,6 +295,11 @@ describe("standard UI renderer", () => {
     const panel = document.body.querySelector(".xui-action-result");
     expect(panel).toHaveClass("xui-action-result-composer");
     fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByText("Action result")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Catalog action" }));
+    await screen.findByText("Action result");
+    fireEvent.pointerDown(document.body);
     expect(screen.queryByText("Action result")).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "Catalog action" }));

@@ -184,7 +184,7 @@ pub(super) fn ui_advance_fail_before_replace_at(
     store::advance_ui(path, extension_id, stage, true)
 }
 
-pub(super) fn ui_complete_at(path: &Path, extension_id: &str) -> Result<(), String> {
+pub(crate) fn ui_complete_at(path: &Path, extension_id: &str) -> Result<(), String> {
     store::clear_ui(path, Some(extension_id))
 }
 

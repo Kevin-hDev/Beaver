@@ -1,4 +1,5 @@
 use serde::Serialize;
+use std::path::Path;
 
 use crate::services::extensions::{
     self, SafeReason, UiAckToken, UiLoadAcknowledger, UiStartupMode, UiStartupState,
@@ -98,9 +99,21 @@ pub fn discard_interrupted_extension_ui_marker(
     state: tauri::State<'_, UiStartupState>,
     extension_id: String,
 ) -> Result<ExtensionUiStartupProjection, String> {
-    extensions::loading_marker::ui_complete(&extension_id)?;
+    discard_interrupted_at(
+        state.inner(),
+        &extensions::loading_marker::path(),
+        &extension_id,
+    )
+}
+
+pub(crate) fn discard_interrupted_at(
+    state: &UiStartupState,
+    path: &Path,
+    extension_id: &str,
+) -> Result<ExtensionUiStartupProjection, String> {
+    extensions::loading_marker::ui_complete_at(path, extension_id)?;
     state.choose_safe()?;
-    Ok(project(state.inner()))
+    Ok(project(state))
 }
 
 #[tauri::command]

@@ -254,6 +254,27 @@ fn closing_invalid_marker_dialog_keeps_marker_and_stays_safe() {
 }
 
 #[test]
+fn discarding_interrupted_ui_marker_clears_disk_and_selects_safe_state() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("extension-loading.json");
+    loading_marker::ui_start_at(&path, UI_ID, 2).unwrap();
+    let state = ui_startup::decide_at(&path, false, false).unwrap();
+
+    let projection =
+        crate::commands::extensions_ui_startup::discard_interrupted_at(&state, &path, UI_ID)
+            .unwrap();
+    let json = serde_json::to_value(projection).unwrap();
+
+    assert_eq!(json["mode"]["kind"], "safe");
+    assert_eq!(json["mode"]["reason"], "recoveryChoice");
+    assert_eq!(json["thirdPartyLoadingAllowed"], false);
+    assert!(matches!(
+        loading_marker::read_journal_at(&path),
+        JournalRead::Missing
+    ));
+}
+
+#[test]
 fn acknowledgement_is_random_single_use_constant_time_and_leaves_failures() {
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path().join("extension-loading.json");
