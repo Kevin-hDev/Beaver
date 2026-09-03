@@ -1,0 +1,9 @@
+UI-P5 — Modules avancés approuvés.
+
+Implémentation : builder JS/TS/TSX borné via Node >= 20 et esbuild, artefacts durables validés et empreintés par Rust, publication atomique, protocole local fermé sur le registre actif, loader avancé ordonné avec journal de reprise, montages bornés, timeout et nettoyage inverse. Les installations locales, Git et npm construisent avant enregistrement ; toute empreinte modifiée révoque la confiance.
+
+Revue interne : correction de la suppression des artefacts encore référencés au même hash, nettoyage après échec d’écriture du registre, point d’entrée JavaScript unique, nettoyage des résolutions tardives CSS/import/activation, séparation du loader hors du SlotProvider générique, et découpage de tous les fichiers de production sous 230 lignes. Aucun Tool Office maison ni mode Chat n’a été étendu.
+
+Validations exécutées et vertes : npm run test:persistence-migration (10), npm run test:extensions-host (75), node --test scripts/extensions/ui-build.test.mjs (4), tests Vitest ciblés avancés/artefacts, cargo test services::extensions (305 réussis, 2 ignorés), npm run contracts:check, npm run lint, npx tsc --noEmit, cargo clippy --all-targets -- -D warnings, npm test complet (552 fichiers / 2968 tests Vitest plus suites CEF, E2E runner, host et build), cargo test complet (4804 réussis, 11 ignorés), graphify update . et git diff --check.
+
+Limite déclarée : le parcours visuel réel de casse, redémarrage sûr et restauration sur applications empaquetées macOS/Windows/Linux n’a pas été rejoué dans ce lot local. La fixture et le scénario E2E sont présents ; la preuve sur les trois OS reste au lot UI-P7.
