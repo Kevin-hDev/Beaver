@@ -37,6 +37,7 @@ pub fn records() -> Result<Vec<ExtensionRecord>, String> {
             enabled: definition.enabled,
             trusted: true,
             fingerprint: None,
+            ui_artifact: None,
             trusted_at: None,
             show_in_chat: definition.show_in_chat,
             status: ExtensionStatus::Inactive,

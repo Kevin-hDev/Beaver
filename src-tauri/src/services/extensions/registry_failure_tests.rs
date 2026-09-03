@@ -29,6 +29,7 @@ fn record(id: &str) -> ExtensionRecord {
         enabled: true,
         trusted: true,
         fingerprint: None,
+        ui_artifact: None,
         trusted_at: None,
         show_in_chat: true,
         status: ExtensionStatus::Loading,

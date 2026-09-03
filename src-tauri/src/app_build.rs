@@ -71,7 +71,7 @@ fn build_with_mode(
     let builder = builder.plugin(tauri_plugin_wdio::init());
     #[cfg(feature = "e2e")]
     let builder = builder.plugin(tauri_plugin_wdio_webdriver::init());
-    let builder = crate::services::extensions::ui_protocol::register(builder);
+    let builder = crate::services::extensions::ui_protocol::register(builder, ui_startup.clone());
     let ollama_manager = runtime.ollama.clone();
     builder
         .manage(OllamaClient::new(ollama_manager))

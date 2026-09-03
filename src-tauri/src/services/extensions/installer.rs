@@ -16,10 +16,11 @@ pub async fn install_git(
     let source =
         super::source_validation::git(locator).map_err(|_| OperationFailure::SourceInvalid)?;
     let npm = super::npm_runner::NpmRunner::resolve(app)?;
+    let ui_runtime = super::ui_builder::UiBuildRuntime::resolve(app)?;
     let work = extension_runtime()?.work.clone();
     work.run_operation(move |cancel| async move {
         let prepared = blocking(
-            move || super::install_preparation::git(source, npm, &cancel),
+            move || super::install_preparation::git(source, npm, ui_runtime, &cancel),
             OperationFailure::InstallFailed,
         )
         .await?;
@@ -37,10 +38,11 @@ pub async fn install_npm(
     let source =
         super::source_validation::npm(locator).map_err(|_| OperationFailure::PackageInvalid)?;
     let npm = super::npm_runner::NpmRunner::resolve(app)?;
+    let ui_runtime = super::ui_builder::UiBuildRuntime::resolve(app)?;
     let work = extension_runtime()?.work.clone();
     work.run_operation(move |cancel| async move {
         let prepared = blocking(
-            move || super::install_preparation::npm(source, npm, &cancel),
+            move || super::install_preparation::npm(source, npm, ui_runtime, &cancel),
             OperationFailure::InstallFailed,
         )
         .await?;
@@ -62,10 +64,11 @@ pub async fn update(
         .filter(|origin| is_managed_kind(&origin.kind))
         .ok_or(OperationFailure::UpdateUnavailable)?;
     let npm = super::npm_runner::NpmRunner::resolve(app)?;
+    let ui_runtime = super::ui_builder::UiBuildRuntime::resolve(app)?;
     let runtime = extension_runtime()?;
     let work = runtime.work.clone();
     work.run_operation(move |cancel| async move {
-        let prepared = prepare_update(origin, npm, cancel.clone()).await?;
+        let prepared = prepare_update(origin, npm, ui_runtime, cancel.clone()).await?;
         if prepared.record.manifest.id != current.manifest.id {
             cleanup(&prepared.record).await;
             return Err(OperationFailure::UpdateIdentityChanged);
@@ -79,6 +82,7 @@ pub async fn update(
 async fn prepare_update(
     origin: super::types::ExtensionOrigin,
     npm: super::npm_runner::NpmRunner,
+    ui_runtime: super::ui_builder::UiBuildRuntime,
     cancellation: ServiceWorkCancellation,
 ) -> Result<PreparedInstall, OperationFailure> {
     match origin.kind {
@@ -86,7 +90,7 @@ async fn prepare_update(
             let source = super::source_validation::git(&origin.locator)
                 .map_err(|_| OperationFailure::SourceInvalid)?;
             blocking(
-                move || super::install_preparation::git(source, npm, &cancellation),
+                move || super::install_preparation::git(source, npm, ui_runtime, &cancellation),
                 OperationFailure::UpdateFailed,
             )
             .await
@@ -95,7 +99,7 @@ async fn prepare_update(
             let source = super::source_validation::npm(&origin.locator)
                 .map_err(|_| OperationFailure::PackageInvalid)?;
             blocking(
-                move || super::install_preparation::npm(source, npm, &cancellation),
+                move || super::install_preparation::npm(source, npm, ui_runtime, &cancellation),
                 OperationFailure::UpdateFailed,
             )
             .await
@@ -107,6 +111,7 @@ async fn prepare_update(
 fn register_new(prepared: PreparedInstall) -> Result<ExtensionRecord, OperationFailure> {
     let record = prepared.record;
     if let Err(error) = super::registry_managed::add(record.clone()) {
+        let _ = super::ui_artifact_store::unreferenced_from_registry();
         let _ = super::managed_store::remove_record(&record);
         return Err(error);
     }
@@ -138,6 +143,8 @@ async fn replace_current(
     let old = current.clone();
     let _ = blocking(
         move || {
+            super::ui_artifact_store::unreferenced_from_registry()
+                .map_err(|_| OperationFailure::StorageFailed)?;
             super::managed_store::remove_record(&old).map_err(|_| OperationFailure::StorageFailed)
         },
         OperationFailure::UpdateFailed,
@@ -150,6 +157,8 @@ async fn cleanup(record: &ExtensionRecord) {
     let record = record.clone();
     let _ = blocking(
         move || {
+            super::ui_artifact_store::unreferenced_from_registry()
+                .map_err(|_| OperationFailure::StorageFailed)?;
             super::managed_store::remove_record(&record)
                 .map_err(|_| OperationFailure::StorageFailed)
         },

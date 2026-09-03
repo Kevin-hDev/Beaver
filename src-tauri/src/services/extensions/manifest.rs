@@ -75,6 +75,7 @@ fn load(input: &str) -> ManifestResult<LocalExtension> {
         enabled: false,
         trusted: false,
         fingerprint: None,
+        ui_artifact: None,
         trusted_at: None,
         show_in_chat: false,
         status: ExtensionStatus::Inactive,
@@ -83,10 +84,17 @@ fn load(input: &str) -> ManifestResult<LocalExtension> {
         sensitive_access_granted: false,
         contributions: ExtensionContributions::default(),
     };
-    record.fingerprint = Some(
-        super::fingerprint::calculate(&record)
-            .map_err(|_| invalid(super::error_codes::FINGERPRINT_FAILED))?,
-    );
+    if !record
+        .manifest
+        .ui
+        .as_ref()
+        .is_some_and(|ui| ui.mode == super::types::ExtensionUiMode::Advanced)
+    {
+        record.fingerprint = Some(
+            super::fingerprint::calculate(&record)
+                .map_err(|_| invalid(super::error_codes::FINGERPRINT_FAILED))?,
+        );
+    }
     Ok(LocalExtension { record })
 }
 

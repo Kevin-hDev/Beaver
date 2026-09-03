@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { UI_LIMITS } from "@/types/extension-ui-contract.generated";
+import { sequenceExtensionUiLoad } from "../ui-load-sequencer";
 
 export interface MountPermit {
   commit: () => Promise<void>;
@@ -51,12 +52,12 @@ export function createMountCoordinator() {
     return readyPromise;
   }
 
-  async function drain(): Promise<void> {
+  function drain(): void {
     if (active || queue.length === 0) return;
     active = queue.shift() ?? null;
     if (!active) return;
     const job = active;
-    try {
+    void sequenceExtensionUiLoad(async () => {
       const token = await invoke<number[]>("begin_extension_ui_load", {
         extensionId: job.extensionId,
         attempts: job.attempts,
@@ -66,29 +67,36 @@ export function createMountCoordinator() {
         stage: "mount",
       });
       let settled = false;
-      job.ready({
-        commit: async () => {
-          if (settled) return;
-          settled = true;
-          await invoke("acknowledge_extension_ui_load", {
-            extensionId: job.extensionId,
-            token,
-          });
-          remember(job.key);
-          job.finish();
-          jobs.delete(job.key);
-          active = null;
-          void drain();
-        },
-        cancel: () => {
-          if (settled) return;
-          settled = true;
-          fail(job, generic());
-        },
+      await new Promise<void>((resolve, reject) => {
+        job.ready({
+          commit: async () => {
+            if (settled) return;
+            settled = true;
+            try {
+              await invoke("acknowledge_extension_ui_load", {
+                extensionId: job.extensionId,
+                token,
+              });
+              remember(job.key);
+              job.finish();
+              resolve();
+            } catch {
+              reject(generic());
+            }
+          },
+          cancel: () => {
+            if (settled) return;
+            settled = true;
+            reject(generic());
+          },
+        });
       });
-    } catch {
+      jobs.delete(job.key);
+      active = null;
+      void drain();
+    }).catch(() => {
       fail(job, generic());
-    }
+    });
   }
 
   function fail(job: MountJob, error: Error) {

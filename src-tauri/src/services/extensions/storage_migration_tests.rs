@@ -196,6 +196,37 @@ fn current_recovery_snapshot_is_preserved_and_bounded() {
 }
 
 #[test]
+fn legacy_advanced_record_without_artifact_is_preserved_but_closed() {
+    let directory = tempfile::tempdir().unwrap();
+    let source = directory.path().join("advanced");
+    std::fs::create_dir(&source).unwrap();
+    std::fs::write(source.join("index.mjs"), "export default {};\n").unwrap();
+    std::fs::write(source.join("ui.ts"), "export function activate() {}\n").unwrap();
+    let mut record = super::manifest::load_local(source.join("index.mjs").to_str().unwrap())
+        .unwrap()
+        .record;
+    record.manifest.ui = Some(super::types::ExtensionUiManifest {
+        api_version: "1".to_string(),
+        mode: super::types::ExtensionUiMode::Advanced,
+        entry: Some("ui.ts".to_string()),
+    });
+    record.enabled = true;
+    record.trusted = true;
+    record.ui_artifact = None;
+
+    let reset = super::registry_state::reset_hosted_runtime(vec![record]);
+
+    assert!(!reset[0].enabled);
+    assert!(!reset[0].trusted);
+    assert_eq!(reset[0].status, super::types::ExtensionStatus::Error);
+    assert_eq!(
+        reset[0].last_error.as_deref(),
+        Some(super::ui_contract::UI_DIAGNOSTIC_UI_ARTIFACT_INVALID),
+    );
+    assert!(super::validation::records(&reset).is_ok());
+}
+
+#[test]
 fn v1_envelope_ignores_unknown_fields_for_forward_compatibility() {
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path().join("extensions.json");

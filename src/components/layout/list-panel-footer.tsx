@@ -8,6 +8,7 @@ import {
   useStandardEntry,
 } from "@/features/extension-ui/standard/standard-contributions";
 import type { SlotOccupant } from "@/features/extension-ui/slot-types";
+import { AdvancedMountAnchor } from "@/features/extension-ui/advanced/advanced-mount-anchor";
 import "./list-panel-footer.css";
 
 interface ListPanelFooterProps {
@@ -31,6 +32,7 @@ export function ListPanelFooter({ activeTab, onTabChange }: ListPanelFooterProps
             <NavigationOccupant occupant={occupant} context={current} />
           )}
         />
+        <AdvancedMountAnchor placement="app.navigation.primary" />
       </nav>
       <GpuStatusBadge />
     </div>

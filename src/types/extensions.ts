@@ -56,6 +56,24 @@ export interface ExtensionManifest {
   description?: string;
 }
 
+export interface ExtensionUiArtifactOutput {
+  name: string;
+  type: "javascript" | "css" | "png" | "jpeg" | "webp" | "gif" | "woff2";
+  bytes: number;
+  sha256: string;
+}
+
+export interface ExtensionUiArtifact {
+  version: number;
+  builderVersion: string;
+  nodeVersion: string;
+  entry: string;
+  totalBytes: number;
+  outputs: ExtensionUiArtifactOutput[];
+  inputs: string[];
+  manifestSha256: string;
+}
+
 export interface ExtensionTool {
   name: string;
   description: string;
@@ -82,6 +100,7 @@ export interface ExtensionRecord {
   origin?: ExtensionOrigin;
   enabled: boolean;
   trusted: boolean;
+  uiArtifact?: ExtensionUiArtifact;
   showInChat: boolean;
   status: ExtensionStatus;
   lastError?: string;

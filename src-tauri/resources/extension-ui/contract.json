@@ -59,7 +59,8 @@
     "maxThemeTokens": 64,
     "maxAdvancedArtifactFiles": 64,
     "maxAdvancedArtifactBytes": 4194304,
-    "maxAdvancedMountsPerExtension": 32
+    "maxAdvancedMountsPerExtension": 32,
+    "maxAdvancedActivationMs": 15000
   },
   "validation": {
     "maxNumericLimit": 4194304,

@@ -97,6 +97,7 @@ fn record(id: &str, kind: ExtensionKind) -> ExtensionRecord {
         enabled: true,
         trusted: true,
         fingerprint: None,
+        ui_artifact: None,
         trusted_at: None,
         show_in_chat: true,
         status: ExtensionStatus::Inactive,

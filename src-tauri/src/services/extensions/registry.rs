@@ -22,6 +22,12 @@ pub fn init() -> Result<(), String> {
             super::OperationFailure::CleanupFailed,
         );
     }
+    if super::ui_artifact_store::unreferenced(&records).is_err() {
+        super::operation_error::report(
+            super::operation_error::Operation::Cleanup,
+            super::OperationFailure::CleanupFailed,
+        );
+    }
     super::registry_memory::replace(records, recovery_snapshot)?;
     super::storage::finish_successful_startup(&super::storage::path(), format)
 }
@@ -107,6 +113,30 @@ pub fn replace_user(
         Ok(())
     })?;
     Ok(reminder)
+}
+
+pub(super) fn replace_ui_records(
+    replacements: Vec<(ExtensionRecord, ExtensionRecord)>,
+) -> Result<(), String> {
+    for (_, replacement) in &replacements {
+        super::validation::records(std::slice::from_ref(replacement))?;
+    }
+    mutate(|records| {
+        for (expected, replacement) in replacements {
+            let current = records
+                .iter_mut()
+                .find(|record| record.manifest.id == expected.manifest.id)
+                .ok_or_else(|| super::error_codes::NOT_FOUND.to_string())?;
+            if current.kind != ExtensionKind::Local
+                || current.source != expected.source
+                || current.origin != expected.origin
+            {
+                return Err("L'extension a changé pendant sa recharge.".to_string());
+            }
+            *current = replacement;
+        }
+        Ok(())
+    })
 }
 
 pub async fn set_enabled(id: &str, enabled: bool, trust_confirmed: bool) -> Result<bool, String> {

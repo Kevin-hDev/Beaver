@@ -14,6 +14,7 @@ import type { MissingSessionDirectory } from "@/hooks/use-agent-missing-director
 import { useSessionCompressionProfile } from "@/hooks/use-session-compression-profile";
 import { allowsThirdPartyComposerUi } from "@/features/extension-ui/slot-contexts";
 import { SlotRenderer } from "@/features/extension-ui/slot-renderer";
+import { AdvancedMountAnchor } from "@/features/extension-ui/advanced/advanced-mount-anchor";
 import type { SlotOccupant } from "@/features/extension-ui/slot-types";
 import {
   StandardPlacementAction,
@@ -97,12 +98,15 @@ export function ChatInputActionsRow({
         render={renderCoreComposerOccupant}
       />
       {allowsThirdPartyComposerUi(permissionMode, planModeEnabled) && (
-        <SlotRenderer
-          placement="agent.composer.leading"
-          source="extension"
-          context={null}
-          render={(occupant) => <ComposerOccupant occupant={occupant} />}
-        />
+        <>
+          <SlotRenderer
+            placement="agent.composer.leading"
+            source="extension"
+            context={null}
+            render={(occupant) => <ComposerOccupant occupant={occupant} />}
+          />
+          <AdvancedMountAnchor placement="agent.composer.leading" />
+        </>
       )}
       <ContextProgress
         used={contextUsed}

@@ -28,6 +28,7 @@ pub fn records(records: &[ExtensionRecord]) -> Result<(), String> {
             }
         }
         super::origin_validation::record(record)?;
+        super::ui_artifact::validate_record(record)?;
         contributions(&record.contributions.tools, &record.contributions.events)?;
     }
     Ok(())

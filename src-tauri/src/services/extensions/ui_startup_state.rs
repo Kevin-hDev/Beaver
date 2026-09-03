@@ -1,4 +1,4 @@
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use serde::Serialize;
 
@@ -35,9 +35,9 @@ pub(crate) enum UiStartupMode {
     AwaitingWayland,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub(crate) struct UiStartupState {
-    resolution: Mutex<StartupResolution>,
+    resolution: Arc<Mutex<StartupResolution>>,
 }
 
 #[derive(Debug)]
@@ -49,19 +49,19 @@ struct StartupResolution {
 impl UiStartupState {
     pub(crate) fn resolved(mode: UiStartupMode) -> Self {
         Self {
-            resolution: Mutex::new(StartupResolution {
+            resolution: Arc::new(Mutex::new(StartupResolution {
                 mode,
                 wayland_fallback: None,
-            }),
+            })),
         }
     }
 
     pub(super) fn awaiting_wayland(fallback: UiStartupMode) -> Self {
         Self {
-            resolution: Mutex::new(StartupResolution {
+            resolution: Arc::new(Mutex::new(StartupResolution {
                 mode: UiStartupMode::AwaitingWayland,
                 wayland_fallback: Some(fallback),
-            }),
+            })),
         }
     }
 
@@ -89,6 +89,17 @@ impl UiStartupState {
                 extension_id: target,
                 attempts: target_attempts,
             } => target == extension_id && target_attempts == attempts,
+            _ => false,
+        }
+    }
+
+    pub(crate) fn protocol_loading_allowed_for(&self, extension_id: &str) -> bool {
+        match self.mode() {
+            UiStartupMode::Normal => true,
+            UiStartupMode::RetryInterruptedUi {
+                extension_id: target,
+                ..
+            } => target == extension_id,
             _ => false,
         }
     }

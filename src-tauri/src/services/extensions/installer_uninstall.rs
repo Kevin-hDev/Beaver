@@ -24,6 +24,8 @@ pub async fn uninstall(id: &str, deadline: std::time::Instant) -> Result<bool, O
             async move {
                 let persisted_reminder =
                     super::registry::remove(&id).map_err(|_| OperationFailure::UninstallFailed)?;
+                super::ui_artifact_store::remove(&current)
+                    .map_err(|_| OperationFailure::StorageFailed)?;
                 let result = if is_managed(&current) {
                     let record = current.clone();
                     blocking(

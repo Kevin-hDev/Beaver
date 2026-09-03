@@ -75,7 +75,7 @@ fn protocol_refuses_other_webviews_origins_methods_and_hashes() {
             Some(&artifact)
         )
         .status(),
-        StatusCode::FORBIDDEN
+        StatusCode::NOT_FOUND
     );
     assert_eq!(
         serve(
@@ -84,7 +84,7 @@ fn protocol_refuses_other_webviews_origins_methods_and_hashes() {
             Some(&artifact)
         )
         .status(),
-        StatusCode::FORBIDDEN
+        StatusCode::NOT_FOUND
     );
     let post = Request::builder()
         .method(Method::POST)
@@ -94,7 +94,7 @@ fn protocol_refuses_other_webviews_origins_methods_and_hashes() {
         .unwrap();
     assert_eq!(
         serve("main", &post, Some(&artifact)).status(),
-        StatusCode::METHOD_NOT_ALLOWED
+        StatusCode::NOT_FOUND
     );
     let bad_hash = "0".repeat(64);
     let uri = format!("beaver-extension://localhost/ui-proof/{bad_hash}/entry.mjs");
@@ -119,7 +119,7 @@ fn protocol_refuses_traversal_symlinks_and_large_files() {
             Some(&artifact)
         )
         .status(),
-        StatusCode::BAD_REQUEST
+        StatusCode::NOT_FOUND
     );
 
     let directory = root.path().join("ui-proof").join(artifact.manifest_sha());
@@ -148,6 +148,29 @@ fn protocol_refuses_traversal_symlinks_and_large_files() {
             Some(&artifact)
         )
         .status(),
-        StatusCode::PAYLOAD_TOO_LARGE
+        StatusCode::NOT_FOUND
+    );
+}
+
+#[test]
+fn protocol_refuses_artifacts_in_safe_mode() {
+    let root = tempfile::tempdir().unwrap();
+    let artifact = fixture(root.path(), b"export default true;");
+    let uri = format!(
+        "beaver-extension://localhost/ui-proof/{}/entry.mjs",
+        artifact.manifest_sha()
+    );
+    let startup = super::UiStartupState::resolved(super::UiStartupMode::Safe {
+        reason: super::SafeReason::Argument,
+    });
+
+    assert_eq!(
+        super::ui_protocol::serve_with_startup(
+            "main",
+            &request(&uri, "tauri://localhost"),
+            &startup,
+            Some(&artifact),
+        ).status(),
+        StatusCode::NOT_FOUND,
     );
 }

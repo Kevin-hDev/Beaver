@@ -41,6 +41,13 @@ test("bundles JS, TS, TSX, CSS, raster images, WOFF2 and a local npm dependency"
   const manifest = await buildExtensionUi({ inputRoot, outputRoot, entry: "entry.ts" });
 
   assert.equal(manifest.version, 1);
+  assert.match(manifest.builderVersion, /^\d+\.\d+\.\d+$/u);
+  assert.equal(manifest.nodeVersion, process.version);
+  assert.match(manifest.entry, /\.js$/u);
+  assert.equal(
+    manifest.totalBytes,
+    manifest.outputs.reduce((total, output) => total + output.bytes, 0),
+  );
   assert.ok(manifest.outputs.some((output) => output.type === "javascript"));
   assert.ok(manifest.outputs.some((output) => output.type === "css"));
   assert.ok(manifest.outputs.some((output) => output.type === "png"));

@@ -18,6 +18,7 @@ import {
 } from "@/types/extension-contract.generated";
 import { EXTENSION_INSTALL_LIMITS } from "./extension-install";
 import { parseExtensionManifestUi } from "./extension-manifest-ui";
+import { parseExtensionUiArtifact } from "./extension-ui-artifact";
 
 export const EXTENSION_VIEW_LIMITS = Object.freeze({
   records: LIMITS.maxExtensions,
@@ -193,6 +194,7 @@ function record(value: unknown): ExtensionRecord {
     origin: parsedOrigin,
     enabled: input.enabled,
     trusted: input.trusted,
+    uiArtifact: parseExtensionUiArtifact(input.uiArtifact),
     showInChat: input.showInChat,
     status: oneOf(input.status, STATUSES),
     lastError: optionalText(input.lastError, MAX_TEXT_CHARS),

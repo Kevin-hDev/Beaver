@@ -249,6 +249,7 @@ The extension author and user are responsible for any secret, file, process, or 
 | `maxActionPayloadBytes` | 65536 |
 | `maxActionResultBytes` | 262144 |
 | `maxActionsPerExtension` | 64 |
+| `maxAdvancedActivationMs` | 15000 |
 | `maxAdvancedArtifactBytes` | 4194304 |
 | `maxAdvancedArtifactFiles` | 64 |
 | `maxAdvancedMountsPerExtension` | 32 |

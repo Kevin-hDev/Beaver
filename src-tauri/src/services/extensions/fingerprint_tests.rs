@@ -1,5 +1,9 @@
 use super::fingerprint;
-use super::types::{ExtensionKind, ExtensionRecord};
+use super::types::{
+    ExtensionApiLevel, ExtensionKind, ExtensionRecord, ExtensionUiArtifact,
+    ExtensionUiArtifactOutput, ExtensionUiManifest, ExtensionUiMode,
+};
+use sha2::{Digest, Sha256};
 
 fn record(root: &std::path::Path) -> ExtensionRecord {
     let mut record = super::builtin::records().unwrap().remove(0);
@@ -239,6 +243,60 @@ fn fingerprint_enforces_file_count_and_depth_limits() {
     }
     std::fs::write(nested.join("deep.ts"), "").unwrap();
     assert!(fingerprint::calculate(&record).is_err());
+}
+
+#[test]
+fn advanced_artifact_changes_are_fingerprinted_and_tampering_fails_closed() {
+    let (_directory, mut record) = source_tree();
+    record.manifest.id = format!("test.ui.{}", uuid::Uuid::new_v4().simple());
+    record.manifest.api_level = ExtensionApiLevel::Advanced;
+    record.manifest.ui = Some(ExtensionUiManifest {
+        api_version: "1".to_string(),
+        mode: ExtensionUiMode::Advanced,
+        entry: Some("ui.ts".to_string()),
+    });
+    let first = store_artifact(&record.manifest.id, b"export const value = 1;");
+    record.ui_artifact = Some(first);
+    let initial = fingerprint::calculate(&record).unwrap();
+
+    let second = store_artifact(&record.manifest.id, b"export const value = 2;");
+    record.ui_artifact = Some(second.clone());
+    let changed = fingerprint::calculate(&record).unwrap();
+    assert_ne!(initial, changed);
+    super::ui_artifact_store::unreferenced(std::slice::from_ref(&record)).unwrap();
+
+    let path = super::ui_artifact_store::artifact_path(
+        &record.manifest.id,
+        &second.manifest_sha256,
+    )
+    .unwrap()
+    .join("entry.js");
+    std::fs::write(path, b"tampered").unwrap();
+    assert!(fingerprint::calculate(&record).is_err());
+    super::ui_artifact_store::remove(&record).unwrap();
+}
+
+fn store_artifact(id: &str, bytes: &[u8]) -> ExtensionUiArtifact {
+    let staging = super::ui_artifact_store::prepare().unwrap();
+    std::fs::write(staging.output().join("entry.js"), bytes).unwrap();
+    let mut artifact = ExtensionUiArtifact {
+        version: 1,
+        builder_version: "0.28.1".to_string(),
+        node_version: "v20.0.0".to_string(),
+        entry: "entry.js".to_string(),
+        total_bytes: bytes.len(),
+        outputs: vec![ExtensionUiArtifactOutput {
+            name: "entry.js".to_string(),
+            kind: "javascript".to_string(),
+            bytes: bytes.len(),
+            sha256: hex::encode(Sha256::digest(bytes)),
+        }],
+        inputs: vec!["ui.ts".to_string()],
+        manifest_sha256: "0".repeat(64),
+    };
+    artifact.manifest_sha256 = super::ui_artifact::manifest_hash(&artifact).unwrap();
+    staging.commit(id, &artifact).unwrap();
+    artifact
 }
 
 #[test]

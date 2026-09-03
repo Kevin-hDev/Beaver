@@ -72,6 +72,29 @@ pub struct ExtensionUiManifest {
     pub entry: Option<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ExtensionUiArtifactOutput {
+    pub name: String,
+    #[serde(rename = "type")]
+    pub kind: String,
+    pub bytes: usize,
+    pub sha256: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ExtensionUiArtifact {
+    pub version: u8,
+    pub builder_version: String,
+    pub node_version: String,
+    pub entry: String,
+    pub total_bytes: usize,
+    pub outputs: Vec<ExtensionUiArtifactOutput>,
+    pub inputs: Vec<String>,
+    pub manifest_sha256: String,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ExtensionManifest {
@@ -135,6 +158,8 @@ pub struct ExtensionRecord {
     pub trusted: bool,
     #[serde(default)]
     pub fingerprint: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ui_artifact: Option<ExtensionUiArtifact>,
     #[serde(default)]
     pub trusted_at: Option<String>,
     pub show_in_chat: bool,

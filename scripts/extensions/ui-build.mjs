@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { lstat, realpath, rename, writeFile } from "node:fs/promises";
 import { basename, dirname, extname, isAbsolute, relative, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { build } from "esbuild";
+import { build, version as esbuildVersion } from "esbuild";
 
 const ERROR_MESSAGE = "Extension UI build failed";
 const MAX_OUTPUTS = 64;
@@ -61,7 +61,18 @@ async function buildValidated(options) {
   const inputs = await validateInputs(inputRoot, Object.keys(result.metafile.inputs));
   const outputs = await validateOutputs(outputRoot, result.outputFiles);
   await writeOutputs(outputRoot, result.outputFiles);
-  const unsigned = { version: 1, outputs, inputs };
+  const entries = outputs.filter((output) => output.type === "javascript");
+  if (entries.length !== 1) fail();
+  const totalBytes = outputs.reduce((total, output) => checkedAdd(total, output.bytes), 0);
+  const unsigned = {
+    version: 1,
+    builderVersion: esbuildVersion,
+    nodeVersion: process.version,
+    entry: entries[0].name,
+    totalBytes,
+    outputs,
+    inputs,
+  };
   const manifest = {
     ...unsigned,
     manifestSha256: sha256(Buffer.from(JSON.stringify(unsigned))),

@@ -98,6 +98,12 @@ mod tool_bridge;
 mod tool_result;
 pub(crate) mod types;
 mod ui_action_result;
+mod ui_artifact;
+mod ui_artifact_manifest;
+mod ui_artifact_store;
+mod ui_build_api;
+mod ui_builder;
+mod ui_builder_process;
 mod ui_catalog;
 mod ui_catalog_actions;
 mod ui_catalog_lifecycle;
@@ -105,6 +111,8 @@ mod ui_catalog_limits;
 mod ui_dispatch;
 mod ui_normalization;
 pub(crate) mod ui_protocol;
+mod ui_protocol_proof;
+mod ui_protocol_response;
 mod ui_types;
 mod ui_validation;
 mod ui_view_validation;
@@ -125,17 +133,7 @@ mod ui_startup_tests;
 mod work_supervision_tests;
 
 #[cfg(test)]
-mod contract_artifact_tests;
-#[cfg(test)]
-mod ui_contract_tests;
-#[cfg(test)]
-mod ui_dispatch_tests;
-#[cfg(test)]
-mod ui_limit_tests;
-#[cfg(test)]
-mod ui_protocol_tests;
-#[cfg(test)]
-mod ui_validation_tests;
+include!("test_modules.inc.rs");
 
 pub use extension_recovery::ExtensionRecoveryState;
 pub use types::{ExtensionEffect, ExtensionHostStatus, ExtensionKind};
@@ -180,6 +178,11 @@ pub(crate) use installer::{
 pub(crate) use manifest::load_local as install_local;
 pub(crate) use operation_error::{report as report_operation_error, Operation};
 pub(crate) use operation_failure::OperationFailure;
+pub(crate) use ui_build_api::{
+    cleanup_unreferenced as cleanup_unreferenced_ui_artifacts, prepare_record as prepare_ui_record,
+    refresh_artifacts as refresh_extension_ui_artifacts,
+    resolve_runtime as resolve_ui_build_runtime,
+};
 pub(crate) use ui_startup::prepare as prepare_ui_startup;
 #[cfg(target_os = "windows")]
 pub(crate) use ui_startup::{
@@ -188,40 +191,3 @@ pub(crate) use ui_startup::{
 pub(crate) use ui_startup_ack::{UiAckToken, UiLoadAcknowledger};
 pub(crate) use ui_startup_state::{SafeReason, UiStartupMode, UiStartupState};
 pub(crate) use validation::identifier as validate_identifier;
-
-#[cfg(test)]
-mod access_log_tests;
-#[cfg(test)]
-mod bounded_jsonl_tests;
-#[cfg(test)]
-mod builtin_tests;
-#[cfg(test)]
-mod fingerprint_tests;
-#[cfg(test)]
-mod git_dependencies_tests;
-#[cfg(test)]
-mod git_policy_tests;
-#[cfg(test)]
-mod git_source_reference_tests;
-#[cfg(test)]
-mod git_source_tests;
-#[cfg(test)]
-mod loading_marker_tests;
-#[cfg(test)]
-mod managed_install_error_tests;
-#[cfg(test)]
-mod managed_store_tests;
-#[cfg(test)]
-mod npm_runner_tests;
-#[cfg(test)]
-mod runtime_hosts_tests;
-#[cfg(test)]
-mod runtime_sync_tests;
-#[cfg(test)]
-mod source_validation_tests;
-#[cfg(test)]
-mod storage_migration_tests;
-#[cfg(test)]
-mod tests;
-#[cfg(test)]
-mod view_tests;

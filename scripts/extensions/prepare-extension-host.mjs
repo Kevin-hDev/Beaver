@@ -25,6 +25,10 @@ if (developmentOnly) {
   await installProductionDependencies(hostDirectory);
   await prepareNodeRuntime(hostDirectory);
 } else {
+  await copyFile(
+    resolve(root, "scripts", "extensions", "ui-build.mjs"),
+    resolve(hostDirectory, "ui-build.mjs"),
+  );
   await installProductionDependencies(hostDirectory);
   await prepareNodeRuntime(hostDirectory);
 }
@@ -95,6 +99,10 @@ async function copyHostSources(source, destination) {
       resolve(source, "vendor", "image-size-disabled"),
       resolve(destination, "vendor", "image-size-disabled"),
       { count: 0 },
+    ),
+    copyFile(
+      resolve(root, "scripts", "extensions", "ui-build.mjs"),
+      resolve(destination, "ui-build.mjs"),
     ),
   ]);
   await copyDirectory(

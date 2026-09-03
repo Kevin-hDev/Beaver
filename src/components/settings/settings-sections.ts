@@ -24,6 +24,7 @@ export interface SubTabDef {
   label?: StandardLocalizedText;
   icon: ComponentType<SettingsTabIconProps>;
   occupantId: string;
+  placement: SlotOccupant["placement"];
 }
 
 export interface SettingsSection {
@@ -82,6 +83,7 @@ function subTabFromOccupant(
       label: contribution.label,
       icon: standardIcon(contribution.icon),
       occupantId: occupant.id,
+      placement: occupant.placement,
     };
   }
   if (!occupant.labelKey || !occupant.iconKey) {
@@ -92,6 +94,7 @@ function subTabFromOccupant(
     i18n: occupant.labelKey,
     icon: settingsIcon(occupant.iconKey),
     occupantId: occupant.id,
+    placement: occupant.placement,
   };
 }
 

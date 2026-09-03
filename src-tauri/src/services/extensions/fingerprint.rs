@@ -7,6 +7,7 @@ use subtle::ConstantTimeEq;
 use super::fingerprint_paths::{
     clean_relative, clean_root, excluded_directory, reject_symlink, relative_name,
 };
+use super::types::ExtensionUiMode;
 use super::types::{ExtensionKind, ExtensionRecord};
 
 pub(super) struct Verification {
@@ -56,6 +57,14 @@ pub fn is_current(record: &ExtensionRecord) -> Result<bool, String> {
     Ok(bool::from(actual.ct_eq(&expected)))
 }
 
+pub(super) fn same_encoded(left: Option<&str>, right: Option<&str>) -> bool {
+    match (left, right) {
+        (Some(left), Some(right)) => bool::from(left.as_bytes().ct_eq(right.as_bytes())),
+        (None, None) => true,
+        _ => false,
+    }
+}
+
 fn calculate_bytes(record: &ExtensionRecord) -> Result<[u8; 32], String> {
     if record.kind != ExtensionKind::Local {
         return Err(error());
@@ -74,7 +83,40 @@ fn calculate_bytes(record: &ExtensionRecord) -> Result<[u8; 32], String> {
         let bytes = serde_json::to_vec(&record.manifest).map_err(|_| error())?;
         files.insert("@manifest".to_string(), FingerprintInput::Memory(bytes));
     }
+    include_ui_artifact(record, &mut files)?;
     hash_files(files)
+}
+
+fn include_ui_artifact(
+    record: &ExtensionRecord,
+    files: &mut BTreeMap<String, FingerprintInput>,
+) -> Result<(), String> {
+    let advanced = record
+        .manifest
+        .ui
+        .as_ref()
+        .is_some_and(|ui| ui.mode == ExtensionUiMode::Advanced);
+    if !advanced {
+        return record.ui_artifact.is_none().then_some(()).ok_or_else(error);
+    }
+    let artifact = record.ui_artifact.as_ref().ok_or_else(error)?;
+    let root =
+        super::ui_artifact_store::artifact_path(&record.manifest.id, &artifact.manifest_sha256)?;
+    super::ui_artifact::verify_at(&root, artifact)?;
+    files.insert(
+        "@ui/manifest.json".to_string(),
+        FingerprintInput::Memory(super::ui_artifact::manifest_bytes(artifact)?),
+    );
+    for output in &artifact.outputs {
+        files.insert(
+            format!("@ui/{}", output.name),
+            FingerprintInput::File(root.join(&output.name)),
+        );
+    }
+    if files.len() > super::types::FINGERPRINT_MAX_FILES {
+        return Err(error());
+    }
+    Ok(())
 }
 
 enum FingerprintInput {

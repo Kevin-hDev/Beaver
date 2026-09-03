@@ -10,6 +10,7 @@ import {
   StandardPlacementAction,
   useStandardEntry,
 } from "@/features/extension-ui/standard/standard-contributions";
+import { AdvancedMountAnchor } from "@/features/extension-ui/advanced/advanced-mount-anchor";
 import "./window-toolbar.css";
 
 interface WindowToolbarProps {
@@ -47,6 +48,7 @@ export function WindowToolbar({
           <ToolbarOccupant occupant={occupant} context={current} />
         )}
       />
+      <AdvancedMountAnchor placement="app.toolbar.primary" />
     </div>
   );
 }

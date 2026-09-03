@@ -225,6 +225,7 @@ fn fixture(
         enabled,
         trusted,
         fingerprint: None,
+        ui_artifact: None,
         trusted_at: None,
         show_in_chat: true,
         status: ExtensionStatus::Inactive,

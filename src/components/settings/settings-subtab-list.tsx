@@ -3,6 +3,7 @@ import { useResolvedSettingsSections } from "./settings-sections";
 import type { SubTabDef } from "./settings-sections";
 import type { SettingsSubTab } from "@/types/navigation";
 import { localizedText } from "@/features/extension-ui/standard/localized-text";
+import { AdvancedMountAnchor } from "@/features/extension-ui/advanced/advanced-mount-anchor";
 
 interface SettingsSubTabListProps {
   active: SettingsSubTab;
@@ -28,6 +29,7 @@ export function SettingsSubTabList({ active, onSelect }: SettingsSubTabListProps
               onSelect={onSelect}
             />
           ))}
+          <AdvancedMountAnchor placement={section.tabs[0].placement} />
         </div>
       ))}
     </div>

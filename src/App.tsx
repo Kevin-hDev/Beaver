@@ -19,6 +19,7 @@ import { UpdateProvider } from "@/hooks/update-context";
 import { SlotProvider } from "@/features/extension-ui/slot-provider";
 import { StandardCatalogProvider } from "@/features/extension-ui/standard/catalog-context";
 import { ThemeCatalogProvider } from "@/features/extension-ui/themes/theme-context";
+import { AdvancedLoaderRoot } from "@/features/extension-ui/advanced/advanced-loader-root";
 import "./App.css";
 
 export default function App({ initialExtensionUiStartup = NORMAL_EXTENSION_UI_STARTUP }:
@@ -108,6 +109,7 @@ function MainApp({ initialExtensionUiStartup }: { initialExtensionUiStartup: Ext
           <StandardCatalogProvider onOpenExtension={setRequestedExtensionId}>
             <ThemeCatalogProvider onCatalogChange={setThemeCatalog}>
               <SlotProvider>
+                <AdvancedLoaderRoot />
                 <ReadyApp
                   themeChoice={choice}
                   onThemeChange={setTheme}
