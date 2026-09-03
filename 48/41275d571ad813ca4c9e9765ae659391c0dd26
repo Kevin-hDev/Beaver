@@ -8,7 +8,7 @@ Décisions et raisons
 - Mutations sérialisées : une transaction unique verrouille, lit, modifie et publie afin qu’une mutation Hôte/UI, completion ou clear ne puisse en écraser une autre.
 - État Rust fail-closed : le frontend projette la décision backend et ne peut pas rouvrir l’UI tierce depuis un fallback IPC ou parsing.
 - Retry ciblé : conserve l’identité fautive, l’étape et attempts+1, avec plafond 3 ; il ne rouvre jamais le catalogue entier.
-- Shift plateforme : lecture macOS et Windows avant CEF, X11 et confirmation différée Wayland ; pendant l’attente, aucun chargement tiers n’est autorisé et le journal reste résolu par Rust.
+- Shift plateforme : Windows est lu avant execute_process ; macOS est lu après la préparation native/bibliothèque CEF mais avant la construction Tauri et toute UI tierce ; X11 est lu nativement ; Wayland est résolu de façon différée. Pendant l’attente, aucun chargement tiers n’est autorisé et le journal reste résolu par Rust.
 - Enfant CEF Windows : l’autorité de lancement retire uniquement le switch exact central --safe-mode avant d’ajouter l’admission. Les formes avec valeur ou dérivées restent refusées, ainsi qu’un helper lancé directement avec ce switch.
 - Ack exact : entrée IPC [u8; 32], token CSPRNG via OsRng.try_fill_bytes, comparaison temps constant, usage unique et zeroize ; les tailles 31 et 33 sont refusées avant traitement.
 - Arguments bornés : 128 arguments maximum et 2 048 caractères par argument avant croissance de la collection.
@@ -17,7 +17,7 @@ Décisions et raisons
 
 Corrections issues de la revue contrôleur
 
-La revue a fait corriger : reprise qui perdait identité/étape/tentative ; préparation Windows trop tardive ; fermeture du dialogue InvalidMarker ; erreurs async visibles sans navigation après échec ; résolution du journal après Wayland false et annulation du timeout ; refus de continue depuis Normal ; RNG fallible ; feature Windows KeyboardAndMouse ; retrait exact de safe-mode pour les enfants CEF ; sérialisation interprocessus du read-modify-write avec tests concurrents déterministes ; séquences clavier réelles ; entrée ack exactement bornée ; collecte args bornée ; matrice visuelle six thèmes ; centralisation des deux mesures de focus CSS.
+La revue a fait corriger : reprise qui perdait identité/étape/tentative ; préparation Windows trop tardive ; fermeture du dialogue InvalidMarker ; erreurs async visibles sans navigation après échec ; résolution du journal après Wayland false et annulation du timeout ; refus de continue depuis Normal ; RNG fallible ; feature Windows KeyboardAndMouse ; retrait exact de safe-mode pour les enfants CEF ; sérialisation intraprocessus des transactions du journal avec tests concurrents déterministes ; séquences clavier réelles ; entrée ack exactement bornée ; collecte args bornée ; matrice visuelle six thèmes ; centralisation des deux mesures de focus CSS.
 
 Preuves TDD et validations exécutées
 
