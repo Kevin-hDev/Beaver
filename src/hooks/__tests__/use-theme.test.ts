@@ -1,15 +1,28 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useTheme } from "@/hooks/use-theme";
+import type {
+  ExtensionThemeCatalog,
+  ExtensionThemeEntry,
+} from "@/features/extension-ui/themes/theme-catalog";
+
+const showToast = vi.hoisted(() => vi.fn());
+
+vi.mock("@/components/ui/toast", () => ({
+  useToast: () => ({ show: showToast }),
+}));
 
 const mediaListeners = new Set<() => void>();
 let prefersDark = false;
 
 beforeEach(() => {
+  localStorage.clear();
+  showToast.mockClear();
   prefersDark = false;
   mediaListeners.clear();
   document.documentElement.removeAttribute("data-theme");
   document.documentElement.removeAttribute("data-palette");
+  document.documentElement.removeAttribute("style");
   Object.defineProperty(window, "matchMedia", {
     configurable: true,
     value: vi.fn(() => ({
@@ -24,6 +37,26 @@ beforeEach(() => {
     })),
   });
 });
+
+function extensionTheme(): ExtensionThemeEntry {
+  return {
+    choice: "extension:com.example.night",
+    paletteId: "com.example.night",
+    extensionId: "com.example",
+    sourceName: "Example",
+    label: "Night",
+    colorScheme: "dark",
+    tokens: { "--void": "#010203" },
+  };
+}
+
+function catalog(entries: ExtensionThemeEntry[]): ExtensionThemeCatalog {
+  return {
+    ready: true,
+    entries,
+    byChoice: new Map(entries.map((entry) => [entry.choice, entry])),
+  };
+}
 
 describe("useTheme", () => {
   it("restaure et applique Émeraude nocturne comme thème sombre", async () => {
@@ -101,5 +134,41 @@ describe("useTheme", () => {
     expect(result.current.choice).toBe("crimson-eclipse");
     expect(document.documentElement).toHaveAttribute("data-theme", "dark");
     expect(document.documentElement).toHaveAttribute("data-palette", "crimson-eclipse");
+  });
+
+  it("attend le catalogue avant d'appliquer un thème d'extension sauvegardé", async () => {
+    localStorage.setItem("clgo-theme", "extension:com.example.night");
+    localStorage.setItem("clgo-theme-base", "dark");
+    const themeEntry = extensionTheme();
+
+    const { result } = renderHook(() => useTheme());
+    expect(result.current.choice).toBe(themeEntry.choice);
+    expect(result.current.theme).toBe("dark");
+    expect(document.documentElement).not.toHaveAttribute("data-palette");
+
+    act(() => result.current.setThemeCatalog(catalog([themeEntry])));
+
+    await waitFor(() => expect(result.current.theme).toBe(themeEntry.choice));
+    expect(document.documentElement).toHaveAttribute("data-theme", "dark");
+    expect(document.documentElement).toHaveAttribute("data-palette", themeEntry.paletteId);
+    expect(document.documentElement.style.getPropertyValue("--void")).toBe("#010203");
+    expect(showToast).not.toHaveBeenCalled();
+  });
+
+  it("revient au système et avertit si le thème actif disparaît", async () => {
+    localStorage.setItem("clgo-theme", "extension:com.example.night");
+    localStorage.setItem("clgo-theme-base", "dark");
+    const themeEntry = extensionTheme();
+    const { result } = renderHook(() => useTheme());
+
+    act(() => result.current.setThemeCatalog(catalog([themeEntry])));
+    await waitFor(() => expect(result.current.theme).toBe(themeEntry.choice));
+    act(() => result.current.setThemeCatalog(catalog([])));
+
+    await waitFor(() => expect(result.current.choice).toBe("system"));
+    expect(result.current.theme).toBe("light");
+    expect(localStorage.getItem("clgo-theme")).toBe("system");
+    expect(document.documentElement.style.getPropertyValue("--void")).toBe("");
+    expect(showToast).toHaveBeenCalledWith(expect.any(String), "warning");
   });
 });

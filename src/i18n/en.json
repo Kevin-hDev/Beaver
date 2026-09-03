@@ -1732,6 +1732,7 @@
   },
   "ui": {
     "catalogError": "Extension interfaces could not be refreshed.",
+    "themeUnavailable": "The saved extension theme is no longer available. The system theme has been restored.",
     "actionError": "The extension action could not be completed.",
     "emptyPanel": "This extension has no content for this panel."
   },

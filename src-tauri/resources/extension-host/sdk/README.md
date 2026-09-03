@@ -267,7 +267,7 @@ The extension author and user are responsible for any secret, file, process, or 
 
 ### Public UI tokens
 
-`--app-frame`, `--shell`, `--surface`, `--surface-hover`, `--surface-overlay`, `--surface-raised`, `--card-on-glass`, `--field-bg`, `--select-bg`, `--select-text`, `--edge`, `--edge-strong`, `--border-subtle`, `--ink`, `--ink-muted`, `--ink-faint`, `--ink-primary`, `--text-primary`, `--text-secondary`, `--text-tertiary`, `--pulse`, `--pulse-hover`, `--pulse-muted`, `--danger`, `--signal-alert`, `--signal-error`, `--signal-error-bg`, `--signal-info`, `--signal-info-bg`, `--signal-ok`, `--signal-ok-bg`, `--signal-warning`, `--signal-warning-bg`, `--chat-composer-bg`, `--chat-composer-border`, `--toast-bg`, `--toast-error-text`, `--toast-ok-text`, `--diff-add-bg`, `--diff-add-gutter`, `--diff-del-bg`, `--diff-del-gutter`, `--diff-new`, `--diff-old`
+`--void`, `--app-frame`, `--shell-opaque`, `--surface`, `--surface-hover`, `--edge`, `--edge-strong`, `--surface-glass`, `--surface-overlay`, `--surface-raised`, `--card-on-glass`, `--field-bg`, `--btn-secondary-bg`, `--ink`, `--ink-muted`, `--ink-faint`, `--ink-on-pulse`, `--ink-on-danger`, `--pulse`, `--pulse-muted`, `--switch-track-off`, `--switch-track-border`, `--switch-track-hover`, `--switch-track-on`, `--switch-knob`, `--signal-error`, `--signal-ok`, `--signal-warning`, `--signal-alert`, `--signal-info`, `--signal-error-bg`, `--signal-ok-bg`, `--signal-warning-bg`, `--signal-alert-bg`, `--signal-info-bg`, `--tooltip-bg`, `--tooltip-border`, `--tooltip-text`, `--chat-composer-bg`, `--chat-composer-border`, `--toast-bg`, `--toast-error-text`, `--toast-ok-text`, `--diff-add-bg`, `--diff-del-bg`, `--diff-new`, `--diff-old`
 
 ### UI diagnostics
 

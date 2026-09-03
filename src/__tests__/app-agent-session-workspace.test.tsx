@@ -10,7 +10,7 @@ vi.mock("@tauri-apps/api/event", () => ({
 }));
 
 vi.mock("@/hooks/use-theme", () => ({
-  useTheme: () => ({ choice: "dark", setTheme: vi.fn() }),
+  useTheme: () => ({ choice: "dark", setTheme: vi.fn(), setThemeCatalog: vi.fn() }),
 }));
 vi.mock("@/hooks/use-startup-gate", () => ({
   useStartupGate: () => ({ view: "ready" }),
@@ -19,7 +19,10 @@ vi.mock("@/hooks/use-arrow-navigation", () => ({ useArrowNavigation: vi.fn() }))
 vi.mock("@/hooks/use-panel-focus", () => ({ usePanelFocus: () => ({ focusedPanel: "detail" }) }));
 vi.mock("@/hooks/use-platform-body-class", () => ({ usePlatformBodyClass: vi.fn() }));
 vi.mock("@/hooks/use-browser-recovery-notice", () => ({ useBrowserRecoveryNotice: vi.fn() }));
-vi.mock("@/hooks/use-extensions", () => ({ ExtensionsProvider: ({ children }: { children: ReactNode }) => children }));
+vi.mock("@/hooks/use-extensions", () => ({
+  ExtensionsProvider: ({ children }: { children: ReactNode }) => children,
+  useExtensions: () => ({ extensions: [] }),
+}));
 vi.mock("@/hooks/update-context", () => ({ UpdateProvider: ({ children }: { children: ReactNode }) => children }));
 vi.mock("@/hooks/use-app-navigation-actions", () => ({
   AppNavigationActionsProvider: ({ children }: { children: ReactNode }) => children,

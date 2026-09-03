@@ -1,6 +1,16 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { ExtensionThemeCatalog } from "@/features/extension-ui/themes/theme-catalog";
 import { ThemeSelector } from "../theme-selector";
+
+const themeCatalog = vi.hoisted<{ current: ExtensionThemeCatalog }>(() => ({
+  current: { ready: false, entries: [], byChoice: new Map() },
+}));
+
+vi.mock("@/features/extension-ui/themes/theme-context", () => ({
+  useThemeCatalog: () => themeCatalog.current,
+}));
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
@@ -15,6 +25,10 @@ vi.mock("react-i18next", () => ({
 }));
 
 describe("ThemeSelector", () => {
+  beforeEach(() => {
+    themeCatalog.current = { ready: false, entries: [], byChoice: new Map() };
+  });
+
   it("affiche et sélectionne Émeraude nocturne", () => {
     const onChange = vi.fn();
     const { container } = render(<ThemeSelector value="dark" onChange={onChange} />);
@@ -53,5 +67,35 @@ describe("ThemeSelector", () => {
 
     expect(onChange).toHaveBeenCalledWith("crimson-eclipse");
     expect(container.querySelector('[data-palette="crimson-eclipse"]')).toHaveAttribute("data-theme", "dark");
+  });
+
+  it("affiche la source et sélectionne au clavier un thème d'extension", async () => {
+    const user = userEvent.setup();
+    const entry = {
+      choice: "extension:com.example.night" as const,
+      paletteId: "com.example.night",
+      extensionId: "com.example",
+      sourceName: "Example Themes",
+      label: "Night",
+      colorScheme: "dark" as const,
+      tokens: { "--void": "#010203" },
+    };
+    themeCatalog.current = {
+      ready: true,
+      entries: [entry],
+      byChoice: new Map([[entry.choice, entry]]),
+    };
+    const onChange = vi.fn();
+    const { container } = render(<ThemeSelector value="dark" onChange={onChange} />);
+    const button = screen.getByRole("button", { name: "Night" });
+
+    button.focus();
+    await user.keyboard("{Enter}");
+
+    expect(onChange).toHaveBeenCalledWith(entry.choice);
+    expect(screen.getByText("Example Themes")).toBeVisible();
+    const preview = container.querySelector('[data-palette="com.example.night"]');
+    expect(preview).toHaveAttribute("data-theme", "dark");
+    expect((preview as HTMLElement).style.getPropertyValue("--void")).toBe("#010203");
   });
 });

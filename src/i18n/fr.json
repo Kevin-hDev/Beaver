@@ -1784,6 +1784,7 @@
   },
   "ui": {
     "catalogError": "Les interfaces d’extension n’ont pas pu être actualisées.",
+    "themeUnavailable": "Le thème d’extension enregistré n’est plus disponible. Le thème du système a été restauré.",
     "actionError": "L’action de l’extension n’a pas pu être effectuée.",
     "emptyPanel": "Cette extension n’a aucun contenu pour ce panneau."
   },

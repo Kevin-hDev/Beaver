@@ -15,14 +15,21 @@
           "crimson-eclipse": "dark"
         });
         var choice = "system";
+        var storedBase = null;
         try {
           choice = localStorage.getItem("clgo-theme") || "system";
+          storedBase = localStorage.getItem("clgo-theme-base");
         } catch (_error) {
           choice = "system";
         }
         var colorScheme = Object.prototype.hasOwnProperty.call(themeSchemes, choice)
           ? themeSchemes[choice]
           : null;
+        if (!colorScheme && choice.indexOf("extension:") === 0
+            && (storedBase === "light" || storedBase === "dark")) {
+          choice = storedBase;
+          colorScheme = storedBase;
+        }
         if (!colorScheme) {
           choice = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
           colorScheme = choice;

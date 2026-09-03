@@ -18,6 +18,7 @@ import { useBrowserRecoveryNotice } from "@/hooks/use-browser-recovery-notice";
 import { UpdateProvider } from "@/hooks/update-context";
 import { SlotProvider } from "@/features/extension-ui/slot-provider";
 import { StandardCatalogProvider } from "@/features/extension-ui/standard/catalog-context";
+import { ThemeCatalogProvider } from "@/features/extension-ui/themes/theme-context";
 import "./App.css";
 
 export default function App({ initialExtensionUiStartup = NORMAL_EXTENSION_UI_STARTUP }:
@@ -43,7 +44,7 @@ function ForecastDocsApp() {
 
 function MainApp({ initialExtensionUiStartup }: { initialExtensionUiStartup: ExtensionUiStartupState }) {
   useBrowserRecoveryNotice();
-  const { choice, setTheme } = useTheme();
+  const { choice, setTheme, setThemeCatalog } = useTheme();
   const [vaultError, setVaultError] = useState(false);
   const [requestedExtensionId, setRequestedExtensionId] = useState<string | null>(null);
   const startupGate = useStartupGate();
@@ -105,16 +106,18 @@ function MainApp({ initialExtensionUiStartup }: { initialExtensionUiStartup: Ext
       <ExtensionsProvider>
         <UpdateProvider>
           <StandardCatalogProvider onOpenExtension={setRequestedExtensionId}>
-            <SlotProvider>
-              <ReadyApp
-                themeChoice={choice}
-                onThemeChange={setTheme}
-                vaultError={vaultError}
-                onDismissVaultError={() => setVaultError(false)}
-                requestedExtensionId={requestedExtensionId}
-                onRequestedExtensionHandled={() => setRequestedExtensionId(null)}
-              />
-            </SlotProvider>
+            <ThemeCatalogProvider onCatalogChange={setThemeCatalog}>
+              <SlotProvider>
+                <ReadyApp
+                  themeChoice={choice}
+                  onThemeChange={setTheme}
+                  vaultError={vaultError}
+                  onDismissVaultError={() => setVaultError(false)}
+                  requestedExtensionId={requestedExtensionId}
+                  onRequestedExtensionHandled={() => setRequestedExtensionId(null)}
+                />
+              </SlotProvider>
+            </ThemeCatalogProvider>
           </StandardCatalogProvider>
         </UpdateProvider>
       </ExtensionsProvider>
