@@ -8,6 +8,7 @@ import itLocale from "../../src/i18n/it.json";
 import jaLocale from "../../src/i18n/ja.json";
 import zhLocale from "../../src/i18n/zh.json";
 import { RESOLVED_THEME_OPTIONS } from "../../src/lib/app-themes";
+import { extensionThemeChoice } from "../../src/features/extension-ui/themes/theme-parser";
 import { completeOnboarding } from "./onboarding-flow";
 import { invokeTauri, waitForTauriBridge } from "./tauri-invoke";
 
@@ -127,9 +128,10 @@ describe("extension UI installed acceptance", () => {
       extensionId === THEME_ID && contribution.type === "theme"
     ));
     assert.ok(theme);
+    const themeChoice = extensionThemeChoice(theme.extensionId, theme.contribution.id);
     await browser.execute((choice) => {
-      window.localStorage.setItem("clgo-theme", `extension:${choice}`);
-    }, theme.contribution.id);
+      window.localStorage.setItem("clgo-theme", choice);
+    }, themeChoice);
     await browser.refresh();
     await $('[data-e2e="app-root"]').waitForDisplayed();
     await browser.waitUntil(async () => (
