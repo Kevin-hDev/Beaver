@@ -1,0 +1,34 @@
+UI-P3 — rendu standard et premiers emplacements
+
+Portée
+- Revalide le catalogue IPC côté TypeScript avec tailles, discriminants, identités, propriétés exactes, unicité et cohérence des valeurs.
+- Synchronise les révisions sans scintillement, conserve le dernier catalogue sain et borne les notifications en attente.
+- Rend les vues déclaratives Beaver sans HTML tiers, style inline ni propriétés DOM propagées.
+- Monte tabs, settings tabs, actions toolbar et actions composer uniquement en Agent/Plan.
+- Journalise chaque montage jusqu'au premier commit React et enregistre les pannes de rendu dans les diagnostics bornés Rust.
+- Conserve le cœur protégé via le résolveur d'emplacements unique.
+- Corrige le garde-fou E2E afin que la preuve UI ajoutée à la configuration WDIO reste obligatoire.
+
+Revue directe et corrections avant commit
+- Correction d'un acquittement perdu lors d'un changement de révision : MountGate est maintenant remonté par clé de révision.
+- Un champ numérique vidé produit null, jamais une chaîne incohérente.
+- Le sélecteur n'est plus imbriqué dans un label HTML contenant un contrôle interactif.
+- Les codes de diagnostic et étapes de montage Rust sont générés depuis contract.json, sans seconde liste manuelle.
+- Le préfixe CSS xui- est unique, les 19 jetons référencés existent, aucune couleur n'est codée en dur.
+- Les 7 catalogues i18n contiennent chacun 2279 clés, sans manque ni clé supplémentaire.
+
+Validations exécutées
+- npm test : vert — 546 fichiers / 2950 tests Vitest, 56 tests build, 16 CI, 45 CEF + 1 skip Windows attendu, 73 E2E runner, 75 extension-host, 10 reasoning fixtures.
+- Tests ciblés standard + extension-ui : 11 fichiers / 62 tests verts.
+- Tests intégration layout/settings/composer : 39 fichiers / 179 tests verts.
+- cargo test --lib extensions : 316 verts, 2 ignorés, 0 échec.
+- cargo clippy --all-targets -- -D warnings : vert.
+- cargo fmt --check, npm run lint, npx tsc --noEmit, npm run contracts:check et git diff --check : verts.
+- graphify update . : terminé, 43396 nœuds / 91305 arêtes.
+- Le build Beaver Dev exact du worktree a compilé et démarré. La session macOS était verrouillée lors du contrôle CUA ; aucune matrice visuelle n'est donc revendiquée. Le log ne montre pas de crash applicatif.
+- Avertissement connu et préexistant du linker macOS : __eh_frame section too large.
+
+Décisions
+- Les plugins officiels beaver.* n'écrivent pas le journal UI tiers, car leur code reste audité et embarqué.
+- Une panne de journal bloque le coordinateur de montage pour ne pas masquer un état incomplet.
+- Les réponses d'action d'une ancienne révision sont ignorées et ne peuvent pas remplacer une vue actuelle.
