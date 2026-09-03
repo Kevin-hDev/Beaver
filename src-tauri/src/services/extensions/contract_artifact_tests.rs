@@ -483,8 +483,8 @@ fn checked_in_ui_contract_artifacts_name_the_json_authority() {
 
 #[test]
 fn sdk_readme_has_one_bounded_ui_generated_section() {
-    let readme = include_str!("../../../resources/extension-host/sdk/README.md")
-        .replace("\r\n", "\n");
+    let readme =
+        include_str!("../../../resources/extension-host/sdk/README.md").replace("\r\n", "\n");
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
     let contract = ui_generator::load_contract(&root.join("resources/extension-ui")).unwrap();
     let expected = ui_generator::generated_document_section(&contract).unwrap();
