@@ -1,0 +1,22 @@
+Documentation commit for the final extensions UI review.
+
+Scope:
+- Adds the root EXTENSIONS.md user and author guide.
+- Documents current compatibility, trust boundary, manifests, SDK tool example, effects, standard and advanced UI, installation from local/Git/npm, provider discovery, host isolation, limits, recovery, safe mode, troubleshooting, distribution, and current exclusions.
+- Links the guide from the English README.
+
+Authorities checked:
+- src-tauri/resources/extension-host/sdk/README.md
+- src-tauri/resources/extension-host/contract.json
+- src-tauri/resources/extension-ui/contract.json
+- live runtime, discovery, installer, permission, safe-mode, and UI code on this commit.
+
+Validation executed:
+- Four JSON examples parsed successfully; five local links resolved; no numbered headings.
+- TypeScript example parsed with esbuild.
+- npm run test:brand-boundaries: 14 passed.
+- node --test scripts/extensions/ui-acceptance-fixtures.test.mjs: 9 passed.
+- git diff --check: passed before commit.
+
+Known maintenance limitation:
+- Full semantic Graphify update was attempted with graphify . --update but exited 1 because no supported LLM API key is configured. Code-only update was intentionally not substituted because it would not index this documentation.
