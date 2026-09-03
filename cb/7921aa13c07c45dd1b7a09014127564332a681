@@ -1,0 +1,31 @@
+UI-P6 — Gestion, diagnostics et récupération visibles
+
+Implémentation:
+- la fiche Extension lit le registre et le catalogue existants pour afficher le niveau UI, les contributions, les emplacements, les thèmes et l’état de l’artefact avancé, sans créer de second état d’activation ou de confiance;
+- les diagnostics UI Rust portent désormais un horodatage RFC 3339, sont acceptés par la frontière IPC validée et restent affichés sous une forme générique;
+- l’activation d’un module avancé exige un consentement distinct dans le dialogue existant, qui reste ouvert en cas d’échec backend;
+- un chargement UI interrompu reste visible en mode sûr avec ouverture de la fiche, désactivation ou abandon explicite du marqueur;
+- désactiver une extension efface uniquement son marqueur UI correspondant; la projection mémoire n’est résolue qu’après confirmation de la mutation;
+- les états chargement, erreur avec nouvelle tentative, vide et contenu sont distincts et le contenu périmé reste visible pendant un rafraîchissement;
+- les textes et diagnostics sont présents dans les sept langues; les styles utilisent uniquement les tokens et restent adaptatifs.
+
+Revue locale et corrections:
+- correction d’un écart où les codes de diagnostic UI produits par Rust étaient refusés par le parseur frontend;
+- remplacement de Date.parse seul par une validation RFC 3339 bornée et partagée;
+- correction d’un incident mémoire pouvant réapparaître après désactivation puis réactivation;
+- centralisation de la production de l’horodatage Rust;
+- aucun fichier source de production modifié ne dépasse 230 lignes; aucun code brut, chemin, hash ou stack trace nouveau n’est affiché.
+
+Validations exécutées:
+- tests ciblés UI-P6: 9 fichiers, 53 tests passés;
+- npm test: 553 fichiers Vitest / 2980 tests passés, puis build scripts 56, CI scripts 16, CEF 45 passés + 1 ignoré Windows, E2E runner 73, hôte d’extensions 75, fixtures raisonnement 10 et validation des rapports;
+- cargo test extensions -- --nocapture: 324 passés, 2 ignorés;
+- cargo test: 4805 passés, 11 ignorés;
+- npm run lint: vert sans avertissement;
+- npx tsc --noEmit: vert;
+- cargo clippy --all-targets -- -D warnings: vert;
+- cargo fmt --all -- --check et git diff --check: verts;
+- graphify update .: graphe synchronisé.
+
+Limite volontaire:
+- le parcours visuel réel dans les sept langues, à largeur minimale et dans les six thèmes livrés n’est pas revendiqué ici; il appartient au lot UI-P7 de validation intégrale et publication.
