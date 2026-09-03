@@ -8,6 +8,11 @@ const repoRoot = await canonicalE2eRepoRoot(import.meta.url);
 try {
   await runCommand({
     command: process.execPath,
+    args: [resolve(repoRoot, "scripts/extensions/prepare-extension-host.mjs")],
+    cwd: repoRoot,
+  });
+  await runCommand({
+    command: process.execPath,
     args: [resolve(repoRoot, "scripts/cef/prepare-cef-source.mjs")],
     cwd: repoRoot,
   });

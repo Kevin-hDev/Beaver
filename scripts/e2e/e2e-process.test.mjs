@@ -21,6 +21,10 @@ const {
 const ciSource = readFileSync(new URL("../../.github/workflows/ci.yml", import.meta.url), "utf8");
 const mainSource = readFileSync(new URL("../../src-tauri/src/main.rs", import.meta.url), "utf8");
 const runnerSource = readFileSync(new URL("./run.mjs", import.meta.url), "utf8");
+const buildPreparationSource = readFileSync(
+  new URL("./prepare-build.mjs", import.meta.url),
+  "utf8",
+);
 const packagedRunnerSource = readFileSync(
   new URL("./run-packaged.mjs", import.meta.url),
   "utf8",
@@ -86,6 +90,14 @@ test("the E2E build always enables the isolated feature", () => {
     "build", "--debug", "--features", "e2e", "--config",
     "src-tauri/tauri.e2e.conf.json", "--bundles", "app",
   ]);
+});
+
+test("the E2E build prepares and bundles the real extension host", () => {
+  assert.match(buildPreparationSource, /prepare-extension-host\.mjs/u);
+  assert.equal(
+    baseE2eConfig.bundle.resources["resources/extension-host/"],
+    "resources/extension-host/",
+  );
 });
 
 test("the Windows packaged build has an isolated product identity", () => {
@@ -268,6 +280,20 @@ test("CI runs the real Tauri WebView journey on Linux", () => {
     /E2E_REQUIRE_WEBVIEW_SMOKE: "1"[\s\S]*xvfb-run[^\r\n]*npm run test:e2e:packaged(?:\r?\n|$)/u,
   );
   assert.match(linuxJob, /webkit2gtk-driver/u);
+});
+
+test("CI installs every dependency used by extension UI integration journeys", () => {
+  const backendJob = ciSource.slice(
+    ciSource.indexOf("  backend:"),
+    ciSource.indexOf("  backend-linux-native:"),
+  );
+  const windowsTestsJob = ciSource.slice(
+    ciSource.indexOf("  backend-windows:"),
+    ciSource.indexOf("  frontend:"),
+  );
+  const uiBuilderInstall = /Install extension UI builder test dependencies[\s\S]*npm ci --ignore-scripts(?:\r?\n|$)/u;
+  assert.match(backendJob, uiBuilderInstall);
+  assert.match(windowsTestsJob, uiBuilderInstall);
 });
 
 test("the WebDriver journey executes the extension UI runtime proof", () => {

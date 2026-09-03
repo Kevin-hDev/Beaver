@@ -250,8 +250,12 @@ fn clearing_known_ui_fields_cannot_resurrect_previous_values() {
 fn invalid_legacy_ui_string_is_dropped_during_v1_migration() {
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path().join("extensions.json");
+    let source = directory.path().join("legacy-ui");
+    std::fs::create_dir(&source).unwrap();
+    std::fs::write(source.join("index.mjs"), "export default {};\n").unwrap();
     let mut value: Value = serde_json::from_slice(LEGACY_UI_V1).unwrap();
     value["extensions"][0]["manifest"]["ui"] = Value::String(String::new());
+    value["extensions"][0]["source"] = Value::String(source.to_string_lossy().into_owned());
     std::fs::write(&path, serde_json::to_vec(&value).unwrap()).unwrap();
 
     let loaded = storage::load_from(&path).unwrap();

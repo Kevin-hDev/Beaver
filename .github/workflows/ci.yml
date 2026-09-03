@@ -50,6 +50,11 @@ jobs:
       - name: Install extension host dependencies
         run: npm ci --ignore-scripts --omit=dev --prefix src-tauri/resources/extension-host
 
+      # The Rust integration test executes scripts/extensions/ui-build.mjs,
+      # whose esbuild dependency belongs to the root package.
+      - name: Install extension UI builder test dependencies
+        run: npm ci --ignore-scripts
+
       - name: Install Linux dependencies (Tauri)
         run: |
           sudo apt-get update -qq
@@ -359,6 +364,10 @@ jobs:
 
       - name: Install extension host dependencies
         run: npm ci --ignore-scripts --omit=dev --prefix src-tauri/resources/extension-host
+
+      # The complete Rust suite executes the root UI builder integration test.
+      - name: Install extension UI builder test dependencies
+        run: npm ci --ignore-scripts
 
       - name: Rust cache
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
