@@ -3,6 +3,11 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { GpuStatusBadge } from "@/components/agent-local/gpu-status-badge";
 import { navItemFromOccupant, type TabId } from "./nav-items";
 import { SlotRenderer } from "@/features/extension-ui/slot-renderer";
+import {
+  StandardNavigationButton,
+  useStandardEntry,
+} from "@/features/extension-ui/standard/standard-contributions";
+import type { SlotOccupant } from "@/features/extension-ui/slot-types";
 import "./list-panel-footer.css";
 
 interface ListPanelFooterProps {
@@ -22,28 +27,48 @@ export function ListPanelFooter({ activeTab, onTabChange }: ListPanelFooterProps
         <SlotRenderer
           placement="app.navigation.primary"
           context={context}
-          render={(occupant, current) => {
-            const item = navItemFromOccupant(occupant);
-            const active = current.activeTab === item.id;
-            const label = current.t(item.i18nKey);
-            return (
-              <Tooltip key={item.id} label={label} placement="top">
-                <button
-                  type="button"
-                  className="icon-btn lpf-btn"
-                  aria-label={label}
-                  aria-current={active ? "page" : undefined}
-                  data-nav-active={active ? "true" : undefined}
-                  onClick={() => current.onTabChange(item.id)}
-                >
-                  <item.icon />
-                </button>
-              </Tooltip>
-            );
-          }}
+          render={(occupant, current) => (
+            <NavigationOccupant occupant={occupant} context={current} />
+          )}
         />
       </nav>
       <GpuStatusBadge />
     </div>
+  );
+}
+
+function NavigationOccupant({
+  occupant,
+  context,
+}: {
+  occupant: SlotOccupant;
+  context: { activeTab: TabId; onTabChange: (tab: TabId) => void; t: (key: string) => string };
+}) {
+  const entry = useStandardEntry(occupant);
+  if (entry) {
+    return (
+      <StandardNavigationButton
+        entry={entry}
+        active={context.activeTab === occupant.id}
+        onSelect={() => context.onTabChange(occupant.id as TabId)}
+      />
+    );
+  }
+  const item = navItemFromOccupant(occupant);
+  const active = context.activeTab === item.id;
+  const label = context.t(item.i18nKey);
+  return (
+    <Tooltip label={label} placement="top">
+      <button
+        type="button"
+        className="icon-btn lpf-btn"
+        aria-label={label}
+        aria-current={active ? "page" : undefined}
+        data-nav-active={active ? "true" : undefined}
+        onClick={() => context.onTabChange(item.id)}
+      >
+        <item.icon />
+      </button>
+    </Tooltip>
   );
 }

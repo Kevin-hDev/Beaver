@@ -12,6 +12,7 @@ pub(in crate::commands) enum ExtensionCommand {
     GetHostStatus,
     GetUiCatalog,
     InvokeUiAction,
+    ReportUiMountFailure,
     GetDiscoveryPreferences,
     SetDiscoveryPreferences,
     RecoverHost,
@@ -25,7 +26,7 @@ pub(in crate::commands) enum ExtensionCommand {
 
 impl ExtensionCommand {
     #[cfg(test)]
-    pub(in crate::commands) const ALL: [Self; 21] = [
+    pub(in crate::commands) const ALL: [Self; 22] = [
         Self::List,
         Self::AddLocal,
         Self::InstallGit,
@@ -38,6 +39,7 @@ impl ExtensionCommand {
         Self::GetHostStatus,
         Self::GetUiCatalog,
         Self::InvokeUiAction,
+        Self::ReportUiMountFailure,
         Self::GetDiscoveryPreferences,
         Self::SetDiscoveryPreferences,
         Self::RecoverHost,
@@ -63,6 +65,7 @@ impl ExtensionCommand {
             Self::GetHostStatus => "get_extension_host_status",
             Self::GetUiCatalog => "get_extension_ui_catalog",
             Self::InvokeUiAction => "invoke_extension_ui_action",
+            Self::ReportUiMountFailure => "report_extension_ui_mount_failure",
             Self::GetDiscoveryPreferences => "get_extension_discovery_preferences",
             Self::SetDiscoveryPreferences => "set_extension_discovery_preferences",
             Self::RecoverHost => "recover_extension_host",

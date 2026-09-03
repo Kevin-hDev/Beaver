@@ -1782,6 +1782,11 @@
     "safeBannerTitle": "Interfaces d’extension désactivées",
     "safeBannerDescription": "Ce lancement reste en mode sûr et n’affiche aucune interface tierce."
   },
+  "ui": {
+    "catalogError": "Les interfaces d’extension n’ont pas pu être actualisées.",
+    "actionError": "L’action de l’extension n’a pas pu être effectuée.",
+    "emptyPanel": "Cette extension n’a aucun contenu pour ce panneau."
+  },
     "add": {
       "title": "Ajouter une extension",
       "fullAccessWarning": "Le code sélectionné s’exécutera avec les droits de votre compte utilisateur. Installez uniquement une extension à laquelle vous choisissez de faire confiance.",

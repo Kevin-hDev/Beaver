@@ -1,12 +1,14 @@
 import { createElement, forwardRef } from "react";
 import type { Icon, IconProps } from "@phosphor-icons/react";
 import {
+  Pulse as PhActivity,
   Archive as PhArchive,
   ArrowClockwise as PhArrowClockwise,
   ArrowLeft as PhArrowLeft,
   ArrowRight as PhArrowRight,
   ArrowUpRight as PhArrowUpRight,
   BookOpen as PhBookOpen,
+  Bell as PhBell,
   ClipboardText as PhClipboardText,
   UserCircle as PhUserCircle,
   Sliders as PhSliders,
@@ -38,6 +40,7 @@ import {
   FolderOpen as PhFolderOpen,
   DotsThreeVertical as PhDotsThreeVertical,
   Hand as PhHand,
+  House as PhHouse,
   PencilSimple as PhPencilSimple,
   ChatCircleDots as PhChatCircleDots,
   GearSix as PhGearSix,
@@ -68,6 +71,8 @@ import {
   TreeStructure as PhTreeStructure,
   Users as PhUsers,
   Spinner as PhSpinner,
+  Terminal as PhTerminal,
+  Warning as PhWarning,
   PawPrint as PhPawPrint,
 } from "@phosphor-icons/react";
 
@@ -136,6 +141,11 @@ export const Sparkle = withSafeCssSize(PhSparkle);
 export const Users = withSafeCssSize(PhUsers);
 export const Spinner = withSafeCssSize(PhSpinner);
 export const PawPrint = withSafeCssSize(PhPawPrint);
+export const Activity = withSafeCssSize(PhActivity);
+export const Bell = withSafeCssSize(PhBell);
+export const House = withSafeCssSize(PhHouse);
+export const Terminal = withSafeCssSize(PhTerminal);
+export const Warning = withSafeCssSize(PhWarning);
 
 export const Archive = withSafeCssSize(PhArchive);
 export const ArrowLeft = withSafeCssSize(PhArrowLeft);

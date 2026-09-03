@@ -2,6 +2,19 @@ use super::ui_catalog::{denied, UiActionRoute, UiCatalog};
 use std::collections::BTreeSet;
 
 impl UiCatalog {
+    pub(super) fn contains_contribution(
+        &self,
+        extension_id: &str,
+        contribution_id: &str,
+    ) -> Result<bool, String> {
+        let state = self.state.read().map_err(|_| denied())?;
+        Ok(state.extensions.get(extension_id).is_some_and(|stored| {
+            stored.entries.iter().any(|entry| {
+                entry.extension_id == extension_id && entry.contribution_id == contribution_id
+            })
+        }))
+    }
+
     pub(super) fn route(
         &self,
         extension_id: &str,

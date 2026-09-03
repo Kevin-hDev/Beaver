@@ -1730,6 +1730,11 @@
     "safeBannerTitle": "Extension interfaces disabled",
     "safeBannerDescription": "This launch remains in safe mode and displays no third-party interface."
   },
+  "ui": {
+    "catalogError": "Extension interfaces could not be refreshed.",
+    "actionError": "The extension action could not be completed.",
+    "emptyPanel": "This extension has no content for this panel."
+  },
     "add": {
       "title": "Add an extension",
       "fullAccessWarning": "The selected code will run with your user account’s rights. Only install an extension you choose to trust.",

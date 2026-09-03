@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { useResolvedSettingsSections } from "./settings-sections";
 import type { SubTabDef } from "./settings-sections";
 import type { SettingsSubTab } from "@/types/navigation";
+import { localizedText } from "@/features/extension-ui/standard/localized-text";
 
 interface SettingsSubTabListProps {
   active: SettingsSubTab;
@@ -41,6 +42,7 @@ interface SubTabItemProps {
 
 function SubTabItem({ tab, active, onSelect }: SubTabItemProps) {
   const { t } = useTranslation();
+  const label = tab.i18n ? t(tab.i18n) : localizedText(tab.label!);
   return (
     <div
       role="button"
@@ -56,7 +58,7 @@ function SubTabItem({ tab, active, onSelect }: SubTabItemProps) {
       className={`settings-subtab${active ? " active" : ""}`}
     >
       <tab.icon className="settings-subtab-icon" />
-      <span className="settings-subtab-label">{t(tab.i18n)}</span>
+      <span className="settings-subtab-label">{label}</span>
     </div>
   );
 }

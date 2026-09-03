@@ -6,6 +6,10 @@ import { IS_MAC, MOD, ALT } from "@/lib/platform";
 import updateIcon from "@/assets/update.png";
 import { SlotRenderer } from "@/features/extension-ui/slot-renderer";
 import type { SlotOccupant } from "@/features/extension-ui/slot-types";
+import {
+  StandardPlacementAction,
+  useStandardEntry,
+} from "@/features/extension-ui/standard/standard-contributions";
 import "./window-toolbar.css";
 
 interface WindowToolbarProps {
@@ -38,12 +42,26 @@ export function WindowToolbar({
     <div className={`window-toolbar${IS_MAC ? " is-mac" : ""}`}>
       <SlotRenderer
         placement="app.toolbar.primary"
-        source="core"
         context={context}
-        render={renderToolbarOccupant}
+        render={(occupant, current) => (
+          <ToolbarOccupant occupant={occupant} context={current} />
+        )}
       />
     </div>
   );
+}
+
+function ToolbarOccupant({
+  occupant,
+  context,
+}: {
+  occupant: SlotOccupant;
+  context: ToolbarRenderContext;
+}) {
+  const entry = useStandardEntry(occupant);
+  return entry
+    ? <StandardPlacementAction entry={entry} surface="toolbar" />
+    : renderToolbarOccupant(occupant, context);
 }
 
 interface ToolbarRenderContext extends WindowToolbarProps {

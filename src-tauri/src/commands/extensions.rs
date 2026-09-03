@@ -165,6 +165,17 @@ pub async fn invoke_extension_ui_action(
 }
 
 #[tauri::command]
+pub async fn report_extension_ui_mount_failure(
+    extension_id: String,
+    contribution_id: String,
+) -> Result<(), String> {
+    command_error::close(
+        command_error::ExtensionCommand::ReportUiMountFailure,
+        extensions::report_ui_mount_failure(&extension_id, &contribution_id),
+    )
+}
+
+#[tauri::command]
 pub async fn get_extension_discovery_preferences() -> Result<DiscoveryPreferences, String> {
     command_error::close(
         command_error::ExtensionCommand::GetDiscoveryPreferences,

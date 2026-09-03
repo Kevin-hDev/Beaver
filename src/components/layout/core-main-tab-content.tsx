@@ -5,6 +5,10 @@ import { SettingsTab } from "@/components/settings/settings-tab";
 import { useSlotOccupantByTarget } from "@/features/extension-ui/slot-contexts";
 import { SlotRenderer } from "@/features/extension-ui/slot-renderer";
 import type { MainTabId, SlotOccupant } from "@/features/extension-ui/slot-types";
+import {
+  StandardTabContent,
+  useStandardEntry,
+} from "@/features/extension-ui/standard/standard-contributions";
 import type { NavPanel } from "@/hooks/use-panel-focus";
 import type { ThemeChoice } from "@/hooks/use-theme";
 import type {
@@ -33,7 +37,9 @@ interface CoreMainTabContentProps {
 
 export function CoreMainTabContent(props: CoreMainTabContentProps) {
   const occupant = useSlotOccupantByTarget(props.activeTab, "tab");
+  const entry = useStandardEntry(occupant);
   if (!occupant) return null;
+  if (entry) return <StandardTabContent entry={entry} />;
   return (
     <SlotRenderer
       placement={occupant.placement}

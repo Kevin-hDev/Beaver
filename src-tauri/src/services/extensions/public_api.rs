@@ -31,6 +31,12 @@ pub async fn invoke_ui_action(
     .await
 }
 
+pub fn report_ui_mount_failure(extension_id: &str, contribution_id: &str) -> Result<(), String> {
+    super::validation::identifier(extension_id)?;
+    super::validation::identifier(contribution_id)?;
+    super::runtime::global()?.record_ui_mount_failure(extension_id, contribution_id)
+}
+
 pub(crate) fn record_tool_invocation(tool_name: &str) -> Result<(), String> {
     super::discovery_usage::record_invocation(tool_name)
 }

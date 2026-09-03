@@ -43,6 +43,16 @@ pub fn render(contract: &Value) -> Result<String, String> {
         .ok_or_else(|| format!("invalid {key}"))?;
         render_slice(&mut output, name, &values);
     }
+    render_named_constants(
+        &mut output,
+        "UI_LOADING_STAGE",
+        array(contract, "loadingStages")?,
+    )?;
+    render_named_constants(
+        &mut output,
+        "UI_DIAGNOSTIC",
+        array(contract, "diagnosticCodes")?,
+    )?;
     super::rust_objects::render(&mut output, contract)?;
     for (name, value) in contract["limits"]
         .as_object()
@@ -57,6 +67,27 @@ pub fn render(contract: &Value) -> Result<String, String> {
         ));
     }
     Ok(output)
+}
+
+fn render_named_constants(
+    output: &mut String,
+    prefix: &str,
+    values: &[Value],
+) -> Result<(), String> {
+    let mut names = BTreeSet::new();
+    for value in values {
+        let value = value
+            .as_str()
+            .ok_or_else(|| "invalid UI contract string".to_string())?;
+        let name = format!("{prefix}_{}", constant(value));
+        if !names.insert(name.clone()) {
+            return Err("extension UI constants collide".to_string());
+        }
+        output.push_str(&format!(
+            "#[allow(dead_code)]\npub const {name}: &str = {value:?};\n"
+        ));
+    }
+    Ok(())
 }
 
 fn render_enum(output: &mut String, name: &str, values: &[Value]) -> Result<(), String> {

@@ -185,6 +185,10 @@
   --extensions-copy-line-height: 1.5;
   --extensions-value-max-width: 22rem;
   --extensions-value-max-width-compact: 12rem;
+  /* Les vues déclaratives partagent ces mesures quelle que soit l'extension :
+     un module tiers ne peut ni agrandir un champ ni imposer un panneau géant. */
+  --extension-ui-field-min-width: var(--extensions-value-max-width-compact);
+  --extension-ui-action-result-max-height: 26rem;
   --memory-section-gap: 28px;
   --memory-legacy-gap: 3px;
   --memory-filter-min-width: 180px;

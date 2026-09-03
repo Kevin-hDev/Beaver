@@ -87,6 +87,7 @@ mod runtime_sync_apply;
 #[cfg(test)]
 mod runtime_sync_apply_tests;
 mod runtime_sync_contributions;
+mod runtime_ui_diagnostics;
 mod runtime_version;
 mod source_validation;
 mod startup;
@@ -148,7 +149,8 @@ pub(crate) use discovery::{
 pub(crate) use discovery_catalog::CatalogSnapshot;
 pub use discovery_preferences::DiscoveryPreferences;
 pub use public_api::{
-    discovery_preferences, invoke_ui_action, set_discovery_preferences, ui_catalog,
+    discovery_preferences, invoke_ui_action, report_ui_mount_failure, set_discovery_preferences,
+    ui_catalog,
 };
 pub use registry::{add_local, list, set_enabled, set_show_in_chat};
 pub(crate) use registry_index::{

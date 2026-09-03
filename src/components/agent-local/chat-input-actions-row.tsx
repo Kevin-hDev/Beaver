@@ -15,6 +15,10 @@ import { useSessionCompressionProfile } from "@/hooks/use-session-compression-pr
 import { allowsThirdPartyComposerUi } from "@/features/extension-ui/slot-contexts";
 import { SlotRenderer } from "@/features/extension-ui/slot-renderer";
 import type { SlotOccupant } from "@/features/extension-ui/slot-types";
+import {
+  StandardPlacementAction,
+  useStandardEntry,
+} from "@/features/extension-ui/standard/standard-contributions";
 
 type ButtonState = "stop" | "confirmStop" | "send" | "hidden";
 
@@ -97,7 +101,7 @@ export function ChatInputActionsRow({
           placement="agent.composer.leading"
           source="extension"
           context={null}
-          render={ignoreThirdPartyComposerOccupant}
+          render={(occupant) => <ComposerOccupant occupant={occupant} />}
         />
       )}
       <ContextProgress
@@ -169,8 +173,7 @@ function renderCoreComposerOccupant(
   );
 }
 
-/* UI-P1 monte la frontière hors Chat mais ne consomme encore aucun catalogue
-   tiers. Le renderer réel n'arrive qu'après validation Rust dans le lot dédié. */
-function ignoreThirdPartyComposerOccupant(): null {
-  return null;
+function ComposerOccupant({ occupant }: { occupant: SlotOccupant }) {
+  const entry = useStandardEntry(occupant);
+  return entry ? <StandardPlacementAction entry={entry} surface="composer" /> : null;
 }

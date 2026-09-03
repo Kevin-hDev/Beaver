@@ -4,7 +4,7 @@ use crate::services::extensions::{extension_recovery, loading_marker, registry_r
 fn every_extension_command_closes_unknown_errors() {
     let generated = crate::services::extensions::error_codes::ALL;
 
-    assert_eq!(super::command_error::ExtensionCommand::ALL.len(), 21);
+    assert_eq!(super::command_error::ExtensionCommand::ALL.len(), 22);
     for command in super::command_error::ExtensionCommand::ALL {
         let error = super::command_error::close(
             command,
@@ -48,7 +48,7 @@ fn r0_boundary_codes_remain_declared_and_preserved() {
 }
 
 #[test]
-fn extension_command_inventory_names_all_twenty_one_boundaries() {
+fn extension_command_inventory_names_all_twenty_two_boundaries() {
     let actual = super::command_error::ExtensionCommand::ALL.map(|command| command.label());
     assert_eq!(
         actual,
@@ -65,6 +65,7 @@ fn extension_command_inventory_names_all_twenty_one_boundaries() {
             "get_extension_host_status",
             "get_extension_ui_catalog",
             "invoke_extension_ui_action",
+            "report_extension_ui_mount_failure",
             "get_extension_discovery_preferences",
             "set_extension_discovery_preferences",
             "recover_extension_host",

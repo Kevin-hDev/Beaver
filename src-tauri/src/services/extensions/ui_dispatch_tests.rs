@@ -63,6 +63,25 @@ fn catalog_revision_is_monotone_and_owner_bound() {
 }
 
 #[test]
+fn catalog_checks_mount_reports_against_an_existing_owned_contribution() {
+    let catalog = UiCatalog::default();
+    let owner = HostIdentity::ThirdParty("com.example.owner".to_string());
+    catalog
+        .replace(&owner, vec![entry("com.example.owner")])
+        .unwrap();
+
+    assert!(catalog
+        .contains_contribution("com.example.owner", "com.example.owner.toolbar")
+        .unwrap());
+    assert!(!catalog
+        .contains_contribution("com.example.owner", "com.example.owner.missing")
+        .unwrap());
+    assert!(!catalog
+        .contains_contribution("com.example.other", "com.example.owner.toolbar")
+        .unwrap());
+}
+
+#[test]
 fn retired_generations_cannot_republish_and_tombstones_stay_bounded() {
     let catalog = UiCatalog::default();
     let owner = HostIdentity::ThirdParty("com.example.owner".to_string());

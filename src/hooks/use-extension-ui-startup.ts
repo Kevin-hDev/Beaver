@@ -12,6 +12,7 @@ export interface ExtensionUiStartupController {
   continueSafe: () => Promise<boolean>;
   retry: () => Promise<boolean>;
   discardInvalid: () => Promise<boolean>;
+  refresh: () => Promise<boolean>;
 }
 
 export const ExtensionUiStartupContext = createContext<ExtensionUiStartupController | null>(null);
@@ -43,6 +44,7 @@ export function useExtensionUiStartup(
     continueSafe: () => run("continue_without_extension_ui"),
     retry: () => run("retry_interrupted_extension_ui"),
     discardInvalid: () => run("discard_invalid_extension_ui_marker"),
+    refresh: () => run("get_extension_ui_startup_state"),
   }), [busy, error, run, state]);
 }
 

@@ -27,7 +27,7 @@ test("every native E2E journey verifies chat_stream child read-only admission", 
   );
   assert.match(
     wdioSource,
-    /specs:\s*\[\[childSessionReadOnlySpec,\s*journeySpec\]\]/u,
+    /specs:\s*\[\[childSessionReadOnlySpec,\s*extensionUiRuntimeProofSpec,\s*journeySpec\]\]/u,
   );
   assert.doesNotMatch(wdioSource, /const shutdownSpec/u);
   assert.match(
