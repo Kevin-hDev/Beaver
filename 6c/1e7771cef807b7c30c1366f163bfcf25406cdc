@@ -1,0 +1,11 @@
+Lot UI-P7 — validation intégrale locale et publication du contrat UI public.
+
+Décisions appliquées : les fixtures AGPL hors ligne couvrent UI standard complète, limites max+1, conflits, thèmes valides/invalides, Unicode et modules avancés valides/en erreur/modifiés. Le SDK documente désormais les contributions standard et le cycle de vie avancé sans présenter la WebView comme une sandbox. Le parcours natif installe réellement les fixtures via les commandes de production ; une commande E2E bornée initialise uniquement l Hôte dans le profil de données isolé.
+
+Autorités : src-tauri/resources/extension-ui/contract.json reste l autorité des limites, emplacements et jetons ; scripts/extensions/fixtures/ui est l inventaire d acceptation ; src-tauri/resources/extension-host/sdk/README.md et index.d.ts sont la documentation publique et les types du SDK.
+
+Corrections découvertes pendant la preuve : la construction avancée vérifie l artefact après écriture atomique du manifeste ; une révision de catalogue identique ne remonte plus les surfaces ; un remplacement React acquitte proprement le journal sans simuler une panne ; un échec d acquittement rejette réellement commit ; le loader avancé ne redémarre plus sur du bruit de registre mais réagit au hash de l artefact.
+
+Preuves exécutées : npm run lint vert ; npx tsc --noEmit vert ; npm test vert avec 554 fichiers et 2985 tests Vitest plus toutes les suites build/CI/CEF/E2E/Hôte/fixtures ; cargo check vert ; cargo clippy --all-targets -- -D warnings vert ; cargo test vert avec 4806 réussis, 11 ignorés et le test d intégration réussi ; npm run test:e2e:packaged vert sur la vraie Beaver.app macOS avec 49 scénarios en 5 min 41 s, dont 7 langues x 6 thèmes à 900x600 ; graphify update . vert.
+
+Limite déclarée : macOS empaqueté a été observé localement. Les preuves empaquetées Linux et Windows restent à observer dans les jobs CI déjà câblés avant de déclarer la validation multiplateforme finale. Les applications externes, fournisseurs/modèles et marketplace restent hors périmètre.
