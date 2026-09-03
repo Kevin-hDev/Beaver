@@ -43,6 +43,14 @@ const commandsSource = readFileSync(
   new URL("../../src-tauri/src/commands/mod.rs", import.meta.url),
   "utf8",
 );
+const e2eCommandSource = readFileSync(
+  new URL("../../src-tauri/src/commands/e2e.rs", import.meta.url),
+  "utf8",
+);
+const acceptanceSource = readFileSync(
+  new URL("../../tests/e2e/extensions-ui-acceptance.spec.ts", import.meta.url),
+  "utf8",
+);
 const baseE2eConfig = JSON.parse(readFileSync(
   new URL("../../src-tauri/tauri.e2e.conf.json", import.meta.url),
   "utf8",
@@ -265,6 +273,10 @@ test("CI runs the real Tauri WebView journey on Linux", () => {
 test("the WebDriver journey executes the extension UI runtime proof", () => {
   assert.match(wdioSource, /extensions-ui-runtime-proof\.spec\.ts/u);
   assert.match(runnerSource, /BEAVER_E2E_UI_MANIFEST_SHA/u);
+  assert.match(
+    wdioSource,
+    /extensions-ui-runtime-proof\.spec\.ts[\s\S]*extensions-ui-advanced\.spec\.ts[\s\S]*extensions-ui-acceptance\.spec\.ts/u,
+  );
 });
 
 test("the native CEF journey uses one isolated application session", () => {
@@ -299,6 +311,16 @@ test("the coordinated exit command is compiled only into the E2E handler", () =>
   assert.match(commandsSource, /#\[cfg\(feature = "e2e"\)\][\s\S]*mod e2e/u);
   assert.match(invokeSource, /#\[cfg\((?:all\()?feature = "e2e"[\s\S]*e2e_request_exit/u);
   assert.match(invokeSource, /#\[cfg\((?:all\()?not\(feature = "e2e"\)/u);
+});
+
+test("installed extension UI acceptance opts into only the isolated extension host", () => {
+  assert.match(e2eCommandSource, /pub fn e2e_initialize_extension_host/u);
+  assert.match(
+    invokeSource,
+    /#\[cfg\((?:all\()?feature = "e2e"[\s\S]*e2e_initialize_extension_host/u,
+  );
+  assert.match(acceptanceSource, /invokeTauri\("e2e_initialize_extension_host"\)/u);
+  assert.match(acceptanceSource, /get_extension_host_status/u);
 });
 
 test("the native smoke releases WebDriver before Beaver performs its coordinated exit", () => {

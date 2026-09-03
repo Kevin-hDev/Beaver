@@ -10,6 +10,8 @@ const nativeWebViewSmoke = process.env.E2E_REQUIRE_WEBVIEW_SMOKE === "1";
 const nativeSmoke = nativeCefSmoke || nativeWebViewSmoke;
 const childSessionReadOnlySpec = "./tests/e2e/child-session-read-only.spec.ts";
 const extensionUiRuntimeProofSpec = "./tests/e2e/extensions-ui-runtime-proof.spec.ts";
+const extensionUiAdvancedSpec = "./tests/e2e/extensions-ui-advanced.spec.ts";
+const extensionUiAcceptanceSpec = "./tests/e2e/extensions-ui-acceptance.spec.ts";
 const journeySpec = nativeCefSmoke
   ? "./tests/e2e/native-cef-shutdown.spec.ts"
   : nativeWebViewSmoke
@@ -24,7 +26,13 @@ const driverArguments = observeMacApplication
 export const config: WebdriverIO.Config = {
   outputDir: e2eLogDirectory,
   runner: "local",
-  specs: [[childSessionReadOnlySpec, extensionUiRuntimeProofSpec, journeySpec]],
+  specs: [[
+    childSessionReadOnlySpec,
+    extensionUiRuntimeProofSpec,
+    extensionUiAdvancedSpec,
+    extensionUiAcceptanceSpec,
+    journeySpec,
+  ]],
   maxInstances: 1,
   capabilities: [{ browserName: "tauri" }],
   services: [["@wdio/tauri-service", {

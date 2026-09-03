@@ -4,6 +4,7 @@ import type {
   ExtensionEvent,
   StableHostToCoreRequestMethod,
 } from "./contract";
+import type { ExtensionUiPlacementKey } from "./ui-contract";
 
 export * from "./contract";
 export * from "./ui-contract";
@@ -75,6 +76,25 @@ export interface BeaverUiApi {
       context: { locale: "fr" | "en" | "es" | "de" | "it" | "zh" | "ja" },
     ) => BeaverUiActionResult | Promise<BeaverUiActionResult>,
   ): () => void;
+}
+
+export type BeaverAdvancedUiCleanup = () => void | Promise<void>;
+export type BeaverAdvancedUiMount = (
+  container: HTMLElement,
+) => void | BeaverAdvancedUiCleanup;
+
+export interface BeaverAdvancedUiContext {
+  readonly apiVersion: string;
+  readonly extensionId: string;
+  mount(placement: ExtensionUiPlacementKey, mount: BeaverAdvancedUiMount): void;
+  completeWithoutMounts(): void;
+}
+
+export interface BeaverAdvancedUiModule {
+  activate(
+    context: BeaverAdvancedUiContext,
+  ): void | BeaverAdvancedUiCleanup | Promise<void | BeaverAdvancedUiCleanup>;
+  deactivate?: BeaverAdvancedUiCleanup;
 }
 
 export interface BeaverExtensionError extends Error {

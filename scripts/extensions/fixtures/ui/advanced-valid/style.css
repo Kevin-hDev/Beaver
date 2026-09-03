@@ -1,0 +1,6 @@
+.acceptance-advanced-button {
+  color: var(--ink);
+  background: var(--btn-secondary-bg);
+  border: var(--line-thin) solid var(--edge);
+  border-radius: var(--radius);
+}

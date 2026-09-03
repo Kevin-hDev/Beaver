@@ -18,6 +18,7 @@ mod source_validation_tests;
 mod storage_migration_tests;
 mod tests;
 mod ui_artifact_tests;
+mod ui_builder_tests;
 mod ui_contract_tests;
 mod ui_dispatch_tests;
 mod ui_limit_tests;

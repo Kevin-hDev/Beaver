@@ -108,6 +108,105 @@ Register contributions during activation: Beaver snapshots the catalog when load
 finishes. Cleanup functions are intended for teardown; later catalog changes become
 visible after the next Host reload.
 
+Standard contributions are data, not UI code. Beaver renders the declared `tab`,
+`settingsTab`, `action`, and `theme` contributions with its own components and validates
+the same machine-readable contract in Node.js, Rust, and the WebView. Tabs provide a
+`detail` view and may provide a `list` view. Settings tabs provide a `detail` view.
+Actions target the main toolbar or the Agent composer; third-party composer actions are
+not exposed in classic Chat mode.
+
+Views can use `stack`, `row`, `heading`, `text`, `badge`, `separator`, `textField`,
+`numberField`, `select`, `toggle`, and `button`. A button references an action registered
+with `beaver.ui.onAction`. Action handlers receive bounded field values and return either
+a bounded notification or a replacement view.
+
+A standard theme declares one of the generated public tokens and a full hexadecimal
+color. Unknown tokens and malformed values fail closed:
+
+```js
+beaver.ui.register({
+  type: "theme",
+  id: "night-blue",
+  order: 0,
+  label: { default: "Night blue" },
+  base: "dark",
+  tokens: {
+    "--surface": "#101827",
+    "--ink": "#F8FAFC"
+  }
+});
+```
+
+The generated tables below are the authority for placements, primitives, public theme
+tokens, diagnostics, and numeric limits. Complete offline fixtures live in
+`scripts/extensions/fixtures/ui/`.
+
+### Advanced interface modules
+
+Advanced modules run arbitrary JavaScript in the same Beaver WebView as the application.
+They are trusted customization code, not a sandbox, and can reach browser globals and
+the DOM. Audit the complete source and every update before approving it.
+
+Keep the normal extension `main` entry and add an advanced UI entry to the manifest:
+
+```json
+{
+  "id": "com.example.dashboard",
+  "name": "Dashboard",
+  "version": "1.0.0",
+  "beaverApi": "1",
+  "runtime": "node",
+  "main": "./index.ts",
+  "access": "full",
+  "apiLevel": "advanced",
+  "essential": false,
+  "ui": {
+    "apiVersion": "1",
+    "mode": "advanced",
+    "entry": "./ui.ts"
+  }
+}
+```
+
+The UI entry exports an `activate` function. Each `mount` receives a Beaver-owned
+container and may return an idempotent cleanup. `activate` may also return a cleanup,
+and the module may export `deactivate`. When the module intentionally mounts nothing,
+it must call `completeWithoutMounts()` explicitly.
+
+```ts
+import type { BeaverAdvancedUiModule } from "@beaver/sdk";
+
+export const activate: BeaverAdvancedUiModule["activate"] = (context) => {
+  context.mount("app.toolbar.primary", (container) => {
+    const button = document.createElement("button");
+    button.textContent = "Dashboard";
+    container.append(button);
+    return () => button.remove();
+  });
+
+  return () => {
+    // Release listeners or resources created outside individual mounts.
+  };
+};
+
+export async function deactivate() {
+  // Optional final cleanup. Beaver isolates cleanup failures and continues teardown.
+}
+```
+
+Beaver compiles the advanced entry locally during a local, Git, or npm installation and
+during managed updates. Reloading the Host rebuilds local advanced entries. The bounded
+artifact, its manifest, and its hashes become part of the extension fingerprint. Source
+or artifact changes revoke approval and disable the extension before the next load;
+modified artifact bytes are refused by the protocol as well.
+
+Import, activation, styles, and mounts use bounded time and size budgets from the
+generated contract. Beaver removes mounted containers and styles during reload,
+disable, recovery, or application teardown. `--safe-mode`, the startup Shift gesture,
+and the recovery flow prevent third-party advanced modules from loading so the
+Extensions screen remains available. Failures are shown as generic localized
+diagnostics without exposing raw extension output.
+
 ## Advanced API
 
 Set `"apiLevel": "advanced"` to use:

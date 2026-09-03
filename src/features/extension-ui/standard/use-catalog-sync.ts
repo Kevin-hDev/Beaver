@@ -38,7 +38,9 @@ export function useCatalogSync(): CatalogSyncState {
           try {
             const parsed = parseStandardCatalog(await invoke<unknown>("get_extension_ui_catalog"));
             if (disposed) return;
-            if (!live || parsed.revision >= live.revision) {
+            // Equal revisions are the same authoritative snapshot. Replacing it
+            // would remount live contributions and can cancel their load journal.
+            if (!live || parsed.revision > live.revision) {
               live = parsed;
               setState({
                 kind: parsed.contributions.length === 0 ? "empty" : "ready",

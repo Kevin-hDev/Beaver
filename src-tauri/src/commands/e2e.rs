@@ -9,6 +9,13 @@ use tauri::Manager;
 const COORDINATED_EXIT_DELAY: Duration = Duration::from_secs(1);
 
 #[tauri::command]
+pub fn e2e_initialize_extension_host(app: tauri::AppHandle) -> Result<(), String> {
+    // The ordinary E2E startup suppresses every external process. Acceptance tests
+    // opt into only the extension host, inside the already isolated E2E profile.
+    crate::services::extensions::initialize(&app)
+}
+
+#[tauri::command]
 pub fn e2e_request_exit(app: tauri::AppHandle) {
     tauri::async_runtime::spawn(async move {
         tokio::time::sleep(COORDINATED_EXIT_DELAY).await;

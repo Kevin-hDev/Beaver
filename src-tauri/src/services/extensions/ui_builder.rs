@@ -167,8 +167,8 @@ fn build(
         serde_json::from_slice(&stdout).map_err(|_| super::OperationFailure::ManifestInvalid)?;
     super::ui_artifact::validate(&artifact)
         .map_err(|_| super::OperationFailure::ManifestInvalid)?;
-    super::ui_artifact::verify_at(staging.output(), &artifact)
-        .map_err(|_| super::OperationFailure::ManifestInvalid)?;
+    // The staging manifest is written by commit. That method verifies the manifest
+    // and every output before the artifact becomes reachable from the registry.
     staging
         .commit(&record.manifest.id, &artifact)
         .map_err(|_| super::OperationFailure::StorageFailed)?;

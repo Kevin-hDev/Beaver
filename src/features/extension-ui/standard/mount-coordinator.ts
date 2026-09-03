@@ -68,26 +68,28 @@ export function createMountCoordinator() {
       });
       let settled = false;
       await new Promise<void>((resolve, reject) => {
+        const settle = async () => {
+          if (settled) return;
+          settled = true;
+          await invoke("acknowledge_extension_ui_load", {
+            extensionId: job.extensionId,
+            token,
+          }).then(() => {
+            remember(job.key);
+            job.finish();
+            resolve();
+          }, () => {
+            const error = generic();
+            reject(error);
+            throw error;
+          });
+        };
         job.ready({
-          commit: async () => {
-            if (settled) return;
-            settled = true;
-            try {
-              await invoke("acknowledge_extension_ui_load", {
-                extensionId: job.extensionId,
-                token,
-              });
-              remember(job.key);
-              job.finish();
-              resolve();
-            } catch {
-              reject(generic());
-            }
-          },
+          commit: settle,
           cancel: () => {
-            if (settled) return;
-            settled = true;
-            reject(generic());
+            // A React replacement is an orderly handoff, not a crash. Completing
+            // its journal lets the replacement mount; a process crash cannot run this path.
+            void settle().then(undefined, () => undefined);
           },
         });
       });

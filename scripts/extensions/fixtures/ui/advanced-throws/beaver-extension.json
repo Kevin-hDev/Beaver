@@ -1,0 +1,12 @@
+{
+  "id": "acceptance.advanced.throws",
+  "name": "Throwing advanced UI",
+  "version": "1.0.0",
+  "beaverApi": "1",
+  "runtime": "node",
+  "main": "index.mjs",
+  "access": "full",
+  "apiLevel": "advanced",
+  "essential": false,
+  "ui": { "apiVersion": "1", "mode": "advanced", "entry": "entry.mjs" }
+}

@@ -67,4 +67,18 @@ describe("useCatalogSync", () => {
     await waitFor(() => expect(invoke).toHaveBeenCalledTimes(2));
     expect(result.current.snapshot?.revision).toBe(3);
   });
+
+  it("preserves the authoritative snapshot identity for an equal revision", async () => {
+    vi.mocked(invoke)
+      .mockResolvedValueOnce(empty(3))
+      .mockResolvedValueOnce(empty(3));
+    const { result } = renderHook(() => useCatalogSync());
+    await waitFor(() => expect(result.current.snapshot?.revision).toBe(3));
+    const first = result.current.snapshot;
+
+    act(() => changed?.({ payload: 3 }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledTimes(2));
+
+    expect(result.current.snapshot).toBe(first);
+  });
 });

@@ -161,6 +161,8 @@ pub use runtime::status;
 pub use runtime_dispatch::{dispatch_tool, emit_event};
 pub(crate) use runtime_lifecycle::{new_stop_deadline, CHANGED_EVENT};
 pub use runtime_lifecycle::{restart, stop_and_wait};
+#[cfg(feature = "e2e")]
+pub(crate) use startup::initialize;
 pub use startup::initialize_on_startup;
 pub(crate) use tool_bridge::definitions as extension_tool_definitions;
 pub(crate) use tool_bridge::{core_fallback, without_core_fallback};

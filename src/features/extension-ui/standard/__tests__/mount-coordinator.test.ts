@@ -44,6 +44,33 @@ describe("createMountCoordinator", () => {
       command === "acknowledge_extension_ui_load")).toHaveLength(2);
   });
 
+  it("treats a superseded React mount as an orderly acknowledged handoff", async () => {
+    const coordinator = createMountCoordinator();
+    const superseded = await coordinator.prepare("1:old", "com.example.ui", 1);
+    const replacementPromise = coordinator.prepare("2:new", "com.example.ui", 1);
+
+    superseded.cancel();
+    const replacement = await replacementPromise;
+    await replacement.commit();
+
+    expect(commands().filter((command) =>
+      command === "acknowledge_extension_ui_load")).toHaveLength(2);
+  });
+
+  it("rejects the commit when the journal acknowledgement fails", async () => {
+    vi.mocked(invoke).mockImplementation((command) => {
+      if (command === "begin_extension_ui_load") return Promise.resolve([1, 2, 3]);
+      if (command === "acknowledge_extension_ui_load") return Promise.reject(new Error("internal"));
+      return Promise.resolve(undefined);
+    });
+    const coordinator = createMountCoordinator();
+    const permit = await coordinator.prepare("1:failed-ack", "com.example.failed", 1);
+
+    await expect(permit.commit()).rejects.toThrow("extension_ui_mount_failed");
+    await expect(coordinator.prepare("2:blocked", "com.example.blocked", 1))
+      .rejects.toThrow("extension_ui_mount_failed");
+  });
+
   it("deduplicates the same contribution and stops after a failure", async () => {
     const coordinator = createMountCoordinator();
     const permit = await coordinator.prepare("1:same", "com.example.same", 1);
