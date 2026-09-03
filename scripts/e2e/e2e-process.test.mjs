@@ -279,7 +279,7 @@ test("CI isolates the Windows extension host before the packaged CEF journey", (
   assert.match(smokeJob, /npm run test:extensions-runtime-smoke/u);
   assert.match(
     smokeJob,
-    /prepared_runtime_answers_hello_through_owned_process --exact --ignored --nocapture/u,
+    /prepared_runtime_answers_hello_through_owned_process --features windows-tests --exact --ignored --nocapture/u,
   );
 });
 

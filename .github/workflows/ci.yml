@@ -299,7 +299,7 @@ jobs:
       # exact Rust-owned process path used by the installed application.
       - name: Rust owned-process protocol smoke
         working-directory: src-tauri
-        run: node ../scripts/ci/run-rust-test-filter.mjs --filter services::extensions::host_process::tests::prepared_runtime_answers_hello_through_owned_process --exact --ignored --nocapture
+        run: node ../scripts/ci/run-rust-test-filter.mjs --filter services::extensions::host_process::tests::prepared_runtime_answers_hello_through_owned_process --features windows-tests --exact --ignored --nocapture
 
   backend-macos-native:
     name: Backend macOS CEF (Rust)
