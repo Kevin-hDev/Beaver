@@ -1,0 +1,11 @@
+UI-P4 — thèmes standard fondés sur les jetons
+
+État validé : extension-ui/contract.json est l'autorité unique des 48 jetons publics. Les artefacts Node, SDK et TypeScript ont été régénérés. Les six thèmes Beaver exposent chaque jeton exactement une fois et leur résolution bornée accepte seulement hex ou rgba, avec refus des cycles, références manquantes, doublons, gradients et fonctions arbitraires.
+
+Fonctionnement : le catalogue de thèmes dérive du catalogue standard actif, localise et trie les contributions puis conserve leur provenance. Une palette tierce ne reçoit que des couleurs hexadécimales sur la liste publique, garde data-theme à light/dark, utilise son identifiant canonique dans data-palette et efface tous les jetons inline avant chaque transition. Le splash ne lit que la projection sûre clgo-theme-base. Un thème sauvegardé absent après chargement revient à system et produit une notification traduite dans les sept langues.
+
+Revue directe : le premier npm test complet a révélé sept tests obsolètes, pas un défaut runtime : le mock App ne projetait pas useExtensions et quatre assertions de catalogue ignoraient le nouveau cssPath central. Les tests ont été corrigés puis la suite complète rejouée. Trois avertissements ESLint sur des expressions régulières ont aussi été supprimés par un parseur de couleur explicite.
+
+Validations exécutées et vertes : npm run contracts:check ; tests ciblés UI-P4 9 fichiers / 48 tests ; npm run lint sans avertissement ; npx tsc --noEmit ; npm test avec 550 fichiers Vitest / 2962 tests, 56 build scripts, 16 CI, 45 CEF + 1 skip Windows attendu, 73 E2E runner, 75 extension-host et 10 reasoning fixtures ; npm run build ; cargo test --lib extensions avec 316 réussites et 2 ignorés ; cargo clippy --all-targets -- -D warnings ; cargo fmt --all -- --check ; graphify update . avec 43440 nœuds / 91477 arêtes.
+
+Limite déclarée : les transitions et contrats ont été vérifiés par exécution, mais aucune installation réelle d'une fixture de thème clair/sombre dans le profil utilisateur n'a été faite pour ce commit. La matrice visuelle réelle reste à rejouer dans le lot UI-P7 sur un profil isolé.
