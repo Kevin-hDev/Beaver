@@ -2,7 +2,7 @@
 
 export declare const EXTENSION_API_VERSION: "1";
 export declare const EXTENSION_CAPABILITIES: readonly ["tools","events"];
-export declare const CORE_TO_HOST_METHODS: readonly ["host.hello","host.reset","host.load","tool.call","event.emit"];
+export declare const CORE_TO_HOST_METHODS: readonly ["host.hello","host.reset","host.load","tool.call","event.emit","ui.action"];
 export declare const STABLE_HOST_TO_CORE_REQUEST_METHODS: readonly ["app.info","sessions.list","sessions.get","projects.list","mcp.connectors.list","mcp.tool.call","channels.config.get","secrets.provider.get","secrets.mcp.oauth.get","secrets.mcp.env.get","secrets.channel.get"];
 export declare const ADVANCED_HOST_TO_CORE_REQUEST_METHODS: readonly [];
 export declare const HOST_TO_CORE_NOTIFICATION_METHODS: readonly ["host.load.stage"];

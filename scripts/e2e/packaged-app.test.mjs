@@ -7,6 +7,55 @@ import {
   windowsInstallerDirectory,
 } from "./packaged-app.mjs";
 
+test("macOS packaged smoke resolves and verifies the app bundle executable", async () => {
+  const cargoTargetDir = resolve("target", "e2e");
+  const expected = resolve(
+    cargoTargetDir,
+    "debug", "bundle", "macos", "Beaver.app", "Contents", "MacOS", "cl-go-dash",
+  );
+  const checked = [];
+  const packaged = await preparePackagedApp({
+    platform: "darwin",
+    cargoTargetDir,
+    profilePath: resolve("temp", "beaver-e2e-Ab12"),
+    isRegularFile: async (path) => {
+      checked.push(path);
+      return path === expected;
+    },
+    run: async () => {
+      throw new Error("macOS preparation must not run a command");
+    },
+  });
+
+  assert.equal(packaged.binaryPath, expected);
+  assert.deepEqual(checked, [expected]);
+  await packaged.cleanup();
+});
+
+test("Linux packaged smoke uses the injected deterministic AppImage listing", async () => {
+  const cargoTargetDir = resolve("target", "e2e");
+  const directory = resolve(cargoTargetDir, "debug", "bundle", "appimage");
+  const appImage = join(directory, "Beaver_1.1.3_amd64.AppImage");
+  const listed = [];
+  const packaged = await preparePackagedApp({
+    platform: "linux",
+    cargoTargetDir,
+    profilePath: resolve("temp", "beaver-e2e-Ab12"),
+    listLinuxFiles: async (path) => {
+      listed.push(path);
+      return [appImage];
+    },
+    isRegularFile: async (path) => path === appImage,
+    run: async () => {
+      throw new Error("Linux preparation must not run a command");
+    },
+  });
+
+  assert.equal(packaged.binaryPath, appImage);
+  assert.deepEqual(listed, [directory]);
+  await packaged.cleanup();
+});
+
 test("Windows packaged smoke installs the single NSIS artifact into the isolated profile", async () => {
   const calls = [];
   const cargoTargetDir = resolve("target", "e2e");

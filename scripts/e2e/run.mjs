@@ -1,4 +1,5 @@
-import { mkdtemp, realpath } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { copyFile, lstat, mkdir, mkdtemp, readFile, realpath } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { reportNativeDiagnostics } from "./native-diagnostics.mjs";
@@ -19,9 +20,6 @@ const repoRoot = await canonicalE2eRepoRoot(import.meta.url);
 const packaged = process.env.E2E_PACKAGED === "1";
 if (process.env.E2E_PACKAGED !== undefined && !packaged) {
   throw new Error("E2E packaged mode is invalid");
-}
-if (packaged && process.platform !== "win32") {
-  throw new Error("E2E packaged mode is unsupported");
 }
 const profilePath = await realpath(await mkdtemp(join(tmpdir(), "beaver-e2e-")));
 const canonicalTemp = await realpath(tmpdir());
@@ -46,6 +44,10 @@ const environment = {
   E2E_LOG_DIR: logDirectory,
   VITE_E2E: "1",
 };
+environment.BEAVER_E2E_UI_MANIFEST_SHA = await prepareUiRuntimeProof(repoRoot, profilePath);
+if (packaged && process.platform === "linux") {
+  environment.APPIMAGE_EXTRACT_AND_RUN = "1";
+}
 
 let hadPriorFailure = false;
 let packagedApp;
@@ -112,4 +114,23 @@ try {
     tempPath: canonicalTemp,
     hadPriorFailure: hadPriorFailure || Boolean(process.exitCode),
   });
+}
+
+async function prepareUiRuntimeProof(root, profile) {
+  const source = resolve(root, "src-tauri/tests/fixtures/extensions/ui-advanced/entry.mjs");
+  const [metadata, canonical] = await Promise.all([lstat(source), realpath(source)]);
+  if (
+    !metadata.isFile()
+    || metadata.isSymbolicLink()
+    || canonical !== source
+    || metadata.size > 65_536
+  ) {
+    throw new Error("E2E UI proof preparation failed");
+  }
+  const bytes = await readFile(canonical);
+  const hash = createHash("sha256").update(bytes).digest("hex");
+  const destination = join(profile, "extensions-ui-proof", "ui-proof", hash);
+  await mkdir(destination, { recursive: true, mode: 0o700 });
+  await copyFile(canonical, join(destination, "entry.mjs"));
+  return hash;
 }

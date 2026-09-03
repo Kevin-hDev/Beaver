@@ -147,7 +147,7 @@ jobs:
       - name: Native Linux WebView journey
         env:
           E2E_REQUIRE_WEBVIEW_SMOKE: "1"
-        run: xvfb-run -a npm run test:e2e
+        run: xvfb-run -a npm run test:e2e:packaged
 
   backend-windows-native:
     name: Backend Windows CEF (Rust)
@@ -340,7 +340,7 @@ jobs:
       - name: Native macOS CEF journey
         env:
           E2E_REQUIRE_CEF_SMOKE: "1"
-        run: npm run test:e2e
+        run: npm run test:e2e:packaged
 
   backend-windows:
     name: Backend Windows tests (Rust)

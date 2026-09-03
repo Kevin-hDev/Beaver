@@ -67,6 +67,7 @@ async function copyHostSources(source, destination) {
     "contract-bootstrap.json",
     "contract.json",
     "contract.mjs",
+    "ui-contract.mjs",
     "diagnostics.mjs",
     "extension-api.mjs",
     "host.mjs",
@@ -77,7 +78,7 @@ async function copyHostSources(source, destination) {
     "protocol.mjs",
     "versions.mjs",
   ];
-  const sdkFiles = ["README.md", "contract.d.ts", "index.d.ts", "index.mjs", "package.json"];
+  const sdkFiles = ["README.md", "contract.d.ts", "ui-contract.d.ts", "index.d.ts", "index.mjs", "package.json"];
   await mkdir(resolve(destination, "sdk"), { recursive: true, mode: 0o700 });
   await Promise.all([
     ...rootFiles.map((file) =>

@@ -2,7 +2,7 @@
   "apiVersion": "1",
   "capabilities": ["tools", "events"],
   "methods": {
-    "coreToHost": ["host.hello", "host.reset", "host.load", "tool.call", "event.emit"],
+    "coreToHost": ["host.hello", "host.reset", "host.load", "tool.call", "event.emit", "ui.action"],
     "hostToCore": [
       { "name": "app.info", "level": "stable", "kind": "request", "rustBudgetMs": 0 },
       { "name": "sessions.list", "level": "stable", "kind": "request", "rustBudgetMs": 0 },

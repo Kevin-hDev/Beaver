@@ -70,6 +70,14 @@ test("the E2E build always enables the isolated feature", () => {
     "src-tauri/tauri.e2e.conf.json", "--config",
     "src-tauri/tauri.e2e.windows.conf.json", "--bundles", "nsis",
   ]);
+  assert.deepEqual(buildArguments("linux", true), [
+    "build", "--debug", "--features", "e2e", "--config",
+    "src-tauri/tauri.e2e.conf.json", "--bundles", "appimage",
+  ]);
+  assert.deepEqual(buildArguments("darwin", true), [
+    "build", "--debug", "--features", "e2e", "--config",
+    "src-tauri/tauri.e2e.conf.json", "--bundles", "app",
+  ]);
 });
 
 test("the Windows packaged build has an isolated product identity", () => {
@@ -226,7 +234,7 @@ test("profile cleanup rejects a target outside the isolated E2E shape", async ()
   assert.equal(removed, false);
 });
 
-test("CI runs the real CEF journey on Windows and macOS only", () => {
+test("CI runs the packaged extension UI journey on all three desktop systems", () => {
   const windowsJob = ciSource.slice(
     ciSource.indexOf("  backend-windows-native:"),
     ciSource.indexOf("  backend-macos-native:"),
@@ -236,8 +244,7 @@ test("CI runs the real CEF journey on Windows and macOS only", () => {
     ciSource.indexOf("  backend-windows:"),
   );
   assert.match(windowsJob, /E2E_REQUIRE_CEF_SMOKE: "1"[\s\S]*npm run test:e2e:packaged(?:\r?\n|$)/u);
-  assert.match(macJob, /E2E_REQUIRE_CEF_SMOKE: "1"[\s\S]*npm run test:e2e(?:\r?\n|$)/u);
-  assert.doesNotMatch(macJob, /npm run test:e2e:packaged/u);
+  assert.match(macJob, /E2E_REQUIRE_CEF_SMOKE: "1"[\s\S]*npm run test:e2e:packaged(?:\r?\n|$)/u);
   const extensionHostInstall = /npm ci --ignore-scripts --omit=dev --prefix src-tauri\/resources\/extension-host/u;
   assert.match(windowsJob, extensionHostInstall);
   assert.match(macJob, extensionHostInstall);
@@ -250,9 +257,14 @@ test("CI runs the real Tauri WebView journey on Linux", () => {
   );
   assert.match(
     linuxJob,
-    /E2E_REQUIRE_WEBVIEW_SMOKE: "1"[\s\S]*xvfb-run[^\r\n]*npm run test:e2e(?:\r?\n|$)/u,
+    /E2E_REQUIRE_WEBVIEW_SMOKE: "1"[\s\S]*xvfb-run[^\r\n]*npm run test:e2e:packaged(?:\r?\n|$)/u,
   );
   assert.match(linuxJob, /webkit2gtk-driver/u);
+});
+
+test("the WebDriver journey executes the extension UI runtime proof", () => {
+  assert.match(wdioSource, /extensions-ui-runtime-proof\.spec\.ts/u);
+  assert.match(runnerSource, /BEAVER_E2E_UI_MANIFEST_SHA/u);
 });
 
 test("the native CEF journey uses one isolated application session", () => {

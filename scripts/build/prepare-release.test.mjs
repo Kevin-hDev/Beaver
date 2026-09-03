@@ -18,6 +18,7 @@ async function recordPreparation(platform) {
     await prepareRelease({
       repoRoot: root,
       platform,
+      prepareExtensionUi: record("extension-ui"),
       prepareExtensions: record("extensions"),
       prepareCefSource: record("cef-source"),
       buildFrontend: record("frontend"),
@@ -33,6 +34,7 @@ async function recordPreparation(platform) {
 
 test("prépare Windows sans lancer de script Bash", async () => {
   assert.deepEqual(await recordPreparation("win32"), [
+    "extension-ui",
     "extensions",
     "cef-source",
     "frontend",
@@ -50,6 +52,7 @@ test("Tauri utilise uniquement la préparation native centralisée", () => {
 
 test("conserve la préparation CEF Unix après les étapes communes", async () => {
   assert.deepEqual(await recordPreparation("linux"), [
+    "extension-ui",
     "extensions",
     "cef-source",
     "frontend",
@@ -71,6 +74,7 @@ test("lance la préparation CEF Unix depuis le dossier Tauri", async () => {
     await prepareRelease({
       repoRoot: root,
       platform: "linux",
+      prepareExtensionUi: skip,
       prepareExtensions: skip,
       prepareCefSource: skip,
       buildFrontend: skip,

@@ -19,6 +19,8 @@ export async function canonicalE2eRepoRoot(moduleUrl) {
 export function buildArguments(platform, packaged = false) {
   const bundleArguments = platform === "darwin"
     ? ["--bundles", "app"]
+    : platform === "linux" && packaged
+      ? ["--bundles", "appimage"]
     : platform === "win32" && packaged
       ? ["--bundles", "nsis"]
       : ["--no-bundle"];

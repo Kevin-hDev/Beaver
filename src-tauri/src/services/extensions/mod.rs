@@ -86,14 +86,23 @@ mod storage_migration;
 mod tool_bridge;
 mod tool_result;
 pub(crate) mod types;
+pub(crate) mod ui_protocol;
 mod validation;
 mod view;
 mod work_supervision;
+#[allow(dead_code)]
+mod ui_contract {
+    include!(concat!(env!("OUT_DIR"), "/extension_ui_contract.rs"));
+}
 #[cfg(test)]
 mod work_supervision_tests;
 
 #[cfg(test)]
 mod contract_artifact_tests;
+#[cfg(test)]
+mod ui_contract_tests;
+#[cfg(test)]
+mod ui_protocol_tests;
 
 pub use extension_recovery::ExtensionRecoveryState;
 pub use types::{ExtensionEffect, ExtensionHostStatus, ExtensionKind};

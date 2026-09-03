@@ -1,0 +1,10 @@
+{
+  "id": "ui-standard-proof",
+  "name": "UI standard contract proof",
+  "version": "1.0.0",
+  "apiVersion": "1",
+  "ui": {
+    "apiVersion": "1",
+    "mode": "standard"
+  }
+}

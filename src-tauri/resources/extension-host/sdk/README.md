@@ -118,7 +118,7 @@ The extension author and user are responsible for any secret, file, process, or 
 | Category | Values |
 |---|---|
 | Capabilities | `tools`, `events` |
-| Core to host | `host.hello`, `host.reset`, `host.load`, `tool.call`, `event.emit` |
+| Core to host | `host.hello`, `host.reset`, `host.load`, `tool.call`, `event.emit`, `ui.action` |
 | Events | `session.turn.started` |
 | Effects | `read-only`, `local-write`, `external-read`, `external-write`, `process`, `secret`, `unknown` |
 
@@ -187,3 +187,60 @@ The extension author and user are responsible for any secret, file, process, or 
 | Protocol reasons | `core_busy`, `core_request_timeout`, `core_transport_failed`, `core_method_unavailable`, `core_request_failed`, `extension_host_busy`, `extension_host_request_failed`, `extension_host_fatal` |
 | Backend codes | `extensions_host_unavailable`, `extensions_host_busy`, `extensions_host_timeout`, `extensions_request_too_large`, `extensions_request_invalid`, `extensions_tool_unavailable`, `extensions_tool_arguments_invalid`, `extensions_builtin_catalog_invalid`, `extensions_builtin_catalog_unavailable`, `extensions_builtin_plugin_invalid`, `extensions_builtin_entry_missing`, `extensions_builtin_entry_unavailable`, `extensions_builtin_entry_invalid`, `extensions_install_failed`, `extensions_update_failed`, `extensions_uninstall_failed`, `extensions_source_invalid`, `extensions_package_invalid`, `extensions_git_download_failed`, `extensions_git_timeout`, `extensions_runtime_unavailable`, `extensions_environment_invalid`, `extensions_dependency_install_failed`, `extensions_manifest_invalid`, `extensions_not_beaver_extension`, `extensions_api_incompatible`, `extensions_symlink_unsupported`, `extensions_already_installed`, `extensions_limit_reached`, `extensions_storage_failed`, `extensions_update_identity_changed`, `extensions_update_unavailable`, `extensions_cleanup_failed`, `extensions_operation_failed`, `extensions_fingerprint_changed`, `extensions_fingerprint_failed`, `extensions_stop_unconfirmed`, `extensions_registry_entry_ignored`, `extensions_registry_migration_failed`, `extensions_recovery_marker_invalid`, `extensions_load_interrupted`, `extensions_activation_confirmation_required`, `extensions_not_found`, `extensions_host_incompatible` |
 <!-- END GENERATED EXTENSION CONTRACT -->
+
+<!-- BEGIN GENERATED EXTENSION UI CONTRACT -->
+### UI contract surface
+
+| Category | Values |
+|---|---|
+| Modes | `standard`, `advanced` |
+| Contribution types | `tab`, `settingsTab`, `action`, `theme` |
+| Primitives | `stack`, `row`, `heading`, `text`, `badge`, `separator`, `textField`, `numberField`, `select`, `toggle`, `button` |
+| Theme bases | `light`, `dark` |
+| Locales | `fr`, `en`, `es`, `de`, `it`, `zh`, `ja` |
+| Loading stages | `contract`, `bundle`, `approve`, `import`, `activate`, `mount` |
+
+### UI placements
+
+| Key | Type | Cardinality | Scope |
+|---|---|---|---|
+| `app.navigation.primary` | `tab` | `multiple` | `global` |
+| `settings.navigation.preferences` | `settingsTab` | `multiple` | `global` |
+| `settings.navigation.agent` | `settingsTab` | `multiple` | `global` |
+| `settings.navigation.models` | `settingsTab` | `multiple` | `global` |
+| `settings.navigation.integrations` | `settingsTab` | `multiple` | `global` |
+| `settings.navigation.application` | `settingsTab` | `multiple` | `global` |
+| `app.toolbar.primary` | `action` | `multiple` | `global` |
+| `agent.composer.leading` | `action` | `multiple` | `session` |
+
+### UI limits
+
+| Name | Value |
+|---|---:|
+| `maxActionPayloadBytes` | 65536 |
+| `maxActionResultBytes` | 262144 |
+| `maxActionsPerExtension` | 64 |
+| `maxAdvancedArtifactBytes` | 4194304 |
+| `maxAdvancedArtifactFiles` | 64 |
+| `maxAdvancedMountsPerExtension` | 32 |
+| `maxContributionsPerExtension` | 32 |
+| `maxFieldsPerView` | 32 |
+| `maxGlobalStandardContributions` | 512 |
+| `maxGlobalUiBytes` | 786432 |
+| `maxOccupantsPerPlacement` | 128 |
+| `maxOptionsPerField` | 64 |
+| `maxTextChars` | 2000 |
+| `maxThemeTokens` | 64 |
+| `maxThemesPerExtension` | 8 |
+| `maxUiBytesPerExtension` | 262144 |
+| `maxViewDepth` | 12 |
+| `maxViewNodes` | 256 |
+
+### Public UI tokens
+
+`--app-frame`, `--shell`, `--surface`, `--surface-hover`, `--surface-overlay`, `--surface-raised`, `--card-on-glass`, `--field-bg`, `--select-bg`, `--select-text`, `--edge`, `--edge-strong`, `--border-subtle`, `--ink`, `--ink-muted`, `--ink-faint`, `--ink-primary`, `--text-primary`, `--text-secondary`, `--text-tertiary`, `--pulse`, `--pulse-hover`, `--pulse-muted`, `--danger`, `--signal-alert`, `--signal-error`, `--signal-error-bg`, `--signal-info`, `--signal-info-bg`, `--signal-ok`, `--signal-ok-bg`, `--signal-warning`, `--signal-warning-bg`, `--chat-composer-bg`, `--chat-composer-border`, `--toast-bg`, `--toast-error-text`, `--toast-ok-text`, `--diff-add-bg`, `--diff-add-gutter`, `--diff-del-bg`, `--diff-del-gutter`, `--diff-new`, `--diff-old`
+
+### UI diagnostics
+
+`ui_contract_invalid`, `ui_contribution_invalid`, `ui_reference_missing`, `ui_reference_incompatible`, `ui_mutation_conflict`, `ui_protected_occupant`, `ui_limit_exceeded`, `ui_bundle_failed`, `ui_node_import_denied`, `ui_artifact_invalid`, `ui_protocol_request_denied`, `ui_protocol_hash_mismatch`, `ui_protocol_file_missing`, `ui_protocol_file_too_large`, `ui_advanced_approval_required`, `ui_activation_failed`, `ui_mount_failed`, `ui_theme_unavailable`
+<!-- END GENERATED EXTENSION UI CONTRACT -->

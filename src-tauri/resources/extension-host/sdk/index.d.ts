@@ -6,6 +6,7 @@ import type {
 } from "./contract";
 
 export * from "./contract";
+export * from "./ui-contract";
 
 export type JsonValue =
   | null

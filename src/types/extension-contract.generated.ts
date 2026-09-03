@@ -3,7 +3,7 @@
 
 export const EXTENSION_API_VERSION = "1" as const;
 export const EXTENSION_CAPABILITIES = ["tools","events"] as const;
-export const CORE_TO_HOST_METHODS = ["host.hello","host.reset","host.load","tool.call","event.emit"] as const;
+export const CORE_TO_HOST_METHODS = ["host.hello","host.reset","host.load","tool.call","event.emit","ui.action"] as const;
 export const STABLE_HOST_TO_CORE_REQUEST_METHODS = ["app.info","sessions.list","sessions.get","projects.list","mcp.connectors.list","mcp.tool.call","channels.config.get","secrets.provider.get","secrets.mcp.oauth.get","secrets.mcp.env.get","secrets.channel.get"] as const;
 export const ADVANCED_HOST_TO_CORE_REQUEST_METHODS = [] as const;
 export const HOST_TO_CORE_NOTIFICATION_METHODS = ["host.load.stage"] as const;
