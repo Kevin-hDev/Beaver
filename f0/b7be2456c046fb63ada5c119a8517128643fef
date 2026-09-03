@@ -1,1 +1,29 @@
-Review closure for REVUE_IMPL_UI_2026-09-04 addendum\n\nScope\n- A-03: the real discard command now has a path-injected internal boundary so its complete disk + memory transition can be exercised without touching the user profile. The regression test proves the UI journal is removed and startup remains Safe/RecoveryChoice with third-party UI blocked.\n- B-09: projection guards are covered for both main navigation and settings. Invalid occupants produce null/are filtered while unaffected settings sections remain available.\n- B-03: the action-result test now covers all supported close paths: Escape, pointer outside, and explicit close button.\n- Test organization: panel-slots.test.tsx follows the production primitive from components/layout to components/ui.\n- Private plan: EXTENSIONS_UI_PLAN.md documents that an authenticated abort acknowledges the live attempt and selects safe state, while a crash/webview loss leaves the journal for recovery. The plan is intentionally ignored and is not part of this commit.\n\nTechnical decisions\n- The discard helper accepts an explicit marker path only inside the Rust crate. Production still supplies the single data_dir-derived loading_marker::path authority; tests use a temporary directory.\n- No change was made to the accepted bounded global host-action residue or the pre-existing dialog focus issue; neither belongs to this review-coverage closure.\n\nVerification executed on the committed tree before commit\n- cargo fmt --check\n- cargo clippy --all-targets -- -D warnings\n- npm run lint\n- npx tsc --noEmit\n- npm test: 555 Vitest files / 2992 tests passed; build, CI, CEF and E2E runner suites passed; 89 extension-host tests passed; reasoning fixture checks passed\n- cargo test --lib: 4810 passed, 11 ignored, 0 failed\n- npm run contracts:check\n- targeted Vitest: 3 files / 14 tests passed\n- targeted Rust discard regression: 1 passed\n- git diff --check\n- graphify update . completed for the code graph\n\nKnown validation note\n- Semantic Graphify update for the private plan was attempted from the main repository but stopped because no supported LLM key was configured. The existing graph was not claimed current for that private document.\n- No visual rerun was needed: this commit changes tests and a testability seam only; it does not change rendered UI behavior or CSS.
+Review closure for REVUE_IMPL_UI_2026-09-04 addendum
+
+Scope
+- A-03: the real discard command now has a path-injected internal boundary so its complete disk + memory transition can be exercised without touching the user profile. The regression test proves the UI journal is removed and startup remains Safe/RecoveryChoice with third-party UI blocked.
+- B-09: projection guards are covered for both main navigation and settings. Invalid occupants produce null/are filtered while unaffected settings sections remain available.
+- B-03: the action-result test now covers all supported close paths: Escape, pointer outside, and explicit close button.
+- Test organization: panel-slots.test.tsx follows the production primitive from components/layout to components/ui.
+- Private plan: EXTENSIONS_UI_PLAN.md documents that an authenticated abort acknowledges the live attempt and selects safe state, while a crash/webview loss leaves the journal for recovery. The plan is intentionally ignored and is not part of this commit.
+
+Technical decisions
+- The discard helper accepts an explicit marker path only inside the Rust crate. Production still supplies the single data_dir-derived loading_marker::path authority; tests use a temporary directory.
+- No change was made to the accepted bounded global host-action residue or the pre-existing dialog focus issue; neither belongs to this review-coverage closure.
+
+Verification executed on the committed tree before commit
+- cargo fmt --check
+- cargo clippy --all-targets -- -D warnings
+- npm run lint
+- npx tsc --noEmit
+- npm test: 555 Vitest files / 2992 tests passed; build, CI, CEF and E2E runner suites passed; 89 extension-host tests passed; reasoning fixture checks passed
+- cargo test --lib: 4810 passed, 11 ignored, 0 failed
+- npm run contracts:check
+- targeted Vitest: 3 files / 14 tests passed
+- targeted Rust discard regression: 1 passed
+- git diff --check
+- graphify update . completed for the code graph
+
+Known validation note
+- Semantic Graphify update for the private plan was attempted from the main repository but stopped because no supported LLM key was configured. The existing graph was not claimed current for that private document.
+- No visual rerun was needed: this commit changes tests and a testability seam only; it does not change rendered UI behavior or CSS.
