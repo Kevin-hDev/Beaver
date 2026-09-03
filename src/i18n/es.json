@@ -2379,6 +2379,7 @@
     "confirm": "Confiar y activar"
   },
   "recovery": { "title": "Carga de extensión interrumpida", "description": "Beaver se detuvo al cargar una extensión. Revísala antes de continuar.", "invalid": "La información de recuperación no es válida y se puede descartar.", "openDetail": "Abrir detalle", "keepDisabled": "Mantener desactivada", "retry": "Reintentar carga", "discard": "Descartar recuperación", "restore": "Restaurar registro anterior" },
+  "uiRecovery": { "title": "Inicio seguro de interfaces de extensión", "description": "Beaver se detuvo al cargar una interfaz de extensión. No se cargó ninguna interfaz de terceros.", "invalidDescription": "La información de recuperación no es válida. Beaver bloqueó todas las interfaces de terceros.", "safe": "Continuar sin interfaz de terceros", "open": "Abrir los detalles de la extensión", "retry": "Reintentar esta interfaz", "discard": "Descartar la recuperación no válida", "error": "No se pudo completar esta acción. El modo seguro sigue activo.", "safeBannerTitle": "Interfaces de extensión desactivadas", "safeBannerDescription": "Este inicio permanece en modo seguro y no muestra interfaces de terceros." },
     "add": {
       "title": "Añadir una extensión",
       "fullAccessWarning": "El código seleccionado se ejecutará con los derechos de tu cuenta de usuario. Instala solo una extensión en la que decidas confiar.",

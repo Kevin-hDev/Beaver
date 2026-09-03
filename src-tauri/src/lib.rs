@@ -43,9 +43,11 @@ pub fn run_macos_cef_helper() -> std::process::ExitCode {
 pub use startup::launch_windows_browser_host;
 #[cfg(target_os = "macos")]
 pub use startup::prepare_macos_application;
+#[cfg(not(target_os = "windows"))]
+pub use startup::run;
 pub use startup::{
     configure_git_network_policy, initialize_shell_environment, prepare_browser_native_application,
-    run, run_shell_sandbox_helper, run_terminal_shell_helper_if_requested,
+    run_shell_sandbox_helper, run_terminal_shell_helper_if_requested,
 };
 
 #[cfg(debug_assertions)]
@@ -73,6 +75,7 @@ pub fn run_live_reasoning_fixtures() -> bool {
 
 pub(crate) fn run_inner(
     #[cfg(target_os = "macos")] browser_library: Option<BrowserLibraryGuard>,
+    ui_startup: services::extensions::UiStartupState,
 ) -> bool {
     let exit_coordinator = match app_exit::AppExitCoordinator::initialize() {
         Ok(coordinator) => coordinator,
@@ -87,7 +90,7 @@ pub(crate) fn run_inner(
     }
     let runtime = runtime_state::services(&exit_coordinator);
     std::hint::black_box(tauri::utils::platform::bundle_type());
-    let app = match app_build::build(exit_coordinator, runtime) {
+    let app = match app_build::build(exit_coordinator, runtime, ui_startup) {
         Ok(app) => app,
         Err(_) => {
             eprintln!("[app] initialization failed");

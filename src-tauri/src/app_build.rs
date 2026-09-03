@@ -19,8 +19,14 @@ impl AppBuildMode {
 pub(super) fn build(
     exit_coordinator: crate::app_exit::AppExitCoordinator,
     runtime: RuntimeServices,
+    ui_startup: crate::services::extensions::UiStartupState,
 ) -> tauri::Result<tauri::App<tauri::Wry>> {
-    build_with_mode(exit_coordinator, runtime, AppBuildMode::Interactive)
+    build_with_mode(
+        exit_coordinator,
+        runtime,
+        ui_startup,
+        AppBuildMode::Interactive,
+    )
 }
 
 #[cfg(debug_assertions)]
@@ -28,12 +34,20 @@ pub(super) fn build_live_fixture(
     exit_coordinator: crate::app_exit::AppExitCoordinator,
     runtime: RuntimeServices,
 ) -> tauri::Result<tauri::App<tauri::Wry>> {
-    build_with_mode(exit_coordinator, runtime, AppBuildMode::LiveFixture)
+    build_with_mode(
+        exit_coordinator,
+        runtime,
+        crate::services::extensions::UiStartupState::resolved(
+            crate::services::extensions::UiStartupMode::Normal,
+        ),
+        AppBuildMode::LiveFixture,
+    )
 }
 
 fn build_with_mode(
     exit_coordinator: crate::app_exit::AppExitCoordinator,
     runtime: RuntimeServices,
+    ui_startup: crate::services::extensions::UiStartupState,
     mode: AppBuildMode,
 ) -> tauri::Result<tauri::App<tauri::Wry>> {
     let builder = tauri::Builder::default()
@@ -75,6 +89,8 @@ fn build_with_mode(
         .manage(crate::services::browser::BrowserRuntimeHandle::default())
         .manage(crate::services::browser::BrowserSessionService::default())
         .manage(crate::services::browser::LocalSiteScanner::default())
+        .manage(ui_startup)
+        .manage(crate::services::extensions::UiLoadAcknowledger::new())
         .manage(runtime.gateway)
         .manage(crate::commands::file_tree_watcher::FileTreeWatcher::new())
         .manage(runtime.forecast)
@@ -203,22 +219,5 @@ fn configure_application(
 }
 
 #[cfg(test)]
-mod tests {
-    use super::AppBuildMode;
-
-    #[test]
-    fn fixture_build_can_run_beside_the_open_application() {
-        assert!(AppBuildMode::Interactive.installs_single_instance());
-        assert!(!AppBuildMode::LiveFixture.installs_single_instance());
-    }
-
-    #[test]
-    fn application_build_failure_is_returned_instead_of_panicking() {
-        let build = include_str!("app_build.rs");
-        let caller = include_str!("lib.rs");
-
-        assert!(build.contains("-> tauri::Result<tauri::App<tauri::Wry>>"));
-        assert!(caller.contains("match app_build::build(exit_coordinator, runtime)"));
-        assert!(!caller.contains("error while building tauri application"));
-    }
-}
+#[path = "app_build_tests.rs"]
+mod tests;

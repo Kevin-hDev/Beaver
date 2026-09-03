@@ -1,6 +1,8 @@
 use std::ffi::{OsStr, OsString};
 use std::os::windows::ffi::OsStrExt;
 
+use crate::services::extensions::SAFE_MODE_SWITCH;
+
 const MAX_PRIVATE_ARG_UTF16: usize = 2_048;
 const CREATE_PROCESS_UTF16_LIMIT: usize = 32_767;
 const CEF_ADMISSION_PREFIX: &str = "--beaver-cef-admission=";
@@ -29,6 +31,7 @@ pub(crate) fn classify_bootstrap(
     }
 
     let mut process_type = 0_u8;
+    let mut safe_mode = false;
     let mut marker: Option<zeroize::Zeroizing<String>> = None;
     for argument in std::iter::once(first).chain(arguments) {
         if matches_ascii(&argument, SHELL_SANDBOX_SWITCH)
@@ -36,7 +39,14 @@ pub(crate) fn classify_bootstrap(
         {
             return Err(());
         }
-        if let Some(value) = bounded_private_suffix(&argument, CEF_ADMISSION_PREFIX) {
+        if matches_ascii(&argument, SAFE_MODE_SWITCH) {
+            if safe_mode {
+                return Err(());
+            }
+            safe_mode = true;
+        } else if bounded_private_suffix(&argument, SAFE_MODE_SWITCH).is_some() {
+            return Err(());
+        } else if let Some(value) = bounded_private_suffix(&argument, CEF_ADMISSION_PREFIX) {
             let value = value?;
             if value.is_empty() || marker.is_some() {
                 return Err(());
@@ -52,9 +62,9 @@ pub(crate) fn classify_bootstrap(
             process_type = 1;
         }
     }
-    match (process_type, marker) {
-        (0, None) => Ok(BootstrapRole::Parent),
-        (1, Some(marker)) => Ok(BootstrapRole::CefHelper(marker)),
+    match (process_type, marker, safe_mode) {
+        (0, None, _) => Ok(BootstrapRole::Parent),
+        (1, Some(marker), false) => Ok(BootstrapRole::CefHelper(marker)),
         _ => Err(()),
     }
 }

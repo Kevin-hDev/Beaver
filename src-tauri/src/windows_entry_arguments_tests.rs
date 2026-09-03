@@ -13,6 +13,41 @@ fn bootstrap_arguments_only_forward_validated_values() {
 }
 
 #[test]
+fn safe_mode_is_forwarded_to_parent_but_refused_for_cef_helpers() {
+    let arguments = bootstrap_arguments(
+        OsStr::new("bootstrap.exe"),
+        vec![OsString::from("--safe-mode")],
+    )
+    .expect("safe argument");
+    assert_eq!(arguments, vec![OsString::from("--safe-mode")]);
+    assert!(matches!(
+        classify_bootstrap(vec![
+            OsString::from("beaver.exe"),
+            OsString::from("--safe-mode")
+        ]),
+        Ok(BootstrapRole::Parent)
+    ));
+    assert!(classify_bootstrap(vec![
+        OsString::from("beaver.exe"),
+        OsString::from("--safe-mode"),
+        OsString::from("--safe-mode")
+    ])
+    .is_err());
+    assert!(classify_bootstrap(vec![
+        OsString::from("beaver.exe"),
+        OsString::from("--safe-mode=true")
+    ])
+    .is_err());
+    assert!(classify_bootstrap(vec![
+        OsString::from("beaver.exe"),
+        OsString::from("--type=renderer"),
+        OsString::from("--beaver-cef-admission=secret"),
+        OsString::from("--safe-mode"),
+    ])
+    .is_err());
+}
+
+#[test]
 fn bootstrap_arguments_reject_an_external_module_override() {
     assert!(bootstrap_arguments(
         OsStr::new("bootstrap.exe"),

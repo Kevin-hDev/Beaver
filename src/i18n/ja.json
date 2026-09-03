@@ -2374,6 +2374,7 @@
     "confirm": "信頼して有効化"
   },
   "recovery": { "title": "拡張機能の読み込みが中断されました", "description": "拡張機能の読み込み中に Beaver が停止しました。続行前に確認してください。", "invalid": "復旧情報が無効です。安全に破棄できます。", "openDetail": "詳細を開く", "keepDisabled": "無効のままにする", "retry": "読み込みを再試行", "discard": "復旧情報を破棄", "restore": "以前のレジストリを復元" },
+  "uiRecovery": { "title": "拡張機能 UI のセーフスタート", "description": "拡張機能 UI の読み込み中に Beaver が停止しました。サードパーティ UI は読み込まれていません。", "invalidDescription": "復旧情報が無効です。Beaver はすべてのサードパーティ UI をブロックしました。", "safe": "サードパーティ UI なしで続行", "open": "拡張機能の詳細を開く", "retry": "この UI を再試行", "discard": "無効な復旧情報を破棄", "error": "この操作を完了できませんでした。セーフモードは有効なままです。", "safeBannerTitle": "拡張機能 UI は無効です", "safeBannerDescription": "この起動はセーフモードのまま、サードパーティ UI を表示しません。" },
     "add": {
       "title": "拡張機能を追加",
       "fullAccessWarning": "選択したコードはユーザーアカウントの権限で実行されます。信頼すると決めた拡張機能だけをインストールしてください。",

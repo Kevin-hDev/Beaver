@@ -31,6 +31,10 @@ mod install_preparation;
 mod installer;
 mod installer_record;
 mod installer_uninstall;
+mod loading_journal_format;
+mod loading_journal_store;
+#[cfg(test)]
+mod loading_journal_tests;
 pub(crate) mod loading_marker;
 mod loading_marker_format;
 mod managed_cleanup;
@@ -94,6 +98,12 @@ mod work_supervision;
 mod ui_contract {
     include!(concat!(env!("OUT_DIR"), "/extension_ui_contract.rs"));
 }
+mod ui_startup;
+mod ui_startup_ack;
+mod ui_startup_platform;
+mod ui_startup_state;
+#[cfg(test)]
+mod ui_startup_tests;
 #[cfg(test)]
 mod work_supervision_tests;
 
@@ -159,6 +169,13 @@ pub(crate) use installer::{
 pub(crate) use manifest::load_local as install_local;
 pub(crate) use operation_error::{report as report_operation_error, Operation};
 pub(crate) use operation_failure::OperationFailure;
+pub(crate) use ui_startup::prepare as prepare_ui_startup;
+#[cfg(target_os = "windows")]
+pub(crate) use ui_startup::{
+    cef_child_safe_mode_action, cef_safe_mode_switch_name, SAFE_MODE_SWITCH,
+};
+pub(crate) use ui_startup_ack::{UiAckToken, UiLoadAcknowledger};
+pub(crate) use ui_startup_state::{SafeReason, UiStartupMode, UiStartupState};
 pub(crate) use validation::identifier as validate_identifier;
 
 pub(crate) fn close_command_error(operation: &str, error: String) -> String {

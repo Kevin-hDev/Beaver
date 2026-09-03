@@ -1770,6 +1770,18 @@
     "discard": "Supprimer les informations de reprise",
     "restore": "Restaurer le registre précédent"
   },
+  "uiRecovery": {
+    "title": "Démarrage sûr des interfaces d’extension",
+    "description": "Beaver s’est arrêté pendant le chargement d’une interface d’extension. Aucun élément tiers n’a été chargé.",
+    "invalidDescription": "Les informations de reprise sont invalides. Beaver a bloqué toutes les interfaces tierces.",
+    "safe": "Continuer sans interface tierce",
+    "open": "Ouvrir la fiche de l’extension",
+    "retry": "Réessayer cette interface",
+    "discard": "Écarter les informations invalides",
+    "error": "Cette action n’a pas pu être effectuée. Le mode sûr reste actif.",
+    "safeBannerTitle": "Interfaces d’extension désactivées",
+    "safeBannerDescription": "Ce lancement reste en mode sûr et n’affiche aucune interface tierce."
+  },
     "add": {
       "title": "Ajouter une extension",
       "fullAccessWarning": "Le code sélectionné s’exécutera avec les droits de votre compte utilisateur. Installez uniquement une extension à laquelle vous choisissez de faire confiance.",

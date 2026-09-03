@@ -168,6 +168,14 @@ macro_rules! generate_tail {
             crate::commands::discard_extension_loading_marker,
             crate::commands::restore_extension_recovery_snapshot,
             crate::commands::open_extension_source,
+            crate::commands::get_extension_ui_startup_state,
+            crate::commands::confirm_extension_ui_wayland_shift,
+            crate::commands::continue_without_extension_ui,
+            crate::commands::retry_interrupted_extension_ui,
+            crate::commands::discard_invalid_extension_ui_marker,
+            crate::commands::begin_extension_ui_load,
+            crate::commands::advance_extension_ui_load,
+            crate::commands::acknowledge_extension_ui_load,
         ]
     };
 }

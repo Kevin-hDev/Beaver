@@ -105,6 +105,42 @@ fn recovery_state_is_bounded_and_retry_stops_after_three_attempts() {
 }
 
 #[test]
+fn ui_startup_projection_is_bounded_and_contains_no_internal_data() {
+    let state = crate::services::extensions::UiStartupState::resolved(
+        crate::services::extensions::UiStartupMode::PendingInterruptedUi {
+            extension_id: "com.example.ui".to_string(),
+            stage: "mount".to_string(),
+            attempts: 2,
+        },
+    );
+    let projection = crate::commands::extensions_ui_startup::project(&state);
+    let json = serde_json::to_value(projection).unwrap();
+
+    assert_eq!(json["mode"]["kind"], "pendingInterruptedUi");
+    assert_eq!(json["mode"]["extensionId"], "com.example.ui");
+    assert_eq!(json["canRetry"], true);
+    assert_eq!(json["thirdPartyLoadingAllowed"], false);
+    let visible = json.to_string();
+    assert!(!visible.contains("token"));
+    assert!(!visible.contains("/Users/"));
+    assert!(!visible.contains("extension-loading.json"));
+}
+
+#[test]
+fn frontend_fallback_cannot_elevate_a_normal_backend_state() {
+    let state = crate::services::extensions::UiStartupState::resolved(
+        crate::services::extensions::UiStartupMode::Normal,
+    );
+
+    assert!(crate::commands::extensions_ui_startup::continue_safe(&state).is_err());
+    assert_eq!(
+        state.mode(),
+        crate::services::extensions::UiStartupMode::Normal
+    );
+    assert!(state.third_party_loading_allowed());
+}
+
+#[test]
 fn an_orphaned_but_well_formed_marker_is_only_discardable() {
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path().join("extension-loading.json");

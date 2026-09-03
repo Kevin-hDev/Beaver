@@ -1718,6 +1718,18 @@
     "discard": "Discard recovery information",
     "restore": "Restore previous registry"
   },
+  "uiRecovery": {
+    "title": "Safe extension UI startup",
+    "description": "Beaver stopped while loading an extension interface. No third-party UI has been loaded.",
+    "invalidDescription": "The recovery information is invalid. Beaver blocked every third-party interface.",
+    "safe": "Continue without third-party UI",
+    "open": "Open the extension details",
+    "retry": "Retry this interface",
+    "discard": "Discard invalid recovery information",
+    "error": "This action could not be completed. Safe mode remains active.",
+    "safeBannerTitle": "Extension interfaces disabled",
+    "safeBannerDescription": "This launch remains in safe mode and displays no third-party interface."
+  },
     "add": {
       "title": "Add an extension",
       "fullAccessWarning": "The selected code will run with your user account’s rights. Only install an extension you choose to trust.",

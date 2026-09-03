@@ -18,6 +18,9 @@ import { ForecastWorkbenchApp } from "@/components/forecast/workbench/forecast-w
 import { cleanupTauriListener } from "@/lib/tauri-listen";
 import { useStartupGate } from "@/hooks/use-startup-gate";
 import { ExtensionsProvider } from "@/hooks/use-extensions";
+import { ExtensionUiStartupBoundary } from "@/components/extensions/extension-ui-startup-boundary";
+import { NORMAL_EXTENSION_UI_STARTUP } from "@/lib/extension-ui-startup";
+import type { ExtensionUiStartupState } from "@/types/extensions";
 import { usePlatformBodyClass } from "@/hooks/use-platform-body-class";
 import { AppNavigationActionsProvider } from "@/hooks/use-app-navigation-actions";
 import { useBrowserRecoveryNotice } from "@/hooks/use-browser-recovery-notice";
@@ -34,12 +37,13 @@ import {
   type SettingsNavState,
 } from "@/types/navigation";
 
-export default function App() {
+export default function App({ initialExtensionUiStartup = NORMAL_EXTENSION_UI_STARTUP }:
+{ initialExtensionUiStartup?: ExtensionUiStartupState }) {
   usePlatformBodyClass();
 
   if (window.location.hash === "#/forecast-docs") return <ForecastDocsApp />;
   if (window.location.hash === "#/forecast-workbench") return <ForecastWorkbenchApp />;
-  return <MainApp />;
+  return <MainApp initialExtensionUiStartup={initialExtensionUiStartup} />;
 }
 
 function ForecastDocsApp() {
@@ -54,7 +58,7 @@ function ForecastDocsApp() {
   return <ForecastDocsWindow />;
 }
 
-function MainApp() {
+function MainApp({ initialExtensionUiStartup }: { initialExtensionUiStartup: ExtensionUiStartupState }) {
   useBrowserRecoveryNotice();
   const { current: nav, pushNav, replaceNav, goBack, goForward, canGoBack, canGoForward } =
     useTabHistory(DEFAULT_APP_NAV);
@@ -160,6 +164,13 @@ function MainApp() {
   }
 
   return (
+    <ExtensionUiStartupBoundary
+      initial={initialExtensionUiStartup}
+      onOpenExtension={(extensionId) => pushNav({
+        tab: "settings",
+        settings: { subTab: "extensions", extensionsSection: "custom", extensionId },
+      })}
+    >
     <ExtensionsProvider>
       <UpdateProvider>
         {vaultError && <VaultErrorBanner onDismiss={() => setVaultError(false)} />}
@@ -213,5 +224,6 @@ function MainApp() {
         </AppNavigationActionsProvider>
       </UpdateProvider>
     </ExtensionsProvider>
+    </ExtensionUiStartupBoundary>
   );
 }

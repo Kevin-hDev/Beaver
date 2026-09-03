@@ -6,6 +6,7 @@ import type {
   ExtensionHostState,
   RuntimeDiagnosticCode,
 } from "./extension-contract.generated";
+import type { ExtensionUiLoadingStage } from "./extension-ui-contract.generated";
 
 export {
   ADVANCED_HOST_TO_CORE_REQUEST_METHODS,
@@ -112,6 +113,30 @@ export interface ExtensionRecoveryState {
   markerInvalid: boolean;
   recoverySnapshotAvailable: boolean;
 }
+
+export type ExtensionUiSafeReason =
+  | "argument" | "shift" | "invalidMarker" | "recoveryChoice";
+
+export type ExtensionUiStartupMode =
+  | { kind: "normal" }
+  | { kind: "safe"; reason: ExtensionUiSafeReason }
+  | {
+    kind: "pendingInterruptedUi";
+    extensionId: string;
+    stage: ExtensionUiLoadingStage;
+    attempts: number;
+  }
+  | { kind: "retryInterruptedUi"; extensionId: string; attempts: number }
+  | { kind: "awaitingWayland" };
+
+export interface ExtensionUiStartupState {
+  mode: ExtensionUiStartupMode;
+  bootstrapResolved: boolean;
+  thirdPartyLoadingAllowed: boolean;
+  showRecoveryDialog: boolean;
+  showSafeBanner: boolean;
+  canRetry: boolean;
+}
 export type {
   AdvancedHostToCoreRequestMethod,
   CoreToHostMethod,
@@ -127,3 +152,4 @@ export type {
   HostToCoreNotificationMethod,
   StableHostToCoreRequestMethod,
 } from "./extension-contract.generated";
+export type { ExtensionUiLoadingStage } from "./extension-ui-contract.generated";

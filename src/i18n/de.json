@@ -2375,6 +2375,7 @@
     "confirm": "Vertrauen und aktivieren"
   },
   "recovery": { "title": "Laden der Erweiterung unterbrochen", "description": "Beaver wurde beim Laden einer Erweiterung beendet. Prüfe sie, bevor du fortfährst.", "invalid": "Die Wiederherstellungsdaten sind ungültig und können verworfen werden.", "openDetail": "Details öffnen", "keepDisabled": "Deaktiviert lassen", "retry": "Laden erneut versuchen", "discard": "Wiederherstellung verwerfen", "restore": "Vorheriges Register wiederherstellen" },
+  "uiRecovery": { "title": "Sicherer Start für Erweiterungsoberflächen", "description": "Beaver wurde beim Laden einer Erweiterungsoberfläche beendet. Keine Drittanbieter-Oberfläche wurde geladen.", "invalidDescription": "Die Wiederherstellungsdaten sind ungültig. Beaver hat alle Drittanbieter-Oberflächen blockiert.", "safe": "Ohne Drittanbieter-Oberfläche fortfahren", "open": "Erweiterungsdetails öffnen", "retry": "Diese Oberfläche erneut versuchen", "discard": "Ungültige Wiederherstellung verwerfen", "error": "Diese Aktion konnte nicht abgeschlossen werden. Der sichere Modus bleibt aktiv.", "safeBannerTitle": "Erweiterungsoberflächen deaktiviert", "safeBannerDescription": "Dieser Start bleibt im sicheren Modus und zeigt keine Drittanbieter-Oberfläche." },
     "add": {
       "title": "Erweiterung hinzufügen",
       "fullAccessWarning": "Der ausgewählte Code wird mit den Rechten deines Benutzerkontos ausgeführt. Installiere nur Erweiterungen, denen du vertrauen möchtest.",
