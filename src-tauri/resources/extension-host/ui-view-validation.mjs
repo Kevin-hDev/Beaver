@@ -1,13 +1,11 @@
 import { LIMITS } from "./contract.mjs";
 import {
-  UI_ICONS,
   UI_LIMITS,
   UI_LOCALES,
   UI_PRIMITIVES,
 } from "./ui-contract.mjs";
 
 const IDENTIFIER = /^[a-zA-Z0-9](?:[a-zA-Z0-9._-]*[a-zA-Z0-9])?$/u;
-const ICONS = new Set(UI_ICONS);
 const PRIMITIVES = new Set(UI_PRIMITIVES);
 
 export function normalizeView(extensionId, root, canonicalId) {

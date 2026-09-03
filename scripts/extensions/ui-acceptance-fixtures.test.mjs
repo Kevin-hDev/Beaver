@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdtemp, lstat, readFile, readdir, realpath, rm, writeFile } from "node:fs/promises";
+import { lstat, mkdtemp, open, readFile, readdir, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -26,13 +26,17 @@ test("the acceptance inventory is exact, bounded, offline and free of links", as
   assert.ok(files.length <= 40);
   let totalBytes = 0;
   for (const file of files) {
-    const metadata = await lstat(file);
-    assert.equal(metadata.isSymbolicLink(), false);
-    assert.equal(metadata.isFile(), true);
-    assert.ok(metadata.size <= 65_536);
-    totalBytes += metadata.size;
-    const text = await readFile(file, "utf8");
-    assert.doesNotMatch(text, /https?:|fetch\s*\(|XMLHttpRequest|WebSocket|node:(?:fs|net|http|child_process)/u);
+    const handle = await open(file, "r");
+    try {
+      const metadata = await handle.stat();
+      assert.equal(metadata.isFile(), true);
+      assert.ok(metadata.size <= 65_536);
+      totalBytes += metadata.size;
+      const text = await handle.readFile("utf8");
+      assert.doesNotMatch(text, /https?:|fetch\s*\(|XMLHttpRequest|WebSocket|node:(?:fs|net|http|child_process)/u);
+    } finally {
+      await handle.close();
+    }
   }
   assert.ok(totalBytes <= 524_288);
   assert.match(await readFile(join(root, "README.md"), "utf8"), /AGPL-3\.0-only/u);
@@ -207,7 +211,8 @@ async function collectFiles(directory) {
   for (const entry of await readdir(directory, { withFileTypes: true })) {
     const path = join(directory, entry.name);
     if (entry.isDirectory()) result.push(...await collectFiles(path));
-    else result.push(path);
+    else if (entry.isFile()) result.push(path);
+    else throw new Error("Unsupported acceptance fixture entry");
   }
   return result;
 }

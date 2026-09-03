@@ -270,6 +270,19 @@ test("CI runs the packaged extension UI journey on all three desktop systems", (
   assert.match(macJob, extensionHostInstall);
 });
 
+test("CI isolates the Windows extension host before the packaged CEF journey", () => {
+  const smokeJob = ciSource.slice(
+    ciSource.indexOf("  windows-extension-host-smoke:"),
+    ciSource.indexOf("  backend-macos-native:"),
+  );
+  assert.match(smokeJob, /runs-on: windows-latest/u);
+  assert.match(smokeJob, /npm run test:extensions-runtime-smoke/u);
+  assert.match(
+    smokeJob,
+    /prepared_runtime_answers_hello_through_owned_process --exact --ignored --nocapture/u,
+  );
+});
+
 test("CI runs the real Tauri WebView journey on Linux", () => {
   const linuxJob = ciSource.slice(
     ciSource.indexOf("  backend-linux-native:"),

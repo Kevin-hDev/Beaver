@@ -9,6 +9,7 @@ import jaLocale from "../../src/i18n/ja.json";
 import zhLocale from "../../src/i18n/zh.json";
 import { RESOLVED_THEME_OPTIONS } from "../../src/lib/app-themes";
 import { extensionThemeChoice } from "../../src/features/extension-ui/themes/theme-parser";
+import { TIMEOUTS } from "../../src/types/extension-contract.generated";
 import { completeOnboarding } from "./onboarding-flow";
 import { invokeTauri, waitForTauriBridge } from "./tauri-invoke";
 
@@ -39,11 +40,14 @@ interface CatalogSnapshot {
 }
 
 describe("extension UI installed acceptance", () => {
-  it("installs and renders standard, theme and advanced fixtures", async () => {
+  before(async () => {
     await completeOnboarding();
     await waitForTauriBridge();
     await invokeTauri("e2e_initialize_extension_host");
     await waitForExtensionHost();
+  });
+
+  it("installs and renders standard, theme and advanced fixtures", async () => {
     const startup = await invokeTauri<{ mode: { kind: string } }>(
       "get_extension_ui_startup_state",
     );
@@ -179,9 +183,23 @@ async function waitForCatalog(extensionIds: readonly string[]): Promise<CatalogS
 }
 
 async function waitForExtensionHost(): Promise<void> {
-  await browser.waitUntil(async () => {
-    const status = await invokeTauri<{ state: string }>("get_extension_host_status");
-    if (status.state === "error") throw new Error("Extension host failed to start");
-    return status.state === "running";
-  }, { timeoutMsg: "Extension host did not become ready" });
+  let latest: { state: string; lastError?: string; nodeVersion?: string } = {
+    state: "unknown",
+  };
+  try {
+    await browser.waitUntil(async () => {
+      latest = await invokeTauri("get_extension_host_status");
+      if (latest.state === "error") {
+        throw new Error(`Extension host failed to start: ${latest.lastError ?? "unknown"}`);
+      }
+      return latest.state === "running";
+    }, {
+      timeout: TIMEOUTS.hostRequestTimeoutMs + TIMEOUTS.hostStopTimeoutMs,
+      timeoutMsg: "Extension host did not become ready",
+    });
+  } catch {
+    throw new Error(
+      `Extension host unavailable: state=${latest.state}; code=${latest.lastError ?? "none"}; node=${latest.nodeVersion ?? "none"}`,
+    );
+  }
 }

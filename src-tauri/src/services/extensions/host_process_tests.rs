@@ -72,6 +72,20 @@ fn bundled_paths() -> HostPaths {
     }
 }
 
+fn prepared_runtime_paths() -> HostPaths {
+    let directory = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("target")
+        .join("extension-host");
+    let node = directory
+        .join("runtime")
+        .join(if cfg!(windows) { "node.exe" } else { "node" });
+    HostPaths {
+        node,
+        script: directory.join("host.mjs"),
+        directory,
+    }
+}
+
 #[tokio::test]
 async fn matches_concurrent_out_of_order_responses_by_id() {
     let directory = tempfile::tempdir().unwrap();
@@ -115,6 +129,24 @@ lines.on("line", (line) => {
 async fn bundled_extension_host_answers_hello() {
     let work = extension_work();
     let host = HostProcess::spawn(&bundled_paths(), &work).await.unwrap();
+
+    let hello = host.request("host.hello", json!({})).await.unwrap();
+
+    assert_eq!(hello["apiVersion"], "1");
+    assert!(hello["nodeVersion"].as_str().is_some());
+    assert!(
+        host.kill(super::super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
+}
+
+#[tokio::test]
+#[ignore = "requires scripts/extensions/prepare-extension-host.mjs --dev"]
+async fn prepared_runtime_answers_hello_through_owned_process() {
+    let work = extension_work();
+    let host = HostProcess::spawn(&prepared_runtime_paths(), &work)
+        .await
+        .unwrap();
 
     let hello = host.request("host.hello", json!({})).await.unwrap();
 

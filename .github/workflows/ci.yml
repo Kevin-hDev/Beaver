@@ -270,6 +270,37 @@ jobs:
           E2E_REQUIRE_CEF_SMOKE: "1"
         run: npm run test:e2e:packaged
 
+  windows-extension-host-smoke:
+    name: Windows extension host smoke
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
+
+      - name: Install Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+
+      # This boundary runs before CEF: it proves the verified Node executable
+      # bundled by Beaver can start and answer the extension protocol.
+      - name: Prepare bundled extension host runtime
+        run: npm run test:extensions-runtime-smoke
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+        with:
+          workspaces: src-tauri
+
+      # The second boundary exercises Windows Job Object admission and the
+      # exact Rust-owned process path used by the installed application.
+      - name: Rust owned-process protocol smoke
+        working-directory: src-tauri
+        run: node ../scripts/ci/run-rust-test-filter.mjs --filter services::extensions::host_process::tests::prepared_runtime_answers_hello_through_owned_process --exact --ignored --nocapture
+
   backend-macos-native:
     name: Backend macOS CEF (Rust)
     runs-on: macos-latest
