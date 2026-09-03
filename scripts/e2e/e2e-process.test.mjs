@@ -168,7 +168,7 @@ test("the E2E repository root resolves through a symbolic link", async () => {
 });
 
 test("a cold native build has a larger budget than the bounded app journey", () => {
-  assert.equal(E2E_BUILD_TIMEOUT_MS, 35 * 60 * 1000);
+  assert.equal(E2E_BUILD_TIMEOUT_MS, 55 * 60 * 1000);
   assert.equal(E2E_JOURNEY_TIMEOUT_MS, 10 * 60 * 1000);
   assert.ok(E2E_BUILD_TIMEOUT_MS > E2E_JOURNEY_TIMEOUT_MS);
 });

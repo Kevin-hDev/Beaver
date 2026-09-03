@@ -4,7 +4,9 @@ import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { resolveCargoTargetDir } from "../cef/tauri-launch.mjs";
 
-export const E2E_BUILD_TIMEOUT_MS = 35 * 60 * 1000;
+// A clean macOS or Windows runner can spend more than 35 minutes compiling and
+// signing CEF, so the build keeps a bounded budget below the 60-minute process cap.
+export const E2E_BUILD_TIMEOUT_MS = 55 * 60 * 1000;
 export const E2E_JOURNEY_TIMEOUT_MS = 10 * 60 * 1000;
 const MAX_PROCESS_TIMEOUT_MS = 60 * 60 * 1000;
 const PROCESS_TIMEOUT_MESSAGE = "E2E process timeout";
