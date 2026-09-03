@@ -133,6 +133,7 @@ mod tests {
                 replaces_core: false,
             }],
             events: Vec::new(),
+            ui: Vec::new(),
         }
     }
 
@@ -146,6 +147,7 @@ mod tests {
                 runtime: "node".to_string(),
                 main: Some("index.mjs".to_string()),
                 ui: None,
+                ui_legacy: None,
                 access: "full".to_string(),
                 api_level: ExtensionApiLevel::Stable,
                 essential: false,

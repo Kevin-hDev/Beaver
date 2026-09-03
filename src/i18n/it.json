@@ -2474,6 +2474,7 @@
       }
     },
     "diagnostics": {
+      "uiGeneric": "Il contributo all’interfaccia di questa estensione è stato rifiutato",
       "codes": {
         "module_not_found": "Modulo o dipendenza non trovati",
         "syntax_error": "Errore di sintassi",
@@ -2483,7 +2484,8 @@
         "entry_unavailable": "Il punto di ingresso dell’estensione non è disponibile",
         "load_failed": "Caricamento dell’estensione non riuscito",
         "host_missing_response": "L’host non ha confermato il caricamento di questa estensione",
-        "advanced_required": "La modalità avanzata è necessaria per sostituire uno strumento integrato"
+        "advanced_required": "La modalità avanzata è necessaria per sostituire uno strumento integrato",
+        "ui_manifest_legacy": "La dichiarazione di interfaccia precedente è stata ignorata; gli strumenti restano disponibili"
       }
     }
   },

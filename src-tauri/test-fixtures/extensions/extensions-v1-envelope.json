@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "extensions": [
+    {
+      "manifest": {
+        "id": "beaver.office.documents",
+        "name": "Documents",
+        "version": "1.0.0",
+        "beaverApi": "1",
+        "runtime": "node",
+        "main": "builtin-plugins/documents/index.mjs",
+        "ui": null,
+        "access": "full",
+        "apiLevel": "stable",
+        "essential": false,
+        "author": "Beaver",
+        "homepage": null,
+        "description": "Create and update editable Microsoft Word DOCX documents.",
+        "futureManifestField": { "preserved": true }
+      },
+      "kind": "builtin",
+      "source": "builtin",
+      "origin": null,
+      "enabled": true,
+      "trusted": true,
+      "fingerprint": null,
+      "trustedAt": null,
+      "showInChat": true,
+      "status": "inactive",
+      "lastError": null,
+      "lastActivatedAt": null,
+      "sensitiveAccessGranted": false,
+      "futureRecordField": ["kept"]
+    }
+  ],
+  "recoverySnapshot": ["beaver.office.documents"],
+  "futureEnvelopeField": { "kept": 42 }
+}

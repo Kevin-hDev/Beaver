@@ -5,6 +5,10 @@ const BUILTIN_V0: &[u8] =
     include_bytes!("../../../test-fixtures/extensions/extensions-v0-array.json");
 const LOCAL_V0: &[u8] =
     include_bytes!("../../../test-fixtures/extensions/extensions-v0-array-with-local.json");
+const REGISTRY_V1: &[u8] =
+    include_bytes!("../../../test-fixtures/extensions/extensions-v1-envelope.json");
+const LEGACY_UI_V1: &[u8] =
+    include_bytes!("../../../test-fixtures/extensions/extensions-v1-legacy-ui.json");
 
 fn write_local_fixture(source: &std::path::Path) -> Vec<u8> {
     let mut value: Value = serde_json::from_slice(LOCAL_V0).unwrap();
@@ -37,7 +41,7 @@ fn persisted_v0_shape(records: &[super::types::ExtensionRecord]) -> Value {
 }
 
 #[test]
-fn real_v120_array_migrates_once_with_an_exact_backup_and_strict_v1_envelope() {
+fn real_v120_array_migrates_once_with_an_exact_backup_and_strict_v2_envelope() {
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path().join("extensions.json");
     std::fs::write(&path, BUILTIN_V0).unwrap();
@@ -55,12 +59,12 @@ fn real_v120_array_migrates_once_with_an_exact_backup_and_strict_v1_envelope() {
         BUILTIN_V0
     );
     let migrated: Value = serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
-    assert_eq!(migrated["version"], 1);
+    assert_eq!(migrated["version"], 2);
     assert_eq!(migrated["extensions"].as_array().unwrap().len(), 4);
     assert!(migrated["recoverySnapshot"].is_null());
 
     let second = storage::load_from(&path).unwrap();
-    assert_eq!(second.format, storage::LoadedFormat::V1);
+    assert_eq!(second.format, storage::LoadedFormat::V2);
     storage::finish_successful_startup(&path, second.format).unwrap();
     assert!(!storage::v0_backup_path(&path).exists());
 }
@@ -171,7 +175,7 @@ fn oversized_v0_fails_before_backup_and_invalid_v1_keeps_an_existing_backup() {
 }
 
 #[test]
-fn v1_recovery_snapshot_is_preserved_and_bounded() {
+fn current_recovery_snapshot_is_preserved_and_bounded() {
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path().join("extensions.json");
     let snapshot = Some(vec!["beaver.office.documents".to_string()]);
@@ -203,5 +207,73 @@ fn v1_envelope_ignores_unknown_fields_for_forward_compatibility() {
 
     let loaded = storage::load_from(&path).unwrap();
     assert!(loaded.extensions.is_empty());
-    assert_eq!(loaded.format, storage::LoadedFormat::V1);
+    assert_eq!(loaded.format, storage::LoadedFormat::MigratedV1);
+    let migrated: Value = serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
+    assert_eq!(migrated["version"], 2);
+    assert_eq!(migrated["futureField"]["enabled"], true);
+}
+
+#[test]
+fn real_v1_registry_migrates_with_exact_backup_and_preserves_unknown_fields() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("extensions.json");
+    let backup = path.with_extension("json.v1.bak");
+    std::fs::write(&path, REGISTRY_V1).unwrap();
+
+    let first = storage::load_from(&path).unwrap();
+    assert_eq!(first.extensions.len(), 1);
+    assert_eq!(std::fs::read(&backup).unwrap(), REGISTRY_V1);
+
+    let migrated: Value = serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
+    assert_eq!(migrated["version"], 2);
+    assert_eq!(migrated["futureEnvelopeField"]["kept"], 42);
+    assert_eq!(migrated["extensions"][0]["futureRecordField"][0], "kept");
+    assert_eq!(
+        migrated["extensions"][0]["manifest"]["futureManifestField"]["preserved"],
+        true,
+    );
+
+    storage::save_to(&path, &first.extensions, &first.recovery_snapshot).unwrap();
+    let saved: Value = serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
+    assert_eq!(saved["futureEnvelopeField"]["kept"], 42);
+    assert_eq!(saved["extensions"][0]["futureRecordField"][0], "kept");
+    assert_eq!(
+        saved["extensions"][0]["manifest"]["futureManifestField"]["preserved"],
+        true,
+    );
+
+    storage::finish_successful_startup(&path, first.format).unwrap();
+    assert!(backup.exists());
+    let second = storage::load_from(&path).unwrap();
+    storage::finish_successful_startup(&path, second.format).unwrap();
+    assert!(!backup.exists());
+}
+
+#[test]
+fn legacy_ui_string_is_retained_but_never_inferred_as_advanced() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("extensions.json");
+    std::fs::write(&path, LEGACY_UI_V1).unwrap();
+
+    let loaded = storage::load_from(&path).unwrap();
+    assert_eq!(loaded.extensions.len(), 1);
+    assert!(loaded.extensions[0].manifest.ui.is_none());
+    assert_eq!(
+        loaded.extensions[0].manifest.ui_legacy.as_deref(),
+        Some("src/ui.tsx")
+    );
+    let migrated: Value = serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
+    let manifest = &migrated["extensions"][0]["manifest"];
+
+    assert!(manifest["ui"].is_null());
+    assert_eq!(manifest["uiLegacy"], "src/ui.tsx");
+    assert_eq!(manifest["apiLevel"], "stable");
+
+    storage::save_to(&path, &loaded.extensions, &loaded.recovery_snapshot).unwrap();
+    let reloaded = storage::load_from(&path).unwrap();
+    assert!(reloaded.extensions[0].manifest.ui.is_none());
+    assert_eq!(
+        reloaded.extensions[0].manifest.ui_legacy.as_deref(),
+        Some("src/ui.tsx")
+    );
 }

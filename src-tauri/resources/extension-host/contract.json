@@ -1,6 +1,6 @@
 {
   "apiVersion": "1",
-  "capabilities": ["tools", "events"],
+  "capabilities": ["tools", "events", "ui"],
   "methods": {
     "coreToHost": ["host.hello", "host.reset", "host.load", "tool.call", "event.emit", "ui.action"],
     "hostToCore": [
@@ -53,6 +53,7 @@
     "coreRequestTimeoutMs": 30000,
     "mcpToolTimeoutMs": 25000,
     "toolCallTimeoutMs": 55000,
+    "uiActionTimeoutMs": 15000,
     "hostRequestTimeoutMs": 60000,
     "eventHandlerTimeoutMs": 5000,
     "hostStopTimeoutMs": 5000
@@ -60,7 +61,7 @@
   "validation": { "maxNumericLimit": 1073741824 },
   "diagnostics": {
     "hostCodes": ["module_not_found", "syntax_error", "activation_failed", "registration_failed", "import_failed"],
-    "runtimeCodes": ["entry_unavailable", "load_failed", "host_missing_response", "advanced_required"]
+    "runtimeCodes": ["entry_unavailable", "load_failed", "host_missing_response", "advanced_required", "ui_manifest_legacy"]
   },
   "errors": {
     "backendCodes": [

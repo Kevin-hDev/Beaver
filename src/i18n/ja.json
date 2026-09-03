@@ -2473,6 +2473,7 @@
       }
     },
     "diagnostics": {
+      "uiGeneric": "この拡張機能のインターフェース要素は拒否されました",
       "codes": {
         "module_not_found": "モジュールまたは依存関係が見つかりません",
         "syntax_error": "構文エラー",
@@ -2482,7 +2483,8 @@
         "entry_unavailable": "拡張機能のエントリーポイントを利用できません",
         "load_failed": "拡張機能の読み込みに失敗しました",
         "host_missing_response": "ホストがこの拡張機能の読み込みを確認しませんでした",
-        "advanced_required": "内蔵ツールの置き換えには高度モードが必要です"
+        "advanced_required": "内蔵ツールの置き換えには高度モードが必要です",
+        "ui_manifest_legacy": "以前のインターフェース宣言は無視されました。ツールは引き続き利用できます"
       }
     }
   },

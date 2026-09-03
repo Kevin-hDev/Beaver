@@ -1,12 +1,15 @@
+use super::host_identity::HostIdentity;
 use super::host_process::HostProcess;
-use super::protocol::{HelloResult, LoadResult};
+use super::protocol::{AttributedLoadResult, HelloResult, LoadResult};
 use super::types::ExtensionApiLevel;
 use serde_json::json;
 
 pub(super) async fn load_specs(
     process: &HostProcess,
+    identity: &HostIdentity,
+    generation: u64,
     specs: &[super::protocol::HostExtensionSpec],
-    responses: &mut Vec<LoadResult>,
+    responses: &mut Vec<AttributedLoadResult>,
     recovery: &super::runtime_sync::RecoveryPreflight,
 ) -> Result<(), ()> {
     if process.request("host.reset", json!({})).await.is_err() {
@@ -19,7 +22,14 @@ pub(super) async fn load_specs(
             .await
             .and_then(super::runtime::parse::<LoadResult>)
         {
-            Ok(response) => loaded.push(response),
+            Ok(response) if response.id == specification.id => {
+                loaded.push(AttributedLoadResult {
+                    identity: identity.clone(),
+                    generation,
+                    loaded: response,
+                });
+            }
+            Ok(_) => return Err(()),
             Err(_) => return Err(()),
         }
     }

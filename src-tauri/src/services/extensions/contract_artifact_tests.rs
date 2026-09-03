@@ -76,7 +76,7 @@ fn contract_declares_the_complete_v1_surface() {
     assert_eq!(contract["apiVersion"], "1");
     assert_eq!(
         contract["capabilities"],
-        serde_json::json!(["tools", "events"])
+        serde_json::json!(["tools", "events", "ui"])
     );
     assert_eq!(
         contract["methods"]["coreToHost"],
@@ -271,6 +271,10 @@ fn generated_ui_artifacts_project_every_contract_section() {
     assert_eq!(actual_keys, expected_keys);
 
     for expected in [
+        "UI_MODES",
+        "UI_CONTRIBUTION_TYPES",
+        "UI_PRIMITIVES",
+        "UI_THEME_BASES",
         "UI_LOCALES",
         "UI_PLACEMENT_OPERATIONS",
         "pub struct UiPlacement",

@@ -17,6 +17,10 @@ pub fn render(contract: &Value) -> Result<String, String> {
         render_enum(&mut output, name, array(contract, key)?)?;
     }
     for (name, key) in [
+        ("UI_MODES", "modes"),
+        ("UI_CONTRIBUTION_TYPES", "contributionTypes"),
+        ("UI_PRIMITIVES", "primitives"),
+        ("UI_THEME_BASES", "themeBases"),
         ("UI_LOCALES", "locales"),
         ("UI_PLACEMENT_OPERATIONS", "placementOperations"),
         ("UI_PLACEMENT_KEYS", "placements"),

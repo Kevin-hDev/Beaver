@@ -17,6 +17,7 @@ import {
   type ExtensionEvent,
 } from "@/types/extension-contract.generated";
 import { EXTENSION_INSTALL_LIMITS } from "./extension-install";
+import { parseExtensionManifestUi } from "./extension-manifest-ui";
 
 export const EXTENSION_VIEW_LIMITS = Object.freeze({
   records: LIMITS.maxExtensions,
@@ -105,7 +106,8 @@ function manifest(value: unknown): ExtensionManifest {
     beaverApi: text(input.beaverApi, 16),
     runtime,
     main: optionalText(input.main, MAX_PATH_CHARS),
-    ui: optionalText(input.ui, MAX_PATH_CHARS),
+    ui: parseExtensionManifestUi(input.ui, MAX_PATH_CHARS),
+    uiLegacy: optionalText(input.uiLegacy, MAX_PATH_CHARS),
     access,
     apiLevel: oneOf(input.apiLevel, API_LEVELS),
     essential: input.essential,

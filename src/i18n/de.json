@@ -2474,6 +2474,7 @@
       }
     },
     "diagnostics": {
+      "uiGeneric": "Der Oberflächenbeitrag dieser Erweiterung wurde abgelehnt",
       "codes": {
         "module_not_found": "Modul oder Abhängigkeit nicht gefunden",
         "syntax_error": "Syntaxfehler",
@@ -2483,7 +2484,8 @@
         "entry_unavailable": "Der Einstiegspunkt der Erweiterung ist nicht verfügbar",
         "load_failed": "Die Erweiterung konnte nicht geladen werden",
         "host_missing_response": "Der Host hat das Laden dieser Erweiterung nicht bestätigt",
-        "advanced_required": "Zum Ersetzen eines integrierten Tools ist der erweiterte Modus erforderlich"
+        "advanced_required": "Zum Ersetzen eines integrierten Tools ist der erweiterte Modus erforderlich",
+        "ui_manifest_legacy": "Die alte Oberflächendeklaration wurde ignoriert; die Tools bleiben verfügbar"
       }
     }
   },

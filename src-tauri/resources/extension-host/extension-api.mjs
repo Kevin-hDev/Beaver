@@ -7,6 +7,7 @@ import {
   supportsEvent,
   TIMEOUTS,
 } from "./contract.mjs";
+import { createUiApi } from "./ui-api.mjs";
 
 const inFlightHandlers = new Set();
 function validIdentifier(value) {
@@ -18,6 +19,7 @@ function validIdentifier(value) {
 export function createExtensionApi(specification) {
   const tools = [];
   const handlers = new Map();
+  const ui = createUiApi(specification);
   let handlerCount = 0;
 
   function registerTool(definition, replacesCore = false) {
@@ -86,6 +88,7 @@ export function createExtensionApi(specification) {
     manifest: Object.freeze({ ...specification.manifest }),
     info: () => callCore("app.info"),
     registerTool: (definition) => registerTool(definition, false),
+    ui: ui.api,
     on,
     call: (method, params = {}) => callAtLevel("stable", method, params),
     sessions: Object.freeze({
@@ -144,6 +147,7 @@ export function createExtensionApi(specification) {
     api: Object.freeze(api),
     tools,
     events: handlers,
+    ui,
     emit: async (event, payload) => {
       for (const eventHandler of handlers.get(event) ?? []) {
         await runEventHandler(eventHandler, payload);

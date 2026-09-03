@@ -1880,6 +1880,7 @@
       }
     },
     "diagnostics": {
+      "uiGeneric": "La contribution d’interface de cette extension a été refusée",
       "codes": {
         "module_not_found": "Module ou dépendance introuvable",
         "syntax_error": "Erreur de syntaxe",
@@ -1889,7 +1890,8 @@
         "entry_unavailable": "Le point d’entrée de l’extension est indisponible",
         "load_failed": "Le chargement de l’extension a échoué",
         "host_missing_response": "L’hôte n’a pas confirmé le chargement de cette extension",
-        "advanced_required": "Le mode avancé est requis pour remplacer un outil intégré"
+        "advanced_required": "Le mode avancé est requis pour remplacer un outil intégré",
+        "ui_manifest_legacy": "L’ancienne déclaration d’interface a été ignorée ; les outils restent disponibles"
       }
     }
   },

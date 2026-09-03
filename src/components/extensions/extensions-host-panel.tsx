@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { ArrowsClockwise, ShieldWarning } from "@/components/ui/icons";
 import { SettingsCard } from "@/components/settings/settings-card";
 import { extensionErrorKey } from "@/lib/extension-errors";
+import { UI_DIAGNOSTIC_CODES } from "@/types/extension-ui-contract.generated";
 import type { ExtensionHostStatus } from "@/types/extensions";
 import "./extensions-host-panel.css";
 
@@ -54,9 +55,12 @@ export function ExtensionsHostPanel({
         <section className="exth-diagnostics">
           <h3>{t("extensions.host.diagnostics")}</h3>
           {host.diagnostics.map((diagnostic) => (
-            <div className="exth-diagnostic" key={`${diagnostic.extensionId}-${diagnostic.stage}`}>
+            <div
+              className="exth-diagnostic"
+              key={`${diagnostic.extensionId}-${diagnostic.stage}-${diagnostic.code}`}
+            >
               <code>{diagnostic.extensionId}</code>
-              <span>{t(`extensions.diagnostics.codes.${diagnostic.code}`)}</span>
+              <span>{t(diagnosticMessageKey(diagnostic.code))}</span>
               {diagnostic.file && (
                 <small>
                   {diagnostic.file}
@@ -85,6 +89,15 @@ export function ExtensionsHostPanel({
       </div>
     </>
   );
+}
+
+function diagnosticMessageKey(code: string): string {
+  if (code === "ui_manifest_legacy") {
+    return "extensions.diagnostics.codes.ui_manifest_legacy";
+  }
+  return UI_DIAGNOSTIC_CODES.some((candidate) => candidate === code)
+    ? "extensions.diagnostics.uiGeneric"
+    : `extensions.diagnostics.codes.${code}`;
 }
 
 function InfoLine({ label, value }: { label: string; value: string }) {

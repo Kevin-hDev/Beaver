@@ -4,7 +4,7 @@ use crate::services::extensions::{extension_recovery, loading_marker, registry_r
 fn every_extension_command_closes_unknown_errors() {
     let generated = crate::services::extensions::error_codes::ALL;
 
-    assert_eq!(super::command_error::ExtensionCommand::ALL.len(), 19);
+    assert_eq!(super::command_error::ExtensionCommand::ALL.len(), 21);
     for command in super::command_error::ExtensionCommand::ALL {
         let error = super::command_error::close(
             command,
@@ -48,7 +48,7 @@ fn r0_boundary_codes_remain_declared_and_preserved() {
 }
 
 #[test]
-fn extension_command_inventory_names_all_nineteen_boundaries() {
+fn extension_command_inventory_names_all_twenty_one_boundaries() {
     let actual = super::command_error::ExtensionCommand::ALL.map(|command| command.label());
     assert_eq!(
         actual,
@@ -63,6 +63,8 @@ fn extension_command_inventory_names_all_nineteen_boundaries() {
             "set_extension_show_in_chat",
             "reload_extension_host",
             "get_extension_host_status",
+            "get_extension_ui_catalog",
+            "invoke_extension_ui_action",
             "get_extension_discovery_preferences",
             "set_extension_discovery_preferences",
             "recover_extension_host",
@@ -208,6 +210,7 @@ fn fixture(
             runtime: "node".to_string(),
             main: Some("index.mjs".to_string()),
             ui: None,
+            ui_legacy: None,
             access: "full".to_string(),
             api_level: ExtensionApiLevel::Stable,
             essential: false,

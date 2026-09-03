@@ -1,6 +1,7 @@
 use super::types::{
     ExtensionApiLevel, ExtensionKind, ExtensionManifest, ExtensionRecord, ExtensionTool,
-    MAX_EVENTS_PER_EXTENSION, MAX_EXTENSIONS, MAX_IDENTIFIER_CHARS, MAX_TOOLS_PER_EXTENSION,
+    ExtensionUiMode, MAX_EVENTS_PER_EXTENSION, MAX_EXTENSIONS, MAX_IDENTIFIER_CHARS,
+    MAX_TOOLS_PER_EXTENSION,
 };
 use serde_json::Value;
 use std::collections::HashSet;
@@ -57,7 +58,33 @@ pub fn manifest(manifest: &ExtensionManifest) -> Result<(), String> {
         )?;
     }
     if let Some(ui) = &manifest.ui {
-        relative_source_path(ui)?;
+        if ui.api_version != super::ui_contract::EXTENSION_UI_API_VERSION {
+            return Err("Version de l'interface d'extension incompatible.".to_string());
+        }
+        match (&ui.mode, ui.entry.as_deref()) {
+            (ExtensionUiMode::Standard, None) => {}
+            (ExtensionUiMode::Advanced, Some(entry))
+                if manifest.api_level == ExtensionApiLevel::Advanced =>
+            {
+                relative_source_path(entry)?;
+                let allowed = Path::new(entry)
+                    .extension()
+                    .and_then(|value| value.to_str())
+                    .is_some_and(|value| ["js", "mjs", "jsx", "ts", "mts", "tsx"].contains(&value));
+                if !allowed {
+                    return Err("Point d'entrée UI invalide.".to_string());
+                }
+            }
+            _ => return Err("Déclaration UI d'extension invalide.".to_string()),
+        }
+    }
+    if manifest.ui.is_some() && manifest.ui_legacy.is_some() {
+        return Err("Déclaration UI d'extension invalide.".to_string());
+    }
+    // La chaîne UI v1 reste une donnée de diagnostic inerte : l'interpréter
+    // comme un chemin rendrait à tort les outils sains de l'extension invalides.
+    if let Some(legacy) = &manifest.ui_legacy {
+        source_input(legacy)?;
     }
     for value in [
         manifest.author.as_deref(),

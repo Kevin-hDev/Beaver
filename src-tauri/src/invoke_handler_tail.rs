@@ -159,6 +159,8 @@ macro_rules! generate_tail {
             crate::commands::set_extension_show_in_chat,
             crate::commands::reload_extension_host,
             crate::commands::get_extension_host_status,
+            crate::commands::get_extension_ui_catalog,
+            crate::commands::invoke_extension_ui_action,
             crate::commands::get_extension_discovery_preferences,
             crate::commands::set_extension_discovery_preferences,
             crate::commands::recover_extension_host,

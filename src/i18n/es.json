@@ -2478,6 +2478,7 @@
       }
     },
     "diagnostics": {
+      "uiGeneric": "Se rechazó la contribución de interfaz de esta extensión",
       "codes": {
         "module_not_found": "No se encontró el módulo o la dependencia",
         "syntax_error": "Error de sintaxis",
@@ -2487,7 +2488,8 @@
         "entry_unavailable": "El punto de entrada de la extensión no está disponible",
         "load_failed": "No se pudo cargar la extensión",
         "host_missing_response": "El host no confirmó la carga de esta extensión",
-        "advanced_required": "Se requiere el modo avanzado para sustituir una herramienta integrada"
+        "advanced_required": "Se requiere el modo avanzado para sustituir una herramienta integrada",
+        "ui_manifest_legacy": "Se ignoró la declaración de interfaz antigua; las herramientas siguen disponibles"
       }
     }
   },

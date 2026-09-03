@@ -53,6 +53,38 @@ describe("parseExtensionRecords", () => {
       .toBe("beaver.office.documents.create");
   });
 
+  it("accepte les manifestes UI v2 standard et avancé", () => {
+    const standard = backendRecord();
+    standard.manifest.ui = { apiVersion: "1", mode: "standard" } as never;
+    const advanced = backendRecord();
+    advanced.manifest.ui = {
+      apiVersion: "1",
+      mode: "advanced",
+      entry: "ui/index.mjs",
+    } as never;
+
+    expect(parseExtensionRecords([standard])[0].manifest.ui).toEqual({
+      apiVersion: "1",
+      mode: "standard",
+    });
+    expect(parseExtensionRecords([advanced])[0].manifest.ui?.entry)
+      .toBe("ui/index.mjs");
+  });
+
+  it("refuse les formes UI v2 ambiguës ou contenant des champs inconnus", () => {
+    for (const ui of [
+      { apiVersion: "1", mode: "standard", entry: "ui.mjs" },
+      { apiVersion: "1", mode: "advanced" },
+      { apiVersion: "2", mode: "standard" },
+      { apiVersion: "1", mode: "standard", extra: true },
+    ]) {
+      const input = backendRecord();
+      input.manifest.ui = ui as never;
+      expect(() => parseExtensionRecords([input]))
+        .toThrow("invalid_extension_response");
+    }
+  });
+
   it("refuse un contrat sans contributions au lieu de laisser React planter", () => {
     const input = backendRecord();
     Reflect.deleteProperty(input, "contributions");

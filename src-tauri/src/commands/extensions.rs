@@ -143,6 +143,28 @@ pub async fn get_extension_host_status() -> Result<ExtensionHostStatus, String> 
 }
 
 #[tauri::command]
+pub async fn get_extension_ui_catalog() -> Result<extensions::UiCatalogSnapshot, String> {
+    command_error::close(
+        command_error::ExtensionCommand::GetUiCatalog,
+        extensions::ui_catalog(),
+    )
+}
+
+#[tauri::command]
+pub async fn invoke_extension_ui_action(
+    extension_id: String,
+    contribution_id: String,
+    action_id: String,
+    payload: extensions::UiActionPayload,
+    locale: String,
+) -> Result<serde_json::Value, String> {
+    let result =
+        extensions::invoke_ui_action(extension_id, contribution_id, action_id, payload, locale)
+            .await;
+    command_error::close(command_error::ExtensionCommand::InvokeUiAction, result)
+}
+
+#[tauri::command]
 pub async fn get_extension_discovery_preferences() -> Result<DiscoveryPreferences, String> {
     command_error::close(
         command_error::ExtensionCommand::GetDiscoveryPreferences,

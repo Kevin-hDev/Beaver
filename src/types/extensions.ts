@@ -6,7 +6,10 @@ import type {
   ExtensionHostState,
   RuntimeDiagnosticCode,
 } from "./extension-contract.generated";
-import type { ExtensionUiLoadingStage } from "./extension-ui-contract.generated";
+import type {
+  ExtensionUiDiagnosticCode,
+  ExtensionUiLoadingStage,
+} from "./extension-ui-contract.generated";
 
 export {
   ADVANCED_HOST_TO_CORE_REQUEST_METHODS,
@@ -39,7 +42,12 @@ export interface ExtensionManifest {
   beaverApi: string;
   runtime: string;
   main?: string;
-  ui?: string;
+  ui?: {
+    apiVersion: string;
+    mode: "standard" | "advanced";
+    entry?: string;
+  };
+  uiLegacy?: string;
   access: string;
   apiLevel: ExtensionApiLevel;
   essential: boolean;
@@ -85,7 +93,7 @@ export interface ExtensionRecord {
 export interface ExtensionDiagnostic {
   extensionId: string;
   stage: HostLoadStage;
-  code: HostDiagnosticCode | RuntimeDiagnosticCode;
+  code: HostDiagnosticCode | RuntimeDiagnosticCode | ExtensionUiDiagnosticCode;
   file?: string;
   line?: number;
   column?: number;
@@ -103,6 +111,21 @@ export interface ExtensionHostStatus {
 
 export interface ExtensionDiscoveryPreferences {
   protectedPluginIds: string[];
+}
+
+export interface ExtensionUiCatalogEntry {
+  extensionId: string;
+  contributionId: string;
+  contribution: Record<string, unknown>;
+}
+
+export interface ExtensionUiCatalogSnapshot {
+  revision: number;
+  contributions: ExtensionUiCatalogEntry[];
+}
+
+export interface ExtensionUiActionPayload {
+  fields: Record<string, null | boolean | number | string>;
 }
 
 export interface ExtensionRecoveryState {
@@ -152,4 +175,7 @@ export type {
   HostToCoreNotificationMethod,
   StableHostToCoreRequestMethod,
 } from "./extension-contract.generated";
-export type { ExtensionUiLoadingStage } from "./extension-ui-contract.generated";
+export type {
+  ExtensionUiDiagnosticCode,
+  ExtensionUiLoadingStage,
+} from "./extension-ui-contract.generated";

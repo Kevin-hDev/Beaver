@@ -46,6 +46,7 @@ pub fn from_source_file(path: &Path) -> Result<(PathBuf, ExtensionManifest), Str
             runtime: "node".to_string(),
             main: Some(main.to_string()),
             ui: None,
+            ui_legacy: None,
             access: "full".to_string(),
             api_level: ExtensionApiLevel::Advanced,
             essential: false,

@@ -317,6 +317,8 @@ readline.createInterface({{ input: process.stdin }}).on("line", (line) => {{
     let _ = super::loading_marker::discard();
     super::runtime_channel_sync::load_specs(
         &process,
+        &super::host_identity::HostIdentity::Official,
+        1,
         &specs,
         &mut responses,
         &super::runtime_sync::RecoveryPreflight::Normal,

@@ -27,9 +27,23 @@ pub struct LoadResult {
     pub contributions: Option<ExtensionContributions>,
     pub error: Option<String>,
     pub diagnostic: Option<HostDiagnostic>,
+    #[serde(default, rename = "uiDiagnostics")]
+    pub ui_diagnostics: Vec<HostUiDiagnostic>,
+}
+
+pub struct AttributedLoadResult {
+    pub identity: super::host_identity::HostIdentity,
+    pub generation: u64,
+    pub loaded: LoadResult,
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct HostUiDiagnostic {
+    pub code: String,
+}
+
+#[derive(Clone, Debug, Deserialize)]
 pub struct HostDiagnostic {
     pub stage: String,
     pub code: String,

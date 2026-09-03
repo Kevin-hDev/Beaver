@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "extensions": [
+    {
+      "manifest": {
+        "id": "com.example.legacy-ui",
+        "name": "Legacy UI",
+        "version": "1.0.0",
+        "beaverApi": "1",
+        "runtime": "node",
+        "main": "index.mjs",
+        "ui": "src/ui.tsx",
+        "access": "full",
+        "apiLevel": "stable",
+        "essential": false,
+        "author": null,
+        "homepage": null,
+        "description": null
+      },
+      "kind": "local",
+      "source": "/tmp/legacy-ui",
+      "origin": null,
+      "enabled": true,
+      "trusted": true,
+      "fingerprint": null,
+      "trustedAt": null,
+      "showInChat": false,
+      "status": "inactive",
+      "lastError": null,
+      "lastActivatedAt": null,
+      "sensitiveAccessGranted": false
+    }
+  ],
+  "recoverySnapshot": null
+}

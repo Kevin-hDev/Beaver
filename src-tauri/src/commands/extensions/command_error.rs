@@ -10,6 +10,8 @@ pub(in crate::commands) enum ExtensionCommand {
     SetShowInChat,
     ReloadHost,
     GetHostStatus,
+    GetUiCatalog,
+    InvokeUiAction,
     GetDiscoveryPreferences,
     SetDiscoveryPreferences,
     RecoverHost,
@@ -23,7 +25,7 @@ pub(in crate::commands) enum ExtensionCommand {
 
 impl ExtensionCommand {
     #[cfg(test)]
-    pub(in crate::commands) const ALL: [Self; 19] = [
+    pub(in crate::commands) const ALL: [Self; 21] = [
         Self::List,
         Self::AddLocal,
         Self::InstallGit,
@@ -34,6 +36,8 @@ impl ExtensionCommand {
         Self::SetShowInChat,
         Self::ReloadHost,
         Self::GetHostStatus,
+        Self::GetUiCatalog,
+        Self::InvokeUiAction,
         Self::GetDiscoveryPreferences,
         Self::SetDiscoveryPreferences,
         Self::RecoverHost,
@@ -57,6 +61,8 @@ impl ExtensionCommand {
             Self::SetShowInChat => "set_extension_show_in_chat",
             Self::ReloadHost => "reload_extension_host",
             Self::GetHostStatus => "get_extension_host_status",
+            Self::GetUiCatalog => "get_extension_ui_catalog",
+            Self::InvokeUiAction => "invoke_extension_ui_action",
             Self::GetDiscoveryPreferences => "get_extension_discovery_preferences",
             Self::SetDiscoveryPreferences => "set_extension_discovery_preferences",
             Self::RecoverHost => "recover_extension_host",

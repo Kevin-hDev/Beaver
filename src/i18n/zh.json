@@ -2473,6 +2473,7 @@
       }
     },
     "diagnostics": {
+      "uiGeneric": "此扩展的界面贡献已被拒绝",
       "codes": {
         "module_not_found": "找不到模块或依赖项",
         "syntax_error": "语法错误",
@@ -2482,7 +2483,8 @@
         "entry_unavailable": "扩展入口点不可用",
         "load_failed": "扩展加载失败",
         "host_missing_response": "宿主未确认此扩展已加载",
-        "advanced_required": "替换内置工具需要高级模式"
+        "advanced_required": "替换内置工具需要高级模式",
+        "ui_manifest_legacy": "旧版界面声明已被忽略；工具仍然可用"
       }
     }
   },

@@ -15,6 +15,7 @@ fn runtime(work: super::super::work_supervision::ExtensionWorkServices) -> Exten
         hosts: Mutex::new(RuntimeHosts::new(temporary).unwrap()),
         sync: Mutex::new(()),
         status: std::sync::RwLock::new(ExtensionHostStatus::default()),
+        ui_catalog: super::super::ui_catalog::UiCatalog::default(),
         work,
     }
 }
@@ -92,6 +93,7 @@ async fn runtime_with_real_host() -> (tempfile::TempDir, ExtensionRuntime, Arc<H
         hosts: Mutex::new(hosts),
         sync: Mutex::new(()),
         status: std::sync::RwLock::new(ExtensionHostStatus::default()),
+        ui_catalog: super::super::ui_catalog::UiCatalog::default(),
         work,
     };
     (directory, runtime, process)
@@ -147,6 +149,7 @@ async fn spontaneous_process_exit_marks_error_without_a_user_call() {
         hosts: Mutex::new(hosts),
         sync: Mutex::new(()),
         status: std::sync::RwLock::new(ExtensionHostStatus::default()),
+        ui_catalog: super::super::ui_catalog::UiCatalog::default(),
         work,
     });
     runtime.start_exit_monitor(receiver).unwrap();
@@ -247,6 +250,7 @@ async fn a_retained_pre_bind_process_is_reaped_after_its_reader_exits() {
         hosts: Mutex::new(hosts),
         sync: Mutex::new(()),
         status: std::sync::RwLock::new(ExtensionHostStatus::default()),
+        ui_catalog: super::super::ui_catalog::UiCatalog::default(),
         work,
     });
     runtime.start_exit_monitor(receiver).unwrap();

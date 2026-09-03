@@ -15,6 +15,7 @@ pub struct ExtensionRuntime {
     pub(super) hosts: Mutex<RuntimeHosts>,
     pub(super) sync: Mutex<()>,
     pub(super) status: RwLock<ExtensionHostStatus>,
+    pub(super) ui_catalog: super::ui_catalog::UiCatalog,
     pub(super) work: super::work_supervision::ExtensionWorkServices,
 }
 
@@ -40,6 +41,7 @@ pub fn init(app: &tauri::AppHandle, app_work: AppWorkSupervisor) -> Result<(), S
         hosts: Mutex::new(hosts),
         sync: Mutex::new(()),
         status: RwLock::new(status),
+        ui_catalog: super::ui_catalog::UiCatalog::with_app(app.clone()),
         work: super::work_supervision::ExtensionWorkServices::new(app_work),
     });
     runtime.start_exit_monitor(exit_receiver)?;
@@ -122,18 +124,20 @@ impl ExtensionRuntime {
             }
             (generation, process)
         };
+        let catalog_retired = self.ui_catalog.retire(identity, snapshot.0).is_ok();
         if !snapshot.1.kill(deadline).await {
             self.mark_stop_unconfirmed(identity).await;
             return StopHostOutcome::Unconfirmed;
         }
         let mut hosts = self.hosts.lock().await;
-        if hosts.remove_current(identity, snapshot.0)
-            || hosts.stop_is_confirmed(identity, snapshot.0)
-        {
-            StopHostOutcome::Confirmed
-        } else {
-            StopHostOutcome::Unconfirmed
+        let stopped = hosts.remove_current(identity, snapshot.0)
+            || hosts.stop_is_confirmed(identity, snapshot.0);
+        drop(hosts);
+        if stopped && catalog_retired {
+            return StopHostOutcome::Confirmed;
         }
+        self.mark_stop_unconfirmed(identity).await;
+        StopHostOutcome::Unconfirmed
     }
 
     pub(super) async fn revoke_extension(
@@ -221,8 +225,4 @@ pub(super) fn global() -> Result<&'static Arc<ExtensionRuntime>, String> {
     RUNTIME
         .get()
         .ok_or_else(|| super::error_codes::HOST_UNAVAILABLE.to_string())
-}
-
-pub(super) fn mark_enabled_extensions_error() {
-    super::registry_sync::mark_all_enabled_error();
 }

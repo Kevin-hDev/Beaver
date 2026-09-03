@@ -1828,6 +1828,7 @@
       }
     },
     "diagnostics": {
+      "uiGeneric": "This extension's interface contribution was rejected",
       "codes": {
         "module_not_found": "Module or dependency not found",
         "syntax_error": "Syntax error",
@@ -1837,7 +1838,8 @@
         "entry_unavailable": "The extension entry point is unavailable",
         "load_failed": "The extension failed to load",
         "host_missing_response": "The host did not confirm that this extension loaded",
-        "advanced_required": "Advanced mode is required to replace a built-in tool"
+        "advanced_required": "Advanced mode is required to replace a built-in tool",
+        "ui_manifest_legacy": "The legacy interface declaration was ignored; tools remain available"
       }
     }
   },

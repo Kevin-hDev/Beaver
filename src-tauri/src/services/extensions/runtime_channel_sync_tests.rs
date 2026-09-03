@@ -16,6 +16,7 @@ fn specification(id: &str) -> HostExtensionSpec {
             runtime: "node".to_string(),
             main: Some("index.mjs".to_string()),
             ui: None,
+            ui_legacy: None,
             access: "full".to_string(),
             api_level: ExtensionApiLevel::Stable,
             essential: false,
@@ -64,6 +65,8 @@ readline.createInterface({ input: process.stdin }).on("line", (line) => {
 
     assert!(load_specs(
         &process,
+        &HostIdentity::Official,
+        1,
         &[specification("first"), specification("second")],
         &mut responses,
         &super::super::runtime_sync::RecoveryPreflight::Normal,
@@ -130,6 +133,8 @@ readline.createInterface({{ input: process.stdin }}).on("line", (line) => {{
 
         assert!(load_specs(
             &process,
+            &HostIdentity::ThirdParty(id.clone()),
+            1,
             &[specification(&id)],
             &mut responses,
             &super::super::runtime_sync::RecoveryPreflight::Normal,
@@ -145,4 +150,111 @@ readline.createInterface({{ input: process.stdin }}).on("line", (line) => {{
         assert_eq!(marker.stage, expected_stage);
     }
     super::super::loading_marker::discard().unwrap();
+}
+
+#[tokio::test]
+async fn standard_ui_fixture_crosses_node_json_rpc_and_rust_validation() {
+    let _marker_lock = super::super::loading_marker::test_lock().await;
+    let _ = super::super::loading_marker::discard();
+    let crate_root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let host_directory = crate_root.join("resources").join("extension-host");
+    let fixture = crate_root
+        .join("tests")
+        .join("fixtures")
+        .join("extensions")
+        .join("ui-standard");
+    let manifest: ExtensionManifest =
+        serde_json::from_slice(&std::fs::read(fixture.join("beaver-extension.json")).unwrap())
+            .unwrap();
+    let specification = HostExtensionSpec {
+        id: manifest.id.clone(),
+        main_path: fixture.join("index.mjs").to_string_lossy().into_owned(),
+        manifest,
+    };
+    let serialized_specification = serde_json::to_value(&specification).unwrap();
+    assert_eq!(
+        serialized_specification.pointer("/manifest/ui/mode"),
+        Some(&serde_json::json!("standard"))
+    );
+    let identity = HostIdentity::ThirdParty(specification.id.clone());
+    let coordinator = crate::app_exit::AppExitCoordinator::initialize().unwrap();
+    let work = crate::services::extensions::work_supervision::ExtensionWorkServices::new(
+        coordinator.work_supervisor(),
+    );
+    let process = HostProcess::spawn(
+        &HostPaths {
+            node: which::which("node").unwrap().canonicalize().unwrap(),
+            script: host_directory.join("host.mjs"),
+            directory: host_directory,
+        },
+        &work,
+    )
+    .await
+    .unwrap();
+    let mut responses = Vec::new();
+
+    load_specs(
+        &process,
+        &identity,
+        1,
+        std::slice::from_ref(&specification),
+        &mut responses,
+        &super::super::runtime_sync::RecoveryPreflight::Normal,
+    )
+    .await
+    .unwrap();
+    let response = responses.pop().unwrap();
+    let mut contributions = response.loaded.contributions.unwrap();
+    assert_eq!(
+        contributions.ui.len(),
+        1,
+        "fixture UI was lost while decoding JSON-RPC"
+    );
+    let entries = super::super::ui_validation::catalog(
+        &response.identity,
+        &response.loaded.id,
+        &specification.manifest.api_level,
+        specification.manifest.ui.as_ref(),
+        std::mem::take(&mut contributions.ui),
+    )
+    .unwrap();
+    assert_eq!(entries.len(), 1, "fixture UI was not collected by the Host");
+    let catalog = super::super::ui_catalog::UiCatalog::default();
+    catalog
+        .apply(vec![super::super::ui_catalog::UiCatalogUpdate {
+            identity: response.identity,
+            generation: response.generation,
+            extension_id: response.loaded.id,
+            entries,
+        }])
+        .unwrap();
+    let snapshot = catalog.snapshot().unwrap();
+    assert_eq!(snapshot.contributions.len(), 1);
+    assert_eq!(
+        snapshot.contributions[0].contribution_id,
+        "ui-standard-proof.toolbar-proof"
+    );
+
+    let result = process
+        .request(
+            "ui.action",
+            serde_json::json!({
+                "extensionId":"ui-standard-proof",
+                "contributionId":"ui-standard-proof.toolbar-proof",
+                "actionId":"ui-standard-proof.run-proof",
+                "payload":{"fields":{"value":"Rust"}},
+                "context":{"locale":"fr"}
+            }),
+        )
+        .await
+        .unwrap();
+    let validated = super::super::ui_action_result::validate("ui-standard-proof", result).unwrap();
+    assert_eq!(validated.value["message"]["fr"], "Preuve Rust");
+
+    super::super::loading_marker::discard().unwrap();
+    assert!(
+        process
+            .kill(crate::services::extensions::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
 }

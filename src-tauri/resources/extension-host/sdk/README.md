@@ -80,6 +80,34 @@ Beaver namespaces this tool as `com.example.hello.hello`.
 - `beaver.secrets.getChannelToken(...)`
 - `beaver.call(method, params)` for the versioned low-level bridge
 
+### Standard interface contributions
+
+Declare `ui: { "apiVersion": "1", "mode": "standard" }` in the manifest, then
+register declarative contributions without receiving access to Tauri `invoke`:
+
+```js
+const remove = beaver.ui.register({
+  type: "action",
+  id: "hello",
+  placement: "app.toolbar.primary",
+  order: 0,
+  label: { default: "Hello" },
+  actionId: "say-hello",
+});
+
+const stop = beaver.ui.onAction("say-hello", async (_payload, context) => ({
+  type: "notification",
+  level: "success",
+  message: { default: `Hello (${context.locale})` },
+}));
+```
+
+Both cleanup functions are idempotent. Beaver namespaces IDs and revalidates every
+contribution, action payload, and result in Rust. Invalid UI never removes healthy Tools.
+Register contributions during activation: Beaver snapshots the catalog when loading
+finishes. Cleanup functions are intended for teardown; later catalog changes become
+visible after the next Host reload.
+
 ## Advanced API
 
 Set `"apiLevel": "advanced"` to use:
@@ -117,7 +145,7 @@ The extension author and user are responsible for any secret, file, process, or 
 
 | Category | Values |
 |---|---|
-| Capabilities | `tools`, `events` |
+| Capabilities | `tools`, `events`, `ui` |
 | Core to host | `host.hello`, `host.reset`, `host.load`, `tool.call`, `event.emit`, `ui.action` |
 | Events | `session.turn.started` |
 | Effects | `read-only`, `local-write`, `external-read`, `external-write`, `process`, `secret`, `unknown` |
@@ -179,6 +207,7 @@ The extension author and user are responsible for any secret, file, process, or 
 | `hostStopTimeoutMs` | 5000 |
 | `mcpToolTimeoutMs` | 25000 |
 | `toolCallTimeoutMs` | 55000 |
+| `uiActionTimeoutMs` | 15000 |
 
 ### Errors
 

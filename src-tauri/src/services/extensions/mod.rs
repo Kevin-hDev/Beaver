@@ -53,6 +53,7 @@ mod origin_validation;
 mod process_environment;
 mod process_runner;
 mod protocol;
+mod public_api;
 mod registry;
 mod registry_access;
 mod registry_failure;
@@ -82,15 +83,30 @@ mod runtime_plan;
 mod runtime_recovery_preflight;
 mod runtime_restart;
 mod runtime_sync;
+mod runtime_sync_apply;
+#[cfg(test)]
+mod runtime_sync_apply_tests;
+mod runtime_sync_contributions;
 mod runtime_version;
 mod source_validation;
 mod startup;
 mod storage;
+mod storage_format;
 mod storage_migration;
 mod tool_bridge;
 mod tool_result;
 pub(crate) mod types;
+mod ui_action_result;
+mod ui_catalog;
+mod ui_catalog_actions;
+mod ui_catalog_lifecycle;
+mod ui_catalog_limits;
+mod ui_dispatch;
+mod ui_normalization;
 pub(crate) mod ui_protocol;
+mod ui_types;
+mod ui_validation;
+mod ui_view_validation;
 mod validation;
 mod view;
 mod work_supervision;
@@ -112,10 +128,17 @@ mod contract_artifact_tests;
 #[cfg(test)]
 mod ui_contract_tests;
 #[cfg(test)]
+mod ui_dispatch_tests;
+#[cfg(test)]
+mod ui_limit_tests;
+#[cfg(test)]
 mod ui_protocol_tests;
+#[cfg(test)]
+mod ui_validation_tests;
 
 pub use extension_recovery::ExtensionRecoveryState;
 pub use types::{ExtensionEffect, ExtensionHostStatus, ExtensionKind};
+pub use ui_types::{UiActionPayload, UiCatalogSnapshot};
 pub use view::ExtensionView;
 
 pub(crate) use discovery::PluginMatch;
@@ -124,6 +147,9 @@ pub(crate) use discovery::{
 };
 pub(crate) use discovery_catalog::CatalogSnapshot;
 pub use discovery_preferences::DiscoveryPreferences;
+pub use public_api::{
+    discovery_preferences, invoke_ui_action, set_discovery_preferences, ui_catalog,
+};
 pub use registry::{add_local, list, set_enabled, set_show_in_chat};
 pub(crate) use registry_index::{
     catalog_snapshot, dynamic_tool_names, indexed_plugins, indexed_tool, plugin_id_for_tool,
@@ -140,27 +166,10 @@ pub(crate) use tool_bridge::{core_fallback, without_core_fallback};
 pub use tool_bridge::{merge_definitions as merge_tool_definitions, validate_arguments};
 pub(crate) use tool_result::unavailable as unavailable_tool_result;
 
-pub fn discovery_preferences() -> Result<DiscoveryPreferences, String> {
-    discovery_preferences::get()
-}
-
-pub fn set_discovery_preferences(plugin_ids: Vec<String>) -> Result<DiscoveryPreferences, String> {
-    discovery_preferences::set(plugin_ids)
-}
-
-pub(crate) fn record_tool_invocation(tool_name: &str) -> Result<(), String> {
-    discovery_usage::record_invocation(tool_name)
-}
-
-pub(crate) async fn revoke_extension(id: &str, deadline: std::time::Instant) -> Result<(), String> {
-    let record = registry::find(id)?;
-    let identity = host_identity::HostIdentity::from_record(&record)?;
-    runtime::revoke_extension(&identity, deadline).await
-}
-
-pub(crate) const MAX_DISCOVERED_PLUGINS: usize = types::MAX_EXTENSIONS;
-pub(crate) const MAX_EXTENSION_TOOLS: usize = types::MAX_TOOLS;
-pub(crate) const MAX_PERMISSION_SUMMARY_CHARS: usize = types::MAX_PERMISSION_SUMMARY_CHARS;
+pub(crate) use public_api::{
+    close_command_error, record_tool_invocation, revoke_extension, MAX_DISCOVERED_PLUGINS,
+    MAX_EXTENSION_TOOLS, MAX_PERMISSION_SUMMARY_CHARS,
+};
 
 pub(crate) use installer::{
     install_git as install_git_source, install_npm as install_npm_source,
@@ -177,10 +186,6 @@ pub(crate) use ui_startup::{
 pub(crate) use ui_startup_ack::{UiAckToken, UiLoadAcknowledger};
 pub(crate) use ui_startup_state::{SafeReason, UiStartupMode, UiStartupState};
 pub(crate) use validation::identifier as validate_identifier;
-
-pub(crate) fn close_command_error(operation: &str, error: String) -> String {
-    operation_error::close(operation, error)
-}
 
 #[cfg(test)]
 mod access_log_tests;

@@ -15,6 +15,7 @@ fn record(id: &str, kind: super::types::ExtensionKind) -> super::types::Extensio
             runtime: "node".to_string(),
             main: Some("index.mjs".to_string()),
             ui: None,
+            ui_legacy: None,
             access: "full".to_string(),
             api_level: ExtensionApiLevel::Stable,
             essential: false,
@@ -36,6 +37,28 @@ fn record(id: &str, kind: super::types::ExtensionKind) -> super::types::Extensio
         sensitive_access_granted: false,
         contributions: ExtensionContributions::default(),
     }
+}
+
+#[test]
+fn typed_legacy_ui_stays_inactive_and_emits_the_runtime_diagnostic() {
+    let mut legacy = record("com.example.legacy-ui", super::types::ExtensionKind::Local);
+    legacy.manifest.ui_legacy = Some("../../obsolete/ui.tsx".to_string());
+    legacy.contributions.tools.push(ExtensionTool {
+        name: "com.example.legacy-ui.healthy".to_string(),
+        description: "Healthy".to_string(),
+        parameters: json!({"type":"object"}),
+        effect: ExtensionEffect::ReadOnly,
+        replaces_core: false,
+    });
+
+    let diagnostics = super::runtime_sync::manifest_ui_diagnostics(std::slice::from_ref(&legacy));
+
+    assert!(legacy.manifest.ui.is_none());
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0].extension_id, legacy.manifest.id);
+    assert_eq!(diagnostics[0].code, "ui_manifest_legacy");
+    assert!(super::validation::manifest(&legacy.manifest).is_ok());
+    assert_eq!(legacy.contributions.tools.len(), 1);
 }
 
 #[test]
@@ -65,6 +88,7 @@ fn stable_extensions_cannot_replace_core_tools() {
             runtime: "node".to_string(),
             main: Some("index.ts".to_string()),
             ui: None,
+            ui_legacy: None,
             access: "full".to_string(),
             api_level: ExtensionApiLevel::Stable,
             essential: false,
@@ -82,9 +106,68 @@ fn stable_extensions_cannot_replace_core_tools() {
             replaces_core: true,
         }],
         events: Vec::new(),
+        ui: Vec::new(),
     };
 
     assert!(!accepts_contributions(&spec, &contributions));
+}
+
+#[test]
+fn invalid_standard_ui_is_dropped_without_losing_valid_tools() {
+    let mut spec = HostExtensionSpec {
+        id: "com.example.partial-ui".to_string(),
+        main_path: "/tmp/index.ts".to_string(),
+        manifest: ExtensionManifest {
+            id: "com.example.partial-ui".to_string(),
+            name: "Partial UI".to_string(),
+            version: "1.0.0".to_string(),
+            beaver_api: "1".to_string(),
+            runtime: "node".to_string(),
+            main: Some("index.ts".to_string()),
+            ui: None,
+            ui_legacy: None,
+            access: "full".to_string(),
+            api_level: ExtensionApiLevel::Stable,
+            essential: false,
+            author: None,
+            homepage: None,
+            description: None,
+        },
+    };
+    spec.manifest.ui = Some(super::types::ExtensionUiManifest {
+        api_version: "1".to_string(),
+        mode: super::types::ExtensionUiMode::Standard,
+        entry: None,
+    });
+    let contributions = ExtensionContributions {
+        tools: vec![ExtensionTool {
+            name: "com.example.partial-ui.healthy".to_string(),
+            description: "Healthy".to_string(),
+            parameters: json!({"type":"object"}),
+            effect: ExtensionEffect::ReadOnly,
+            replaces_core: false,
+        }],
+        events: Vec::new(),
+        ui: vec![json!({
+            "type":"action", "id":"broken", "placement":"app.toolbar.primary",
+            "order":0, "label":{"default":"x".repeat(super::ui_contract::MAX_TEXT_CHARS + 1)},
+            "actionId":"broken"
+        })],
+    };
+
+    let validated = super::runtime_sync_contributions::validate(
+        &super::host_identity::HostIdentity::ThirdParty(spec.id.clone()),
+        &spec.id,
+        &spec,
+        contributions,
+    )
+    .unwrap();
+    assert_eq!(validated.core.tools.len(), 1);
+    assert!(validated.ui.is_empty());
+    assert_eq!(
+        validated.ui_diagnostic.as_deref(),
+        Some("ui_contribution_invalid")
+    );
 }
 
 #[test]
