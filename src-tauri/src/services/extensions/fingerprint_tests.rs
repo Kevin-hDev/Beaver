@@ -265,12 +265,10 @@ fn advanced_artifact_changes_are_fingerprinted_and_tampering_fails_closed() {
     assert_ne!(initial, changed);
     super::ui_artifact_store::unreferenced(std::slice::from_ref(&record)).unwrap();
 
-    let path = super::ui_artifact_store::artifact_path(
-        &record.manifest.id,
-        &second.manifest_sha256,
-    )
-    .unwrap()
-    .join("entry.js");
+    let path =
+        super::ui_artifact_store::artifact_path(&record.manifest.id, &second.manifest_sha256)
+            .unwrap()
+            .join("entry.js");
     std::fs::write(path, b"tampered").unwrap();
     assert!(fingerprint::calculate(&record).is_err());
     super::ui_artifact_store::remove(&record).unwrap();

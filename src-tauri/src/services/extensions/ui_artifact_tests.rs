@@ -24,7 +24,8 @@ fn fixture(root: &std::path::Path) -> ExtensionUiArtifact {
     std::fs::write(
         root.join("manifest.json"),
         super::ui_artifact::manifest_bytes(&artifact).unwrap(),
-    ).unwrap();
+    )
+    .unwrap();
     artifact
 }
 

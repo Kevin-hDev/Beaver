@@ -170,7 +170,8 @@ fn protocol_refuses_artifacts_in_safe_mode() {
             &request(&uri, "tauri://localhost"),
             &startup,
             Some(&artifact),
-        ).status(),
+        )
+        .status(),
         StatusCode::NOT_FOUND,
     );
 }
