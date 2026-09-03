@@ -1,0 +1,31 @@
+UI-P1 — objectif et portée
+
+Route les surfaces cœur de Beaver via le registre de slots UI-R0, sans activer ni consommer aucune contribution tierce et sans changement visuel volontaire.
+
+Décisions et raisons
+
+CORE_SLOT_OCCUPANTS est la seule autorité des occupants cœur; navigation, réglages, toolbar et compositeur n’en consomment que des projections typées. Cette structure évite les catalogues parallèles et prépare les lots suivants sans anticiper leur chargement tiers.
+
+Le moteur de résolution est déterministe, borné et fail-local: validation, dépendances, conflits et ordre sont résolus indépendamment de l’ordre lexical ou d’arrivée. Les occupants protégés et les parcours Chat existants restent conservés.
+
+Corrections issues de la revue contrôleur
+
+- validation individuelle des cibles avant regroupement des conflits;
+- graphe borné des dépendances, tri topologique stable et cycles rejetés localement;
+- dépendants rejetés si leur déclaration cible est rejetée;
+- chaînes replace vers replace indépendantes des identifiants et permutations, avec héritage de l’ordre vivant;
+- fallback de navigation vers un occupant cœur réellement présent avant toute extension;
+- cinq placements Settings dérivés de UI_PLACEMENTS;
+- revalidation post-effets des relations before et after: une cible déplacée hors du placement ou du type attendu rejette seulement la relation, tandis que le move sain survit.
+
+Preuves TDD et validations
+
+Avant la dernière correction post-move: suite frontend complète 539 fichiers et 2922 tests, exit 0. Après cette correction: résolveur et navigation adversariaux 2 fichiers et 30 tests, exit 0; périmètre ciblé UI-P1 23 fichiers et 121 tests, exit 0. Vérification finale supplémentaire de l’arbre committé: suite frontend complète 539 fichiers et 2923 tests, exit 0.
+
+Après la dernière correction: npm run lint exit 0, npx tsc --noEmit exit 0, git diff --check exit 0. graphify update . exit 0: 42904 nœuds, 89920 arêtes, 2435 communautés.
+
+Preuve réelle et limites
+
+Build macOS e2e exit 0 avec les overrides CEF imposés. Parcours WebDriver macOS principal 1/1 et quatre redémarrages indépendants 1/1; navigation, réglages, toolbar et menu plus observés. Matrice de 12 vues couvrant 6 thèmes et 2 largeurs, captures inspectées et conservées dans le rapport privé ignoré.
+
+Windows et Linux ne sont pas exécutés localement. Le contrôle réel macOS a utilisé un profil isolé. Le harness a retiré uniquement le splash après constat de app-root prêt, car la session macOS verrouillée empêchait requestAnimationFrame de progresser; aucun code produit n’a été modifié pour cette preuve.
