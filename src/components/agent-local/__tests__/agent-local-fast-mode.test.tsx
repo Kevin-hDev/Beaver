@@ -36,7 +36,7 @@ vi.mock("../use-agent-local-conversation-list", () => ({ useAgentLocalConversati
 vi.mock("@/hooks/use-available-panel-mode", () => ({
   useAvailablePanelMode: vi.fn(() => ({ panelMode: "preview", browserStatus: "unavailable" })),
 }));
-vi.mock("@/components/layout/panel-slots", () => ({
+vi.mock("@/components/ui/panel-slots", () => ({
   PanelSlot: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 vi.mock("../chat-header", () => ({ ChatHeader: () => null }));

@@ -17,7 +17,7 @@ import { MascotSettings } from "./mascot-settings";
 import { LlmExplorer } from "./llm-explorer";
 import { useResolvedSettingsSections } from "./settings-sections";
 import { SettingsSubTabList } from "./settings-subtab-list";
-import { PanelSlot } from "@/components/layout/panel-slots";
+import { PanelSlot } from "@/components/ui/panel-slots";
 import { useSlotOccupantByTarget } from "@/features/extension-ui/slot-contexts";
 import { SlotRenderer } from "@/features/extension-ui/slot-renderer";
 import {

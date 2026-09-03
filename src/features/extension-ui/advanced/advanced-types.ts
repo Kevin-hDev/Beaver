@@ -20,7 +20,11 @@ export interface AdvancedLoaderDependencies {
   document: Document;
   importModule: (url: string) => Promise<unknown>;
   begin: (extensionId: string, attempts: number) => Promise<number[]>;
-  advance: (extensionId: string, stage: "import" | "activate" | "mount") => Promise<void>;
+  advance: (
+    extensionId: string,
+    token: number[],
+    stage: "import" | "activate" | "mount",
+  ) => Promise<void>;
   acknowledge: (extensionId: string, token: number[]) => Promise<void>;
 }
 

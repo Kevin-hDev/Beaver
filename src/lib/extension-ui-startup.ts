@@ -9,7 +9,9 @@ const ROOT_KEYS = [
   "mode", "bootstrapResolved", "thirdPartyLoadingAllowed",
   "showRecoveryDialog", "showSafeBanner", "canRetry",
 ] as const;
-const SAFE_REASONS = ["argument", "shift", "invalidMarker", "recoveryChoice"] as const;
+const SAFE_REASONS = [
+  "argument", "invalidArguments", "shift", "invalidMarker", "recoveryChoice",
+] as const;
 
 export const NORMAL_EXTENSION_UI_STARTUP: ExtensionUiStartupState = {
   mode: { kind: "normal" },

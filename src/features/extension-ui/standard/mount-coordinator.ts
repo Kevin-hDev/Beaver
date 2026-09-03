@@ -24,10 +24,8 @@ export function createMountCoordinator() {
   const jobs = new Map<string, MountJob>();
   const queue: MountJob[] = [];
   let active: MountJob | null = null;
-  let blocked = false;
 
   async function prepare(key: string, extensionId: string, attempts: number): Promise<MountPermit> {
-    if (blocked) throw generic();
     if (completed.has(key)) return noOpPermit();
     const current = jobs.get(key);
     if (current) return current.done.then(noOpPermit);
@@ -58,41 +56,53 @@ export function createMountCoordinator() {
     if (!active) return;
     const job = active;
     void sequenceExtensionUiLoad(async () => {
-      const token = await invoke<number[]>("begin_extension_ui_load", {
-        extensionId: job.extensionId,
-        attempts: job.attempts,
-      });
-      await invoke("advance_extension_ui_load", {
-        extensionId: job.extensionId,
-        stage: "mount",
-      });
-      let settled = false;
-      await new Promise<void>((resolve, reject) => {
-        const settle = async () => {
-          if (settled) return;
-          settled = true;
-          await invoke("acknowledge_extension_ui_load", {
+      let token: number[] | null = null;
+      try {
+        token = await invoke<number[]>("begin_extension_ui_load", {
+          extensionId: job.extensionId,
+          attempts: job.attempts,
+        });
+        await invoke("advance_extension_ui_load", {
+          extensionId: job.extensionId,
+          token,
+          stage: "mount",
+        });
+        let settled = false;
+        await new Promise<void>((resolve, reject) => {
+          const settle = async () => {
+            if (settled) return;
+            settled = true;
+            await invoke("acknowledge_extension_ui_load", {
+              extensionId: job.extensionId,
+              token,
+            }).then(() => {
+              remember(job.key);
+              job.finish();
+              resolve();
+            }, () => {
+              const error = generic();
+              reject(error);
+              throw error;
+            });
+          };
+          job.ready({
+            commit: settle,
+            cancel: () => {
+              // A React replacement is an orderly handoff, not a crash. Completing
+              // its journal lets the replacement mount; a process crash cannot run this path.
+              void settle().then(undefined, () => undefined);
+            },
+          });
+        });
+      } catch (error) {
+        if (token) {
+          await invoke("abort_extension_ui_load", {
             extensionId: job.extensionId,
             token,
-          }).then(() => {
-            remember(job.key);
-            job.finish();
-            resolve();
-          }, () => {
-            const error = generic();
-            reject(error);
-            throw error;
-          });
-        };
-        job.ready({
-          commit: settle,
-          cancel: () => {
-            // A React replacement is an orderly handoff, not a crash. Completing
-            // its journal lets the replacement mount; a process crash cannot run this path.
-            void settle().then(undefined, () => undefined);
-          },
-        });
-      });
+          }).catch(() => undefined);
+        }
+        throw error;
+      }
       jobs.delete(job.key);
       active = null;
       void drain();
@@ -102,12 +112,13 @@ export function createMountCoordinator() {
   }
 
   function fail(job: MountJob, error: Error) {
-    blocked = true;
     job.failReady(error);
     job.failDone(error);
     jobs.delete(job.key);
     active = null;
-    // Le journal reste volontairement présent : continuer masquerait un montage incomplet.
+    // Une panne observée est acquittée par abort ; seul un crash, qui ne peut
+    // exécuter ce chemin, conserve le journal durable de reprise.
+    void drain();
   }
 
   function remember(key: string) {

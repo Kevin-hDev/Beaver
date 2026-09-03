@@ -62,7 +62,7 @@ describe("theme application", () => {
     const target = document.createElement("div");
     expect(applyThemeChoice(
       target,
-      "extension:com.example.missing",
+      "extension:com.example:com.example.missing",
       catalog(),
       false,
     )).toBeNull();

@@ -16,6 +16,7 @@ src-tauri/resources/searxng-sidecar/wheels/
 src-tauri/resources/searxng-sidecar/wheels.tmp/
 src-tauri/resources/searxng-sidecar/.prepare.lock
 src-tauri/resources/extension-host/runtime/
+src-tauri/resources/extension-host/ui-build.mjs
 .DS_Store
 # Notes de travail personnelles : rien de docs/ ne part sur GitHub, à la seule
 # exception des maquettes du site ci-dessous. Toute nouvelle exception ici rend

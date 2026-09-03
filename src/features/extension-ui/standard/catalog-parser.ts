@@ -27,6 +27,8 @@ export function parseStandardCatalog(value: unknown): StandardCatalogSnapshot {
   const entries = input.contributions.map(parseEntry);
   const keys = new Set<string>();
   const perExtension = new Map<string, StandardCatalogEntry[]>();
+  const themes = new Map<string, number>();
+  const actions = new Map<string, Set<string>>();
   for (const entry of entries) {
     const key = `${entry.extensionId}:${entry.contributionId}`;
     if (keys.has(key)) throw invalid();
@@ -37,9 +39,28 @@ export function parseStandardCatalog(value: unknown): StandardCatalogSnapshot {
       || jsonBytes(group.map((item) => item.contribution)) > UI_LIMITS.maxUiBytesPerExtension) {
       throw invalid();
     }
+    const themeCount = (themes.get(entry.extensionId) ?? 0)
+      + Number(entry.contribution.type === "theme");
+    if (themeCount > UI_LIMITS.maxThemesPerExtension) throw invalid();
+    themes.set(entry.extensionId, themeCount);
+    const declaredActions = actions.get(entry.extensionId) ?? new Set<string>();
+    collectActionIds(entry.contribution, declaredActions);
+    if (declaredActions.size > UI_LIMITS.maxActionsPerExtension) throw invalid();
+    actions.set(entry.extensionId, declaredActions);
     perExtension.set(entry.extensionId, group);
   }
   return { revision: input.revision as number, contributions: entries };
+}
+
+function collectActionIds(value: unknown, actions: Set<string>): void {
+  if (!value || typeof value !== "object") return;
+  const object = value as Record<string, unknown>;
+  if (typeof object.actionId === "string") actions.add(object.actionId);
+  if (Array.isArray(object.children)) {
+    for (const child of object.children) collectActionIds(child, actions);
+  }
+  collectActionIds(object.list, actions);
+  collectActionIds(object.detail, actions);
 }
 
 function parseEntry(value: unknown): StandardCatalogEntry {

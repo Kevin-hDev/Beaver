@@ -30,6 +30,30 @@ fn startup_argument_collection_is_bounded_before_allocation_can_grow() {
     assert!(ui_startup::collect_startup_args(rejected).is_err());
 }
 
+#[cfg(unix)]
+#[test]
+fn non_utf8_startup_argument_opens_in_safe_mode() {
+    use std::os::unix::ffi::OsStringExt;
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("extension-loading.json");
+    let state = ui_startup::prepare_from_os_args_at(
+        &path,
+        [
+            std::ffi::OsString::from("beaver"),
+            std::ffi::OsString::from_vec(vec![0xff]),
+        ],
+        false,
+        false,
+    )
+    .unwrap();
+    assert_eq!(
+        state.mode(),
+        UiStartupMode::Safe {
+            reason: SafeReason::InvalidArguments,
+        }
+    );
+}
+
 #[test]
 fn ipc_acknowledgement_token_has_one_exact_deserialized_size() {
     assert!(serde_json::from_value::<UiAckToken>(serde_json::json!(vec![0_u8; 31])).is_err());
@@ -57,9 +81,14 @@ fn cef_launch_authority_consumes_the_central_safe_mode_decision() {
 fn malformed_safe_mode_never_masquerades_as_an_invalid_journal() {
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path().join("extension-loading.json");
-    assert!(
-        ui_startup::prepare_from_args_at(&path, ["beaver", "--safe-mode=true"], false, false,)
-            .is_err()
+    let state =
+        ui_startup::prepare_from_args_at(&path, ["beaver", "--safe-mode=true"], false, false)
+            .unwrap();
+    assert_eq!(
+        state.mode(),
+        UiStartupMode::Safe {
+            reason: SafeReason::InvalidArguments,
+        }
     );
     assert!(matches!(
         loading_marker::read_journal_at(&path),
@@ -232,6 +261,15 @@ fn acknowledgement_is_random_single_use_constant_time_and_leaves_failures() {
 
     let first = acknowledger.begin(UI_ID, 1).unwrap();
     assert_eq!(first.len(), 32);
+    assert!(acknowledger.advance(UI_ID, &[0; 32], "mount").is_err());
+    assert!(acknowledger
+        .advance("com.example.other", &first, "mount")
+        .is_err());
+    acknowledger.advance(UI_ID, &first, "mount").unwrap();
+    let JournalRead::Valid(journal) = loading_marker::read_journal_at(&path) else {
+        panic!("active attempt must keep its journal");
+    };
+    assert_eq!(journal.ui().unwrap().stage, "mount");
     assert!(acknowledger.acknowledge(UI_ID, &[0; 32]).is_err());
     assert!(matches!(
         loading_marker::read_journal_at(&path),

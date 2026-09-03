@@ -1,5 +1,5 @@
-import { useCallback, useState } from "react";
-import { PanelSlot } from "@/components/layout/panel-slots";
+import { useCallback, useRef, useState } from "react";
+import { PanelSlot } from "@/components/ui/panel-slots";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useTranslation } from "react-i18next";
@@ -9,6 +9,7 @@ import { StandardIcon } from "./icon-registry";
 import { localizedText } from "./localized-text";
 import { useContributionAction } from "./use-contribution-action";
 import { StandardViewRenderer } from "./view-renderer";
+import { ActionResultPopover } from "./action-result-popover";
 import type { SlotOccupant } from "../slot-types";
 import type { StandardCatalogEntry, StandardContribution, StandardView } from "./types";
 import "./standard-ui.css";
@@ -97,10 +98,12 @@ function PlacementAction({
   const contribution = asContribution(entry, "action");
   const label = localizedText(contribution.label);
   const [view, setView] = useState<StandardView | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const payload = useCallback(() => ({ fields: {} }), []);
   const action = useContributionAction(entry, payload, setView);
   const button = (
     <button
+      ref={triggerRef}
       type="button"
       className={surface === "toolbar"
         ? "icon-btn toolbar-btn xui-toolbar-action"
@@ -119,9 +122,13 @@ function PlacementAction({
       <span className={`xui-placement-action xui-placement-action-${surface}`}>
         {surface === "toolbar" ? <Tooltip label={label}>{button}</Tooltip> : button}
         {view && (
-          <div className="xui-action-result relief elev-float">
+          <ActionResultPopover
+            triggerRef={triggerRef}
+            surface={surface}
+            onClose={() => setView(null)}
+          >
             <StandardViewRenderer key={entry.contributionId} entry={entry} view={view} />
-          </div>
+          </ActionResultPopover>
         )}
       </span>
     </StandardContributionBoundary>

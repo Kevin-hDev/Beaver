@@ -84,6 +84,41 @@ describe("advanced extension UI loader", () => {
     expect(rejected.acknowledge).not.toHaveBeenCalled();
   });
 
+  it("defers an unavailable session mount and remounts it when its anchor returns", async () => {
+    const renders: HTMLElement[] = [];
+    const cleanups: string[] = [];
+    const dependencies = harness([], () => Promise.resolve({
+      activate(context: AdvancedExtensionContext) {
+        context.mount("agent.composer.leading", (container) => {
+          renders.push(container);
+          container.textContent = "mounted";
+          return () => { cleanups.push("cleanup"); };
+        });
+      },
+    }));
+
+    const cleanup = await loadAdvancedModules({
+      records: [record("com.example.deferred")],
+      startup: NORMAL,
+      generationCurrent: () => true,
+    }, dependencies);
+    expect(dependencies.acknowledge).toHaveBeenCalledOnce();
+    expect(renders).toHaveLength(0);
+
+    const first = document.createElement("span");
+    first.setAttribute("data-extension-ui-slot", "agent.composer.leading");
+    document.body.append(first);
+    await vi.waitFor(() => expect(renders).toHaveLength(1));
+    first.remove();
+    await vi.waitFor(() => expect(cleanups).toHaveLength(1));
+
+    const second = first.cloneNode() as HTMLElement;
+    document.body.append(second);
+    await vi.waitFor(() => expect(renders).toHaveLength(2));
+    await cleanup();
+    expect(cleanups).toHaveLength(2);
+  });
+
   it("loads no third-party module in safe mode and only the retry target", async () => {
     const dependencies = harness([], () => Promise.resolve({
       activate(context: AdvancedExtensionContext) { context.completeWithoutMounts(); },
@@ -214,7 +249,10 @@ function harness(
     document,
     importModule: vi.fn(importer),
     begin: vi.fn((id) => { events.push(`begin:${id}`); return Promise.resolve([1, 2, 3]); }),
-    advance: vi.fn((id, stage) => { events.push(`${stage}:${id}`); return Promise.resolve(); }),
+    advance: vi.fn((id, _token, stage) => {
+      events.push(`${stage}:${id}`);
+      return Promise.resolve();
+    }),
     acknowledge: vi.fn((id) => { events.push(`ack:${id}`); return Promise.resolve(); }),
   };
 }

@@ -1,7 +1,8 @@
-import { useEffect, useId, useRef } from "react";
+import { useCallback, useId, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { ShieldWarning } from "@/components/ui/icons";
 import { DialogPortal } from "@/components/ui/dialog-portal";
+import { useDialogKeyboard } from "@/components/ui/use-dialog-keyboard";
 import type { ExtensionUiStartupState } from "@/types/extensions";
 import "./extension-ui-recovery-dialog.css";
 
@@ -21,24 +22,19 @@ export function ExtensionUiRecoveryDialog(props: ExtensionUiRecoveryDialogProps)
   const titleId = useId();
   const descriptionId = useId();
   const safeRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
   const invalid = props.state.mode.kind === "safe"
     && props.state.mode.reason === "invalidMarker";
   const interrupted = props.state.mode.kind === "pendingInterruptedUi"
     ? props.state.mode
     : null;
 
-  useEffect(() => {
-    const previous = document.activeElement as HTMLElement | null;
-    safeRef.current?.focus();
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !busy) onSafe();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => {
-      window.removeEventListener("keydown", onKeyDown);
-      previous?.focus();
-    };
-  }, [busy, onSafe]);
+  const handleEscape = useCallback(() => { if (!busy) onSafe(); }, [busy, onSafe]);
+  useDialogKeyboard({
+    rootRef: dialogRef,
+    initialFocusRef: safeRef,
+    onEscape: handleEscape,
+  });
 
   return (
     <DialogPortal>
@@ -50,6 +46,7 @@ export function ExtensionUiRecoveryDialog(props: ExtensionUiRecoveryDialogProps)
         }}
       >
         <div
+          ref={dialogRef}
           className="wk-dialog extur-dialog"
           role="dialog"
           aria-modal="true"

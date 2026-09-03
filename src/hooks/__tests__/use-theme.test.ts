@@ -40,7 +40,7 @@ beforeEach(() => {
 
 function extensionTheme(): ExtensionThemeEntry {
   return {
-    choice: "extension:com.example.night",
+    choice: "extension:com.example:com.example.night",
     paletteId: "com.example.night",
     extensionId: "com.example",
     sourceName: "Example",
@@ -137,7 +137,7 @@ describe("useTheme", () => {
   });
 
   it("attend le catalogue avant d'appliquer un thème d'extension sauvegardé", async () => {
-    localStorage.setItem("clgo-theme", "extension:com.example.night");
+    localStorage.setItem("clgo-theme", "extension:com.example:com.example.night");
     localStorage.setItem("clgo-theme-base", "dark");
     const themeEntry = extensionTheme();
 
@@ -156,7 +156,7 @@ describe("useTheme", () => {
   });
 
   it("revient au système et avertit si le thème actif disparaît", async () => {
-    localStorage.setItem("clgo-theme", "extension:com.example.night");
+    localStorage.setItem("clgo-theme", "extension:com.example:com.example.night");
     localStorage.setItem("clgo-theme-base", "dark");
     const themeEntry = extensionTheme();
     const { result } = renderHook(() => useTheme());

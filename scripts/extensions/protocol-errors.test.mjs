@@ -6,10 +6,33 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
+import { LIMITS } from "../../src-tauri/resources/extension-host/contract.mjs";
 import { createHost, resetAndLoad } from "./host-test-client.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const hostScript = join(root, "src-tauri/target/extension-host/host.mjs");
+
+test("accepts one complete incoming message at the exact byte limit", async () => {
+  const child = spawn(process.execPath, [hostScript], {
+    shell: false,
+    stdio: ["pipe", "pipe", "ignore"],
+  });
+  const response = once(child.stdout, "data");
+  const message = JSON.stringify({
+    jsonrpc: "2.0", id: "exact-limit", method: "host.hello", params: {},
+  });
+  const padding = LIMITS.maxMessageBytes - Buffer.byteLength(message, "utf8") - 1;
+  assert.ok(padding > 0);
+  const input = `${message}${" ".repeat(padding)}\n`;
+  assert.equal(Buffer.byteLength(input, "utf8"), LIMITS.maxMessageBytes);
+
+  child.stdin.write(input);
+  const [chunk] = await response;
+  assert.equal(JSON.parse(chunk.toString("utf8")).id, "exact-limit");
+  const exited = once(child, "exit");
+  child.kill();
+  await exited;
+});
 
 test("rejects oversized protocol identifiers before tracking them", async () => {
   const child = spawn(process.execPath, [hostScript], {

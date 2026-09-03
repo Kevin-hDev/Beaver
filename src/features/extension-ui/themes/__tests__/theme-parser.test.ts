@@ -10,13 +10,13 @@ import {
 
 describe("extension theme parser", () => {
   it("accepte uniquement les identifiants canoniques et les couleurs hexadécimales", () => {
-    const choice = extensionThemeChoice("com.example.theme.night");
-    expect(choice).toBe("extension:com.example.theme.night");
+    const choice = extensionThemeChoice("com.example", "com.example.theme.night");
+    expect(choice).toBe("extension:com.example:com.example.theme.night");
     expect(themeIdFromChoice(choice)).toBe("com.example.theme.night");
     expect(parseExtensionThemeTokens({ "--void": "#010203", "--ink": "#AABBCCDD" }))
       .toEqual({ "--void": "#010203", "--ink": "#AABBCCDD" });
 
-    expect(() => extensionThemeChoice("../night")).toThrow("invalid_extension_theme");
+    expect(() => extensionThemeChoice("com.example", "../night")).toThrow("invalid_extension_theme");
     expect(() => parseExtensionThemeTokens({ "--void": "rgba(0, 0, 0, 1)" })).toThrow();
     expect(() => parseExtensionThemeTokens({ "--private-token": "#010203" })).toThrow();
     expect(() => parseExtensionThemeTokens(Object.fromEntries([

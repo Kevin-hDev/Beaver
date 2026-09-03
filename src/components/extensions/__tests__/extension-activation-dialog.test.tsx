@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { ExtensionRecord } from "@/types/extensions";
 import { ExtensionActivationDialog } from "../extension-activation-dialog";
@@ -115,5 +116,27 @@ describe("ExtensionActivationDialog", () => {
       .toHaveAttribute("role", "presentation");
     fireEvent.keyDown(window, { key: "Escape" });
     expect(onCancel).toHaveBeenCalledOnce();
+  });
+
+  it("garde la navigation clavier dans la fenêtre", async () => {
+    const user = userEvent.setup();
+    render(
+      <ExtensionActivationDialog
+        extension={extension}
+        busy={false}
+        errorKey={null}
+        onCancel={vi.fn()}
+        onConfirm={vi.fn()}
+      />,
+    );
+    const cancel = screen.getByRole("button", { name: "extensions.actions.cancel" });
+    const confirm = screen.getByRole("button", { name: "extensions.activation.confirm" });
+    expect(cancel).toHaveFocus();
+    await user.tab();
+    expect(confirm).toHaveFocus();
+    await user.tab();
+    expect(cancel).toHaveFocus();
+    await user.tab({ shift: true });
+    expect(confirm).toHaveFocus();
   });
 });

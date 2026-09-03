@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { PanelSlot, PanelSlotProvider, PanelSlotTarget } from "../panel-slots";
+import { PanelSlot, PanelSlotProvider, PanelSlotTarget } from "@/components/ui/panel-slots";
 
 function SlotHarness({ active }: { active: "agent" | "settings" }) {
   return (

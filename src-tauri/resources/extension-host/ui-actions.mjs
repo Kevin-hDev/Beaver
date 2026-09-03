@@ -9,6 +9,7 @@ import {
 } from "./ui-validation.mjs";
 
 const executions = new Set();
+const executionsByExtension = new Map();
 const admissions = new Set();
 let generation = 0;
 
@@ -29,7 +30,9 @@ export async function invokeUiAction(
       && contributionOwnsAction(extension.context.ui, item, actionId));
   const handler = extension.context.ui.handlers.get(actionId);
   const admission = `${generation}:${params.extensionId}:${contributionId}`;
+  const extensionExecutions = executionsByExtension.get(params.extensionId) ?? new Set();
   if (!contribution || !handler || admissions.has(admission)
+    || extensionExecutions.size >= UI_LIMITS.maxInFlightActionsPerExtension
     || executions.size >= LIMITS.maxInFlightHandlers) {
     throw new Error("ui_action_denied");
   }
@@ -38,9 +41,13 @@ export async function invokeUiAction(
   const execution = Promise.resolve().then(() => handler(params.payload, params.context));
   admissions.add(admission);
   executions.add(execution);
+  extensionExecutions.add(execution);
+  executionsByExtension.set(params.extensionId, extensionExecutions);
   void execution.finally(() => {
     admissions.delete(admission);
     executions.delete(execution);
+    extensionExecutions.delete(execution);
+    if (extensionExecutions.size === 0) executionsByExtension.delete(params.extensionId);
   }).catch(() => {});
   let timer;
   try {

@@ -62,12 +62,29 @@ pub(crate) fn decide_at(
 }
 
 pub(crate) fn prepare() -> Result<UiStartupState, String> {
-    let arguments = collect_startup_args(std::env::args_os())?;
-    prepare_from_args_at(
+    prepare_from_os_args_at(
         &loading_marker::path(),
-        arguments.iter().map(String::as_str),
+        std::env::args_os(),
         super::ui_startup_platform::shift_pressed().unwrap_or(false),
         cfg!(target_os = "linux") && std::env::var_os("WAYLAND_DISPLAY").is_some(),
+    )
+}
+
+pub(super) fn prepare_from_os_args_at(
+    marker_path: &Path,
+    arguments: impl IntoIterator<Item = std::ffi::OsString>,
+    shift: bool,
+    wayland: bool,
+) -> Result<UiStartupState, String> {
+    let arguments = match collect_startup_args(arguments) {
+        Ok(arguments) => arguments,
+        Err(_) => return Ok(invalid_arguments_state()),
+    };
+    prepare_from_args_at(
+        marker_path,
+        arguments.iter().map(String::as_str),
+        shift,
+        wayland,
     )
 }
 
@@ -105,7 +122,10 @@ pub(super) fn prepare_from_args_at<'a>(
     shift: bool,
     wayland: bool,
 ) -> Result<UiStartupState, String> {
-    let safe_argument = safe_mode_from_args(arguments)?;
+    let safe_argument = match safe_mode_from_args(arguments) {
+        Ok(safe_argument) => safe_argument,
+        Err(_) => return Ok(invalid_arguments_state()),
+    };
     if safe_argument {
         return Ok(UiStartupState::resolved(UiStartupMode::Safe {
             reason: SafeReason::Argument,
@@ -116,6 +136,12 @@ pub(super) fn prepare_from_args_at<'a>(
         return Ok(UiStartupState::awaiting_wayland(fallback));
     }
     decide_at(marker_path, false, shift)
+}
+
+fn invalid_arguments_state() -> UiStartupState {
+    UiStartupState::resolved(UiStartupMode::Safe {
+        reason: SafeReason::InvalidArguments,
+    })
 }
 
 fn mode_from_journal(journal: JournalRead) -> UiStartupMode {

@@ -50,6 +50,14 @@ test("Tauri utilise uniquement la préparation native centralisée", () => {
   assert.equal(existsSync("src-tauri/scripts/prepare-searxng.sh"), false);
 });
 
+test("la CSP complète interdit les sources de scripts non approuvées", () => {
+  const config = JSON.parse(readFileSync("src-tauri/tauri.conf.json", "utf8"));
+  assert.equal(
+    config.app.security.csp,
+    "default-src 'self'; style-src 'self' 'unsafe-inline' beaver-extension: http://beaver-extension.localhost; script-src 'self' beaver-extension: http://beaver-extension.localhost; img-src 'self' data: https: beaver-extension: http://beaver-extension.localhost; font-src 'self' data: beaver-extension: http://beaver-extension.localhost",
+  );
+});
+
 test("conserve la préparation CEF Unix après les étapes communes", async () => {
   assert.deepEqual(await recordPreparation("linux"), [
     "extension-ui",

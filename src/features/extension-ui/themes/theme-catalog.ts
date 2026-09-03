@@ -71,7 +71,7 @@ function themeEntry(
   locale: string,
 ): ExtensionThemeEntry {
   return {
-    choice: extensionThemeChoice(theme.id),
+    choice: extensionThemeChoice(extensionId, theme.id),
     paletteId: theme.id,
     extensionId,
     sourceName,

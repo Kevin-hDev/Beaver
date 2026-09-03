@@ -99,6 +99,7 @@ pub fn discard_interrupted_extension_ui_marker(
     extension_id: String,
 ) -> Result<ExtensionUiStartupProjection, String> {
     extensions::loading_marker::ui_complete(&extension_id)?;
+    state.choose_safe()?;
     Ok(project(state.inner()))
 }
 
@@ -116,8 +117,13 @@ pub fn begin_extension_ui_load(
 }
 
 #[tauri::command]
-pub fn advance_extension_ui_load(extension_id: String, stage: String) -> Result<(), String> {
-    extensions::loading_marker::ui_advance(&extension_id, &stage)
+pub fn advance_extension_ui_load(
+    acknowledger: tauri::State<'_, UiLoadAcknowledger>,
+    extension_id: String,
+    token: UiAckToken,
+    stage: String,
+) -> Result<(), String> {
+    acknowledger.advance(&extension_id, &token, &stage)
 }
 
 #[tauri::command]
@@ -129,4 +135,15 @@ pub fn acknowledge_extension_ui_load(
 ) -> Result<(), String> {
     acknowledger.acknowledge(&extension_id, &token)?;
     state.complete_authorized_load(&extension_id)
+}
+
+#[tauri::command]
+pub fn abort_extension_ui_load(
+    state: tauri::State<'_, UiStartupState>,
+    acknowledger: tauri::State<'_, UiLoadAcknowledger>,
+    extension_id: String,
+    token: UiAckToken,
+) -> Result<(), String> {
+    acknowledger.abort(&extension_id, &token)?;
+    state.abort_authorized_load(&extension_id)
 }

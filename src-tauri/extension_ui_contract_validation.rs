@@ -152,7 +152,7 @@ fn validate_theme_tokens(contract: &Value) -> Result<(), String> {
         || tokens.iter().any(|value| {
             !value
                 .as_str()
-                .is_some_and(|token| token.starts_with("--") && valid_name(&token[2..]))
+                .is_some_and(|token| token.strip_prefix("--").is_some_and(valid_name))
         })
     {
         return Err("invalid extension UI theme token".to_string());

@@ -57,6 +57,7 @@ function NavigationOccupant({
     );
   }
   const item = navItemFromOccupant(occupant);
+  if (!item) return null;
   const active = context.activeTab === item.id;
   const label = context.t(item.i18nKey);
   return (

@@ -73,6 +73,10 @@ describe("ExtensionUiRecoveryDialog", () => {
     await user.keyboard(" ");
     expect(onOpen).toHaveBeenCalledWith("com.example.ui");
     expect(onRetry).toHaveBeenCalledOnce();
+    await user.tab();
+    expect(screen.getByRole("button", { name: "extensions.uiRecovery.safe" })).toHaveFocus();
+    await user.tab({ shift: true });
+    expect(screen.getByRole("button", { name: "extensions.uiRecovery.retry" })).toHaveFocus();
 
     view.unmount();
     const onDiscard = vi.fn();

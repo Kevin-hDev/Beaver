@@ -81,4 +81,20 @@ describe("useCatalogSync", () => {
 
     expect(result.current.snapshot).toBe(first);
   });
+
+  it("retries when the backend has not reached the requested revision", async () => {
+    vi.useFakeTimers();
+    vi.mocked(invoke)
+      .mockResolvedValueOnce(empty(1))
+      .mockResolvedValueOnce(empty(1))
+      .mockResolvedValueOnce(empty(2));
+    const { result } = renderHook(() => useCatalogSync());
+    await vi.waitFor(() => expect(result.current.snapshot?.revision).toBe(1));
+
+    act(() => changed?.({ payload: 2 }));
+    await vi.waitFor(() => expect(invoke).toHaveBeenCalledTimes(2));
+    await act(() => vi.runOnlyPendingTimersAsync());
+    await vi.waitFor(() => expect(result.current.snapshot?.revision).toBe(2));
+    vi.useRealTimers();
+  });
 });

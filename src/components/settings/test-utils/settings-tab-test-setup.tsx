@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { vi } from "vitest";
 import { SettingsTab } from "../settings-tab";
-import { PanelSlotProvider, PanelSlotTarget } from "@/components/layout/panel-slots";
+import { PanelSlotProvider, PanelSlotTarget } from "@/components/ui/panel-slots";
 import { SlotProvider } from "@/features/extension-ui/slot-provider";
 import { DEFAULT_APP_NAV, type DeepPartial, type SettingsNavState } from "@/types/navigation";
 import { resetMascotSettingsMock } from "./settings-tab-test-mascot";

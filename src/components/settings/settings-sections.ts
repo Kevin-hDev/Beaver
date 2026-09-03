@@ -62,21 +62,25 @@ function projectSettingsSections(
   return groups.flatMap((occupants) => {
     if (occupants.length === 0) return [];
     const i18n = settingsSectionLabel(occupants[0].placement);
-    return [{ i18n, tabs: occupants.map((occupant) => subTabFromOccupant(occupant, entryFor)) }];
+    const tabs = occupants.flatMap((occupant) => {
+      const tab = subTabFromOccupant(occupant, entryFor);
+      return tab ? [tab] : [];
+    });
+    return tabs.length > 0 ? [{ i18n, tabs }] : [];
   });
 }
 
 function subTabFromOccupant(
   occupant: SlotOccupant,
   entryFor?: (extensionId: string, contributionId: string) => StandardCatalogEntry | undefined,
-): SubTabDef {
+): SubTabDef | null {
   if (occupant.source.kind === "extension") {
     const contribution = entryFor?.(
       occupant.source.extensionId,
       occupant.source.contributionId,
     )?.contribution;
     if (!contribution || contribution.type !== "settingsTab") {
-      throw new Error("Invalid extension settings occupant.");
+      return null;
     }
     return {
       id: occupant.id as SettingsSubTab,
@@ -87,7 +91,7 @@ function subTabFromOccupant(
     };
   }
   if (!occupant.labelKey || !occupant.iconKey) {
-    throw new Error("Invalid core settings occupant.");
+    return null;
   }
   return {
     id: occupant.target as CoreSettingsTabId,

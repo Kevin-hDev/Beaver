@@ -99,6 +99,31 @@ impl UiLoadAcknowledger {
         Ok(())
     }
 
+    pub(crate) fn abort(&self, extension_id: &str, candidate: &UiAckToken) -> Result<(), String> {
+        self.acknowledge(extension_id, candidate)
+    }
+
+    pub(crate) fn advance(
+        &self,
+        extension_id: &str,
+        candidate: &UiAckToken,
+        stage: &str,
+    ) -> Result<(), String> {
+        let active = self.active.lock().map_err(|_| invalid())?;
+        let Some(attempt) = active.as_ref() else {
+            return Err(invalid());
+        };
+        let token_matches = attempt.token.as_ref().ct_eq(candidate.as_slice());
+        if attempt.extension_id != extension_id || !bool::from(token_matches) {
+            return Err(invalid());
+        }
+        if self.marker_path == loading_marker::path() {
+            loading_marker::ui_advance(extension_id, stage)
+        } else {
+            loading_marker::ui_advance_at(&self.marker_path, extension_id, stage)
+        }
+    }
+
     #[cfg(test)]
     pub(crate) fn fail_active_attempt(&self) {
         if let Ok(mut active) = self.active.lock() {

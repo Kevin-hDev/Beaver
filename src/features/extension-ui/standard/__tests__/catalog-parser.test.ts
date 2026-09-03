@@ -78,4 +78,22 @@ describe("parseStandardCatalog", () => {
     expect(() => parseStandardCatalog({ ...valid, revision: -1 })).toThrow();
     expect(() => parseStandardCatalog({ ...valid, extra: true })).toThrow();
   });
+
+  it("revalidates theme and action budgets at the TypeScript boundary", () => {
+    const themes = Array.from({ length: UI_LIMITS.maxThemesPerExtension + 1 }, (_, index) => ({
+      extensionId: "com.example.ui",
+      contributionId: `com.example.ui.theme-${index}`,
+      contribution: {
+        type: "theme", id: `com.example.ui.theme-${index}`, order: index,
+        label: { default: `Theme ${index}` }, base: "dark", tokens: {},
+      },
+    }));
+    expect(() => parseStandardCatalog({ revision: 1, contributions: themes })).toThrow();
+
+    const buttons = Array.from({ length: UI_LIMITS.maxActionsPerExtension + 1 }, (_, index) => ({
+      type: "button", id: `com.example.ui.button-${index}`,
+      label: { default: `Button ${index}` }, actionId: `com.example.ui.action-${index}`,
+    }));
+    expect(() => parseStandardCatalog(snapshot(tab({ type: "stack", children: buttons })))).toThrow();
+  });
 });

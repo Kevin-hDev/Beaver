@@ -6,6 +6,7 @@ use serde::Serialize;
 #[serde(rename_all = "camelCase")]
 pub(crate) enum SafeReason {
     Argument,
+    InvalidArguments,
     Shift,
     InvalidMarker,
     RecoveryChoice,
@@ -167,6 +168,23 @@ impl UiStartupState {
                 return Err(invalid());
             }
             resolution.mode = UiStartupMode::Normal;
+        }
+        Ok(())
+    }
+
+    pub(crate) fn abort_authorized_load(&self, extension_id: &str) -> Result<(), String> {
+        let mut resolution = self.resolution.lock().map_err(|_| invalid())?;
+        if let UiStartupMode::RetryInterruptedUi {
+            extension_id: target,
+            ..
+        } = &resolution.mode
+        {
+            if target != extension_id {
+                return Err(invalid());
+            }
+            resolution.mode = UiStartupMode::Safe {
+                reason: SafeReason::RecoveryChoice,
+            };
         }
         Ok(())
     }

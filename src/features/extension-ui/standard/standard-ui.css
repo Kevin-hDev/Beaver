@@ -54,15 +54,21 @@
 
 .xui-placement-action { display: inline-flex; position: relative; }
 .xui-action-result {
-  position: absolute;
+  position: fixed;
   z-index: var(--z-dropdown);
-  top: calc(100% + var(--space-sm));
-  right: 0;
   width: min(var(--extensions-value-max-width), calc(100vw - var(--space-xl)));
   max-height: var(--extension-ui-action-result-max-height);
   background: var(--surface-overlay);
+  overflow: auto;
 }
-.xui-placement-action-composer .xui-action-result { right: auto; left: 0; }
+.xui-action-result-toolbar { transform: translateY(var(--space-sm)); }
+.xui-action-result-composer { transform: translateY(calc(-100% - var(--space-sm))); }
+.xui-action-result-close {
+  position: sticky;
+  top: var(--space-xs);
+  float: right;
+  margin: var(--space-xs);
+}
 
 @media (max-width: 900px) {
   .xui-row { flex-direction: column; align-items: stretch; }

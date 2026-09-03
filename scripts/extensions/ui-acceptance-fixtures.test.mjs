@@ -153,6 +153,8 @@ test("advanced fixtures build CSS, preserve failure, and detect modified bytes",
   const approved = await readFile(artifactPath);
   await writeFile(artifactPath, `${approved.toString("utf8")}\n// modified after approval\n`, "utf8");
   const modified = await readFile(artifactPath);
+  // This fixture only proves that tampering changes the approved digest. The
+  // serving refusal itself is exercised by Rust's ui_artifact_tests.
   assert.notEqual(sha256(approved), sha256(modified));
 });
 

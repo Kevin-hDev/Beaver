@@ -180,6 +180,7 @@ macro_rules! generate_tail {
             crate::commands::begin_extension_ui_load,
             crate::commands::advance_extension_ui_load,
             crate::commands::acknowledge_extension_ui_load,
+            crate::commands::abort_extension_ui_load,
         ]
     };
 }

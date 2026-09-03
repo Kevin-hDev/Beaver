@@ -22,10 +22,14 @@ pub(super) fn migrate_v1(
         if let Some(legacy) = manifest
             .get("ui")
             .and_then(Value::as_str)
+            .filter(|value| super::validation::source_input(value).is_ok())
             .map(str::to_string)
         {
             manifest.insert("ui".to_string(), Value::Null);
             manifest.insert("uiLegacy".to_string(), Value::String(legacy));
+        } else if manifest.get("ui").is_some_and(Value::is_string) {
+            manifest.insert("ui".to_string(), Value::Null);
+            manifest.insert("uiLegacy".to_string(), Value::Null);
         }
     }
     source["version"] = Value::from(2_u8);

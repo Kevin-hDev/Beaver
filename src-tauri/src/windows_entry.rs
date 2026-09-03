@@ -46,7 +46,10 @@ fn run_parent(instance: cef::sys::HINSTANCE, sandbox_info: *mut u8) -> i32 {
     // before CEF can create helpers or Tauri can construct a webview.
     let ui_startup = match crate::services::extensions::prepare_ui_startup() {
         Ok(state) => state,
-        Err(_) => return 1,
+        Err(_) => {
+            ::log::error!("[extensions] extension_ui_startup_failed");
+            return 1;
+        }
     };
     let _ = api_hash(sys::CEF_API_VERSION_LAST, 0);
     let args = Args::from(MainArgs { instance });

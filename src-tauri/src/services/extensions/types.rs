@@ -68,7 +68,7 @@ pub enum ExtensionUiMode {
 pub struct ExtensionUiManifest {
     pub api_version: String,
     pub mode: ExtensionUiMode,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     pub entry: Option<String>,
 }
 
@@ -107,7 +107,7 @@ pub struct ExtensionManifest {
     pub ui: Option<ExtensionUiManifest>,
     /// Projection transitoire de la chaîne UI v1 : lisible pour le diagnostic,
     /// mais distincte du manifeste structuré afin de ne jamais réactiver l'UI.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     pub ui_legacy: Option<String>,
     #[serde(default = "default_access")]
     pub access: String,
@@ -158,7 +158,7 @@ pub struct ExtensionRecord {
     pub trusted: bool,
     #[serde(default)]
     pub fingerprint: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     pub ui_artifact: Option<ExtensionUiArtifact>,
     #[serde(default)]
     pub trusted_at: Option<String>,

@@ -66,6 +66,7 @@ pub fn prepare_macos_application() -> (Option<BrowserLibraryGuard>, bool) {
 #[cfg(target_os = "macos")]
 pub fn run(browser_library: Option<BrowserLibraryGuard>) -> bool {
     let Ok(ui_startup) = super::services::extensions::prepare_ui_startup() else {
+        ::log::error!("[extensions] extension_ui_startup_failed");
         return false;
     };
     super::run_inner(browser_library, ui_startup)
@@ -74,6 +75,7 @@ pub fn run(browser_library: Option<BrowserLibraryGuard>) -> bool {
 #[cfg(all(not(target_os = "macos"), not(target_os = "windows")))]
 pub fn run() -> bool {
     let Ok(ui_startup) = super::services::extensions::prepare_ui_startup() else {
+        ::log::error!("[extensions] extension_ui_startup_failed");
         return false;
     };
     super::run_inner(ui_startup)

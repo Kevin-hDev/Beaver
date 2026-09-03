@@ -158,7 +158,7 @@ export interface ExtensionRecoveryState {
 }
 
 export type ExtensionUiSafeReason =
-  | "argument" | "shift" | "invalidMarker" | "recoveryChoice";
+  | "argument" | "invalidArguments" | "shift" | "invalidMarker" | "recoveryChoice";
 
 export type ExtensionUiStartupMode =
   | { kind: "normal" }

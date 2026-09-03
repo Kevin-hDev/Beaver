@@ -48,7 +48,7 @@ async function loadOne(
   let activationCleanup: AdvancedCleanup | undefined;
   let module: AdvancedExtensionModule | undefined;
   try {
-    await dependencies.advance(extensionId, "import");
+    await dependencies.advance(extensionId, token, "import");
     for (const output of artifact.outputs.filter(({ type }) => type === "css")) {
       styles.push(await mountStyle(
         dependencies.document,
@@ -64,7 +64,7 @@ async function loadOne(
       },
     ));
     if (!input.generationCurrent()) throw new Error("extension_ui_activation_failed");
-    await dependencies.advance(extensionId, "activate");
+    await dependencies.advance(extensionId, token, "activate");
     const activationResult = await limited(
       Promise.resolve(module.activate(createAdvancedContext(extensionId, mounts))),
       UI_LIMITS.maxAdvancedActivationMs,
@@ -81,7 +81,7 @@ async function loadOne(
     if (!mounts.completed() || !input.generationCurrent()) {
       throw new Error("extension_ui_mount_failed");
     }
-    await dependencies.advance(extensionId, "mount");
+    await dependencies.advance(extensionId, token, "mount");
     await dependencies.acknowledge(extensionId, token);
   } catch (error) {
     await cleanupOne(module, activationCleanup, mounts.cleanup, styles);
@@ -205,7 +205,10 @@ function defaults(): AdvancedLoaderDependencies {
     document,
     importModule: (url) => import(/* @vite-ignore */ url),
     begin: (extensionId, attempts) => invoke("begin_extension_ui_load", { extensionId, attempts }),
-    advance: (extensionId, stage) => invoke("advance_extension_ui_load", { extensionId, stage }),
+    advance: (extensionId, token, stage) => invoke(
+      "advance_extension_ui_load",
+      { extensionId, token, stage },
+    ),
     acknowledge: (extensionId, token) => invoke("acknowledge_extension_ui_load", { extensionId, token }),
   };
 }

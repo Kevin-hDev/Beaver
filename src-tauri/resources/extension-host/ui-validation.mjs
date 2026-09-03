@@ -16,12 +16,17 @@ const PLACEMENTS = new Map(UI_PLACEMENTS.map((entry) => [entry.key, entry]));
 
 export function canonicalId(extensionId, value) {
   if (!validId(extensionId) || !validId(value)) throw new Error("invalid_ui_id");
-  return value.startsWith(`${extensionId}.`) ? value : `${extensionId}.${value}`;
+  const canonical = value.startsWith(`${extensionId}.`) ? value : `${extensionId}.${value}`;
+  if (!validId(canonical)) throw new Error("invalid_ui_id");
+  return canonical;
 }
 
 export function validateUiManifest(manifest) {
-  return plain(manifest) && exactKeys(manifest, ["apiVersion", "mode"])
-    && manifest.apiVersion === EXTENSION_UI_API_VERSION && manifest.mode === "standard";
+  return plain(manifest) && exactKeys(manifest, ["apiVersion", "mode", "entry"])
+    && manifest.apiVersion === EXTENSION_UI_API_VERSION && manifest.mode === "standard"
+    // Rust serializes absent optional registry fields as null so a merge cannot
+    // resurrect a stale advanced entry. Standard UI must accept that wire form.
+    && (manifest.entry === undefined || manifest.entry === null);
 }
 
 export function normalizeContribution(extensionId, input) {
@@ -53,19 +58,23 @@ export function validateActionPayload(payload) {
 }
 
 export function validateActionResult(extensionId, result) {
-  if (!plain(result) || jsonBytes(result) > UI_LIMITS.maxActionResultBytes) {
+  const normalized = cloneJson(result);
+  if (!plain(normalized)) {
     throw new Error("invalid_ui_action_result");
   }
-  if (result.type === "notification") {
-    if (!exactKeys(result, ["type", "level", "message"])
-      || !LEVELS.has(result.level) || !localizedText(result.message)) {
+  if (normalized.type === "notification") {
+    if (!exactKeys(normalized, ["type", "level", "message"])
+      || !LEVELS.has(normalized.level) || !localizedText(normalized.message)) {
       throw new Error("invalid_ui_action_result");
     }
-  } else if (result.type === "view") {
-    if (!exactKeys(result, ["type", "view"])) throw new Error("invalid_ui_action_result");
-    normalizeView(extensionId, result.view, canonicalId);
+  } else if (normalized.type === "view") {
+    if (!exactKeys(normalized, ["type", "view"])) throw new Error("invalid_ui_action_result");
+    normalizeView(extensionId, normalized.view, canonicalId);
   } else throw new Error("invalid_ui_action_result");
-  return cloneJson(result);
+  if (jsonBytes(normalized) > UI_LIMITS.maxActionResultBytes) {
+    throw new Error("invalid_ui_action_result");
+  }
+  return normalized;
 }
 
 export function actionIdsInResult(result) {

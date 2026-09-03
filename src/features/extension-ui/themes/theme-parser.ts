@@ -10,15 +10,16 @@ const PUBLIC_TOKENS = new Set<string>(UI_THEME_TOKENS);
 const MAX_THEME_CSS_BYTES = 1_048_576;
 const MAX_RESOLUTION_DEPTH = 16;
 
-export function extensionThemeChoice(id: string): ExtensionThemeChoice {
-  if (!isExtensionIdentifier(id)) throw invalidTheme();
-  return `extension:${id}`;
+export function extensionThemeChoice(extensionId: string, themeId: string): ExtensionThemeChoice {
+  if (!isExtensionIdentifier(extensionId) || !isExtensionIdentifier(themeId)) throw invalidTheme();
+  return `extension:${extensionId}:${themeId}`;
 }
 
 export function themeIdFromChoice(choice: ExtensionThemeChoice): string {
-  const id = choice.slice("extension:".length);
-  if (!isExtensionIdentifier(id)) throw invalidTheme();
-  return id;
+  const [extensionId, themeId, extra] = choice.slice("extension:".length).split(":");
+  if (extra !== undefined || !isExtensionIdentifier(extensionId)
+    || !isExtensionIdentifier(themeId)) throw invalidTheme();
+  return themeId;
 }
 
 export function parseExtensionThemeTokens(value: unknown): Record<string, string> {

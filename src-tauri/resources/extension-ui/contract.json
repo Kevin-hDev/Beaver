@@ -55,6 +55,7 @@
     "maxGlobalUiBytes": 786432,
     "maxActionPayloadBytes": 65536,
     "maxActionResultBytes": 262144,
+    "maxInFlightActionsPerExtension": 8,
     "maxThemesPerExtension": 8,
     "maxThemeTokens": 64,
     "maxAdvancedArtifactFiles": 64,

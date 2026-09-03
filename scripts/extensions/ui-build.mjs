@@ -25,8 +25,6 @@ const LOADERS = {
   ".webp": "file",
   ".gif": "file",
   ".woff2": "file",
-  ".svg": "file",
-  ".bin": "file",
 };
 
 export async function buildExtensionUi(options) {

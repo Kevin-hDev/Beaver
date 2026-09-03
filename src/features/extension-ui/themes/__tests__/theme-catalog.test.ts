@@ -46,7 +46,7 @@ describe("theme catalog", () => {
     expect(catalog.entries.map(({ label }) => label)).toEqual(["Ambre", "Bleu"]);
     expect(catalog.entries.map(({ sourceName }) => sourceName))
       .toEqual(["Alpha Pack", "Zulu Pack"]);
-    expect(catalog.byChoice.get("extension:com.example.zulu.blue")?.tokens)
+    expect(catalog.byChoice.get("extension:com.example.zulu:com.example.zulu.blue")?.tokens)
       .toEqual({ "--pulse": "#010203" });
   });
 });

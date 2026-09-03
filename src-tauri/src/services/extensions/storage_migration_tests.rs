@@ -36,6 +36,12 @@ fn persisted_v0_shape(records: &[super::types::ExtensionRecord]) -> Value {
         object.remove("fingerprint");
         object.remove("trustedAt");
         object.remove("sensitiveAccessGranted");
+        object.remove("uiArtifact");
+        object
+            .get_mut("manifest")
+            .and_then(Value::as_object_mut)
+            .unwrap()
+            .remove("uiLegacy");
     }
     value
 }
@@ -193,6 +199,64 @@ fn current_recovery_snapshot_is_preserved_and_bounded() {
         storage::save_to(&path, &[], &oversized).unwrap_err(),
         super::error_codes::RECOVERY_MARKER_INVALID
     );
+}
+
+#[test]
+fn clearing_known_ui_fields_cannot_resurrect_previous_values() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("extensions.json");
+    let mut advanced = super::builtin::records().unwrap().remove(0);
+    advanced.manifest.ui = Some(super::types::ExtensionUiManifest {
+        api_version: "1".to_string(),
+        mode: super::types::ExtensionUiMode::Advanced,
+        entry: Some("ui.ts".to_string()),
+    });
+    advanced.manifest.ui_legacy = Some("legacy.ts".to_string());
+    advanced.ui_artifact = Some(super::types::ExtensionUiArtifact {
+        version: 1,
+        builder_version: "0.28.1".to_string(),
+        node_version: "v20.0.0".to_string(),
+        entry: "ui.js".to_string(),
+        total_bytes: 1,
+        outputs: vec![super::types::ExtensionUiArtifactOutput {
+            name: "ui.js".to_string(),
+            kind: "javascript".to_string(),
+            bytes: 1,
+            sha256: "a".repeat(64),
+        }],
+        inputs: vec!["ui.ts".to_string()],
+        manifest_sha256: "b".repeat(64),
+    });
+    storage::save_to(&path, &[advanced.clone()], &None).unwrap();
+
+    advanced.manifest.ui = Some(super::types::ExtensionUiManifest {
+        api_version: "1".to_string(),
+        mode: super::types::ExtensionUiMode::Standard,
+        entry: None,
+    });
+    advanced.manifest.ui_legacy = None;
+    advanced.ui_artifact = None;
+    storage::save_to(&path, &[advanced], &None).unwrap();
+
+    let loaded = storage::load_from(&path).unwrap();
+    let record = &loaded.extensions[0];
+    assert!(record.manifest.ui.as_ref().unwrap().entry.is_none());
+    assert!(record.manifest.ui_legacy.is_none());
+    assert!(record.ui_artifact.is_none());
+    assert!(super::validation::records(&loaded.extensions).is_ok());
+}
+
+#[test]
+fn invalid_legacy_ui_string_is_dropped_during_v1_migration() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("extensions.json");
+    let mut value: Value = serde_json::from_slice(LEGACY_UI_V1).unwrap();
+    value["extensions"][0]["manifest"]["ui"] = Value::String(String::new());
+    std::fs::write(&path, serde_json::to_vec(&value).unwrap()).unwrap();
+
+    let loaded = storage::load_from(&path).unwrap();
+    assert!(loaded.extensions[0].manifest.ui_legacy.is_none());
+    assert!(super::validation::records(&loaded.extensions).is_ok());
 }
 
 #[test]

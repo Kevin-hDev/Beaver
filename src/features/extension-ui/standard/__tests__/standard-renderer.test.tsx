@@ -14,7 +14,7 @@ import {
   StandardSettingsContent,
   StandardTabContent,
 } from "../standard-contributions";
-import { PanelSlotProvider, PanelSlotTarget } from "@/components/layout/panel-slots";
+import { PanelSlotProvider, PanelSlotTarget } from "@/components/ui/panel-slots";
 import type { StandardView } from "../types";
 
 const owner = "com.example.ui";
@@ -273,6 +273,36 @@ describe("standard UI renderer", () => {
     expect(screen.queryByText("Stale content")).toBeNull();
   });
 
+  it("ports a composer result above the trigger and closes it with Escape or its button", async () => {
+    vi.mocked(invoke).mockImplementation((command) => {
+      if (command === "get_extension_ui_catalog") return Promise.resolve(actionSnapshot(1));
+      if (command === "invoke_extension_ui_action") {
+        return Promise.resolve({
+          type: "view",
+          view: { type: "text", text: text("Action result") },
+        });
+      }
+      return Promise.resolve(undefined);
+    });
+    render(
+      <StandardCatalogProvider onOpenExtension={vi.fn()}>
+        <CatalogAction surface="composer" />
+      </StandardCatalogProvider>,
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: "Catalog action" }));
+    expect(await screen.findByText("Action result")).toBeInTheDocument();
+    const panel = document.body.querySelector(".xui-action-result");
+    expect(panel).toHaveClass("xui-action-result-composer");
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByText("Action result")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Catalog action" }));
+    await screen.findByText("Action result");
+    fireEvent.click(screen.getByRole("button", { name: i18n.t("a11y.close") }));
+    expect(screen.queryByText("Action result")).toBeNull();
+  });
+
   it("acknowledges the remount after the same contribution changes revision", async () => {
     let changed: ((event: { payload: number }) => void) | undefined;
     let current = actionSnapshot(1);
@@ -377,7 +407,7 @@ function actionSnapshot(revision: number) {
   };
 }
 
-function CatalogAction() {
+function CatalogAction({ surface = "toolbar" }: { surface?: "toolbar" | "composer" }) {
   const entry = useStandardCatalog().snapshot?.contributions[0];
-  return entry ? <StandardPlacementAction entry={entry} surface="toolbar" /> : null;
+  return entry ? <StandardPlacementAction entry={entry} surface={surface} /> : null;
 }

@@ -356,6 +356,7 @@ The extension author and user are responsible for any secret, file, process, or 
 | `maxFieldsPerView` | 32 |
 | `maxGlobalStandardContributions` | 512 |
 | `maxGlobalUiBytes` | 786432 |
+| `maxInFlightActionsPerExtension` | 8 |
 | `maxOccupantsPerPlacement` | 128 |
 | `maxOptionsPerField` | 64 |
 | `maxTextChars` | 2000 |

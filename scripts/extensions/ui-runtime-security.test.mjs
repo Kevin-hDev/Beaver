@@ -16,6 +16,7 @@ import {
   UI_THEME_TOKENS,
 } from "../../src-tauri/resources/extension-host/ui-contract.mjs";
 import {
+  canonicalId,
   jsonBytes,
   validateActionPayload,
   validateActionResult,
@@ -35,6 +36,17 @@ function specification(id = "com.example.ui") {
     },
   };
 }
+
+test("standard UI accepts the null entry emitted by the Rust registry boundary", () => {
+  const input = specification("com.example.null-entry");
+  input.manifest.ui.entry = null;
+  const context = createExtensionApi(input);
+
+  context.api.ui.register(action("run"));
+
+  assert.equal(context.ui.contributions.length, 1);
+  assert.deepEqual(context.ui.diagnostics, []);
+});
 
 function action(id) {
   return {
@@ -265,11 +277,27 @@ test("view nodes, depth, options, text and published theme tokens are bounded", 
     },
     { ...action("text-overflow"), label: { default: "x".repeat(UI_LIMITS.maxTextChars + 1) } },
     { ...accepts[4], tokens: { ...accepts[4].tokens, "--unknown": "#112233" } },
+    { ...accepts[4], tokens: { "--surface": "color-mix(in srgb, red, blue)" } },
   ];
   for (const contribution of rejects) {
     const context = createExtensionApi(specification());
     context.api.ui.register(contribution);
     assert.equal(context.ui.contributions.length, 0);
+  }
+});
+
+test("prototype-shaped contribution keys stay outside the closed UI schema", () => {
+  for (const key of ["constructor", "__proto__"]) {
+    const contribution = JSON.parse(JSON.stringify(action(`prototype-${key}`)));
+    Object.defineProperty(contribution, key, {
+      value: { polluted: true }, enumerable: true, configurable: true,
+    });
+    const context = createExtensionApi(specification());
+
+    context.api.ui.register(contribution);
+
+    assert.equal(context.ui.contributions.length, 0);
+    assert.equal(context.ui.diagnostics.at(-1).code, "ui_contribution_invalid");
   }
 });
 
@@ -306,6 +334,44 @@ test("action payload and result byte limits accept max then reject max plus one"
   growFirstStringSlot(texts);
   assert.equal(jsonBytes(result), UI_LIMITS.maxActionResultBytes + 1);
   assert.throws(() => validateActionResult("com.example.ui", result));
+});
+
+test("canonicalization cannot grow action results or identifiers beyond their limits", () => {
+  const result = {
+    type: "view",
+    view: {
+      type: "stack",
+      children: [
+        {
+          type: "button", id: "button", label: { default: "Run" }, actionId: "run",
+        },
+        ...Array.from({ length: 17 }, () => ({
+          type: "text",
+          text: Object.fromEntries(["default", ...UI_LOCALES].map((locale) => [locale, "x"])),
+        })),
+      ],
+    },
+  };
+  const slots = result.view.children.slice(1).flatMap((node) =>
+    Object.keys(node.text).map((key) => [node.text, key]));
+  fillStringSlotsToBytes(slots, result, UI_LIMITS.maxActionResultBytes);
+  assert.equal(jsonBytes(result), UI_LIMITS.maxActionResultBytes);
+  assert.throws(() => validateActionResult("com.example.ui", result), /invalid_ui_action_result/u);
+
+  const maximum = "a".repeat(LIMITS.maxIdentifierChars);
+  assert.throws(() => canonicalId(maximum, maximum), /invalid_ui_id/u);
+});
+
+test("action results are materialized once before validation", () => {
+  let reads = 0;
+  const result = {
+    get type() { reads += 1; return reads <= 2 ? "notification" : "view"; },
+    level: "info",
+    message: { default: "Safe" },
+  };
+  const normalized = validateActionResult("com.example.ui", result);
+  assert.equal(normalized.type, "notification");
+  assert.equal(reads, 1);
 });
 
 test("declared actions are bounded globally and unsubscribe releases admission", () => {
@@ -408,25 +474,33 @@ test("returned views keep the action limit extension-wide", async () => {
   }), /invalid_ui_action_result/u);
 });
 
-test("timed out handlers keep bounded admission until settle and reset changes generation", async () => {
+test("timed out handlers cannot consume another extension's admission budget", async () => {
   const resolvers = [];
-  const context = createExtensionApi(specification());
+  const context = createExtensionApi(specification("com.example.slow"));
   context.api.ui.register(action("slow"));
   context.api.ui.onAction("slow", () => new Promise((resolve) => resolvers.push(resolve)));
   const extension = { context };
   const params = {
-    extensionId: "com.example.ui", contributionId: "slow", actionId: "slow",
+    extensionId: "com.example.slow", contributionId: "slow", actionId: "slow",
     payload: { fields: {} }, context: { locale: "en" },
   };
-  await assert.rejects(invokeUiAction(extension, params, 2), /ui_action_timeout/u);
-  await assert.rejects(invokeUiAction(extension, params, 2), /ui_action_denied/u);
-
-  for (let index = 1; index < LIMITS.maxInFlightHandlers; index += 1) {
+  for (let index = 0; index < UI_LIMITS.maxInFlightActionsPerExtension; index += 1) {
     clearUiActions();
     await assert.rejects(invokeUiAction(extension, params, 2), /ui_action_timeout/u);
   }
   clearUiActions();
   await assert.rejects(invokeUiAction(extension, params, 2), /ui_action_denied/u);
+
+  const healthyContext = createExtensionApi(specification("com.example.healthy"));
+  healthyContext.api.ui.register(action("run"));
+  healthyContext.api.ui.onAction("run", () => ({
+    type: "notification", level: "info", message: { default: "healthy" },
+  }));
+  const healthy = await invokeUiAction({ context: healthyContext }, {
+    extensionId: "com.example.healthy", contributionId: "run", actionId: "run",
+    payload: { fields: {} }, context: { locale: "en" },
+  });
+  assert.equal(healthy.message.default, "healthy");
   for (const resolve of resolvers) {
     resolve({ type: "notification", level: "info", message: { default: "settled" } });
   }

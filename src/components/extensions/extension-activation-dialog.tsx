@@ -1,7 +1,8 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ShieldWarning } from "@/components/ui/icons";
 import { DialogPortal } from "@/components/ui/dialog-portal";
+import { useDialogKeyboard } from "@/components/ui/use-dialog-keyboard";
 import type { ExtensionRecord } from "@/types/extensions";
 import "./extension-activation-dialog.css";
 
@@ -24,20 +25,15 @@ export function ExtensionActivationDialog({
   const titleId = useId();
   const descriptionId = useId();
   const cancelRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
   const advanced = extension.manifest.ui?.mode === "advanced";
   const [advancedConfirmed, setAdvancedConfirmed] = useState(false);
-  useEffect(() => {
-    const previous = document.activeElement as HTMLElement | null;
-    cancelRef.current?.focus();
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !busy) onCancel();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      previous?.focus();
-    };
-  }, [busy, onCancel]);
+  const handleEscape = useCallback(() => { if (!busy) onCancel(); }, [busy, onCancel]);
+  useDialogKeyboard({
+    rootRef: dialogRef,
+    initialFocusRef: cancelRef,
+    onEscape: handleEscape,
+  });
   return (
     <DialogPortal>
       <div
@@ -48,6 +44,7 @@ export function ExtensionActivationDialog({
         }}
       >
         <div
+          ref={dialogRef}
           className="wk-dialog extc-dialog"
           role="dialog"
           aria-modal="true"

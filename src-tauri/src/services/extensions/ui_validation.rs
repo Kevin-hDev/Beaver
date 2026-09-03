@@ -206,8 +206,9 @@ fn order(object: &Map<String, Value>) -> Result<(), String> {
 
 fn is_hex_color(value: &str) -> bool {
     matches!(value.len(), 7 | 9)
-        && value.starts_with('#')
-        && value[1..].chars().all(|ch| ch.is_ascii_hexdigit())
+        && value
+            .strip_prefix('#')
+            .is_some_and(|content| content.chars().all(|ch| ch.is_ascii_hexdigit()))
 }
 
 fn invalid() -> String {

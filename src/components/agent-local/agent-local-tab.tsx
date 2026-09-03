@@ -12,7 +12,7 @@ import { useGitUncommittedFiles } from "@/hooks/use-git-uncommitted-files";
 import { useSessionSummary } from "@/hooks/use-session-summary";
 import { useSessionTabs } from "@/hooks/use-session-tabs";
 import { useAgentLocalTabGit } from "@/hooks/use-agent-local-tab-git";
-import { PanelSlot } from "@/components/layout/panel-slots";
+import { PanelSlot } from "@/components/ui/panel-slots";
 import {
   resolveDisplayModel, resolveDisplayProject, resolveDisplayReasoningMode, resolveDisplaySession,
 } from "./agent-local-display";
