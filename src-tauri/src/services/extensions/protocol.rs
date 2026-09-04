@@ -22,6 +22,7 @@ pub struct HelloResult {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct LoadResult {
     pub id: String,
     pub contributions: Option<ExtensionContributions>,
@@ -44,6 +45,7 @@ pub struct HostUiDiagnostic {
 }
 
 #[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct HostDiagnostic {
     pub stage: String,
     pub code: String,

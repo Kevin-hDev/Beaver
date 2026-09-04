@@ -2380,6 +2380,17 @@
     "uiEmpty": "Derzeit ist kein Oberflächenbeitrag deklariert.",
     "uiTheme": "Design",
     "contributions": "Registrierte Beiträge",
+    "capabilities": "Skills und Ressourcen",
+    "capabilitiesLoading": "Skills und Ressourcen werden geladen…",
+    "capabilitiesError": "Skills und Ressourcen konnten nicht geladen werden.",
+    "capabilitiesEmpty": "Derzeit sind keine Skills oder Ressourcen deklariert.",
+    "skills": "Skills",
+    "resources": "Ressourcen",
+    "resourceTypes": {
+      "text": "Text",
+      "image": "Bild",
+      "file": "Datei"
+    },
     "replacesCore": "Ersetzt ein integriertes Tool"
   },
   "activation": {

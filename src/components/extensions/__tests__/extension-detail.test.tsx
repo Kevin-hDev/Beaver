@@ -74,6 +74,34 @@ describe("ExtensionDetail", () => {
     expect(screen.getByText("Custom search behavior")).toBeInTheDocument();
   });
 
+  it("intègre les métadonnées des skills et ressources sans leurs chemins", () => {
+    const withCapabilities: ExtensionRecord = {
+      ...extension,
+      contributions: {
+        ...extension.contributions,
+        skills: [{
+          id: "guide",
+          name: "Guide",
+          description: "A concise guide.",
+          path: "skills/private-guide.md",
+        }],
+        resources: [{
+          id: "preview",
+          name: "Preview",
+          description: "An image preview.",
+          type: "image",
+          path: "resources/private-preview.png",
+        }],
+      },
+    };
+    renderDetail(withCapabilities);
+
+    expect(screen.getByText("Guide")).toBeInTheDocument();
+    expect(screen.getByText("Preview")).toBeInTheDocument();
+    expect(screen.queryByText("skills/private-guide.md")).not.toBeInTheDocument();
+    expect(screen.queryByText("resources/private-preview.png")).not.toBeInTheDocument();
+  });
+
   it("reste affichable si une ancienne réponse IPC omet les contributions", () => {
     const incomplete = {
       ...extension,

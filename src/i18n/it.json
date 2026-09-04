@@ -2380,6 +2380,17 @@
     "uiEmpty": "Nessun contributo dell’interfaccia è attualmente dichiarato.",
     "uiTheme": "Tema",
     "contributions": "Contributi registrati",
+    "capabilities": "Skill e risorse",
+    "capabilitiesLoading": "Caricamento di skill e risorse…",
+    "capabilitiesError": "Impossibile caricare skill e risorse.",
+    "capabilitiesEmpty": "Al momento non è dichiarato alcuno skill o risorsa.",
+    "skills": "Skill",
+    "resources": "Risorse",
+    "resourceTypes": {
+      "text": "Testo",
+      "image": "Immagine",
+      "file": "File"
+    },
     "replacesCore": "Sostituisce uno strumento integrato"
   },
   "activation": {

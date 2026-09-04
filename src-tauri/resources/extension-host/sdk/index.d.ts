@@ -3,6 +3,7 @@ import type {
   ExtensionCapability,
   ExtensionEffectClass,
   ExtensionEvent,
+  OptionalExtensionCapability,
   ExtensionResourceType,
   StableHostToCoreRequestMethod,
 } from "./contract";
@@ -147,9 +148,11 @@ export interface BeaverExtensionApi {
   readonly id: string;
   readonly manifest: Record<string, JsonValue>;
   /** Frozen copy of capabilities that are usable by this Host. */
-  readonly capabilities?: readonly ExtensionCapability[];
+  readonly capabilities?: readonly (ExtensionCapability | OptionalExtensionCapability)[];
   info(): Promise<JsonValue>;
   registerTool(tool: BeaverTool): void;
+  registerSkill(skill: BeaverSkillContribution): void;
+  registerResource(resource: BeaverResourceContribution): void;
   readonly ui: BeaverUiApi;
   on(event: ExtensionEvent, handler: (payload: JsonValue) => void | Promise<void>): () => void;
   call(method: StableHostToCoreRequestMethod, params?: Record<string, JsonValue>): Promise<JsonValue>;

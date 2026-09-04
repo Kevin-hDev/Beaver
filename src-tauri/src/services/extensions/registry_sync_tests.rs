@@ -1,7 +1,7 @@
 use super::registry_sync::{apply_all_enabled_error, apply_loaded_results, mark_loading_records};
 use super::types::{
     ExtensionApiLevel, ExtensionContributions, ExtensionEffect, ExtensionKind, ExtensionManifest,
-    ExtensionRecord, ExtensionStatus, ExtensionTool,
+    ExtensionRecord, ExtensionSkill, ExtensionStatus, ExtensionTool,
 };
 use serde_json::json;
 use std::collections::{BTreeMap, HashMap, HashSet};
@@ -107,4 +107,34 @@ fn loading_transition_only_clears_errors_for_eligible_records() {
         records[1].last_error.as_deref(),
         Some("extensions_fingerprint_changed")
     );
+}
+
+#[test]
+fn restarted_host_reconstructs_a_skill_only_extension() {
+    let successful = HashMap::from([(
+        "plugin-a".to_string(),
+        ExtensionContributions {
+            skills: vec![ExtensionSkill {
+                id: "guide".to_string(),
+                name: "Guide".to_string(),
+                description: "Description.".to_string(),
+                path: "skills/guide.md".to_string(),
+            }],
+            ..Default::default()
+        },
+    )]);
+    let mut records = vec![record("plugin-a")];
+    let mut active = 0;
+
+    apply_loaded_results(
+        &mut records,
+        &HashSet::from(["plugin-a".to_string()]),
+        &successful,
+        &BTreeMap::new(),
+        &mut active,
+    );
+
+    assert_eq!(active, 1);
+    assert!(records[0].contributions.tools.is_empty());
+    assert_eq!(records[0].contributions.skills[0].id, "guide");
 }

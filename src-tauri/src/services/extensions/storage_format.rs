@@ -62,10 +62,15 @@ fn preserve_registry_unknown(previous: Value, candidate: Value) -> Result<Value,
                 .iter()
                 .find(|item| item.pointer("/manifest/id").and_then(Value::as_str) == Some(id))
         });
-        merged.push(match previous_entry {
+        let mut record = match previous_entry {
             Some(previous_entry) => merge_objects(previous_entry, entry),
             None => entry.clone(),
-        });
+        };
+        // Les contributions viennent uniquement de l'Hôte au démarrage : une
+        // ancienne clé inconnue ne doit pas contourner cette reconstruction.
+        let object = record.as_object_mut().ok_or_else(unavailable)?;
+        object.remove("contributions");
+        merged.push(record);
     }
     output.insert("extensions".to_string(), Value::Array(merged));
     Ok(Value::Object(output))

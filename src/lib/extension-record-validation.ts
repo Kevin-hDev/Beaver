@@ -9,6 +9,15 @@ export function object(value: unknown): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
+export function objectWithKeys(
+  value: unknown,
+  keys: readonly string[],
+): Record<string, unknown> {
+  const input = object(value);
+  if (Object.keys(input).some((key) => !keys.includes(key))) invalid();
+  return input;
+}
+
 export function text(value: unknown, maxChars: number, allowEmpty = false): string {
   if (typeof value !== "string") invalid();
   const length = Array.from(value).length;

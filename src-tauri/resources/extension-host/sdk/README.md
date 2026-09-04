@@ -82,10 +82,32 @@ Beaver namespaces this tool as `com.example.hello.hello`.
 
 `beaver.capabilities` is an optional frozen copy of the API that the current
 Host can actually use. Use `beaver.capabilities?.includes(...)` so an
-extension also loads in an older Beaver Host. API-R0 defines future skill,
-resource, and rich-result shapes in the generated contract, but it does not
-expose registration methods for them yet; extensions must not assume those
-capabilities are available.
+extension also loads in an older Beaver Host. When both `skills` and
+`resources` are present, the Host also exposes `registerSkill` and
+`registerResource`. Register metadata only: Beaver does not read, inject, or
+expose either file's content during this API level. `richToolResults` remains
+unavailable until its separate capability is announced.
+
+```ts
+if (
+  beaver.capabilities?.includes("skills")
+  && beaver.capabilities?.includes("resources")
+) {
+  beaver.registerSkill({
+    id: "guide",
+    name: "Guide",
+    description: "A concise guide.",
+    path: "skills/guide.md",
+  });
+  beaver.registerResource({
+    id: "reference",
+    name: "Reference",
+    description: "A text reference.",
+    type: "text",
+    path: "resources/reference.txt",
+  });
+}
+```
 
 ### Standard interface contributions
 

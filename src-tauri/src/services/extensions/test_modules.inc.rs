@@ -15,6 +15,7 @@ mod npm_runner_tests;
 mod registry_sync_tests;
 mod runtime_hosts_tests;
 mod runtime_sync_tests;
+mod runtime_sync_contributions_tests;
 mod source_validation_tests;
 mod storage_migration_tests;
 mod tests;

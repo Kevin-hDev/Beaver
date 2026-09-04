@@ -1,14 +1,21 @@
 import { callCore } from "./protocol.mjs";
 import {
-  CAPABILITIES,
   LIMITS,
   methodKind,
   methodLevel,
+  RESOURCE_TYPES,
   supportsEffect,
   supportsEvent,
   TIMEOUTS,
 } from "./contract.mjs";
 import { createUiApi } from "./ui-api.mjs";
+import { ACTIVE_CAPABILITIES } from "./extension-api-capabilities.mjs";
+import { snapshotContribution } from "./contribution-snapshot.mjs";
+import {
+  unicodeScalarLength,
+  validContribution,
+  validRelativePath,
+} from "./contribution-validation.mjs";
 
 const inFlightHandlers = new Set();
 function validIdentifier(value) {
@@ -19,6 +26,8 @@ function validIdentifier(value) {
 
 export function createExtensionApi(specification) {
   const tools = [];
+  const skills = [];
+  const resources = [];
   const handlers = new Map();
   const ui = createUiApi(specification);
   let handlerCount = 0;
@@ -84,13 +93,37 @@ export function createExtensionApi(specification) {
     };
   }
 
+  function registerSkill(definition) {
+    const skill = snapshotContribution(definition);
+    if (
+      skills.length >= LIMITS.maxSkillsPerExtension
+      || !validContribution(skill, validIdentifier, ["id", "name", "description", "path"])
+      || !validRelativePath(skill.path)
+      || skills.some((item) => item.id === skill.id)
+    ) throw new Error("invalid_skill");
+    skills.push(skill);
+  }
+
+  function registerResource(definition) {
+    const resource = snapshotContribution(definition);
+    if (
+      resources.length >= LIMITS.maxResourcesPerExtension
+      || !validContribution(resource, validIdentifier, ["id", "name", "description", "type", "path"])
+      || !RESOURCE_TYPES.includes(resource.type)
+      || !validRelativePath(resource.path)
+      || resources.some((item) => item.id === resource.id)
+    ) throw new Error("invalid_resource");
+    resources.push(resource);
+  }
+
   const api = {
     id: specification.id,
     manifest: Object.freeze({ ...specification.manifest }),
-    // R0 declares future types without exposing unusable registration methods.
-    capabilities: Object.freeze([...CAPABILITIES]),
+    capabilities: Object.freeze([...ACTIVE_CAPABILITIES]),
     info: () => callCore("app.info"),
     registerTool: (definition) => registerTool(definition, false),
+    registerSkill,
+    registerResource,
     ui: ui.api,
     on,
     call: (method, params = {}) => callAtLevel("stable", method, params),
@@ -149,6 +182,8 @@ export function createExtensionApi(specification) {
   return {
     api: Object.freeze(api),
     tools,
+    skills,
+    resources,
     events: handlers,
     ui,
     emit: async (event, payload) => {
@@ -157,10 +192,6 @@ export function createExtensionApi(specification) {
       }
     },
   };
-}
-
-function unicodeScalarLength(value) {
-  return Array.from(value).length;
 }
 
 async function runEventHandler(handler, payload) {

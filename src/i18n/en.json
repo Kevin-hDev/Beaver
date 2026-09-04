@@ -1723,6 +1723,17 @@
     "uiEmpty": "No interface contribution is currently declared.",
     "uiTheme": "Theme",
     "contributions": "Registered contributions",
+    "capabilities": "Skills and resources",
+    "capabilitiesLoading": "Loading skills and resources…",
+    "capabilitiesError": "Skills and resources could not be loaded.",
+    "capabilitiesEmpty": "No skill or resource is currently declared.",
+    "skills": "Skills",
+    "resources": "Resources",
+    "resourceTypes": {
+      "text": "Text",
+      "image": "Image",
+      "file": "File"
+    },
     "replacesCore": "Replaces a built-in tool"
   },
   "activation": {

@@ -123,7 +123,7 @@ pub struct ExtensionManifest {
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ExtensionContributions {
     #[serde(default)]
     pub tools: Vec<ExtensionTool>,

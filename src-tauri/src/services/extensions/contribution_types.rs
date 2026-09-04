@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use super::types::ExtensionResourceType;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ExtensionSkill {
     pub id: String,
     pub name: String,
@@ -12,7 +12,7 @@ pub struct ExtensionSkill {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ExtensionResource {
     pub id: String,
     pub name: String,

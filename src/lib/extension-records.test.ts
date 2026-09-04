@@ -113,6 +113,65 @@ describe("parseExtensionRecords", () => {
       .toThrow("invalid_extension_response");
   });
 
+  it("borne séparément les skills et ressources projetés", () => {
+    const input = backendRecord();
+    input.contributions.skills = Array.from(
+      { length: EXTENSION_VIEW_LIMITS.skillsPerExtension + 1 },
+      (_, index) => ({
+        id: `skill-${index}`,
+        name: "Skill",
+        description: "Description",
+        path: `skills/${index}.md`,
+      }),
+    );
+    expect(() => parseExtensionRecords([input]))
+      .toThrow("invalid_extension_response");
+
+    input.contributions.skills = [];
+    input.contributions.resources = Array.from(
+      { length: EXTENSION_VIEW_LIMITS.resourcesPerExtension + 1 },
+      (_, index) => ({
+        id: `resource-${index}`,
+        name: "Resource",
+        description: "Description",
+        type: "text",
+        path: `resources/${index}.txt`,
+      }),
+    );
+    expect(() => parseExtensionRecords([input]))
+      .toThrow("invalid_extension_response");
+  });
+
+  it("accepte exactement 32 skills et 64 ressources projetés", () => {
+    expect(EXTENSION_VIEW_LIMITS.skillsPerExtension).toBe(32);
+    expect(EXTENSION_VIEW_LIMITS.resourcesPerExtension).toBe(64);
+    const input = backendRecord();
+    input.contributions.skills = Array.from(
+      { length: EXTENSION_VIEW_LIMITS.skillsPerExtension },
+      (_, index) => ({
+        id: `skill-${index}`,
+        name: "Skill",
+        description: "Description",
+        path: `skills/${index}.md`,
+      }),
+    );
+    input.contributions.resources = Array.from(
+      { length: EXTENSION_VIEW_LIMITS.resourcesPerExtension },
+      (_, index) => ({
+        id: `resource-${index}`,
+        name: "Resource",
+        description: "Description",
+        type: "text",
+        path: `resources/${index}.txt`,
+      }),
+    );
+
+    const [record] = parseExtensionRecords([input]);
+
+    expect(record.contributions.skills).toHaveLength(32);
+    expect(record.contributions.resources).toHaveLength(64);
+  });
+
   it("ignore les anciens événements inconnus sans perdre le registre", () => {
     const input = backendRecord();
     input.contributions.events = ["session.legacy", "session.turn.started"];
@@ -156,6 +215,32 @@ describe("parseExtensionRecords", () => {
       .toBe("Compétence 🦫");
 
     input.contributions.skills[0].id = "compétence";
+    expect(() => parseExtensionRecords([input]))
+      .toThrow("invalid_extension_response");
+  });
+
+  it("refuse les champs inconnus des contributions skills et ressources", () => {
+    const input = backendRecord();
+    const rawContributions = input.contributions as Record<string, unknown>;
+    rawContributions.skills = [{
+      id: "guide",
+      name: "Guide",
+      description: "Description",
+      path: "SKILL.md",
+      root: "/untrusted",
+    }];
+    expect(() => parseExtensionRecords([input]))
+      .toThrow("invalid_extension_response");
+
+    rawContributions.skills = [];
+    rawContributions.resources = [{
+      id: "resource",
+      name: "Resource",
+      description: "Description",
+      type: "text",
+      path: "resources/reference.txt",
+      mimeType: "text/plain",
+    }];
     expect(() => parseExtensionRecords([input]))
       .toThrow("invalid_extension_response");
   });

@@ -112,13 +112,17 @@ export async function callExtensionUiAction(params) {
 }
 
 export async function loadExtension(specification) {
+  return loadExtensionWithApi(specification, createExtensionApi);
+}
+
+export async function loadExtensionWithApi(specification, createApi) {
   let stage = LOAD_STAGES[0];
   try {
     if (!specification || typeof specification !== "object") {
       throw new Error("invalid_extension_specification");
     }
     notifyCore(HOST_LOAD_STAGE_METHOD, { stage });
-    const context = createExtensionApi(specification);
+    const context = createApi(specification);
     const module = await jiti.import(specification.mainPath, { default: true });
     stage = LOAD_STAGES[1];
     notifyCore(HOST_LOAD_STAGE_METHOD, { stage });
@@ -144,6 +148,8 @@ export async function loadExtension(specification) {
       id: specification.id,
       contributions: {
         tools: context.tools.map((tool) => tool.metadata),
+        skills: context.skills,
+        resources: context.resources,
         events: [...context.events.keys()],
         ui: context.ui.contributions,
       },

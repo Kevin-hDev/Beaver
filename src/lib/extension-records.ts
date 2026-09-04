@@ -27,6 +27,7 @@ import {
   identifier,
   invalid,
   object,
+  objectWithKeys,
   oneOf,
   optionalText,
   text,
@@ -54,7 +55,7 @@ const STATUSES: readonly ExtensionStatus[] = [
 const API_LEVELS: readonly ExtensionApiLevel[] = ["stable", "advanced"];
 
 function skill(value: unknown): ExtensionSkill {
-  const input = object(value);
+  const input = objectWithKeys(value, ["id", "name", "description", "path"]);
   return {
     id: identifier(input.id),
     name: text(input.name, LIMITS.maxExtensionNameChars),
@@ -64,7 +65,7 @@ function skill(value: unknown): ExtensionSkill {
 }
 
 function resource(value: unknown): ExtensionResource {
-  const input = object(value);
+  const input = objectWithKeys(value, ["id", "name", "description", "type", "path"]);
   return {
     id: identifier(input.id),
     name: text(input.name, LIMITS.maxExtensionNameChars),
@@ -117,7 +118,7 @@ function tool(value: unknown): ExtensionTool {
 }
 
 function contributions(value: unknown): ExtensionContributions {
-  const input = object(value);
+  const input = objectWithKeys(value, ["tools", "events", "skills", "resources"]);
   const skills = input.skills === undefined ? [] : input.skills;
   const resources = input.resources === undefined ? [] : input.resources;
   if (

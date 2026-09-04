@@ -2,6 +2,13 @@ mod access_log;
 mod bounded_jsonl;
 mod builtin;
 mod call_context;
+mod contribution_path;
+mod contribution_resources;
+#[cfg(test)]
+mod contribution_resources_tests;
+mod contribution_skills;
+#[cfg(test)]
+mod contribution_skills_tests;
 mod contribution_types;
 mod core_bridge;
 mod core_secrets;

@@ -141,6 +141,36 @@ fn runtime_contributions_are_not_persisted() {
 }
 
 #[test]
+fn stale_persisted_contributions_are_removed_before_a_restart() {
+    let directory = tempfile::tempdir().unwrap();
+    let source = directory.path().join("extension.ts");
+    let storage = directory.path().join("extensions.json");
+    std::fs::write(&source, "export default function () {}").unwrap();
+    let record = super::manifest::load_local(source.to_str().unwrap())
+        .unwrap()
+        .record;
+    let mut stale = serde_json::to_value(&record).unwrap();
+    stale.as_object_mut().unwrap().insert(
+        "contributions".to_string(),
+        json!({"skills":[{"id":"guide","name":"Guide","description":"Old","path":"SKILL.md"}]}),
+    );
+    std::fs::write(
+        &storage,
+        json!({"version":2,"extensions":[stale],"recoverySnapshot":null}).to_string(),
+    )
+    .unwrap();
+
+    super::storage::save_to(&storage, &[record], &None).unwrap();
+
+    let persisted: serde_json::Value = serde_json::from_slice(&std::fs::read(&storage).unwrap()).unwrap();
+    assert!(persisted.pointer("/extensions/0/contributions").is_none());
+    assert!(super::storage::load_from(&storage).unwrap().extensions[0]
+        .contributions
+        .skills
+        .is_empty());
+}
+
+#[test]
 fn direct_typescript_react_entry_is_supported_by_jiti() {
     let directory = tempfile::tempdir().unwrap();
     let source = directory.path().join("extension.tsx");

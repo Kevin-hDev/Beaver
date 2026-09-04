@@ -2379,6 +2379,17 @@
     "uiEmpty": "当前未声明任何界面扩展项。",
     "uiTheme": "主题",
     "contributions": "已注册的扩展项",
+    "capabilities": "技能与资源",
+    "capabilitiesLoading": "正在加载技能与资源…",
+    "capabilitiesError": "无法加载技能与资源。",
+    "capabilitiesEmpty": "当前未声明任何技能或资源。",
+    "skills": "技能",
+    "resources": "资源",
+    "resourceTypes": {
+      "text": "文本",
+      "image": "图像",
+      "file": "文件"
+    },
     "replacesCore": "替换内置工具"
   },
   "activation": {

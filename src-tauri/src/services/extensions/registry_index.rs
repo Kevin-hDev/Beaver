@@ -36,20 +36,7 @@ static INDEX: LazyLock<RwLock<DynamicIndex>> =
 
 pub fn rebuild(records: &[ExtensionRecord]) -> Result<(), String> {
     let preferences = super::discovery_preferences::sanitize(records)?;
-    let plugins = records
-        .iter()
-        .filter(|record| record.enabled && record.trusted)
-        .map(|record| IndexedPlugin {
-            id: record.manifest.id.clone(),
-            name: record.manifest.name.clone(),
-            version: record.manifest.version.clone(),
-            description: record.manifest.description.clone(),
-            essential: record.manifest.essential,
-            tools: record.contributions.tools.clone(),
-            skills: record.contributions.skills.clone(),
-            resources: record.contributions.resources.clone(),
-        })
-        .collect::<Vec<_>>();
+    let plugins = plugins_from_records(records);
     let tools = plugins
         .iter()
         .flat_map(|plugin| {
@@ -88,6 +75,23 @@ pub fn rebuild(records: &[ExtensionRecord]) -> Result<(), String> {
         catalog,
     };
     Ok(())
+}
+
+fn plugins_from_records(records: &[ExtensionRecord]) -> Vec<IndexedPlugin> {
+    records
+        .iter()
+        .filter(|record| record.enabled && record.trusted)
+        .map(|record| IndexedPlugin {
+            id: record.manifest.id.clone(),
+            name: record.manifest.name.clone(),
+            version: record.manifest.version.clone(),
+            description: record.manifest.description.clone(),
+            essential: record.manifest.essential,
+            tools: record.contributions.tools.clone(),
+            skills: record.contributions.skills.clone(),
+            resources: record.contributions.resources.clone(),
+        })
+        .collect()
 }
 
 fn usage_scores() -> BTreeMap<String, f64> {
