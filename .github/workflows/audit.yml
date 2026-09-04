@@ -37,13 +37,36 @@ jobs:
         with:
           node-version: 24
 
-      - name: Audit frontend dependencies
-        run: node scripts/ci/npm-audit-with-retry.mjs
+      - name: Audit npm dependencies
+        id: npm-audit
+        shell: bash
+        run: |
+          set +e
+          node scripts/ci/npm-audit-with-retry.mjs
+          frontend_status=$?
+          (cd src-tauri/resources/extension-host && node ../../../scripts/ci/npm-audit-with-retry.mjs)
+          host_status=$?
+          set -e
 
-      - name: Audit extension host dependencies
-        if: always()
-        working-directory: src-tauri/resources/extension-host
-        run: node ../../../scripts/ci/npm-audit-with-retry.mjs
+          # Exit 75 means the advisory service stayed unavailable after its
+          # bounded retry. Any other failure remains authoritative and red.
+          if { [ "$frontend_status" -ne 0 ] && [ "$frontend_status" -ne 75 ]; } || \
+             { [ "$host_status" -ne 0 ] && [ "$host_status" -ne 75 ]; }; then
+            exit 1
+          fi
+          if [ "$frontend_status" -eq 75 ] || [ "$host_status" -eq 75 ]; then
+            echo "service-unavailable=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # npm's advisory endpoint has repeatedly timed out from hosted runners.
+      # OSV is an independent fail-closed source, not a bypass for findings.
+      - name: Fallback audit when npm advisories are unavailable
+        if: steps.npm-audit.outputs.service-unavailable == 'true'
+        uses: google/osv-scanner-action/osv-scanner-action@baa4139e56d6312335d899e6ba045fa16d1d3d0b # v2.5.1
+        with:
+          scan-args: |-
+            --lockfile=package-lock.json
+            --lockfile=src-tauri/resources/extension-host/package-lock.json
 
   cargo:
     name: RustSec advisories

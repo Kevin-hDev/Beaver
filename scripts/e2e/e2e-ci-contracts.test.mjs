@@ -153,6 +153,18 @@ test("installed extension UI acceptance opts into only its host", () => {
   assert.match(acceptanceSource, /get_extension_host_status/u);
 });
 
+test("installed extension UI setup exposes each bounded failure phase", () => {
+  for (const phase of [
+    "initializes the extension host",
+    "installs the standard extension fixture",
+    "installs the theme extension fixture",
+    "installs the advanced extension fixture",
+  ]) {
+    assert.match(acceptanceSource, new RegExp(`before\\("${phase}"`, "u"));
+  }
+  assert.match(acceptanceSource, /this\.timeout\(EXTENSION_SETUP_TIMEOUT_MS\)/u);
+});
+
 test("the native smoke releases WebDriver before coordinated exit", () => {
   const request = nativeSmokeSource.indexOf('invokeTauri("e2e_request_exit")');
   const release = nativeSmokeSource.indexOf("browser.deleteSession()", request);

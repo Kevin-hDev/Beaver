@@ -102,6 +102,33 @@ async fn prepared_runtime_restarts_after_confirmed_stop() {
 
 #[tokio::test]
 #[ignore = "requires scripts/extensions/prepare-extension-host.mjs --dev"]
+async fn prepared_runtime_loads_real_ui_after_restart() {
+    let _marker_lock = super::super::loading_marker::test_lock().await;
+    let _ = super::super::loading_marker::discard();
+    let paths = prepared_runtime_paths();
+    let work = test_extension_work();
+    let first = HostProcess::spawn(&paths, &work).await.unwrap();
+    first.request("host.hello", json!({})).await.unwrap();
+    assert!(
+        first
+            .kill(super::super::runtime_lifecycle::new_stop_deadline())
+            .await
+    );
+
+    let second = HostProcess::spawn(&paths, &work).await.unwrap();
+    let loaded = second.load(&standard_ui_specification(), 1).await;
+    let stopped = second
+        .kill(super::super::runtime_lifecycle::new_stop_deadline())
+        .await;
+    let marker_discarded = super::super::loading_marker::discard();
+
+    assert_eq!(loaded.unwrap()["id"], "acceptance.standard.complete");
+    assert!(stopped);
+    marker_discarded.unwrap();
+}
+
+#[tokio::test]
+#[ignore = "requires scripts/extensions/prepare-extension-host.mjs --dev"]
 async fn prepared_runtime_runs_two_isolated_hosts_concurrently() {
     let paths = prepared_runtime_paths();
     let work = test_extension_work();

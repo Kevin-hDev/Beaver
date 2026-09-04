@@ -17,6 +17,11 @@ const FIXTURES = resolve("scripts/extensions/fixtures/ui");
 const STANDARD_ID = "acceptance.standard.complete";
 const THEME_ID = "acceptance.theme.valid";
 const ADVANCED_ID = "acceptance.advanced.valid";
+// Setup combines independently bounded host and UI operations. Its outer guard
+// must cover their sum so Mocha never hides the boundary that actually failed.
+const EXTENSION_SETUP_TIMEOUT_MS = TIMEOUTS.hostRequestTimeoutMs
+  + TIMEOUTS.hostStopTimeoutMs
+  + (2 * TIMEOUTS.uiActionTimeoutMs);
 const LOCALES = ["fr", "en", "es", "de", "it", "zh", "ja"] as const;
 const SETTINGS_LABELS = {
   de: deLocale.nav.settings,
@@ -40,11 +45,16 @@ interface CatalogSnapshot {
 }
 
 describe("extension UI installed acceptance", () => {
-  before(async () => {
+  before("initializes the extension host", async function () {
+    this.timeout(EXTENSION_SETUP_TIMEOUT_MS);
     await completeOnboarding();
     await waitForTauriBridge();
     await invokeTauri("e2e_initialize_extension_host");
     await waitForExtensionHost();
+  });
+
+  before("installs the standard extension fixture", async function () {
+    this.timeout(EXTENSION_SETUP_TIMEOUT_MS);
     const startup = await invokeTauri<{ mode: { kind: string } }>(
       "get_extension_ui_startup_state",
     );
@@ -62,6 +72,20 @@ describe("extension UI installed acceptance", () => {
       markerInvalid: boolean;
     }>("get_extension_recovery_state");
     assert.equal(recovery.extensionId, null, JSON.stringify(recovery));
+  });
+
+  before("installs the theme extension fixture", async function () {
+    this.timeout(EXTENSION_SETUP_TIMEOUT_MS);
+    await install("theme-valid", THEME_ID);
+    await waitForCatalog([STANDARD_ID, THEME_ID]);
+  });
+
+  before("installs the advanced extension fixture", async function () {
+    this.timeout(EXTENSION_SETUP_TIMEOUT_MS);
+    await install("advanced-valid", ADVANCED_ID);
+  });
+
+  it("renders the installed standard, theme and advanced fixtures", async () => {
     const navigation = $('button.lpf-btn[aria-label="Acceptance"]');
     await navigation.waitForDisplayed();
     await navigation.click();
@@ -74,13 +98,6 @@ describe("extension UI installed acceptance", () => {
     await $(".toast-message").waitForDisplayed();
     assert.equal(await $(".toast-message").getText(), "Accepted");
 
-    await install("theme-valid", THEME_ID);
-    await waitForCatalog([STANDARD_ID, THEME_ID]);
-    await install("advanced-valid", ADVANCED_ID);
-  });
-
-  it("renders the installed standard, theme and advanced fixtures", async () => {
-    await $('button.lpf-btn[aria-label="Acceptance"]').waitForDisplayed();
     await $(".acceptance-advanced-button").waitForDisplayed();
 
     const catalog = await waitForCatalog([STANDARD_ID, THEME_ID]);

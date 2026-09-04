@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const MAX_OUTPUT_CHARS = 64 * 1024;
+export const SERVICE_UNAVAILABLE_EXIT_CODE = 75;
 const TRANSIENT_PATTERNS = [
   /503 Service Unavailable/iu,
   /audit endpoint returned an error/iu,
@@ -26,7 +27,9 @@ export async function runAuditWithRetry({
     const transient = isTransientAuditFailure(result.output);
     if (!transient || attempt === maxAttempts) {
       const kind = transient ? "service_unavailable" : "advisory_failure";
-      throw new Error(`npm_audit_${kind}`);
+      const error = new Error(`npm_audit_${kind}`);
+      error.exitCode = transient ? SERVICE_UNAVAILABLE_EXIT_CODE : 1;
+      throw error;
     }
     report(`npm advisory service unavailable; retrying (${attempt}/${maxAttempts}).`);
     await wait(2_000);
@@ -58,6 +61,6 @@ async function executeNpmAudit() {
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   runAuditWithRetry().catch((error) => {
     process.stderr.write(`${error.message}\n`);
-    process.exitCode = 1;
+    process.exitCode = error.exitCode ?? 1;
   });
 }

@@ -1,9 +1,16 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import {
   isTransientAuditFailure,
   runAuditWithRetry,
+  SERVICE_UNAVAILABLE_EXIT_CODE,
 } from "./npm-audit-with-retry.mjs";
+
+const auditWorkflow = readFileSync(
+  new URL("../../.github/workflows/audit.yml", import.meta.url),
+  "utf8",
+);
 
 test("recognizes an unavailable advisory service", () => {
   assert.equal(isTransientAuditFailure("503 Service Unavailable"), true);
@@ -54,7 +61,29 @@ test("remains failed after the bounded transient retry", async () => {
       report: () => {},
       wait: async () => {},
     }),
-    /npm_audit_service_unavailable/u,
+    (error) => {
+      assert.match(error.message, /npm_audit_service_unavailable/u);
+      assert.equal(error.exitCode, SERVICE_UNAVAILABLE_EXIT_CODE);
+      return true;
+    },
   );
   assert.equal(attempts, 2);
+});
+
+test("the workflow falls back only when npm's advisory service is unavailable", () => {
+  assert.match(auditWorkflow, /frontend_status[^]*host_status/u);
+  assert.match(auditWorkflow, /service-unavailable=true/u);
+  assert.match(
+    auditWorkflow,
+    /if: steps\.npm-audit\.outputs\.service-unavailable == 'true'/u,
+  );
+  assert.match(
+    auditWorkflow,
+    /google\/osv-scanner-action\/osv-scanner-action@baa4139e56d6312335d899e6ba045fa16d1d3d0b/u,
+  );
+  assert.match(auditWorkflow, /--lockfile=package-lock\.json/u);
+  assert.match(
+    auditWorkflow,
+    /--lockfile=src-tauri\/resources\/extension-host\/package-lock\.json/u,
+  );
 });
