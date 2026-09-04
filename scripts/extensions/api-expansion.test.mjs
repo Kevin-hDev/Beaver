@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { test } from "node:test";
 
 import {
@@ -194,6 +194,27 @@ test("un même identifiant local reste indépendant de son extension", () => {
   second.api.registerSkill(skill);
 
   assert.equal(first.skills[0].id, second.skills[0].id);
+});
+
+test("la fixture API expansion installable enregistre son skill et ses ressources", async () => {
+  const root = resolve("src-tauri/tests/fixtures/extensions/api-expansion");
+  await resetExtensions();
+  try {
+    const loaded = await loadExtensionWithApi({
+      id: "acceptance.api.expansion",
+      mainPath: join(root, "index.ts"),
+      manifest: { apiLevel: "stable" },
+    }, createExtensionApi);
+
+    assert.equal(loaded.error, undefined);
+    assert.deepEqual(loaded.contributions.skills.map(({ id }) => id), ["reference-skill"]);
+    assert.deepEqual(
+      loaded.contributions.resources.map(({ id }) => id),
+      ["reference", "preview"],
+    );
+  } finally {
+    await resetExtensions();
+  }
 });
 
 test("le contrat fixe les formes et bornes R0 sans les activer", () => {

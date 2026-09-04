@@ -5,6 +5,9 @@ pub mod subagent_working_dir;
 pub mod subagent_worktree;
 include!("agent_local_modules_shell.rs");
 pub mod extension_tool_set;
+pub mod extension_skill_loader;
+#[cfg(test)]
+mod extension_skill_loader_tests;
 #[cfg(debug_assertions)]
 pub mod fixture_tool_executor;
 pub mod tool_automation;
@@ -101,6 +104,9 @@ mod tool_executor_sequential_support;
 pub mod tool_executor_write;
 pub mod tool_extension_list;
 pub mod tool_extension_inspect;
+pub mod tool_extension_resource;
+#[cfg(test)]
+mod tool_extension_resource_tests;
 mod tool_extension_catalog_diagnostics;
 #[allow(dead_code)]
 mod extension_discovery_contract {

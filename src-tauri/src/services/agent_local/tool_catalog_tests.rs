@@ -82,10 +82,10 @@ fn enabled_subagent_bundle_exposes_change_lifecycle_tools() {
 #[test]
 fn native_definitions_catalog_and_groups_are_exhaustively_consistent() {
     let entries = catalog();
-    assert_eq!(entries.len(), 45);
-    assert_eq!(entries.iter().filter(|entry| entry.locked).count(), 13);
+    assert_eq!(entries.len(), 46);
+    assert_eq!(entries.iter().filter(|entry| entry.locked).count(), 14);
     assert_eq!(entries.iter().filter(|entry| !entry.locked).count(), 32);
-    assert_eq!(entries.iter().filter(|entry| entry.default_enabled).count(), 26);
+    assert_eq!(entries.iter().filter(|entry| entry.default_enabled).count(), 27);
     let entry_by_id = entries
         .iter()
         .map(|entry| (entry.id, entry))
@@ -128,9 +128,17 @@ fn native_definitions_catalog_and_groups_are_exhaustively_consistent() {
         .filter(|tool_id| !grouped_tools.contains(**tool_id))
         .copied()
         .collect::<Vec<_>>();
-    assert_eq!(ungrouped, ["inspect_extensions", "list_extensions"]);
+    assert_eq!(
+        ungrouped,
+        [
+            "inspect_extensions",
+            "list_extensions",
+            super::tool_extension_resource::NAME,
+        ]
+    );
     assert!(entry_by_id["inspect_extensions"].locked);
     assert!(entry_by_id["list_extensions"].locked);
+    assert!(entry_by_id[super::tool_extension_resource::NAME].locked);
 }
 
 #[test]
@@ -195,8 +203,8 @@ fn default_native_catalog_measurement_is_reproducible() {
     let estimated_tokens =
         crate::services::compress::token_estimate::estimate_tool_tokens(&active);
 
-    assert_eq!(all.len(), 45);
-    assert_eq!(active.len(), 26);
+    assert_eq!(all.len(), 46);
+    assert_eq!(active.len(), 27);
     println!(
         "TOOL_CATALOG_MEASUREMENT={}",
         serde_json::json!({

@@ -98,7 +98,9 @@ impl Decision {
     }
 
     fn admissible(self) -> bool {
-        matches!(self, Self::Loaded | Self::NoTools)
+        // Inspection also grants skills/resources when a plugin's tools were
+        // already active in the current provider budget.
+        matches!(self, Self::AlreadyAvailable | Self::Loaded | Self::NoTools)
     }
 }
 

@@ -23,7 +23,7 @@ Use only these read-only or Plan Mode tools: {}.
 Keep the codebase unchanged while Plan Mode is active. The backend blocks write tools and todo_write, then unlocks them automatically after approval.
 </blocked_actions>
 </critical_plan_mode_workflow>",
-        super::tool_plan_guard::PLAN_MODE_ALLOWED_ACTIONS_TEXT
+        super::tool_plan_guard::allowed_actions_text()
     )
 }
 

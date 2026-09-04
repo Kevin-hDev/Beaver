@@ -56,7 +56,7 @@ fn classifies_every_inspection_status_without_mutation() {
         (decision(None, None, false), Decision::Unknown, false),
         (decision(Some((false, true)), None, false), Decision::Inactive, false),
         (decision(Some((true, false)), None, false), Decision::Unapproved, false),
-        (decision(Some((true, true)), Some(false), true), Decision::AlreadyAvailable, false),
+        (decision(Some((true, true)), Some(false), true), Decision::AlreadyAvailable, true),
         (decision(Some((true, true)), Some(false), false), Decision::Loaded, true),
         (decision(Some((true, true)), Some(true), false), Decision::NoTools, true),
     ];
@@ -115,6 +115,18 @@ fn capacity_overflow_rolls_back_the_discovery() {
 fn no_tools_is_admissible_without_capacity() {
     let catalog = catalog();
     let mut state = state(0, 0);
+
+    assert!(discover_with_refresh(&mut state, "example.a", |state| {
+        refresh_active_with_catalog(state, false, &catalog)
+    }));
+    assert_eq!(state.discovered_plugin_ids, ["example.a"]);
+}
+
+#[test]
+fn inspection_records_discovery_when_plugin_tools_were_already_active() {
+    let catalog = catalog();
+    let mut state = state(1, 1);
+    state.active_plugin_ids.push("example.a".into());
 
     assert!(discover_with_refresh(&mut state, "example.a", |state| {
         refresh_active_with_catalog(state, false, &catalog)

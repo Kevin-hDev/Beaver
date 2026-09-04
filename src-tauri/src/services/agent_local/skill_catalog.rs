@@ -19,6 +19,8 @@ pub fn entries() -> Result<Vec<SkillCatalogEntry>, String> {
     if let Some(home) = dirs::home_dir() {
         entries.extend(external_entries(&home));
     }
+    // This namespace is session-authorized and must never enter the global catalog.
+    retain_global_entries(&mut entries);
     entries.sort_by(|left, right| {
         left.info
             .name
@@ -28,6 +30,14 @@ pub fn entries() -> Result<Vec<SkillCatalogEntry>, String> {
     });
     make_commands_unique(&mut entries);
     Ok(entries)
+}
+
+fn valid_catalog_id(id: &str) -> bool {
+    !id.starts_with("extension:")
+}
+
+fn retain_global_entries(entries: &mut Vec<SkillCatalogEntry>) {
+    entries.retain(|entry| valid_catalog_id(&entry.info.id));
 }
 
 fn local_entries() -> Result<Vec<SkillCatalogEntry>, String> {

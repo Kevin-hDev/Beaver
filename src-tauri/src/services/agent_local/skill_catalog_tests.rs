@@ -81,3 +81,34 @@ fn metadata_keeps_up_to_250_unicode_characters() {
     assert_eq!(bounded.chars().count(), MAX_SKILL_DESCRIPTION_CHARS);
     assert_eq!(bounded, "é".repeat(MAX_SKILL_DESCRIPTION_CHARS));
 }
+#[test]
+fn catalog_reserves_extension_qualified_ids() {
+    assert!(!super::valid_catalog_id("extension:plugin:guide"));
+    assert!(super::valid_catalog_id("local:skill:guide"));
+}
+
+#[test]
+fn global_catalog_filter_removes_extension_qualified_entries() {
+    let make_entry = |id: &str| SkillCatalogEntry {
+        info: SkillInfo {
+            id: id.into(),
+            name: "guide".into(),
+            command: "guide".into(),
+            description: String::new(),
+            path: id.into(),
+            source: "test".into(),
+            source_name: "Test".into(),
+        },
+        manifest: PathBuf::from("SKILL.md"),
+        bundle_root: PathBuf::from("."),
+    };
+    let mut entries = vec![
+        make_entry("local:skill:guide"),
+        make_entry("extension:example.plugin:guide"),
+    ];
+
+    retain_global_entries(&mut entries);
+
+    assert_eq!(entries.len(), 1);
+    assert_eq!(entries[0].info.id, "local:skill:guide");
+}

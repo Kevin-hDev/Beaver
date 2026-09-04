@@ -14,13 +14,15 @@ pub fn is_read_only(name: &str) -> bool {
             | "read_spreadsheet"
             | "read_document"
     ) || name == crate::services::extensions::LIST_EXTENSIONS_TOOL_NAME
+        || name == super::tool_extension_resource::NAME
 }
 
 #[cfg(test)]
 mod tests {
     #[test]
-    fn only_listing_is_read_only_among_extension_discovery_tools() {
+    fn resource_loading_is_read_only_but_inspection_is_not() {
         assert!(super::is_read_only("list_extensions"));
         assert!(!super::is_read_only("inspect_extensions"));
+        assert!(super::is_read_only(super::super::tool_extension_resource::NAME));
     }
 }

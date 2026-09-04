@@ -54,6 +54,7 @@ static TODO_DELETE: Schema = &[("id", Ty::Str, false), ("active", Ty::Bool, fals
 static ASK_USER_CHOICE: Schema = &[("questions", Ty::Arr, true)];
 static PLAN_MODE: Schema = &[("title", Ty::Str, true), ("content", Ty::Str, true)];
 static LOAD_SKILL: Schema = &[("skill_id", Ty::Str, true)];
+static LOAD_EXTENSION_RESOURCE: Schema = &[("resource_id", Ty::Str, true)];
 static MANAGE_AUTOMATION: Schema = &[
     ("action", Ty::Str, true),
     ("id", Ty::Str, false),
@@ -154,6 +155,7 @@ pub(super) fn schema(tool: &str) -> Option<Schema> {
         "ask_user_choice" => ASK_USER_CHOICE,
         "plan_mode" => PLAN_MODE,
         "load_skill" => LOAD_SKILL,
+        name if name == super::super::tool_extension_resource::NAME => LOAD_EXTENSION_RESOURCE,
         "manage_automation" => MANAGE_AUTOMATION,
         "create_branch" => CREATE_BRANCH,
         "checkout_branch" => CHECKOUT_BRANCH,

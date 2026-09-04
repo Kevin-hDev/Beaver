@@ -78,6 +78,7 @@ mod registry_mutation_error;
 pub(crate) mod registry_recovery;
 mod registry_state;
 mod registry_sync;
+mod resource_loader;
 mod runtime;
 mod runtime_channel_ensure;
 mod runtime_channel_sync;
@@ -128,6 +129,7 @@ mod ui_types;
 mod ui_validation;
 mod ui_view_validation;
 mod validation;
+mod verified_file_read;
 mod view;
 mod work_supervision;
 #[allow(dead_code)]
@@ -199,6 +201,10 @@ pub(crate) use installer::{
 pub(crate) use manifest::load_local as install_local;
 pub(crate) use operation_error::{report as report_operation_error, Operation};
 pub(crate) use operation_failure::OperationFailure;
+pub(crate) use resource_loader::{
+    load_for_session as load_extension_resource_for_session,
+    load_skill_for_session as load_extension_skill_for_session, ResourceLoadError,
+};
 pub(crate) use ui_build_api::{
     cleanup_unreferenced as cleanup_unreferenced_ui_artifacts, prepare_record as prepare_ui_record,
     refresh_artifacts as refresh_extension_ui_artifacts,
@@ -212,3 +218,4 @@ pub(crate) use ui_startup::{
 pub(crate) use ui_startup_ack::{UiAckToken, UiLoadAcknowledger};
 pub(crate) use ui_startup_state::{SafeReason, UiStartupMode, UiStartupState};
 pub(crate) use validation::identifier as validate_identifier;
+pub(crate) use verified_file_read::read as read_verified_file;

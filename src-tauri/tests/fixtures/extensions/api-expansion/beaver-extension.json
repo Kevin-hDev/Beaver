@@ -1,0 +1,11 @@
+{
+  "id": "acceptance.api.expansion",
+  "name": "API expansion acceptance",
+  "version": "1.0.0",
+  "beaverApi": "1",
+  "runtime": "node",
+  "main": "index.ts",
+  "access": "full",
+  "apiLevel": "stable",
+  "essential": false
+}

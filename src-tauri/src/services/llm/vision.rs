@@ -84,15 +84,9 @@ pub fn data_url(base64_data: &str) -> String {
 
 pub fn detect_mime(b64: &str) -> &'static str {
     let normalized = normalize_base64(b64);
-    let prefix = &normalized[..normalized.len().min(16)];
-    if prefix.starts_with("/9j/") {
-        "image/jpeg"
-    } else if prefix.starts_with("iVBOR") {
-        "image/png"
-    } else if prefix.starts_with("R0lGO") {
-        "image/gif"
-    } else if prefix.starts_with("UklGR") {
-        "image/webp"
+    let signature = crate::services::file_signature::classify_base64(&normalized);
+    if signature.image() {
+        signature.mime()
     } else {
         "image/png"
     }
@@ -137,10 +131,7 @@ fn normalize_payload(input: &str) -> &str {
 }
 
 fn has_supported_image_signature(payload: &str) -> bool {
-    payload.starts_with("/9j/")
-        || payload.starts_with("iVBOR")
-        || payload.starts_with("R0lGO")
-        || payload.starts_with("UklGR")
+    crate::services::file_signature::classify_base64(payload).image()
 }
 
 fn normalize_base64(input: &str) -> String {

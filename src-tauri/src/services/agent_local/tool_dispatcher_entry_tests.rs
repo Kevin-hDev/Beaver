@@ -8,6 +8,7 @@ fn chat_policy_has_exactly_two_native_tools() {
     assert!(is_chat_tool("web_fetch"));
     assert!(!is_chat_tool("bash"));
     assert!(!is_chat_tool("list_extensions"));
+    assert!(!is_chat_tool(super::super::tool_extension_resource::NAME));
 }
 
 #[test]
@@ -55,6 +56,37 @@ async fn chat_rejects_an_extension_call_before_dispatch() {
         result.error.as_ref().map(|error| error.code.as_ref()),
         Some("tool_unavailable_in_mode"),
     );
+}
+
+#[tokio::test]
+async fn chat_rejects_extension_resource_and_skill_loading_before_dispatch() {
+    for (name, args) in [
+        (
+            super::super::tool_extension_resource::NAME,
+            json!({"resource_id": "extension:example.plugin:guide"}),
+        ),
+        (
+            "load_skill",
+            json!({"skill_id": "extension:example.plugin:guide"}),
+        ),
+    ] {
+        let result = dispatch_for_mode(
+            name,
+            &args,
+            std::path::Path::new("."),
+            "test-session",
+            None,
+            CancellationToken::new(),
+            true,
+        )
+        .await;
+
+        assert_eq!(
+            result.error.as_ref().map(|error| error.code.as_ref()),
+            Some("tool_unavailable_in_mode"),
+            "{name}"
+        );
+    }
 }
 
 #[tokio::test]

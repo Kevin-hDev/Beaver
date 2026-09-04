@@ -18,6 +18,27 @@ fn contribution_paths_reject_absolute_parent_control_and_windows_forms() {
 }
 
 #[test]
+fn contribution_paths_reject_ads_and_all_dos_reserved_name_variants() {
+    for path in [
+        "resources/file.txt:stream",
+        "CON",
+        "con.txt",
+        "PRN .md",
+        "aux...",
+        "NUL ",
+        "com1.txt",
+        "COM9... ",
+        "lpt1.md",
+        "LPT9 .txt",
+    ] {
+        assert!(
+            super::contribution_path::validate(path).is_err(),
+            "{path:?} must be refused"
+        );
+    }
+}
+
+#[test]
 fn skills_reject_duplicate_ids_and_overlong_human_metadata() {
     let skill = super::types::ExtensionSkill {
         id: "guide".to_string(),

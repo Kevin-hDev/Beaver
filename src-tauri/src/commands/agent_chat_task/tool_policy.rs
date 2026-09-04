@@ -45,6 +45,7 @@ fn apply_with(
             let name = tool.pointer("/function/name").and_then(Value::as_str)?;
             if name == crate::services::extensions::LIST_EXTENSIONS_TOOL_NAME
                 || name == crate::services::extensions::INSPECT_EXTENSIONS_TOOL_NAME
+                || name == crate::services::agent_local::tool_extension_resource::NAME
             {
                 return None;
             }
@@ -94,6 +95,7 @@ mod tests {
             serde_json::json!({"function": {"name": "read_file"}}),
             serde_json::json!({"function": {"name": "list_extensions"}}),
             serde_json::json!({"function": {"name": "inspect_extensions"}}),
+            serde_json::json!({"function": {"name": "load_extension_resource"}}),
             serde_json::json!({"function": {"name": "beaver.office.documents.create"}}),
         ];
 

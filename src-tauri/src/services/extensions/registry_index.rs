@@ -77,7 +77,7 @@ pub fn rebuild(records: &[ExtensionRecord]) -> Result<(), String> {
     Ok(())
 }
 
-fn plugins_from_records(records: &[ExtensionRecord]) -> Vec<IndexedPlugin> {
+pub(super) fn plugins_from_records(records: &[ExtensionRecord]) -> Vec<IndexedPlugin> {
     records
         .iter()
         .filter(|record| record.enabled && record.trusted)

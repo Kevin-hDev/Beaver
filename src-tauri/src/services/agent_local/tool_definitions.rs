@@ -23,6 +23,7 @@ pub(super) fn native_tool_definitions() -> Vec<Value> {
     defs.extend(super::tool_definitions_mcp::mcp_tool_definitions());
     defs.push(super::tool_definitions_extensions::extension_listing_definition());
     defs.push(super::tool_definitions_extensions::extension_inspection_definition());
+    defs.push(super::tool_definitions_extensions::extension_resource_definition());
     defs
 }
 
@@ -46,5 +47,6 @@ mod tests {
         let names = definitions.iter().filter_map(|tool| tool.pointer("/function/name").and_then(serde_json::Value::as_str)).collect::<Vec<_>>();
         assert!(names.contains(&"list_extensions"));
         assert!(names.contains(&"inspect_extensions"));
+        assert!(names.contains(&super::super::tool_extension_resource::NAME));
     }
 }

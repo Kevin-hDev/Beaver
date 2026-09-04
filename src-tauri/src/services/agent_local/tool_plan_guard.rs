@@ -8,6 +8,8 @@ pub const PLAN_MODE_ALLOWED_TOOL_NAMES: &[&str] = &[
     "web_search",
     "web_fetch",
     crate::services::extensions::LIST_EXTENSIONS_TOOL_NAME,
+    crate::services::extensions::INSPECT_EXTENSIONS_TOOL_NAME,
+    super::tool_extension_resource::NAME,
     "read_spreadsheet",
     "read_document",
     "bash_control",
@@ -22,7 +24,12 @@ pub const PLAN_MODE_ALLOWED_TOOL_NAMES: &[&str] = &[
     "forecast_models",
 ];
 
-pub const PLAN_MODE_ALLOWED_ACTIONS_TEXT: &str = "read_file, list_dir, grep, glob, web_search, web_fetch, list_extensions, read_spreadsheet, read_document, bash_control, load_skill, todo_history, todo_pause, todo_resume, todo_delete, ask_user_choice, plan_mode, forecast_read, forecast_models, safe bash exploration and validation commands (including tests and builds), and search_mcp_tools without MCP calls";
+pub fn allowed_actions_text() -> String {
+    format!(
+        "{}, safe bash exploration and validation commands (including tests and builds), and search_mcp_tools without MCP calls",
+        PLAN_MODE_ALLOWED_TOOL_NAMES.join(", ")
+    )
+}
 
 pub fn is_allowed_in_plan_mode(tool_name: &str, args: &Value) -> bool {
     if let Some(indexed) = crate::services::extensions::indexed_tool(tool_name) {
@@ -101,7 +108,8 @@ mod tests {
         assert!(super::ensure_allowed("read_file", &json!({}), true).is_ok());
         assert!(super::ensure_allowed("grep", &json!({}), true).is_ok());
         assert!(super::ensure_allowed("list_extensions", &json!({}), true).is_ok());
-        assert!(super::ensure_allowed("inspect_extensions", &json!({"ids":["example.a"]}), true).is_err());
+        assert!(super::ensure_allowed(super::super::tool_extension_resource::NAME, &json!({"resource_id":"extension:a:guide"}), true).is_ok());
+        assert!(super::ensure_allowed("inspect_extensions", &json!({"ids":["example.a"]}), true).is_ok());
         assert!(super::ensure_allowed("plan_mode", &json!({}), true).is_ok());
         assert!(super::ensure_allowed(
             "transform_image",
@@ -124,6 +132,14 @@ mod tests {
             true
         )
         .is_ok());
+    }
+
+    #[test]
+    fn plan_guidance_is_derived_from_the_canonical_tool_list() {
+        let guidance = super::allowed_actions_text();
+        for name in super::PLAN_MODE_ALLOWED_TOOL_NAMES {
+            assert!(guidance.contains(name), "missing {name}");
+        }
     }
 
     #[test]

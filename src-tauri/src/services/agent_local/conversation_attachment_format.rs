@@ -118,7 +118,7 @@ pub(super) fn resolve(
         }
         return Ok(AttachmentPayload::Text(text));
     }
-    let format = image_format(&bytes).ok_or_else(|| error(ConversationInputErrorKind::Type))?;
+    let format = crate::services::file_signature::classify(&bytes);
     let normalized_extension = match extension.as_str() {
         "jpg" | "jpeg" => "jpeg",
         "png" => "png",
@@ -126,7 +126,9 @@ pub(super) fn resolve(
         "webp" => "webp",
         _ => return Err(error(ConversationInputErrorKind::Type)),
     };
-    if normalized_extension != format.extension() || !format.matches_declared(declared) {
+    if !format.matches_image_extension(normalized_extension)
+        || !format.matches_declared_image(declared)
+    {
         return Err(error(ConversationInputErrorKind::Type));
     }
     Ok(AttachmentPayload::Image(ResolvedImagePayload {
@@ -163,54 +165,6 @@ pub(super) fn decode_data_url(value: &str) -> Result<DecodedDataUrl, Conversatio
         bytes,
         mime_type: mime_type.to_string(),
     })
-}
-
-#[derive(Clone, Copy)]
-enum ImageFormat {
-    Jpeg,
-    Png,
-    Gif,
-    Webp,
-}
-
-impl ImageFormat {
-    fn extension(self) -> &'static str {
-        match self {
-            Self::Jpeg => "jpeg",
-            Self::Png => "png",
-            Self::Gif => "gif",
-            Self::Webp => "webp",
-        }
-    }
-
-    fn mime(self) -> &'static str {
-        match self {
-            Self::Jpeg => "image/jpeg",
-            Self::Png => "image/png",
-            Self::Gif => "image/gif",
-            Self::Webp => "image/webp",
-        }
-    }
-
-    fn matches_declared(self, declared: &str) -> bool {
-        declared.eq_ignore_ascii_case(self.mime())
-            || declared.eq_ignore_ascii_case(self.extension())
-            || (matches!(self, Self::Jpeg) && declared.eq_ignore_ascii_case("jpg"))
-    }
-}
-
-fn image_format(bytes: &[u8]) -> Option<ImageFormat> {
-    if bytes.starts_with(&[0xff, 0xd8, 0xff]) {
-        Some(ImageFormat::Jpeg)
-    } else if bytes.starts_with(b"\x89PNG\r\n\x1a\n") {
-        Some(ImageFormat::Png)
-    } else if bytes.starts_with(b"GIF87a") || bytes.starts_with(b"GIF89a") {
-        Some(ImageFormat::Gif)
-    } else if bytes.len() >= 12 && &bytes[..4] == b"RIFF" && &bytes[8..12] == b"WEBP" {
-        Some(ImageFormat::Webp)
-    } else {
-        None
-    }
 }
 
 fn error(kind: ConversationInputErrorKind) -> ConversationInputError {
