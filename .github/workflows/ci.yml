@@ -296,10 +296,11 @@ jobs:
           workspaces: src-tauri
 
       # The second boundary exercises Windows Job Object admission and the
-      # exact Rust-owned process path used by the installed application.
+      # exact Rust-owned process path used by the installed application,
+      # including restart and concurrent isolated hosts.
       - name: Rust owned-process protocol smoke
         working-directory: src-tauri
-        run: node ../scripts/ci/run-rust-test-filter.mjs --filter services::extensions::host_process::tests::prepared_runtime_answers_hello_through_owned_process --features windows-tests --exact --ignored --nocapture
+        run: node ../scripts/ci/run-rust-test-filter.mjs --filter services::extensions::host_process::tests::prepared_runtime_ --features windows-tests --ignored --nocapture
 
   backend-macos-native:
     name: Backend macOS CEF (Rust)
