@@ -1,0 +1,11 @@
+API-P2 — skills/resources enregistrés et indexés.
+
+Périmètre et décisions : capacités skills/resources dérivées du contrat, activées ensemble sans activer richToolResults ; snapshot JSON profond sans prototype, getters lus une fois et appelant de production couvert ; validateurs Rust dédiés pour limites, IDs, Unicode, doublons et chemins relatifs ; contributions reconstruites après redémarrage, non persistées dans extensions.json, fingerprint inclus ; index attribué par extension, même ID local admis entre extensions ; UI compacte avec 7 langues, sans chemin ni lecture de contenu avant P3.
+
+Audit inventaire : tous les JS Beaver embarqués .mjs/.js/.cjs sont parcourus après matérialisation fraîche. node_modules/runtime restent exclus car lockfile puis checksum/smoke en sont les autorités ; ui-build est appelé directement par Rust. Le premier inventaire rouge a révélé exports.import résolu sans son préfixe vendor ; corrigé et vert.
+
+RED/GREEN : formes Hôte/rust invalides, chemins, bornes, diagnostic advanced versus load_failed, ancien Hôte, useId/wrap/hover, chemin du test snapshot, même ID local et maxima frontend 32/64 ont des tests ciblés. L'ancien Hôte charge le code gardé par api.capabilities?.includes et le code non gardé échoue fermé/générique.
+
+Validation : i18n 7/7 ; frontend 29/29 ; Hôte 102/102, sortie nommant scripts/extensions/contribution-snapshot.test.mjs ; Rust contribution_ 18/18, runtime_sync 17/17, registry_index 5/5 avec collectes non nulles ; lint, tsc, cargo check/fmt/clippy et diff-check verts ; graphify mis à jour. E2E non empaqueté 1/1 : extension locale installée/activée, fiche 900x600 dans six thèmes, long texte contenu et chemins absents. Première tentative bundle macOS bloquée par codesign CEF/fixture ; E2E_SKIP_BUILD vert sur binaire déjà compilé, non assimilé à un paquet final.
+
+Limite : aucun contenu skill/resource n'est lu ou injecté avant API-P3.
