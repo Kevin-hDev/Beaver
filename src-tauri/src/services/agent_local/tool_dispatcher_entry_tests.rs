@@ -7,7 +7,7 @@ fn chat_policy_has_exactly_two_native_tools() {
     assert!(is_chat_tool("web_search"));
     assert!(is_chat_tool("web_fetch"));
     assert!(!is_chat_tool("bash"));
-    assert!(!is_chat_tool("search_extension_tools"));
+    assert!(!is_chat_tool("list_extensions"));
 }
 
 #[test]
@@ -58,10 +58,10 @@ async fn chat_rejects_an_extension_call_before_dispatch() {
 }
 
 #[tokio::test]
-async fn discovery_without_an_exact_request_correlation_fails_closed() {
+async fn inspection_without_an_exact_request_correlation_fails_closed() {
     let result = super::super::tool_dispatcher::dispatch_inner(
-        crate::services::extensions::SEARCH_TOOL_NAME,
-        &json!({"query": "documents"}),
+        crate::services::extensions::INSPECT_EXTENSIONS_TOOL_NAME,
+        &json!({"ids": ["example.documents"]}),
         std::path::Path::new("."),
         DispatchTrace {
             session_id: "test-session",
@@ -75,6 +75,6 @@ async fn discovery_without_an_exact_request_correlation_fails_closed() {
 
     assert_eq!(
         result.error.as_ref().map(|error| error.code.as_ref()),
-        Some("plugin_search_unavailable")
+        Some(crate::services::extensions::error_codes::INSPECTION_UNAVAILABLE)
     );
 }

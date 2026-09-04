@@ -7,7 +7,7 @@ pub const PLAN_MODE_ALLOWED_TOOL_NAMES: &[&str] = &[
     "list_dir",
     "web_search",
     "web_fetch",
-    "search_extension_tools",
+    crate::services::extensions::LIST_EXTENSIONS_TOOL_NAME,
     "read_spreadsheet",
     "read_document",
     "bash_control",
@@ -22,7 +22,7 @@ pub const PLAN_MODE_ALLOWED_TOOL_NAMES: &[&str] = &[
     "forecast_models",
 ];
 
-pub const PLAN_MODE_ALLOWED_ACTIONS_TEXT: &str = "read_file, list_dir, grep, glob, web_search, web_fetch, search_extension_tools, read_spreadsheet, read_document, bash_control, load_skill, todo_history, todo_pause, todo_resume, todo_delete, ask_user_choice, plan_mode, forecast_read, forecast_models, safe bash exploration and validation commands (including tests and builds), and search_mcp_tools without MCP calls";
+pub const PLAN_MODE_ALLOWED_ACTIONS_TEXT: &str = "read_file, list_dir, grep, glob, web_search, web_fetch, list_extensions, read_spreadsheet, read_document, bash_control, load_skill, todo_history, todo_pause, todo_resume, todo_delete, ask_user_choice, plan_mode, forecast_read, forecast_models, safe bash exploration and validation commands (including tests and builds), and search_mcp_tools without MCP calls";
 
 pub fn is_allowed_in_plan_mode(tool_name: &str, args: &Value) -> bool {
     if let Some(indexed) = crate::services::extensions::indexed_tool(tool_name) {
@@ -100,7 +100,8 @@ mod tests {
     fn allows_read_tools_in_plan_mode() {
         assert!(super::ensure_allowed("read_file", &json!({}), true).is_ok());
         assert!(super::ensure_allowed("grep", &json!({}), true).is_ok());
-        assert!(super::ensure_allowed("search_extension_tools", &json!({}), true).is_ok());
+        assert!(super::ensure_allowed("list_extensions", &json!({}), true).is_ok());
+        assert!(super::ensure_allowed("inspect_extensions", &json!({"ids":["example.a"]}), true).is_err());
         assert!(super::ensure_allowed("plan_mode", &json!({}), true).is_ok());
         assert!(super::ensure_allowed(
             "transform_image",

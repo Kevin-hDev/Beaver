@@ -4,11 +4,19 @@ use super::extension_session_state::ExtensionSessionState;
 
 pub fn refresh_active(state: &mut ExtensionSessionState, preserve_dynamic_tools: bool) {
     let catalog = crate::services::extensions::catalog_snapshot();
+    refresh_active_with_catalog(state, preserve_dynamic_tools, &catalog);
+}
+
+pub(crate) fn refresh_active_with_catalog(
+    state: &mut ExtensionSessionState,
+    preserve_dynamic_tools: bool,
+    catalog: &crate::services::extensions::CatalogSnapshot,
+) {
     let masked = state.epoch.as_ref().is_some_and(|epoch| epoch.masked)
         && !preserve_dynamic_tools;
     state.active_plugin_ids = super::extension_tool_selection::decide_for_catalog(
         &state.plugin_descriptors,
-        &catalog,
+        catalog,
         masked,
         state.plugin_tool_capacity,
         &state.discovered_plugin_ids,

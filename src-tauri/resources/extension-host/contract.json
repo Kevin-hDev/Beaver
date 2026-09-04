@@ -131,7 +131,10 @@
       "extensions_resource_invalid",
       "extensions_resource_too_large",
       "extensions_result_invalid",
-      "extensions_result_too_large"
+      "extensions_result_too_large",
+      "extensions_listing_unavailable",
+      "extensions_inspection_invalid",
+      "extensions_inspection_unavailable"
     ],
     "protocolReasons": ["core_busy", "core_request_timeout", "core_transport_failed", "core_method_unavailable", "core_request_failed", "extension_host_busy", "extension_host_request_failed", "extension_host_fatal"]
   }

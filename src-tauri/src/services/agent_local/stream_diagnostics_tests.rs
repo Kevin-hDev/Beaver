@@ -236,9 +236,9 @@ async fn extension_diagnostics_keep_only_bounded_canonical_metadata() {
 }
 
 #[tokio::test]
-async fn one_refresh_keeps_every_parallel_search_correlation() {
+async fn one_refresh_keeps_every_parallel_inspection_correlation() {
     let session = super::session_store::create_full(
-        "Parallel discovery diagnostics",
+        "Parallel inspection diagnostics",
         "qwen-max",
         "qwen",
         false,
@@ -254,7 +254,7 @@ async fn one_refresh_keeps_every_parallel_search_correlation() {
         super::stream_diagnostics::record_tool(
             &session.id,
             &request_id,
-            crate::services::extensions::SEARCH_TOOL_NAME,
+            crate::services::extensions::LIST_EXTENSIONS_TOOL_NAME,
             "started",
             None,
             None,
@@ -264,8 +264,8 @@ async fn one_refresh_keeps_every_parallel_search_correlation() {
             &session.id,
             &request_id,
             super::stream_diagnostics::ExtensionToolDiagnostic {
-                origin: super::stream_diagnostics::ExtensionDiagnosticOrigin::Search,
-                reason: super::stream_diagnostics::ExtensionDiagnosticReason::DiscoveryResult,
+                origin: super::stream_diagnostics::ExtensionDiagnosticOrigin::Inspection,
+                reason: super::stream_diagnostics::ExtensionDiagnosticReason::InspectionResult,
                 correlation_id: Some(&correlation_id),
                 plugin_ids: &[],
                 tool_names: &[],
@@ -281,7 +281,7 @@ async fn one_refresh_keeps_every_parallel_search_correlation() {
         super::stream_diagnostics::record_tool(
             &session.id,
             &request_id,
-            crate::services::extensions::SEARCH_TOOL_NAME,
+            crate::services::extensions::LIST_EXTENSIONS_TOOL_NAME,
             "completed",
             None,
             Some(&result),
@@ -290,9 +290,9 @@ async fn one_refresh_keeps_every_parallel_search_correlation() {
     }
 
     let pending =
-        super::stream_diagnostics::pending_extension_searches(&session.id, &request_id).await;
-    let added_names = vec!["search".to_string()];
-    let alias_context = vec![serde_json::json!({"function": {"name": "search"}})];
+        super::stream_diagnostics::pending_extension_inspections(&session.id, &request_id).await;
+    let added_names = vec!["lookup".to_string()];
+    let alias_context = vec![serde_json::json!({"function": {"name": "lookup"}})];
     super::stream_diagnostics::record_extension_refreshes(
         &session.id,
         &request_id,
@@ -309,11 +309,11 @@ async fn one_refresh_keeps_every_parallel_search_correlation() {
         .iter()
         .find(|run| run.request_id == request_id)
         .unwrap();
-    let searches = run
+    let inspections = run
         .events
         .iter()
         .filter_map(|event| event.extension.as_ref())
-        .filter(|diagnostic| diagnostic.origin == "extension_tool_search")
+        .filter(|diagnostic| diagnostic.origin == "extension_inspection")
         .filter_map(|diagnostic| diagnostic.correlation_id.clone())
         .collect::<Vec<_>>();
     let refreshed = run
@@ -322,10 +322,10 @@ async fn one_refresh_keeps_every_parallel_search_correlation() {
         .filter_map(|event| event.extension.as_ref())
         .find(|diagnostic| diagnostic.origin == "extension_tools_refreshed")
         .unwrap();
-    assert_eq!(searches, expected);
-    assert_eq!(refreshed.related_search_ids, expected);
+    assert_eq!(inspections, expected);
+    assert_eq!(refreshed.related_inspection_ids, expected);
     assert_eq!(refreshed.tool_delta, 1);
-    assert_eq!(refreshed.canonical_tool_names, "search");
-    assert_eq!(refreshed.provider_aliases, "beaver_search");
+    assert_eq!(refreshed.canonical_tool_names, "lookup");
+    assert_eq!(refreshed.provider_aliases, "lookup");
     super::session_store::delete_one(&session.id).await.unwrap();
 }

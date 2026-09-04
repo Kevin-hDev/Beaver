@@ -43,7 +43,7 @@ Prefer dedicated tools over bash when one fits:
 - To read PDF/Word files: use read_document/write_document (not edit_file, not Python via bash). For .txt/.md use read_file/write_file.
 - To inspect metadata, resize, crop, or convert images: use transform_image (not Python/ImageMagick via bash)
 - Use search_mcp_tools for external MCP services.
-- Use search_extension_tools for enabled Beaver plugins whose typed tools are not currently loaded.
+- The compact extension catalogue already gives names and exact IDs. Inspect directly with inspect_extensions using 1–4 known exact IDs to load selected typed tools for the next model turn. Use list_extensions only for a complete view, descriptions, or counts; then inspect_extensions using 1–4 exact IDs. Never use lexical or keyword search for extensions.
 - Use load_skill for project instructions and procedures, not external services or plugin discovery.
 - When adding totals or computed values to spreadsheets, use set_formula with Excel formulas (=SUM, =AVERAGE) instead of computing values yourself.
 - Reserve bash for system commands and shell operations that dedicated tools cannot handle.

@@ -40,7 +40,7 @@ fn definitions_are_selected_by_injected_capacity_decision() {
 fn capacity_notice_is_added_only_when_needed() {
     let mut tools = vec![json!({
         "function": {
-            "name": crate::services::extensions::SEARCH_TOOL_NAME,
+            "name": crate::services::extensions::LIST_EXTENSIONS_TOOL_NAME,
             "description": "Catalogue"
         }
     })];
@@ -91,11 +91,24 @@ fn an_active_replacement_never_exposes_internal_fallback_metadata() {
 }
 
 #[test]
-fn a_core_tool_displaced_by_search_is_reported() {
+fn inspected_extension_schemas_arrive_only_after_the_next_set_application() {
+    let tools = vec![json!({"function":{"name":"example.a.one","parameters":{"type":"object"}}}), json!({"function":{"name":"example.a.two","parameters":{"type":"object"}}})];
+    let catalog = crate::services::extensions::CatalogSnapshot { ordered_plugin_ids: vec!["example.a".into()], capacity_plugin_ids: vec!["example.a".into()], ..Default::default() };
+    let mut set = ExtensionToolSet { all: tools, active: Vec::new(), managed: true, masked: true, provider_tool_limit: 8, plugin_tool_capacity: 2, plugin_descriptors: vec![super::super::extension_tool_selection::PluginDescriptor { id:"example.a".into(), tool_count:2, definition_count:2 }], active_plugin_ids:Vec::new(), discovered_plugin_ids:Vec::new(), provider_id:String::new(), omitted_plugin_ids:Vec::new(), omitted_tool_names:Vec::new(), additional_omitted_tools:0 };
+    set.apply_with_catalog(&[], &catalog, |_| Some("example.a".into()));
+    assert!(set.active().is_empty());
+    let discovered = vec!["example.a".to_string()];
+    assert!(set.active().is_empty());
+    set.apply_with_catalog(&discovered, &catalog, |_| Some("example.a".into()));
+    assert_eq!(set.active().len(), 2);
+}
+
+#[test]
+fn a_core_tool_displaced_by_extension_capacity_is_reported() {
     let tools = vec![
         json!({"function": {"name": "read_file"}}),
         json!({"function": {"name": "write_file"}}),
-        json!({"function": {"name": crate::services::extensions::SEARCH_TOOL_NAME}}),
+        json!({"function": {"name": crate::services::extensions::LIST_EXTENSIONS_TOOL_NAME}}),
     ];
     let selected = active_definitions_with(&tools, &CapacityDecision::default(), 2, |_| None);
 
@@ -105,7 +118,50 @@ fn a_core_tool_displaced_by_search_is_reported() {
             .iter()
             .filter_map(definition_name)
             .collect::<Vec<_>>(),
-        vec!["read_file", crate::services::extensions::SEARCH_TOOL_NAME]
+        vec!["read_file", crate::services::extensions::LIST_EXTENSIONS_TOOL_NAME]
     );
     assert_eq!(selected.omitted_tool_names, vec!["write_file"]);
+}
+
+#[test]
+fn zero_capacity_keeps_no_extension_discovery_tool() {
+    let tools = discovery_tools_after_two_core_tools();
+
+    let selected = active_definitions_with(&tools, &CapacityDecision::default(), 0, |_| None);
+
+    assert!(selected.tools.is_empty());
+}
+
+#[test]
+fn one_capacity_keeps_only_the_listing_entrypoint() {
+    let tools = discovery_tools_after_two_core_tools();
+
+    let selected = active_definitions_with(&tools, &CapacityDecision::default(), 1, |_| None);
+
+    assert_eq!(selected_names(&selected.tools), vec!["list_extensions"]);
+}
+
+#[test]
+fn two_capacity_keeps_the_discovery_pair_even_beyond_the_prefix() {
+    let tools = discovery_tools_after_two_core_tools();
+
+    let selected = active_definitions_with(&tools, &CapacityDecision::default(), 2, |_| None);
+
+    assert_eq!(
+        selected_names(&selected.tools),
+        vec!["list_extensions", "inspect_extensions"]
+    );
+}
+
+fn discovery_tools_after_two_core_tools() -> Vec<serde_json::Value> {
+    vec![
+        json!({"function": {"name": "read_file"}}),
+        json!({"function": {"name": "write_file"}}),
+        json!({"function": {"name": "list_extensions"}}),
+        json!({"function": {"name": "inspect_extensions"}}),
+    ]
+}
+
+fn selected_names(tools: &[serde_json::Value]) -> Vec<&str> {
+    tools.iter().filter_map(definition_name).collect()
 }

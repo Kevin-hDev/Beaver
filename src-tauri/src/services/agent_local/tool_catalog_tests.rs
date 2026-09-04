@@ -40,7 +40,7 @@ fn filtered_definitions_keep_locked_and_enabled_optional_tools() {
     assert!(has_tool(&names, "bash"));
     assert!(has_tool(&names, "bash_control"));
     assert!(has_tool(&names, "search_mcp_tools"));
-    assert!(has_tool(&names, "search_extension_tools"));
+    assert!(has_tool(&names, "list_extensions"));
     assert!(has_tool(&names, "load_skill"));
     assert!(!has_tool(&names, "todo_write"));
     assert!(!has_tool(&names, "forecast_run"));
@@ -82,10 +82,10 @@ fn enabled_subagent_bundle_exposes_change_lifecycle_tools() {
 #[test]
 fn native_definitions_catalog_and_groups_are_exhaustively_consistent() {
     let entries = catalog();
-    assert_eq!(entries.len(), 44);
-    assert_eq!(entries.iter().filter(|entry| entry.locked).count(), 12);
+    assert_eq!(entries.len(), 45);
+    assert_eq!(entries.iter().filter(|entry| entry.locked).count(), 13);
     assert_eq!(entries.iter().filter(|entry| !entry.locked).count(), 32);
-    assert_eq!(entries.iter().filter(|entry| entry.default_enabled).count(), 25);
+    assert_eq!(entries.iter().filter(|entry| entry.default_enabled).count(), 26);
     let entry_by_id = entries
         .iter()
         .map(|entry| (entry.id, entry))
@@ -128,8 +128,9 @@ fn native_definitions_catalog_and_groups_are_exhaustively_consistent() {
         .filter(|tool_id| !grouped_tools.contains(**tool_id))
         .copied()
         .collect::<Vec<_>>();
-    assert_eq!(ungrouped, ["search_extension_tools"]);
-    assert!(entry_by_id["search_extension_tools"].locked);
+    assert_eq!(ungrouped, ["inspect_extensions", "list_extensions"]);
+    assert!(entry_by_id["inspect_extensions"].locked);
+    assert!(entry_by_id["list_extensions"].locked);
 }
 
 #[test]
@@ -194,8 +195,8 @@ fn default_native_catalog_measurement_is_reproducible() {
     let estimated_tokens =
         crate::services::compress::token_estimate::estimate_tool_tokens(&active);
 
-    assert_eq!(all.len(), 44);
-    assert_eq!(active.len(), 25);
+    assert_eq!(all.len(), 45);
+    assert_eq!(active.len(), 26);
     println!(
         "TOOL_CATALOG_MEASUREMENT={}",
         serde_json::json!({

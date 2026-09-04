@@ -2,7 +2,7 @@
 pub enum ExtensionDiagnosticOrigin {
     Selected,
     Refreshed,
-    Search,
+    Inspection,
 }
 
 impl ExtensionDiagnosticOrigin {
@@ -10,7 +10,7 @@ impl ExtensionDiagnosticOrigin {
         match self {
             Self::Selected => "extension_tools_selected",
             Self::Refreshed => "extension_tools_refreshed",
-            Self::Search => "extension_tool_search",
+            Self::Inspection => "extension_inspection",
         }
     }
 }
@@ -24,7 +24,7 @@ pub enum ExtensionDiagnosticReason {
     Masked,
     ProviderCapacity,
     GlobalCapacity,
-    DiscoveryResult,
+    InspectionResult,
 }
 
 impl ExtensionDiagnosticReason {
@@ -37,7 +37,7 @@ impl ExtensionDiagnosticReason {
             Self::Masked => "masked",
             Self::ProviderCapacity => "provider_capacity",
             Self::GlobalCapacity => "global_capacity",
-            Self::DiscoveryResult => "discovery_result",
+            Self::InspectionResult => "inspection_result",
         }
     }
 }
@@ -70,9 +70,9 @@ pub fn structured(
         .iter()
         .map(|name| aliases.wire_name_for_provider(diagnostic.provider_id, name))
         .collect::<Vec<_>>();
-    let discovery_result = outcome_ids(
+    let inspection_result = outcome_ids(
         diagnostic.outcomes,
-        ExtensionDiagnosticReason::DiscoveryResult,
+        ExtensionDiagnosticReason::InspectionResult,
     );
     let provider_capacity = outcome_ids(
         diagnostic.outcomes,
@@ -89,7 +89,7 @@ pub fn structured(
             .correlation_id
             .filter(|value| uuid::Uuid::parse_str(value).is_ok())
             .map(str::to_string),
-        related_search_ids: Vec::new(),
+        related_inspection_ids: Vec::new(),
         plugin_count: plugin_ids.len(),
         plugin_ids: bounded_join(&plugin_ids),
         tool_count: tool_names
@@ -103,8 +103,8 @@ pub fn structured(
                 .collect::<Vec<_>>(),
         ),
         tool_delta: diagnostic.added_tool_count,
-        discovery_result_count: discovery_result.len(),
-        discovery_result_plugin_ids: bounded_join(&discovery_result),
+        inspection_result_count: inspection_result.len(),
+        inspection_result_plugin_ids: bounded_join(&inspection_result),
         provider_capacity_count: provider_capacity.len(),
         provider_capacity_plugin_ids: bounded_join(&provider_capacity),
         global_capacity_count: global_capacity.len(),
@@ -116,10 +116,16 @@ fn outcome_ids(
     outcomes: &[ExtensionDiagnosticOutcome],
     reason: ExtensionDiagnosticReason,
 ) -> Vec<&str> {
+    let maximum = match reason {
+        ExtensionDiagnosticReason::InspectionResult => {
+            crate::services::extensions::MAX_INSPECTED_EXTENSIONS
+        }
+        _ => crate::services::extensions::MAX_DISCOVERED_PLUGINS,
+    };
     outcomes
         .iter()
-        .take(crate::services::extensions::MAX_SEARCH_RESULTS)
         .filter(|outcome| outcome.reason == reason)
+        .take(maximum)
         .map(|outcome| outcome.plugin_id.as_str())
         .filter(|id| crate::services::extensions::validate_identifier(id).is_ok())
         .collect()
@@ -134,14 +140,17 @@ fn valid_identifiers(values: &[String]) -> Vec<&str> {
 }
 
 fn bounded_join(values: &[&str]) -> String {
-    const MAX_CHARS: usize = 200;
-    let mut joined = String::with_capacity(MAX_CHARS);
+    let mut joined = String::with_capacity(
+        super::types_diagnostics::MAX_EXTENSION_DIAGNOSTIC_TEXT_CHARS,
+    );
     for value in values
         .iter()
         .take(super::provider_tool_limits::MAX_CAPACITY_DIAGNOSTIC_ITEMS)
     {
         let separator_chars = usize::from(!joined.is_empty());
-        if joined.chars().count() + separator_chars + value.chars().count() > MAX_CHARS {
+        if joined.chars().count() + separator_chars + value.chars().count()
+            > super::types_diagnostics::MAX_EXTENSION_DIAGNOSTIC_TEXT_CHARS
+        {
             break;
         }
         if separator_chars == 1 {

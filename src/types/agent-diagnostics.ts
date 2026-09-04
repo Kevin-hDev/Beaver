@@ -7,7 +7,7 @@ export type AgentDiagnosticTool = { name: string, status: string, args?: unknown
 
 export type AgentDiagnosticTodo = { id: string, title: string, active_task?: string, completed: number, total: number, progress: string, };
 
-export type AgentExtensionDiagnostic = { origin: string, reason: string, correlation_id?: string, related_search_ids?: Array<string>, plugin_count: number, plugin_ids: string, tool_count: number, canonical_tool_names: string, provider_aliases: string, tool_delta: number, discovery_result_count: number, discovery_result_plugin_ids: string, provider_capacity_count: number, provider_capacity_plugin_ids: string, global_capacity_count: number, global_capacity_plugin_ids: string, };
+export type AgentExtensionDiagnostic = { origin: string, reason: string, correlation_id?: string, related_inspection_ids?: Array<string>, plugin_count: number, plugin_ids: string, tool_count: number, canonical_tool_names: string, provider_aliases: string, tool_delta: number, inspection_result_count: number, inspection_result_plugin_ids: string, provider_capacity_count: number, provider_capacity_plugin_ids: string, global_capacity_count: number, global_capacity_plugin_ids: string, };
 
 export type AgentDiagnosticEvent = { at: string, phase: string, message: string, tool_name?: string, error_type?: string, extension?: AgentExtensionDiagnostic, };
 

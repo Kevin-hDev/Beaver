@@ -4,6 +4,8 @@ use crate::services::agent_local::memory_context_usage::MemoryContextUsage;
 use crate::services::git_context::GitSnapshot;
 
 pub(super) fn for_prompt(context: &PromptContext<'_>) -> ContextUsageSeed {
+    // Tool definitions, including the compact extension catalog, are measured separately in
+    // RequestContextUsage::from_request as system_tools; adding them to this seed would double count.
     let mut meta = context
         .agent_md_content
         .as_deref()

@@ -2486,7 +2486,16 @@
         "extensions_load_interrupted": "Das Laden der Erweiterung wurde unterbrochen.",
         "extensions_activation_confirmation_required": "Diese Erweiterung muss vor der Aktivierung erneut genehmigt werden.",
         "extensions_not_found": "Die Erweiterung wurde nicht gefunden.",
-        "extensions_host_incompatible": "Der Erweiterungshost ist mit dieser Beaver-Version nicht kompatibel."
+        "extensions_host_incompatible": "Der Erweiterungshost ist mit dieser Beaver-Version nicht kompatibel.",
+        "extensions_resource_unavailable": "Die Erweiterungsressource ist nicht verfügbar.",
+        "extensions_resource_not_found": "Die Erweiterungsressource wurde nicht gefunden.",
+        "extensions_resource_invalid": "Die Erweiterungsressource ist ungültig.",
+        "extensions_resource_too_large": "Die Erweiterungsressource ist zu groß.",
+        "extensions_result_invalid": "Das Erweiterungsergebnis ist ungültig.",
+        "extensions_result_too_large": "Das Erweiterungsergebnis ist zu groß.",
+        "extensions_listing_unavailable": "Die Erweiterungsliste ist nicht verfügbar.",
+        "extensions_inspection_invalid": "Die Erweiterungsprüfung ist ungültig.",
+        "extensions_inspection_unavailable": "Die Erweiterungsprüfung ist nicht verfügbar."
       }
     },
     "diagnostics": {
@@ -2497,6 +2506,8 @@
         "activation_failed": "Aktivierung fehlgeschlagen",
         "registration_failed": "Registrierung der Beiträge fehlgeschlagen",
         "import_failed": "Modulimport fehlgeschlagen",
+        "resource_unavailable": "Erweiterungsressource nicht verfügbar",
+        "result_invalid": "Erweiterungsergebnis ungültig",
         "entry_unavailable": "Der Einstiegspunkt der Erweiterung ist nicht verfügbar",
         "load_failed": "Die Erweiterung konnte nicht geladen werden",
         "host_missing_response": "Der Host hat das Laden dieser Erweiterung nicht bestätigt",

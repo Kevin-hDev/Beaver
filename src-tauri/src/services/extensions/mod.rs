@@ -6,10 +6,12 @@ mod contribution_types;
 mod core_bridge;
 mod core_secrets;
 mod diagnostic_time;
-pub(crate) mod discovery;
 mod discovery_catalog;
+mod discovery_inspection;
 mod discovery_limits;
+mod discovery_listing;
 mod discovery_preferences;
+mod discovery_result_serialization;
 mod discovery_usage;
 pub(crate) mod error_codes;
 pub(crate) mod extension_recovery;
@@ -129,6 +131,10 @@ mod ui_startup;
 mod ui_startup_ack;
 mod ui_startup_platform;
 mod ui_startup_state;
+#[allow(dead_code)]
+mod discovery_contract {
+    include!(concat!(env!("OUT_DIR"), "/extension_discovery_contract.rs"));
+}
 #[cfg(test)]
 mod ui_startup_tests;
 #[cfg(test)]
@@ -142,11 +148,15 @@ pub use types::{ExtensionEffect, ExtensionHostStatus, ExtensionKind};
 pub use ui_types::{UiActionPayload, UiCatalogSnapshot};
 pub use view::ExtensionView;
 
-pub(crate) use discovery::PluginMatch;
-pub(crate) use discovery::{
-    search as search_plugins, MAX_SEARCH_QUERY_CHARS, MAX_SEARCH_RESULTS, SEARCH_TOOL_NAME,
-};
 pub(crate) use discovery_catalog::CatalogSnapshot;
+pub(crate) use discovery_inspection::inspect as inspect_discoverable;
+pub(crate) use discovery_inspection::InspectionStatus;
+pub(crate) use discovery_listing::list as list_discoverable;
+pub(crate) use discovery_result_serialization::serialize_bounded_result;
+pub(crate) const MAX_INSPECTED_EXTENSIONS: usize = discovery_contract::MAX_INSPECTED_EXTENSIONS;
+pub(crate) const MAX_COMPACT_CATALOG_BYTES: usize = discovery_contract::MAX_COMPACT_CATALOG_BYTES;
+pub(crate) const LIST_EXTENSIONS_TOOL_NAME: &str = discovery_contract::DISCOVERY_TOOL_NAMES[0];
+pub(crate) const INSPECT_EXTENSIONS_TOOL_NAME: &str = discovery_contract::DISCOVERY_TOOL_NAMES[1];
 pub use discovery_preferences::DiscoveryPreferences;
 pub use public_api::{
     discovery_preferences, invoke_ui_action, report_ui_mount_failure, set_discovery_preferences,

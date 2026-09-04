@@ -1,5 +1,5 @@
 use super::discovery_catalog::CatalogSnapshot;
-use super::types::{ExtensionRecord, ExtensionTool};
+use super::types::{ExtensionRecord, ExtensionResource, ExtensionSkill, ExtensionTool};
 use std::collections::{BTreeMap, HashSet};
 use std::sync::{LazyLock, RwLock};
 
@@ -11,6 +11,8 @@ pub(crate) struct IndexedPlugin {
     pub description: Option<String>,
     pub essential: bool,
     pub tools: Vec<ExtensionTool>,
+    pub skills: Vec<ExtensionSkill>,
+    pub resources: Vec<ExtensionResource>,
 }
 
 #[derive(Clone)]
@@ -44,6 +46,8 @@ pub fn rebuild(records: &[ExtensionRecord]) -> Result<(), String> {
             description: record.manifest.description.clone(),
             essential: record.manifest.essential,
             tools: record.contributions.tools.clone(),
+            skills: record.contributions.skills.clone(),
+            resources: record.contributions.resources.clone(),
         })
         .collect::<Vec<_>>();
     let tools = plugins
@@ -67,7 +71,7 @@ pub fn rebuild(records: &[ExtensionRecord]) -> Result<(), String> {
         .collect();
     let scores = usage_scores();
     let next_catalog =
-        super::discovery_catalog::build(&plugins, &preferences.protected_plugin_ids, &scores);
+        super::discovery_catalog::build(&plugins, &preferences.protected_plugin_ids, &scores)?;
     let previous_catalog = INDEX
         .read()
         .map(|index| index.catalog.clone())

@@ -94,16 +94,12 @@ pub(super) async fn dispatch_inner(
                 Err(error) => super::tool_web_error::fetch(error),
             }
         }
-        "search_extension_tools" => match trace.request_id {
-            Some(request_id) => {
-                super::tool_extension_discovery::execute(args, session_id, request_id).await
-            }
-            None => ToolResult::unavailable(
-                "plugin_search_unavailable",
-                "Recherche de plugins indisponible.",
-                true,
-            ),
-        },
+        name if name == crate::services::extensions::LIST_EXTENSIONS_TOOL_NAME => {
+            super::tool_extension_list::execute().await
+        }
+        name if name == crate::services::extensions::INSPECT_EXTENSIONS_TOOL_NAME => {
+            super::tool_extension_inspect::execute(args, session_id, trace.request_id).await
+        }
         "todo_write" => super::tool_todo::execute(args, session_id).await,
         "todo_history" => super::tool_todo::execute_history(args, session_id).await,
         "todo_pause" => super::tool_todo::execute_pause(args, session_id).await,

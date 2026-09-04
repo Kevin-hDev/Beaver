@@ -10,9 +10,17 @@ pub fn is_read_only(name: &str) -> bool {
             | "glob"
             | "list_dir"
             | "web_search"
-            | "search_extension_tools"
             | "load_skill"
             | "read_spreadsheet"
             | "read_document"
-    )
+    ) || name == crate::services::extensions::LIST_EXTENSIONS_TOOL_NAME
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn only_listing_is_read_only_among_extension_discovery_tools() {
+        assert!(super::is_read_only("list_extensions"));
+        assert!(!super::is_read_only("inspect_extensions"));
+    }
 }

@@ -146,7 +146,7 @@ fn ensure_identifier_width(maximum: usize, counts: [usize; 4]) -> Result<(), Str
         remaining /= 10;
         suffix_chars += 1;
     }
-    (maximum >= suffix_chars + 1)
+    (maximum > suffix_chars)
         .then_some(())
         .ok_or_else(|| "extension discovery identifier limit is too small".to_string())
 }

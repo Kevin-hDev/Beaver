@@ -1,5 +1,8 @@
 #[path = "../../../extension_contract_shared.rs"]
 #[allow(dead_code)]
+// The contract generator is compiled here as an executable test fixture; the extensions module
+// loads the same helper independently to validate its own generated artifacts.
+#[allow(clippy::duplicate_mod)]
 mod extension_contract_shared;
 #[path = "../../../extension_discovery_contract_build.rs"]
 #[allow(dead_code)]

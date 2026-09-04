@@ -2485,7 +2485,16 @@
         "extensions_load_interrupted": "扩展加载已中断。",
         "extensions_activation_confirmation_required": "激活前必须重新批准此扩展。",
         "extensions_not_found": "找不到该扩展。",
-        "extensions_host_incompatible": "扩展主机与此版本的 Beaver 不兼容。"
+        "extensions_host_incompatible": "扩展主机与此版本的 Beaver 不兼容。",
+        "extensions_resource_unavailable": "扩展资源不可用。",
+        "extensions_resource_not_found": "找不到扩展资源。",
+        "extensions_resource_invalid": "扩展资源无效。",
+        "extensions_resource_too_large": "扩展资源过大。",
+        "extensions_result_invalid": "扩展结果无效。",
+        "extensions_result_too_large": "扩展结果过大。",
+        "extensions_listing_unavailable": "扩展列表不可用。",
+        "extensions_inspection_invalid": "扩展检查无效。",
+        "extensions_inspection_unavailable": "扩展检查不可用。"
       }
     },
     "diagnostics": {
@@ -2496,6 +2505,8 @@
         "activation_failed": "激活失败",
         "registration_failed": "扩展项注册失败",
         "import_failed": "模块导入失败",
+        "resource_unavailable": "扩展资源不可用",
+        "result_invalid": "扩展结果无效",
         "entry_unavailable": "扩展入口点不可用",
         "load_failed": "扩展加载失败",
         "host_missing_response": "宿主未确认此扩展已加载",

@@ -2490,7 +2490,16 @@
         "extensions_load_interrupted": "Se interrumpió la carga de la extensión.",
         "extensions_activation_confirmation_required": "Esta extensión debe aprobarse de nuevo antes de activarla.",
         "extensions_not_found": "No se encontró la extensión.",
-        "extensions_host_incompatible": "El host de extensiones no es compatible con esta versión de Beaver."
+        "extensions_host_incompatible": "El host de extensiones no es compatible con esta versión de Beaver.",
+        "extensions_resource_unavailable": "El recurso de la extensión no está disponible.",
+        "extensions_resource_not_found": "No se encontró el recurso de la extensión.",
+        "extensions_resource_invalid": "El recurso de la extensión no es válido.",
+        "extensions_resource_too_large": "El recurso de la extensión es demasiado grande.",
+        "extensions_result_invalid": "El resultado de la extensión no es válido.",
+        "extensions_result_too_large": "El resultado de la extensión es demasiado grande.",
+        "extensions_listing_unavailable": "La lista de extensiones no está disponible.",
+        "extensions_inspection_invalid": "La inspección de extensiones no es válida.",
+        "extensions_inspection_unavailable": "La inspección de extensiones no está disponible."
       }
     },
     "diagnostics": {
@@ -2501,6 +2510,8 @@
         "activation_failed": "La activación falló",
         "registration_failed": "Falló el registro de contribuciones",
         "import_failed": "Falló la importación del módulo",
+        "resource_unavailable": "El recurso de la extensión no está disponible",
+        "result_invalid": "El resultado de la extensión no es válido",
         "entry_unavailable": "El punto de entrada de la extensión no está disponible",
         "load_failed": "No se pudo cargar la extensión",
         "host_missing_response": "El host no confirmó la carga de esta extensión",

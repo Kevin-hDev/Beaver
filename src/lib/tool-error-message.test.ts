@@ -10,6 +10,9 @@ const translations: Record<string, string> = {
   "agentLocal.toolActivity.errorCategories.conflict": "L’état actuel empêche cette opération.",
   "agentLocal.toolActivity.errorCategories.unavailable": "L’outil est temporairement indisponible.",
   "agentLocal.toolActivity.webSearchRuntimeUnavailable": "La recherche locale est indisponible.",
+  "extensions.errors.codes.extensions_listing_unavailable": "La liste des extensions est indisponible.",
+  "extensions.errors.codes.extensions_inspection_invalid": "L’inspection des extensions est invalide.",
+  "extensions.errors.codes.extensions_inspection_unavailable": "L’inspection des extensions est indisponible.",
   "errors.toolFailed": "L’outil a échoué",
 };
 const t = ((key: string) => translations[key] ?? key) as TFunction;
@@ -35,6 +38,23 @@ describe("toolErrorMessage", () => {
 
     expect(message).toBe("L’outil est temporairement indisponible.");
     expect(message).not.toContain("extension_unavailable");
+  });
+
+  it("traduit les trois nouveaux codes backend d'extension sans exposer leur code", () => {
+    for (const [code, expected] of [
+      ["extensions_listing_unavailable", "La liste des extensions est indisponible."],
+      ["extensions_inspection_invalid", "L’inspection des extensions est invalide."],
+      ["extensions_inspection_unavailable", "L’inspection des extensions est indisponible."],
+    ]) {
+      const message = toolErrorMessage("list_extensions", code, {
+        code,
+        category: "unavailable",
+        retryable: false,
+      }, t);
+
+      expect(message).toBe(expected);
+      expect(message).not.toContain(code);
+    }
   });
 
   it("traduit le runtime SearXNG sans afficher le code backend", () => {

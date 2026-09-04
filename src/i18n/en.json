@@ -1857,7 +1857,16 @@
         "extensions_load_interrupted": "Extension loading was interrupted.",
         "extensions_activation_confirmation_required": "This extension must be approved again before activation.",
         "extensions_not_found": "The extension could not be found.",
-        "extensions_host_incompatible": "The extension host is not compatible with this version of Beaver."
+        "extensions_host_incompatible": "The extension host is not compatible with this version of Beaver.",
+        "extensions_resource_unavailable": "The extension resource is unavailable.",
+        "extensions_resource_not_found": "The extension resource could not be found.",
+        "extensions_resource_invalid": "The extension resource is invalid.",
+        "extensions_resource_too_large": "The extension resource is too large.",
+        "extensions_result_invalid": "The extension result is invalid.",
+        "extensions_result_too_large": "The extension result is too large.",
+        "extensions_listing_unavailable": "The extension list is unavailable.",
+        "extensions_inspection_invalid": "The extension inspection is invalid.",
+        "extensions_inspection_unavailable": "The extension inspection is unavailable."
       }
     },
     "diagnostics": {
@@ -1868,6 +1877,8 @@
         "activation_failed": "Activation failed",
         "registration_failed": "Contribution registration failed",
         "import_failed": "Module import failed",
+        "resource_unavailable": "Extension resource unavailable",
+        "result_invalid": "Extension result invalid",
         "entry_unavailable": "The extension entry point is unavailable",
         "load_failed": "The extension failed to load",
         "host_missing_response": "The host did not confirm that this extension loaded",

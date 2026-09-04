@@ -2,10 +2,10 @@ use chrono::Utc;
 use uuid::Uuid;
 
 pub use super::extension_tool_correlation::{
-    pending_extension_searches, record_extension_refreshes,
+    pending_extension_inspections, record_extension_refreshes,
 };
 pub use super::extension_tool_diagnostic::{
-    ExtensionDiagnosticOrigin, ExtensionDiagnosticOutcome, ExtensionDiagnosticReason,
+    ExtensionDiagnosticOrigin, ExtensionDiagnosticReason,
     ExtensionToolDiagnostic,
 };
 
