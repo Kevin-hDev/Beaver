@@ -403,6 +403,7 @@ async fn a_completed_stop_stays_confirmed_when_another_owner_removed_the_generat
     assert!(!hosts.stop_is_confirmed(&identity, generation));
     assert!(hosts.remove_current(&identity, generation));
     assert!(hosts.stop_is_confirmed(&identity, generation));
+    assert!(hosts.remove_stopped(&identity, generation, true));
 
     assert!(
         process

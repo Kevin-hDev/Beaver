@@ -130,8 +130,7 @@ impl ExtensionRuntime {
             return StopHostOutcome::Unconfirmed;
         }
         let mut hosts = self.hosts.lock().await;
-        let stopped = hosts.remove_current(identity, snapshot.0)
-            || hosts.stop_is_confirmed(identity, snapshot.0);
+        let stopped = hosts.remove_stopped(identity, snapshot.0, true);
         drop(hosts);
         if stopped && catalog_retired {
             return StopHostOutcome::Confirmed;
