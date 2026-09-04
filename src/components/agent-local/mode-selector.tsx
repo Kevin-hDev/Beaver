@@ -84,17 +84,17 @@ export function ModeSelector({ mode, browserStatus = "hidden", onChange }: ModeS
           className="asp-mode-menu"
           style={{ top: pos.top, right: pos.right }}
         >
-          <button className="asp-mode-item" onClick={() => pick("preview")}>
+          <button className="menu-row asp-mode-item" onClick={() => pick("preview")}>
             <span className={`asp-mode-dot ${mode === "preview" ? "asp-mode-dot-active" : ""}`} />
             {t("forecast.panelMode.preview")}
           </button>
-          <button className="asp-mode-item" onClick={() => pick("forecast")}>
+          <button className="menu-row asp-mode-item" onClick={() => pick("forecast")}>
             <span className={`asp-mode-dot ${mode === "forecast" ? "asp-mode-dot-active" : ""}`} />
             {t("forecast.panelMode.forecast")}
           </button>
           {browserStatus !== "hidden" && (
             <button
-              className="asp-mode-item"
+              className="menu-row asp-mode-item"
               disabled={browserStatus !== "ready"}
               title={browserStatus === "unavailable" ? t("browser.unavailable") : undefined}
               onClick={() => pick("browser")}

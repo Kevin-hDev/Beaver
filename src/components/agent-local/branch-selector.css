@@ -60,36 +60,21 @@
   letter-spacing: 0.04em;
 }
 
+/* Forme, retrait et survol viennent de src/styles/menu-row.css. La ligne porte
+   deux gestes — choisir la branche, la supprimer — d'où menu-row-host : le
+   retrait descend sur le bouton de choix pour qu'il couvre toute la ligne. */
 .bs-item {
-  display: flex;
-  align-items: center;
-  border-radius: var(--radius-sm);
   font-size: var(--text-xs);
   color: var(--ink-muted);
-  transition: background var(--ease-smooth);
-}
-
-.bs-item:hover {
-  background: var(--surface-hover);
 }
 
 .bs-item.bs-selected {
   color: var(--ink);
 }
 
+/* Le bouton qui remplit la ligne : tout vient de menu-row-fill. */
 .bs-item-select {
-  display: flex;
-  min-width: 0;
-  flex: 1;
-  align-items: center;
-  gap: var(--space-sm);
-  padding: var(--space-xs) var(--space-sm);
-  border: 0;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-  font: inherit;
-  text-align: left;
+  --menu-row-padding-y: var(--space-xs);
 }
 
 .bs-item-info {

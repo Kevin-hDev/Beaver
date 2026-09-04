@@ -11,36 +11,13 @@
   -webkit-backdrop-filter: var(--popover-backdrop-filter, none);
 }
 
+/* Forme, retrait, survol et état désactivé viennent de src/styles/menu-row.css. */
 .asp-mode-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  min-height: 28px;
-  padding: 0 10px;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--ink-muted);
   font-size: var(--text-sm);
-  font-family: var(--font-sans);
-  text-align: left;
-  cursor: pointer;
-}
-
-.asp-mode-item:hover {
-  color: var(--ink);
-  background: var(--surface-hover);
 }
 
 .asp-mode-item:disabled {
-  color: var(--ink-faint);
   cursor: not-allowed;
-}
-
-.asp-mode-item:disabled:hover {
-  color: var(--ink-faint);
-  background: transparent;
 }
 
 .asp-mode-dot {

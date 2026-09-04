@@ -90,7 +90,7 @@ export function ChatPlusMenu({
 
       {open && (
         <div className="cpm-dropdown" ref={dropdownRef}>
-          <button type="button" className="cpm-item" onClick={handleFileImport}>
+          <button type="button" className="menu-row cpm-item" onClick={handleFileImport}>
             <Image size="var(--icon-md)" weight="regular" />
             <span>{t("chatMenu.addFile")}</span>
           </button>
@@ -98,7 +98,7 @@ export function ChatPlusMenu({
           {showCompression && (
             <button
               type="button"
-              className={`cpm-item cpm-has-sub ${submenu === "compression" ? "active" : ""}`}
+              className={`menu-row cpm-item cpm-has-sub ${submenu === "compression" ? "active" : ""}`}
               onMouseEnter={() => setSubmenu("compression")}
               onFocus={() => setSubmenu("compression")}
               onClick={() => setSubmenu("compression")}
@@ -113,7 +113,7 @@ export function ChatPlusMenu({
 
           {agentic && (
             <>
-              <div className="cpm-item">
+              <div className="menu-row cpm-item">
                 <ClipboardText size="var(--icon-md)" weight="regular" />
                 <label className="cpm-switch-copy" htmlFor={planModeSwitchId}>
                   <span>{t("chatMenu.planMode")}</span>
@@ -131,7 +131,7 @@ export function ChatPlusMenu({
 
               <button
                 type="button"
-                className={`cpm-item cpm-has-sub ${submenu === "connectors" ? "active" : ""}`}
+                className={`menu-row cpm-item cpm-has-sub ${submenu === "connectors" ? "active" : ""}`}
                 onMouseEnter={() => setSubmenu("connectors")}
                 onFocus={() => setSubmenu("connectors")}
                 onClick={() => setSubmenu("connectors")}
@@ -145,7 +145,7 @@ export function ChatPlusMenu({
 
               <button
                 type="button"
-                className={`cpm-item cpm-has-sub ${submenu === "plugins" ? "active" : ""}`}
+                className={`menu-row cpm-item cpm-has-sub ${submenu === "plugins" ? "active" : ""}`}
                 onMouseEnter={() => setSubmenu("plugins")}
                 onFocus={() => setSubmenu("plugins")}
                 onClick={() => setSubmenu("plugins")}

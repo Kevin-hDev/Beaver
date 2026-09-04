@@ -11,21 +11,9 @@
   -webkit-backdrop-filter: var(--popover-backdrop-filter, none);
 }
 
+/* Forme, retrait et survol viennent de src/styles/menu-row.css. */
 .context-item {
-  min-height: 28px;
-  padding: 0 var(--space-sm);
   font-size: var(--text-sm);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  transition: background var(--ease-smooth);
-  color: var(--ink);
-}
-
-.context-item:hover {
-  background: var(--surface-hover);
 }
 
 .context-item.danger {

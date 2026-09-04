@@ -19,24 +19,13 @@
   border-color: transparent;
 }
 
+/* Forme, retrait et survol viennent de src/styles/menu-row.css. */
 .cpm-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  width: 100%;
-  min-height: 28px;
-  padding: 4px var(--space-sm);
-  border: none;
-  background: transparent;
-  border-radius: var(--radius-sm);
+  --menu-row-padding-y: 4px;
   font-size: var(--text-sm);
-  color: var(--ink);
-  cursor: pointer;
-  text-align: left;
-  transition: background var(--ease-smooth);
 }
 
-.cpm-item:hover, .cpm-item.active { background: var(--select-bg); color: var(--select-text); }
+.cpm-item.active { background: var(--select-bg); }
 
 .cpm-caret { margin-left: auto; color: var(--ink-faint); }
 
@@ -93,23 +82,11 @@
   border-color: transparent;
 }
 
+/* Forme, retrait et survol viennent de src/styles/menu-row.css. */
 .cpm-sub-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  width: 100%;
-  padding: 6px var(--space-sm);
-  border: none;
-  background: transparent;
-  border-radius: var(--radius-sm);
+  --menu-row-padding-y: 6px;
   font-size: var(--text-sm);
-  color: var(--ink);
-  cursor: pointer;
-  text-align: left;
-  transition: background var(--ease-smooth);
 }
-
-.cpm-sub-item:hover { background: var(--surface); }
 
 .cpm-disabled { opacity: 0.4; }
 

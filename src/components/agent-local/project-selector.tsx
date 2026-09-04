@@ -95,13 +95,13 @@ export function ProjectSelector({
           )}
 
           {filtered.length === 0 && projects.length === 0 && (
-            <div className="project-dropdown-empty">
+            <div className="menu-row menu-row-static project-dropdown-empty">
               {t("projects.noFolder", "Aucun dossier")}
             </div>
           )}
 
           {filtered.length === 0 && projects.length > 0 && (
-            <div className="project-dropdown-empty">
+            <div className="menu-row menu-row-static project-dropdown-empty">
               {t("projects.noMatch", "Aucun dossier trouvé")}
             </div>
           )}
@@ -109,7 +109,7 @@ export function ProjectSelector({
           {filtered.map((p) => (
             <div
               key={p.id}
-              className={`project-dropdown-item ${p.id === selectedProjectId ? "selected" : ""}`}
+              className={`menu-row project-dropdown-item ${p.id === selectedProjectId ? "selected" : ""}`}
               role="button"
               tabIndex={0}
               onClick={() => handleSelect(p.id)}
@@ -123,7 +123,7 @@ export function ProjectSelector({
 
           <div className="project-dropdown-sep" />
 
-          <div className="project-dropdown-item" role="button" tabIndex={0} onClick={handleAdd} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleAdd(); }}>
+          <div className="menu-row project-dropdown-item" role="button" tabIndex={0} onClick={handleAdd} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleAdd(); }}>
             <FolderAddIcon size="var(--icon-sm)" />
             <span>{t("projects.addNew", "Ajouter un nouveau projet")}</span>
           </div>

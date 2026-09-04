@@ -18,7 +18,7 @@ export function ChatPlusConnectorRow({
   const switchId = useId();
 
   return (
-    <div className="cpm-sub-item">
+    <div className="menu-row cpm-sub-item">
       <McpIcon
         connectorId={connectorId}
         displayName={displayName}

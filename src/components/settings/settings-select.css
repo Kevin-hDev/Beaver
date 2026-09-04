@@ -136,22 +136,9 @@
   color: var(--ink-faint);
 }
 
+/* Forme, retrait et survol viennent de src/styles/menu-row.css. */
 .ss-option {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 28px;
-  padding: 0 var(--chrome-3);
-  border-radius: var(--radius);
-  cursor: pointer;
   font-size: var(--text-sm);
-  color: var(--ink);
-  transition: background 100ms ease-out;
-}
-
-.ss-option:hover,
-.ss-option[data-local-nav-active="true"] {
-  background: var(--surface-hover);
 }
 
 .ss-option.active {
@@ -168,13 +155,6 @@
   opacity: 0.4;
 }
 
-.ss-option-label {
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .ss-empty {
   padding: 12px;
   font-size: var(--text-xs);
@@ -182,27 +162,12 @@
   text-align: center;
 }
 
+/* Le trait qui séparait deux fournisseurs a disparu avec la primitive : dans
+   une liste dont chaque ligne s'arrondit au survol, une règle horizontale
+   traverse ces coins et redonne à la liste l'allure d'un tableau. */
 .ss-group-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 28px;
-  padding: 0 var(--chrome-3);
   font-size: var(--text-xs);
-  font-weight: 600;
-  color: var(--ink-muted);
-  cursor: pointer;
   user-select: none;
-  border-top: 1px solid var(--edge);
-}
-
-.ss-group-header:hover,
-.ss-group-header[data-local-nav-active="true"] {
-  background: var(--surface-hover);
-}
-
-.ss-group:first-child .ss-group-header {
-  border-top: none;
 }
 
 .ss-group-caret {
@@ -211,10 +176,4 @@
 
 .ss-group-caret.open {
   transform: rotate(90deg);
-}
-
-.ss-group-count {
-  font-weight: 400;
-  color: var(--ink-faint);
-  margin-left: auto;
 }

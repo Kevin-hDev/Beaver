@@ -36,7 +36,7 @@ export function SettingsSelectList({
     return (
       <div
         key={opt.value}
-        className={`ss-option ${opt.value === value ? "active" : ""} ${opt.dimmed ? "ss-option-dimmed" : ""}`}
+        className={`menu-row ss-option ${opt.value === value ? "active" : ""} ${opt.dimmed ? "ss-option-dimmed" : ""}`}
         role="button"
         ref={getItemRef(navId)}
         tabIndex={isActive(navId) ? 0 : -1}
@@ -51,7 +51,7 @@ export function SettingsSelectList({
           {opt.value === value && <Check size="var(--icon-sm)" weight="bold" />}
         </div>
         {opt.icon}
-        <span className="ss-option-label">{opt.label}</span>
+        <span className="menu-row-label">{opt.label}</span>
       </div>
     );
   };
@@ -70,7 +70,7 @@ export function SettingsSelectList({
           return (
             <div key={group.label} className="ss-group">
               <div
-                className="ss-group-header"
+                className="menu-row menu-row-header ss-group-header"
                 role="button"
                 ref={getItemRef(navId)}
                 tabIndex={isActive(navId) ? 0 : -1}
@@ -86,8 +86,8 @@ export function SettingsSelectList({
                   weight="bold"
                   className={`ss-group-caret ${isCollapsed ? "" : "open"}`}
                 />
-                <span>{group.label}</span>
-                <span className="ss-group-count">{group.options.length}</span>
+                <span className="menu-row-label">{group.label}</span>
+                <span className="menu-row-trailing">{group.options.length}</span>
               </div>
               {!isCollapsed && sortedOptions(group.options).map(renderOption)}
             </div>

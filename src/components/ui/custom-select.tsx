@@ -74,7 +74,7 @@ export function CustomSelect({
             return (
             <div
               key={opt.value}
-              className={`cs-option ${opt.value === value ? "active" : ""}`}
+              className={`menu-row cs-option ${opt.value === value ? "active" : ""}`}
               role="option"
               ref={getItemRef(navId)}
               tabIndex={isActive(navId) ? 0 : -1}

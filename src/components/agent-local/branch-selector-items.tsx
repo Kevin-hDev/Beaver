@@ -41,8 +41,8 @@ export function BranchSelectorBranchItem({
   deleteControl,
 }: BranchSelectorBranchItemProps) {
   return (
-    <div className={`bs-item ${branch.is_current ? "bs-selected" : ""}`}>
-      <button className="bs-item-select" type="button" onClick={() => onSelect(branch.name)}>
+    <div className={`menu-row menu-row-host bs-item ${branch.is_current ? "bs-selected" : ""}`}>
+      <button className="menu-row-fill bs-item-select" type="button" onClick={() => onSelect(branch.name)}>
         <GitBranch size="var(--icon-sm)" />
         <span className="bs-item-info">
           <span className="bs-item-name">{branch.name}</span>
@@ -63,8 +63,8 @@ export function BranchSelectorWorktreeItem({
   const name = worktree.branch || worktree.path;
 
   return (
-    <div className="bs-item">
-      <button className="bs-item-select" type="button" onClick={() => onSelect(worktree.path, worktree.branch)}>
+    <div className="menu-row menu-row-host bs-item">
+      <button className="menu-row-fill bs-item-select" type="button" onClick={() => onSelect(worktree.path, worktree.branch)}>
         <GitBranch size="var(--icon-sm)" />
         <span className="bs-item-info">
           <span className="bs-item-name">{name}</span>
@@ -79,7 +79,7 @@ export function BranchSelectorWorktreeItem({
 export function BranchSelectorCreateItem({ label, onStart }: BranchSelectorCreateItemProps) {
   return (
     <div
-      className="bs-item"
+      className="menu-row menu-row-host bs-item"
       role="button"
       tabIndex={0}
       onClick={onStart}

@@ -74,7 +74,7 @@ export function ReasoningSelector({
       aria-label={t("agentLocal.reasoningTitle")}
     >
       {model?.supports_fast_mode === true && (
-        <div className="rs-fast-row">
+        <div className="menu-row menu-row-static rs-fast-row">
           <span className="rs-fast-label">
             <FastModeIcon className="rs-fast-icon" />
             <span>{t("agentLocal.fastMode")}</span>
@@ -92,6 +92,7 @@ export function ReasoningSelector({
           key={option.mode}
           type="button"
           className={cn(
+            "menu-row",
             "rs-option",
             selectedMode === option.mode && "rs-option-active",
           )}

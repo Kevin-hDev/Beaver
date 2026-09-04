@@ -48,7 +48,7 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
       {items.map((item) => (
         <div
           key={item.id ?? item.label}
-          className={`context-item ${item.danger ? "danger" : ""}`}
+          className={`menu-row context-item ${item.danger ? "danger" : ""}`}
           role="menuitem"
           tabIndex={0}
           onClick={() => handleClick(item)}
