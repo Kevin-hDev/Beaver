@@ -300,7 +300,9 @@ jobs:
       # including restart and concurrent isolated hosts.
       - name: Rust owned-process protocol smoke
         working-directory: src-tauri
-        run: node ../scripts/ci/run-rust-test-filter.mjs --filter services::extensions::host_process::tests::prepared_runtime_ --features windows-tests --ignored --nocapture
+        run: |
+          node ../scripts/ci/run-rust-test-filter.mjs --filter services::extensions::host_process::tests::prepared_runtime_ --features windows-tests --ignored --nocapture
+          node ../scripts/ci/run-rust-test-filter.mjs --filter services::extensions::runtime_lifecycle::tests::prepared_runtime_confirms_restart_stop_while_exit_monitor_is_active --features windows-tests --exact --ignored --nocapture
 
   backend-macos-native:
     name: Backend macOS CEF (Rust)

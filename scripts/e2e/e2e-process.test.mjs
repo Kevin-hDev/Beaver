@@ -281,6 +281,10 @@ test("CI isolates the Windows extension host before the packaged CEF journey", (
     smokeJob,
     /--filter services::extensions::host_process::tests::prepared_runtime_[^\r\n]*--features windows-tests --ignored --nocapture/u,
   );
+  assert.match(
+    smokeJob,
+    /prepared_runtime_confirms_restart_stop_while_exit_monitor_is_active --features windows-tests --exact --ignored --nocapture/u,
+  );
 });
 
 test("CI runs the real Tauri WebView journey on Linux", () => {
