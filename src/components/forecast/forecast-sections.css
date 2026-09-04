@@ -20,7 +20,6 @@
   color: var(--ink);
 }
 
-
 .fcs-content {
   flex: 1;
   overflow: auto;
@@ -51,29 +50,4 @@
   margin: 0;
   max-width: 240px;
   line-height: 1.5;
-}
-
-.fcs-accordion {
-  padding: 8px 12px;
-}
-
-.fcs-details {
-  border-bottom: 1px solid var(--edge);
-}
-
-.fcs-summary {
-  padding: 10px 4px;
-  font-size: var(--text-sm);
-  font-family: var(--font-sans);
-  color: var(--ink);
-  cursor: pointer;
-  user-select: none;
-}
-
-.fcs-summary:hover {
-  color: var(--pulse);
-}
-
-.fcs-details-body {
-  padding: 4px 4px 12px;
 }

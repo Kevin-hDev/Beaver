@@ -86,12 +86,6 @@
   font-size: var(--text-sm);
 }
 
-.fp-editor-note {
-  padding: 8px 20px;
-  color: var(--ink-faint);
-  font-size: var(--text-xs);
-}
-
 .fp-nowrap .tp-wrapper {
   min-width: max-content;
 }

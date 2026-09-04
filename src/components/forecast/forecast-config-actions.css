@@ -15,38 +15,3 @@
   color: var(--signal-error);
   font-size: var(--text-xs);
 }
-
-.fcc-callout {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 10px 12px;
-  border: 1px solid var(--edge);
-  border-radius: var(--radius-sm);
-}
-
-.fcc-callout-info {
-  background: var(--signal-info-bg);
-  border-color: var(--signal-info);
-}
-
-.fcc-callout-warning {
-  background: var(--signal-warning-bg);
-  border-color: var(--signal-warning);
-}
-
-.fcc-callout-ok {
-  background: var(--signal-ok-bg);
-  border-color: var(--signal-ok);
-}
-
-.fcc-callout-title {
-  font-size: var(--text-xs);
-  font-family: var(--font-sans);
-  color: var(--ink);
-}
-
-.fcc-callout-body {
-  font-size: var(--text-sm);
-  color: var(--ink-muted);
-}

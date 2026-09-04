@@ -39,24 +39,3 @@
 .toolbar-btn:first-child {
   margin-right: 2px;
 }
-
-.toolbar-btn-active {
-  color: var(--ink);
-  background: var(--surface-hover);
-}
-
-.toolbar-badge {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  min-width: 14px;
-  height: 14px;
-  padding: 0 3px;
-  border-radius: var(--radius-full);
-  background: var(--signal-ok);
-  color: var(--void);
-  font-size: 9px;
-  font-family: var(--font-mono);
-  line-height: 14px;
-  text-align: center;
-}

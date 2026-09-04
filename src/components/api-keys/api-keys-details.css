@@ -42,3 +42,19 @@
   color: var(--ink);
   font-family: var(--font-mono);
 }
+
+/* Lien vers la page d'inscription du fournisseur. Il vivait dans un
+   api-keys-detail.css voisin — sans le « s » — que seul l'onglet importait,
+   alors que la règle sert ce composant-ci. */
+.ak-signup-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--select-text);
+  text-decoration: none;
+  font-size: var(--text-xs);
+}
+
+.ak-signup-link:hover {
+  text-decoration: underline;
+}
