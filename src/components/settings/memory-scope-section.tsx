@@ -30,7 +30,7 @@ export function MemoryScopeSection({
         </div>
         <span>{formatSize(scope.totalBytes)}</span>
       </div>
-      <div className="settings-card mems-topic-list">
+      <div className="settings-card settings-card-list mems-topic-list">
         {scope.topicsLoaded && topics.map((topic) => (
           <button
             type="button"

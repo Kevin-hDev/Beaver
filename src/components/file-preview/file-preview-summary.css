@@ -16,7 +16,6 @@
   color: var(--ink);
   cursor: pointer;
   text-align: left;
-  margin: 0 var(--list-gutter);
 }
 
 .fp-summary-row:hover {
