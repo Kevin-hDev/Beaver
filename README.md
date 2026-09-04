@@ -16,6 +16,7 @@ Beaver is an agentic desktop workspace for local models through Ollama and cloud
 - **Providers and usage**: connect OpenAI/Codex, Grok, and Kimi through web authentication; configure Anthropic, Alibaba Cloud Qwen, and other API-key providers; and view available limits, credits, token usage, request counts, and estimated costs
 - **Reasoning and multimodal continuity**: use the reasoning controls and image inputs validated for each model while Beaver preserves provider-native reasoning across messages and tool continuations without exposing private provider state
 - **MCP connectors and channels**: activate local or cloud MCP connectors per chat and optionally connect the background Gateway to Telegram, Slack, or Discord
+- **Custom extensions**: install trusted JavaScript or TypeScript extensions from a local source, Git, or npm; add agent tools, events, tabs, settings, actions, and themes through the versioned [Beaver Extension API](./EXTENSIONS.md)
 - **Wakeups**: schedule one-time, daily, or weekly prompts with the internal scheduler and keep each result in a dedicated conversation
 - **Managed Ollama runtime**: download Ollama on first launch, reuse an existing daemon when available, browse and install models, edit modelfiles, and configure model parameters or system prompts
 - **Desktop workspace**: use the cross-platform tabbed terminal, file tree, rich text and Office previews, link previews, context usage breakdown, six visual themes, and the interactive Beaver companion

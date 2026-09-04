@@ -5,9 +5,10 @@ import { SettingsCard } from "@/components/settings/settings-card";
 import { SettingsDetailHeader } from "@/components/settings/shell/settings-detail-header";
 import { extensionErrorKey } from "@/lib/extension-errors";
 import { formatExtensionDate } from "@/lib/extension-date";
-import type { ExtensionRecord } from "@/types/extensions";
+import type { ExtensionDiagnostic, ExtensionRecord } from "@/types/extensions";
 import { ExtensionIcon } from "./extension-icon";
 import { ExtensionActions } from "./extension-actions";
+import { ExtensionUiDetail } from "./extension-ui-detail";
 import {
   extensionDisplayName,
   extensionToolDescription,
@@ -16,6 +17,7 @@ import "./extension-detail.css";
 
 interface ExtensionDetailProps {
   extension: ExtensionRecord;
+  diagnostics: ExtensionDiagnostic[];
   busy: boolean;
   onBack: () => void;
   onEnabled: (enabled: boolean) => void;
@@ -95,6 +97,13 @@ export function ExtensionDetail(props: ExtensionDetailProps) {
       </SettingsCard>
 
       <Contributions extension={extension} />
+
+      <ExtensionUiDetail
+        extension={extension}
+        diagnostics={props.diagnostics}
+        busy={props.busy}
+        onRetry={props.onReload}
+      />
 
       {extension.kind === "local" && (
         <ExtensionActions

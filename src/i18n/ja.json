@@ -2323,7 +2323,8 @@
       "confirmRemove": "確認",
       "confirmUpdate": "更新を確認",
       "restartHost": "ホストを再起動",
-      "recovery": "ホスト型拡張機能を無効化"
+      "recovery": "ホスト型拡張機能を無効化",
+      "retry": "再試行"
     },
     "status": {
       "active": "有効",
@@ -2338,6 +2339,8 @@
     },
     "enabled": { "yes": "有効", "no": "無効" },
     "apiLevels": { "stable": "安定", "advanced": "高度" },
+    "uiModes": { "standard": "標準インターフェース", "advanced": "高度なインターフェース" },
+    "uiPlacements": { "app_navigation_primary": "メインナビゲーション", "settings_navigation_preferences": "環境設定", "settings_navigation_agent": "エージェント設定", "settings_navigation_models": "モデル設定", "settings_navigation_integrations": "連携設定", "settings_navigation_application": "アプリケーション設定", "app_toolbar_primary": "メインツールバー", "agent_composer_leading": "エージェント入力欄" },
     "effects": { "read-only": "読み取り専用", "local-write": "ローカル書き込み", "external-read": "外部読み取り", "external-write": "外部書き込み", "process": "プロセス", "secret": "機密情報へのアクセス", "unknown": "不明な影響" },
     "origins": {
       "local": "ローカルファイルまたはフォルダー",
@@ -2365,15 +2368,29 @@
       "trustedAt": "信頼開始日時",
       "lastError": "前回のエラー",
       "unknown": "未記載",
+    "uiTitle": "インターフェース",
+    "uiLevel": "インターフェースレベル",
+    "uiArtifact": "高度なモジュール",
+    "uiArtifactReady": "検証済みで準備完了",
+    "uiArtifactMissing": "利用不可",
+    "uiAdvancedWarning": "この高度なモジュールは Beaver のメインインターフェース内で実行され、どの部分でも変更または破損させる可能性があります。",
+    "uiLoading": "インターフェース拡張項目を読み込み中…",
+    "uiError": "インターフェース拡張項目を読み込めませんでした。",
+    "uiEmpty": "現在、インターフェース拡張項目は宣言されていません。",
+    "uiTheme": "テーマ",
     "contributions": "登録された拡張項目",
     "replacesCore": "内蔵ツールを置き換えます"
   },
   "activation": {
     "title": "{{name}} を有効にしますか？",
     "description": "この拡張機能はアカウントのデータ、シークレット、機能へ完全にアクセスできます。Beaver は監査していません。",
+    "advancedDescription": "高度なインターフェースモジュールは Beaver 内で直接実行され、インターフェース全体を変更、参照、または破損させる可能性があります。",
+    "advancedConfirmation": "この高度なインターフェースモジュールを理解し、明示的に承認します。",
     "confirm": "信頼して有効化"
   },
   "recovery": { "title": "拡張機能の読み込みが中断されました", "description": "拡張機能の読み込み中に Beaver が停止しました。続行前に確認してください。", "invalid": "復旧情報が無効です。安全に破棄できます。", "openDetail": "詳細を開く", "keepDisabled": "無効のままにする", "retry": "読み込みを再試行", "discard": "復旧情報を破棄", "restore": "以前のレジストリを復元" },
+  "uiRecovery": { "title": "拡張機能 UI のセーフスタート", "description": "拡張機能 UI の読み込み中に Beaver が停止しました。サードパーティ UI は読み込まれていません。", "invalidDescription": "復旧情報が無効です。Beaver はすべてのサードパーティ UI をブロックしました。", "safe": "サードパーティ UI なしで続行", "open": "拡張機能の詳細を開く", "retry": "この UI を再試行", "discard": "無効な復旧情報を破棄", "error": "この操作を完了できませんでした。セーフモードは有効なままです。", "safeBannerTitle": "拡張機能 UI は無効です", "safeBannerDescription": "この起動はセーフモードのまま、サードパーティ UI を表示しません。", "interruptedTitle": "拡張機能 UI の読み込みが中断されました", "interruptedDescription": "{{name}} のインターフェース読み込み中に Beaver が停止しました。次回の通常起動前に確認してください。", "discardInterrupted": "事象を破棄" },
+  "ui": { "catalogError": "拡張機能 UI を更新できませんでした。", "themeUnavailable": "保存された拡張機能のテーマは利用できなくなりました。システムテーマに戻しました。", "actionError": "拡張機能の操作を完了できませんでした。", "emptyPanel": "この拡張機能には、このパネル用のコンテンツがありません。" },
     "add": {
       "title": "拡張機能を追加",
       "fullAccessWarning": "選択したコードはユーザーアカウントの権限で実行されます。信頼すると決めた拡張機能だけをインストールしてください。",
@@ -2472,6 +2489,7 @@
       }
     },
     "diagnostics": {
+      "uiGeneric": "この拡張機能のインターフェース要素は拒否されました",
       "codes": {
         "module_not_found": "モジュールまたは依存関係が見つかりません",
         "syntax_error": "構文エラー",
@@ -2481,7 +2499,26 @@
         "entry_unavailable": "拡張機能のエントリーポイントを利用できません",
         "load_failed": "拡張機能の読み込みに失敗しました",
         "host_missing_response": "ホストがこの拡張機能の読み込みを確認しませんでした",
-        "advanced_required": "内蔵ツールの置き換えには高度モードが必要です"
+        "advanced_required": "内蔵ツールの置き換えには高度モードが必要です",
+        "ui_manifest_legacy": "以前のインターフェース宣言は無視されました。ツールは引き続き利用できます",
+        "ui_contract_invalid": "インターフェース契約が無効です",
+        "ui_contribution_invalid": "インターフェース拡張項目が無効です",
+        "ui_reference_missing": "インターフェース参照がありません",
+        "ui_reference_incompatible": "インターフェース参照に互換性がありません",
+        "ui_mutation_conflict": "インターフェースの変更が競合しています",
+        "ui_protected_occupant": "Beaver の保護された要素は変更できません",
+        "ui_limit_exceeded": "インターフェースが許可された上限を超えています",
+        "ui_bundle_failed": "高度なインターフェースを準備できませんでした",
+        "ui_node_import_denied": "高度なインターフェースが禁止された Node.js インポートを使用しています",
+        "ui_artifact_invalid": "高度なインターフェースのファイルを検証できませんでした",
+        "ui_protocol_request_denied": "インターフェースファイルの要求が拒否されました",
+        "ui_protocol_hash_mismatch": "承認後にインターフェースファイルが変更されました",
+        "ui_protocol_file_missing": "承認済みのインターフェースファイルがありません",
+        "ui_protocol_file_too_large": "インターフェースファイルが大きすぎます",
+        "ui_advanced_approval_required": "高度なインターフェースを再承認する必要があります",
+        "ui_activation_failed": "高度なインターフェースを起動できませんでした",
+        "ui_mount_failed": "インターフェースを表示できませんでした",
+        "ui_theme_unavailable": "拡張機能のテーマを利用できません"
       }
     }
   },

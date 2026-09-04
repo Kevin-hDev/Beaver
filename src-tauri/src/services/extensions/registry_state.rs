@@ -1,4 +1,6 @@
-use super::types::{ExtensionContributions, ExtensionKind, ExtensionRecord, ExtensionStatus};
+use super::types::{
+    ExtensionContributions, ExtensionKind, ExtensionRecord, ExtensionStatus, ExtensionUiMode,
+};
 use std::collections::BTreeMap;
 
 pub fn approve_local(record: &mut ExtensionRecord, trusted_at: &str) -> Result<(), String> {
@@ -33,10 +35,25 @@ pub fn revoke_fingerprints(
 
 pub fn reset_hosted_runtime(mut records: Vec<ExtensionRecord>) -> Vec<ExtensionRecord> {
     for record in &mut records {
+        let missing_advanced_artifact = record.kind == ExtensionKind::Local
+            && record.ui_artifact.is_none()
+            && record
+                .manifest
+                .ui
+                .as_ref()
+                .is_some_and(|ui| ui.mode == ExtensionUiMode::Advanced);
+        if missing_advanced_artifact {
+            record.enabled = false;
+            record.trusted = false;
+            record.trusted_at = None;
+            record.status = ExtensionStatus::Error;
+            record.last_error =
+                Some(super::ui_contract::UI_DIAGNOSTIC_UI_ARTIFACT_INVALID.to_string());
+        }
         if record.kind == ExtensionKind::Local && !record.trusted {
             record.enabled = false;
         }
-        if !preserve_revocation_on_disable(record) {
+        if !missing_advanced_artifact && !preserve_revocation_on_disable(record) {
             record.status = ExtensionStatus::Inactive;
             record.last_error = None;
         }

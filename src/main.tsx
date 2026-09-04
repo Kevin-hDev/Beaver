@@ -8,8 +8,17 @@ import { installTauriListenerCleanupGuard } from "@/lib/tauri-listen";
 import { applyStoredSettings } from "@/hooks/use-settings";
 import { BrowserCapabilityProvider } from "@/hooks/use-browser-capability";
 import App from "./App";
+import {
+  FAIL_CLOSED_EXTENSION_UI_STARTUP,
+  installExtensionUiStartupCapture,
+} from "@/lib/extension-ui-startup";
+
+// Installed at module start, before React can mount any provider or extension surface.
+const extensionUiStartup = installExtensionUiStartupCapture()
+  .catch(() => FAIL_CLOSED_EXTENSION_UI_STARTUP);
 
 async function startApplication() {
+  const initialExtensionUiStartup = await extensionUiStartup;
   if (import.meta.env.VITE_E2E === "1") {
     await import("@wdio/tauri-plugin");
   }
@@ -22,7 +31,7 @@ async function startApplication() {
       <ErrorBoundary>
         <ToastProvider>
           <BrowserCapabilityProvider>
-            <App />
+            <App initialExtensionUiStartup={initialExtensionUiStartup} />
           </BrowserCapabilityProvider>
         </ToastProvider>
       </ErrorBoundary>

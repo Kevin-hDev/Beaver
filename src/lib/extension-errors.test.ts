@@ -4,6 +4,7 @@ import {
   EXTENSION_BACKEND_ERROR_CODES,
   extensionErrorKey,
 } from "./extension-errors";
+import { UI_DIAGNOSTIC_CODES } from "@/types/extension-ui-contract.generated";
 
 describe("extensionErrorKey", () => {
   it("traduit seulement les codes d'erreur connus", () => {
@@ -44,5 +45,12 @@ describe("extensionErrorKey", () => {
       "secret at /Users/private",
       "extensions.errors.host",
     )).toBe("extensions.errors.host");
+  });
+
+  it("résout chaque diagnostic UI depuis le contrat généré", () => {
+    for (const code of UI_DIAGNOSTIC_CODES) {
+      expect(extensionErrorKey(code, "extensions.errors.operation"))
+        .toBe(`extensions.diagnostics.codes.${code}`);
+    }
   });
 });

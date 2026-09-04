@@ -4,6 +4,7 @@ mod builtin;
 mod call_context;
 mod core_bridge;
 mod core_secrets;
+mod diagnostic_time;
 pub(crate) mod discovery;
 mod discovery_catalog;
 mod discovery_limits;
@@ -31,6 +32,10 @@ mod install_preparation;
 mod installer;
 mod installer_record;
 mod installer_uninstall;
+mod loading_journal_format;
+mod loading_journal_store;
+#[cfg(test)]
+mod loading_journal_tests;
 pub(crate) mod loading_marker;
 mod loading_marker_format;
 mod managed_cleanup;
@@ -49,6 +54,7 @@ mod origin_validation;
 mod process_environment;
 mod process_runner;
 mod protocol;
+mod public_api;
 mod registry;
 mod registry_access;
 mod registry_failure;
@@ -78,25 +84,61 @@ mod runtime_plan;
 mod runtime_recovery_preflight;
 mod runtime_restart;
 mod runtime_sync;
+mod runtime_sync_apply;
+#[cfg(test)]
+mod runtime_sync_apply_tests;
+mod runtime_sync_contributions;
+mod runtime_ui_diagnostics;
 mod runtime_version;
 mod source_validation;
 mod startup;
 mod storage;
+mod storage_format;
 mod storage_migration;
 mod tool_bridge;
 mod tool_result;
 pub(crate) mod types;
+mod ui_action_result;
+mod ui_artifact;
+mod ui_artifact_manifest;
+mod ui_artifact_store;
+mod ui_build_api;
+mod ui_builder;
+mod ui_builder_process;
+mod ui_catalog;
+mod ui_catalog_actions;
+mod ui_catalog_lifecycle;
+mod ui_catalog_limits;
+mod ui_dispatch;
+mod ui_normalization;
+pub(crate) mod ui_protocol;
+mod ui_protocol_proof;
+mod ui_protocol_response;
+mod ui_types;
+mod ui_validation;
+mod ui_view_validation;
 mod validation;
 mod view;
 mod work_supervision;
+#[allow(dead_code)]
+mod ui_contract {
+    include!(concat!(env!("OUT_DIR"), "/extension_ui_contract.rs"));
+}
+mod ui_startup;
+mod ui_startup_ack;
+mod ui_startup_platform;
+mod ui_startup_state;
+#[cfg(test)]
+mod ui_startup_tests;
 #[cfg(test)]
 mod work_supervision_tests;
 
 #[cfg(test)]
-mod contract_artifact_tests;
+include!("test_modules.inc.rs");
 
 pub use extension_recovery::ExtensionRecoveryState;
 pub use types::{ExtensionEffect, ExtensionHostStatus, ExtensionKind};
+pub use ui_types::{UiActionPayload, UiCatalogSnapshot};
 pub use view::ExtensionView;
 
 pub(crate) use discovery::PluginMatch;
@@ -105,6 +147,10 @@ pub(crate) use discovery::{
 };
 pub(crate) use discovery_catalog::CatalogSnapshot;
 pub use discovery_preferences::DiscoveryPreferences;
+pub use public_api::{
+    discovery_preferences, invoke_ui_action, report_ui_mount_failure, set_discovery_preferences,
+    ui_catalog,
+};
 pub use registry::{add_local, list, set_enabled, set_show_in_chat};
 pub(crate) use registry_index::{
     catalog_snapshot, dynamic_tool_names, indexed_plugins, indexed_tool, plugin_id_for_tool,
@@ -115,33 +161,18 @@ pub use runtime::status;
 pub use runtime_dispatch::{dispatch_tool, emit_event};
 pub(crate) use runtime_lifecycle::{new_stop_deadline, CHANGED_EVENT};
 pub use runtime_lifecycle::{restart, stop_and_wait};
+#[cfg(feature = "e2e")]
+pub(crate) use startup::initialize;
 pub use startup::initialize_on_startup;
 pub(crate) use tool_bridge::definitions as extension_tool_definitions;
 pub(crate) use tool_bridge::{core_fallback, without_core_fallback};
 pub use tool_bridge::{merge_definitions as merge_tool_definitions, validate_arguments};
 pub(crate) use tool_result::unavailable as unavailable_tool_result;
 
-pub fn discovery_preferences() -> Result<DiscoveryPreferences, String> {
-    discovery_preferences::get()
-}
-
-pub fn set_discovery_preferences(plugin_ids: Vec<String>) -> Result<DiscoveryPreferences, String> {
-    discovery_preferences::set(plugin_ids)
-}
-
-pub(crate) fn record_tool_invocation(tool_name: &str) -> Result<(), String> {
-    discovery_usage::record_invocation(tool_name)
-}
-
-pub(crate) async fn revoke_extension(id: &str, deadline: std::time::Instant) -> Result<(), String> {
-    let record = registry::find(id)?;
-    let identity = host_identity::HostIdentity::from_record(&record)?;
-    runtime::revoke_extension(&identity, deadline).await
-}
-
-pub(crate) const MAX_DISCOVERED_PLUGINS: usize = types::MAX_EXTENSIONS;
-pub(crate) const MAX_EXTENSION_TOOLS: usize = types::MAX_TOOLS;
-pub(crate) const MAX_PERMISSION_SUMMARY_CHARS: usize = types::MAX_PERMISSION_SUMMARY_CHARS;
+pub(crate) use public_api::{
+    close_command_error, record_tool_invocation, revoke_extension, MAX_DISCOVERED_PLUGINS,
+    MAX_EXTENSION_TOOLS, MAX_PERMISSION_SUMMARY_CHARS,
+};
 
 pub(crate) use installer::{
     install_git as install_git_source, install_npm as install_npm_source,
@@ -150,45 +181,16 @@ pub(crate) use installer::{
 pub(crate) use manifest::load_local as install_local;
 pub(crate) use operation_error::{report as report_operation_error, Operation};
 pub(crate) use operation_failure::OperationFailure;
+pub(crate) use ui_build_api::{
+    cleanup_unreferenced as cleanup_unreferenced_ui_artifacts, prepare_record as prepare_ui_record,
+    refresh_artifacts as refresh_extension_ui_artifacts,
+    resolve_runtime as resolve_ui_build_runtime,
+};
+pub(crate) use ui_startup::prepare as prepare_ui_startup;
+#[cfg(target_os = "windows")]
+pub(crate) use ui_startup::{
+    cef_child_safe_mode_action, cef_safe_mode_switch_name, SAFE_MODE_SWITCH,
+};
+pub(crate) use ui_startup_ack::{UiAckToken, UiLoadAcknowledger};
+pub(crate) use ui_startup_state::{SafeReason, UiStartupMode, UiStartupState};
 pub(crate) use validation::identifier as validate_identifier;
-
-pub(crate) fn close_command_error(operation: &str, error: String) -> String {
-    operation_error::close(operation, error)
-}
-
-#[cfg(test)]
-mod access_log_tests;
-#[cfg(test)]
-mod bounded_jsonl_tests;
-#[cfg(test)]
-mod builtin_tests;
-#[cfg(test)]
-mod fingerprint_tests;
-#[cfg(test)]
-mod git_dependencies_tests;
-#[cfg(test)]
-mod git_policy_tests;
-#[cfg(test)]
-mod git_source_reference_tests;
-#[cfg(test)]
-mod git_source_tests;
-#[cfg(test)]
-mod loading_marker_tests;
-#[cfg(test)]
-mod managed_install_error_tests;
-#[cfg(test)]
-mod managed_store_tests;
-#[cfg(test)]
-mod npm_runner_tests;
-#[cfg(test)]
-mod runtime_hosts_tests;
-#[cfg(test)]
-mod runtime_sync_tests;
-#[cfg(test)]
-mod source_validation_tests;
-#[cfg(test)]
-mod storage_migration_tests;
-#[cfg(test)]
-mod tests;
-#[cfg(test)]
-mod view_tests;

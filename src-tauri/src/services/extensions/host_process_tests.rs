@@ -3,11 +3,6 @@ use super::*;
 use serde_json::json;
 use std::time::{Duration, Instant};
 
-fn extension_work() -> super::super::work_supervision::ExtensionWorkServices {
-    let coordinator = crate::app_exit::AppExitCoordinator::initialize().unwrap();
-    super::super::work_supervision::ExtensionWorkServices::new(coordinator.work_supervisor())
-}
-
 #[tokio::test]
 async fn load_tracker_accepts_one_ordered_load_and_clears_it() {
     let tracker = HostLoadTracker::default();
@@ -93,7 +88,7 @@ lines.on("line", (line) => {
         script,
         directory: directory.path().to_path_buf(),
     };
-    let work = extension_work();
+    let work = test_extension_work();
     let host = Arc::new(HostProcess::spawn(&paths, &work).await.unwrap());
     let slow_host = host.clone();
     let fast_host = host.clone();
@@ -113,7 +108,7 @@ lines.on("line", (line) => {
 
 #[tokio::test]
 async fn bundled_extension_host_answers_hello() {
-    let work = extension_work();
+    let work = test_extension_work();
     let host = HostProcess::spawn(&bundled_paths(), &work).await.unwrap();
 
     let hello = host.request("host.hello", json!({})).await.unwrap();
@@ -128,7 +123,7 @@ async fn bundled_extension_host_answers_hello() {
 
 #[tokio::test]
 async fn closed_reader_admission_refuses_and_reaps_new_host() {
-    let work = extension_work();
+    let work = test_extension_work();
     work.begin_closing();
 
     let result = HostProcess::spawn(&bundled_paths(), &work).await;
@@ -140,7 +135,7 @@ async fn closed_reader_admission_refuses_and_reaps_new_host() {
 #[tokio::test]
 async fn repeated_host_restarts_reuse_the_single_reader_slot() {
     let paths = bundled_paths();
-    let work = extension_work();
+    let work = test_extension_work();
 
     for _ in 0..16 {
         let host = HostProcess::spawn(&paths, &work)
@@ -174,7 +169,7 @@ lines.on("line", (line) => {
         script,
         directory: directory.path().to_path_buf(),
     };
-    let work = extension_work();
+    let work = test_extension_work();
     let host = Arc::new(HostProcess::spawn(&paths, &work).await.unwrap());
     let request = {
         let host = Arc::clone(&host);

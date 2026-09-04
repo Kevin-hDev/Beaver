@@ -10,11 +10,14 @@ impl RuntimeHosts {
         identity: &HostIdentity,
         process: &Arc<HostProcess>,
         specifications: &[super::super::protocol::HostExtensionSpec],
-    ) -> Result<(), String> {
+    ) -> Result<u64, String> {
         for specification in specifications {
             self.authorize_load(identity, process, &specification.id)?;
         }
-        Ok(())
+        self.channel(identity)
+            .filter(|channel| Arc::ptr_eq(&channel.process, process))
+            .map(|channel| channel.generation.number)
+            .ok_or_else(|| super::super::error_codes::HOST_UNAVAILABLE.to_string())
     }
 
     pub(in crate::services::extensions) fn authorize_load(

@@ -4,8 +4,10 @@ import type {
   ExtensionEvent,
   StableHostToCoreRequestMethod,
 } from "./contract";
+import type { ExtensionUiPlacementKey } from "./ui-contract";
 
 export * from "./contract";
+export * from "./ui-contract";
 
 export type JsonValue =
   | null
@@ -24,6 +26,75 @@ export interface BeaverToolResult {
 
 export interface BeaverToolContext {
   readonly workingDirectory: string;
+}
+
+export type BeaverLocalizedText = {
+  default: string;
+  fr?: string; en?: string; es?: string; de?: string;
+  it?: string; zh?: string; ja?: string;
+};
+
+export type BeaverUiFieldValue = null | boolean | number | string;
+
+export type BeaverUiView =
+  | { type: "stack" | "row"; children: BeaverUiView[] }
+  | { type: "heading" | "text" | "badge"; text: BeaverLocalizedText }
+  | { type: "separator" }
+  | { type: "textField" | "numberField" | "toggle"; id: string; label: BeaverLocalizedText; value: BeaverUiFieldValue }
+  | { type: "select"; id: string; label: BeaverLocalizedText; value: BeaverUiFieldValue; options: Array<{ value: string; label: BeaverLocalizedText }> }
+  | { type: "button"; id: string; label: BeaverLocalizedText; actionId: string };
+
+export interface BeaverUiBaseContribution {
+  id: string;
+  order: number;
+  label: BeaverLocalizedText;
+  icon?: string;
+  operation?: "before" | "after" | "replace" | "move" | "remove";
+  targetId?: string;
+}
+
+export type BeaverUiContribution =
+  | (BeaverUiBaseContribution & { type: "tab"; placement: "app.navigation.primary"; list?: BeaverUiView; detail: BeaverUiView })
+  | (BeaverUiBaseContribution & {
+    type: "settingsTab";
+    placement: "settings.navigation.preferences" | "settings.navigation.agent" | "settings.navigation.models" | "settings.navigation.integrations" | "settings.navigation.application";
+    detail: BeaverUiView;
+  })
+  | (BeaverUiBaseContribution & { type: "action"; placement: "app.toolbar.primary" | "agent.composer.leading"; actionId: string })
+  | { type: "theme"; id: string; order: number; label: BeaverLocalizedText; base: "light" | "dark"; tokens: Record<string, string> };
+
+export type BeaverUiActionResult =
+  | { type: "notification"; level: "info" | "success" | "warning" | "error"; message: BeaverLocalizedText }
+  | { type: "view"; view: BeaverUiView };
+
+export interface BeaverUiApi {
+  register(contribution: BeaverUiContribution): () => void;
+  onAction(
+    actionId: string,
+    handler: (
+      payload: { fields: Record<string, BeaverUiFieldValue> },
+      context: { locale: "fr" | "en" | "es" | "de" | "it" | "zh" | "ja" },
+    ) => BeaverUiActionResult | Promise<BeaverUiActionResult>,
+  ): () => void;
+}
+
+export type BeaverAdvancedUiCleanup = () => void | Promise<void>;
+export type BeaverAdvancedUiMount = (
+  container: HTMLElement,
+) => void | BeaverAdvancedUiCleanup;
+
+export interface BeaverAdvancedUiContext {
+  readonly apiVersion: string;
+  readonly extensionId: string;
+  mount(placement: ExtensionUiPlacementKey, mount: BeaverAdvancedUiMount): void;
+  completeWithoutMounts(): void;
+}
+
+export interface BeaverAdvancedUiModule {
+  activate(
+    context: BeaverAdvancedUiContext,
+  ): void | BeaverAdvancedUiCleanup | Promise<void | BeaverAdvancedUiCleanup>;
+  deactivate?: BeaverAdvancedUiCleanup;
 }
 
 export interface BeaverExtensionError extends Error {
@@ -50,6 +121,7 @@ export interface BeaverExtensionApi {
   readonly manifest: Record<string, JsonValue>;
   info(): Promise<JsonValue>;
   registerTool(tool: BeaverTool): void;
+  readonly ui: BeaverUiApi;
   on(event: ExtensionEvent, handler: (payload: JsonValue) => void | Promise<void>): () => void;
   call(method: StableHostToCoreRequestMethod, params?: Record<string, JsonValue>): Promise<JsonValue>;
   readonly sessions: {

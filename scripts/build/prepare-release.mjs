@@ -30,6 +30,10 @@ async function canonicalFile(root, ...segments) {
 
 function defaultPreparations(run) {
   return {
+    async prepareExtensionUi({ repoRoot }) {
+      const script = await canonicalFile(repoRoot, "scripts", "extensions", "ui-build.mjs");
+      await run({ command: process.execPath, args: ["--check", script], cwd: repoRoot });
+    },
     async prepareExtensions({ repoRoot }) {
       const script = await canonicalFile(repoRoot, "scripts", "extensions", "prepare-extension-host.mjs");
       await run({ command: process.execPath, args: [script], cwd: repoRoot });
@@ -64,6 +68,7 @@ function defaultPreparations(run) {
 export async function prepareRelease({
   repoRoot,
   platform = process.platform,
+  prepareExtensionUi,
   prepareExtensions,
   prepareCefSource,
   buildFrontend,
@@ -77,6 +82,7 @@ export async function prepareRelease({
     const root = await canonicalDirectory(repoRoot);
     const defaults = defaultPreparations(run);
     const selected = [
+      prepareExtensionUi ?? defaults.prepareExtensionUi,
       prepareExtensions ?? defaults.prepareExtensions,
       prepareCefSource ?? defaults.prepareCefSource,
       buildFrontend ?? defaults.buildFrontend,
@@ -91,7 +97,8 @@ export async function prepareRelease({
     await selected[2](context);
     await selected[3](context);
     await selected[4](context);
-    if (platform !== "win32") await selected[5](context);
+    await selected[5](context);
+    if (platform !== "win32") await selected[6](context);
   } catch {
     fail();
   }

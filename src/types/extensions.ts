@@ -6,6 +6,10 @@ import type {
   ExtensionHostState,
   RuntimeDiagnosticCode,
 } from "./extension-contract.generated";
+import type {
+  ExtensionUiDiagnosticCode,
+  ExtensionUiLoadingStage,
+} from "./extension-ui-contract.generated";
 
 export {
   ADVANCED_HOST_TO_CORE_REQUEST_METHODS,
@@ -38,13 +42,36 @@ export interface ExtensionManifest {
   beaverApi: string;
   runtime: string;
   main?: string;
-  ui?: string;
+  ui?: {
+    apiVersion: string;
+    mode: "standard" | "advanced";
+    entry?: string;
+  };
+  uiLegacy?: string;
   access: string;
   apiLevel: ExtensionApiLevel;
   essential: boolean;
   author?: string;
   homepage?: string;
   description?: string;
+}
+
+export interface ExtensionUiArtifactOutput {
+  name: string;
+  type: "javascript" | "css" | "png" | "jpeg" | "webp" | "gif" | "woff2";
+  bytes: number;
+  sha256: string;
+}
+
+export interface ExtensionUiArtifact {
+  version: number;
+  builderVersion: string;
+  nodeVersion: string;
+  entry: string;
+  totalBytes: number;
+  outputs: ExtensionUiArtifactOutput[];
+  inputs: string[];
+  manifestSha256: string;
 }
 
 export interface ExtensionTool {
@@ -73,6 +100,7 @@ export interface ExtensionRecord {
   origin?: ExtensionOrigin;
   enabled: boolean;
   trusted: boolean;
+  uiArtifact?: ExtensionUiArtifact;
   showInChat: boolean;
   status: ExtensionStatus;
   lastError?: string;
@@ -84,7 +112,8 @@ export interface ExtensionRecord {
 export interface ExtensionDiagnostic {
   extensionId: string;
   stage: HostLoadStage;
-  code: HostDiagnosticCode | RuntimeDiagnosticCode;
+  code: HostDiagnosticCode | RuntimeDiagnosticCode | ExtensionUiDiagnosticCode;
+  occurredAt: string;
   file?: string;
   line?: number;
   column?: number;
@@ -104,6 +133,21 @@ export interface ExtensionDiscoveryPreferences {
   protectedPluginIds: string[];
 }
 
+export interface ExtensionUiCatalogEntry {
+  extensionId: string;
+  contributionId: string;
+  contribution: Record<string, unknown>;
+}
+
+export interface ExtensionUiCatalogSnapshot {
+  revision: number;
+  contributions: ExtensionUiCatalogEntry[];
+}
+
+export interface ExtensionUiActionPayload {
+  fields: Record<string, null | boolean | number | string>;
+}
+
 export interface ExtensionRecoveryState {
   extensionId: string | null;
   stage: HostLoadStage | null;
@@ -111,6 +155,38 @@ export interface ExtensionRecoveryState {
   canRetry: boolean;
   markerInvalid: boolean;
   recoverySnapshotAvailable: boolean;
+}
+
+export type ExtensionUiSafeReason =
+  | "argument" | "invalidArguments" | "shift" | "invalidMarker" | "recoveryChoice";
+
+export type ExtensionUiStartupMode =
+  | { kind: "normal" }
+  | { kind: "safe"; reason: ExtensionUiSafeReason }
+  | {
+    kind: "pendingInterruptedUi";
+    extensionId: string;
+    stage: ExtensionUiLoadingStage;
+    startedAt: string;
+    attempts: number;
+  }
+  | { kind: "retryInterruptedUi"; extensionId: string; attempts: number }
+  | { kind: "awaitingWayland" };
+
+export interface ExtensionUiStartupState {
+  mode: ExtensionUiStartupMode;
+  bootstrapResolved: boolean;
+  thirdPartyLoadingAllowed: boolean;
+  showRecoveryDialog: boolean;
+  showSafeBanner: boolean;
+  canRetry: boolean;
+}
+
+export interface ExtensionUiIncident {
+  extensionId: string;
+  stage: ExtensionUiLoadingStage;
+  startedAt: string;
+  attempts: number;
 }
 export type {
   AdvancedHostToCoreRequestMethod,
@@ -127,3 +203,7 @@ export type {
   HostToCoreNotificationMethod,
   StableHostToCoreRequestMethod,
 } from "./extension-contract.generated";
+export type {
+  ExtensionUiDiagnosticCode,
+  ExtensionUiLoadingStage,
+} from "./extension-ui-contract.generated";

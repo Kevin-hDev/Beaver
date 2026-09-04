@@ -1,28 +1,37 @@
 use serde::{Deserialize, Serialize};
 
-const VERSION: u8 = 1;
-const MAX_ATTEMPTS: u8 = 3;
+pub(super) const MAX_ATTEMPTS: u8 = 3;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct LoadingMarker {
-    version: u8,
     pub(crate) extension_id: String,
     pub(crate) stage: String,
-    started_at: String,
+    pub(crate) started_at: String,
     pub(crate) attempts: u8,
 }
 
 impl LoadingMarker {
-    pub(super) fn new(extension_id: &str, attempts: u8) -> Result<Self, String> {
+    pub(super) fn new_host(extension_id: &str, attempts: u8) -> Result<Self, String> {
+        Self::new(extension_id, super::types::HOST_LOAD_STAGES[0], attempts)
+    }
+
+    pub(super) fn new_ui(extension_id: &str, attempts: u8) -> Result<Self, String> {
+        Self::new(
+            extension_id,
+            super::ui_contract::UI_LOADING_STAGES[0],
+            attempts,
+        )
+    }
+
+    fn new(extension_id: &str, stage: &str, attempts: u8) -> Result<Self, String> {
         super::validation::identifier(extension_id).map_err(|_| invalid())?;
         if !(1..=MAX_ATTEMPTS).contains(&attempts) {
             return Err(invalid());
         }
         Ok(Self {
-            version: VERSION,
             extension_id: extension_id.to_string(),
-            stage: super::types::HOST_LOAD_STAGES[0].to_string(),
+            stage: stage.to_string(),
             started_at: chrono::Utc::now().to_rfc3339(),
             attempts,
         })
@@ -32,23 +41,20 @@ impl LoadingMarker {
         self.attempts < MAX_ATTEMPTS
     }
 
-    pub(super) fn valid(&self) -> bool {
-        self.version == VERSION
-            && super::validation::identifier(&self.extension_id).is_ok()
-            && super::types::HOST_LOAD_STAGES.contains(&self.stage.as_str())
+    pub(super) fn valid_host(&self) -> bool {
+        self.valid(super::types::HOST_LOAD_STAGES)
+    }
+
+    pub(super) fn valid_ui(&self) -> bool {
+        self.valid(super::ui_contract::UI_LOADING_STAGES)
+    }
+
+    fn valid(&self, stages: &[&str]) -> bool {
+        super::validation::identifier(&self.extension_id).is_ok()
+            && stages.contains(&self.stage.as_str())
             && (1..=MAX_ATTEMPTS).contains(&self.attempts)
             && chrono::DateTime::parse_from_rfc3339(&self.started_at).is_ok()
     }
-}
-
-pub(super) fn parse(bytes: &[u8]) -> Option<LoadingMarker> {
-    serde_json::from_slice::<LoadingMarker>(bytes)
-        .ok()
-        .filter(LoadingMarker::valid)
-}
-
-pub(super) fn serialize(marker: &LoadingMarker) -> Result<Vec<u8>, String> {
-    serde_json::to_vec(marker).map_err(|_| invalid())
 }
 
 fn invalid() -> String {

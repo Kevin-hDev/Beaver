@@ -25,6 +25,7 @@ export function useDialogKeyboard({
   const initialFocusApplied = useRef(false);
   useEffect(() => {
     if (!enabled) return;
+    const previous = document.activeElement as HTMLElement | null;
     if (!initialFocusApplied.current) {
       initialFocusApplied.current = true;
       initialFocusRef.current?.focus();
@@ -50,6 +51,9 @@ export function useDialogKeyboard({
       }
     };
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      previous?.focus();
+    };
   }, [enabled, initialFocusRef, onEscape, rootRef]);
 }

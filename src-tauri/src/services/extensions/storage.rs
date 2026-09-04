@@ -1,18 +1,19 @@
 use super::types::{ExtensionRecord, MAX_EXTENSIONS, MAX_MESSAGE_BYTES};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use serde_json::Value;
 use std::collections::HashSet;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
 const FILE_NAME: &str = "extensions.json";
-const VERSION: u8 = 1;
+const VERSION: u8 = 2;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum LoadedFormat {
     Missing,
     MigratedV0,
-    V1,
+    MigratedV1,
+    V2,
 }
 
 #[derive(Debug)]
@@ -28,14 +29,6 @@ struct RawEnvelope {
     version: u8,
     extensions: Vec<Value>,
     recovery_snapshot: Option<Vec<String>>,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-struct Envelope<'a> {
-    version: u8,
-    extensions: &'a [ExtensionRecord],
-    recovery_snapshot: &'a Option<Vec<String>>,
 }
 
 pub fn path() -> PathBuf {
@@ -65,7 +58,11 @@ pub(crate) fn load_from(path: &Path) -> Result<LoadedRegistry, String> {
     let value: Value = serde_json::from_slice(&bytes).map_err(|_| migration_error())?;
     match value {
         Value::Array(entries) => super::storage_migration::migrate_v0(path, &bytes, entries),
-        Value::Object(_) => load_v1(value),
+        Value::Object(_) => match value.get("version").and_then(Value::as_u64) {
+            Some(1) => super::storage_migration::migrate_v1(path, &bytes, value),
+            Some(2) => load_v2(value),
+            _ => Err(migration_error()),
+        },
         _ => Err(migration_error()),
     }
 }
@@ -86,7 +83,7 @@ fn read_registry(path: &Path) -> Result<Vec<u8>, String> {
     Ok(bytes)
 }
 
-fn load_v1(value: Value) -> Result<LoadedRegistry, String> {
+pub(super) fn load_v2(value: Value) -> Result<LoadedRegistry, String> {
     let raw: RawEnvelope = serde_json::from_value(value).map_err(|_| migration_error())?;
     if raw.version != VERSION || raw.extensions.len() > MAX_EXTENSIONS {
         return Err(migration_error());
@@ -96,7 +93,7 @@ fn load_v1(value: Value) -> Result<LoadedRegistry, String> {
     Ok(LoadedRegistry {
         extensions,
         recovery_snapshot: raw.recovery_snapshot,
-        format: LoadedFormat::V1,
+        format: LoadedFormat::V2,
     })
 }
 
@@ -124,7 +121,14 @@ pub(crate) fn save_to(
     records: &[ExtensionRecord],
     recovery_snapshot: &Option<Vec<String>>,
 ) -> Result<(), String> {
-    let bytes = serialize_envelope(records, recovery_snapshot)?;
+    validate_recovery_snapshot(recovery_snapshot)?;
+    let existing = if path.exists() {
+        let bytes = read_registry(path)?;
+        Some(serde_json::from_slice(&bytes).map_err(|_| migration_error())?)
+    } else {
+        None
+    };
+    let bytes = super::storage_format::serialize(VERSION, records, recovery_snapshot, existing)?;
     crate::services::private_store::atomic_write(path, &bytes)
         .map_err(|_| "Registre d'extensions indisponible.".to_string())
 }
@@ -133,20 +137,8 @@ pub(super) fn serialize_envelope(
     records: &[ExtensionRecord],
     recovery_snapshot: &Option<Vec<String>>,
 ) -> Result<Vec<u8>, String> {
-    if records.len() > MAX_EXTENSIONS {
-        return Err("Trop d'extensions enregistrées.".to_string());
-    }
     validate_recovery_snapshot(recovery_snapshot)?;
-    let bytes = serde_json::to_vec_pretty(&Envelope {
-        version: VERSION,
-        extensions: records,
-        recovery_snapshot,
-    })
-    .map_err(|_| "Registre d'extensions indisponible.".to_string())?;
-    if bytes.len() > MAX_MESSAGE_BYTES {
-        return Err("Registre d'extensions trop volumineux.".to_string());
-    }
-    Ok(bytes)
+    super::storage_format::serialize(VERSION, records, recovery_snapshot, None)
 }
 
 fn validate_recovery_snapshot(snapshot: &Option<Vec<String>>) -> Result<(), String> {
@@ -170,10 +162,17 @@ pub(crate) fn v0_backup_path(path: &Path) -> PathBuf {
     path.with_extension("json.v0.bak")
 }
 
+pub(crate) fn v1_backup_path(path: &Path) -> PathBuf {
+    path.with_extension("json.v1.bak")
+}
+
 pub(crate) fn finish_successful_startup(path: &Path, format: LoadedFormat) -> Result<(), String> {
-    let backup = v0_backup_path(path);
-    if format == LoadedFormat::V1 && backup.exists() {
-        std::fs::remove_file(backup).map_err(|_| migration_error())?;
+    if format == LoadedFormat::V2 {
+        for backup in [v0_backup_path(path), v1_backup_path(path)] {
+            if backup.exists() {
+                std::fs::remove_file(backup).map_err(|_| migration_error())?;
+            }
+        }
     }
     Ok(())
 }

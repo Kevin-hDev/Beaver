@@ -13,12 +13,35 @@ export async function preparePackagedApp({
   cargoTargetDir,
   profilePath,
   listFiles = listWindowsInstallers,
+  listLinuxFiles = listLinuxBundles,
   isRegularFile = regularFile,
   run,
 }) {
-  if (platform !== "win32" || typeof run !== "function") {
+  if (typeof run !== "function") {
     throw new Error(PREPARATION_ERROR);
   }
+  if (platform === "darwin") {
+    const binaryPath = resolve(
+      cargoTargetDir,
+      "debug", "bundle", "macos", "Beaver.app", "Contents", "MacOS", "cl-go-dash",
+    );
+    if (!(await isRegularFile(binaryPath))) throw new Error(PREPARATION_ERROR);
+    return { binaryPath, cleanup: async () => {} };
+  }
+  if (platform === "linux") {
+    const directory = resolve(cargoTargetDir, "debug", "bundle", "appimage");
+    let bundles;
+    try {
+      bundles = await listLinuxFiles(directory);
+    } catch {
+      throw new Error(PREPARATION_ERROR);
+    }
+    if (bundles.length !== 1 || !(await isRegularFile(bundles[0]))) {
+      throw new Error(PREPARATION_ERROR);
+    }
+    return { binaryPath: bundles[0], cleanup: async () => {} };
+  }
+  if (platform !== "win32") throw new Error(PREPARATION_ERROR);
 
   let installers;
   try {
@@ -55,6 +78,21 @@ export async function preparePackagedApp({
       }
     },
   };
+}
+
+async function listLinuxBundles(directory) {
+  try {
+    const entries = await readdir(directory, { withFileTypes: true });
+    if (entries.length > MAX_INSTALLERS) throw new Error(PREPARATION_ERROR);
+    return entries
+      .filter((entry) => (
+        entry.isFile()
+        && /^Beaver_[0-9]+\.[0-9]+\.[0-9]+_amd64\.AppImage$/u.test(entry.name)
+      ))
+      .map((entry) => join(directory, entry.name));
+  } catch {
+    throw new Error(PREPARATION_ERROR);
+  }
 }
 
 async function tryRemoveWindowsInstallation(context) {

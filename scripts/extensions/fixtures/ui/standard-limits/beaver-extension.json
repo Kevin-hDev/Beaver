@@ -1,0 +1,12 @@
+{
+  "id": "acceptance.standard.limits",
+  "name": "Standard UI negative limits",
+  "version": "1.0.0",
+  "beaverApi": "1",
+  "runtime": "node",
+  "main": "index.mjs",
+  "access": "full",
+  "apiLevel": "stable",
+  "essential": false,
+  "ui": { "apiVersion": "1", "mode": "standard" }
+}

@@ -13,6 +13,7 @@ function status() {
       extensionId: "com.example.test",
       stage: "activate",
       code: "activation_failed",
+      occurredAt: "2026-09-03T10:00:00Z",
       file: "index.mjs",
       line: 12,
       column: 4,
@@ -35,6 +36,21 @@ describe("parseExtensionHostStatus", () => {
     expect(() => parseExtensionHostStatus({
       ...status(),
       diagnostics: [{ ...status().diagnostics[0], code: "missing_translation" }],
+    })).toThrow("invalid_extension_host_response");
+  });
+
+  it("accepte les diagnostics UI horodatés et refuse les dates non RFC 3339", () => {
+    const uiDiagnostic = {
+      ...status().diagnostics[0],
+      code: "ui_contribution_invalid",
+    };
+    expect(parseExtensionHostStatus({
+      ...status(),
+      diagnostics: [uiDiagnostic],
+    }).diagnostics[0].code).toBe("ui_contribution_invalid");
+    expect(() => parseExtensionHostStatus({
+      ...status(),
+      diagnostics: [{ ...uiDiagnostic, occurredAt: "2026-09-03" }],
     })).toThrow("invalid_extension_host_response");
   });
 

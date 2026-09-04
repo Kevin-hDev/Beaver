@@ -5,6 +5,10 @@ const BUILTIN_V0: &[u8] =
     include_bytes!("../../../test-fixtures/extensions/extensions-v0-array.json");
 const LOCAL_V0: &[u8] =
     include_bytes!("../../../test-fixtures/extensions/extensions-v0-array-with-local.json");
+const REGISTRY_V1: &[u8] =
+    include_bytes!("../../../test-fixtures/extensions/extensions-v1-envelope.json");
+const LEGACY_UI_V1: &[u8] =
+    include_bytes!("../../../test-fixtures/extensions/extensions-v1-legacy-ui.json");
 
 fn write_local_fixture(source: &std::path::Path) -> Vec<u8> {
     let mut value: Value = serde_json::from_slice(LOCAL_V0).unwrap();
@@ -32,12 +36,18 @@ fn persisted_v0_shape(records: &[super::types::ExtensionRecord]) -> Value {
         object.remove("fingerprint");
         object.remove("trustedAt");
         object.remove("sensitiveAccessGranted");
+        object.remove("uiArtifact");
+        object
+            .get_mut("manifest")
+            .and_then(Value::as_object_mut)
+            .unwrap()
+            .remove("uiLegacy");
     }
     value
 }
 
 #[test]
-fn real_v120_array_migrates_once_with_an_exact_backup_and_strict_v1_envelope() {
+fn real_v120_array_migrates_once_with_an_exact_backup_and_strict_v2_envelope() {
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path().join("extensions.json");
     std::fs::write(&path, BUILTIN_V0).unwrap();
@@ -55,12 +65,12 @@ fn real_v120_array_migrates_once_with_an_exact_backup_and_strict_v1_envelope() {
         BUILTIN_V0
     );
     let migrated: Value = serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
-    assert_eq!(migrated["version"], 1);
+    assert_eq!(migrated["version"], 2);
     assert_eq!(migrated["extensions"].as_array().unwrap().len(), 4);
     assert!(migrated["recoverySnapshot"].is_null());
 
     let second = storage::load_from(&path).unwrap();
-    assert_eq!(second.format, storage::LoadedFormat::V1);
+    assert_eq!(second.format, storage::LoadedFormat::V2);
     storage::finish_successful_startup(&path, second.format).unwrap();
     assert!(!storage::v0_backup_path(&path).exists());
 }
@@ -171,7 +181,7 @@ fn oversized_v0_fails_before_backup_and_invalid_v1_keeps_an_existing_backup() {
 }
 
 #[test]
-fn v1_recovery_snapshot_is_preserved_and_bounded() {
+fn current_recovery_snapshot_is_preserved_and_bounded() {
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path().join("extensions.json");
     let snapshot = Some(vec!["beaver.office.documents".to_string()]);
@@ -192,6 +202,99 @@ fn v1_recovery_snapshot_is_preserved_and_bounded() {
 }
 
 #[test]
+fn clearing_known_ui_fields_cannot_resurrect_previous_values() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("extensions.json");
+    let mut advanced = super::builtin::records().unwrap().remove(0);
+    advanced.manifest.ui = Some(super::types::ExtensionUiManifest {
+        api_version: "1".to_string(),
+        mode: super::types::ExtensionUiMode::Advanced,
+        entry: Some("ui.ts".to_string()),
+    });
+    advanced.manifest.ui_legacy = Some("legacy.ts".to_string());
+    advanced.ui_artifact = Some(super::types::ExtensionUiArtifact {
+        version: 1,
+        builder_version: "0.28.1".to_string(),
+        node_version: "v20.0.0".to_string(),
+        entry: "ui.js".to_string(),
+        total_bytes: 1,
+        outputs: vec![super::types::ExtensionUiArtifactOutput {
+            name: "ui.js".to_string(),
+            kind: "javascript".to_string(),
+            bytes: 1,
+            sha256: "a".repeat(64),
+        }],
+        inputs: vec!["ui.ts".to_string()],
+        manifest_sha256: "b".repeat(64),
+    });
+    storage::save_to(&path, &[advanced.clone()], &None).unwrap();
+
+    advanced.manifest.ui = Some(super::types::ExtensionUiManifest {
+        api_version: "1".to_string(),
+        mode: super::types::ExtensionUiMode::Standard,
+        entry: None,
+    });
+    advanced.manifest.ui_legacy = None;
+    advanced.ui_artifact = None;
+    storage::save_to(&path, &[advanced], &None).unwrap();
+
+    let loaded = storage::load_from(&path).unwrap();
+    let record = &loaded.extensions[0];
+    assert!(record.manifest.ui.as_ref().unwrap().entry.is_none());
+    assert!(record.manifest.ui_legacy.is_none());
+    assert!(record.ui_artifact.is_none());
+    assert!(super::validation::records(&loaded.extensions).is_ok());
+}
+
+#[test]
+fn invalid_legacy_ui_string_is_dropped_during_v1_migration() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("extensions.json");
+    let source = directory.path().join("legacy-ui");
+    std::fs::create_dir(&source).unwrap();
+    std::fs::write(source.join("index.mjs"), "export default {};\n").unwrap();
+    let mut value: Value = serde_json::from_slice(LEGACY_UI_V1).unwrap();
+    value["extensions"][0]["manifest"]["ui"] = Value::String(String::new());
+    value["extensions"][0]["source"] = Value::String(source.to_string_lossy().into_owned());
+    std::fs::write(&path, serde_json::to_vec(&value).unwrap()).unwrap();
+
+    let loaded = storage::load_from(&path).unwrap();
+    assert!(loaded.extensions[0].manifest.ui_legacy.is_none());
+    assert!(super::validation::records(&loaded.extensions).is_ok());
+}
+
+#[test]
+fn legacy_advanced_record_without_artifact_is_preserved_but_closed() {
+    let directory = tempfile::tempdir().unwrap();
+    let source = directory.path().join("advanced");
+    std::fs::create_dir(&source).unwrap();
+    std::fs::write(source.join("index.mjs"), "export default {};\n").unwrap();
+    std::fs::write(source.join("ui.ts"), "export function activate() {}\n").unwrap();
+    let mut record = super::manifest::load_local(source.join("index.mjs").to_str().unwrap())
+        .unwrap()
+        .record;
+    record.manifest.ui = Some(super::types::ExtensionUiManifest {
+        api_version: "1".to_string(),
+        mode: super::types::ExtensionUiMode::Advanced,
+        entry: Some("ui.ts".to_string()),
+    });
+    record.enabled = true;
+    record.trusted = true;
+    record.ui_artifact = None;
+
+    let reset = super::registry_state::reset_hosted_runtime(vec![record]);
+
+    assert!(!reset[0].enabled);
+    assert!(!reset[0].trusted);
+    assert_eq!(reset[0].status, super::types::ExtensionStatus::Error);
+    assert_eq!(
+        reset[0].last_error.as_deref(),
+        Some(super::ui_contract::UI_DIAGNOSTIC_UI_ARTIFACT_INVALID),
+    );
+    assert!(super::validation::records(&reset).is_ok());
+}
+
+#[test]
 fn v1_envelope_ignores_unknown_fields_for_forward_compatibility() {
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path().join("extensions.json");
@@ -203,5 +306,73 @@ fn v1_envelope_ignores_unknown_fields_for_forward_compatibility() {
 
     let loaded = storage::load_from(&path).unwrap();
     assert!(loaded.extensions.is_empty());
-    assert_eq!(loaded.format, storage::LoadedFormat::V1);
+    assert_eq!(loaded.format, storage::LoadedFormat::MigratedV1);
+    let migrated: Value = serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
+    assert_eq!(migrated["version"], 2);
+    assert_eq!(migrated["futureField"]["enabled"], true);
+}
+
+#[test]
+fn real_v1_registry_migrates_with_exact_backup_and_preserves_unknown_fields() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("extensions.json");
+    let backup = path.with_extension("json.v1.bak");
+    std::fs::write(&path, REGISTRY_V1).unwrap();
+
+    let first = storage::load_from(&path).unwrap();
+    assert_eq!(first.extensions.len(), 1);
+    assert_eq!(std::fs::read(&backup).unwrap(), REGISTRY_V1);
+
+    let migrated: Value = serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
+    assert_eq!(migrated["version"], 2);
+    assert_eq!(migrated["futureEnvelopeField"]["kept"], 42);
+    assert_eq!(migrated["extensions"][0]["futureRecordField"][0], "kept");
+    assert_eq!(
+        migrated["extensions"][0]["manifest"]["futureManifestField"]["preserved"],
+        true,
+    );
+
+    storage::save_to(&path, &first.extensions, &first.recovery_snapshot).unwrap();
+    let saved: Value = serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
+    assert_eq!(saved["futureEnvelopeField"]["kept"], 42);
+    assert_eq!(saved["extensions"][0]["futureRecordField"][0], "kept");
+    assert_eq!(
+        saved["extensions"][0]["manifest"]["futureManifestField"]["preserved"],
+        true,
+    );
+
+    storage::finish_successful_startup(&path, first.format).unwrap();
+    assert!(backup.exists());
+    let second = storage::load_from(&path).unwrap();
+    storage::finish_successful_startup(&path, second.format).unwrap();
+    assert!(!backup.exists());
+}
+
+#[test]
+fn legacy_ui_string_is_retained_but_never_inferred_as_advanced() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("extensions.json");
+    std::fs::write(&path, LEGACY_UI_V1).unwrap();
+
+    let loaded = storage::load_from(&path).unwrap();
+    assert_eq!(loaded.extensions.len(), 1);
+    assert!(loaded.extensions[0].manifest.ui.is_none());
+    assert_eq!(
+        loaded.extensions[0].manifest.ui_legacy.as_deref(),
+        Some("src/ui.tsx")
+    );
+    let migrated: Value = serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
+    let manifest = &migrated["extensions"][0]["manifest"];
+
+    assert!(manifest["ui"].is_null());
+    assert_eq!(manifest["uiLegacy"], "src/ui.tsx");
+    assert_eq!(manifest["apiLevel"], "stable");
+
+    storage::save_to(&path, &loaded.extensions, &loaded.recovery_snapshot).unwrap();
+    let reloaded = storage::load_from(&path).unwrap();
+    assert!(reloaded.extensions[0].manifest.ui.is_none());
+    assert_eq!(
+        reloaded.extensions[0].manifest.ui_legacy.as_deref(),
+        Some("src/ui.tsx")
+    );
 }

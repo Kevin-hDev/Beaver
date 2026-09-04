@@ -155,3 +155,13 @@ pub(super) async fn wait_reader_done(
 #[cfg(test)]
 #[path = "host_process_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "host_process_prepared_tests.rs"]
+mod prepared_tests;
+
+#[cfg(test)]
+fn test_extension_work() -> super::work_supervision::ExtensionWorkServices {
+    let coordinator = crate::app_exit::AppExitCoordinator::initialize().unwrap();
+    super::work_supervision::ExtensionWorkServices::new(coordinator.work_supervisor())
+}

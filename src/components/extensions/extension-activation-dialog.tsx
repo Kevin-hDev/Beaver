@@ -1,7 +1,8 @@
-import { useEffect, useId, useRef } from "react";
+import { useCallback, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ShieldWarning } from "@/components/ui/icons";
 import { DialogPortal } from "@/components/ui/dialog-portal";
+import { useDialogKeyboard } from "@/components/ui/use-dialog-keyboard";
 import type { ExtensionRecord } from "@/types/extensions";
 import "./extension-activation-dialog.css";
 
@@ -24,18 +25,15 @@ export function ExtensionActivationDialog({
   const titleId = useId();
   const descriptionId = useId();
   const cancelRef = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    const previous = document.activeElement as HTMLElement | null;
-    cancelRef.current?.focus();
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !busy) onCancel();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      previous?.focus();
-    };
-  }, [busy, onCancel]);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const advanced = extension.manifest.ui?.mode === "advanced";
+  const [advancedConfirmed, setAdvancedConfirmed] = useState(false);
+  const handleEscape = useCallback(() => { if (!busy) onCancel(); }, [busy, onCancel]);
+  useDialogKeyboard({
+    rootRef: dialogRef,
+    initialFocusRef: cancelRef,
+    onEscape: handleEscape,
+  });
   return (
     <DialogPortal>
       <div
@@ -46,6 +44,7 @@ export function ExtensionActivationDialog({
         }}
       >
         <div
+          ref={dialogRef}
           className="wk-dialog extc-dialog"
           role="dialog"
           aria-modal="true"
@@ -59,6 +58,20 @@ export function ExtensionActivationDialog({
             <ShieldWarning size="var(--icon-xl)" weight="fill" />
             <p id={descriptionId}>{t("extensions.activation.description")}</p>
           </div>
+          {advanced && (
+            <div className="extc-advanced">
+              <p>{t("extensions.activation.advancedDescription")}</p>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={advancedConfirmed}
+                  disabled={busy}
+                  onChange={(event) => setAdvancedConfirmed(event.target.checked)}
+                />
+                <span>{t("extensions.activation.advancedConfirmation")}</span>
+              </label>
+            </div>
+          )}
           {errorKey && (
             <p className="extp-message extp-message-error" role="alert">
               {t(errorKey)}
@@ -77,7 +90,7 @@ export function ExtensionActivationDialog({
             <button
               type="button"
               className="btn btn-sm btn-primary"
-              disabled={busy}
+              disabled={busy || (advanced && !advancedConfirmed)}
               onClick={onConfirm}
             >
               {t("extensions.activation.confirm")}

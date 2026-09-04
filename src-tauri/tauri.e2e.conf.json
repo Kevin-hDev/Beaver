@@ -23,7 +23,8 @@
   },
   "bundle": {
     "resources": {
-      "default-skills/": "default-skills/"
+      "default-skills/": "default-skills/",
+      "resources/extension-host/": "resources/extension-host/"
     },
     "macOS": {
       "frameworks": [

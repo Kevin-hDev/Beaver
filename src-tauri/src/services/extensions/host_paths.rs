@@ -11,6 +11,12 @@ pub struct HostPaths {
     pub directory: PathBuf,
 }
 
+impl HostPaths {
+    pub(super) fn ui_builder(&self) -> PathBuf {
+        self.directory.join("ui-build.mjs")
+    }
+}
+
 pub fn resolve(app: &tauri::AppHandle) -> Result<HostPaths, String> {
     let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("resources")
@@ -47,6 +53,10 @@ pub fn resolve(app: &tauri::AppHandle) -> Result<HostPaths, String> {
     let script = directory.join("host.mjs");
     if !script.is_file() {
         return Err("Hôte d'extensions indisponible.".to_string());
+    }
+    let ui_builder = directory.join("ui-build.mjs");
+    if !ui_builder.is_file() {
+        return Err("Builder d'interface indisponible.".to_string());
     }
     Ok(HostPaths {
         node,

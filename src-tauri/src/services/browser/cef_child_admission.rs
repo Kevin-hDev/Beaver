@@ -24,6 +24,8 @@ impl BrowserCefSupervision {
         if command_line.is_valid() != 1 || command_line.is_read_only() != 0 {
             return self.fail(CefUnavailableCategory::Admission);
         }
+        #[cfg(target_os = "windows")]
+        self.remove_parent_safe_mode(command_line)?;
         let name = CefString::from(CEF_ADMISSION_SWITCH);
         if command_line.has_switch(Some(&name)) != 0 {
             return self.fail(CefUnavailableCategory::Admission);
@@ -40,6 +42,29 @@ impl BrowserCefSupervision {
             || !ticket.constant_time_encoded_matches(&copied)
         {
             return self.fail(CefUnavailableCategory::Admission);
+        }
+        Ok(())
+    }
+
+    #[cfg(target_os = "windows")]
+    fn remove_parent_safe_mode(
+        &self,
+        command_line: &CommandLine,
+    ) -> Result<(), CefUnavailableCategory> {
+        let name = CefString::from(crate::services::extensions::cef_safe_mode_switch_name());
+        let present = command_line.has_switch(Some(&name)) == 1;
+        let value = command_line.switch_value(Some(&name));
+        let value = Zeroizing::new(CefString::from(&value).to_string());
+        let remove = match crate::services::extensions::cef_child_safe_mode_action(present, &value)
+        {
+            Ok(remove) => remove,
+            Err(_) => return self.fail(CefUnavailableCategory::Admission),
+        };
+        if remove {
+            command_line.remove_switch(Some(&name));
+            if command_line.has_switch(Some(&name)) != 0 {
+                return self.fail(CefUnavailableCategory::Admission);
+            }
         }
         Ok(())
     }

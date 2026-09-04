@@ -1,0 +1,13 @@
+{
+  "id": "ui-standard-proof",
+  "name": "UI standard contract proof",
+  "version": "1.0.0",
+  "beaverApi": "1",
+  "runtime": "node",
+  "main": "index.mjs",
+  "apiLevel": "stable",
+  "ui": {
+    "apiVersion": "1",
+    "mode": "standard"
+  }
+}

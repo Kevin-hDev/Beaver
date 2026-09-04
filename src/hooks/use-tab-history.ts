@@ -1,5 +1,9 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { migrateAppNav, type AppNavPatch, type AppNavState } from "@/types/navigation";
+import {
+  CORE_NAVIGATION_AVAILABILITY,
+  type NavigationAvailability,
+} from "@/features/extension-ui/slot-navigation";
 
 const MAX_HISTORY = 50;
 
@@ -22,14 +26,27 @@ function sameNav(a: AppNavState, b: AppNavState): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
-export function useTabHistory(initial: AppNavState) {
-  const [current, setCurrent] = useState(() => migrateAppNav(initial));
+export function useTabHistory(
+  initial: AppNavState,
+  availability: NavigationAvailability = CORE_NAVIGATION_AVAILABILITY,
+) {
+  const [current, setCurrent] = useState(() => migrateAppNav(initial, availability));
   const [navIndex, setNavIndex] = useState(0);
   const history = useRef<AppNavState[]>([current]);
   const live = useRef(current);
 
+  useEffect(() => {
+    setNavIndex((index) => {
+      history.current = history.current.map((state) => migrateAppNav(state, availability));
+      const next = history.current[index];
+      live.current = next;
+      setCurrent(next);
+      return index;
+    });
+  }, [availability]);
+
   const pushNav = useCallback((partial: AppNavPatch) => {
-    const next = mergePatch(live.current, partial);
+    const next = migrateAppNav(mergePatch(live.current, partial), availability);
     if (sameNav(live.current, next)) return;
     live.current = next;
     setNavIndex((i) => {
@@ -42,10 +59,10 @@ export function useTabHistory(initial: AppNavState) {
       return i + 1;
     });
     setCurrent(next);
-  }, []);
+  }, [availability]);
 
   const replaceNav = useCallback((partial: AppNavPatch) => {
-    const next = mergePatch(live.current, partial);
+    const next = migrateAppNav(mergePatch(live.current, partial), availability);
     if (sameNav(live.current, next)) return;
     live.current = next;
     setNavIndex((i) => {
@@ -53,29 +70,31 @@ export function useTabHistory(initial: AppNavState) {
       return i;
     });
     setCurrent(next);
-  }, []);
+  }, [availability]);
 
   const goBack = useCallback(() => {
     setNavIndex((i) => {
       if (i <= 0) return i;
       const newIdx = i - 1;
-      const state = history.current[newIdx];
+      const state = migrateAppNav(history.current[newIdx], availability);
+      history.current[newIdx] = state;
       live.current = state;
       setCurrent(state);
       return newIdx;
     });
-  }, []);
+  }, [availability]);
 
   const goForward = useCallback(() => {
     setNavIndex((i) => {
       if (i >= history.current.length - 1) return i;
       const newIdx = i + 1;
-      const state = history.current[newIdx];
+      const state = migrateAppNav(history.current[newIdx], availability);
+      history.current[newIdx] = state;
       live.current = state;
       setCurrent(state);
       return newIdx;
     });
-  }, []);
+  }, [availability]);
 
   const canGoBack = navIndex > 0;
   // eslint-disable-next-line react-hooks/refs -- derived from navIndex state change

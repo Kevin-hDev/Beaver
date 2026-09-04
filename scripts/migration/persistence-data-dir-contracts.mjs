@@ -67,6 +67,7 @@ export const EXPECTED_DATA_DIR_REFERENCES = Object.freeze([
   ["src-tauri/src/services/extensions/operation_log.rs", 1],
   ["src-tauri/src/services/extensions/runtime.rs", 1],
   ["src-tauri/src/services/extensions/storage.rs", 1],
+  ["src-tauri/src/services/extensions/ui_artifact_store.rs", 1],
   ["src-tauri/src/services/favorite_models.rs", 1],
   ["src-tauri/src/services/file_watcher.rs", 1],
   // La reprise des profils inspecte les profils scopes et leurs marqueurs legacy.

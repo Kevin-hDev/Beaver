@@ -65,12 +65,27 @@ pub fn prepare_macos_application() -> (Option<BrowserLibraryGuard>, bool) {
 
 #[cfg(target_os = "macos")]
 pub fn run(browser_library: Option<BrowserLibraryGuard>) -> bool {
-    super::run_inner(browser_library)
+    let Ok(ui_startup) = super::services::extensions::prepare_ui_startup() else {
+        ::log::error!("[extensions] extension_ui_startup_failed");
+        return false;
+    };
+    super::run_inner(browser_library, ui_startup)
 }
 
-#[cfg(not(target_os = "macos"))]
+#[cfg(all(not(target_os = "macos"), not(target_os = "windows")))]
 pub fn run() -> bool {
-    super::run_inner()
+    let Ok(ui_startup) = super::services::extensions::prepare_ui_startup() else {
+        ::log::error!("[extensions] extension_ui_startup_failed");
+        return false;
+    };
+    super::run_inner(ui_startup)
+}
+
+#[cfg(target_os = "windows")]
+pub(crate) fn run_windows_with_ui_startup(
+    ui_startup: super::services::extensions::UiStartupState,
+) -> bool {
+    super::run_inner(ui_startup)
 }
 
 /// Exécute le lanceur shell isolé avant l'initialisation de Tauri ou de CEF.

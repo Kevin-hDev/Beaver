@@ -73,14 +73,17 @@ impl ExtensionRuntime {
                 .ensure_channel(HostIdentity::Official, api_level, deadline, start_reason)
                 .await
             {
-                let authorized = self.hosts.lock().await.authorize_loads(
-                    &HostIdentity::Official,
-                    &process,
-                    &build.official_specs,
-                );
-                if authorized.is_err()
+                let generation = self
+                    .hosts
+                    .lock()
+                    .await
+                    .authorize_loads(&HostIdentity::Official, &process, &build.official_specs)
+                    .unwrap_or(0);
+                if generation == 0
                     || super::runtime_host_load::load_specs(
                         &process,
+                        &HostIdentity::Official,
+                        generation,
                         &build.official_specs,
                         &mut responses,
                         &recovery,
@@ -117,14 +120,17 @@ impl ExtensionRuntime {
                 continue;
             };
             let identity = HostIdentity::ThirdParty(id.clone());
-            let authorized = self.hosts.lock().await.authorize_loads(
-                &identity,
-                &process,
-                std::slice::from_ref(specification),
-            );
-            if authorized.is_err()
+            let generation = self
+                .hosts
+                .lock()
+                .await
+                .authorize_loads(&identity, &process, std::slice::from_ref(specification))
+                .unwrap_or(0);
+            if generation == 0
                 || super::runtime_host_load::load_specs(
                     &process,
+                    &identity,
+                    generation,
                     std::slice::from_ref(specification),
                     &mut responses,
                     &recovery,
@@ -144,7 +150,15 @@ impl ExtensionRuntime {
                 .failures
                 .insert(id, super::error_codes::HOST_UNAVAILABLE.to_string());
         }
-        let applied = super::runtime_sync::apply(responses, &build)?;
+        let mut applied = super::runtime_sync::apply(responses, &build)?;
+        let ui_apply = self.ui_catalog.apply(applied.ui_updates)?;
+        for extension_id in ui_apply.rejected_extensions {
+            super::runtime_sync_apply::push_ui_diagnostic_once(
+                &mut applied.diagnostics,
+                super::runtime_sync_apply::ui_diagnostic(&extension_id, "ui_limit_exceeded")?,
+            )?;
+        }
+        let _catalog_revision = ui_apply.revision;
         super::loading_marker::complete(
             preserved_marker,
             &applied.completed_ids,

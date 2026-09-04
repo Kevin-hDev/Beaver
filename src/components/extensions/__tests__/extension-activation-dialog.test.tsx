@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { ExtensionRecord } from "@/types/extensions";
 import { ExtensionActivationDialog } from "../extension-activation-dialog";
@@ -64,6 +65,40 @@ describe("ExtensionActivationDialog", () => {
       .toBeEnabled();
   });
 
+  it("exige un consentement distinct pour un module UI avancé", () => {
+    const onConfirm = vi.fn();
+    render(
+      <ExtensionActivationDialog
+        extension={{
+          ...extension,
+          manifest: {
+            ...extension.manifest,
+            apiLevel: "advanced",
+            ui: { apiVersion: "1", mode: "advanced", entry: "ui.tsx" },
+          },
+        }}
+        busy={false}
+        errorKey={null}
+        onCancel={vi.fn()}
+        onConfirm={onConfirm}
+      />,
+    );
+
+    const confirm = screen.getByRole("button", {
+      name: "extensions.activation.confirm",
+    });
+    expect(screen.getByText("extensions.activation.advancedDescription"))
+      .toBeInTheDocument();
+    expect(confirm).toBeDisabled();
+
+    fireEvent.click(screen.getByRole("checkbox", {
+      name: "extensions.activation.advancedConfirmation",
+    }));
+    expect(confirm).toBeEnabled();
+    fireEvent.click(confirm);
+    expect(onConfirm).toHaveBeenCalledOnce();
+  });
+
   it("place le focus et se ferme avec Échap", () => {
     const onCancel = vi.fn();
     render(
@@ -81,5 +116,27 @@ describe("ExtensionActivationDialog", () => {
       .toHaveAttribute("role", "presentation");
     fireEvent.keyDown(window, { key: "Escape" });
     expect(onCancel).toHaveBeenCalledOnce();
+  });
+
+  it("garde la navigation clavier dans la fenêtre", async () => {
+    const user = userEvent.setup();
+    render(
+      <ExtensionActivationDialog
+        extension={extension}
+        busy={false}
+        errorKey={null}
+        onCancel={vi.fn()}
+        onConfirm={vi.fn()}
+      />,
+    );
+    const cancel = screen.getByRole("button", { name: "extensions.actions.cancel" });
+    const confirm = screen.getByRole("button", { name: "extensions.activation.confirm" });
+    expect(cancel).toHaveFocus();
+    await user.tab();
+    expect(confirm).toHaveFocus();
+    await user.tab();
+    expect(cancel).toHaveFocus();
+    await user.tab({ shift: true });
+    expect(confirm).toHaveFocus();
   });
 });

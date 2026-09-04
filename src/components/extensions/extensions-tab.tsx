@@ -41,7 +41,7 @@ export function useExtensionsTabContent({
           priorityBusy={registry.priorityBusy}
           onSelect={(extensionId) => onNavChange({ extensionId })}
           onAdd={() => setAdding(true)}
-          onEnabled={(id, enabled) => void registry.setEnabled(id, enabled)}
+          onEnabled={(id, enabled) => registry.setEnabled(id, enabled)}
           onShowInChat={(id, show) => void registry.setShowInChat(id, show)}
           onOpenSource={(id) => void registry.openSource(id)}
           onUpdate={(id) => void registry.update(id)}

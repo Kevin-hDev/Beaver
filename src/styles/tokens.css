@@ -37,6 +37,11 @@
      détail de cadre, il ne grandit pas avec le texte. */
   --list-gutter: 4px;
 
+  /* Le reset global retire le contour natif : ces deux mesures sont donc
+     l'autorité commune de géométrie pour tout focus visible redessiné. */
+  --focus-visible-ring-width: 2px;
+  --focus-visible-ring-offset: 2px;
+
   /* La sélection de texte prend l'accent du thème. Sans elle, la couleur venait
      du système : sur le fond crème du thème Clair, elle ne se voyait pas. */
   --text-selection-bg: color-mix(in srgb, var(--pulse) 32%, transparent);
@@ -180,6 +185,10 @@
   --extensions-copy-line-height: 1.5;
   --extensions-value-max-width: 22rem;
   --extensions-value-max-width-compact: 12rem;
+  /* Les vues déclaratives partagent ces mesures quelle que soit l'extension :
+     un module tiers ne peut ni agrandir un champ ni imposer un panneau géant. */
+  --extension-ui-field-min-width: var(--extensions-value-max-width-compact);
+  --extension-ui-action-result-max-height: 26rem;
   --memory-section-gap: 28px;
   --memory-legacy-gap: 3px;
   --memory-filter-min-width: 180px;

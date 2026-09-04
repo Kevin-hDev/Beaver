@@ -1,10 +1,9 @@
-use super::protocol::{HostExtensionSpec, LoadResult};
+use super::protocol::HostExtensionSpec;
 use super::types::{
-    ExtensionApiLevel, ExtensionContributions, ExtensionDiagnostic, DIAGNOSTIC_ADVANCED_REQUIRED,
-    DIAGNOSTIC_ENTRY_UNAVAILABLE, DIAGNOSTIC_HOST_MISSING_RESPONSE, DIAGNOSTIC_LOAD_FAILED,
+    ExtensionApiLevel, ExtensionContributions, ExtensionDiagnostic, DIAGNOSTIC_ENTRY_UNAVAILABLE,
     HOST_LOAD_STAGE_IMPORT, HOST_LOAD_STAGE_REGISTER, MAX_EXTENSIONS, RUNTIME_DIAGNOSTIC_CODES,
 };
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, HashSet};
 use std::path::Path;
 
 pub struct BuildSpecs {
@@ -20,6 +19,7 @@ pub struct ApplyResult {
     pub active: usize,
     pub diagnostics: Vec<ExtensionDiagnostic>,
     pub completed_ids: HashSet<String>,
+    pub ui_updates: Vec<super::ui_catalog::UiCatalogUpdate>,
 }
 
 pub(super) use super::runtime_recovery_preflight::{filter_for_recovery, RecoveryPreflight};
@@ -57,7 +57,8 @@ pub async fn build_specs(
     let plan = super::runtime_plan::records(verified.eligible);
     let mut official_specs = Vec::new();
     let mut third_party_specs = BTreeMap::new();
-    let mut diagnostics = Vec::new();
+    let mut diagnostics =
+        manifest_ui_diagnostics(plan.official.iter().chain(plan.third_party.iter()));
     for record in plan.official.into_iter().take(MAX_EXTENSIONS) {
         let extension_id = record.manifest.id.clone();
         if let Some(specification) = super::runtime_plan::specification(record, host_directory) {
@@ -92,82 +93,26 @@ pub async fn build_specs(
     })
 }
 
-pub fn apply(responses: Vec<LoadResult>, build: &BuildSpecs) -> Result<ApplyResult, String> {
-    if responses.len() > MAX_EXTENSIONS {
-        return Err(super::error_codes::HOST_INCOMPATIBLE.to_string());
-    }
-    let requested: HashMap<&str, &HostExtensionSpec> = build
-        .official_specs
-        .iter()
-        .chain(build.third_party_specs.values())
-        .map(|spec| (spec.id.as_str(), spec))
-        .collect();
-    let mut received = HashSet::new();
-    let mut successful = HashMap::new();
-    let mut diagnostics = build.diagnostics.clone();
-    for loaded in responses.into_iter().take(MAX_EXTENSIONS) {
-        if loaded
-            .error
-            .as_deref()
-            .is_some_and(|error| error != "load_failed")
-            || (loaded.diagnostic.is_some() && loaded.error.is_none())
-        {
-            return Err(super::error_codes::HOST_INCOMPATIBLE.to_string());
-        }
-        let Some(spec) = requested.get(loaded.id.as_str()) else {
-            return Err(super::error_codes::HOST_INCOMPATIBLE.to_string());
-        };
-        if !received.insert(loaded.id.clone()) {
-            return Err(super::error_codes::HOST_INCOMPATIBLE.to_string());
-        }
-        let failed = loaded.error.is_some();
-        let has_diagnostic = loaded.diagnostic.is_some();
-        if let Some(diagnostic) = loaded.diagnostic {
-            diagnostics.push(super::runtime_diagnostics::from_host(
-                loaded.id.clone(),
-                diagnostic,
-            )?);
-        }
-        if failed && !has_diagnostic {
-            diagnostics.push(runtime_diagnostic(
-                &loaded.id,
-                HOST_LOAD_STAGE_IMPORT,
-                DIAGNOSTIC_LOAD_FAILED,
-            ));
-        }
-        let Some(contributions) = loaded.contributions.filter(|_| loaded.error.is_none()) else {
-            continue;
-        };
-        if accepts_contributions(spec, &contributions) {
-            successful.insert(loaded.id, contributions);
-        } else {
-            diagnostics.push(runtime_diagnostic(
-                &loaded.id,
+pub(super) fn manifest_ui_diagnostics<'a>(
+    records: impl IntoIterator<Item = &'a super::types::ExtensionRecord>,
+) -> Vec<ExtensionDiagnostic> {
+    records
+        .into_iter()
+        .take(MAX_EXTENSIONS)
+        .filter(|record| record.manifest.ui_legacy.is_some())
+        .map(|record| {
+            runtime_diagnostic(
+                &record.manifest.id,
                 HOST_LOAD_STAGE_REGISTER,
-                DIAGNOSTIC_ADVANCED_REQUIRED,
-            ));
-        }
-    }
-    for missing in requested
-        .keys()
-        .filter(|extension_id| !received.contains(**extension_id))
-    {
-        diagnostics.push(runtime_diagnostic(
-            missing,
-            HOST_LOAD_STAGE_IMPORT,
-            DIAGNOSTIC_HOST_MISSING_RESPONSE,
-        ));
-    }
-    let active =
-        super::registry_sync::apply_results(&build.enabled_ids, successful, &build.failures)?;
-    Ok(ApplyResult {
-        active,
-        diagnostics,
-        completed_ids: received,
-    })
+                super::types::DIAGNOSTIC_UI_MANIFEST_LEGACY,
+            )
+        })
+        .collect()
 }
 
-fn runtime_diagnostic(
+pub use super::runtime_sync_apply::apply;
+
+pub(super) fn runtime_diagnostic(
     extension_id: &str,
     stage: &'static str,
     code: &'static str,
@@ -177,6 +122,7 @@ fn runtime_diagnostic(
         extension_id: extension_id.to_string(),
         stage: stage.to_string(),
         code: code.to_string(),
+        occurred_at: super::diagnostic_time::now(),
         file: None,
         line: None,
         column: None,

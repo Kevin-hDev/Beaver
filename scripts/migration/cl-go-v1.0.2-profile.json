@@ -527,6 +527,7 @@
         "litellm-models.json",
         "extension-discovery-preferences.json",
         "extension-tool-usage.json",
+        "extensions-ui/example/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/manifest.json",
         "searxng-sidecar/.venv/bin/python",
         "searxng-sidecar/.source-archive.sha256",
         "searxng-sidecar/settings.yml"
@@ -561,6 +562,11 @@
           "snippets": [".join(\"extension-tool-usage.json\")"]
         },
         {
+          "scope": "migration",
+          "file": "src-tauri/src/services/extensions/ui_artifact_store.rs",
+          "snippets": ["const DIRECTORY: &str = \"extensions-ui\";", "data_dir().join(DIRECTORY)"]
+        },
+        {
           "file": "src-tauri/src/services/searxng/paths.rs",
           "snippets": [
             ".join(\"searxng-sidecar\")",
@@ -569,7 +575,10 @@
           ]
         }
       ],
-      "evidence": ["src-tauri/src/services/provider_usage/ledger_tests.rs"],
+      "evidence": [
+        "src-tauri/src/services/provider_usage/ledger_tests.rs",
+        "src-tauri/src/services/extensions/ui_artifact_tests.rs"
+      ],
       "manualGates": []
     },
     {

@@ -15,6 +15,7 @@ fn runtime(work: super::super::work_supervision::ExtensionWorkServices) -> Exten
         hosts: Mutex::new(RuntimeHosts::new(temporary).unwrap()),
         sync: Mutex::new(()),
         status: std::sync::RwLock::new(ExtensionHostStatus::default()),
+        ui_catalog: super::super::ui_catalog::UiCatalog::default(),
         work,
     }
 }
@@ -92,9 +93,73 @@ async fn runtime_with_real_host() -> (tempfile::TempDir, ExtensionRuntime, Arc<H
         hosts: Mutex::new(hosts),
         sync: Mutex::new(()),
         status: std::sync::RwLock::new(ExtensionHostStatus::default()),
+        ui_catalog: super::super::ui_catalog::UiCatalog::default(),
         work,
     };
     (directory, runtime, process)
+}
+
+#[tokio::test]
+#[ignore = "requires scripts/extensions/prepare-extension-host.mjs --dev"]
+async fn prepared_runtime_confirms_restart_stop_while_exit_monitor_is_active() {
+    let directory = tempfile::tempdir().unwrap();
+    let paths = HostPaths {
+        node: std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("target")
+            .join("extension-host")
+            .join("runtime")
+            .join(if cfg!(windows) { "node.exe" } else { "node" }),
+        script: std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("target")
+            .join("extension-host")
+            .join("host.mjs"),
+        directory: std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("target")
+            .join("extension-host"),
+    };
+    let coordinator = crate::app_exit::AppExitCoordinator::initialize().unwrap();
+    let work =
+        super::super::work_supervision::ExtensionWorkServices::new(coordinator.work_supervisor());
+    let (mut hosts, receiver) =
+        RuntimeHosts::new_monitored(directory.path().join("channels")).unwrap();
+    let reservation = hosts.reserve(HostIdentity::Official).unwrap();
+    let process = Arc::new(
+        HostProcess::spawn_bound(
+            &paths,
+            &work,
+            reservation.spawn_binding(),
+            Instant::now() + Duration::from_secs(5),
+            reservation.temporary_directory(),
+        )
+        .await
+        .unwrap(),
+    );
+    hosts
+        .bind(reservation, ExtensionApiLevel::Stable, process)
+        .unwrap();
+    let runtime = Arc::new(ExtensionRuntime {
+        paths: Some(paths),
+        hosts: Mutex::new(hosts),
+        sync: Mutex::new(()),
+        status: std::sync::RwLock::new(ExtensionHostStatus::default()),
+        ui_catalog: super::super::ui_catalog::UiCatalog::default(),
+        work,
+    });
+    runtime.start_exit_monitor(receiver).unwrap();
+
+    assert!(
+        runtime
+            .stop_hosts_for_restart(Instant::now() + Duration::from_secs(5))
+            .await
+    );
+    assert_eq!(runtime.hosts.lock().await.len(), 0);
+    runtime.work.begin_closing();
+    assert!(
+        runtime
+            .work
+            .stop_and_wait(Instant::now() + Duration::from_secs(2))
+            .await
+    );
 }
 
 #[tokio::test]
@@ -147,6 +212,7 @@ async fn spontaneous_process_exit_marks_error_without_a_user_call() {
         hosts: Mutex::new(hosts),
         sync: Mutex::new(()),
         status: std::sync::RwLock::new(ExtensionHostStatus::default()),
+        ui_catalog: super::super::ui_catalog::UiCatalog::default(),
         work,
     });
     runtime.start_exit_monitor(receiver).unwrap();
@@ -247,6 +313,7 @@ async fn a_retained_pre_bind_process_is_reaped_after_its_reader_exits() {
         hosts: Mutex::new(hosts),
         sync: Mutex::new(()),
         status: std::sync::RwLock::new(ExtensionHostStatus::default()),
+        ui_catalog: super::super::ui_catalog::UiCatalog::default(),
         work,
     });
     runtime.start_exit_monitor(receiver).unwrap();

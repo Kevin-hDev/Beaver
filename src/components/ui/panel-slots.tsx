@@ -20,16 +20,10 @@ export function PanelSlotProvider({ children }: { children: ReactNode }) {
     list: null,
     detail: null,
   });
-
   const registerTarget = useCallback((name: PanelSlotName, target: HTMLElement | null) => {
-    setTargets((current) => {
-      if (current[name] === target) return current;
-      return { ...current, [name]: target };
-    });
+    setTargets((current) => current[name] === target ? current : { ...current, [name]: target });
   }, []);
-
   const value = useMemo(() => ({ targets, registerTarget }), [targets, registerTarget]);
-
   return <PanelSlotContext.Provider value={value}>{children}</PanelSlotContext.Provider>;
 }
 
@@ -45,7 +39,6 @@ export function PanelSlotTarget({
     (target: HTMLDivElement | null) => registerTarget(name, target),
     [name, registerTarget],
   );
-
   return (
     <div
       ref={setTargetRef}
@@ -54,17 +47,9 @@ export function PanelSlotTarget({
   );
 }
 
-export function PanelSlot({
-  name,
-  children,
-}: {
-  name: PanelSlotName;
-  children: ReactNode;
-}) {
-  const { targets } = usePanelSlotContext();
-  const target = targets[name];
-  if (!target) return null;
-  return createPortal(children, target);
+export function PanelSlot({ name, children }: { name: PanelSlotName; children: ReactNode }) {
+  const target = usePanelSlotContext().targets[name];
+  return target ? createPortal(children, target) : null;
 }
 
 function usePanelSlotContext() {

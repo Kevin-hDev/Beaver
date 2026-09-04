@@ -25,6 +25,10 @@ if (developmentOnly) {
   await installProductionDependencies(hostDirectory);
   await prepareNodeRuntime(hostDirectory);
 } else {
+  await copyFile(
+    resolve(root, "scripts", "extensions", "ui-build.mjs"),
+    resolve(hostDirectory, "ui-build.mjs"),
+  );
   await installProductionDependencies(hostDirectory);
   await prepareNodeRuntime(hostDirectory);
 }
@@ -67,17 +71,22 @@ async function copyHostSources(source, destination) {
     "contract-bootstrap.json",
     "contract.json",
     "contract.mjs",
+    "ui-contract.mjs",
     "diagnostics.mjs",
     "extension-api.mjs",
     "host.mjs",
     "loader.mjs",
+    "ui-actions.mjs",
+    "ui-api.mjs",
+    "ui-validation.mjs",
+    "ui-view-validation.mjs",
     "package-lock.json",
     "package.json",
     "protocol-output.mjs",
     "protocol.mjs",
     "versions.mjs",
   ];
-  const sdkFiles = ["README.md", "contract.d.ts", "index.d.ts", "index.mjs", "package.json"];
+  const sdkFiles = ["README.md", "contract.d.ts", "ui-contract.d.ts", "index.d.ts", "index.mjs", "package.json"];
   await mkdir(resolve(destination, "sdk"), { recursive: true, mode: 0o700 });
   await Promise.all([
     ...rootFiles.map((file) =>
@@ -90,6 +99,10 @@ async function copyHostSources(source, destination) {
       resolve(source, "vendor", "image-size-disabled"),
       resolve(destination, "vendor", "image-size-disabled"),
       { count: 0 },
+    ),
+    copyFile(
+      resolve(root, "scripts", "extensions", "ui-build.mjs"),
+      resolve(destination, "ui-build.mjs"),
     ),
   ]);
   await copyDirectory(

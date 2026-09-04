@@ -159,6 +159,9 @@ macro_rules! generate_tail {
             crate::commands::set_extension_show_in_chat,
             crate::commands::reload_extension_host,
             crate::commands::get_extension_host_status,
+            crate::commands::get_extension_ui_catalog,
+            crate::commands::invoke_extension_ui_action,
+            crate::commands::report_extension_ui_mount_failure,
             crate::commands::get_extension_discovery_preferences,
             crate::commands::set_extension_discovery_preferences,
             crate::commands::recover_extension_host,
@@ -168,6 +171,16 @@ macro_rules! generate_tail {
             crate::commands::discard_extension_loading_marker,
             crate::commands::restore_extension_recovery_snapshot,
             crate::commands::open_extension_source,
+            crate::commands::get_extension_ui_startup_state,
+            crate::commands::confirm_extension_ui_wayland_shift,
+            crate::commands::continue_without_extension_ui,
+            crate::commands::retry_interrupted_extension_ui,
+            crate::commands::discard_invalid_extension_ui_marker,
+            crate::commands::discard_interrupted_extension_ui_marker,
+            crate::commands::begin_extension_ui_load,
+            crate::commands::advance_extension_ui_load,
+            crate::commands::acknowledge_extension_ui_load,
+            crate::commands::abort_extension_ui_load,
         ]
     };
 }

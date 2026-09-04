@@ -137,12 +137,16 @@ impl ExtensionRuntime {
 
     async fn stop_hosts_with_mode(&self, deadline: Instant, restarting: bool) -> bool {
         let snapshots = self.hosts.lock().await.begin_stop_all(restarting);
+        let mut catalogs_retired = true;
+        for (identity, generation, _) in &snapshots {
+            catalogs_retired &= self.ui_catalog.retire(identity, *generation).is_ok();
+        }
         let mut results = Vec::with_capacity(snapshots.len());
         for (_, _, process) in &snapshots {
             results.push(process.kill(deadline).await);
         }
         let mut hosts = self.hosts.lock().await;
-        let mut all_stopped = true;
+        let mut all_stopped = catalogs_retired;
         for ((identity, generation, _), stopped) in snapshots.into_iter().zip(results) {
             all_stopped &= hosts.remove_stopped(&identity, generation, stopped);
             if !stopped {
@@ -163,12 +167,17 @@ impl ExtensionRuntime {
         // Une panne globale invalide tous les canaux. Effacer toutes les autorisations
         // d'extension reste fermé même si le registre est lui-même illisible.
         crate::services::agent_local::permission_gate::clear_all_extensions().await;
+        for (identity, generation, _) in self.hosts.lock().await.snapshots() {
+            if self.ui_catalog.retire(&identity, generation).is_err() {
+                ::log::warn!("[extensions] {}", error_codes::OPERATION_FAILED);
+            }
+        }
         self.set_state(
             HostState::Error,
             Some(error_codes::HOST_UNAVAILABLE.to_string()),
             0,
         );
-        super::runtime::mark_enabled_extensions_error();
+        super::registry_sync::mark_all_enabled_error();
     }
 }
 

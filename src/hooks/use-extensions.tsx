@@ -121,9 +121,9 @@ function useExtensionsState() {
     if (enabled && extension && extension.kind !== "builtin" && !extension.trusted) {
       setOperationError(null);
       setPendingActivation(extension);
-      return Promise.resolve();
+      return Promise.resolve(false);
     }
-    return applyEnabled(id, enabled).then(() => undefined);
+    return applyEnabled(id, enabled);
   }, [applyEnabled, extensions]);
 
   const confirmActivation = useCallback(async () => {
@@ -209,6 +209,7 @@ export function ExtensionsProvider({ children }: { children: ReactNode }) {
       {children}
       {value.pendingActivation && (
         <ExtensionActivationDialog
+          key={value.pendingActivation.manifest.id}
           extension={value.pendingActivation}
           busy={value.busyIds.has(value.pendingActivation.manifest.id)}
           errorKey={value.operationError}

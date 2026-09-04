@@ -1,7 +1,9 @@
 import { useTranslation } from "react-i18next";
-import { SETTINGS_SECTIONS } from "./settings-sections";
+import { useResolvedSettingsSections } from "./settings-sections";
 import type { SubTabDef } from "./settings-sections";
 import type { SettingsSubTab } from "@/types/navigation";
+import { localizedText } from "@/features/extension-ui/standard/localized-text";
+import { AdvancedMountAnchor } from "@/features/extension-ui/advanced/advanced-mount-anchor";
 
 interface SettingsSubTabListProps {
   active: SettingsSubTab;
@@ -10,9 +12,10 @@ interface SettingsSubTabListProps {
 
 export function SettingsSubTabList({ active, onSelect }: SettingsSubTabListProps) {
   const { t } = useTranslation();
+  const sections = useResolvedSettingsSections();
   return (
     <div className="settings-subtab-list">
-      {SETTINGS_SECTIONS.map((section) => (
+      {sections.map((section) => (
         <div key={section.i18n} className="settings-subtab-group">
           {/* L'en-tête décrit le groupe sans être une destination : ni rôle de
               bouton, ni tabIndex, sous peine que la navigation aux flèches et
@@ -26,6 +29,7 @@ export function SettingsSubTabList({ active, onSelect }: SettingsSubTabListProps
               onSelect={onSelect}
             />
           ))}
+          <AdvancedMountAnchor placement={section.tabs[0].placement} />
         </div>
       ))}
     </div>
@@ -40,6 +44,7 @@ interface SubTabItemProps {
 
 function SubTabItem({ tab, active, onSelect }: SubTabItemProps) {
   const { t } = useTranslation();
+  const label = tab.i18n ? t(tab.i18n) : localizedText(tab.label!);
   return (
     <div
       role="button"
@@ -55,7 +60,7 @@ function SubTabItem({ tab, active, onSelect }: SubTabItemProps) {
       className={`settings-subtab${active ? " active" : ""}`}
     >
       <tab.icon className="settings-subtab-icon" />
-      <span className="settings-subtab-label">{t(tab.i18n)}</span>
+      <span className="settings-subtab-label">{label}</span>
     </div>
   );
 }

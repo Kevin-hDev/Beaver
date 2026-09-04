@@ -89,6 +89,7 @@
   --signal-warning: #ddbd70;
   --signal-alert: #e78a44;
   --signal-warning-bg: rgba(221, 189, 112, 0.15);
+  --signal-alert-bg: rgba(231, 138, 68, 0.15);
   --signal-info: #58b6ce;
   --signal-info-bg: rgba(88, 182, 206, 0.15);
 

@@ -4,7 +4,7 @@ use crate::services::extensions::{extension_recovery, loading_marker, registry_r
 fn every_extension_command_closes_unknown_errors() {
     let generated = crate::services::extensions::error_codes::ALL;
 
-    assert_eq!(super::command_error::ExtensionCommand::ALL.len(), 19);
+    assert_eq!(super::command_error::ExtensionCommand::ALL.len(), 22);
     for command in super::command_error::ExtensionCommand::ALL {
         let error = super::command_error::close(
             command,
@@ -48,7 +48,7 @@ fn r0_boundary_codes_remain_declared_and_preserved() {
 }
 
 #[test]
-fn extension_command_inventory_names_all_nineteen_boundaries() {
+fn extension_command_inventory_names_all_twenty_two_boundaries() {
     let actual = super::command_error::ExtensionCommand::ALL.map(|command| command.label());
     assert_eq!(
         actual,
@@ -63,6 +63,9 @@ fn extension_command_inventory_names_all_nineteen_boundaries() {
             "set_extension_show_in_chat",
             "reload_extension_host",
             "get_extension_host_status",
+            "get_extension_ui_catalog",
+            "invoke_extension_ui_action",
+            "report_extension_ui_mount_failure",
             "get_extension_discovery_preferences",
             "set_extension_discovery_preferences",
             "recover_extension_host",
@@ -102,6 +105,44 @@ fn recovery_state_is_bounded_and_retry_stops_after_three_attempts() {
     let visible = serde_json::to_string(&invalid).unwrap();
     assert!(!visible.contains("secret-url-and-path-sentinel"));
     assert!(!visible.contains(directory.path().to_string_lossy().as_ref()));
+}
+
+#[test]
+fn ui_startup_projection_is_bounded_and_contains_no_internal_data() {
+    let state = crate::services::extensions::UiStartupState::resolved(
+        crate::services::extensions::UiStartupMode::PendingInterruptedUi {
+            extension_id: "com.example.ui".to_string(),
+            stage: "mount".to_string(),
+            started_at: "2026-09-03T10:00:00Z".to_string(),
+            attempts: 2,
+        },
+    );
+    let projection = crate::commands::extensions_ui_startup::project(&state);
+    let json = serde_json::to_value(projection).unwrap();
+
+    assert_eq!(json["mode"]["kind"], "pendingInterruptedUi");
+    assert_eq!(json["mode"]["extensionId"], "com.example.ui");
+    assert_eq!(json["mode"]["startedAt"], "2026-09-03T10:00:00Z");
+    assert_eq!(json["canRetry"], true);
+    assert_eq!(json["thirdPartyLoadingAllowed"], false);
+    let visible = json.to_string();
+    assert!(!visible.contains("token"));
+    assert!(!visible.contains("/Users/"));
+    assert!(!visible.contains("extension-loading.json"));
+}
+
+#[test]
+fn frontend_fallback_cannot_elevate_a_normal_backend_state() {
+    let state = crate::services::extensions::UiStartupState::resolved(
+        crate::services::extensions::UiStartupMode::Normal,
+    );
+
+    assert!(crate::commands::extensions_ui_startup::continue_safe(&state).is_err());
+    assert_eq!(
+        state.mode(),
+        crate::services::extensions::UiStartupMode::Normal
+    );
+    assert!(state.third_party_loading_allowed());
 }
 
 #[test]
@@ -172,6 +213,7 @@ fn fixture(
             runtime: "node".to_string(),
             main: Some("index.mjs".to_string()),
             ui: None,
+            ui_legacy: None,
             access: "full".to_string(),
             api_level: ExtensionApiLevel::Stable,
             essential: false,
@@ -185,6 +227,7 @@ fn fixture(
         enabled,
         trusted,
         fingerprint: None,
+        ui_artifact: None,
         trusted_at: None,
         show_in_chat: true,
         status: ExtensionStatus::Inactive,

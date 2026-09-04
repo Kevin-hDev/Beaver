@@ -1,10 +1,20 @@
 import type { FilePreviewActiveTab } from "@/types/file-preview";
 import type { ForecastSection, PanelMode } from "@/types/forecast-panel";
+import {
+  CORE_NAVIGATION_AVAILABILITY,
+  normalizeMainTabId,
+  normalizeSettingsTabId,
+  type NavigationAvailability,
+} from "@/features/extension-ui/slot-navigation";
+import type {
+  CoreMainTabId,
+  CoreSettingsTabId,
+  MainTabId,
+  SettingsTabId,
+} from "@/features/extension-ui/slot-types";
 
-type MainTabId = "heartbeat" | "personality" | "agent-local" | "settings";
-export type SettingsSubTab =
-  | "general" | "ollama" | "connectors" | "channels" | "providers"
-  | "extensions" | "forecast" | "llm" | "tools" | "memory" | "system-prompt" | "mascot" | "archived-chats" | "advanced" | "shortcuts" | "updates" | "about";
+export type { CoreMainTabId, MainTabId };
+export type SettingsSubTab = SettingsTabId;
 
 type OllamaSettingsSubTab = "modelfile" | "models";
 type ForecastSettingsSubTab = "config" | "models";
@@ -122,19 +132,24 @@ export const DEFAULT_APP_NAV: AppNavState = {
   },
 };
 
-export function migrateAppNav(input: AppNavState): AppNavState {
+export function migrateAppNav(
+  input: AppNavState,
+  availability: NavigationAvailability = CORE_NAVIGATION_AVAILABILITY,
+): AppNavState {
   const { sessionId = null } = input.agentLocal as LegacyAgentLocalRouteState;
   const settings = input.settings as Omit<SettingsNavState, "subTab" | "extensionsSection"> & {
-    subTab: SettingsSubTab | "api-keys";
+    subTab: CoreSettingsTabId | "api-keys";
     providersSubTab?: ProvidersSettingsSubTab;
     oauthProviderId?: string | null;
     extensionsSection?: ExtensionsSettingsSection | "external";
     extensionId?: string | null;
     advancedTarget?: AdvancedSettingsTarget;
   };
-  const subTab: SettingsSubTab = settings.subTab === "api-keys" ? "providers" : settings.subTab;
+  const legacySubTab = settings.subTab === "api-keys" ? "providers" : settings.subTab;
+  const subTab = normalizeSettingsTabId(legacySubTab, availability);
   return {
     ...input,
+    tab: normalizeMainTabId(input.tab, availability),
     agentLocal: { sessionId },
     settings: {
       ...settings,

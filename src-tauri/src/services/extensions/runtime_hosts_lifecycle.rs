@@ -100,6 +100,10 @@ impl RuntimeHosts {
         stopped: bool,
     ) -> bool {
         // Le canal reste autoritatif tant que la disparition de l'arbre n'est pas confirmée.
-        stopped && self.remove_current(identity, generation)
+        // Le moniteur de sortie peut avoir récolté cette même génération entre
+        // la confirmation OS et cette étape ; elle est alors déjà arrêtée.
+        stopped
+            && (self.remove_current(identity, generation)
+                || self.stop_is_confirmed(identity, generation))
     }
 }

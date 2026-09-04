@@ -37,3 +37,21 @@ fn development_bootstrap_is_staged_with_the_module_basename() {
         b"verified bootstrap"
     );
 }
+
+#[test]
+fn parent_captures_safe_startup_before_any_cef_execution() {
+    let source = include_str!("windows_entry.rs");
+    let parent = source.find("fn run_parent(").expect("parent entry");
+    let prepare = source[parent..]
+        .find("prepare_ui_startup()")
+        .expect("safe startup capture");
+    let cef = source[parent..]
+        .find("execute_process(")
+        .expect("CEF process execution");
+    let transported = source[parent..]
+        .find("run_windows_with_ui_startup(ui_startup)")
+        .expect("transported startup state");
+
+    assert!(prepare < cef);
+    assert!(cef < transported);
+}

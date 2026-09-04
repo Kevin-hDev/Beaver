@@ -8,7 +8,7 @@ import { CHAT_MIN_WIDTH } from "@/hooks/file-preview-storage";
 import { CHAT_COMPACT_MIN_WIDTH } from "@/hooks/agent-panel-layout-solver";
 import { IS_MAC } from "@/lib/platform";
 import { WindowControls } from "./window-controls";
-import { PanelSlotProvider, PanelSlotTarget } from "./panel-slots";
+import { PanelSlotProvider, PanelSlotTarget } from "@/components/ui/panel-slots";
 import { useAgentPanelsAutoSidebar } from "./agent-panels-auto-sidebar";
 import { useAppLayoutShortcuts, useSidebarHiddenOffset, useWindowFullscreen } from "./use-app-layout-effects";
 import { ModelDownloadBadge } from "./model-download-badge";

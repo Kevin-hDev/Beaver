@@ -42,6 +42,15 @@ fn run_bootstrap_entry(instance: cef::sys::HINSTANCE, sandbox_info: *mut u8) -> 
 }
 
 fn run_parent(instance: cef::sys::HINSTANCE, sandbox_info: *mut u8) -> i32 {
+    // Capture arguments and native Shift while still in the classified Parent,
+    // before CEF can create helpers or Tauri can construct a webview.
+    let ui_startup = match crate::services::extensions::prepare_ui_startup() {
+        Ok(state) => state,
+        Err(_) => {
+            ::log::error!("[extensions] extension_ui_startup_failed");
+            return 1;
+        }
+    };
     let _ = api_hash(sys::CEF_API_VERSION_LAST, 0);
     let args = Args::from(MainArgs { instance });
     let result = execute_process(
@@ -58,7 +67,7 @@ fn run_parent(instance: cef::sys::HINSTANCE, sandbox_info: *mut u8) -> i32 {
     if !crate::prepare_browser_native_application() {
         return 1;
     }
-    if crate::run() {
+    if crate::startup::run_windows_with_ui_startup(ui_startup) {
         0
     } else {
         1

@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { invoke } from "@tauri-apps/api/core";
 import { describe, expect, it, vi } from "vitest";
 import { ChatInputActionsRow } from "../chat-input-actions-row";
+import { SlotProvider } from "@/features/extension-ui/slot-provider";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 vi.mock("@/hooks/use-available-models", () => ({
@@ -32,25 +33,27 @@ vi.mock("react-i18next", async (importOriginal) => ({
 describe("ChatInputActionsRow", () => {
   it("ne montre aucun contrôle de continuité du raisonnement dans le composeur", () => {
     render(
-      <ChatInputActionsRow
-        sessionId="session-1"
-        modelName="gemma4:e2b-it-q4_K_M"
-        providerName="ollama"
-        fastModeEnabled={false}
-        fastModePending={false}
-        contextUsed={0}
-        contextMax={1}
-        permissionMode="auto"
-        planModeEnabled={false}
-        buttonState="send"
-        onPermissionModeChange={vi.fn()}
-        onFileImport={vi.fn()}
-        onModelChange={vi.fn()}
-        onReasoningModeChange={vi.fn()}
-        onFastModeChange={vi.fn()}
-        onSend={vi.fn()}
-        onStop={vi.fn()}
-      />,
+      <SlotProvider>
+        <ChatInputActionsRow
+          sessionId="session-1"
+          modelName="gemma4:e2b-it-q4_K_M"
+          providerName="ollama"
+          fastModeEnabled={false}
+          fastModePending={false}
+          contextUsed={0}
+          contextMax={1}
+          permissionMode="auto"
+          planModeEnabled={false}
+          buttonState="send"
+          onPermissionModeChange={vi.fn()}
+          onFileImport={vi.fn()}
+          onModelChange={vi.fn()}
+          onReasoningModeChange={vi.fn()}
+          onFastModeChange={vi.fn()}
+          onSend={vi.fn()}
+          onStop={vi.fn()}
+        />
+      </SlotProvider>,
     );
 
     expect(invoke).not.toHaveBeenCalledWith("get_agent_session", { id: "session-1" });

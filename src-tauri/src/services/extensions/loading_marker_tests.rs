@@ -234,21 +234,11 @@ fn an_oversized_marker_can_only_be_removed_by_explicit_discard() {
 }
 
 #[test]
-fn successful_builtin_load_restores_a_regular_corrupt_marker() {
+fn corrupt_security_journal_blocks_a_builtin_load_without_changing_bytes() {
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path().join("extension-loading.json");
     std::fs::write(&path, b"corrupt-sentinel-without-path-or-url").unwrap();
-    let preserved = loading_marker::preserve_at(&path);
-    assert!(matches!(preserved.state, MarkerRead::Invalid));
-    loading_marker::start_at(&path, "beaver.official.word", 1).unwrap();
-
-    loading_marker::complete_at(
-        &path,
-        preserved,
-        &HashSet::from(["beaver.official.word".to_string()]),
-        None,
-    )
-    .unwrap();
+    assert!(loading_marker::start_at(&path, "beaver.official.word", 1).is_err());
 
     assert!(matches!(
         loading_marker::read_at(&path),

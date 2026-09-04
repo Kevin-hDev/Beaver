@@ -95,6 +95,18 @@
   text-align: center;
 }
 
+.ts-source {
+  display: block;
+  overflow: hidden;
+  margin-top: var(--space-2xs);
+  color: var(--ink-faint);
+  font-size: var(--text-2xs);
+  line-height: 1.2;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Le gras élargit le libellé d'environ 4 px, assez pour le faire passer à la
    ligne au moment du clic. Le contour épaissit le trait sans toucher à la
    métrique du texte : la sélection ne déplace donc plus rien, quelle que soit

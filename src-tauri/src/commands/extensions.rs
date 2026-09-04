@@ -1,9 +1,9 @@
-use crate::services::extensions::{
-    self, DiscoveryPreferences, ExtensionHostStatus, ExtensionKind, ExtensionView,
-};
+use crate::services::extensions::{self, DiscoveryPreferences, ExtensionHostStatus, ExtensionView};
 use tauri::Emitter;
 
 pub(super) mod command_error;
+mod local_install;
+mod source_access;
 
 #[tauri::command]
 pub async fn list_extensions() -> Result<Vec<ExtensionView>, String> {
@@ -18,14 +18,9 @@ pub async fn add_local_extension(
     app: tauri::AppHandle,
     path: String,
 ) -> Result<ExtensionView, String> {
-    let result = async {
-        let extension = extensions::install_local(&path)?;
-        let view = ExtensionView::from(extension.record.clone());
-        extensions::add_local(extension.record)?;
+    let result = local_install::install(&app, &path).await.inspect(|_| {
         emit_changed(&app);
-        Ok(view)
-    }
-    .await;
+    });
     command_error::close(command_error::ExtensionCommand::AddLocal, result)
 }
 
@@ -129,7 +124,11 @@ pub async fn set_extension_show_in_chat(
 #[tauri::command]
 pub async fn reload_extension_host(app: tauri::AppHandle) -> Result<bool, String> {
     let deadline = extensions::new_stop_deadline();
-    let result = extensions::restart(deadline).await;
+    let result = async {
+        extensions::refresh_extension_ui_artifacts(&app).await?;
+        extensions::restart(deadline).await
+    }
+    .await;
     emit_changed(&app);
     command_error::close(command_error::ExtensionCommand::ReloadHost, result)
 }
@@ -139,6 +138,39 @@ pub async fn get_extension_host_status() -> Result<ExtensionHostStatus, String> 
     command_error::close(
         command_error::ExtensionCommand::GetHostStatus,
         Ok(extensions::status()),
+    )
+}
+
+#[tauri::command]
+pub async fn get_extension_ui_catalog() -> Result<extensions::UiCatalogSnapshot, String> {
+    command_error::close(
+        command_error::ExtensionCommand::GetUiCatalog,
+        extensions::ui_catalog(),
+    )
+}
+
+#[tauri::command]
+pub async fn invoke_extension_ui_action(
+    extension_id: String,
+    contribution_id: String,
+    action_id: String,
+    payload: extensions::UiActionPayload,
+    locale: String,
+) -> Result<serde_json::Value, String> {
+    let result =
+        extensions::invoke_ui_action(extension_id, contribution_id, action_id, payload, locale)
+            .await;
+    command_error::close(command_error::ExtensionCommand::InvokeUiAction, result)
+}
+
+#[tauri::command]
+pub async fn report_extension_ui_mount_failure(
+    extension_id: String,
+    contribution_id: String,
+) -> Result<(), String> {
+    command_error::close(
+        command_error::ExtensionCommand::ReportUiMountFailure,
+        extensions::report_ui_mount_failure(&extension_id, &contribution_id),
     )
 }
 
@@ -175,21 +207,7 @@ pub async fn recover_extension_host(app: tauri::AppHandle) -> Result<bool, Strin
 
 #[tauri::command]
 pub async fn open_extension_source(extension_id: String) -> Result<(), String> {
-    let result = (|| {
-        extensions::validate_identifier(&extension_id)?;
-        let record = extensions::list()?
-            .into_iter()
-            .find(|record| record.manifest.id == extension_id)
-            .ok_or_else(|| extensions::error_codes::NOT_FOUND.to_string())?;
-        if record.kind != ExtensionKind::Local {
-            return Err(extensions::error_codes::OPERATION_FAILED.to_string());
-        }
-        let source = std::path::PathBuf::from(record.source)
-            .canonicalize()
-            .map_err(|_| extensions::error_codes::NOT_FOUND.to_string())?;
-        open::that_detached(source)
-            .map_err(|_| extensions::error_codes::OPERATION_FAILED.to_string())
-    })();
+    let result = source_access::open(&extension_id);
     command_error::close(command_error::ExtensionCommand::OpenSource, result)
 }
 

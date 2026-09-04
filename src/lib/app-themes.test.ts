@@ -13,6 +13,7 @@ describe("app themes", () => {
       id: "emerald-night",
       labelKey: "settings.emeraldNight",
       colorScheme: "dark",
+      cssPath: "src/styles/themes/emerald-night.css",
     });
     expect(getThemeColorScheme("emerald-night")).toBe("dark");
   });
@@ -22,6 +23,7 @@ describe("app themes", () => {
       id: "cobalt-frost",
       labelKey: "settings.cobaltFrost",
       colorScheme: "light",
+      cssPath: "src/styles/themes/cobalt-frost.css",
     });
     expect(getThemeColorScheme("cobalt-frost")).toBe("light");
   });
@@ -31,6 +33,7 @@ describe("app themes", () => {
       id: "astral-mist",
       labelKey: "settings.astralMist",
       colorScheme: "dark",
+      cssPath: "src/styles/themes/astral-mist.css",
     });
     expect(getThemeColorScheme("astral-mist")).toBe("dark");
   });
@@ -40,6 +43,7 @@ describe("app themes", () => {
       id: "crimson-eclipse",
       labelKey: "settings.crimsonEclipse",
       colorScheme: "dark",
+      cssPath: "src/styles/themes/crimson-eclipse.css",
     });
     expect(getThemeColorScheme("crimson-eclipse")).toBe("dark");
   });

@@ -1,12 +1,18 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { RESOLVED_THEME_OPTIONS, type ResolvedTheme } from "@/lib/app-themes";
 
-const darkCss = readFileSync("src/styles/themes/dark.css", "utf8");
-const lightCss = readFileSync("src/styles/themes/light.css", "utf8");
-const emeraldCss = readFileSync("src/styles/themes/emerald-night.css", "utf8");
-const cobaltCss = readFileSync("src/styles/themes/cobalt-frost.css", "utf8");
-const astralCss = readFileSync("src/styles/themes/astral-mist.css", "utf8");
-const crimsonCss = readFileSync("src/styles/themes/crimson-eclipse.css", "utf8");
+const themeCss = new Map<ResolvedTheme, string>(RESOLVED_THEME_OPTIONS.map(({ id, cssPath }) => {
+  // Les chemins viennent uniquement du catalogue interne borné des thèmes Beaver.
+  // eslint-disable-next-line security/detect-non-literal-fs-filename
+  return [id, readFileSync(cssPath, "utf8")];
+}));
+const darkCss = themeCss.get("dark")!;
+const lightCss = themeCss.get("light")!;
+const emeraldCss = themeCss.get("emerald-night")!;
+const cobaltCss = themeCss.get("cobalt-frost")!;
+const astralCss = themeCss.get("astral-mist")!;
+const crimsonCss = themeCss.get("crimson-eclipse")!;
 const toolPreviewsCss = readFileSync("src/components/agent-local/tool-previews.css", "utf8");
 const gitDiffCss = readFileSync("src/components/file-preview/git-diff-preview.css", "utf8");
 const tabbarCss = readFileSync("src/components/settings/shell/settings-tabbar.css", "utf8");

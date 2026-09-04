@@ -165,7 +165,7 @@ fn ultimate_exit_is_initialized_before_tauri_builder_side_effects() {
         .find("AppExitCoordinator::initialize()")
         .expect("ultimate coordinator initialization");
     let build_call = entry
-        .find("app_build::build(exit_coordinator, runtime)")
+        .find("app_build::build(exit_coordinator, runtime, ui_startup)")
         .expect("application build call");
     let builder = build
         .find("tauri::Builder::default()")

@@ -4,6 +4,7 @@ import { HOST_LOAD_STAGE_METHOD, LIMITS, LOAD_STAGES, supportsEvent, TIMEOUTS } 
 import { createExtensionApi } from "./extension-api.mjs";
 import { createDiagnostic } from "./diagnostics.mjs";
 import { notifyCore } from "./protocol.mjs";
+import { clearUiActions, invokeUiAction } from "./ui-actions.mjs";
 
 const sdkPath = fileURLToPath(new URL("./sdk/index.mjs", import.meta.url));
 const jiti = createJiti(import.meta.url, {
@@ -106,6 +107,10 @@ export async function emitExtensionEvent(event, payload) {
   return { delivered: extensions.size };
 }
 
+export async function callExtensionUiAction(params) {
+  return invokeUiAction(extensions.get(params?.extensionId), params);
+}
+
 export async function loadExtension(specification) {
   let stage = LOAD_STAGES[0];
   try {
@@ -140,7 +145,9 @@ export async function loadExtension(specification) {
       contributions: {
         tools: context.tools.map((tool) => tool.metadata),
         events: [...context.events.keys()],
+        ui: context.ui.contributions,
       },
+      uiDiagnostics: context.ui.diagnostics,
     };
   } catch (error) {
     return {
@@ -176,4 +183,5 @@ async function deactivateAll() {
   }
   extensions.clear();
   tools.clear();
+  clearUiActions();
 }

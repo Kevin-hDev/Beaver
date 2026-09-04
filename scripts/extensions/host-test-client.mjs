@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import readline from "node:readline";
 
 export function createHost(hostScript, options = {}) {
-  const child = spawn(process.execPath, [hostScript], {
+  const child = spawn(options.executable ?? process.execPath, [hostScript], {
     shell: false,
     stdio: ["pipe", "pipe", "ignore"],
   });

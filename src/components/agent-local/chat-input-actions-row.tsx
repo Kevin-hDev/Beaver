@@ -12,6 +12,14 @@ import type { ReasoningMode } from "@/lib/reasoning-modes";
 import type { RetryIndicatorState } from "@/types/agent";
 import type { MissingSessionDirectory } from "@/hooks/use-agent-missing-directory";
 import { useSessionCompressionProfile } from "@/hooks/use-session-compression-profile";
+import { allowsThirdPartyComposerUi } from "@/features/extension-ui/slot-contexts";
+import { SlotRenderer } from "@/features/extension-ui/slot-renderer";
+import { AdvancedMountAnchor } from "@/features/extension-ui/advanced/advanced-mount-anchor";
+import type { SlotOccupant } from "@/features/extension-ui/slot-types";
+import {
+  StandardPlacementAction,
+  useStandardEntry,
+} from "@/features/extension-ui/standard/standard-contributions";
 
 type ButtonState = "stop" | "confirmStop" | "send" | "hidden";
 
@@ -73,19 +81,33 @@ export function ChatInputActionsRow({
   onStop,
 }: ChatInputActionsRowProps) {
   const compression = useSessionCompressionProfile(sessionId);
+  const menuContext: ComposerMenuContext = {
+    onFileImport,
+    agentic: permissionMode !== "chat",
+    planModeEnabled,
+    onPlanModeChange: onPlanModeChange ?? (() => {}),
+    showCompression: Boolean(sessionId),
+    compression,
+  };
   return (
     <div className="chat-input-row3">
-      <ChatPlusMenu
-        onFileImport={onFileImport}
-        agentic={permissionMode !== "chat"}
-        planModeEnabled={planModeEnabled}
-        onPlanModeChange={onPlanModeChange ?? (() => {})}
-        showCompression={Boolean(sessionId)}
-        compressionProfiles={compression.profiles}
-        compressionProfilesStatus={compression.profilesStatus}
-        selectedCompressionId={compression.effective?.id}
-        onCompressionSelect={(profileId) => compression.select(profileId)}
+      <SlotRenderer
+        placement="agent.composer.leading"
+        source="core"
+        context={menuContext}
+        render={renderCoreComposerOccupant}
       />
+      {allowsThirdPartyComposerUi(permissionMode, planModeEnabled) && (
+        <>
+          <SlotRenderer
+            placement="agent.composer.leading"
+            source="extension"
+            context={null}
+            render={(occupant) => <ComposerOccupant occupant={occupant} />}
+          />
+          <AdvancedMountAnchor placement="agent.composer.leading" />
+        </>
+      )}
       <ContextProgress
         used={contextUsed}
         max={contextMax}
@@ -124,4 +146,38 @@ export function ChatInputActionsRow({
       <SendStopButton state={buttonState} onSend={onSend} onStop={onStop} />
     </div>
   );
+}
+
+interface ComposerMenuContext {
+  onFileImport: () => void;
+  agentic: boolean;
+  planModeEnabled: boolean;
+  onPlanModeChange: (enabled: boolean) => void;
+  showCompression: boolean;
+  compression: ReturnType<typeof useSessionCompressionProfile>;
+}
+
+function renderCoreComposerOccupant(
+  occupant: SlotOccupant,
+  context: ComposerMenuContext,
+) {
+  if (occupant.target !== "plus-menu") return null;
+  return (
+    <ChatPlusMenu
+      onFileImport={context.onFileImport}
+      agentic={context.agentic}
+      planModeEnabled={context.planModeEnabled}
+      onPlanModeChange={context.onPlanModeChange}
+      showCompression={context.showCompression}
+      compressionProfiles={context.compression.profiles}
+      compressionProfilesStatus={context.compression.profilesStatus}
+      selectedCompressionId={context.compression.effective?.id}
+      onCompressionSelect={(profileId) => context.compression.select(profileId)}
+    />
+  );
+}
+
+function ComposerOccupant({ occupant }: { occupant: SlotOccupant }) {
+  const entry = useStandardEntry(occupant);
+  return entry ? <StandardPlacementAction entry={entry} surface="composer" /> : null;
 }

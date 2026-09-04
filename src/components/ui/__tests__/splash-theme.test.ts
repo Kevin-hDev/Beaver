@@ -6,10 +6,17 @@ import { RESOLVED_THEME_OPTIONS, type ResolvedTheme } from "@/lib/app-themes";
 const indexHtml = readFileSync("index.html", "utf8");
 const bootstrapSource = indexHtml.match(/<script>([\s\S]*?)<\/script>/)?.[1];
 
-function runBootstrap(choice: string | null, prefersDark = false, userAgent = "Mozilla/5.0 (Macintosh)") {
+function runBootstrap(
+  choice: string | null,
+  prefersDark = false,
+  userAgent = "Mozilla/5.0 (Macintosh)",
+  base: string | null = null,
+) {
   const attributes: Record<string, string> = {};
   const context = {
-    localStorage: { getItem: () => choice },
+    localStorage: {
+      getItem: (key: string) => key === "clgo-theme" ? choice : base,
+    },
     navigator: { userAgent },
     window: { matchMedia: () => ({ matches: prefersDark }) },
     document: {
@@ -27,10 +34,11 @@ function runBootstrap(choice: string | null, prefersDark = false, userAgent = "M
 }
 
 function themeTokens(theme: ResolvedTheme): { background: string; mark: string } {
-  const themePath = `src/styles/themes/${theme}.css`;
+  const themePath = RESOLVED_THEME_OPTIONS.find(({ id }) => id === theme)?.cssPath;
+  expect(themePath).toBeDefined();
   // Le chemin vient exclusivement de la liste interne et bornée des thèmes.
   // eslint-disable-next-line security/detect-non-literal-fs-filename
-  const css = readFileSync(themePath, "utf8");
+  const css = readFileSync(themePath!, "utf8");
   const background = css.match(/--void:\s*(#[0-9a-f]{6});/i)?.[1];
   const mark = css.match(/--ink:\s*(#[0-9a-f]{6});/i)?.[1];
 
@@ -93,5 +101,14 @@ describe("thème du splash de démarrage", () => {
       "data-theme": "dark",
       "data-palette": "dark",
     });
+  });
+
+  it("projette uniquement la base sûre d'un thème d'extension avant le catalogue", () => {
+    expect(runBootstrap("extension:com.example.light", true, undefined, "light"))
+      .toMatchObject({ "data-theme": "light", "data-palette": "light" });
+    expect(runBootstrap("extension:com.example.dark", false, undefined, "dark"))
+      .toMatchObject({ "data-theme": "dark", "data-palette": "dark" });
+    expect(runBootstrap("extension:com.example.invalid", true, undefined, "corrupt"))
+      .toMatchObject({ "data-theme": "dark", "data-palette": "dark" });
   });
 });

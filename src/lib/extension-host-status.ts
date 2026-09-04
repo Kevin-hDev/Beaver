@@ -9,8 +9,13 @@ import {
   type HostDiagnosticCode,
   type RuntimeDiagnosticCode,
 } from "@/types/extension-contract.generated";
+import {
+  UI_DIAGNOSTIC_CODES,
+  type ExtensionUiDiagnosticCode,
+} from "@/types/extension-ui-contract.generated";
 import type { ExtensionDiagnostic, ExtensionHostStatus } from "@/types/extensions";
 import { isExtensionIdentifier } from "./extension-records";
+import { isExtensionTimestamp } from "./extension-timestamp";
 
 const MAX_VERSION_CHARS = 128;
 const MAX_DIAGNOSTIC_FILE_CHARS = 128;
@@ -50,13 +55,16 @@ function diagnostic(value: unknown): ExtensionDiagnostic {
     extensionId,
     stage: oneOf(input.stage, HOST_LOAD_STAGES),
     code: diagnosticCode(input.code),
+    occurredAt: timestamp(input.occurredAt),
     file,
     line: optionalInteger(input.line, MAX_DIAGNOSTIC_POSITION),
     column: optionalInteger(input.column, MAX_DIAGNOSTIC_POSITION),
   };
 }
 
-function diagnosticCode(value: unknown): HostDiagnosticCode | RuntimeDiagnosticCode {
+function diagnosticCode(
+  value: unknown,
+): HostDiagnosticCode | RuntimeDiagnosticCode | ExtensionUiDiagnosticCode {
   if (typeof value !== "string") invalid();
   if (HOST_DIAGNOSTIC_CODES.includes(value as HostDiagnosticCode)) {
     return value as HostDiagnosticCode;
@@ -64,7 +72,15 @@ function diagnosticCode(value: unknown): HostDiagnosticCode | RuntimeDiagnosticC
   if (RUNTIME_DIAGNOSTIC_CODES.includes(value as RuntimeDiagnosticCode)) {
     return value as RuntimeDiagnosticCode;
   }
+  if (UI_DIAGNOSTIC_CODES.includes(value as ExtensionUiDiagnosticCode)) {
+    return value as ExtensionUiDiagnosticCode;
+  }
   invalid();
+}
+
+function timestamp(value: unknown): string {
+  if (!isExtensionTimestamp(value)) invalid();
+  return value;
 }
 
 function object(value: unknown): Record<string, unknown> {

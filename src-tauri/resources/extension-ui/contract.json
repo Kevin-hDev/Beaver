@@ -1,0 +1,82 @@
+{
+  "apiVersion": "1",
+  "modes": ["standard", "advanced"],
+  "contributionTypes": ["tab", "settingsTab", "action", "theme"],
+  "primitives": [
+    "stack", "row", "heading", "text", "badge", "separator", "textField",
+    "numberField", "select", "toggle", "button"
+  ],
+  "themeBases": ["light", "dark"],
+  "locales": ["fr", "en", "es", "de", "it", "zh", "ja"],
+  "placementOperations": ["before", "after", "replace", "move", "remove"],
+  "placements": [
+    {"key":"app.navigation.primary","contributionType":"tab","cardinality":"multiple","scope":"global"},
+    {"key":"settings.navigation.preferences","contributionType":"settingsTab","cardinality":"multiple","scope":"global"},
+    {"key":"settings.navigation.agent","contributionType":"settingsTab","cardinality":"multiple","scope":"global"},
+    {"key":"settings.navigation.models","contributionType":"settingsTab","cardinality":"multiple","scope":"global"},
+    {"key":"settings.navigation.integrations","contributionType":"settingsTab","cardinality":"multiple","scope":"global"},
+    {"key":"settings.navigation.application","contributionType":"settingsTab","cardinality":"multiple","scope":"global"},
+    {"key":"app.toolbar.primary","contributionType":"action","cardinality":"multiple","scope":"global"},
+    {"key":"agent.composer.leading","contributionType":"action","cardinality":"multiple","scope":"session","thirdPartyChatAllowed":false}
+  ],
+  "protectedOccupants": [
+    {"placement":"app.navigation.primary","occupant":"beaver.settings","operations":["remove","replace"]},
+    {"placement":"settings.navigation.integrations","occupant":"beaver.extensions","operations":["remove","replace"]}
+  ],
+  "icons": [
+    "activity", "archive", "bell", "book-open", "brain", "check", "chevron-down",
+    "circle", "gear", "house", "info", "link", "moon", "plus", "puzzle-piece",
+    "sparkle", "sun", "terminal", "warning", "x"
+  ],
+  "themeTokens": [
+    "--void", "--app-frame", "--shell-opaque", "--surface", "--surface-hover", "--edge",
+    "--edge-strong", "--surface-glass", "--surface-overlay", "--surface-raised",
+    "--card-on-glass", "--field-bg", "--btn-secondary-bg", "--ink", "--ink-muted",
+    "--ink-faint", "--ink-on-pulse", "--ink-on-danger", "--pulse", "--pulse-muted",
+    "--switch-track-off", "--switch-track-border", "--switch-track-hover", "--switch-track-on",
+    "--switch-knob", "--signal-error", "--signal-ok", "--signal-warning", "--signal-alert",
+    "--signal-info", "--signal-error-bg", "--signal-ok-bg", "--signal-warning-bg",
+    "--signal-alert-bg", "--signal-info-bg", "--tooltip-bg", "--tooltip-border",
+    "--tooltip-text", "--chat-composer-bg", "--chat-composer-border", "--toast-bg",
+    "--toast-error-text", "--toast-ok-text", "--diff-add-bg", "--diff-del-bg", "--diff-new",
+    "--diff-old"
+  ],
+  "limits": {
+    "maxContributionsPerExtension": 32,
+    "maxGlobalStandardContributions": 512,
+    "maxOccupantsPerPlacement": 128,
+    "maxActionsPerExtension": 64,
+    "maxViewNodes": 256,
+    "maxViewDepth": 12,
+    "maxFieldsPerView": 32,
+    "maxOptionsPerField": 64,
+    "maxTextChars": 2000,
+    "maxUiBytesPerExtension": 262144,
+    "maxGlobalUiBytes": 786432,
+    "maxActionPayloadBytes": 65536,
+    "maxActionResultBytes": 262144,
+    "maxInFlightActionsPerExtension": 8,
+    "maxThemesPerExtension": 8,
+    "maxThemeTokens": 64,
+    "maxAdvancedArtifactFiles": 64,
+    "maxAdvancedArtifactBytes": 4194304,
+    "maxAdvancedMountsPerExtension": 32,
+    "maxAdvancedActivationMs": 15000
+  },
+  "validation": {
+    "maxNumericLimit": 4194304,
+    "minOrder": -1000,
+    "maxOrder": 1000,
+    "themeValuePattern": "^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$"
+  },
+  "loadingStages": ["contract", "bundle", "approve", "import", "activate", "mount"],
+  "diagnosticCodes": [
+    "ui_contract_invalid", "ui_contribution_invalid", "ui_reference_missing",
+    "ui_reference_incompatible", "ui_mutation_conflict", "ui_protected_occupant",
+    "ui_limit_exceeded", "ui_bundle_failed", "ui_node_import_denied",
+    "ui_artifact_invalid", "ui_protocol_request_denied", "ui_protocol_hash_mismatch",
+    "ui_protocol_file_missing", "ui_protocol_file_too_large",
+    "ui_advanced_approval_required", "ui_activation_failed", "ui_mount_failed",
+    "ui_theme_unavailable"
+  ]
+}

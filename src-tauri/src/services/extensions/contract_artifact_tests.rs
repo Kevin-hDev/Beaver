@@ -1,6 +1,14 @@
+#[path = "../../../extension_contract_shared.rs"]
+mod extension_contract_shared;
 #[path = "../../../extension_contract_build.rs"]
 #[allow(dead_code)]
 mod generator;
+#[path = "../../../extension_ui_contract_build.rs"]
+#[allow(dead_code)]
+mod ui_generator;
+
+const UI_GENERATED_BEGIN: &str = "<!-- BEGIN GENERATED EXTENSION UI CONTRACT -->";
+const UI_GENERATED_END: &str = "<!-- END GENERATED EXTENSION UI CONTRACT -->";
 
 #[test]
 fn oversized_contract_is_rejected_before_deserialization() {
@@ -68,7 +76,7 @@ fn contract_declares_the_complete_v1_surface() {
     assert_eq!(contract["apiVersion"], "1");
     assert_eq!(
         contract["capabilities"],
-        serde_json::json!(["tools", "events"])
+        serde_json::json!(["tools", "events", "ui"])
     );
     assert_eq!(
         contract["methods"]["coreToHost"],
@@ -77,7 +85,8 @@ fn contract_declares_the_complete_v1_surface() {
             "host.reset",
             "host.load",
             "tool.call",
-            "event.emit"
+            "event.emit",
+            "ui.action"
         ])
     );
     assert_eq!(
@@ -196,6 +205,118 @@ fn generated_rust_names_the_unique_load_stage_notification() {
 
     assert!(generated.contains("pub const HOST_LOAD_STAGE_METHOD: &str = \"host.load.stage\";"));
     assert!(generated.contains("pub enum HostState"));
+}
+
+#[test]
+fn ui_contract_rejects_unknown_schema_keys_at_every_structured_level() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let contract = ui_generator::load_contract(&root.join("resources/extension-ui")).unwrap();
+
+    let mut top_level = contract.clone();
+    top_level
+        .as_object_mut()
+        .unwrap()
+        .insert("futureSection".to_string(), serde_json::json!({}));
+    assert!(ui_generator::validate_contract(&top_level).is_err());
+
+    for pointer in ["/placements/0", "/protectedOccupants/0", "/validation"] {
+        let mut mutated = contract.clone();
+        mutated
+            .pointer_mut(pointer)
+            .unwrap()
+            .as_object_mut()
+            .unwrap()
+            .insert("futureProperty".to_string(), serde_json::json!(true));
+        assert!(
+            ui_generator::validate_contract(&mutated).is_err(),
+            "unknown property accepted at {pointer}"
+        );
+    }
+}
+
+#[test]
+fn generated_ui_artifacts_project_every_contract_section() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let contract = ui_generator::load_contract(&root.join("resources/extension-ui")).unwrap();
+    let rust = include_str!(concat!(env!("OUT_DIR"), "/extension_ui_contract.rs"));
+    let typescript = ui_generator::render_typescript(&contract).unwrap();
+    let node = ui_generator::render_node(&contract).unwrap();
+    let sdk = ui_generator::render_sdk_contract(&contract).unwrap();
+
+    let expected_keys = [
+        "apiVersion",
+        "modes",
+        "contributionTypes",
+        "primitives",
+        "themeBases",
+        "locales",
+        "placementOperations",
+        "placements",
+        "protectedOccupants",
+        "icons",
+        "themeTokens",
+        "limits",
+        "validation",
+        "loadingStages",
+        "diagnosticCodes",
+    ]
+    .into_iter()
+    .collect::<std::collections::BTreeSet<_>>();
+    let actual_keys = contract
+        .as_object()
+        .unwrap()
+        .keys()
+        .map(String::as_str)
+        .collect::<std::collections::BTreeSet<_>>();
+    assert_eq!(actual_keys, expected_keys);
+
+    for expected in [
+        "UI_MODES",
+        "UI_CONTRIBUTION_TYPES",
+        "UI_PRIMITIVES",
+        "UI_THEME_BASES",
+        "UI_LOCALES",
+        "UI_PLACEMENT_OPERATIONS",
+        "pub struct UiPlacement",
+        "pub const UI_PLACEMENTS",
+        "pub struct UiProtectedOccupant",
+        "pub const UI_PROTECTED_OCCUPANTS",
+        "pub struct UiValidation",
+        "pub const UI_VALIDATION",
+    ] {
+        assert!(rust.contains(expected), "Rust omitted {expected}");
+    }
+    for field in [
+        "contribution_type:",
+        "cardinality:",
+        "scope:",
+        "third_party_chat_allowed:",
+        "occupant:",
+        "operations:",
+        "max_numeric_limit:",
+        "min_order:",
+        "max_order:",
+        "theme_value_pattern:",
+    ] {
+        assert!(rust.contains(field), "Rust omitted field {field}");
+    }
+    assert_eq!(
+        rust.matches("UiPlacement { key:").count(),
+        contract["placements"].as_array().unwrap().len()
+    );
+    assert_eq!(
+        rust.matches("UiProtectedOccupant { placement:").count(),
+        contract["protectedOccupants"].as_array().unwrap().len()
+    );
+    for artifact in [&typescript, &node, &sdk] {
+        for key in &expected_keys {
+            let projection = serde_json::to_string(&contract[*key]).unwrap();
+            assert!(
+                artifact.contains(&projection),
+                "generated artifact omitted {key}"
+            );
+        }
+    }
 }
 
 #[test]
@@ -332,4 +453,51 @@ fn replaced_local_contract_constants_do_not_return() {
 fn export_extension_contract_artifacts() {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
     generator::export_artifacts(root).unwrap();
+}
+
+#[test]
+fn checked_in_ui_contract_artifacts_name_the_json_authority() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let contract = ui_generator::load_contract(&root.join("resources/extension-ui")).unwrap();
+    let typescript =
+        std::fs::read_to_string(root.join("../src/types/extension-ui-contract.generated.ts"))
+            .unwrap();
+    let sdk = std::fs::read_to_string(root.join("resources/extension-host/sdk/ui-contract.d.ts"))
+        .unwrap();
+    let node =
+        std::fs::read_to_string(root.join("resources/extension-host/ui-contract.mjs")).unwrap();
+
+    assert_eq!(
+        typescript.replace("\r\n", "\n"),
+        ui_generator::render_typescript(&contract).unwrap()
+    );
+    assert_eq!(
+        sdk.replace("\r\n", "\n"),
+        ui_generator::render_sdk_contract(&contract).unwrap()
+    );
+    assert_eq!(
+        node.replace("\r\n", "\n"),
+        ui_generator::render_node(&contract).unwrap()
+    );
+}
+
+#[test]
+fn sdk_readme_has_one_bounded_ui_generated_section() {
+    let readme =
+        include_str!("../../../resources/extension-host/sdk/README.md").replace("\r\n", "\n");
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let contract = ui_generator::load_contract(&root.join("resources/extension-ui")).unwrap();
+    let expected = ui_generator::generated_document_section(&contract).unwrap();
+
+    assert_eq!(readme.matches(UI_GENERATED_BEGIN).count(), 1);
+    assert_eq!(readme.matches(UI_GENERATED_END).count(), 1);
+    assert!(readme.find(UI_GENERATED_BEGIN).unwrap() < readme.find(UI_GENERATED_END).unwrap());
+    assert!(readme.contains(&expected));
+}
+
+#[test]
+#[ignore = "developer command that refreshes checked-in extension UI contract artifacts"]
+fn export_extension_ui_contract_artifacts() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    ui_generator::export_artifacts(root).unwrap();
 }

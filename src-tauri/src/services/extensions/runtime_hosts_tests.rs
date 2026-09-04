@@ -83,6 +83,7 @@ fn record(id: &str, kind: ExtensionKind) -> ExtensionRecord {
             runtime: "node".to_string(),
             main: Some("index.mjs".to_string()),
             ui: None,
+            ui_legacy: None,
             access: "full".to_string(),
             api_level: ExtensionApiLevel::Stable,
             essential: false,
@@ -96,6 +97,7 @@ fn record(id: &str, kind: ExtensionKind) -> ExtensionRecord {
         enabled: true,
         trusted: true,
         fingerprint: None,
+        ui_artifact: None,
         trusted_at: None,
         show_in_chat: true,
         status: ExtensionStatus::Inactive,
@@ -401,6 +403,7 @@ async fn a_completed_stop_stays_confirmed_when_another_owner_removed_the_generat
     assert!(!hosts.stop_is_confirmed(&identity, generation));
     assert!(hosts.remove_current(&identity, generation));
     assert!(hosts.stop_is_confirmed(&identity, generation));
+    assert!(hosts.remove_stopped(&identity, generation, true));
 
     assert!(
         process
@@ -686,6 +689,7 @@ async fn targeted_update_or_uninstall_stop_preserves_official_and_other_third_pa
         hosts: tokio::sync::Mutex::new(hosts),
         sync: tokio::sync::Mutex::new(()),
         status: std::sync::RwLock::new(super::types::ExtensionHostStatus::default()),
+        ui_catalog: super::ui_catalog::UiCatalog::default(),
         work,
     };
 

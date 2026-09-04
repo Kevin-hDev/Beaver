@@ -1,0 +1,39 @@
+.extur-overlay {
+  --popover-bg: var(--shell-opaque);
+  --popover-backdrop-filter: none;
+}
+
+.extur-dialog {
+  width: min(var(--dialog-compact-max-width), 100%);
+  padding: var(--space-lg);
+}
+
+.extur-dialog > svg {
+  color: var(--signal-warning);
+}
+
+.extur-dialog h2 {
+  margin: var(--space-sm) 0;
+  font-size: var(--text-lg);
+}
+
+.extur-dialog p {
+  margin: 0 0 var(--space-lg);
+  color: var(--ink-muted);
+}
+
+.extur-dialog .extur-error {
+  color: var(--signal-error);
+}
+
+.extur-dialog .btn:focus-visible {
+  outline: var(--focus-visible-ring-width) solid var(--pulse);
+  outline-offset: var(--focus-visible-ring-offset);
+}
+
+.extur-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  justify-content: flex-end;
+}

@@ -94,3 +94,64 @@
 .extd-update-warning svg {
   flex-shrink: 0;
 }
+
+.extud-root {
+  margin-top: var(--space-lg);
+}
+
+.extud-root h3 {
+  margin: 0 0 var(--space-sm);
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--extensions-label-spacing);
+  text-transform: uppercase;
+}
+
+.extud-list {
+  overflow: hidden;
+}
+
+.extud-row,
+.extud-state,
+.extud-diagnostic {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  color: var(--ink);
+  font-size: var(--text-sm);
+}
+
+.extud-row > span:last-child,
+.extud-diagnostic time {
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+}
+
+.extud-state {
+  color: var(--ink-faint);
+}
+
+.extud-error,
+.extud-diagnostic {
+  margin-top: var(--space-sm);
+  border: var(--line-thin) solid var(--signal-error-border);
+  border-radius: var(--radius-sm);
+  background: var(--signal-error-bg);
+  color: var(--signal-error);
+}
+
+.extud-error-text {
+  color: var(--signal-error) !important;
+}
+
+@media (max-width: 48rem) {
+  .extud-row,
+  .extud-state,
+  .extud-diagnostic {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

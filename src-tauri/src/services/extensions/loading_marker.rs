@@ -4,8 +4,11 @@ use std::path::{Path, PathBuf};
 mod completion;
 
 const FILE_NAME: &str = "extension-loading.json";
-pub(super) const MAX_MARKER_BYTES: usize = 1_024;
+pub(super) const MAX_MARKER_BYTES: usize = 2_048;
+use super::loading_journal_format::LoadingJournal;
+use super::loading_journal_store as store;
 pub(crate) use super::loading_marker_format::LoadingMarker;
+
 #[cfg(test)]
 static TEST_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 
@@ -21,9 +24,16 @@ pub(crate) enum MarkerRead {
     Invalid,
 }
 
+#[derive(Clone, Debug)]
+pub(crate) enum JournalRead {
+    Missing,
+    Valid(LoadingJournal),
+    Invalid,
+}
+
 pub(super) struct PreservedMarker {
     pub(super) state: MarkerRead,
-    bytes: Option<Vec<u8>>,
+    pub(super) host: Option<LoadingMarker>,
 }
 
 pub(super) fn read() -> MarkerRead {
@@ -44,6 +54,44 @@ pub(super) fn advance(extension_id: &str, stage: &str) -> Result<(), String> {
 
 pub(super) fn discard() -> Result<(), String> {
     discard_at(&path())
+}
+
+pub(super) fn ui_start(extension_id: &str, attempts: u8) -> Result<(), String> {
+    ui_start_at(&path(), extension_id, attempts)
+}
+
+pub(crate) fn ui_advance(extension_id: &str, stage: &str) -> Result<(), String> {
+    ui_advance_at(&path(), extension_id, stage)
+}
+
+pub(crate) fn ui_complete(extension_id: &str) -> Result<(), String> {
+    ui_complete_at(&path(), extension_id)
+}
+
+pub(super) fn ui_clear_if_matches(extension_id: &str) -> Result<(), String> {
+    ui_clear_if_matches_at(&path(), extension_id)
+}
+
+pub(super) fn ui_clear_if_matches_at(path: &Path, extension_id: &str) -> Result<(), String> {
+    super::validation::identifier(extension_id)?;
+    match read_journal_at(path) {
+        JournalRead::Missing => Ok(()),
+        JournalRead::Invalid => Err(marker_error()),
+        JournalRead::Valid(journal) => match journal.ui() {
+            Some(marker) if marker.extension_id == extension_id => {
+                ui_complete_at(path, extension_id)
+            }
+            Some(_) | None => Ok(()),
+        },
+    }
+}
+
+#[allow(
+    dead_code,
+    reason = "stable journal operation consumed by the UI loader in UI-P1"
+)]
+pub(super) fn ui_discard() -> Result<(), String> {
+    store::clear_ui(&path(), None)
 }
 
 pub(super) fn next_retry_attempt(extension_id: &str) -> Result<u8, String> {
@@ -79,49 +127,35 @@ pub(super) fn complete_at(
 }
 
 pub(crate) fn read_at(path: &Path) -> MarkerRead {
-    let bytes = match read_bytes_at(path) {
-        Ok(crate::services::private_store::BoundedFile::Missing) => return MarkerRead::Missing,
-        Ok(crate::services::private_store::BoundedFile::Content(bytes)) => bytes,
-        Err(_) => return MarkerRead::Invalid,
-    };
-    super::loading_marker_format::parse(&bytes).map_or(MarkerRead::Invalid, MarkerRead::Valid)
+    match read_journal_at(path) {
+        JournalRead::Missing => MarkerRead::Missing,
+        JournalRead::Valid(journal) => journal
+            .host()
+            .cloned()
+            .map_or(MarkerRead::Missing, MarkerRead::Valid),
+        JournalRead::Invalid => MarkerRead::Invalid,
+    }
+}
+
+pub(crate) fn read_journal_at(path: &Path) -> JournalRead {
+    store::read(path)
 }
 
 pub(super) fn preserve_at(path: &Path) -> PreservedMarker {
-    match read_bytes_at(path) {
-        Ok(crate::services::private_store::BoundedFile::Missing) => PreservedMarker {
-            state: MarkerRead::Missing,
-            bytes: None,
-        },
-        Ok(crate::services::private_store::BoundedFile::Content(bytes)) => {
-            let state = super::loading_marker_format::parse(&bytes)
-                .map_or(MarkerRead::Invalid, MarkerRead::Valid);
-            PreservedMarker {
-                state,
-                bytes: Some(bytes),
-            }
-        }
-        Err(_) => PreservedMarker {
-            state: MarkerRead::Invalid,
-            bytes: None,
-        },
-    }
+    let state = read_at(path);
+    let host = match &state {
+        MarkerRead::Valid(marker) => Some(marker.clone()),
+        MarkerRead::Missing | MarkerRead::Invalid => None,
+    };
+    PreservedMarker { state, host }
 }
 
 pub(crate) fn start_at(path: &Path, extension_id: &str, attempts: u8) -> Result<(), String> {
-    let marker = LoadingMarker::new(extension_id, attempts)?;
-    write_at(path, &marker, false)
+    store::start_host(path, extension_id, attempts)
 }
 
 pub(super) fn advance_at(path: &Path, extension_id: &str, stage: &str) -> Result<(), String> {
-    let MarkerRead::Valid(mut marker) = read_at(path) else {
-        return Err(marker_error());
-    };
-    if marker.extension_id != extension_id || !super::types::HOST_LOAD_STAGES.contains(&stage) {
-        return Err(marker_error());
-    }
-    marker.stage = stage.to_string();
-    write_at(path, &marker, false)
+    store::advance_host(path, extension_id, stage)
 }
 
 #[cfg(test)]
@@ -130,83 +164,39 @@ pub(super) fn advance_fail_before_replace_at(
     extension_id: &str,
     stage: &str,
 ) -> Result<(), String> {
-    let MarkerRead::Valid(mut marker) = read_at(path) else {
-        return Err(marker_error());
-    };
-    if marker.extension_id != extension_id || !super::types::HOST_LOAD_STAGES.contains(&stage) {
-        return Err(marker_error());
-    }
-    marker.stage = stage.to_string();
-    write_at(path, &marker, true)
+    store::advance_host_with_failure(path, extension_id, stage)
 }
 
-pub(super) fn discard_at(path: &Path) -> Result<(), String> {
-    match crate::services::private_store::open_regular_single_link(path) {
-        Ok(None) => Ok(()),
-        Ok(Some(_)) => std::fs::remove_file(path).map_err(|_| marker_error()),
-        Err(_) => Err(marker_error()),
-    }
+pub(super) fn ui_start_at(path: &Path, extension_id: &str, attempts: u8) -> Result<(), String> {
+    store::start_ui(path, extension_id, attempts)
+}
+
+pub(super) fn ui_advance_at(path: &Path, extension_id: &str, stage: &str) -> Result<(), String> {
+    store::advance_ui(path, extension_id, stage, false)
 }
 
 #[cfg(test)]
-pub(super) fn discard_invalid_at(path: &Path) -> Result<(), String> {
-    if !matches!(read_at(path), MarkerRead::Invalid) {
-        return Err(marker_error());
-    }
-    discard_at(path)
-}
-
-pub(super) fn write_at(
+pub(super) fn ui_advance_fail_before_replace_at(
     path: &Path,
-    marker: &LoadingMarker,
-    fail_before_replace: bool,
+    extension_id: &str,
+    stage: &str,
 ) -> Result<(), String> {
-    ensure_safe_destination(path)?;
-    let bytes = super::loading_marker_format::serialize(marker)?;
-    if bytes.len() > MAX_MARKER_BYTES {
-        return Err(marker_error());
-    }
-    write_bytes_at(path, &bytes, fail_before_replace)
+    store::advance_ui(path, extension_id, stage, true)
 }
 
-pub(super) fn write_bytes_at(
-    path: &Path,
-    bytes: &[u8],
-    fail_before_replace: bool,
-) -> Result<(), String> {
-    ensure_safe_destination(path)?;
-    if bytes.len() > MAX_MARKER_BYTES {
-        return Err(marker_error());
-    }
-    #[cfg(test)]
-    if fail_before_replace {
-        return crate::services::private_store::atomic_write_fail_before_replace(path, bytes)
-            .map_err(|_| marker_error());
-    }
-    let _ = fail_before_replace;
-    crate::services::private_store::atomic_write(path, bytes).map_err(|_| marker_error())
+pub(crate) fn ui_complete_at(path: &Path, extension_id: &str) -> Result<(), String> {
+    store::clear_ui(path, Some(extension_id))
 }
 
-fn read_bytes_at(path: &Path) -> Result<crate::services::private_store::BoundedFile, String> {
-    crate::services::private_store::read_bounded_regular(path, MAX_MARKER_BYTES as u64)
+pub(super) fn discard_at(path: &Path) -> Result<(), String> {
+    store::discard_host(path)
 }
 
-fn ensure_safe_destination(path: &Path) -> Result<(), String> {
-    match crate::services::private_store::open_regular_single_link(path) {
-        Ok(None) => Ok(()),
-        Ok(Some(file))
-            if file
-                .metadata()
-                .is_ok_and(|metadata| metadata.len() <= MAX_MARKER_BYTES as u64) =>
-        {
-            Ok(())
-        }
-        Ok(Some(_)) => Err(marker_error()),
-        Err(_) => Err(marker_error()),
-    }
+pub(crate) fn discard_invalid_at(path: &Path) -> Result<(), String> {
+    store::discard_invalid(path)
 }
 
-pub(super) fn path() -> PathBuf {
+pub(crate) fn path() -> PathBuf {
     crate::services::paths::data_dir().join(FILE_NAME)
 }
 

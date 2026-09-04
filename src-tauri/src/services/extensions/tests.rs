@@ -1,6 +1,6 @@
 use super::types::{
-    ExtensionApiLevel, ExtensionManifest, ExtensionTool, BEAVER_API_VERSION,
-    MAX_TOOLS_PER_EXTENSION,
+    ExtensionApiLevel, ExtensionContributions, ExtensionManifest, ExtensionTool,
+    BEAVER_API_VERSION, MAX_TOOLS_PER_EXTENSION,
 };
 use serde_json::json;
 
@@ -13,6 +13,7 @@ fn manifest(id: &str) -> ExtensionManifest {
         runtime: "node".to_string(),
         main: Some("index.ts".to_string()),
         ui: None,
+        ui_legacy: None,
         access: "full".to_string(),
         api_level: ExtensionApiLevel::Stable,
         essential: false,
@@ -72,6 +73,20 @@ fn contributions_are_bounded_and_require_object_schemas() {
         })
         .collect::<Vec<_>>();
     assert!(super::validation::contributions(&tools, &[]).is_err());
+}
+
+#[test]
+fn registry_projection_never_serializes_host_ui_trees() {
+    let contributions = ExtensionContributions {
+        tools: Vec::new(),
+        events: Vec::new(),
+        ui: vec![serde_json::json!({
+            "type":"text", "text":{"default":"host-only-sentinel"}
+        })],
+    };
+    let projected = serde_json::to_value(contributions).unwrap();
+    assert!(projected.get("ui").is_none());
+    assert!(!projected.to_string().contains("host-only-sentinel"));
 }
 
 #[test]

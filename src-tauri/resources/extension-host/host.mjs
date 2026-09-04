@@ -2,6 +2,7 @@ import { fatalProtocolExit, startProtocol } from "./protocol.mjs";
 import { API_VERSION, LIMITS } from "./contract.mjs";
 import {
   callExtensionTool,
+  callExtensionUiAction,
   emitExtensionEvent,
   loadExtension,
   resetExtensions,
@@ -44,6 +45,8 @@ startProtocol(async (method, params) => {
       );
     case "event.emit":
       return emitExtensionEvent(String(params.event ?? ""), params.payload ?? null);
+    case "ui.action":
+      return callExtensionUiAction(params);
     default:
       throw new Error("unknown_method");
   }

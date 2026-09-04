@@ -7,7 +7,7 @@ import { useArrowNavigation } from "@/hooks/use-arrow-navigation";
 import { showToast } from "@/lib/toast-emitter";
 import { PersonalityList } from "./personality-list";
 import { MarkdownViewer } from "./markdown-viewer";
-import { PanelSlot } from "@/components/layout/panel-slots";
+import { PanelSlot } from "@/components/ui/panel-slots";
 
 interface PersonalityTabProps {
   activePath?: string | null;

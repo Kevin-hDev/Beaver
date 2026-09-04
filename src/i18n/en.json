@@ -1655,7 +1655,8 @@
       "confirmRemove": "Confirm",
       "confirmUpdate": "Confirm update",
       "restartHost": "Restart host",
-      "recovery": "Disable hosted extensions"
+      "recovery": "Disable hosted extensions",
+      "retry": "Try again"
     },
     "status": {
       "active": "Active",
@@ -1670,6 +1671,17 @@
     },
     "enabled": { "yes": "Enabled", "no": "Disabled" },
     "apiLevels": { "stable": "Stable", "advanced": "Advanced" },
+    "uiModes": { "standard": "Standard interface", "advanced": "Advanced interface" },
+    "uiPlacements": {
+      "app_navigation_primary": "Main navigation",
+      "settings_navigation_preferences": "Preferences settings",
+      "settings_navigation_agent": "Agent settings",
+      "settings_navigation_models": "Model settings",
+      "settings_navigation_integrations": "Integration settings",
+      "settings_navigation_application": "Application settings",
+      "app_toolbar_primary": "Main toolbar",
+      "agent_composer_leading": "Agent composer"
+    },
     "effects": {
       "read-only": "Read only", "local-write": "Local write", "external-read": "External read",
       "external-write": "External write", "process": "Process", "secret": "Secret access", "unknown": "Unknown effect"
@@ -1700,12 +1712,24 @@
       "trustedAt": "Trusted since",
       "lastError": "Last error",
       "unknown": "Not provided",
+    "uiTitle": "Interface",
+    "uiLevel": "Interface level",
+    "uiArtifact": "Advanced module",
+    "uiArtifactReady": "Verified and ready",
+    "uiArtifactMissing": "Unavailable",
+    "uiAdvancedWarning": "This advanced module runs inside Beaver’s main interface and can change or break any part of it.",
+    "uiLoading": "Loading interface contributions…",
+    "uiError": "Interface contributions could not be loaded.",
+    "uiEmpty": "No interface contribution is currently declared.",
+    "uiTheme": "Theme",
     "contributions": "Registered contributions",
     "replacesCore": "Replaces a built-in tool"
   },
   "activation": {
     "title": "Enable {{name}}?",
     "description": "This extension will have full access to your account data, secrets, and features. Beaver has not audited it.",
+    "advancedDescription": "Its advanced interface module runs directly inside Beaver and can change, access, or break the entire interface.",
+    "advancedConfirmation": "I understand and explicitly approve this advanced interface module.",
     "confirm": "Trust and enable"
   },
   "recovery": {
@@ -1717,6 +1741,27 @@
     "retry": "Retry loading",
     "discard": "Discard recovery information",
     "restore": "Restore previous registry"
+  },
+  "uiRecovery": {
+    "title": "Safe extension UI startup",
+    "description": "Beaver stopped while loading an extension interface. No third-party UI has been loaded.",
+    "invalidDescription": "The recovery information is invalid. Beaver blocked every third-party interface.",
+    "safe": "Continue without third-party UI",
+    "open": "Open the extension details",
+    "retry": "Retry this interface",
+    "discard": "Discard invalid recovery information",
+    "error": "This action could not be completed. Safe mode remains active.",
+    "safeBannerTitle": "Extension interfaces disabled",
+    "safeBannerDescription": "This launch remains in safe mode and displays no third-party interface.",
+    "interruptedTitle": "Interrupted extension interface",
+    "interruptedDescription": "Beaver stopped while loading the interface from {{name}}. Review it before the next normal launch.",
+    "discardInterrupted": "Discard incident"
+  },
+  "ui": {
+    "catalogError": "Extension interfaces could not be refreshed.",
+    "themeUnavailable": "The saved extension theme is no longer available. The system theme has been restored.",
+    "actionError": "The extension action could not be completed.",
+    "emptyPanel": "This extension has no content for this panel."
   },
     "add": {
       "title": "Add an extension",
@@ -1816,6 +1861,7 @@
       }
     },
     "diagnostics": {
+      "uiGeneric": "This extension's interface contribution was rejected",
       "codes": {
         "module_not_found": "Module or dependency not found",
         "syntax_error": "Syntax error",
@@ -1825,7 +1871,26 @@
         "entry_unavailable": "The extension entry point is unavailable",
         "load_failed": "The extension failed to load",
         "host_missing_response": "The host did not confirm that this extension loaded",
-        "advanced_required": "Advanced mode is required to replace a built-in tool"
+        "advanced_required": "Advanced mode is required to replace a built-in tool",
+        "ui_manifest_legacy": "The legacy interface declaration was ignored; tools remain available",
+        "ui_contract_invalid": "The interface contract is invalid",
+        "ui_contribution_invalid": "An interface contribution is invalid",
+        "ui_reference_missing": "An interface reference is missing",
+        "ui_reference_incompatible": "An interface reference is incompatible",
+        "ui_mutation_conflict": "Interface changes conflict with each other",
+        "ui_protected_occupant": "A protected Beaver interface element cannot be changed",
+        "ui_limit_exceeded": "The interface exceeds an allowed limit",
+        "ui_bundle_failed": "The advanced interface could not be prepared",
+        "ui_node_import_denied": "The advanced interface uses a forbidden Node.js import",
+        "ui_artifact_invalid": "The advanced interface files could not be verified",
+        "ui_protocol_request_denied": "The interface file request was denied",
+        "ui_protocol_hash_mismatch": "The interface files changed after approval",
+        "ui_protocol_file_missing": "An approved interface file is missing",
+        "ui_protocol_file_too_large": "An interface file is too large",
+        "ui_advanced_approval_required": "The advanced interface must be approved again",
+        "ui_activation_failed": "The advanced interface could not start",
+        "ui_mount_failed": "The interface could not be displayed",
+        "ui_theme_unavailable": "The extension theme is unavailable"
       }
     }
   },

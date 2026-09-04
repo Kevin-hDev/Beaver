@@ -12,6 +12,7 @@ const expectedDependencies = {
   "@cantoo/pdf-lib": "2.9.1",
   "@xlsx/xlsx-populate": "0.2.0",
   docx: "9.7.1",
+  esbuild: "0.28.1",
   fflate: "0.8.3",
   fontkit: "2.0.4",
   "image-size": "file:vendor/image-size-disabled",

@@ -22,6 +22,15 @@ pub fn write(operation: &str, code: &str, reason: &str) {
     }
 }
 
+pub(super) fn write_ui_action(extension_id: &str, reason: &str) {
+    let operation = if super::validation::identifier(extension_id).is_ok() {
+        format!("ui_action:{extension_id}")
+    } else {
+        "ui_action".to_string()
+    };
+    write(&operation, super::error_codes::OPERATION_FAILED, reason);
+}
+
 #[cfg(test)]
 pub fn write(operation: &str, code: &str, reason: &str) {
     let _ = (operation, code, reason);
@@ -46,7 +55,9 @@ fn write_at(path: &Path, operation: &str, code: &str, reason: &str) -> Result<()
 }
 
 fn safe_reason(reason: &str) -> &str {
-    if super::operation_error::is_safe_reason(reason) {
+    if super::operation_error::is_safe_reason(reason)
+        || super::ui_dispatch::is_safe_failure_reason(reason)
+    {
         reason
     } else {
         "operation_failed"

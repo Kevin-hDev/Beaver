@@ -9,7 +9,7 @@ import { WakeupDetails } from "./wakeup-details";
 import { NewWakeupDialog } from "./new-wakeup-dialog";
 import type { ScheduledWakeup } from "@/types/wakeup";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
-import { PanelSlot } from "@/components/layout/panel-slots";
+import { PanelSlot } from "@/components/ui/panel-slots";
 import "./heartbeat.css";
 
 type DialogState =

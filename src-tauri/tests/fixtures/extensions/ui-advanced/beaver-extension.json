@@ -1,0 +1,12 @@
+{
+  "id": "ui-proof",
+  "name": "UI runtime proof",
+  "version": "1.0.0",
+  "apiVersion": "1",
+  "apiLevel": "advanced",
+  "ui": {
+    "apiVersion": "1",
+    "mode": "advanced",
+    "entry": "entry.mjs"
+  }
+}

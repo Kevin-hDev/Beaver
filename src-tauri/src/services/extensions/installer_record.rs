@@ -3,7 +3,6 @@ use super::types::{ExtensionRecord, ExtensionStatus};
 pub fn for_update(current: &ExtensionRecord, mut replacement: ExtensionRecord) -> ExtensionRecord {
     replacement.enabled = false;
     replacement.trusted = false;
-    replacement.fingerprint = None;
     replacement.trusted_at = None;
     replacement.show_in_chat = current.show_in_chat;
     replacement.status = ExtensionStatus::Inactive;
@@ -39,12 +38,13 @@ mod tests {
         current.sensitive_access_granted = true;
         let mut downloaded = current.clone();
         downloaded.manifest.version = "2.0.0".to_string();
+        downloaded.fingerprint = Some("cd".repeat(32));
 
         let replacement = for_update(&current, downloaded);
 
         assert!(!replacement.enabled);
         assert!(!replacement.trusted);
-        assert!(replacement.fingerprint.is_none());
+        assert_eq!(replacement.fingerprint, Some("cd".repeat(32)));
         assert!(replacement.trusted_at.is_none());
         assert!(replacement.show_in_chat);
         assert_eq!(replacement.last_activated_at, current.last_activated_at);

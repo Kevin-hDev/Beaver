@@ -2323,7 +2323,8 @@
       "confirmRemove": "确认",
       "confirmUpdate": "确认更新",
       "restartHost": "重启宿主",
-      "recovery": "禁用托管扩展"
+      "recovery": "禁用托管扩展",
+      "retry": "重试"
     },
     "status": {
       "active": "已启用",
@@ -2338,6 +2339,8 @@
     },
     "enabled": { "yes": "已启用", "no": "已停用" },
     "apiLevels": { "stable": "稳定", "advanced": "高级" },
+    "uiModes": { "standard": "标准界面", "advanced": "高级界面" },
+    "uiPlacements": { "app_navigation_primary": "主导航", "settings_navigation_preferences": "偏好设置", "settings_navigation_agent": "智能体设置", "settings_navigation_models": "模型设置", "settings_navigation_integrations": "集成设置", "settings_navigation_application": "应用设置", "app_toolbar_primary": "主工具栏", "agent_composer_leading": "智能体输入框" },
     "effects": { "read-only": "只读", "local-write": "本地写入", "external-read": "外部读取", "external-write": "外部写入", "process": "进程", "secret": "机密访问", "unknown": "未知影响" },
     "origins": {
       "local": "本地文件或文件夹",
@@ -2365,15 +2368,29 @@
       "trustedAt": "信任时间",
       "lastError": "上次错误",
       "unknown": "未提供",
+    "uiTitle": "界面",
+    "uiLevel": "界面级别",
+    "uiArtifact": "高级模块",
+    "uiArtifactReady": "已验证并就绪",
+    "uiArtifactMissing": "不可用",
+    "uiAdvancedWarning": "此高级模块在 Beaver 主界面中运行，可以修改或破坏其中任何部分。",
+    "uiLoading": "正在加载界面扩展项…",
+    "uiError": "无法加载界面扩展项。",
+    "uiEmpty": "当前未声明任何界面扩展项。",
+    "uiTheme": "主题",
     "contributions": "已注册的扩展项",
     "replacesCore": "替换内置工具"
   },
   "activation": {
     "title": "启用 {{name}}？",
     "description": "此扩展将完全访问你账户中的数据、密钥和功能。Beaver 未对其进行审核。",
+    "advancedDescription": "其高级界面模块直接在 Beaver 中运行，可以修改、访问或破坏整个界面。",
+    "advancedConfirmation": "我理解并明确批准此高级界面模块。",
     "confirm": "信任并启用"
   },
   "recovery": { "title": "扩展加载已中断", "description": "Beaver 在加载扩展时停止。请先检查扩展再继续。", "invalid": "恢复信息无效，可以安全丢弃。", "openDetail": "打开详情", "keepDisabled": "保持停用", "retry": "重试加载", "discard": "丢弃恢复信息", "restore": "恢复以前的注册表" },
+  "uiRecovery": { "title": "扩展界面安全启动", "description": "Beaver 在加载扩展界面时停止。未加载任何第三方界面。", "invalidDescription": "恢复信息无效。Beaver 已阻止所有第三方界面。", "safe": "不加载第三方界面并继续", "open": "打开扩展详情", "retry": "重试此界面", "discard": "丢弃无效恢复信息", "error": "无法完成此操作。安全模式仍然有效。", "safeBannerTitle": "扩展界面已停用", "safeBannerDescription": "本次启动保持安全模式，不显示任何第三方界面。", "interruptedTitle": "扩展界面加载中断", "interruptedDescription": "Beaver 在加载 {{name}} 的界面时停止。请在下次正常启动前检查它。", "discardInterrupted": "丢弃此事件" },
+  "ui": { "catalogError": "无法刷新扩展界面。", "themeUnavailable": "已保存的扩展主题不再可用，已恢复系统主题。", "actionError": "无法完成扩展操作。", "emptyPanel": "此扩展在该面板中没有内容。" },
     "add": {
       "title": "添加扩展",
       "fullAccessWarning": "所选代码将以你的用户账户权限运行。请只安装你决定信任的扩展。",
@@ -2472,6 +2489,7 @@
       }
     },
     "diagnostics": {
+      "uiGeneric": "此扩展的界面贡献已被拒绝",
       "codes": {
         "module_not_found": "找不到模块或依赖项",
         "syntax_error": "语法错误",
@@ -2481,7 +2499,26 @@
         "entry_unavailable": "扩展入口点不可用",
         "load_failed": "扩展加载失败",
         "host_missing_response": "宿主未确认此扩展已加载",
-        "advanced_required": "替换内置工具需要高级模式"
+        "advanced_required": "替换内置工具需要高级模式",
+        "ui_manifest_legacy": "旧版界面声明已被忽略；工具仍然可用",
+        "ui_contract_invalid": "界面契约无效",
+        "ui_contribution_invalid": "界面扩展项无效",
+        "ui_reference_missing": "缺少界面引用",
+        "ui_reference_incompatible": "界面引用不兼容",
+        "ui_mutation_conflict": "界面更改相互冲突",
+        "ui_protected_occupant": "无法修改 Beaver 的受保护界面元素",
+        "ui_limit_exceeded": "界面超出允许的限制",
+        "ui_bundle_failed": "无法准备高级界面",
+        "ui_node_import_denied": "高级界面使用了禁止的 Node.js 导入",
+        "ui_artifact_invalid": "无法验证高级界面文件",
+        "ui_protocol_request_denied": "界面文件请求被拒绝",
+        "ui_protocol_hash_mismatch": "界面文件在批准后发生变化",
+        "ui_protocol_file_missing": "缺少已批准的界面文件",
+        "ui_protocol_file_too_large": "界面文件过大",
+        "ui_advanced_approval_required": "必须重新批准高级界面",
+        "ui_activation_failed": "无法启动高级界面",
+        "ui_mount_failed": "无法显示界面",
+        "ui_theme_unavailable": "扩展主题不可用"
       }
     }
   },
