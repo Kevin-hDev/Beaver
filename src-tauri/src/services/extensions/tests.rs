@@ -61,7 +61,11 @@ fn contributions_are_bounded_and_require_object_schemas() {
         effect: super::types::ExtensionEffect::Unknown,
         replaces_core: false,
     };
-    assert!(super::validation::contributions(&[invalid], &[]).is_err());
+    assert!(super::validation::contributions(&ExtensionContributions {
+        tools: vec![invalid],
+        ..Default::default()
+    })
+    .is_err());
 
     let tools = (0..=MAX_TOOLS_PER_EXTENSION)
         .map(|index| ExtensionTool {
@@ -72,7 +76,11 @@ fn contributions_are_bounded_and_require_object_schemas() {
             replaces_core: false,
         })
         .collect::<Vec<_>>();
-    assert!(super::validation::contributions(&tools, &[]).is_err());
+    assert!(super::validation::contributions(&ExtensionContributions {
+        tools,
+        ..Default::default()
+    })
+    .is_err());
 }
 
 #[test]
@@ -83,6 +91,7 @@ fn registry_projection_never_serializes_host_ui_trees() {
         ui: vec![serde_json::json!({
             "type":"text", "text":{"default":"host-only-sentinel"}
         })],
+        ..Default::default()
     };
     let projected = serde_json::to_value(contributions).unwrap();
     assert!(projected.get("ui").is_none());

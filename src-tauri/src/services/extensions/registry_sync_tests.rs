@@ -17,6 +17,7 @@ fn contributions(name: &str) -> ExtensionContributions {
         }],
         events: Vec::new(),
         ui: Vec::new(),
+        ..Default::default()
     }
 }
 

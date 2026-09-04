@@ -17,6 +17,22 @@ pub fn render_typescript(contract: &Value) -> Result<String, String> {
             array_value(contract, "capabilities")?.to_vec(),
         ),
         (
+            "OPTIONAL_EXTENSION_CAPABILITIES",
+            array_value(contract, "optionalCapabilities")?.to_vec(),
+        ),
+        (
+            "EXTENSION_CONTRIBUTION_TYPES",
+            array_value(contract, "contributionTypes")?.to_vec(),
+        ),
+        (
+            "EXTENSION_RESULT_BLOCK_TYPES",
+            array_value(contract, "resultBlockTypes")?.to_vec(),
+        ),
+        (
+            "EXTENSION_RESOURCE_TYPES",
+            array_value(contract, "resourceTypes")?.to_vec(),
+        ),
+        (
             "CORE_TO_HOST_METHODS",
             array(methods, "coreToHost")?.to_vec(),
         ),
@@ -71,6 +87,13 @@ pub fn render_typescript(contract: &Value) -> Result<String, String> {
     ));
     for (type_name, constant) in [
         ("ExtensionCapability", "EXTENSION_CAPABILITIES"),
+        (
+            "OptionalExtensionCapability",
+            "OPTIONAL_EXTENSION_CAPABILITIES",
+        ),
+        ("ExtensionContributionType", "EXTENSION_CONTRIBUTION_TYPES"),
+        ("ExtensionResultBlockType", "EXTENSION_RESULT_BLOCK_TYPES"),
+        ("ExtensionResourceType", "EXTENSION_RESOURCE_TYPES"),
         ("CoreToHostMethod", "CORE_TO_HOST_METHODS"),
         (
             "StableHostToCoreRequestMethod",

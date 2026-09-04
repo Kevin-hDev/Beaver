@@ -56,8 +56,8 @@ function toolExecutionContext(context) {
   const workingDirectory = context?.workingDirectory;
   if (
     typeof workingDirectory !== "string"
-    || workingDirectory.length === 0
-    || workingDirectory.length > LIMITS.maxWorkingDirectoryChars
+    || Array.from(workingDirectory).length === 0
+    || Array.from(workingDirectory).length > LIMITS.maxWorkingDirectoryChars
     || workingDirectory.includes("\0")
   ) {
     throw new Error("invalid_tool_context");

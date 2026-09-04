@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+pub use super::contribution_types::{ExtensionResource, ExtensionSkill};
+
 pub const MINIMUM_NODE_MAJOR: u64 = 20;
 include!(concat!(env!("OUT_DIR"), "/extension_contract.rs"));
 
@@ -127,6 +129,10 @@ pub struct ExtensionContributions {
     pub tools: Vec<ExtensionTool>,
     #[serde(default)]
     pub events: Vec<String>,
+    #[serde(default)]
+    pub skills: Vec<ExtensionSkill>,
+    #[serde(default)]
+    pub resources: Vec<ExtensionResource>,
     /// Transport Hôte -> cœur uniquement. Le catalogue UI possède sa propre
     /// autorité mémoire et cette valeur n'est jamais sérialisée vers l'UI.
     #[serde(default, skip_serializing)]

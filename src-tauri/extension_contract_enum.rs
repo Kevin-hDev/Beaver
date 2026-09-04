@@ -2,8 +2,7 @@ use serde_json::Value;
 use std::collections::BTreeSet;
 
 pub fn render(output: &mut String, name: &str, values: &[Value]) -> Result<(), String> {
-    output
-        .push_str("#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]\n");
+    output.push_str("#[allow(dead_code)]\n#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]\n");
     output.push_str(&format!("pub enum {name} {{\n"));
     let values = strings(values)?;
     let variants = values

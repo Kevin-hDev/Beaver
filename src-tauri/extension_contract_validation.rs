@@ -56,7 +56,7 @@ fn validate_method_budgets(contract: &Value) -> Result<(), String> {
     for method in methods {
         let name = method["name"]
             .as_str()
-            .filter(|name| valid_name(name, maximum_name_chars))
+            .filter(|name| valid_protocol_code(name, maximum_name_chars))
             .ok_or_else(|| "invalid host to core method".to_string())?;
         if !names.insert(name) || !matches!(method["level"].as_str(), Some("stable" | "advanced")) {
             return Err("invalid host to core method".to_string());
@@ -81,8 +81,19 @@ fn validate_method_budgets(contract: &Value) -> Result<(), String> {
 
 fn validate_strings(contract: &Value) -> Result<(), String> {
     let maximum_name_chars = contract_code_limit(contract)?;
+    for (pointer, expected) in [
+        ("/capabilities", &["tools", "events", "ui"][..]),
+        (
+            "/contributionTypes",
+            &["tool", "event", "ui", "skill", "resource"][..],
+        ),
+        ("/resultBlockTypes", &["text", "file"][..]),
+        ("/resourceTypes", &["text", "image", "file"][..]),
+    ] {
+        exact_contract_strings(contract, pointer, expected, maximum_name_chars)?;
+    }
+    exact_optional_capabilities(contract, maximum_name_chars)?;
     for pointer in [
-        "/capabilities",
         "/methods/coreToHost",
         "/events",
         "/hostStates",
@@ -108,10 +119,64 @@ fn validate_strings(contract: &Value) -> Result<(), String> {
         if strings.len() != values.len()
             || strings
                 .iter()
-                .any(|value| !valid_name(value, maximum_name_chars))
+                .any(|value| !valid_protocol_code(value, maximum_name_chars))
         {
             return Err(format!("invalid extension contract list: {pointer}"));
         }
+    }
+    let capabilities = contract["capabilities"]
+        .as_array()
+        .ok_or_else(|| "invalid extension contract capabilities".to_string())?;
+    let optional = contract["optionalCapabilities"]
+        .as_array()
+        .ok_or_else(|| "invalid extension contract optional capabilities".to_string())?;
+    if optional.iter().any(|value| capabilities.contains(value)) {
+        return Err("extension contract capability is declared twice".to_string());
+    }
+    Ok(())
+}
+
+fn exact_contract_strings(
+    contract: &Value,
+    pointer: &str,
+    expected: &[&str],
+    maximum_name_chars: usize,
+) -> Result<(), String> {
+    let values = contract
+        .pointer(pointer)
+        .and_then(Value::as_array)
+        .ok_or_else(|| format!("invalid extension contract list: {pointer}"))?;
+    let strings = values
+        .iter()
+        .map(Value::as_str)
+        .collect::<Option<Vec<_>>>()
+        .ok_or_else(|| format!("invalid extension contract list: {pointer}"))?;
+    if strings.as_slice() != expected
+        || strings
+            .iter()
+            .any(|value| !valid_protocol_code(value, maximum_name_chars))
+    {
+        return Err(format!("invalid extension contract list: {pointer}"));
+    }
+    Ok(())
+}
+
+fn exact_optional_capabilities(contract: &Value, maximum_name_chars: usize) -> Result<(), String> {
+    let values = contract["optionalCapabilities"]
+        .as_array()
+        .ok_or_else(|| "invalid extension contract optional capabilities".to_string())?;
+    let strings = values
+        .iter()
+        .map(Value::as_str)
+        .collect::<Option<Vec<_>>>()
+        .ok_or_else(|| "invalid extension contract optional capabilities".to_string())?;
+    let expected = ["skills", "resources", "richToolResults"];
+    if strings.as_slice() != expected
+        || strings
+            .iter()
+            .any(|value| !valid_optional_capability(value, maximum_name_chars))
+    {
+        return Err("invalid extension contract optional capabilities".to_string());
     }
     Ok(())
 }
@@ -147,11 +212,18 @@ fn contract_code_limit(contract: &Value) -> Result<usize, String> {
         .ok_or_else(|| "invalid extension contract code limit".to_string())
 }
 
-fn valid_name(value: &str, maximum_chars: usize) -> bool {
+fn valid_protocol_code(value: &str, maximum_chars: usize) -> bool {
     let mut bytes = value.bytes();
     bytes.next().is_some_and(|byte| byte.is_ascii_lowercase())
         && value.len() <= maximum_chars
         && bytes.all(|byte| {
             byte.is_ascii_lowercase() || byte.is_ascii_digit() || matches!(byte, b'_' | b'-' | b'.')
         })
+}
+
+fn valid_optional_capability(value: &str, maximum_chars: usize) -> bool {
+    let mut bytes = value.bytes();
+    bytes.next().is_some_and(|byte| byte.is_ascii_lowercase())
+        && value.len() <= maximum_chars
+        && bytes.all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'_' | b'-' | b'.'))
 }

@@ -100,6 +100,12 @@ pub mod tool_executor_sequential;
 mod tool_executor_sequential_support;
 pub mod tool_executor_write;
 pub mod tool_extension_discovery;
+#[allow(dead_code)]
+mod extension_discovery_contract {
+    include!(concat!(env!("OUT_DIR"), "/extension_discovery_contract.rs"));
+}
+#[cfg(test)]
+mod extension_discovery_contract_tests;
 mod tool_extension_discovery_diagnostics;
 mod tool_extension_discovery_result;
 pub mod tool_file_changes;

@@ -108,6 +108,7 @@ fn stable_extensions_cannot_replace_core_tools() {
         }],
         events: Vec::new(),
         ui: Vec::new(),
+        ..Default::default()
     };
 
     assert!(!accepts_contributions(&spec, &contributions));
@@ -154,6 +155,7 @@ fn invalid_standard_ui_is_dropped_without_losing_valid_tools() {
             "order":0, "label":{"default":"x".repeat(super::ui_contract::MAX_TEXT_CHARS + 1)},
             "actionId":"broken"
         })],
+        ..Default::default()
     };
 
     let validated = super::runtime_sync_contributions::validate(

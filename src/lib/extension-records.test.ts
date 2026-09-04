@@ -4,6 +4,7 @@ import {
   EXTENSION_VIEW_LIMITS,
   parseExtensionRecords,
 } from "./extension-records";
+import { LIMITS } from "@/types/extension-contract.generated";
 import { EXTENSION_INSTALL_LIMITS } from "./extension-install";
 
 function backendRecord() {
@@ -39,6 +40,14 @@ function backendRecord() {
         replacesCore: false,
       }],
       events: [] as string[],
+      skills: [] as Array<{ id: string; name: string; description: string; path: string }>,
+      resources: [] as Array<{
+        id: string;
+        name: string;
+        description: string;
+        type: string;
+        path: string;
+      }>,
     },
   };
 }
@@ -113,6 +122,54 @@ describe("parseExtensionRecords", () => {
     expect(record.contributions.events).toEqual(["session.turn.started"]);
   });
 
+  it("accepte les contributions R0 et mesure les chemins en valeurs Unicode", () => {
+    const input = backendRecord();
+    input.contributions.skills = [{
+      id: "reference-skill",
+      name: "reference-skill",
+      description: "Compétence 🦫",
+      path: "SKILL.md",
+    }];
+    input.contributions.resources = [{
+      id: "preview",
+      name: "preview",
+      description: "Aperçu 🦫",
+      type: "image",
+      path: "🦫".repeat(4096),
+    }];
+
+    const [record] = parseExtensionRecords([input]);
+
+    expect(record.contributions.skills?.[0].name).toBe("reference-skill");
+    expect(record.contributions.resources?.[0].type).toBe("image");
+  });
+
+  it("accepte les noms humains R0 mais refuse leurs identifiants non ASCII", () => {
+    const input = backendRecord();
+    input.contributions.skills = [{
+      id: "reference-skill",
+      name: "Compétence 🦫",
+      description: "Résumé",
+      path: "SKILL.md",
+    }];
+    expect(parseExtensionRecords([input])[0].contributions.skills?.[0].name)
+      .toBe("Compétence 🦫");
+
+    input.contributions.skills[0].id = "compétence";
+    expect(() => parseExtensionRecords([input]))
+      .toThrow("invalid_extension_response");
+  });
+
+  it("préserve la compatibilité des contributions historiques sans skills ni resources", () => {
+    const input = backendRecord();
+    Reflect.deleteProperty(input.contributions, "skills");
+    Reflect.deleteProperty(input.contributions, "resources");
+    const [record] = parseExtensionRecords([input]);
+
+    expect(record.contributions.skills).toEqual([]);
+    expect(record.contributions.resources).toEqual([]);
+  });
+
   it("valide la provenance Git ou npm exposée par le registre", () => {
     const input = {
       ...backendRecord(),
@@ -141,10 +198,14 @@ describe("parseExtensionRecords", () => {
       records: contract.limits.maxExtensions,
       toolsPerExtension: contract.limits.maxToolsPerExtension,
       eventsPerExtension: contract.limits.maxEventsPerExtension,
+      skillsPerExtension: contract.limits.maxSkillsPerExtension,
+      resourcesPerExtension: contract.limits.maxResourcesPerExtension,
     });
     expect(EXTENSION_INSTALL_LIMITS).toEqual({
       git: contract.limits.maxGitLocatorChars,
       npm: contract.limits.maxNpmSpecChars,
     });
+    expect(LIMITS.maxExtensionNameChars).toBe(contract.limits.maxExtensionNameChars);
+    expect(LIMITS.maxExtensionTextChars).toBe(contract.limits.maxExtensionTextChars);
   });
 });

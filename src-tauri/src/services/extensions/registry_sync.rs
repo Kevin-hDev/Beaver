@@ -29,7 +29,7 @@ pub fn apply_results(
     let total_tools = successful
         .values()
         .try_fold(0_usize, |total, contributions| {
-            super::validation::contributions(&contributions.tools, &contributions.events)?;
+            super::validation::contributions(contributions)?;
             Ok::<usize, String>(total.saturating_add(contributions.tools.len()))
         })?;
     if total_tools > MAX_TOOLS {

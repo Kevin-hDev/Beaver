@@ -1,5 +1,6 @@
 import { callCore } from "./protocol.mjs";
 import {
+  CAPABILITIES,
   LIMITS,
   methodKind,
   methodLevel,
@@ -47,7 +48,7 @@ export function createExtensionApi(specification) {
     if (
       !validIdentifier(tool.name)
       || !tool.description.trim()
-      || tool.description.length > 2_000
+      || unicodeScalarLength(tool.description) > LIMITS.maxExtensionTextChars
       || !tool.parameters
       || typeof tool.parameters !== "object"
       || Array.isArray(tool.parameters)
@@ -86,6 +87,8 @@ export function createExtensionApi(specification) {
   const api = {
     id: specification.id,
     manifest: Object.freeze({ ...specification.manifest }),
+    // R0 declares future types without exposing unusable registration methods.
+    capabilities: Object.freeze([...CAPABILITIES]),
     info: () => callCore("app.info"),
     registerTool: (definition) => registerTool(definition, false),
     ui: ui.api,
@@ -154,6 +157,10 @@ export function createExtensionApi(specification) {
       }
     },
   };
+}
+
+function unicodeScalarLength(value) {
+  return Array.from(value).length;
 }
 
 async function runEventHandler(handler, payload) {

@@ -28,6 +28,7 @@ pub fn render(contract: &Value) -> Result<String, String> {
     output.push_str("pub mod backend_error_codes {\n");
     render_named_strings(&mut output, array(errors, "backendCodes")?, "", "ALL")?;
     output.push_str("}\n");
+    super::r0_enum_renderer::render(&mut output, contract)?;
     for (name, values) in [
         ("PROTOCOL_ERROR_REASONS", array(errors, "protocolReasons")?),
         (

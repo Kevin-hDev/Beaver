@@ -2,6 +2,7 @@ mod access_log;
 mod bounded_jsonl;
 mod builtin;
 mod call_context;
+mod contribution_types;
 mod core_bridge;
 mod core_secrets;
 mod diagnostic_time;

@@ -1,7 +1,9 @@
 import type {
   AdvancedHostToCoreRequestMethod,
+  ExtensionCapability,
   ExtensionEffectClass,
   ExtensionEvent,
+  ExtensionResourceType,
   StableHostToCoreRequestMethod,
 } from "./contract";
 import type { ExtensionUiPlacementKey } from "./ui-contract";
@@ -22,6 +24,31 @@ export interface BeaverToolResult {
   isError?: boolean;
   displaySummary?: string;
   truncated?: boolean;
+}
+
+/** R0 declares this shape for future rich results; the Host does not accept it yet. */
+export type BeaverToolResultBlock =
+  | { type: "text"; text: string }
+  | { type: "file"; path: string; purpose: "artifact" | "preview"; displayName?: string };
+
+/** Future API-R0 result content; it remains unavailable until richToolResults is active. */
+export type BeaverToolResultContent = string | BeaverToolResultBlock[];
+
+/** R0 declares this shape for future resource registration; no registration method is exposed. */
+export interface BeaverResourceContribution {
+  id: string;
+  name: string;
+  description: string;
+  type: ExtensionResourceType;
+  path: string;
+}
+
+/** R0 declares this shape for future skill registration; no registration method is exposed. */
+export interface BeaverSkillContribution {
+  id: string;
+  name: string;
+  description: string;
+  path: string;
 }
 
 export interface BeaverToolContext {
@@ -119,6 +146,8 @@ export interface BeaverTool {
 export interface BeaverExtensionApi {
   readonly id: string;
   readonly manifest: Record<string, JsonValue>;
+  /** Frozen copy of capabilities that are usable by this Host. */
+  readonly capabilities?: readonly ExtensionCapability[];
   info(): Promise<JsonValue>;
   registerTool(tool: BeaverTool): void;
   readonly ui: BeaverUiApi;

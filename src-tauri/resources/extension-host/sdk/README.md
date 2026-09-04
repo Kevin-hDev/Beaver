@@ -80,6 +80,13 @@ Beaver namespaces this tool as `com.example.hello.hello`.
 - `beaver.secrets.getChannelToken(...)`
 - `beaver.call(method, params)` for the versioned low-level bridge
 
+`beaver.capabilities` is an optional frozen copy of the API that the current
+Host can actually use. Use `beaver.capabilities?.includes(...)` so an
+extension also loads in an older Beaver Host. API-R0 defines future skill,
+resource, and rich-result shapes in the generated contract, but it does not
+expose registration methods for them yet; extensions must not assume those
+capabilities are available.
+
 ### Standard interface contributions
 
 Declare `ui: { "apiVersion": "1", "mode": "standard" }` in the manifest, then
@@ -277,6 +284,8 @@ The extension author and user are responsible for any secret, file, process, or 
 | `hostRestartWindowSeconds` | 300 |
 | `maxContractCodeChars` | 96 |
 | `maxEventsPerExtension` | 64 |
+| `maxExtensionNameChars` | 100 |
+| `maxExtensionTextChars` | 2000 |
 | `maxExtensions` | 132 |
 | `maxGitLocatorChars` | 2048 |
 | `maxHostProcesses` | 32 |
@@ -285,11 +294,22 @@ The extension author and user are responsible for any secret, file, process, or 
 | `maxInFlightHandlers` | 64 |
 | `maxInFlightRequests` | 64 |
 | `maxMessageBytes` | 1048576 |
+| `maxMultimodalPreviewsPerContinuation` | 8 |
 | `maxNpmSpecChars` | 280 |
+| `maxParallelEphemeralArtifactBytes` | 67108864 |
+| `maxPathChars` | 4096 |
 | `maxPendingRequests` | 64 |
 | `maxPermissionSummaryChars` | 512 |
 | `maxProjectResults` | 500 |
+| `maxResourceFileBytes` | 20971520 |
+| `maxResourcesPerExtension` | 64 |
+| `maxResultBlocks` | 16 |
+| `maxResultBytes` | 20971520 |
+| `maxResultFiles` | 8 |
+| `maxResultTextBytes` | 524288 |
 | `maxSessionResults` | 500 |
+| `maxSkillsPerExtension` | 32 |
+| `maxTextResourceBytes` | 262144 |
 | `maxTools` | 256 |
 | `maxToolsPerExtension` | 64 |
 | `maxUserExtensions` | 128 |
@@ -313,7 +333,7 @@ The extension author and user are responsible for any secret, file, process, or 
 | Category | Values |
 |---|---|
 | Protocol reasons | `core_busy`, `core_request_timeout`, `core_transport_failed`, `core_method_unavailable`, `core_request_failed`, `extension_host_busy`, `extension_host_request_failed`, `extension_host_fatal` |
-| Backend codes | `extensions_host_unavailable`, `extensions_host_busy`, `extensions_host_timeout`, `extensions_request_too_large`, `extensions_request_invalid`, `extensions_tool_unavailable`, `extensions_tool_arguments_invalid`, `extensions_builtin_catalog_invalid`, `extensions_builtin_catalog_unavailable`, `extensions_builtin_plugin_invalid`, `extensions_builtin_entry_missing`, `extensions_builtin_entry_unavailable`, `extensions_builtin_entry_invalid`, `extensions_install_failed`, `extensions_update_failed`, `extensions_uninstall_failed`, `extensions_source_invalid`, `extensions_package_invalid`, `extensions_git_download_failed`, `extensions_git_timeout`, `extensions_runtime_unavailable`, `extensions_environment_invalid`, `extensions_dependency_install_failed`, `extensions_manifest_invalid`, `extensions_not_beaver_extension`, `extensions_api_incompatible`, `extensions_symlink_unsupported`, `extensions_already_installed`, `extensions_limit_reached`, `extensions_storage_failed`, `extensions_update_identity_changed`, `extensions_update_unavailable`, `extensions_cleanup_failed`, `extensions_operation_failed`, `extensions_fingerprint_changed`, `extensions_fingerprint_failed`, `extensions_stop_unconfirmed`, `extensions_registry_entry_ignored`, `extensions_registry_migration_failed`, `extensions_recovery_marker_invalid`, `extensions_load_interrupted`, `extensions_activation_confirmation_required`, `extensions_not_found`, `extensions_host_incompatible` |
+| Backend codes | `extensions_host_unavailable`, `extensions_host_busy`, `extensions_host_timeout`, `extensions_request_too_large`, `extensions_request_invalid`, `extensions_tool_unavailable`, `extensions_tool_arguments_invalid`, `extensions_builtin_catalog_invalid`, `extensions_builtin_catalog_unavailable`, `extensions_builtin_plugin_invalid`, `extensions_builtin_entry_missing`, `extensions_builtin_entry_unavailable`, `extensions_builtin_entry_invalid`, `extensions_install_failed`, `extensions_update_failed`, `extensions_uninstall_failed`, `extensions_source_invalid`, `extensions_package_invalid`, `extensions_git_download_failed`, `extensions_git_timeout`, `extensions_runtime_unavailable`, `extensions_environment_invalid`, `extensions_dependency_install_failed`, `extensions_manifest_invalid`, `extensions_not_beaver_extension`, `extensions_api_incompatible`, `extensions_symlink_unsupported`, `extensions_already_installed`, `extensions_limit_reached`, `extensions_storage_failed`, `extensions_update_identity_changed`, `extensions_update_unavailable`, `extensions_cleanup_failed`, `extensions_operation_failed`, `extensions_fingerprint_changed`, `extensions_fingerprint_failed`, `extensions_stop_unconfirmed`, `extensions_registry_entry_ignored`, `extensions_registry_migration_failed`, `extensions_recovery_marker_invalid`, `extensions_load_interrupted`, `extensions_activation_confirmation_required`, `extensions_not_found`, `extensions_host_incompatible`, `extensions_resource_unavailable`, `extensions_resource_not_found`, `extensions_resource_invalid`, `extensions_resource_too_large`, `extensions_result_invalid`, `extensions_result_too_large` |
 <!-- END GENERATED EXTENSION CONTRACT -->
 
 <!-- BEGIN GENERATED EXTENSION UI CONTRACT -->
