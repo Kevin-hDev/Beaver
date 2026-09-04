@@ -48,9 +48,11 @@ export function BranchSelectorBranchItem({
           <span className="bs-item-name">{branch.name}</span>
           {dirtyLabel && <span className="bs-item-detail">{dirtyLabel}</span>}
         </span>
-        {branch.is_current && <Check size="var(--icon-sm)" />}
       </button>
       {deleteControl}
+      <span className="bs-item-check">
+        {branch.is_current && <Check size="var(--icon-sm)" />}
+      </span>
     </div>
   );
 }
@@ -72,6 +74,7 @@ export function BranchSelectorWorktreeItem({
         </span>
       </button>
       {deleteControl}
+      <span className="bs-item-check" />
     </div>
   );
 }
@@ -88,7 +91,7 @@ export function BranchSelectorCreateItem({ label, onStart }: BranchSelectorCreat
       }}
     >
       <Plus size="var(--icon-sm)" />
-      <span>{label}</span>
+      <span className="menu-row-label">{label}</span>
     </div>
   );
 }
