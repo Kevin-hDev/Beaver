@@ -3,11 +3,6 @@ use super::*;
 use serde_json::json;
 use std::time::{Duration, Instant};
 
-fn extension_work() -> super::super::work_supervision::ExtensionWorkServices {
-    let coordinator = crate::app_exit::AppExitCoordinator::initialize().unwrap();
-    super::super::work_supervision::ExtensionWorkServices::new(coordinator.work_supervisor())
-}
-
 #[tokio::test]
 async fn load_tracker_accepts_one_ordered_load_and_clears_it() {
     let tracker = HostLoadTracker::default();
@@ -72,20 +67,6 @@ fn bundled_paths() -> HostPaths {
     }
 }
 
-fn prepared_runtime_paths() -> HostPaths {
-    let directory = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("target")
-        .join("extension-host");
-    let node = directory
-        .join("runtime")
-        .join(if cfg!(windows) { "node.exe" } else { "node" });
-    HostPaths {
-        node,
-        script: directory.join("host.mjs"),
-        directory,
-    }
-}
-
 #[tokio::test]
 async fn matches_concurrent_out_of_order_responses_by_id() {
     let directory = tempfile::tempdir().unwrap();
@@ -107,7 +88,7 @@ lines.on("line", (line) => {
         script,
         directory: directory.path().to_path_buf(),
     };
-    let work = extension_work();
+    let work = test_extension_work();
     let host = Arc::new(HostProcess::spawn(&paths, &work).await.unwrap());
     let slow_host = host.clone();
     let fast_host = host.clone();
@@ -127,7 +108,7 @@ lines.on("line", (line) => {
 
 #[tokio::test]
 async fn bundled_extension_host_answers_hello() {
-    let work = extension_work();
+    let work = test_extension_work();
     let host = HostProcess::spawn(&bundled_paths(), &work).await.unwrap();
 
     let hello = host.request("host.hello", json!({})).await.unwrap();
@@ -141,76 +122,8 @@ async fn bundled_extension_host_answers_hello() {
 }
 
 #[tokio::test]
-#[ignore = "requires scripts/extensions/prepare-extension-host.mjs --dev"]
-async fn prepared_runtime_answers_hello_through_owned_process() {
-    let work = extension_work();
-    let host = HostProcess::spawn(&prepared_runtime_paths(), &work)
-        .await
-        .unwrap();
-
-    let hello = host.request("host.hello", json!({})).await.unwrap();
-
-    assert_eq!(hello["apiVersion"], "1");
-    assert!(hello["nodeVersion"].as_str().is_some());
-    assert!(
-        host.kill(super::super::runtime_lifecycle::new_stop_deadline())
-            .await
-    );
-}
-
-#[tokio::test]
-#[ignore = "requires scripts/extensions/prepare-extension-host.mjs --dev"]
-async fn prepared_runtime_restarts_after_confirmed_stop() {
-    let paths = prepared_runtime_paths();
-    let work = extension_work();
-    let first = HostProcess::spawn(&paths, &work).await.unwrap();
-    first.request("host.hello", json!({})).await.unwrap();
-    assert!(
-        first
-            .kill(super::super::runtime_lifecycle::new_stop_deadline())
-            .await
-    );
-
-    let second = HostProcess::spawn(&paths, &work).await.unwrap();
-    let hello = second.request("host.hello", json!({})).await.unwrap();
-    assert_eq!(hello["apiVersion"], "1");
-    assert!(
-        second
-            .kill(super::super::runtime_lifecycle::new_stop_deadline())
-            .await
-    );
-}
-
-#[tokio::test]
-#[ignore = "requires scripts/extensions/prepare-extension-host.mjs --dev"]
-async fn prepared_runtime_runs_two_isolated_hosts_concurrently() {
-    let paths = prepared_runtime_paths();
-    let work = extension_work();
-    let first = HostProcess::spawn(&paths, &work).await.unwrap();
-    let second = HostProcess::spawn(&paths, &work).await.unwrap();
-
-    let (first_hello, second_hello) = tokio::join!(
-        first.request("host.hello", json!({})),
-        second.request("host.hello", json!({})),
-    );
-    assert_eq!(first_hello.unwrap()["apiVersion"], "1");
-    assert_eq!(second_hello.unwrap()["apiVersion"], "1");
-
-    assert!(
-        first
-            .kill(super::super::runtime_lifecycle::new_stop_deadline())
-            .await
-    );
-    assert!(
-        second
-            .kill(super::super::runtime_lifecycle::new_stop_deadline())
-            .await
-    );
-}
-
-#[tokio::test]
 async fn closed_reader_admission_refuses_and_reaps_new_host() {
-    let work = extension_work();
+    let work = test_extension_work();
     work.begin_closing();
 
     let result = HostProcess::spawn(&bundled_paths(), &work).await;
@@ -222,7 +135,7 @@ async fn closed_reader_admission_refuses_and_reaps_new_host() {
 #[tokio::test]
 async fn repeated_host_restarts_reuse_the_single_reader_slot() {
     let paths = bundled_paths();
-    let work = extension_work();
+    let work = test_extension_work();
 
     for _ in 0..16 {
         let host = HostProcess::spawn(&paths, &work)
@@ -256,7 +169,7 @@ lines.on("line", (line) => {
         script,
         directory: directory.path().to_path_buf(),
     };
-    let work = extension_work();
+    let work = test_extension_work();
     let host = Arc::new(HostProcess::spawn(&paths, &work).await.unwrap());
     let request = {
         let host = Arc::clone(&host);

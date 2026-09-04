@@ -156,6 +156,9 @@ jobs:
 
   backend-windows-native:
     name: Backend Windows CEF (Rust)
+    # The packaged journey is deliberately gated by the cheaper real host-load
+    # boundary so an extension runtime failure does not consume another 79 minutes.
+    needs: windows-extension-host-smoke
     runs-on: windows-latest
     timeout-minutes: 150
     steps:
@@ -301,7 +304,7 @@ jobs:
       - name: Rust owned-process protocol smoke
         working-directory: src-tauri
         run: |
-          node ../scripts/ci/run-rust-test-filter.mjs --filter services::extensions::host_process::tests::prepared_runtime_ --features windows-tests --ignored --nocapture
+          node ../scripts/ci/run-rust-test-filter.mjs --filter services::extensions::host_process::prepared_tests::prepared_runtime_ --features windows-tests --ignored --nocapture
           node ../scripts/ci/run-rust-test-filter.mjs --filter services::extensions::runtime_lifecycle::tests::prepared_runtime_confirms_restart_stop_while_exit_monitor_is_active --features windows-tests --exact --ignored --nocapture
 
   backend-macos-native:

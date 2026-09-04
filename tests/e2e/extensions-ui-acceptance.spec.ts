@@ -45,9 +45,6 @@ describe("extension UI installed acceptance", () => {
     await waitForTauriBridge();
     await invokeTauri("e2e_initialize_extension_host");
     await waitForExtensionHost();
-  });
-
-  it("installs and renders standard, theme and advanced fixtures", async () => {
     const startup = await invokeTauri<{ mode: { kind: string } }>(
       "get_extension_ui_startup_state",
     );
@@ -79,9 +76,11 @@ describe("extension UI installed acceptance", () => {
 
     await install("theme-valid", THEME_ID);
     await waitForCatalog([STANDARD_ID, THEME_ID]);
-    await $('button.lpf-btn[aria-label="Acceptance"]').waitForDisplayed();
-
     await install("advanced-valid", ADVANCED_ID);
+  });
+
+  it("renders the installed standard, theme and advanced fixtures", async () => {
+    await $('button.lpf-btn[aria-label="Acceptance"]').waitForDisplayed();
     await $(".acceptance-advanced-button").waitForDisplayed();
 
     const catalog = await waitForCatalog([STANDARD_ID, THEME_ID]);
@@ -161,11 +160,22 @@ describe("extension UI installed acceptance", () => {
 
 async function install(fixture: string, extensionId: string): Promise<void> {
   await invokeTauri("add_local_extension", { path: resolve(FIXTURES, fixture) });
-  await invokeTauri("set_extension_enabled", {
-    extensionId,
-    enabled: true,
-    trustConfirmed: true,
-  });
+  try {
+    await invokeTauri("set_extension_enabled", {
+      extensionId,
+      enabled: true,
+      trustConfirmed: true,
+    });
+  } catch {
+    const recovery = await invokeTauri<{
+      extensionId: string | null;
+      stage: string | null;
+      markerInvalid: boolean;
+    }>("get_extension_recovery_state");
+    throw new Error(
+      `Extension activation failed: extension=${extensionId}; stage=${recovery.stage ?? "none"}; markerInvalid=${recovery.markerInvalid}`,
+    );
+  }
 }
 
 async function remove(extensionId: string): Promise<void> {
