@@ -47,11 +47,11 @@ export function SettingsSelectList({
         onClick={() => onSelect(opt.value)}
         onKeyDown={onItemKeyDown}
       >
+        {opt.icon}
+        <span className="menu-row-label">{opt.label}</span>
         <div className="ss-option-check">
           {opt.value === value && <Check size="var(--icon-sm)" weight="bold" />}
         </div>
-        {opt.icon}
-        <span className="menu-row-label">{opt.label}</span>
       </div>
     );
   };

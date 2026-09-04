@@ -83,10 +83,13 @@
   transform: rotate(0deg);
 }
 
+/* Aligné sur le bord gauche du bouton, il déborde donc vers la droite. Aligné à
+   droite, il partait vers la gauche et recouvrait ce qui précède le bouton — le
+   champ de recherche des chats archivés, par exemple. */
 .ss-panel {
   position: absolute;
   top: calc(100% + 4px);
-  right: 0;
+  left: 0;
   min-width: 100%;
   max-height: 280px;
   overflow-y: auto;
@@ -145,7 +148,11 @@
   font-weight: 500;
 }
 
+/* Emplacement réservé au bord droit de la ligne : il reste vide sur les lignes
+   non cochées, pour que tous les libellés s'arrêtent au même endroit. */
 .ss-option-check {
+  display: flex;
+  justify-content: flex-end;
   width: 14px;
   flex-shrink: 0;
   color: var(--ink);
