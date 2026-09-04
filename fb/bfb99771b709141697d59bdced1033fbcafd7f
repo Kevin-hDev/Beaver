@@ -1,0 +1,9 @@
+Task 1 / API-R0
+
+Décisions : le contrat Hôte reste l’autorité des limites ; optionalCapabilities sépare les futures capacités des capacités réellement utilisables. Le contrat de découverte importe maxExtensions, maxSkillsPerExtension et maxResourcesPerExtension depuis l’Hôte pendant la génération Rust OUT_DIR, sans les recopier. Les métadonnées et chemins frontaux comptent Array.from(), Rust conserve chars().
+
+RED observés : api-expansion.test.mjs manquait OPTIONAL_CAPABILITIES ; les contributions Rust ne possédaient ni skills/resources ni validation unifiée ; le générateur découverte était absent ; les artefacts TypeScript/SDK/README étaient périmés ; Node refusait 2000 caractères astrals car il comptait UTF-16.
+
+GREEN : api-expansion.test.mjs 4/4 ; contribution_contract_tests 3/3 ; extension_discovery_contract_tests 4/4 après --list ; contract_artifact_tests 20 actifs passés, 2 exports ignorés ; test:extensions-host 95/95 ; extension-records 10/10 ; contracts:generate et contracts:check passés ; tsc --noEmit et git diff --check passés ; graphify update . a réextrait 5253 fichiers.
+
+Limite assumée : R0 ne branche aucune inscription/exécution de skill, ressource ou résultat riche ; les lots suivants rendront ces capacités disponibles.
