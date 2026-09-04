@@ -4,6 +4,7 @@
   "optionalCapabilities": ["skills", "resources", "richToolResults"],
   "contributionTypes": ["tool", "event", "ui", "skill", "resource"],
   "resultBlockTypes": ["text", "file"],
+  "resultFilePurposes": ["artifact", "preview"],
   "resourceTypes": ["text", "image", "file"],
   "methods": {
     "coreToHost": ["host.hello", "host.reset", "host.load", "tool.call", "event.emit", "ui.action"],

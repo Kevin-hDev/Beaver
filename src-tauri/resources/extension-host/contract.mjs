@@ -122,6 +122,9 @@ export const CONTRIBUTION_TYPES = exactStrings(
   contract.contributionTypes, ["tool", "event", "ui", "skill", "resource"],
 );
 export const RESULT_BLOCK_TYPES = exactStrings(contract.resultBlockTypes, ["text", "file"]);
+export const RESULT_FILE_PURPOSES = exactStrings(
+  contract.resultFilePurposes, ["artifact", "preview"],
+);
 export const RESOURCE_TYPES = exactStrings(contract.resourceTypes, ["text", "image", "file"]);
 export const CORE_TO_HOST_METHODS = strings(contract?.methods?.coreToHost);
 export const EVENTS = strings(contract.events);

@@ -1,7 +1,30 @@
 use super::{
     read_verified_file,
-    verified_file_read::{read_after, read_after_content, FileReadError},
+    verified_file_read::{inspect, read_inspected, read_inspected_with_hook, FileReadError},
 };
+use tokio_util::sync::CancellationToken;
+
+#[test]
+fn inspection_keeps_size_and_open_identity_without_reading_bytes() {
+    let root = tempfile::tempdir().expect("root");
+    std::fs::write(root.path().join("resource.txt"), b"four").expect("resource");
+
+    let inspected = inspect(root.path(), "resource.txt", 4).expect("inspection");
+
+    assert_eq!(inspected.size, 4);
+    assert_eq!(read_inspected(inspected, 4).expect("read").bytes, b"four");
+}
+
+#[test]
+fn inspected_read_rejects_a_size_change_before_accepting_bytes() {
+    let root = tempfile::tempdir().expect("root");
+    let path = root.path().join("resource.txt");
+    std::fs::write(&path, b"four").expect("resource");
+    let inspected = inspect(root.path(), "resource.txt", 8).expect("inspection");
+    std::fs::write(&path, b"larger file").expect("mutate");
+
+    assert!(matches!(read_inspected(inspected, 8), Err(FileReadError::Access)));
+}
 
 #[test]
 fn reads_a_regular_file_at_the_exact_bound_and_rejects_an_oversized_file() {
@@ -25,9 +48,9 @@ fn rejects_a_file_replaced_between_identity_checks() {
     std::fs::write(&file, b"original").expect("original");
     std::fs::write(&replacement, b"replacement").expect("replacement");
 
-    let result = read_after(root.path(), "resource.txt", 64, || {
-        std::fs::rename(&replacement, &file).expect("replace");
-    });
+    let inspected = inspect(root.path(), "resource.txt", 64).expect("inspection");
+    std::fs::rename(&replacement, &file).expect("replace");
+    let result = read_inspected_with_hook(inspected, 64, None, || {}, || {});
 
     assert!(matches!(result, Err(FileReadError::Access)));
 }
@@ -40,9 +63,40 @@ fn rejects_a_file_replaced_after_content_was_read() {
     std::fs::write(&file, b"original").expect("original");
     std::fs::write(&replacement, b"replacement").expect("replacement");
 
-    let result = read_after_content(root.path(), "resource.txt", 64, || {
+    let result = read_inspected_with_hook(
+        inspect(root.path(), "resource.txt", 64).expect("inspection"),
+        64,
+        None,
+        || {
         std::fs::rename(&replacement, &file).expect("replace");
-    });
+        },
+        || {},
+    );
+
+    assert!(matches!(result, Err(FileReadError::Access)));
+}
+
+#[test]
+fn rejects_a_file_replaced_during_content_read() {
+    let root = tempfile::tempdir().expect("root");
+    let file = root.path().join("resource.txt");
+    let replacement = root.path().join("replacement.txt");
+    std::fs::write(&file, vec![1_u8; 128 * 1024]).expect("original");
+    std::fs::write(&replacement, vec![2_u8; 128 * 1024]).expect("replacement");
+    let mut replaced = false;
+
+    let result = read_inspected_with_hook(
+        inspect(root.path(), "resource.txt", 128 * 1024).expect("inspection"),
+        128 * 1024,
+        None,
+        || {},
+        || {
+            if !replaced {
+                std::fs::rename(&replacement, &file).expect("replace during read");
+                replaced = true;
+            }
+        },
+    );
 
     assert!(matches!(result, Err(FileReadError::Access)));
 }
@@ -57,10 +111,10 @@ fn rejects_a_late_symlink() {
     let file = root.path().join("resource.txt");
     std::fs::write(&file, b"original").expect("original");
 
-    let result = read_after(root.path(), "resource.txt", 64, || {
-        std::fs::remove_file(&file).expect("remove");
-        symlink(outside.path(), &file).expect("symlink");
-    });
+    let inspected = inspect(root.path(), "resource.txt", 64).expect("inspection");
+    std::fs::remove_file(&file).expect("remove");
+    symlink(outside.path(), &file).expect("symlink");
+    let result = read_inspected_with_hook(inspected, 64, None, || {}, || {});
 
     assert!(matches!(result, Err(FileReadError::Access)));
 }
@@ -103,4 +157,33 @@ fn distinguishes_a_missing_file_from_an_access_failure() {
         read_verified_file(root.path(), "missing.txt", 64),
         Err(FileReadError::NotFound)
     ));
+}
+
+#[test]
+fn cancellation_during_or_after_read_rejects_the_verified_file() {
+    let root = tempfile::tempdir().expect("root");
+    std::fs::write(root.path().join("resource.txt"), vec![1_u8; 128 * 1024])
+        .expect("resource");
+
+    let during = CancellationToken::new();
+    let during_chunk = during.clone();
+    let result = read_inspected_with_hook(
+        inspect(root.path(), "resource.txt", 128 * 1024).expect("inspection"),
+        128 * 1024,
+        Some(&during),
+        || {},
+        move || during_chunk.cancel(),
+    );
+    assert!(matches!(result, Err(FileReadError::Cancelled)));
+
+    let after = CancellationToken::new();
+    let after_content = after.clone();
+    let result = read_inspected_with_hook(
+        inspect(root.path(), "resource.txt", 128 * 1024).expect("inspection"),
+        128 * 1024,
+        Some(&after),
+        move || after_content.cancel(),
+        || {},
+    );
+    assert!(matches!(result, Err(FileReadError::Cancelled)));
 }

@@ -85,8 +85,10 @@ Host can actually use. Use `beaver.capabilities?.includes(...)` so an
 extension also loads in an older Beaver Host. When both `skills` and
 `resources` are present, the Host also exposes `registerSkill` and
 `registerResource`. Register metadata only: Beaver does not read, inject, or
-expose either file's content during this API level. `richToolResults` remains
-unavailable until its separate capability is announced.
+expose either file's content during this API level. When `richToolResults` is
+present, tools may return bounded text and file blocks. File paths stay relative
+to the tool working directory; Beaver verifies and reads them only after the
+result is admitted to its batch budget.
 
 ```ts
 if (

@@ -175,7 +175,7 @@ pub async fn run_agent_loop(
         let control_only =
             agent_loop_tools::prepare_tool_batch(&result.tool_calls, turn, &mut breaker).await?;
         let tool_start = messages.len();
-        let tool_outcome =
+        let mut tool_outcome =
             agent_loop_tools::execute_tool_batch(agent_loop_tools::ToolBatchContext {
                 on_event,
                 messages,

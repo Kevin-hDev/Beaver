@@ -29,6 +29,10 @@ pub fn render_typescript(contract: &Value) -> Result<String, String> {
             array_value(contract, "resultBlockTypes")?.to_vec(),
         ),
         (
+            "EXTENSION_RESULT_FILE_PURPOSES",
+            array_value(contract, "resultFilePurposes")?.to_vec(),
+        ),
+        (
             "EXTENSION_RESOURCE_TYPES",
             array_value(contract, "resourceTypes")?.to_vec(),
         ),
@@ -93,6 +97,10 @@ pub fn render_typescript(contract: &Value) -> Result<String, String> {
         ),
         ("ExtensionContributionType", "EXTENSION_CONTRIBUTION_TYPES"),
         ("ExtensionResultBlockType", "EXTENSION_RESULT_BLOCK_TYPES"),
+        (
+            "ExtensionResultFilePurpose",
+            "EXTENSION_RESULT_FILE_PURPOSES",
+        ),
         ("ExtensionResourceType", "EXTENSION_RESOURCE_TYPES"),
         ("CoreToHostMethod", "CORE_TO_HOST_METHODS"),
         (

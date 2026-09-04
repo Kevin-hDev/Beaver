@@ -11,6 +11,7 @@ export function encodeProtocolMessage(message) {
 
 function fitToolResult(message) {
   if (encodedLength(message) < LIMITS.maxMessageBytes) return message;
+  if (Array.isArray(message?.result?.content)) throw new Error("message_too_large");
   if (
     !message?.result
     || typeof message.result !== "object"

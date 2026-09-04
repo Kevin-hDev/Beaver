@@ -86,6 +86,7 @@ async function copyHostSources(source, destination) {
     "package-lock.json",
     "package.json",
     "protocol-output.mjs",
+    "tool-result-snapshot.mjs",
     "protocol.mjs",
     "versions.mjs",
   ];

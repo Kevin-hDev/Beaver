@@ -48,12 +48,25 @@ pub(super) async fn push_and_compress(
     name: &str,
     args: &serde_json::Value,
     working_dir: &std::path::Path,
-    tr: ToolResult,
+    mut tr: ToolResult,
     idx: usize,
     tool_call_ids: &[String],
     compression: Option<&ToolCompression<'_>>,
 ) -> ToolExecutionOutcome {
     let resolved_path = resolve_tool_path(name, args, working_dir);
+    let mut outcome = ToolExecutionOutcome::with_compressed(false);
+    let artifacts = tr.take_ephemeral_artifacts();
+    if outcome
+        .record_artifacts(idx, tool_call_ids.get(idx).map(String::as_str), artifacts)
+        .is_err()
+    {
+        tr = ToolResult::error(
+            "Résultat d'extension indisponible.",
+            crate::services::extensions::error_codes::RESULT_TOO_LARGE,
+            super::tool_result_contract::ToolErrorCategory::Unavailable,
+            false,
+        );
+    }
     let follow_up = push_tool_result(
         on_event,
         messages,
@@ -67,7 +80,7 @@ pub(super) async fn push_and_compress(
         Some(compression) => compression.try_run(messages).await,
         None => false,
     };
-    let mut outcome = ToolExecutionOutcome::with_compressed(compressed);
+    outcome.compressed = compressed;
     outcome.record(follow_up);
     outcome
 }

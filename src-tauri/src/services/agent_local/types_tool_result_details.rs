@@ -20,6 +20,81 @@ pub(super) struct ToolResultDetails {
 }
 
 impl ToolResult {
+    #[cfg_attr(not(test), allow(dead_code))]
+    pub(crate) fn with_ephemeral_artifact(
+        mut self,
+        artifact: super::tool_artifact::EphemeralArtifact,
+    ) -> Self {
+        self.artifacts.ephemeral.push(artifact);
+        self
+    }
+
+    pub(crate) fn push_ephemeral_artifact(
+        &mut self,
+        artifact: super::tool_artifact::EphemeralArtifact,
+    ) {
+        self.artifacts.ephemeral.push(artifact);
+    }
+
+    #[cfg(test)]
+    pub(crate) fn ephemeral_artifacts(&self) -> &[super::tool_artifact::EphemeralArtifact] {
+        &self.artifacts.ephemeral
+    }
+
+    pub(crate) fn take_ephemeral_artifacts(
+        &mut self,
+    ) -> Vec<super::tool_artifact::EphemeralArtifact> {
+        std::mem::take(&mut self.artifacts.ephemeral)
+    }
+
+    pub(crate) fn set_pending_artifacts(
+        &mut self,
+        artifacts: Vec<super::tool_artifact::PendingArtifact>,
+    ) -> Result<(), ()> {
+        if artifacts.len() > crate::services::extensions::types::MAX_RESULT_FILES {
+            return Err(());
+        }
+        self.artifacts.pending = artifacts;
+        Ok(())
+    }
+
+    pub(crate) fn pending_artifacts(&self) -> &[super::tool_artifact::PendingArtifact] {
+        &self.artifacts.pending
+    }
+
+    pub(crate) fn take_pending_artifacts(
+        &mut self,
+    ) -> Vec<super::tool_artifact::PendingArtifact> {
+        std::mem::take(&mut self.artifacts.pending)
+    }
+
+    pub(crate) fn set_pending_extension_resource(
+        &mut self,
+        resource: super::tool_artifact::PendingExtensionResource,
+    ) -> Result<(), ()> {
+        if self.artifacts.pending_resource.is_some() {
+            return Err(());
+        }
+        self.artifacts.pending_resource = Some(resource);
+        Ok(())
+    }
+
+    pub(crate) fn take_pending_extension_resource(
+        &mut self,
+    ) -> Option<super::tool_artifact::PendingExtensionResource> {
+        self.artifacts.pending_resource.take()
+    }
+
+    pub(crate) fn has_pending_extension_resource(&self) -> bool {
+        self.artifacts.pending_resource.is_some()
+    }
+
+    pub(crate) fn pending_extension_resource(
+        &self,
+    ) -> Option<&super::tool_artifact::PendingExtensionResource> {
+        self.artifacts.pending_resource.as_ref()
+    }
+
     pub fn with_affected_paths(mut self, paths: Vec<String>) -> Self {
         self.details.affected_paths = paths;
         self

@@ -4,6 +4,7 @@ import type {
   ExtensionEffectClass,
   ExtensionEvent,
   OptionalExtensionCapability,
+  ExtensionResultFilePurpose,
   ExtensionResourceType,
   StableHostToCoreRequestMethod,
 } from "./contract";
@@ -21,18 +22,18 @@ export type JsonValue =
   | { [key: string]: JsonValue };
 
 export interface BeaverToolResult {
-  content: string;
+  content: BeaverToolResultContent;
   isError?: boolean;
   displaySummary?: string;
   truncated?: boolean;
 }
 
-/** R0 declares this shape for future rich results; the Host does not accept it yet. */
+/** Rich results are available when the Host advertises richToolResults. */
 export type BeaverToolResultBlock =
   | { type: "text"; text: string }
-  | { type: "file"; path: string; purpose: "artifact" | "preview"; displayName?: string };
+  | { type: "file"; path: string; purpose: ExtensionResultFilePurpose; displayName?: string };
 
-/** Future API-R0 result content; it remains unavailable until richToolResults is active. */
+/** A tool may return text or bounded rich-result blocks. */
 export type BeaverToolResultContent = string | BeaverToolResultBlock[];
 
 /** R0 declares this shape for future resource registration; no registration method is exposed. */

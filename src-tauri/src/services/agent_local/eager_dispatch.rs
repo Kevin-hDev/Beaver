@@ -102,15 +102,8 @@ where
                 chat_mode,
             )
             .await;
-            super::stream_diagnostics::record_tool(
-                &sid,
-                &rid,
-                &name,
-                "completed",
-                arg_summary,
-                Some(&result),
-            )
-            .await;
+            // The batch resolves pending artifacts before it records the sole
+            // completion event, so diagnostics match the published result.
             (idx, result)
         });
     }

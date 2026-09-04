@@ -21,6 +21,7 @@ mod discovery_preferences;
 mod discovery_result_serialization;
 mod discovery_usage;
 pub(crate) mod error_codes;
+mod extension_internal_exports;
 pub(crate) mod extension_recovery;
 mod fingerprint;
 mod fingerprint_paths;
@@ -79,11 +80,13 @@ pub(crate) mod registry_recovery;
 mod registry_state;
 mod registry_sync;
 mod resource_loader;
+mod resource_loader_prepare;
 mod runtime;
 mod runtime_channel_ensure;
 mod runtime_channel_sync;
 mod runtime_diagnostics;
 mod runtime_dispatch;
+mod runtime_dispatch_result;
 mod runtime_exit_monitor;
 mod runtime_failed_spawn;
 mod runtime_host_generation;
@@ -108,6 +111,9 @@ mod storage_format;
 mod storage_migration;
 mod tool_bridge;
 mod tool_result;
+mod tool_result_contract;
+mod tool_result_files;
+mod tool_result_media;
 pub(crate) mod types;
 mod ui_action_result;
 mod ui_artifact;
@@ -194,6 +200,7 @@ pub(crate) use public_api::{
     MAX_EXTENSION_TOOLS, MAX_PERMISSION_SUMMARY_CHARS,
 };
 
+pub(crate) use extension_internal_exports::*;
 pub(crate) use installer::{
     install_git as install_git_source, install_npm as install_npm_source,
     uninstall as uninstall_extension, update as update_managed_extension,
@@ -202,20 +209,5 @@ pub(crate) use manifest::load_local as install_local;
 pub(crate) use operation_error::{report as report_operation_error, Operation};
 pub(crate) use operation_failure::OperationFailure;
 pub(crate) use resource_loader::{
-    load_for_session as load_extension_resource_for_session,
-    load_skill_for_session as load_extension_skill_for_session, ResourceLoadError,
+    load_skill_for_session as load_extension_skill_for_session, LoadedResource, ResourceLoadError,
 };
-pub(crate) use ui_build_api::{
-    cleanup_unreferenced as cleanup_unreferenced_ui_artifacts, prepare_record as prepare_ui_record,
-    refresh_artifacts as refresh_extension_ui_artifacts,
-    resolve_runtime as resolve_ui_build_runtime,
-};
-pub(crate) use ui_startup::prepare as prepare_ui_startup;
-#[cfg(target_os = "windows")]
-pub(crate) use ui_startup::{
-    cef_child_safe_mode_action, cef_safe_mode_switch_name, SAFE_MODE_SWITCH,
-};
-pub(crate) use ui_startup_ack::{UiAckToken, UiLoadAcknowledger};
-pub(crate) use ui_startup_state::{SafeReason, UiStartupMode, UiStartupState};
-pub(crate) use validation::identifier as validate_identifier;
-pub(crate) use verified_file_read::read as read_verified_file;

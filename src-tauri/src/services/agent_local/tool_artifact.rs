@@ -1,0 +1,78 @@
+use serde::Serialize;
+
+pub(crate) use crate::services::extensions::types::ExtensionResultFilePurpose as ArtifactPurpose;
+
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct ArtifactMetadata {
+    pub name: String,
+    pub mime_type: String,
+    pub bytes: u64,
+    pub sha256: String,
+    pub purpose: ArtifactPurpose,
+    pub source: ArtifactSource,
+}
+
+#[derive(Clone, Debug, Serialize)]
+#[serde(tag = "kind", rename_all = "camelCase")]
+pub(crate) enum ArtifactSource {
+    WorkspaceFile { path: std::path::PathBuf, grant: String },
+    ExtensionResource { resource_id: String, catalog_fingerprint: String },
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct EphemeralArtifact {
+    #[cfg_attr(not(test), allow(dead_code))]
+    pub metadata: ArtifactMetadata,
+    #[cfg_attr(
+        not(test),
+        expect(dead_code, reason = "P6 consumes these bytes after the execution outcome")
+    )]
+    pub bytes: Vec<u8>,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct PendingArtifact {
+    pub relative_path: String,
+    pub display_name: Option<String>,
+    pub purpose: ArtifactPurpose,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct PendingExtensionResource {
+    pub session_id: String,
+    pub name: String,
+    pub extension_id: String,
+    pub qualified_resource_id: String,
+    pub catalog_fingerprint: String,
+    pub root: std::path::PathBuf,
+    pub relative_path: String,
+}
+
+impl From<crate::services::extensions::PreparedResource> for PendingExtensionResource {
+    fn from(resource: crate::services::extensions::PreparedResource) -> Self {
+        Self {
+            session_id: resource.session_id,
+            name: resource.name,
+            extension_id: resource.extension_id,
+            qualified_resource_id: resource.qualified_resource_id,
+            catalog_fingerprint: resource.catalog_fingerprint,
+            root: resource.root,
+            relative_path: resource.relative_path,
+        }
+    }
+}
+
+impl PendingArtifact {
+    pub(crate) fn from_validated(
+        relative_path: String,
+        display_name: Option<String>,
+        purpose: ArtifactPurpose,
+    ) -> Self {
+        Self {
+            relative_path,
+            display_name,
+            purpose,
+        }
+    }
+}

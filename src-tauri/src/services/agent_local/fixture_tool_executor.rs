@@ -76,7 +76,7 @@ mod tests {
                 ("bash".to_string(), json!({ "command": "pwd" })),
             ];
 
-            let outcome = execute(
+            let mut outcome = execute(
                 &emitter,
                 &mut messages,
                 &calls,

@@ -22,6 +22,7 @@ async fn loading_requires_inspection_and_an_extension_capable_route() {
             &session_id,
             &records,
             &plugins,
+            "test-catalog-fingerprint",
         )
         .await
         .unwrap_err(),
@@ -119,6 +120,7 @@ async fn assert_unavailable(
             session_id,
             records,
             plugins,
+            "test-catalog-fingerprint",
         )
         .await
         .unwrap_err(),
@@ -136,6 +138,7 @@ async fn load_reference(
         session_id,
         records,
         plugins,
+        "test-catalog-fingerprint",
     )
     .await
     .expect("reference resource")

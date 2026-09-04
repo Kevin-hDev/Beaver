@@ -34,11 +34,12 @@ pub(super) async fn flush_read_batch<'a>(
     request_id: &str,
     chat_mode: bool,
 ) {
-    for chunk in batch.chunks(MAX_PARALLEL) {
+    let mut batch_results: Vec<Option<ToolResult>> = vec![None; batch.len()];
+    for (chunk_index, chunk) in batch.chunks(MAX_PARALLEL).enumerate() {
+        let chunk_start = chunk_index * MAX_PARALLEL;
         if cancel.is_cancelled() {
-            for entry in chunk {
-                indexed_results[entry.global_idx] =
-                    Some((entry.name, ToolResult::cancelled("Annulé.")));
+            for (position, _) in chunk.iter().enumerate() {
+                batch_results[chunk_start + position] = Some(ToolResult::cancelled("Annulé."));
             }
             continue;
         }
@@ -68,7 +69,14 @@ pub(super) async fn flush_read_batch<'a>(
             let futs: Vec<_> = pending_indices
                 .iter()
                 .map(|&pos| {
-                    dispatch_pending(&chunk[pos], working_dir, session_id, request_id, chat_mode)
+                    dispatch_pending(
+                        &chunk[pos],
+                        working_dir,
+                        session_id,
+                        request_id,
+                        cancel.clone(),
+                        chat_mode,
+                    )
                 })
                 .collect();
             let dispatched = tokio::select! {
@@ -105,7 +113,7 @@ pub(super) async fn flush_read_batch<'a>(
             }
         }
 
-        for (pos, entry) in chunk.iter().enumerate() {
+        for (pos, _) in chunk.iter().enumerate() {
             let tr = chunk_results[pos].take().unwrap_or_else(|| {
                 if cancel.is_cancelled() {
                     ToolResult::cancelled("Annulé.")
@@ -118,8 +126,17 @@ pub(super) async fn flush_read_batch<'a>(
                     )
                 }
             });
-            indexed_results[entry.global_idx] = Some((entry.name, tr));
+            batch_results[chunk_start + pos] = Some(tr);
         }
+    }
+    for (entry, result) in batch.iter().zip(batch_results) {
+        let result = result.unwrap_or_else(|| ToolResult::error(
+                "Résultat de lecture indisponible.",
+                "read_batch_result_missing",
+                ToolErrorCategory::Internal,
+                true,
+            ));
+        indexed_results[entry.global_idx] = Some((entry.name, result));
     }
 }
 
@@ -128,6 +145,7 @@ async fn dispatch_pending(
     working_dir: &std::path::Path,
     session_id: &str,
     request_id: &str,
+    cancel: CancellationToken,
     chat_mode: bool,
 ) -> ToolResult {
     super::tool_executor_parallel_dispatch::dispatch_read(
@@ -136,7 +154,12 @@ async fn dispatch_pending(
         working_dir,
         session_id,
         request_id,
+        cancel,
         chat_mode,
     )
     .await
 }
+
+#[cfg(test)]
+#[path = "tool_executor_parallel_batch_tests.rs"]
+mod tests;

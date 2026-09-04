@@ -47,7 +47,8 @@ pub async fn run_sequential(
         {
             Ok(summary) => summary,
             Err(tr) => {
-                outcome.merge(
+                if !merge_or_stop(
+                    &mut outcome,
                     push_and_compress(
                         on_event,
                         messages,
@@ -60,7 +61,9 @@ pub async fn run_sequential(
                         compression,
                     )
                     .await,
-                );
+                ) {
+                    return outcome;
+                }
                 continue;
             }
         };
@@ -75,7 +78,7 @@ pub async fn run_sequential(
                     &tr,
                 )
                 .await;
-                outcome.merge(
+                if !merge_or_stop(&mut outcome,
                     push_and_compress(
                         on_event,
                         messages,
@@ -88,7 +91,9 @@ pub async fn run_sequential(
                         compression,
                     )
                     .await,
-                );
+                ) {
+                    return outcome;
+                }
                 continue;
             }
             PreHookDecision::Allow => {}
@@ -104,7 +109,7 @@ pub async fn run_sequential(
                 &tr,
             )
             .await;
-            outcome.merge(
+            if !merge_or_stop(&mut outcome,
                 push_and_compress(
                     on_event,
                     messages,
@@ -117,7 +122,9 @@ pub async fn run_sequential(
                     compression,
                 )
                 .await,
-            );
+            ) {
+                return outcome;
+            }
             continue;
         }
 
@@ -151,12 +158,13 @@ pub async fn run_sequential(
             super::tool_executor_errors::denied_or_cancelled(&cancel)
         };
 
+        let tr = super::tool_pending_artifacts::resolve_for_result(tr, working_dir, &cancel).await;
         let tr = run_post_hooks(name, args, tr);
         post_record_read(name, args, working_dir, &tr, write_guard);
         post_record_write(name, args, working_dir, &tr, write_guard);
         super::tool_executor_diagnostics::completed(session_id, request_id, name, arg_summary, &tr)
             .await;
-        outcome.merge(
+        if !merge_or_stop(&mut outcome,
             push_and_compress(
                 on_event,
                 messages,
@@ -169,7 +177,20 @@ pub async fn run_sequential(
                 compression,
             )
             .await,
-        );
+        ) {
+            return outcome;
+        }
     }
     outcome
+}
+
+fn merge_or_stop(outcome: &mut ToolExecutionOutcome, next: ToolExecutionOutcome) -> bool {
+    if outcome.merge(next).is_ok() {
+        return true;
+    }
+    // A malformed caller bypassed the validated tool-call/result bounds. Stop
+    // rather than panic or silently discard attributed bytes.
+    log::error!("tool_execution_artifact_limit_exceeded");
+    outcome.record(super::types_tools::ToolFollowUp::Stop);
+    false
 }

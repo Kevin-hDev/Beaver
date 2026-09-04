@@ -82,16 +82,7 @@ pub(super) async fn execute(context: ToolBatchContext<'_>) -> ToolExecutionOutco
         context.write_guard,
         context.plan_active,
         Some(context.eager_results),
-        {
-            #[cfg(debug_assertions)]
-            {
-                context.tool_call_ids
-            }
-            #[cfg(not(debug_assertions))]
-            {
-                &[]
-            }
-        },
+        context.tool_call_ids,
         None,
     )
     .await

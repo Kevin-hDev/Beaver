@@ -88,6 +88,10 @@ fn contract_declares_the_complete_v1_surface() {
     );
     assert_eq!(contract["resultBlockTypes"], serde_json::json!(["text", "file"]));
     assert_eq!(
+        contract["resultFilePurposes"],
+        serde_json::json!(["artifact", "preview"])
+    );
+    assert_eq!(
         contract["resourceTypes"],
         serde_json::json!(["text", "image", "file"])
     );
@@ -243,6 +247,7 @@ fn generated_rust_names_the_unique_load_stage_notification() {
     assert!(generated.contains("pub enum OptionalExtensionCapability"));
     assert!(generated.contains("pub enum ExtensionContributionType"));
     assert!(generated.contains("pub enum ExtensionResultBlockType"));
+    assert!(generated.contains("pub enum ExtensionResultFilePurpose"));
     assert!(generated.contains("pub enum ExtensionResourceType"));
 }
 

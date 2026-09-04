@@ -5,6 +5,7 @@ pub fn render(output: &mut String, contract: &Value) -> Result<(), String> {
         ("OptionalExtensionCapability", "optionalCapabilities"),
         ("ExtensionContributionType", "contributionTypes"),
         ("ExtensionResultBlockType", "resultBlockTypes"),
+        ("ExtensionResultFilePurpose", "resultFilePurposes"),
         ("ExtensionResourceType", "resourceTypes"),
     ] {
         let values = contract

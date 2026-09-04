@@ -135,6 +135,13 @@ pub(crate) fn indexed_plugins() -> Vec<IndexedPlugin> {
         .unwrap_or_default()
 }
 
+pub(crate) fn indexed_plugins_with_catalog_version() -> Result<(Vec<IndexedPlugin>, String), ()> {
+    INDEX
+        .read()
+        .map(|index| (index.plugins.clone(), index.catalog.version.clone()))
+        .map_err(|_| ())
+}
+
 pub(crate) fn catalog_snapshot() -> CatalogSnapshot {
     INDEX
         .read()

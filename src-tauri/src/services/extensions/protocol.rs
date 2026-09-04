@@ -57,7 +57,7 @@ pub struct HostDiagnostic {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HostToolResult {
-    pub content: String,
+    pub content: super::tool_result_contract::ToolResultContent,
     #[serde(default)]
     pub is_error: bool,
     #[serde(default)]

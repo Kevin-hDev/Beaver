@@ -11,6 +11,9 @@ mod extension_skill_loader_tests;
 #[cfg(debug_assertions)]
 pub mod fixture_tool_executor;
 pub mod tool_automation;
+pub mod tool_artifact;
+#[cfg(test)]
+mod tool_artifact_tests;
 #[cfg(test)]
 mod tool_automation_tests;
 mod tool_automation_validation;
@@ -83,6 +86,7 @@ mod tool_document_write_table;
 pub mod tool_document_write_tests;
 pub mod tool_document_write_xml;
 pub mod tool_execution_outcome;
+mod tool_execution_artifacts;
 pub mod tool_executor;
 pub mod tool_executor_compression;
 pub mod tool_executor_delegate_batch;
@@ -93,6 +97,7 @@ pub mod tool_executor_helpers;
 pub mod tool_executor_parallel;
 pub mod tool_executor_parallel_batch;
 pub mod tool_executor_parallel_dispatch;
+mod tool_executor_parallel_finalize;
 #[cfg(test)]
 pub mod tool_executor_parallel_tests;
 pub mod tool_executor_parallel_write;
@@ -146,6 +151,12 @@ pub mod tool_list_dir;
 #[cfg(test)]
 mod tool_list_dir_tests;
 pub mod tool_mcp;
+pub mod tool_pending_artifact_batch;
+mod tool_pending_artifact_errors;
+mod tool_pending_artifact_inspect;
+mod tool_pending_artifact_read;
+mod tool_pending_artifact_revalidate;
+pub mod tool_pending_artifacts;
 mod tool_mcp_call;
 mod tool_office_array;
 #[cfg(test)]

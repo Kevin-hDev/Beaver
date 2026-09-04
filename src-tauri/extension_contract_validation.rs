@@ -88,6 +88,7 @@ fn validate_strings(contract: &Value) -> Result<(), String> {
             &["tool", "event", "ui", "skill", "resource"][..],
         ),
         ("/resultBlockTypes", &["text", "file"][..]),
+        ("/resultFilePurposes", &["artifact", "preview"][..]),
         ("/resourceTypes", &["text", "image", "file"][..]),
     ] {
         exact_contract_strings(contract, pointer, expected, maximum_name_chars)?;

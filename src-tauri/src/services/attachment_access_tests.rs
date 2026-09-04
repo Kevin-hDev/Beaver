@@ -3,7 +3,8 @@ use std::fs;
 use tempfile::tempdir;
 
 use super::attachment_access::{
-    read_verified_after, register_paths, verify_access_grant, VerifiedAttachmentError,
+    grant_verified_path, read_verified_after, register_paths, verify_access_grant,
+    VerifiedAttachmentError,
 };
 
 const TEST_KEY: [u8; 32] = [7; 32];
@@ -245,4 +246,21 @@ fn symlink_substitution_after_grant_is_never_followed() {
     );
 
     assert!(matches!(result, Err(VerifiedAttachmentError::Access)));
+}
+
+#[test]
+fn verified_path_grant_requires_the_expected_identity_and_key() {
+    let dir = tempdir().unwrap();
+    let path = dir.path().join("artifact.txt");
+    fs::write(&path, b"safe").unwrap();
+    let file = std::fs::File::open(&path).unwrap();
+    let identity = super::attachment_access_identity::from_file(&file).unwrap();
+    let canonical = path.canonicalize().unwrap();
+    assert!(grant_verified_path(&canonical, identity, &TEST_KEY).is_ok());
+    assert!(grant_verified_path(&canonical, identity, b"bad").is_err());
+    let other = dir.path().join("other.txt");
+    fs::write(&other, b"other").unwrap();
+    let other_file = std::fs::File::open(&other).unwrap();
+    let other_identity = super::attachment_access_identity::from_file(&other_file).unwrap();
+    assert!(grant_verified_path(&canonical, other_identity, &TEST_KEY).is_err());
 }

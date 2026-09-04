@@ -5,6 +5,7 @@ import { createExtensionApi } from "./extension-api.mjs";
 import { createDiagnostic } from "./diagnostics.mjs";
 import { notifyCore } from "./protocol.mjs";
 import { clearUiActions, invokeUiAction } from "./ui-actions.mjs";
+import { snapshotToolResult } from "./tool-result-snapshot.mjs";
 
 const sdkPath = fileURLToPath(new URL("./sdk/index.mjs", import.meta.url));
 const jiti = createJiti(import.meta.url, {
@@ -37,19 +38,7 @@ export async function callExtensionTool(name, arguments_, context) {
       timer.unref();
     }),
   ]).finally(() => clearTimeout(timer));
-  if (typeof raw === "string") {
-    return boundedToolResult({ content: raw, isError: false });
-  }
-  if (!raw || typeof raw !== "object" || typeof raw.content !== "string") {
-    throw new Error("invalid_tool_result");
-  }
-  return boundedToolResult({
-    content: raw.content,
-    isError: raw.isError === true,
-    displaySummary:
-      typeof raw.displaySummary === "string" ? raw.displaySummary : undefined,
-    truncated: raw.truncated === true,
-  });
+  return boundedToolResult(snapshotToolResult(raw));
 }
 
 function toolExecutionContext(context) {
@@ -65,17 +54,26 @@ function toolExecutionContext(context) {
   return Object.freeze({ workingDirectory });
 }
 
-function boundedToolResult(result) {
-  const content = safeSlice(result.content, LIMITS.maxMessageBytes);
+export function boundedToolResult(result) {
+  const content = typeof result.content === "string"
+    ? safeSlice(result.content, LIMITS.maxMessageBytes)
+    : boundedBlocks(result.content);
   const displaySummary = typeof result.displaySummary === "string"
     ? safeSlice(result.displaySummary, 1_024)
     : undefined;
-  return {
+  return Object.freeze(Object.assign(Object.create(null), {
     content,
     isError: result.isError,
     displaySummary,
-    truncated: result.truncated === true || content.length < result.content.length,
-  };
+    truncated: result.truncated === true || (typeof content === "string" && content.length < result.content.length),
+  }));
+}
+
+function boundedBlocks(blocks) {
+  if (!Array.isArray(blocks)) throw new Error("invalid_tool_result");
+  // `snapshotToolResult` already owns and freezes this array and its records.
+  // Reuse that validated snapshot instead of consulting a mutable Array prototype.
+  return blocks;
 }
 
 function safeSlice(value, maxChars) {

@@ -6,6 +6,13 @@ use super::types_tool_result_details::ToolResultDetails;
 const MAX_TOOL_WARNINGS: usize = 16;
 const MAX_TOOL_WARNING_CHARS: usize = 1_000;
 
+#[derive(Debug, Clone, Default)]
+pub(super) struct ToolResultArtifacts {
+    pub(super) ephemeral: Vec<super::tool_artifact::EphemeralArtifact>,
+    pub(super) pending: Vec<super::tool_artifact::PendingArtifact>,
+    pub(super) pending_resource: Option<super::tool_artifact::PendingExtensionResource>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ToolResult {
     pub content: String,
@@ -20,6 +27,8 @@ pub struct ToolResult {
     pub truncated: bool,
     #[serde(flatten)]
     pub(super) details: Box<ToolResultDetails>,
+    #[serde(skip)]
+    pub(super) artifacts: Box<ToolResultArtifacts>,
     #[serde(skip)]
     pub follow_up: Option<Box<ToolFollowUp>>,
 }
@@ -97,6 +106,7 @@ impl ToolResult {
             warnings: Vec::new(),
             truncated: false,
             details: Box::default(),
+            artifacts: Box::default(),
             follow_up: None,
         }
     }

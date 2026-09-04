@@ -58,7 +58,7 @@ async fn finish_prepared(
     prepared: super::agent_loop_tool_batch::PreparedToolBatch,
 ) -> Result<bool, String> {
     let tool_start = context.messages.len();
-    let outcome =
+    let mut outcome =
         super::agent_loop_tool_batch::execute(super::agent_loop_tool_batch::ToolBatchContext {
             on_event: context.on_event,
             messages: context.messages,

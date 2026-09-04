@@ -8,6 +8,8 @@ pub(crate) struct QualifiedContributionId {
 pub(crate) struct LoadedResource {
     pub name: String,
     pub extension_id: String,
+    pub qualified_resource_id: String,
+    pub catalog_fingerprint: String,
     pub bytes: Vec<u8>,
     pub signature: crate::services::file_signature::FileSignature,
 }
@@ -41,21 +43,13 @@ pub(crate) fn parse_qualified_contribution_id(value: &str) -> Result<QualifiedCo
         local_id: local_id.to_string(),
     })
 }
-
-pub(crate) async fn load_for_session(
-    resource_id: &str,
-    session_id: &str,
-) -> Result<LoadedResource, ResourceLoadError> {
-    let records = super::list().map_err(|_| ResourceLoadError::Unavailable)?;
-    let plugins = super::indexed_plugins();
-    load_for_session_with(resource_id, session_id, &records, &plugins).await
-}
-
+#[cfg(test)]
 pub(super) async fn load_for_session_with(
     resource_id: &str,
     session_id: &str,
     records: &[super::types::ExtensionRecord],
     plugins: &[super::registry_index::IndexedPlugin],
+    catalog_fingerprint: &str,
 ) -> Result<LoadedResource, ResourceLoadError> {
     let qualified =
         parse_qualified_contribution_id(resource_id).map_err(|_| ResourceLoadError::InvalidId)?;
@@ -76,6 +70,11 @@ pub(super) async fn load_for_session_with(
         .ok_or(ResourceLoadError::NotFound)?;
     let root = std::path::PathBuf::from(&record.source);
     let path = resource.path.clone();
+    let qualified_resource_id = format!(
+        "extension:{}:{}",
+        qualified.extension_id, qualified.local_id
+    );
+    let catalog_fingerprint = catalog_fingerprint.to_owned();
     tokio::task::spawn_blocking(move || {
         let loaded =
             super::read_verified_file(&root, &path, super::types::MAX_RESOURCE_FILE_BYTES as u64)
@@ -92,6 +91,8 @@ pub(super) async fn load_for_session_with(
         Ok(LoadedResource {
             name: resource.name,
             extension_id: qualified.extension_id,
+            qualified_resource_id,
+            catalog_fingerprint,
             bytes: loaded.bytes,
             signature: loaded.signature,
         })
@@ -99,21 +100,29 @@ pub(super) async fn load_for_session_with(
     .await
     .map_err(|_| ResourceLoadError::Unavailable)?
 }
-
 pub(crate) async fn load_skill_for_session(
     skill_id: &str,
     session_id: &str,
 ) -> Result<LoadedResource, ResourceLoadError> {
     let records = super::list().map_err(|_| ResourceLoadError::Unavailable)?;
-    let plugins = super::indexed_plugins();
-    load_skill_for_session_with(skill_id, session_id, &records, &plugins).await
+    let (plugins, catalog_fingerprint) =
+        super::registry_index::indexed_plugins_with_catalog_version()
+            .map_err(|_| ResourceLoadError::Unavailable)?;
+    load_skill_for_session_with(
+        skill_id,
+        session_id,
+        &records,
+        &plugins,
+        &catalog_fingerprint,
+    )
+    .await
 }
-
 pub(super) async fn load_skill_for_session_with(
     skill_id: &str,
     session_id: &str,
     records: &[super::types::ExtensionRecord],
     plugins: &[super::registry_index::IndexedPlugin],
+    catalog_fingerprint: &str,
 ) -> Result<LoadedResource, ResourceLoadError> {
     let qualified =
         parse_qualified_contribution_id(skill_id).map_err(|_| ResourceLoadError::InvalidId)?;
@@ -134,6 +143,11 @@ pub(super) async fn load_skill_for_session_with(
         .ok_or(ResourceLoadError::NotFound)?;
     let root = std::path::PathBuf::from(&record.source);
     let path = skill.path.clone();
+    let qualified_resource_id = format!(
+        "extension:{}:{}",
+        qualified.extension_id, qualified.local_id
+    );
+    let catalog_fingerprint = catalog_fingerprint.to_owned();
     tokio::task::spawn_blocking(move || {
         let loaded = super::read_verified_file(
             &root,
@@ -151,6 +165,8 @@ pub(super) async fn load_skill_for_session_with(
         Ok(LoadedResource {
             name: skill.name,
             extension_id: qualified.extension_id,
+            qualified_resource_id,
+            catalog_fingerprint,
             bytes: loaded.bytes,
             signature: loaded.signature,
         })
@@ -159,7 +175,10 @@ pub(super) async fn load_skill_for_session_with(
     .map_err(|_| ResourceLoadError::Unavailable)?
 }
 
-async fn authorize_session(session_id: &str, extension_id: &str) -> Result<(), ResourceLoadError> {
+pub(super) async fn authorize_session(
+    session_id: &str,
+    extension_id: &str,
+) -> Result<(), ResourceLoadError> {
     let session = crate::services::agent_local::session_store::get(session_id)
         .await
         .map_err(|_| ResourceLoadError::Unavailable)?;
@@ -183,7 +202,10 @@ async fn authorize_session(session_id: &str, extension_id: &str) -> Result<(), R
     Ok(())
 }
 
-fn active_approved_record(record: &super::types::ExtensionRecord, extension_id: &str) -> bool {
+pub(super) fn active_approved_record(
+    record: &super::types::ExtensionRecord,
+    extension_id: &str,
+) -> bool {
     record.manifest.id == extension_id
         && record.enabled
         && record.trusted
