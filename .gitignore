@@ -2,6 +2,7 @@ node_modules/
 dist/
 target/
 coverage/
+.e2e-artifacts/
 __pycache__/
 *.py[cod]
 *.ips

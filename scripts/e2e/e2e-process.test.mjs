@@ -87,6 +87,27 @@ test("the packaged runner selects the packaged binary before WebDriver", () => {
   assert.ok(preparation >= 0 && webdriver > preparation);
 });
 
+test("the E2E runner separates package construction from acceptance", () => {
+  assert.equal(typeof e2eProcess.resolveE2eRunMode, "function");
+  if (typeof e2eProcess.resolveE2eRunMode !== "function") return;
+  assert.deepEqual(e2eProcess.resolveE2eRunMode({}), {
+    build: true,
+    journey: true,
+  });
+  assert.deepEqual(e2eProcess.resolveE2eRunMode({ E2E_BUILD_ONLY: "1" }), {
+    build: true,
+    journey: false,
+  });
+  assert.deepEqual(e2eProcess.resolveE2eRunMode({ E2E_SKIP_BUILD: "1" }), {
+    build: false,
+    journey: true,
+  });
+  assert.throws(
+    () => e2eProcess.resolveE2eRunMode({ E2E_BUILD_ONLY: "1", E2E_SKIP_BUILD: "1" }),
+    /E2E run mode is invalid/u,
+  );
+});
+
 test("the E2E binary path is platform specific", () => {
   const cargoTargetDir = resolve("/repo", "target", "e2e");
   const debugRoot = resolve(cargoTargetDir, "debug");

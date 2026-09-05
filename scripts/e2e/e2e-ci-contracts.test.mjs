@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
+import { load as loadYaml } from "js-yaml";
 
 const readSource = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 const ciSource = readSource("../../.github/workflows/ci.yml");
@@ -14,7 +15,76 @@ const invokeSource = readSource("../../src-tauri/src/invoke_handler.rs");
 const commandsSource = readSource("../../src-tauri/src/commands/mod.rs");
 const e2eCommandSource = readSource("../../src-tauri/src/commands/e2e.rs");
 const acceptanceSource = readSource("../../tests/e2e/extensions-ui-acceptance.spec.ts");
+const hostSetupSource = readSource("../../tests/e2e/extension-host-setup.ts");
 const packagedSource = readSource("./run-packaged.mjs");
+const ci = loadYaml(ciSource);
+
+test("CI can target only the native boundary that needs diagnosis", () => {
+  assert.deepEqual(ci.on.workflow_dispatch.inputs.target.options, [
+    "all",
+    "windows-host",
+    "windows-backend",
+    "windows-native",
+    "macos-native",
+  ]);
+  assert.match(ci.jobs["windows-extension-host-smoke"].if, /windows-host/u);
+  assert.match(ci.jobs["backend-windows"].if, /windows-backend/u);
+  assert.match(ci.jobs["backend-windows-native"].if, /windows-native/u);
+  assert.match(ci.jobs["backend-macos-native"].if, /macos-native/u);
+});
+
+test("native Windows CI executes the AppContainer confinement boundary", () => {
+  const backend = ci.jobs["backend-windows"];
+  const confinement = backend.steps.find(({ name }) => name === "Windows AppContainer confinement");
+  assert.ok(confinement);
+  assert.match(confinement.run, /appcontainer_writes_only_inside_the_selected_root/u);
+  assert.match(confinement.run, /--exact --ignored --nocapture/u);
+});
+
+test("Windows packages and acceptance run in separate jobs", () => {
+  const build = ci.jobs["backend-windows-native"];
+  const acceptance = ci.jobs["windows-packaged-acceptance"];
+  assert.equal(acceptance.needs, "backend-windows-native");
+  assert.ok(build.steps.some(({ name }) => name === "Build Windows E2E package"));
+  assert.ok(build.steps.some(({ name }) => name === "Upload Windows E2E package"));
+  assert.ok(acceptance.steps.some(({ name }) => name === "Download Windows E2E package"));
+  assert.ok(acceptance.steps.some(({ name }) => name === "Native Windows CEF journey"));
+});
+
+test("Windows acceptance always preserves bounded diagnostics and test results", () => {
+  const acceptance = ci.jobs["windows-packaged-acceptance"];
+  const journey = acceptance.steps.find(({ name }) => name === "Native Windows CEF journey");
+  const upload = acceptance.steps.find(({ name }) => name === "Upload Windows E2E diagnostics");
+  assert.equal(journey.env.E2E_SKIP_BUILD, "1");
+  assert.equal(journey.env.E2E_ARTIFACT_DIR, ".e2e-artifacts/windows-cef");
+  assert.equal(upload.if, "${{ always() }}");
+  assert.equal(upload.with.path, ".e2e-artifacts/windows-cef");
+  assert.equal(upload.with["include-hidden-files"], true);
+  assert.equal(upload.with["retention-days"], 14);
+});
+
+test("macOS packages and acceptance run in separate jobs", () => {
+  const build = ci.jobs["backend-macos-native"];
+  const acceptance = ci.jobs["macos-packaged-acceptance"];
+  assert.equal(acceptance.needs, "backend-macos-native");
+  assert.ok(build.steps.some(({ name }) => name === "Build macOS E2E package"));
+  assert.ok(build.steps.some(({ name }) => name === "Archive macOS E2E package"));
+  assert.ok(build.steps.some(({ name }) => name === "Upload macOS E2E package"));
+  assert.ok(acceptance.steps.some(({ name }) => name === "Download macOS E2E package"));
+  assert.ok(acceptance.steps.some(({ name }) => name === "Native macOS CEF journey"));
+});
+
+test("macOS acceptance always preserves bounded diagnostics and test results", () => {
+  const acceptance = ci.jobs["macos-packaged-acceptance"];
+  const journey = acceptance.steps.find(({ name }) => name === "Native macOS CEF journey");
+  const upload = acceptance.steps.find(({ name }) => name === "Upload macOS E2E diagnostics");
+  assert.equal(journey.env.E2E_SKIP_BUILD, "1");
+  assert.equal(journey.env.E2E_ARTIFACT_DIR, ".e2e-artifacts/macos-cef");
+  assert.equal(upload.if, "${{ always() }}");
+  assert.equal(upload.with.path, ".e2e-artifacts/macos-cef");
+  assert.equal(upload.with["include-hidden-files"], true);
+  assert.equal(upload.with["retention-days"], 14);
+});
 
 test("CI exercises Rust assertions and clippy with the E2E feature", () => {
   assert.match(ciSource, /cargo clippy --all-targets --features e2e -- -D warnings/u);
@@ -157,7 +227,8 @@ test("installed extension UI acceptance opts into only its host", () => {
     invokeSource,
     /#\[cfg\((?:all\()?feature = "e2e"[\s\S]*e2e_initialize_extension_host/u,
   );
-  assert.match(acceptanceSource, /invokeTauri\("e2e_initialize_extension_host"\)/u);
+  assert.match(acceptanceSource, /initializeExtensionHost\(\)/u);
+  assert.match(hostSetupSource, /invokeTauri\("e2e_initialize_extension_host"\)/u);
   assert.match(acceptanceSource, /get_extension_host_status/u);
 });
 

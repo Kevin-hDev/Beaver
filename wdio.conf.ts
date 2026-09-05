@@ -8,6 +8,7 @@ if (!e2eLogDirectory) throw new Error("E2E log directory is not configured");
 const nativeCefSmoke = process.env.E2E_REQUIRE_CEF_SMOKE === "1";
 const nativeWebViewSmoke = process.env.E2E_REQUIRE_WEBVIEW_SMOKE === "1";
 const nativeSmoke = nativeCefSmoke || nativeWebViewSmoke;
+const artifactDirectory = process.env.E2E_ARTIFACT_DIR;
 const childSessionReadOnlySpec = "./tests/e2e/child-session-read-only.spec.ts";
 const extensionUiRuntimeProofSpec = "./tests/e2e/extensions-ui-runtime-proof.spec.ts";
 const extensionUiAdvancedSpec = "./tests/e2e/extensions-ui-advanced.spec.ts";
@@ -45,7 +46,12 @@ export const config: WebdriverIO.Config = {
     captureFrontendLogs: true,
   }]],
   framework: "mocha",
-  reporters: ["spec"],
+  reporters: artifactDirectory
+    ? ["spec", ["junit", {
+      outputDir: artifactDirectory,
+      outputFileFormat: () => "wdio-results.xml",
+    }]]
+    : ["spec"],
   logLevel: nativeSmoke ? "info" : "warn",
   bail: 1,
   waitforTimeout: 15_000,

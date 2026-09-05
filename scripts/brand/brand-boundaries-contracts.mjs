@@ -10,7 +10,7 @@ export const EXPECTED_INTERNAL_REFERENCE_COUNTS = Object.freeze({
   // Les parcours E2E nomment explicitement le binaire historique sur chaque OS.
   "cl-go-dash": 260,
   // Les thèmes d'extension et leurs parcours rejouent les clés persistantes historiques.
-  clgo: 126,
+  clgo: 128,
   "cl-go": 72,
   // Les deux branches main appellent explicitement la bibliothèque Rust.
   cl_go_dash: 48,
