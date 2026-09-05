@@ -31,12 +31,11 @@ pub async fn retry_extension_load(
     app: tauri::AppHandle,
     extension_id: String,
 ) -> Result<bool, String> {
-    let result =
-        extensions::extension_recovery::retry(&extension_id, extensions::new_stop_deadline())
-            .await
-            .inspect(|_| {
-                super::extensions::emit_changed(&app);
-            });
+    let result = extensions::extension_recovery::retry(&extension_id)
+        .await
+        .inspect(|_| {
+            super::extensions::emit_changed(&app);
+        });
     super::extensions::command_error::close(
         super::extensions::command_error::ExtensionCommand::RetryLoad,
         result,

@@ -29,9 +29,7 @@ async fn internal_start_cannot_bypass_closed_admission() {
     let runtime = runtime(work);
 
     assert_eq!(
-        runtime
-            .start_untracked(Instant::now() + Duration::from_secs(1))
-            .await,
+        runtime.start_untracked().await,
         Err(error_codes::HOST_UNAVAILABLE.to_string())
     );
     assert_eq!(runtime.hosts.lock().await.len(), 0);
@@ -45,11 +43,7 @@ async fn failed_cautious_retry_never_leaves_the_runtime_stuck_as_starting() {
     ));
 
     assert!(runtime
-        .retry_untracked(
-            "com.example.missing".to_string(),
-            2,
-            Instant::now() + Duration::from_secs(1),
-        )
+        .retry_untracked("com.example.missing".to_string(), 2)
         .await
         .is_err());
     assert_eq!(runtime.status.read().unwrap().state, HostState::Error);

@@ -46,10 +46,10 @@ pub async fn keep_disabled(extension_id: &str) -> Result<bool, String> {
     Ok(reminder)
 }
 
-pub async fn retry(extension_id: &str, deadline: std::time::Instant) -> Result<bool, String> {
+pub async fn retry(extension_id: &str) -> Result<bool, String> {
     super::validation::identifier(extension_id)?;
     let attempts = super::loading_marker::next_retry_attempt(extension_id)?;
-    super::runtime_lifecycle::retry_load(extension_id.to_string(), attempts, deadline).await
+    super::runtime_lifecycle::retry_load(extension_id.to_string(), attempts).await
 }
 
 pub fn discard_marker() -> Result<(), String> {

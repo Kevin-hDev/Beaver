@@ -182,6 +182,10 @@ test("CI gates the Windows CEF journey on a real extension load", () => {
     smokeJob,
     /prepared_runtime_confirms_restart_stop_while_exit_monitor_is_active --features windows-tests --exact --ignored --nocapture/u,
   );
+  assert.match(
+    smokeJob,
+    /cargo test --manifest-path tests\/windows-private-store\/Cargo\.toml/u,
+  );
 });
 
 test("CI runs the real Tauri WebView journey on Linux", () => {

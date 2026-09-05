@@ -350,6 +350,12 @@ jobs:
           node ../scripts/ci/run-rust-test-filter.mjs --filter services::extensions::host_process::prepared_tests::prepared_runtime_ --features windows-tests --ignored --nocapture
           node ../scripts/ci/run-rust-test-filter.mjs --filter services::extensions::runtime_lifecycle::tests::prepared_runtime_confirms_restart_stop_while_exit_monitor_is_active --features windows-tests --exact --ignored --nocapture
 
+      # Keep the fast host boundary capable of diagnosing the durable loading
+      # journal without rebuilding the packaged CEF application.
+      - name: Windows private-store replacement stress
+        working-directory: src-tauri
+        run: cargo test --manifest-path tests/windows-private-store/Cargo.toml
+
   windows-packaged-acceptance:
     name: Windows packaged acceptance (CEF)
     needs: backend-windows-native

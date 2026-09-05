@@ -43,8 +43,12 @@ async fn dispatch_tracked(
     arguments: &Value,
     working_directory: &Path,
 ) -> ToolResult {
-    let deadline = super::runtime_lifecycle::new_stop_deadline();
-    let host = match super::runtime_lifecycle::ensure_running(extension_id, deadline).await {
+    let host = match super::runtime_lifecycle::ensure_running(
+        extension_id,
+        super::runtime_lifecycle::new_stop_deadline(),
+    )
+    .await
+    {
         Ok(host) => host,
         Err(_) => return super::tool_result::unavailable(),
     };
@@ -66,11 +70,18 @@ async fn dispatch_tracked(
         .await
         .and_then(super::runtime::parse::<HostToolResult>);
     if response.is_err() {
-        if let Ok((identity, _, current)) =
-            runtime.process_for_extension(extension_id, deadline).await
+        if let Ok((identity, _, current)) = runtime
+            .process_for_extension(extension_id, super::runtime_lifecycle::new_stop_deadline())
+            .await
         {
             if Arc::ptr_eq(&current, &host) {
-                invalidate(runtime, identity, host, deadline).await;
+                invalidate(
+                    runtime,
+                    identity,
+                    host,
+                    super::runtime_lifecycle::new_stop_deadline(),
+                )
+                .await;
             }
         }
     }

@@ -43,7 +43,14 @@ pub fn secure_acl(path: &Path) -> Result<(), String> {
     let user = windows_token::current_user()?;
     let path = wide(path);
     let is_directory = path_is_directory(path.as_slice())?;
-    windows_acl::apply_and_verify(&path, user.sid(), is_directory)
+    // Security scanners can transiently hold the file while its DACL is applied.
+    // Every retry reapplies and re-verifies the exact same private ACL; the
+    // bounded failure remains closed and never accepts an unverified file.
+    crate::services::windows_fs_retry::bounded(
+        || windows_acl::apply_and_verify(&path, user.sid(), is_directory),
+        |_| true,
+        std::thread::sleep,
+    )
 }
 
 fn security_metadata_guard() -> Result<MutexGuard<'static, ()>, String> {
