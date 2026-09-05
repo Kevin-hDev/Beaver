@@ -17,8 +17,13 @@ export function validRelativePath(value) {
     && !value.startsWith("/")
     && !value.includes("\\")
     && !value.includes(":")
-    && !/[\0-\x1F\x7F]/u.test(value)
-    && value.split("/").every((part) => part && part !== "." && part !== "..");
+    && !/[\0-\x1F\x7F-\x9F]/u.test(value)
+    && value.split("/").every((part) => part && part !== "." && part !== ".." && !dosReserved(part));
+}
+
+function dosReserved(part) {
+  const base = part.replace(/[ .]+$/u, "").split(".")[0].replace(/ +$/u, "").toUpperCase();
+  return /^(?:CON|PRN|AUX|NUL|(?:COM|LPT)[1-9¹²³])$/u.test(base);
 }
 
 export function unicodeScalarLength(value) {

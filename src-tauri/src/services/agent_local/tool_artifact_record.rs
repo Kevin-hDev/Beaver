@@ -44,7 +44,6 @@ pub(crate) enum ToolArtifactSource {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(test, derive(ts_rs::TS))]
-#[serde(deny_unknown_fields)]
 pub(crate) struct ToolArtifactRecord {
     pub name: String,
     pub mime_type: String,
@@ -123,6 +122,15 @@ mod tests {
                 catalog_fingerprint: "b".repeat(SHA256_HEX_BYTES),
             },
         }
+    }
+
+    #[test]
+    fn persisted_artifacts_ignore_future_fields_but_still_validate_metadata() {
+        let mut value = serde_json::to_value(artifact()).unwrap();
+        value["future_field"] = serde_json::json!({"version": 2});
+        value["source"]["future_source_field"] = serde_json::json!(true);
+        let parsed: ToolArtifactRecord = serde_json::from_value(value).expect("tolerant persisted read");
+        assert!(validate(&[parsed]).is_ok());
     }
 
     #[test]

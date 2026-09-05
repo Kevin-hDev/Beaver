@@ -764,6 +764,14 @@ async fn future_session_is_visible_without_continuity_or_rewrite() {
     });
     let mut value = serde_json::to_value(&session).unwrap();
     value["schema_version"] = json!(99);
+    value["messages"][1]["tool_activities"] = json!([{
+        "name": "write_file", "summary": "Created a file", "artifacts": [{
+            "name":"preview.png", "mime_type":"image/png", "bytes":8,
+            "sha256":"a".repeat(64), "purpose":"preview", "future_field":true,
+            "source":{"kind":"extension_resource", "resource_id":"extension:sample:preview",
+                "catalog_fingerprint":"b".repeat(64), "future_source_field":true}
+        }]
+    }]);
     let bytes = serde_json::to_vec_pretty(&value).unwrap();
     crate::services::private_store::atomic_write(&path, &bytes).unwrap();
 
@@ -771,6 +779,7 @@ async fn future_session_is_visible_without_continuity_or_rewrite() {
         .await
         .expect("future visible");
     assert_eq!(visible.schema_version, 99);
+    assert_eq!(visible.messages[1].tool_activities.as_ref().unwrap()[0].artifacts.len(), 1);
     assert_eq!(visible.messages[1].content, "fixture-assistant-content");
     assert!(visible.messages[1].continuation.is_none());
     assert!(visible.messages[0].replay_source.is_none());

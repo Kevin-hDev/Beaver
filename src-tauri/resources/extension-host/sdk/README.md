@@ -96,12 +96,14 @@ result is admitted to its batch budget.
 if (
   beaver.capabilities?.includes("skills")
   && beaver.capabilities?.includes("resources")
+  && beaver.registerSkill
+  && beaver.registerResource
 ) {
   beaver.registerSkill({
     id: "guide",
     name: "Guide",
     description: "A concise guide.",
-    path: "skills/guide.md",
+    path: "skills/guide/SKILL.md",
   });
   beaver.registerResource({
     id: "reference",
@@ -115,12 +117,26 @@ if (
 
 ### Bounded file results
 
-Return a text block before each file block. `artifact` is a result file and
+Return explanatory text alongside file blocks. `artifact` is a result file and
 `preview` is eligible for a provider-specific image preview. The generated limits
 are authoritative: at most 16 blocks, 8 files, 20 MiB per result and 64 MiB for
 one parallel batch. An error result cannot carry a file. Beaver stores only the
 validated metadata and provenance; it does not persist the binary bytes or expose
 the extension's internal resource path.
+
+Skills must point to `SKILL.md` or `skill.md`; ordinary resources have no such
+basename restriction. Feature-detect both the capability and the optional
+registration method on older API 1 hosts.
+
+The complete registration response, including tools, skills, resources and UI,
+must fit within `maxMessageBytes`, including the RPC envelope and the largest
+accepted request ID. Exceeding the aggregate budget fails registration
+before any tools are published, even when individual contributions are valid.
+
+History verification has a separate 64 MiB I/O budget per session opening.
+Readers reserve their worst-case cost, not an untrusted persisted file size.
+Skipped artifacts are shown as not verified; preview replay still revalidates
+the actual file before supplying any bytes to a model.
 
 ```ts
 return {

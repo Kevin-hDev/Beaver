@@ -99,6 +99,7 @@ export function createExtensionApi(specification) {
       skills.length >= LIMITS.maxSkillsPerExtension
       || !validContribution(skill, validIdentifier, ["id", "name", "description", "path"])
       || !validRelativePath(skill.path)
+      || !["SKILL.md", "skill.md"].includes(skill.path.split("/").at(-1))
       || skills.some((item) => item.id === skill.id)
     ) throw new Error("invalid_skill");
     skills.push(skill);

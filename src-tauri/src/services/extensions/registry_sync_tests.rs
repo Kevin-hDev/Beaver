@@ -118,7 +118,7 @@ fn restarted_host_reconstructs_a_skill_only_extension() {
                 id: "guide".to_string(),
                 name: "Guide".to_string(),
                 description: "Description.".to_string(),
-                path: "skills/guide.md".to_string(),
+                path: "skills/guide/SKILL.md".to_string(),
             }],
             ..Default::default()
         },

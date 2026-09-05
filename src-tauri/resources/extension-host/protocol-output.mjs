@@ -1,5 +1,13 @@
 import { LIMITS } from "./contract.mjs";
 
+export const MAX_REQUEST_ID_CHARS = 128;
+
+export function assertProtocolResultFits(result) {
+  // Use the largest escaped request id accepted by the protocol; no arbitrary
+  // second payload ceiling may reject registrations that already fit the wire.
+  encodeProtocolMessage({ jsonrpc: "2.0", id: "\u0000".repeat(MAX_REQUEST_ID_CHARS), result });
+}
+
 export function encodeProtocolMessage(message) {
   const fitted = fitToolResult(message);
   const line = Buffer.from(`${JSON.stringify(fitted)}\n`, "utf8");

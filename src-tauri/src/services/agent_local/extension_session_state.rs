@@ -6,7 +6,7 @@ use tokio::sync::Mutex;
 
 use super::extension_tool_selection::PluginDescriptor;
 
-const STORE_MAX_BYTES: u64 = 64 * 1024;
+use crate::services::extensions::DISCOVERY_STORE_MAX_BYTES as STORE_MAX_BYTES;
 const MAX_EPOCH_TEXT_CHARS: usize = 256;
 static STORE_LOCK: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
 

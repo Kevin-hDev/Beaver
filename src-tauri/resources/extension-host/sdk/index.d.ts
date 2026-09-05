@@ -36,7 +36,7 @@ export type BeaverToolResultBlock =
 /** A tool may return text or bounded rich-result blocks. */
 export type BeaverToolResultContent = string | BeaverToolResultBlock[];
 
-/** R0 declares this shape for future resource registration; no registration method is exposed. */
+/** A resource under the extension root; feature-detect registration on older hosts. */
 export interface BeaverResourceContribution {
   id: string;
   name: string;
@@ -45,7 +45,7 @@ export interface BeaverResourceContribution {
   path: string;
 }
 
-/** R0 declares this shape for future skill registration; no registration method is exposed. */
+/** A SKILL.md or skill.md manifest under the extension root. */
 export interface BeaverSkillContribution {
   id: string;
   name: string;
@@ -152,8 +152,8 @@ export interface BeaverExtensionApi {
   readonly capabilities?: readonly (ExtensionCapability | OptionalExtensionCapability)[];
   info(): Promise<JsonValue>;
   registerTool(tool: BeaverTool): void;
-  registerSkill(skill: BeaverSkillContribution): void;
-  registerResource(resource: BeaverResourceContribution): void;
+  registerSkill?(skill: BeaverSkillContribution): void;
+  registerResource?(resource: BeaverResourceContribution): void;
   readonly ui: BeaverUiApi;
   on(event: ExtensionEvent, handler: (payload: JsonValue) => void | Promise<void>): () => void;
   call(method: StableHostToCoreRequestMethod, params?: Record<string, JsonValue>): Promise<JsonValue>;

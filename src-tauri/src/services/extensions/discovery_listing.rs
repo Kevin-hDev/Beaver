@@ -67,13 +67,19 @@ struct CompactEntry<'a> {
 
 pub(crate) fn json_text(value: &str, maximum_bytes: usize) -> String {
     let mut output = String::new();
+    // Count the JSON quotes and each scalar's escape once, without serializing prefixes.
+    let mut bytes = 2;
     for character in value.chars() {
-        let mut candidate = output.clone();
-        candidate.push(character);
-        if serde_json::to_vec(&candidate).is_ok_and(|json| json.len() > maximum_bytes) {
+        let escaped = match character {
+            '"' | '\\' | '\n' | '\r' | '\t' | '\u{0008}' | '\u{000c}' => 2,
+            '\u{0000}'..='\u{001f}' => 6,
+            _ => character.len_utf8(),
+        };
+        if bytes + escaped > maximum_bytes {
             break;
         }
-        output = candidate;
+        bytes += escaped;
+        output.push(character);
     }
     output
 }

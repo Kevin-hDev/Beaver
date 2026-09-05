@@ -476,7 +476,7 @@
       "toggleDetails": "Afficher les détails des outils",
       "artifacts": "Fichiers produits",
       "openArtifact": "Ouvrir {{name}}",
-      "artifactStatus": { "intact": "Intact", "absent": "Absent", "modified": "Modifié", "inaccessible": "Inaccessible" },
+      "artifactStatus": { "intact": "Intact", "absent": "Absent", "modified": "Modifié", "inaccessible": "Inaccessible", "unverified": "Non vérifié" },
       "groups": {
         "exploration": "Exploration",
         "modification": "Modifications",

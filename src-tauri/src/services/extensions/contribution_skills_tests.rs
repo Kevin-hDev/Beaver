@@ -44,7 +44,7 @@ fn skills_reject_duplicate_ids_and_overlong_human_metadata() {
         id: "guide".to_string(),
         name: "Guide".to_string(),
         description: "Description.".to_string(),
-        path: "skills/guide.md".to_string(),
+        path: "skills/guide/SKILL.md".to_string(),
     };
     assert!(super::contribution_skills::validate(&[skill.clone(), skill.clone()]).is_err());
 
@@ -60,9 +60,40 @@ fn skills_enforce_the_generated_collection_limit() {
             id: format!("skill-{index}"),
             name: "Skill".to_string(),
             description: "Description.".to_string(),
-            path: "skills/guide.md".to_string(),
+            path: "skills/guide/SKILL.md".to_string(),
         })
         .collect::<Vec<_>>();
 
     assert!(super::contribution_skills::validate(&skills).is_err());
+}
+
+#[test]
+fn skills_require_a_manifest_filename_and_reject_windows_superscripts() {
+    for path in [
+        "guide.txt",
+        "skills/guide.md",
+        "Skill.md",
+        "COM¹/SKILL.md",
+        "LPT².txt/SKILL.md",
+    ] {
+        let skill = super::types::ExtensionSkill {
+            id: "guide".into(),
+            name: "Guide".into(),
+            description: "Guide".into(),
+            path: path.into(),
+        };
+        assert!(
+            super::contribution_skills::validate(&[skill]).is_err(),
+            "{path}"
+        );
+    }
+    for path in ["SKILL.md", "skills/skill.md"] {
+        let skill = super::types::ExtensionSkill {
+            id: "guide".into(),
+            name: "Guide".into(),
+            description: "Guide".into(),
+            path: path.into(),
+        };
+        assert!(super::contribution_skills::validate(&[skill]).is_ok());
+    }
 }

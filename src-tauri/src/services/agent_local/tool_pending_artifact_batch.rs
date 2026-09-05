@@ -64,6 +64,8 @@ pub(crate) async fn resolve_batch(
     });
     let output = tokio::select! {
         output = worker => Some(output.unwrap_or_else(|_| unavailable_results(len))),
+        // Blocking I/O cannot be killed mid-syscall. The shared token stops the
+        // reader at its next chunk boundary; a cancelled result is never published.
         _ = cancel.cancelled() => None,
     };
     if let Some(output) = output {

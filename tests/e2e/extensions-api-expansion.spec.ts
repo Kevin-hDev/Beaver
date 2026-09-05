@@ -81,7 +81,7 @@ describe("API expansion packaged acceptance", () => {
     const capabilities = $(".extcap-root");
     const labelledBy = await capabilities.getAttribute("aria-labelledby");
     assert.ok(labelledBy);
-    assert.equal(await $(`#${labelledBy}`).isExisting(), true);
+    assert.equal(await browser.execute((id) => Boolean(document.getElementById(id)), labelledBy), true);
     assert.equal(await browser.execute(
       () => document.querySelectorAll('button[aria-label*="Beryl"]').length > 0,
     ), true);
@@ -117,7 +117,8 @@ describe("API expansion packaged acceptance", () => {
     await openExtensionsPage(enLocale);
     await waitForText(".extr-main", "Beryl");
     await browser.execute(() => {
-      document.querySelector<HTMLElement>(".extr-main")?.focus();
+      Array.from(document.querySelectorAll<HTMLElement>(".extr-main"))
+        .find((row) => row.innerText.includes("Beryl"))?.focus();
     });
     await browser.keys("Enter");
     await $(".settings-detail-title h2").waitForDisplayed();

@@ -170,6 +170,8 @@ pub(crate) use discovery_inspection::InspectionStatus;
 pub(crate) use discovery_listing::list as list_discoverable;
 pub(crate) use discovery_result_serialization::serialize_bounded_result;
 pub(crate) const MAX_INSPECTED_EXTENSIONS: usize = discovery_contract::MAX_INSPECTED_EXTENSIONS;
+pub(crate) use discovery_contract::{CONTEXT_THRESHOLD_PERCENT, UNKNOWN_CONTEXT_TOKENS};
+pub(crate) use discovery_limits::DISCOVERY_STORE_MAX_BYTES;
 pub(crate) const MAX_COMPACT_CATALOG_BYTES: usize = discovery_contract::MAX_COMPACT_CATALOG_BYTES;
 pub(crate) const LIST_EXTENSIONS_TOOL_NAME: &str = discovery_contract::DISCOVERY_TOOL_NAMES[0];
 pub(crate) const INSPECT_EXTENSIONS_TOOL_NAME: &str = discovery_contract::DISCOVERY_TOOL_NAMES[1];

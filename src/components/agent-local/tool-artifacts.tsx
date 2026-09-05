@@ -24,11 +24,9 @@ export function ToolArtifacts({
           <>
             <span className="ta-name">{artifact.name}</span>
             <span className="ta-meta">{artifact.mime_type} · {formatBytes(artifact.bytes)}</span>
-            {artifact.verification && (
-              <span className={`ta-status ta-status-${artifact.verification}`}>
-                {t(`agentLocal.toolActivity.artifactStatus.${artifact.verification}`)}
-              </span>
-            )}
+            <span className="ta-status">
+              {t(`agentLocal.toolActivity.artifactStatus.${artifact.verification ?? "unverified"}`)}
+            </span>
           </>
         );
         return (

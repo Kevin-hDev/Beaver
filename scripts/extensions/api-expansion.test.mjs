@@ -16,6 +16,31 @@ import { createExtensionApi } from "../../src-tauri/resources/extension-host/ext
 import { loadExtensionWithApi, resetExtensions } from "../../src-tauri/resources/extension-host/loader.mjs";
 import { createLegacyHostContext } from "./fixtures/legacy-host.mjs";
 
+test("oversized contributions fail at registration without publishing any tools", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "beaver-contribution-budget-"));
+  const mainPath = join(directory, "index.mjs");
+  await writeFile(mainPath, `export default function(api) {
+    api.registerTool({name:"probe", description:"Probe", parameters:{type:"object"}, execute:()=>({content:"ok"})});
+    for (let index = 0; index < 64; index++) api.registerResource({
+      id:"r"+index, name:"🦫".repeat(100), description:"🦫".repeat(2000),
+      type:"file", path:"🦫".repeat(4096)
+    });
+  }`);
+  try {
+    await resetExtensions();
+    const result = await loadExtensionWithApi({
+      id: "sample.oversized", mainPath, manifest: {apiLevel:"stable"},
+    }, createExtensionApi);
+    assert.equal(result.error, "load_failed");
+    assert.equal(result.diagnostic.code, "registration_failed");
+    const { callExtensionTool } = await import("../../src-tauri/resources/extension-host/loader.mjs");
+    await assert.rejects(callExtensionTool("sample.oversized.probe", {}, {workingDirectory:directory}), /tool_not_found/);
+  } finally {
+    await resetExtensions();
+    await rm(directory, {recursive:true, force:true});
+  }
+});
+
 test("API 1 historique charge sans lire api.capabilities", () => {
   const { api } = createExtensionApi({
     id: "com.example.legacy",
@@ -86,7 +111,7 @@ test("skills et ressources sont capturés une seule fois avant validation", () =
     id: "reference",
     get name() { reads += 1; return "Reference"; },
     description: "Guidance",
-    path: "skills/reference.md",
+    path: "skills/reference/SKILL.md",
   };
 
   api.registerSkill(skill);
@@ -104,7 +129,7 @@ test("skills et ressources sont capturés une seule fois avant validation", () =
     id: "reference",
     name: "Reference",
     description: "Guidance",
-    path: "skills/reference.md",
+    path: "skills/reference/SKILL.md",
   }]);
   assert.deepEqual(JSON.parse(JSON.stringify(resources)), [{
     id: "preview",
@@ -125,20 +150,20 @@ test("l’Hôte borne et déduplique les déclarations de skills et ressources",
       id: `skill-${index}`,
       name: "Skill",
       description: "Description",
-      path: `skills/${index}.md`,
+      path: `skills/${index}/SKILL.md`,
     });
   }
   assert.throws(() => api.registerSkill({
     id: "one-too-many",
     name: "Skill",
     description: "Description",
-    path: "skills/overflow.md",
+    path: "skills/overflow/SKILL.md",
   }), /invalid_skill/u);
   assert.throws(() => api.registerSkill({
     id: "skill-0",
     name: "Duplicate",
     description: "Description",
-    path: "skills/duplicate.md",
+    path: "skills/duplicate/SKILL.md",
   }), /invalid_skill/u);
 
   const { api: resourceApi } = createExtensionApi({
@@ -180,7 +205,7 @@ test("l’Hôte refuse les chemins de contribution ambigus", () => {
     id: "root-injection",
     name: "Skill",
     description: "Description",
-    path: "skills/guide.md",
+    path: "skills/guide/SKILL.md",
     root: "/untrusted",
   }), /invalid_skill/u);
 });

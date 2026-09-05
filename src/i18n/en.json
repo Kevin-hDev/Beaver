@@ -476,7 +476,7 @@
       "toggleDetails": "Show tool details",
       "artifacts": "Produced files",
       "openArtifact": "Open {{name}}",
-      "artifactStatus": { "intact": "Intact", "absent": "Missing", "modified": "Modified", "inaccessible": "Inaccessible" },
+      "artifactStatus": { "intact": "Intact", "absent": "Missing", "modified": "Modified", "inaccessible": "Inaccessible", "unverified": "Not verified" },
       "groups": {
         "exploration": "Exploration",
         "modification": "Changes",

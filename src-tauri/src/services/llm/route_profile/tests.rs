@@ -120,6 +120,24 @@ fn xai_and_codex_profiles_explicitly_refuse_tool_result_media() {
 }
 
 #[test]
+fn compatible_secondary_routes_declare_follow_up_media_explicitly() {
+    for provider in [
+        "cerebras",
+        "deepseek",
+        "zai",
+        "qwen",
+        "moonshot",
+        "openrouter",
+    ] {
+        assert_eq!(
+            find(provider).expect(provider).wire.tool_result_media,
+            super::ToolResultMedia::FollowUpUserMessage,
+            "{provider}"
+        );
+    }
+}
+
+#[test]
 fn xai_oauth_chat_catalog_entries_have_their_own_text_only_wire() {
     let policy = super::xai_oauth_chat_payload_policy("grok-code-fast-1").expect("policy");
     assert_eq!(policy.tool_result_media, ToolResultMedia::TextOnly);

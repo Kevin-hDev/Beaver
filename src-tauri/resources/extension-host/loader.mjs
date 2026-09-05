@@ -6,6 +6,8 @@ import { createDiagnostic } from "./diagnostics.mjs";
 import { notifyCore } from "./protocol.mjs";
 import { clearUiActions, invokeUiAction } from "./ui-actions.mjs";
 import { snapshotToolResult } from "./tool-result-snapshot.mjs";
+import { snapshotContribution } from "./contribution-snapshot.mjs";
+import { assertProtocolResultFits } from "./protocol-output.mjs";
 
 const sdkPath = fileURLToPath(new URL("./sdk/index.mjs", import.meta.url));
 const jiti = createJiti(import.meta.url, {
@@ -135,14 +137,7 @@ export async function loadExtensionWithApi(specification, createApi) {
     stage = LOAD_STAGES[2];
     notifyCore(HOST_LOAD_STAGE_METHOD, { stage });
     ensureUniqueTools(context.tools);
-    for (const tool of context.tools) {
-      tools.set(tool.metadata.name, {
-        extensionId: specification.id,
-        execute: tool.execute,
-      });
-    }
-    extensions.set(specification.id, { module, context });
-    return {
+    const response = snapshotContribution({
       id: specification.id,
       contributions: {
         tools: context.tools.map((tool) => tool.metadata),
@@ -152,7 +147,17 @@ export async function loadExtensionWithApi(specification, createApi) {
         ui: context.ui.contributions,
       },
       uiDiagnostics: context.ui.diagnostics,
-    };
+    });
+    // Check the actual wire encoder before publishing any tools.
+    assertProtocolResultFits(response);
+    for (const tool of context.tools) {
+      tools.set(tool.metadata.name, {
+        extensionId: specification.id,
+        execute: tool.execute,
+      });
+    }
+    extensions.set(specification.id, { module, context });
+    return response;
   } catch (error) {
     return {
       id: specification.id,

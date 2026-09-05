@@ -41,6 +41,7 @@ pub(crate) fn responses_preview_input(
         "type": "input_text",
         "text": EXTENSION_OUTPUT_LABEL
     })];
+    // ToolResultPreviewBatch is the bounded owner, shared by every projection.
     for preview in previews.previews() {
         if !preview.artifact.mime_type.starts_with("image/") {
             continue;
@@ -129,7 +130,6 @@ pub(crate) fn append_ollama_fallback(
         .previews()
         .iter()
         .filter(|preview| preview.artifact.mime_type.starts_with("image/"))
-        .take(crate::services::extensions::types::MAX_MULTIMODAL_PREVIEWS_PER_CONTINUATION)
         .map(|preview| STANDARD.encode(&preview.artifact.bytes))
         .collect::<Vec<_>>();
     if !images.is_empty() {
@@ -159,7 +159,6 @@ fn compatible_follow_up_content(
         .previews()
         .iter()
         .filter(|preview| preview.artifact.mime_type.starts_with("image/"))
-        .take(crate::services::extensions::types::MAX_MULTIMODAL_PREVIEWS_PER_CONTINUATION)
     {
         let data_url = format!(
             "data:{};base64,{}",

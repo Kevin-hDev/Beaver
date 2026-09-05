@@ -23,6 +23,8 @@ pub async fn execute(args: &Value, session_id: &str, request_id: Option<&str>) -
                 record.map(|record| (record.enabled, record.trusted)),
                 plugin.is_some(),
             ) {
+                // A trusted active record missing from the index indicates an incoherent
+                // snapshot. Roll back the whole transaction rather than grant partial access.
                 return Err(
                     crate::services::extensions::error_codes::INSPECTION_UNAVAILABLE.to_string(),
                 );

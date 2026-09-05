@@ -5,6 +5,27 @@ use zeroize::Zeroizing;
 use super::tool_artifact_record::{ToolArtifactRecord, ToolArtifactSource, ToolArtifactStatus};
 use super::types_session::AgentSession;
 
+// History has its own I/O ceiling: never scale hashing work with session length.
+const MAX_HISTORY_VERIFICATION_BYTES: u64 = 64 * 1024 * 1024;
+
+#[derive(Default)]
+pub(super) struct HistoryVerificationBudget {
+    reserved_bytes: u64,
+}
+
+impl HistoryVerificationBudget {
+    fn admit(&mut self, maximum: u64) -> bool {
+        // Reserve the reader's worst case, including its one-byte overflow probe.
+        // Persisted sizes cannot understate the cost of reading a modified file.
+        let Some(next) = self.reserved_bytes.checked_add(maximum).and_then(|n| n.checked_add(1)) else {
+            return false;
+        };
+        if next > MAX_HISTORY_VERIFICATION_BYTES { return false; }
+        self.reserved_bytes = next;
+        true
+    }
+}
+
 pub(crate) async fn apply(session: &AgentSession, view: &mut AgentSessionView) {
     let records = records(session);
     let view_records = view_records_mut(view);
@@ -20,16 +41,32 @@ pub(crate) async fn apply(session: &AgentSession, view: &mut AgentSessionView) {
         .transpose()
         .ok()
         .flatten();
+    let mut budget = HistoryVerificationBudget::default();
     for (record, view_record) in records.into_iter().zip(view_records) {
-        view_record.verification = Some(match &record.source {
+        view_record.verification = match &record.source {
             ToolArtifactSource::WorkspaceFile { .. } => {
-                verify_workspace(record, key.as_deref().map(Vec::as_slice)).await
+                verify_workspace_bounded(record, key.as_deref().map(Vec::as_slice), &mut budget).await
             }
             ToolArtifactSource::ExtensionResource { .. } => {
-                verify_extension(record).await
+                if budget.admit(crate::services::extensions::types::MAX_RESOURCE_FILE_BYTES as u64) {
+                    Some(verify_extension(record).await)
+                } else {
+                    None
+                }
             }
-        });
+        };
     }
+}
+
+pub(super) async fn verify_workspace_bounded(
+    record: &ToolArtifactRecord,
+    key: Option<&[u8]>,
+    budget: &mut HistoryVerificationBudget,
+) -> Option<ToolArtifactStatus> {
+    if !budget.admit(crate::services::extensions::types::MAX_RESULT_BYTES as u64) {
+        return None;
+    }
+    Some(verify_workspace(record, key).await)
 }
 
 pub(super) async fn verify_workspace(
@@ -113,7 +150,8 @@ pub(super) fn resource_status_from_load(
 }
 
 fn artifact_matches(expected_bytes: u64, expected_sha256: &str, bytes: &[u8]) -> bool {
-    bytes.len() as u64 == expected_bytes && hex::encode(Sha256::digest(bytes)) == expected_sha256
+    bytes.len() as u64 == expected_bytes
+        && hex::encode(Sha256::digest(bytes)).eq_ignore_ascii_case(expected_sha256)
 }
 
 fn records(session: &AgentSession) -> Vec<&ToolArtifactRecord> {

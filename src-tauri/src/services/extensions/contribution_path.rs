@@ -29,5 +29,8 @@ fn dos_reserved_name(component: &str) -> bool {
         || base
             .strip_prefix("COM")
             .or_else(|| base.strip_prefix("LPT"))
-            .is_some_and(|number| number.len() == 1 && matches!(number.as_bytes(), [b'1'..=b'9']))
+            .is_some_and(|number| {
+                matches!(number, "¹" | "²" | "³")
+                    || (number.len() == 1 && matches!(number.as_bytes(), [b'1'..=b'9']))
+            })
 }

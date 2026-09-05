@@ -469,7 +469,7 @@
       "toggleDetails": "Mostrar detalles de herramientas",
       "artifacts": "Archivos producidos",
       "openArtifact": "Abrir {{name}}",
-      "artifactStatus": { "intact": "Intacto", "absent": "Ausente", "modified": "Modificado", "inaccessible": "Inaccesible" },
+      "artifactStatus": { "intact": "Intacto", "absent": "Ausente", "modified": "Modificado", "inaccessible": "Inaccesible", "unverified": "Sin verificar" },
       "groups": {
         "exploration": "Exploración",
         "modification": "Cambios",

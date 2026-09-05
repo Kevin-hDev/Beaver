@@ -21,6 +21,7 @@ pub fn validate(values: &[ExtensionSkill]) -> Result<(), ()> {
             )
             .is_err()
             || super::contribution_path::validate(&value.path).is_err()
+            || !matches!(value.path.rsplit('/').next(), Some("SKILL.md" | "skill.md"))
         {
             return Err(());
         }

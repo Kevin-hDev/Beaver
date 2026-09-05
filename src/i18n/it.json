@@ -469,7 +469,7 @@
       "toggleDetails": "Mostra dettagli degli strumenti",
       "artifacts": "File prodotti",
       "openArtifact": "Apri {{name}}",
-      "artifactStatus": { "intact": "Integro", "absent": "Assente", "modified": "Modificato", "inaccessible": "Inaccessibile" },
+      "artifactStatus": { "intact": "Integro", "absent": "Assente", "modified": "Modificato", "inaccessible": "Inaccessibile", "unverified": "Non verificato" },
       "groups": {
         "exploration": "Esplorazione",
         "modification": "Modifiche",

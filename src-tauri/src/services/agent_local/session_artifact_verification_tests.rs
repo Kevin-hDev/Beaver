@@ -53,6 +53,34 @@ async fn workspace_revalidation_marks_intact_modified_and_inaccessible() {
     );
 }
 
+#[tokio::test]
+async fn history_verification_budget_skips_files_before_reading_them() {
+    use super::session_artifact_verification::{verify_workspace_bounded, HistoryVerificationBudget};
+    let mut budget = HistoryVerificationBudget::default();
+    let record = workspace("/missing".into(), "invalid".into(), b"");
+    let mut verified = 0;
+    for _ in 0..100 {
+        if verify_workspace_bounded(&record, None, &mut budget).await.is_some() {
+            verified += 1;
+        }
+    }
+    assert_eq!(verified, 3, "20 MiB per file plus overflow probe; 64 MiB total");
+}
+
+#[tokio::test]
+async fn intact_workspace_hash_is_case_insensitive() {
+    let root = tempfile::tempdir().unwrap();
+    let path = root.path().join("artifact.bin");
+    std::fs::write(&path, b"first").unwrap();
+    let key = [7_u8; 32];
+    let registered = crate::services::attachment_access::register_paths(
+        &[path.to_string_lossy().into_owned()], &key, |_| true,
+    ).unwrap();
+    let mut record = workspace(registered[0].path.clone(), registered[0].access_grant.clone(), b"first");
+    record.sha256.make_ascii_uppercase();
+    assert_eq!(verify_workspace(&record, Some(&key)).await, ToolArtifactStatus::Intact);
+}
+
 #[test]
 fn resource_revalidation_maps_current_update_disabled_and_removed() {
     let record = ToolArtifactRecord {

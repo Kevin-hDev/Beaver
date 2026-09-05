@@ -56,6 +56,9 @@ pub async fn run_agent_loop(
         crate::services::agent_local::tool_artifact_preview::ToolResultPreviewBatch::default();
     #[cfg(debug_assertions)]
     let fixture_mode = fixture_run.is_some();
+    // Packaged builds have no fixture runner, but share the tool-turn context.
+    #[cfg(not(debug_assertions))]
+    let fixture_mode = false;
     let mut subagents = subagent_orchestration::ParentSubagentOrchestrator::with_parent_inbox(
         &session_id,
         parent_message_inbox,

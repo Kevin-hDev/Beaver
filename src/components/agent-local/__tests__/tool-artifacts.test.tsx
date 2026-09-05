@@ -51,7 +51,7 @@ describe("ToolArtifacts", () => {
       { ...workspace, name: "unchecked.pdf", mime_type: "application/pdf" },
     ]} />);
 
-    for (const status of ["intact", "absent", "modified", "inaccessible"]) {
+    for (const status of ["intact", "absent", "modified", "inaccessible", "unverified"]) {
       expect(screen.getByText(`agentLocal.toolActivity.artifactStatus.${status}`)).toBeVisible();
     }
     expect(screen.getByText("application/pdf · 2 KB")).toBeVisible();

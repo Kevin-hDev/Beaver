@@ -12,6 +12,22 @@ fn json_text_preserves_valid_unicode_within_the_serialized_budget() {
 }
 
 #[test]
+fn json_text_matches_actual_json_escaping_for_every_control_and_unicode_scalar() {
+    let input = (0_u8..=127).map(char::from).collect::<String>() + "é🦫中";
+    for budget in 2..=serde_json::to_vec(&input).unwrap().len() {
+        let mut expected = String::new();
+        for scalar in input.chars() {
+            let candidate = format!("{expected}{scalar}");
+            if serde_json::to_vec(&candidate).unwrap().len() > budget {
+                break;
+            }
+            expected = candidate;
+        }
+        assert_eq!(json_text(&input, budget), expected);
+    }
+}
+
+#[test]
 fn listing_sorts_by_id_and_rejects_more_than_the_host_extension_limit() {
     let plugins = vec![plugin("example.z"), plugin("example.a")];
 
