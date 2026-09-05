@@ -1,0 +1,25 @@
+Windows packaged-acceptance diagnosis after repeated failures.
+
+Observed evidence:
+- Diagnostic run 33975097548 failed twice after a real standard extension reached register, then activate.
+- Both attempts persisted extensions_stop_unconfirmed, while the changing last load stage proved the process had crossed the Node handshake and entered host.load.
+- The runtime reused a stop deadline created before fingerprinting, host startup, handshake, and requests that may each wait up to 30 seconds. A subsequent cleanup therefore received an already-expired 5-second deadline and overwrote the original load failure with a misleading stop failure.
+
+Correction:
+- Stop deadlines are now created at the exact process-stop boundary, independently for stale channels, rejected spawns, failed loads, tool-call invalidation, and post-sync lookup.
+- Restart keeps the user-owned stop deadline only for the old generation; starting the new generation is a separate phase.
+- Windows private ACL application and verification reuse the single existing 2-second bounded filesystem retry authority. Every attempt reapplies and re-verifies the exact ACL, and permanent failure remains fail-closed.
+- The isolated Windows private-store harness now performs 128 atomic replacements, and the fast windows-host CI target executes it before any packaged CEF rebuild.
+
+Validation observed locally:
+- cargo clippy --all-targets --features windows-tests -- -D warnings: green.
+- Runtime lifecycle: 8 passed, 1 intentionally ignored.
+- Runtime channel sync: 3 passed.
+- Windows filesystem retry: 2 passed.
+- CI contract tests: 24 passed.
+- Bundled extension runtime smoke: 4 passed.
+- graphify update . completed.
+
+Remaining platform boundary:
+- The Windows private-store stress and prepared host lifecycle must pass on windows-host.
+- One fresh windows-native packaged build is still required because this commit changes the Rust binary; the old-installer overlay diagnostic cannot prove it.
