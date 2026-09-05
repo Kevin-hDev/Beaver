@@ -8,7 +8,8 @@ export const EXPECTED_INTERNAL_REFERENCE_COUNTS = Object.freeze({
   "CL-GO": 38,
   CLGO: 32,
   // Les parcours E2E nomment explicitement le binaire historique sur chaque OS.
-  "cl-go-dash": 260,
+  // Le test de surcouche Windows crée aussi ce binaire dans son installation isolée.
+  "cl-go-dash": 261,
   // Les thèmes d'extension et leurs parcours rejouent les clés persistantes historiques.
   clgo: 128,
   "cl-go": 72,
