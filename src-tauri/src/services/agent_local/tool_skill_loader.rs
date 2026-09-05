@@ -91,13 +91,15 @@ pub async fn load_skill_with_metadata(skill_id: &str) -> Result<LoadedSkill, Ski
 pub(crate) fn valid_skill_id(skill_id: &str) -> bool {
     !skill_id.is_empty()
         && skill_id.len() <= MAX_SKILL_ID_BYTES
+        // Qualified extension skills are resolved only with a session grant.
+        && !skill_id.starts_with("extension:")
         && !skill_id.contains("..")
         && !skill_id
             .chars()
             .any(|value| matches!(value, '/' | '\\') || value.is_control())
 }
 
-fn display_name(name: &str) -> String {
+pub(crate) fn display_name(name: &str) -> String {
     let bounded = name
         .chars()
         .map(|value| if value.is_control() { ' ' } else { value })
@@ -127,5 +129,10 @@ mod tests {
     #[test]
     fn display_name_falls_back_when_empty() {
         assert_eq!(display_name("\n\t"), "Skill");
+    }
+
+    #[test]
+    fn ordinary_skill_ids_reserve_the_extension_namespace() {
+        assert!(!super::valid_skill_id("extension:plugin:guide"));
     }
 }

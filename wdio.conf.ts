@@ -1,4 +1,10 @@
 import { resolve } from "node:path";
+import {
+  EXTENSION_HOST_SETUP_TIMEOUT_MS,
+  EXTENSION_UI_SETUP_TIMEOUT_MS,
+  WEBDRIVER_IMPLICIT_TIMEOUT_MS,
+  WEBDRIVER_PAGE_LOAD_TIMEOUT_MS,
+} from "./scripts/e2e/extension-setup-deadline";
 import { NATIVE_JOURNEY_MOCHA_TIMEOUT_MS } from "./scripts/e2e/native-journey-deadline.mjs";
 
 const appBinaryPath = process.env.E2E_APP_BINARY;
@@ -8,10 +14,12 @@ if (!e2eLogDirectory) throw new Error("E2E log directory is not configured");
 const nativeCefSmoke = process.env.E2E_REQUIRE_CEF_SMOKE === "1";
 const nativeWebViewSmoke = process.env.E2E_REQUIRE_WEBVIEW_SMOKE === "1";
 const nativeSmoke = nativeCefSmoke || nativeWebViewSmoke;
+const artifactDirectory = process.env.E2E_ARTIFACT_DIR;
 const childSessionReadOnlySpec = "./tests/e2e/child-session-read-only.spec.ts";
 const extensionUiRuntimeProofSpec = "./tests/e2e/extensions-ui-runtime-proof.spec.ts";
 const extensionUiAdvancedSpec = "./tests/e2e/extensions-ui-advanced.spec.ts";
 const extensionUiAcceptanceSpec = "./tests/e2e/extensions-ui-acceptance.spec.ts";
+const extensionApiExpansionSpec = "./tests/e2e/extensions-api-expansion.spec.ts";
 const journeySpec = nativeCefSmoke
   ? "./tests/e2e/native-cef-shutdown.spec.ts"
   : nativeWebViewSmoke
@@ -22,6 +30,10 @@ const driverBinaryPath = observeMacApplication ? process.execPath : appBinaryPat
 const driverArguments = observeMacApplication
   ? [resolve(process.cwd(), "scripts/e2e/macos-app-observer.mjs")]
   : undefined;
+const mochaTimeoutMs = Math.max(
+  NATIVE_JOURNEY_MOCHA_TIMEOUT_MS,
+  EXTENSION_UI_SETUP_TIMEOUT_MS,
+);
 
 export const config: WebdriverIO.Config = {
   outputDir: e2eLogDirectory,
@@ -31,10 +43,20 @@ export const config: WebdriverIO.Config = {
     extensionUiRuntimeProofSpec,
     extensionUiAdvancedSpec,
     extensionUiAcceptanceSpec,
+    extensionApiExpansionSpec,
     journeySpec,
   ]],
   maxInstances: 1,
-  capabilities: [{ browserName: "tauri" }],
+  capabilities: [{
+    browserName: "tauri",
+    // Let Beaver's bounded host request report its precise failure before the
+    // WebDriver script guard can replace it with a generic timeout.
+    timeouts: {
+      implicit: WEBDRIVER_IMPLICIT_TIMEOUT_MS,
+      pageLoad: WEBDRIVER_PAGE_LOAD_TIMEOUT_MS,
+      script: EXTENSION_HOST_SETUP_TIMEOUT_MS,
+    },
+  }],
   services: [["@wdio/tauri-service", {
     appBinaryPath: driverBinaryPath,
     appArgs: driverArguments,
@@ -43,11 +65,16 @@ export const config: WebdriverIO.Config = {
     captureFrontendLogs: true,
   }]],
   framework: "mocha",
-  reporters: ["spec"],
+  reporters: artifactDirectory
+    ? ["spec", ["junit", {
+      outputDir: artifactDirectory,
+      outputFileFormat: () => "wdio-results.xml",
+    }]]
+    : ["spec"],
   logLevel: nativeSmoke ? "info" : "warn",
   bail: 1,
   waitforTimeout: 15_000,
   connectionRetryTimeout: 90_000,
   connectionRetryCount: 1,
-  mochaOpts: { ui: "bdd", timeout: NATIVE_JOURNEY_MOCHA_TIMEOUT_MS },
+  mochaOpts: { ui: "bdd", timeout: mochaTimeoutMs },
 };

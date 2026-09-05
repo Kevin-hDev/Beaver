@@ -85,6 +85,14 @@ pub(crate) enum ToolResultPlacement {
     OllamaNative,
 }
 
+/// Une route choisit explicitement la projection des aperçus P6.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum ToolResultMedia {
+    Inline,
+    FollowUpUserMessage,
+    TextOnly,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[allow(
     dead_code,
@@ -114,6 +122,7 @@ pub(in crate::services::llm) struct WireContract {
     pub tool_results: ToolResultPlacement,
     pub images: ImageFormat,
     pub usage: UsageApiFormat,
+    pub tool_result_media: ToolResultMedia,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

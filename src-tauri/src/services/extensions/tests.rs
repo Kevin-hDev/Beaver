@@ -61,7 +61,11 @@ fn contributions_are_bounded_and_require_object_schemas() {
         effect: super::types::ExtensionEffect::Unknown,
         replaces_core: false,
     };
-    assert!(super::validation::contributions(&[invalid], &[]).is_err());
+    assert!(super::validation::contributions(&ExtensionContributions {
+        tools: vec![invalid],
+        ..Default::default()
+    })
+    .is_err());
 
     let tools = (0..=MAX_TOOLS_PER_EXTENSION)
         .map(|index| ExtensionTool {
@@ -72,7 +76,11 @@ fn contributions_are_bounded_and_require_object_schemas() {
             replaces_core: false,
         })
         .collect::<Vec<_>>();
-    assert!(super::validation::contributions(&tools, &[]).is_err());
+    assert!(super::validation::contributions(&ExtensionContributions {
+        tools,
+        ..Default::default()
+    })
+    .is_err());
 }
 
 #[test]
@@ -83,6 +91,7 @@ fn registry_projection_never_serializes_host_ui_trees() {
         ui: vec![serde_json::json!({
             "type":"text", "text":{"default":"host-only-sentinel"}
         })],
+        ..Default::default()
     };
     let projected = serde_json::to_value(contributions).unwrap();
     assert!(projected.get("ui").is_none());
@@ -129,6 +138,37 @@ fn runtime_contributions_are_not_persisted() {
     let loaded = super::storage::load_from(&storage).unwrap();
 
     assert!(loaded.extensions[0].contributions.tools.is_empty());
+}
+
+#[test]
+fn stale_persisted_contributions_are_removed_before_a_restart() {
+    let directory = tempfile::tempdir().unwrap();
+    let source = directory.path().join("extension.ts");
+    let storage = directory.path().join("extensions.json");
+    std::fs::write(&source, "export default function () {}").unwrap();
+    let record = super::manifest::load_local(source.to_str().unwrap())
+        .unwrap()
+        .record;
+    let mut stale = serde_json::to_value(&record).unwrap();
+    stale.as_object_mut().unwrap().insert(
+        "contributions".to_string(),
+        json!({"skills":[{"id":"guide","name":"Guide","description":"Old","path":"SKILL.md"}]}),
+    );
+    std::fs::write(
+        &storage,
+        json!({"version":2,"extensions":[stale],"recoverySnapshot":null}).to_string(),
+    )
+    .unwrap();
+
+    super::storage::save_to(&storage, &[record], &None).unwrap();
+
+    let persisted: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(&storage).unwrap()).unwrap();
+    assert!(persisted.pointer("/extensions/0/contributions").is_none());
+    assert!(super::storage::load_from(&storage).unwrap().extensions[0]
+        .contributions
+        .skills
+        .is_empty());
 }
 
 #[test]

@@ -3,24 +3,33 @@ import { copyFile, lstat, mkdir, mkdtemp, readFile, realpath } from "node:fs/pro
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { reportNativeDiagnostics } from "./native-diagnostics.mjs";
+import { persistNativeDiagnostics } from "./native-diagnostics-artifact.mjs";
+import { prepareE2eArtifactDirectory } from "./e2e-artifact-directory.mjs";
 import { preparePackagedApp } from "./packaged-app.mjs";
 import {
   buildArguments,
   canonicalE2eRepoRoot,
   cleanupProfile,
   debugBinaryPath,
+  diagnosticExtensionHostRoot,
   E2E_BUILD_TIMEOUT_MS,
   E2E_JOURNEY_TIMEOUT_MS,
   e2eCargoTargetDir,
   isAllowedProfilePath,
+  resolveE2eRunMode,
   runCommand,
 } from "./e2e-process.mjs";
 
 const repoRoot = await canonicalE2eRepoRoot(import.meta.url);
+const artifactDirectory = await prepareE2eArtifactDirectory(
+  repoRoot,
+  process.env.E2E_ARTIFACT_DIR,
+);
 const packaged = process.env.E2E_PACKAGED === "1";
 if (process.env.E2E_PACKAGED !== undefined && !packaged) {
   throw new Error("E2E packaged mode is invalid");
 }
+const runMode = resolveE2eRunMode(process.env);
 const profilePath = await realpath(await mkdtemp(join(tmpdir(), "beaver-e2e-")));
 const canonicalTemp = await realpath(tmpdir());
 const logDirectory = join(profilePath, "logs");
@@ -44,6 +53,7 @@ const environment = {
   E2E_LOG_DIR: logDirectory,
   VITE_E2E: "1",
 };
+if (artifactDirectory) environment.E2E_ARTIFACT_DIR = artifactDirectory;
 environment.BEAVER_E2E_UI_MANIFEST_SHA = await prepareUiRuntimeProof(repoRoot, profilePath);
 if (packaged && process.platform === "linux") {
   environment.APPIMAGE_EXTRACT_AND_RUN = "1";
@@ -52,7 +62,7 @@ if (packaged && process.platform === "linux") {
 let hadPriorFailure = false;
 let packagedApp;
 try {
-  if (process.env.E2E_SKIP_BUILD !== "1") {
+  if (runMode.build) {
     const buildExit = await runCommand(
       process.execPath,
       [
@@ -64,12 +74,16 @@ try {
     if (buildExit !== 0) process.exitCode = buildExit;
   }
 
-  if (!process.exitCode) {
+  if (!process.exitCode && runMode.journey) {
     if (packaged) {
       packagedApp = await preparePackagedApp({
         platform: process.platform,
         cargoTargetDir,
         profilePath,
+        diagnosticExtensionHostRoot: diagnosticExtensionHostRoot(
+          process.env,
+          repoRoot,
+        ),
         run: (command, args, options) => runCommand(
           command,
           args,
@@ -100,6 +114,14 @@ try {
       await reportNativeDiagnostics(logDirectory);
     } catch {
       process.stderr.write("Native diagnostic collection failed.\n");
+    }
+  }
+  if (artifactDirectory) {
+    try {
+      await persistNativeDiagnostics(logDirectory, artifactDirectory);
+    } catch {
+      process.stderr.write("Native diagnostic artifact failed.\n");
+      process.exitCode = 1;
     }
   }
   if (packagedApp) {

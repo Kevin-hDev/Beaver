@@ -40,7 +40,7 @@ fn filtered_definitions_keep_locked_and_enabled_optional_tools() {
     assert!(has_tool(&names, "bash"));
     assert!(has_tool(&names, "bash_control"));
     assert!(has_tool(&names, "search_mcp_tools"));
-    assert!(has_tool(&names, "search_extension_tools"));
+    assert!(has_tool(&names, "list_extensions"));
     assert!(has_tool(&names, "load_skill"));
     assert!(!has_tool(&names, "todo_write"));
     assert!(!has_tool(&names, "forecast_run"));
@@ -82,10 +82,13 @@ fn enabled_subagent_bundle_exposes_change_lifecycle_tools() {
 #[test]
 fn native_definitions_catalog_and_groups_are_exhaustively_consistent() {
     let entries = catalog();
-    assert_eq!(entries.len(), 44);
-    assert_eq!(entries.iter().filter(|entry| entry.locked).count(), 12);
+    assert_eq!(entries.len(), 46);
+    assert_eq!(entries.iter().filter(|entry| entry.locked).count(), 14);
     assert_eq!(entries.iter().filter(|entry| !entry.locked).count(), 32);
-    assert_eq!(entries.iter().filter(|entry| entry.default_enabled).count(), 25);
+    assert_eq!(
+        entries.iter().filter(|entry| entry.default_enabled).count(),
+        27
+    );
     let entry_by_id = entries
         .iter()
         .map(|entry| (entry.id, entry))
@@ -94,8 +97,15 @@ fn native_definitions_catalog_and_groups_are_exhaustively_consistent() {
 
     let definitions = super::tool_definitions::native_tool_definitions();
     let definition_names = tool_names(&definitions);
-    let definition_ids = definition_names.iter().map(String::as_str).collect::<BTreeSet<_>>();
-    assert_eq!(definition_ids.len(), definition_names.len(), "duplicate definition");
+    let definition_ids = definition_names
+        .iter()
+        .map(String::as_str)
+        .collect::<BTreeSet<_>>();
+    assert_eq!(
+        definition_ids.len(),
+        definition_names.len(),
+        "duplicate definition"
+    );
     assert_eq!(
         definition_ids,
         entry_by_id.keys().copied().collect(),
@@ -119,7 +129,10 @@ fn native_definitions_catalog_and_groups_are_exhaustively_consistent() {
                 entry.default_enabled, group.default_enabled,
                 "default mismatch: {tool_id}"
             );
-            assert!(grouped_tools.insert(*tool_id), "tool in two groups: {tool_id}");
+            assert!(
+                grouped_tools.insert(*tool_id),
+                "tool in two groups: {tool_id}"
+            );
         }
     }
 
@@ -128,8 +141,17 @@ fn native_definitions_catalog_and_groups_are_exhaustively_consistent() {
         .filter(|tool_id| !grouped_tools.contains(**tool_id))
         .copied()
         .collect::<Vec<_>>();
-    assert_eq!(ungrouped, ["search_extension_tools"]);
-    assert!(entry_by_id["search_extension_tools"].locked);
+    assert_eq!(
+        ungrouped,
+        [
+            "inspect_extensions",
+            "list_extensions",
+            super::tool_extension_resource::NAME,
+        ]
+    );
+    assert!(entry_by_id["inspect_extensions"].locked);
+    assert!(entry_by_id["list_extensions"].locked);
+    assert!(entry_by_id[super::tool_extension_resource::NAME].locked);
 }
 
 #[test]
@@ -185,17 +207,21 @@ fn default_native_catalog_measurement_is_reproducible() {
         .sum::<usize>();
     let schema_chars = all
         .iter()
-        .map(|definition| definition["function"]["parameters"].to_string().chars().count())
+        .map(|definition| {
+            definition["function"]["parameters"]
+                .to_string()
+                .chars()
+                .count()
+        })
         .sum::<usize>();
     let serialized_chars = active
         .iter()
         .map(|definition| definition.to_string().chars().count())
         .sum::<usize>();
-    let estimated_tokens =
-        crate::services::compress::token_estimate::estimate_tool_tokens(&active);
+    let estimated_tokens = crate::services::compress::token_estimate::estimate_tool_tokens(&active);
 
-    assert_eq!(all.len(), 44);
-    assert_eq!(active.len(), 25);
+    assert_eq!(all.len(), 46);
+    assert_eq!(active.len(), 27);
     println!(
         "TOOL_CATALOG_MEASUREMENT={}",
         serde_json::json!({

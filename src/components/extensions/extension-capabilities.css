@@ -1,0 +1,83 @@
+.extcap-root {
+  margin-top: var(--space-lg);
+}
+
+.extcap-root h3,
+.extcap-group h4 {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--extensions-label-spacing);
+  text-transform: uppercase;
+}
+
+.extcap-root > h3 {
+  margin-bottom: var(--space-sm);
+}
+
+.extcap-card {
+  overflow: hidden;
+}
+
+.extcap-group + .extcap-group {
+  border-top: var(--line-thin) solid var(--border-subtle);
+}
+
+.extcap-group h4 {
+  padding: var(--space-sm) var(--space-md) var(--space-2xs);
+}
+
+.extcap-row {
+  min-width: 0;
+  padding: var(--space-sm) var(--space-md);
+}
+
+.extcap-row:hover {
+  background: var(--surface-hover);
+}
+
+.extcap-row-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  min-width: 0;
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.extcap-kind {
+  padding: var(--space-2xs) var(--space-xs);
+  border-radius: var(--radius-sm);
+  background: var(--surface-hover);
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.extcap-row p,
+.extcap-state {
+  margin: var(--space-xs) 0 0;
+  color: var(--ink-faint);
+  font-size: var(--text-xs);
+  line-height: var(--extensions-copy-line-height);
+}
+
+.extcap-row-heading > span:first-child,
+.extcap-row p {
+  overflow-wrap: anywhere;
+}
+
+.extcap-state {
+  margin: 0;
+  padding: var(--space-sm) var(--space-md);
+}
+
+.extcap-error {
+  border: var(--line-thin) solid var(--signal-error-border);
+  border-radius: var(--radius-sm);
+  background: var(--signal-error-bg);
+  color: var(--signal-error);
+}

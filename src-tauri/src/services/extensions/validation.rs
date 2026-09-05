@@ -1,15 +1,11 @@
 use super::types::{
-    ExtensionApiLevel, ExtensionKind, ExtensionManifest, ExtensionRecord, ExtensionTool,
-    ExtensionUiMode, MAX_EVENTS_PER_EXTENSION, MAX_EXTENSIONS, MAX_IDENTIFIER_CHARS,
-    MAX_TOOLS_PER_EXTENSION,
+    ExtensionApiLevel, ExtensionContributions, ExtensionKind, ExtensionManifest, ExtensionRecord,
+    ExtensionUiMode, MAX_EVENTS_PER_EXTENSION, MAX_EXTENSIONS, MAX_EXTENSION_NAME_CHARS,
+    MAX_EXTENSION_TEXT_CHARS, MAX_IDENTIFIER_CHARS, MAX_PATH_CHARS, MAX_TOOLS_PER_EXTENSION,
 };
 use serde_json::Value;
 use std::collections::HashSet;
 use std::path::{Component, Path};
-
-const MAX_NAME_CHARS: usize = 100;
-const MAX_TEXT_CHARS: usize = 2_000;
-const MAX_PATH_CHARS: usize = 4_096;
 
 pub fn records(records: &[ExtensionRecord]) -> Result<(), String> {
     if records.len() > MAX_EXTENSIONS {
@@ -29,15 +25,15 @@ pub fn records(records: &[ExtensionRecord]) -> Result<(), String> {
         }
         super::origin_validation::record(record)?;
         super::ui_artifact::validate_record(record)?;
-        contributions(&record.contributions.tools, &record.contributions.events)?;
+        contributions(&record.contributions)?;
     }
     Ok(())
 }
 
 pub fn manifest(manifest: &ExtensionManifest) -> Result<(), String> {
     identifier(&manifest.id)?;
-    text(&manifest.name, MAX_NAME_CHARS)?;
-    text(&manifest.version, 64)?;
+    contribution_text(&manifest.name, MAX_EXTENSION_NAME_CHARS)?;
+    contribution_text(&manifest.version, 64)?;
     if manifest.beaver_api != super::types::BEAVER_API_VERSION {
         return Err("Version de l'API Beaver incompatible.".to_string());
     }
@@ -95,23 +91,29 @@ pub fn manifest(manifest: &ExtensionManifest) -> Result<(), String> {
     .into_iter()
     .flatten()
     {
-        text(value, MAX_TEXT_CHARS)?;
+        contribution_text(value, MAX_EXTENSION_TEXT_CHARS)?;
     }
     Ok(())
 }
 
-pub fn contributions(tools: &[ExtensionTool], events: &[String]) -> Result<(), String> {
-    if tools.len() > MAX_TOOLS_PER_EXTENSION || events.len() > MAX_EVENTS_PER_EXTENSION {
+pub fn contributions(contributions: &ExtensionContributions) -> Result<(), String> {
+    if contributions.tools.len() > MAX_TOOLS_PER_EXTENSION
+        || contributions.events.len() > MAX_EVENTS_PER_EXTENSION
+    {
         return Err("Trop de contributions déclarées.".to_string());
     }
-    for tool in tools {
+    for tool in &contributions.tools {
         identifier(&tool.name)?;
-        text(&tool.description, MAX_TEXT_CHARS)?;
+        contribution_text(&tool.description, MAX_EXTENSION_TEXT_CHARS)?;
         validate_schema(&tool.parameters)?;
     }
-    for event in events {
+    for event in &contributions.events {
         identifier(event)?;
     }
+    super::contribution_skills::validate(&contributions.skills)
+        .map_err(|_| "Contribution d'extension invalide.".to_string())?;
+    super::contribution_resources::validate(&contributions.resources)
+        .map_err(|_| "Contribution d'extension invalide.".to_string())?;
     Ok(())
 }
 
@@ -175,7 +177,7 @@ fn validate_local_source(value: &str) -> Result<(), String> {
     Ok(())
 }
 
-fn text(value: &str, max_chars: usize) -> Result<(), String> {
+pub(super) fn contribution_text(value: &str, max_chars: usize) -> Result<(), String> {
     (!value.trim().is_empty() && value.chars().count() <= max_chars)
         .then_some(())
         .ok_or_else(|| "Métadonnée d'extension invalide.".to_string())

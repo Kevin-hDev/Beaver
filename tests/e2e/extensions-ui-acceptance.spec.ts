@@ -9,19 +9,19 @@ import jaLocale from "../../src/i18n/ja.json";
 import zhLocale from "../../src/i18n/zh.json";
 import { RESOLVED_THEME_OPTIONS } from "../../src/lib/app-themes";
 import { extensionThemeChoice } from "../../src/features/extension-ui/themes/theme-parser";
-import { TIMEOUTS } from "../../src/types/extension-contract.generated";
+import {
+  EXTENSION_HOST_SETUP_TIMEOUT_MS,
+  EXTENSION_UI_SETUP_TIMEOUT_MS,
+} from "../../scripts/e2e/extension-setup-deadline";
 import { completeOnboarding } from "./onboarding-flow";
+import { initializeExtensionHost } from "./extension-host-setup";
+import { setMinimumViewport } from "./native-viewport";
 import { invokeTauri, waitForTauriBridge } from "./tauri-invoke";
 
 const FIXTURES = resolve("scripts/extensions/fixtures/ui");
 const STANDARD_ID = "acceptance.standard.complete";
 const THEME_ID = "acceptance.theme.valid";
 const ADVANCED_ID = "acceptance.advanced.valid";
-// Setup combines independently bounded host and UI operations. Its outer guard
-// must cover their sum so Mocha never hides the boundary that actually failed.
-const EXTENSION_SETUP_TIMEOUT_MS = TIMEOUTS.hostRequestTimeoutMs
-  + TIMEOUTS.hostStopTimeoutMs
-  + (2 * TIMEOUTS.uiActionTimeoutMs);
 const LOCALES = ["fr", "en", "es", "de", "it", "zh", "ja"] as const;
 const SETTINGS_LABELS = {
   de: deLocale.nav.settings,
@@ -46,15 +46,15 @@ interface CatalogSnapshot {
 
 describe("extension UI installed acceptance", () => {
   before("initializes the extension host", async function () {
-    this.timeout(EXTENSION_SETUP_TIMEOUT_MS);
+    this.timeout(EXTENSION_UI_SETUP_TIMEOUT_MS);
     await completeOnboarding();
     await waitForTauriBridge();
-    await invokeTauri("e2e_initialize_extension_host");
+    await initializeExtensionHost();
     await waitForExtensionHost();
   });
 
   before("installs the standard extension fixture", async function () {
-    this.timeout(EXTENSION_SETUP_TIMEOUT_MS);
+    this.timeout(EXTENSION_UI_SETUP_TIMEOUT_MS);
     const startup = await invokeTauri<{ mode: { kind: string } }>(
       "get_extension_ui_startup_state",
     );
@@ -75,13 +75,13 @@ describe("extension UI installed acceptance", () => {
   });
 
   before("installs the theme extension fixture", async function () {
-    this.timeout(EXTENSION_SETUP_TIMEOUT_MS);
+    this.timeout(EXTENSION_UI_SETUP_TIMEOUT_MS);
     await install("theme-valid", THEME_ID);
     await waitForCatalog([STANDARD_ID, THEME_ID]);
   });
 
   before("installs the advanced extension fixture", async function () {
-    this.timeout(EXTENSION_SETUP_TIMEOUT_MS);
+    this.timeout(EXTENSION_UI_SETUP_TIMEOUT_MS);
     await install("advanced-valid", ADVANCED_ID);
   });
 
@@ -125,7 +125,7 @@ describe("extension UI installed acceptance", () => {
   for (const locale of LOCALES) {
     for (const theme of RESOLVED_THEME_OPTIONS) {
       it(`keeps installed surfaces usable for ${locale}/${theme.id} at minimum size`, async () => {
-        await browser.setWindowSize(900, 600);
+        await setMinimumViewport(900, 600);
         await browser.execute((nextLocale, nextTheme) => {
           window.localStorage.setItem("clgo-language", nextLocale);
           window.localStorage.setItem("clgo-theme", nextTheme);
@@ -183,15 +183,39 @@ async function install(fixture: string, extensionId: string): Promise<void> {
       enabled: true,
       trustConfirmed: true,
     });
-  } catch {
-    const recovery = await invokeTauri<{
-      extensionId: string | null;
-      stage: string | null;
-      markerInvalid: boolean;
-    }>("get_extension_recovery_state");
+  } catch (error) {
+    const [recovery, host, extensions] = await Promise.all([
+      invokeOrFallback<{
+        extensionId: string | null;
+        stage: string | null;
+        markerInvalid: boolean;
+      }>("get_extension_recovery_state", {
+        extensionId: null,
+        stage: null,
+        markerInvalid: false,
+      }),
+      invokeOrFallback<{ state: string; lastError?: string }>(
+        "get_extension_host_status",
+        { state: "unavailable" },
+      ),
+      invokeOrFallback<Array<{ manifest: { id: string }; status: string; lastError?: string }>>(
+        "list_extensions",
+        [],
+      ),
+    ]);
+    const record = extensions.find(({ manifest }) => manifest.id === extensionId);
+    const reason = error instanceof Error ? error.message : "unknown";
     throw new Error(
-      `Extension activation failed: extension=${extensionId}; stage=${recovery.stage ?? "none"}; markerInvalid=${recovery.markerInvalid}`,
+      `Extension activation failed: extension=${extensionId}; reason=${reason}; stage=${recovery.stage ?? "none"}; markerInvalid=${recovery.markerInvalid}; host=${host.state}/${host.lastError ?? "none"}; record=${record?.status ?? "missing"}/${record?.lastError ?? "none"}`,
     );
+  }
+}
+
+async function invokeOrFallback<T>(command: string, fallback: T): Promise<T> {
+  try {
+    return await invokeTauri<T>(command);
+  } catch {
+    return fallback;
   }
 }
 
@@ -221,7 +245,7 @@ async function waitForExtensionHost(): Promise<void> {
       }
       return latest.state === "running";
     }, {
-      timeout: TIMEOUTS.hostRequestTimeoutMs + TIMEOUTS.hostStopTimeoutMs,
+      timeout: EXTENSION_HOST_SETUP_TIMEOUT_MS,
       timeoutMsg: "Extension host did not become ready",
     });
   } catch {

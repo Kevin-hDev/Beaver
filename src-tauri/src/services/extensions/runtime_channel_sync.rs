@@ -2,16 +2,15 @@ use super::host_identity::HostIdentity;
 use super::runtime::ExtensionRuntime;
 use super::runtime_hosts::HostStartReason;
 use std::collections::BTreeSet;
-use std::time::Instant;
 
 impl ExtensionRuntime {
-    pub(super) async fn sync_hosts(&self, deadline: Instant) -> Result<bool, String> {
-        self.sync_hosts_with_recovery(deadline, None, HostStartReason::InitialOrManual)
+    pub(super) async fn sync_hosts(&self) -> Result<bool, String> {
+        self.sync_hosts_with_recovery(None, HostStartReason::InitialOrManual)
             .await
     }
 
-    pub(super) async fn sync_hosts_automatically(&self, deadline: Instant) -> Result<bool, String> {
-        self.sync_hosts_with_recovery(deadline, None, HostStartReason::Automatic)
+    pub(super) async fn sync_hosts_automatically(&self) -> Result<bool, String> {
+        self.sync_hosts_with_recovery(None, HostStartReason::Automatic)
             .await
     }
 
@@ -19,10 +18,8 @@ impl ExtensionRuntime {
         &self,
         extension_id: String,
         attempts: u8,
-        deadline: Instant,
     ) -> Result<bool, String> {
         self.sync_hosts_with_recovery(
-            deadline,
             Some(super::runtime_sync::RecoveryPreflight::Retry(
                 extension_id,
                 attempts,
@@ -34,7 +31,6 @@ impl ExtensionRuntime {
 
     async fn sync_hosts_with_recovery(
         &self,
-        deadline: Instant,
         forced_recovery: Option<super::runtime_sync::RecoveryPreflight>,
         start_reason: HostStartReason,
     ) -> Result<bool, String> {
@@ -63,14 +59,14 @@ impl ExtensionRuntime {
             .filter(|record| record.enabled && record.trusted)
             .collect();
         let build = super::runtime_sync::build_specs(records, &paths.directory, &recovery).await?;
-        self.close_stale_channels(&build, deadline).await;
+        self.close_stale_channels(&build).await;
         let mut unavailable_ids = Vec::new();
         let mut responses =
             Vec::with_capacity(build.official_specs.len() + build.third_party_specs.len());
         if !build.official_specs.is_empty() {
             let api_level = super::runtime_host_load::official_api_level(&build.official_specs);
             if let Ok(process) = self
-                .ensure_channel(HostIdentity::Official, api_level, deadline, start_reason)
+                .ensure_channel(HostIdentity::Official, api_level, start_reason)
                 .await
             {
                 let generation = self
@@ -95,7 +91,7 @@ impl ExtensionRuntime {
                         .stop_host_if_current(
                             &HostIdentity::Official,
                             Some(&process),
-                            deadline,
+                            super::runtime_lifecycle::new_stop_deadline(),
                             false,
                         )
                         .await;
@@ -112,10 +108,7 @@ impl ExtensionRuntime {
         for (id, specification) in &build.third_party_specs {
             let identity = HostIdentity::ThirdParty(id.clone());
             let api_level = specification.manifest.api_level.clone();
-            let Ok(process) = self
-                .ensure_channel(identity, api_level, deadline, start_reason)
-                .await
-            else {
+            let Ok(process) = self.ensure_channel(identity, api_level, start_reason).await else {
                 unavailable_ids.push(id.clone());
                 continue;
             };
@@ -140,7 +133,12 @@ impl ExtensionRuntime {
             {
                 let identity = HostIdentity::ThirdParty(id.clone());
                 let _ = self
-                    .stop_host_if_current(&identity, Some(&process), deadline, false)
+                    .stop_host_if_current(
+                        &identity,
+                        Some(&process),
+                        super::runtime_lifecycle::new_stop_deadline(),
+                        false,
+                    )
                     .await;
             }
         }
@@ -168,11 +166,7 @@ impl ExtensionRuntime {
         Ok(build.sensitive_access_reminder)
     }
 
-    async fn close_stale_channels(
-        &self,
-        build: &super::runtime_sync::BuildSpecs,
-        deadline: Instant,
-    ) {
+    async fn close_stale_channels(&self, build: &super::runtime_sync::BuildSpecs) {
         let mut desired = build
             .third_party_specs
             .keys()
@@ -192,7 +186,12 @@ impl ExtensionRuntime {
             .collect::<Vec<_>>();
         for (identity, _, process) in stale {
             let _ = self
-                .stop_host_if_current(&identity, Some(&process), deadline, false)
+                .stop_host_if_current(
+                    &identity,
+                    Some(&process),
+                    super::runtime_lifecycle::new_stop_deadline(),
+                    false,
+                )
                 .await;
         }
     }

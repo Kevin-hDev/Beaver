@@ -1,6 +1,5 @@
 #![allow(dead_code)]
 
-use super::constants::{WINDOWS_SHARING_RETRY_INTERVAL, WINDOWS_SHARING_RETRY_TIMEOUT};
 use super::path_identity::CanonicalDirectory;
 use std::path::Path;
 use std::time::Duration;
@@ -82,35 +81,24 @@ pub(super) const fn windows_file_flush_access() -> u32 {
 pub(super) fn retry_windows_sharing<T, Operation, Cancel, Sleep>(
     mut operation: Operation,
     mut cancelled: Cancel,
-    mut sleep: Sleep,
+    sleep: Sleep,
 ) -> Result<T, OllamaFsError>
 where
     Operation: FnMut() -> Result<T, OllamaFsError>,
     Cancel: FnMut() -> bool,
     Sleep: FnMut(Duration),
 {
-    let max_waits = WINDOWS_SHARING_RETRY_TIMEOUT
-        .as_millis()
-        .checked_div(WINDOWS_SHARING_RETRY_INTERVAL.as_millis())
-        .and_then(|value| usize::try_from(value).ok())
-        .unwrap_or(0);
-    let mut waits = 0;
-    loop {
-        // L'annulation est testée avant chaque appel OS pour fermer le retry.
-        if cancelled() {
-            return Err(OllamaFsError::cancelled());
-        }
-        match operation() {
-            Ok(value) => return Ok(value),
-            Err(error)
-                if error.kind() == OllamaFsErrorKind::SharingViolation && waits < max_waits =>
-            {
-                sleep(WINDOWS_SHARING_RETRY_INTERVAL);
-                waits += 1;
+    crate::services::windows_fs_retry::bounded(
+        || {
+            if cancelled() {
+                Err(OllamaFsError::cancelled())
+            } else {
+                operation()
             }
-            Err(error) => return Err(error),
-        }
-    }
+        },
+        |error| error.kind() == OllamaFsErrorKind::SharingViolation,
+        sleep,
+    )
 }
 
 #[cfg(unix)]

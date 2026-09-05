@@ -23,6 +23,7 @@ pub async fn stream_chat_no_done(
     tools: &[serde_json::Value],
     think: bool,
     reasoning_mode: Option<&str>,
+    tool_result_previews: &crate::services::agent_local::tool_artifact_preview::ToolResultPreviewBatch,
     cancel: CancellationToken,
     buffer_content: bool,
     realtime_budget: Option<RealtimeBudget>,
@@ -70,21 +71,25 @@ pub async fn stream_chat_no_done(
         crate::services::provider_usage::UsageWorkload::Primary,
         fast_mode,
     );
+    // Every HTTP family receives the same bounded continuation state; the
+    // route profile alone decides whether preview bytes enter its payload.
+    let request_config = |request_think| RequestConfig {
+        provider_id,
+        model,
+        messages,
+        tools,
+        think: request_think,
+        reasoning_mode,
+        max_tokens: None,
+        purpose,
+        session_id: Some(session_id),
+        fast_mode,
+        tool_result_previews: Some(tool_result_previews),
+        continuation_target,
+    };
     let result = match transport.client {
         super::stream_dispatch::ClientKind::Anthropic => {
-            let config = RequestConfig {
-                provider_id,
-                model,
-                messages,
-                tools,
-                think,
-                reasoning_mode,
-                max_tokens: None,
-                purpose,
-                session_id: Some(session_id),
-                fast_mode,
-                continuation_target,
-            };
+            let config = request_config(think);
             super::anthropic::stream_chat(
                 on_event,
                 &config,
@@ -117,19 +122,7 @@ pub async fn stream_chat_no_done(
             .await
         }
         super::stream_dispatch::ClientKind::Responses => {
-            let config = RequestConfig {
-                provider_id,
-                model,
-                messages,
-                tools,
-                think,
-                reasoning_mode,
-                max_tokens: None,
-                purpose,
-                session_id: Some(session_id),
-                fast_mode,
-                continuation_target,
-            };
+            let config = request_config(think);
             // Les API publiques OpenAI et xAI utilisent Responses avec leur propre authentification.
             super::openai_responses::stream_chat(
                 on_event,
@@ -153,19 +146,7 @@ pub async fn stream_chat_no_done(
             super::xai_oauth_transport::stream_chat(
                 super::xai_oauth_transport::StreamContext {
                     on_event,
-                    request: RequestConfig {
-                        provider_id,
-                        model,
-                        messages,
-                        tools,
-                        think: true,
-                        reasoning_mode,
-                        max_tokens: None,
-                        purpose,
-                        session_id: Some(session_id),
-                        fast_mode,
-                        continuation_target,
-                    },
+                    request: request_config(true),
                     cancel,
                     buffer_content,
                     realtime_budget,
@@ -178,19 +159,7 @@ pub async fn stream_chat_no_done(
             .await
         }
         super::stream_dispatch::ClientKind::ChatCompletions => {
-            let cfg = RequestConfig {
-                provider_id,
-                model,
-                messages,
-                tools,
-                think,
-                reasoning_mode,
-                max_tokens: None,
-                purpose,
-                session_id: Some(session_id),
-                fast_mode,
-                continuation_target,
-            };
+            let cfg = request_config(think);
             match super::stream_http::post_chat_request_measured(
                 &cfg,
                 measurement.as_mut(),

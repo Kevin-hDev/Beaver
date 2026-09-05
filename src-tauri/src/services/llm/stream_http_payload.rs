@@ -20,18 +20,40 @@ pub(super) fn build_chat_payload_with_evidence(
     route: &LlmRoute,
     max_tokens: Option<u32>,
 ) -> Result<PreparedChatPayload, super::reasoning_wire::replay::ReplayApplyError> {
+    let payload_policy = super::route_profile::payload_policy(route.chat_provider_id, cfg.model)
+        .expect("LlmRoute is constructed from a route profile");
+    build_chat_payload_with_policy(cfg, route, max_tokens, payload_policy)
+}
+
+pub(super) fn build_chat_payload_with_policy(
+    cfg: &RequestConfig<'_>,
+    route: &LlmRoute,
+    max_tokens: Option<u32>,
+    payload_policy: super::route_profile::ResolvedPayloadPolicy,
+) -> Result<PreparedChatPayload, super::reasoning_wire::replay::ReplayApplyError> {
     let provider_id = route.canonical_provider_id;
     let cache_policy = super::route_profile::cache_policy(route.chat_provider_id, cfg.model)
         .expect("LlmRoute is constructed from a route profile");
-    let payload_policy = super::route_profile::payload_policy(route.chat_provider_id, cfg.model)
-        .expect("LlmRoute is constructed from a route profile");
+    let mut messages = super::stream_convert::messages_to_openai_with_tools(
+        cfg.messages,
+        payload_policy.message,
+        cfg.tools,
+    );
+    let supports_vision = crate::services::llm::provider_model_lookup::resolve_local(
+        route.chat_provider_id,
+        cfg.model,
+    )
+    .is_some_and(|capabilities| capabilities.supports_vision);
+    super::tool_result_projection::append_openai_compatible_fallback(
+        &mut messages,
+        cfg.tool_result_previews,
+        payload_policy.tool_result_media,
+        supports_vision,
+        payload_policy.message.images,
+    );
     let mut payload = serde_json::json!({
         "model": cfg.model,
-        "messages": super::stream_convert::messages_to_openai_with_tools(
-            cfg.messages,
-            payload_policy.message,
-            cfg.tools,
-        ),
+        "messages": messages,
         "stream": true,
     });
     if super::prompt_cache_policy::include_usage(cache_policy) {

@@ -21,9 +21,7 @@ pub fn plugin_descriptors(tools: &[Value]) -> Vec<PluginDescriptor> {
                 .collect::<HashSet<_>>();
             let definitions = tools
                 .iter()
-                .filter(|tool| {
-                    definition_name(tool).is_some_and(|name| names.contains(name))
-                })
+                .filter(|tool| definition_name(tool).is_some_and(|name| names.contains(name)))
                 .collect::<Vec<_>>();
             if definitions.is_empty() && !plugin.tools.is_empty() {
                 return None;
@@ -32,9 +30,7 @@ pub fn plugin_descriptors(tools: &[Value]) -> Vec<PluginDescriptor> {
                 id: plugin.id,
                 tool_count: definitions
                     .iter()
-                    .filter(|tool| {
-                        crate::services::extensions::core_fallback(tool).is_none()
-                    })
+                    .filter(|tool| crate::services::extensions::core_fallback(tool).is_none())
                     .count(),
                 definition_count: definitions.len(),
             })
@@ -53,16 +49,6 @@ pub fn base_tool_count(tools: &[Value]) -> usize {
         .count()
 }
 
-pub fn active_definitions(
-    tools: &[Value],
-    decision: &CapacityDecision,
-    provider_tool_limit: usize,
-) -> ActiveDefinitions {
-    active_definitions_with(tools, decision, provider_tool_limit, |name| {
-        crate::services::extensions::plugin_id_for_tool(name)
-    })
-}
-
 pub fn active_definitions_with(
     tools: &[Value],
     decision: &CapacityDecision,
@@ -79,11 +65,13 @@ pub fn active_definitions_with(
         .filter_map(|tool| {
             let plugin_id = definition_name(tool).and_then(&plugin_id_for_tool);
             match plugin_id {
-                Some(plugin_id) if active.contains(plugin_id.as_str()) => {
-                    Some(crate::services::extensions::without_core_fallback(tool.clone()))
-                }
+                Some(plugin_id) if active.contains(plugin_id.as_str()) => Some(
+                    crate::services::extensions::without_core_fallback(tool.clone()),
+                ),
                 Some(_) => crate::services::extensions::core_fallback(tool).cloned(),
-                None => Some(crate::services::extensions::without_core_fallback(tool.clone())),
+                None => Some(crate::services::extensions::without_core_fallback(
+                    tool.clone(),
+                )),
             }
         })
         .collect::<Vec<_>>();
@@ -98,17 +86,34 @@ fn cap_definitions(tools: Vec<Value>, provider_tool_limit: usize) -> ActiveDefin
             additional_omitted_tools: 0,
         };
     }
-    let discovery_index = tools
-        .iter()
-        .position(|tool| {
-            definition_name(tool) == Some(crate::services::extensions::SEARCH_TOOL_NAME)
-        });
-    let mut kept_indices = (0..provider_tool_limit).collect::<Vec<_>>();
-    if let Some(index) = discovery_index.filter(|index| *index >= provider_tool_limit) {
-        if let Some(last) = kept_indices.last_mut() {
-            *last = index;
+    let list_index = tools.iter().position(|tool| {
+        definition_name(tool) == Some(crate::services::extensions::LIST_EXTENSIONS_TOOL_NAME)
+    });
+    let inspect_index = tools.iter().position(|tool| {
+        definition_name(tool) == Some(crate::services::extensions::INSPECT_EXTENSIONS_TOOL_NAME)
+    });
+    let mut required = (provider_tool_limit > 0)
+        .then_some(list_index)
+        .flatten()
+        .into_iter()
+        .collect::<Vec<_>>();
+    if provider_tool_limit >= 2 {
+        if let Some(index) = inspect_index {
+            required.push(index);
         }
     }
+    required.sort_unstable();
+    required.dedup();
+    let remaining = provider_tool_limit.saturating_sub(required.len());
+    let required_set = required.iter().copied().collect::<HashSet<_>>();
+    let mut kept_indices = tools
+        .iter()
+        .enumerate()
+        .filter_map(|(index, _)| (!required_set.contains(&index)).then_some(index))
+        .take(remaining)
+        .chain(required)
+        .collect::<Vec<_>>();
+    kept_indices.sort_unstable();
     let kept = kept_indices.iter().copied().collect::<HashSet<_>>();
     let selected = kept_indices
         .iter()
@@ -143,7 +148,7 @@ pub fn append_capacity_notice(
         return;
     }
     let Some(description) = tools.iter_mut().find_map(|tool| {
-        (definition_name(tool) == Some(crate::services::extensions::SEARCH_TOOL_NAME))
+        (definition_name(tool) == Some(crate::services::extensions::LIST_EXTENSIONS_TOOL_NAME))
             .then(|| tool.pointer_mut("/function/description"))
             .flatten()
             .and_then(|value| value.as_str())
@@ -184,7 +189,7 @@ pub fn append_capacity_notice(
         tool_notice.unwrap_or_default()
     );
     if let Some(tool) = tools.iter_mut().find(|tool| {
-        definition_name(tool) == Some(crate::services::extensions::SEARCH_TOOL_NAME)
+        definition_name(tool) == Some(crate::services::extensions::LIST_EXTENSIONS_TOOL_NAME)
     }) {
         tool["function"]["description"] = Value::String(format!("{description}{notice}"));
     }

@@ -10,6 +10,8 @@ mod effect_renderer;
 mod enum_renderer;
 #[path = "extension_contract_io.rs"]
 mod io;
+#[path = "extension_contract_r0_enums.rs"]
+mod r0_enum_renderer;
 #[path = "extension_contract_rust.rs"]
 mod rust_renderer;
 #[path = "extension_contract_validation.rs"]

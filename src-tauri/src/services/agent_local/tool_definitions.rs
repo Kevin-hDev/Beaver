@@ -21,7 +21,9 @@ pub(super) fn native_tool_definitions() -> Vec<Value> {
     defs.extend(super::tool_definitions_forecast::forecast_tool_definitions());
     defs.extend(super::tool_definitions_office::office_tool_definitions());
     defs.extend(super::tool_definitions_mcp::mcp_tool_definitions());
-    defs.push(super::tool_definitions_extensions::extension_discovery_definition());
+    defs.push(super::tool_definitions_extensions::extension_listing_definition());
+    defs.push(super::tool_definitions_extensions::extension_inspection_definition());
+    defs.push(super::tool_definitions_extensions::extension_resource_definition());
     defs
 }
 
@@ -35,4 +37,22 @@ pub(in crate::services::agent_local) fn tool_def(
         "type": "function",
         "function": { "name": name, "description": description, "parameters": parameters }
     })
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn main_agent_receives_both_extension_discovery_tools() {
+        let definitions = super::get_tool_definitions();
+        let names = definitions
+            .iter()
+            .filter_map(|tool| {
+                tool.pointer("/function/name")
+                    .and_then(serde_json::Value::as_str)
+            })
+            .collect::<Vec<_>>();
+        assert!(names.contains(&"list_extensions"));
+        assert!(names.contains(&"inspect_extensions"));
+        assert!(names.contains(&super::super::tool_extension_resource::NAME));
+    }
 }

@@ -3,7 +3,7 @@ use serde_json::Value;
 use super::extension_session_state::DiscoveryEpoch;
 use super::extension_tool_selection::decide_for_catalog;
 use super::extension_tool_set_apply::{
-    active_definitions, append_capacity_notice, base_tool_count, plugin_descriptors,
+    append_capacity_notice, base_tool_count, plugin_descriptors,
 };
 
 pub struct PrepareContext<'a> {
@@ -125,16 +125,34 @@ impl ExtensionToolSet {
             return;
         }
         let catalog = crate::services::extensions::catalog_snapshot();
+        self.apply_with_catalog(
+            discovered_plugin_ids,
+            &catalog,
+            crate::services::extensions::plugin_id_for_tool,
+        );
+    }
+
+    fn apply_with_catalog(
+        &mut self,
+        discovered_plugin_ids: &[String],
+        catalog: &crate::services::extensions::CatalogSnapshot,
+        plugin_id_for_tool: impl Fn(&str) -> Option<String>,
+    ) {
         let decision = decide_for_catalog(
             &self.plugin_descriptors,
-            &catalog,
+            catalog,
             self.masked,
             self.plugin_tool_capacity,
             discovered_plugin_ids,
         );
         self.active_plugin_ids = decision.active_plugin_ids.clone();
         self.discovered_plugin_ids = discovered_plugin_ids.to_vec();
-        let active = active_definitions(&self.all, &decision, self.provider_tool_limit);
+        let active = super::extension_tool_set_apply::active_definitions_with(
+            &self.all,
+            &decision,
+            self.provider_tool_limit,
+            plugin_id_for_tool,
+        );
         self.active = active.tools;
         self.omitted_plugin_ids = decision.omitted_plugin_ids;
         self.omitted_tool_names = active.omitted_tool_names;

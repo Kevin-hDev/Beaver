@@ -467,6 +467,9 @@
         "internal": "内部エラーにより操作を完了できませんでした。"
       },
       "toggleDetails": "ツール詳細を表示",
+      "artifacts": "生成ファイル",
+      "openArtifact": "{{name}} を開く",
+      "artifactStatus": { "intact": "正常", "absent": "見つかりません", "modified": "変更済み", "inaccessible": "アクセス不可", "unverified": "未検証" },
       "groups": {
         "exploration": "探索",
         "modification": "変更",
@@ -2379,6 +2382,17 @@
     "uiEmpty": "現在、インターフェース拡張項目は宣言されていません。",
     "uiTheme": "テーマ",
     "contributions": "登録された拡張項目",
+    "capabilities": "スキルとリソース",
+    "capabilitiesLoading": "スキルとリソースを読み込み中…",
+    "capabilitiesError": "スキルとリソースを読み込めませんでした。",
+    "capabilitiesEmpty": "現在、スキルまたはリソースは宣言されていません。",
+    "skills": "スキル",
+    "resources": "リソース",
+    "resourceTypes": {
+      "text": "テキスト",
+      "image": "画像",
+      "file": "ファイル"
+    },
     "replacesCore": "内蔵ツールを置き換えます"
   },
   "activation": {
@@ -2485,7 +2499,16 @@
         "extensions_load_interrupted": "拡張機能の読み込みが中断されました。",
         "extensions_activation_confirmation_required": "有効化する前に、この拡張機能を再承認してください。",
         "extensions_not_found": "拡張機能が見つかりません。",
-        "extensions_host_incompatible": "拡張機能ホストはこのバージョンの Beaver と互換性がありません。"
+        "extensions_host_incompatible": "拡張機能ホストはこのバージョンの Beaver と互換性がありません。",
+        "extensions_resource_unavailable": "拡張機能のリソースを利用できません。",
+        "extensions_resource_not_found": "拡張機能のリソースが見つかりません。",
+        "extensions_resource_invalid": "拡張機能のリソースが無効です。",
+        "extensions_resource_too_large": "拡張機能のリソースが大きすぎます。",
+        "extensions_result_invalid": "拡張機能の結果が無効です。",
+        "extensions_result_too_large": "拡張機能の結果が大きすぎます。",
+        "extensions_listing_unavailable": "拡張機能の一覧を利用できません。",
+        "extensions_inspection_invalid": "拡張機能の検査が無効です。",
+        "extensions_inspection_unavailable": "拡張機能の検査を利用できません。"
       }
     },
     "diagnostics": {
@@ -2496,6 +2519,8 @@
         "activation_failed": "有効化に失敗しました",
         "registration_failed": "拡張項目の登録に失敗しました",
         "import_failed": "モジュールの読み込みに失敗しました",
+        "resource_unavailable": "拡張機能のリソースを利用できません",
+        "result_invalid": "拡張機能の結果が無効です",
         "entry_unavailable": "拡張機能のエントリーポイントを利用できません",
         "load_failed": "拡張機能の読み込みに失敗しました",
         "host_missing_response": "ホストがこの拡張機能の読み込みを確認しませんでした",

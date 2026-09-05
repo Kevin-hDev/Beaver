@@ -39,6 +39,23 @@ pub(crate) fn attachment_key() -> Result<zeroize::Zeroizing<Vec<u8>>, String> {
         .map_err(|_| ERROR_CODE.to_string())
 }
 
+pub(crate) fn grant_verified_path(
+    canonical: &Path,
+    expected_identity: super::attachment_access_identity::FileIdentity,
+    key: &[u8],
+) -> Result<String, String> {
+    if key.len() != 32 {
+        return Err(ERROR_CODE.into());
+    }
+    let file = super::private_store::open_regular_single_link(canonical)
+        .map_err(|_| ERROR_CODE.to_string())?
+        .ok_or(ERROR_CODE)?;
+    if super::attachment_access_identity::from_file(&file) != Some(expected_identity) {
+        return Err(ERROR_CODE.into());
+    }
+    create_grant(canonical.to_str().ok_or(ERROR_CODE)?, key)
+}
+
 #[cfg(not(feature = "e2e"))]
 pub(crate) fn ensure_attachment_key() -> Result<(), String> {
     attachment_key().map(|_| ())

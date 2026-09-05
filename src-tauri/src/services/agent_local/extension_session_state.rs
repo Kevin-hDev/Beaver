@@ -6,7 +6,7 @@ use tokio::sync::Mutex;
 
 use super::extension_tool_selection::PluginDescriptor;
 
-const STORE_MAX_BYTES: u64 = 64 * 1024;
+use crate::services::extensions::DISCOVERY_STORE_MAX_BYTES as STORE_MAX_BYTES;
 const MAX_EPOCH_TEXT_CHARS: usize = 256;
 static STORE_LOCK: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
 
@@ -152,7 +152,11 @@ fn load(session_id: &str) -> ExtensionSessionState {
     {
         return ExtensionSessionState::default();
     }
-    let mut state = serde_json::from_slice(&bytes).unwrap_or_default();
+    parse_state(&bytes)
+}
+
+fn parse_state(bytes: &[u8]) -> ExtensionSessionState {
+    let mut state = serde_json::from_slice(bytes).unwrap_or_default();
     sanitize(&mut state);
     state
 }

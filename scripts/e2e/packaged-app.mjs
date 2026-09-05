@@ -1,8 +1,13 @@
-import { readdir, lstat } from "node:fs/promises";
-import { dirname, join, resolve } from "node:path";
+import { copyFile, readdir, lstat, realpath } from "node:fs/promises";
+import { dirname, isAbsolute, join, resolve } from "node:path";
 
 const PREPARATION_ERROR = "Packaged E2E preparation failed";
 const MAX_INSTALLERS = 16;
+const MAX_DIAGNOSTIC_MODULE_BYTES = 64 * 1024;
+const DIAGNOSTIC_EXTENSION_MODULES = Object.freeze([
+  "loader.mjs",
+  "module-loader.mjs",
+]);
 
 export function windowsInstallerDirectory(cargoTargetDir) {
   return resolve(cargoTargetDir, "debug", "bundle", "nsis");
@@ -15,6 +20,7 @@ export async function preparePackagedApp({
   listFiles = listWindowsInstallers,
   listLinuxFiles = listLinuxBundles,
   isRegularFile = regularFile,
+  diagnosticExtensionHostRoot,
   run,
 }) {
   if (typeof run !== "function") {
@@ -65,6 +71,9 @@ export async function preparePackagedApp({
     if (installExit !== 0 || !(await isRegularFile(binaryPath))) {
       throw new Error(PREPARATION_ERROR);
     }
+    if (diagnosticExtensionHostRoot !== undefined) {
+      await overlayExtensionModuleLoader(diagnosticExtensionHostRoot, installDir);
+    }
   } catch {
     await tryRemoveWindowsInstallation({ installDir, isRegularFile, run, runOptions });
     throw new Error(PREPARATION_ERROR);
@@ -78,6 +87,47 @@ export async function preparePackagedApp({
       }
     },
   };
+}
+
+async function overlayExtensionModuleLoader(sourceRoot, installDir) {
+  if (
+    typeof sourceRoot !== "string"
+    || sourceRoot.length === 0
+    || sourceRoot.length > 32_768
+    || !isAbsolute(sourceRoot)
+    || /[\0\r\n]/u.test(sourceRoot)
+  ) {
+    throw new Error(PREPARATION_ERROR);
+  }
+  const [sourceMetadata, canonicalSourceRoot] = await Promise.all([
+    lstat(sourceRoot),
+    realpath(sourceRoot),
+  ]);
+  if (!sourceMetadata.isDirectory() || sourceMetadata.isSymbolicLink()) {
+    throw new Error(PREPARATION_ERROR);
+  }
+  const destinationRoot = join(installDir, "resources", "extension-host");
+  const destinationMetadata = await lstat(destinationRoot);
+  if (!destinationMetadata.isDirectory() || destinationMetadata.isSymbolicLink()) {
+    throw new Error(PREPARATION_ERROR);
+  }
+  for (const name of DIAGNOSTIC_EXTENSION_MODULES) {
+    const source = join(canonicalSourceRoot, name);
+    const [metadata, canonicalSource] = await Promise.all([
+      lstat(source),
+      realpath(source),
+    ]);
+    if (
+      !metadata.isFile()
+      || metadata.isSymbolicLink()
+      || metadata.size < 1
+      || metadata.size > MAX_DIAGNOSTIC_MODULE_BYTES
+      || dirname(canonicalSource) !== canonicalSourceRoot
+    ) {
+      throw new Error(PREPARATION_ERROR);
+    }
+    await copyFile(canonicalSource, join(destinationRoot, name));
+  }
 }
 
 async function listLinuxBundles(directory) {

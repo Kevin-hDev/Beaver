@@ -2,16 +2,17 @@ use super::host_identity::HostIdentity;
 use super::host_process::HostProcess;
 use super::protocol::HostToolResult;
 use super::types::MAX_WORKING_DIRECTORY_CHARS;
-use crate::services::agent_local::tool_result_contract::ToolErrorCategory;
 use crate::services::agent_local::types_tools::ToolResult;
 use serde_json::{json, Value};
 use std::path::Path;
 use std::sync::Arc;
+use tokio_util::sync::CancellationToken;
 
 pub async fn dispatch_tool(
     name: &str,
     arguments: &Value,
     working_directory: &Path,
+    caller_cancel: CancellationToken,
 ) -> Option<ToolResult> {
     let extension_id = super::registry_index::plugin_id_for_tool(name)?;
     let runtime = match super::runtime::global() {
@@ -22,10 +23,12 @@ pub async fn dispatch_tool(
     let arguments = arguments.clone();
     let working_directory = working_directory.to_path_buf();
     let work = runtime.work.clone();
+    let caller_cancel = caller_cancel.clone();
     let result = work
-        .run_operation(move |cancel| async move {
+        .run_operation(move |runtime_cancel| async move {
             tokio::select! {
-                _ = cancel.cancelled() => super::tool_result::unavailable(),
+                _ = caller_cancel.cancelled() => ToolResult::cancelled("Annulé."),
+                _ = runtime_cancel.cancelled() => super::tool_result::unavailable(),
                 result = dispatch_tracked(&runtime, &extension_id, &name, &arguments, &working_directory) => result,
             }
         })
@@ -40,16 +43,20 @@ async fn dispatch_tracked(
     arguments: &Value,
     working_directory: &Path,
 ) -> ToolResult {
-    let deadline = super::runtime_lifecycle::new_stop_deadline();
-    let host = match super::runtime_lifecycle::ensure_running(extension_id, deadline).await {
+    let host = match super::runtime_lifecycle::ensure_running(
+        extension_id,
+        super::runtime_lifecycle::new_stop_deadline(),
+    )
+    .await
+    {
         Ok(host) => host,
         Err(_) => return super::tool_result::unavailable(),
     };
     let Some(working_directory) = working_directory.to_str() else {
-        return extension_context_unavailable();
+        return super::runtime_dispatch_result::extension_context_unavailable();
     };
     if working_directory.encode_utf16().count() > MAX_WORKING_DIRECTORY_CHARS {
-        return extension_context_unavailable();
+        return super::runtime_dispatch_result::extension_context_unavailable();
     }
     let response = host
         .request(
@@ -63,15 +70,22 @@ async fn dispatch_tracked(
         .await
         .and_then(super::runtime::parse::<HostToolResult>);
     if response.is_err() {
-        if let Ok((identity, _, current)) =
-            runtime.process_for_extension(extension_id, deadline).await
+        if let Ok((identity, _, current)) = runtime
+            .process_for_extension(extension_id, super::runtime_lifecycle::new_stop_deadline())
+            .await
         {
             if Arc::ptr_eq(&current, &host) {
-                invalidate(runtime, identity, host, deadline).await;
+                invalidate(
+                    runtime,
+                    identity,
+                    host,
+                    super::runtime_lifecycle::new_stop_deadline(),
+                )
+                .await;
             }
         }
     }
-    to_tool_result(response)
+    super::runtime_dispatch_result::to_tool_result(response)
 }
 
 pub async fn emit_event(name: &str, payload: Value) {
@@ -124,46 +138,6 @@ async fn emit_tracked(
     }
 }
 
-fn to_tool_result(result: Result<HostToolResult, String>) -> ToolResult {
-    match result {
-        Ok(result) => {
-            let mut tool_result = if result.is_error {
-                ToolResult::error(
-                    result.content,
-                    "extension_tool_error",
-                    ToolErrorCategory::External,
-                    false,
-                )
-            } else {
-                ToolResult::ok(result.content)
-            };
-            tool_result.mark_truncated(result.truncated);
-            if let Some(summary) = result.display_summary {
-                tool_result = tool_result.with_display_summary(summary);
-            }
-            tool_result
-        }
-        Err(_) => ToolResult::error(
-            "L'extension n'a pas pu confirmer le résultat de cet outil.",
-            "extension_host_failed",
-            ToolErrorCategory::External,
-            false,
-        )
-        .with_error_hint(
-            "Vérifier l'état du projet ou du service avant de relancer : l'action a pu être exécutée.",
-        ),
-    }
-}
-
-fn extension_context_unavailable() -> ToolResult {
-    ToolResult::error(
-        "Contexte d'extension indisponible.",
-        "extension_context_unavailable",
-        ToolErrorCategory::Unavailable,
-        false,
-    )
-}
-
 async fn invalidate(
     runtime: &super::runtime::ExtensionRuntime,
     identity: HostIdentity,
@@ -198,27 +172,6 @@ fn should_invalidate_generation(generation: &super::runtime_hosts::HostGeneratio
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn uncertain_host_failure_never_recommends_a_blind_retry() {
-        let result = to_tool_result(Err("host disconnected".to_string()));
-        let error = result.error.expect("structured extension error");
-        assert_eq!(error.code.as_ref(), "extension_host_failed");
-        assert!(!error.retryable);
-        assert!(error.hint.is_some());
-    }
-
-    #[test]
-    fn extension_reported_error_stays_an_error() {
-        let result = to_tool_result(Ok(HostToolResult {
-            content: "invalid input".to_string(),
-            is_error: true,
-            truncated: false,
-            display_summary: None,
-        }));
-        assert!(result.is_error);
-        assert_eq!(result.error.unwrap().code.as_ref(), "extension_tool_error");
-    }
 
     #[test]
     fn stopping_generations_are_owned_by_the_stop_path() {

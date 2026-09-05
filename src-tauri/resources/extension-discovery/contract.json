@@ -1,0 +1,15 @@
+{
+  "toolNames": ["list_extensions", "inspect_extensions", "load_extension_resource"],
+  "imports": ["maxExtensions", "maxToolsPerExtension", "maxSkillsPerExtension", "maxResourcesPerExtension", "maxIdentifierChars"],
+  "limits": {
+    "contextThresholdPercent": 10,
+    "unknownContextTokens": 20000,
+    "maxInspectedExtensions": 4,
+    "maxProjectedExtensionNameJsonBytes": 64,
+    "maxProjectedExtensionDescriptionJsonBytes": 240,
+    "maxProjectedContributionNameJsonBytes": 96,
+    "maxProjectedContributionSummaryJsonBytes": 120,
+    "maxCompactCatalogBytes": 32768,
+    "maxSerializedResultBytes": 393216
+  }
+}

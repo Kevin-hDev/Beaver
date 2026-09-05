@@ -132,7 +132,10 @@ fn publish(path: &Path, journal: &LoadingJournal, fail_before_replace: bool) -> 
             .map_err(|_| marker_error());
     }
     let _ = fail_before_replace;
-    crate::services::private_store::atomic_write(path, &bytes).map_err(|_| marker_error())
+    crate::services::private_store::atomic_write(path, &bytes).map_err(|_| {
+        ::log::error!("[extensions] operation=loading-journal-write result=failed");
+        marker_error()
+    })
 }
 
 fn update(

@@ -1,5 +1,4 @@
 use crate::services::agent_local::tool_result_contract::ToolErrorCategory;
-use crate::services::agent_local::tool_skill_loader;
 use crate::services::agent_local::types_tools::ToolResult;
 use crate::services::agent_local::{
     tool_files, tool_glob, tool_grep, tool_web_fetch, tool_web_search,
@@ -94,16 +93,12 @@ pub(super) async fn dispatch_inner(
                 Err(error) => super::tool_web_error::fetch(error),
             }
         }
-        "search_extension_tools" => match trace.request_id {
-            Some(request_id) => {
-                super::tool_extension_discovery::execute(args, session_id, request_id).await
-            }
-            None => ToolResult::unavailable(
-                "plugin_search_unavailable",
-                "Recherche de plugins indisponible.",
-                true,
-            ),
-        },
+        name if name == crate::services::extensions::LIST_EXTENSIONS_TOOL_NAME => {
+            super::tool_extension_list::execute().await
+        }
+        name if name == crate::services::extensions::INSPECT_EXTENSIONS_TOOL_NAME => {
+            super::tool_extension_inspect::execute(args, session_id, trace.request_id).await
+        }
         "todo_write" => super::tool_todo::execute(args, session_id).await,
         "todo_history" => super::tool_todo::execute_history(args, session_id).await,
         "todo_pause" => super::tool_todo::execute_pause(args, session_id).await,
@@ -123,7 +118,8 @@ pub(super) async fn dispatch_inner(
         ),
         "load_skill" => {
             let skill_id = args["skill_id"].as_str().unwrap_or("");
-            match tool_skill_loader::load_skill_with_metadata(skill_id).await {
+            match super::extension_skill_loader::load_skill_for_session(skill_id, session_id).await
+            {
                 Ok(skill) => ToolResult::ok(format!(
                     "Skill loaded. Follow its instructions:\n\n{content}",
                     content = skill.content
@@ -131,6 +127,9 @@ pub(super) async fn dispatch_inner(
                 .with_display_summary(skill.name),
                 Err(error) => super::tool_dispatcher_error::skill_load(error),
             }
+        }
+        name if name == super::tool_extension_resource::NAME => {
+            super::tool_extension_resource::execute(args, session_id).await
         }
         "manage_automation" => super::tool_automation::execute(args, working_dir, session_id).await,
         "create_branch" => {

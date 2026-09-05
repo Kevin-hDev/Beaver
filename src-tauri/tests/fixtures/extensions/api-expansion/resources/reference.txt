@@ -1,0 +1,1 @@
+API-P7 extension resource fixture.

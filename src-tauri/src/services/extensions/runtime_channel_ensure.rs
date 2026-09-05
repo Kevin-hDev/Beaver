@@ -11,7 +11,6 @@ impl ExtensionRuntime {
         &self,
         identity: HostIdentity,
         api_level: ExtensionApiLevel,
-        deadline: Instant,
         start_reason: HostStartReason,
     ) -> Result<Arc<HostProcess>, String> {
         if let Some(((current_level, _, process), usable)) = self.current_channel(&identity).await {
@@ -19,7 +18,12 @@ impl ExtensionRuntime {
                 return Ok(process);
             }
             if self
-                .stop_host_if_current(&identity, Some(&process), deadline, true)
+                .stop_host_if_current(
+                    &identity,
+                    Some(&process),
+                    super::runtime_lifecycle::new_stop_deadline(),
+                    true,
+                )
                 .await
                 == super::runtime::StopHostOutcome::Unconfirmed
             {
@@ -42,14 +46,20 @@ impl ExtensionRuntime {
                 paths,
                 &self.work,
                 reservation.spawn_binding(),
-                deadline,
+                super::runtime_lifecycle::new_stop_deadline(),
                 reservation.temporary_directory(),
             )
             .await?,
         );
         let Ok(hello) = super::runtime_host_load::validate_hello(&process).await else {
             return Err(self
-                .reject_spawn(identity, reservation, api_level, process, deadline)
+                .reject_spawn(
+                    identity,
+                    reservation,
+                    api_level,
+                    process,
+                    super::runtime_lifecycle::new_stop_deadline(),
+                )
                 .await);
         };
         self.set_host_version(&hello);
@@ -60,7 +70,13 @@ impl ExtensionRuntime {
                 .bind(reservation, api_level.clone(), Arc::clone(&process));
         if let Err(reservation) = bind {
             return Err(self
-                .reject_spawn(identity, reservation, api_level, process, deadline)
+                .reject_spawn(
+                    identity,
+                    reservation,
+                    api_level,
+                    process,
+                    super::runtime_lifecycle::new_stop_deadline(),
+                )
                 .await);
         }
         Ok(process)

@@ -151,11 +151,11 @@ fn diagnostic_groups_are_derived_from_reachable_selection_states() {
 fn refresh_delta_uses_actual_definition_names_not_plugin_tool_counts() {
     let before = vec![
         json!({"function": {"name": "read_file", "description": "native"}}),
-        json!({"function": {"name": "search_extension_tools"}}),
+        json!({"function": {"name": "list_extensions"}}),
     ];
     let after = vec![
         json!({"function": {"name": "read_file", "description": "plugin replacement"}}),
-        json!({"function": {"name": "search_extension_tools"}}),
+        json!({"function": {"name": "list_extensions"}}),
         json!({"function": {"name": "plugin_new_tool"}}),
     ];
 

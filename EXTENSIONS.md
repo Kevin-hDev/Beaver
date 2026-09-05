@@ -68,6 +68,32 @@ Toutes les méthodes stables, les emplacements d’interface, les composants dé
 les jetons de thème et les limites sont listés dans la
 [référence du SDK](./src-tauri/resources/extension-host/sdk/README.md).
 
+## Skills, ressources et résultats de fichier
+
+Une extension peut déclarer des skills et des ressources texte, image ou fichier. Leur
+description n’est jamais ajoutée à toutes les conversations : l’agent doit d’abord
+inspecter l’extension, puis charger explicitement le skill ou la ressource demandée.
+Beaver vérifie alors l’extension approuvée, sa provenance et le chemin déclaré avant de
+lire un contenu borné. Une modification ou une désactivation rend la lecture indisponible.
+
+Un skill pointe vers un fichier nommé exactement `SKILL.md` ou `skill.md`.
+Les ressources ordinaires peuvent porter d’autres noms. Les limites individuelles ne
+s’additionnent pas sans limite : la réponse complète de chargement doit rester sous
+le budget de message du contrat, enveloppe comprise, sinon l’enregistrement est refusé.
+
+Un outil peut aussi retourner du texte et des fichiers relatifs au dossier de travail.
+Beaver contrôle ces fichiers avant et pendant la lecture, applique le budget du lot et
+conserve des métadonnées attribuées sans enregistrer les octets binaires. Un aperçu image
+ne rejoint un fournisseur que si sa route le permet ; les autres routes reçoivent une
+référence textuelle. Le mode Chat classique et les sous-agents ne reçoivent pas ces
+capacités d’extension.
+
+À l’ouverture d’une conversation, la vérification automatique des fichiers dispose
+d’un budget total de 64 Mio. Chaque lecture réserve son coût maximal, y compris le
+contrôle de dépassement. Les fichiers non examinés sont indiqués « Non vérifié » :
+ce statut ne signifie ni « intact » ni « absent ». La réutilisation d’un aperçu par
+le modèle conserve ses propres contrôles complets.
+
 ## Structure recommandée
 
 Pour une extension distribuable, utilisez un dossier avec un manifeste explicite :
@@ -308,8 +334,11 @@ devenir défilable ; huit n’est pas une limite d’extensions.
 Tant que les définitions des plugins occupent au plus 10 % de la fenêtre de contexte,
 Beaver conserve les plugins activés dans le catalogue envoyé au modèle. Au-delà,
 Beaver passe à la découverte progressive : les plugins choisis comme prioritaires,
-ceux marqués essentiels et ceux trouvés avec `search_extension_tools` sont chargés en
-premier. L’utilisateur n’a pas à sélectionner manuellement des outils à chaque requête.
+ceux marqués essentiels et ceux inspectés sont chargés en premier. Le nom et
+l’identifiant de chaque extension active et approuvée restent visibles dans une
+section dédiée de la description de `list_extensions`. Le modèle peut lister les
+extensions puis appeler `inspect_extensions` avec plusieurs identifiants à la fois.
+L’utilisateur n’a pas à sélectionner manuellement des outils à chaque requête.
 
 Les limites propres à un provider restent applicables. Actuellement, les modèles Groq
 utilisés via OpenRouter ne reçoivent pas les outils d’extension ; les modèles
@@ -382,6 +411,8 @@ Les fixtures hors ligne dans
 [`scripts/extensions/fixtures/ui/`](./scripts/extensions/fixtures/ui/) montrent des
 contributions standard, avancées, localisées, limitées et volontairement invalides.
 Elles servent de référence testable avec le SDK et les contrats générés.
+La fixture d’acceptation complète des skills, ressources et résultats se trouve dans
+[`src-tauri/tests/fixtures/extensions/api-expansion/`](./src-tauri/tests/fixtures/extensions/api-expansion/).
 
 ## Limites actuelles
 

@@ -2,6 +2,9 @@ use super::tool_result_contract::{ToolErrorCategory, ToolResultStatus};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
+// Persisted extension diagnostic text is capped so hand-edited legacy sessions cannot grow it.
+pub(crate) const MAX_EXTENSION_DIAGNOSTIC_TEXT_CHARS: usize = 200;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(test, derive(ts_rs::TS))]
 pub struct AgentDiagnosticRun {
@@ -107,15 +110,15 @@ pub struct AgentExtensionDiagnostic {
     pub correlation_id: Option<String>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     #[cfg_attr(test, ts(optional, as = "Option<_>"))]
-    pub related_search_ids: Vec<String>,
+    pub related_inspection_ids: Vec<String>,
     pub plugin_count: usize,
     pub plugin_ids: String,
     pub tool_count: usize,
     pub canonical_tool_names: String,
     pub provider_aliases: String,
     pub tool_delta: usize,
-    pub discovery_result_count: usize,
-    pub discovery_result_plugin_ids: String,
+    pub inspection_result_count: usize,
+    pub inspection_result_plugin_ids: String,
     pub provider_capacity_count: usize,
     pub provider_capacity_plugin_ids: String,
     pub global_capacity_count: usize,

@@ -53,6 +53,23 @@ fn definitions_and_prompt_names_match_executable_names() {
 }
 
 #[test]
+fn subagent_definitions_exclude_extension_discovery_and_resource_tools() {
+    for profile in [SubagentToolProfile::Explorer, SubagentToolProfile::Coder] {
+        let definitions = profile.definitions(true);
+        let names = definitions
+            .iter()
+            .filter_map(|tool| {
+                tool.pointer("/function/name")
+                    .and_then(serde_json::Value::as_str)
+            })
+            .collect::<Vec<_>>();
+        assert!(!names.contains(&"list_extensions"));
+        assert!(!names.contains(&"inspect_extensions"));
+        assert!(!names.contains(&super::tool_extension_resource::NAME));
+    }
+}
+
+#[test]
 fn invalid_or_nested_profiles_fail_closed() {
     assert_eq!(
         SubagentToolProfile::from_session_type(Some("explorer")),

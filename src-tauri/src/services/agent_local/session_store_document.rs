@@ -75,7 +75,7 @@ pub(super) async fn prepare(session: &AgentSession) -> Result<PreparedSessionDoc
     let data = serde_json::to_vec_pretty(&value)
         .map_err(|_| "Sauvegarde de session impossible".to_string())?;
     super::session_limits::validate_serialized_size(data.len())?;
-    let parsed = super::session_migration_wire::parse_v4(&data)
+    let parsed = super::session_migration_wire::parse_v5(&data)
         .map_err(|_| super::session_limits::save_failed())?;
     super::session_migration_wire::validate_current_writable(&parsed)
         .map_err(|_| super::session_limits::save_failed())?;
@@ -122,6 +122,9 @@ pub(super) async fn write_prepared_to_path(
                     super::session_migration::commit_migrated_bytes(&loaded, data).await
                 }
                 super::session_migration::LoadedVersion::V4 => {
+                    super::session_migration::commit_migrated_bytes(&loaded, data).await
+                }
+                super::session_migration::LoadedVersion::V5 => {
                     crate::services::private_store::atomic_write_async(path, data)
                         .await
                         .map_err(|_| super::session_limits::save_failed())

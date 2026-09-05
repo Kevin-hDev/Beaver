@@ -2,11 +2,10 @@ use chrono::Utc;
 use uuid::Uuid;
 
 pub use super::extension_tool_correlation::{
-    pending_extension_searches, record_extension_refreshes,
+    pending_extension_inspections, record_extension_refreshes,
 };
 pub use super::extension_tool_diagnostic::{
-    ExtensionDiagnosticOrigin, ExtensionDiagnosticOutcome, ExtensionDiagnosticReason,
-    ExtensionToolDiagnostic,
+    ExtensionDiagnosticOrigin, ExtensionDiagnosticReason, ExtensionToolDiagnostic,
 };
 
 use super::stream_diagnostics_failure as failure;

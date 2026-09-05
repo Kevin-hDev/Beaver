@@ -140,20 +140,33 @@ impl ConversationJournal {
     pub(crate) async fn persist_tool_results(
         &mut self,
         messages: &[ChatMessage],
+        artifacts: &[super::tool_execution_artifacts::AttributedArtifact],
     ) -> Result<(), String> {
         if self.committed || self.partial || self.expected_tool_ids.is_empty() {
             return Err(error());
         }
         validate_tool_results(messages, &self.expected_tool_ids)?;
+        let artifacts = artifact_records(messages, artifacts)?;
         let records = messages
             .iter()
-            .map(|message| {
-                record::from_message(
+            .zip(artifacts)
+            .map(|(message, artifacts)| {
+                let mut record = record::from_message(
                     message,
                     uuid::Uuid::new_v4().to_string(),
                     &self.turn_id,
                     &self.request_id,
-                )
+                )?;
+                record.tool_activities = (!artifacts.is_empty()).then(|| {
+                    vec![super::types_message::ToolActivityRecord::artifact_carrier(
+                        message
+                            .tool_name
+                            .clone()
+                            .unwrap_or_else(|| "tool".to_string()),
+                        artifacts,
+                    )]
+                });
+                Ok::<_, String>(record)
             })
             .collect::<Result<Vec<_>, _>>()?;
         self.append(records).await?;
@@ -197,4 +210,19 @@ impl ConversationJournal {
         })
         .await
     }
+}
+
+fn artifact_records(
+    messages: &[ChatMessage],
+    artifacts: &[super::tool_execution_artifacts::AttributedArtifact],
+) -> Result<Vec<Vec<super::tool_artifact_record::ToolArtifactRecord>>, String> {
+    let mut grouped = vec![Vec::new(); messages.len()];
+    for attributed in artifacts {
+        let message = messages.get(attributed.tool_call_index).ok_or_else(error)?;
+        if message.tool_call_id.as_deref() != attributed.tool_call_id.as_deref() {
+            return Err(error());
+        }
+        grouped[attributed.tool_call_index].push((&attributed.artifact.metadata).into());
+    }
+    Ok(grouped)
 }

@@ -7,6 +7,28 @@ use crate::services::llm::fast_mode;
 use crate::services::llm::stream_test_transport::{ScriptedResponse, StreamScenario};
 use tokio_util::sync::CancellationToken;
 
+fn preview_batch() -> crate::services::agent_local::tool_artifact_preview::ToolResultPreviewBatch {
+    crate::services::agent_local::tool_artifact_preview::ToolResultPreviewBatch::from_ephemeral(
+        0,
+        Some("call-retry".into()),
+        crate::services::agent_local::tool_artifact::EphemeralArtifact {
+            metadata: crate::services::agent_local::tool_artifact::ArtifactMetadata {
+                name: "retry.png".into(),
+                mime_type: "image/png".into(),
+                bytes: 8,
+                sha256: "a".repeat(64),
+                purpose: crate::services::agent_local::tool_artifact::ArtifactPurpose::Preview,
+                source:
+                    crate::services::agent_local::tool_artifact::ArtifactSource::ExtensionResource {
+                        resource_id: "extension:demo:retry".into(),
+                        catalog_fingerprint: "b".repeat(64),
+                    },
+            },
+            bytes: b"\x89PNG\r\n\x1a\n".to_vec(),
+        },
+    )
+}
+
 fn message(role: &str, content: String) -> ChatMessage {
     match role {
         "system" => ChatMessage::system(content),
@@ -46,6 +68,7 @@ async fn payload_reduction_retry_keeps_the_generation_fast_capture() {
         message("assistant", "b".repeat(16_000)),
     ];
     let mut subagents = ParentSubagentOrchestrator::new(&session.id).await;
+    let previews = preview_batch();
 
     let request = run(ApiRequestParams {
         on_event: &emitter,
@@ -64,6 +87,7 @@ async fn payload_reduction_retry_keeps_the_generation_fast_capture() {
         turn: 0,
         subagents: &mut subagents,
         context_usage_seed: ContextUsageSeed::default(),
+        tool_result_previews: &previews,
         continuation_target: None,
     });
     let change_preference = async {
@@ -85,4 +109,8 @@ async fn payload_reduction_retry_keeps_the_generation_fast_capture() {
     assert_eq!(payloads[1]["service_tier"], "fast");
     assert!(payloads[1]["input"].as_array().unwrap().len() < 3);
     assert!(payloads[1].get("reasoning_effort").is_none());
+    let image = "data:image/png;base64,iVBORw0KGgo=";
+    assert!(payloads[0].to_string().contains(image));
+    assert!(payloads[1].to_string().contains(image));
+    assert_eq!(previews.previews().len(), 1);
 }

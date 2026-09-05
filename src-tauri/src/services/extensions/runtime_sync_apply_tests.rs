@@ -1,4 +1,7 @@
-use super::types::{ExtensionDiagnostic, HOST_LOAD_STAGE_REGISTER, MAX_RUNTIME_DIAGNOSTICS};
+use super::types::{
+    ExtensionDiagnostic, DIAGNOSTIC_ADVANCED_REQUIRED, DIAGNOSTIC_LOAD_FAILED,
+    HOST_LOAD_STAGE_REGISTER, MAX_RUNTIME_DIAGNOSTICS,
+};
 
 fn diagnostic(extension_id: &str, code: &str) -> ExtensionDiagnostic {
     ExtensionDiagnostic {
@@ -38,4 +41,20 @@ fn runtime_diagnostic_projection_refuses_growth_past_its_bound() {
     )
     .is_err());
     assert_eq!(diagnostics.len(), MAX_RUNTIME_DIAGNOSTICS);
+}
+
+#[test]
+fn contribution_validation_failures_keep_their_distinct_generic_diagnostics() {
+    use super::runtime_sync_contributions::ValidationError;
+
+    assert_eq!(
+        super::runtime_sync_apply::contribution_diagnostic_code(ValidationError::AdvancedRequired),
+        DIAGNOSTIC_ADVANCED_REQUIRED,
+    );
+    assert_eq!(
+        super::runtime_sync_apply::contribution_diagnostic_code(
+            ValidationError::InvalidContribution
+        ),
+        DIAGNOSTIC_LOAD_FAILED,
+    );
 }

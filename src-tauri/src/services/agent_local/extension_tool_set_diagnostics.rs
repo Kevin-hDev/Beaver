@@ -175,7 +175,7 @@ pub async fn refresh_and_record(
     request_id: &str,
 ) -> Result<(), String> {
     let pending =
-        super::stream_diagnostics::pending_extension_searches(session_id, request_id).await;
+        super::stream_diagnostics::pending_extension_inspections(session_id, request_id).await;
     let before = tools.active().to_vec();
     tools.refresh_from_session(session_id).await?;
     let added_names = added_definition_names(&before, tools.active());

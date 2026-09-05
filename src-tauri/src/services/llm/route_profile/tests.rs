@@ -107,3 +107,40 @@ fn context_usage_reasoning_policy_is_owned_by_the_route_profile() {
     assert!(find("openai").unwrap().context_usage_includes_reasoning());
     assert!(find("ollama").unwrap().context_usage_includes_reasoning());
 }
+
+#[test]
+fn xai_and_codex_profiles_explicitly_refuse_tool_result_media() {
+    for provider in ["xai", "xai-oauth", "codex-oauth"] {
+        assert_eq!(
+            find(provider).expect("profile").wire.tool_result_media,
+            ToolResultMedia::TextOnly,
+            "{provider}"
+        );
+    }
+}
+
+#[test]
+fn compatible_secondary_routes_declare_follow_up_media_explicitly() {
+    for provider in [
+        "cerebras",
+        "deepseek",
+        "zai",
+        "qwen",
+        "moonshot",
+        "openrouter",
+    ] {
+        assert_eq!(
+            find(provider).expect(provider).wire.tool_result_media,
+            super::ToolResultMedia::FollowUpUserMessage,
+            "{provider}"
+        );
+    }
+}
+
+#[test]
+fn xai_oauth_chat_catalog_entries_have_their_own_text_only_wire() {
+    let policy = super::xai_oauth_chat_payload_policy("grok-code-fast-1").expect("policy");
+    assert_eq!(policy.tool_result_media, ToolResultMedia::TextOnly);
+    assert_eq!(policy.message.tool_results, ToolResultPlacement::ToolRole);
+    assert_eq!(policy.message.images, ImageFormat::OpenAiNested);
+}

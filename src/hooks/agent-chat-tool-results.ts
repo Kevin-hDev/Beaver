@@ -1,6 +1,7 @@
 import type {
   ToolErrorInfo,
   ToolFileChangeRecord,
+  ToolArtifact,
   ToolResultStatus,
 } from "@/types/agent";
 import type { ToolActivity } from "./agent-chat-utils";
@@ -21,6 +22,7 @@ export interface ToolResultUpdate {
   fileChanges?: ToolFileChangeRecord[];
   startLine?: number;
   displaySummary?: string;
+  artifacts?: ToolArtifact[];
 }
 
 export interface AppliedToolResult {
@@ -101,5 +103,6 @@ function mergeResult(tool: ToolActivity, update: ToolResultUpdate): ToolActivity
       ? update.fileChanges : tool.fileChanges,
     startLine: update.startLine ?? tool.startLine,
     displaySummary: update.displaySummary ?? tool.displaySummary,
+    artifacts: update.artifacts?.length ? update.artifacts : tool.artifacts,
   };
 }

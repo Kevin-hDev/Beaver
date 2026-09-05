@@ -1,4 +1,5 @@
 use super::*;
+use crate::services::agent_local::tool_artifact::{ArtifactPurpose, PendingArtifact};
 use crate::services::agent_local::types_tools::{ToolFileChange, ToolFileChangeStatus};
 
 #[test]
@@ -31,10 +32,7 @@ fn cancellation_preserves_result_context() {
     assert_eq!(result.status, ToolResultStatus::Cancelled);
     assert_eq!(result.content, "cancelled after a partial write");
     assert_eq!(result.affected_paths(), ["changed.txt"]);
-    assert_eq!(
-        result.error.unwrap().category,
-        ToolErrorCategory::Cancelled
-    );
+    assert_eq!(result.error.unwrap().category, ToolErrorCategory::Cancelled);
 }
 
 #[test]
@@ -89,7 +87,9 @@ fn file_change_details_keep_a_bounded_sample_and_report_counts() {
 
 #[test]
 fn affected_paths_keep_a_bounded_sample_and_report_counts() {
-    let paths = (0..200).map(|index| format!("src/file-{index}.rs")).collect();
+    let paths = (0..200)
+        .map(|index| format!("src/file-{index}.rs"))
+        .collect();
     let mut result = ToolResult::ok("done").with_affected_paths(paths);
 
     let counts = result.bound_affected_paths();
@@ -97,4 +97,55 @@ fn affected_paths_keep_a_bounded_sample_and_report_counts() {
     assert_eq!(counts, Some((200, 128)));
     assert_eq!(result.affected_paths().len(), 128);
     assert_eq!(result.affected_paths()[0], "src/file-0.rs");
+}
+
+#[test]
+fn pending_artifacts_are_bounded_hidden_and_taken_once() {
+    let artifacts = (0..crate::services::extensions::types::MAX_RESULT_FILES)
+        .map(|index| {
+            PendingArtifact::from_validated(
+                format!("result-{index}.txt"),
+                Some(format!("Result {index}")),
+                ArtifactPurpose::Artifact,
+            )
+        })
+        .collect();
+    let mut result = ToolResult::ok("done");
+
+    assert!(result.set_pending_artifacts(artifacts).is_ok());
+    assert_eq!(result.pending_artifacts().len(), 8);
+    assert!(serde_json::to_value(&result)
+        .unwrap()
+        .get("pendingArtifacts")
+        .is_none());
+    assert_eq!(result.take_pending_artifacts().len(), 8);
+    assert!(result.pending_artifacts().is_empty());
+    assert!(result
+        .set_pending_artifacts(vec![
+            PendingArtifact::from_validated(
+                "extra.txt".to_string(),
+                Some("Extra".to_string()),
+                ArtifactPurpose::Preview,
+            );
+            crate::services::extensions::types::MAX_RESULT_FILES + 1
+        ])
+        .is_err());
+}
+
+#[test]
+fn error_result_refuses_pending_artifacts() {
+    let mut result = ToolResult::error(
+        "failed",
+        "tool_failed",
+        crate::services::agent_local::tool_result_contract::ToolErrorCategory::Execution,
+        false,
+    );
+    assert!(result
+        .set_pending_artifacts(vec![PendingArtifact::from_validated(
+            "output.png".into(),
+            None,
+            ArtifactPurpose::Preview,
+        )])
+        .is_err());
+    assert!(result.pending_artifacts().is_empty());
 }

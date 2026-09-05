@@ -126,7 +126,7 @@ pub(super) const API_PROFILES: &[RouteProfile] = &[
         canonical_provider: CanonicalProviderId::Xai,
         display_name: "xAI",
         client: ClientSelector::OpenAiResponses,
-        wire: RESPONSES_WIRE,
+        wire: RESPONSES_TEXT_ONLY_WIRE,
         auth: api_key("xai"),
         endpoint: endpoint("https://api.x.ai/v1", "/models"),
         availability: AVAILABLE_ANY,

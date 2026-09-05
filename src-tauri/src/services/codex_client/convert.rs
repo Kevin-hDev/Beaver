@@ -102,11 +102,7 @@ pub(crate) fn convert_messages_with_tools_and_continuity_evidence(
 
         if msg.role == "tool" {
             if let Some(ref id) = msg.tool_call_id {
-                input.push(serde_json::json!({
-                    "type": "function_call_output",
-                    "call_id": id,
-                    "output": msg.content,
-                }));
+                input.push(function_call_output(id, &msg.content));
                 continue;
             }
         }
@@ -122,6 +118,11 @@ pub(crate) fn convert_messages_with_tools_and_continuity_evidence(
         input,
         replayed,
     })
+}
+
+/// Autorité unique de la forme Responses pour toute sortie d'appel d'outil.
+pub(crate) fn function_call_output(call_id: &str, output: &str) -> serde_json::Value {
+    serde_json::json!({"type":"function_call_output", "call_id":call_id, "output":output})
 }
 
 /// Les transports Responses (Codex, OpenAI API et xAI OAuth) réutiliseront

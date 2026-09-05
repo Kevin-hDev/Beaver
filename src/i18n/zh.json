@@ -467,6 +467,9 @@
         "internal": "内部错误阻止了此操作。"
       },
       "toggleDetails": "显示工具详情",
+      "artifacts": "生成的文件",
+      "openArtifact": "打开 {{name}}",
+      "artifactStatus": { "intact": "完整", "absent": "缺失", "modified": "已修改", "inaccessible": "无法访问", "unverified": "未验证" },
       "groups": {
         "exploration": "探索",
         "modification": "更改",
@@ -2379,6 +2382,17 @@
     "uiEmpty": "当前未声明任何界面扩展项。",
     "uiTheme": "主题",
     "contributions": "已注册的扩展项",
+    "capabilities": "技能与资源",
+    "capabilitiesLoading": "正在加载技能与资源…",
+    "capabilitiesError": "无法加载技能与资源。",
+    "capabilitiesEmpty": "当前未声明任何技能或资源。",
+    "skills": "技能",
+    "resources": "资源",
+    "resourceTypes": {
+      "text": "文本",
+      "image": "图像",
+      "file": "文件"
+    },
     "replacesCore": "替换内置工具"
   },
   "activation": {
@@ -2485,7 +2499,16 @@
         "extensions_load_interrupted": "扩展加载已中断。",
         "extensions_activation_confirmation_required": "激活前必须重新批准此扩展。",
         "extensions_not_found": "找不到该扩展。",
-        "extensions_host_incompatible": "扩展主机与此版本的 Beaver 不兼容。"
+        "extensions_host_incompatible": "扩展主机与此版本的 Beaver 不兼容。",
+        "extensions_resource_unavailable": "扩展资源不可用。",
+        "extensions_resource_not_found": "找不到扩展资源。",
+        "extensions_resource_invalid": "扩展资源无效。",
+        "extensions_resource_too_large": "扩展资源过大。",
+        "extensions_result_invalid": "扩展结果无效。",
+        "extensions_result_too_large": "扩展结果过大。",
+        "extensions_listing_unavailable": "扩展列表不可用。",
+        "extensions_inspection_invalid": "扩展检查无效。",
+        "extensions_inspection_unavailable": "扩展检查不可用。"
       }
     },
     "diagnostics": {
@@ -2496,6 +2519,8 @@
         "activation_failed": "激活失败",
         "registration_failed": "扩展项注册失败",
         "import_failed": "模块导入失败",
+        "resource_unavailable": "扩展资源不可用",
+        "result_invalid": "扩展结果无效",
         "entry_unavailable": "扩展入口点不可用",
         "load_failed": "扩展加载失败",
         "host_missing_response": "宿主未确认此扩展已加载",

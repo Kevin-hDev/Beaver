@@ -91,6 +91,8 @@ pub enum StreamEvent {
         file_changes: Vec<super::types_tools::ToolFileChange>,
         #[serde(skip_serializing_if = "Option::is_none", default)]
         start_line: Option<usize>,
+        #[serde(skip_serializing_if = "Vec::is_empty", default)]
+        artifacts: Vec<crate::models::agent_session_contract::ToolArtifactRecordView>,
     },
     TurnEnd {},
     PermissionRequest(super::permission_request::PermissionRequest),

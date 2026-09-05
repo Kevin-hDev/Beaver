@@ -79,6 +79,26 @@ fn contract_declares_the_complete_v1_surface() {
         serde_json::json!(["tools", "events", "ui"])
     );
     assert_eq!(
+        contract["optionalCapabilities"],
+        serde_json::json!(["skills", "resources", "richToolResults"])
+    );
+    assert_eq!(
+        contract["contributionTypes"],
+        serde_json::json!(["tool", "event", "ui", "skill", "resource"])
+    );
+    assert_eq!(
+        contract["resultBlockTypes"],
+        serde_json::json!(["text", "file"])
+    );
+    assert_eq!(
+        contract["resultFilePurposes"],
+        serde_json::json!(["artifact", "preview"])
+    );
+    assert_eq!(
+        contract["resourceTypes"],
+        serde_json::json!(["text", "image", "file"])
+    );
+    assert_eq!(
         contract["methods"]["coreToHost"],
         serde_json::json!([
             "host.hello",
@@ -110,6 +130,23 @@ fn contract_declares_the_complete_v1_surface() {
         contract["limits"]["fingerprintMaxTotalBytes"],
         33_554_432_u64
     );
+    for (name, value) in [
+        ("maxSkillsPerExtension", 32),
+        ("maxExtensionNameChars", 100),
+        ("maxExtensionTextChars", 2_000),
+        ("maxResourcesPerExtension", 64),
+        ("maxResultBlocks", 16),
+        ("maxResultFiles", 8),
+        ("maxResultTextBytes", 524_288),
+        ("maxTextResourceBytes", 262_144),
+        ("maxResourceFileBytes", 20_971_520),
+        ("maxResultBytes", 20_971_520),
+        ("maxPathChars", 4_096),
+        ("maxParallelEphemeralArtifactBytes", 67_108_864),
+        ("maxMultimodalPreviewsPerContinuation", 8),
+    ] {
+        assert_eq!(contract["limits"][name], value);
+    }
 }
 
 #[test]
@@ -130,7 +167,7 @@ fn contract_validates_shared_limits_timeouts_and_builtin_count() {
 }
 
 #[test]
-fn contract_rejects_names_that_the_node_host_would_reject() {
+fn contract_rejects_protocol_capitals_but_accepts_the_exact_optional_capabilities() {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
     let directory = root.join("resources/extension-host");
     let contract = generator::load_contract(&directory).unwrap();
@@ -138,6 +175,11 @@ fn contract_rejects_names_that_the_node_host_would_reject() {
     invalid["capabilities"][0] = serde_json::json!("Tools");
 
     assert!(generator::validate_contract(&invalid, &directory).is_err());
+    assert!(generator::validate_contract(&contract, &directory).is_ok());
+
+    let mut unknown_optional = contract;
+    unknown_optional["optionalCapabilities"][2] = serde_json::json!("richToolResult");
+    assert!(generator::validate_contract(&unknown_optional, &directory).is_err());
 }
 
 #[test]
@@ -205,6 +247,11 @@ fn generated_rust_names_the_unique_load_stage_notification() {
 
     assert!(generated.contains("pub const HOST_LOAD_STAGE_METHOD: &str = \"host.load.stage\";"));
     assert!(generated.contains("pub enum HostState"));
+    assert!(generated.contains("pub enum OptionalExtensionCapability"));
+    assert!(generated.contains("pub enum ExtensionContributionType"));
+    assert!(generated.contains("pub enum ExtensionResultBlockType"));
+    assert!(generated.contains("pub enum ExtensionResultFilePurpose"));
+    assert!(generated.contains("pub enum ExtensionResourceType"));
 }
 
 #[test]

@@ -38,6 +38,9 @@ mod extension_tool_correlation;
 mod extension_tool_diagnostic;
 pub mod generation_metrics;
 pub mod session_archive;
+pub(crate) mod session_artifact_verification;
+#[cfg(test)]
+mod session_artifact_verification_tests;
 mod session_artifacts;
 pub mod session_continuity;
 pub mod session_family;
@@ -56,6 +59,8 @@ mod session_migration_ids;
 mod session_migration_legacy_history;
 #[cfg(test)]
 mod session_migration_tests;
+mod session_migration_v5;
+mod session_migration_version;
 mod session_migration_wire;
 mod session_mutations;
 pub mod session_ops;

@@ -92,9 +92,11 @@ pub async fn set_extension_enabled(
     enabled: bool,
     trust_confirmed: bool,
 ) -> Result<bool, String> {
-    let deadline = extensions::new_stop_deadline();
     let result = async {
         let reminder = extensions::set_enabled(&extension_id, enabled, trust_confirmed).await?;
+        // Fingerprinting and durable registry writes are not part of the bounded
+        // process-stop phase; start that clock only once they are complete.
+        let deadline = extensions::new_stop_deadline();
         let runtime_result = if enabled {
             extensions::restart(deadline).await
         } else {
@@ -123,10 +125,9 @@ pub async fn set_extension_show_in_chat(
 
 #[tauri::command]
 pub async fn reload_extension_host(app: tauri::AppHandle) -> Result<bool, String> {
-    let deadline = extensions::new_stop_deadline();
     let result = async {
         extensions::refresh_extension_ui_artifacts(&app).await?;
-        extensions::restart(deadline).await
+        extensions::restart(extensions::new_stop_deadline()).await
     }
     .await;
     emit_changed(&app);
@@ -194,10 +195,9 @@ pub async fn set_extension_discovery_preferences(
 
 #[tauri::command]
 pub async fn recover_extension_host(app: tauri::AppHandle) -> Result<bool, String> {
-    let deadline = extensions::new_stop_deadline();
     let result = async {
         let reminder = extensions::disable_hosted_extensions().await?;
-        let runtime_result = extensions::restart(deadline).await;
+        let runtime_result = extensions::restart(extensions::new_stop_deadline()).await;
         emit_changed(&app);
         runtime_result.map(|runtime_reminder| reminder || runtime_reminder)
     }

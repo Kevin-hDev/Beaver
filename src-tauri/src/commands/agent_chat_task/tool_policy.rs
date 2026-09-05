@@ -43,7 +43,10 @@ fn apply_with(
         .into_iter()
         .filter_map(|tool| {
             let name = tool.pointer("/function/name").and_then(Value::as_str)?;
-            if name == crate::services::extensions::SEARCH_TOOL_NAME {
+            if name == crate::services::extensions::LIST_EXTENSIONS_TOOL_NAME
+                || name == crate::services::extensions::INSPECT_EXTENSIONS_TOOL_NAME
+                || name == crate::services::agent_local::tool_extension_resource::NAME
+            {
                 return None;
             }
             if !is_extension(name) {
@@ -90,7 +93,9 @@ mod tests {
     fn openrouter_groq_keeps_core_tools_and_removes_complete_plugins() {
         let tools = vec![
             serde_json::json!({"function": {"name": "read_file"}}),
-            serde_json::json!({"function": {"name": "search_extension_tools"}}),
+            serde_json::json!({"function": {"name": "list_extensions"}}),
+            serde_json::json!({"function": {"name": "inspect_extensions"}}),
+            serde_json::json!({"function": {"name": "load_extension_resource"}}),
             serde_json::json!({"function": {"name": "beaver.office.documents.create"}}),
         ];
 

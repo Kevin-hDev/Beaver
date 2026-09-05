@@ -7,6 +7,16 @@ import type {
   RuntimeDiagnosticCode,
 } from "./extension-contract.generated";
 import type {
+  ExtensionResource,
+  ExtensionSkill,
+} from "./extension-contribution-types";
+
+export type {
+  ExtensionResource,
+  ExtensionResultBlock,
+  ExtensionSkill,
+} from "./extension-contribution-types";
+import type {
   ExtensionUiDiagnosticCode,
   ExtensionUiLoadingStage,
 } from "./extension-ui-contract.generated";
@@ -85,6 +95,10 @@ export interface ExtensionTool {
 export interface ExtensionContributions {
   tools: ExtensionTool[];
   events: ExtensionEvent[];
+  /** Absent in a persisted API 1 record created before R0. */
+  skills?: ExtensionSkill[];
+  /** Absent in a persisted API 1 record created before R0. */
+  resources?: ExtensionResource[];
 }
 
 export interface ExtensionOrigin {
@@ -195,6 +209,10 @@ export type {
   ExtensionCapability,
   ExtensionEffectClass,
   ExtensionEvent,
+  ExtensionContributionType,
+  OptionalExtensionCapability,
+  ExtensionResourceType,
+  ExtensionResultBlockType,
   ExtensionHostState,
   ExtensionProtocolErrorReason,
   HostLoadStage,

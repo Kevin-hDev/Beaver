@@ -108,7 +108,10 @@ function toolRecord(call: ToolCallRequest): ToolActivityRecord {
 function attachResult(tools: ToolActivityRecord[], message: AgentMessage) {
   const matching = tools.find((tool) => tool.result === undefined && tool.name === message.tool_name);
   const pending = matching ?? tools.find((tool) => tool.result === undefined);
-  if (pending) pending.result = message.content;
+  if (!pending) return;
+  pending.result = message.content;
+  const artifacts = message.tool_activities?.flatMap((tool) => tool.artifacts ?? []);
+  if (artifacts?.length) pending.artifacts = artifacts;
 }
 
 function toolSummary(name: string, args: Record<string, unknown>): string {

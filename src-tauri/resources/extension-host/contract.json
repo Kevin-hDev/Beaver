@@ -1,6 +1,11 @@
 {
   "apiVersion": "1",
   "capabilities": ["tools", "events", "ui"],
+  "optionalCapabilities": ["skills", "resources", "richToolResults"],
+  "contributionTypes": ["tool", "event", "ui", "skill", "resource"],
+  "resultBlockTypes": ["text", "file"],
+  "resultFilePurposes": ["artifact", "preview"],
+  "resourceTypes": ["text", "image", "file"],
   "methods": {
     "coreToHost": ["host.hello", "host.reset", "host.load", "tool.call", "event.emit", "ui.action"],
     "hostToCore": [
@@ -28,6 +33,19 @@
     "maxTools": 256,
     "maxToolsPerExtension": 64,
     "maxEventsPerExtension": 64,
+    "maxExtensionNameChars": 100,
+    "maxExtensionTextChars": 2000,
+    "maxSkillsPerExtension": 32,
+    "maxResourcesPerExtension": 64,
+    "maxResultBlocks": 16,
+    "maxResultFiles": 8,
+    "maxResultTextBytes": 524288,
+    "maxTextResourceBytes": 262144,
+    "maxResourceFileBytes": 20971520,
+    "maxResultBytes": 20971520,
+    "maxPathChars": 4096,
+    "maxParallelEphemeralArtifactBytes": 67108864,
+    "maxMultimodalPreviewsPerContinuation": 8,
     "maxPendingRequests": 64,
     "maxInFlightRequests": 64,
     "maxInFlightHandlers": 64,
@@ -60,7 +78,7 @@
   },
   "validation": { "maxNumericLimit": 1073741824 },
   "diagnostics": {
-    "hostCodes": ["module_not_found", "syntax_error", "activation_failed", "registration_failed", "import_failed"],
+    "hostCodes": ["module_not_found", "syntax_error", "activation_failed", "registration_failed", "import_failed", "resource_unavailable", "result_invalid"],
     "runtimeCodes": ["entry_unavailable", "load_failed", "host_missing_response", "advanced_required", "ui_manifest_legacy"]
   },
   "errors": {
@@ -108,7 +126,16 @@
       "extensions_load_interrupted",
       "extensions_activation_confirmation_required",
       "extensions_not_found",
-      "extensions_host_incompatible"
+      "extensions_host_incompatible",
+      "extensions_resource_unavailable",
+      "extensions_resource_not_found",
+      "extensions_resource_invalid",
+      "extensions_resource_too_large",
+      "extensions_result_invalid",
+      "extensions_result_too_large",
+      "extensions_listing_unavailable",
+      "extensions_inspection_invalid",
+      "extensions_inspection_unavailable"
     ],
     "protocolReasons": ["core_busy", "core_request_timeout", "core_transport_failed", "core_method_unavailable", "core_request_failed", "extension_host_busy", "extension_host_request_failed", "extension_host_fatal"]
   }

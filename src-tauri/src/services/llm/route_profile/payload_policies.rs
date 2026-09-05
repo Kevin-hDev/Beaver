@@ -2,13 +2,22 @@ use super::policy_types::{ParameterPolicy, ToolChoicePolicy};
 use super::{ClientSelector, MessageWirePolicy, ResolvedPayloadPolicy, RouteProfile};
 
 pub(super) fn resolve(profile: &RouteProfile, model: &str) -> ResolvedPayloadPolicy {
+    resolve_for_wire(profile, model, profile.wire)
+}
+
+pub(super) fn resolve_for_wire(
+    profile: &RouteProfile,
+    model: &str,
+    wire: super::WireContract,
+) -> ResolvedPayloadPolicy {
     ResolvedPayloadPolicy {
         message: MessageWirePolicy {
-            images: profile.wire.images,
-            tool_results: profile.wire.tool_results,
+            images: wire.images,
+            tool_results: wire.tool_results,
             null_empty_tool_assistant: profile.policies.parameters != ParameterPolicy::DeepSeek,
             preserve_all_extra_content: profile.client == ClientSelector::Codex,
         },
+        tool_result_media: wire.tool_result_media,
         parameters: profile.policies.parameters,
         emit_tool_choice: profile.policies.tool_choice == ToolChoicePolicy::Default,
         tool_stream: profile.policies.parameters == ParameterPolicy::Zai

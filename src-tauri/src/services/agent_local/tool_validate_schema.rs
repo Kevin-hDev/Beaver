@@ -45,7 +45,7 @@ static GREP: Schema = &[
 static GLOB: Schema = &[("pattern", Ty::Str, true), ("path", Ty::Str, false)];
 static WEB_SEARCH: Schema = &[("query", Ty::Str, true)];
 static WEB_FETCH: Schema = &[("url", Ty::Str, true)];
-static SEARCH_EXTENSIONS: Schema = &[("query", Ty::Str, true)];
+static INSPECT_EXTENSIONS: Schema = &[("ids", Ty::Arr, true)];
 static TODO_WRITE: Schema = &[("todos", Ty::Arr, true)];
 static TODO_HISTORY: Schema = &[];
 static TODO_PAUSE: Schema = &[("reason", Ty::Str, false)];
@@ -54,6 +54,7 @@ static TODO_DELETE: Schema = &[("id", Ty::Str, false), ("active", Ty::Bool, fals
 static ASK_USER_CHOICE: Schema = &[("questions", Ty::Arr, true)];
 static PLAN_MODE: Schema = &[("title", Ty::Str, true), ("content", Ty::Str, true)];
 static LOAD_SKILL: Schema = &[("skill_id", Ty::Str, true)];
+static LOAD_EXTENSION_RESOURCE: Schema = &[("resource_id", Ty::Str, true)];
 static MANAGE_AUTOMATION: Schema = &[
     ("action", Ty::Str, true),
     ("id", Ty::Str, false),
@@ -79,10 +80,7 @@ static DELEGATE_TASK: Schema = &[
 ];
 static SUBAGENT_ID: Schema = &[("subagent_id", Ty::Str, true)];
 static MESSAGE_SUBAGENT: Schema = &[("subagent_id", Ty::Str, true), ("prompt", Ty::Str, true)];
-static SUBAGENT_CHANGE: Schema = &[
-    ("subagent_id", Ty::Str, true),
-    ("change_id", Ty::Str, true),
-];
+static SUBAGENT_CHANGE: Schema = &[("subagent_id", Ty::Str, true), ("change_id", Ty::Str, true)];
 static READ_SPREADSHEET: Schema = &[
     ("path", Ty::Str, true),
     ("sheet", Ty::Str, false),
@@ -144,7 +142,10 @@ pub(super) fn schema(tool: &str) -> Option<Schema> {
         "glob" => GLOB,
         "web_search" => WEB_SEARCH,
         "web_fetch" => WEB_FETCH,
-        "search_extension_tools" => SEARCH_EXTENSIONS,
+        name if name == crate::services::extensions::LIST_EXTENSIONS_TOOL_NAME => &[],
+        name if name == crate::services::extensions::INSPECT_EXTENSIONS_TOOL_NAME => {
+            INSPECT_EXTENSIONS
+        }
         "todo_write" => TODO_WRITE,
         "todo_history" => TODO_HISTORY,
         "todo_pause" => TODO_PAUSE,
@@ -153,6 +154,7 @@ pub(super) fn schema(tool: &str) -> Option<Schema> {
         "ask_user_choice" => ASK_USER_CHOICE,
         "plan_mode" => PLAN_MODE,
         "load_skill" => LOAD_SKILL,
+        name if name == super::super::tool_extension_resource::NAME => LOAD_EXTENSION_RESOURCE,
         "manage_automation" => MANAGE_AUTOMATION,
         "create_branch" => CREATE_BRANCH,
         "checkout_branch" => CHECKOUT_BRANCH,

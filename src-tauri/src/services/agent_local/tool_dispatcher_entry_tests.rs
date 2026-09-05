@@ -7,7 +7,8 @@ fn chat_policy_has_exactly_two_native_tools() {
     assert!(is_chat_tool("web_search"));
     assert!(is_chat_tool("web_fetch"));
     assert!(!is_chat_tool("bash"));
-    assert!(!is_chat_tool("search_extension_tools"));
+    assert!(!is_chat_tool("list_extensions"));
+    assert!(!is_chat_tool(super::super::tool_extension_resource::NAME));
 }
 
 #[test]
@@ -58,10 +59,41 @@ async fn chat_rejects_an_extension_call_before_dispatch() {
 }
 
 #[tokio::test]
-async fn discovery_without_an_exact_request_correlation_fails_closed() {
+async fn chat_rejects_extension_resource_and_skill_loading_before_dispatch() {
+    for (name, args) in [
+        (
+            super::super::tool_extension_resource::NAME,
+            json!({"resource_id": "extension:example.plugin:guide"}),
+        ),
+        (
+            "load_skill",
+            json!({"skill_id": "extension:example.plugin:guide"}),
+        ),
+    ] {
+        let result = dispatch_for_mode(
+            name,
+            &args,
+            std::path::Path::new("."),
+            "test-session",
+            None,
+            CancellationToken::new(),
+            true,
+        )
+        .await;
+
+        assert_eq!(
+            result.error.as_ref().map(|error| error.code.as_ref()),
+            Some("tool_unavailable_in_mode"),
+            "{name}"
+        );
+    }
+}
+
+#[tokio::test]
+async fn inspection_without_an_exact_request_correlation_fails_closed() {
     let result = super::super::tool_dispatcher::dispatch_inner(
-        crate::services::extensions::SEARCH_TOOL_NAME,
-        &json!({"query": "documents"}),
+        crate::services::extensions::INSPECT_EXTENSIONS_TOOL_NAME,
+        &json!({"ids": ["example.documents"]}),
         std::path::Path::new("."),
         DispatchTrace {
             session_id: "test-session",
@@ -75,6 +107,6 @@ async fn discovery_without_an_exact_request_correlation_fails_closed() {
 
     assert_eq!(
         result.error.as_ref().map(|error| error.code.as_ref()),
-        Some("plugin_search_unavailable")
+        Some(crate::services::extensions::error_codes::INSPECTION_UNAVAILABLE)
     );
 }

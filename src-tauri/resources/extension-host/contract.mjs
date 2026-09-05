@@ -65,12 +65,12 @@ function numericObject(name) {
   return Object.freeze({ ...values });
 }
 
-function strings(values, maximumCount = 128) {
+function strings(values, maximumCount = 128, validator = validProtocolCode) {
   if (!Array.isArray(values) || values.length < 1 || values.length > maximumCount) {
     throw new Error("invalid_extension_contract");
   }
   if (
-    values.some((value) => !validContractCode(value))
+    values.some((value) => !validator(value))
     || new Set(values).size !== values.length
   ) {
     throw new Error("invalid_extension_contract");
@@ -78,9 +78,22 @@ function strings(values, maximumCount = 128) {
   return Object.freeze([...values]);
 }
 
-function validContractCode(value) {
+function validProtocolCode(value) {
   if (typeof value !== "string" || value.length > LIMITS.maxContractCodeChars) return false;
   return /^[a-z][a-z0-9_.-]*$/.test(value);
+}
+
+function validOptionalCapability(value) {
+  if (typeof value !== "string" || value.length > LIMITS.maxContractCodeChars) return false;
+  return /^[a-z][a-zA-Z0-9_.-]*$/.test(value);
+}
+
+function exactStrings(values, expected, validator = validProtocolCode) {
+  const parsed = strings(values, expected.length, validator);
+  if (parsed.length !== expected.length || parsed.some((value, index) => value !== expected[index])) {
+    throw new Error("invalid_extension_contract");
+  }
+  return parsed;
 }
 
 export const API_VERSION = contract.apiVersion;
@@ -96,7 +109,23 @@ if (
   throw new Error("invalid_extension_contract");
 }
 
-export const CAPABILITIES = strings(contract.capabilities);
+export const CAPABILITIES = exactStrings(contract.capabilities, ["tools", "events", "ui"]);
+export const OPTIONAL_CAPABILITIES = exactStrings(
+  contract.optionalCapabilities,
+  ["skills", "resources", "richToolResults"],
+  validOptionalCapability,
+);
+if (OPTIONAL_CAPABILITIES.some((capability) => CAPABILITIES.includes(capability))) {
+  throw new Error("invalid_extension_contract");
+}
+export const CONTRIBUTION_TYPES = exactStrings(
+  contract.contributionTypes, ["tool", "event", "ui", "skill", "resource"],
+);
+export const RESULT_BLOCK_TYPES = exactStrings(contract.resultBlockTypes, ["text", "file"]);
+export const RESULT_FILE_PURPOSES = exactStrings(
+  contract.resultFilePurposes, ["artifact", "preview"],
+);
+export const RESOURCE_TYPES = exactStrings(contract.resourceTypes, ["text", "image", "file"]);
 export const CORE_TO_HOST_METHODS = strings(contract?.methods?.coreToHost);
 export const EVENTS = strings(contract.events);
 export const HOST_STATES = strings(contract.hostStates);
@@ -117,7 +146,7 @@ for (const method of hostMethods) {
   if (
     !method
     || typeof method !== "object"
-    || !validContractCode(method.name)
+    || !validProtocolCode(method.name)
     || !["stable", "advanced"].includes(method.level)
     || !["request", "notification"].includes(method.kind)
     || method.name in methodLevels

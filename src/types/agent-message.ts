@@ -3,6 +3,7 @@ import type {
   FileAttachmentView,
   SavedSegmentView,
   ToolActivityRecordView,
+  ToolArtifactRecordView,
   ToolCallRequestView,
   ToolFileChangeView,
 } from "./agent-session.generated";
@@ -23,6 +24,7 @@ export interface AgentMessage extends Omit<
 export type StreamMessagePart = NonNullable<AgentMessageView["stream_part"]>;
 export type SavedSegment = SavedSegmentView;
 export type ToolActivityRecord = ToolActivityRecordView;
+export type ToolArtifact = ToolArtifactRecordView;
 export type ToolFileChangeRecord = ToolFileChangeView;
 
 export interface ToolCallRequest extends Omit<ToolCallRequestView, "id"> {

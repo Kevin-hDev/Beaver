@@ -35,6 +35,7 @@ pub async fn execute(
             index,
             tool_call_ids.get(index).map(String::as_str),
             None,
+            Vec::new(),
         ));
     }
     outcome
@@ -76,7 +77,7 @@ mod tests {
                 ("bash".to_string(), json!({ "command": "pwd" })),
             ];
 
-            let outcome = execute(
+            let mut outcome = execute(
                 &emitter,
                 &mut messages,
                 &calls,

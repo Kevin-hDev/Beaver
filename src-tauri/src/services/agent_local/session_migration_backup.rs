@@ -16,6 +16,10 @@ pub(super) fn v3_backup_path(path: &Path) -> Result<PathBuf, String> {
     backup_path_for(path, "v3")
 }
 
+pub(super) fn v4_backup_path(path: &Path) -> Result<PathBuf, String> {
+    backup_path_for(path, "v4")
+}
+
 fn backup_path_for(path: &Path, version: &str) -> Result<PathBuf, String> {
     let name = path
         .file_name()
@@ -54,7 +58,9 @@ pub(super) async fn acknowledge_path(backup: PathBuf, can_remove: bool) -> Resul
     };
     drop(file);
     if !can_remove {
-        log::warn!("session_migration_backup_retained_empty_v2");
+        // Keep the exact backup when the visible session is empty: automatic
+        // cleanup must not destroy the only potentially recoverable messages.
+        log::warn!("session_migration_backup_retained_empty");
         return Ok(());
     }
     tokio::fs::remove_file(backup)

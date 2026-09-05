@@ -35,9 +35,9 @@ fn correction_arriving_with_tool_calls_cannot_skip_tool_execution() {
     for (request_source, execution_source, runner, executor) in [
         (
             include_str!("../llm/agent_loop.rs"),
-            include_str!("../llm/agent_loop.rs"),
-            "agent_loop_tools::execute_tool_batch",
-            "agent_loop_tools::execute_tool_batch",
+            include_str!("../llm/agent_loop_tools.rs"),
+            "agent_loop_tools::run_tool_turn",
+            "execute_tool_batch",
         ),
         (
             include_str!("agent_loop.rs"),

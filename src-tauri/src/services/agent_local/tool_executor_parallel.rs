@@ -1,4 +1,7 @@
-#![expect(clippy::too_many_arguments, reason = "orchestration boundary keeps related runtime context explicit")]
+#![expect(
+    clippy::too_many_arguments,
+    reason = "orchestration boundary keeps related runtime context explicit"
+)]
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::tool_hooks::{run_pre_hooks, PreHookDecision};
 use crate::services::agent_local::types_ollama::ChatMessage;
@@ -7,10 +10,13 @@ use crate::services::agent_local::write_guard::WriteGuard;
 use std::collections::HashMap;
 use tokio_util::sync::CancellationToken;
 
-use super::tool_executor_compression::ToolCompression;
 use super::tool_execution_outcome::ToolExecutionOutcome;
+use super::tool_executor_compression::ToolCompression;
 use super::tool_executor_helpers::{push_tool_message, push_tool_result, resolve_tool_path};
 use super::tool_executor_parallel_batch::{flush_read_batch, BatchEntry};
+use super::tool_executor_parallel_finalize::resolve_and_record_diagnostics;
+
+pub(super) type IndexedResult<'a> = Option<(&'a str, ToolResult)>;
 
 pub async fn run_with_parallel_reads(
     on_event: &AgentEventEmitter,
@@ -30,8 +36,9 @@ pub async fn run_with_parallel_reads(
 ) -> ToolExecutionOutcome {
     let tool_id = |idx| tool_call_ids.get(idx).map(String::as_str);
     let mut read_batch: Vec<BatchEntry> = Vec::new();
-    let mut indexed_results: Vec<Option<(&str, ToolResult)>> = vec![None; tool_calls.len()];
+    let mut indexed_results: Vec<IndexedResult<'_>> = vec![None; tool_calls.len()];
     let mut emitted_results = vec![false; tool_calls.len()];
+    let mut diagnostics_already_completed = vec![false; tool_calls.len()];
     let mut i = 0;
     while i <= tool_calls.len() {
         let is_last = i == tool_calls.len();
@@ -47,7 +54,9 @@ pub async fn run_with_parallel_reads(
                     &cancel,
                     write_guard,
                     &mut eager_results,
-                    session_id, request_id, mode == "chat",
+                    session_id,
+                    request_id,
+                    mode == "chat",
                 )
                 .await;
             }
@@ -81,6 +90,7 @@ pub async fn run_with_parallel_reads(
                 .await;
                 for output in results {
                     emitted_results[output.index] = true;
+                    diagnostics_already_completed[output.index] = true;
                     indexed_results[output.index] = Some((
                         super::tool_executor_delegate_batch::DELEGATE_TOOL,
                         output.result,
@@ -107,6 +117,7 @@ pub async fn run_with_parallel_reads(
                 )
                 .await;
                 indexed_results[i] = Some((name.as_str(), tr));
+                diagnostics_already_completed[i] = true;
                 i += 1;
                 continue;
             }
@@ -148,17 +159,13 @@ pub async fn run_with_parallel_reads(
                 )
                 .await;
                 indexed_results[i] = Some((name.as_str(), tr));
+                diagnostics_already_completed[i] = true;
                 i += 1;
                 continue;
             }
             match run_pre_hooks(name, args) {
                 PreHookDecision::Deny(msg) => {
                     let tr = super::tool_executor_errors::permission(msg, "tool_hook_denied");
-                    let summary = super::diagnostic_args::summarize(name, args, working_dir);
-                    super::tool_executor_diagnostics::completed(
-                        session_id, request_id, name, summary, &tr,
-                    )
-                    .await;
                     indexed_results[i] = Some((name.as_str(), tr));
                 }
                 PreHookDecision::Allow => {
@@ -173,9 +180,32 @@ pub async fn run_with_parallel_reads(
         }
     }
 
+    resolve_and_record_diagnostics(
+        &mut indexed_results,
+        tool_calls,
+        working_dir,
+        &cancel,
+        session_id,
+        request_id,
+        &diagnostics_already_completed,
+    )
+    .await;
+
     let mut outcome = ToolExecutionOutcome::default();
     for (idx, slot) in indexed_results.into_iter().enumerate() {
-        if let Some((name, tr)) = slot {
+        if let Some((name, mut tr)) = slot {
+            let artifacts = tr.take_ephemeral_artifacts();
+            let artifact_records = outcome
+                .retain_artifacts(idx, tool_id(idx), artifacts)
+                .unwrap_or_else(|()| {
+                    tr = ToolResult::error(
+                        "Résultat d'extension indisponible.",
+                        crate::services::extensions::error_codes::RESULT_TOO_LARGE,
+                        crate::services::agent_local::tool_result_contract::ToolErrorCategory::Unavailable,
+                        false,
+                    );
+                    Vec::new()
+                });
             let resolved_path = resolve_tool_path(name, &tool_calls[idx].1, working_dir);
             let follow_up = if emitted_results[idx] {
                 push_tool_message(messages, name, tr, tool_id(idx))
@@ -188,6 +218,7 @@ pub async fn run_with_parallel_reads(
                     idx,
                     tool_id(idx),
                     resolved_path,
+                    artifact_records,
                 )
             };
             outcome.record(follow_up);

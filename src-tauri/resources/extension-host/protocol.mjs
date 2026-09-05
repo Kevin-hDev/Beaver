@@ -5,9 +5,8 @@ import {
   PROTOCOL_ERROR_REASONS,
   TIMEOUTS,
 } from "./contract.mjs";
-import { encodeProtocolMessage } from "./protocol-output.mjs";
+import { encodeProtocolMessage, MAX_REQUEST_ID_CHARS } from "./protocol-output.mjs";
 
-const MAX_REQUEST_ID_CHARS = 128;
 const ERROR_REASON_PATTERN = /^[a-z][a-z0-9_]{0,63}$/;
 const RETRYABLE_REASONS = new Set([
   "core_busy",

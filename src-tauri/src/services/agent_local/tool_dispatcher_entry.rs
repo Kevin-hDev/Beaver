@@ -169,7 +169,7 @@ pub async fn dispatch_with_progress(
         if crate::services::extensions::record_tool_invocation(tool_name).is_err() {
             ::log::warn!("[extensions] usage counter unavailable");
         }
-        crate::services::extensions::dispatch_tool(tool_name, &args, working_dir)
+        crate::services::extensions::dispatch_tool(tool_name, &args, working_dir, cancel.clone())
             .await
             .unwrap_or_else(crate::services::extensions::unavailable_tool_result)
     } else {

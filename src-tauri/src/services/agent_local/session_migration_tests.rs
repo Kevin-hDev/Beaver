@@ -21,9 +21,102 @@ const SYNTHETIC_TOOL_CHAIN: &[u8] =
 const V2_COMPRESSION_FIXTURE: &[u8] =
     include_bytes!("../../../test-fixtures/agent-session-v2-compression.json");
 const V3_COMPRESSION_FIXTURE: &[u8] = include_bytes!("fixtures/session-v3-compression.json");
+const V4_TOOL_ACTIVITY_FIXTURE: &[u8] =
+    include_bytes!("../../../test-fixtures/agent-session-v4-with-tool-activity.json");
 
 #[tokio::test]
-async fn v3_migrates_to_v4_with_an_empty_guard_and_exact_backup() {
+async fn v4_tool_activity_fixture_migrates_with_empty_artifacts_and_exact_backup() {
+    let root = tempfile::tempdir().expect("tempdir");
+    let path = root
+        .path()
+        .join("00000000-0000-4000-8000-000000000030.json");
+    crate::services::private_store::atomic_write(&path, V4_TOOL_ACTIVITY_FIXTURE)
+        .expect("seed v4 fixture");
+    let migrated = super::session_migration::read(V4_TOOL_ACTIVITY_FIXTURE, path.clone())
+        .expect("migrate fixture");
+    assert_eq!(
+        migrated.version(),
+        super::session_migration::LoadedVersion::V4
+    );
+    assert!(migrated.session().messages[1]
+        .tool_activities
+        .as_ref()
+        .unwrap()[0]
+        .artifacts
+        .is_empty());
+    super::session_migration::commit_current(&migrated)
+        .await
+        .expect("publish v5");
+    assert_eq!(
+        std::fs::read(path.with_extension("json.v4.bak")).unwrap(),
+        V4_TOOL_ACTIVITY_FIXTURE
+    );
+}
+
+#[tokio::test]
+async fn v4_migrates_to_v5_with_empty_artifacts_and_exact_backup() {
+    let root = tempfile::tempdir().expect("tempdir");
+    let path = root
+        .path()
+        .join("00000000-0000-4000-8000-000000000051.json");
+    let v4 = super::session_migration::read(V3_COMPRESSION_FIXTURE, path.clone())
+        .expect("read source fixture");
+    let mut value = serde_json::to_value(v4.session()).expect("serialize v4");
+    value["schema_version"] = json!(4);
+    let bytes = serde_json::to_vec(&value).expect("serialize v4");
+    crate::services::private_store::atomic_write(&path, &bytes).expect("seed v4");
+
+    let migrated = super::session_migration::read(&bytes, path.clone()).expect("migrate v4");
+
+    assert_eq!(
+        migrated.version(),
+        super::session_migration::LoadedVersion::V4
+    );
+    assert_eq!(migrated.session().schema_version, 5);
+    assert!(migrated.session().messages.iter().all(|message| {
+        message
+            .tool_activities
+            .iter()
+            .flatten()
+            .all(|activity| activity.artifacts.is_empty())
+    }));
+    super::session_migration::commit_current(&migrated)
+        .await
+        .expect("publish v5");
+    let backup = root
+        .path()
+        .join("00000000-0000-4000-8000-000000000051.json.v4.bak");
+    assert_eq!(std::fs::read(backup).expect("v4 backup"), bytes);
+}
+
+#[test]
+fn v5_read_rejects_artifact_metadata_that_exceeds_the_shared_limit() {
+    let migrated = super::session_migration::read(
+        V4_TOOL_ACTIVITY_FIXTURE,
+        PathBuf::from("bounded-artifacts.json"),
+    )
+    .expect("migrate fixture");
+    let mut value = serde_json::to_value(migrated.session()).expect("serialize v5");
+    let artifact = json!({
+        "name": "preview.png", "mime_type": "image/png", "bytes": 8,
+        "sha256": "a".repeat(64), "purpose": "preview",
+        "source": {
+            "kind": "extension_resource",
+            "resource_id": "extension:sample:preview",
+            "catalog_fingerprint": "b".repeat(64)
+        }
+    });
+    value["messages"][1]["tool_activities"][0]["artifacts"] = serde_json::Value::Array(vec![
+        artifact;
+        super::tool_artifact_record::MAX_ARTIFACTS_PER_TOOL + 1
+    ]);
+    let bytes = serde_json::to_vec(&value).expect("serialize invalid fixture");
+
+    assert!(super::session_migration::read(&bytes, PathBuf::from("invalid.json")).is_err());
+}
+
+#[tokio::test]
+async fn v3_migrates_to_v5_with_an_empty_guard_and_exact_backup() {
     let root = tempfile::tempdir().expect("tempdir");
     let path = root
         .path()
@@ -38,21 +131,21 @@ async fn v3_migrates_to_v4_with_an_empty_guard_and_exact_backup() {
         loaded.version(),
         super::session_migration::LoadedVersion::V3
     );
-    assert_eq!(loaded.session().schema_version, 4);
+    assert_eq!(loaded.session().schema_version, 5);
     assert!(loaded.session().automatic_compression_guard.is_empty());
     assert_eq!(loaded.session().compression_count, 2);
     assert_eq!(loaded.session().messages.len(), 3);
     super::session_migration::commit_current(&loaded)
         .await
-        .expect("publish v4");
+        .expect("publish v5");
     let backup = super::session_migration::v3_backup_path(&path).expect("v3 backup path");
     assert_eq!(std::fs::read(&backup).unwrap(), V3_COMPRESSION_FIXTURE);
 
     let current = std::fs::read(&path).unwrap();
-    let reloaded = super::session_migration::read(&current, path).expect("reload v4");
+    let reloaded = super::session_migration::read(&current, path).expect("reload v5");
     assert_eq!(
         reloaded.version(),
-        super::session_migration::LoadedVersion::V4
+        super::session_migration::LoadedVersion::V5
     );
     assert!(reloaded.session().automatic_compression_guard.is_empty());
 }
@@ -83,7 +176,7 @@ fn invalid_automatic_compression_guard_does_not_make_the_session_unreadable() {
 }
 
 #[tokio::test]
-async fn v2_compression_markers_migrate_to_v3_with_an_exact_backup() {
+async fn v2_compression_markers_migrate_to_v5_with_an_exact_backup() {
     use super::types_message::AgentMessageKind;
 
     let root = tempfile::tempdir().expect("tempdir");
@@ -99,7 +192,7 @@ async fn v2_compression_markers_migrate_to_v3_with_an_exact_backup() {
         loaded.version(),
         super::session_migration::LoadedVersion::V2
     );
-    assert_eq!(loaded.session().schema_version, 4);
+    assert_eq!(loaded.session().schema_version, 5);
     assert_eq!(
         loaded.session().messages[0].message_kind,
         Some(AgentMessageKind::CompressionCheckpoint)
@@ -114,16 +207,16 @@ async fn v2_compression_markers_migrate_to_v3_with_an_exact_backup() {
 
     super::session_migration::commit_current(&loaded)
         .await
-        .expect("publish v4");
+        .expect("publish v5");
     let backup = super::session_migration::v2_backup_path(&path).expect("v2 backup path");
     assert_eq!(std::fs::read(&backup).unwrap(), V2_COMPRESSION_FIXTURE);
     let current = std::fs::read(&path).unwrap();
-    let reloaded = super::session_migration::read(&current, path).expect("reload v4");
+    let reloaded = super::session_migration::read(&current, path).expect("reload v5");
     assert_eq!(
         reloaded.version(),
-        super::session_migration::LoadedVersion::V4
+        super::session_migration::LoadedVersion::V5
     );
-    assert_eq!(reloaded.session().schema_version, 4);
+    assert_eq!(reloaded.session().schema_version, 5);
 }
 
 #[test]
@@ -343,6 +436,7 @@ async fn migrated_v1_history_builds_a_required_moonshot_payload_after_admission(
         purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
         session_id: Some(&session.id),
         fast_mode: FastModeRequest::Unsupported,
+        tool_result_previews: None,
         continuation_target: Some(&target),
     };
 
@@ -625,6 +719,7 @@ async fn writer_redacts_visible_text_without_mutating_opaque_state_or_provider_i
         start_line: None,
         affected_paths: Vec::new(),
         file_changes: Vec::new(),
+        artifacts: Vec::new(),
     }]);
 
     super::session_store_document::write_to_path(path.clone(), &session)
@@ -687,6 +782,14 @@ async fn future_session_is_visible_without_continuity_or_rewrite() {
     });
     let mut value = serde_json::to_value(&session).unwrap();
     value["schema_version"] = json!(99);
+    value["messages"][1]["tool_activities"] = json!([{
+        "name": "write_file", "summary": "Created a file", "artifacts": [{
+            "name":"preview.png", "mime_type":"image/png", "bytes":8,
+            "sha256":"a".repeat(64), "purpose":"preview", "future_field":true,
+            "source":{"kind":"extension_resource", "resource_id":"extension:sample:preview",
+                "catalog_fingerprint":"b".repeat(64), "future_source_field":true}
+        }]
+    }]);
     let bytes = serde_json::to_vec_pretty(&value).unwrap();
     crate::services::private_store::atomic_write(&path, &bytes).unwrap();
 
@@ -694,6 +797,12 @@ async fn future_session_is_visible_without_continuity_or_rewrite() {
         .await
         .expect("future visible");
     assert_eq!(visible.schema_version, 99);
+    assert_eq!(
+        visible.messages[1].tool_activities.as_ref().unwrap()[0]
+            .artifacts
+            .len(),
+        1
+    );
     assert_eq!(visible.messages[1].content, "fixture-assistant-content");
     assert!(visible.messages[1].continuation.is_none());
     assert!(visible.messages[0].replay_source.is_none());

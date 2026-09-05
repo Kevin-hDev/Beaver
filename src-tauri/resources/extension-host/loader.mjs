@@ -1,19 +1,12 @@
-import { createJiti } from "jiti";
-import { fileURLToPath } from "node:url";
 import { HOST_LOAD_STAGE_METHOD, LIMITS, LOAD_STAGES, supportsEvent, TIMEOUTS } from "./contract.mjs";
 import { createExtensionApi } from "./extension-api.mjs";
 import { createDiagnostic } from "./diagnostics.mjs";
 import { notifyCore } from "./protocol.mjs";
 import { clearUiActions, invokeUiAction } from "./ui-actions.mjs";
-
-const sdkPath = fileURLToPath(new URL("./sdk/index.mjs", import.meta.url));
-const jiti = createJiti(import.meta.url, {
-  alias: { "@beaver/sdk": sdkPath },
-  fsCache: false,
-  interopDefault: true,
-  moduleCache: false,
-  sourceMaps: false,
-});
+import { snapshotToolResult } from "./tool-result-snapshot.mjs";
+import { snapshotContribution } from "./contribution-snapshot.mjs";
+import { assertProtocolResultFits } from "./protocol-output.mjs";
+import { importExtensionModule } from "./module-loader.mjs";
 const extensions = new Map();
 const tools = new Map();
 
@@ -37,27 +30,15 @@ export async function callExtensionTool(name, arguments_, context) {
       timer.unref();
     }),
   ]).finally(() => clearTimeout(timer));
-  if (typeof raw === "string") {
-    return boundedToolResult({ content: raw, isError: false });
-  }
-  if (!raw || typeof raw !== "object" || typeof raw.content !== "string") {
-    throw new Error("invalid_tool_result");
-  }
-  return boundedToolResult({
-    content: raw.content,
-    isError: raw.isError === true,
-    displaySummary:
-      typeof raw.displaySummary === "string" ? raw.displaySummary : undefined,
-    truncated: raw.truncated === true,
-  });
+  return boundedToolResult(snapshotToolResult(raw));
 }
 
 function toolExecutionContext(context) {
   const workingDirectory = context?.workingDirectory;
   if (
     typeof workingDirectory !== "string"
-    || workingDirectory.length === 0
-    || workingDirectory.length > LIMITS.maxWorkingDirectoryChars
+    || Array.from(workingDirectory).length === 0
+    || Array.from(workingDirectory).length > LIMITS.maxWorkingDirectoryChars
     || workingDirectory.includes("\0")
   ) {
     throw new Error("invalid_tool_context");
@@ -65,17 +46,26 @@ function toolExecutionContext(context) {
   return Object.freeze({ workingDirectory });
 }
 
-function boundedToolResult(result) {
-  const content = safeSlice(result.content, LIMITS.maxMessageBytes);
+export function boundedToolResult(result) {
+  const content = typeof result.content === "string"
+    ? safeSlice(result.content, LIMITS.maxMessageBytes)
+    : boundedBlocks(result.content);
   const displaySummary = typeof result.displaySummary === "string"
     ? safeSlice(result.displaySummary, 1_024)
     : undefined;
-  return {
+  return Object.freeze(Object.assign(Object.create(null), {
     content,
     isError: result.isError,
     displaySummary,
-    truncated: result.truncated === true || content.length < result.content.length,
-  };
+    truncated: result.truncated === true || (typeof content === "string" && content.length < result.content.length),
+  }));
+}
+
+function boundedBlocks(blocks) {
+  if (!Array.isArray(blocks)) throw new Error("invalid_tool_result");
+  // `snapshotToolResult` already owns and freezes this array and its records.
+  // Reuse that validated snapshot instead of consulting a mutable Array prototype.
+  return blocks;
 }
 
 function safeSlice(value, maxChars) {
@@ -112,14 +102,18 @@ export async function callExtensionUiAction(params) {
 }
 
 export async function loadExtension(specification) {
+  return loadExtensionWithApi(specification, createExtensionApi);
+}
+
+export async function loadExtensionWithApi(specification, createApi) {
   let stage = LOAD_STAGES[0];
   try {
     if (!specification || typeof specification !== "object") {
       throw new Error("invalid_extension_specification");
     }
     notifyCore(HOST_LOAD_STAGE_METHOD, { stage });
-    const context = createExtensionApi(specification);
-    const module = await jiti.import(specification.mainPath, { default: true });
+    const context = createApi(specification);
+    const module = await importExtensionModule(specification.mainPath);
     stage = LOAD_STAGES[1];
     notifyCore(HOST_LOAD_STAGE_METHOD, { stage });
     const activate =
@@ -133,6 +127,19 @@ export async function loadExtension(specification) {
     stage = LOAD_STAGES[2];
     notifyCore(HOST_LOAD_STAGE_METHOD, { stage });
     ensureUniqueTools(context.tools);
+    const response = snapshotContribution({
+      id: specification.id,
+      contributions: {
+        tools: context.tools.map((tool) => tool.metadata),
+        skills: context.skills,
+        resources: context.resources,
+        events: [...context.events.keys()],
+        ui: context.ui.contributions,
+      },
+      uiDiagnostics: context.ui.diagnostics,
+    });
+    // Check the actual wire encoder before publishing any tools.
+    assertProtocolResultFits(response);
     for (const tool of context.tools) {
       tools.set(tool.metadata.name, {
         extensionId: specification.id,
@@ -140,15 +147,7 @@ export async function loadExtension(specification) {
       });
     }
     extensions.set(specification.id, { module, context });
-    return {
-      id: specification.id,
-      contributions: {
-        tools: context.tools.map((tool) => tool.metadata),
-        events: [...context.events.keys()],
-        ui: context.ui.contributions,
-      },
-      uiDiagnostics: context.ui.diagnostics,
-    };
+    return response;
   } catch (error) {
     return {
       id: specification.id,

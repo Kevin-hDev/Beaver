@@ -1,3 +1,7 @@
+pub mod tool_artifact;
+pub(crate) mod tool_artifact_preview;
+pub mod tool_artifact_record;
+pub(crate) mod tool_artifact_replay;
 pub mod types_diagnostics;
 mod types_diagnostics_deserialize;
 pub mod types_interactive;

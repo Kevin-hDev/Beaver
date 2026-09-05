@@ -29,6 +29,7 @@ pub(super) struct OllamaRequestParams<'a> {
     pub capture_reasoning: bool,
     pub live_replay_target:
         Option<&'a crate::services::reasoning_continuity::contract::ReplayTarget>,
+    pub tool_result_previews: &'a super::tool_artifact_preview::ToolResultPreviewBatch,
     #[cfg(debug_assertions)]
     pub fixture_candidate:
         Option<&'a crate::services::reasoning_continuity::contract::ReplayTarget>,
@@ -85,6 +86,10 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
         params.messages,
         params.tools,
         params.think.clone(),
+    );
+    super::agent_loop_ollama_media::append_verified_previews(
+        &mut request,
+        params.tool_result_previews,
     );
     request.capture_reasoning = params.capture_reasoning;
     request.live_replay_target = params

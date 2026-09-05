@@ -21,6 +21,7 @@ fn tool_result_serializes_readable_display_summary() {
         affected_paths: Vec::new(),
         file_changes: Vec::new(),
         start_line: None,
+        artifacts: Vec::new(),
     };
 
     let serialized = serde_json::to_value(event).expect("stream event should serialize");
@@ -33,6 +34,46 @@ fn tool_result_serializes_readable_display_summary() {
     assert_eq!(serialized["data"]["toolCallIndex"], 0);
     assert_eq!(serialized["data"]["toolCallId"], "call-0");
     assert_eq!(serialized["data"]["status"], "success");
+}
+
+#[test]
+fn tool_result_serializes_artifact_metadata_without_payload_or_internal_path() {
+    let event = StreamEvent::ToolResult {
+        name: "extension_tool".to_string(),
+        content: "ok".to_string(),
+        is_error: false,
+        status: ToolResultStatus::Success,
+        error: None,
+        warnings: Vec::new(),
+        truncated: false,
+        display_summary: None,
+        tool_call_index: 3,
+        tool_call_id: Some("call-3".to_string()),
+        resolved_path: None,
+        domain: None,
+        affected_paths: Vec::new(),
+        file_changes: Vec::new(),
+        start_line: None,
+        artifacts: vec![crate::models::agent_session_contract::ToolArtifactRecordView::from(
+            &crate::services::agent_local::tool_artifact_record::ToolArtifactRecord {
+            name: "diagram.png".into(),
+            mime_type: "image/png".into(),
+            bytes: 42,
+            sha256: "a".repeat(64),
+            purpose: crate::services::agent_local::tool_artifact_record::ToolArtifactPurpose::Artifact,
+            source: crate::services::agent_local::tool_artifact_record::ToolArtifactSource::ExtensionResource {
+                resource_id: "extension:demo:diagram".into(),
+                catalog_fingerprint: "b".repeat(64),
+            },
+        })],
+    };
+
+    let json = serde_json::to_string(&event).expect("serialize stream artifact");
+    assert!(json.contains("extension:demo:diagram"));
+    assert!(!json.contains("base64"));
+    assert!(!json.contains("relative_path"));
+    assert!(!json.contains("bytes_data"));
+    assert!(!json.contains("catalog_fingerprint"));
 }
 
 #[test]

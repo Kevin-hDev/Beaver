@@ -7,7 +7,7 @@ mod session;
 
 pub use message::{
     AgentMessageView, FileAttachmentView, SavedSegmentView, ToolActivityRecordView,
-    ToolCallFunctionView, ToolCallRequestView, ToolFileChangeView,
+    ToolArtifactRecordView, ToolCallFunctionView, ToolCallRequestView, ToolFileChangeView,
 };
 pub use session::{
     AgentSessionView, AgentStreamFailureView, ContinuityCapability, ContinuityRequirement,
@@ -64,6 +64,10 @@ pub(crate) fn typescript_bindings() -> String {
         message::ToolCallFunctionView::decl(&config),
         message::ToolCallRequestView::decl(&config),
         message::ToolFileChangeView::decl(&config),
+        crate::services::agent_local::tool_artifact_record::ToolArtifactPurpose::decl(&config),
+        crate::services::agent_local::tool_artifact_record::ToolArtifactStatus::decl(&config),
+        message::ToolArtifactSourceView::decl(&config),
+        message::ToolArtifactRecordView::decl(&config),
         message::ToolActivityRecordView::decl(&config),
         message::SavedSegmentView::decl(&config),
         message::AgentMessageView::decl(&config),

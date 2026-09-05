@@ -1,4 +1,7 @@
-#![expect(clippy::too_many_arguments, reason = "orchestration boundary keeps related runtime context explicit")]
+#![expect(
+    clippy::too_many_arguments,
+    reason = "orchestration boundary keeps related runtime context explicit"
+)]
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::tool_execution_outcome::ToolExecutionOutcome;
 use crate::services::agent_local::tool_hooks::run_post_hooks;
@@ -213,6 +216,7 @@ fn emit_result(
         index,
         tool_call_ids.get(index).map(String::as_str),
         None,
+        Vec::new(),
     );
 }
 

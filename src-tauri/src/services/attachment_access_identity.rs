@@ -1,8 +1,8 @@
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub(super) struct FileIdentity(u128);
+pub(crate) struct FileIdentity(u128);
 
 #[cfg(unix)]
-pub(super) fn from_file(file: &std::fs::File) -> Option<FileIdentity> {
+pub(crate) fn from_file(file: &std::fs::File) -> Option<FileIdentity> {
     use std::os::unix::fs::MetadataExt;
 
     let metadata = file.metadata().ok()?;
@@ -12,7 +12,7 @@ pub(super) fn from_file(file: &std::fs::File) -> Option<FileIdentity> {
 }
 
 #[cfg(windows)]
-pub(super) fn from_file(file: &std::fs::File) -> Option<FileIdentity> {
+pub(crate) fn from_file(file: &std::fs::File) -> Option<FileIdentity> {
     use std::os::windows::io::AsRawHandle;
     use windows_sys::Win32::Storage::FileSystem::{
         GetFileInformationByHandle, BY_HANDLE_FILE_INFORMATION,
@@ -30,6 +30,6 @@ pub(super) fn from_file(file: &std::fs::File) -> Option<FileIdentity> {
 }
 
 #[cfg(not(any(unix, windows)))]
-pub(super) fn from_file(_: &std::fs::File) -> Option<FileIdentity> {
+pub(crate) fn from_file(_: &std::fs::File) -> Option<FileIdentity> {
     None
 }

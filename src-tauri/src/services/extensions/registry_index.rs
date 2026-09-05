@@ -1,5 +1,5 @@
 use super::discovery_catalog::CatalogSnapshot;
-use super::types::{ExtensionRecord, ExtensionTool};
+use super::types::{ExtensionRecord, ExtensionResource, ExtensionSkill, ExtensionTool};
 use std::collections::{BTreeMap, HashSet};
 use std::sync::{LazyLock, RwLock};
 
@@ -11,6 +11,8 @@ pub(crate) struct IndexedPlugin {
     pub description: Option<String>,
     pub essential: bool,
     pub tools: Vec<ExtensionTool>,
+    pub skills: Vec<ExtensionSkill>,
+    pub resources: Vec<ExtensionResource>,
 }
 
 #[derive(Clone)]
@@ -34,18 +36,7 @@ static INDEX: LazyLock<RwLock<DynamicIndex>> =
 
 pub fn rebuild(records: &[ExtensionRecord]) -> Result<(), String> {
     let preferences = super::discovery_preferences::sanitize(records)?;
-    let plugins = records
-        .iter()
-        .filter(|record| record.enabled && record.trusted)
-        .map(|record| IndexedPlugin {
-            id: record.manifest.id.clone(),
-            name: record.manifest.name.clone(),
-            version: record.manifest.version.clone(),
-            description: record.manifest.description.clone(),
-            essential: record.manifest.essential,
-            tools: record.contributions.tools.clone(),
-        })
-        .collect::<Vec<_>>();
+    let plugins = plugins_from_records(records);
     let tools = plugins
         .iter()
         .flat_map(|plugin| {
@@ -67,7 +58,7 @@ pub fn rebuild(records: &[ExtensionRecord]) -> Result<(), String> {
         .collect();
     let scores = usage_scores();
     let next_catalog =
-        super::discovery_catalog::build(&plugins, &preferences.protected_plugin_ids, &scores);
+        super::discovery_catalog::build(&plugins, &preferences.protected_plugin_ids, &scores)?;
     let previous_catalog = INDEX
         .read()
         .map(|index| index.catalog.clone())
@@ -84,6 +75,23 @@ pub fn rebuild(records: &[ExtensionRecord]) -> Result<(), String> {
         catalog,
     };
     Ok(())
+}
+
+pub(super) fn plugins_from_records(records: &[ExtensionRecord]) -> Vec<IndexedPlugin> {
+    records
+        .iter()
+        .filter(|record| record.enabled && record.trusted)
+        .map(|record| IndexedPlugin {
+            id: record.manifest.id.clone(),
+            name: record.manifest.name.clone(),
+            version: record.manifest.version.clone(),
+            description: record.manifest.description.clone(),
+            essential: record.manifest.essential,
+            tools: record.contributions.tools.clone(),
+            skills: record.contributions.skills.clone(),
+            resources: record.contributions.resources.clone(),
+        })
+        .collect()
 }
 
 fn usage_scores() -> BTreeMap<String, f64> {
@@ -125,6 +133,13 @@ pub(crate) fn indexed_plugins() -> Vec<IndexedPlugin> {
         .read()
         .map(|index| index.plugins.clone())
         .unwrap_or_default()
+}
+
+pub(crate) fn indexed_plugins_with_catalog_version() -> Result<(Vec<IndexedPlugin>, String), ()> {
+    INDEX
+        .read()
+        .map(|index| (index.plugins.clone(), index.catalog.version.clone()))
+        .map_err(|_| ())
 }
 
 pub(crate) fn catalog_snapshot() -> CatalogSnapshot {

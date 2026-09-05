@@ -3,6 +3,7 @@ import type { ToolErrorCategory, ToolErrorInfo } from "@/types/agent";
 import { officeToolErrorMessage } from "./office-tool-errors";
 import { sanitizeToolError } from "./tool-error-sanitize";
 import { admissionErrorKey } from "./admission-error";
+import { extensionErrorKey } from "./extension-errors";
 
 const CATEGORY_KEYS: Record<ToolErrorCategory, string> = {
   validation: "agentLocal.toolActivity.errorCategories.validation",
@@ -22,7 +23,7 @@ const ERROR_CODE_KEYS: Readonly<Record<string, string>> = {
 };
 
 export function toolErrorHasLocalizedMessage(error: ToolErrorInfo | undefined): boolean {
-  return error ? error.code in ERROR_CODE_KEYS : false;
+  return error ? error.code in ERROR_CODE_KEYS || extensionBackendErrorKey(error.code) !== undefined : false;
 }
 
 export function toolErrorResultIsMachineCode(result: string | undefined): boolean {
@@ -43,11 +44,16 @@ export function toolErrorMessage(
     if (officeMessage) return officeMessage;
   }
 
-  const errorCodeKey = error ? ERROR_CODE_KEYS[error.code] : undefined;
+  const errorCodeKey = error ? extensionBackendErrorKey(error.code) ?? ERROR_CODE_KEYS[error.code] : undefined;
   if (errorCodeKey) return t(errorCodeKey);
 
   const categoryKey = error ? CATEGORY_KEYS[error.category] : undefined;
   if (categoryKey) return t(categoryKey);
 
   return sanitizeToolError(result) || t("errors.toolFailed");
+}
+
+function extensionBackendErrorKey(code: string): string | undefined {
+  const key = extensionErrorKey(code, "");
+  return key.startsWith("extensions.errors.codes.") ? key : undefined;
 }

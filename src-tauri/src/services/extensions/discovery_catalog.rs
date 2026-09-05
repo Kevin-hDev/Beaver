@@ -1,7 +1,7 @@
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, HashSet};
 
-use super::discovery_limits::{MAX_CATALOG_DESCRIPTION_CHARS, MAX_SELF_DECLARED_ESSENTIAL_PLUGINS};
+use super::discovery_limits::MAX_SELF_DECLARED_ESSENTIAL_PLUGINS;
 use super::registry_index::IndexedPlugin;
 
 #[derive(Clone, Default)]
@@ -18,7 +18,10 @@ pub fn build(
     plugins: &[IndexedPlugin],
     protected_plugin_ids: &[String],
     scores: &BTreeMap<String, f64>,
-) -> CatalogSnapshot {
+) -> Result<CatalogSnapshot, String> {
+    if plugins.len() > super::discovery_contract::HOST_MAX_EXTENSIONS {
+        return Err(super::error_codes::LISTING_UNAVAILABLE.to_string());
+    }
     let mut stable = plugins.to_vec();
     stable.sort_by(|left, right| {
         left.name
@@ -79,45 +82,16 @@ pub fn build(
         .iter()
         .filter_map(|id| by_id.get(id).cloned())
         .collect::<Vec<_>>();
-    let text = render(&ordered);
+    let text = super::discovery_listing::compact_catalog(&ordered)?;
     let version = fingerprint(plugins, protected_plugin_ids);
-    CatalogSnapshot {
+    Ok(CatalogSnapshot {
         text,
         version,
         ordered_plugin_ids,
         capacity_plugin_ids,
         protected_plugin_ids: protected,
         essential_plugin_ids: essential,
-    }
-}
-
-fn render(plugins: &[IndexedPlugin]) -> String {
-    plugins
-        .iter()
-        .map(|plugin| {
-            let name = normalized_name(&plugin.name);
-            match normalized_description(plugin.description.as_deref()) {
-                Some(description) => format!("- {name} : {description}"),
-                None => format!("- {name}"),
-            }
-        })
-        .collect::<Vec<_>>()
-        .join("\n")
-}
-
-fn normalized_name(name: &str) -> String {
-    name.split_whitespace().collect::<Vec<_>>().join(" ")
-}
-
-fn normalized_description(description: Option<&str>) -> Option<String> {
-    let normalized = description?
-        .split_whitespace()
-        .collect::<Vec<_>>()
-        .join(" ")
-        .chars()
-        .take(MAX_CATALOG_DESCRIPTION_CHARS)
-        .collect::<String>();
-    (!normalized.is_empty()).then_some(normalized)
+    })
 }
 
 fn fingerprint(plugins: &[IndexedPlugin], protected_plugin_ids: &[String]) -> String {
@@ -137,6 +111,21 @@ fn fingerprint(plugins: &[IndexedPlugin], protected_plugin_ids: &[String]) -> St
             hash_text(&mut hash, &tool.description);
             hash.update([tool.replaces_core as u8]);
             hash_text(&mut hash, &tool.parameters.to_string());
+        }
+        hash.update((plugin.skills.len() as u64).to_le_bytes());
+        for skill in &plugin.skills {
+            hash_text(&mut hash, &skill.id);
+            hash_text(&mut hash, &skill.name);
+            hash_text(&mut hash, &skill.description);
+            hash_text(&mut hash, &skill.path);
+        }
+        hash.update((plugin.resources.len() as u64).to_le_bytes());
+        for resource in &plugin.resources {
+            hash_text(&mut hash, &resource.id);
+            hash_text(&mut hash, &resource.name);
+            hash_text(&mut hash, &resource.description);
+            hash_text(&mut hash, &format!("{:?}", resource.resource_type));
+            hash_text(&mut hash, &resource.path);
         }
     }
     hash.update((protected_plugin_ids.len() as u64).to_le_bytes());

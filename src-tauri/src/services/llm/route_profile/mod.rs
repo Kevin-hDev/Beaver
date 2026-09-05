@@ -21,7 +21,9 @@ pub(crate) use policy_types::{
     SchemaPolicy, ToolLimitPolicy, UpstreamToolFamily,
 };
 pub(super) use types::*;
-pub(crate) use types::{ApiKeyHeader, ImageFormat, MessageWirePolicy, ToolResultPlacement};
+pub(crate) use types::{
+    ApiKeyHeader, ImageFormat, MessageWirePolicy, ToolResultMedia, ToolResultPlacement,
+};
 
 pub(crate) fn tool_policy(provider_id: &str, model: &str) -> Option<ResolvedToolPolicy> {
     let profile = find(provider_id)?;
@@ -39,6 +41,15 @@ pub(crate) fn cache_policy<'a>(
 pub(crate) fn payload_policy(provider_id: &str, model: &str) -> Option<ResolvedPayloadPolicy> {
     let profile = find(provider_id)?;
     Some(payload_policies::resolve(profile, model))
+}
+
+pub(crate) fn xai_oauth_chat_payload_policy(model: &str) -> Option<ResolvedPayloadPolicy> {
+    let profile = find("xai-oauth")?;
+    Some(payload_policies::resolve_for_wire(
+        profile,
+        model,
+        wire_contracts::XAI_OAUTH_CHAT_TEXT_ONLY_WIRE,
+    ))
 }
 
 pub(crate) fn tool_limit_policy(provider_id: &str, model: &str) -> Option<ResolvedToolLimitPolicy> {
@@ -101,3 +112,6 @@ pub(super) fn anthropic_fixture(
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+#[path = "tool_policies_tests.rs"]
+mod tool_policies_tests;

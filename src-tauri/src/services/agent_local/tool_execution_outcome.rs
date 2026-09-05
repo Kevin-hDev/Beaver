@@ -1,12 +1,15 @@
+use super::tool_artifact::EphemeralArtifact;
+use super::tool_execution_artifacts::{AttributedArtifact, ToolExecutionArtifacts};
 use super::types_ollama::ChatMessage;
 use super::types_tools::ToolFollowUp;
 
-const MAX_FOLLOW_UP_BYTES: usize = 16 * 1024;
+pub(super) const MAX_FOLLOW_UP_BYTES: usize = 16 * 1024;
 
 #[derive(Default)]
 pub struct ToolExecutionOutcome {
     pub compressed: bool,
     follow_ups: Vec<ToolFollowUp>,
+    artifacts: ToolExecutionArtifacts,
 }
 
 impl ToolExecutionOutcome {
@@ -14,6 +17,7 @@ impl ToolExecutionOutcome {
         Self {
             compressed,
             follow_ups: Vec::new(),
+            artifacts: ToolExecutionArtifacts::default(),
         }
     }
 
@@ -23,14 +27,55 @@ impl ToolExecutionOutcome {
         }
     }
 
-    pub fn merge(&mut self, other: Self) {
+    pub fn merge(&mut self, other: Self) -> Result<(), ()> {
+        // Keep an overflow atomic: callers stop the turn instead of publishing an
+        // outcome whose visible message and retained artifacts disagree.
+        self.artifacts.merge(other.artifacts)?;
         self.compressed |= other.compressed;
         self.follow_ups.extend(other.follow_ups);
+        Ok(())
     }
 
-    pub fn apply_follow_ups(self, messages: &mut [ChatMessage]) -> Result<bool, String> {
+    pub(crate) fn record_artifacts(
+        &mut self,
+        tool_call_index: usize,
+        tool_call_id: Option<&str>,
+        artifacts: Vec<EphemeralArtifact>,
+    ) -> Result<(), ()> {
+        self.artifacts
+            .record(tool_call_index, tool_call_id, artifacts)
+    }
+
+    pub(crate) fn retain_artifacts(
+        &mut self,
+        tool_call_index: usize,
+        tool_call_id: Option<&str>,
+        artifacts: Vec<EphemeralArtifact>,
+    ) -> Result<Vec<super::tool_artifact_record::ToolArtifactRecord>, ()> {
+        let records = artifacts
+            .iter()
+            .map(|artifact| (&artifact.metadata).into())
+            .collect();
+        self.record_artifacts(tool_call_index, tool_call_id, artifacts)?;
+        Ok(records)
+    }
+
+    pub(crate) fn artifacts(&self) -> &[AttributedArtifact] {
+        self.artifacts.as_slice()
+    }
+
+    pub(crate) async fn take_artifact_previews(
+        &mut self,
+    ) -> super::tool_artifact_preview::ToolResultPreviewBatch {
+        super::tool_artifact_preview::ToolResultPreviewBatch::replay_from_artifacts(
+            self.artifacts.take(),
+        )
+        .await
+    }
+
+    pub fn apply_follow_ups(&mut self, messages: &mut [ChatMessage]) -> Result<bool, String> {
         let mut stop = false;
-        for follow_up in self.follow_ups {
+        for follow_up in std::mem::take(&mut self.follow_ups) {
             match follow_up {
                 ToolFollowUp::None => {}
                 ToolFollowUp::UserMessage(content) => {
@@ -79,52 +124,5 @@ fn bounded_prefix(value: &str, max_bytes: usize) -> &str {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn trusted_follow_ups_are_appended_after_tool_messages() {
-        let mut outcome = ToolExecutionOutcome::default();
-        outcome.record(ToolFollowUp::UserMessage("User answer".into()));
-        outcome.record(ToolFollowUp::SystemMessage("Backend state".into()));
-        let mut messages = vec![ChatMessage::tool("Receipt".into(), None, None)];
-
-        assert!(!outcome.apply_follow_ups(&mut messages).unwrap());
-        assert_eq!(messages.len(), 1);
-        assert!(messages[0].content.contains("User answer"));
-        assert!(messages[0].content.contains("Backend state"));
-    }
-
-    #[test]
-    fn stop_follow_up_ends_the_batch_without_fabricating_a_message() {
-        let mut outcome = ToolExecutionOutcome::default();
-        outcome.record(ToolFollowUp::Stop);
-        let mut messages = Vec::new();
-
-        assert!(outcome.apply_follow_ups(&mut messages).unwrap());
-        assert!(messages.is_empty());
-    }
-
-    #[test]
-    fn oversized_follow_up_is_bounded_without_failing_a_large_tool_result() {
-        let mut outcome = ToolExecutionOutcome::default();
-        outcome.record(ToolFollowUp::UserMessage("é".repeat(MAX_FOLLOW_UP_BYTES)));
-        let mut messages = vec![ChatMessage::tool(
-            "x".repeat(MAX_FOLLOW_UP_BYTES * 2),
-            None,
-            None,
-        )];
-
-        assert!(!outcome.apply_follow_ups(&mut messages).unwrap());
-        assert!(messages[0].content.ends_with('é'));
-        assert!(messages[0].content.len() <= MAX_FOLLOW_UP_BYTES * 3 + 32);
-    }
-
-    #[test]
-    fn follow_up_without_tool_is_ignored_without_failing_the_turn() {
-        let mut outcome = ToolExecutionOutcome::default();
-        outcome.record(ToolFollowUp::UserMessage("answer".into()));
-
-        assert!(!outcome.apply_follow_ups(&mut []).unwrap());
-    }
-}
+#[path = "tool_execution_outcome_tests.rs"]
+mod tests;

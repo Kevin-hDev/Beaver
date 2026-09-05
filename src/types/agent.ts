@@ -17,6 +17,7 @@ export type {
   SavedSegment,
   SkillInfo,
   StreamMessagePart,
+  ToolArtifact,
   ToolActivityRecord,
   ToolFileChangeRecord,
   ToolCallRequest,

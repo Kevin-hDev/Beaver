@@ -208,5 +208,8 @@ function safeDiagnostic(line) {
   if (line.includes("[browser] initialization failed after CEF boundary")) {
     return "browser-initialization:fatal";
   }
+  if (line.includes("[extensions] operation=loading-journal-write result=failed")) {
+    return "extensions:loading-journal-write-failed";
+  }
   return undefined;
 }

@@ -467,6 +467,9 @@
         "internal": "Un errore interno ha impedito l’operazione."
       },
       "toggleDetails": "Mostra dettagli degli strumenti",
+      "artifacts": "File prodotti",
+      "openArtifact": "Apri {{name}}",
+      "artifactStatus": { "intact": "Integro", "absent": "Assente", "modified": "Modificato", "inaccessible": "Inaccessibile", "unverified": "Non verificato" },
       "groups": {
         "exploration": "Esplorazione",
         "modification": "Modifiche",
@@ -2380,6 +2383,17 @@
     "uiEmpty": "Nessun contributo dell’interfaccia è attualmente dichiarato.",
     "uiTheme": "Tema",
     "contributions": "Contributi registrati",
+    "capabilities": "Skill e risorse",
+    "capabilitiesLoading": "Caricamento di skill e risorse…",
+    "capabilitiesError": "Impossibile caricare skill e risorse.",
+    "capabilitiesEmpty": "Al momento non è dichiarato alcuno skill o risorsa.",
+    "skills": "Skill",
+    "resources": "Risorse",
+    "resourceTypes": {
+      "text": "Testo",
+      "image": "Immagine",
+      "file": "File"
+    },
     "replacesCore": "Sostituisce uno strumento integrato"
   },
   "activation": {
@@ -2486,7 +2500,16 @@
         "extensions_load_interrupted": "Il caricamento dell’estensione è stato interrotto.",
         "extensions_activation_confirmation_required": "Questa estensione deve essere approvata di nuovo prima dell’attivazione.",
         "extensions_not_found": "L’estensione non è stata trovata.",
-        "extensions_host_incompatible": "L’host delle estensioni non è compatibile con questa versione di Beaver."
+        "extensions_host_incompatible": "L’host delle estensioni non è compatibile con questa versione di Beaver.",
+        "extensions_resource_unavailable": "La risorsa dell’estensione non è disponibile.",
+        "extensions_resource_not_found": "La risorsa dell’estensione non è stata trovata.",
+        "extensions_resource_invalid": "La risorsa dell’estensione non è valida.",
+        "extensions_resource_too_large": "La risorsa dell’estensione è troppo grande.",
+        "extensions_result_invalid": "Il risultato dell’estensione non è valido.",
+        "extensions_result_too_large": "Il risultato dell’estensione è troppo grande.",
+        "extensions_listing_unavailable": "L’elenco delle estensioni non è disponibile.",
+        "extensions_inspection_invalid": "L’ispezione delle estensioni non è valida.",
+        "extensions_inspection_unavailable": "L’ispezione delle estensioni non è disponibile."
       }
     },
     "diagnostics": {
@@ -2497,6 +2520,8 @@
         "activation_failed": "Attivazione non riuscita",
         "registration_failed": "Registrazione dei contributi non riuscita",
         "import_failed": "Importazione del modulo non riuscita",
+        "resource_unavailable": "Risorsa dell’estensione non disponibile",
+        "result_invalid": "Risultato dell’estensione non valido",
         "entry_unavailable": "Il punto di ingresso dell’estensione non è disponibile",
         "load_failed": "Caricamento dell’estensione non riuscito",
         "host_missing_response": "L’host non ha confermato il caricamento di questa estensione",

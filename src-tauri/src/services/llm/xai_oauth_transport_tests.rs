@@ -1,5 +1,6 @@
 use super::xai_oauth_transport::{
-    backend_path, catalog_reasoning_mode, classify_status, prepare_chat_request, validate_backend,
+    backend_path, catalog_reasoning_mode, classify_status, prepare_chat_request,
+    prepare_responses_request, validate_backend,
 };
 use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::llm::request_purpose::RequestPurpose;
@@ -87,6 +88,7 @@ fn chat_request_uses_the_subscription_catalog_restriction() {
         purpose: RequestPurpose::ManualChat,
         session_id: Some("session-fixture"),
         fast_mode: crate::services::llm::fast_mode::FastModeRequest::Unsupported,
+        tool_result_previews: None,
         continuation_target: None,
     };
     let mut model = catalog_model();
@@ -97,6 +99,68 @@ fn chat_request_uses_the_subscription_catalog_restriction() {
     let prepared = prepare_chat_request(request, &model);
 
     assert_eq!(prepared.reasoning_mode, Some("high"));
+}
+
+#[test]
+fn both_xai_oauth_wires_remain_text_only_with_a_preview_batch_present() {
+    let messages = [ChatMessage::tool(
+        "done".into(),
+        Some("call-preview".into()),
+        None,
+    )];
+    let previews = preview_batch();
+    let request = RequestConfig {
+        provider_id: "xai-oauth",
+        model: "grok-4.6",
+        messages: &messages,
+        tools: &[],
+        think: true,
+        reasoning_mode: Some("high"),
+        max_tokens: None,
+        purpose: RequestPurpose::ManualChat,
+        session_id: Some("session-preview"),
+        fast_mode: crate::services::llm::fast_mode::FastModeRequest::Unsupported,
+        tool_result_previews: Some(&previews),
+        continuation_target: None,
+    };
+
+    let route = crate::services::llm::route::resolve("xai-oauth").expect("xAI OAuth route");
+    let policy = crate::services::llm::route_profile::xai_oauth_chat_payload_policy(request.model)
+        .expect("xAI OAuth chat policy");
+    let chat = crate::services::llm::stream_http_payload::build_chat_payload_with_policy(
+        &request, &route, None, policy,
+    )
+    .expect("chat payload")
+    .payload;
+    let responses = prepare_responses_request(&catalog_model(), &request)
+        .expect("Responses payload")
+        .payload;
+    assert!(!chat.to_string().contains("data:image"));
+    assert!(!responses.to_string().contains("data:image"));
+}
+
+fn preview_batch() -> crate::services::agent_local::tool_artifact_preview::ToolResultPreviewBatch {
+    use crate::services::agent_local::tool_artifact::{
+        ArtifactMetadata, ArtifactPurpose, ArtifactSource, EphemeralArtifact,
+    };
+    crate::services::agent_local::tool_artifact_preview::ToolResultPreviewBatch::from_ephemeral(
+        0,
+        Some("call-preview".into()),
+        EphemeralArtifact {
+            metadata: ArtifactMetadata {
+                name: "preview.png".into(),
+                mime_type: "image/png".into(),
+                bytes: 8,
+                sha256: "a".repeat(64),
+                purpose: ArtifactPurpose::Preview,
+                source: ArtifactSource::ExtensionResource {
+                    resource_id: "extension:demo:preview".into(),
+                    catalog_fingerprint: "b".repeat(64),
+                },
+            },
+            bytes: b"\x89PNG\r\n\x1a\n".to_vec(),
+        },
+    )
 }
 
 #[test]
@@ -114,6 +178,7 @@ fn required_continuity_cannot_use_the_chat_completions_backend() {
         purpose: RequestPurpose::ManualChat,
         session_id: Some("session-fixture"),
         fast_mode: crate::services::llm::fast_mode::FastModeRequest::Unsupported,
+        tool_result_previews: None,
         continuation_target: Some(&target),
     };
 

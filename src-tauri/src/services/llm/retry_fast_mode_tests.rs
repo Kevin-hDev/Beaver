@@ -24,6 +24,8 @@ async fn retryable_provider_failure_is_sent_once_without_idempotency() {
     let emitter = AgentEventEmitter::test(session.id.clone());
     let messages = [ChatMessage::user("hello".into())];
     let mut next_attempt = 1;
+    let previews =
+        crate::services::agent_local::tool_artifact_preview::ToolResultPreviewBatch::default();
 
     let retry = retry_stream(
         &emitter,
@@ -39,6 +41,7 @@ async fn retryable_provider_failure_is_sent_once_without_idempotency() {
         &[],
         false,
         None,
+        &previews,
         CancellationToken::new(),
         false,
         None,
@@ -83,6 +86,8 @@ async fn structured_service_tier_refusal_is_sent_once_even_with_tools() {
         }
     })];
     let mut next_attempt = 1;
+    let previews =
+        crate::services::agent_local::tool_artifact_preview::ToolResultPreviewBatch::default();
 
     let error = retry_stream(
         &emitter,
@@ -98,6 +103,7 @@ async fn structured_service_tier_refusal_is_sent_once_even_with_tools() {
         &tools,
         false,
         None,
+        &previews,
         CancellationToken::new(),
         false,
         None,

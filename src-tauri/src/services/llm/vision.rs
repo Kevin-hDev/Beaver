@@ -1,7 +1,9 @@
 use crate::services::agent_local::types_ollama::ChatMessage;
 use serde_json::{json, Value};
 
-pub const MAX_IMAGES_PER_MESSAGE: usize = 8;
+/// Generated extension-contract limit shared with continuation previews.
+pub const MAX_IMAGES_PER_MESSAGE: usize =
+    crate::services::extensions::types::MAX_MULTIMODAL_PREVIEWS_PER_CONTINUATION;
 pub const MAX_IMAGE_BYTES: usize = crate::models::agent_turn_contract::MAX_TURN_IMAGE_BYTES;
 // Anthropic documente 10 MB pour l'API directe : la borne est décimale.
 pub const MAX_ANTHROPIC_IMAGE_BYTES: usize = 10_000_000;
@@ -84,15 +86,9 @@ pub fn data_url(base64_data: &str) -> String {
 
 pub fn detect_mime(b64: &str) -> &'static str {
     let normalized = normalize_base64(b64);
-    let prefix = &normalized[..normalized.len().min(16)];
-    if prefix.starts_with("/9j/") {
-        "image/jpeg"
-    } else if prefix.starts_with("iVBOR") {
-        "image/png"
-    } else if prefix.starts_with("R0lGO") {
-        "image/gif"
-    } else if prefix.starts_with("UklGR") {
-        "image/webp"
+    let signature = crate::services::file_signature::classify_base64(&normalized);
+    if signature.image() {
+        signature.mime()
     } else {
         "image/png"
     }
@@ -137,10 +133,7 @@ fn normalize_payload(input: &str) -> &str {
 }
 
 fn has_supported_image_signature(payload: &str) -> bool {
-    payload.starts_with("/9j/")
-        || payload.starts_with("iVBOR")
-        || payload.starts_with("R0lGO")
-        || payload.starts_with("UklGR")
+    crate::services::file_signature::classify_base64(payload).image()
 }
 
 fn normalize_base64(input: &str) -> String {

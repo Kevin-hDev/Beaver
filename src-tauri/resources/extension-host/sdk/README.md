@@ -80,6 +80,74 @@ Beaver namespaces this tool as `com.example.hello.hello`.
 - `beaver.secrets.getChannelToken(...)`
 - `beaver.call(method, params)` for the versioned low-level bridge
 
+`beaver.capabilities` is an optional frozen copy of the API that the current
+Host can actually use. Use `beaver.capabilities?.includes(...)` so an
+extension also loads in an older Beaver Host. When both `skills` and
+`resources` are present, the Host also exposes `registerSkill` and
+`registerResource`. Register metadata only: Beaver does not inject either file
+globally. The Agent must explicitly inspect the extension then call `load_skill`
+or the resource loader. Beaver revalidates the approved extension and the
+declared relative path before reading bounded content. When `richToolResults` is
+present, tools may return bounded text and file blocks. File paths stay relative
+to the tool working directory; Beaver verifies and reads them only after the
+result is admitted to its batch budget.
+
+```ts
+if (
+  beaver.capabilities?.includes("skills")
+  && beaver.capabilities?.includes("resources")
+  && beaver.registerSkill
+  && beaver.registerResource
+) {
+  beaver.registerSkill({
+    id: "guide",
+    name: "Guide",
+    description: "A concise guide.",
+    path: "skills/guide/SKILL.md",
+  });
+  beaver.registerResource({
+    id: "reference",
+    name: "Reference",
+    description: "A text reference.",
+    type: "text",
+    path: "resources/reference.txt",
+  });
+}
+```
+
+### Bounded file results
+
+Return explanatory text alongside file blocks. `artifact` is a result file and
+`preview` is eligible for a provider-specific image preview. The generated limits
+are authoritative: at most 16 blocks, 8 files, 20 MiB per result and 64 MiB for
+one parallel batch. An error result cannot carry a file. Beaver stores only the
+validated metadata and provenance; it does not persist the binary bytes or expose
+the extension's internal resource path.
+
+Skills must point to `SKILL.md` or `skill.md`; ordinary resources have no such
+basename restriction. Feature-detect both the capability and the optional
+registration method on older API 1 hosts.
+
+The complete registration response, including tools, skills, resources and UI,
+must fit within `maxMessageBytes`, including the RPC envelope and the largest
+accepted request ID. Exceeding the aggregate budget fails registration
+before any tools are published, even when individual contributions are valid.
+
+History verification has a separate 64 MiB I/O budget per session opening.
+Readers reserve their worst-case cost, not an untrusted persisted file size.
+Skipped artifacts are shown as not verified; preview replay still revalidates
+the actual file before supplying any bytes to a model.
+
+```ts
+return {
+  content: [
+    { type: "text", text: "Report ready." },
+    { type: "file", path: "report.pdf", purpose: "artifact", displayName: "report.pdf" },
+    { type: "file", path: "chart.png", purpose: "preview", displayName: "chart.png" },
+  ],
+};
+```
+
 ### Standard interface contributions
 
 Declare `ui: { "apiVersion": "1", "mode": "standard" }` in the manifest, then
@@ -277,6 +345,8 @@ The extension author and user are responsible for any secret, file, process, or 
 | `hostRestartWindowSeconds` | 300 |
 | `maxContractCodeChars` | 96 |
 | `maxEventsPerExtension` | 64 |
+| `maxExtensionNameChars` | 100 |
+| `maxExtensionTextChars` | 2000 |
 | `maxExtensions` | 132 |
 | `maxGitLocatorChars` | 2048 |
 | `maxHostProcesses` | 32 |
@@ -285,11 +355,22 @@ The extension author and user are responsible for any secret, file, process, or 
 | `maxInFlightHandlers` | 64 |
 | `maxInFlightRequests` | 64 |
 | `maxMessageBytes` | 1048576 |
+| `maxMultimodalPreviewsPerContinuation` | 8 |
 | `maxNpmSpecChars` | 280 |
+| `maxParallelEphemeralArtifactBytes` | 67108864 |
+| `maxPathChars` | 4096 |
 | `maxPendingRequests` | 64 |
 | `maxPermissionSummaryChars` | 512 |
 | `maxProjectResults` | 500 |
+| `maxResourceFileBytes` | 20971520 |
+| `maxResourcesPerExtension` | 64 |
+| `maxResultBlocks` | 16 |
+| `maxResultBytes` | 20971520 |
+| `maxResultFiles` | 8 |
+| `maxResultTextBytes` | 524288 |
 | `maxSessionResults` | 500 |
+| `maxSkillsPerExtension` | 32 |
+| `maxTextResourceBytes` | 262144 |
 | `maxTools` | 256 |
 | `maxToolsPerExtension` | 64 |
 | `maxUserExtensions` | 128 |
@@ -313,7 +394,7 @@ The extension author and user are responsible for any secret, file, process, or 
 | Category | Values |
 |---|---|
 | Protocol reasons | `core_busy`, `core_request_timeout`, `core_transport_failed`, `core_method_unavailable`, `core_request_failed`, `extension_host_busy`, `extension_host_request_failed`, `extension_host_fatal` |
-| Backend codes | `extensions_host_unavailable`, `extensions_host_busy`, `extensions_host_timeout`, `extensions_request_too_large`, `extensions_request_invalid`, `extensions_tool_unavailable`, `extensions_tool_arguments_invalid`, `extensions_builtin_catalog_invalid`, `extensions_builtin_catalog_unavailable`, `extensions_builtin_plugin_invalid`, `extensions_builtin_entry_missing`, `extensions_builtin_entry_unavailable`, `extensions_builtin_entry_invalid`, `extensions_install_failed`, `extensions_update_failed`, `extensions_uninstall_failed`, `extensions_source_invalid`, `extensions_package_invalid`, `extensions_git_download_failed`, `extensions_git_timeout`, `extensions_runtime_unavailable`, `extensions_environment_invalid`, `extensions_dependency_install_failed`, `extensions_manifest_invalid`, `extensions_not_beaver_extension`, `extensions_api_incompatible`, `extensions_symlink_unsupported`, `extensions_already_installed`, `extensions_limit_reached`, `extensions_storage_failed`, `extensions_update_identity_changed`, `extensions_update_unavailable`, `extensions_cleanup_failed`, `extensions_operation_failed`, `extensions_fingerprint_changed`, `extensions_fingerprint_failed`, `extensions_stop_unconfirmed`, `extensions_registry_entry_ignored`, `extensions_registry_migration_failed`, `extensions_recovery_marker_invalid`, `extensions_load_interrupted`, `extensions_activation_confirmation_required`, `extensions_not_found`, `extensions_host_incompatible` |
+| Backend codes | `extensions_host_unavailable`, `extensions_host_busy`, `extensions_host_timeout`, `extensions_request_too_large`, `extensions_request_invalid`, `extensions_tool_unavailable`, `extensions_tool_arguments_invalid`, `extensions_builtin_catalog_invalid`, `extensions_builtin_catalog_unavailable`, `extensions_builtin_plugin_invalid`, `extensions_builtin_entry_missing`, `extensions_builtin_entry_unavailable`, `extensions_builtin_entry_invalid`, `extensions_install_failed`, `extensions_update_failed`, `extensions_uninstall_failed`, `extensions_source_invalid`, `extensions_package_invalid`, `extensions_git_download_failed`, `extensions_git_timeout`, `extensions_runtime_unavailable`, `extensions_environment_invalid`, `extensions_dependency_install_failed`, `extensions_manifest_invalid`, `extensions_not_beaver_extension`, `extensions_api_incompatible`, `extensions_symlink_unsupported`, `extensions_already_installed`, `extensions_limit_reached`, `extensions_storage_failed`, `extensions_update_identity_changed`, `extensions_update_unavailable`, `extensions_cleanup_failed`, `extensions_operation_failed`, `extensions_fingerprint_changed`, `extensions_fingerprint_failed`, `extensions_stop_unconfirmed`, `extensions_registry_entry_ignored`, `extensions_registry_migration_failed`, `extensions_recovery_marker_invalid`, `extensions_load_interrupted`, `extensions_activation_confirmation_required`, `extensions_not_found`, `extensions_host_incompatible`, `extensions_resource_unavailable`, `extensions_resource_not_found`, `extensions_resource_invalid`, `extensions_resource_too_large`, `extensions_result_invalid`, `extensions_result_too_large`, `extensions_listing_unavailable`, `extensions_inspection_invalid`, `extensions_inspection_unavailable` |
 <!-- END GENERATED EXTENSION CONTRACT -->
 
 <!-- BEGIN GENERATED EXTENSION UI CONTRACT -->

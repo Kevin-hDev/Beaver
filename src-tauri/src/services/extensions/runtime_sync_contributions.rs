@@ -9,15 +9,25 @@ pub(super) struct ValidatedContributions {
     pub(super) ui_diagnostic: Option<String>,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum ValidationError {
+    AdvancedRequired,
+    InvalidContribution,
+}
+
 pub(super) fn validate(
     identity: &HostIdentity,
     extension_id: &str,
     specification: &HostExtensionSpec,
     mut contributions: ExtensionContributions,
-) -> Result<ValidatedContributions, ()> {
+) -> Result<ValidatedContributions, ValidationError> {
     if !super::runtime_sync::accepts_contributions(specification, &contributions) {
-        return Err(());
+        return Err(ValidationError::AdvancedRequired);
     }
+    // Les déclarations viennent d'un processus Hôte : elles sont toujours
+    // revalidées avant toute projection en mémoire du registre.
+    super::validation::contributions(&contributions)
+        .map_err(|_| ValidationError::InvalidContribution)?;
     let raw_ui = std::mem::take(&mut contributions.ui);
     let (ui, ui_diagnostic) = match super::ui_validation::catalog(
         identity,

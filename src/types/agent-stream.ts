@@ -1,6 +1,6 @@
 import type { AgentInteractiveChoiceRequest } from "./agent-interactive";
 import type { ToolFileChangeRecord } from "./agent-message";
-import type { AgentMessageView } from "./agent-session.generated";
+import type { AgentMessageView, ToolArtifactRecordView } from "./agent-session.generated";
 import type { AgentPlanPreview } from "./agent-plan";
 import type { SubagentStatus } from "./agent-session";
 import type { AgentTodoItem } from "./agent-todo";
@@ -64,7 +64,7 @@ export type StreamEvent =
   | { event: "turnCommitted"; data: { turnId: string; userMessageId: string; assistantMessageId: string } }
   | { event: "toolCall"; data: { name: string; arguments: Record<string, unknown>; toolCallIndex?: number; toolCallId?: string; domain?: "memory" } }
   | { event: "toolOutput"; data: { toolCallIndex: number; content: string; elapsedMs: number } }
-  | { event: "toolResult"; data: { name: string; content: string; isError: boolean; status?: ToolResultStatus; error?: ToolErrorInfo; warnings?: string[]; truncated?: boolean; displaySummary?: string; toolCallIndex: number; toolCallId?: string; resolvedPath?: string; domain?: "memory"; affectedPaths?: string[]; fileChanges?: ToolFileChangeRecord[]; startLine?: number } }
+  | { event: "toolResult"; data: { name: string; content: string; isError: boolean; status?: ToolResultStatus; error?: ToolErrorInfo; warnings?: string[]; truncated?: boolean; displaySummary?: string; toolCallIndex: number; toolCallId?: string; resolvedPath?: string; domain?: "memory"; affectedPaths?: string[]; fileChanges?: ToolFileChangeRecord[]; startLine?: number; artifacts?: ToolArtifactRecordView[] } }
   | { event: "turnEnd"; data: Record<string, never> }
   | { event: "permissionRequest"; data: AgentPermissionRequest }
   | { event: "done"; data: { evalCount: number | null; evalDurationNs: number; finalTps: number; tpsEstimated?: boolean; promptTokens: number | null; contextTokens: number | null } }

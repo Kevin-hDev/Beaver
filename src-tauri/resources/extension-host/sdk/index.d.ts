@@ -1,7 +1,11 @@
 import type {
   AdvancedHostToCoreRequestMethod,
+  ExtensionCapability,
   ExtensionEffectClass,
   ExtensionEvent,
+  OptionalExtensionCapability,
+  ExtensionResultFilePurpose,
+  ExtensionResourceType,
   StableHostToCoreRequestMethod,
 } from "./contract";
 import type { ExtensionUiPlacementKey } from "./ui-contract";
@@ -18,10 +22,35 @@ export type JsonValue =
   | { [key: string]: JsonValue };
 
 export interface BeaverToolResult {
-  content: string;
+  content: BeaverToolResultContent;
   isError?: boolean;
   displaySummary?: string;
   truncated?: boolean;
+}
+
+/** Rich results are available when the Host advertises richToolResults. */
+export type BeaverToolResultBlock =
+  | { type: "text"; text: string }
+  | { type: "file"; path: string; purpose: ExtensionResultFilePurpose; displayName?: string };
+
+/** A tool may return text or bounded rich-result blocks. */
+export type BeaverToolResultContent = string | BeaverToolResultBlock[];
+
+/** A resource under the extension root; feature-detect registration on older hosts. */
+export interface BeaverResourceContribution {
+  id: string;
+  name: string;
+  description: string;
+  type: ExtensionResourceType;
+  path: string;
+}
+
+/** A SKILL.md or skill.md manifest under the extension root. */
+export interface BeaverSkillContribution {
+  id: string;
+  name: string;
+  description: string;
+  path: string;
 }
 
 export interface BeaverToolContext {
@@ -119,8 +148,12 @@ export interface BeaverTool {
 export interface BeaverExtensionApi {
   readonly id: string;
   readonly manifest: Record<string, JsonValue>;
+  /** Frozen copy of capabilities that are usable by this Host. */
+  readonly capabilities?: readonly (ExtensionCapability | OptionalExtensionCapability)[];
   info(): Promise<JsonValue>;
   registerTool(tool: BeaverTool): void;
+  registerSkill?(skill: BeaverSkillContribution): void;
+  registerResource?(resource: BeaverResourceContribution): void;
   readonly ui: BeaverUiApi;
   on(event: ExtensionEvent, handler: (payload: JsonValue) => void | Promise<void>): () => void;
   call(method: StableHostToCoreRequestMethod, params?: Record<string, JsonValue>): Promise<JsonValue>;

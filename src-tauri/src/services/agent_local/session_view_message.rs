@@ -135,6 +135,7 @@ fn activity_view(record: &ToolActivityRecord) -> Result<ToolActivityRecordView, 
             .iter()
             .map(file_change_view)
             .collect::<Result<Vec<_>, _>>()?,
+        artifacts: record.artifacts.iter().map(Into::into).collect(),
     })
 }
 

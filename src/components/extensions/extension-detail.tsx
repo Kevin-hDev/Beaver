@@ -8,6 +8,7 @@ import { formatExtensionDate } from "@/lib/extension-date";
 import type { ExtensionDiagnostic, ExtensionRecord } from "@/types/extensions";
 import { ExtensionIcon } from "./extension-icon";
 import { ExtensionActions } from "./extension-actions";
+import { ExtensionCapabilities } from "./extension-capabilities";
 import { ExtensionUiDetail } from "./extension-ui-detail";
 import {
   extensionDisplayName,
@@ -97,6 +98,7 @@ export function ExtensionDetail(props: ExtensionDetailProps) {
       </SettingsCard>
 
       <Contributions extension={extension} />
+      <ExtensionCapabilities extension={extension} />
 
       <ExtensionUiDetail
         extension={extension}

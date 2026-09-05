@@ -21,17 +21,13 @@ pub async fn restart(deadline: Instant) -> Result<bool, String> {
     .map_err(|error| error.public_code().to_string())?
 }
 
-pub async fn retry_load(
-    extension_id: String,
-    attempts: u8,
-    deadline: Instant,
-) -> Result<bool, String> {
+pub async fn retry_load(extension_id: String, attempts: u8) -> Result<bool, String> {
     let runtime = Arc::clone(super::runtime::global()?);
     let work = runtime.work.clone();
     work.run_operation(move |cancel| async move {
         tokio::select! {
             _ = cancel.cancelled() => Err(error_codes::HOST_UNAVAILABLE.to_string()),
-            result = runtime.retry_untracked(extension_id, attempts, deadline) => result,
+            result = runtime.retry_untracked(extension_id, attempts) => result,
         }
     })
     .await
@@ -61,7 +57,7 @@ pub(super) fn start_background(app: tauri::AppHandle) -> Result<(), String> {
     work.spawn_operation(move |cancel| async move {
         let _ = tokio::select! {
             _ = cancel.cancelled() => Err(error_codes::HOST_UNAVAILABLE.to_string()),
-            result = runtime.start_untracked(new_stop_deadline()) => result,
+            result = runtime.start_untracked() => result,
         };
         let _ = app.emit(CHANGED_EVENT, ());
     })
@@ -81,20 +77,20 @@ pub(super) async fn ensure_running(
     }
     let _ = super::registry::find(extension_id)?;
     runtime.set_state(HostState::Starting, None, 0);
-    let _ = runtime.sync_hosts_automatically(deadline).await?;
+    let _ = runtime.sync_hosts_automatically().await?;
     runtime
-        .process_for_extension(extension_id, deadline)
+        .process_for_extension(extension_id, new_stop_deadline())
         .await
         .map(|(_, _, process)| process)
 }
 
 impl ExtensionRuntime {
-    pub(super) async fn start_untracked(&self, deadline: Instant) -> Result<bool, String> {
+    pub(super) async fn start_untracked(&self) -> Result<bool, String> {
         if !self.work.is_open() {
             return Err(error_codes::HOST_UNAVAILABLE.to_string());
         }
         self.set_state(HostState::Starting, None, 0);
-        let result = self.sync_hosts(deadline).await;
+        let result = self.sync_hosts().await;
         if result.is_err() {
             self.mark_unavailable().await;
         }
@@ -107,20 +103,17 @@ impl ExtensionRuntime {
         super::host_stop_boundary::after_confirmed_stop(
             stopped,
             error_codes::HOST_UNAVAILABLE.to_string(),
-            async { self.start_untracked(deadline).await },
+            // Starting is a distinct bounded phase. Reusing the stop deadline
+            // makes a valid stop consume the new Hote's cleanup budget.
+            async { self.start_untracked().await },
         )
         .await
     }
 
-    async fn retry_untracked(
-        &self,
-        extension_id: String,
-        attempts: u8,
-        deadline: Instant,
-    ) -> Result<bool, String> {
+    async fn retry_untracked(&self, extension_id: String, attempts: u8) -> Result<bool, String> {
         self.hosts.lock().await.reset_restart_budgets();
         self.set_state(HostState::Starting, None, 0);
-        let result = self.retry_host_load(extension_id, attempts, deadline).await;
+        let result = self.retry_host_load(extension_id, attempts).await;
         if result.is_err() {
             self.mark_unavailable().await;
         }

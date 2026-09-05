@@ -1,0 +1,60 @@
+{
+  "accumulated_tokens": 42,
+  "compression_count": 2,
+  "compression_profile_selection": {
+    "global_selection_revision": 4,
+    "profile_id": "beaver"
+  },
+  "created_at": "2026-08-31T10:00:00Z",
+  "fast_mode_enabled": false,
+  "id": "00000000-0000-4000-8000-000000000030",
+  "is_gateway": false,
+  "is_heartbeat": false,
+  "messages": [
+    {
+      "content": "Fixture checkpoint",
+      "files": [],
+      "id": "00000000-0000-4000-8000-000000000031",
+      "message_kind": "compression_checkpoint",
+      "role": "user",
+      "timestamp": "2026-08-31T10:00:00Z",
+      "tokens": 34,
+      "turn_id": "00000000-0000-4000-8000-000000000034"
+    },
+    {
+      "content": "Tool fixture completed",
+      "files": [],
+      "id": "00000000-0000-4000-8000-000000000032",
+      "role": "assistant",
+      "timestamp": "2026-08-31T10:00:01Z",
+      "tokens": 8,
+      "tool_activities": [
+        {
+          "name": "write_file",
+          "summary": "Synthetic fixture output"
+        }
+      ],
+      "turn_id": "00000000-0000-4000-8000-000000000034"
+    },
+    {
+      "content": "Continue fixture work",
+      "files": [],
+      "id": "00000000-0000-4000-8000-000000000033",
+      "role": "user",
+      "timestamp": "2026-08-31T10:00:02Z",
+      "tokens": 3,
+      "turn_id": "00000000-0000-4000-8000-000000000035"
+    }
+  ],
+  "model": "fixture-model",
+  "name": "fixture-v4-tool-activity",
+  "plan_mode_enabled": false,
+  "plan_workflow_status": "needs_context",
+  "preserve_reasoning": "off",
+  "provider": "ollama",
+  "schema_version": 4,
+  "thinking_enabled": false,
+  "todo_neglect_count": 0,
+  "working_dir": "",
+  "working_dir_managed": false
+}

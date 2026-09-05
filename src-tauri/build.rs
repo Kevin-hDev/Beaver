@@ -1,11 +1,13 @@
 mod extension_contract_build;
 mod extension_contract_shared;
+mod extension_discovery_contract_build;
 mod extension_ui_contract_build;
 
 fn main() {
     configure_browser_runtime_cfg();
     configure_windows_test_manifest();
     extension_contract_build::generate();
+    extension_discovery_contract_build::generate();
     extension_ui_contract_build::generate();
     prepare_cef_bundle_placeholders();
     prepare_updater_helper_placeholder();

@@ -54,6 +54,7 @@ fn payload(
         purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
         session_id: None,
         fast_mode: FastModeRequest::Unsupported,
+        tool_result_previews: None,
         continuation_target: Some(target),
     };
     build_chat_payload(&cfg, &route::resolve(provider_id).unwrap(), None)
@@ -109,6 +110,7 @@ fn gemini_reasoning_fixture_payload_keeps_parts_and_late_signature_in_order() {
         purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
         session_id: None,
         fast_mode: FastModeRequest::Unsupported,
+        tool_result_previews: None,
         continuation_target: Some(&target),
     };
 

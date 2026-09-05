@@ -5,21 +5,37 @@ use std::sync::{Mutex, MutexGuard};
 
 static SECURITY_METADATA: Mutex<()> = Mutex::new(());
 
+fn retryable_replace_error(code: u32) -> bool {
+    use windows_sys::Win32::Foundation::{ERROR_LOCK_VIOLATION, ERROR_SHARING_VIOLATION};
+
+    matches!(code, ERROR_SHARING_VIOLATION | ERROR_LOCK_VIOLATION)
+}
+
 pub fn replace_file(source: &Path, destination: &Path) -> Result<(), String> {
+    use windows_sys::Win32::Foundation::GetLastError;
     use windows_sys::Win32::Storage::FileSystem::{
         MoveFileExW, MOVEFILE_REPLACE_EXISTING, MOVEFILE_WRITE_THROUGH,
     };
     let _metadata_guard = security_metadata_guard()?;
     let source = wide(source);
     let destination = wide(destination);
-    let success = unsafe {
-        MoveFileExW(
-            source.as_ptr(),
-            destination.as_ptr(),
-            MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH,
-        )
-    };
-    (success != 0).then_some(()).ok_or_else(private_store_error)
+    crate::services::windows_fs_retry::bounded(
+        || {
+            let success = unsafe {
+                MoveFileExW(
+                    source.as_ptr(),
+                    destination.as_ptr(),
+                    MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH,
+                )
+            };
+            (success != 0)
+                .then_some(())
+                .ok_or_else(|| unsafe { GetLastError() })
+        },
+        |code| retryable_replace_error(*code),
+        std::thread::sleep,
+    )
+    .map_err(|_| private_store_error())
 }
 
 pub fn secure_acl(path: &Path) -> Result<(), String> {
@@ -27,7 +43,14 @@ pub fn secure_acl(path: &Path) -> Result<(), String> {
     let user = windows_token::current_user()?;
     let path = wide(path);
     let is_directory = path_is_directory(path.as_slice())?;
-    windows_acl::apply_and_verify(&path, user.sid(), is_directory)
+    // Security scanners can transiently hold the file while its DACL is applied.
+    // Every retry reapplies and re-verifies the exact same private ACL; the
+    // bounded failure remains closed and never accepts an unverified file.
+    crate::services::windows_fs_retry::bounded(
+        || windows_acl::apply_and_verify(&path, user.sid(), is_directory),
+        |_| true,
+        std::thread::sleep,
+    )
 }
 
 fn security_metadata_guard() -> Result<MutexGuard<'static, ()>, String> {
@@ -50,4 +73,19 @@ fn path_is_directory(path: &[u16]) -> Result<bool, String> {
 
 fn wide(path: &Path) -> Vec<u16> {
     path.as_os_str().encode_wide().chain(Some(0)).collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::retryable_replace_error;
+    use windows_sys::Win32::Foundation::{
+        ERROR_ACCESS_DENIED, ERROR_LOCK_VIOLATION, ERROR_SHARING_VIOLATION,
+    };
+
+    #[test]
+    fn replacement_retries_only_transient_file_locks() {
+        assert!(retryable_replace_error(ERROR_SHARING_VIOLATION));
+        assert!(retryable_replace_error(ERROR_LOCK_VIOLATION));
+        assert!(!retryable_replace_error(ERROR_ACCESS_DENIED));
+    }
 }

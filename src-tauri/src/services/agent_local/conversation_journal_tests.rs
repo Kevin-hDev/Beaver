@@ -1,6 +1,10 @@
 use super::conversation_journal::{validate_tool_results, ConversationJournal};
 use super::session_store;
 use super::types_ollama::ChatMessage;
+use crate::services::agent_local::tool_artifact::{
+    ArtifactMetadata, ArtifactPurpose, ArtifactSource, EphemeralArtifact,
+};
+use crate::services::agent_local::tool_execution_artifacts::AttributedArtifact;
 use crate::services::reasoning_continuity::contract::{
     ContinuationUse, CredentialScope, ReasoningModeId, ReplayTarget, RouteId,
 };
@@ -178,4 +182,138 @@ async fn commit_write_failure_leaves_the_durable_turn_uncommitted_and_retryable(
 
 fn tool(id: &str) -> ChatMessage {
     ChatMessage::tool("result".into(), Some(id.into()), Some("bash".into()))
+}
+
+#[tokio::test]
+async fn tool_artifacts_are_persisted_with_the_matching_result() {
+    let session = session_store::create_full("Artifact journal", "model", "openai", false, None)
+        .await
+        .expect("create session");
+    let mut journal = ConversationJournal::new(
+        session.id.clone(),
+        uuid::Uuid::new_v4().to_string(),
+        uuid::Uuid::new_v4().to_string(),
+        uuid::Uuid::new_v4().to_string(),
+        uuid::Uuid::new_v4().to_string(),
+    )
+    .expect("create journal");
+    let assistant = ChatMessage::assistant(
+        String::new(),
+        None,
+        None,
+        None,
+        Some(vec![super::types_ollama::ToolCallOllama {
+            id: Some("call-a".into()),
+            function: super::types_ollama::ToolCallFunction {
+                name: "extension_tool".into(),
+                arguments: serde_json::json!({}),
+            },
+            extra_content: None,
+        }]),
+    );
+    journal
+        .persist_assistant_step(&assistant)
+        .await
+        .expect("persist assistant");
+    let artifact = AttributedArtifact {
+        tool_call_index: 0,
+        tool_call_id: Some("call-a".into()),
+        artifact: EphemeralArtifact {
+            metadata: ArtifactMetadata {
+                name: "report.txt".into(),
+                mime_type: "text/plain".into(),
+                bytes: 3,
+                sha256: "a".repeat(64),
+                purpose: ArtifactPurpose::Artifact,
+                source: ArtifactSource::WorkspaceFile {
+                    path: "/workspace/report.txt".into(),
+                    grant: "secret-grant".into(),
+                },
+            },
+            bytes: vec![1, 2, 3],
+        },
+    };
+    journal
+        .persist_tool_results(&[tool("call-a")], &[artifact])
+        .await
+        .expect("persist result");
+
+    let reloaded = session_store::get(&session.id).await.expect("reload");
+    let stored = &reloaded
+        .messages
+        .last()
+        .unwrap()
+        .tool_activities
+        .as_ref()
+        .unwrap()[0];
+    assert_eq!(stored.artifacts.len(), 1);
+    assert_eq!(stored.artifacts[0].name, "report.txt");
+    assert!(!serde_json::to_string(&stored.artifacts)
+        .unwrap()
+        .contains("bytes_data"));
+    session_store::delete_one(&session.id)
+        .await
+        .expect("delete");
+}
+
+#[tokio::test]
+async fn mismatched_tool_artifacts_are_rejected_without_persisting_the_result() {
+    let session = session_store::create_full("Artifact mismatch", "model", "openai", false, None)
+        .await
+        .expect("create session");
+    let mut journal = ConversationJournal::new(
+        session.id.clone(),
+        uuid::Uuid::new_v4().to_string(),
+        uuid::Uuid::new_v4().to_string(),
+        uuid::Uuid::new_v4().to_string(),
+        uuid::Uuid::new_v4().to_string(),
+    )
+    .expect("create journal");
+    let assistant = ChatMessage::assistant(
+        String::new(),
+        None,
+        None,
+        None,
+        Some(vec![super::types_ollama::ToolCallOllama {
+            id: Some("call-a".into()),
+            function: super::types_ollama::ToolCallFunction {
+                name: "extension_tool".into(),
+                arguments: serde_json::json!({}),
+            },
+            extra_content: None,
+        }]),
+    );
+    journal
+        .persist_assistant_step(&assistant)
+        .await
+        .expect("persist assistant");
+    let artifact = AttributedArtifact {
+        tool_call_index: 0,
+        tool_call_id: Some("call-b".into()),
+        artifact: EphemeralArtifact {
+            metadata: ArtifactMetadata {
+                name: "report.txt".into(),
+                mime_type: "text/plain".into(),
+                bytes: 3,
+                sha256: "a".repeat(64),
+                purpose: ArtifactPurpose::Artifact,
+                source: ArtifactSource::WorkspaceFile {
+                    path: "/workspace/report.txt".into(),
+                    grant: "secret-grant".into(),
+                },
+            },
+            bytes: vec![1, 2, 3],
+        },
+    };
+
+    assert!(journal
+        .persist_tool_results(&[tool("call-a")], &[artifact])
+        .await
+        .is_err());
+    let reloaded = session_store::get(&session.id).await.expect("reload");
+    assert_eq!(reloaded.messages.len(), 1);
+    assert_eq!(reloaded.messages[0].role, "assistant");
+    session_store::delete_one(&session.id)
+        .await
+        .expect("delete");
 }

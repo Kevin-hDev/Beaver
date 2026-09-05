@@ -5,7 +5,7 @@ pub mod app_log;
 #[cfg(test)]
 mod app_log_tests;
 pub mod attachment_access;
-mod attachment_access_identity;
+pub(crate) mod attachment_access_identity;
 mod attachment_access_read;
 #[cfg(test)]
 mod attachment_access_tests;
@@ -25,6 +25,9 @@ mod e2e_profile_tests;
 pub mod env_detect;
 pub mod extensions;
 pub mod favorite_models;
+pub(crate) mod file_signature;
+#[cfg(test)]
+mod file_signature_tests;
 pub mod file_watcher;
 pub mod forecast;
 pub mod gateway;
@@ -103,6 +106,7 @@ pub mod update_notifications;
 #[cfg(test)]
 mod update_notifications_tests;
 pub mod vault;
+mod windows_fs_retry;
 pub mod work_registry;
 #[cfg(test)]
 mod work_registry_tests;

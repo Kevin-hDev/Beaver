@@ -5,9 +5,34 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Validation boundary to run
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - windows-host
+          - windows-backend
+          - windows-native
+          - windows-acceptance-diagnostic
+          - macos-native
+      source_run_id:
+        description: Prior CI run carrying the Windows installer for diagnostic acceptance
+        required: false
+        default: ""
+        type: string
 
 permissions:
+  actions: read
   contents: read
+
+# Windows uses the shorter repository-level Cargo target to stay below native
+# path limits. Build upload and acceptance download must share this authority.
+env:
+  WINDOWS_E2E_PACKAGE_DIR: target/e2e/debug/bundle/nsis
 
 # Les séries de PR se remplacent ; celles de main sont conservées car elles
 # valident un état déjà fusionné.
@@ -22,6 +47,7 @@ concurrency:
 jobs:
   backend:
     name: Backend (Rust)
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.target == 'all' }}
     runs-on: ubuntu-22.04
     timeout-minutes: 60
     steps:
@@ -113,6 +139,7 @@ jobs:
 
   backend-linux-native:
     name: Backend Linux WebView (E2E)
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.target == 'all' }}
     runs-on: ubuntu-22.04
     timeout-minutes: 60
     steps:
@@ -159,6 +186,7 @@ jobs:
     # The packaged journey is deliberately gated by the cheaper real host-load
     # boundary so an extension runtime failure does not consume another 79 minutes.
     needs: windows-extension-host-smoke
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == 'windows-native' }}
     runs-on: windows-latest
     timeout-minutes: 150
     steps:
@@ -256,25 +284,39 @@ jobs:
 
       - name: Windows CEF supervision authority
         working-directory: src-tauri
+        shell: bash
         run: |
           node ../scripts/ci/run-rust-test-filter.mjs --filter services::browser::cef_supervision::windows_tracker_tests --features windows-tests
           node ../scripts/ci/run-rust-test-filter.mjs --filter services::browser::cef_supervision::capability_tests --features windows-tests
 
       - name: Ollama manager contracts and historical scenarios
+        shell: bash
         run: |
           cd src-tauri
-          node ../scripts/ci/run-rust-test-filter.mjs --filter services::ollama_manager
+          node ../scripts/ci/run-rust-test-filter.mjs --filter services::ollama_manager --features windows-tests
           cd ..
           npm run test:ollama-manager-contracts
           npm run test:j3-native-assets
 
-      - name: Native Windows CEF journey
+      # Build once, then pass the installer to a short acceptance job. A failed
+      # acceptance rerun therefore does not spend another hour recompiling CEF.
+      - name: Build Windows E2E package
         env:
-          E2E_REQUIRE_CEF_SMOKE: "1"
+          E2E_BUILD_ONLY: "1"
         run: npm run test:e2e:packaged
+
+      - name: Upload Windows E2E package
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: windows-e2e-installer
+          path: ${{ env.WINDOWS_E2E_PACKAGE_DIR }}/*.exe
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 1
 
   windows-extension-host-smoke:
     name: Windows extension host smoke
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == 'windows-host' || inputs.target == 'windows-native' }}
     runs-on: windows-latest
     timeout-minutes: 30
     steps:
@@ -303,12 +345,115 @@ jobs:
       # including restart and concurrent isolated hosts.
       - name: Rust owned-process protocol smoke
         working-directory: src-tauri
+        shell: bash
         run: |
           node ../scripts/ci/run-rust-test-filter.mjs --filter services::extensions::host_process::prepared_tests::prepared_runtime_ --features windows-tests --ignored --nocapture
           node ../scripts/ci/run-rust-test-filter.mjs --filter services::extensions::runtime_lifecycle::tests::prepared_runtime_confirms_restart_stop_while_exit_monitor_is_active --features windows-tests --exact --ignored --nocapture
 
+      # Keep the fast host boundary capable of diagnosing the durable loading
+      # journal without rebuilding the packaged CEF application.
+      - name: Windows private-store replacement stress
+        working-directory: src-tauri
+        run: cargo test --manifest-path tests/windows-private-store/Cargo.toml
+
+  windows-packaged-acceptance:
+    name: Windows packaged acceptance (CEF)
+    needs: backend-windows-native
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == 'windows-native' }}
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Download Windows E2E package
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: windows-e2e-installer
+          path: ${{ env.WINDOWS_E2E_PACKAGE_DIR }}
+
+      - name: Native Windows CEF journey
+        env:
+          E2E_REQUIRE_CEF_SMOKE: "1"
+          E2E_SKIP_BUILD: "1"
+          E2E_ARTIFACT_DIR: .e2e-artifacts/windows-cef
+        run: npm run test:e2e:packaged
+
+      - name: Upload Windows E2E diagnostics
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: windows-e2e-diagnostics
+          path: .e2e-artifacts/windows-cef
+          if-no-files-found: warn
+          include-hidden-files: true
+          retention-days: 14
+
+  windows-packaged-acceptance-diagnostic:
+    name: Windows packaged acceptance diagnostic (CEF)
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.target == 'windows-acceptance-diagnostic' }}
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Validate prior Windows package run
+        shell: pwsh
+        env:
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+        run: |
+          if ($env:SOURCE_RUN_ID -notmatch '^[1-9][0-9]{0,19}$') {
+            throw "Invalid source run id"
+          }
+
+      - name: Install Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Download prior Windows E2E package
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: windows-e2e-installer
+          path: ${{ env.WINDOWS_E2E_PACKAGE_DIR }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ inputs.source_run_id }}
+
+      # This is a diagnostic boundary, not packaging proof: it deliberately
+      # overlays only the reviewed loader files after installing the old artifact.
+      - name: Diagnostic Windows CEF journey
+        env:
+          E2E_REQUIRE_CEF_SMOKE: "1"
+          E2E_SKIP_BUILD: "1"
+          E2E_EXTENSION_HOST_DIAGNOSTIC_OVERLAY: "1"
+          E2E_ARTIFACT_DIR: .e2e-artifacts/windows-cef-diagnostic
+        run: npm run test:e2e:packaged
+
+      - name: Upload Windows diagnostic acceptance results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: windows-e2e-diagnostic-overlay-results
+          path: .e2e-artifacts/windows-cef-diagnostic
+          if-no-files-found: warn
+          include-hidden-files: true
+          retention-days: 14
+
   backend-macos-native:
     name: Backend macOS CEF (Rust)
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == 'macos-native' }}
     runs-on: macos-latest
     timeout-minutes: 150
     env:
@@ -379,13 +524,74 @@ jobs:
           npm run test:ollama-manager-contracts
           npm run test:j3-native-assets
 
+      - name: Build macOS E2E package
+        env:
+          E2E_BUILD_ONLY: "1"
+        run: npm run test:e2e:packaged
+
+      # ditto preserves the application bundle metadata and executable modes
+      # that a plain artifact upload cannot represent reliably.
+      - name: Archive macOS E2E package
+        run: ditto -c -k --sequesterRsrc --keepParent src-tauri/target/e2e/debug/bundle/macos/Beaver.app macos-e2e-app.zip
+
+      - name: Upload macOS E2E package
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: macos-e2e-app
+          path: macos-e2e-app.zip
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 1
+
+  macos-packaged-acceptance:
+    name: macOS packaged acceptance (CEF)
+    needs: backend-macos-native
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == 'macos-native' }}
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Download macOS E2E package
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: macos-e2e-app
+          path: .e2e-packages/macos
+
+      - name: Restore macOS E2E package
+        run: |
+          mkdir -p src-tauri/target/e2e/debug/bundle/macos
+          ditto -x -k .e2e-packages/macos/macos-e2e-app.zip src-tauri/target/e2e/debug/bundle/macos
+
       - name: Native macOS CEF journey
         env:
           E2E_REQUIRE_CEF_SMOKE: "1"
+          E2E_SKIP_BUILD: "1"
+          E2E_ARTIFACT_DIR: .e2e-artifacts/macos-cef
         run: npm run test:e2e:packaged
+
+      - name: Upload macOS E2E diagnostics
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: macos-e2e-diagnostics
+          path: .e2e-artifacts/macos-cef
+          if-no-files-found: warn
+          include-hidden-files: true
+          retention-days: 14
 
   backend-windows:
     name: Backend Windows tests (Rust)
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == 'windows-backend' }}
     runs-on: windows-2022
     timeout-minutes: 120
     steps:
@@ -413,6 +619,7 @@ jobs:
 
       - name: Windows extension installer preflight
         working-directory: src-tauri
+        shell: bash
         run: |
           node ../scripts/ci/run-rust-test-filter.mjs --filter services::extensions::git_dependencies_tests::git_materialization_installs_dependencies_without_running_scripts_or_npmrc --features windows-tests --exact --nocapture
           node ../scripts/ci/run-rust-test-filter.mjs --filter services::extensions::npm_runner_tests::local_fixture_install_never_runs_its_lifecycle_script --features windows-tests --exact --nocapture
@@ -427,13 +634,9 @@ jobs:
         working-directory: src-tauri
         run: cargo test --lib --features windows-tests -- --test-threads=1
 
-      - name: Windows AppContainer test inventory
+      - name: Windows AppContainer confinement
         working-directory: src-tauri
-        shell: pwsh
-        run: |
-          $tests = cargo test --lib --features windows-tests -- --ignored --list | Out-String
-          $expected = 'services::agent_local::shell_sandbox::windows::tests::appcontainer_writes_only_inside_the_selected_root: test'
-          if (-not $tests.Contains($expected)) { throw 'Windows AppContainer confinement test is missing' }
+        run: node ../scripts/ci/run-rust-test-filter.mjs --filter services::agent_local::shell_sandbox::windows::tests::appcontainer_writes_only_inside_the_selected_root --features windows-tests --exact --ignored --nocapture
 
       - name: Windows private storage tests
         working-directory: src-tauri
@@ -441,6 +644,7 @@ jobs:
 
   frontend:
     name: Frontend (TS/React)
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.target == 'all' }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -484,6 +688,7 @@ jobs:
 
   desktop-e2e:
     name: Desktop E2E (CEF)
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.target == 'all' }}
     runs-on: ubuntu-22.04
     timeout-minutes: 60
     steps:

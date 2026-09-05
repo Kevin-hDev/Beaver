@@ -20,7 +20,13 @@ fn image_guidance_uses_the_single_image_tool() {
 fn discovery_tools_have_distinct_scopes() {
     for prompt in prompts() {
         assert!(prompt.contains("search_mcp_tools for external MCP services"));
-        assert!(prompt.contains("search_extension_tools for enabled Beaver plugins"));
+        assert!(
+            prompt.contains("Inspect directly with inspect_extensions using 1–4 known exact IDs")
+        );
+        assert!(
+            prompt.contains("list_extensions only for a complete view, descriptions, or counts")
+        );
+        assert!(prompt.contains("Never use lexical or keyword search"));
         assert!(prompt.contains("load_skill for project instructions and procedures"));
     }
 }
@@ -32,7 +38,11 @@ fn discovery_guidance_disappears_with_its_unavailable_tool() {
             super::tool_prompt_filter::filter_system_prompt(&prompt, &["read_file".to_string()]);
 
         assert!(!filtered.contains("search_mcp_tools for external MCP services"));
-        assert!(!filtered.contains("search_extension_tools for enabled Beaver plugins"));
+        assert!(!filtered
+            .contains("Inspect directly with inspect_extensions using 1–4 known exact IDs"));
+        assert!(
+            !filtered.contains("list_extensions only for a complete view, descriptions, or counts")
+        );
         assert!(!filtered.contains("load_skill for project instructions and procedures"));
     }
 }

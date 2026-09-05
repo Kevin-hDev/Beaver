@@ -7,7 +7,10 @@ import itJson from "./it.json";
 import ja from "./ja.json";
 import zh from "./zh.json";
 import extensionContract from "../../src-tauri/resources/extension-host/contract.json";
-import { EXTENSION_BACKEND_ERROR_CODES } from "@/lib/extension-errors";
+import {
+  EXTENSION_BACKEND_ERROR_CODES,
+  extensionErrorKey,
+} from "@/lib/extension-errors";
 import { UI_DIAGNOSTIC_CODES } from "@/types/extension-ui-contract.generated";
 
 const locales = [fr, en, es, de, itJson, zh, ja];
@@ -16,6 +19,11 @@ const diagnosticCodes = [
   ...extensionContract.diagnostics.runtimeCodes,
   ...UI_DIAGNOSTIC_CODES,
 ].sort();
+const discoveryBackendCodes = [
+  "extensions_listing_unavailable",
+  "extensions_inspection_invalid",
+  "extensions_inspection_unavailable",
+] as const;
 
 function leafPaths(value: unknown, prefix = ""): string[] {
   if (!value || typeof value !== "object") return [prefix];
@@ -77,6 +85,19 @@ describe("extensions translations", () => {
       const translations = locale.extensions.errors.codes as Record<string, string>;
       expect(Object.keys(translations).sort()).toEqual(expected);
       expect(Object.values(translations).every((value) => value.trim())).toBe(true);
+    }
+  });
+
+  it("résout les trois erreurs de découverte par l'autorité frontend générée", () => {
+    for (const code of discoveryBackendCodes) {
+      expect(EXTENSION_BACKEND_ERROR_CODES).toContain(code);
+      expect(extensionErrorKey(code, "extensions.errors.operation"))
+        .toBe(`extensions.errors.codes.${code}`);
+      for (const locale of locales) {
+        const translation = (locale.extensions.errors.codes as Record<string, string>)[code];
+        expect(translation).toBeTypeOf("string");
+        expect(translation.trim()).not.toBe("");
+      }
     }
   });
 });

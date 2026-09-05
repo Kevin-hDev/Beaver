@@ -44,6 +44,7 @@ fn config_for_model<'a>(
         purpose: RequestPurpose::ManualChat,
         session_id: None,
         fast_mode: FastModeRequest::Unsupported,
+        tool_result_previews: None,
         continuation_target: None,
     }
 }
@@ -104,7 +105,7 @@ fn tool_results_are_grouped_and_errors_are_marked() {
     );
     failure.tool_call_id = Some("call-b".into());
 
-    let converted = super::messages::convert(&[assistant, success, failure], &[]).unwrap();
+    let converted = super::messages::convert(&[assistant, success, failure], &[], None).unwrap();
     let result = converted.messages.last().unwrap();
     let blocks = result["content"].as_array().unwrap();
 
@@ -117,8 +118,145 @@ fn tool_results_are_grouped_and_errors_are_marked() {
 
     let mut ordinary = message("tool", "{\"status\":\"error\"}\nLegitimate content");
     ordinary.tool_call_id = Some("call-a".into());
-    let ordinary = super::messages::convert(&[ordinary], &[]).unwrap();
+    let ordinary = super::messages::convert(&[ordinary], &[], None).unwrap();
     assert_eq!(ordinary.messages[0]["content"][0]["is_error"], false);
+}
+
+#[test]
+fn payload_projects_verified_preview_in_its_matching_anthropic_tool_result() {
+    let mut tool = message("tool", "done");
+    tool.tool_call_id = Some("call-preview".into());
+    let preview = crate::services::agent_local::tool_artifact_preview::ToolResultPreviewBatch::from_ephemeral(
+        0,
+        Some("call-preview".into()),
+        crate::services::agent_local::tool_artifact::EphemeralArtifact {
+            metadata: crate::services::agent_local::tool_artifact::ArtifactMetadata {
+                name: "preview.png".into(),
+                mime_type: "image/png".into(),
+                bytes: 8,
+                sha256: "a".repeat(64),
+                purpose: crate::services::agent_local::tool_artifact::ArtifactPurpose::Preview,
+                source: crate::services::agent_local::tool_artifact::ArtifactSource::ExtensionResource {
+                    resource_id: "extension:demo:preview".into(),
+                    catalog_fingerprint: "b".repeat(64),
+                },
+            },
+            bytes: vec![137, 80, 78, 71, 13, 10, 26, 10],
+        },
+    );
+    let messages = vec![tool];
+    let mut cfg = config(&messages, &[], "off");
+    cfg.tool_result_previews = Some(&preview);
+    let payload = super::build_payload(&cfg, 4_096).expect("payload").payload;
+    let expected: serde_json::Value = serde_json::from_slice(include_bytes!(
+        "../../../../test-fixtures/tool-result-media/anthropic-messages.json"
+    ))
+    .expect("fixture");
+    assert_eq!(payload["messages"][0]["content"][0], expected);
+}
+
+#[test]
+fn a_reused_tool_call_id_receives_the_current_preview_only_once() {
+    let mut historical = message("tool", "old");
+    historical.tool_call_id = Some("call-preview".into());
+    let mut current = message("tool", "current");
+    current.tool_call_id = Some("call-preview".into());
+    let preview = crate::services::agent_local::tool_artifact_preview::ToolResultPreviewBatch::from_ephemeral(
+        0,
+        Some("call-preview".into()),
+        crate::services::agent_local::tool_artifact::EphemeralArtifact {
+            metadata: crate::services::agent_local::tool_artifact::ArtifactMetadata {
+                name: "preview.png".into(),
+                mime_type: "image/png".into(),
+                bytes: 8,
+                sha256: "a".repeat(64),
+                purpose: crate::services::agent_local::tool_artifact::ArtifactPurpose::Preview,
+                source: crate::services::agent_local::tool_artifact::ArtifactSource::ExtensionResource {
+                    resource_id: "extension:demo:preview".into(),
+                    catalog_fingerprint: "b".repeat(64),
+                },
+            },
+            bytes: b"\x89PNG\r\n\x1a\n".to_vec(),
+        },
+    );
+
+    let converted = super::messages::convert(&[historical, current], &[], Some(&preview)).unwrap();
+    let results = converted.messages[0]["content"].as_array().unwrap();
+    assert_eq!(results[0]["content"].as_array().unwrap().len(), 1);
+    assert_eq!(results[1]["content"].as_array().unwrap().len(), 2);
+    assert_eq!(results[1]["content"][1]["type"], "image");
+}
+
+#[test]
+fn an_unavailable_preview_adds_a_safe_note_to_its_anthropic_tool_result() {
+    let mut tool = message("tool", "done");
+    tool.tool_call_id = Some("call-preview".into());
+    let preview = crate::services::agent_local::tool_artifact_preview::ToolResultPreviewBatch::from_ephemeral(
+        0,
+        Some("call-preview".into()),
+        crate::services::agent_local::tool_artifact::EphemeralArtifact {
+            metadata: crate::services::agent_local::tool_artifact::ArtifactMetadata {
+                name: "preview.png".into(),
+                mime_type: "image/png".into(),
+                bytes: 12,
+                sha256: "a".repeat(64),
+                purpose: crate::services::agent_local::tool_artifact::ArtifactPurpose::Preview,
+                source: crate::services::agent_local::tool_artifact::ArtifactSource::ExtensionResource {
+                    resource_id: "extension:demo:preview".into(),
+                    catalog_fingerprint: "b".repeat(64),
+                },
+            },
+            bytes: b"not an image".to_vec(),
+        },
+    );
+
+    let converted = super::messages::convert(&[tool], &[], Some(&preview)).unwrap();
+    let content = converted.messages[0]["content"][0]["content"]
+        .as_array()
+        .unwrap();
+    assert_eq!(content.len(), 2);
+    assert_eq!(
+        content[1]["text"],
+        "Saved extension preview is not a supported image."
+    );
+}
+
+#[test]
+fn omitted_previews_are_reported_on_their_anthropic_tool_result() {
+    let mut tool = message("tool", "done");
+    tool.tool_call_id = Some("call-preview".into());
+    let preview = crate::services::agent_local::tool_artifact_preview::ToolResultPreviewBatch::from_ephemerals(
+        (0..9).map(|index| {
+            (
+                0,
+                Some("call-preview".into()),
+                crate::services::agent_local::tool_artifact::EphemeralArtifact {
+                    metadata: crate::services::agent_local::tool_artifact::ArtifactMetadata {
+                        name: format!("preview-{index}.png"),
+                        mime_type: "image/png".into(),
+                        bytes: 8,
+                        sha256: "a".repeat(64),
+                        purpose: crate::services::agent_local::tool_artifact::ArtifactPurpose::Preview,
+                        source: crate::services::agent_local::tool_artifact::ArtifactSource::ExtensionResource {
+                            resource_id: "extension:demo:preview".into(),
+                            catalog_fingerprint: "b".repeat(64),
+                        },
+                    },
+                    bytes: b"\x89PNG\r\n\x1a\n".to_vec(),
+                },
+            )
+        }),
+    );
+
+    let converted = super::messages::convert(&[tool], &[], Some(&preview)).unwrap();
+    let content = converted.messages[0]["content"][0]["content"]
+        .as_array()
+        .unwrap();
+    assert_eq!(content.len(), 10);
+    assert_eq!(
+        content.last().unwrap()["text"],
+        "Additional extension previews are available in Beaver."
+    );
 }
 
 #[test]
@@ -126,7 +264,7 @@ fn image_is_native_base64_before_text() {
     let mut user = message("user", "What is shown?");
     user.images = Some(vec!["iVBORw0KGgo=".into()]);
 
-    let converted = super::messages::convert(&[user], &[]).unwrap();
+    let converted = super::messages::convert(&[user], &[], None).unwrap();
     let content = converted.messages[0]["content"].as_array().unwrap();
 
     assert_eq!(content[0]["type"], "image");
@@ -142,7 +280,7 @@ fn synthetic_fixture_image_is_one_native_block_and_oversize_fails_before_transpo
     user.images = Some(vec![
         crate::commands::reasoning_fixture_vision::inline_base64().unwrap(),
     ]);
-    let converted = super::messages::convert(&[user], &[]).unwrap();
+    let converted = super::messages::convert(&[user], &[], None).unwrap();
     let content = converted.messages[0]["content"].as_array().unwrap();
     assert_eq!(content.len(), 2);
     assert_eq!(content[0]["type"], "image");
@@ -156,7 +294,7 @@ fn synthetic_fixture_image_is_one_native_block_and_oversize_fails_before_transpo
         )
     )]);
     assert_eq!(
-        super::messages::convert(&[oversized], &[]),
+        super::messages::convert(&[oversized], &[], None),
         Err(super::BuildError::InvalidImage)
     );
 }
@@ -293,7 +431,7 @@ fn rejects_invalid_images_tool_schemas_and_limits() {
     let mut invalid_image = message("user", "image");
     invalid_image.images = Some(vec!["not-base64".into()]);
     assert_eq!(
-        super::messages::convert(&[invalid_image], &[]),
+        super::messages::convert(&[invalid_image], &[], None),
         Err(super::BuildError::InvalidImage)
     );
 

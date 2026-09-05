@@ -6,6 +6,7 @@ pub mod agent_loop_errors;
 pub mod agent_loop_finish;
 mod agent_loop_interrupted;
 pub mod agent_loop_limits;
+mod agent_loop_ollama_media;
 mod agent_loop_ollama_request;
 pub mod agent_loop_plan;
 pub mod agent_loop_support;

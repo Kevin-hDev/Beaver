@@ -6,29 +6,43 @@ import type {
   ExtensionOrigin,
   ExtensionOriginKind,
   ExtensionRecord,
+  ExtensionResource,
+  ExtensionSkill,
   ExtensionStatus,
   ExtensionTool,
 } from "@/types/extensions";
 import {
   EXTENSION_EFFECT_CLASSES,
   EXTENSION_EVENTS,
+  EXTENSION_RESOURCE_TYPES,
   LIMITS,
   type ExtensionEffectClass,
   type ExtensionEvent,
+  type ExtensionResourceType,
 } from "@/types/extension-contract.generated";
 import { EXTENSION_INSTALL_LIMITS } from "./extension-install";
 import { parseExtensionManifestUi } from "./extension-manifest-ui";
 import { parseExtensionUiArtifact } from "./extension-ui-artifact";
+import {
+  identifier,
+  invalid,
+  object,
+  objectWithKeys,
+  oneOf,
+  optionalText,
+  text,
+} from "./extension-record-validation";
+
+export { isExtensionIdentifier } from "./extension-record-validation";
 
 export const EXTENSION_VIEW_LIMITS = Object.freeze({
   records: LIMITS.maxExtensions,
   toolsPerExtension: LIMITS.maxToolsPerExtension,
   eventsPerExtension: LIMITS.maxEventsPerExtension,
+  skillsPerExtension: LIMITS.maxSkillsPerExtension,
+  resourcesPerExtension: LIMITS.maxResourcesPerExtension,
 });
 
-const MAX_NAME_CHARS = 100;
-const MAX_TEXT_CHARS = 2_000;
-const MAX_PATH_CHARS = 4_096;
 const KINDS: readonly ExtensionKind[] = ["builtin", "local"];
 const ORIGIN_KINDS: readonly ExtensionOriginKind[] = ["local", "git", "npm"];
 const STATUSES: readonly ExtensionStatus[] = [
@@ -40,56 +54,25 @@ const STATUSES: readonly ExtensionStatus[] = [
 ];
 const API_LEVELS: readonly ExtensionApiLevel[] = ["stable", "advanced"];
 
-function invalid(): never {
-  throw new Error("invalid_extension_response");
+function skill(value: unknown): ExtensionSkill {
+  const input = objectWithKeys(value, ["id", "name", "description", "path"]);
+  return {
+    id: identifier(input.id),
+    name: text(input.name, LIMITS.maxExtensionNameChars),
+    description: text(input.description, LIMITS.maxExtensionTextChars),
+    path: text(input.path, LIMITS.maxPathChars),
+  };
 }
 
-function object(value: unknown): Record<string, unknown> {
-  if (value === null || typeof value !== "object" || Array.isArray(value)) {
-    invalid();
-  }
-  return value as Record<string, unknown>;
-}
-
-function text(value: unknown, maxChars: number, allowEmpty = false): string {
-  if (typeof value !== "string" || value.length > maxChars * 2) invalid();
-  const length = Array.from(value).length;
-  if (length > maxChars || (!allowEmpty && length === 0)) invalid();
-  return value;
-}
-
-function optionalText(value: unknown, maxChars: number): string | undefined {
-  return value === null || value === undefined
-    ? undefined
-    : text(value, maxChars);
-}
-
-function identifier(value: unknown): string {
-  const parsed = text(value, LIMITS.maxIdentifierChars);
-  if (!isExtensionIdentifier(parsed)) invalid();
-  return parsed;
-}
-
-export function isExtensionIdentifier(value: string): boolean {
-  const characters = Array.from(value);
-  return characters.length <= LIMITS.maxIdentifierChars
-    && asciiAlphanumeric(characters[0])
-    && asciiAlphanumeric(characters[characters.length - 1])
-    && characters.every((character) =>
-      asciiAlphanumeric(character) || [".", "_", "-"].includes(character));
-}
-
-function asciiAlphanumeric(character: string | undefined): boolean {
-  if (!character) return false;
-  const code = character.charCodeAt(0);
-  return (code >= 48 && code <= 57)
-    || (code >= 65 && code <= 90)
-    || (code >= 97 && code <= 122);
-}
-
-function oneOf<T extends string>(value: unknown, values: readonly T[]): T {
-  if (typeof value !== "string" || !values.includes(value as T)) invalid();
-  return value as T;
+function resource(value: unknown): ExtensionResource {
+  const input = objectWithKeys(value, ["id", "name", "description", "type", "path"]);
+  return {
+    id: identifier(input.id),
+    name: text(input.name, LIMITS.maxExtensionNameChars),
+    description: text(input.description, LIMITS.maxExtensionTextChars),
+    type: oneOf(input.type, EXTENSION_RESOURCE_TYPES as readonly ExtensionResourceType[]),
+    path: text(input.path, LIMITS.maxPathChars),
+  };
 }
 
 function manifest(value: unknown): ExtensionManifest {
@@ -102,19 +85,19 @@ function manifest(value: unknown): ExtensionManifest {
   if (typeof input.essential !== "boolean") invalid();
   return {
     id: identifier(input.id),
-    name: text(input.name, MAX_NAME_CHARS),
+    name: text(input.name, LIMITS.maxExtensionNameChars),
     version: text(input.version, 64),
     beaverApi: text(input.beaverApi, 16),
     runtime,
-    main: optionalText(input.main, MAX_PATH_CHARS),
-    ui: parseExtensionManifestUi(input.ui, MAX_PATH_CHARS),
-    uiLegacy: optionalText(input.uiLegacy, MAX_PATH_CHARS),
+    main: optionalText(input.main, LIMITS.maxPathChars),
+    ui: parseExtensionManifestUi(input.ui, LIMITS.maxPathChars),
+    uiLegacy: optionalText(input.uiLegacy, LIMITS.maxPathChars),
     access,
     apiLevel: oneOf(input.apiLevel, API_LEVELS),
     essential: input.essential,
-    author: optionalText(input.author, MAX_TEXT_CHARS),
-    homepage: optionalText(input.homepage, MAX_TEXT_CHARS),
-    description: optionalText(input.description, MAX_TEXT_CHARS),
+    author: optionalText(input.author, LIMITS.maxExtensionTextChars),
+    homepage: optionalText(input.homepage, LIMITS.maxExtensionTextChars),
+    description: optionalText(input.description, LIMITS.maxExtensionTextChars),
   };
 }
 
@@ -127,7 +110,7 @@ function tool(value: unknown): ExtensionTool {
     : "unknown";
   return {
     name: identifier(input.name),
-    description: text(input.description, MAX_TEXT_CHARS),
+    description: text(input.description, LIMITS.maxExtensionTextChars),
     parameters: object(input.parameters),
     replacesCore: input.replacesCore,
     effect,
@@ -135,12 +118,18 @@ function tool(value: unknown): ExtensionTool {
 }
 
 function contributions(value: unknown): ExtensionContributions {
-  const input = object(value);
+  const input = objectWithKeys(value, ["tools", "events", "skills", "resources"]);
+  const skills = input.skills === undefined ? [] : input.skills;
+  const resources = input.resources === undefined ? [] : input.resources;
   if (
     !Array.isArray(input.tools)
     || !Array.isArray(input.events)
+    || !Array.isArray(skills)
+    || !Array.isArray(resources)
     || input.tools.length > EXTENSION_VIEW_LIMITS.toolsPerExtension
     || input.events.length > EXTENSION_VIEW_LIMITS.eventsPerExtension
+    || skills.length > EXTENSION_VIEW_LIMITS.skillsPerExtension
+    || resources.length > EXTENSION_VIEW_LIMITS.resourcesPerExtension
   ) {
     invalid();
   }
@@ -150,6 +139,8 @@ function contributions(value: unknown): ExtensionContributions {
       .map(identifier)
       .filter((event): event is ExtensionEvent =>
         EXTENSION_EVENTS.includes(event as ExtensionEvent)),
+    skills: skills.map(skill),
+    resources: resources.map(resource),
   };
 }
 
@@ -161,7 +152,7 @@ function origin(value: unknown): ExtensionOrigin | undefined {
     kind,
     locator: text(
       input.locator,
-      kind === "local" ? MAX_PATH_CHARS : EXTENSION_INSTALL_LIMITS[kind],
+      kind === "local" ? LIMITS.maxPathChars : EXTENSION_INSTALL_LIMITS[kind],
     ),
     revision: optionalText(input.revision, 128),
   };
@@ -183,7 +174,7 @@ function record(value: unknown): ExtensionRecord {
     invalid();
   }
   const parsedKind = oneOf(input.kind, KINDS);
-  const parsedSource = text(input.source, MAX_PATH_CHARS);
+  const parsedSource = text(input.source, LIMITS.maxPathChars);
   const parsedOrigin = origin(input.origin);
   if (parsedOrigin && parsedKind !== "local") invalid();
   if (parsedOrigin?.kind === "local" && parsedOrigin.locator !== parsedSource) invalid();
@@ -197,7 +188,7 @@ function record(value: unknown): ExtensionRecord {
     uiArtifact: parseExtensionUiArtifact(input.uiArtifact),
     showInChat: input.showInChat,
     status: oneOf(input.status, STATUSES),
-    lastError: optionalText(input.lastError, MAX_TEXT_CHARS),
+    lastError: optionalText(input.lastError, LIMITS.maxExtensionTextChars),
     lastActivatedAt: optionalText(input.lastActivatedAt, 64),
     trustedAt: optionalText(input.trustedAt, 64),
     contributions: contributions(input.contributions),

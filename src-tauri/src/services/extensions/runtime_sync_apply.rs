@@ -52,12 +52,12 @@ pub fn apply(
                     }
                     successful.insert(loaded.id.clone(), validated.core);
                 }
-                Err(()) => push_diagnostic(
+                Err(error) => push_diagnostic(
                     &mut diagnostics,
                     super::runtime_sync::runtime_diagnostic(
                         &loaded.id,
                         HOST_LOAD_STAGE_REGISTER,
-                        DIAGNOSTIC_ADVANCED_REQUIRED,
+                        contribution_diagnostic_code(error),
                     ),
                 )?,
             }
@@ -78,6 +78,21 @@ pub fn apply(
         completed_ids: received,
         ui_updates,
     })
+}
+
+pub(super) fn contribution_diagnostic_code(
+    error: super::runtime_sync_contributions::ValidationError,
+) -> &'static str {
+    match error {
+        super::runtime_sync_contributions::ValidationError::AdvancedRequired => {
+            DIAGNOSTIC_ADVANCED_REQUIRED
+        }
+        // La forme a été fournie par le processus Hôte : ne pas la présenter
+        // comme une demande d'autorisation avancée lorsqu'elle est invalide.
+        super::runtime_sync_contributions::ValidationError::InvalidContribution => {
+            DIAGNOSTIC_LOAD_FAILED
+        }
+    }
 }
 
 fn validate_attribution(

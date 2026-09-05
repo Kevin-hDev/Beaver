@@ -123,6 +123,7 @@ export function useSessionSummary(sessionId: string | null) {
           fileChanges: payload.event.data.fileChanges,
           startLine: payload.event.data.startLine,
           displaySummary: payload.event.data.displaySummary,
+          artifacts: payload.event.data.artifacts,
         });
         liveToolsRef.current = next.tools;
         const completed = next.tools[next.appliedIndex];

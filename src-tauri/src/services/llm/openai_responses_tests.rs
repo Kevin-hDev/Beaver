@@ -21,6 +21,7 @@ fn request<'a>(
         purpose: RequestPurpose::ManualChat,
         session_id: Some("session-fixture"),
         fast_mode,
+        tool_result_previews: None,
         continuation_target: None,
     }
 }
@@ -40,7 +41,34 @@ fn xai_request<'a>(
         purpose: RequestPurpose::ManualChat,
         session_id: Some("xai-fixture"),
         fast_mode: FastModeRequest::Unsupported,
+        tool_result_previews: None,
         continuation_target: None,
+    }
+}
+
+fn preview_batch() -> crate::services::agent_local::tool_artifact_preview::ToolResultPreviewBatch {
+    crate::services::agent_local::tool_artifact_preview::ToolResultPreviewBatch::from_ephemeral(
+        2,
+        Some("call-preview".into()),
+        preview_artifact(),
+    )
+}
+
+fn preview_artifact() -> crate::services::agent_local::tool_artifact::EphemeralArtifact {
+    crate::services::agent_local::tool_artifact::EphemeralArtifact {
+        metadata: crate::services::agent_local::tool_artifact::ArtifactMetadata {
+            name: "preview.png".into(),
+            mime_type: "image/png".into(),
+            bytes: 8,
+            sha256: "a".repeat(64),
+            purpose: crate::services::agent_local::tool_artifact::ArtifactPurpose::Preview,
+            source:
+                crate::services::agent_local::tool_artifact::ArtifactSource::ExtensionResource {
+                    resource_id: "extension:demo:preview".into(),
+                    catalog_fingerprint: "b".repeat(64),
+                },
+        },
+        bytes: b"\x89PNG\r\n\x1a\n".to_vec(),
     }
 }
 
@@ -142,6 +170,56 @@ fn api_request_uses_responses_reasoning_and_fast_contract() {
     assert_eq!(body["store"], false);
     assert!(body.get("reasoning_effort").is_none());
     assert!(body.get("messages").is_none());
+}
+
+#[test]
+fn responses_payload_receives_verified_preview_with_its_original_tool_call_id() {
+    let messages = [ChatMessage::tool(
+        "done".into(),
+        Some("call-preview".into()),
+        None,
+    )];
+    let previews = preview_batch();
+    let config = RequestConfig {
+        provider_id: "openai",
+        model: "gpt-5.6-luna",
+        messages: &messages,
+        tools: &[],
+        think: false,
+        reasoning_mode: None,
+        max_tokens: None,
+        purpose: RequestPurpose::ManualChat,
+        session_id: Some("session-preview"),
+        fast_mode: FastModeRequest::Unsupported,
+        tool_result_previews: Some(&previews),
+        continuation_target: None,
+    };
+
+    let body = build_request(&config);
+    let preview = body["input"].as_array().unwrap().last().unwrap();
+    assert_eq!(preview["role"], "user");
+    assert_eq!(
+        preview["content"][1]["text"],
+        "Extension preview for tool call call-preview (index 2): preview.png"
+    );
+    assert_eq!(
+        preview["content"][2]["image_url"],
+        "data:image/png;base64,iVBORw0KGgo="
+    );
+}
+
+#[test]
+fn xai_text_only_route_does_not_receive_preview_bytes() {
+    let messages = [ChatMessage::tool(
+        "done".into(),
+        Some("call-preview".into()),
+        None,
+    )];
+    let previews = preview_batch();
+    let mut config = xai_request(&messages, &[]);
+    config.tool_result_previews = Some(&previews);
+
+    assert!(!build_request(&config).to_string().contains("data:image"));
 }
 
 #[test]
@@ -319,6 +397,8 @@ async fn runtime_dispatch_cannot_fall_back_to_chat_completions() {
         session_id.to_string(),
     );
     let messages = [ChatMessage::user("bonjour".into())];
+    let previews =
+        crate::services::agent_local::tool_artifact_preview::ToolResultPreviewBatch::default();
 
     crate::services::llm::stream::stream_chat_no_done(
         &emitter,
@@ -334,6 +414,7 @@ async fn runtime_dispatch_cannot_fall_back_to_chat_completions() {
         &[],
         true,
         Some("medium"),
+        &previews,
         tokio_util::sync::CancellationToken::new(),
         false,
         None,
@@ -363,6 +444,8 @@ async fn xai_runtime_dispatch_cannot_fall_back_to_chat_completions() {
         session_id.to_string(),
     );
     let messages = [ChatMessage::user("bonjour".into())];
+    let previews =
+        crate::services::agent_local::tool_artifact_preview::ToolResultPreviewBatch::default();
 
     crate::services::llm::stream::stream_chat_no_done(
         &emitter,
@@ -378,6 +461,7 @@ async fn xai_runtime_dispatch_cannot_fall_back_to_chat_completions() {
         &[],
         true,
         Some("high"),
+        &previews,
         tokio_util::sync::CancellationToken::new(),
         false,
         None,

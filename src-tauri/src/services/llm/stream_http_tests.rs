@@ -75,6 +75,7 @@ fn legacy_openai_chat_payload_never_reintroduces_flat_reasoning() {
         purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
         session_id: None,
         fast_mode: FastModeRequest::Standard,
+        tool_result_previews: None,
         continuation_target: None,
     };
 
@@ -100,6 +101,7 @@ fn openrouter_gpt_56_uses_max_completion_tokens() {
         purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
         session_id: None,
         fast_mode: FastModeRequest::Unsupported,
+        tool_result_previews: None,
         continuation_target: None,
     };
 
@@ -131,6 +133,7 @@ fn qwen_payload_combines_reasoning_and_parallel_tools_without_foreign_fields() {
         purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
         session_id: None,
         fast_mode: FastModeRequest::Unsupported,
+        tool_result_previews: None,
         continuation_target: None,
     };
     let route = route::test_route("qwen");
@@ -183,6 +186,7 @@ fn chat_payload_respects_each_route_cache_and_usage_contract() {
             purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
             session_id: Some("session-1"),
             fast_mode: super::super::fast_mode::standard_for_internal(provider),
+            tool_result_previews: None,
             continuation_target: None,
         };
 
@@ -235,6 +239,7 @@ fn streaming_output_limit_field_matches_model_family() {
             purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
             session_id: None,
             fast_mode: super::super::fast_mode::standard_for_internal(provider),
+            tool_result_previews: None,
             continuation_target: None,
         };
         let route = route::resolve(provider).unwrap();
@@ -291,6 +296,7 @@ async fn cerebras_payloads_omit_automatic_limits() {
             purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
             session_id: None,
             fast_mode: FastModeRequest::Unsupported,
+            tool_result_previews: None,
             continuation_target: None,
         };
 
@@ -363,6 +369,7 @@ async fn timeout_above_secure_limit_uses_a_stable_code() {
         purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
         session_id: None,
         fast_mode: FastModeRequest::Standard,
+        tool_result_previews: None,
         continuation_target: None,
     };
     let timeout = crate::services::secure_http::MAX_AUTHENTICATED_TIMEOUT + Duration::from_secs(1);
@@ -413,6 +420,7 @@ fn chat_payload_emits_only_the_closed_api_fast_tiers() {
             purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
             session_id: None,
             fast_mode,
+            tool_result_previews: None,
             continuation_target: None,
         };
         let route = route::resolve(provider_id).expect("known provider");
@@ -431,4 +439,74 @@ fn chat_payload_emits_only_the_closed_api_fast_tiers() {
             );
         }
     }
+}
+
+#[test]
+fn google_payload_appends_verified_extension_follow_up_after_ordered_tools() {
+    assert_compatible_fallback("google", "gemini-2.5-flash", "google");
+}
+
+#[test]
+fn mistral_payload_appends_verified_extension_follow_up_after_ordered_tools() {
+    assert_compatible_fallback("mistral", "mistral-small-2603", "mistral");
+}
+
+fn assert_compatible_fallback(provider_id: &'static str, model: &'static str, fixture_key: &str) {
+    let messages = [
+        crate::services::agent_local::types_ollama::ChatMessage::tool(
+            "first".into(),
+            Some("call-one".into()),
+            None,
+        ),
+        crate::services::agent_local::types_ollama::ChatMessage::tool(
+            "second".into(),
+            Some("call-two".into()),
+            None,
+        ),
+    ];
+    let previews = preview_batch();
+    let cfg = RequestConfig {
+        provider_id,
+        model,
+        messages: &messages,
+        tools: &[],
+        think: false,
+        reasoning_mode: None,
+        max_tokens: None,
+        purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
+        session_id: None,
+        fast_mode: FastModeRequest::Unsupported,
+        tool_result_previews: Some(&previews),
+        continuation_target: None,
+    };
+    let payload = build_chat_payload(&cfg, &route::test_route(provider_id), None).expect("payload");
+    let expected: serde_json::Value = serde_json::from_slice(include_bytes!(
+        "../../../test-fixtures/tool-result-media/openai-compatible-fallback.json"
+    ))
+    .expect("fixture");
+    assert_eq!(payload["messages"], expected[fixture_key]);
+}
+
+fn preview_batch() -> crate::services::agent_local::tool_artifact_preview::ToolResultPreviewBatch {
+    use crate::services::agent_local::tool_artifact::{
+        ArtifactMetadata, ArtifactPurpose, ArtifactSource, EphemeralArtifact,
+    };
+    crate::services::agent_local::tool_artifact_preview::ToolResultPreviewBatch::from_ephemeral(
+        2,
+        Some("call-media".into()),
+        EphemeralArtifact {
+            metadata: ArtifactMetadata {
+                name: "preview.png".into(),
+                mime_type: "image/png".into(),
+                bytes: 8,
+                sha256: "a".repeat(64),
+                purpose: ArtifactPurpose::Preview,
+                source: ArtifactSource::ExtensionResource {
+                    resource_id: "extension:demo:preview".into(),
+                    catalog_fingerprint: "b".repeat(64),
+                },
+            },
+            bytes: b"\x89PNG\r\n\x1a\n".to_vec(),
+        },
+    )
 }
