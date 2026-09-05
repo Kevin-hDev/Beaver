@@ -74,3 +74,65 @@ pub(super) fn len(pending: &PendingRequests) -> usize {
         .unwrap_or_else(|error| error.into_inner())
         .len()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+    use std::process::Stdio;
+    use tokio::io::{AsyncBufReadExt, BufReader};
+    use tokio::process::Command;
+
+    #[tokio::test]
+    async fn oversized_response_is_rejected_without_corrupting_the_owned_channel() {
+        let mut command = Command::new(which::which("node").unwrap());
+        command
+            .args(["-e", "process.stdin.pipe(process.stdout)"])
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .kill_on_drop(true);
+        let (mut child, scope) = crate::services::owned_process::OwnedProcess::spawn_tokio_scoped(
+            &mut command,
+            crate::services::process_tree::ProcessKind::ExtensionHost,
+        )
+        .await
+        .unwrap();
+        let root_pid = child.id().unwrap();
+        let writer = Arc::new(Mutex::new(child.stdin.take().unwrap()));
+        let mut reader = BufReader::new(child.stdout.take().unwrap());
+
+        write(&writer, &json!({"result": "before"})).await.unwrap();
+        let mut line = String::new();
+        reader.read_line(&mut line).await.unwrap();
+        assert_eq!(
+            serde_json::from_str::<Value>(line.trim()).unwrap(),
+            json!({"result": "before"})
+        );
+
+        assert_eq!(
+            write(&writer, &json!({"result": "x".repeat(MAX_MESSAGE_BYTES)})).await,
+            Err(error_codes::REQUEST_TOO_LARGE.to_string())
+        );
+
+        write(&writer, &json!({"result": "after"})).await.unwrap();
+        line.clear();
+        reader.read_line(&mut line).await.unwrap();
+        assert_eq!(
+            serde_json::from_str::<Value>(line.trim()).unwrap(),
+            json!({"result": "after"})
+        );
+
+        drop(writer);
+        assert!(
+            crate::services::process_tree::terminate_tokio_scoped(
+                &mut child,
+                crate::services::process_tree::ProcessKind::ExtensionHost,
+                &scope,
+                root_pid,
+                std::time::Instant::now() + std::time::Duration::from_secs(5),
+            )
+            .await
+        );
+        assert!(child.wait().await.is_ok());
+    }
+}
