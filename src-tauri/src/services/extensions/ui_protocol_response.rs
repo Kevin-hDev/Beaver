@@ -1,8 +1,17 @@
 use std::io::Read;
 use std::path::Path;
+
+use sha2::{Digest, Sha256};
+use subtle::ConstantTimeEq;
 use tauri::http::{header, Response, StatusCode};
 
-pub(super) fn read_response(root: &Path, name: &str, origin: &str) -> Option<Response<Vec<u8>>> {
+pub(super) fn read_response(
+    root: &Path,
+    name: &str,
+    expected_sha256: &str,
+    expected_bytes: Option<usize>,
+    origin: &str,
+) -> Option<Response<Vec<u8>>> {
     let mime = mime(name)?;
     let path = root.join(name);
     let metadata = std::fs::symlink_metadata(&path).ok()?;
@@ -22,7 +31,13 @@ pub(super) fn read_response(root: &Path, name: &str, origin: &str) -> Option<Res
     file.take(super::ui_contract::MAX_ADVANCED_ARTIFACT_BYTES as u64 + 1)
         .read_to_end(&mut body)
         .ok()?;
-    if body.len() as u64 != metadata.len() {
+    if body.len() as u64 != metadata.len()
+        || expected_bytes.is_some_and(|bytes| body.len() != bytes)
+    {
+        return None;
+    }
+    let actual = hex::encode(Sha256::digest(&body));
+    if !bool::from(actual.as_bytes().ct_eq(expected_sha256.as_bytes())) {
         return None;
     }
     Some(response(StatusCode::OK, body, Some((mime, origin))))
@@ -60,3 +75,7 @@ fn response(status: StatusCode, body: Vec<u8>, success: Option<(&str, &str)>) ->
         .body(body)
         .unwrap_or_else(|_| Response::new(Vec::new()))
 }
+
+#[cfg(test)]
+#[path = "ui_protocol_response_tests.rs"]
+mod tests;

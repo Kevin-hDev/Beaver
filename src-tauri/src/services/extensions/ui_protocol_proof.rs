@@ -5,6 +5,8 @@ pub(crate) struct ProofArtifact {
     root: PathBuf,
     pub(super) extension_id: String,
     pub(super) manifest_sha: String,
+    content_sha256: String,
+    expected_bytes: Option<usize>,
 }
 
 impl ProofArtifact {
@@ -23,6 +25,9 @@ impl ProofArtifact {
             root,
             extension_id: extension_id.to_string(),
             manifest_sha: manifest_sha.to_string(),
+            // The E2E directory identifier is the content digest, not a manifest digest.
+            content_sha256: manifest_sha.to_string(),
+            expected_bytes: None,
         })
     }
 
@@ -30,9 +35,28 @@ impl ProofArtifact {
         &self.root
     }
 
+    pub(super) fn content_sha256(&self) -> &str {
+        &self.content_sha256
+    }
+
+    pub(super) fn expected_bytes(&self) -> Option<usize> {
+        self.expected_bytes
+    }
+
     #[cfg(test)]
     pub(super) fn for_test(root: PathBuf, extension_id: &str, manifest_sha: &str) -> Self {
-        Self::new(root, extension_id, manifest_sha).expect("valid UI protocol test artifact")
+        let mut artifact =
+            Self::new(root, extension_id, manifest_sha).expect("valid UI protocol test artifact");
+        artifact.expected_bytes = std::fs::metadata(
+            artifact
+                .root
+                .join(extension_id)
+                .join(manifest_sha)
+                .join("entry.mjs"),
+        )
+        .ok()
+        .and_then(|metadata| usize::try_from(metadata.len()).ok());
+        artifact
     }
 
     #[cfg(test)]

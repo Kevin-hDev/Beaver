@@ -60,6 +60,25 @@ fn protocol_serves_only_the_allowlisted_fixture_with_closed_headers() {
 }
 
 #[test]
+fn protocol_refuses_same_size_fixture_tampering() {
+    let root = tempfile::tempdir().unwrap();
+    let original = b"export default true;";
+    let replacement = b"export default null;";
+    assert_eq!(original.len(), replacement.len());
+    let artifact = fixture(root.path(), original);
+    let directory = root.path().join("ui-proof").join(artifact.manifest_sha());
+    std::fs::write(directory.join("entry.mjs"), replacement).unwrap();
+    let uri = format!(
+        "beaver-extension://localhost/ui-proof/{}/entry.mjs",
+        artifact.manifest_sha()
+    );
+
+    let response = serve("main", &request(&uri, "tauri://localhost"), Some(&artifact));
+
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
+}
+
+#[test]
 fn protocol_refuses_other_webviews_origins_methods_and_hashes() {
     let root = tempfile::tempdir().unwrap();
     let artifact = fixture(root.path(), b"export default true;");

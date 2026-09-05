@@ -10,7 +10,13 @@ const MAIN_WEBVIEW: &str = "main";
 
 struct GrantedArtifact {
     root: PathBuf,
-    output_names: Vec<String>,
+    outputs: Vec<GrantedOutput>,
+}
+
+struct GrantedOutput {
+    name: String,
+    sha256: String,
+    expected_bytes: Option<usize>,
 }
 
 pub(crate) fn register<R: tauri::Runtime>(
@@ -77,10 +83,17 @@ fn serve_request(
     let Some(grant) = grant else {
         return not_found();
     };
-    if !grant.output_names.iter().any(|output| output == name) {
+    let Some(output) = grant.outputs.iter().find(|output| output.name == name) else {
         return not_found();
-    }
-    read_response(&grant.root, name, origin).unwrap_or_else(not_found)
+    };
+    read_response(
+        &grant.root,
+        name,
+        &output.sha256,
+        output.expected_bytes,
+        origin,
+    )
+    .unwrap_or_else(not_found)
 }
 
 fn active_grant(extension_id: &str, manifest_sha: &str) -> Option<GrantedArtifact> {
@@ -100,10 +113,14 @@ fn active_grant(extension_id: &str, manifest_sha: &str) -> Option<GrantedArtifac
     super::ui_artifact::verify_at(&root, artifact).ok()?;
     Some(GrantedArtifact {
         root,
-        output_names: artifact
+        outputs: artifact
             .outputs
             .iter()
-            .map(|output| output.name.clone())
+            .map(|output| GrantedOutput {
+                name: output.name.clone(),
+                sha256: output.sha256.clone(),
+                expected_bytes: Some(output.bytes),
+            })
             .collect(),
     })
 }
@@ -118,7 +135,11 @@ fn proof_grant(
     }
     Some(GrantedArtifact {
         root: proof.root().join(extension_id).join(manifest_sha),
-        output_names: vec!["entry.mjs".to_string()],
+        outputs: vec![GrantedOutput {
+            name: "entry.mjs".to_string(),
+            sha256: proof.content_sha256().to_string(),
+            expected_bytes: proof.expected_bytes(),
+        }],
     })
 }
 
