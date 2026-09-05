@@ -1,0 +1,21 @@
+CI diagnosis after eef8f771:
+- Windows packaged acceptance now activates acceptance.standard.complete, then stalls for 60 seconds at the import stage of acceptance.theme.valid during the next full host restart.
+- The fixture is plain MJS and standalone/concurrent host tests pass, isolating the remaining risk to Jiti involvement in repeated Windows Node 24 module loads rather than WebDriver, CEF startup, registry installation, or UI mounting.
+
+Correction:
+- Plain .js/.mjs/.cjs entrypoints now use Node native import directly.
+- Jiti remains the TypeScript runtime and the bounded fallback when native linking requires @beaver/sdk or reaches a TypeScript dependency.
+- The loader is a separate single-responsibility module and is included by the existing bounded host preparation inventory.
+- A new bundled-runtime regression reproduces two complete generations: official plus standard, full stop, then official plus standard plus theme.
+
+Validation executed on this commit:
+- npm run test:extensions-host: 120 passed
+- npm run test:extensions-runtime-smoke: 4 passed
+- npm run test:e2e-runner: 91 passed
+- npx tsc --noEmit: passed
+- npm run lint: passed
+- git diff --check: passed
+- graphify . --update --code-only: passed
+
+CI policy:
+- Do not restart the full matrix for diagnosis. Run workflow_dispatch target windows-host first; only if green, run windows-native. The final full matrix remains pending.
