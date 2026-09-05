@@ -185,15 +185,39 @@ async function install(fixture: string, extensionId: string): Promise<void> {
       enabled: true,
       trustConfirmed: true,
     });
-  } catch {
-    const recovery = await invokeTauri<{
-      extensionId: string | null;
-      stage: string | null;
-      markerInvalid: boolean;
-    }>("get_extension_recovery_state");
+  } catch (error) {
+    const [recovery, host, extensions] = await Promise.all([
+      invokeOrFallback<{
+        extensionId: string | null;
+        stage: string | null;
+        markerInvalid: boolean;
+      }>("get_extension_recovery_state", {
+        extensionId: null,
+        stage: null,
+        markerInvalid: false,
+      }),
+      invokeOrFallback<{ state: string; lastError?: string }>(
+        "get_extension_host_status",
+        { state: "unavailable" },
+      ),
+      invokeOrFallback<Array<{ manifest: { id: string }; status: string; lastError?: string }>>(
+        "list_extensions",
+        [],
+      ),
+    ]);
+    const record = extensions.find(({ manifest }) => manifest.id === extensionId);
+    const reason = error instanceof Error ? error.message : "unknown";
     throw new Error(
-      `Extension activation failed: extension=${extensionId}; stage=${recovery.stage ?? "none"}; markerInvalid=${recovery.markerInvalid}`,
+      `Extension activation failed: extension=${extensionId}; reason=${reason}; stage=${recovery.stage ?? "none"}; markerInvalid=${recovery.markerInvalid}; host=${host.state}/${host.lastError ?? "none"}; record=${record?.status ?? "missing"}/${record?.lastError ?? "none"}`,
     );
+  }
+}
+
+async function invokeOrFallback<T>(command: string, fallback: T): Promise<T> {
+  try {
+    return await invokeTauri<T>(command);
+  } catch {
+    return fallback;
   }
 }
 

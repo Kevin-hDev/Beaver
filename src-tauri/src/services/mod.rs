@@ -106,6 +106,7 @@ pub mod update_notifications;
 #[cfg(test)]
 mod update_notifications_tests;
 pub mod vault;
+mod windows_fs_retry;
 pub mod work_registry;
 #[cfg(test)]
 mod work_registry_tests;

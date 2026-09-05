@@ -15,12 +15,15 @@ test("the persisted native report contains only bounded safe categories", async 
   try {
     await writeFile(
       join(logs, "wdio-safe.log"),
-      "token=secret\n[e2e-lifecycle] setup-completed\n",
+      "token=secret\n[e2e-lifecycle] setup-completed\n[extensions] operation=loading-journal-write result=failed\n",
       "utf8",
     );
     await artifact.persistNativeDiagnostics(logs, output);
     const report = await readFile(join(output, "native-diagnostics.txt"), "utf8");
-    assert.equal(report, "application-stage:setup-completed\n");
+    assert.equal(
+      report,
+      "application-stage:setup-completed\nextensions:loading-journal-write-failed\n",
+    );
     assert.equal(report.includes("secret"), false);
   } finally {
     await rm(root, { recursive: true, force: true });
