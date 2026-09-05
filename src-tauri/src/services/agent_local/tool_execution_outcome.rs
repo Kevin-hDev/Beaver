@@ -63,6 +63,15 @@ impl ToolExecutionOutcome {
         self.artifacts.as_slice()
     }
 
+    pub(crate) async fn take_artifact_previews(
+        &mut self,
+    ) -> super::tool_artifact_preview::ToolResultPreviewBatch {
+        super::tool_artifact_preview::ToolResultPreviewBatch::replay_from_artifacts(
+            self.artifacts.take(),
+        )
+        .await
+    }
+
     pub fn apply_follow_ups(&mut self, messages: &mut [ChatMessage]) -> Result<bool, String> {
         let mut stop = false;
         for follow_up in std::mem::take(&mut self.follow_ups) {

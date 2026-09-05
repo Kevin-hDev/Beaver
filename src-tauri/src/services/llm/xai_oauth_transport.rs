@@ -56,14 +56,7 @@ pub(super) async fn stream_chat(
             .await
         }
         XaiBackend::Responses => {
-            let prepared = super::xai_oauth_payload::build_with_evidence(
-                catalog_model,
-                request.messages,
-                request.tools,
-                request.reasoning_mode,
-                request.session_id,
-                request.continuation_target,
-            )?;
+            let prepared = prepare_responses_request(catalog_model, &request)?;
             crate::services::llm::reasoning_wire::replay::record_evidence(
                 request.session_id,
                 Some(request_id),
@@ -87,6 +80,22 @@ pub(super) async fn stream_chat(
             .await
         }
     }
+}
+
+pub(super) fn prepare_responses_request(
+    catalog_model: &XaiCatalogModel,
+    request: &super::stream_http::RequestConfig<'_>,
+) -> Result<super::xai_oauth_payload::PreparedResponsesPayload, String> {
+    // xAI OAuth is explicitly text-only: preview bytes never cross this
+    // builder boundary until its own wire contract is proven.
+    super::xai_oauth_payload::build_with_evidence(
+        catalog_model,
+        request.messages,
+        request.tools,
+        request.reasoning_mode,
+        request.session_id,
+        request.continuation_target,
+    )
 }
 
 pub(super) fn validate_backend(

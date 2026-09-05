@@ -47,6 +47,7 @@ pub async fn run_agent_loop(
     let write_guard_arc = write_guard_registry::lock(&session_id).await;
     let mut write_guard = write_guard_arc.lock().await;
     let mut plan_repairs = 0;
+    let mut tool_result_previews = super::tool_artifact_preview::ToolResultPreviewBatch::default();
     #[cfg(debug_assertions)]
     let fixture_mode = fixture_run.is_some();
     #[cfg(not(debug_assertions))]
@@ -85,6 +86,7 @@ pub async fn run_agent_loop(
             context_usage_seed,
             capture_reasoning,
             live_replay_target: live_replay_target.as_ref(),
+            tool_result_previews: &tool_result_previews,
             #[cfg(debug_assertions)]
             fixture_candidate: fixture_candidate.as_ref(),
             enable_eager_tools: {
@@ -99,6 +101,9 @@ pub async fn run_agent_loop(
             },
         })
         .await?;
+        // The request consumed this ephemeral projection; persisted tool text
+        // remains the only context retained across a later compaction.
+        tool_result_previews.clear_after_projection();
         generation.merge(request_output.generation);
         let eager_handle = request_output.eager_handle;
         let interrupted = request_output.interrupted;
@@ -177,7 +182,7 @@ pub async fn run_agent_loop(
             }
             break;
         }
-        let stop_after_tools =
+        let tool_turn =
             super::agent_loop_tool_turn::run(super::agent_loop_tool_turn::ToolTurnContext {
                 on_event,
                 messages,
@@ -204,7 +209,8 @@ pub async fn run_agent_loop(
                 fixture_run: fixture_run.as_deref_mut(),
             })
             .await?;
-        if stop_after_tools {
+        tool_result_previews = tool_turn.previews;
+        if tool_turn.stop {
             break;
         }
     }

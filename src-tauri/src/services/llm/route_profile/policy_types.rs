@@ -141,6 +141,7 @@ pub(crate) struct ResolvedCachePolicy<'a> {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct ResolvedPayloadPolicy {
     pub message: super::types::MessageWirePolicy,
+    pub tool_result_media: super::types::ToolResultMedia,
     pub parameters: ParameterPolicy,
     pub emit_tool_choice: bool,
     pub tool_stream: bool,

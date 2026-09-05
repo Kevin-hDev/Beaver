@@ -17,6 +17,7 @@ fn config<'a>(messages: &'a [ChatMessage], session_id: &'a str) -> RequestConfig
         purpose: RequestPurpose::ManualChat,
         session_id: Some(session_id),
         fast_mode: FastModeRequest::Unsupported,
+        tool_result_previews: None,
         continuation_target: None,
     }
 }

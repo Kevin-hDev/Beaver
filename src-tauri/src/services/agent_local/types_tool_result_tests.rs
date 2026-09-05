@@ -132,3 +132,21 @@ fn pending_artifacts_are_bounded_hidden_and_taken_once() {
         ])
         .is_err());
 }
+
+#[test]
+fn error_result_refuses_pending_artifacts() {
+    let mut result = ToolResult::error(
+        "failed",
+        "tool_failed",
+        crate::services::agent_local::tool_result_contract::ToolErrorCategory::Execution,
+        false,
+    );
+    assert!(result
+        .set_pending_artifacts(vec![PendingArtifact::from_validated(
+            "output.png".into(),
+            None,
+            ArtifactPurpose::Preview,
+        )])
+        .is_err());
+    assert!(result.pending_artifacts().is_empty());
+}

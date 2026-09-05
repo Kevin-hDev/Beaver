@@ -22,12 +22,7 @@ pub(crate) enum ArtifactSource {
 
 #[derive(Clone, Debug)]
 pub(crate) struct EphemeralArtifact {
-    #[cfg_attr(not(test), allow(dead_code))]
     pub metadata: ArtifactMetadata,
-    #[cfg_attr(
-        not(test),
-        expect(dead_code, reason = "P6 consumes these bytes after the execution outcome")
-    )]
     pub bytes: Vec<u8>,
 }
 

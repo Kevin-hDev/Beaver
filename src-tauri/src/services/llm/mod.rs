@@ -102,6 +102,7 @@ pub(crate) mod stream_sse;
 pub(crate) mod stream_test_transport;
 mod stream_tools;
 mod timeouts;
+pub(crate) mod tool_result_projection;
 pub(crate) mod tool_schema;
 mod tool_schema_names;
 mod tool_schema_profile;

@@ -51,7 +51,9 @@ impl ToolResult {
         &mut self,
         artifacts: Vec<super::tool_artifact::PendingArtifact>,
     ) -> Result<(), ()> {
-        if artifacts.len() > crate::services::extensions::types::MAX_RESULT_FILES {
+        if self.is_error
+            || artifacts.len() > crate::services::extensions::types::MAX_RESULT_FILES
+        {
             return Err(());
         }
         self.artifacts.pending = artifacts;
@@ -72,7 +74,7 @@ impl ToolResult {
         &mut self,
         resource: super::tool_artifact::PendingExtensionResource,
     ) -> Result<(), ()> {
-        if self.artifacts.pending_resource.is_some() {
+        if self.is_error || self.artifacts.pending_resource.is_some() {
             return Err(());
         }
         self.artifacts.pending_resource = Some(resource);

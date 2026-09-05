@@ -6,77 +6,11 @@ use tokio_util::sync::CancellationToken;
 
 use super::stream_http::{RequestConfig, RequestError};
 
+#[path = "openai_responses_request.rs"]
+mod request_builder;
+use request_builder::try_build_request_with_evidence;
 #[cfg(test)]
-pub(super) fn build_request(config: &RequestConfig<'_>) -> serde_json::Value {
-    try_build_request(config).expect("a request without a continuation target cannot be rejected")
-}
-
-#[cfg(test)]
-pub(super) fn try_build_request(
-    config: &RequestConfig<'_>,
-) -> Result<serde_json::Value, RequestError> {
-    try_build_request_with_evidence(config).map(|prepared| prepared.body)
-}
-
-struct PreparedResponseRequest {
-    body: serde_json::Value,
-    replayed: Vec<super::reasoning_wire::replay::ReplayEvidence>,
-}
-
-fn try_build_request_with_evidence(
-    config: &RequestConfig<'_>,
-) -> Result<PreparedResponseRequest, RequestError> {
-    let payload_policy = super::route_profile::payload_policy(config.provider_id, config.model)
-        .ok_or(RequestError::InvalidConfiguration)?;
-    let converted =
-        crate::services::codex_client::convert::convert_messages_with_tools_and_continuity_evidence(
-            config.messages,
-            config.tools,
-            config.continuation_target,
-            payload_policy.message.tool_results,
-        )
-        .map_err(|_| RequestError::InvalidConfiguration)?;
-    let instructions = converted.instructions;
-    let input = converted.input;
-    let tool_policy = super::route_profile::tool_policy(config.provider_id, config.model)
-        .ok_or(RequestError::InvalidConfiguration)?;
-    let mut body = serde_json::json!({
-        "model": config.model,
-        "instructions": instructions,
-        "input": input,
-        "stream": true,
-        "store": false,
-        "tools": crate::services::codex_client::convert::convert_tools_to_responses_api(
-            tool_policy,
-            config.tools,
-        ),
-        "tool_choice": "auto",
-        "parallel_tool_calls": false,
-        "prompt_cache_key": super::prompt_cache_policy::routing_key(
-            config.provider_id,
-            config.model,
-            config.session_id,
-        ),
-        "include": ["reasoning.encrypted_content"],
-    });
-    if let Some(tier) = config.fast_mode.api_value() {
-        body["service_tier"] = tier.into();
-    }
-    if let Some(limit) = config.max_tokens {
-        body[payload_policy.output_limit_field] = limit.into();
-    }
-    if let Some(effort) = super::openai_responses_reasoning::requested_effort(config) {
-        body["reasoning"] = if effort == "none" {
-            serde_json::json!({"effort": effort})
-        } else {
-            serde_json::json!({"effort": effort, "summary": "auto"})
-        };
-    }
-    Ok(PreparedResponseRequest {
-        body,
-        replayed: converted.replayed,
-    })
-}
+use request_builder::{build_request, try_build_request};
 
 pub(super) struct ResponseStreamOptions<'a> {
     pub buffer_content: bool,

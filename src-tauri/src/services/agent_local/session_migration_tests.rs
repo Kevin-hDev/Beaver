@@ -418,6 +418,7 @@ async fn migrated_v1_history_builds_a_required_moonshot_payload_after_admission(
         purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
         session_id: Some(&session.id),
         fast_mode: FastModeRequest::Unsupported,
+        tool_result_previews: None,
         continuation_target: Some(&target),
     };
 

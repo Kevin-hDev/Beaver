@@ -15,3 +15,5 @@ mod types_tool_result_errors;
 pub mod types_tools;
 pub mod tool_artifact;
 pub mod tool_artifact_record;
+pub(crate) mod tool_artifact_preview;
+pub(crate) mod tool_artifact_replay;

@@ -41,6 +41,10 @@ impl ToolExecutionArtifacts {
         &self.0
     }
 
+    pub(crate) fn take(&mut self) -> Vec<AttributedArtifact> {
+        std::mem::take(&mut self.0)
+    }
+
     fn record_many(&mut self, artifacts: Vec<AttributedArtifact>) -> Result<(), ()> {
         let count = self.0.len().checked_add(artifacts.len()).ok_or(())?;
         if count > MAX_OUTCOME_ARTIFACTS {

@@ -29,7 +29,7 @@ pub(in crate::services::llm) fn build_payload(
     if max_tokens == 0 {
         return Err(BuildError::InvalidMaxTokens);
     }
-    let mut converted = messages::convert(cfg.messages, cfg.tools)?;
+    let mut converted = messages::convert(cfg.messages, cfg.tools, cfg.tool_result_previews)?;
     let replayed = crate::services::llm::reasoning_wire::replay::apply_anthropic_messages(
         cfg.messages,
         cfg.continuation_target,

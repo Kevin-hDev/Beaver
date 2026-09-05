@@ -16,7 +16,15 @@ pub(super) async fn post(
     request_id: Option<&str>,
 ) -> Result<reqwest::Response, super::stream_http::RequestError> {
     // Ce type fermé empêche le chemin OAuth d'envoyer une requête chat non restreinte.
-    super::stream_http::post_chat_request_measured(request, measurement, request_id).await
+    let policy = super::route_profile::xai_oauth_chat_payload_policy(request.model)
+        .ok_or(super::stream_http::RequestError::InvalidConfiguration)?;
+    super::stream_http::post_chat_request_with_payload_policy(
+        request,
+        policy,
+        measurement,
+        request_id,
+    )
+    .await
 }
 
 pub(super) fn prepare<'request, 'catalog>(
@@ -40,6 +48,7 @@ where
         purpose: request.purpose,
         session_id: request.session_id,
         fast_mode: request.fast_mode,
+        tool_result_previews: request.tool_result_previews,
         continuation_target: request.continuation_target,
     })
 }

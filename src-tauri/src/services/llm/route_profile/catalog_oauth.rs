@@ -29,7 +29,7 @@ pub(super) const OAUTH_PROFILES: &[RouteProfile] = &[
         canonical_provider: CanonicalProviderId::Xai,
         display_name: "xAI",
         client: ClientSelector::XaiOauth,
-        wire: RESPONSES_WIRE,
+        wire: RESPONSES_TEXT_ONLY_WIRE,
         auth: oauth(LlmOAuthProvider::Xai),
         endpoint: endpoint(crate::services::llm_oauth::XAI_PROXY_BASE_URL, "/models-v2"),
         availability: INTERACTIVE_ONLY,
@@ -55,7 +55,7 @@ pub(super) const OAUTH_PROFILES: &[RouteProfile] = &[
         canonical_provider: CanonicalProviderId::CodexOauth,
         display_name: "Codex",
         client: ClientSelector::Codex,
-        wire: RESPONSES_WIRE,
+        wire: RESPONSES_TEXT_ONLY_WIRE,
         auth: AuthKind::ClientOAuth {
             credential_id: "codex-oauth",
             source: "client-owned OAuth",

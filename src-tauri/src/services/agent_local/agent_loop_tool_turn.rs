@@ -36,7 +36,12 @@ pub(super) struct ToolTurnContext<'a> {
     pub fixture_run: Option<&'a mut crate::services::reasoning_fixture_run::FixtureRunContext>,
 }
 
-pub(super) async fn run(mut context: ToolTurnContext<'_>) -> Result<bool, String> {
+pub(super) struct ToolTurnOutput {
+    pub stop: bool,
+    pub previews: super::tool_artifact_preview::ToolResultPreviewBatch,
+}
+
+pub(super) async fn run(mut context: ToolTurnContext<'_>) -> Result<ToolTurnOutput, String> {
     let eager_handle = context
         .eager_handle
         .take()
@@ -56,7 +61,7 @@ pub(super) async fn run(mut context: ToolTurnContext<'_>) -> Result<bool, String
 async fn finish_prepared(
     mut context: ToolTurnContext<'_>,
     prepared: super::agent_loop_tool_batch::PreparedToolBatch,
-) -> Result<bool, String> {
+) -> Result<ToolTurnOutput, String> {
     let tool_start = context.messages.len();
     let mut outcome =
         super::agent_loop_tool_batch::execute(super::agent_loop_tool_batch::ToolBatchContext {
@@ -87,6 +92,8 @@ async fn finish_prepared(
             )
             .await?;
     }
+    // The persisted references are revalidated before any provider receives bytes.
+    let previews = outcome.take_artifact_previews().await;
     refresh_tools(
         context.tools,
         context.session_id,
@@ -111,7 +118,7 @@ async fn finish_prepared(
             context.cancel,
         )
         .await;
-    Ok(stop)
+    Ok(ToolTurnOutput { stop, previews })
 }
 
 async fn refresh_tools(

@@ -1,5 +1,5 @@
 use super::provider_error::ProviderErrorCode;
-pub(super) use super::stream_http_error::RequestError;
+pub(super) use super::stream_http_error::{classify_error, RequestError};
 use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::llm::request_purpose::RequestPurpose;
 use crate::services::llm::route;
@@ -15,6 +15,9 @@ pub struct RequestConfig<'a> {
     pub purpose: RequestPurpose,
     pub session_id: Option<&'a str>,
     pub fast_mode: super::fast_mode::FastModeRequest,
+    /// Aperçus vérifiés du dernier lot d'outils, gardés seulement en mémoire.
+    pub tool_result_previews:
+        Option<&'a crate::services::agent_local::tool_artifact_preview::ToolResultPreviewBatch>,
     /// Décision d'admission conservée jusqu'au constructeur du payload.
     pub continuation_target:
         Option<&'a crate::services::reasoning_continuity::contract::ContinuationTarget>,
@@ -36,11 +39,28 @@ pub(super) async fn post_chat_request_measured(
     measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
     request_id: Option<&str>,
 ) -> Result<reqwest::Response, RequestError> {
-    post_chat_request_with_timeout_measured(
+    post_chat_request_with_timeout_and_policy(
         cfg,
         super::timeouts::request_timeout_for(cfg.provider_id),
         measurement,
         request_id,
+        None,
+    )
+    .await
+}
+
+pub(super) async fn post_chat_request_with_payload_policy(
+    cfg: &RequestConfig<'_>,
+    payload_policy: super::route_profile::ResolvedPayloadPolicy,
+    measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
+    request_id: Option<&str>,
+) -> Result<reqwest::Response, RequestError> {
+    post_chat_request_with_timeout_and_policy(
+        cfg,
+        super::timeouts::request_timeout_for(cfg.provider_id),
+        measurement,
+        request_id,
+        Some(payload_policy),
     )
     .await
 }
@@ -56,8 +76,18 @@ pub async fn post_chat_request_with_timeout(
 pub(super) async fn post_chat_request_with_timeout_measured(
     cfg: &RequestConfig<'_>,
     timeout: std::time::Duration,
+    measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
+    request_id: Option<&str>,
+) -> Result<reqwest::Response, RequestError> {
+    post_chat_request_with_timeout_and_policy(cfg, timeout, measurement, request_id, None).await
+}
+
+async fn post_chat_request_with_timeout_and_policy(
+    cfg: &RequestConfig<'_>,
+    timeout: std::time::Duration,
     mut measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
     request_id: Option<&str>,
+    payload_policy: Option<super::route_profile::ResolvedPayloadPolicy>,
 ) -> Result<reqwest::Response, RequestError> {
     if cfg.model.len() > 128 {
         return Err(RequestError::Fatal("nom de modèle trop long".into()));
@@ -77,8 +107,13 @@ pub(super) async fn post_chat_request_with_timeout_measured(
     )
     .await
     .map_err(request_error_for_limit)?;
-    let prepared = build_chat_payload_with_evidence(cfg, &route, max_tokens)
-        .map_err(|_| RequestError::Fatal("reasoning_continuity_invalid".to_string()))?;
+    let prepared = match payload_policy {
+        Some(policy) => super::stream_http_payload::build_chat_payload_with_policy(
+            cfg, &route, max_tokens, policy,
+        ),
+        None => build_chat_payload_with_evidence(cfg, &route, max_tokens),
+    }
+    .map_err(|_| RequestError::Fatal("reasoning_continuity_invalid".to_string()))?;
     let payload = prepared.payload;
     super::reasoning_wire::replay::record_evidence(cfg.session_id, request_id, &prepared.replayed)
         .await;
@@ -151,54 +186,6 @@ fn request_error_for_limit(error: super::stream_max_tokens::ResolveError) -> Req
     match error {
         super::stream_max_tokens::ResolveError::ContextExhausted => RequestError::PayloadTooLarge,
         super::stream_max_tokens::ResolveError::InvalidLimit => RequestError::InvalidConfiguration,
-    }
-}
-
-pub(super) fn classify_error(
-    status: u16,
-    body: &str,
-    _provider_name: &str,
-    error_policy: super::route_profile::ErrorPolicy,
-    oauth: bool,
-    has_retry_after: bool,
-) -> RequestError {
-    if super::provider_error::is_service_tier_rejection(body) {
-        return RequestError::Fatal(
-            ProviderErrorCode::ServiceTierUnavailable
-                .as_str()
-                .to_string(),
-        );
-    }
-    match status {
-        402 => RequestError::Fatal(
-            super::provider_error::classify_http(error_policy, status, body)
-                .as_str()
-                .to_string(),
-        ),
-        401 if oauth => RequestError::Fatal("oauth_reauthentication_required".into()),
-        403 if oauth => RequestError::Fatal("provider_access_unavailable".into()),
-        401 | 403 => RequestError::Fatal("auth_failed".into()),
-        413 => RequestError::PayloadTooLarge,
-        429 if error_policy == super::route_profile::ErrorPolicy::XaiOauth
-            && !has_retry_after
-            && super::provider_error::safe_details(body)
-                .error_code
-                .as_deref()
-                == Some("resource-exhausted") =>
-        {
-            RequestError::Fatal("provider_quota_exhausted".into())
-        }
-        429 => RequestError::Fatal("rate_limit".into()),
-        500..=599 => RequestError::Fatal(
-            ProviderErrorCode::ProviderTemporarilyUnavailable
-                .as_str()
-                .to_string(),
-        ),
-        _ => RequestError::Fatal(
-            ProviderErrorCode::ProviderRequestRejected
-                .as_str()
-                .to_string(),
-        ),
     }
 }
 

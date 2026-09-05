@@ -158,6 +158,7 @@ fn request_config<'a>(
         max_tokens,
         purpose,
         session_id,
+        tool_result_previews: None,
         continuation_target: None,
     }
 }

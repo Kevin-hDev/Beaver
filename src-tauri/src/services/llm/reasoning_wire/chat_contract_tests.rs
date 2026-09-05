@@ -90,6 +90,7 @@ fn payload(
         purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
         session_id: None,
         fast_mode: FastModeRequest::Unsupported,
+        tool_result_previews: None,
         continuation_target: Some(target),
     };
     let route = if provider_id == "qwen" {
@@ -115,6 +116,7 @@ fn kimi_reasoning_fixture_payload_places_opaque_reasoning_on_the_same_assistant_
         purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
         session_id: None,
         fast_mode: FastModeRequest::Unsupported,
+        tool_result_previews: None,
         continuation_target: Some(&target),
     };
 
@@ -218,6 +220,7 @@ fn required_chat_replay_ignores_legacy_assistants_before_the_barrier() {
         purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
         session_id: None,
         fast_mode: FastModeRequest::Unsupported,
+        tool_result_previews: None,
         continuation_target: Some(&target),
     };
 
@@ -331,6 +334,7 @@ fn deepseek_user_continuation_with_tools_replays_all_prior_reasoning() {
         purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
         session_id: None,
         fast_mode: FastModeRequest::Unsupported,
+        tool_result_previews: None,
         continuation_target: Some(&target),
     };
     let prepared =
@@ -372,6 +376,7 @@ async fn required_missing_envelope_blocks_before_the_transport_records_a_request
         purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
         session_id: Some("required-no-network"),
         fast_mode: FastModeRequest::Unsupported,
+        tool_result_previews: None,
         continuation_target: Some(&target),
     };
 

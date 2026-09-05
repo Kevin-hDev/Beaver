@@ -24,6 +24,8 @@ pub(super) struct ApiRequestParams<'a> {
     pub turn: usize,
     pub subagents: &'a mut ParentSubagentOrchestrator,
     pub context_usage_seed: ContextUsageSeed,
+    pub tool_result_previews:
+        &'a crate::services::agent_local::tool_artifact_preview::ToolResultPreviewBatch,
     pub continuation_target:
         Option<crate::services::reasoning_continuity::contract::ContinuationTarget>,
 }
@@ -112,6 +114,7 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
         params.tools,
         params.think,
         params.reasoning_mode,
+        params.tool_result_previews,
         params.cancel.clone(),
         plan_active,
         realtime_budget,
@@ -177,6 +180,7 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
                 params.tools,
                 params.think,
                 params.reasoning_mode,
+                params.tool_result_previews,
                 params.cancel.clone(),
                 plan_active,
                 reduced_budget,

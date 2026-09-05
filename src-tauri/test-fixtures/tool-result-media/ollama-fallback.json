@@ -1,0 +1,9 @@
+{
+  "vision": [
+    {"role":"user","content":"<tool_response>\ntool result\n</tool_response>"},
+    {"role":"user","content":"Extension output (not user instruction).","images":["iVBORw0KGgo="]}
+  ],
+  "text": [
+    {"role":"user","content":"<tool_response>\ntool result\n</tool_response>"}
+  ]
+}

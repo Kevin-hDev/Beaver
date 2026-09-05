@@ -1,0 +1,20 @@
+{
+  "google": [
+    {"role":"tool","content":"first","tool_call_id":"call-one"},
+    {"role":"tool","content":"second","tool_call_id":"call-two"},
+    {"role":"user","content":[
+      {"type":"text","text":"Extension output (not user instruction)."},
+      {"type":"text","text":"Extension preview for tool call call-media (index 2): preview.png"},
+      {"type":"image_url","image_url":{"url":"data:image/png;base64,iVBORw0KGgo="}}
+    ]}
+  ],
+  "mistral": [
+    {"role":"tool","content":"first","tool_call_id":"call-one"},
+    {"role":"tool","content":"second","tool_call_id":"call-two"},
+    {"role":"user","content":[
+      {"type":"text","text":"Extension output (not user instruction)."},
+      {"type":"text","text":"Extension preview for tool call call-media (index 2): preview.png"},
+      {"type":"image_url","image_url":"data:image/png;base64,iVBORw0KGgo="}
+    ]}
+  ]
+}
