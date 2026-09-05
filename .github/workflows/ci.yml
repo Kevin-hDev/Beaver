@@ -435,6 +435,7 @@ jobs:
       # overlays only the reviewed loader files after installing the old artifact.
       - name: Diagnostic Windows CEF journey
         env:
+          E2E_EXTENSION_ACTIVATION_DIAGNOSTIC: "1"
           E2E_REQUIRE_CEF_SMOKE: "1"
           E2E_SKIP_BUILD: "1"
           E2E_EXTENSION_HOST_DIAGNOSTIC_OVERLAY: "1"

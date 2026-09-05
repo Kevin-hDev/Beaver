@@ -1,6 +1,7 @@
 import { resolve } from "node:path";
 import {
   EXTENSION_HOST_SETUP_TIMEOUT_MS,
+  EXTENSION_DIAGNOSTIC_TIMEOUT_MS,
   EXTENSION_UI_SETUP_TIMEOUT_MS,
   WEBDRIVER_IMPLICIT_TIMEOUT_MS,
   WEBDRIVER_PAGE_LOAD_TIMEOUT_MS,
@@ -15,6 +16,7 @@ const nativeCefSmoke = process.env.E2E_REQUIRE_CEF_SMOKE === "1";
 const nativeWebViewSmoke = process.env.E2E_REQUIRE_WEBVIEW_SMOKE === "1";
 const nativeSmoke = nativeCefSmoke || nativeWebViewSmoke;
 const artifactDirectory = process.env.E2E_ARTIFACT_DIR;
+const activationDiagnostic = process.env.E2E_EXTENSION_ACTIVATION_DIAGNOSTIC === "1";
 const childSessionReadOnlySpec = "./tests/e2e/child-session-read-only.spec.ts";
 const extensionUiRuntimeProofSpec = "./tests/e2e/extensions-ui-runtime-proof.spec.ts";
 const extensionUiAdvancedSpec = "./tests/e2e/extensions-ui-advanced.spec.ts";
@@ -42,8 +44,9 @@ export const config: WebdriverIO.Config = {
     childSessionReadOnlySpec,
     extensionUiRuntimeProofSpec,
     extensionUiAdvancedSpec,
-    extensionUiAcceptanceSpec,
-    extensionApiExpansionSpec,
+    ...(activationDiagnostic
+      ? ["./tests/e2e/extensions-activation-diagnostic.spec.ts"]
+      : [extensionUiAcceptanceSpec, extensionApiExpansionSpec]),
     journeySpec,
   ]],
   maxInstances: 1,
@@ -75,6 +78,7 @@ export const config: WebdriverIO.Config = {
   bail: 1,
   waitforTimeout: 15_000,
   connectionRetryTimeout: 90_000,
-  connectionRetryCount: 1,
-  mochaOpts: { ui: "bdd", timeout: mochaTimeoutMs },
+  // A timed-out mutation must not start a second overlapping activation.
+  connectionRetryCount: activationDiagnostic ? 0 : 1,
+  mochaOpts: { ui: "bdd", timeout: activationDiagnostic ? EXTENSION_DIAGNOSTIC_TIMEOUT_MS : mochaTimeoutMs },
 };
