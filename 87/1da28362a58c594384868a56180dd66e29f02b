@@ -23,3 +23,9 @@ Validation observed locally:
 Remaining platform boundary:
 - The Windows private-store stress and prepared host lifecycle must pass on windows-host.
 - One fresh windows-native packaged build is still required because this commit changes the Rust binary; the old-installer overlay diagnostic cannot prove it.
+
+Windows targeted CI evidence:
+- CI run 33976620417 / Windows extension host smoke: green in 12m21s.
+- Bundled Node runtime preparation: green.
+- Prepared Rust owned-process protocol and restart lifecycle: green.
+- Windows private-store replacement stress (128 atomic ACL-protected writes): green.
