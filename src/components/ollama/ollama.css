@@ -9,27 +9,6 @@
   justify-content: center;
 }
 
-
-.ollama-profile-table {
-  width: 100%;
-  font-size: var(--text-sm);
-}
-
-.ollama-profile-table td {
-  padding: var(--space-sm) 0;
-  border-bottom: 1px solid var(--edge);
-}
-
-.ollama-profile-table td:first-child {
-  color: var(--ink-faint);
-  white-space: nowrap;
-  padding-right: var(--space-md);
-}
-
-.ollama-profile-table td:last-child {
-  color: var(--ink);
-}
-
 .ollama-progress-bar {
   width: 128px;
   height: 6px;

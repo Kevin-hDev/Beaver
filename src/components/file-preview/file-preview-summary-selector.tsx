@@ -123,7 +123,7 @@ export function FilePreviewSummarySelector({
             <button
               key={item}
               type="button"
-              className="fps-menu-item"
+              className="menu-row fps-menu-item"
               role="menuitemradio"
               aria-checked={item === mode}
               onClick={() => selectMode(item)}

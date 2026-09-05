@@ -32,7 +32,7 @@ export function SettingsEntryList({ entries, emptyMessage, onSelect }: SettingsE
   }
 
   return (
-    <SettingsCard>
+    <SettingsCard className="settings-card-list">
       {entries.map((entry) => (
         <button
           key={entry.id}

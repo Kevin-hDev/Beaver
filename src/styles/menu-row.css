@@ -1,0 +1,119 @@
+/* Ligne de couche flottante — source unique pour toute l'application.
+   Menus déroulants, listes de choix, menus contextuels, autocomplétion : ce
+   sont tous la même ligne, et chacun la redessinait. Relevé du 4 septembre
+   2026 : quatorze lignes, cinq retraits horizontaux différents (8, 9, 10, 12
+   et 16 px) et deux couleurs de survol pour le même geste.
+   Référence : le sélecteur de modèle du champ de saisie, choisi par Kevin.
+
+   Ce fichier ne porte que la ligne. Le retrait latéral, lui, a déjà son
+   autorité : --list-gutter, posé en marge interne par le conteneur depuis le
+   25 août 2026. */
+
+[data-theme] {
+  --menu-row-height: 28px;
+  /* En px et non en rem : c'est un détail de cadre, il ne grandit pas avec le
+     réglage de police. Même valeur qu'affiche aujourd'hui le sélecteur de
+     modèle, pour que la référence ne bouge pas d'un pixel. */
+  --menu-row-padding-x: var(--chrome-4);
+  /* Nul par défaut : la hauteur minimale suffit. Les deux menus qui portent une
+     description sous leur libellé le relèvent chez eux. */
+  --menu-row-padding-y: 0px;
+}
+
+.menu-row {
+  display: flex;
+  align-items: center;
+  gap: var(--chrome-2);
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--menu-row-height);
+  padding: var(--menu-row-padding-y) var(--menu-row-padding-x);
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--ease-smooth), color var(--ease-smooth);
+}
+
+/* `data-local-nav-active` marque la ligne atteinte au clavier : elle doit se
+   voir exactement comme celle que la souris survole. */
+.menu-row:hover,
+.menu-row[data-local-nav-active="true"] {
+  background: var(--select-bg);
+}
+
+.menu-row:disabled,
+.menu-row[aria-disabled="true"] {
+  color: var(--ink-faint);
+  cursor: default;
+}
+
+.menu-row:disabled:hover,
+.menu-row[aria-disabled="true"]:hover {
+  background: transparent;
+}
+
+/* En-tête de groupe : même géométrie, survol plus discret que celui des lignes
+   qu'il ouvre — sans quoi le titre d'un groupe se lit comme un choix. */
+.menu-row-header {
+  color: var(--ink-muted);
+  font-weight: 600;
+}
+
+.menu-row-header:hover,
+.menu-row-header[data-local-nav-active="true"] {
+  background: var(--surface-hover);
+}
+
+/* Ligne à deux actions — choisir d'un côté, supprimer de l'autre. Le retrait
+   descend sur le bouton qui la remplit, sinon les seize pixels de bord ne se
+   cliquent plus. La ligne garde son fond, son arrondi et son survol. */
+.menu-row-host {
+  padding: 0;
+}
+
+.menu-row-fill {
+  display: flex;
+  align-items: center;
+  gap: var(--chrome-2);
+  min-width: 0;
+  flex: 1;
+  padding: var(--menu-row-padding-y) var(--menu-row-padding-x);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* Un intitulé qui ne se clique pas — un titre de section, par exemple : il tient
+   la même géométrie que les lignes qu'il annonce, sans en prendre les gestes. */
+.menu-row-static {
+  cursor: default;
+}
+
+.menu-row-static:hover,
+.menu-row-static[data-local-nav-active="true"] {
+  background: transparent;
+}
+
+/* Le compteur et tout ce qui se pose à droite d'un libellé extensible. */
+.menu-row-trailing {
+  margin-left: auto;
+  color: var(--ink-faint);
+  font-weight: 400;
+  flex-shrink: 0;
+}
+
+/* Un libellé de longueur inconnue ne pousse pas la ligne : il se coupe. */
+.menu-row-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

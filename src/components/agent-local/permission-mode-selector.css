@@ -89,25 +89,16 @@
   border-color: transparent;
 }
 
+/* Forme, retrait et survol viennent de src/styles/menu-row.css. Restent ici les
+   trois colonnes et l'air au-dessus et en dessous : chaque ligne porte un
+   libellé et sa description, et se lit mal collée à ses voisines. */
 .perm-mode-option {
-  width: 100%;
+  --menu-row-padding-y: 6px;
   display: grid;
   grid-template-columns: var(--icon-2xl) minmax(0, 1fr) 24px;
-  align-items: center;
   gap: 12px;
-  min-height: 28px;
-  padding: 6px 12px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  border-radius: var(--radius-sm);
   font-size: var(--text-sm);
-  font-family: var(--font-sans);
-  text-align: left;
 }
-
-.perm-mode-option:hover,
-.perm-mode-option[data-local-nav-active="true"] { background: var(--select-bg); }
 
 .perm-mode-option-icon {
   color: var(--ink-muted);

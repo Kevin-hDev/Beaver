@@ -35,7 +35,6 @@
   --signal-error: #f07680;
   --signal-error-border: rgba(240, 118, 128, 0.32);
   --signal-error-pulse: rgba(240, 118, 128, 0.50);
-  --signal-error-pulse-fade: rgba(240, 118, 128, 0);
   --signal-ok: #68c39c;
   --signal-ok-border: rgba(104, 195, 156, 0.32);
   --context-ring-fill: #a8bad0;

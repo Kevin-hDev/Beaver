@@ -16,20 +16,13 @@
   padding: 0 var(--list-gutter);
 }
 
+/* Forme, retrait et survol viennent de src/styles/menu-row.css. */
 .slash-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  min-height: 28px;
-  padding: var(--space-xs) var(--space-md);
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: background var(--ease-smooth);
+  --menu-row-padding-y: var(--space-xs);
 }
 
-.slash-item:hover,
 .slash-item.active {
-  background: var(--surface-hover);
+  background: var(--select-bg);
 }
 
 .slash-item-icon {

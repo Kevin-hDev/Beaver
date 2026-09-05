@@ -25,27 +25,9 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Forme, retrait et survol viennent de src/styles/menu-row.css. */
 .exd-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  min-height: 28px;
-  padding: 0 10px;
-  border: none;
-  border-radius: var(--radius-sm);
-  background: none;
-  color: var(--ink-muted);
   font-size: var(--text-sm);
-  font-family: var(--font-sans);
-  cursor: pointer;
-  text-align: left;
-  transition: background 100ms ease;
-}
-
-.exd-item:hover {
-  background: var(--surface-hover);
-  color: var(--ink);
 }
 
 .exd-icon {

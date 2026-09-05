@@ -130,17 +130,6 @@
   min-width: 0;
 }
 
-.chat-tps-col {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  font-size: var(--text-xs);
-  color: var(--ink-faint);
-  white-space: nowrap;
-  padding-bottom: 12px;
-  min-width: 70px;
-}
-
 /* Repère du bouton de retour en bas, qui se pose au-dessus du champ sans
    occuper de place dans le flux. */
 .chat-input-anchor {

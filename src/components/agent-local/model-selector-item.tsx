@@ -37,7 +37,7 @@ export function ModelSelectorItem({
   const disabled = m.disabled === true;
   return (
     <div
-      className={`ms-item ${isSelected ? "active" : ""} ${disabled ? "ms-item-disabled" : ""}`}
+      className={`menu-row ms-item ${isSelected ? "active" : ""} ${disabled ? "ms-item-disabled" : ""}`}
       role="button"
       aria-disabled={disabled || undefined}
       ref={getItemRef(navId)}

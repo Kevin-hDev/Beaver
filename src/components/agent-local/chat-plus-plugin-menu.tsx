@@ -51,7 +51,7 @@ function PluginToggleRow({
   const switchId = useId();
   const name = extensionDisplayName(t, extension);
   return (
-    <div className="cpm-sub-item cpm-plugin-item">
+    <div className="menu-row cpm-sub-item cpm-plugin-item">
       <span className="cpm-plugin-icon"><ExtensionIcon extension={extension} /></span>
       <label className={extension.enabled ? "cpm-connector-label" : "cpm-connector-label cpm-disabled"} htmlFor={switchId}>
         {name}

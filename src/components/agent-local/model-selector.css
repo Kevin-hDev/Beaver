@@ -55,30 +55,17 @@
   text-align: center;
 }
 
-/* Provider header — collapsable */
+/* Provider header — collapsable.
+   Forme, retrait et survol viennent de src/styles/menu-row.css. Ne reste ici
+   que le maintien en haut de la liste pendant le défilement. */
 .ms-provider {
-  display: flex;
-  align-items: center;
-  gap: 6px;
   min-width: 0;
-  box-sizing: border-box;
-  min-height: 28px;
-  padding: 0 var(--space-md);
-  border-radius: var(--radius);
   font-size: 11px;
-  font-weight: 600;
   color: var(--ink);
-  cursor: pointer;
-  background: transparent;
   position: sticky;
   top: 0;
   z-index: 1;
   user-select: none;
-}
-
-.ms-provider:hover,
-.ms-provider[data-local-nav-active="true"] {
-  background: var(--surface-hover);
 }
 
 .ms-provider-caret {
@@ -124,39 +111,21 @@
 
 /* Favoris header */
 .ms-section-fav {
-  min-height: 28px;
-  padding: 0 var(--space-md);
   font-size: 11px;
-  font-weight: 600;
   color: var(--select-text);
-  background: transparent;
   position: sticky;
   top: 0;
   z-index: 1;
 }
 
-/* Model item */
+/* Model item — forme, retrait et survol viennent de src/styles/menu-row.css.
+   Les trois colonnes lui sont propres : étoile, nom extensible, indicateurs. */
 .ms-item {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) max-content;
-  align-items: center;
-  width: 100%;
   max-width: 100%;
   min-width: 0;
-  box-sizing: border-box;
-  min-height: 28px;
-  padding: 0 var(--space-md);
-  border-radius: var(--radius);
   font-size: var(--text-xs);
-  cursor: pointer;
-  color: var(--ink);
-  transition: background var(--ease-smooth);
-  gap: 6px;
-}
-
-.ms-item:hover,
-.ms-item[data-local-nav-active="true"] {
-  background: var(--select-bg);
 }
 
 .ms-item.active {

@@ -15,7 +15,6 @@
   cursor: pointer;
   transition: background var(--ease-smooth);
   border-radius: var(--radius);
-  margin: 0 var(--list-gutter);
 }
 
 .wk-row:hover {

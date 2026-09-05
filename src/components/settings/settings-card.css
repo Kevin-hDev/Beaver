@@ -59,3 +59,14 @@
 .settings-row-control {
   flex-shrink: 0;
 }
+
+/* Carte qui contient une liste de lignes arrondies — entrées de réglages,
+   réveils, sujets de mémoire. C'est elle qui porte la gouttière, en marge
+   interne, comme tout conteneur de liste depuis le 25 août 2026.
+
+   Posée à l'envers, en marge externe sur la ligne, elle débordait : une ligne en
+   « width: 100% » mesure toute la largeur de la carte, et la marge la décale en
+   plus — son fond de survol sortait de quatre pixels sur la droite. */
+.settings-card-list {
+  padding: var(--list-gutter);
+}

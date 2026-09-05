@@ -149,15 +149,3 @@
   transition: none;
   z-index: 0;
 }
-
-.conv-gw-badge {
-  font-size: 9px;
-  font-weight: 600;
-  padding: 1px 4px;
-  border-radius: var(--radius-xs);
-  background: var(--signal-info-bg);
-  color: var(--signal-info);
-  flex-shrink: 0;
-  margin-left: 4px;
-  letter-spacing: 0.5px;
-}

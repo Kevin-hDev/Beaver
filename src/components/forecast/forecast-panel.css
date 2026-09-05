@@ -47,16 +47,6 @@
   scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
-.fc-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  color: var(--ink-faint);
-  font-size: var(--text-sm);
-  font-family: var(--font-sans);
-}
-
 .fc-loading {
   padding: 20px;
 }

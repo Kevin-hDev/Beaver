@@ -12,7 +12,6 @@ import { ApiKeysConfigDialog } from "./api-keys-config-dialog";
 import { ConnectorsModal } from "./connectors-modal";
 import type { DeepPartial, SettingsNavState } from "@/types/navigation";
 import "./api-keys-main.css";
-import "./api-keys-detail.css";
 import "./api-keys-dialog.css";
 import "./connectors-modal.css";
 import "./connector-card.css";

@@ -44,15 +44,15 @@ export function FileTabMenu({ x, y, editors, onOpen, onOpenWith, onClose }: File
       role="menu"
       tabIndex={0}
     >
-      <button className="fp-menu-item" onClick={onOpen}>{t("filePreview.open")}</button>
+      <button className="menu-row fp-menu-item" onClick={onOpen}>{t("filePreview.open")}</button>
       <div className="fp-menu-sep" />
-      <div className="fp-menu-label">{t("filePreview.openWith")}</div>
+      <div className="menu-row menu-row-static fp-menu-label">{t("filePreview.openWith")}</div>
       {editors.length === 0 ? (
-        <div className="fp-menu-empty">{t("filePreview.noEditorDetected")}</div>
+        <div className="menu-row menu-row-static fp-menu-empty">{t("filePreview.noEditorDetected")}</div>
       ) : editors.map((editor, idx) => (
         <button
           key={idx}
-          className="fp-menu-item"
+          className="menu-row fp-menu-item"
           onClick={() => onOpenWith(editor.path)}
         >
           {editorLabel(editor, suffix)}

@@ -104,8 +104,10 @@
 
 /* Fond, bordure et coins viennent de `.settings-card` (settings-card.css) :
    c'est la même carte, elle ne se redessine pas ici. */
+/* Plus rien à rogner : la gouttière posée en marge interne par
+   .settings-card-list contient les lignes au lieu de couper ce qui dépasse. */
 .mems-topic-list {
-  overflow: hidden;
+  min-width: 0;
 }
 
 .mems-topic {
@@ -121,11 +123,6 @@
   text-align: left;
   cursor: pointer;
   border-radius: var(--radius);
-  margin: 0 var(--list-gutter);
-}
-
-.mems-topic:last-child {
-  border-bottom: 0;
 }
 
 .mems-topic:hover,

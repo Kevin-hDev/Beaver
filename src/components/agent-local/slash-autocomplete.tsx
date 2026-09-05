@@ -42,7 +42,7 @@ export function SlashAutocomplete({ skills, activeIndex, onSelect }: SlashAutoco
       {skills.map((item, i) => (
         <div
           key={isBuiltIn(item) ? item.path : item.id}
-          className={`slash-item ${i === activeIndex ? "active" : ""}`}
+          className={`menu-row slash-item ${i === activeIndex ? "active" : ""}`}
           role="button"
           tabIndex={0}
           onClick={() => onSelect(item)}

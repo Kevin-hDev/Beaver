@@ -40,7 +40,6 @@
   --signal-error: #ef4444;
   --signal-error-border: rgba(239, 68, 68, 0.3);
   --signal-error-pulse: rgba(239, 68, 68, 0.5);
-  --signal-error-pulse-fade: rgba(239, 68, 68, 0);
   --signal-ok: #22c55e;
   --signal-ok-border: rgba(34, 197, 94, 0.3);
   --context-ring-fill: #b8b8bf;

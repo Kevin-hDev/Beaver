@@ -83,7 +83,7 @@ export function ForecastScenarioMenuSelect({
         <button
           key={option.value}
           ref={nav.getItemRef(option.value)}
-          className={`fcs-menu-option ${option.value === value ? "is-selected" : ""}`}
+          className={`menu-row fcs-menu-option ${option.value === value ? "is-selected" : ""}`}
           type="button"
           data-local-nav-item="true"
           data-local-nav-active={nav.isActive(option.value) ? "true" : undefined}

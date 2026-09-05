@@ -60,36 +60,42 @@
   letter-spacing: 0.04em;
 }
 
+/* Forme, retrait et survol viennent de src/styles/menu-row.css. La ligne porte
+   deux gestes — choisir la branche, la supprimer — d'où menu-row-host : le
+   retrait descend sur le bouton de choix pour qu'il couvre toute la ligne. */
 .bs-item {
-  display: flex;
-  align-items: center;
-  border-radius: var(--radius-sm);
   font-size: var(--text-xs);
   color: var(--ink-muted);
-  transition: background var(--ease-smooth);
-}
-
-.bs-item:hover {
-  background: var(--surface-hover);
 }
 
 .bs-item.bs-selected {
   color: var(--ink);
 }
 
+/* La ligne porte son retrait à droite, pour la coche qui s'y range. */
+.bs-item {
+  padding-right: var(--menu-row-padding-x);
+}
+
+/* Le bouton garde son retrait à gauche et abandonne celui de droite : le nom de
+   branche s'étend alors jusqu'à la poubelle au lieu de s'arrêter avant. */
 .bs-item-select {
+  --menu-row-padding-y: var(--space-xs);
+  padding-right: 0;
+}
+
+/* La coche se range au bord droit, la poubelle vient se placer à sa gauche au
+   survol. L'inverse — coche au milieu, poubelle au bord — faisait apparaître au
+   survol une action destructive à l'endroit le plus exposé de la ligne.
+
+   Sa place reste tenue quand la ligne n'est pas la branche courante : sans
+   cela, les poubelles d'une ligne à l'autre ne s'aligneraient pas. */
+.bs-item-check {
   display: flex;
-  min-width: 0;
-  flex: 1;
-  align-items: center;
-  gap: var(--space-sm);
-  padding: var(--space-xs) var(--space-sm);
-  border: 0;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-  font: inherit;
-  text-align: left;
+  justify-content: flex-end;
+  flex-shrink: 0;
+  width: var(--icon-sm);
+  color: var(--ink);
 }
 
 .bs-item-info {
@@ -106,8 +112,11 @@
 }
 
 .bs-item-detail {
+  overflow: hidden;
   font-size: 10px;
   color: var(--ink-faint);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .bs-sep {

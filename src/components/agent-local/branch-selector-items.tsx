@@ -41,16 +41,18 @@ export function BranchSelectorBranchItem({
   deleteControl,
 }: BranchSelectorBranchItemProps) {
   return (
-    <div className={`bs-item ${branch.is_current ? "bs-selected" : ""}`}>
-      <button className="bs-item-select" type="button" onClick={() => onSelect(branch.name)}>
+    <div className={`menu-row menu-row-host bs-item ${branch.is_current ? "bs-selected" : ""}`}>
+      <button className="menu-row-fill bs-item-select" type="button" onClick={() => onSelect(branch.name)}>
         <GitBranch size="var(--icon-sm)" />
         <span className="bs-item-info">
           <span className="bs-item-name">{branch.name}</span>
           {dirtyLabel && <span className="bs-item-detail">{dirtyLabel}</span>}
         </span>
-        {branch.is_current && <Check size="var(--icon-sm)" />}
       </button>
       {deleteControl}
+      <span className="bs-item-check">
+        {branch.is_current && <Check size="var(--icon-sm)" />}
+      </span>
     </div>
   );
 }
@@ -63,8 +65,8 @@ export function BranchSelectorWorktreeItem({
   const name = worktree.branch || worktree.path;
 
   return (
-    <div className="bs-item">
-      <button className="bs-item-select" type="button" onClick={() => onSelect(worktree.path, worktree.branch)}>
+    <div className="menu-row menu-row-host bs-item">
+      <button className="menu-row-fill bs-item-select" type="button" onClick={() => onSelect(worktree.path, worktree.branch)}>
         <GitBranch size="var(--icon-sm)" />
         <span className="bs-item-info">
           <span className="bs-item-name">{name}</span>
@@ -72,6 +74,7 @@ export function BranchSelectorWorktreeItem({
         </span>
       </button>
       {deleteControl}
+      <span className="bs-item-check" />
     </div>
   );
 }
@@ -79,7 +82,7 @@ export function BranchSelectorWorktreeItem({
 export function BranchSelectorCreateItem({ label, onStart }: BranchSelectorCreateItemProps) {
   return (
     <div
-      className="bs-item"
+      className="menu-row menu-row-host bs-item"
       role="button"
       tabIndex={0}
       onClick={onStart}
@@ -88,7 +91,7 @@ export function BranchSelectorCreateItem({ label, onStart }: BranchSelectorCreat
       }}
     >
       <Plus size="var(--icon-sm)" />
-      <span>{label}</span>
+      <span className="menu-row-label">{label}</span>
     </div>
   );
 }

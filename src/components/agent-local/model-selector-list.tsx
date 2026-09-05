@@ -75,7 +75,7 @@ export function ModelSelectorList({
     <div {...listProps}>
       {favModels.length > 0 && (
         <div>
-          <div className="ms-section ms-section-fav">★ {t("agentLocal.favorites")}</div>
+          <div className="menu-row menu-row-header menu-row-static ms-section ms-section-fav">★ {t("agentLocal.favorites")}</div>
           {favModels.map((m) => (
             <ModelSelectorItem
               key={`fav:${m.provider_id}:${m.id}`}
@@ -102,7 +102,7 @@ export function ModelSelectorList({
         return (
           <div key={providerId}>
             <div
-              className="ms-provider"
+              className="menu-row menu-row-header ms-provider"
               role="button"
               ref={getItemRef(providerNavId)}
               tabIndex={isActive(providerNavId) ? 0 : -1}

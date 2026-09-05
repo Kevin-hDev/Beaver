@@ -6,7 +6,6 @@
 .bs-delete-btn {
   width: auto;
   min-width: var(--btn-height);
-  margin-right: 2px;
   padding: 0 var(--space-sm);
   font-size: var(--text-2xs);
   font-weight: 600;

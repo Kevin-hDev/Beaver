@@ -35,7 +35,7 @@ export function WakeupList({ wakeups, summaries, onSelect, onCreate }: WakeupLis
             <div className="wk-empty">{t("heartbeat.empty")}</div>
           </SettingsCard>
         ) : (
-          <SettingsCard>
+          <SettingsCard className="settings-card-list">
             {wakeups.map((w) => (
               <WakeupRow
                 key={w.id}

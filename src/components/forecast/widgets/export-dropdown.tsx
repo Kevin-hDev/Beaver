@@ -74,7 +74,7 @@ export function ExportDropdown({ analysisId, onExport }: ExportDropdownProps) {
         <button
           key={f.key}
           ref={nav.getItemRef(f.key)}
-          className="exd-item"
+          className="menu-row exd-item"
           data-local-nav-item="true"
           data-local-nav-active={nav.isActive(f.key) ? "true" : undefined}
           tabIndex={nav.isActive(f.key) ? 0 : -1}

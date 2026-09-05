@@ -80,14 +80,14 @@
   -webkit-backdrop-filter: var(--popover-backdrop-filter, none);
 }
 
+/* Cette ligne n'est pas un choix mais elle vit dans le menu : elle en suit la
+   géométrie, sinon son libellé se décale sous ceux des options. Seule sa hauteur
+   lui reste propre : elle porte un interrupteur, plus haut qu'une ligne de
+   texte, qui toucherait les bords aux 28 px des autres lignes. */
 .rs-fast-row {
-  display: flex;
-  align-items: center;
   justify-content: space-between;
   gap: var(--space-lg);
   min-height: 32px;
-  padding: 0 9px;
-  color: var(--ink);
   font-size: var(--text-xs);
 }
 
@@ -103,28 +103,16 @@
   color: var(--ink-muted);
 }
 
+/* Forme, retrait et survol viennent de src/styles/menu-row.css. Reste ici le
+   libellé poussé d'un bout à l'autre de la ligne, propre à ce menu. */
 .rs-option {
-  display: flex;
-  align-items: center;
   justify-content: space-between;
   gap: var(--space-md);
-  width: 100%;
-  min-height: 28px;
-  padding: 0 9px;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--ink-muted);
-  font: inherit;
   font-size: var(--text-xs);
-  text-align: left;
-  cursor: pointer;
 }
 
-.rs-option:hover,
 .rs-option:focus-visible {
-  background: var(--surface-hover);
-  color: var(--ink);
+  background: var(--select-bg);
   outline: none;
 }
 

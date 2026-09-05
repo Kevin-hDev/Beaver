@@ -37,7 +37,7 @@ export function ChatPlusCompressionMenu({
         <button
           key={profile.id}
           type="button"
-          className="cpm-sub-item cpcm-item"
+          className="menu-row cpm-sub-item cpcm-item"
           title={profile.name}
           disabled={pendingId !== null}
           aria-current={selectedId === profile.id ? "true" : undefined}
