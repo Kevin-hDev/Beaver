@@ -1,7 +1,13 @@
 #![cfg(windows)]
 #![allow(dead_code)]
 
+#[path = "../../../src/services/windows_fs_retry.rs"]
+mod windows_fs_retry;
+
 mod services {
+    // Mirror the production module path so this isolated crate compiles the real implementation.
+    pub(crate) use crate::windows_fs_retry;
+
     pub mod paths {
         pub fn data_dir() -> std::path::PathBuf {
             std::env::temp_dir().join("cl-go-private-store-integration")
