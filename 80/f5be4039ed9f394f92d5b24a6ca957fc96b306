@@ -1,0 +1,86 @@
+# Correctifs de la revue API — note pour le reviewer
+
+## Périmètre et intégration
+
+Corrections sur `codex/extensions-api-expansion`, après fusion de `main`
+(`1ff5cf3d`) dans cette branche par `b50c53ae`. Rien n'est fusionné vers main.
+Les changements indépendants du répertoire de travail principal sont préservés.
+La documentation de plan et de revue reste privée et ignorée par Git.
+
+## Points importants
+
+- IMP-1 : les seuils de découverte consomment maintenant les valeurs générées.
+- IMP-2 : `contracts:check` utilise une liste unique et exige, pour chaque nom
+  exact, une collecte et une réussite uniques. Zéro test n'est plus un succès.
+  Deux tests Node protègent les sorties vides, ignorées, erronées et interrompues.
+- IMP-3 : le dernier segment d'un skill est `SKILL.md` ou `skill.md`, vérifié
+  dans l'Hôte et Rust. Les ressources ordinaires gardent leurs propres noms.
+- IMP-4 : un champ futur dans un artefact n'empêche plus de lire la session.
+  La forme connue reste validée ; les variantes inconnues ne sont pas acceptées
+  aveuglément. Test réel de session future conservée sur disque.
+- IMP-5 : budget partagé de lecture/vérification d'historique de 64 Mio par
+  ouverture. Réservation du pire coût de chaque lecture, sonde de dépassement
+  comprise : ne pas faire confiance à la taille persistée d'un fichier modifié.
+  Ce choix conservateur vérifie au plus trois fichiers de plafond 20 Mio ; les
+  suivants affichent « Non vérifié », dans les sept langues, jamais « Intact ».
+  Ce n'est ni un cache ni une vérification différée. Les aperçus destinés au
+  modèle gardent leurs propres contrôles et budgets.
+- IMP-6 : les validations locales ne remplacent pas les trois parcours CI
+  empaquetés ni la validation visuelle. Voir l'état d'exécution ci-dessous.
+
+## Points mineurs et décisions conservées
+
+1. Inspection d'un index incohérent : refus atomique maintenu et expliqué sur
+   le chemin exécuté. Pas de résultat partiel qui ferait croire le catalogue sain.
+2. Le catalogue compact est porté par la description de l'outil de liste, pas
+   ajouté au prompt système. La documentation est alignée sur ce comportement.
+3. Projection JSON : comptage linéaire des octets échappés ; comparaison par test
+   avec la sérialisation réelle, contrôles ASCII et Unicode compris.
+4. La limite du stockage de découverte référence l'autorité existante.
+5. La réponse complète d'enregistrement passe par le vrai encodeur de protocole
+   avant publication des outils. L'enveloppe réserve le pire identifiant accepté.
+   Aucun nouveau plafond arbitraire de demi-message ; test de frontière exact et
+   test d'extension refusée dont l'outil n'est effectivement pas publié.
+6. Noms DOS réservés et caractères C1 refusés dans l'Hôte aussi.
+7. Méthodes facultatives du SDK corrigées, gardes d'exemple ajoutées, commentaires
+   de fonctionnalité future retirés.
+8. Empreintes de contenu hexadécimales acceptées sans différence de casse ; ce ne
+   sont pas des secrets. Test sur un fichier temporaire réel.
+9. Une sauvegarde vide de migration reste conservée intentionnellement : aucune
+   suppression automatique d'une preuve antérieure. Nom de trace corrigé.
+10. Noms DOS avec chiffres en exposant également refusés dans Rust et Node.
+11. Note du commit de persistance complétée, sans effacement : provenance de la
+    fixture `335c3959d5ca9a3c1b9a90e7aad50d75a2cf3a61` vérifiée.
+12. L'absence d'artefacts se lit déjà comme une liste vide grâce à serde(default).
+    Aucun réécriture de session ajoutée uniquement pour matérialiser ce défaut.
+13. Annulation d'une lecture bloquante : coopérative entre blocs. Un appel système
+    déjà engagé peut terminer ; le résultat annulé n'est pas publié. Limite documentée.
+14. Le lot borné porte le plafond des aperçus ; projections redondantes retirées.
+    Le chemin Anthropic qui reçoit une collection différente conserve sa borne.
+15. Classes CSS de statut sans règle supprimées ; primitive partagée conservée.
+16. Plan explicite sur la réutilisation des commandes CI existantes, pas de travail
+    fictif présenté comme une modification de workflow.
+17. Test explicite des six routes secondaires et de leur repli média.
+
+## Validation observée avant le dernier contrôle natif
+
+- `cargo test --lib` : 4 990 réussis, 17 ignorés, aucun échec.
+- `npm test` : 561 fichiers Vitest, 3 060 tests réussis ; commande complète sortie 0,
+  incluant aussi les suites Node de build, CEF, runtime et contrats.
+- Hôte : 117 tests réussis ; tests ciblés de protocole et d'expansion également verts.
+- `npm run contracts:check` : les 14 noms exacts ont chacun exécuté un test réussi.
+- `npm run lint`, `npx tsc --noEmit`, `cargo clippy --all-targets -- -D warnings`,
+  contrôle de format Rust, tests du lanceur E2E : sorties 0 observées.
+- Relecture du diff et `git diff --check` effectués.
+- Le build natif a révélé un vrai oubli non compilé par les tests ordinaires :
+  `fixture_mode` n'avait pas de définition sans assertions de débogage. Le contexte
+  partagé doit explicitement recevoir `false` dans ce profil. Correction ajoutée.
+  Des avertissements préexistants de fonctions de fixture inutilisées restent visibles
+  dans ce profil ; aucune prétention de compilation sans avertissements.
+
+## Acceptation encore distincte des corrections
+
+Au moment de rédaction : nouvelle exécution macOS empaquetée en cours, Windows et
+Linux non exécutés sur cette révision ; validation visuelle non déclarée acquise.
+L'addendum de la note Git précisera les résultats effectivement obtenus ensuite.
+Ne pas fusionner la fonctionnalité dans main sur la seule base des tests unitaires.
