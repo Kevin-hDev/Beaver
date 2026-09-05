@@ -1,4 +1,5 @@
 import { resolve } from "node:path";
+import { applyWebdriverTimeouts } from "./scripts/e2e/webdriver-timeouts";
 import {
   EXTENSION_HOST_SETUP_TIMEOUT_MS,
   EXTENSION_UI_SETUP_TIMEOUT_MS,
@@ -75,6 +76,10 @@ export const config: WebdriverIO.Config = {
   bail: 1,
   waitforTimeout: 15_000,
   connectionRetryTimeout: 90_000,
-  connectionRetryCount: 1,
+  // A timed-out script can still be mutating native state; never send it twice.
+  connectionRetryCount: 0,
+  before: async (_capabilities, _specs, session: WebdriverIO.Browser) => {
+    await applyWebdriverTimeouts(session);
+  },
   mochaOpts: { ui: "bdd", timeout: mochaTimeoutMs },
 };

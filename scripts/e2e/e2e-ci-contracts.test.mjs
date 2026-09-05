@@ -19,6 +19,14 @@ const hostSetupSource = readSource("../../tests/e2e/extension-host-setup.ts");
 const packagedSource = readSource("./run-packaged.mjs");
 const ci = loadYaml(ciSource);
 
+test("application data stays outside the installation tree with one cleanup owner", () => {
+  assert.match(runnerSource, /const dataPath = join\(profilePath, "data"\)/u);
+  assert.match(runnerSource, /CL_GO_CEF_TEST_DATA_DIR: dataPath/u);
+  assert.match(runnerSource, /prepareUiRuntimeProof\(repoRoot, dataPath\)/u);
+  assert.match(readSource("./packaged-app.mjs"), /resolve\(profilePath, "packaged-app"\)/u);
+  assert.match(runnerSource, /cleanupProfile\(profilePath,/u);
+});
+
 test("CI can target only the native boundary that needs diagnosis", () => {
   assert.deepEqual(ci.on.workflow_dispatch.inputs.target.options, [
     "all",

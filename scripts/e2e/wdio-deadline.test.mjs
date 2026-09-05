@@ -42,6 +42,17 @@ test("WebdriverIO covers both native journeys and extension setup", async () => 
       deadlines.WEBDRIVER_PAGE_LOAD_TIMEOUT_MS,
     );
     assert.equal(module.config.reporters?.[0], "spec");
+    assert.equal(module.config.connectionRetryCount, 0);
+    let actual = { script: 30000, implicit: 0, pageLoad: 300000 };
+    const session = {
+      setTimeout: async (requested) => { actual = { ...requested }; },
+      getTimeouts: async () => actual,
+    };
+    await module.config.before({}, [], session);
+    assert.equal(actual.script, deadlines.EXTENSION_HOST_SETUP_TIMEOUT_MS);
+    actual.script = 30000;
+    session.setTimeout = async () => {};
+    await assert.rejects(module.config.before({}, [], session), /not applied/u);
     assert.equal(module.config.reporters?.[1]?.[0], "junit");
     assert.equal(
       module.config.reporters?.[1]?.[1]?.outputDir,

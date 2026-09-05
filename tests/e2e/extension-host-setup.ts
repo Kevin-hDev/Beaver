@@ -1,4 +1,12 @@
 import { invokeTauri } from "./tauri-invoke";
+import { waitForHostReady } from "../../scripts/e2e/extension-host-ready";
+
+export async function waitForExtensionHost(): Promise<void> {
+  await waitForHostReady(
+    () => invokeTauri("get_extension_host_status"),
+    (condition, options) => browser.waitUntil(condition, options),
+  );
+}
 
 let initialization: Promise<unknown> | undefined;
 

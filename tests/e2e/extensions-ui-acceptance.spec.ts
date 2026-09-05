@@ -10,11 +10,10 @@ import zhLocale from "../../src/i18n/zh.json";
 import { RESOLVED_THEME_OPTIONS } from "../../src/lib/app-themes";
 import { extensionThemeChoice } from "../../src/features/extension-ui/themes/theme-parser";
 import {
-  EXTENSION_HOST_SETUP_TIMEOUT_MS,
   EXTENSION_UI_SETUP_TIMEOUT_MS,
 } from "../../scripts/e2e/extension-setup-deadline";
 import { completeOnboarding } from "./onboarding-flow";
-import { initializeExtensionHost } from "./extension-host-setup";
+import { initializeExtensionHost, waitForExtensionHost } from "./extension-host-setup";
 import { setMinimumViewport } from "./native-viewport";
 import { invokeTauri, waitForTauriBridge } from "./tauri-invoke";
 
@@ -231,26 +230,4 @@ async function waitForCatalog(extensionIds: readonly string[]): Promise<CatalogS
     return extensionIds.every((extensionId) => identities.has(extensionId));
   }, { timeoutMsg: "Installed extension UI catalog did not become ready" });
   return snapshot;
-}
-
-async function waitForExtensionHost(): Promise<void> {
-  let latest: { state: string; lastError?: string; nodeVersion?: string } = {
-    state: "unknown",
-  };
-  try {
-    await browser.waitUntil(async () => {
-      latest = await invokeTauri("get_extension_host_status");
-      if (latest.state === "error") {
-        throw new Error(`Extension host failed to start: ${latest.lastError ?? "unknown"}`);
-      }
-      return latest.state === "running";
-    }, {
-      timeout: EXTENSION_HOST_SETUP_TIMEOUT_MS,
-      timeoutMsg: "Extension host did not become ready",
-    });
-  } catch {
-    throw new Error(
-      `Extension host unavailable: state=${latest.state}; code=${latest.lastError ?? "none"}; node=${latest.nodeVersion ?? "none"}`,
-    );
-  }
 }

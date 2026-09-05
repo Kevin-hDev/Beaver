@@ -8,9 +8,9 @@ import itLocale from "../../src/i18n/it.json";
 import jaLocale from "../../src/i18n/ja.json";
 import zhLocale from "../../src/i18n/zh.json";
 import { RESOLVED_THEME_OPTIONS } from "../../src/lib/app-themes";
-import { EXTENSION_HOST_SETUP_TIMEOUT_MS } from "../../scripts/e2e/extension-setup-deadline";
+import { EXTENSION_UI_SETUP_TIMEOUT_MS } from "../../scripts/e2e/extension-setup-deadline";
 import { completeOnboarding } from "./onboarding-flow";
-import { initializeExtensionHost } from "./extension-host-setup";
+import { initializeExtensionHost, waitForExtensionHost } from "./extension-host-setup";
 import { setMinimumViewport } from "./native-viewport";
 import { invokeTauri, waitForTauriBridge } from "./tauri-invoke";
 
@@ -39,7 +39,7 @@ describe("API expansion packaged acceptance", () => {
   let installed = false;
 
   before(async function () {
-    this.timeout(EXTENSION_HOST_SETUP_TIMEOUT_MS);
+    this.timeout(EXTENSION_UI_SETUP_TIMEOUT_MS);
     await completeOnboarding();
     await waitForTauriBridge();
     await initializeExtensionHost();
@@ -238,16 +238,4 @@ async function view(): Promise<ExtensionView> {
   const extension = extensions.find(({ manifest }) => manifest.id === extensionId);
   assert.ok(extension, "API expansion fixture is missing from the extension registry");
   return extension;
-}
-
-async function waitForExtensionHost(): Promise<void> {
-  let latest = { state: "unknown", lastError: undefined as string | undefined };
-  await browser.waitUntil(async () => {
-    latest = await invokeTauri("get_extension_host_status");
-    if (latest.state === "error") throw new Error(latest.lastError ?? "host_error");
-    return latest.state === "running";
-  }, {
-    timeout: EXTENSION_HOST_SETUP_TIMEOUT_MS,
-    timeoutMsg: `Extension host unavailable: ${latest.state}`,
-  });
 }
