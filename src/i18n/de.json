@@ -467,6 +467,9 @@
         "internal": "Ein interner Fehler hat den Vorgang verhindert."
       },
       "toggleDetails": "Tool-Details anzeigen",
+      "artifacts": "Erzeugte Dateien",
+      "openArtifact": "{{name}} öffnen",
+      "artifactStatus": { "intact": "Unverändert", "absent": "Fehlt", "modified": "Geändert", "inaccessible": "Nicht verfügbar" },
       "groups": {
         "exploration": "Erkundung",
         "modification": "Änderungen",

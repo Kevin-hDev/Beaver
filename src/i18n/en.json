@@ -474,6 +474,9 @@
         "internal": "An internal error prevented the operation."
       },
       "toggleDetails": "Show tool details",
+      "artifacts": "Produced files",
+      "openArtifact": "Open {{name}}",
+      "artifactStatus": { "intact": "Intact", "absent": "Missing", "modified": "Modified", "inaccessible": "Inaccessible" },
       "groups": {
         "exploration": "Exploration",
         "modification": "Changes",

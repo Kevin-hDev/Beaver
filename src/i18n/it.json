@@ -467,6 +467,9 @@
         "internal": "Un errore interno ha impedito l’operazione."
       },
       "toggleDetails": "Mostra dettagli degli strumenti",
+      "artifacts": "File prodotti",
+      "openArtifact": "Apri {{name}}",
+      "artifactStatus": { "intact": "Integro", "absent": "Assente", "modified": "Modificato", "inaccessible": "Inaccessibile" },
       "groups": {
         "exploration": "Esplorazione",
         "modification": "Modifiche",

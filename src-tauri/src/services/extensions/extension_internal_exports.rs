@@ -1,3 +1,4 @@
+pub(crate) use super::resource_loader::load_resource_for_history as load_extension_resource_for_history;
 pub(crate) use super::resource_loader_prepare::{
     prepare_for_session as prepare_extension_resource_for_session,
     revalidate_for_resolution as revalidate_extension_resource_for_resolution, PreparedResource,

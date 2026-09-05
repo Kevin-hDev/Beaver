@@ -79,6 +79,7 @@ mod registry_mutation_error;
 pub(crate) mod registry_recovery;
 mod registry_state;
 mod registry_sync;
+mod resource_identifier;
 mod resource_loader;
 mod resource_loader_prepare;
 mod runtime;
@@ -208,6 +209,7 @@ pub(crate) use installer::{
 pub(crate) use manifest::load_local as install_local;
 pub(crate) use operation_error::{report as report_operation_error, Operation};
 pub(crate) use operation_failure::OperationFailure;
+pub(crate) use resource_identifier::parse as parse_qualified_contribution_id;
 pub(crate) use resource_loader::{
     load_skill_for_session as load_extension_skill_for_session, LoadedResource, ResourceLoadError,
 };

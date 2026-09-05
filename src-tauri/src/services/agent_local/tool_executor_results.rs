@@ -2,6 +2,10 @@ use super::stream_events::AgentEventEmitter;
 use super::types_ollama::{ChatMessage, StreamEvent};
 use super::types_tools::{ToolFollowUp, ToolResult};
 
+#[expect(
+    clippy::too_many_arguments,
+    reason = "emission keeps its event identity, path and verified metadata together"
+)]
 pub fn push_tool_result(
     on_event: &AgentEventEmitter,
     messages: &mut Vec<ChatMessage>,
@@ -10,6 +14,7 @@ pub fn push_tool_result(
     tool_call_index: usize,
     tool_call_id: Option<&str>,
     resolved_path: Option<String>,
+    artifacts: Vec<super::tool_artifact_record::ToolArtifactRecord>,
 ) -> ToolFollowUp {
     emit_tool_result(
         on_event,
@@ -18,6 +23,7 @@ pub fn push_tool_result(
         tool_call_index,
         tool_call_id,
         resolved_path,
+        artifacts,
     );
     push_tool_message(messages, name, tr, tool_call_id)
 }
@@ -29,6 +35,7 @@ pub fn emit_tool_result(
     tool_call_index: usize,
     tool_call_id: Option<&str>,
     resolved_path: Option<String>,
+    artifacts: Vec<super::tool_artifact_record::ToolArtifactRecord>,
 ) {
     let domain = super::memory_tool::resolved_path_domain(resolved_path.as_deref());
     let _ = on_event.send(StreamEvent::ToolResult {
@@ -47,6 +54,7 @@ pub fn emit_tool_result(
         affected_paths: tr.affected_paths().to_vec(),
         file_changes: tr.file_changes().to_vec(),
         start_line: tr.start_line(),
+        artifacts: artifacts.iter().map(Into::into).collect(),
     });
 }
 

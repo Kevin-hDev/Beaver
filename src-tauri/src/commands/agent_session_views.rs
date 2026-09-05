@@ -5,7 +5,9 @@ use crate::services::agent_local::session_store;
 #[tauri::command]
 pub async fn get_agent_session(id: String) -> Result<AgentSessionView, String> {
     let session = session_store::get(&id).await?;
-    crate::services::agent_local::session_view::from_session(&session)
+    let mut view = crate::services::agent_local::session_view::from_session(&session)?;
+    crate::services::agent_local::session_artifact_verification::apply(&session, &mut view).await;
+    Ok(view)
 }
 
 #[tauri::command]

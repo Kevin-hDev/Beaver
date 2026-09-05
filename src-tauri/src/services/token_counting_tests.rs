@@ -65,6 +65,7 @@ fn agent_estimate_counts_tool_payload_once() {
         start_line: None,
         affected_paths: vec![],
         file_changes: vec![],
+        artifacts: vec![],
     };
     let message = AgentMessage {
         id: uuid::Uuid::new_v4().to_string(),

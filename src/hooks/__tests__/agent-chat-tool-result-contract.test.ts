@@ -18,6 +18,29 @@ function state(): ManagedStreamState {
 }
 
 describe("contrat des résultats d'outils", () => {
+  it("conserve les métadonnées d'artefact sans octets dans l'historique", () => {
+    const current = toolResult(toolCall(state(), "read_file", 0), "read_file", 0, "ok", {
+      artifacts: [{
+        name: "preview.png",
+        mime_type: "image/png",
+        bytes: 8,
+        sha256: "a".repeat(64),
+        purpose: "preview",
+        source: {
+          kind: "extension_resource",
+          resource_id: "extension:sample:preview",
+        },
+      }],
+    });
+
+    const record = toolsToRecords(current.currentTools)[0];
+    const json = JSON.stringify(record);
+    expect(record.artifacts).toHaveLength(1);
+    expect(json).not.toContain("base64");
+    expect(json).not.toContain("relative_path");
+    expect(json).not.toContain("catalog_fingerprint");
+    expect(json).not.toContain("grant");
+  });
   it("ne décale pas les résultats quand un outil interne est masqué", () => {
     let current = state();
     current = toolCall(current, "todo_history", 0);
@@ -217,9 +240,10 @@ function toolResult(
   name: string,
   toolCallIndex: number,
   content: string,
+  extras: Record<string, unknown> = {},
 ): ManagedStreamState {
   return applyStreamEvent(current, {
     event: "toolResult",
-    data: { name, toolCallIndex, content, isError: false, status: "success" },
+    data: { name, toolCallIndex, content, isError: false, status: "success", ...extras },
   }).state;
 }

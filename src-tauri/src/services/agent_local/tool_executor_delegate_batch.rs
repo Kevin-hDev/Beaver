@@ -213,6 +213,7 @@ fn emit_result(
         index,
         tool_call_ids.get(index).map(String::as_str),
         None,
+        Vec::new(),
     );
 }
 

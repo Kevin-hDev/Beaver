@@ -467,6 +467,9 @@
         "internal": "Un error interno impidió la operación."
       },
       "toggleDetails": "Mostrar detalles de herramientas",
+      "artifacts": "Archivos producidos",
+      "openArtifact": "Abrir {{name}}",
+      "artifactStatus": { "intact": "Intacto", "absent": "Ausente", "modified": "Modificado", "inaccessible": "Inaccesible" },
       "groups": {
         "exploration": "Exploración",
         "modification": "Cambios",

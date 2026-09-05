@@ -6,11 +6,8 @@ pub(crate) const MAX_OUTCOME_ARTIFACTS: usize =
 
 #[derive(Debug)]
 pub(crate) struct AttributedArtifact {
-    #[cfg_attr(not(test), expect(dead_code, reason = "P6 persists call attribution"))]
     pub tool_call_index: usize,
-    #[cfg_attr(not(test), expect(dead_code, reason = "P6 persists call attribution"))]
     pub tool_call_id: Option<String>,
-    #[cfg_attr(not(test), expect(dead_code, reason = "P6 delivers retained artifact bytes"))]
     pub artifact: EphemeralArtifact,
 }
 
@@ -40,7 +37,6 @@ impl ToolExecutionArtifacts {
         self.record_many(other.0)
     }
 
-    #[cfg_attr(not(test), expect(dead_code, reason = "P6 consumes retained artifacts"))]
     pub(crate) fn as_slice(&self) -> &[AttributedArtifact] {
         &self.0
     }

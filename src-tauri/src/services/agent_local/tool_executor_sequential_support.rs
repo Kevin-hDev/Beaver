@@ -56,17 +56,17 @@ pub(super) async fn push_and_compress(
     let resolved_path = resolve_tool_path(name, args, working_dir);
     let mut outcome = ToolExecutionOutcome::with_compressed(false);
     let artifacts = tr.take_ephemeral_artifacts();
-    if outcome
-        .record_artifacts(idx, tool_call_ids.get(idx).map(String::as_str), artifacts)
-        .is_err()
-    {
-        tr = ToolResult::error(
-            "Résultat d'extension indisponible.",
-            crate::services::extensions::error_codes::RESULT_TOO_LARGE,
-            super::tool_result_contract::ToolErrorCategory::Unavailable,
-            false,
-        );
-    }
+    let artifact_records = outcome
+        .retain_artifacts(idx, tool_call_ids.get(idx).map(String::as_str), artifacts)
+        .unwrap_or_else(|()| {
+            tr = ToolResult::error(
+                "Résultat d'extension indisponible.",
+                crate::services::extensions::error_codes::RESULT_TOO_LARGE,
+                super::tool_result_contract::ToolErrorCategory::Unavailable,
+                false,
+            );
+            Vec::new()
+        });
     let follow_up = push_tool_result(
         on_event,
         messages,
@@ -75,6 +75,7 @@ pub(super) async fn push_and_compress(
         idx,
         tool_call_ids.get(idx).map(String::as_str),
         resolved_path,
+        artifact_records,
     );
     let compressed = match compression {
         Some(compression) => compression.try_run(messages).await,

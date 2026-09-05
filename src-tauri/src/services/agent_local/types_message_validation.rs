@@ -23,6 +23,9 @@ pub(super) fn validate(message: &AgentMessage) -> Result<(), String> {
         if record.file_changes.len() > super::tool_file_changes::MAX_FILE_CHANGES {
             return Err("Historique de fichiers invalide.".to_string());
         }
+        if super::tool_artifact_record::validate(&record.artifacts).is_err() {
+            return Err("Historique d'artefacts invalide.".to_string());
+        }
         if record.affected_paths.len() > super::types_tool_result_details::MAX_AFFECTED_PATHS
             || record
                 .affected_paths

@@ -81,7 +81,10 @@ async fn finish_prepared(
     let stop = outcome.apply_follow_ups(&mut context.messages[tool_start..tool_end])?;
     if let Some(journal) = context.journal.as_deref_mut() {
         journal
-            .persist_tool_results(&context.messages[tool_start..tool_end])
+            .persist_tool_results(
+                &context.messages[tool_start..tool_end],
+                outcome.artifacts(),
+            )
             .await?;
     }
     refresh_tools(

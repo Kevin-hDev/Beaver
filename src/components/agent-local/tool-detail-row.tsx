@@ -22,6 +22,7 @@ import { ToolItem } from "./tool-item";
 import { toolDisplayInfo } from "./tool-display";
 import { isLegacyShellStopError, shellCommandPreview } from "./tool-shell-display";
 import { isAdmissionError } from "@/lib/admission-error";
+import { ToolArtifacts } from "./tool-artifacts";
 
 export interface RenderableTool {
   name: string;
@@ -43,6 +44,7 @@ export interface RenderableTool {
   start_line?: number;
   legacySuccessfulStop?: boolean;
   resolved_path?: string;
+  artifacts?: import("@/types/agent").ToolArtifact[];
 }
 
 function str(v: unknown, fallback = ""): string {
@@ -92,6 +94,7 @@ export function streamToolToRenderable(t: ToolActivity, isActive?: boolean): Ren
     old_text: t.name === "edit_file" ? str(t.args.old_string) : undefined,
     new_text: t.name === "edit_file" ? str(t.args.new_string) : undefined,
     start_line: t.startLine,
+    artifacts: t.artifacts,
   };
 }
 
@@ -116,6 +119,7 @@ export function savedToolToRenderable(t: ToolActivityRecord): RenderableTool {
     old_text: t.old_text,
     new_text: t.new_text,
     start_line: t.start_line,
+    artifacts: t.artifacts,
   };
 }
 
@@ -210,6 +214,7 @@ export function ToolDetailRow({
       {tool.name === "write_document" && tool.result && !tool.is_error && documentContent != null && (
         <WriteDocumentPreview content={documentContent} />
       )}
+      <ToolArtifacts artifacts={tool.artifacts} onFilePreview={onFilePreview} />
     </ToolItem>
   );
 }

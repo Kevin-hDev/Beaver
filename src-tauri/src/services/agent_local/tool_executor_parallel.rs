@@ -190,17 +190,17 @@ pub async fn run_with_parallel_reads(
     for (idx, slot) in indexed_results.into_iter().enumerate() {
         if let Some((name, mut tr)) = slot {
             let artifacts = tr.take_ephemeral_artifacts();
-            if outcome
-                .record_artifacts(idx, tool_id(idx), artifacts)
-                .is_err()
-            {
-                tr = ToolResult::error(
-                    "Résultat d'extension indisponible.",
-                    crate::services::extensions::error_codes::RESULT_TOO_LARGE,
-                    crate::services::agent_local::tool_result_contract::ToolErrorCategory::Unavailable,
-                    false,
-                );
-            }
+            let artifact_records = outcome
+                .retain_artifacts(idx, tool_id(idx), artifacts)
+                .unwrap_or_else(|()| {
+                    tr = ToolResult::error(
+                        "Résultat d'extension indisponible.",
+                        crate::services::extensions::error_codes::RESULT_TOO_LARGE,
+                        crate::services::agent_local::tool_result_contract::ToolErrorCategory::Unavailable,
+                        false,
+                    );
+                    Vec::new()
+                });
             let resolved_path = resolve_tool_path(name, &tool_calls[idx].1, working_dir);
             let follow_up = if emitted_results[idx] {
                 push_tool_message(messages, name, tr, tool_id(idx))
@@ -213,6 +213,7 @@ pub async fn run_with_parallel_reads(
                     idx,
                     tool_id(idx),
                     resolved_path,
+                    artifact_records,
                 )
             };
             outcome.record(follow_up);

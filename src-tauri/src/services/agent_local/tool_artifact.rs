@@ -76,3 +76,34 @@ impl PendingArtifact {
         }
     }
 }
+
+impl From<&ArtifactMetadata> for super::tool_artifact_record::ToolArtifactRecord {
+    fn from(metadata: &ArtifactMetadata) -> Self {
+        use super::tool_artifact_record::{ToolArtifactPurpose, ToolArtifactSource};
+
+        let purpose = match metadata.purpose {
+            ArtifactPurpose::Artifact => ToolArtifactPurpose::Artifact,
+            ArtifactPurpose::Preview => ToolArtifactPurpose::Preview,
+        };
+        let source = match &metadata.source {
+            ArtifactSource::WorkspaceFile { path, grant } => ToolArtifactSource::WorkspaceFile {
+                path: path.to_string_lossy().into_owned(),
+                grant: grant.clone(),
+            },
+            ArtifactSource::ExtensionResource { resource_id, catalog_fingerprint } => {
+                ToolArtifactSource::ExtensionResource {
+                    resource_id: resource_id.clone(),
+                    catalog_fingerprint: catalog_fingerprint.clone(),
+                }
+            }
+        };
+        Self {
+            name: metadata.name.clone(),
+            mime_type: metadata.mime_type.clone(),
+            bytes: metadata.bytes,
+            sha256: metadata.sha256.clone(),
+            purpose,
+            source,
+        }
+    }
+}

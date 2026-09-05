@@ -34,6 +34,7 @@ fn messages_and_checkpoint_are_redacted_without_mutating_the_source() {
             start_line: None,
             affected_paths: Vec::new(),
             file_changes: Vec::new(),
+            artifacts: Vec::new(),
         },
     ]);
     let original = serde_json::to_vec(&source).unwrap();

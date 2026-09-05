@@ -13,3 +13,5 @@ mod types_tool_result;
 mod types_tool_result_details;
 mod types_tool_result_errors;
 pub mod types_tools;
+pub mod tool_artifact;
+pub mod tool_artifact_record;

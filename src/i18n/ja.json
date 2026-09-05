@@ -467,6 +467,9 @@
         "internal": "内部エラーにより操作を完了できませんでした。"
       },
       "toggleDetails": "ツール詳細を表示",
+      "artifacts": "生成ファイル",
+      "openArtifact": "{{name}} を開く",
+      "artifactStatus": { "intact": "正常", "absent": "見つかりません", "modified": "変更済み", "inaccessible": "アクセス不可" },
       "groups": {
         "exploration": "探索",
         "modification": "変更",

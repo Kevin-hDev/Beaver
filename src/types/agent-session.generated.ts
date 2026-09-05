@@ -21,7 +21,15 @@ export type ToolCallRequestView = { id: string, function: ToolCallFunctionView, 
 
 export type ToolFileChangeView = { path: string, status: "added" | "modified" | "deleted", additions: number, deletions: number, diff?: GitDiffPreview, };
 
-export type ToolActivityRecordView = { name: string, summary: string, domain?: "memory", resolved_path?: string, args?: Record<string, unknown>, result?: string, is_error?: boolean, result_meta?: PersistedToolResultMeta, content?: string, old_text?: string, new_text?: string, start_line?: number, affected_paths?: Array<string>, file_changes?: Array<ToolFileChangeView>, };
+export type ToolArtifactPurpose = "artifact" | "preview";
+
+export type ToolArtifactStatus = "intact" | "absent" | "modified" | "inaccessible";
+
+export type ToolArtifactSourceView = { "kind": "workspace_file", path: string, } | { "kind": "extension_resource", resource_id: string, };
+
+export type ToolArtifactRecordView = { name: string, mime_type: string, bytes: number, sha256: string, purpose: ToolArtifactPurpose, source: ToolArtifactSourceView, verification?: ToolArtifactStatus, };
+
+export type ToolActivityRecordView = { name: string, summary: string, domain?: "memory", resolved_path?: string, args?: Record<string, unknown>, result?: string, is_error?: boolean, result_meta?: PersistedToolResultMeta, content?: string, old_text?: string, new_text?: string, start_line?: number, affected_paths?: Array<string>, file_changes?: Array<ToolFileChangeView>, artifacts?: Array<ToolArtifactRecordView>, };
 
 export type SavedSegmentView = { thinking?: string, tools: Array<ToolActivityRecordView>, content: string, phase?: "work" | "final", };
 

@@ -35,7 +35,7 @@ pub(super) async fn prepare_for_session_with(
     plugins: &[super::registry_index::IndexedPlugin],
     catalog_fingerprint: &str,
 ) -> Result<PreparedResource, super::resource_loader::ResourceLoadError> {
-    let qualified = super::resource_loader::parse_qualified_contribution_id(resource_id)
+    let qualified = super::resource_identifier::parse(resource_id)
         .map_err(|_| super::resource_loader::ResourceLoadError::InvalidId)?;
     super::resource_loader::authorize_session(session_id, &qualified.extension_id).await?;
     let record = records

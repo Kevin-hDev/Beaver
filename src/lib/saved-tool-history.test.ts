@@ -24,6 +24,43 @@ describe("normalizeSavedToolHistory", () => {
 
     expect(normalizeSavedToolHistory([parent])).toEqual([parent]);
   });
+
+  it("rattache les artefacts persistés du résultat à l'appel d'outil", () => {
+    const assistant: AgentMessage = {
+      ...message("assistant", ""),
+      tool_calls: [{
+        id: "call-a",
+        function: { name: "extension_tool", arguments: { input: "report" } },
+      }],
+    };
+    const result: AgentMessage = {
+      ...message("tool", "done"),
+      tool_name: "extension_tool",
+      tool_call_id: "call-a",
+      tool_activities: [{
+        name: "extension_tool",
+        summary: "",
+        artifacts: [{
+          name: "report.txt",
+          mime_type: "text/plain",
+          bytes: 3,
+          sha256: "a".repeat(64),
+          purpose: "artifact",
+          source: { kind: "workspace_file", path: "/workspace/report.txt" },
+          verification: "intact",
+        }],
+      }],
+    };
+
+    const normalized = normalizeSavedToolHistory([
+      message("user", "Create"), assistant, result, message("assistant", "Ready"),
+    ]);
+
+    expect(normalized[1].segments?.[0].tools[0].artifacts?.[0]).toMatchObject({
+      name: "report.txt",
+      verification: "intact",
+    });
+  });
 });
 
 function message(role: AgentMessage["role"], content: string): AgentMessage {

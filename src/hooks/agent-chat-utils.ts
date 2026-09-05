@@ -1,5 +1,6 @@
 import type {
   ToolActivityRecord,
+  ToolArtifact,
   ToolErrorInfo,
   ToolFileChangeRecord,
   ToolResultStatus,
@@ -31,6 +32,7 @@ export interface ToolActivity {
   fileChanges?: ToolFileChangeRecord[];
   /** Ligne de départ structurée d'une modification de fichier. */
   startLine?: number;
+  artifacts?: ToolArtifact[];
 }
 
 export interface StreamSegment {
@@ -89,6 +91,7 @@ export function toolsToRecords(tools: ToolActivity[]): ToolActivityRecord[] {
       old_text: t.name === "edit_file" ? str(a.old_string) : undefined,
       new_text: t.name === "edit_file" ? str(a.new_string) : undefined,
       start_line: t.startLine,
+      artifacts: t.artifacts,
     };
   });
 }

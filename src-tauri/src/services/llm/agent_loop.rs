@@ -198,7 +198,7 @@ pub async fn run_agent_loop(
             tool_outcome.apply_follow_ups(&mut messages[tool_start..tool_end])?;
         if let Some(journal) = journal.as_deref_mut() {
             journal
-                .persist_tool_results(&messages[tool_start..tool_end])
+                .persist_tool_results(&messages[tool_start..tool_end], tool_outcome.artifacts())
                 .await?;
         }
         #[cfg(debug_assertions)]

@@ -117,6 +117,33 @@ pub struct ToolActivityRecord {
     pub affected_paths: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub file_changes: Vec<ToolFileChange>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub artifacts: Vec<super::tool_artifact_record::ToolArtifactRecord>,
+}
+
+impl ToolActivityRecord {
+    pub(crate) fn artifact_carrier(
+        name: String,
+        artifacts: Vec<super::tool_artifact_record::ToolArtifactRecord>,
+    ) -> Self {
+        Self {
+            name,
+            summary: String::new(),
+            domain: None,
+            resolved_path: None,
+            args: None,
+            result: None,
+            is_error: None,
+            result_meta: None,
+            content: None,
+            old_text: None,
+            new_text: None,
+            start_line: None,
+            affected_paths: Vec::new(),
+            file_changes: Vec::new(),
+            artifacts,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -101,6 +101,7 @@ export function applyStreamEvent(
         fileChanges: event.data.fileChanges,
         startLine: event.data.startLine,
         displaySummary: event.data.displaySummary,
+        artifacts: event.data.artifacts,
       });
       next.currentTools = applied.tools;
       next.activeStreamItem = activeItemAfterToolResult(

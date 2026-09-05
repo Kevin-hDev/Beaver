@@ -1,9 +1,3 @@
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) struct QualifiedContributionId {
-    pub extension_id: String,
-    pub local_id: String,
-}
-
 #[derive(Debug)]
 pub(crate) struct LoadedResource {
     pub name: String,
@@ -22,27 +16,16 @@ pub(crate) enum ResourceLoadError {
     NotFound,
 }
 
-pub(crate) fn parse_qualified_contribution_id(value: &str) -> Result<QualifiedContributionId, ()> {
-    let mut segments = value.split(':');
-    let prefix = segments.next();
-    let extension_id = segments.next();
-    let local_id = segments.next();
-    if prefix != Some("extension") || segments.next().is_some() {
-        return Err(());
-    }
-    let (Some(extension_id), Some(local_id)) = (extension_id, local_id) else {
-        return Err(());
-    };
-    if super::validation::identifier(extension_id).is_err()
-        || super::validation::identifier(local_id).is_err()
-    {
-        return Err(());
-    }
-    Ok(QualifiedContributionId {
-        extension_id: extension_id.to_string(),
-        local_id: local_id.to_string(),
-    })
+pub(crate) async fn load_resource_for_history(
+    resource_id: &str,
+) -> Result<LoadedResource, ResourceLoadError> {
+    let records = super::list().map_err(|_| ResourceLoadError::Unavailable)?;
+    let (plugins, catalog_fingerprint) =
+        super::registry_index::indexed_plugins_with_catalog_version()
+            .map_err(|_| ResourceLoadError::Unavailable)?;
+    load_current_with(resource_id, &records, &plugins, &catalog_fingerprint).await
 }
+
 #[cfg(test)]
 pub(super) async fn load_for_session_with(
     resource_id: &str,
@@ -52,8 +35,28 @@ pub(super) async fn load_for_session_with(
     catalog_fingerprint: &str,
 ) -> Result<LoadedResource, ResourceLoadError> {
     let qualified =
-        parse_qualified_contribution_id(resource_id).map_err(|_| ResourceLoadError::InvalidId)?;
+        super::resource_identifier::parse(resource_id).map_err(|_| ResourceLoadError::InvalidId)?;
     authorize_session(session_id, &qualified.extension_id).await?;
+    load_current_with_qualified(qualified, records, plugins, catalog_fingerprint).await
+}
+
+async fn load_current_with(
+    resource_id: &str,
+    records: &[super::types::ExtensionRecord],
+    plugins: &[super::registry_index::IndexedPlugin],
+    catalog_fingerprint: &str,
+) -> Result<LoadedResource, ResourceLoadError> {
+    let qualified =
+        super::resource_identifier::parse(resource_id).map_err(|_| ResourceLoadError::InvalidId)?;
+    load_current_with_qualified(qualified, records, plugins, catalog_fingerprint).await
+}
+
+async fn load_current_with_qualified(
+    qualified: super::resource_identifier::QualifiedContributionId,
+    records: &[super::types::ExtensionRecord],
+    plugins: &[super::registry_index::IndexedPlugin],
+    catalog_fingerprint: &str,
+) -> Result<LoadedResource, ResourceLoadError> {
     let record = records
         .iter()
         .find(|record| active_approved_record(record, &qualified.extension_id))
@@ -125,7 +128,7 @@ pub(super) async fn load_skill_for_session_with(
     catalog_fingerprint: &str,
 ) -> Result<LoadedResource, ResourceLoadError> {
     let qualified =
-        parse_qualified_contribution_id(skill_id).map_err(|_| ResourceLoadError::InvalidId)?;
+        super::resource_identifier::parse(skill_id).map_err(|_| ResourceLoadError::InvalidId)?;
     authorize_session(session_id, &qualified.extension_id).await?;
     let record = records
         .iter()

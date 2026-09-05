@@ -44,6 +44,7 @@ fn tool_record(name: &str, path: &str, result: Option<String>) -> ToolActivityRe
         start_line: None,
         affected_paths: vec![],
         file_changes: vec![],
+        artifacts: vec![],
     }
 }
 
@@ -56,6 +57,43 @@ fn serialize_limits_tool_result() {
     );
     let serialized = serialize_messages(&[message_with_tool(tool)]);
     assert!(serialized.len() < MAX_TOOL_RESULT_CHARS + 500);
+}
+
+#[test]
+fn serialize_keeps_artifact_order_without_access_grants() {
+    let mut tool = tool_record("write_file", "src/main.rs", Some("ok".into()));
+    tool.artifacts = vec![
+        super::super::tool_artifact_record::ToolArtifactRecord {
+            name: "first.png".into(),
+            mime_type: "image/png".into(),
+            bytes: 12,
+            sha256: "a".repeat(64),
+            purpose: super::super::tool_artifact_record::ToolArtifactPurpose::Artifact,
+            source: super::super::tool_artifact_record::ToolArtifactSource::WorkspaceFile {
+                path: "/workspace/first.png".into(),
+                grant: "v1.must-not-reach-summary".into(),
+            },
+        },
+        super::super::tool_artifact_record::ToolArtifactRecord {
+            name: "second.pdf".into(),
+            mime_type: "application/pdf".into(),
+            bytes: 24,
+            sha256: "b".repeat(64),
+            purpose: super::super::tool_artifact_record::ToolArtifactPurpose::Preview,
+            source: super::super::tool_artifact_record::ToolArtifactSource::ExtensionResource {
+                resource_id: "extension:demo:document".into(),
+                catalog_fingerprint: "c".repeat(64),
+            },
+        },
+    ];
+
+    let serialized = serialize_messages(&[message_with_tool(tool)]);
+    let first = serialized.find("first.png").expect("first artifact");
+    let second = serialized.find("second.pdf").expect("second artifact");
+    assert!(first < second);
+    assert!(serialized.contains("sha256:"));
+    assert!(!serialized.contains("v1.must-not-reach-summary"));
+    assert!(!serialized.contains("/workspace/first.png"));
 }
 
 #[test]

@@ -467,6 +467,9 @@
         "internal": "内部错误阻止了此操作。"
       },
       "toggleDetails": "显示工具详情",
+      "artifacts": "生成的文件",
+      "openArtifact": "打开 {{name}}",
+      "artifactStatus": { "intact": "完整", "absent": "缺失", "modified": "已修改", "inaccessible": "无法访问" },
       "groups": {
         "exploration": "探索",
         "modification": "更改",

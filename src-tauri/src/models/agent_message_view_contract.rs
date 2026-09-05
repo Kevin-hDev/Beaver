@@ -2,6 +2,9 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 use super::ReasoningReplayStatus;
+use crate::services::agent_local::tool_artifact_record::{
+    ToolArtifactPurpose, ToolArtifactRecord, ToolArtifactSource, ToolArtifactStatus,
+};
 use crate::services::agent_local::types_message::AgentMessageKind;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -54,6 +57,54 @@ pub struct ToolFileChangeView {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(test, derive(ts_rs::TS))]
+#[serde(tag = "kind", rename_all = "snake_case")]
+#[cfg_attr(test, ts(tag = "kind", rename_all = "snake_case"))]
+pub enum ToolArtifactSourceView {
+    WorkspaceFile { path: String },
+    ExtensionResource { resource_id: String },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[serde(deny_unknown_fields)]
+pub struct ToolArtifactRecordView {
+    pub name: String,
+    pub mime_type: String,
+    #[cfg_attr(test, ts(type = "number"))]
+    pub bytes: u64,
+    pub sha256: String,
+    pub purpose: ToolArtifactPurpose,
+    pub source: ToolArtifactSourceView,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(test, ts(optional))]
+    pub verification: Option<ToolArtifactStatus>,
+}
+
+impl From<&ToolArtifactRecord> for ToolArtifactRecordView {
+    fn from(record: &ToolArtifactRecord) -> Self {
+        Self {
+            name: record.name.clone(),
+            mime_type: record.mime_type.clone(),
+            bytes: record.bytes,
+            sha256: record.sha256.clone(),
+            purpose: record.purpose.clone(),
+            source: match &record.source {
+                ToolArtifactSource::WorkspaceFile { path, .. } => {
+                    ToolArtifactSourceView::WorkspaceFile { path: path.clone() }
+                }
+                ToolArtifactSource::ExtensionResource { resource_id, .. } => {
+                    ToolArtifactSourceView::ExtensionResource {
+                        resource_id: resource_id.clone(),
+                    }
+                }
+            },
+            verification: None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
 #[serde(deny_unknown_fields)]
 pub struct ToolActivityRecordView {
     pub name: String,
@@ -94,6 +145,9 @@ pub struct ToolActivityRecordView {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     #[cfg_attr(test, ts(optional, as = "Option<_>"))]
     pub file_changes: Vec<ToolFileChangeView>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[cfg_attr(test, ts(optional, as = "Option<_>"))]
+    pub artifacts: Vec<ToolArtifactRecordView>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

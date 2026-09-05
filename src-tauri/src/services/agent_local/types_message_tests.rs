@@ -183,3 +183,62 @@ fn agent_message_rejects_unsafe_tool_metadata_text() {
 
     assert!(message.validate_stream_metadata().is_err());
 }
+
+fn message_with_artifacts(artifacts: serde_json::Value) -> AgentMessage {
+    serde_json::from_value(serde_json::json!({
+        "id": "m-artifact", "role": "assistant", "content": "ok",
+        "files": [], "timestamp": "2026-07-01T12:00:00Z",
+        "tool_activities": [{
+            "name": "extension_tool", "summary": "artifact",
+            "artifacts": artifacts
+        }]
+    }))
+    .unwrap()
+}
+
+fn artifact_value() -> serde_json::Value {
+    serde_json::json!({
+        "name": "preview.png",
+        "mime_type": "image/png",
+        "bytes": 8,
+        "sha256": "a".repeat(64),
+        "purpose": "preview",
+        "source": {
+            "kind": "extension_resource",
+            "resource_id": "extension:sample:preview",
+            "catalog_fingerprint": "b".repeat(64)
+        }
+    })
+}
+
+#[test]
+fn agent_message_accepts_missing_empty_and_exact_artifact_limits() {
+    let missing = message_with_artifacts(serde_json::json!([]));
+    assert!(missing.validate_stream_metadata().is_ok());
+
+    let exact = message_with_artifacts(serde_json::Value::Array(vec![
+        artifact_value();
+        super::super::tool_artifact_record::MAX_ARTIFACTS_PER_TOOL
+    ]));
+    assert!(exact.validate_stream_metadata().is_ok());
+}
+
+#[test]
+fn agent_message_rejects_excess_or_malformed_artifact_metadata() {
+    let too_many = message_with_artifacts(serde_json::Value::Array(vec![
+        artifact_value();
+        super::super::tool_artifact_record::MAX_ARTIFACTS_PER_TOOL + 1
+    ]));
+    assert!(too_many.validate_stream_metadata().is_err());
+
+    for (pointer, value) in [
+        ("/sha256", serde_json::json!("not-a-sha")),
+        ("/bytes", serde_json::json!(u64::MAX)),
+        ("/source/resource_id", serde_json::json!("extension:missing")),
+    ] {
+        let mut artifact = artifact_value();
+        *artifact.pointer_mut(pointer).expect("fixture field") = value;
+        let malformed = message_with_artifacts(serde_json::json!([artifact]));
+        assert!(malformed.validate_stream_metadata().is_err(), "{pointer}");
+    }
+}

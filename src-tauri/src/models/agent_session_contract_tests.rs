@@ -46,6 +46,32 @@ fn checked_in_agent_session_types_match_rust() {
 }
 
 #[test]
+fn artifact_view_never_exposes_persistent_access_capabilities() {
+    let record = crate::services::agent_local::tool_artifact_record::ToolArtifactRecord {
+        name: "report.txt".into(),
+        mime_type: "text/plain".into(),
+        bytes: 3,
+        sha256: "a".repeat(64),
+        purpose: crate::services::agent_local::tool_artifact_record::ToolArtifactPurpose::Artifact,
+        source:
+            crate::services::agent_local::tool_artifact_record::ToolArtifactSource::WorkspaceFile {
+                path: "/workspace/report.txt".into(),
+                grant: "secret-grant".into(),
+            },
+    };
+
+    let json = serde_json::to_string(
+        &super::agent_session_contract::ToolArtifactRecordView::from(&record),
+    )
+    .expect("serialize view");
+
+    assert!(json.contains("/workspace/report.txt"));
+    assert!(!json.contains("secret-grant"));
+    assert!(!json.contains("grant"));
+    assert!(!json.contains("catalog_fingerprint"));
+}
+
+#[test]
 #[ignore = "developer command that refreshes the checked-in TypeScript contract"]
 fn export_typescript_agent_session_contract() {
     let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))

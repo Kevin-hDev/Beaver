@@ -11,7 +11,6 @@ mod extension_skill_loader_tests;
 #[cfg(debug_assertions)]
 pub mod fixture_tool_executor;
 pub mod tool_automation;
-pub mod tool_artifact;
 #[cfg(test)]
 mod tool_artifact_tests;
 #[cfg(test)]
