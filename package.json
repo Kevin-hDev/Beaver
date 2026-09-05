@@ -39,6 +39,7 @@
     "contracts:generate:diagnostics": "cd src-tauri && cargo test services::agent_local::types_diagnostics_contract_tests::export_typescript_diagnostics_contract -- --ignored --exact --nocapture",
     "contracts:generate:agent": "node scripts/contracts/generate-agent-session.mjs",
     "contracts:generate:compression": "node scripts/contracts/generate-compression-profiles.mjs",
+    "contracts:generate:extension-installs": "cd src-tauri && cargo test --lib services::extensions::install_jobs::contract_tests::export_typescript_contract -- --ignored --exact --nocapture",
     "contracts:generate:ollama": "cd src-tauri && cargo test services::ollama_manager::typescript_contract_tests::export_typescript_runtime_contract -- --ignored --exact --nocapture",
     "contracts:check": "node scripts/contracts/check.mjs",
     "forecast:lock-runtimes": "bash scripts/forecast/lock-runtimes.sh",

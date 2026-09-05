@@ -43,6 +43,7 @@ mod host_stop_boundary;
 #[cfg(test)]
 mod host_stop_boundary_tests;
 mod install_preparation;
+pub(crate) mod install_jobs;
 mod installer;
 mod installer_record;
 mod installer_uninstall;
@@ -101,6 +102,7 @@ mod runtime_lifecycle;
 mod runtime_plan;
 mod runtime_recovery_preflight;
 mod runtime_restart;
+mod runtime_status;
 mod runtime_sync;
 mod runtime_sync_apply;
 #[cfg(test)]

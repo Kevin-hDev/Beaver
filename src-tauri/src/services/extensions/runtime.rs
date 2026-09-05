@@ -2,7 +2,7 @@ use super::host_identity::HostIdentity;
 use super::host_paths::HostPaths;
 use super::host_process::HostProcess;
 use super::runtime_hosts::RuntimeHosts;
-use super::types::{ExtensionDiagnostic, ExtensionHostStatus, HostState};
+use super::types::{ExtensionHostStatus, HostState};
 use crate::app_exit::AppWorkSupervisor;
 use serde_json::Value;
 use std::sync::{Arc, OnceLock, RwLock};
@@ -16,6 +16,7 @@ pub struct ExtensionRuntime {
     pub(super) sync: Mutex<()>,
     pub(super) status: RwLock<ExtensionHostStatus>,
     pub(super) ui_catalog: super::ui_catalog::UiCatalog,
+    pub(super) install_jobs: super::install_jobs::InstallJobStore,
     pub(super) work: super::work_supervision::ExtensionWorkServices,
 }
 
@@ -36,13 +37,19 @@ pub fn init(app: &tauri::AppHandle, app_work: AppWorkSupervisor) -> Result<(), S
     }
     let temporary_root = crate::services::paths::data_dir().join("extension-host-channels");
     let (hosts, exit_receiver) = RuntimeHosts::with_app(temporary_root, app.clone())?;
+    let work = super::work_supervision::ExtensionWorkServices::new(app_work);
     let runtime = Arc::new(ExtensionRuntime {
         paths,
         hosts: Mutex::new(hosts),
         sync: Mutex::new(()),
         status: RwLock::new(status),
         ui_catalog: super::ui_catalog::UiCatalog::with_app(app.clone()),
-        work: super::work_supervision::ExtensionWorkServices::new(app_work),
+        install_jobs: super::install_jobs::InstallJobStore::new(
+            work.clone(),
+            None,
+            Some(app.clone()),
+        ),
+        work,
     });
     runtime.start_exit_monitor(exit_receiver)?;
     RUNTIME
@@ -167,34 +174,6 @@ impl ExtensionRuntime {
             0,
         );
         self.hosts.lock().await.emit_changed();
-    }
-
-    pub(super) fn set_running(&self, active: usize, diagnostics: Vec<ExtensionDiagnostic>) {
-        if let Ok(mut status) = self.status.write() {
-            status.state = HostState::Running;
-            status.active_extensions = active;
-            status.last_error = None;
-            status.diagnostics = diagnostics;
-        }
-    }
-
-    pub(super) fn set_host_version(&self, hello: &super::protocol::HelloResult) {
-        if let Ok(mut status) = self.status.write() {
-            status.node_version = Some(hello.node_version.clone());
-            status.jiti_version = hello.jiti_version.clone();
-            status.api_version = hello.api_version.clone();
-        }
-    }
-
-    pub(super) fn set_state(&self, state: HostState, error: Option<String>, active: usize) {
-        if let Ok(mut status) = self.status.write() {
-            status.state = state.clone();
-            status.active_extensions = active;
-            status.last_error = error;
-            if state != HostState::Running {
-                status.diagnostics.clear();
-            }
-        }
     }
 }
 

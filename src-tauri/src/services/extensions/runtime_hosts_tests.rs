@@ -690,6 +690,7 @@ async fn targeted_update_or_uninstall_stop_preserves_official_and_other_third_pa
         sync: tokio::sync::Mutex::new(()),
         status: std::sync::RwLock::new(super::types::ExtensionHostStatus::default()),
         ui_catalog: super::ui_catalog::UiCatalog::default(),
+        install_jobs: super::install_jobs::InstallJobStore::new(work.clone(), None, None),
         work,
     };
 

@@ -1,6 +1,12 @@
 macro_rules! generate {
     ($($extra:path),* $(,)?) => {
         crate::invoke_handler_tail::generate_tail![
+            crate::commands::start_extension_install,
+            crate::commands::list_extension_installs,
+            crate::commands::cancel_extension_install,
+            crate::commands::continue_extension_install,
+            crate::commands::dismiss_extension_install,
+            crate::commands::resume_extension_install,
             crate::commands::get_config,
             crate::commands::browser_capability,
             crate::commands::restart_application,
