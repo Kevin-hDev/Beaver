@@ -29,6 +29,18 @@ test("WebdriverIO covers both native journeys and extension setup", async () => 
         deadlines.EXTENSION_UI_SETUP_TIMEOUT_MS,
       ),
     );
+    assert.equal(
+      module.config.capabilities?.[0]?.timeouts?.script,
+      deadlines.EXTENSION_HOST_SETUP_TIMEOUT_MS,
+    );
+    assert.equal(
+      module.config.capabilities?.[0]?.timeouts?.implicit,
+      deadlines.WEBDRIVER_IMPLICIT_TIMEOUT_MS,
+    );
+    assert.equal(
+      module.config.capabilities?.[0]?.timeouts?.pageLoad,
+      deadlines.WEBDRIVER_PAGE_LOAD_TIMEOUT_MS,
+    );
     assert.equal(module.config.reporters?.[0], "spec");
     assert.equal(module.config.reporters?.[1]?.[0], "junit");
     assert.equal(

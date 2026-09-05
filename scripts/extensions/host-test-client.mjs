@@ -64,7 +64,7 @@ export function createHost(hostScript, options = {}) {
         const timer = setTimeout(() => {
           pending.delete(id);
           reject(new Error("host request timeout"));
-        }, 5_000);
+        }, options.requestTimeoutMs ?? 5_000);
         pending.set(id, { resolve, reject, timer });
         child.stdin.write(`${JSON.stringify({
           jsonrpc: "2.0",

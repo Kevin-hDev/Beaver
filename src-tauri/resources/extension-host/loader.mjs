@@ -16,6 +16,9 @@ const jiti = createJiti(import.meta.url, {
   interopDefault: true,
   moduleCache: false,
   sourceMaps: false,
+  // Plain JavaScript extensions should use Node's loader directly. Jiti remains
+  // the fallback for TypeScript and the virtual Beaver SDK alias.
+  tryNative: true,
 });
 const extensions = new Map();
 const tools = new Map();

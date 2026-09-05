@@ -1,5 +1,10 @@
 import { resolve } from "node:path";
-import { EXTENSION_UI_SETUP_TIMEOUT_MS } from "./scripts/e2e/extension-setup-deadline";
+import {
+  EXTENSION_HOST_SETUP_TIMEOUT_MS,
+  EXTENSION_UI_SETUP_TIMEOUT_MS,
+  WEBDRIVER_IMPLICIT_TIMEOUT_MS,
+  WEBDRIVER_PAGE_LOAD_TIMEOUT_MS,
+} from "./scripts/e2e/extension-setup-deadline";
 import { NATIVE_JOURNEY_MOCHA_TIMEOUT_MS } from "./scripts/e2e/native-journey-deadline.mjs";
 
 const appBinaryPath = process.env.E2E_APP_BINARY;
@@ -42,7 +47,16 @@ export const config: WebdriverIO.Config = {
     journeySpec,
   ]],
   maxInstances: 1,
-  capabilities: [{ browserName: "tauri" }],
+  capabilities: [{
+    browserName: "tauri",
+    // Let Beaver's bounded host request report its precise failure before the
+    // WebDriver script guard can replace it with a generic timeout.
+    timeouts: {
+      implicit: WEBDRIVER_IMPLICIT_TIMEOUT_MS,
+      pageLoad: WEBDRIVER_PAGE_LOAD_TIMEOUT_MS,
+      script: EXTENSION_HOST_SETUP_TIMEOUT_MS,
+    },
+  }],
   services: [["@wdio/tauri-service", {
     appBinaryPath: driverBinaryPath,
     appArgs: driverArguments,
