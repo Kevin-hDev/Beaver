@@ -84,3 +84,19 @@ pub(super) async fn confirm_scope_absent_with_root_probe(
         tokio::time::sleep(super::POLL_INTERVAL).await;
     }
 }
+
+/// Recovery has no live Child handle. The native identity must be stopped first;
+/// a recycled root PID makes this proof unavailable, never permission to signal it.
+#[cfg(unix)]
+pub(crate) async fn confirm_recovered_group_absent(
+    root_pid: u32,
+    deadline: std::time::Instant,
+) -> bool {
+    if crate::services::owned_process::OwnedProcess::process_exists(root_pid) {
+        return false;
+    }
+    if !super::unix::terminate_group_members(root_pid, deadline).await {
+        return false;
+    }
+    super::unix::group_is_empty(root_pid)
+}

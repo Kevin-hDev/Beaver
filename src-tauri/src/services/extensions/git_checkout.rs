@@ -3,9 +3,9 @@ use git2::CheckoutNotificationType;
 use std::collections::HashSet;
 use std::path::Component;
 
-use crate::services::work_registry::ServiceWorkCancellation;
+use super::install_signal::InstallSignal;
 
-pub fn bounded(cancellation: ServiceWorkCancellation) -> CheckoutBuilder<'static> {
+pub fn bounded(cancellation: impl InstallSignal) -> CheckoutBuilder<'static> {
     let mut checkout = CheckoutBuilder::new();
     let mut paths = HashSet::new();
     let mut bytes = 0_u64;

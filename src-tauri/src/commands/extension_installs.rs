@@ -4,7 +4,7 @@ use crate::services::extensions::install_jobs::{
 
 #[tauri::command]
 pub async fn start_extension_install(request: InstallRequest) -> Result<InstallJobView, String> {
-    install_jobs::global()?.start(request)
+    install_jobs::global()?.start_reconciled(request).await
 }
 #[tauri::command]
 pub fn list_extension_installs() -> Result<InstallJobsSnapshot, String> {
@@ -22,8 +22,8 @@ pub fn continue_extension_install(
     install_jobs::global()?.confirm(&job_id, &confirmation_id)
 }
 #[tauri::command]
-pub fn dismiss_extension_install(job_id: String) -> Result<(), String> {
-    install_jobs::global()?.dismiss(&job_id)
+pub async fn dismiss_extension_install(job_id: String) -> Result<(), String> {
+    install_jobs::global()?.dismiss_reconciled(&job_id).await
 }
 #[tauri::command]
 pub fn resume_extension_install(job_id: String) -> Result<InstallJobView, String> {

@@ -33,15 +33,18 @@ pub(super) async fn run(
             if app_cancel.is_cancelled() {
                 for job in &mut state.jobs {
                     if job.view.status == InstallStatus::Queued {
-                        job.view.status = InstallStatus::Cancelled;
+                        job.view.status = InstallStatus::Interrupted;
                         job.view.can_cancel = false;
                     }
                 }
             }
-            let index = state
-                .jobs
-                .iter()
-                .position(|job| job.view.status == InstallStatus::Queued);
+            let index = state.jobs.iter().position(|job| {
+                !job.claimed_cleanup
+                    && matches!(
+                        job.view.status,
+                        InstallStatus::Queued | InstallStatus::Cancelling
+                    )
+            });
             let Some(index) = index else {
                 if state.evict(super::limits::MAX_RECENT).is_err() {
                     log::warn!("extension install cleanup still required");
@@ -51,7 +54,9 @@ pub(super) async fn run(
                 return;
             };
             let job = &mut state.jobs[index];
-            job.view.status = InstallStatus::Running;
+            if job.view.status == InstallStatus::Queued {
+                job.view.status = InstallStatus::Running;
+            }
             job.clean = false;
             let next = (job.view.id.clone(), job.request.clone(), job.cancel.clone());
             store.changed(&mut state);
@@ -88,7 +93,10 @@ pub(super) async fn run(
                     job.view.error_code = Some(FAILED.into());
                 }
             }
-            Err(InstallInterruption::Cancelled | InstallInterruption::AppClosing) if job.clean => {
+            Err(InstallInterruption::AppClosing) if job.clean => {
+                job.view.status = InstallStatus::Interrupted;
+            }
+            Err(InstallInterruption::Cancelled) if job.clean => {
                 job.view.status = InstallStatus::Cancelled;
             }
             Err(_) => {

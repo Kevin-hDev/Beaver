@@ -48,7 +48,14 @@ async fn checkpoint_race(closing: bool, expected: InstallInterruption) {
     stop(&store).await;
     assert_eq!(*observed.lock().unwrap(), Some(expected));
     assert_eq!(terminal.id, job.id);
-    assert_eq!(terminal.status, InstallStatus::Cancelled);
+    assert_eq!(
+        terminal.status,
+        if closing {
+            InstallStatus::Interrupted
+        } else {
+            InstallStatus::Cancelled
+        }
+    );
 }
 #[tokio::test]
 async fn individual_cancel_between_check_and_lock_keeps_its_classification() {

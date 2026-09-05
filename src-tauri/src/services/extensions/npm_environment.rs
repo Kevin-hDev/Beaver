@@ -36,6 +36,11 @@ impl ProjectConfig {
         })
     }
 
+    pub fn retain(mut self) {
+        // The entire managed staging owns this held config until process death is proven.
+        self.held = None;
+    }
+
     pub fn restore(mut self) -> Result<(), String> {
         self.restore_inner()
     }

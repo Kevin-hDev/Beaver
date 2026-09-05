@@ -5,11 +5,7 @@ pub(crate) use super::resource_loader_prepare::{
 };
 pub(crate) use super::tool_result_files::{artifact_from_verified, FileResultError};
 pub(crate) use super::tool_result_media::extension_resource_artifact;
-pub(crate) use super::ui_build_api::{
-    cleanup_unreferenced as cleanup_unreferenced_ui_artifacts, prepare_record as prepare_ui_record,
-    refresh_artifacts as refresh_extension_ui_artifacts,
-    resolve_runtime as resolve_ui_build_runtime,
-};
+pub(crate) use super::ui_build_api::refresh_artifacts as refresh_extension_ui_artifacts;
 pub(crate) use super::ui_startup::prepare as prepare_ui_startup;
 #[cfg(target_os = "windows")]
 pub(crate) use super::ui_startup::{

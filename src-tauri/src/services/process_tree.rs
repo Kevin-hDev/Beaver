@@ -16,6 +16,8 @@ mod unix;
 #[cfg(windows)]
 #[path = "process_tree_windows.rs"]
 mod windows;
+#[cfg(unix)]
+pub(crate) use scope::confirm_recovered_group_absent;
 pub use scope::terminate_tokio_scoped;
 pub use tokio_process::terminate_tokio;
 

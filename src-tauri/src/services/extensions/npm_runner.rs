@@ -4,7 +4,7 @@ use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
-use crate::services::work_registry::ServiceWorkCancellation;
+use super::install_signal::InstallSignal;
 
 const INSTALL_TIMEOUT: Duration = Duration::from_secs(300);
 const REGISTRY: &str = "https://registry.npmjs.org/";
@@ -32,7 +32,7 @@ impl NpmRunner {
         &self,
         prefix: &Path,
         source: &NpmSource,
-        cancellation: &ServiceWorkCancellation,
+        cancellation: &impl InstallSignal,
     ) -> Result<PathBuf, OperationFailure> {
         let workspace = prepare_workspace(prefix).map_err(|_| OperationFailure::StorageFailed)?;
         let mut arguments = self.common_arguments("install", &workspace);
@@ -43,6 +43,9 @@ impl NpmRunner {
             OsString::from(&source.locator),
         ]);
         let result = self.run(prefix, &workspace, arguments, cancellation);
+        if result == Err(OperationFailure::CleanupFailed) {
+            return result.map(|_| prefix.to_path_buf());
+        }
         cleanup_workspace(&workspace).map_err(|_| OperationFailure::StorageFailed)?;
         result?;
         let package_root = prefix
@@ -57,7 +60,7 @@ impl NpmRunner {
     pub fn install_dependencies(
         &self,
         root: &Path,
-        cancellation: &ServiceWorkCancellation,
+        cancellation: &impl InstallSignal,
     ) -> Result<(), OperationFailure> {
         let workspace = prepare_workspace(root).map_err(|_| OperationFailure::StorageFailed)?;
         let config = super::npm_environment::ProjectConfig::neutralize(root)
@@ -77,6 +80,10 @@ impl NpmRunner {
             ]);
         }
         let result = self.run(root, &workspace, arguments, cancellation);
+        if result == Err(OperationFailure::CleanupFailed) {
+            config.retain();
+            return result;
+        }
         let restore = config.restore();
         let cleanup = cleanup_workspace(&workspace);
         restore.map_err(|_| OperationFailure::StorageFailed)?;
@@ -113,7 +120,7 @@ impl NpmRunner {
         root: &Path,
         workspace: &Path,
         arguments: Vec<OsString>,
-        cancellation: &ServiceWorkCancellation,
+        cancellation: &impl InstallSignal,
     ) -> Result<(), OperationFailure> {
         super::process_runner::run(
             &self.node,

@@ -5,3 +5,4 @@ pub(super) const BUSY: &str = "extension-install-busy";
 pub(super) const UNAVAILABLE: &str = "extension-install-unavailable";
 pub(super) const FAILED: &str = "extension-install-failed";
 pub(crate) const CHANGED_EVENT: &str = "extension-installs-changed";
+pub(super) const RECOVERY_UNAVAILABLE: &str = "extension-install-recovery-unavailable";

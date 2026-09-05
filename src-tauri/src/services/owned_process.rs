@@ -20,7 +20,7 @@ pub enum OwnedProcessError {
     Admission,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 pub(crate) struct OwnedProcessIdentity {
     pub(crate) pid: u32,
     pub(crate) native_scope: u64,

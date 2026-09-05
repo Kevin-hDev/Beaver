@@ -1,3 +1,6 @@
+#[path = "ui_artifact_cleanup.rs"]
+mod cleanup;
+use cleanup::{cleanup_entry, invalid, remove_empty_parent, valid_token};
 use rand::RngCore;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
@@ -17,9 +20,21 @@ pub(super) struct StagingArtifact {
     output: PathBuf,
     temporary: PathBuf,
     committed: bool,
+    retain: bool,
 }
 
 pub(super) fn prepare() -> Result<StagingArtifact, String> {
+    prepare_with_token(None)
+}
+
+pub(super) fn prepare_owned(token: &str) -> Result<StagingArtifact, String> {
+    if !valid_token(token, 32) {
+        return Err(invalid());
+    }
+    prepare_with_token(Some(token))
+}
+
+fn prepare_with_token(owned: Option<&str>) -> Result<StagingArtifact, String> {
     let mut active = ACTIVE_STAGING.lock().map_err(|_| invalid())?;
     if active.len() >= MAX_ACTIVE_STAGING_ARTIFACTS {
         return Err(invalid());
@@ -30,7 +45,10 @@ pub(super) fn prepare() -> Result<StagingArtifact, String> {
     rand::rngs::OsRng
         .try_fill_bytes(&mut random)
         .map_err(|_| invalid())?;
-    let path = root.join(format!(".staging-{}", hex::encode(random)));
+    let token = owned
+        .map(str::to_owned)
+        .unwrap_or_else(|| hex::encode(random));
+    let path = root.join(format!(".staging-{token}"));
     let output = path.join("output");
     let temporary = path.join("tmp");
     crate::services::private_store::ensure_private_dir(&output).map_err(|_| invalid())?;
@@ -43,6 +61,7 @@ pub(super) fn prepare() -> Result<StagingArtifact, String> {
         output,
         temporary,
         committed: false,
+        retain: owned.is_some(),
     })
 }
 
@@ -74,6 +93,9 @@ pub(super) fn remove(record: &ExtensionRecord) -> Result<(), String> {
 }
 
 pub(super) fn unreferenced(records: &[ExtensionRecord]) -> Result<(), String> {
+    if super::install_jobs::protects_artifacts() {
+        return Ok(());
+    }
     let active = ACTIVE_STAGING.lock().map_err(|_| invalid())?;
     let root = root();
     if !root.exists() {
@@ -158,72 +180,10 @@ fn validate_directory_if_present(path: &Path, expected_root: Option<&Path>) -> R
 impl Drop for StagingArtifact {
     fn drop(&mut self) {
         if let Ok(mut active) = ACTIVE_STAGING.lock() {
-            if !self.committed {
+            if !self.committed && !self.retain {
                 let _ = std::fs::remove_dir_all(&self.path);
             }
             active.remove(&self.path);
         }
     }
-}
-
-fn cleanup_entry(
-    path: &Path,
-    referenced: &HashSet<PathBuf>,
-    active: &HashSet<PathBuf>,
-) -> Result<(), String> {
-    let metadata = std::fs::symlink_metadata(path).map_err(|_| invalid())?;
-    let name = path
-        .file_name()
-        .and_then(|value| value.to_str())
-        .unwrap_or("");
-    if metadata.is_dir() && name.starts_with(".staging-") {
-        if active.contains(path) {
-            return Ok(());
-        }
-        return std::fs::remove_dir_all(path).map_err(|_| invalid());
-    }
-    if !metadata.is_dir() || super::validation::identifier(name).is_err() {
-        return Ok(());
-    }
-    for (index, child) in std::fs::read_dir(path).map_err(|_| invalid())?.enumerate() {
-        if index >= MAX_ARTIFACTS_PER_EXTENSION {
-            return Err(invalid());
-        }
-        let child = child.map_err(|_| invalid())?.path();
-        let child_name = child
-            .file_name()
-            .and_then(|value| value.to_str())
-            .unwrap_or("");
-        if valid_token(child_name, 64) && !referenced.contains(&child) {
-            std::fs::remove_dir_all(&child).map_err(|_| invalid())?;
-        }
-    }
-    remove_empty_parent(path)
-}
-
-fn remove_empty_parent(path: &Path) -> Result<(), String> {
-    let Some(parent) = path.parent() else {
-        return Ok(());
-    };
-    if parent != root()
-        && parent.exists()
-        && std::fs::read_dir(parent)
-            .map_err(|_| invalid())?
-            .next()
-            .is_none()
-    {
-        std::fs::remove_dir(parent).map_err(|_| invalid())?;
-    }
-    Ok(())
-}
-
-fn valid_token(value: &str, length: usize) -> bool {
-    value.len() == length
-        && value
-            .bytes()
-            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
-}
-
-fn invalid() -> String {
-    super::ui_contract::UI_DIAGNOSTIC_UI_ARTIFACT_INVALID.to_string()
 }

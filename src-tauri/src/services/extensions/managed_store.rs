@@ -9,15 +9,30 @@ pub struct StagingDirectory {
     path: PathBuf,
     token: String,
     committed: bool,
+    retain: bool,
 }
 
+#[cfg(test)]
 pub fn prepare() -> Result<StagingDirectory, String> {
+    prepare_with_token(None)
+}
+
+pub(super) fn prepare_owned(token: &str) -> Result<StagingDirectory, String> {
+    if !valid_token(token) {
+        return Err("Stockage des extensions indisponible.".into());
+    }
+    prepare_with_token(Some(token))
+}
+
+fn prepare_with_token(owned: Option<&str>) -> Result<StagingDirectory, String> {
     let root = root();
     crate::services::private_store::ensure_private_dir(&root)
         .map_err(|_| "Stockage des extensions indisponible.".to_string())?;
     let mut random = [0_u8; 16];
     rand::rngs::OsRng.fill_bytes(&mut random);
-    let token = hex::encode(random);
+    let token = owned
+        .map(str::to_owned)
+        .unwrap_or_else(|| hex::encode(random));
     let path = root.join(format!(".staging-{token}"));
     std::fs::create_dir(&path).map_err(|_| "Stockage des extensions indisponible.".to_string())?;
     crate::services::private_store::repair_path(&path)
@@ -27,6 +42,7 @@ pub fn prepare() -> Result<StagingDirectory, String> {
         path,
         token,
         committed: false,
+        retain: owned.is_some(),
     })
 }
 
@@ -54,7 +70,7 @@ impl StagingDirectory {
 
 impl Drop for StagingDirectory {
     fn drop(&mut self) {
-        if !self.committed {
+        if !self.committed && !self.retain {
             let _ = std::fs::remove_dir_all(&self.path);
         }
     }

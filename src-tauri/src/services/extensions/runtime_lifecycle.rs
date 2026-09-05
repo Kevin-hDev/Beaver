@@ -44,11 +44,12 @@ pub async fn stop_and_wait(deadline: Instant) -> bool {
 async fn stop_runtime(runtime: &ExtensionRuntime, deadline: Instant) -> bool {
     runtime.work.begin_closing();
     let hosts_stopped = runtime.stop_hosts(deadline).await;
-    crate::services::shutdown_completion::combine_with_work(
+    let stopped = crate::services::shutdown_completion::combine_with_work(
         hosts_stopped,
         runtime.work.stop_and_wait(deadline),
     )
-    .await
+    .await;
+    stopped && runtime.install_jobs.stop_confirmed()
 }
 
 pub(super) fn start_background(app: tauri::AppHandle) -> Result<(), String> {

@@ -3,11 +3,17 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use tokio::sync::Notify;
 use tokio_util::sync::CancellationToken;
 
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub(super) struct Job {
     pub view: InstallJobView,
     pub request: InstallRequest,
     pub key: String,
+    #[serde(skip)]
     pub cancel: CancellationToken,
+    #[serde(default)]
+    pub checkpoint: Option<super::checkpoint::InstallCheckpoint>,
+    #[serde(skip)]
+    pub claimed_cleanup: bool,
     // Only the executor may attest that owned artifacts are gone.
     pub clean: bool,
     pub finished_revision: Option<u64>,
@@ -16,6 +22,8 @@ pub(super) struct State {
     pub revision: u64,
     pub jobs: Vec<Job>,
     pub worker: bool,
+    pub durable_error: bool,
+    pub recovery_error: bool,
 }
 
 #[derive(Clone)]
@@ -25,6 +33,7 @@ pub(crate) struct InstallJobStore {
     pub(super) work: super::super::work_supervision::ExtensionWorkServices,
     pub(super) executor: Option<Arc<dyn InstallExecutor>>,
     pub(super) app: Option<tauri::AppHandle>,
+    pub(super) journal: Option<std::path::PathBuf>,
 }
 impl InstallJobStore {
     pub(in crate::services::extensions) fn new(
@@ -37,23 +46,37 @@ impl InstallJobStore {
                 revision: 0,
                 jobs: Vec::new(),
                 worker: false,
+                durable_error: false,
+                recovery_error: false,
             })),
             notify: Arc::new(Notify::new()),
             work,
             executor,
             app,
+            journal: None,
         }
     }
     pub(super) fn lock(&self) -> Result<MutexGuard<'_, State>, String> {
         self.state.lock().map_err(|_| UNAVAILABLE.into())
     }
     pub(crate) fn snapshot(&self) -> Result<InstallJobsSnapshot, String> {
-        Ok(self.lock()?.snapshot())
+        let state = self.lock()?;
+        if state.recovery_error {
+            return Err(RECOVERY_UNAVAILABLE.into());
+        }
+        Ok(state.snapshot())
     }
     pub(super) fn changed(&self, state: &mut State) {
         state.revision += 1;
         for job in &mut state.jobs {
             job.view.revision = state.revision;
+        }
+        if self.persist(state).is_err() {
+            state.durable_error = true;
+            for job in &state.jobs {
+                job.cancel.cancel();
+            }
+            log::warn!("extension install journal unavailable; work cancelled");
         }
         self.notify.notify_one();
         if let Some(app) = &self.app {
@@ -63,6 +86,18 @@ impl InstallJobStore {
             }
         }
     }
+    pub(in crate::services::extensions) fn stop_confirmed(&self) -> bool {
+        self.lock().is_ok_and(|state| {
+            !state.recovery_error
+                && state.jobs.iter().all(|job| {
+                    job.clean
+                        || job.checkpoint.as_ref().is_some_and(|checkpoint| {
+                            checkpoint.native_process.is_none() && !checkpoint.producer_active
+                        })
+                })
+        })
+    }
+
     pub(crate) fn dismiss(&self, id: &str) -> Result<(), String> {
         super::request::id(id)?;
         let mut state = self.lock()?;
@@ -74,13 +109,6 @@ impl InstallJobStore {
         state.jobs.remove(index);
         self.changed(&mut state);
         Ok(())
-    }
-    pub(crate) fn resume(&self, id: &str) -> Result<InstallJobView, String> {
-        super::request::id(id)?;
-        // Recovery must revalidate durable ownership before advertising resumability.
-        let state = self.lock()?;
-        state.index(id)?;
-        Err(UNAVAILABLE.into())
     }
 }
 impl State {

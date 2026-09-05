@@ -42,9 +42,10 @@ mod host_reader_line;
 mod host_stop_boundary;
 #[cfg(test)]
 mod host_stop_boundary_tests;
-mod install_preparation;
 pub(crate) mod install_jobs;
+mod install_signal;
 mod installer;
+mod installer_process;
 mod installer_record;
 mod installer_uninstall;
 mod loading_journal_format;
@@ -127,6 +128,8 @@ mod ui_artifact_manifest;
 mod ui_artifact_store;
 mod ui_build_api;
 mod ui_builder;
+mod ui_builder_build;
+mod ui_builder_paths;
 mod ui_builder_process;
 mod ui_catalog;
 mod ui_catalog_actions;
@@ -185,7 +188,7 @@ pub use public_api::{
     discovery_preferences, invoke_ui_action, report_ui_mount_failure, set_discovery_preferences,
     ui_catalog,
 };
-pub use registry::{add_local, list, set_enabled, set_show_in_chat};
+pub use registry::{list, set_enabled, set_show_in_chat};
 pub(crate) use registry_index::{
     catalog_snapshot, dynamic_tool_names, indexed_plugins, indexed_tool, plugin_id_for_tool,
 };
@@ -213,7 +216,6 @@ pub(crate) use installer::{
     install_git as install_git_source, install_npm as install_npm_source,
     uninstall as uninstall_extension, update as update_managed_extension,
 };
-pub(crate) use manifest::load_local as install_local;
 pub(crate) use operation_error::{report as report_operation_error, Operation};
 pub(crate) use operation_failure::OperationFailure;
 pub(crate) use resource_identifier::parse as parse_qualified_contribution_id;

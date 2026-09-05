@@ -1,7 +1,4 @@
-use super::types::{
-    ExtensionContributions, ExtensionKind, ExtensionRecord, ExtensionStatus, MAX_EXTENSIONS,
-    MAX_USER_EXTENSIONS,
-};
+use super::types::{ExtensionContributions, ExtensionKind, ExtensionRecord, ExtensionStatus};
 use std::collections::BTreeMap;
 use std::sync::Mutex;
 
@@ -48,27 +45,6 @@ pub fn find(id: &str) -> Result<ExtensionRecord, String> {
         .ok_or_else(|| super::error_codes::NOT_FOUND.to_string())
 }
 
-pub fn add_local(record: ExtensionRecord) -> Result<(), String> {
-    super::validation::records(std::slice::from_ref(&record))?;
-    mutate(|records| {
-        let user_extensions = records
-            .iter()
-            .filter(|item| item.kind != ExtensionKind::Builtin)
-            .count();
-        if user_extensions >= MAX_USER_EXTENSIONS || records.len() >= MAX_EXTENSIONS {
-            return Err("Nombre maximal d'extensions atteint.".to_string());
-        }
-        if records
-            .iter()
-            .any(|item| item.manifest.id == record.manifest.id)
-        {
-            return Err("Cette extension est déjà enregistrée.".to_string());
-        }
-        records.push(record);
-        Ok(())
-    })
-}
-
 pub fn remove(id: &str) -> Result<bool, String> {
     super::validation::identifier(id)?;
     let mut reminder = false;
@@ -98,6 +74,7 @@ pub fn replace_user(
     }
     let mut reminder = false;
     mutate(|records| {
+        super::registry_managed::ensure_current(&replacement)?;
         let record = records
             .iter_mut()
             .find(|record| record.manifest.id == id)

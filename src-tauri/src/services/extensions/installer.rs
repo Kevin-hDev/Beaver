@@ -1,170 +1,48 @@
-use super::install_preparation::PreparedInstall;
+//! Compatibility commands wait on the same owner as background installations.
+use super::install_jobs::{self, InstallRequest};
 use super::runtime::ExtensionRuntime;
 use super::types::{ExtensionOriginKind, ExtensionRecord};
 use super::OperationFailure;
-use crate::services::work_registry::ServiceWorkCancellation;
 use std::sync::Arc;
 use std::time::Instant;
 
 pub use super::installer_uninstall::uninstall;
 
 pub async fn install_git(
-    app: &tauri::AppHandle,
+    _app: &tauri::AppHandle,
     locator: &str,
     _deadline: Instant,
 ) -> Result<ExtensionRecord, OperationFailure> {
-    let source =
-        super::source_validation::git(locator).map_err(|_| OperationFailure::SourceInvalid)?;
-    let npm = super::npm_runner::NpmRunner::resolve(app)?;
-    let ui_runtime = super::ui_builder::UiBuildRuntime::resolve(app)?;
-    let work = extension_runtime()?.work.clone();
-    work.run_operation(move |cancel| async move {
-        let prepared = blocking(
-            move || super::install_preparation::git(source, npm, ui_runtime, &cancel),
-            OperationFailure::InstallFailed,
-        )
-        .await?;
-        register_new(prepared)
-    })
-    .await
-    .map_err(|error| error.operation_failure())?
+    install_jobs::global()
+        .map_err(|_| OperationFailure::HostUnavailable)?
+        .wait_install(InstallRequest::Git {
+            locator: locator.into(),
+        })
+        .await
 }
-
 pub async fn install_npm(
-    app: &tauri::AppHandle,
+    _app: &tauri::AppHandle,
     locator: &str,
     _deadline: Instant,
 ) -> Result<ExtensionRecord, OperationFailure> {
-    let source =
-        super::source_validation::npm(locator).map_err(|_| OperationFailure::PackageInvalid)?;
-    let npm = super::npm_runner::NpmRunner::resolve(app)?;
-    let ui_runtime = super::ui_builder::UiBuildRuntime::resolve(app)?;
-    let work = extension_runtime()?.work.clone();
-    work.run_operation(move |cancel| async move {
-        let prepared = blocking(
-            move || super::install_preparation::npm(source, npm, ui_runtime, &cancel),
-            OperationFailure::InstallFailed,
-        )
-        .await?;
-        register_new(prepared)
-    })
-    .await
-    .map_err(|error| error.operation_failure())?
+    install_jobs::global()
+        .map_err(|_| OperationFailure::HostUnavailable)?
+        .wait_install(InstallRequest::Npm {
+            locator: locator.into(),
+        })
+        .await
 }
-
 pub async fn update(
-    app: &tauri::AppHandle,
+    _app: &tauri::AppHandle,
     id: &str,
-    deadline: Instant,
+    _deadline: Instant,
 ) -> Result<ExtensionRecord, OperationFailure> {
-    let current = super::registry::find(id).map_err(|_| OperationFailure::UpdateUnavailable)?;
-    let origin = current
-        .origin
-        .clone()
-        .filter(|origin| is_managed_kind(&origin.kind))
-        .ok_or(OperationFailure::UpdateUnavailable)?;
-    let npm = super::npm_runner::NpmRunner::resolve(app)?;
-    let ui_runtime = super::ui_builder::UiBuildRuntime::resolve(app)?;
-    let runtime = extension_runtime()?;
-    let work = runtime.work.clone();
-    work.run_operation(move |cancel| async move {
-        let prepared = prepare_update(origin, npm, ui_runtime, cancel.clone()).await?;
-        if prepared.record.manifest.id != current.manifest.id {
-            cleanup(&prepared.record).await;
-            return Err(OperationFailure::UpdateIdentityChanged);
-        }
-        replace_current(&runtime, current, prepared, deadline).await
-    })
-    .await
-    .map_err(|error| error.operation_failure())?
-}
-
-async fn prepare_update(
-    origin: super::types::ExtensionOrigin,
-    npm: super::npm_runner::NpmRunner,
-    ui_runtime: super::ui_builder::UiBuildRuntime,
-    cancellation: ServiceWorkCancellation,
-) -> Result<PreparedInstall, OperationFailure> {
-    match origin.kind {
-        ExtensionOriginKind::Git => {
-            let source = super::source_validation::git(&origin.locator)
-                .map_err(|_| OperationFailure::SourceInvalid)?;
-            blocking(
-                move || super::install_preparation::git(source, npm, ui_runtime, &cancellation),
-                OperationFailure::UpdateFailed,
-            )
-            .await
-        }
-        ExtensionOriginKind::Npm => {
-            let source = super::source_validation::npm(&origin.locator)
-                .map_err(|_| OperationFailure::PackageInvalid)?;
-            blocking(
-                move || super::install_preparation::npm(source, npm, ui_runtime, &cancellation),
-                OperationFailure::UpdateFailed,
-            )
-            .await
-        }
-        ExtensionOriginKind::Local => Err(OperationFailure::UpdateUnavailable),
-    }
-}
-
-fn register_new(prepared: PreparedInstall) -> Result<ExtensionRecord, OperationFailure> {
-    let record = prepared.record;
-    if let Err(error) = super::registry_managed::add(record.clone()) {
-        let _ = super::ui_artifact_store::unreferenced_from_registry();
-        let _ = super::managed_store::remove_record(&record);
-        return Err(error);
-    }
-    Ok(record)
-}
-
-async fn replace_current(
-    runtime: &ExtensionRuntime,
-    current: ExtensionRecord,
-    prepared: PreparedInstall,
-    deadline: Instant,
-) -> Result<ExtensionRecord, OperationFailure> {
-    let replacement = super::installer_record::for_update(&current, prepared.record);
-    let identity = super::host_identity::HostIdentity::ThirdParty(current.manifest.id.clone());
-    crate::services::agent_local::permission_gate::clear_extension(&current.manifest.id).await;
-    // Remplacer d'abord le registre ferme le routage avant de révoquer l'ancien canal.
-    let reminder = match super::registry::replace_user(&current, replacement.clone()) {
-        Ok(reminder) => reminder,
-        Err(_) => {
-            cleanup(&replacement).await;
-            return Err(OperationFailure::UpdateFailed);
-        }
-    };
-    let mut replacement = replacement;
-    replacement.sensitive_access_granted |= reminder;
-    if !runtime.revoke_extension(&identity, deadline).await {
-        return Err(OperationFailure::HostUnavailable);
-    }
-    let old = current.clone();
-    let _ = blocking(
-        move || {
-            super::ui_artifact_store::unreferenced_from_registry()
-                .map_err(|_| OperationFailure::StorageFailed)?;
-            super::managed_store::remove_record(&old).map_err(|_| OperationFailure::StorageFailed)
-        },
-        OperationFailure::UpdateFailed,
-    )
-    .await;
-    Ok(replacement)
-}
-
-async fn cleanup(record: &ExtensionRecord) {
-    let record = record.clone();
-    let _ = blocking(
-        move || {
-            super::ui_artifact_store::unreferenced_from_registry()
-                .map_err(|_| OperationFailure::StorageFailed)?;
-            super::managed_store::remove_record(&record)
-                .map_err(|_| OperationFailure::StorageFailed)
-        },
-        OperationFailure::StorageFailed,
-    )
-    .await;
+    install_jobs::global()
+        .map_err(|_| OperationFailure::HostUnavailable)?
+        .wait_install(InstallRequest::Update {
+            extension_id: id.into(),
+        })
+        .await
 }
 
 pub(super) fn extension_runtime() -> Result<Arc<ExtensionRuntime>, OperationFailure> {
@@ -172,16 +50,13 @@ pub(super) fn extension_runtime() -> Result<Arc<ExtensionRuntime>, OperationFail
         .map(Arc::clone)
         .map_err(|_| OperationFailure::HostUnavailable)
 }
-
 pub(super) fn is_managed(record: &ExtensionRecord) -> bool {
-    record
-        .origin
-        .as_ref()
-        .is_some_and(|origin| is_managed_kind(&origin.kind))
-}
-
-fn is_managed_kind(kind: &ExtensionOriginKind) -> bool {
-    matches!(kind, ExtensionOriginKind::Git | ExtensionOriginKind::Npm)
+    record.origin.as_ref().is_some_and(|origin| {
+        matches!(
+            origin.kind,
+            ExtensionOriginKind::Git | ExtensionOriginKind::Npm
+        )
+    })
 }
 
 pub(super) async fn blocking<T: Send + 'static>(

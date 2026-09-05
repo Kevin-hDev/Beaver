@@ -7,13 +7,16 @@ impl InstallJobStore {
         let index = state.index(id)?;
         let revision = state.revision + 1;
         let job = &mut state.jobs[index];
+        if job.view.status == InstallStatus::Completed {
+            return Ok(job.view.clone());
+        }
         if job.view.status.terminal() || job.view.status == InstallStatus::Cancelling {
             return Err(INVALID.into());
         }
         job.cancel.cancel();
         job.view.confirmation_id = None;
         // Queued jobs never owned a producer or files and need no asynchronous cleanup.
-        job.view.status = if job.view.status == InstallStatus::Queued {
+        job.view.status = if job.view.status == InstallStatus::Queued && job.checkpoint.is_none() {
             job.finished_revision = Some(revision);
             InstallStatus::Cancelled
         } else {

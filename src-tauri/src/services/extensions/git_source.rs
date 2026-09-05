@@ -5,7 +5,7 @@ use git2::{AutotagOption, FetchOptions, RemoteCallbacks, Repository};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
-use crate::services::work_registry::ServiceWorkCancellation;
+use super::install_signal::InstallSignal;
 
 const MAX_TRANSFER_BYTES: usize = 512 * 1024 * 1024;
 const MAX_GIT_OBJECTS: usize = 100_000;
@@ -23,8 +23,9 @@ pub fn materialize(
     source: &GitSource,
     destination: &Path,
     npm: &NpmRunner,
-    cancellation: &ServiceWorkCancellation,
+    cancellation: &impl InstallSignal,
 ) -> Result<GitMaterialization, super::OperationFailure> {
+    cancellation.phase(super::install_jobs::InstallPhase::Downloading)?;
     let started = Instant::now();
     let checkout = destination.join("repository");
     let repository = clone_repository(source, &checkout, cancellation)
@@ -39,6 +40,7 @@ pub fn materialize(
         .map_err(|_| super::OperationFailure::StorageFailed)?;
     super::managed_tree::validate(destination)?;
     if super::git_package::has_runtime_dependencies(&checkout)? {
+        cancellation.phase(super::install_jobs::InstallPhase::Dependencies)?;
         npm.install_dependencies(&checkout, cancellation)?;
     }
     super::managed_tree::validate(destination)?;
@@ -51,7 +53,7 @@ pub fn materialize(
 pub(super) fn clone_repository(
     source: &GitSource,
     checkout: &Path,
-    cancellation: &ServiceWorkCancellation,
+    cancellation: &impl InstallSignal,
 ) -> Result<Repository, git2::Error> {
     let deadline = Instant::now() + GIT_TIMEOUT;
     let fetch = fetch_options(
@@ -72,7 +74,7 @@ pub(super) fn clone_repository(
 fn fetch_options(
     deadline: Instant,
     shallow: bool,
-    cancellation: ServiceWorkCancellation,
+    cancellation: impl InstallSignal,
 ) -> Result<FetchOptions<'static>, git2::Error> {
     let config = git2::Config::open_default()
         .map_err(|_| git2::Error::from_str("git configuration unavailable"))?;
@@ -111,7 +113,7 @@ fn checkout_reference(
     repository: &Repository,
     reference: &str,
     deadline: Instant,
-    cancellation: &ServiceWorkCancellation,
+    cancellation: &impl InstallSignal,
 ) -> Result<(), git2::Error> {
     if let Some(commit) = resolve_commit(repository, reference) {
         repository.checkout_tree(
@@ -147,7 +149,7 @@ fn checkout_reference(
 fn checkout_commit(
     repository: &Repository,
     commit: &git2::Commit<'_>,
-    cancellation: &ServiceWorkCancellation,
+    cancellation: &impl InstallSignal,
 ) -> Result<(), git2::Error> {
     repository.checkout_tree(
         commit.as_object(),

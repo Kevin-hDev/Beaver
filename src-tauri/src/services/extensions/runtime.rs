@@ -44,11 +44,7 @@ pub fn init(app: &tauri::AppHandle, app_work: AppWorkSupervisor) -> Result<(), S
         sync: Mutex::new(()),
         status: RwLock::new(status),
         ui_catalog: super::ui_catalog::UiCatalog::with_app(app.clone()),
-        install_jobs: super::install_jobs::InstallJobStore::new(
-            work.clone(),
-            None,
-            Some(app.clone()),
-        ),
+        install_jobs: super::install_jobs::InstallJobStore::production(work.clone(), app.clone()),
         work,
     });
     runtime.start_exit_monitor(exit_receiver)?;

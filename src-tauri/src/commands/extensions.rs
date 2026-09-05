@@ -18,9 +18,7 @@ pub async fn add_local_extension(
     app: tauri::AppHandle,
     path: String,
 ) -> Result<ExtensionView, String> {
-    let result = local_install::install(&app, &path).await.inspect(|_| {
-        emit_changed(&app);
-    });
+    let result = local_install::install(&app, &path).await;
     command_error::close(command_error::ExtensionCommand::AddLocal, result)
 }
 
@@ -35,10 +33,7 @@ pub async fn install_git_extension(
         .map_err(|error| {
             extensions::report_operation_error(extensions::Operation::InstallGit, error)
         })
-        .map(|record| {
-            emit_changed(&app);
-            ExtensionView::from(record)
-        });
+        .map(ExtensionView::from);
     command_error::close(command_error::ExtensionCommand::InstallGit, result)
 }
 
@@ -53,10 +48,7 @@ pub async fn install_npm_extension(
         .map_err(|error| {
             extensions::report_operation_error(extensions::Operation::InstallNpm, error)
         })
-        .map(|record| {
-            emit_changed(&app);
-            ExtensionView::from(record)
-        });
+        .map(ExtensionView::from);
     command_error::close(command_error::ExtensionCommand::InstallNpm, result)
 }
 
@@ -66,10 +58,7 @@ pub async fn update_extension(app: tauri::AppHandle, extension_id: String) -> Re
     let result = extensions::update_managed_extension(&app, &extension_id, deadline)
         .await
         .map_err(|error| extensions::report_operation_error(extensions::Operation::Update, error))
-        .map(|record| {
-            emit_changed(&app);
-            record.sensitive_access_granted
-        });
+        .map(|record| record.sensitive_access_granted);
     command_error::close(command_error::ExtensionCommand::Update, result)
 }
 

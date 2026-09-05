@@ -29,6 +29,7 @@ impl InstallControl {
     pub(crate) fn is_cancelled(&self) -> bool {
         self.cancel.is_cancelled() || self.app_cancel.is_cancelled()
     }
+    #[cfg(test)]
     pub(crate) async fn cancelled(&self) {
         tokio::select! { _ = self.cancel.cancelled() => {}, _ = self.app_cancel.cancelled() => {} }
     }
@@ -98,6 +99,7 @@ impl InstallControl {
         Ok(())
     }
     /// Call only after every producer has stopped. On return, recheck disk before resuming.
+    #[cfg(test)] // Production consent is wired by the volume-policy task.
     pub(crate) async fn await_confirmation(&self) -> Result<(), InstallInterruption> {
         {
             let mut state = self.store.lock().map_err(|_| InstallInterruption::Failed)?;

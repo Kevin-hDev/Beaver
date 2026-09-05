@@ -12,7 +12,10 @@ impl InstallJobStore {
     ) -> Result<InstallJobView, String> {
         let (request, key, kind) = super::request::normalize(request)?;
         let mut state = self.lock()?;
-        if !self.work.is_open() {
+        if state.recovery_error {
+            return Err(RECOVERY_UNAVAILABLE.into());
+        }
+        if !self.work.is_open() || state.durable_error {
             return Err(UNAVAILABLE.into());
         }
         if let Some(job) = state
@@ -20,6 +23,9 @@ impl InstallJobStore {
             .iter()
             .find(|job| job.key == key && !job.view.status.terminal())
         {
+            if job.claimed_cleanup {
+                return Err(BUSY.into());
+            }
             return state
                 .snapshot()
                 .jobs
@@ -86,8 +92,15 @@ impl InstallJobStore {
             key,
             cancel: CancellationToken::new(),
             clean: true,
+            checkpoint: None,
+            claimed_cleanup: false,
             finished_revision: None,
         });
+        // Queued admission is durable before a producer starts or IPC acknowledges it.
+        if self.persist(&state).is_err() {
+            state.jobs.retain(|job| job.view.id != id);
+            return Err(UNAVAILABLE.into());
+        }
         if let Some(admission) = admission {
             state.worker = true;
             before_spawn();

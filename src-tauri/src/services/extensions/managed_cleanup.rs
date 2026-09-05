@@ -7,6 +7,9 @@ const MAX_ROOT_ENTRIES: usize = MAX_USER_EXTENSIONS + 32;
 const STAGING_PREFIX: &str = ".staging-";
 
 pub fn unreferenced(records: &[ExtensionRecord]) -> Result<(), String> {
+    if super::install_jobs::protects_artifacts() {
+        return Ok(());
+    }
     let root = super::managed_store::root();
     if !root.exists() {
         return Ok(());

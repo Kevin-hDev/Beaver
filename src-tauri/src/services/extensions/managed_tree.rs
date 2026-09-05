@@ -8,6 +8,10 @@ pub(super) const MAX_FILE_BYTES: u64 = 256 * 1024 * 1024;
 pub(super) const MAX_TOTAL_BYTES: u64 = 1024 * 1024 * 1024;
 
 pub fn validate(root: &Path) -> Result<(), OperationFailure> {
+    measure(root).map(|_| ())
+}
+
+pub(super) fn measure(root: &Path) -> Result<u64, OperationFailure> {
     let root = root
         .canonicalize()
         .map_err(|_| OperationFailure::ManifestInvalid)?;
@@ -29,7 +33,7 @@ pub fn validate(root: &Path) -> Result<(), OperationFailure> {
             inspect_entry(&path, depth, &mut total_bytes, &mut pending)?;
         }
     }
-    Ok(())
+    Ok(total_bytes)
 }
 
 fn inspect_entry(

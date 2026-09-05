@@ -1,13 +1,12 @@
 use std::ffi::OsString;
 use std::path::Path;
 use std::process::{Command, Stdio};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
-use crate::services::work_registry::ServiceWorkCancellation;
+use super::install_signal::InstallSignal;
 
 const MAX_ARGUMENTS: usize = 48;
 const MAX_ARGUMENT_CHARS: usize = 4_096;
-const POLL_INTERVAL: Duration = Duration::from_millis(100);
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum ProcessFailure {
@@ -17,6 +16,7 @@ pub enum ProcessFailure {
     Failed,
     Timeout,
     Interrupted,
+    StopUnconfirmed,
 }
 
 pub fn run(
@@ -25,7 +25,7 @@ pub fn run(
     working_directory: &Path,
     temporary_directory: &Path,
     timeout: Duration,
-    cancellation: &ServiceWorkCancellation,
+    cancellation: &impl InstallSignal,
 ) -> Result<(), ProcessFailure> {
     if !program.is_absolute()
         || !program.is_file()
@@ -54,40 +54,14 @@ pub fn run(
         .stderr(Stdio::null());
     super::process_environment::configure_installer(&mut command, path, temporary_directory)
         .map_err(|_| ProcessFailure::EnvironmentInvalid)?;
-    let mut child = crate::services::owned_process::OwnedProcess::spawn(
-        &mut command,
-        crate::services::process_tree::ProcessKind::ExtensionInstaller,
+    super::installer_process::run(
+        command,
+        timeout,
+        || cancellation.is_cancelled(),
+        |identity| cancellation.process_started(identity),
+        || cancellation.process_stopped(),
     )
-    .map_err(|_| ProcessFailure::Unavailable)?;
-    let deadline = Instant::now() + timeout;
-    loop {
-        match child.try_wait() {
-            Ok(Some(status)) if status.success() => return Ok(()),
-            Ok(Some(_)) => return Err(ProcessFailure::Failed),
-            Ok(None) if cancellation.is_cancelled() => {
-                crate::services::process_tree::terminate(
-                    &mut child,
-                    crate::services::process_tree::ProcessKind::ExtensionInstaller,
-                );
-                return Err(ProcessFailure::Interrupted);
-            }
-            Ok(None) if Instant::now() < deadline => std::thread::sleep(POLL_INTERVAL),
-            Ok(None) => {
-                crate::services::process_tree::terminate(
-                    &mut child,
-                    crate::services::process_tree::ProcessKind::ExtensionInstaller,
-                );
-                return Err(ProcessFailure::Timeout);
-            }
-            Err(_) => {
-                crate::services::process_tree::terminate(
-                    &mut child,
-                    crate::services::process_tree::ProcessKind::ExtensionInstaller,
-                );
-                return Err(ProcessFailure::Interrupted);
-            }
-        }
-    }
+    .map(|_| ())
 }
 
 #[cfg(test)]
