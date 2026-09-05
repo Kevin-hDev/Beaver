@@ -11,6 +11,7 @@ import {
   canonicalE2eRepoRoot,
   cleanupProfile,
   debugBinaryPath,
+  diagnosticExtensionHostRoot,
   E2E_BUILD_TIMEOUT_MS,
   E2E_JOURNEY_TIMEOUT_MS,
   e2eCargoTargetDir,
@@ -79,6 +80,10 @@ try {
         platform: process.platform,
         cargoTargetDir,
         profilePath,
+        diagnosticExtensionHostRoot: diagnosticExtensionHostRoot(
+          process.env,
+          repoRoot,
+        ),
         run: (command, args, options) => runCommand(
           command,
           args,

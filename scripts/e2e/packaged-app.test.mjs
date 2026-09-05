@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import test from "node:test";
 import {
@@ -90,6 +92,54 @@ test("Windows packaged smoke installs the single NSIS artifact into the isolated
     ["/S", `_?=${installDir}`],
     { windowsVerbatimArguments: true },
   ]);
+});
+
+test("Windows diagnostic acceptance overlays only the current extension module loader", async () => {
+  const root = await mkdtemp(join(tmpdir(), "beaver-overlay-test-"));
+  const cargoTargetDir = join(root, "target");
+  const profilePath = join(root, "beaver-e2e-Ab12");
+  const installDir = join(profilePath, "packaged-app");
+  const source = join(root, "source");
+  const destination = join(installDir, "resources", "extension-host");
+  const installer = join(
+    windowsInstallerDirectory(cargoTargetDir),
+    "Beaver_E2E_1.1.3_x64-setup.exe",
+  );
+  try {
+    await Promise.all([
+      mkdir(source, { recursive: true }),
+      mkdir(destination, { recursive: true }),
+      mkdir(join(cargoTargetDir, "debug", "bundle", "nsis"), { recursive: true }),
+    ]);
+    await Promise.all([
+      writeFile(join(source, "loader.mjs"), "export const loader = 'current';\n"),
+      writeFile(join(source, "module-loader.mjs"), "export const moduleLoader = 'current';\n"),
+      writeFile(join(destination, "loader.mjs"), "export const loader = 'old';\n"),
+      writeFile(join(installDir, "cl-go-dash.exe"), "binary"),
+      writeFile(join(installDir, "uninstall.exe"), "uninstaller"),
+      writeFile(installer, "installer"),
+    ]);
+
+    const packaged = await preparePackagedApp({
+      platform: "win32",
+      cargoTargetDir,
+      profilePath,
+      diagnosticExtensionHostRoot: source,
+      run: async () => 0,
+    });
+
+    assert.equal(
+      await readFile(join(destination, "loader.mjs"), "utf8"),
+      "export const loader = 'current';\n",
+    );
+    assert.equal(
+      await readFile(join(destination, "module-loader.mjs"), "utf8"),
+      "export const moduleLoader = 'current';\n",
+    );
+    await packaged.cleanup();
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
 });
 
 test("Windows NSIS keeps an isolated install path containing spaces verbatim", async () => {

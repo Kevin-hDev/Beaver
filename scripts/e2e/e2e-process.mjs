@@ -12,6 +12,7 @@ const MAX_PROCESS_TIMEOUT_MS = 60 * 60 * 1000;
 const PROCESS_TIMEOUT_MESSAGE = "E2E process timeout";
 const PROFILE_CLEANUP_MESSAGE = "E2E profile cleanup failed";
 const RUN_MODE_ERROR = "E2E run mode is invalid";
+const DIAGNOSTIC_OVERLAY_ERROR = "E2E diagnostic overlay is invalid";
 const MAX_PROFILE_PATH_CHARS = 32_768;
 
 export async function canonicalE2eRepoRoot(moduleUrl) {
@@ -54,6 +55,13 @@ export function resolveE2eRunMode(environment) {
     build: skipBuild !== "1",
     journey: buildOnly !== "1",
   };
+}
+
+export function diagnosticExtensionHostRoot(environment, repoRoot) {
+  const enabled = environment.E2E_EXTENSION_HOST_DIAGNOSTIC_OVERLAY;
+  if (enabled === undefined) return undefined;
+  if (enabled !== "1") throw new Error(DIAGNOSTIC_OVERLAY_ERROR);
+  return join(repoRoot, "src-tauri", "resources", "extension-host");
 }
 
 export function e2eCargoTargetDir(platform, repoRoot, configuredTargetDir) {

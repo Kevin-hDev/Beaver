@@ -108,6 +108,27 @@ test("the E2E runner separates package construction from acceptance", () => {
   );
 });
 
+test("the diagnostic extension overlay requires one explicit bounded opt-in", () => {
+  assert.equal(typeof e2eProcess.diagnosticExtensionHostRoot, "function");
+  if (typeof e2eProcess.diagnosticExtensionHostRoot !== "function") return;
+  const repoRoot = resolve("workspace", "project");
+  assert.equal(e2eProcess.diagnosticExtensionHostRoot({}, repoRoot), undefined);
+  assert.equal(
+    e2eProcess.diagnosticExtensionHostRoot(
+      { E2E_EXTENSION_HOST_DIAGNOSTIC_OVERLAY: "1" },
+      repoRoot,
+    ),
+    join(repoRoot, "src-tauri", "resources", "extension-host"),
+  );
+  assert.throws(
+    () => e2eProcess.diagnosticExtensionHostRoot(
+      { E2E_EXTENSION_HOST_DIAGNOSTIC_OVERLAY: "yes" },
+      repoRoot,
+    ),
+    /E2E diagnostic overlay is invalid/u,
+  );
+});
+
 test("the E2E binary path is platform specific", () => {
   const cargoTargetDir = resolve("/repo", "target", "e2e");
   const debugRoot = resolve(cargoTargetDir, "debug");

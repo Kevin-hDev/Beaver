@@ -25,12 +25,31 @@ test("CI can target only the native boundary that needs diagnosis", () => {
     "windows-host",
     "windows-backend",
     "windows-native",
+    "windows-acceptance-diagnostic",
     "macos-native",
   ]);
   assert.match(ci.jobs["windows-extension-host-smoke"].if, /windows-host/u);
   assert.match(ci.jobs["backend-windows"].if, /windows-backend/u);
   assert.match(ci.jobs["backend-windows-native"].if, /windows-native/u);
   assert.match(ci.jobs["backend-macos-native"].if, /macos-native/u);
+});
+
+test("Windows diagnostic acceptance reuses one named installer without rebuilding", () => {
+  const acceptance = ci.jobs["windows-packaged-acceptance-diagnostic"];
+  assert.ok(acceptance);
+  assert.equal(acceptance.needs, undefined);
+  assert.match(acceptance.if, /windows-acceptance-diagnostic/u);
+  const download = acceptance.steps.find(
+    ({ name }) => name === "Download prior Windows E2E package",
+  );
+  const journey = acceptance.steps.find(
+    ({ name }) => name === "Diagnostic Windows CEF journey",
+  );
+  assert.equal(download.with["run-id"], "${{ inputs.source_run_id }}");
+  assert.equal(download.with["github-token"], "${{ secrets.GITHUB_TOKEN }}");
+  assert.equal(journey.env.E2E_SKIP_BUILD, "1");
+  assert.equal(journey.env.E2E_EXTENSION_HOST_DIAGNOSTIC_OVERLAY, "1");
+  assert.equal(ci.permissions.actions, "read");
 });
 
 test("native Windows CI executes the AppContainer confinement boundary", () => {
