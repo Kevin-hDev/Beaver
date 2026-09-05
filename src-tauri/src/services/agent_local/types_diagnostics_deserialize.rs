@@ -104,7 +104,10 @@ fn deserialize_inspection_result_count<'de, D>(deserializer: D) -> Result<usize,
 where
     D: serde::Deserializer<'de>,
 {
-    Ok(usize::deserialize(deserializer)?.min(crate::services::extensions::MAX_INSPECTED_EXTENSIONS))
+    Ok(
+        usize::deserialize(deserializer)?
+            .min(crate::services::extensions::MAX_INSPECTED_EXTENSIONS),
+    )
 }
 
 fn deserialize_inspection_result_plugin_ids<'de, D>(deserializer: D) -> Result<String, D::Error>
@@ -200,7 +203,10 @@ fn new_diagnostic_serialization_uses_inspection_ids_only() {
     };
 
     let serialized = serde_json::to_value(diagnostic).unwrap();
-    assert_eq!(serialized["related_inspection_ids"], serde_json::json!([id]));
+    assert_eq!(
+        serialized["related_inspection_ids"],
+        serde_json::json!([id])
+    );
     assert!(serialized.get("related_search_ids").is_none());
     assert!(serialized.get("discovery_result_count").is_none());
     assert!(serialized.get("discovery_result_plugin_ids").is_none());

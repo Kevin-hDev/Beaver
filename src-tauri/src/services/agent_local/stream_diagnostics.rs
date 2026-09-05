@@ -5,8 +5,7 @@ pub use super::extension_tool_correlation::{
     pending_extension_inspections, record_extension_refreshes,
 };
 pub use super::extension_tool_diagnostic::{
-    ExtensionDiagnosticOrigin, ExtensionDiagnosticReason,
-    ExtensionToolDiagnostic,
+    ExtensionDiagnosticOrigin, ExtensionDiagnosticReason, ExtensionToolDiagnostic,
 };
 
 use super::stream_diagnostics_failure as failure;

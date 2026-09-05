@@ -86,7 +86,10 @@ fn contract_declares_the_complete_v1_surface() {
         contract["contributionTypes"],
         serde_json::json!(["tool", "event", "ui", "skill", "resource"])
     );
-    assert_eq!(contract["resultBlockTypes"], serde_json::json!(["text", "file"]));
+    assert_eq!(
+        contract["resultBlockTypes"],
+        serde_json::json!(["text", "file"])
+    );
     assert_eq!(
         contract["resultFilePurposes"],
         serde_json::json!(["artifact", "preview"])

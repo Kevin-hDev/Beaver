@@ -23,6 +23,8 @@ mod tests {
     fn resource_loading_is_read_only_but_inspection_is_not() {
         assert!(super::is_read_only("list_extensions"));
         assert!(!super::is_read_only("inspect_extensions"));
-        assert!(super::is_read_only(super::super::tool_extension_resource::NAME));
+        assert!(super::is_read_only(
+            super::super::tool_extension_resource::NAME
+        ));
     }
 }

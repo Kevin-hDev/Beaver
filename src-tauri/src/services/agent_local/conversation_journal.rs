@@ -159,7 +159,10 @@ impl ConversationJournal {
                 )?;
                 record.tool_activities = (!artifacts.is_empty()).then(|| {
                     vec![super::types_message::ToolActivityRecord::artifact_carrier(
-                        message.tool_name.clone().unwrap_or_else(|| "tool".to_string()),
+                        message
+                            .tool_name
+                            .clone()
+                            .unwrap_or_else(|| "tool".to_string()),
                         artifacts,
                     )]
                 });
@@ -215,9 +218,7 @@ fn artifact_records(
 ) -> Result<Vec<Vec<super::tool_artifact_record::ToolArtifactRecord>>, String> {
     let mut grouped = vec![Vec::new(); messages.len()];
     for attributed in artifacts {
-        let message = messages
-            .get(attributed.tool_call_index)
-            .ok_or_else(error)?;
+        let message = messages.get(attributed.tool_call_index).ok_or_else(error)?;
         if message.tool_call_id.as_deref() != attributed.tool_call_id.as_deref() {
             return Err(error());
         }

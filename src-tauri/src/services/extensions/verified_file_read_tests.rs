@@ -23,7 +23,10 @@ fn inspected_read_rejects_a_size_change_before_accepting_bytes() {
     let inspected = inspect(root.path(), "resource.txt", 8).expect("inspection");
     std::fs::write(&path, b"larger file").expect("mutate");
 
-    assert!(matches!(read_inspected(inspected, 8), Err(FileReadError::Access)));
+    assert!(matches!(
+        read_inspected(inspected, 8),
+        Err(FileReadError::Access)
+    ));
 }
 
 #[test]
@@ -68,7 +71,7 @@ fn rejects_a_file_replaced_after_content_was_read() {
         64,
         None,
         || {
-        std::fs::rename(&replacement, &file).expect("replace");
+            std::fs::rename(&replacement, &file).expect("replace");
         },
         || {},
     );
@@ -162,8 +165,7 @@ fn distinguishes_a_missing_file_from_an_access_failure() {
 #[test]
 fn cancellation_during_or_after_read_rejects_the_verified_file() {
     let root = tempfile::tempdir().expect("root");
-    std::fs::write(root.path().join("resource.txt"), vec![1_u8; 128 * 1024])
-        .expect("resource");
+    std::fs::write(root.path().join("resource.txt"), vec![1_u8; 128 * 1024]).expect("resource");
 
     let during = CancellationToken::new();
     let during_chunk = during.clone();

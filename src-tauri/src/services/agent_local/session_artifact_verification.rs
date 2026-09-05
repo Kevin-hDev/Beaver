@@ -17,10 +17,16 @@ impl HistoryVerificationBudget {
     fn admit(&mut self, maximum: u64) -> bool {
         // Reserve the reader's worst case, including its one-byte overflow probe.
         // Persisted sizes cannot understate the cost of reading a modified file.
-        let Some(next) = self.reserved_bytes.checked_add(maximum).and_then(|n| n.checked_add(1)) else {
+        let Some(next) = self
+            .reserved_bytes
+            .checked_add(maximum)
+            .and_then(|n| n.checked_add(1))
+        else {
             return false;
         };
-        if next > MAX_HISTORY_VERIFICATION_BYTES { return false; }
+        if next > MAX_HISTORY_VERIFICATION_BYTES {
+            return false;
+        }
         self.reserved_bytes = next;
         true
     }
@@ -45,10 +51,12 @@ pub(crate) async fn apply(session: &AgentSession, view: &mut AgentSessionView) {
     for (record, view_record) in records.into_iter().zip(view_records) {
         view_record.verification = match &record.source {
             ToolArtifactSource::WorkspaceFile { .. } => {
-                verify_workspace_bounded(record, key.as_deref().map(Vec::as_slice), &mut budget).await
+                verify_workspace_bounded(record, key.as_deref().map(Vec::as_slice), &mut budget)
+                    .await
             }
             ToolArtifactSource::ExtensionResource { .. } => {
-                if budget.admit(crate::services::extensions::types::MAX_RESOURCE_FILE_BYTES as u64) {
+                if budget.admit(crate::services::extensions::types::MAX_RESOURCE_FILE_BYTES as u64)
+                {
                     Some(verify_extension(record).await)
                 } else {
                     None
@@ -142,9 +150,7 @@ pub(super) fn resource_status_from_load(
             ToolArtifactStatus::Intact
         }
         Ok(_) => ToolArtifactStatus::Modified,
-        Err(crate::services::extensions::ResourceLoadError::NotFound) => {
-            ToolArtifactStatus::Absent
-        }
+        Err(crate::services::extensions::ResourceLoadError::NotFound) => ToolArtifactStatus::Absent,
         Err(_) => ToolArtifactStatus::Inaccessible,
     }
 }
@@ -165,10 +171,7 @@ fn records(session: &AgentSession) -> Vec<&ToolArtifactRecord> {
                 .flatten()
                 .flat_map(|tool| tool.artifacts.iter())
                 .chain(message.segments.iter().flatten().flat_map(|segment| {
-                    segment
-                        .tools
-                        .iter()
-                        .flat_map(|tool| tool.artifacts.iter())
+                    segment.tools.iter().flat_map(|tool| tool.artifacts.iter())
                 }))
         })
         .collect()

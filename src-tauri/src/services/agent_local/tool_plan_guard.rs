@@ -108,8 +108,16 @@ mod tests {
         assert!(super::ensure_allowed("read_file", &json!({}), true).is_ok());
         assert!(super::ensure_allowed("grep", &json!({}), true).is_ok());
         assert!(super::ensure_allowed("list_extensions", &json!({}), true).is_ok());
-        assert!(super::ensure_allowed(super::super::tool_extension_resource::NAME, &json!({"resource_id":"extension:a:guide"}), true).is_ok());
-        assert!(super::ensure_allowed("inspect_extensions", &json!({"ids":["example.a"]}), true).is_ok());
+        assert!(super::ensure_allowed(
+            super::super::tool_extension_resource::NAME,
+            &json!({"resource_id":"extension:a:guide"}),
+            true
+        )
+        .is_ok());
+        assert!(
+            super::ensure_allowed("inspect_extensions", &json!({"ids":["example.a"]}), true)
+                .is_ok()
+        );
         assert!(super::ensure_allowed("plan_mode", &json!({}), true).is_ok());
         assert!(super::ensure_allowed(
             "transform_image",

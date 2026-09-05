@@ -39,7 +39,11 @@ fn final_payload() -> serde_json::Value {
 fn request() -> ChatRequest {
     ChatRequest {
         model: "p6-vision".into(),
-        messages: vec![ChatMessage::tool("tool result".into(), Some("call-1".into()), None)],
+        messages: vec![ChatMessage::tool(
+            "tool result".into(),
+            Some("call-1".into()),
+            None,
+        )],
         stream: true,
         tools: None,
         options: None,

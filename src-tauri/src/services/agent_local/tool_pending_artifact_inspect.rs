@@ -5,10 +5,7 @@ use tokio_util::sync::CancellationToken;
 
 pub(super) struct PreparedResult {
     pub(super) result: ToolResult,
-    pub(super) files: Vec<(
-        PendingArtifact,
-        crate::services::extensions::InspectedFile,
-    )>,
+    pub(super) files: Vec<(PendingArtifact, crate::services::extensions::InspectedFile)>,
     pub(super) resource: Option<(
         PendingExtensionResource,
         crate::services::extensions::InspectedFile,

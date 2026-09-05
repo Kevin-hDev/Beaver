@@ -84,14 +84,17 @@ fn merge_accepts_the_limit_and_rejects_one_more_atomically() {
         .record_artifacts(0, None, vec![artifact(); MAX_OUTCOME_ARTIFACTS - 1])
         .unwrap();
     let mut last = ToolExecutionOutcome::default();
-    last.record_artifacts(1, Some("last"), vec![artifact()]).unwrap();
+    last.record_artifacts(1, Some("last"), vec![artifact()])
+        .unwrap();
 
     assert!(outcome.merge(last).is_ok());
     assert_eq!(outcome.artifacts().len(), MAX_OUTCOME_ARTIFACTS);
 
     let mut overflow = ToolExecutionOutcome::with_compressed(true);
     overflow.record(ToolFollowUp::UserMessage("must not merge".into()));
-    overflow.record_artifacts(2, Some("overflow"), vec![artifact()]).unwrap();
+    overflow
+        .record_artifacts(2, Some("overflow"), vec![artifact()])
+        .unwrap();
     assert!(outcome.merge(overflow).is_err());
     assert_eq!(outcome.artifacts().len(), MAX_OUTCOME_ARTIFACTS);
     assert!(!outcome.compressed);

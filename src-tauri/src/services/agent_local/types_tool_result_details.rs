@@ -51,9 +51,7 @@ impl ToolResult {
         &mut self,
         artifacts: Vec<super::tool_artifact::PendingArtifact>,
     ) -> Result<(), ()> {
-        if self.is_error
-            || artifacts.len() > crate::services::extensions::types::MAX_RESULT_FILES
-        {
+        if self.is_error || artifacts.len() > crate::services::extensions::types::MAX_RESULT_FILES {
             return Err(());
         }
         self.artifacts.pending = artifacts;
@@ -64,9 +62,7 @@ impl ToolResult {
         &self.artifacts.pending
     }
 
-    pub(crate) fn take_pending_artifacts(
-        &mut self,
-    ) -> Vec<super::tool_artifact::PendingArtifact> {
+    pub(crate) fn take_pending_artifacts(&mut self) -> Vec<super::tool_artifact::PendingArtifact> {
         std::mem::take(&mut self.artifacts.pending)
     }
 

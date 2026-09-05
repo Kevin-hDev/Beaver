@@ -22,6 +22,11 @@ on:
 permissions:
   contents: read
 
+# Windows uses the shorter repository-level Cargo target to stay below native
+# path limits. Build upload and acceptance download must share this authority.
+env:
+  WINDOWS_E2E_PACKAGE_DIR: target/e2e/debug/bundle/nsis
+
 # Les séries de PR se remplacent ; celles de main sont conservées car elles
 # valident un état déjà fusionné.
 #
@@ -272,14 +277,16 @@ jobs:
 
       - name: Windows CEF supervision authority
         working-directory: src-tauri
+        shell: bash
         run: |
           node ../scripts/ci/run-rust-test-filter.mjs --filter services::browser::cef_supervision::windows_tracker_tests --features windows-tests
           node ../scripts/ci/run-rust-test-filter.mjs --filter services::browser::cef_supervision::capability_tests --features windows-tests
 
       - name: Ollama manager contracts and historical scenarios
+        shell: bash
         run: |
           cd src-tauri
-          node ../scripts/ci/run-rust-test-filter.mjs --filter services::ollama_manager
+          node ../scripts/ci/run-rust-test-filter.mjs --filter services::ollama_manager --features windows-tests
           cd ..
           npm run test:ollama-manager-contracts
           npm run test:j3-native-assets
@@ -295,7 +302,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: windows-e2e-installer
-          path: src-tauri/target/e2e/debug/bundle/nsis/*.exe
+          path: ${{ env.WINDOWS_E2E_PACKAGE_DIR }}/*.exe
           if-no-files-found: error
           overwrite: true
           retention-days: 1
@@ -331,6 +338,7 @@ jobs:
       # including restart and concurrent isolated hosts.
       - name: Rust owned-process protocol smoke
         working-directory: src-tauri
+        shell: bash
         run: |
           node ../scripts/ci/run-rust-test-filter.mjs --filter services::extensions::host_process::prepared_tests::prepared_runtime_ --features windows-tests --ignored --nocapture
           node ../scripts/ci/run-rust-test-filter.mjs --filter services::extensions::runtime_lifecycle::tests::prepared_runtime_confirms_restart_stop_while_exit_monitor_is_active --features windows-tests --exact --ignored --nocapture
@@ -357,7 +365,7 @@ jobs:
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: windows-e2e-installer
-          path: src-tauri/target/e2e/debug/bundle/nsis
+          path: ${{ env.WINDOWS_E2E_PACKAGE_DIR }}
 
       - name: Native Windows CEF journey
         env:
@@ -544,6 +552,7 @@ jobs:
 
       - name: Windows extension installer preflight
         working-directory: src-tauri
+        shell: bash
         run: |
           node ../scripts/ci/run-rust-test-filter.mjs --filter services::extensions::git_dependencies_tests::git_materialization_installs_dependencies_without_running_scripts_or_npmrc --features windows-tests --exact --nocapture
           node ../scripts/ci/run-rust-test-filter.mjs --filter services::extensions::npm_runner_tests::local_fixture_install_never_runs_its_lifecycle_script --features windows-tests --exact --nocapture

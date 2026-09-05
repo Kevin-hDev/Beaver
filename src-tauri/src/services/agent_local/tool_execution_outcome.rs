@@ -1,6 +1,6 @@
-use super::types_ollama::ChatMessage;
 use super::tool_artifact::EphemeralArtifact;
 use super::tool_execution_artifacts::{AttributedArtifact, ToolExecutionArtifacts};
+use super::types_ollama::ChatMessage;
 use super::types_tools::ToolFollowUp;
 
 pub(super) const MAX_FOLLOW_UP_BYTES: usize = 16 * 1024;
@@ -42,7 +42,8 @@ impl ToolExecutionOutcome {
         tool_call_id: Option<&str>,
         artifacts: Vec<EphemeralArtifact>,
     ) -> Result<(), ()> {
-        self.artifacts.record(tool_call_index, tool_call_id, artifacts)
+        self.artifacts
+            .record(tool_call_index, tool_call_id, artifacts)
     }
 
     pub(crate) fn retain_artifacts(

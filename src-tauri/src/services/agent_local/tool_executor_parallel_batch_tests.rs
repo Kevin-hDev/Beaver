@@ -9,7 +9,12 @@ const TWENTY_MIB: u64 = 20 * 1024 * 1024;
 async fn flushes_two_read_chunks_before_one_shared_artifact_budget() {
     let root = tempfile::tempdir().expect("root");
     let calls: Vec<_> = (0..(MAX_PARALLEL + 1))
-        .map(|index| ("read_file".to_owned(), serde_json::json!({ "path": format!("{index}.bin") })))
+        .map(|index| {
+            (
+                "read_file".to_owned(),
+                serde_json::json!({ "path": format!("{index}.bin") }),
+            )
+        })
         .collect();
     let entries: Vec<_> = calls
         .iter()
@@ -76,13 +81,20 @@ async fn flushes_two_read_chunks_before_one_shared_artifact_budget() {
     for (index, slot) in indexed_results.iter_mut().enumerate().take(3) {
         let (_, result) = slot.as_mut().expect("admitted result");
         outcome
-            .record_artifacts(index, Some(&format!("call-{index}")), result.take_ephemeral_artifacts())
+            .record_artifacts(
+                index,
+                Some(&format!("call-{index}")),
+                result.take_ephemeral_artifacts(),
+            )
             .expect("bounded artifacts");
     }
     let artifacts = outcome.artifacts();
     assert_eq!(artifacts.len(), 3);
     for (index, artifact) in artifacts.iter().enumerate() {
         assert_eq!(artifact.tool_call_index, index);
-        assert_eq!(artifact.tool_call_id.as_deref(), Some(format!("call-{index}").as_str()));
+        assert_eq!(
+            artifact.tool_call_id.as_deref(),
+            Some(format!("call-{index}").as_str())
+        );
     }
 }

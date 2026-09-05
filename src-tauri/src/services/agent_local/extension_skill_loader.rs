@@ -7,9 +7,10 @@ pub(crate) async fn load_skill_for_session(
     if !skill_id.starts_with("extension:") {
         return super::tool_skill_loader::load_skill_with_metadata(skill_id).await;
     }
-    let loaded = crate::services::extensions::load_extension_skill_for_session(skill_id, session_id)
-        .await
-        .map_err(map_error)?;
+    let loaded =
+        crate::services::extensions::load_extension_skill_for_session(skill_id, session_id)
+            .await
+            .map_err(map_error)?;
     enrich(loaded.name, loaded.extension_id, loaded.bytes)
 }
 

@@ -1,16 +1,16 @@
 use super::conversation_journal::{validate_tool_results, ConversationJournal};
 use super::session_store;
 use super::types_ollama::ChatMessage;
+use crate::services::agent_local::tool_artifact::{
+    ArtifactMetadata, ArtifactPurpose, ArtifactSource, EphemeralArtifact,
+};
+use crate::services::agent_local::tool_execution_artifacts::AttributedArtifact;
 use crate::services::reasoning_continuity::contract::{
     ContinuationUse, CredentialScope, ReasoningModeId, ReplayTarget, RouteId,
 };
 use crate::services::reasoning_continuity::envelope::{
     CompletionState, ContinuationState, ReasoningEnvelope, ReasoningSource,
 };
-use crate::services::agent_local::tool_artifact::{
-    ArtifactMetadata, ArtifactPurpose, ArtifactSource, EphemeralArtifact,
-};
-use crate::services::agent_local::tool_execution_artifacts::AttributedArtifact;
 
 #[test]
 fn journal_rejects_missing_duplicate_and_reordered_tool_results() {
@@ -239,11 +239,21 @@ async fn tool_artifacts_are_persisted_with_the_matching_result() {
         .expect("persist result");
 
     let reloaded = session_store::get(&session.id).await.expect("reload");
-    let stored = &reloaded.messages.last().unwrap().tool_activities.as_ref().unwrap()[0];
+    let stored = &reloaded
+        .messages
+        .last()
+        .unwrap()
+        .tool_activities
+        .as_ref()
+        .unwrap()[0];
     assert_eq!(stored.artifacts.len(), 1);
     assert_eq!(stored.artifacts[0].name, "report.txt");
-    assert!(!serde_json::to_string(&stored.artifacts).unwrap().contains("bytes_data"));
-    session_store::delete_one(&session.id).await.expect("delete");
+    assert!(!serde_json::to_string(&stored.artifacts)
+        .unwrap()
+        .contains("bytes_data"));
+    session_store::delete_one(&session.id)
+        .await
+        .expect("delete");
 }
 
 #[tokio::test]
@@ -303,5 +313,7 @@ async fn mismatched_tool_artifacts_are_rejected_without_persisting_the_result() 
     let reloaded = session_store::get(&session.id).await.expect("reload");
     assert_eq!(reloaded.messages.len(), 1);
     assert_eq!(reloaded.messages[0].role, "assistant");
-    session_store::delete_one(&session.id).await.expect("delete");
+    session_store::delete_one(&session.id)
+        .await
+        .expect("delete");
 }

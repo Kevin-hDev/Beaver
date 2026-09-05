@@ -2,11 +2,7 @@ use super::*;
 
 #[test]
 fn command_name_is_qualified_by_source() {
-    let command = command_name(
-        "claude",
-        "frontend-design",
-        "claude:skill:0123456789abcdef",
-    );
+    let command = command_name("claude", "frontend-design", "claude:skill:0123456789abcdef");
 
     assert_eq!(command, "claude:frontend-design");
 }
@@ -25,7 +21,11 @@ fn local_skills_use_the_beaver_source_name() {
 
 #[test]
 fn command_name_filters_unsafe_characters() {
-    let command = command_name("agents", "review / ../ secrets", "agents:skill:123456789012");
+    let command = command_name(
+        "agents",
+        "review / ../ secrets",
+        "agents:skill:123456789012",
+    );
 
     assert_eq!(command, "agents:reviewsecrets");
     assert!(!command.contains('/'));

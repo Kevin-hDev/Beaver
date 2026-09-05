@@ -41,13 +41,33 @@ test("native Windows CI executes the AppContainer confinement boundary", () => {
   assert.match(confinement.run, /--exact --ignored --nocapture/u);
 });
 
+test("Windows multi-command native contracts stop after the first failure", () => {
+  const guardedSteps = [
+    ["backend-windows", "Windows extension installer preflight"],
+    ["backend-windows-native", "Windows CEF supervision authority"],
+    ["backend-windows-native", "Ollama manager contracts and historical scenarios"],
+    ["windows-extension-host-smoke", "Rust owned-process protocol smoke"],
+  ];
+  for (const [jobName, stepName] of guardedSteps) {
+    const step = ci.jobs[jobName].steps.find(({ name }) => name === stepName);
+    assert.equal(step.shell, "bash", `${jobName}: ${stepName}`);
+  }
+  const ollama = ci.jobs["backend-windows-native"].steps.find(
+    ({ name }) => name === "Ollama manager contracts and historical scenarios",
+  );
+  assert.match(ollama.run, /services::ollama_manager --features windows-tests/u);
+});
+
 test("Windows packages and acceptance run in separate jobs", () => {
   const build = ci.jobs["backend-windows-native"];
   const acceptance = ci.jobs["windows-packaged-acceptance"];
+  const upload = build.steps.find(({ name }) => name === "Upload Windows E2E package");
+  const download = acceptance.steps.find(({ name }) => name === "Download Windows E2E package");
+  assert.equal(ci.env.WINDOWS_E2E_PACKAGE_DIR, "target/e2e/debug/bundle/nsis");
   assert.equal(acceptance.needs, "backend-windows-native");
   assert.ok(build.steps.some(({ name }) => name === "Build Windows E2E package"));
-  assert.ok(build.steps.some(({ name }) => name === "Upload Windows E2E package"));
-  assert.ok(acceptance.steps.some(({ name }) => name === "Download Windows E2E package"));
+  assert.equal(upload.with.path, "${{ env.WINDOWS_E2E_PACKAGE_DIR }}/*.exe");
+  assert.equal(download.with.path, "${{ env.WINDOWS_E2E_PACKAGE_DIR }}");
   assert.ok(acceptance.steps.some(({ name }) => name === "Native Windows CEF journey"));
 });
 

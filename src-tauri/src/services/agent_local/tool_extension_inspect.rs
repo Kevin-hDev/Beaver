@@ -63,7 +63,8 @@ pub async fn execute(args: &Value, session_id: &str, request_id: Option<&str>) -
     .await
     {
         Ok((content, outcomes)) => {
-            super::tool_extension_catalog_diagnostics::record(session_id, request_id, &outcomes).await;
+            super::tool_extension_catalog_diagnostics::record(session_id, request_id, &outcomes)
+                .await;
             ToolResult::ok(content)
         }
         Err(_) => {

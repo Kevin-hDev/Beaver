@@ -55,16 +55,24 @@ async fn workspace_revalidation_marks_intact_modified_and_inaccessible() {
 
 #[tokio::test]
 async fn history_verification_budget_skips_files_before_reading_them() {
-    use super::session_artifact_verification::{verify_workspace_bounded, HistoryVerificationBudget};
+    use super::session_artifact_verification::{
+        verify_workspace_bounded, HistoryVerificationBudget,
+    };
     let mut budget = HistoryVerificationBudget::default();
     let record = workspace("/missing".into(), "invalid".into(), b"");
     let mut verified = 0;
     for _ in 0..100 {
-        if verify_workspace_bounded(&record, None, &mut budget).await.is_some() {
+        if verify_workspace_bounded(&record, None, &mut budget)
+            .await
+            .is_some()
+        {
             verified += 1;
         }
     }
-    assert_eq!(verified, 3, "20 MiB per file plus overflow probe; 64 MiB total");
+    assert_eq!(
+        verified, 3,
+        "20 MiB per file plus overflow probe; 64 MiB total"
+    );
 }
 
 #[tokio::test]
@@ -74,11 +82,21 @@ async fn intact_workspace_hash_is_case_insensitive() {
     std::fs::write(&path, b"first").unwrap();
     let key = [7_u8; 32];
     let registered = crate::services::attachment_access::register_paths(
-        &[path.to_string_lossy().into_owned()], &key, |_| true,
-    ).unwrap();
-    let mut record = workspace(registered[0].path.clone(), registered[0].access_grant.clone(), b"first");
+        &[path.to_string_lossy().into_owned()],
+        &key,
+        |_| true,
+    )
+    .unwrap();
+    let mut record = workspace(
+        registered[0].path.clone(),
+        registered[0].access_grant.clone(),
+        b"first",
+    );
     record.sha256.make_ascii_uppercase();
-    assert_eq!(verify_workspace(&record, Some(&key)).await, ToolArtifactStatus::Intact);
+    assert_eq!(
+        verify_workspace(&record, Some(&key)).await,
+        ToolArtifactStatus::Intact
+    );
 }
 
 #[test]
@@ -94,16 +112,15 @@ fn resource_revalidation_maps_current_update_disabled_and_removed() {
             catalog_fingerprint: "a".repeat(64),
         },
     };
-    let loaded = |fingerprint: String, bytes: Vec<u8>| {
-        crate::services::extensions::LoadedResource {
+    let loaded =
+        |fingerprint: String, bytes: Vec<u8>| crate::services::extensions::LoadedResource {
             name: "resource".into(),
             extension_id: "demo".into(),
             qualified_resource_id: "extension:demo:file".into(),
             catalog_fingerprint: fingerprint,
             bytes,
             signature: crate::services::file_signature::FileSignature::Binary,
-        }
-    };
+        };
     assert_eq!(
         resource_status_from_load(&record, Ok(loaded("a".repeat(64), b"first".to_vec()))),
         ToolArtifactStatus::Intact

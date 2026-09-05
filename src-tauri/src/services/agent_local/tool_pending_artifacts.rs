@@ -13,10 +13,7 @@ pub(crate) async fn resolve_for_result(
     }
     let mut results = vec![Some(result)];
     super::tool_pending_artifact_batch::resolve_batch(&mut results, working_dir, cancel).await;
-    results
-        .pop()
-        .flatten()
-        .unwrap_or_else(invalid_result)
+    results.pop().flatten().unwrap_or_else(invalid_result)
 }
 
 #[cfg(test)]

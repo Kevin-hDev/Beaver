@@ -78,7 +78,8 @@ pub async fn run_sequential(
                     &tr,
                 )
                 .await;
-                if !merge_or_stop(&mut outcome,
+                if !merge_or_stop(
+                    &mut outcome,
                     push_and_compress(
                         on_event,
                         messages,
@@ -109,7 +110,8 @@ pub async fn run_sequential(
                 &tr,
             )
             .await;
-            if !merge_or_stop(&mut outcome,
+            if !merge_or_stop(
+                &mut outcome,
                 push_and_compress(
                     on_event,
                     messages,
@@ -164,7 +166,8 @@ pub async fn run_sequential(
         post_record_write(name, args, working_dir, &tr, write_guard);
         super::tool_executor_diagnostics::completed(session_id, request_id, name, arg_summary, &tr)
             .await;
-        if !merge_or_stop(&mut outcome,
+        if !merge_or_stop(
+            &mut outcome,
             push_and_compress(
                 on_event,
                 messages,

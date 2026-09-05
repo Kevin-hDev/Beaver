@@ -42,12 +42,15 @@ fn compromised_host_contribution_is_refused_before_runtime_projection() {
         ..Default::default()
     };
 
-    assert!(matches!(super::runtime_sync_contributions::validate(
-        &HostIdentity::ThirdParty(specification.id.clone()),
-        &specification.id,
-        &specification,
-        contributions,
-    ), Err(super::runtime_sync_contributions::ValidationError::InvalidContribution)));
+    assert!(matches!(
+        super::runtime_sync_contributions::validate(
+            &HostIdentity::ThirdParty(specification.id.clone()),
+            &specification.id,
+            &specification,
+            contributions,
+        ),
+        Err(super::runtime_sync_contributions::ValidationError::InvalidContribution)
+    ));
 }
 
 #[test]
@@ -64,10 +67,13 @@ fn stable_core_replacement_is_classified_as_advanced_required() {
         ..Default::default()
     };
 
-    assert!(matches!(super::runtime_sync_contributions::validate(
-        &HostIdentity::ThirdParty(specification.id.clone()),
-        &specification.id,
-        &specification,
-        contributions,
-    ), Err(super::runtime_sync_contributions::ValidationError::AdvancedRequired)));
+    assert!(matches!(
+        super::runtime_sync_contributions::validate(
+            &HostIdentity::ThirdParty(specification.id.clone()),
+            &specification.id,
+            &specification,
+            contributions,
+        ),
+        Err(super::runtime_sync_contributions::ValidationError::AdvancedRequired)
+    ));
 }

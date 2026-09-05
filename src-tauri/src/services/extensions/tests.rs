@@ -162,7 +162,8 @@ fn stale_persisted_contributions_are_removed_before_a_restart() {
 
     super::storage::save_to(&storage, &[record], &None).unwrap();
 
-    let persisted: serde_json::Value = serde_json::from_slice(&std::fs::read(&storage).unwrap()).unwrap();
+    let persisted: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(&storage).unwrap()).unwrap();
     assert!(persisted.pointer("/extensions/0/contributions").is_none());
     assert!(super::storage::load_from(&storage).unwrap().extensions[0]
         .contributions

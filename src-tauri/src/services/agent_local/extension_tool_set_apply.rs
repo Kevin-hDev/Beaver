@@ -21,9 +21,7 @@ pub fn plugin_descriptors(tools: &[Value]) -> Vec<PluginDescriptor> {
                 .collect::<HashSet<_>>();
             let definitions = tools
                 .iter()
-                .filter(|tool| {
-                    definition_name(tool).is_some_and(|name| names.contains(name))
-                })
+                .filter(|tool| definition_name(tool).is_some_and(|name| names.contains(name)))
                 .collect::<Vec<_>>();
             if definitions.is_empty() && !plugin.tools.is_empty() {
                 return None;
@@ -32,9 +30,7 @@ pub fn plugin_descriptors(tools: &[Value]) -> Vec<PluginDescriptor> {
                 id: plugin.id,
                 tool_count: definitions
                     .iter()
-                    .filter(|tool| {
-                        crate::services::extensions::core_fallback(tool).is_none()
-                    })
+                    .filter(|tool| crate::services::extensions::core_fallback(tool).is_none())
                     .count(),
                 definition_count: definitions.len(),
             })
@@ -69,11 +65,13 @@ pub fn active_definitions_with(
         .filter_map(|tool| {
             let plugin_id = definition_name(tool).and_then(&plugin_id_for_tool);
             match plugin_id {
-                Some(plugin_id) if active.contains(plugin_id.as_str()) => {
-                    Some(crate::services::extensions::without_core_fallback(tool.clone()))
-                }
+                Some(plugin_id) if active.contains(plugin_id.as_str()) => Some(
+                    crate::services::extensions::without_core_fallback(tool.clone()),
+                ),
                 Some(_) => crate::services::extensions::core_fallback(tool).cloned(),
-                None => Some(crate::services::extensions::without_core_fallback(tool.clone())),
+                None => Some(crate::services::extensions::without_core_fallback(
+                    tool.clone(),
+                )),
             }
         })
         .collect::<Vec<_>>();
@@ -88,11 +86,9 @@ fn cap_definitions(tools: Vec<Value>, provider_tool_limit: usize) -> ActiveDefin
             additional_omitted_tools: 0,
         };
     }
-    let list_index = tools
-        .iter()
-        .position(|tool| {
-            definition_name(tool) == Some(crate::services::extensions::LIST_EXTENSIONS_TOOL_NAME)
-        });
+    let list_index = tools.iter().position(|tool| {
+        definition_name(tool) == Some(crate::services::extensions::LIST_EXTENSIONS_TOOL_NAME)
+    });
     let inspect_index = tools.iter().position(|tool| {
         definition_name(tool) == Some(crate::services::extensions::INSPECT_EXTENSIONS_TOOL_NAME)
     });

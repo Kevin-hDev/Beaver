@@ -80,10 +80,7 @@ static DELEGATE_TASK: Schema = &[
 ];
 static SUBAGENT_ID: Schema = &[("subagent_id", Ty::Str, true)];
 static MESSAGE_SUBAGENT: Schema = &[("subagent_id", Ty::Str, true), ("prompt", Ty::Str, true)];
-static SUBAGENT_CHANGE: Schema = &[
-    ("subagent_id", Ty::Str, true),
-    ("change_id", Ty::Str, true),
-];
+static SUBAGENT_CHANGE: Schema = &[("subagent_id", Ty::Str, true), ("change_id", Ty::Str, true)];
 static READ_SPREADSHEET: Schema = &[
     ("path", Ty::Str, true),
     ("sheet", Ty::Str, false),
@@ -146,7 +143,9 @@ pub(super) fn schema(tool: &str) -> Option<Schema> {
         "web_search" => WEB_SEARCH,
         "web_fetch" => WEB_FETCH,
         name if name == crate::services::extensions::LIST_EXTENSIONS_TOOL_NAME => &[],
-        name if name == crate::services::extensions::INSPECT_EXTENSIONS_TOOL_NAME => INSPECT_EXTENSIONS,
+        name if name == crate::services::extensions::INSPECT_EXTENSIONS_TOOL_NAME => {
+            INSPECT_EXTENSIONS
+        }
         "todo_write" => TODO_WRITE,
         "todo_history" => TODO_HISTORY,
         "todo_pause" => TODO_PAUSE,

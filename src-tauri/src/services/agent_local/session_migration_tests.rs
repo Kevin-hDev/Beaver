@@ -27,17 +27,30 @@ const V4_TOOL_ACTIVITY_FIXTURE: &[u8] =
 #[tokio::test]
 async fn v4_tool_activity_fixture_migrates_with_empty_artifacts_and_exact_backup() {
     let root = tempfile::tempdir().expect("tempdir");
-    let path = root.path().join("00000000-0000-4000-8000-000000000030.json");
+    let path = root
+        .path()
+        .join("00000000-0000-4000-8000-000000000030.json");
     crate::services::private_store::atomic_write(&path, V4_TOOL_ACTIVITY_FIXTURE)
         .expect("seed v4 fixture");
     let migrated = super::session_migration::read(V4_TOOL_ACTIVITY_FIXTURE, path.clone())
         .expect("migrate fixture");
-    assert_eq!(migrated.version(), super::session_migration::LoadedVersion::V4);
-    assert!(migrated.session().messages[1].tool_activities.as_ref().unwrap()[0]
+    assert_eq!(
+        migrated.version(),
+        super::session_migration::LoadedVersion::V4
+    );
+    assert!(migrated.session().messages[1]
+        .tool_activities
+        .as_ref()
+        .unwrap()[0]
         .artifacts
         .is_empty());
-    super::session_migration::commit_current(&migrated).await.expect("publish v5");
-    assert_eq!(std::fs::read(path.with_extension("json.v4.bak")).unwrap(), V4_TOOL_ACTIVITY_FIXTURE);
+    super::session_migration::commit_current(&migrated)
+        .await
+        .expect("publish v5");
+    assert_eq!(
+        std::fs::read(path.with_extension("json.v4.bak")).unwrap(),
+        V4_TOOL_ACTIVITY_FIXTURE
+    );
 }
 
 #[tokio::test]
@@ -55,7 +68,10 @@ async fn v4_migrates_to_v5_with_empty_artifacts_and_exact_backup() {
 
     let migrated = super::session_migration::read(&bytes, path.clone()).expect("migrate v4");
 
-    assert_eq!(migrated.version(), super::session_migration::LoadedVersion::V4);
+    assert_eq!(
+        migrated.version(),
+        super::session_migration::LoadedVersion::V4
+    );
     assert_eq!(migrated.session().schema_version, 5);
     assert!(migrated.session().messages.iter().all(|message| {
         message
@@ -67,7 +83,9 @@ async fn v4_migrates_to_v5_with_empty_artifacts_and_exact_backup() {
     super::session_migration::commit_current(&migrated)
         .await
         .expect("publish v5");
-    let backup = root.path().join("00000000-0000-4000-8000-000000000051.json.v4.bak");
+    let backup = root
+        .path()
+        .join("00000000-0000-4000-8000-000000000051.json.v4.bak");
     assert_eq!(std::fs::read(backup).expect("v4 backup"), bytes);
 }
 
@@ -779,7 +797,12 @@ async fn future_session_is_visible_without_continuity_or_rewrite() {
         .await
         .expect("future visible");
     assert_eq!(visible.schema_version, 99);
-    assert_eq!(visible.messages[1].tool_activities.as_ref().unwrap()[0].artifacts.len(), 1);
+    assert_eq!(
+        visible.messages[1].tool_activities.as_ref().unwrap()[0]
+            .artifacts
+            .len(),
+        1
+    );
     assert_eq!(visible.messages[1].content, "fixture-assistant-content");
     assert!(visible.messages[1].continuation.is_none());
     assert!(visible.messages[0].replay_source.is_none());

@@ -8,7 +8,12 @@ pub(crate) async fn execute(args: &Value, session_id: &str) -> ToolResult {
     let Some(resource_id) = args.get("resource_id").and_then(Value::as_str) else {
         return ToolResult::validation("resource_id_required", "Identifiant de ressource requis.");
     };
-    match crate::services::extensions::prepare_extension_resource_for_session(resource_id, session_id).await {
+    match crate::services::extensions::prepare_extension_resource_for_session(
+        resource_id,
+        session_id,
+    )
+    .await
+    {
         Ok(resource) => pending_resource_result(resource),
         Err(error) => failure(error),
     }
@@ -27,9 +32,7 @@ fn pending_resource_result(resource: crate::services::extensions::PreparedResour
 }
 
 #[cfg(test)]
-pub(super) fn resource_result(
-    resource: crate::services::extensions::LoadedResource,
-) -> ToolResult {
+pub(super) fn resource_result(resource: crate::services::extensions::LoadedResource) -> ToolResult {
     if resource.signature == crate::services::file_signature::FileSignature::Utf8 {
         let summary = resource.name.clone();
         let source = resource.extension_id.clone();

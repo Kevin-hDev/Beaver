@@ -44,7 +44,13 @@ mod tests {
     #[test]
     fn main_agent_receives_both_extension_discovery_tools() {
         let definitions = super::get_tool_definitions();
-        let names = definitions.iter().filter_map(|tool| tool.pointer("/function/name").and_then(serde_json::Value::as_str)).collect::<Vec<_>>();
+        let names = definitions
+            .iter()
+            .filter_map(|tool| {
+                tool.pointer("/function/name")
+                    .and_then(serde_json::Value::as_str)
+            })
+            .collect::<Vec<_>>();
         assert!(names.contains(&"list_extensions"));
         assert!(names.contains(&"inspect_extensions"));
         assert!(names.contains(&super::super::tool_extension_resource::NAME));

@@ -28,7 +28,10 @@ pub(super) async fn resolve_and_record_diagnostics<'a>(
 
 fn take_results<'a>(
     indexed_results: &mut [IndexedResult<'a>],
-) -> (Vec<Option<&'a str>>, Vec<Option<crate::services::agent_local::types_tools::ToolResult>>) {
+) -> (
+    Vec<Option<&'a str>>,
+    Vec<Option<crate::services::agent_local::types_tools::ToolResult>>,
+) {
     indexed_results
         .iter_mut()
         .map(|slot| match slot.take() {
@@ -80,7 +83,11 @@ pub(super) fn resolve_with_test_key(
     let (names, results) = take_results(indexed_results);
     let mut budget = super::tool_pending_artifact_batch::BatchArtifactBudget::new();
     let results = super::tool_pending_artifact_batch::resolve_with_budget(
-        results, working_dir, cancel, &mut budget, Some(key),
+        results,
+        working_dir,
+        cancel,
+        &mut budget,
+        Some(key),
     );
     restore_results(indexed_results, names, results);
 }

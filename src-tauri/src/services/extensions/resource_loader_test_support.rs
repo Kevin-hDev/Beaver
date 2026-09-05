@@ -57,11 +57,11 @@ impl TestRegistry {
         crate::services::agent_local::extension_session_state::mutate(session_id, |state| {
             *state = crate::services::agent_local::extension_session_state::ExtensionSessionState {
                 epoch: Some(DiscoveryEpoch {
-                provider: provider.into(),
-                model: model.into(),
-                context_window: 128_000,
+                    provider: provider.into(),
+                    model: model.into(),
+                    context_window: 128_000,
                     catalog_version: "0".repeat(64),
-                masked: false,
+                    masked: false,
                 }),
                 plugin_tool_capacity: super::types::MAX_TOOLS,
                 plugin_descriptors: [&self.first, &self.second]

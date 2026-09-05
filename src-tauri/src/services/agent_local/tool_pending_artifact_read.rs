@@ -1,5 +1,7 @@
+use super::tool_pending_artifact_errors::{
+    artifact_error, file_error, invalid_result, too_large_result,
+};
 use super::tool_pending_artifact_inspect::PreparedResult;
-use super::tool_pending_artifact_errors::{artifact_error, file_error, invalid_result, too_large_result};
 use super::types_tools::ToolResult;
 use tokio_util::sync::CancellationToken;
 
@@ -9,9 +11,7 @@ pub(super) fn read_result(
     key: Option<&[u8]>,
 ) -> ToolResult {
     read_result_with(prepared, cancel, key, |inspected, max_bytes, cancel| {
-        crate::services::extensions::read_inspected_file_cancellable(
-            inspected, max_bytes, cancel,
-        )
+        crate::services::extensions::read_inspected_file_cancellable(inspected, max_bytes, cancel)
     })
 }
 
@@ -83,8 +83,11 @@ where
             let Ok(text) = String::from_utf8(loaded.bytes) else {
                 return invalid_result();
             };
-            prepared.result.content = format!("Resource source: {}\n\n{text}", resource.extension_id);
-        } else if let Ok(Some(artifact)) = crate::services::extensions::extension_resource_artifact(loaded) {
+            prepared.result.content =
+                format!("Resource source: {}\n\n{text}", resource.extension_id);
+        } else if let Ok(Some(artifact)) =
+            crate::services::extensions::extension_resource_artifact(loaded)
+        {
             artifacts.push(artifact);
         } else {
             return invalid_result();
@@ -103,12 +106,17 @@ pub(super) fn read_result_cancelling_after_chunk(
     key: Option<&[u8]>,
 ) -> ToolResult {
     let trigger = cancel.clone();
-    read_result_with(prepared, cancel, key, move |inspected, max_bytes, cancel| {
-        crate::services::extensions::read_inspected_file_cancellable_after_chunk(
-            inspected,
-            max_bytes,
-            cancel,
-            || trigger.cancel(),
-        )
-    })
+    read_result_with(
+        prepared,
+        cancel,
+        key,
+        move |inspected, max_bytes, cancel| {
+            crate::services::extensions::read_inspected_file_cancellable_after_chunk(
+                inspected,
+                max_bytes,
+                cancel,
+                || trigger.cancel(),
+            )
+        },
+    )
 }

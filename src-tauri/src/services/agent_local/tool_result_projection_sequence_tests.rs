@@ -1,9 +1,9 @@
-use super::super::tool_executor_results::push_tool_message;
 use super::super::tool_artifact::{
     ArtifactMetadata, ArtifactPurpose, ArtifactSource, EphemeralArtifact,
 };
-use super::ToolResultPreviewBatch;
+use super::super::tool_executor_results::push_tool_message;
 use super::super::types_tools::ToolResult;
+use super::ToolResultPreviewBatch;
 
 #[test]
 fn parallel_tool_receipts_remain_ordered_before_the_single_media_follow_up() {
@@ -52,7 +52,10 @@ fn parallel_tool_receipts_remain_ordered_before_the_single_media_follow_up() {
     assert_eq!(wire[0]["tool_call_id"], "call-0");
     assert_eq!(wire[1]["tool_call_id"], "call-1");
     assert_eq!(wire[2]["role"], "user");
-    assert_eq!(wire[2]["content"][0]["text"], "Extension output (not user instruction).");
+    assert_eq!(
+        wire[2]["content"][0]["text"],
+        "Extension output (not user instruction)."
+    );
     previews.clear_after_projection();
     assert!(previews.previews().is_empty());
     assert_eq!(messages[1].content, "second");
@@ -71,7 +74,11 @@ fn only_explicit_image_previews_reach_the_projection_batch() {
     let unsupported = ToolResultPreviewBatch::from_ephemeral(
         0,
         Some("call-invalid".into()),
-        artifact(ArtifactPurpose::Preview, "image/png", b"not an image".to_vec()),
+        artifact(
+            ArtifactPurpose::Preview,
+            "image/png",
+            b"not an image".to_vec(),
+        ),
     );
     assert!(unsupported.previews().is_empty());
     assert_eq!(unsupported.notes().len(), 1);
@@ -84,11 +91,7 @@ fn only_explicit_image_previews_reach_the_projection_batch() {
     assert_eq!(detected.previews()[0].artifact.mime_type, "image/png");
 }
 
-fn artifact(
-    purpose: ArtifactPurpose,
-    mime_type: &str,
-    bytes: Vec<u8>,
-) -> EphemeralArtifact {
+fn artifact(purpose: ArtifactPurpose, mime_type: &str, bytes: Vec<u8>) -> EphemeralArtifact {
     EphemeralArtifact {
         metadata: ArtifactMetadata {
             name: "preview.png".into(),

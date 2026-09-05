@@ -16,8 +16,14 @@ pub(crate) struct ArtifactMetadata {
 #[derive(Clone, Debug, Serialize)]
 #[serde(tag = "kind", rename_all = "camelCase")]
 pub(crate) enum ArtifactSource {
-    WorkspaceFile { path: std::path::PathBuf, grant: String },
-    ExtensionResource { resource_id: String, catalog_fingerprint: String },
+    WorkspaceFile {
+        path: std::path::PathBuf,
+        grant: String,
+    },
+    ExtensionResource {
+        resource_id: String,
+        catalog_fingerprint: String,
+    },
 }
 
 #[derive(Clone, Debug)]
@@ -85,12 +91,13 @@ impl From<&ArtifactMetadata> for super::tool_artifact_record::ToolArtifactRecord
                 path: path.to_string_lossy().into_owned(),
                 grant: grant.clone(),
             },
-            ArtifactSource::ExtensionResource { resource_id, catalog_fingerprint } => {
-                ToolArtifactSource::ExtensionResource {
-                    resource_id: resource_id.clone(),
-                    catalog_fingerprint: catalog_fingerprint.clone(),
-                }
-            }
+            ArtifactSource::ExtensionResource {
+                resource_id,
+                catalog_fingerprint,
+            } => ToolArtifactSource::ExtensionResource {
+                resource_id: resource_id.clone(),
+                catalog_fingerprint: catalog_fingerprint.clone(),
+            },
         };
         Self {
             name: metadata.name.clone(),

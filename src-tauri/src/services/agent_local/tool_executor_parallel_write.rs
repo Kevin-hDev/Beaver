@@ -19,7 +19,7 @@ pub async fn execute_tracked_write(
         ctx.session_id,
         ctx.plan_mode_active,
     )
-        .await
+    .await
     {
         return super::tool_executor_errors::permission(msg, "tool_not_allowed_in_plan");
     }

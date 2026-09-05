@@ -52,14 +52,16 @@ fn contributions_reject_r0_collections_and_unknown_resource_types() {
         .collect();
     assert!(super::validation::contributions(&oversized_resources).is_err());
 
-    assert!(serde_json::from_value::<ExtensionResource>(serde_json::json!({
-        "id": "unknown",
-        "name": "Inconnue",
-        "description": "Type inconnu.",
-        "type": "archive",
-        "path": "resources/archive.bin"
-    }))
-    .is_err());
+    assert!(
+        serde_json::from_value::<ExtensionResource>(serde_json::json!({
+            "id": "unknown",
+            "name": "Inconnue",
+            "description": "Type inconnu.",
+            "type": "archive",
+            "path": "resources/archive.bin"
+        }))
+        .is_err()
+    );
 }
 
 #[test]
@@ -102,32 +104,38 @@ fn contribution_shapes_reject_unknown_fields() {
         "root": "/untrusted"
     }))
     .is_err());
-    assert!(serde_json::from_value::<ExtensionResource>(serde_json::json!({
-        "id": "resource",
-        "name": "Resource",
-        "description": "Description.",
-        "type": "text",
-        "path": "resources/reference.txt",
-        "root": "/untrusted"
-    }))
-    .is_err());
+    assert!(
+        serde_json::from_value::<ExtensionResource>(serde_json::json!({
+            "id": "resource",
+            "name": "Resource",
+            "description": "Description.",
+            "type": "text",
+            "path": "resources/reference.txt",
+            "root": "/untrusted"
+        }))
+        .is_err()
+    );
 }
 
 #[test]
 fn contribution_envelope_rejects_unknown_fields() {
-    assert!(serde_json::from_value::<ExtensionContributions>(serde_json::json!({
-        "skills": [],
-        "resources": [],
-        "root": "/untrusted"
-    }))
-    .is_err());
+    assert!(
+        serde_json::from_value::<ExtensionContributions>(serde_json::json!({
+            "skills": [],
+            "resources": [],
+            "root": "/untrusted"
+        }))
+        .is_err()
+    );
 }
 
 #[test]
 fn load_result_rejects_an_unattributed_root() {
-    assert!(serde_json::from_value::<super::protocol::LoadResult>(serde_json::json!({
-        "id": "com.example.safe",
-        "root": "/untrusted"
-    }))
-    .is_err());
+    assert!(
+        serde_json::from_value::<super::protocol::LoadResult>(serde_json::json!({
+            "id": "com.example.safe",
+            "root": "/untrusted"
+        }))
+        .is_err()
+    );
 }

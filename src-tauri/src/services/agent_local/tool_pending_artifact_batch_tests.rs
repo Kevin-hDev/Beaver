@@ -77,8 +77,14 @@ fn one_budget_bounds_more_than_one_parallel_chunk() {
         Some(&KEY),
     );
 
-    assert!(results.iter().take(3).all(|result| !result.as_ref().unwrap().is_error));
-    assert!(results.iter().skip(3).all(|result| result.as_ref().unwrap().is_error));
+    assert!(results
+        .iter()
+        .take(3)
+        .all(|result| !result.as_ref().unwrap().is_error));
+    assert!(results
+        .iter()
+        .skip(3)
+        .all(|result| result.as_ref().unwrap().is_error));
 }
 
 #[test]
@@ -261,8 +267,7 @@ fn repeated_admission_never_exceeds_the_generated_batch_limit() {
 #[test]
 fn cancellation_during_coordinator_read_keeps_plain_neighbors_and_no_partial_artifact() {
     let root = tempfile::tempdir().expect("root");
-    std::fs::write(root.path().join("large.bin"), vec![3_u8; 128 * 1024])
-        .expect("artifact file");
+    std::fs::write(root.path().join("large.bin"), vec![3_u8; 128 * 1024]).expect("artifact file");
     let mut pending = ToolResult::ok("pending");
     pending
         .set_pending_artifacts(vec![PendingArtifact::from_validated(
@@ -272,12 +277,9 @@ fn cancellation_during_coordinator_read_keeps_plain_neighbors_and_no_partial_art
         )])
         .expect("pending artifact");
     let cancel = CancellationToken::new();
-    let prepared = super::super::tool_pending_artifact_inspect::inspect_result(
-        pending,
-        root.path(),
-        &cancel,
-    )
-    .expect("inspected result");
+    let prepared =
+        super::super::tool_pending_artifact_inspect::inspect_result(pending, root.path(), &cancel)
+            .expect("inspected result");
 
     let result = super::super::tool_pending_artifact_read::read_result_cancelling_after_chunk(
         prepared,

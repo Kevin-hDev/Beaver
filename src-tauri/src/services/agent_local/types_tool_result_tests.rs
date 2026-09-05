@@ -32,10 +32,7 @@ fn cancellation_preserves_result_context() {
     assert_eq!(result.status, ToolResultStatus::Cancelled);
     assert_eq!(result.content, "cancelled after a partial write");
     assert_eq!(result.affected_paths(), ["changed.txt"]);
-    assert_eq!(
-        result.error.unwrap().category,
-        ToolErrorCategory::Cancelled
-    );
+    assert_eq!(result.error.unwrap().category, ToolErrorCategory::Cancelled);
 }
 
 #[test]
@@ -90,7 +87,9 @@ fn file_change_details_keep_a_bounded_sample_and_report_counts() {
 
 #[test]
 fn affected_paths_keep_a_bounded_sample_and_report_counts() {
-    let paths = (0..200).map(|index| format!("src/file-{index}.rs")).collect();
+    let paths = (0..200)
+        .map(|index| format!("src/file-{index}.rs"))
+        .collect();
     let mut result = ToolResult::ok("done").with_affected_paths(paths);
 
     let counts = result.bound_affected_paths();

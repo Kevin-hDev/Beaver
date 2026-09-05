@@ -38,8 +38,14 @@ pub(crate) enum ToolArtifactStatus {
 #[serde(tag = "kind", rename_all = "snake_case")]
 #[cfg_attr(test, ts(tag = "kind", rename_all = "snake_case"))]
 pub(crate) enum ToolArtifactSource {
-    WorkspaceFile { path: String, grant: String },
-    ExtensionResource { resource_id: String, catalog_fingerprint: String },
+    WorkspaceFile {
+        path: String,
+        grant: String,
+    },
+    ExtensionResource {
+        resource_id: String,
+        catalog_fingerprint: String,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -62,8 +68,7 @@ pub(crate) fn validate(artifacts: &[ToolArtifactRecord]) -> Result<(), ()> {
         if !safe_text_chars(
             &artifact.name,
             crate::services::extensions::types::MAX_EXTENSION_NAME_CHARS,
-        )
-            || !safe_text_bytes(&artifact.mime_type, MAX_ATTACHMENT_MIME_BYTES)
+        ) || !safe_text_bytes(&artifact.mime_type, MAX_ATTACHMENT_MIME_BYTES)
             || artifact.bytes > crate::services::extensions::types::MAX_RESULT_BYTES as u64
             || artifact.sha256.len() != SHA256_HEX_BYTES
             || !artifact.sha256.bytes().all(|byte| byte.is_ascii_hexdigit())
@@ -86,7 +91,9 @@ pub(crate) fn validate(artifacts: &[ToolArtifactRecord]) -> Result<(), ()> {
                     || crate::services::extensions::parse_qualified_contribution_id(resource_id)
                         .is_err()
                     || catalog_fingerprint.len() != SHA256_HEX_BYTES
-                    || !catalog_fingerprint.bytes().all(|byte| byte.is_ascii_hexdigit())
+                    || !catalog_fingerprint
+                        .bytes()
+                        .all(|byte| byte.is_ascii_hexdigit())
                 {
                     return Err(());
                 }
@@ -101,9 +108,7 @@ fn safe_text_bytes(value: &str, maximum: usize) -> bool {
 }
 
 fn safe_text_chars(value: &str, maximum: usize) -> bool {
-    !value.is_empty()
-        && value.chars().count() <= maximum
-        && !value.chars().any(char::is_control)
+    !value.is_empty() && value.chars().count() <= maximum && !value.chars().any(char::is_control)
 }
 
 #[cfg(test)]
@@ -129,7 +134,8 @@ mod tests {
         let mut value = serde_json::to_value(artifact()).unwrap();
         value["future_field"] = serde_json::json!({"version": 2});
         value["source"]["future_source_field"] = serde_json::json!(true);
-        let parsed: ToolArtifactRecord = serde_json::from_value(value).expect("tolerant persisted read");
+        let parsed: ToolArtifactRecord =
+            serde_json::from_value(value).expect("tolerant persisted read");
         assert!(validate(&[parsed]).is_ok());
     }
 
@@ -169,5 +175,4 @@ mod tests {
         };
         assert!(validate(&[grant]).is_ok());
     }
-
 }

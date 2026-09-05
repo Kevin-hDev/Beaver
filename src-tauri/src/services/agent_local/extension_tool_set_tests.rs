@@ -92,9 +92,34 @@ fn an_active_replacement_never_exposes_internal_fallback_metadata() {
 
 #[test]
 fn inspected_extension_schemas_arrive_only_after_the_next_set_application() {
-    let tools = vec![json!({"function":{"name":"example.a.one","parameters":{"type":"object"}}}), json!({"function":{"name":"example.a.two","parameters":{"type":"object"}}})];
-    let catalog = crate::services::extensions::CatalogSnapshot { ordered_plugin_ids: vec!["example.a".into()], capacity_plugin_ids: vec!["example.a".into()], ..Default::default() };
-    let mut set = ExtensionToolSet { all: tools, active: Vec::new(), managed: true, masked: true, provider_tool_limit: 8, plugin_tool_capacity: 2, plugin_descriptors: vec![super::super::extension_tool_selection::PluginDescriptor { id:"example.a".into(), tool_count:2, definition_count:2 }], active_plugin_ids:Vec::new(), discovered_plugin_ids:Vec::new(), provider_id:String::new(), omitted_plugin_ids:Vec::new(), omitted_tool_names:Vec::new(), additional_omitted_tools:0 };
+    let tools = vec![
+        json!({"function":{"name":"example.a.one","parameters":{"type":"object"}}}),
+        json!({"function":{"name":"example.a.two","parameters":{"type":"object"}}}),
+    ];
+    let catalog = crate::services::extensions::CatalogSnapshot {
+        ordered_plugin_ids: vec!["example.a".into()],
+        capacity_plugin_ids: vec!["example.a".into()],
+        ..Default::default()
+    };
+    let mut set = ExtensionToolSet {
+        all: tools,
+        active: Vec::new(),
+        managed: true,
+        masked: true,
+        provider_tool_limit: 8,
+        plugin_tool_capacity: 2,
+        plugin_descriptors: vec![super::super::extension_tool_selection::PluginDescriptor {
+            id: "example.a".into(),
+            tool_count: 2,
+            definition_count: 2,
+        }],
+        active_plugin_ids: Vec::new(),
+        discovered_plugin_ids: Vec::new(),
+        provider_id: String::new(),
+        omitted_plugin_ids: Vec::new(),
+        omitted_tool_names: Vec::new(),
+        additional_omitted_tools: 0,
+    };
     set.apply_with_catalog(&[], &catalog, |_| Some("example.a".into()));
     assert!(set.active().is_empty());
     let discovered = vec!["example.a".to_string()];
@@ -118,7 +143,10 @@ fn a_core_tool_displaced_by_extension_capacity_is_reported() {
             .iter()
             .filter_map(definition_name)
             .collect::<Vec<_>>(),
-        vec!["read_file", crate::services::extensions::LIST_EXTENSIONS_TOOL_NAME]
+        vec![
+            "read_file",
+            crate::services::extensions::LIST_EXTENSIONS_TOOL_NAME
+        ]
     );
     assert_eq!(selected.omitted_tool_names, vec!["write_file"]);
 }

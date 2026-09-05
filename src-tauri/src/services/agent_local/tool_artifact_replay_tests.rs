@@ -47,11 +47,20 @@ async fn workspace_replay_revalidates_intact_absent_modified_and_inaccessible() 
     assert_eq!(intact.artifact.unwrap().bytes.as_ref(), b"first");
 
     std::fs::write(&path, b"second").unwrap();
-    assert_note(replay(&record, Some(&key)).await, ToolArtifactStatus::Modified);
-    assert_note(replay(&record, None).await, ToolArtifactStatus::Inaccessible);
+    assert_note(
+        replay(&record, Some(&key)).await,
+        ToolArtifactStatus::Modified,
+    );
+    assert_note(
+        replay(&record, None).await,
+        ToolArtifactStatus::Inaccessible,
+    );
 
     std::fs::remove_file(&path).unwrap();
-    assert_note(replay(&record, Some(&key)).await, ToolArtifactStatus::Absent);
+    assert_note(
+        replay(&record, Some(&key)).await,
+        ToolArtifactStatus::Absent,
+    );
 }
 
 #[test]
@@ -63,14 +72,15 @@ fn extension_replay_maps_intact_absent_modified_and_inaccessible_without_executi
         },
         b"first",
     );
-    let loaded = |fingerprint: String, bytes: Vec<u8>| crate::services::extensions::LoadedResource {
-        name: "output".into(),
-        extension_id: "demo".into(),
-        qualified_resource_id: "extension:demo:output".into(),
-        catalog_fingerprint: fingerprint,
-        bytes,
-        signature: crate::services::file_signature::FileSignature::Binary,
-    };
+    let loaded =
+        |fingerprint: String, bytes: Vec<u8>| crate::services::extensions::LoadedResource {
+            name: "output".into(),
+            extension_id: "demo".into(),
+            qualified_resource_id: "extension:demo:output".into(),
+            catalog_fingerprint: fingerprint,
+            bytes,
+            signature: crate::services::file_signature::FileSignature::Binary,
+        };
 
     let intact = replay_extension_from_load(&record, Ok(loaded("a".repeat(64), b"first".to_vec())));
     assert_eq!(intact.status, ToolArtifactStatus::Intact);

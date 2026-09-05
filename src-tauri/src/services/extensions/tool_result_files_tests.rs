@@ -20,9 +20,21 @@ fn workspace_file_keeps_verified_bytes_metadata_and_grant() {
     assert_eq!(artifact.metadata.mime_type, "text/plain");
     assert_eq!(artifact.metadata.name, "résultat.txt");
     assert_eq!(artifact.metadata.purpose, ArtifactPurpose::Artifact);
-    let super::super::agent_local::tool_artifact::ArtifactSource::WorkspaceFile { path, grant } = &artifact.metadata.source else { panic!("workspace source"); };
+    let super::super::agent_local::tool_artifact::ArtifactSource::WorkspaceFile { path, grant } =
+        &artifact.metadata.source
+    else {
+        panic!("workspace source");
+    };
     assert!(!grant.is_empty());
-    assert_eq!(crate::services::attachment_access::verify_access_grant(path.to_str().unwrap(), grant, &KEY).unwrap(), *path);
+    assert_eq!(
+        crate::services::attachment_access::verify_access_grant(
+            path.to_str().unwrap(),
+            grant,
+            &KEY
+        )
+        .unwrap(),
+        *path
+    );
     let source = serde_json::to_value(&artifact.metadata).unwrap()["source"].clone();
     assert_eq!(source.as_object().unwrap().len(), 3);
     assert!(source.get("path").is_some());
@@ -51,21 +63,22 @@ fn declared_name_or_basename_is_visible_metadata() {
 #[test]
 fn derived_unicode_name_is_safely_bounded_by_the_contract() {
     let root = tempfile::tempdir().unwrap();
-    let name = format!("{}{}.txt", "é".repeat(super::types::MAX_EXTENSION_NAME_CHARS), "fin");
+    let name = format!(
+        "{}{}.txt",
+        "é".repeat(super::types::MAX_EXTENSION_NAME_CHARS),
+        "fin"
+    );
     std::fs::write(root.path().join(&name), "x").unwrap();
 
-    let visible = read_workspace_file(
-        root.path(),
-        &name,
-        None,
-        ArtifactPurpose::Artifact,
-        &KEY,
-    )
-    .unwrap()
-    .metadata
-    .name;
+    let visible = read_workspace_file(root.path(), &name, None, ArtifactPurpose::Artifact, &KEY)
+        .unwrap()
+        .metadata
+        .name;
 
-    assert_eq!(visible.chars().count(), super::types::MAX_EXTENSION_NAME_CHARS);
+    assert_eq!(
+        visible.chars().count(),
+        super::types::MAX_EXTENSION_NAME_CHARS
+    );
     assert!(visible.is_char_boundary(visible.len()));
 }
 
@@ -206,13 +219,7 @@ fn fifo_is_refused_before_opening() {
     assert_eq!(unsafe { libc::mkfifo(raw.as_ptr(), 0o600) }, 0);
 
     assert!(matches!(
-        read_workspace_file(
-            root.path(),
-            "pipe",
-            None,
-            ArtifactPurpose::Artifact,
-            &KEY,
-        ),
+        read_workspace_file(root.path(), "pipe", None, ArtifactPurpose::Artifact, &KEY,),
         Err(FileResultError::Access)
     ));
 }

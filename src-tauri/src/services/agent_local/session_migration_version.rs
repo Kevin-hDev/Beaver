@@ -15,7 +15,8 @@ pub(super) enum WireVersion {
 }
 
 pub(super) fn version(bytes: &[u8]) -> Result<WireVersion, String> {
-    let probe: VersionProbe = serde_json::from_slice(bytes).map_err(|_| super::session_limits::invalid_session())?;
+    let probe: VersionProbe =
+        serde_json::from_slice(bytes).map_err(|_| super::session_limits::invalid_session())?;
     match probe.schema_version {
         None | Some(1) => Ok(WireVersion::V1),
         Some(2) => Ok(WireVersion::V2),

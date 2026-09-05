@@ -118,7 +118,8 @@ pub(super) async fn dispatch_inner(
         ),
         "load_skill" => {
             let skill_id = args["skill_id"].as_str().unwrap_or("");
-            match super::extension_skill_loader::load_skill_for_session(skill_id, session_id).await {
+            match super::extension_skill_loader::load_skill_for_session(skill_id, session_id).await
+            {
                 Ok(skill) => ToolResult::ok(format!(
                     "Skill loaded. Follow its instructions:\n\n{content}",
                     content = skill.content

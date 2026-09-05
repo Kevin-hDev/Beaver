@@ -147,7 +147,12 @@ impl ExtensionToolSet {
         );
         self.active_plugin_ids = decision.active_plugin_ids.clone();
         self.discovered_plugin_ids = discovered_plugin_ids.to_vec();
-        let active = super::extension_tool_set_apply::active_definitions_with(&self.all, &decision, self.provider_tool_limit, plugin_id_for_tool);
+        let active = super::extension_tool_set_apply::active_definitions_with(
+            &self.all,
+            &decision,
+            self.provider_tool_limit,
+            plugin_id_for_tool,
+        );
         self.active = active.tools;
         self.omitted_plugin_ids = decision.omitted_plugin_ids;
         self.omitted_tool_names = active.omitted_tool_names;

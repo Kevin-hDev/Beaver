@@ -28,7 +28,6 @@ struct V1ToolFunctionWire {
     name: String,
 }
 
-
 pub(super) fn parse_v1(bytes: &[u8]) -> Result<AgentSession, String> {
     let wire: V1SessionWire = serde_json::from_slice(bytes).map_err(|_| invalid())?;
     validate_v1_shape(&wire)?;

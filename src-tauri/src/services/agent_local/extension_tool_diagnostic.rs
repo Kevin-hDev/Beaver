@@ -140,9 +140,8 @@ fn valid_identifiers(values: &[String]) -> Vec<&str> {
 }
 
 fn bounded_join(values: &[&str]) -> String {
-    let mut joined = String::with_capacity(
-        super::types_diagnostics::MAX_EXTENSION_DIAGNOSTIC_TEXT_CHARS,
-    );
+    let mut joined =
+        String::with_capacity(super::types_diagnostics::MAX_EXTENSION_DIAGNOSTIC_TEXT_CHARS);
     for value in values
         .iter()
         .take(super::provider_tool_limits::MAX_CAPACITY_DIAGNOSTIC_ITEMS)

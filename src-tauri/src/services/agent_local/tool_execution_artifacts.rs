@@ -25,11 +25,12 @@ impl ToolExecutionArtifacts {
         if count > MAX_OUTCOME_ARTIFACTS {
             return Err(());
         }
-        self.0.extend(artifacts.into_iter().map(|artifact| AttributedArtifact {
-            tool_call_index,
-            tool_call_id: tool_call_id.map(str::to_owned),
-            artifact,
-        }));
+        self.0
+            .extend(artifacts.into_iter().map(|artifact| AttributedArtifact {
+                tool_call_index,
+                tool_call_id: tool_call_id.map(str::to_owned),
+                artifact,
+            }));
         Ok(())
     }
 

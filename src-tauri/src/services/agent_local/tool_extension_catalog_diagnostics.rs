@@ -13,10 +13,12 @@ pub(super) async fn record(
         .take(crate::services::extensions::MAX_INSPECTED_EXTENSIONS)
         .map(|(id, _)| id.clone())
         .collect::<Vec<_>>();
-    let outcomes = outcomes
-        .iter()
-        .take(crate::services::extensions::MAX_INSPECTED_EXTENSIONS)
-        .map(|(plugin_id, status)| super::extension_tool_diagnostic::ExtensionDiagnosticOutcome {
+    let outcomes =
+        outcomes
+            .iter()
+            .take(crate::services::extensions::MAX_INSPECTED_EXTENSIONS)
+            .map(|(plugin_id, status)| {
+                super::extension_tool_diagnostic::ExtensionDiagnosticOutcome {
             plugin_id: plugin_id.clone(),
             reason: match status {
                 InspectionStatus::LimitedByProvider => {
@@ -24,8 +26,9 @@ pub(super) async fn record(
                 }
                 _ => super::extension_tool_diagnostic::ExtensionDiagnosticReason::InspectionResult,
             },
-        })
-        .collect::<Vec<_>>();
+        }
+            })
+            .collect::<Vec<_>>();
     let correlation_id = uuid::Uuid::new_v4().to_string();
     super::stream_diagnostics::record_extension_tools(
         session_id,

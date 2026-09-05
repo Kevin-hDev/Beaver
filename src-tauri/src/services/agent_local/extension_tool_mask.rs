@@ -38,10 +38,7 @@ mod tests {
 
         let boundary = tokens.saturating_mul(100) / CONTEXT_THRESHOLD_PERCENT as u64;
         assert!(!should_mask(&definitions, boundary));
-        assert!(should_mask(
-            &definitions,
-            boundary.saturating_sub(1)
-        ));
+        assert!(should_mask(&definitions, boundary.saturating_sub(1)));
     }
 
     #[test]

@@ -1,11 +1,12 @@
 use super::types_ollama::ChatMessage;
 
 pub fn append(messages: &mut [ChatMessage], enabled_tool_names: &[String]) {
-    if !enabled_tool_names.iter().any(|name| {
-        name == crate::services::extensions::LIST_EXTENSIONS_TOOL_NAME
-    }) || !enabled_tool_names.iter().any(|name| {
-        name == crate::services::extensions::INSPECT_EXTENSIONS_TOOL_NAME
-    })
+    if !enabled_tool_names
+        .iter()
+        .any(|name| name == crate::services::extensions::LIST_EXTENSIONS_TOOL_NAME)
+        || !enabled_tool_names
+            .iter()
+            .any(|name| name == crate::services::extensions::INSPECT_EXTENSIONS_TOOL_NAME)
     {
         return;
     }
@@ -41,7 +42,10 @@ mod tests {
 
         append(
             &mut messages,
-            &["list_extensions".to_string(), "inspect_extensions".to_string()],
+            &[
+                "list_extensions".to_string(),
+                "inspect_extensions".to_string(),
+            ],
         );
         assert!(messages[0]
             .content

@@ -7,7 +7,8 @@ pub(super) fn append_verified_previews(
     request: &mut ChatRequest,
     previews: &ToolResultPreviewBatch,
 ) {
-    let Some(policy) = crate::services::llm::route_profile::payload_policy("ollama", &request.model)
+    let Some(policy) =
+        crate::services::llm::route_profile::payload_policy("ollama", &request.model)
     else {
         return;
     };

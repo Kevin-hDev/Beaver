@@ -85,7 +85,10 @@ fn native_definitions_catalog_and_groups_are_exhaustively_consistent() {
     assert_eq!(entries.len(), 46);
     assert_eq!(entries.iter().filter(|entry| entry.locked).count(), 14);
     assert_eq!(entries.iter().filter(|entry| !entry.locked).count(), 32);
-    assert_eq!(entries.iter().filter(|entry| entry.default_enabled).count(), 27);
+    assert_eq!(
+        entries.iter().filter(|entry| entry.default_enabled).count(),
+        27
+    );
     let entry_by_id = entries
         .iter()
         .map(|entry| (entry.id, entry))
@@ -94,8 +97,15 @@ fn native_definitions_catalog_and_groups_are_exhaustively_consistent() {
 
     let definitions = super::tool_definitions::native_tool_definitions();
     let definition_names = tool_names(&definitions);
-    let definition_ids = definition_names.iter().map(String::as_str).collect::<BTreeSet<_>>();
-    assert_eq!(definition_ids.len(), definition_names.len(), "duplicate definition");
+    let definition_ids = definition_names
+        .iter()
+        .map(String::as_str)
+        .collect::<BTreeSet<_>>();
+    assert_eq!(
+        definition_ids.len(),
+        definition_names.len(),
+        "duplicate definition"
+    );
     assert_eq!(
         definition_ids,
         entry_by_id.keys().copied().collect(),
@@ -119,7 +129,10 @@ fn native_definitions_catalog_and_groups_are_exhaustively_consistent() {
                 entry.default_enabled, group.default_enabled,
                 "default mismatch: {tool_id}"
             );
-            assert!(grouped_tools.insert(*tool_id), "tool in two groups: {tool_id}");
+            assert!(
+                grouped_tools.insert(*tool_id),
+                "tool in two groups: {tool_id}"
+            );
         }
     }
 
@@ -194,14 +207,18 @@ fn default_native_catalog_measurement_is_reproducible() {
         .sum::<usize>();
     let schema_chars = all
         .iter()
-        .map(|definition| definition["function"]["parameters"].to_string().chars().count())
+        .map(|definition| {
+            definition["function"]["parameters"]
+                .to_string()
+                .chars()
+                .count()
+        })
         .sum::<usize>();
     let serialized_chars = active
         .iter()
         .map(|definition| definition.to_string().chars().count())
         .sum::<usize>();
-    let estimated_tokens =
-        crate::services::compress::token_estimate::estimate_tool_tokens(&active);
+    let estimated_tokens = crate::services::compress::token_estimate::estimate_tool_tokens(&active);
 
     assert_eq!(all.len(), 46);
     assert_eq!(active.len(), 27);

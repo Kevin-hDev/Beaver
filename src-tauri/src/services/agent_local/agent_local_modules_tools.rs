@@ -4,15 +4,15 @@ pub mod subagent_explorer_process;
 pub mod subagent_working_dir;
 pub mod subagent_worktree;
 include!("agent_local_modules_shell.rs");
-pub mod extension_tool_set;
 pub mod extension_skill_loader;
 #[cfg(test)]
 mod extension_skill_loader_tests;
+pub mod extension_tool_set;
 #[cfg(debug_assertions)]
 pub mod fixture_tool_executor;
-pub mod tool_automation;
 #[cfg(test)]
 mod tool_artifact_tests;
+pub mod tool_automation;
 #[cfg(test)]
 mod tool_automation_tests;
 mod tool_automation_validation;
@@ -84,8 +84,8 @@ mod tool_document_write_table;
 #[cfg(test)]
 pub mod tool_document_write_tests;
 pub mod tool_document_write_xml;
-pub mod tool_execution_outcome;
 mod tool_execution_artifacts;
+pub mod tool_execution_outcome;
 pub mod tool_executor;
 pub mod tool_executor_compression;
 pub mod tool_executor_delegate_batch;
@@ -106,12 +106,12 @@ pub mod tool_executor_results;
 pub mod tool_executor_sequential;
 mod tool_executor_sequential_support;
 pub mod tool_executor_write;
-pub mod tool_extension_list;
+mod tool_extension_catalog_diagnostics;
 pub mod tool_extension_inspect;
+pub mod tool_extension_list;
 pub mod tool_extension_resource;
 #[cfg(test)]
 mod tool_extension_resource_tests;
-mod tool_extension_catalog_diagnostics;
 #[allow(dead_code)]
 mod extension_discovery_contract {
     include!(concat!(env!("OUT_DIR"), "/extension_discovery_contract.rs"));
@@ -150,18 +150,18 @@ pub mod tool_list_dir;
 #[cfg(test)]
 mod tool_list_dir_tests;
 pub mod tool_mcp;
-pub mod tool_pending_artifact_batch;
-mod tool_pending_artifact_errors;
-mod tool_pending_artifact_inspect;
-mod tool_pending_artifact_read;
-mod tool_pending_artifact_revalidate;
-pub mod tool_pending_artifacts;
 mod tool_mcp_call;
 mod tool_office_array;
 #[cfg(test)]
 mod tool_office_array_tests;
 pub mod tool_office_limits;
 pub mod tool_office_utils;
+pub mod tool_pending_artifact_batch;
+mod tool_pending_artifact_errors;
+mod tool_pending_artifact_inspect;
+mod tool_pending_artifact_read;
+mod tool_pending_artifact_revalidate;
+pub mod tool_pending_artifacts;
 pub mod tool_plan;
 pub mod tool_plan_approval;
 pub mod tool_plan_approval_request;

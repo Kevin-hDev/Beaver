@@ -1,4 +1,7 @@
-#![expect(clippy::too_many_arguments, reason = "orchestration boundary keeps related runtime context explicit")]
+#![expect(
+    clippy::too_many_arguments,
+    reason = "orchestration boundary keeps related runtime context explicit"
+)]
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::tool_hooks::{run_pre_hooks, PreHookDecision};
 use crate::services::agent_local::types_ollama::ChatMessage;
@@ -7,8 +10,8 @@ use crate::services::agent_local::write_guard::WriteGuard;
 use std::collections::HashMap;
 use tokio_util::sync::CancellationToken;
 
-use super::tool_executor_compression::ToolCompression;
 use super::tool_execution_outcome::ToolExecutionOutcome;
+use super::tool_executor_compression::ToolCompression;
 use super::tool_executor_helpers::{push_tool_message, push_tool_result, resolve_tool_path};
 use super::tool_executor_parallel_batch::{flush_read_batch, BatchEntry};
 use super::tool_executor_parallel_finalize::resolve_and_record_diagnostics;
@@ -51,7 +54,9 @@ pub async fn run_with_parallel_reads(
                     &cancel,
                     write_guard,
                     &mut eager_results,
-                    session_id, request_id, mode == "chat",
+                    session_id,
+                    request_id,
+                    mode == "chat",
                 )
                 .await;
             }

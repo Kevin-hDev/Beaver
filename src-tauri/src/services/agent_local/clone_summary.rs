@@ -112,12 +112,7 @@ fn collect_tool_files(
 ) {
     let is_read = matches!(
         tool.name.as_str(),
-        "read_file"
-            | "grep"
-            | "glob"
-            | "list_dir"
-            | "read_document"
-            | "read_spreadsheet"
+        "read_file" | "grep" | "glob" | "list_dir" | "read_document" | "read_spreadsheet"
     );
     let is_write = matches!(
         tool.name.as_str(),

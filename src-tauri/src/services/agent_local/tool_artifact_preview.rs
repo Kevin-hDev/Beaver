@@ -5,7 +5,8 @@ use super::tool_artifact_replay::{
     replay, ArtifactReplay, ReplayedArtifact, UNSUPPORTED_PREVIEW_NOTE,
 };
 
-const MAX_NOTES: usize = crate::services::extensions::types::MAX_MULTIMODAL_PREVIEWS_PER_CONTINUATION;
+const MAX_NOTES: usize =
+    crate::services::extensions::types::MAX_MULTIMODAL_PREVIEWS_PER_CONTINUATION;
 
 /// Aperçus en mémoire du dernier lot d'outils : jamais sérialisés ni persistés.
 #[derive(Debug)]
@@ -41,8 +42,7 @@ impl ToolResultPreviewBatch {
         artifacts: Vec<super::tool_execution_artifacts::AttributedArtifact>,
     ) -> Self {
         let needs_workspace_key = artifacts.iter().any(|attributed| {
-            attributed.artifact.metadata.purpose
-                == super::tool_artifact::ArtifactPurpose::Preview
+            attributed.artifact.metadata.purpose == super::tool_artifact::ArtifactPurpose::Preview
                 && matches!(
                     attributed.artifact.metadata.source,
                     super::tool_artifact::ArtifactSource::WorkspaceFile { .. }
@@ -102,17 +102,19 @@ impl ToolResultPreviewBatch {
             note: None,
         };
         let mut batch = Self::default();
-        batch.push_replay(
-            tool_call_index,
-            tool_call_id,
-            replay,
-        );
+        batch.push_replay(tool_call_index, tool_call_id, replay);
         batch
     }
 
     #[cfg(test)]
     pub(crate) fn from_ephemerals(
-        artifacts: impl IntoIterator<Item = (usize, Option<String>, super::tool_artifact::EphemeralArtifact)>,
+        artifacts: impl IntoIterator<
+            Item = (
+                usize,
+                Option<String>,
+                super::tool_artifact::EphemeralArtifact,
+            ),
+        >,
     ) -> Self {
         let mut batch = Self::default();
         for (index, call_id, artifact) in artifacts {
@@ -205,9 +207,7 @@ impl ToolResultPreviewBatch {
                 tool_call_index,
                 tool_call_id,
             };
-            if self.omitted_sources.len() < MAX_NOTES
-                && !self.omitted_sources.contains(&source)
-            {
+            if self.omitted_sources.len() < MAX_NOTES && !self.omitted_sources.contains(&source) {
                 self.omitted_sources.push(source);
             }
             return;

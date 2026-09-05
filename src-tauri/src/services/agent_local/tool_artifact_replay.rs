@@ -3,7 +3,9 @@ use std::sync::Arc;
 use sha2::{Digest, Sha256};
 use zeroize::Zeroizing;
 
-use super::tool_artifact_record::{self, ToolArtifactPurpose, ToolArtifactRecord, ToolArtifactSource, ToolArtifactStatus};
+use super::tool_artifact_record::{
+    self, ToolArtifactPurpose, ToolArtifactRecord, ToolArtifactSource, ToolArtifactStatus,
+};
 
 const ABSENT_NOTE: &str = "Saved extension output is no longer available.";
 const MODIFIED_NOTE: &str = "Saved extension output changed and cannot be replayed.";
@@ -88,7 +90,10 @@ async fn replay_extension(record: &ToolArtifactRecord, resource_id: &str) -> Art
 
 fn replay_extension_from_load(
     record: &ToolArtifactRecord,
-    loaded: Result<crate::services::extensions::LoadedResource, crate::services::extensions::ResourceLoadError>,
+    loaded: Result<
+        crate::services::extensions::LoadedResource,
+        crate::services::extensions::ResourceLoadError,
+    >,
 ) -> ArtifactReplay {
     let ToolArtifactSource::ExtensionResource {
         resource_id,
@@ -113,8 +118,8 @@ fn replay_extension_from_load(
 }
 
 fn replay_bytes(record: &ToolArtifactRecord, bytes: Vec<u8>) -> ArtifactReplay {
-    let matches = bytes.len() as u64 == record.bytes
-        && hex::encode(Sha256::digest(&bytes)) == record.sha256;
+    let matches =
+        bytes.len() as u64 == record.bytes && hex::encode(Sha256::digest(&bytes)) == record.sha256;
     if !matches {
         return unavailable(ToolArtifactStatus::Modified);
     }

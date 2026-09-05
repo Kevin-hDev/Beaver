@@ -154,7 +154,11 @@ fn windows_backend_ci_checks_native_cef_and_isolates_it_from_unit_tests() {
     // sur CVT1100. Y passer demande de restreindre le manifeste aux cibles de
     // test (cargo:rustc-link-arg-tests).
     assert!(test_job.contains("cargo test --lib --features windows-tests -- --test-threads=1"));
-    assert!(test_job.contains("Windows AppContainer test inventory"));
+    assert!(test_job.contains("Windows AppContainer confinement"));
+    assert!(test_job.contains(
+        "services::agent_local::shell_sandbox::windows::tests::appcontainer_writes_only_inside_the_selected_root"
+    ));
+    assert!(test_job.contains("--exact --ignored --nocapture"));
     assert!(!test_job.contains("prepare-cef-source.mjs"));
     assert!(!test_job.contains(".cef-cache"));
     assert!(!workflow.contains("/DELAYLOAD:libcef.dll"));

@@ -10,7 +10,10 @@ async fn loading_requires_inspection_and_an_extension_capable_route() {
 
     assert_unavailable(&session_id, &records, &plugins).await;
     registry.inspect(&session_id).await;
-    assert_eq!(load_reference(&session_id, &records, &plugins).await, b"first");
+    assert_eq!(
+        load_reference(&session_id, &records, &plugins).await,
+        b"first"
+    );
 
     registry
         .configure(&session_id, "openrouter", "groq/llama-3.3-70b")

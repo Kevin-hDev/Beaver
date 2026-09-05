@@ -38,8 +38,14 @@ const LOCKED_TOOLS: &[ToolCatalogEntry] = &[
     locked("web_search", "web"),
     locked("web_fetch", "web"),
     locked("search_mcp_tools", "mcp"),
-    locked(crate::services::extensions::LIST_EXTENSIONS_TOOL_NAME, "extensions"),
-    locked(crate::services::extensions::INSPECT_EXTENSIONS_TOOL_NAME, "extensions"),
+    locked(
+        crate::services::extensions::LIST_EXTENSIONS_TOOL_NAME,
+        "extensions",
+    ),
+    locked(
+        crate::services::extensions::INSPECT_EXTENSIONS_TOOL_NAME,
+        "extensions",
+    ),
     locked(super::tool_extension_resource::NAME, "extensions"),
 ];
 

@@ -12,8 +12,7 @@ pub(crate) fn refresh_active_with_catalog(
     preserve_dynamic_tools: bool,
     catalog: &crate::services::extensions::CatalogSnapshot,
 ) {
-    let masked = state.epoch.as_ref().is_some_and(|epoch| epoch.masked)
-        && !preserve_dynamic_tools;
+    let masked = state.epoch.as_ref().is_some_and(|epoch| epoch.masked) && !preserve_dynamic_tools;
     state.active_plugin_ids = super::extension_tool_selection::decide_for_catalog(
         &state.plugin_descriptors,
         catalog,
@@ -41,9 +40,9 @@ pub fn sanitize(state: &mut ExtensionSessionState) {
         .map(|descriptor| descriptor.id.as_str())
         .collect::<HashSet<_>>();
     let mut active_ids = HashSet::with_capacity(known.len());
-    state.active_plugin_ids.retain(|id| {
-        known.contains(id.as_str()) && active_ids.insert(id.clone())
-    });
+    state
+        .active_plugin_ids
+        .retain(|id| known.contains(id.as_str()) && active_ids.insert(id.clone()));
 }
 
 pub async fn is_tool_active(session_id: &str, tool_name: &str) -> Result<bool, String> {

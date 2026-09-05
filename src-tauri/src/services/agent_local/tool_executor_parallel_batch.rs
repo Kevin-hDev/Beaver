@@ -130,12 +130,14 @@ pub(super) async fn flush_read_batch<'a>(
         }
     }
     for (entry, result) in batch.iter().zip(batch_results) {
-        let result = result.unwrap_or_else(|| ToolResult::error(
+        let result = result.unwrap_or_else(|| {
+            ToolResult::error(
                 "Résultat de lecture indisponible.",
                 "read_batch_result_missing",
                 ToolErrorCategory::Internal,
                 true,
-            ));
+            )
+        });
         indexed_results[entry.global_idx] = Some((entry.name, result));
     }
 }

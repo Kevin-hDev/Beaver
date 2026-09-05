@@ -127,20 +127,46 @@ async fn deferred_resource_revalidation_rejects_every_authority_change() {
     .await
     .expect("prepared resource");
 
-    assert!(revalidate(&prepared, &records, &plugins, "catalog-a").await.is_ok());
-    assert!(revalidate(&prepared, &records, &plugins, "catalog-b").await.is_err());
+    assert!(revalidate(&prepared, &records, &plugins, "catalog-a")
+        .await
+        .is_ok());
+    assert!(revalidate(&prepared, &records, &plugins, "catalog-b")
+        .await
+        .is_err());
 
     let mut disabled = records.clone();
     disabled[0].enabled = false;
-    assert!(revalidate(&prepared, &disabled, &registry.plugins(&disabled), "catalog-a").await.is_err());
+    assert!(revalidate(
+        &prepared,
+        &disabled,
+        &registry.plugins(&disabled),
+        "catalog-a"
+    )
+    .await
+    .is_err());
 
     let mut moved = records.clone();
-    moved[0].source = tempfile::tempdir().expect("moved source").path().display().to_string();
-    assert!(revalidate(&prepared, &moved, &registry.plugins(&moved), "catalog-a").await.is_err());
+    moved[0].source = tempfile::tempdir()
+        .expect("moved source")
+        .path()
+        .display()
+        .to_string();
+    assert!(
+        revalidate(&prepared, &moved, &registry.plugins(&moved), "catalog-a")
+            .await
+            .is_err()
+    );
 
     let mut changed_path = records.clone();
     changed_path[0].contributions.resources[0].path = "other.txt".into();
-    assert!(revalidate(&prepared, &changed_path, &registry.plugins(&changed_path), "catalog-a").await.is_err());
+    assert!(revalidate(
+        &prepared,
+        &changed_path,
+        &registry.plugins(&changed_path),
+        "catalog-a"
+    )
+    .await
+    .is_err());
 
     crate::services::agent_local::session_store::delete_one(&session_id)
         .await
