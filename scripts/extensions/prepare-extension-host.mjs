@@ -79,6 +79,7 @@ async function copyHostSources(source, destination) {
     "extension-api-capabilities.mjs",
     "host.mjs",
     "loader.mjs",
+    "module-loader.mjs",
     "ui-actions.mjs",
     "ui-api.mjs",
     "ui-validation.mjs",

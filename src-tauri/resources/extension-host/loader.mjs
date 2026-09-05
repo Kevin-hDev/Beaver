@@ -1,5 +1,3 @@
-import { createJiti } from "jiti";
-import { fileURLToPath } from "node:url";
 import { HOST_LOAD_STAGE_METHOD, LIMITS, LOAD_STAGES, supportsEvent, TIMEOUTS } from "./contract.mjs";
 import { createExtensionApi } from "./extension-api.mjs";
 import { createDiagnostic } from "./diagnostics.mjs";
@@ -8,18 +6,7 @@ import { clearUiActions, invokeUiAction } from "./ui-actions.mjs";
 import { snapshotToolResult } from "./tool-result-snapshot.mjs";
 import { snapshotContribution } from "./contribution-snapshot.mjs";
 import { assertProtocolResultFits } from "./protocol-output.mjs";
-
-const sdkPath = fileURLToPath(new URL("./sdk/index.mjs", import.meta.url));
-const jiti = createJiti(import.meta.url, {
-  alias: { "@beaver/sdk": sdkPath },
-  fsCache: false,
-  interopDefault: true,
-  moduleCache: false,
-  sourceMaps: false,
-  // Plain JavaScript extensions should use Node's loader directly. Jiti remains
-  // the fallback for TypeScript and the virtual Beaver SDK alias.
-  tryNative: true,
-});
+import { importExtensionModule } from "./module-loader.mjs";
 const extensions = new Map();
 const tools = new Map();
 
@@ -126,7 +113,7 @@ export async function loadExtensionWithApi(specification, createApi) {
     }
     notifyCore(HOST_LOAD_STAGE_METHOD, { stage });
     const context = createApi(specification);
-    const module = await jiti.import(specification.mainPath, { default: true });
+    const module = await importExtensionModule(specification.mainPath);
     stage = LOAD_STAGES[1];
     notifyCore(HOST_LOAD_STAGE_METHOD, { stage });
     const activate =
