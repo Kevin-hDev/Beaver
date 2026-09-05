@@ -2,6 +2,8 @@ import { UI_LIMITS, UI_PLACEMENTS } from "@/types/extension-ui-contract.generate
 import type { ExtensionUiPlacementKey } from "@/types/extension-ui-contract.generated";
 import type { AdvancedCleanup, AdvancedMount } from "./advanced-types";
 
+import { runAdvancedCleanups } from "./advanced-cleanup";
+
 const PLACEMENTS = new Set<string>(UI_PLACEMENTS.map(({ key }) => key));
 
 interface MountRequest {
@@ -21,6 +23,7 @@ export function createAdvancedMountManager(document: Document) {
   let explicitNoMount = false;
   let active = true;
   let reconciling = false;
+  let reconcileRequested = false;
   const observer = new MutationObserver(() => { void reconcile(); });
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
@@ -36,20 +39,34 @@ export function createAdvancedMountManager(document: Document) {
     mountAvailable(request, true);
   }
 
-  async function reconcile(): Promise<void> {
-    if (!active || reconciling) return;
+  async function reconcile(
+    deadline = performance.now() + UI_LIMITS.maxAdvancedCleanupMs,
+  ): Promise<void> {
+    if (!active) return;
+    if (reconciling) {
+      reconcileRequested = true;
+      return;
+    }
     reconciling = true;
+    reconcileRequested = false;
     try {
+      const callbacks = requests.flatMap((request) =>
+        request.container && !request.container.isConnected ? detachRequest(request) : []);
+      await runAdvancedCleanups(callbacks, deadline);
+      // The observer may have been disconnected while a cleanup callback was pending.
+      if (!active) return;
       for (const request of requests) {
-        if (request.container && !request.container.isConnected) await runCleanup(request);
         if (!request.container && !request.failed) mountAvailable(request, false);
       }
     } finally {
       reconciling = false;
+      // Mutations delivered during the await still need a pass, within the same budget.
+      if (active && reconcileRequested) void reconcile(deadline);
     }
   }
 
   function mountAvailable(request: MountRequest, propagate: boolean): void {
+    if (!active) return;
     const selector = `[data-extension-ui-slot="${request.placement}"]`;
     const anchor = document.querySelector(selector);
     const view = document.defaultView;
@@ -71,12 +88,12 @@ export function createAdvancedMountManager(document: Document) {
     }
   }
 
-  async function runCleanup(request: MountRequest): Promise<void> {
+  function detachRequest(request: MountRequest): AdvancedCleanup[] {
     const cleanup = request.cleanup;
     request.cleanup = null;
     request.container?.remove();
     request.container = null;
-    try { await cleanup?.(); } catch { /* chaque montage reste isolé */ }
+    return cleanup ? [cleanup] : [];
   }
 
   return {
@@ -86,11 +103,10 @@ export function createAdvancedMountManager(document: Document) {
       explicitNoMount = true;
     },
     completed: () => requests.length > 0 || explicitNoMount,
-    cleanup: async () => {
+    detach: () => {
       active = false;
       observer.disconnect();
-      for (const request of requests.reverse()) await runCleanup(request);
-      requests.length = 0;
+      return requests.splice(0).reverse().flatMap(detachRequest);
     },
   };
 }

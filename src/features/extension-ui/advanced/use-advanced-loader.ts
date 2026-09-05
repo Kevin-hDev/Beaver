@@ -37,7 +37,10 @@ export function useAdvancedLoader(): void {
         if (snapshot.startupState?.mode.kind === "retryInterruptedUi") void refresh.current?.();
       }
       else void next();
-    }).catch(() => {});
+    }).catch(() => {
+      // An authenticated abort can move a failed retry into safe mode in Rust.
+      if (generation.current === current) void refresh.current?.();
+    });
     return () => {
       generation.current += 1;
       void cleanup?.();

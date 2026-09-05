@@ -61,7 +61,8 @@
     "maxAdvancedArtifactFiles": 64,
     "maxAdvancedArtifactBytes": 4194304,
     "maxAdvancedMountsPerExtension": 32,
-    "maxAdvancedActivationMs": 15000
+    "maxAdvancedActivationMs": 15000,
+    "maxAdvancedCleanupMs": 5000
   },
   "validation": {
     "maxNumericLimit": 4194304,

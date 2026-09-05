@@ -2,6 +2,10 @@ import type { ExtensionRecord, ExtensionUiStartupState } from "@/types/extension
 import type { ExtensionUiPlacementKey } from "@/types/extension-ui-contract.generated";
 
 export type AdvancedCleanup = () => void | Promise<void>;
+export interface AdvancedCleanupPlan {
+  detach(): readonly AdvancedCleanup[];
+}
+
 export type AdvancedMount = (container: HTMLElement) => void | AdvancedCleanup;
 
 export interface AdvancedExtensionContext {
@@ -26,6 +30,7 @@ export interface AdvancedLoaderDependencies {
     stage: "import" | "activate" | "mount",
   ) => Promise<void>;
   acknowledge: (extensionId: string, token: number[]) => Promise<void>;
+  abort: (extensionId: string, token: number[]) => Promise<void>;
 }
 
 export interface AdvancedLoaderInput {
