@@ -1,0 +1,11 @@
+CI robustness correction before final review.
+
+Windows and macOS native package construction are separated from their packaged CEF acceptance jobs. Each acceptance job consumes the previously built artifact, publishes bounded safe diagnostics plus JUnit output, and can be rerun without recompiling the application.
+
+workflow_dispatch now exposes targeted Windows host, Windows backend, Windows native, and macOS native boundaries. The Windows AppContainer confinement test is executed rather than merely inventoried.
+
+E2E artifact paths are restricted to a dedicated repository directory. Diagnostic reports contain only allowlisted bounded categories and use exclusive CSPRNG-named temporary files so pre-created symlinks cannot redirect writes.
+
+Validation before commit: npm test passed (Vitest 3060; build scripts 57; CI scripts 21; CEF 45 passed and 1 Windows-only skipped on macOS; E2E runner 90; extension host 118; reasoning 10 plus 2); npm audit reported 0 vulnerabilities; npm run lint, npx tsc --noEmit, actionlint v1.7.12, git diff --check, and graphify update all completed successfully.
+
+Limit intentionally remaining: the real packaged acceptance on GitHub-hosted Windows and macOS runners is not claimed here; this commit exists to obtain that cross-platform proof from CI.
