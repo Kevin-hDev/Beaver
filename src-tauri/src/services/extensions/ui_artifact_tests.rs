@@ -1,7 +1,7 @@
 use super::types::{ExtensionUiArtifact, ExtensionUiArtifactOutput};
 use sha2::{Digest, Sha256};
 
-fn fixture(root: &std::path::Path) -> ExtensionUiArtifact {
+pub(super) fn fixture(root: &std::path::Path) -> ExtensionUiArtifact {
     let bytes = b"export const ready = true;";
     std::fs::write(root.join("entry.js"), bytes).unwrap();
     let output = ExtensionUiArtifactOutput {

@@ -44,4 +44,6 @@ mod publication_tests;
 #[cfg(test)]
 mod recovery_tests;
 #[cfg(test)]
+mod ui_checkpoint_tests;
+#[cfg(test)]
 mod worker_tests;

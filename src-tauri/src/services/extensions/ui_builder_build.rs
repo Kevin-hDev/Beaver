@@ -46,10 +46,32 @@ pub(super) fn build(
         serde_json::from_slice(&stdout).map_err(|_| super::OperationFailure::ManifestInvalid)?;
     super::ui_artifact::validate(&artifact)
         .map_err(|_| super::OperationFailure::ManifestInvalid)?;
-    // The staging manifest is written by commit. That method verifies the manifest
-    // and every output before the artifact becomes reachable from the registry.
-    staging
-        .commit(&record.manifest.id, &artifact)
-        .map_err(|_| super::OperationFailure::StorageFailed)?;
+    commit_artifact(staging, record, &artifact, owner)?;
     Ok(artifact)
+}
+
+pub(super) fn commit_artifact(
+    staging: super::ui_artifact_store::StagingArtifact,
+    record: &ExtensionRecord,
+    artifact: &ExtensionUiArtifact,
+    owner: Option<&super::install_jobs::InstallControl>,
+) -> Result<(), super::OperationFailure> {
+    if let Some(owner) = owner {
+        let mut checkpoint = owner
+            .saved()
+            .map_err(|_| super::OperationFailure::StorageFailed)?
+            .ok_or(super::OperationFailure::StorageFailed)?;
+        let mut candidate = record.clone();
+        candidate.ui_artifact = Some(artifact.clone());
+        checkpoint.record = Some(candidate);
+        // Record the content-addressed destination before rename: a crash must
+        // leave the job enough evidence to remove its unpublished UI precisely.
+        owner
+            .save(checkpoint)
+            .map_err(|_| super::OperationFailure::StorageFailed)?;
+    }
+    staging
+        .commit(&record.manifest.id, artifact)
+        .map_err(|_| super::OperationFailure::StorageFailed)?;
+    Ok(())
 }

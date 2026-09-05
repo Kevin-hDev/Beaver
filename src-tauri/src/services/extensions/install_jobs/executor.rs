@@ -64,13 +64,22 @@ fn execute(
     };
     let result = super::materialize::prepare(&request, &control, &mut checkpoint, &npm, &ui)
         .and_then(|record| publish(&control, &checkpoint, record));
+    complete(&control, checkpoint, result)
+}
+
+pub(super) fn complete(
+    control: &InstallControl,
+    checkpoint: InstallCheckpoint,
+    result: Result<String, InstallInterruption>,
+) -> InstallOutcome {
     // Always re-read ownership changed by process callbacks. A stale local copy
     // cannot attest that a producer has stopped or its identity was saved.
     let mut checkpoint = control.saved().ok().flatten().unwrap_or(checkpoint);
     let durable = control.store.lock().is_ok_and(|state| !state.durable_error);
     if !durable || checkpoint.native_process.is_some() {
         return InstallOutcome {
-            result: Err(InstallInterruption::Failed),
+            // The registry mutation already won; loss of the journal cannot undo it.
+            result: result.or(Err(InstallInterruption::Failed)),
             cleanup_confirmed: false,
         };
     }
