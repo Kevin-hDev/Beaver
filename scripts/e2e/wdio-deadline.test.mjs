@@ -6,7 +6,7 @@ import {
   NATIVE_JOURNEY_MOCHA_TIMEOUT_MS,
 } from "./native-journey-deadline.mjs";
 
-test("WebdriverIO derives its Mocha guard from the native journey policy", async () => {
+test("WebdriverIO covers both native journeys and extension setup", async () => {
   const previousBinary = process.env.E2E_APP_BINARY;
   const previousLogDirectory = process.env.E2E_LOG_DIR;
   const previousArtifactDirectory = process.env.E2E_ARTIFACT_DIR;
@@ -14,9 +14,21 @@ test("WebdriverIO derives its Mocha guard from the native journey policy", async
   process.env.E2E_LOG_DIR = "C:\\bounded-e2e\\logs";
   process.env.E2E_ARTIFACT_DIR = "C:\\bounded-e2e\\artifacts";
   try {
-    const module = await tsImport("../../wdio.conf.ts", import.meta.url);
+    const [module, deadlines] = await Promise.all([
+      tsImport("../../wdio.conf.ts", import.meta.url),
+      tsImport("./extension-setup-deadline.ts", import.meta.url),
+    ]);
 
-    assert.equal(module.config.mochaOpts?.timeout, NATIVE_JOURNEY_MOCHA_TIMEOUT_MS);
+    assert.ok(
+      deadlines.EXTENSION_UI_SETUP_TIMEOUT_MS > NATIVE_JOURNEY_MOCHA_TIMEOUT_MS,
+    );
+    assert.equal(
+      module.config.mochaOpts?.timeout,
+      Math.max(
+        NATIVE_JOURNEY_MOCHA_TIMEOUT_MS,
+        deadlines.EXTENSION_UI_SETUP_TIMEOUT_MS,
+      ),
+    );
     assert.equal(module.config.reporters?.[0], "spec");
     assert.equal(module.config.reporters?.[1]?.[0], "junit");
     assert.equal(

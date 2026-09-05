@@ -1,4 +1,5 @@
 import { resolve } from "node:path";
+import { EXTENSION_UI_SETUP_TIMEOUT_MS } from "./scripts/e2e/extension-setup-deadline";
 import { NATIVE_JOURNEY_MOCHA_TIMEOUT_MS } from "./scripts/e2e/native-journey-deadline.mjs";
 
 const appBinaryPath = process.env.E2E_APP_BINARY;
@@ -24,6 +25,10 @@ const driverBinaryPath = observeMacApplication ? process.execPath : appBinaryPat
 const driverArguments = observeMacApplication
   ? [resolve(process.cwd(), "scripts/e2e/macos-app-observer.mjs")]
   : undefined;
+const mochaTimeoutMs = Math.max(
+  NATIVE_JOURNEY_MOCHA_TIMEOUT_MS,
+  EXTENSION_UI_SETUP_TIMEOUT_MS,
+);
 
 export const config: WebdriverIO.Config = {
   outputDir: e2eLogDirectory,
@@ -57,5 +62,5 @@ export const config: WebdriverIO.Config = {
   waitforTimeout: 15_000,
   connectionRetryTimeout: 90_000,
   connectionRetryCount: 1,
-  mochaOpts: { ui: "bdd", timeout: NATIVE_JOURNEY_MOCHA_TIMEOUT_MS },
+  mochaOpts: { ui: "bdd", timeout: mochaTimeoutMs },
 };

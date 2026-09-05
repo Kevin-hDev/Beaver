@@ -261,7 +261,10 @@ test("installed extension UI setup exposes each bounded failure phase", () => {
   ]) {
     assert.match(acceptanceSource, new RegExp(`before\\("${phase}"`, "u"));
   }
-  assert.match(acceptanceSource, /this\.timeout\(EXTENSION_SETUP_TIMEOUT_MS\)/u);
+  assert.match(
+    acceptanceSource,
+    /this\.timeout\(EXTENSION_UI_SETUP_TIMEOUT_MS\)/u,
+  );
 });
 
 test("the native smoke releases WebDriver before coordinated exit", () => {

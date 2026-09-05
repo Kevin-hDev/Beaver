@@ -8,7 +8,7 @@ import itLocale from "../../src/i18n/it.json";
 import jaLocale from "../../src/i18n/ja.json";
 import zhLocale from "../../src/i18n/zh.json";
 import { RESOLVED_THEME_OPTIONS } from "../../src/lib/app-themes";
-import { TIMEOUTS } from "../../src/types/extension-contract.generated";
+import { EXTENSION_HOST_SETUP_TIMEOUT_MS } from "../../scripts/e2e/extension-setup-deadline";
 import { completeOnboarding } from "./onboarding-flow";
 import { initializeExtensionHost } from "./extension-host-setup";
 import { setMinimumViewport } from "./native-viewport";
@@ -39,7 +39,7 @@ describe("API expansion packaged acceptance", () => {
   let installed = false;
 
   before(async function () {
-    this.timeout(TIMEOUTS.hostRequestTimeoutMs + TIMEOUTS.hostStopTimeoutMs);
+    this.timeout(EXTENSION_HOST_SETUP_TIMEOUT_MS);
     await completeOnboarding();
     await waitForTauriBridge();
     await initializeExtensionHost();
@@ -247,7 +247,7 @@ async function waitForExtensionHost(): Promise<void> {
     if (latest.state === "error") throw new Error(latest.lastError ?? "host_error");
     return latest.state === "running";
   }, {
-    timeout: TIMEOUTS.hostRequestTimeoutMs + TIMEOUTS.hostStopTimeoutMs,
+    timeout: EXTENSION_HOST_SETUP_TIMEOUT_MS,
     timeoutMsg: `Extension host unavailable: ${latest.state}`,
   });
 }
