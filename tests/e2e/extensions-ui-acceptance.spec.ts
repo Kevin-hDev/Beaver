@@ -11,6 +11,8 @@ import { RESOLVED_THEME_OPTIONS } from "../../src/lib/app-themes";
 import { extensionThemeChoice } from "../../src/features/extension-ui/themes/theme-parser";
 import { TIMEOUTS } from "../../src/types/extension-contract.generated";
 import { completeOnboarding } from "./onboarding-flow";
+import { initializeExtensionHost } from "./extension-host-setup";
+import { setMinimumViewport } from "./native-viewport";
 import { invokeTauri, waitForTauriBridge } from "./tauri-invoke";
 
 const FIXTURES = resolve("scripts/extensions/fixtures/ui");
@@ -49,7 +51,7 @@ describe("extension UI installed acceptance", () => {
     this.timeout(EXTENSION_SETUP_TIMEOUT_MS);
     await completeOnboarding();
     await waitForTauriBridge();
-    await invokeTauri("e2e_initialize_extension_host");
+    await initializeExtensionHost();
     await waitForExtensionHost();
   });
 
@@ -125,7 +127,7 @@ describe("extension UI installed acceptance", () => {
   for (const locale of LOCALES) {
     for (const theme of RESOLVED_THEME_OPTIONS) {
       it(`keeps installed surfaces usable for ${locale}/${theme.id} at minimum size`, async () => {
-        await browser.setWindowSize(900, 600);
+        await setMinimumViewport(900, 600);
         await browser.execute((nextLocale, nextTheme) => {
           window.localStorage.setItem("clgo-language", nextLocale);
           window.localStorage.setItem("clgo-theme", nextTheme);
