@@ -84,3 +84,5 @@ Au moment de rédaction : nouvelle exécution macOS empaquetée en cours, Window
 Linux non exécutés sur cette révision ; validation visuelle non déclarée acquise.
 L'addendum de la note Git précisera les résultats effectivement obtenus ensuite.
 Ne pas fusionner la fonctionnalité dans main sur la seule base des tests unitaires.
+
+Acceptation locale complétée dans c552a1b5 : build macOS empaqueté réussi, 68 contrôles natifs réussis, fiche Beryl examinée dans les six thèmes et activation par vraie touche Entrée observée. Voir la note de c552a1b5 pour les limites du pilote, les correctifs du parcours et la CI Windows/Linux encore requise.
