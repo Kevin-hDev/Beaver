@@ -11,3 +11,5 @@ Executed green: cargo fmt --all -- --check; cargo clippy --all-targets -- -D war
 Known environment note: the first contracts check stopped with ENOSPC because this worktree target directory had grown to 146.8 GiB; cargo clean removed only regenerable build artifacts, after which the exact command passed. The recurring macOS linker warning about __eh_frame over 16 MiB remained non-fatal.
 
 Manual visual verification in all six shipped themes was not performed in this lot; only component behavior and accessibility were verified automatically. This is intentionally stated rather than overclaiming visual acceptance.
+
+Correction after the 2026-09-05 review: the fixture provenance commit is 335c3959d5ca9a3c1b9a90e7aad50d75a2cf3a61 (verified with git rev-parse v1.2.1), as already stated in test-fixtures/agent-session-v4-provenance.md. The earlier abbreviated string in this note was incorrect. The v5 empty artifact list is a serde(default) read semantic, not an explicit JSON field inserted by the migrator.
