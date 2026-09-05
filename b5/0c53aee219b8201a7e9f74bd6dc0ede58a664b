@@ -1,0 +1,1 @@
+Integrates main at 1ff5cf3d into the isolated extension API branch. Automatic merge without conflicts. This does not publish the feature on main. Full post-integration validation and review corrections follow in a separate commit; this merge alone makes no claim of packaged acceptance.
