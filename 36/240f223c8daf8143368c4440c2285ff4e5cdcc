@@ -1,0 +1,39 @@
+API-P6 — projection multimodale des résultats d'outils par route
+
+État livré
+- WireContract est l'autorité unique des politiques inline, follow_up_user_message et text_only.
+- OpenAI Responses reçoit les aperçus vérifiés avec le tool_call_id d'origine.
+- Anthropic attache texte, images et notes sûres au tool_result concerné.
+- Google/Mistral et Ollama vision reçoivent un unique suivi multimodal après tous les résultats outils.
+- xAI public, xAI OAuth et Codex OAuth restent explicitement text_only.
+- Le replay relit uniquement les références P5 intactes, revalide taille et SHA-256, puis classe les octets par leur signature réelle ; le MIME persisté n'est jamais une autorité.
+- Le lot parallèle est borné à 8 aperçus dans l'ordre des résultats, avec attribution bornée des omissions. Les octets éphémères sont libérés après projection et ne sont jamais persistés.
+- La limite 8 est générée depuis contract.json et partagée avec vision.rs ; un test interdit une seconde constante numérique.
+
+Revue racine et corrections
+- Exclusion des artefacts ordinaires : seul purpose=preview peut atteindre un fournisseur.
+- Libération des octets P4 avant relecture P5 pour éviter de doubler le pic mémoire de 64 Mio.
+- Notes sûres pour fichiers absents, modifiés, inaccessibles ou dont la signature n'est pas une image prise en charge.
+- Correction des duplications Anthropic quand un tool_call_id existe déjà dans l'historique ; notes et omissions restent rattachées au bon appel.
+- Refus explicite des suivis média non pris en charge dans les routes compatibles.
+- Découpage des fichiers de production dépassant 230 lignes, sans compression du code.
+- Le test de 16 aperçus représente réellement deux outils parallèles de 8 ; les 8 premiers survivent, les 8 suivants sont omis.
+
+RED -> GREEN notable
+- Un test croisé xAI OAuth a révélé que des modèles Chat Completions utilisaient encore une forme Responses et pouvaient échouer avant transport.
+- Le profil xAI OAuth distingue désormais explicitement Chat text-only et Responses text-only, avec 8/8 tests de transport verts.
+
+Validations exécutées sur le commit avant création
+- cargo fmt --all -- --check : vert.
+- cargo check --tests : vert.
+- cargo clippy --all-targets -- -D warnings : vert.
+- Tests ciblés Rust : 11 + 13 + 14 + 4 + 2 + 3 + 4 + 24 + 2 + 45 + 8 + 2 + 2 + 8 + 7 + 1, tous verts et réellement collectés.
+- npm run contracts:check : vert.
+- npm run lint : vert.
+- npx tsc --noEmit : vert.
+- git diff --check : vert.
+- graphify update . : code 0 après la dernière modification.
+- Seul avertissement non bloquant : linker macOS __eh_frame section too large.
+
+Limite honnête
+- Aucun appel fournisseur réel ni parcours complet d'une extension exécutée une seule fois sur les trois politiques n'a été lancé dans ce lot. Les constructeurs actifs et transports de test capturent les payloads sans réseau. La preuve empaquetée et de bout en bout appartient à API-P7 et n'est pas revendiquée ici.
