@@ -1,1 +1,24 @@
-CI correction after Windows packaged acceptance run 33962131569.\n\nObserved root cause:\n- Attempt 2 JUnit stopped the extension UI setup hook at exactly 66.009 seconds.\n- The hook's own bounded setup policy allowed 95 seconds: 60 seconds for the host request, 5 seconds for host stop, and two 15-second UI actions.\n- The API expansion suite started immediately afterwards and passed, proving the extension host was operational and the failure was the outer WebdriverIO/Mocha guard, not a persistent runtime crash.\n\nCorrection:\n- Added scripts/e2e/extension-setup-deadline.ts as the single setup-deadline authority derived from the generated extension contract.\n- WebdriverIO now uses the maximum of the native journey deadline and the extension UI setup deadline.\n- Both packaged extension suites consume the shared host/setup deadlines instead of duplicating arithmetic.\n- Updated the CI contract assertion and strengthened the WebdriverIO deadline test.\n\nScope:\n- Test harness only; no production runtime behavior changed.\n- The Windows durable-file retry from 6919dc12 remains valid hardening, but it was not the cause of this final acceptance timeout.\n\nLocal validation:\n- npx tsc --noEmit: passed.\n- npm run lint: passed.\n- node --test scripts/e2e/wdio-deadline.test.mjs scripts/e2e/native-journey-deadline.test.mjs: 9 passed.\n- npm run test:e2e-runner: 91 passed.\n- git diff --check: passed.\n- graphify . --update --code-only: passed.
+CI correction after Windows packaged acceptance run 33962131569.
+
+Observed root cause:
+- Attempt 2 JUnit stopped the extension UI setup hook at exactly 66.009 seconds.
+- The hook own bounded setup policy allowed 95 seconds: 60 seconds for the host request, 5 seconds for host stop, and two 15-second UI actions.
+- The API expansion suite started immediately afterwards and passed, proving the extension host was operational and the failure was the outer WebdriverIO/Mocha guard, not a persistent runtime crash.
+
+Correction:
+- Added scripts/e2e/extension-setup-deadline.ts as the single setup-deadline authority derived from the generated extension contract.
+- WebdriverIO now uses the maximum of the native journey deadline and the extension UI setup deadline.
+- Both packaged extension suites consume the shared host/setup deadlines instead of duplicating arithmetic.
+- Updated the CI contract assertion and strengthened the WebdriverIO deadline test.
+
+Scope:
+- Test harness only; no production runtime behavior changed.
+- The Windows durable-file retry from 6919dc12 remains valid hardening, but it was not the cause of this final acceptance timeout.
+
+Local validation:
+- npx tsc --noEmit: passed.
+- npm run lint: passed.
+- node --test scripts/e2e/wdio-deadline.test.mjs scripts/e2e/native-journey-deadline.test.mjs: 9 passed.
+- npm run test:e2e-runner: 91 passed.
+- git diff --check: passed.
+- graphify . --update --code-only: passed.
