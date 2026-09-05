@@ -1,10 +1,16 @@
 # Beaver Extension SDK — API v1
 
-Beaver extensions are trusted local code. They run in a separate Node.js host with the rights and environment of the current user account. The host is not a sandbox.
+Beaver extensions are trusted local code. They run in a separate Node.js host with the rights of the current user account. Beaver clears inherited environment variables except the minimal runtime profile; this does not restrict the code's file, process, or network access. The host is not a sandbox.
 
 `access` and `apiLevel` describe compatibility and intended use. They are not process-isolation or security boundaries. Beaver validates registered contributions again in Rust, but extension code remains fully trusted code.
 
 Approval is associated with the extension identity, source, and current bounded file fingerprint. Editing fingerprinted local, Git, or npm content revokes approval, disables the extension, and clears its session permissions before the next load. A Git or npm update managed by Beaver also requests trust again before its next activation. Users remain responsible for auditing every source and update.
+
+The fingerprint covers selected JavaScript/TypeScript sources, the manifest, and the
+compiled UI artifact. It excludes `node_modules` and does not freeze the files Node
+later imports. Dependency edits and a local replacement between verification and
+import are therefore not guaranteed to request fresh approval. Full Node access also
+allows external or dynamic imports; approval is not an immutable execution snapshot.
 
 ## Installation sources
 
@@ -265,12 +271,17 @@ export async function deactivate() {
 Beaver compiles the advanced entry locally during a local, Git, or npm installation and
 during managed updates. Reloading the Host rebuilds local advanced entries. The bounded
 artifact, its manifest, and its hashes become part of the extension fingerprint. Source
-or artifact changes revoke approval and disable the extension before the next load;
+or artifact changes detected by that fingerprint revoke approval before the next load;
 modified artifact bytes are refused by the protocol as well.
 
 Import, activation, styles, and mounts use bounded time and size budgets from the
 generated contract. Beaver removes mounted containers and styles during reload,
-disable, recovery, or application teardown. `--safe-mode`, the startup Shift gesture,
+disable, recovery, or application teardown, before calling extension cleanup callbacks.
+All callbacks share the `maxAdvancedCleanupMs` deadline; one suspended promise does
+not prevent the others from running or keep the loader waiting forever. The deadline
+ends Beaver's wait, but cannot cancel extension JavaScript or interrupt a synchronous
+loop. Extensions must release their own external listeners and resources.
+`--safe-mode`, the startup Shift gesture,
 and the recovery flow prevent third-party advanced modules from loading so the
 Extensions screen remains available. Failures are shown as generic localized
 diagnostics without exposing raw extension output.
@@ -298,6 +309,10 @@ beaver.unstable.registerReplacement({
 Core calls reject with a `BeaverExtensionError`. Use `isBeaverExtensionError(error)` to read its bounded `code`, `reason`, and `retryable` fields. A `core_busy` or `core_request_timeout` error is retryable; an unavailable method is not.
 
 Enabled official plugins share Beaver's official host. Each enabled third-party extension runs in its own managed host process, so disabling or stopping it terminates its code without sharing an identity or failure domain with other third-party extensions.
+
+Beaver's normal frontend does not receive vault keys. Explicitly approved extensions may retrieve secrets through this SDK without separate approval per key. This is intentional: approval trusts the extension's complete code and dependencies, rather than confining it to the SDK surface.
+
+Secret access must be recorded before the response can be released. If the access journal cannot be written, Beaver refuses the response. The journal records authorization, not confirmed delivery, and contains neither secret values nor request parameters. Disabling an extension cannot revoke a copy already received; revoke the credential with its provider when needed.
 
 Secrets are zeroized by Beaver on the Rust side after transfer. Once a secret crosses into JavaScript, immutable strings and the JavaScript garbage collector prevent Beaver from guaranteeing immediate memory erasure.
 
@@ -432,6 +447,7 @@ The extension author and user are responsible for any secret, file, process, or 
 | `maxAdvancedActivationMs` | 15000 |
 | `maxAdvancedArtifactBytes` | 4194304 |
 | `maxAdvancedArtifactFiles` | 64 |
+| `maxAdvancedCleanupMs` | 5000 |
 | `maxAdvancedMountsPerExtension` | 32 |
 | `maxContributionsPerExtension` | 32 |
 | `maxFieldsPerView` | 32 |

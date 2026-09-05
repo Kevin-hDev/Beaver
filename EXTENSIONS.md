@@ -304,8 +304,11 @@ le stockage géré par Beaver et disposent d’une action **Mettre à jour**.
 
 Après une mise à jour ou un changement des fichiers couverts par l’empreinte, Beaver
 révoque l’approbation précédente, désactive l’extension et demande une nouvelle
-confirmation. Ce comportement évite qu’un code différent hérite silencieusement de la
-confiance accordée à l’ancienne version.
+confirmation. Ce contrôle porte sur les fichiers sélectionnés par l’empreinte au
+moment de la vérification : sources JavaScript/TypeScript, manifeste et artefact UI.
+Il exclut notamment `node_modules` et ne fige pas les fichiers ouverts ensuite par
+Node. Il ne garantit donc pas qu’une modification locale d’une dépendance ou un
+remplacement entre vérification et import demandera une nouvelle approbation.
 
 ## Dépendances npm
 
@@ -354,6 +357,24 @@ panne. Le crash d’une extension ne doit donc pas arrêter les autres extension
 Cette isolation améliore la stabilité, pas la sécurité contre l’utilisateur lui-même :
 une extension tierce peut toujours accéder aux fichiers, au réseau, aux processus et
 aux secrets que son code demande. Ne l’activez que si vous acceptez ce comportement.
+
+L’interface normale de Beaver ne reçoit pas les clés du coffre. Une extension
+explicitement approuvée peut demander directement les secrets via l’API du SDK :
+cette approbation porte sur tout son code et ses dépendances, sans permission séparée
+par clé. Cet accès permet aux extensions de travailler avec les services choisis par
+l’utilisateur ; il ne constitue pas une garantie de confinement du code installé.
+
+Beaver enregistre l’autorisation d’accès sans écrire la clé ni les paramètres de la
+demande dans le journal. Si cet enregistrement échoue, le secret n’est pas remis.
+Le journal atteste l’autorisation, pas la réception effective de la réponse.
+Désactiver ou supprimer une extension ne retire pas une copie qu’elle aurait déjà
+obtenue : pour invalider cette copie, révoquez l’accès auprès du fournisseur concerné.
+
+Pour une interface avancée, Beaver retire ses conteneurs et ses styles avant
+d’attendre les callbacks de nettoyage de l’extension. Cette attente partage un
+budget global borné ; son expiration libère les chargements suivants, mais n’annule
+pas le JavaScript tiers. Une boucle synchrone bloquant la page principale nécessite
+toujours un redémarrage, éventuellement en mode sûr.
 
 Beaver borne notamment le nombre de fichiers, la taille de l’empreinte, les messages,
 les requêtes en vol, le temps d’exécution et les redémarrages automatiques. Les limites
