@@ -1,6 +1,6 @@
 import { constants } from "node:fs";
 import { open, realpath } from "node:fs/promises";
-import { basename, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { tmpdir } from "node:os";
 
 // Disposable investigation: remove once the packaged Windows activation is explained.
@@ -19,7 +19,8 @@ export async function diagnosticProfile(value) {
   if (!profile.startsWith(`${temporary}/`) && !profile.startsWith(`${temporary}\\`)) {
     throw new Error("Diagnostic profile unavailable");
   }
-  if (!/^beaver-e2e-[a-zA-Z0-9]+$/u.test(basename(profile))) {
+  const owner = basename(profile) === "data" ? dirname(profile) : profile;
+  if (!/^beaver-e2e-[a-zA-Z0-9]+$/u.test(basename(owner))) {
     throw new Error("Diagnostic profile unavailable");
   }
   return profile;

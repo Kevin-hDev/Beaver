@@ -32,6 +32,10 @@ if (process.env.E2E_PACKAGED !== undefined && !packaged) {
 const runMode = resolveE2eRunMode(process.env);
 const profilePath = await realpath(await mkdtemp(join(tmpdir(), "beaver-e2e-")));
 const canonicalTemp = await realpath(tmpdir());
+// Diagnostic comparison: keep the installed application outside the secured data tree.
+const dataPath = process.env.E2E_DIAGNOSTIC_SEPARATE_DATA === "1"
+  ? join(profilePath, "data") : profilePath;
+await mkdir(dataPath, { recursive: true, mode: 0o700 });
 const logDirectory = join(profilePath, "logs");
 const cargoTargetDir = e2eCargoTargetDir(
   process.platform,
@@ -46,7 +50,7 @@ if (!isAllowedProfilePath(profilePath, canonicalTemp)) {
 const environment = {
   ...process.env,
   CARGO_TARGET_DIR: cargoTargetDir,
-  CL_GO_CEF_TEST_DATA_DIR: profilePath,
+  CL_GO_CEF_TEST_DATA_DIR: dataPath,
   CLGO_CEF_DEV_PREP: "1",
   CLGO_CEF_CARGO_FEATURES: "e2e",
   E2E_APP_BINARY: debugBinaryPath(process.platform, cargoTargetDir),
@@ -54,7 +58,7 @@ const environment = {
   VITE_E2E: "1",
 };
 if (artifactDirectory) environment.E2E_ARTIFACT_DIR = artifactDirectory;
-environment.BEAVER_E2E_UI_MANIFEST_SHA = await prepareUiRuntimeProof(repoRoot, profilePath);
+environment.BEAVER_E2E_UI_MANIFEST_SHA = await prepareUiRuntimeProof(repoRoot, dataPath);
 if (packaged && process.platform === "linux") {
   environment.APPIMAGE_EXTRACT_AND_RUN = "1";
 }
