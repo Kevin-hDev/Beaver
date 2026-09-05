@@ -1,0 +1,13 @@
+API-P5 review note
+
+Implements session schema v5 and durable tool-artifact metadata. Workspace artifacts persist name, MIME type, size, SHA-256, purpose, source path and HMAC grant; extension resources persist resource id and catalog fingerprint. No artifact bytes, base64 payload or internal extension path is written to the session.
+
+Root review corrections: artifacts are now attached to the durable tool-result journal and restored onto the matching assistant activity after restart; mismatched tool-call identity fails closed without partial persistence; historical resource verification no longer depends on ephemeral request discovery state; the IPC view strips HMAC grants and catalog fingerprints; qualified resource identifiers have one parser authority; overflow cannot publish metadata for discarded bytes; source modules were split to remain within the 230-line limit.
+
+Migration: v4 to v5 creates an exact .v4.bak before publication, initializes empty artifact lists, validates current reads, and includes a synthetic fixture generated with the real v1.2.1 serializer at commit 335c3959d5ca9eebf12a7eb813d9afc6ed0b1.
+
+Executed green: cargo fmt --all -- --check; cargo clippy --all-targets -- -D warnings; npm run contracts:check; npm run test:persistence-migration (10); session_migration (27); agent_session_contract (4 passed, 1 ignored generator); conversation_journal_tests (7); resource_loader (8); session_artifact_verification (2); tool_artifact_record (3); tool_execution_outcome tests (7); targeted Vitest artifact/history/contract (16); i18n tests (8); npm run lint; npx tsc --noEmit; git diff --check; graphify update.
+
+Known environment note: the first contracts check stopped with ENOSPC because this worktree target directory had grown to 146.8 GiB; cargo clean removed only regenerable build artifacts, after which the exact command passed. The recurring macOS linker warning about __eh_frame over 16 MiB remained non-fatal.
+
+Manual visual verification in all six shipped themes was not performed in this lot; only component behavior and accessibility were verified automatically. This is intentionally stated rather than overclaiming visual acceptance.
