@@ -33,13 +33,29 @@ impl InstallControl {
         tokio::select! { _ = self.cancel.cancelled() => {}, _ = self.app_cancel.cancelled() => {} }
     }
     pub(crate) fn checkpoint(&self, phase: InstallPhase) -> Result<(), InstallInterruption> {
+        self.checkpoint_with(phase, || {})
+    }
+    pub(super) fn checkpoint_with(
+        &self,
+        phase: InstallPhase,
+        before_lock: impl FnOnce(),
+    ) -> Result<(), InstallInterruption> {
         if self.app_cancel.is_cancelled() {
             return Err(InstallInterruption::AppClosing);
         }
         if self.cancel.is_cancelled() {
             return Err(InstallInterruption::Cancelled);
         }
+        before_lock();
         let mut state = self.store.lock().map_err(|_| InstallInterruption::Failed)?;
+        // Cancellation can win while this checkpoint waits for the state lock.
+        // Preserve its reason before interpreting the resulting Cancelling status.
+        if self.app_cancel.is_cancelled() {
+            return Err(InstallInterruption::AppClosing);
+        }
+        if self.cancel.is_cancelled() {
+            return Err(InstallInterruption::Cancelled);
+        }
         let index = state
             .index(&self.id)
             .map_err(|_| InstallInterruption::Failed)?;

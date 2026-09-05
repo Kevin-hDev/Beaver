@@ -378,3 +378,6 @@ async fn cancelling_a_full_queue_never_overflows_recent_results() {
     stop(&store).await;
     assert!(store.snapshot().unwrap().jobs.len() <= 32);
 }
+
+#[path = "review_tests.rs"]
+mod review_tests;

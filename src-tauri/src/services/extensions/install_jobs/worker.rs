@@ -97,8 +97,20 @@ pub(super) async fn run(
             }
         }
         let cleanup_confirmed = job.clean;
-        if state.evict(super::limits::MAX_RECENT).is_err() || !cleanup_confirmed {
-            // Retain ownership evidence and stop admission until recovery confirms cleanup.
+        if !cleanup_confirmed || state.evict(super::limits::MAX_RECENT).is_err() {
+            // No consumer remains: stop never-started jobs explicitly while retaining
+            // the failed producer's ownership evidence and leaving all sources intact.
+            for queued in &mut state.jobs {
+                if queued.view.status == InstallStatus::Queued {
+                    queued.view.status = InstallStatus::Failed;
+                    queued.view.error_code = Some(FAILED.into());
+                    queued.view.can_cancel = false;
+                    queued.finished_revision = Some(revision);
+                }
+            }
+            if state.evict(super::limits::MAX_RECENT).is_err() {
+                log::warn!("extension install cleanup still required");
+            }
             state.worker = false;
             store.changed(&mut state);
             return;
