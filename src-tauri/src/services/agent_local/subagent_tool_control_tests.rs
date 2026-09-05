@@ -32,9 +32,9 @@ fn delegate_and_mixed_batches_are_not_control_only() {
 fn api_and_ollama_wait_after_control_batches_before_finishing_tools() {
     for (source, classifier_marker, tool_marker) in [
         (
-            include_str!("../llm/agent_loop.rs"),
-            "agent_loop_tools::prepare_tool_batch",
-            "agent_loop_tools::execute_tool_batch",
+            include_str!("../llm/agent_loop_tools.rs"),
+            "prepare_tool_batch",
+            "execute_tool_batch",
         ),
         (
             include_str!("agent_loop_tool_turn.rs"),

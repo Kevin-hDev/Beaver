@@ -1,0 +1,10 @@
+{
+  "tools": [
+    { "type": "function", "function": { "name": "read_file" } },
+    { "type": "function", "function": { "name": "list_extensions" } },
+    { "type": "function", "function": { "name": "inspect_extensions" } },
+    { "type": "function", "function": { "name": "load_extension_resource" } }
+  ],
+  "expectedWithoutExtensions": ["read_file"],
+  "expectedNoTools": []
+}

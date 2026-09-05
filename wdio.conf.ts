@@ -12,6 +12,7 @@ const childSessionReadOnlySpec = "./tests/e2e/child-session-read-only.spec.ts";
 const extensionUiRuntimeProofSpec = "./tests/e2e/extensions-ui-runtime-proof.spec.ts";
 const extensionUiAdvancedSpec = "./tests/e2e/extensions-ui-advanced.spec.ts";
 const extensionUiAcceptanceSpec = "./tests/e2e/extensions-ui-acceptance.spec.ts";
+const extensionApiExpansionSpec = "./tests/e2e/extensions-api-expansion.spec.ts";
 const journeySpec = nativeCefSmoke
   ? "./tests/e2e/native-cef-shutdown.spec.ts"
   : nativeWebViewSmoke
@@ -31,6 +32,7 @@ export const config: WebdriverIO.Config = {
     extensionUiRuntimeProofSpec,
     extensionUiAdvancedSpec,
     extensionUiAcceptanceSpec,
+    extensionApiExpansionSpec,
     journeySpec,
   ]],
   maxInstances: 1,

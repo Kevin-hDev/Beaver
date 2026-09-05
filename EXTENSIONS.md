@@ -68,6 +68,21 @@ Toutes les méthodes stables, les emplacements d’interface, les composants dé
 les jetons de thème et les limites sont listés dans la
 [référence du SDK](./src-tauri/resources/extension-host/sdk/README.md).
 
+## Skills, ressources et résultats de fichier
+
+Une extension peut déclarer des skills et des ressources texte, image ou fichier. Leur
+description n’est jamais ajoutée à toutes les conversations : l’agent doit d’abord
+inspecter l’extension, puis charger explicitement le skill ou la ressource demandée.
+Beaver vérifie alors l’extension approuvée, sa provenance et le chemin déclaré avant de
+lire un contenu borné. Une modification ou une désactivation rend la lecture indisponible.
+
+Un outil peut aussi retourner du texte et des fichiers relatifs au dossier de travail.
+Beaver contrôle ces fichiers avant et pendant la lecture, applique le budget du lot et
+conserve des métadonnées attribuées sans enregistrer les octets binaires. Un aperçu image
+ne rejoint un fournisseur que si sa route le permet ; les autres routes reçoivent une
+référence textuelle. Le mode Chat classique et les sous-agents ne reçoivent pas ces
+capacités d’extension.
+
 ## Structure recommandée
 
 Pour une extension distribuable, utilisez un dossier avec un manifeste explicite :
@@ -382,6 +397,8 @@ Les fixtures hors ligne dans
 [`scripts/extensions/fixtures/ui/`](./scripts/extensions/fixtures/ui/) montrent des
 contributions standard, avancées, localisées, limitées et volontairement invalides.
 Elles servent de référence testable avec le SDK et les contrats générés.
+La fixture d’acceptation complète des skills, ressources et résultats se trouve dans
+[`src-tauri/tests/fixtures/extensions/api-expansion/`](./src-tauri/tests/fixtures/extensions/api-expansion/).
 
 ## Limites actuelles
 

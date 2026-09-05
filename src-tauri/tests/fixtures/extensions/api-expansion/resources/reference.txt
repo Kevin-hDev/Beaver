@@ -1,1 +1,1 @@
-API-R0 extension resource fixture.
+API-P7 extension resource fixture.

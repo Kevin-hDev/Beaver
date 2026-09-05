@@ -79,7 +79,7 @@ fn rich_blocks_keep_their_original_order() {
 }
 
 #[test]
-fn extension_reported_error_drops_declared_files() {
+fn extension_reported_error_with_a_file_is_refused_as_one_invalid_result() {
     let mut host_result = host_result(ToolResultContent::Blocks(vec![
         ToolResultBlock::Text {
             text: "entrée invalide".to_string(),
@@ -95,11 +95,13 @@ fn extension_reported_error_drops_declared_files() {
     let result = to_tool_result(Ok(host_result));
 
     assert!(result.is_error);
-    assert_eq!(result.content, "entrée invalide");
+    assert_eq!(result.content, "Résultat d'extension indisponible.");
     assert!(result.pending_artifacts().is_empty());
+    let error = result.error.expect("structured extension error");
+    assert_eq!(error.category, ToolErrorCategory::Unavailable);
     assert_eq!(
-        result.error.expect("structured extension error").category,
-        ToolErrorCategory::External
+        error.code.as_ref(),
+        crate::services::extensions::error_codes::RESULT_INVALID
     );
 }
 

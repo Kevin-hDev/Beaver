@@ -41,16 +41,16 @@ async fn migration_profile_snapshot_and_two_atomic_compressions_survive_restart(
         .any(|message| { message.message_kind == Some(AgentMessageKind::CompressionCheckpoint) }));
     crate::services::agent_local::session_migration::commit_current(&loaded)
         .await
-        .expect("persist v3");
+        .expect("persist current session");
     let current = std::fs::read(&legacy_path).expect("current session");
     let reloaded = crate::services::agent_local::session_migration::read(
         &current,
         PathBuf::from(&legacy_path),
     )
-    .expect("reload v3");
+    .expect("reload current session");
     assert_eq!(
         reloaded.version(),
-        crate::services::agent_local::session_migration::LoadedVersion::V4
+        crate::services::agent_local::session_migration::LoadedVersion::V5
     );
 
     let fixture = reloaded.into_session();

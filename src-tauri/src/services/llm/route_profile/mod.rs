@@ -112,3 +112,6 @@ pub(super) fn anthropic_fixture(
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+#[path = "tool_policies_tests.rs"]
+mod tool_policies_tests;

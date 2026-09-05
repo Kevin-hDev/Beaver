@@ -214,7 +214,9 @@ export function ToolDetailRow({
       {tool.name === "write_document" && tool.result && !tool.is_error && documentContent != null && (
         <WriteDocumentPreview content={documentContent} />
       )}
-      <ToolArtifacts artifacts={tool.artifacts} onFilePreview={onFilePreview} />
+      {!!tool.artifacts?.length && (
+        <ToolArtifacts artifacts={tool.artifacts} onFilePreview={onFilePreview} />
+      )}
     </ToolItem>
   );
 }

@@ -14,6 +14,7 @@ const invokeSource = readSource("../../src-tauri/src/invoke_handler.rs");
 const commandsSource = readSource("../../src-tauri/src/commands/mod.rs");
 const e2eCommandSource = readSource("../../src-tauri/src/commands/e2e.rs");
 const acceptanceSource = readSource("../../tests/e2e/extensions-ui-acceptance.spec.ts");
+const packagedSource = readSource("./run-packaged.mjs");
 
 test("CI exercises Rust assertions and clippy with the E2E feature", () => {
   assert.match(ciSource, /cargo clippy --all-targets --features e2e -- -D warnings/u);
@@ -107,6 +108,13 @@ test("the WebDriver journey executes the extension UI runtime proof", () => {
     wdioSource,
     /extensions-ui-runtime-proof\.spec\.ts[\s\S]*extensions-ui-advanced\.spec\.ts[\s\S]*extensions-ui-acceptance\.spec\.ts/u,
   );
+});
+
+test("the packaged journey collects the API expansion acceptance fixture", () => {
+  assert.match(wdioSource, /extensions-api-expansion\.spec\.ts/u);
+  assert.match(packagedSource, /BEAVER_E2E_API_EXPANSION_FIXTURE/u);
+  assert.match(packagedSource, /api-expansion/u);
+  assert.match(packagedSource, /beaver-extension\.json/u);
 });
 
 test("the native CEF journey uses one isolated application session", () => {

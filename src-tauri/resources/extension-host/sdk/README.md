@@ -84,8 +84,10 @@ Beaver namespaces this tool as `com.example.hello.hello`.
 Host can actually use. Use `beaver.capabilities?.includes(...)` so an
 extension also loads in an older Beaver Host. When both `skills` and
 `resources` are present, the Host also exposes `registerSkill` and
-`registerResource`. Register metadata only: Beaver does not read, inject, or
-expose either file's content during this API level. When `richToolResults` is
+`registerResource`. Register metadata only: Beaver does not inject either file
+globally. The Agent must explicitly inspect the extension then call `load_skill`
+or the resource loader. Beaver revalidates the approved extension and the
+declared relative path before reading bounded content. When `richToolResults` is
 present, tools may return bounded text and file blocks. File paths stay relative
 to the tool working directory; Beaver verifies and reads them only after the
 result is admitted to its batch budget.
@@ -109,6 +111,25 @@ if (
     path: "resources/reference.txt",
   });
 }
+```
+
+### Bounded file results
+
+Return a text block before each file block. `artifact` is a result file and
+`preview` is eligible for a provider-specific image preview. The generated limits
+are authoritative: at most 16 blocks, 8 files, 20 MiB per result and 64 MiB for
+one parallel batch. An error result cannot carry a file. Beaver stores only the
+validated metadata and provenance; it does not persist the binary bytes or expose
+the extension's internal resource path.
+
+```ts
+return {
+  content: [
+    { type: "text", text: "Report ready." },
+    { type: "file", path: "report.pdf", purpose: "artifact", displayName: "report.pdf" },
+    { type: "file", path: "chart.png", purpose: "preview", displayName: "chart.png" },
+  ],
+};
 ```
 
 ### Standard interface contributions
