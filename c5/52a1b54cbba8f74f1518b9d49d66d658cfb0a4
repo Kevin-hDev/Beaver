@@ -1,0 +1,47 @@
+# Complément d'acceptation native API
+
+Le build macOS empaqueté et la suite complète se sont terminés avec une sortie 0 :
+68 tests réussis, dont le parcours API et les anciennes surfaces UI. Les sept
+langues et les six thèmes ont effectivement été parcourus, ainsi que Chat,
+rechargement de l'Hôte et désactivation. Aucun appel payant à un fournisseur.
+
+Les essais natifs ont révélé des défauts du parcours initial, corrigés ici :
+
+- L'initialisation Rust est unique par processus ; les deux suites partagent
+  maintenant une préparation unique, y compris sa promesse d'échec.
+- Le contrôle accessible vérifie le rôle switch de notre véritable interrupteur,
+  pas un élément button qui n'existe pas.
+- Les assertions de traduction utilisent le contenu textuel, sans le confondre
+  avec la mise en majuscules CSS. Aucun changement du design n'a été nécessaire.
+- La taille réellement rendue est mesurée. Le pilote macOS Retina recevait 900×600
+  mais rendait 450×300. La préparation corrige cette différence en trois essais
+  au maximum et exige au moins le viewport annoncé avant de poursuivre.
+- Le test d'accès clavier vérifie maintenant le focus sur un vrai bouton activé.
+  Le pilote embarqué envoie des KeyboardEvent synthétiques, sans l'action native
+  par défaut d'Entrée. Il ne faut pas ajouter de handler à Beaver pour satisfaire
+  artificiellement ce pilote. L'activation réelle est une vérification manuelle
+  distincte, dont le résultat est consigné dans l'addendum final.
+
+Les essais ciblés ont réutilisé le binaire empaqueté, sans reconstruction. La
+sélection temporaire des tests pour les contrôles visuels n'est pas livrée.
+
+Validation transversale Windows/Linux : encore à obtenir via CI. Pas de fusion
+vers main autorisée par le seul résultat macOS.
+
+Maintenance : le graphe de code a été mis à jour. La mise à jour sémantique des
+deux documents publics a été tentée mais son export a été refusé par le garde-fou
+de réduction du graphe après dédoublonnage. Aucun passage en force : l'ancien
+graphe sémantique est préservé et n'est pas déclaré à jour.
+
+## Vérification manuelle réellement observée
+
+La fiche Beryl a été ouverte et examinée dans les six thèmes livrés, dans un
+viewport de 900×600 réellement mesuré : outils, classes d'effet, skill, ressources
+et commandes restent lisibles et accessibles par défilement. Les essais ont
+utilisé uniquement le profil E2E isolé et le binaire du worktree de cette branche.
+
+L'ouverture au clavier a été effectuée avec Computer Use : une vraie touche
+Entrée sur la ligne Beryl préalablement focalisée fait passer la liste à la fiche.
+L'arbre d'accessibilité et l'écran ont confirmé le titre Beryl et ses capacités.
+Ce contrôle manuel complète le test de focus ; il ne prétend pas réparer le
+pilote synthétique ni automatiser cette preuve sur Windows et Linux.
