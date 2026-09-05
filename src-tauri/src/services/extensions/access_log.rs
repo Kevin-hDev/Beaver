@@ -7,7 +7,7 @@ use uuid::Uuid;
 const FILE_NAME: &str = "extension-access.jsonl";
 const SCHEMA_VERSION: u8 = 1;
 
-#[derive(Clone, Copy, Serialize)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub(super) enum AccessResult {
     Granted,
@@ -45,10 +45,16 @@ enum Event<'a> {
     },
 }
 
-pub(super) fn write_core(context: &ExtensionCallContext, method: &str, result: AccessResult) {
-    if write_core_at(&log_path(), context, method, result).is_err() {
+pub(super) fn write_core(
+    context: &ExtensionCallContext,
+    method: &str,
+    result: AccessResult,
+) -> Result<(), String> {
+    let outcome = write_core_at(&log_path(), context, method, result);
+    if outcome.is_err() {
         ::log::error!("[extensions] access journal unavailable");
     }
+    outcome
 }
 
 pub(super) fn write_core_at(

@@ -57,3 +57,21 @@ fn host_started_log_has_generation_and_pid_but_no_method() {
     assert!(value.get("method").is_none());
     assert!(value.get("correlationId").is_none());
 }
+
+#[test]
+fn core_call_log_propagates_an_unavailable_journal() {
+    let temporary = tempfile::tempdir().unwrap();
+    let context = ExtensionCallContext::for_test(
+        HostIdentity::ThirdParty("com.example.safe".to_string()),
+        ExtensionApiLevel::Stable,
+    );
+
+    let result = super::access_log::write_core_at(
+        temporary.path(),
+        &context,
+        "secrets.provider.get",
+        AccessResult::Granted,
+    );
+
+    assert!(result.is_err());
+}

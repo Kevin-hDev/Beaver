@@ -11,6 +11,9 @@ mod contribution_skills;
 mod contribution_skills_tests;
 mod contribution_types;
 mod core_bridge;
+mod core_response_audit;
+#[cfg(test)]
+mod core_response_audit_tests;
 mod core_secrets;
 mod diagnostic_time;
 mod discovery_catalog;

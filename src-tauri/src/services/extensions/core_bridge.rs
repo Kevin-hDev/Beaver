@@ -23,14 +23,22 @@ pub async fn call(
     params: Option<&Value>,
 ) -> Result<CoreResponse, ExtensionBridgeError> {
     let outcome = execute(context, method, params).await;
-    if matches!(outcome, Ok(CoreResponse::Secret(_)))
-        && super::registry_access::mark_sensitive_access(context.identity()).is_err()
-    {
-        super::access_log::write_core(context, method, super::access_log::AccessResult::Failed);
-        return Err(ExtensionBridgeError::Failed);
+    finalize_response(
+        outcome,
+        || super::registry_access::mark_sensitive_access(context.identity()),
+        |result| super::access_log::write_core(context, method, result),
+    )
+}
+
+fn finalize_response(
+    mut outcome: Result<CoreResponse, ExtensionBridgeError>,
+    mark_sensitive: impl FnOnce() -> Result<(), String>,
+    write_audit: impl FnOnce(super::access_log::AccessResult) -> Result<(), String>,
+) -> Result<CoreResponse, ExtensionBridgeError> {
+    if matches!(outcome, Ok(CoreResponse::Secret(_))) && mark_sensitive().is_err() {
+        outcome = Err(ExtensionBridgeError::Failed);
     }
-    super::access_log::write_core(context, method, access_result(&outcome));
-    outcome
+    super::core_response_audit::record_outcome(outcome, write_audit)
 }
 
 async fn execute(
@@ -48,19 +56,6 @@ async fn execute(
         return Err(ExtensionBridgeError::Revoked);
     }
     await_unrevoked(context, budget, dispatch(method, params)).await
-}
-
-fn access_result(
-    outcome: &Result<CoreResponse, ExtensionBridgeError>,
-) -> super::access_log::AccessResult {
-    use super::access_log::AccessResult;
-    match outcome {
-        Ok(_) => AccessResult::Granted,
-        Err(ExtensionBridgeError::Denied) => AccessResult::Denied,
-        Err(ExtensionBridgeError::Failed) => AccessResult::Failed,
-        Err(ExtensionBridgeError::Revoked) => AccessResult::Revoked,
-        Err(ExtensionBridgeError::Timeout) => AccessResult::Timeout,
-    }
 }
 
 async fn await_unrevoked<F>(

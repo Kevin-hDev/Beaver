@@ -1,5 +1,8 @@
 use super::*;
 use serde_json::json;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
+use zeroize::Zeroizing;
 
 #[test]
 fn authorization_snapshot_rejects_spoofed_disabled_and_mismatched_channels() {
@@ -148,6 +151,25 @@ async fn revocation_interrupts_an_in_flight_core_operation() {
     ));
 }
 
+#[tokio::test]
+async fn timeout_stops_waiting_without_starting_the_operation_twice() {
+    let context = super::super::call_context::ExtensionCallContext::for_test(
+        super::super::host_identity::HostIdentity::ThirdParty("com.example.timeout".to_string()),
+        super::super::types::ExtensionApiLevel::Stable,
+    );
+    let starts = Arc::new(AtomicUsize::new(0));
+    let observed = Arc::clone(&starts);
+
+    let result = await_unrevoked(&context, std::time::Duration::from_millis(10), async move {
+        observed.fetch_add(1, Ordering::SeqCst);
+        std::future::pending::<Result<CoreResponse, ()>>().await
+    })
+    .await;
+
+    assert!(matches!(result, Err(ExtensionBridgeError::Timeout)));
+    assert_eq!(starts.load(Ordering::SeqCst), 1);
+}
+
 #[test]
 fn sensitive_resource_scope_never_falls_back_to_another_requested_name() {
     let allowed = vec!["TOKEN_FOR_CONNECTOR_A".to_string()];
@@ -192,4 +214,52 @@ fn an_already_marked_sensitive_identity_needs_no_registry_rewrite() {
         &records,
         &super::super::host_identity::HostIdentity::Official,
     ));
+}
+
+#[test]
+fn bridge_finalization_withholds_a_secret_when_the_real_journal_write_fails() {
+    let temporary = tempfile::tempdir().unwrap();
+    let context = super::super::call_context::ExtensionCallContext::for_test(
+        super::super::host_identity::HostIdentity::ThirdParty("com.example.audit".to_string()),
+        super::super::types::ExtensionApiLevel::Stable,
+    );
+    let outcome = Ok(CoreResponse::Secret(Zeroizing::new(
+        "AUDIT-FAKE-KEY".to_string(),
+    )));
+
+    let result = finalize_response(
+        outcome,
+        || Ok(()),
+        |access_result| {
+            super::super::access_log::write_core_at(
+                temporary.path(),
+                &context,
+                "secrets.provider.get",
+                access_result,
+            )
+        },
+    );
+
+    assert!(matches!(result, Err(ExtensionBridgeError::Failed)));
+}
+
+#[test]
+fn sensitive_marking_failure_is_audited_as_failed_and_withholds_the_secret() {
+    let mut audited = None;
+    let result = finalize_response(
+        Ok(CoreResponse::Secret(Zeroizing::new(
+            "AUDIT-FAKE-KEY".to_string(),
+        ))),
+        || Err("registry unavailable".to_string()),
+        |access_result| {
+            audited = Some(access_result);
+            Ok(())
+        },
+    );
+
+    assert!(matches!(result, Err(ExtensionBridgeError::Failed)));
+    assert_eq!(
+        audited,
+        Some(super::super::access_log::AccessResult::Failed)
+    );
 }
