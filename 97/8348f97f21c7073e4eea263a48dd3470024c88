@@ -1,0 +1,11 @@
+# Targeted backend follow-up
+
+The targeted run 34036975400 at ce388451 failed. Linux completed 5015 tests successfully, with one failure in forced_scans_serialize_but_do_not_hold_the_state_lock. The previous actual parent-death leak test now passes. Windows passed dedicated scope identity and the minimal acknowledged launch gate, but three installer lifecycle fixtures failed before the npm preflights could run.
+
+The disk test used a single try_lock while another scan legitimately briefly acquires the same state mutex to obtain the sampling mutex. Replace the instantaneous absence-of-contention assertion with bounded acquisition while the first measurement remains blocked. The test continues to prove that measurements serialize and state remains accessible during measurement.
+
+The failing installer fixtures omitted configure_installer, unlike production process_runner and ui_builder_process. The gate intentionally clears inherited environment and copies only explicit command variables. Configure the fixtures through the existing production authority, including SystemRoot on Windows; do not broaden production environment inheritance. This discrepancy is confirmed in code; successful execution of these updated Windows fixtures still requires native CI evidence.
+
+Validation before commit: macOS installer tests 6 passed, 1 ignored subprocess fixture; disk monitor tests 3 passed; the corrected concurrency test passed 20 additional repetitions; strict cargo clippy --all-targets -- -D warnings exited 0; complementary Rust formatting and git diff --check exited 0; graphify update . succeeded. No production code changes in this follow-up. No Windows/Linux success claimed before the next targeted run.
+
+Next: push with [skip ci], dispatch target=installer-tests only. Full application builds and integration into main remain gated on both backend results, followed by complete checks on the final commit.
