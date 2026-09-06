@@ -1,0 +1,9 @@
+Traçabilité ajoutée le 6 septembre 2026, sans réécrire l’historique.
+
+Revue tâche 2 : journaliser la destination UI avant le renommage ; préserver un succès de publication déjà durable même si le journal suivant échoue.
+
+task-2-root-review-green.log : filtre install_jobs, 35 passés / 0 échec / 1 ignoré. Sortie relue le 6 septembre. progress.md rapporte le rouge préalable (Failed au lieu de Completed), clippy lib strict, fmt et mise à jour Graphify. Ces preuves datent de cette étape du chantier.
+
+Autorité locale des rapports : .superpowers/sdd/2026-09-05-extension-installation-background/ (ignoré). Les logs historiques ne portent pas tous une empreinte de checkout ; aucun rejeu sur cet ancien commit n’est revendiqué. La note de 69a2d057 décrit la validation globale ultérieure et ses limites natives. Les corrections de la revue disposent de leurs propres logs review-*.log.
+
+Aucun push, CI, merge ou publication réalisé par cet ajout de note.
