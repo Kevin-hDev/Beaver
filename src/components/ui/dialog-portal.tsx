@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
-import { createPortal } from "react-dom";
+import { AppSurfacePortal } from "./app-surface-portal";
 
 interface DialogPortalProps {
   children: ReactNode;
 }
 
 export function DialogPortal({ children }: DialogPortalProps) {
-  return createPortal(children, document.body);
+  return <AppSurfacePortal>{children}</AppSurfacePortal>;
 }

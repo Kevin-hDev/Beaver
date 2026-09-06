@@ -68,3 +68,24 @@ body.al-panel-resizing .agent-detail-chat {
   right: 12px;
   z-index: var(--z-sticky);
 }
+
+.al-panel-surface {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.al-panel-surface[hidden] {
+  display: none;
+}
+
+.al-overlay-surface {
+  display: contents;
+}
+
+.al-overlay-surface[hidden] {
+  display: none;
+}

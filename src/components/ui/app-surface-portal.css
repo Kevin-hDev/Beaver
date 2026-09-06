@@ -1,0 +1,7 @@
+.app-surface-portal-boundary {
+  display: contents;
+}
+
+.app-surface-portal-boundary[hidden] {
+  display: none;
+}
