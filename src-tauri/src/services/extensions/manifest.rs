@@ -108,11 +108,8 @@ fn from_directory(root: &Path) -> ManifestResult<(PathBuf, ExtensionManifest)> {
     for file_name in super::manifest_source::MANIFEST_FILES {
         let path = root.join(file_name);
         if path.is_file() {
-            let manifest_path = dunce::canonicalize(path)
+            let manifest_path = resolve_inside(root, &path)
                 .map_err(|_| invalid("Manifeste d'extension invalide."))?;
-            if !manifest_path.starts_with(root) {
-                return Err(invalid("Manifeste d'extension invalide."));
-            }
             return from_manifest_file(&manifest_path);
         }
     }
@@ -170,7 +167,7 @@ fn copy_package_field(package: &Map<String, Value>, manifest: &mut Map<String, V
 
 fn resolve_entry(root: &Path, main: Option<&str>) -> ManifestResult<PathBuf> {
     let main = main.ok_or_else(|| invalid("Point d'entrée d'extension manquant."))?;
-    let resolved = dunce::canonicalize(root.join(main))
+    let resolved = resolve_inside(root, &root.join(main))
         .map_err(|_| invalid("Point d'entrée d'extension introuvable."))?;
     if !resolved.starts_with(root)
         || !resolved.is_file()
@@ -191,6 +188,18 @@ fn read_json(path: &Path) -> ManifestResult<Value> {
     serde_json::from_slice(&bytes).map_err(|_| invalid("Manifeste d'extension invalide."))
 }
 
+fn resolve_inside(root: &Path, requested: &Path) -> std::io::Result<PathBuf> {
+    // Compare native canonical paths: dunce can strip the Windows prefix from
+    // the root but retain it on a child that crosses the long-path boundary.
+    let canonical_root = std::fs::canonicalize(root)?;
+    let resolved = std::fs::canonicalize(requested)?;
+    let relative = resolved
+        .strip_prefix(&canonical_root)
+        .map_err(|_| std::io::Error::from(std::io::ErrorKind::PermissionDenied))?;
+    // Keep the caller's root representation for the persisted relative entry.
+    Ok(root.join(relative))
+}
+
 fn invalid(detail: impl Into<String>) -> ManifestError {
     failure(ManifestFailure::Invalid, detail)
 }
@@ -201,3 +210,7 @@ fn failure(failure: ManifestFailure, detail: impl Into<String>) -> ManifestError
         detail: detail.into(),
     }
 }
+
+#[cfg(test)]
+#[path = "manifest_path_tests.rs"]
+mod path_tests;

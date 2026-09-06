@@ -627,6 +627,7 @@ jobs:
           node ../scripts/ci/run-rust-test-filter.mjs --filter services::extensions::git_dependencies_tests::git_materialization_installs_dependencies_without_running_scripts_or_npmrc --features windows-tests --exact --nocapture
           node ../scripts/ci/run-rust-test-filter.mjs --filter services::extensions::npm_runner_tests::local_fixture_install_never_runs_its_lifecycle_script --features windows-tests --exact --nocapture
           node ../scripts/ci/run-rust-test-filter.mjs --filter services::extensions::install_jobs --features windows-tests --nocapture
+          node ../scripts/ci/run-rust-test-filter.mjs --filter services::extensions::manifest::path_tests --features windows-tests --nocapture
 
       # CEF is replaced by its compile-only profile so the complete backend
       # suite can run without loading libcef.dll in the test process.
