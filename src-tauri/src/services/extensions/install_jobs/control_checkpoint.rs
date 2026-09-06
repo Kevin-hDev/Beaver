@@ -30,6 +30,9 @@ impl InstallControl {
                     .or(checkpoint.resolved_source);
             }
         }
+        if let Some(record) = &checkpoint.record {
+            state.jobs[index].view.display_name = record.manifest.name.clone();
+        }
         state.jobs[index].checkpoint = Some(checkpoint);
         if self.store.persist(&state).is_err() {
             state.durable_error = true;

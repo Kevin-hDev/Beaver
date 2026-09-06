@@ -118,7 +118,7 @@ export function OllamaSetupScreen({ onComplete, onSkip }: OllamaSetupScreenProps
         <div className="oss-download-block">
           <div className="ollama-progress-bar oss-progress-bar">
             <div
-              className={`ollama-progress-fill${isInstallPhase ? " oss-progress-fill-indeterminate" : ""}`}
+              className={`ollama-progress-fill${isInstallPhase ? " operation-progress-indeterminate" : ""}`}
               style={{ width: isInstallPhase ? "42%" : `${percent}%` }}
             />
           </div>

@@ -118,8 +118,8 @@ async fn durable_queued_jobs_restore_interrupted_without_spontaneous_execution()
 async fn ready_checkpoint_allows_one_explicit_resume_and_invalidates_old_consent() {
     let (_root, store, id, _source) = interrupted(true).await;
     assert!(store.snapshot().unwrap().jobs[0].can_resume);
-    assert!(store.resume(&id).is_ok());
-    assert!(store.resume(&id).is_err());
+    assert!(store.resume_reconciled(id.clone()).await.is_ok());
+    assert!(store.resume_reconciled(id.clone()).await.is_err());
     assert!(store.snapshot().unwrap().jobs[0].confirmation_id.is_none());
     assert!(
         store
@@ -133,7 +133,7 @@ async fn ready_checkpoint_allows_one_explicit_resume_and_invalidates_old_consent
 async fn changed_source_refuses_resume_and_explicit_dismiss_preserves_local_source() {
     let (_root, store, id, source) = interrupted(true).await;
     std::fs::write(source.join("index.mjs"), "export default {changed:true};").unwrap();
-    assert!(store.resume(&id).is_err());
+    assert!(store.resume_reconciled(id.clone()).await.is_err());
     store.dismiss_reconciled(&id).await.unwrap();
     assert!(source.join("index.mjs").exists());
     assert!(store.snapshot().unwrap().jobs.is_empty());

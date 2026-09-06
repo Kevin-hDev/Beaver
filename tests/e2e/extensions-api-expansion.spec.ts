@@ -1,3 +1,4 @@
+import { setExtensionPresentation as setPresentation } from "./extension-presentation";
 import assert from "node:assert/strict";
 import { resolve } from "node:path";
 import deLocale from "../../src/i18n/de.json";
@@ -166,17 +167,6 @@ describe("API expansion packaged acceptance", () => {
   });
 });
 
-async function setPresentation(locale: string, theme: string): Promise<void> {
-  await browser.execute((nextLocale, nextTheme) => {
-    window.localStorage.setItem("clgo-language", nextLocale);
-    window.localStorage.setItem("clgo-theme", nextTheme);
-  }, locale, theme);
-  await browser.refresh();
-  await $('[data-e2e="app-root"]').waitForDisplayed();
-  await browser.waitUntil(async () => (
-    await browser.execute(() => document.documentElement.dataset.palette)
-  ) === theme, { timeoutMsg: `Theme ${theme} was not applied` });
-}
 
 async function openExtensionsPage(copy: LocaleCopy): Promise<void> {
   const settings = $(`button.lpf-btn[aria-label="${copy.nav.settings}"]`);

@@ -246,7 +246,7 @@ fn diagnostic_entry_omits_arguments() {
 #[test]
 fn every_channel_revocation_clears_extension_permissions_at_the_required_boundary() {
     let registry = include_str!("../extensions/registry.rs");
-    let installer = include_str!("../extensions/installer.rs");
+    let installer = include_str!("../extensions/install_jobs/executor.rs");
     let uninstall = include_str!("../extensions/installer_uninstall.rs");
     let lifecycle = include_str!("../extensions/runtime_lifecycle.rs");
 
@@ -257,10 +257,10 @@ fn every_channel_revocation_clears_extension_permissions_at_the_required_boundar
     assert!(disable_clear > 0);
 
     let update_clear = installer
-        .find("permission_gate::clear_extension(&current.manifest.id).await")
+        .find("permission_gate::clear_extension(&previous.manifest.id)")
         .expect("update clear");
     let replace = installer
-        .find("registry::replace_user(&current")
+        .find("registry::replace_user(previous")
         .expect("registry replacement");
     assert!(update_clear < replace);
 

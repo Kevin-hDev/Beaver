@@ -1,6 +1,23 @@
 use super::{InstallJobStore, InstallJobView, InstallRequest, InstallStatus};
 
 impl InstallJobStore {
+    pub(crate) async fn retry(&self, id: &str) -> Result<InstallJobView, String> {
+        super::request::id(id)?;
+        let request = {
+            let state = self.lock()?;
+            let job = &state.jobs[state.index(id)?];
+            if !matches!(
+                job.view.status,
+                InstallStatus::Failed | InstallStatus::Cancelled | InstallStatus::Interrupted
+            ) {
+                return Err(super::limits::INVALID.into());
+            }
+            job.request.clone()
+        };
+        // Keep the private source in Rust, including after restart. A retry is a
+        // new admission with fresh validation; concurrent requests deduplicate there.
+        self.start_reconciled(request).await
+    }
     pub(crate) async fn start_reconciled(
         &self,
         request: InstallRequest,

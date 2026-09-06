@@ -163,7 +163,7 @@ impl NpmRunner {
         .map_err(OperationFailure::from)
     }
 
-    #[cfg(test)]
+    #[cfg(any(test, feature = "e2e"))]
     pub(super) fn for_test(node: PathBuf, cli: PathBuf) -> Self {
         Self::new(node, cli)
     }

@@ -2562,5 +2562,50 @@
     "plugins": "Plugin",
     "noConnectors": "Nessun connettore",
     "noPlugins": "Nessuna scorciatoia plugin"
+  },
+  "extensionInstalls": {
+    "title": "Download e installazioni",
+    "cancel": "Annulla",
+    "continue": "Continua l’installazione",
+    "resume": "Riprendi l’installazione",
+    "retry": "Riprova",
+    "open": "Apri l’estensione",
+    "dismiss": "Nascondi",
+    "showRequest": "Mostra la richiesta",
+    "anotherInstallation": "un’altra installazione",
+    "queueBlocked": "In attesa di conferma per {{name}}",
+    "volumeReason": "Questa installazione occupa già {{size}}. Potrebbe utilizzare altro spazio su disco. Continuare?",
+    "availableSpace": "Spazio disponibile: {{size}}",
+    "occupiedSpace": "Spazio occupato: {{size}}",
+    "resumeUnavailable": "Questa installazione non può essere ripresa. Puoi riprovare.",
+    "status": {
+      "queued": "In coda",
+      "running": "Installazione in corso",
+      "awaitingConfirmation": "È necessaria una conferma",
+      "cancelling": "Annullamento in corso…",
+      "completed": "Installazione completata",
+      "cancelled": "Installazione annullata",
+      "failed": "Installazione non riuscita",
+      "interrupted": "Installazione interrotta"
+    },
+    "phase": {
+      "resolving": "Ricerca della sorgente",
+      "downloading": "Download in corso",
+      "dependencies": "Installazione delle dipendenze",
+      "validating": "Verifica",
+      "buildingUi": "Preparazione dell’interfaccia",
+      "publishing": "Finalizzazione",
+      "cleaning": "Pulizia"
+    },
+    "errors": {
+      "load": "Impossibile caricare lo stato delle installazioni.",
+      "action": "Impossibile eseguire questa azione. Riprova.",
+      "invalid": "Questa richiesta non è più valida. Aggiorna lo stato delle installazioni.",
+      "busy": "La coda delle installazioni è piena o occupata.",
+      "unavailable": "Questa installazione non può proseguire al momento.",
+      "failed": "L’installazione non è riuscita. Puoi riprovare.",
+      "insufficientSpace": "Spazio su disco insufficiente per proseguire.",
+      "recoveryUnavailable": "Impossibile recuperare lo stato salvato delle installazioni. Le nuove installazioni sono bloccate. I dati di recupero richiedono un intervento manuale."
+    }
   }
 }

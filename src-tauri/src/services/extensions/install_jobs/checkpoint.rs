@@ -50,12 +50,35 @@ pub(super) fn load(path: &std::path::Path) -> Result<Option<Journal>, String> {
     let journal: Journal =
         serde_json::from_slice(&bytes).map_err(|_| super::limits::UNAVAILABLE)?;
     if journal.version != FORMAT
+        || journal.revision >= super::limits::MAX_REVISION - 1
         || journal.jobs.len() > super::limits::MAX_ACTIVE + super::limits::MAX_RECENT
+        || journal
+            .jobs
+            .iter()
+            .filter(|job| !job.view.status.terminal())
+            .count()
+            > super::limits::MAX_ACTIVE
+        || journal
+            .jobs
+            .iter()
+            .filter(|job| job.view.status.terminal())
+            .count()
+            > super::limits::MAX_RECENT
     {
         return Err(super::limits::UNAVAILABLE.into());
     }
-    for job in &journal.jobs {
+    for (index, job) in journal.jobs.iter().enumerate() {
         super::request::id(&job.view.id)?;
+        if job.view.revision > journal.revision
+            || job
+                .finished_revision
+                .is_some_and(|revision| revision > journal.revision)
+            || journal.jobs[..index]
+                .iter()
+                .any(|other| other.view.id == job.view.id)
+        {
+            return Err(super::limits::UNAVAILABLE.into());
+        }
         if let Some(checkpoint) = &job.checkpoint {
             if let Some(identity) = checkpoint.native_process {
                 if identity.pid < 2

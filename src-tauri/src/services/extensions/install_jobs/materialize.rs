@@ -38,6 +38,9 @@ pub(super) fn prepare(
         InstallRequest::Git { locator } => {
             let source = super::super::source_validation::git(&locator)
                 .map_err(|_| InstallInterruption::Failed)?;
+            #[cfg(feature = "e2e")]
+            let source =
+                super::e2e_fixture::git_source(source).map_err(|_| InstallInterruption::Failed)?;
             let staging = super::super::managed_store::prepare_owned(&checkpoint.token)
                 .map_err(|_| InstallInterruption::Failed)?;
             let materialized =

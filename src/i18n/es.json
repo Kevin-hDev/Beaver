@@ -2566,5 +2566,50 @@
     "plugins": "Plugins",
     "noConnectors": "Sin conectores",
     "noPlugins": "Sin accesos directos de plugins"
+  },
+  "extensionInstalls": {
+    "title": "Descargas e instalaciones",
+    "cancel": "Cancelar",
+    "continue": "Continuar la instalación",
+    "resume": "Reanudar la instalación",
+    "retry": "Reintentar",
+    "open": "Abrir la extensión",
+    "dismiss": "Ocultar",
+    "showRequest": "Mostrar la solicitud",
+    "anotherInstallation": "otra instalación",
+    "queueBlocked": "Esperando confirmación para {{name}}",
+    "volumeReason": "Esta instalación ya ocupa {{size}}. Puede utilizar más espacio en disco. ¿Continuar?",
+    "availableSpace": "Espacio disponible: {{size}}",
+    "occupiedSpace": "Espacio ocupado: {{size}}",
+    "resumeUnavailable": "Esta instalación no se puede reanudar. Puedes reintentarlo.",
+    "status": {
+      "queued": "En cola",
+      "running": "Instalando",
+      "awaitingConfirmation": "Se necesita confirmación",
+      "cancelling": "Cancelando…",
+      "completed": "Instalación completada",
+      "cancelled": "Instalación cancelada",
+      "failed": "Error de instalación",
+      "interrupted": "Instalación interrumpida"
+    },
+    "phase": {
+      "resolving": "Buscando la fuente",
+      "downloading": "Descargando",
+      "dependencies": "Instalando dependencias",
+      "validating": "Verificando",
+      "buildingUi": "Preparando la interfaz",
+      "publishing": "Finalizando",
+      "cleaning": "Limpiando"
+    },
+    "errors": {
+      "load": "No se puede cargar el seguimiento de las instalaciones.",
+      "action": "No se puede realizar esta acción. Inténtalo de nuevo.",
+      "invalid": "Esta solicitud ya no es válida. Actualiza el seguimiento.",
+      "busy": "La cola de instalaciones está llena u ocupada.",
+      "unavailable": "Esta instalación no puede continuar por ahora.",
+      "failed": "La instalación ha fallado. Puedes reintentarlo.",
+      "insufficientSpace": "No hay suficiente espacio en disco para continuar.",
+      "recoveryUnavailable": "No se puede recuperar el seguimiento guardado. Las nuevas instalaciones están bloqueadas. Los datos de recuperación requieren una intervención manual."
+    }
   }
 }

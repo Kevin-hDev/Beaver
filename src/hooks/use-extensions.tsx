@@ -9,6 +9,7 @@ import {
 } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useFsEvent } from "@/hooks/use-fs-event";
+import { ExtensionInstallJobsProvider } from "./use-extension-install-jobs";
 import { useExtensionInstall } from "@/hooks/use-extension-install";
 import { useExtensionPriorities } from "@/hooks/use-extension-priorities";
 import { useExtensionRecovery } from "@/hooks/use-extension-recovery";
@@ -137,7 +138,7 @@ function useExtensionsState() {
     mutate(id, "set_extension_show_in_chat", { extensionId: id, showInChat },
       (record) => ({ ...record, showInChat })), [mutate]);
 
-  const install = useExtensionInstall(refresh, setOperationError);
+  const install = useExtensionInstall(setOperationError);
 
   const run = useCallback(async (command: string, payload: Record<string, unknown> = {}) => {
     setOperationError(null);
@@ -176,21 +177,16 @@ function useExtensionsState() {
     priorityBusy,
     pendingActivation,
     refresh,
-    addLocal: (path: string) => install("add_local_extension", { path }),
-    installGit: (url: string) => install("install_git_extension", { url }),
+    addLocal: (path: string) => install({ kind: "local", path }),
+    installGit: (url: string) => install({ kind: "git", locator: url }),
     installNpm: (packageSpec: string) =>
-      install("install_npm_extension", { packageSpec }),
+      install({ kind: "npm", locator: packageSpec }),
     setEnabled,
     confirmActivation,
     cancelActivation: () => setPendingActivation(null),
     setShowInChat,
     setPriorityPlugins,
-    update: (id: string) => mutate(
-      id,
-      "update_extension",
-      { extensionId: id },
-      (record) => record,
-    ),
+    update: (id: string) => install({ kind: "update", extensionId: id }),
     remove: (id: string) => run("remove_extension", { extensionId: id }),
     reload: () => runHost(() => run("reload_extension_host")),
     recover: () => runHost(() => run("recover_extension_host")),
@@ -203,6 +199,10 @@ type ExtensionsContextValue = ReturnType<typeof useExtensionsState>;
 const ExtensionsContext = createContext<ExtensionsContextValue | null>(null);
 
 export function ExtensionsProvider({ children }: { children: ReactNode }) {
+  return <ExtensionInstallJobsProvider><ExtensionsRegistryProvider>{children}</ExtensionsRegistryProvider></ExtensionInstallJobsProvider>;
+}
+
+function ExtensionsRegistryProvider({ children }: { children: ReactNode }) {
   const value = useExtensionsState();
   return (
     <ExtensionsContext.Provider value={value}>

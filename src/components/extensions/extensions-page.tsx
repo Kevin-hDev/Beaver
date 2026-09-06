@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus } from "@/components/ui/icons";
 import { SettingsPanel } from "@/components/settings/shell/settings-panel";
@@ -13,6 +13,7 @@ import { ExtensionsSectionView } from "./extensions-section-view";
 import "./extensions-page.css";
 
 interface ExtensionsPageProps {
+  installationTracking?: ReactNode;
   section: ExtensionsSettingsSection;
   selected: ExtensionRecord | null;
   records: ExtensionRecord[];
@@ -72,6 +73,7 @@ export function ExtensionsPage(props: ExtensionsPageProps) {
   if (selected) {
     return (
       <SettingsPanel wide>
+        {props.installationTracking}
         <OperationError errorKey={props.operationError} />
         {recoveryBanner}
         <ExtensionDetail
@@ -110,6 +112,8 @@ export function ExtensionsPage(props: ExtensionsPageProps) {
 
       <OperationError errorKey={props.operationError} />
       {recoveryBanner}
+
+      {props.installationTracking}
 
       {section === "host" ? (
         <ExtensionsHostPanel

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useExtensions } from "@/hooks/use-extensions";
+import { ExtensionInstallRows } from "./extension-install-rows";
 import { ExtensionAddDialog } from "./extension-add-dialog";
 import { ExtensionsErrorBoundary } from "./extensions-error-boundary";
 import { ExtensionsPage } from "./extensions-page";
@@ -24,6 +25,7 @@ export function useExtensionsTabContent({
         onReset={() => onNavReplace({ extensionId: null })}
       >
         <ExtensionsPage
+          installationTracking={<ExtensionInstallRows onOpen={(extensionId) => onNavChange({ extensionId })} />}
           section={navState.extensionsSection}
           selected={selected}
           onSelectSection={(extensionsSection) =>
@@ -63,16 +65,14 @@ export function useExtensionsTabContent({
           onClose={() => setAdding(false)}
           onAdd={async (path) => {
             const outcome = await registry.addLocal(path);
-            if (!outcome.record) return outcome.errorKey;
-            onNavChange({ extensionId: outcome.record.manifest.id });
+            if (!outcome.jobId) return outcome.errorKey;
             return null;
           }}
           onInstall={async (source, locator) => {
             const outcome = source === "git"
               ? await registry.installGit(locator)
               : await registry.installNpm(locator);
-            if (!outcome.record) return outcome.errorKey;
-            onNavChange({ extensionId: outcome.record.manifest.id });
+            if (!outcome.jobId) return outcome.errorKey;
             return null;
           }}
         />

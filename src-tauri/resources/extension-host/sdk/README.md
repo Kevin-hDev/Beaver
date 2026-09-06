@@ -18,6 +18,31 @@ Add a local file or folder directly, install a repository through HTTPS or SSH G
 
 Beaver uses its bundled npm with the official HTTPS registry and strict TLS. It installs production dependencies without running npm lifecycle scripts or creating executable links. Repository-level npm configuration is ignored during installation. If your dependency requires an install-time build, prepare it yourself and add the resulting local folder instead.
 
+Installation and managed updates use a backend-owned queue that remains accessible
+while users navigate or collapse the sidebar. Closing the add dialog or tracking
+panel does not cancel a job. Cancellation becomes final only after producers stop
+and owned temporary files are cleaned. Local source directories are preserved.
+Successful installation never grants code trust or forces navigation.
+
+An installation exceeding the 1 GiB monitored storage warning stops its producers
+before requesting explicit consent in the tracking panel. Cache and temporary
+files count toward occupied storage. Consent permits continued use of the available
+space while retaining a 1 GiB reserve; insufficient capacity stops the job. This is
+practical monitoring with possible transient overshoot, not an OS disk quota.
+One producer runs at a time; queued jobs identify a blocking confirmation. Waiting
+for a person neither grants consent nor consumes the active execution timeout.
+
+npm resolves a lock before materializing dependencies, retains its cache during a
+volume wait, and validates the lock and package manifest before replaying a stopped
+step. Git pins the selected commit before replaying materialization. A step may
+restart; byte-exact download resumption is not promised. Unknown totals are shown
+as an indeterminate phase rather than a synthetic percentage.
+
+Recovery never starts work automatically. Explicit resume revalidates a fully
+prepared checkpoint; otherwise users can retry as a new installation. A corrupted
+global ownership journal blocks further installations and preserves evidence for
+manual recovery instead of guessing which files may be deleted.
+
 ## Minimal manifest
 
 Create `beaver-extension.json` in the extension folder:

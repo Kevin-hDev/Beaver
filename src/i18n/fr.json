@@ -2710,5 +2710,50 @@
       "copied": "Export copié",
       "failed": "Export impossible"
     }
+  },
+  "extensionInstalls": {
+    "title": "Téléchargements et installations",
+    "cancel": "Annuler",
+    "continue": "Continuer l’installation",
+    "resume": "Reprendre l’installation",
+    "retry": "Réessayer",
+    "open": "Ouvrir l’extension",
+    "dismiss": "Masquer",
+    "showRequest": "Afficher la demande",
+    "anotherInstallation": "une autre installation",
+    "queueBlocked": "En attente d’une confirmation sur {{name}}",
+    "volumeReason": "Cette installation occupe déjà {{size}}. Elle peut encore utiliser de l’espace disque. Continuer ?",
+    "availableSpace": "Espace disponible : {{size}}",
+    "occupiedSpace": "Espace occupé : {{size}}",
+    "resumeUnavailable": "Cette installation ne peut pas être reprise. Vous pouvez réessayer.",
+    "status": {
+      "queued": "En file d’attente",
+      "running": "Installation en cours",
+      "awaitingConfirmation": "Une confirmation est nécessaire",
+      "cancelling": "Annulation en cours…",
+      "completed": "Installation réussie",
+      "cancelled": "Installation annulée",
+      "failed": "Échec de l’installation",
+      "interrupted": "Installation interrompue"
+    },
+    "phase": {
+      "resolving": "Recherche de la source",
+      "downloading": "Téléchargement",
+      "dependencies": "Installation des dépendances",
+      "validating": "Vérification",
+      "buildingUi": "Préparation de l’interface",
+      "publishing": "Finalisation",
+      "cleaning": "Nettoyage"
+    },
+    "errors": {
+      "load": "Impossible de charger le suivi des installations.",
+      "action": "Impossible d’effectuer cette action. Réessayez.",
+      "invalid": "La demande n’est plus valide. Actualisez le suivi.",
+      "busy": "La file des installations est pleine ou occupée.",
+      "unavailable": "Cette installation ne peut pas être poursuivie pour le moment.",
+      "failed": "L’installation a échoué. Vous pouvez réessayer.",
+      "insufficientSpace": "Espace disque insuffisant pour poursuivre.",
+      "recoveryUnavailable": "Le suivi enregistré ne peut pas être récupéré. Les nouvelles installations sont bloquées. Une intervention sur les données de récupération est nécessaire."
+    }
   }
 }

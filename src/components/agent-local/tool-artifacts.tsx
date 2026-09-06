@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import type { ToolArtifact } from "@/types/agent";
+import { formatByteSize } from "@/lib/format-byte-size";
 import "./tool-artifacts.css";
 
 export function ToolArtifacts({
@@ -9,7 +10,7 @@ export function ToolArtifacts({
   artifacts?: ToolArtifact[];
   onFilePreview?: (path: string) => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   if (!artifacts?.length) return null;
 
   return (
@@ -23,7 +24,7 @@ export function ToolArtifacts({
         const content = (
           <>
             <span className="ta-name">{artifact.name}</span>
-            <span className="ta-meta">{artifact.mime_type} · {formatBytes(artifact.bytes)}</span>
+            <span className="ta-meta">{artifact.mime_type} · {formatByteSize(artifact.bytes, i18n.language)}</span>
             <span className="ta-status">
               {t(`agentLocal.toolActivity.artifactStatus.${artifact.verification ?? "unverified"}`)}
             </span>
@@ -48,11 +49,4 @@ export function ToolArtifacts({
       })}
     </ul>
   );
-}
-
-function formatBytes(bytes: number | bigint): string {
-  const value = Number(bytes);
-  if (value < 1024) return `${value} B`;
-  if (value < 1024 * 1024) return `${Math.ceil(value / 1024)} KB`;
-  return `${(value / (1024 * 1024)).toFixed(1)} MB`;
 }

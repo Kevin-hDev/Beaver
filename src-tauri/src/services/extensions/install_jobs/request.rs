@@ -70,3 +70,34 @@ pub(super) fn id(value: &str) -> Result<(), String> {
     }
     Ok(())
 }
+
+pub(super) fn display_name(request: &InstallRequest) -> String {
+    // Only the source's label is public, never its parent path, host or credentials.
+    let label = match request {
+        InstallRequest::Local { path } => std::path::Path::new(path)
+            .file_name()
+            .and_then(|value| value.to_str())
+            .unwrap_or("Local")
+            .to_owned(),
+        InstallRequest::Git { locator } => super::super::source_validation::git(locator)
+            .map(|source| {
+                source
+                    .clone_url
+                    .rsplit(['/', ':'])
+                    .next()
+                    .unwrap_or("Git")
+                    .trim_end_matches(".git")
+                    .to_owned()
+            })
+            .unwrap_or_else(|_| "Git".into()),
+        InstallRequest::Npm { locator } => super::super::source_validation::npm(locator)
+            .map(|source| source.package_name)
+            .unwrap_or_else(|_| "npm".into()),
+        InstallRequest::Update { extension_id } => extension_id.clone(),
+    };
+    label
+        .chars()
+        .filter(|value| !value.is_control())
+        .take(super::super::types::MAX_EXTENSION_NAME_CHARS)
+        .collect()
+}

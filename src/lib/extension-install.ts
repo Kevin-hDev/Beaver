@@ -1,10 +1,9 @@
 import extensionContract from "../../src-tauri/resources/extension-host/contract.json";
-import type { ExtensionRecord } from "@/types/extensions";
 
 export type ExtensionInstallSource = "git" | "npm";
 
 export interface ExtensionInstallOutcome {
-  record: ExtensionRecord | null;
+  jobId: string | null;
   errorKey: string | null;
 }
 

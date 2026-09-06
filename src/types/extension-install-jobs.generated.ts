@@ -1,4 +1,5 @@
-// Generated from Rust install_jobs/types.rs. Do not edit.
+// Generated from Rust install_jobs/types.rs and limits.rs. Do not edit.
+export const INSTALL_JOB_LIMITS = { active: 8, recent: 32 } as const;
 export type InstallRequest = { "kind": "local", path: string, } | { "kind": "git", locator: string, } | { "kind": "npm", locator: string, } | { "kind": "update", extensionId: string, };
 export type InstallKind = "local" | "git" | "npm" | "update";
 export type InstallStatus = "queued" | "running" | "awaitingConfirmation" | "cancelling" | "completed" | "cancelled" | "failed" | "interrupted";

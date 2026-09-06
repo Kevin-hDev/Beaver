@@ -26,6 +26,7 @@ export function useFloatingMenuPosition(
   matchAnchorWidth = false,
   spanRef?: React.RefObject<HTMLElement | null>,
   horizontalRef?: React.RefObject<HTMLElement | null>,
+  providedAnchorRef?: React.RefObject<HTMLElement | null>,
 ) {
   const anchorRef = useRef<HTMLElement | null>(null);
   const floatingRef = useRef<HTMLDivElement | null>(null);
@@ -33,7 +34,7 @@ export function useFloatingMenuPosition(
   const [style, setStyle] = useState<CSSProperties>(HIDDEN_STYLE);
 
   const update = useCallback(() => {
-    const anchor = anchorRef.current;
+    const anchor = providedAnchorRef?.current ?? anchorRef.current;
     const floating = floatingRef.current;
     if (!open || !anchor || !floating) return;
 
@@ -88,7 +89,7 @@ export function useFloatingMenuPosition(
       visibility: "visible",
       zIndex: 1000,
     });
-  }, [align, gap, horizontalRef, matchAnchorWidth, open, placement, spanRef]);
+  }, [align, providedAnchorRef, gap, horizontalRef, matchAnchorWidth, open, placement, spanRef]);
 
   useLayoutEffect(() => {
     if (!open) {

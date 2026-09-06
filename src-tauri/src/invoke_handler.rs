@@ -7,6 +7,7 @@ macro_rules! generate {
             crate::commands::continue_extension_install,
             crate::commands::dismiss_extension_install,
             crate::commands::resume_extension_install,
+            crate::commands::retry_extension_install,
             crate::commands::get_config,
             crate::commands::browser_capability,
             crate::commands::restart_application,
@@ -155,6 +156,7 @@ macro_rules! for_build {
         {
             crate::invoke_handler::generate![
                 crate::commands::e2e_initialize_extension_host,
+                crate::commands::e2e_extension_install_fixture,
                 crate::commands::e2e_request_exit,
                 crate::commands::e2e_native_webviews,
                 crate::commands::e2e_verify_child_chat_stream_read_only,
@@ -167,6 +169,7 @@ macro_rules! for_build {
         {
             crate::invoke_handler::generate![
                 crate::commands::e2e_initialize_extension_host,
+                crate::commands::e2e_extension_install_fixture,
                 crate::commands::e2e_request_exit,
                 crate::commands::e2e_native_webviews,
                 crate::commands::e2e_verify_child_chat_stream_read_only

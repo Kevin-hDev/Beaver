@@ -28,6 +28,11 @@ pub async fn dismiss_extension_install(job_id: String) -> Result<(), String> {
     install_jobs::global()?.dismiss_reconciled(&job_id).await
 }
 #[tauri::command]
-pub fn resume_extension_install(job_id: String) -> Result<InstallJobView, String> {
-    install_jobs::global()?.resume(&job_id)
+pub async fn resume_extension_install(job_id: String) -> Result<InstallJobView, String> {
+    install_jobs::global()?.resume_reconciled(job_id).await
+}
+
+#[tauri::command]
+pub async fn retry_extension_install(job_id: String) -> Result<InstallJobView, String> {
+    install_jobs::global()?.retry(&job_id).await
 }

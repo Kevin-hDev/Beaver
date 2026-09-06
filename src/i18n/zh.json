@@ -2561,5 +2561,50 @@
     "plugins": "插件",
     "noConnectors": "没有连接器",
     "noPlugins": "没有插件快捷方式"
+  },
+  "extensionInstalls": {
+    "title": "下载和安装",
+    "cancel": "取消",
+    "continue": "继续安装",
+    "resume": "恢复安装",
+    "retry": "重试",
+    "open": "打开扩展",
+    "dismiss": "隐藏",
+    "showRequest": "查看请求",
+    "anotherInstallation": "另一个安装任务",
+    "queueBlocked": "正在等待对 {{name}} 的确认",
+    "volumeReason": "此安装已占用 {{size}}，可能还会使用更多磁盘空间。是否继续？",
+    "availableSpace": "可用空间：{{size}}",
+    "occupiedSpace": "已占用空间：{{size}}",
+    "resumeUnavailable": "无法恢复此安装。你可以重试。",
+    "status": {
+      "queued": "排队中",
+      "running": "正在安装",
+      "awaitingConfirmation": "需要确认",
+      "cancelling": "正在取消…",
+      "completed": "安装完成",
+      "cancelled": "安装已取消",
+      "failed": "安装失败",
+      "interrupted": "安装已中断"
+    },
+    "phase": {
+      "resolving": "正在解析来源",
+      "downloading": "正在下载",
+      "dependencies": "正在安装依赖",
+      "validating": "正在验证",
+      "buildingUi": "正在准备界面",
+      "publishing": "正在完成安装",
+      "cleaning": "正在清理"
+    },
+    "errors": {
+      "load": "无法加载安装进度。",
+      "action": "无法完成此操作。请重试。",
+      "invalid": "此请求已失效。请刷新安装列表。",
+      "busy": "安装队列已满或正忙。",
+      "unavailable": "目前无法继续此安装。",
+      "failed": "安装失败。你可以重试。",
+      "insufficientSpace": "磁盘空间不足，无法继续。",
+      "recoveryUnavailable": "无法恢复已保存的安装记录。新安装已被阻止。恢复数据需要手动处理。"
+    }
   }
 }

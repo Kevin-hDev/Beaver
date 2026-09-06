@@ -116,15 +116,16 @@ async fn cancelling_real_npm_writer_confirms_process_death_before_cleaning_and_p
         std::fs::read_to_string(fixture.root.path().join("user-source.mjs")).unwrap(),
         "export default {};"
     );
-    let state = fixture.store.lock().unwrap();
-    let checkpoint = state.jobs[state.index(&job.id).unwrap()]
-        .checkpoint
-        .as_ref()
-        .unwrap();
-    assert!(!super::super::managed_store::root()
-        .join(format!(".staging-{}", checkpoint.token))
-        .exists());
-    drop(state);
+    {
+        let state = fixture.store.lock().unwrap();
+        let checkpoint = state.jobs[state.index(&job.id).unwrap()]
+            .checkpoint
+            .as_ref()
+            .unwrap();
+        assert!(!super::super::managed_store::root()
+            .join(format!(".staging-{}", checkpoint.token))
+            .exists());
+    }
     assert!(
         fixture
             .store

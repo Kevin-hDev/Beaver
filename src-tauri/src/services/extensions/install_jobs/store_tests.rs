@@ -381,3 +381,105 @@ async fn cancelling_a_full_queue_never_overflows_recent_results() {
 
 #[path = "review_tests.rs"]
 mod review_tests;
+
+#[tokio::test]
+async fn full_queue_recovery_preserves_interrupted_jobs_and_bounds_history() {
+    let root = tempfile::tempdir().unwrap();
+    let original = store(Arc::new(Suspended)).restore(root.path().join("live.json"));
+    let active = original.start(request("active-recovery")).unwrap();
+    wait_status(&original, &active.id, InstallStatus::Running).await;
+    for index in 0..31 {
+        let old = original
+            .start(request(&format!("historical-{index}")))
+            .unwrap();
+        original.request_cancel(&old.id).unwrap();
+    }
+    let mut interrupted = vec![active.id];
+    for index in 0..7 {
+        interrupted.push(
+            original
+                .start(request(&format!("pending-recovery-{index}")))
+                .unwrap()
+                .id,
+        );
+    }
+    let copy = root.path().join("restart.json");
+    std::fs::copy(root.path().join("live.json"), &copy).unwrap();
+    stop(&original).await;
+    let restored = store(Arc::new(Suspended)).restore(copy);
+    let jobs = restored.snapshot().unwrap().jobs;
+    assert!(
+        jobs.len() <= super::limits::MAX_RECENT,
+        "restored {} terminal jobs",
+        jobs.len()
+    );
+    for id in interrupted {
+        assert!(jobs
+            .iter()
+            .any(|job| job.id == id && job.status == InstallStatus::Interrupted));
+    }
+    stop(&restored).await;
+}
+
+#[tokio::test]
+async fn malformed_journal_revision_and_duplicate_ids_fail_closed_before_recovery() {
+    let root = tempfile::tempdir().unwrap();
+    let path = root.path().join("source.json");
+    let original = store(Arc::new(Suspended)).restore(path.clone());
+    original.start(request("journal-validation")).unwrap();
+    stop(&original).await;
+    let original: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap();
+    for duplicate in [false, true] {
+        let mut journal = original.clone();
+        if duplicate {
+            let job = journal["jobs"][0].clone();
+            journal["jobs"].as_array_mut().unwrap().push(job);
+        } else {
+            journal["revision"] = u64::MAX.into();
+        }
+        let path = root.path().join(format!("bad-{duplicate}.json"));
+        std::fs::write(&path, serde_json::to_vec(&journal).unwrap()).unwrap();
+        assert!(super::checkpoint::load(&path).is_err());
+        let restored = store(Arc::new(Suspended)).restore(path);
+        assert_eq!(
+            restored.snapshot().unwrap_err(),
+            super::limits::RECOVERY_UNAVAILABLE
+        );
+        stop(&restored).await;
+    }
+}
+
+#[tokio::test]
+async fn explicit_retry_after_restart_uses_private_source_and_deduplicates() {
+    let root = tempfile::tempdir().unwrap();
+    let journal = root.path().join("jobs.json");
+    let original = store(Arc::new(Suspended)).restore(journal.clone());
+    let job = original
+        .start(InstallRequest::Git {
+            locator: "https://private.example/fixture.git".into(),
+        })
+        .unwrap();
+    wait_status(&original, &job.id, InstallStatus::Running).await;
+    assert!(original.retry(&job.id).await.is_err());
+    original.request_cancel(&job.id).unwrap();
+    wait_status(&original, &job.id, InstallStatus::Cancelled).await;
+    stop(&original).await;
+    let restored = store(Arc::new(Suspended)).restore(journal);
+    let (first, second) = tokio::join!(restored.retry(&job.id), restored.retry(&job.id));
+    let first = first.unwrap();
+    assert_ne!(first.id, job.id);
+    assert_eq!(first.id, second.unwrap().id);
+    assert_eq!(first.display_name, "fixture");
+    assert!(!serde_json::to_string(&first)
+        .unwrap()
+        .contains("private.example"));
+    {
+        let state = restored.lock().unwrap();
+        assert!(
+            matches!(&state.jobs[state.index(&first.id).unwrap()].request,
+            InstallRequest::Git { locator } if locator == "https://private.example/fixture.git")
+        );
+    }
+    stop(&restored).await;
+}

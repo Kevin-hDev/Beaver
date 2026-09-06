@@ -2561,5 +2561,50 @@
     "plugins": "プラグイン",
     "noConnectors": "コネクターなし",
     "noPlugins": "プラグインのショートカットなし"
+  },
+  "extensionInstalls": {
+    "title": "ダウンロードとインストール",
+    "cancel": "キャンセル",
+    "continue": "インストールを続行",
+    "resume": "インストールを再開",
+    "retry": "再試行",
+    "open": "拡張機能を開く",
+    "dismiss": "非表示",
+    "showRequest": "確認要求を表示",
+    "anotherInstallation": "別のインストール",
+    "queueBlocked": "{{name}} の確認待ち",
+    "volumeReason": "このインストールはすでに {{size}} を使用しています。さらにディスク容量を使用する可能性があります。続行しますか？",
+    "availableSpace": "空き容量：{{size}}",
+    "occupiedSpace": "使用容量：{{size}}",
+    "resumeUnavailable": "このインストールは再開できません。再試行できます。",
+    "status": {
+      "queued": "待機中",
+      "running": "インストール中",
+      "awaitingConfirmation": "確認が必要です",
+      "cancelling": "キャンセル中…",
+      "completed": "インストール完了",
+      "cancelled": "インストールをキャンセルしました",
+      "failed": "インストール失敗",
+      "interrupted": "インストールが中断されました"
+    },
+    "phase": {
+      "resolving": "ソースを確認中",
+      "downloading": "ダウンロード中",
+      "dependencies": "依存関係をインストール中",
+      "validating": "検証中",
+      "buildingUi": "画面を準備中",
+      "publishing": "最終処理中",
+      "cleaning": "クリーンアップ中"
+    },
+    "errors": {
+      "load": "インストール状況を読み込めません。",
+      "action": "この操作を完了できませんでした。再試行してください。",
+      "invalid": "この要求は無効になりました。インストール一覧を更新してください。",
+      "busy": "インストール待ちが上限に達しているか、処理中です。",
+      "unavailable": "現在、このインストールを続行できません。",
+      "failed": "インストールに失敗しました。再試行できます。",
+      "insufficientSpace": "続行するためのディスク容量が不足しています。",
+      "recoveryUnavailable": "保存済みのインストール情報を復元できません。新しいインストールは停止されています。復元データを手動で確認する必要があります。"
+    }
   }
 }

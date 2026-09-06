@@ -42,34 +42,37 @@ async fn registry_publication_wins_a_crash_before_job_completion() {
 async fn interruption_on_either_side_of_managed_rename_cleans_only_owned_paths() {
     for renamed in [false, true] {
         let (root, original, id, user_source) = interrupted(true).await;
-        let mut state = original.lock().unwrap();
-        let checkpoint = state.jobs[0].checkpoint.as_mut().unwrap();
-        let staging = super::super::super::managed_store::prepare_owned(&checkpoint.token).unwrap();
-        for name in ["beaver-extension.json", "index.mjs"] {
-            std::fs::copy(user_source.join(name), staging.path().join(name)).unwrap();
-        }
-        let mut record =
-            super::super::super::manifest::load_local(staging.path().to_str().unwrap())
-                .unwrap()
-                .record;
-        record.origin = Some(super::super::super::types::ExtensionOrigin {
-            kind: super::super::super::types::ExtensionOriginKind::Git,
-            locator: "https://example.invalid/test.git".into(),
-            revision: Some("ab".repeat(20)),
-        });
-        let destination = super::super::super::managed_store::root()
-            .join(&record.manifest.id)
-            .join(&checkpoint.token);
-        super::super::super::managed_store::rewrite_source(
-            &mut record,
-            staging.path(),
-            &destination,
-        )
-        .unwrap();
-        checkpoint.record = Some(record.clone());
-        checkpoint.safe_phase = None;
-        original.persist(&state).unwrap();
-        drop(state);
+        let (staging, record, destination) = {
+            let mut state = original.lock().unwrap();
+            let checkpoint = state.jobs[0].checkpoint.as_mut().unwrap();
+            let staging =
+                super::super::super::managed_store::prepare_owned(&checkpoint.token).unwrap();
+            for name in ["beaver-extension.json", "index.mjs"] {
+                std::fs::copy(user_source.join(name), staging.path().join(name)).unwrap();
+            }
+            let mut record =
+                super::super::super::manifest::load_local(staging.path().to_str().unwrap())
+                    .unwrap()
+                    .record;
+            record.origin = Some(super::super::super::types::ExtensionOrigin {
+                kind: super::super::super::types::ExtensionOriginKind::Git,
+                locator: "https://example.invalid/test.git".into(),
+                revision: Some("ab".repeat(20)),
+            });
+            let destination = super::super::super::managed_store::root()
+                .join(&record.manifest.id)
+                .join(&checkpoint.token);
+            super::super::super::managed_store::rewrite_source(
+                &mut record,
+                staging.path(),
+                &destination,
+            )
+            .unwrap();
+            checkpoint.record = Some(record.clone());
+            checkpoint.safe_phase = None;
+            original.persist(&state).unwrap();
+            (staging, record, destination)
+        };
         if renamed {
             staging.commit(&record.manifest.id).unwrap();
         } else {

@@ -18,8 +18,14 @@ pub(crate) use worker::{InstallExecutor, InstallFuture, InstallOutcome};
 pub(super) const DEFAULT_STORAGE_BYTES: u64 = disk_policy::WARNING_BYTES;
 
 pub(crate) fn global() -> Result<InstallJobStore, String> {
+    #[cfg(feature = "e2e")]
+    if let Some(store) = e2e_fixture::current()? {
+        return Ok(store);
+    }
     Ok(super::runtime::global()?.install_jobs.clone())
 }
+#[cfg(feature = "e2e")]
+pub(crate) mod e2e_fixture;
 mod owned_work;
 #[cfg(test)]
 mod owned_work_tests;

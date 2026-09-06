@@ -1,12 +1,12 @@
 import type { useUpdateChecker } from "@/hooks/use-update-checker";
-import { IS_MAC } from "@/lib/platform";
+import type { RefObject, ReactNode } from "react";
 import { SearchDialog } from "./search-dialog";
 import { UpdateNotifications } from "./update-notifications";
 
-const UPDATES_ANCHOR_MAC = 197;
-const UPDATES_ANCHOR_OTHER = 122;
 
 interface AppLayoutOverlaysProps {
+  updatesAnchorRef: RefObject<HTMLElement | null>;
+  installationRows?: ReactNode;
   searchOpen: boolean;
   updatesOpen: boolean;
   onCloseSearch: () => void;
@@ -16,6 +16,7 @@ interface AppLayoutOverlaysProps {
 }
 
 export function AppLayoutOverlays({
+  updatesAnchorRef, installationRows,
   searchOpen,
   updatesOpen,
   onCloseSearch,
@@ -52,8 +53,8 @@ export function AppLayoutOverlays({
         appCancelling={updates.appCancelling}
         ollamaBinaryCancelling={updates.ollamaBinaryCancelling}
         modelCancelling={updates.modelCancelling}
-        anchorLeft={IS_MAC ? UPDATES_ANCHOR_MAC : UPDATES_ANCHOR_OTHER}
-      />
+        anchorRef={updatesAnchorRef}
+      >{installationRows}</UpdateNotifications>
     </>
   );
 }

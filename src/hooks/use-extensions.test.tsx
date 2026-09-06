@@ -1,3 +1,4 @@
+import { installJobFixture } from "@/lib/extension-install-job-fixture.test-support";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { invoke } from "@tauri-apps/api/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -503,15 +504,15 @@ describe("useExtensions", () => {
     await waitFor(() => expect(view.result.current.recoveryBusy).toBe(false));
   });
 
-  it("installe Git et npm avec des commandes distinctes et validées au retour", async () => {
+  it("admet Git et npm dans la même autorité avec des sources distinctes", async () => {
     vi.mocked(invoke).mockImplementation((command) => {
       if (command === "list_extensions") return Promise.resolve([record]);
       if (command === "get_extension_host_status") return Promise.resolve(host);
       if (command === "get_extension_discovery_preferences") {
         return Promise.resolve({ protectedPluginIds: [] });
       }
-      if (command === "install_git_extension" || command === "install_npm_extension") {
-        return Promise.resolve(record);
+      if (command === "start_extension_install") {
+        return Promise.resolve(installJobFixture());
       }
       return Promise.resolve(undefined);
     });
@@ -520,14 +521,14 @@ describe("useExtensions", () => {
 
     const gitOutcome = await act(() =>
       view.result.current.installGit("https://github.com/example/ext.git"));
-    expect(gitOutcome.record).toEqual(record);
-    expect(invoke).toHaveBeenCalledWith("install_git_extension", {
-      url: "https://github.com/example/ext.git",
+    expect(gitOutcome.jobId).toEqual(installJobFixture().id);
+    expect(invoke).toHaveBeenCalledWith("start_extension_install", {
+      request: { kind: "git", locator: "https://github.com/example/ext.git" },
     });
 
     await act(() => view.result.current.installNpm("@example/ext@latest"));
-    expect(invoke).toHaveBeenCalledWith("install_npm_extension", {
-      packageSpec: "@example/ext@latest",
+    expect(invoke).toHaveBeenCalledWith("start_extension_install", {
+      request: { kind: "npm", locator: "@example/ext@latest" },
     });
   });
 
@@ -538,7 +539,7 @@ describe("useExtensions", () => {
       if (command === "get_extension_discovery_preferences") {
         return Promise.resolve({ protectedPluginIds: [] });
       }
-      if (command === "install_git_extension") {
+      if (command === "start_extension_install") {
         return Promise.reject(new Error("extensions_git_download_failed"));
       }
       return Promise.resolve(undefined);
@@ -550,19 +551,19 @@ describe("useExtensions", () => {
       view.result.current.installGit("https://github.com/example/ext.git"));
 
     expect(outcome).toEqual({
-      record: null,
+      jobId: null,
       errorKey: "extensions.errors.codes.extensions_git_download_failed",
     });
   });
 
-  it("marque une extension occupée pendant sa mise à jour", async () => {
+  it("admet une mise à jour dans le suivi commun", async () => {
     const view = renderHook(() => useExtensions(), { wrapper: ExtensionsProvider });
     await waitFor(() => expect(view.result.current.loading).toBe(false));
 
     await act(() => view.result.current.update(record.manifest.id));
 
-    expect(invoke).toHaveBeenCalledWith("update_extension", {
-      extensionId: record.manifest.id,
+    expect(invoke).toHaveBeenCalledWith("start_extension_install", {
+      request: { kind: "update", extensionId: record.manifest.id },
     });
   });
 

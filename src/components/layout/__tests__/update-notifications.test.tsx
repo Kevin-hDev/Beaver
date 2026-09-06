@@ -38,10 +38,31 @@ const baseProps = {
   appCancelling: false,
   ollamaBinaryCancelling: false,
   modelCancelling: false,
-  anchorLeft: 0,
+  anchorRef: { current: null },
 };
 
 describe("UpdateNotifications", () => {
+  it("positions a portal at its actual anchor and returns focus on Escape without cancelling", () => {
+    const anchor = document.createElement("button");
+    document.body.appendChild(anchor);
+    anchor.getBoundingClientRect = () => ({ left: 25, right: 45, top: 15, bottom: 35, width: 20, height: 20, x: 25, y: 15, toJSON: () => ({}) });
+    const close = vi.fn();
+    const cancel = vi.fn();
+    const { container } = render(<UpdateNotifications {...baseProps} anchorRef={{ current: anchor }} onClose={close} onCancelApp={cancel}>
+      <button type="button">Continuer l’installation</button>
+    </UpdateNotifications>);
+    const region = screen.getByRole("region", { name: "extensionInstalls.title" });
+    expect(container.contains(region)).toBe(false);
+    expect(region.style.left).toBe("25px");
+    expect(region.style.top).toBe("39px");
+    expect(region.style.maxWidth).toBe(""); // Preserve the shared CSS width cap.
+    expect(screen.getByRole("button", { name: "Continuer l’installation" })).toHaveFocus();
+    fireEvent.keyDown(window, { code: "Escape" });
+    expect(close).toHaveBeenCalledOnce();
+    expect(anchor).toHaveFocus();
+    expect(cancel).not.toHaveBeenCalled();
+    anchor.remove();
+  });
   afterEach(() => {
     cleanup();
     vi.clearAllMocks();

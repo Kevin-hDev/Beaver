@@ -64,14 +64,7 @@ impl InstallJobStore {
             id: uuid::Uuid::new_v4().to_string(),
             revision: 0,
             kind,
-            // A source can contain a private path or credential: it is never a public label.
-            display_name: match kind {
-                InstallKind::Local => "Local",
-                InstallKind::Git => "Git",
-                InstallKind::Npm => "npm",
-                InstallKind::Update => "Extension",
-            }
-            .into(),
+            display_name: super::request::display_name(&request),
             status: InstallStatus::Queued,
             phase: InstallPhase::Resolving,
             downloaded_bytes: None,

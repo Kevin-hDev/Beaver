@@ -11,7 +11,9 @@ fn bindings() -> String {
         InstallJobsSnapshot::decl(&ts_rs::Config::default()),
     ];
     format!(
-        "// Generated from Rust install_jobs/types.rs. Do not edit.\n{}\n",
+        "// Generated from Rust install_jobs/types.rs and limits.rs. Do not edit.\nexport const INSTALL_JOB_LIMITS = {{ active: {}, recent: {} }} as const;\n{}\n",
+        super::limits::MAX_ACTIVE,
+        super::limits::MAX_RECENT,
         declarations
             .into_iter()
             .map(|decl| format!("export {decl}"))

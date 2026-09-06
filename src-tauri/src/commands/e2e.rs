@@ -9,6 +9,14 @@ use tauri::Manager;
 const COORDINATED_EXIT_DELAY: Duration = Duration::from_secs(1);
 
 #[tauri::command]
+pub fn e2e_extension_install_fixture(
+    app: tauri::AppHandle,
+    enabled: bool,
+) -> Result<Option<crate::services::extensions::install_jobs::e2e_fixture::Fixture>, String> {
+    crate::services::extensions::install_jobs::e2e_fixture::configure(&app, enabled)
+}
+
+#[tauri::command]
 pub fn e2e_initialize_extension_host(app: tauri::AppHandle) -> Result<(), String> {
     // The ordinary E2E startup suppresses every external process. Acceptance tests
     // opt into only the extension host, inside the already isolated E2E profile.

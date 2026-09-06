@@ -1,4 +1,6 @@
-.upa-root {
+@import "../../styles/operation-progress.css";
+
+.opa-root {
   display: grid;
   grid-template-columns: minmax(100px, 1fr) auto auto;
   align-items: center;
@@ -6,31 +8,39 @@
   width: 100%;
 }
 
-.upa-track {
+.opa-track {
   height: 5px;
   overflow: hidden;
   border-radius: var(--radius-xs);
   background: var(--edge);
 }
 
-.upa-fill {
+.opa-fill {
   height: 100%;
   background: var(--pulse);
   transition: width 200ms ease-out;
 }
 
-.upa-percent {
+.opa-percent {
   color: var(--ink-faint);
   font-size: var(--text-xs);
   font-variant-numeric: tabular-nums;
 }
 
-.upa-compact {
+.opa-compact {
   grid-template-columns: 100px auto;
   width: auto;
 }
 
-.upa-compact .upa-cancel {
+.opa-compact .opa-cancel {
   grid-column: 1 / -1;
   justify-self: end;
+}
+
+.opa-stopped {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .opa-fill { transition: none; }
 }

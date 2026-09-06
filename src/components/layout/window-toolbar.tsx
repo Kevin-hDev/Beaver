@@ -1,3 +1,4 @@
+import type { RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { SidebarToggleIcon, ArrowLeftIcon, ArrowRightIcon, SearchIcon } from "./toolbar-icons";
 import { ComposeIcon } from "@/components/ui/compose-icon";
@@ -14,6 +15,8 @@ import { AdvancedMountAnchor } from "@/features/extension-ui/advanced/advanced-m
 import "./window-toolbar.css";
 
 interface WindowToolbarProps {
+  updatesAnchorRef?: RefObject<HTMLElement | null>;
+  updatesOpen?: boolean;
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
   onBack: () => void;
@@ -29,13 +32,13 @@ interface WindowToolbarProps {
 export function WindowToolbar({
   sidebarOpen, onToggleSidebar,
   onBack, onForward, onNewSession, onSearch,
-  onToggleUpdates, updatesCount,
+  onToggleUpdates, updatesCount, updatesAnchorRef, updatesOpen,
   canGoBack, canGoForward,
 }: WindowToolbarProps) {
   const { t } = useTranslation();
   const context: ToolbarRenderContext = {
     sidebarOpen, onToggleSidebar, onBack, onForward, onNewSession, onSearch,
-    onToggleUpdates, updatesCount, canGoBack, canGoForward,
+    onToggleUpdates, updatesCount, updatesAnchorRef, updatesOpen, canGoBack, canGoForward,
     translate: (key) => t(key),
   };
 
@@ -108,10 +111,10 @@ function renderToolbarOccupant(occupant: SlotOccupant, context: ToolbarRenderCon
       </Tooltip>
     );
   }
-  if (occupant.target === "updates" && context.sidebarOpen && context.updatesCount > 0) {
+  if (occupant.target === "updates" && context.updatesCount > 0) {
     return (
-        <Tooltip label={t("updates.tooltip")}>
-          <button className="icon-btn toolbar-btn toolbar-btn-update" onClick={context.onToggleUpdates}>
+        <Tooltip label={t("extensionInstalls.title")}>
+          <button ref={(node) => { if (context.updatesAnchorRef) context.updatesAnchorRef.current = node; }} aria-label={t("extensionInstalls.title")} aria-expanded={context.updatesOpen} className="icon-btn toolbar-btn toolbar-btn-update" onClick={context.onToggleUpdates}>
             <img src={updateIcon} alt="" style={{ width: "var(--chrome-icon-md)", height: "var(--chrome-icon-md)" }} />
           </button>
         </Tooltip>

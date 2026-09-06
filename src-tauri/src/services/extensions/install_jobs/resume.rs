@@ -2,6 +2,15 @@ use super::{limits::*, InstallJobStore, InstallJobView, InstallStatus};
 use tokio_util::sync::CancellationToken;
 
 impl InstallJobStore {
+    pub(crate) async fn resume_reconciled(&self, id: String) -> Result<InstallJobView, String> {
+        super::request::id(&id)?;
+        let store = self.clone();
+        // Fingerprinting may read a large tree; keep it off the window thread
+        // while retaining supervised ownership until that read actually ends.
+        super::owned_work::spawn(&self.work, move || store.resume(&id))?
+            .await
+            .map_err(|_| UNAVAILABLE)?
+    }
     pub(crate) fn resume(&self, id: &str) -> Result<InstallJobView, String> {
         super::request::id(id)?;
         let candidate = {

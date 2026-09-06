@@ -2562,5 +2562,50 @@
     "plugins": "Plugins",
     "noConnectors": "Keine Connectors",
     "noPlugins": "Keine Plugin-Verknüpfungen"
+  },
+  "extensionInstalls": {
+    "title": "Downloads und Installationen",
+    "cancel": "Abbrechen",
+    "continue": "Installation fortsetzen",
+    "resume": "Installation wiederaufnehmen",
+    "retry": "Erneut versuchen",
+    "open": "Erweiterung öffnen",
+    "dismiss": "Ausblenden",
+    "showRequest": "Anfrage anzeigen",
+    "anotherInstallation": "eine andere Installation",
+    "queueBlocked": "Warten auf Bestätigung für {{name}}",
+    "volumeReason": "Diese Installation belegt bereits {{size}}. Sie kann weiteren Speicherplatz benötigen. Fortfahren?",
+    "availableSpace": "Verfügbarer Speicherplatz: {{size}}",
+    "occupiedSpace": "Belegter Speicherplatz: {{size}}",
+    "resumeUnavailable": "Diese Installation kann nicht fortgesetzt werden. Du kannst es erneut versuchen.",
+    "status": {
+      "queued": "In der Warteschlange",
+      "running": "Installation läuft",
+      "awaitingConfirmation": "Bestätigung erforderlich",
+      "cancelling": "Wird abgebrochen…",
+      "completed": "Installation abgeschlossen",
+      "cancelled": "Installation abgebrochen",
+      "failed": "Installation fehlgeschlagen",
+      "interrupted": "Installation unterbrochen"
+    },
+    "phase": {
+      "resolving": "Quelle wird ermittelt",
+      "downloading": "Download läuft",
+      "dependencies": "Abhängigkeiten werden installiert",
+      "validating": "Überprüfung läuft",
+      "buildingUi": "Oberfläche wird vorbereitet",
+      "publishing": "Wird abgeschlossen",
+      "cleaning": "Wird bereinigt"
+    },
+    "errors": {
+      "load": "Der Installationsfortschritt kann nicht geladen werden.",
+      "action": "Diese Aktion konnte nicht ausgeführt werden. Versuche es erneut.",
+      "invalid": "Diese Anfrage ist nicht mehr gültig. Aktualisiere die Installationsliste.",
+      "busy": "Die Installationswarteschlange ist voll oder belegt.",
+      "unavailable": "Diese Installation kann derzeit nicht fortgesetzt werden.",
+      "failed": "Die Installation ist fehlgeschlagen. Du kannst es erneut versuchen.",
+      "insufficientSpace": "Nicht genügend Speicherplatz zum Fortfahren.",
+      "recoveryUnavailable": "Der gespeicherte Installationsstand kann nicht wiederhergestellt werden. Neue Installationen sind gesperrt. Die Wiederherstellungsdaten müssen manuell überprüft werden."
+    }
   }
 }

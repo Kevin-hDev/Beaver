@@ -10,7 +10,7 @@ pub(super) struct ProductionExecutor {
     ui: UiBuildRuntime,
 }
 impl ProductionExecutor {
-    #[cfg(test)]
+    #[cfg(any(test, feature = "e2e"))]
     pub(super) fn for_test(npm: NpmRunner, ui: UiBuildRuntime) -> Arc<dyn InstallExecutor> {
         Arc::new(Self { npm, ui })
     }
@@ -113,10 +113,17 @@ fn publish(
         let runtime = super::super::runtime::global().map_err(|_| InstallInterruption::Failed)?;
         let identity =
             super::super::host_identity::HostIdentity::ThirdParty(previous.manifest.id.clone());
-        let stopped = tokio::runtime::Handle::current().block_on(runtime.revoke_extension(
-            &identity,
-            std::time::Instant::now() + std::time::Duration::from_secs(2),
-        ));
+        let stopped = tokio::runtime::Handle::current().block_on(async {
+            // Grants belong to the old code, even when its host is already absent.
+            crate::services::agent_local::permission_gate::clear_extension(&previous.manifest.id)
+                .await;
+            runtime
+                .revoke_extension(
+                    &identity,
+                    std::time::Instant::now() + std::time::Duration::from_secs(2),
+                )
+                .await
+        });
         if !stopped {
             return Err(InstallInterruption::Failed);
         }

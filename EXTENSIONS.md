@@ -302,6 +302,34 @@ Une extension locale reste liée au fichier ou au dossier choisi. Pour appliquer
 modifications, utilisez **Recharger**. Les installations Git et npm sont copiées dans
 le stockage géré par Beaver et disposent d’une action **Mettre à jour**.
 
+L’ajout et les mises à jour s’exécutent en arrière-plan. Après le lancement, vous
+pouvez fermer la fenêtre d’ajout et continuer à naviguer. Le bouton de suivi dans la
+barre supérieure reste accessible lorsque la barre latérale est repliée ; la page
+Extensions affiche les mêmes installations. Fermer ce suivi ne les annule pas.
+**Annuler** demande l’arrêt du travail et le nettoyage de ses fichiers temporaires ;
+Beaver confirme l’annulation après cet arrêt. Vos sources locales sont conservées.
+Une installation réussie ne change pas automatiquement votre écran et n’approuve
+pas le code : son activation reste une décision séparée.
+
+Au-delà de 1 Gio occupé par une installation gérée, Beaver arrête les écritures et
+demande **Continuer l’installation** ou **Annuler** dans le suivi. Les caches et
+fichiers temporaires comptent aussi. Cette confirmation n’est pas un plafond à
+configurer : elle autorise la poursuite dans l’espace disponible, en conservant une
+réserve de 1 Gio. Si l’espace devient insuffisant, le travail s’arrête. Il s’agit
+d’une surveillance pratique, pas d’un quota imposé par le système d’exploitation :
+des écritures peuvent dépasser brièvement le seuil entre deux mesures.
+
+Une seule installation travaille à la fois. Une confirmation laissée sans réponse
+reste en attente ; les installations suivantes en indiquent la raison et permettent
+d’afficher la demande. Aucun délai ne vaut accord. Un pourcentage n’est montré que
+si le total est connu ; sinon Beaver affiche l’étape en cours.
+
+Après une interruption, aucune installation ne reprend automatiquement.
+**Reprendre l’installation** apparaît seulement lorsqu’un point de reprise peut
+être revérifié ; sinon **Réessayer** lance une nouvelle opération. Un journal de
+récupération illisible bloque les nouvelles installations et conserve les fichiers
+concernés : il nécessite une intervention, sans empêcher le reste de Beaver de fonctionner.
+
 Après une mise à jour ou un changement des fichiers couverts par l’empreinte, Beaver
 révoque l’approbation précédente, désactive l’extension et demande une nouvelle
 confirmation. Ce contrôle porte sur les fichiers sélectionnés par l’empreinte au
@@ -322,6 +350,12 @@ production avec son npm et le registre officiel HTTPS. Il désactive notamment :
 - la création de liens exécutables ;
 - les workspaces ;
 - les configurations npm du dépôt ou de la machine.
+
+Beaver conserve le cache pendant une attente de confirmation. Il verrouille les
+dépendances avant leur installation et revérifie ce verrouillage avant de relancer
+une étape interrompue ; une modification le fait échouer. Git conserve de même la
+révision choisie pendant l’attente. Cette reprise peut refaire une étape et ne
+promet pas de continuer exactement au dernier octet téléchargé.
 
 Précompilez donc les dépendances qui exigent un script d’installation, ou distribuez
 une extension déjà prête à exécuter. Vous pouvez aussi ajouter localement un dossier

@@ -1,0 +1,21 @@
+.eij-list { display: contents; }
+
+.eij-root {
+  gap: var(--space-sm);
+  padding: var(--chrome-3);
+  min-width: 0;
+}
+
+.eij-status, .eij-message {
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+  overflow-wrap: anywhere;
+}
+
+.eij-message p { margin: 0 0 var(--space-sm); }
+.eij-actions { flex-wrap: wrap; }
+.eij-actions:empty { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .eij-root { animation: none; opacity: 1; transform: none; }
+}

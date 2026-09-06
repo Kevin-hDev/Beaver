@@ -2658,5 +2658,50 @@
       "copied": "Export copied",
       "failed": "Export failed"
     }
+  },
+  "extensionInstalls": {
+    "title": "Downloads and installations",
+    "cancel": "Cancel",
+    "continue": "Continue installation",
+    "resume": "Resume installation",
+    "retry": "Retry",
+    "open": "Open extension",
+    "dismiss": "Dismiss",
+    "showRequest": "Show request",
+    "anotherInstallation": "another installation",
+    "queueBlocked": "Waiting for confirmation on {{name}}",
+    "volumeReason": "This installation already occupies {{size}}. It may use more disk space. Continue?",
+    "availableSpace": "Available space: {{size}}",
+    "occupiedSpace": "Occupied space: {{size}}",
+    "resumeUnavailable": "This installation cannot be resumed. You can retry.",
+    "status": {
+      "queued": "Queued",
+      "running": "Installing",
+      "awaitingConfirmation": "Confirmation required",
+      "cancelling": "Cancelling…",
+      "completed": "Installation completed",
+      "cancelled": "Installation cancelled",
+      "failed": "Installation failed",
+      "interrupted": "Installation interrupted"
+    },
+    "phase": {
+      "resolving": "Resolving source",
+      "downloading": "Downloading",
+      "dependencies": "Installing dependencies",
+      "validating": "Verifying",
+      "buildingUi": "Preparing interface",
+      "publishing": "Finalizing",
+      "cleaning": "Cleaning up"
+    },
+    "errors": {
+      "load": "Unable to load installation tracking.",
+      "action": "Unable to complete this action. Try again.",
+      "invalid": "This request is no longer valid. Refresh the installation list.",
+      "busy": "The installation queue is full or busy.",
+      "unavailable": "This installation cannot continue at this time.",
+      "failed": "Installation failed. You can retry.",
+      "insufficientSpace": "Not enough disk space to continue.",
+      "recoveryUnavailable": "Saved installation tracking cannot be recovered. New installations are blocked. The recovery data requires manual intervention."
+    }
   }
 }

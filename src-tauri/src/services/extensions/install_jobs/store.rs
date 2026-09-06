@@ -75,6 +75,15 @@ impl InstallJobStore {
         Ok(state.snapshot())
     }
     pub(super) fn changed(&self, state: &mut State) {
+        if state.revision >= MAX_REVISION {
+            state.durable_error = true;
+            state.recovery_error = true;
+            for job in &state.jobs {
+                job.cancel.cancel();
+            }
+            self.notify.notify_waiters();
+            return;
+        }
         state.revision += 1;
         for job in &mut state.jobs {
             job.view.revision = state.revision;

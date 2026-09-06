@@ -44,7 +44,7 @@ describe("OllamaSetupScreen", () => {
 
     act(() => activeChannel.onmessage?.({ completed: 0, total: 0, status: "extracting" }));
     expect(screen.getByText("ollamaSetup.extracting")).toBeTruthy();
-    expect(document.querySelector(".oss-progress-fill-indeterminate")).toBeTruthy();
+    expect(document.querySelector(".operation-progress-indeterminate")).toBeTruthy();
   });
 
   it.each([

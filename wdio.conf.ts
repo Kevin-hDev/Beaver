@@ -21,6 +21,7 @@ const extensionUiRuntimeProofSpec = "./tests/e2e/extensions-ui-runtime-proof.spe
 const extensionUiAdvancedSpec = "./tests/e2e/extensions-ui-advanced.spec.ts";
 const extensionUiAcceptanceSpec = "./tests/e2e/extensions-ui-acceptance.spec.ts";
 const extensionUiCleanupSpec = "./tests/e2e/extensions-ui-cleanup.spec.ts";
+const extensionInstallBackgroundSpec = "./tests/e2e/extensions-install-background.spec.ts";
 const extensionApiExpansionSpec = "./tests/e2e/extensions-api-expansion.spec.ts";
 const journeySpec = nativeCefSmoke
   ? "./tests/e2e/native-cef-shutdown.spec.ts"
@@ -47,6 +48,7 @@ export const config: WebdriverIO.Config = {
     extensionUiAcceptanceSpec,
     extensionUiCleanupSpec,
     extensionApiExpansionSpec,
+    extensionInstallBackgroundSpec,
     journeySpec,
   ]],
   maxInstances: 1,

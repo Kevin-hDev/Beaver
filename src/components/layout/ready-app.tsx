@@ -88,6 +88,7 @@ export function ReadyApp(props: ReadyAppProps) {
       {vaultError && <VaultErrorBanner onDismiss={onDismissVaultError} />}
       <AppNavigationActionsProvider openFileAccessSettings={openFileAccessSettings}>
         <AppLayout
+          onOpenExtension={(extensionId) => pushNav({ tab: "settings", settings: { subTab: "extensions", extensionsSection: "custom", extensionId } })}
           activeTab={activeTab}
           onTabChange={(tab) => pushNav({ tab })}
           onShowWelcome={onWelcome}

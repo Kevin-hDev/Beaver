@@ -4,6 +4,8 @@ import type { TabId } from "./nav-items";
 import { DragRegion } from "./drag-region";
 import { WindowToolbar } from "./window-toolbar";
 import { useUpdates } from "@/hooks/update-context";
+import { useExtensionInstallJobs } from "@/hooks/use-extension-install-jobs";
+import { ExtensionInstallRows } from "@/components/extensions/extension-install-rows";
 import { CHAT_MIN_WIDTH } from "@/hooks/file-preview-storage";
 import { CHAT_COMPACT_MIN_WIDTH } from "@/hooks/agent-panel-layout-solver";
 import { IS_MAC } from "@/lib/platform";
@@ -33,6 +35,7 @@ interface AppLayoutProps {
   canGoForward: boolean;
   onSearchSelect: (sessionId: string) => void;
   onNewSession?: () => void;
+  onOpenExtension: (id: string) => void;
   children: ReactNode;
 }
 
@@ -41,13 +44,15 @@ export function AppLayout({
   children,
   onShowWelcome,
   onBack, onForward, canGoBack, canGoForward,
-  onSearchSelect, onNewSession,
+  onSearchSelect, onNewSession, onOpenExtension,
 }: AppLayoutProps) {
   const [agentSidebar, setAgentSidebar] = useState(INITIAL_AGENT_SIDEBAR_LAYOUT_STATE);
   const [searchOpen, setSearchOpen] = useState(false);
+  const updatesAnchorRef = useRef<HTMLElement | null>(null);
   const [updatesOpen, setUpdatesOpen] = useState(false);
   const fullscreen = useWindowFullscreen();
   const updates = useUpdates();
+  const installs = useExtensionInstallJobs();
   const sidebarHiddenOffset = useSidebarHiddenOffset(agentSidebar.sidebarOpen);
 
   const [listWidth, setListWidth] = useState<number | null>(null);
@@ -118,6 +123,8 @@ export function AppLayout({
       >
         <WindowControls />
         <WindowToolbar
+          updatesAnchorRef={updatesAnchorRef}
+          updatesOpen={updatesOpen}
           sidebarOpen={agentSidebar.sidebarOpen}
           onToggleSidebar={toggleSidebar}
           onBack={onBack}
@@ -125,7 +132,7 @@ export function AppLayout({
           onNewSession={() => onShowWelcome?.()}
           onSearch={openSearch}
           onToggleUpdates={toggleUpdates}
-          updatesCount={updates.totalCount}
+          updatesCount={updates.totalCount + installs.jobs.length + (installs.loadError ? 1 : 0)}
           canGoBack={canGoBack}
           canGoForward={canGoForward}
         />
@@ -158,6 +165,8 @@ export function AppLayout({
           <ModelDownloadBadge />
         </div>
         <AppLayoutOverlays
+          installationRows={<ExtensionInstallRows onOpen={(id) => { onOpenExtension(id); closeUpdates(); }} />}
+          updatesAnchorRef={updatesAnchorRef}
           searchOpen={searchOpen}
           updatesOpen={updatesOpen}
           onCloseSearch={closeSearch}

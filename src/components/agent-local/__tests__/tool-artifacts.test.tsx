@@ -5,6 +5,7 @@ import { ToolArtifacts } from "../tool-artifacts";
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
+    i18n: { language: "en" },
     t: (key: string, values?: { name?: string }) => values?.name ?? key,
   }),
 }));
@@ -54,6 +55,6 @@ describe("ToolArtifacts", () => {
     for (const status of ["intact", "absent", "modified", "inaccessible", "unverified"]) {
       expect(screen.getByText(`agentLocal.toolActivity.artifactStatus.${status}`)).toBeVisible();
     }
-    expect(screen.getByText("application/pdf · 2 KB")).toBeVisible();
+    expect(screen.getByText("application/pdf · 2 KiB")).toBeVisible();
   });
 });

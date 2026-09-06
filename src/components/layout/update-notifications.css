@@ -9,12 +9,13 @@
    La largeur fixe d'avant tronquait les noms longs bien avant le bouton. */
 .update-list {
   position: fixed;
-  top: 42px;
   z-index: var(--z-toast);
   display: flex;
   flex-direction: column;
   gap: 6px;
   width: max-content;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   /* Même borne que l'état déplié : au-delà, un nom de modèle à rallonge
      étirerait la pile sur toute la largeur de l'écran. */
   max-width: min(520px, calc(100vw - 24px));
@@ -49,7 +50,9 @@
   border-radius: var(--radius-md-bubble);
   box-shadow: var(--shadow-lg);
   transition: background-color var(--ease-smooth);
-  opacity: 0;
+  /* Native WebViews can suspend animations while the window is not painted.
+     Entry motion must never be required to make actionable content visible. */
+  opacity: 1;
   transform: translateY(-12px);
   /* both, pas forwards : chaque bulle attend son tour via animation-delay, et
      forwards ne s'applique qu'après la fin. Pendant l'attente, la bulle
@@ -122,6 +125,11 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .update-bubble { animation: none; transform: none; }
+  .update-list, .update-bubble-caret { transition: none; }
 }
 
 @keyframes bubble-out {

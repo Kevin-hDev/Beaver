@@ -25,7 +25,6 @@ impl InstallJobStore {
                         job.view.status = InstallStatus::Interrupted;
                         job.finished_revision = Some(revision);
                     }
-                    job.finished_revision = Some(revision);
                     job.view.revision = revision;
                     job.view.confirmation_id = None;
                     job.view.can_cancel = false;
@@ -64,7 +63,12 @@ impl InstallJobStore {
                         }
                     }
                 }
-                if self.persist(&state).is_err() {
+                // Newly interrupted jobs survive ahead of older clean history.
+                // Never discard owned artifacts merely to satisfy the UI bound.
+                if state.evict(super::limits::MAX_RECENT).is_err() {
+                    state.durable_error = true;
+                    state.recovery_error = true;
+                } else if self.persist(&state).is_err() {
                     state.durable_error = true;
                 }
             }
