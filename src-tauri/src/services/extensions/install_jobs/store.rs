@@ -160,6 +160,16 @@ impl State {
         }
     }
     pub fn evict(&mut self, maximum: usize) -> Result<(), String> {
+        // Refusal cannot partially erase history before the caller commits its transition.
+        if self
+            .jobs
+            .iter()
+            .filter(|job| job.view.status.terminal() && !job.clean)
+            .count()
+            > maximum
+        {
+            return Err(BUSY.into());
+        }
         while self
             .jobs
             .iter()

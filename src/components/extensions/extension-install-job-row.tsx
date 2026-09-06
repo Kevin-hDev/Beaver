@@ -39,7 +39,7 @@ export function ExtensionInstallJobRow({
         cancelling={job.status === "cancelling"} canCancel={job.canCancel && !busy}
         cancelLabel={t(`${key}.cancel`)} cancellingLabel={t(`${key}.status.cancelling`)}
         onCancel={() => actions.cancel(job.id)} />}
-      {working && job.occupiedBytes !== null && <span className="eij-status">
+      {working && <span className="eij-status">
         {t(`${key}.occupiedSpace`, { size: formatByteSize(job.occupiedBytes, i18n.language) })}
       </span>}
       {job.queueBlocker && <div className="eij-message">

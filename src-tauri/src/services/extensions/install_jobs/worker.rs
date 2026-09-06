@@ -113,10 +113,17 @@ pub(super) async fn run(
             // No consumer remains: stop never-started jobs explicitly while retaining
             // the failed producer's ownership evidence and leaving all sources intact.
             for queued in &mut state.jobs {
-                if queued.view.status == InstallStatus::Queued {
+                if !queued.claimed_cleanup
+                    && matches!(
+                        queued.view.status,
+                        InstallStatus::Queued | InstallStatus::Cancelling
+                    )
+                {
                     queued.view.status = InstallStatus::Failed;
                     queued.view.error_code = Some(FAILED.into());
                     queued.view.can_cancel = false;
+                    queued.view.can_resume = false;
+                    queued.view.confirmation_id = None;
                     queued.finished_revision = Some(revision);
                 }
             }

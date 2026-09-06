@@ -2568,6 +2568,7 @@
     "noPlugins": "Sin accesos directos de plugins"
   },
   "extensionInstalls": {
+    "empty": "No hay instalaciones en curso ni recientes.",
     "title": "Descargas e instalaciones",
     "cancel": "Cancelar",
     "continue": "Continuar la instalación",

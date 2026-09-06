@@ -13,14 +13,14 @@ pub(super) trait InstallSignal: Clone + Send + Sync + 'static {
             Ok(false)
         }
     }
-    fn storage_budget(&self) -> u64 {
-        super::managed_tree::MAX_TOTAL_BYTES
+    fn storage_budget(&self) -> Result<u64, super::OperationFailure> {
+        Ok(super::managed_tree::MAX_TOTAL_BYTES)
     }
     fn downloaded(&self, bytes: u64) -> bool {
-        bytes <= self.storage_budget() && !self.producer_should_stop()
+        self.storage_budget().is_ok_and(|budget| bytes <= budget) && !self.producer_should_stop()
     }
     fn allows_volume(&self, bytes: u64) -> bool {
-        bytes <= self.storage_budget()
+        self.storage_budget().is_ok_and(|budget| bytes <= budget)
     }
     fn resolved_git(
         &self,
@@ -67,8 +67,9 @@ impl InstallSignal for super::install_jobs::InstallControl {
         self.after_producer_stopped()
             .map_err(|_| super::process_runner::ProcessFailure::Interrupted)
     }
-    fn storage_budget(&self) -> u64 {
+    fn storage_budget(&self) -> Result<u64, super::OperationFailure> {
         self.storage_budget()
+            .map_err(|_| super::OperationFailure::InstallFailed)
     }
     fn downloaded(&self, bytes: u64) -> bool {
         self.downloaded(bytes)

@@ -9,6 +9,7 @@ import type { InstallJobsSnapshot } from "@/types/extension-install-jobs.generat
 const EMPTY_SNAPSHOT: InstallJobsSnapshot = { revision: 0, jobs: [] };
 
 export function useExtensionInstallSnapshots() {
+  const [loading, setLoading] = useState(true);
   const [snapshot, setSnapshot] = useState(EMPTY_SNAPSHOT);
   const [loadError, setLoadError] = useState<string | null>(null);
   const revision = useRef(-1);
@@ -21,9 +22,13 @@ export function useExtensionInstallSnapshots() {
       setSnapshot(next);
     }
     setLoadError(null);
+    setLoading(false);
   }, []);
   const reportError = useCallback((error: unknown) => {
-    if (mounted.current) setLoadError(installJobErrorKey(error, "extensionInstalls.errors.load"));
+    if (mounted.current) {
+      setLoadError(installJobErrorKey(error, "extensionInstalls.errors.load"));
+      setLoading(false);
+    }
   }, []);
   const refresh = useCallback(async () => {
     try { accept(await invoke<unknown>("list_extension_installs")); }
@@ -48,5 +53,5 @@ export function useExtensionInstallSnapshots() {
       cleanupTauriListener(unlisten);
     };
   }, [accept, refresh, reportError]);
-  return { snapshot, loadError, refresh };
+  return { snapshot, loading, loadError, refresh };
 }

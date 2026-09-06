@@ -10,7 +10,7 @@ import {
 import { invoke } from "@tauri-apps/api/core";
 import { useFsEvent } from "@/hooks/use-fs-event";
 import { ExtensionInstallJobsProvider } from "./use-extension-install-jobs";
-import { useExtensionInstall } from "@/hooks/use-extension-install";
+import { useExtensionInstall, useExtensionUpdate } from "@/hooks/use-extension-install";
 import { useExtensionPriorities } from "@/hooks/use-extension-priorities";
 import { useExtensionRecovery } from "@/hooks/use-extension-recovery";
 import { ExtensionActivationDialog } from "@/components/extensions/extension-activation-dialog";
@@ -138,7 +138,8 @@ function useExtensionsState() {
     mutate(id, "set_extension_show_in_chat", { extensionId: id, showInChat },
       (record) => ({ ...record, showInChat })), [mutate]);
 
-  const install = useExtensionInstall(setOperationError);
+  const install = useExtensionInstall();
+  const update = useExtensionUpdate(install, setOperationError);
 
   const run = useCallback(async (command: string, payload: Record<string, unknown> = {}) => {
     setOperationError(null);
@@ -186,7 +187,7 @@ function useExtensionsState() {
     cancelActivation: () => setPendingActivation(null),
     setShowInChat,
     setPriorityPlugins,
-    update: (id: string) => install({ kind: "update", extensionId: id }),
+    update,
     remove: (id: string) => run("remove_extension", { extensionId: id }),
     reload: () => runHost(() => run("reload_extension_host")),
     recover: () => runHost(() => run("recover_extension_host")),

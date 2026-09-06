@@ -2563,6 +2563,7 @@
     "noPlugins": "没有插件快捷方式"
   },
   "extensionInstalls": {
+    "empty": "没有正在进行或最近的安装。",
     "title": "下载和安装",
     "cancel": "取消",
     "continue": "继续安装",

@@ -27,14 +27,17 @@ impl InstallExecutor for ProductionExecutor {
         let ui = self.ui.clone();
         Box::pin(async move {
             let work = control.store.work.clone();
-            match super::owned_work::spawn(&work, move || execute(request, control, npm, ui)) {
+            // Refused admission did not clean a resumed job's retained ownership.
+            let never_owned_artifacts = matches!(control.saved(), Ok(None));
+            match super::owned_work::spawn_typed(&work, move || execute(request, control, npm, ui))
+            {
                 Ok(receiver) => receiver.await.unwrap_or(InstallOutcome {
                     result: Err(InstallInterruption::Failed),
                     cleanup_confirmed: false,
                 }),
-                Err(_) => InstallOutcome {
-                    result: Err(InstallInterruption::AppClosing),
-                    cleanup_confirmed: true,
+                Err(error) => InstallOutcome {
+                    result: Err(admission_interruption(error)),
+                    cleanup_confirmed: never_owned_artifacts,
                 },
             }
         })
@@ -140,3 +143,34 @@ fn publish(
         Ok(id)
     })
 }
+
+fn admission_interruption(
+    error: crate::services::extensions::work_supervision::ExtensionWorkAdmissionError,
+) -> InstallInterruption {
+    use crate::services::extensions::work_supervision::ExtensionWorkAdmissionError::*;
+    match error {
+        ShuttingDown => InstallInterruption::AppClosing,
+        Busy => InstallInterruption::Failed,
+    }
+}
+
+#[cfg(test)]
+mod admission_tests {
+    #[test]
+    fn capacity_is_failure_and_only_closure_is_interruption() {
+        use super::InstallInterruption;
+        use crate::services::extensions::work_supervision::ExtensionWorkAdmissionError::*;
+        assert_eq!(
+            super::admission_interruption(Busy),
+            InstallInterruption::Failed
+        );
+        assert_eq!(
+            super::admission_interruption(ShuttingDown),
+            InstallInterruption::AppClosing
+        );
+    }
+}
+
+#[cfg(test)]
+#[path = "executor_admission_tests.rs"]
+mod producer_admission_tests;

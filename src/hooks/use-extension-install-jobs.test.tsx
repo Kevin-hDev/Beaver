@@ -34,9 +34,11 @@ describe("backend installation projection", () => {
     vi.mocked(invoke).mockReturnValue(initial.promise);
     const view = renderHook(useExtensionInstallJobs, { wrapper });
     expect(invoke).not.toHaveBeenCalled();
+    expect(view.result.current.loading).toBe(true);
     await act(async () => { subscription.resolve(unlisten); await subscription.promise; });
     expect(invoke).toHaveBeenCalledWith("list_extension_installs");
     act(() => send(installSnapshotFixture(3)));
+    expect(view.result.current.loading).toBe(false);
     await act(async () => { initial.resolve(installSnapshotFixture(1, [])); await initial.promise; });
     act(() => send(installSnapshotFixture(3, [])));
     expect(view.result.current.jobs).toHaveLength(1);
@@ -51,6 +53,7 @@ describe("backend installation projection", () => {
     vi.mocked(invoke).mockRejectedValue(new Error("private/path"));
     await act(() => view.result.current.refresh());
     expect(view.result.current.loadError).toBe("extensionInstalls.errors.load");
+    expect(view.result.current.loading).toBe(false);
     expect(view.result.current.jobs).toHaveLength(1);
     act(() => send({ revision: 3, jobs: [{ source: "private" }] }));
     expect(view.result.current.jobs[0].revision).toBe(2);

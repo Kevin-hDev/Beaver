@@ -1,3 +1,5 @@
+// Deduplication uses the submitted source. Update origins are resolved by the sole
+// worker; identity validation before publication rejects cross-kind duplicates.
 use super::{limits::INVALID, InstallKind, InstallRequest};
 
 pub(super) fn normalize(

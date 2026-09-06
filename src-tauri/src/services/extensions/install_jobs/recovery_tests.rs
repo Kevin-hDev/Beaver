@@ -190,3 +190,72 @@ async fn incompatible_checkpoint_with_known_stopped_ownership_allows_safe_retry_
 
 #[path = "recovery_publication_tests.rs"]
 mod publication;
+
+#[tokio::test]
+async fn failed_resume_journal_write_restores_entire_job_and_admission() {
+    let (root, store, id, _) = interrupted(true).await;
+    let path = root.path().join("jobs.json");
+    let before = serde_json::to_value(&store.lock().unwrap().jobs[0]).unwrap();
+    let revision = store.snapshot().unwrap().revision;
+    let bytes = std::fs::read(&path).unwrap();
+    std::fs::rename(&path, root.path().join("saved.json")).unwrap();
+    std::fs::create_dir(&path).unwrap();
+    assert!(store.resume(&id).is_err());
+    assert_eq!(
+        serde_json::to_value(&store.lock().unwrap().jobs[0]).unwrap(),
+        before
+    );
+    assert_eq!(store.snapshot().unwrap().revision, revision);
+    assert!(!store.lock().unwrap().worker);
+    assert_eq!(store.work.operation_diagnostics().active, 0);
+    assert_eq!(
+        std::fs::read(root.path().join("saved.json")).unwrap(),
+        bytes
+    );
+}
+
+#[tokio::test]
+async fn failed_resume_spawn_restores_resumption_and_checkpoint_consent() {
+    let (root, store, id, _) = interrupted(true).await;
+    let before = serde_json::to_value(&store.lock().unwrap().jobs[0]).unwrap();
+    assert!(store
+        .resume_with(&id, || store.work.begin_closing())
+        .is_err());
+    let mut after = serde_json::to_value(&store.lock().unwrap().jobs[0]).unwrap();
+    after["view"]["revision"] = before["view"]["revision"].clone();
+    assert_eq!(after, before);
+    assert!(!store.lock().unwrap().worker);
+    assert_eq!(store.work.operation_diagnostics().active, 0);
+    let disk: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(root.path().join("jobs.json")).unwrap()).unwrap();
+    assert_eq!(disk["jobs"][0]["view"]["canResume"], true);
+}
+
+#[tokio::test]
+async fn failed_cleanup_journal_write_does_not_claim_an_unstarted_cleanup() {
+    let (root, store, id, _) = interrupted(true).await;
+    let before = serde_json::to_value(&store.lock().unwrap().jobs[0]).unwrap();
+    let path = root.path().join("jobs.json");
+    std::fs::rename(&path, root.path().join("saved.json")).unwrap();
+    std::fs::create_dir(&path).unwrap();
+    assert!(store.dismiss_reconciled(&id).await.is_err());
+    assert_eq!(
+        serde_json::to_value(&store.lock().unwrap().jobs[0]).unwrap(),
+        before
+    );
+    assert!(!store.lock().unwrap().jobs[0].claimed_cleanup);
+    assert_eq!(store.work.operation_diagnostics().active, 0);
+}
+
+#[tokio::test]
+async fn refused_cleanup_admission_restores_the_resume_action() {
+    let (_root, store, id, _) = interrupted(true).await;
+    let before = serde_json::to_value(&store.lock().unwrap().jobs[0]).unwrap();
+    store.work.begin_closing();
+    assert!(store.dismiss_reconciled(&id).await.is_err());
+    let mut after = serde_json::to_value(&store.lock().unwrap().jobs[0]).unwrap();
+    after["view"]["revision"] = before["view"]["revision"].clone();
+    assert_eq!(after, before);
+    assert!(!store.lock().unwrap().jobs[0].claimed_cleanup);
+    assert_eq!(store.work.operation_diagnostics().active, 0);
+}

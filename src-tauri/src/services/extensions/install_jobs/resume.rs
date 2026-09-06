@@ -12,6 +12,13 @@ impl InstallJobStore {
             .map_err(|_| UNAVAILABLE)?
     }
     pub(crate) fn resume(&self, id: &str) -> Result<InstallJobView, String> {
+        self.resume_with(id, || {})
+    }
+    pub(super) fn resume_with(
+        &self,
+        id: &str,
+        before_spawn: impl FnOnce(),
+    ) -> Result<InstallJobView, String> {
         super::request::id(id)?;
         let candidate = {
             let state = self.lock()?;
@@ -56,6 +63,7 @@ impl InstallJobStore {
         } else {
             Some(self.work.try_admit_operation().map_err(|_| UNAVAILABLE)?)
         };
+        let previous = state.jobs[index].clone();
         let job = &mut state.jobs[index];
         job.cancel = CancellationToken::new();
         job.view.status = InstallStatus::Queued;
@@ -68,8 +76,13 @@ impl InstallJobStore {
             checkpoint.allowance = super::disk_policy::StorageAllowance::new(self.disk_policy);
         }
         job.monitor = Default::default();
-        self.persist(&state)?;
+        if let Err(error) = self.persist(&state) {
+            // Admission is transactional: a refused resume must never become runnable.
+            state.jobs[index] = previous;
+            return Err(error);
+        }
         if let Some(admission) = admission {
+            before_spawn();
             state.worker = true;
             let store = self.clone();
             if admission
@@ -77,7 +90,7 @@ impl InstallJobStore {
                 .is_err()
             {
                 state.worker = false;
-                state.jobs[index].view.status = InstallStatus::Interrupted;
+                state.jobs[index] = previous;
                 self.changed(&mut state);
                 return Err(UNAVAILABLE.into());
             }

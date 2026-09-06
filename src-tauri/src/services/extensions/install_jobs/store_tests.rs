@@ -483,3 +483,6 @@ async fn explicit_retry_after_restart_uses_private_source_and_deduplicates() {
     }
     stop(&restored).await;
 }
+
+#[path = "disk_monitor_tests.rs"]
+mod disk_monitor_tests;

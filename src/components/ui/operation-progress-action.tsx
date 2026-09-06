@@ -26,7 +26,7 @@ export function OperationProgressAction({
           cancelling && "opa-stopped")}
           style={safePercent === null ? undefined : { width: `${safePercent}%` }} />
       </div>
-      <span className="opa-percent">{cancelling ? cancellingLabel : safePercent === null ? phaseLabel : `${safePercent}%`}</span>
+      <span className="opa-percent">{safePercent === null ? phaseLabel : `${safePercent}%`}</span>
       {(canCancel || cancelling) && (
         <button type="button" className="btn btn-sm btn-destructive opa-cancel"
           disabled={cancelling} onClick={onCancel}>

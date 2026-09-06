@@ -65,11 +65,15 @@ impl InstallJobStore {
                 return Err(super::limits::BUSY.into());
             }
             let checkpoint = job.checkpoint.clone().ok_or(super::limits::UNAVAILABLE)?;
+            let previous = job.clone();
             let previous_status = job.view.status;
             state.jobs[index].claimed_cleanup = true;
             state.jobs[index].view.status = InstallStatus::Cancelling;
             state.jobs[index].view.can_resume = false;
-            self.persist(&state)?;
+            if let Err(error) = self.persist(&state) {
+                state.jobs[index] = previous;
+                return Err(error);
+            }
             let store = self.clone();
             let id = id.to_owned();
             let receiver = super::owned_work::spawn(&self.work, move || {
@@ -91,8 +95,7 @@ impl InstallJobStore {
                 result
             });
             if receiver.is_err() {
-                state.jobs[index].claimed_cleanup = false;
-                state.jobs[index].view.status = previous_status;
+                state.jobs[index] = previous;
                 self.changed(&mut state);
             }
             drop(state);

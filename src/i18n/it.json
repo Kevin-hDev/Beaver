@@ -2564,6 +2564,7 @@
     "noPlugins": "Nessuna scorciatoia plugin"
   },
   "extensionInstalls": {
+    "empty": "Nessuna installazione in corso o recente.",
     "title": "Download e installazioni",
     "cancel": "Annulla",
     "continue": "Continua l’installazione",

@@ -25,7 +25,7 @@ export function useExtensionsTabContent({
         onReset={() => onNavReplace({ extensionId: null })}
       >
         <ExtensionsPage
-          installationTracking={<ExtensionInstallRows onOpen={(extensionId) => onNavChange({ extensionId })} />}
+          installationTracking={<ExtensionInstallRows page onOpen={(extensionId) => onNavChange({ extensionId })} />}
           section={navState.extensionsSection}
           selected={selected}
           onSelectSection={(extensionsSection) =>

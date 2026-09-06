@@ -5,7 +5,7 @@ import { useExtensionInstallJobActions } from "./use-extension-install-job-actio
 function useJobs() {
   const state = useExtensionInstallSnapshots();
   const actions = useExtensionInstallJobActions(state.refresh);
-  return { jobs: state.snapshot.jobs, loadError: state.loadError, refresh: state.refresh, ...actions };
+  return { jobs: state.snapshot.jobs, loading: state.loading, loadError: state.loadError, refresh: state.refresh, ...actions };
 }
 const InstallJobsContext = createContext<ReturnType<typeof useJobs> | null>(null);
 

@@ -131,3 +131,70 @@ async fn dirty_failure_stops_queued_jobs_without_touching_sources_or_losing_owne
     store.dismiss(&queued.id).unwrap();
     assert_eq!(std::fs::read_to_string(path).unwrap(), "user-owned source");
 }
+
+#[tokio::test]
+async fn dirty_worker_exit_finishes_pending_cancellation_and_retains_checkpoint() {
+    let release = Arc::new(tokio::sync::Notify::new());
+    let store = store(Arc::new(GatedDirtyFailure(release.clone())));
+    let active = store.start(request("active")).unwrap();
+    wait_status(&store, &active.id, InstallStatus::Running).await;
+    let queued = store.start(request("resumed")).unwrap();
+    {
+        // A resumed queued job retains the ownership journal from its earlier run.
+        let mut state = store.lock().unwrap();
+        let index = state.index(&queued.id).unwrap();
+        state.jobs[index].checkpoint = Some(Default::default());
+        state.jobs[index].clean = false;
+    }
+    store.request_cancel(&queued.id).unwrap();
+    release.notify_one();
+    wait_status(&store, &active.id, InstallStatus::Failed).await;
+    let state = store.lock().unwrap();
+    assert!(!state.worker);
+    let job = &state.jobs[state.index(&queued.id).unwrap()];
+    assert_eq!(job.view.status, InstallStatus::Failed);
+    assert!(!job.view.can_cancel);
+    assert!(!job.clean);
+    assert!(job.checkpoint.is_some());
+    assert!(job.finished_revision.is_some());
+}
+
+#[tokio::test]
+async fn impossible_history_eviction_refuses_cancel_without_mutating_token_or_history() {
+    let store = store(Arc::new(super::Suspended));
+    let active = store.start(request("active")).unwrap();
+    wait_status(&store, &active.id, InstallStatus::Running).await;
+    let queued = store.start(request("queued")).unwrap();
+    {
+        let mut state = store.lock().unwrap();
+        let mut template = state.jobs[state.index(&queued.id).unwrap()].clone();
+        template.view.status = InstallStatus::Failed;
+        template.clean = false;
+        for index in 0..super::super::limits::MAX_RECENT {
+            template.view.id = uuid::Uuid::new_v4().to_string();
+            template.key = format!("history-{index}");
+            state.jobs.push(template.clone());
+        }
+    }
+    let before = serde_json::to_value(&store.lock().unwrap().jobs).unwrap();
+    let revision = store.snapshot().unwrap().revision;
+    assert!(store.request_cancel(&queued.id).is_err());
+    assert_eq!(
+        serde_json::to_value(&store.lock().unwrap().jobs).unwrap(),
+        before
+    );
+    assert_eq!(store.snapshot().unwrap().revision, revision);
+    {
+        let state = store.lock().unwrap();
+        assert!(!state.jobs[state.index(&queued.id).unwrap()]
+            .cancel
+            .is_cancelled());
+    }
+    // Remove only the injected impossible history before normal supervised teardown.
+    store
+        .lock()
+        .unwrap()
+        .jobs
+        .retain(|job| !job.key.starts_with("history-"));
+    stop(&store).await;
+}

@@ -12,17 +12,19 @@ impl super::InstallJobStore {
 
 #[derive(Clone, Default)]
 pub(super) struct DiskMonitor {
+    pub sampling: std::sync::Arc<std::sync::Mutex<()>>,
     pub sampled_at: Option<std::time::Instant>,
     pub stop: Option<InstallInterruption>,
     pub downloaded: Option<u64>,
 }
 
 impl InstallControl {
-    pub(in crate::services::extensions) fn storage_budget(&self) -> u64 {
-        self.saved()
-            .ok()
-            .flatten()
-            .map_or(0, |checkpoint| checkpoint.allowance.approved_total_bytes)
+    pub(in crate::services::extensions) fn storage_budget(
+        &self,
+    ) -> Result<u64, InstallInterruption> {
+        self.saved()?
+            .map(|checkpoint| checkpoint.allowance.approved_total_bytes)
+            .ok_or(InstallInterruption::Failed)
     }
     pub(in crate::services::extensions) fn producer_should_stop(&self) -> bool {
         self.is_cancelled() || self.poll_disk(false).is_err()
@@ -67,7 +69,34 @@ impl InstallControl {
         state.jobs[state.index(&self.id).ok()?].monitor.stop.clone()
     }
     fn poll_disk(&self, force: bool) -> Result<(), InstallInterruption> {
-        let (checkpoint, phase, downloaded, prior) = {
+        self.poll_disk_with(force, |checkpoint| {
+            super::disk_usage::measure(checkpoint).and_then(|occupied| {
+                self.store
+                    .available_disk_space()
+                    .map(|free| (occupied, free))
+                    .map_err(|_| InstallInterruption::Failed)
+            })
+        })
+    }
+    pub(super) fn poll_disk_with(
+        &self,
+        force: bool,
+        measure: impl FnOnce(
+            &super::checkpoint::InstallCheckpoint,
+        ) -> Result<(u64, u64), InstallInterruption>,
+    ) -> Result<(), InstallInterruption> {
+        let sampling = {
+            let state = self.store.lock().map_err(|_| InstallInterruption::Failed)?;
+            state.jobs[state
+                .index(&self.id)
+                .map_err(|_| InstallInterruption::Failed)?]
+            .monitor
+            .sampling
+            .clone()
+        };
+        // Serialize scans without holding the state lock: cancel remains responsive.
+        let _sampling = sampling.lock().map_err(|_| InstallInterruption::Failed)?;
+        let (checkpoint, phase, downloaded) = {
             let mut state = self.store.lock().map_err(|_| InstallInterruption::Failed)?;
             let index = state
                 .index(&self.id)
@@ -84,45 +113,40 @@ impl InstallControl {
             let Some(checkpoint) = job.checkpoint.clone() else {
                 return Ok(());
             };
-            job.monitor.sampled_at = Some(std::time::Instant::now());
-            (
-                checkpoint,
-                job.view.phase,
-                job.monitor.downloaded,
-                job.monitor.stop.clone(),
-            )
+            (checkpoint, job.view.phase, job.monitor.downloaded)
         };
-        let sample = super::disk_usage::measure(&checkpoint).and_then(|occupied| {
-            self.store
-                .available_disk_space()
-                .map(|free| (occupied, free))
-                .map_err(|_| InstallInterruption::Failed)
-        });
+        let sample = measure(&checkpoint);
         let result = match sample {
-            Ok((occupied, free)) => {
-                self.progress(InstallProgress {
+            Ok((occupied, free)) => self
+                .progress(InstallProgress {
                     phase,
                     downloaded_bytes: downloaded,
                     download_total_bytes: None,
                     occupied_bytes: occupied,
                     free_bytes: Some(free),
-                })?;
-                checkpoint
-                    .allowance
-                    .check(occupied, free, self.store.disk_policy)
-            }
+                })
+                .and_then(|()| {
+                    checkpoint
+                        .allowance
+                        .check(occupied, free, self.store.disk_policy)
+                }),
             Err(error) => Err(error),
-        };
-        // A transfer can stop before received bytes reach disk; retain its request.
-        let reason = match result {
-            Err(InstallInterruption::Confirmation) | Ok(()) => prior.or_else(|| result.err()),
-            Err(error) => Some(error),
         };
         let mut state = self.store.lock().map_err(|_| InstallInterruption::Failed)?;
         let index = state
             .index(&self.id)
             .map_err(|_| InstallInterruption::Failed)?;
-        state.jobs[index].monitor.stop = reason.clone();
+        let monitor = &mut state.jobs[index].monitor;
+        // Rest starts after traversal and publication, even when either fails.
+        monitor.sampled_at = Some(std::time::Instant::now());
+        // Preserve a stop requested concurrently by a transfer callback.
+        let reason = match result {
+            Err(InstallInterruption::Confirmation) | Ok(()) => {
+                monitor.stop.clone().or_else(|| result.err())
+            }
+            Err(error) => Some(error),
+        };
+        monitor.stop = reason.clone();
         reason.map_or(Ok(()), Err)
     }
     /// The caller reaped its process or returned from libgit2 before this wait.

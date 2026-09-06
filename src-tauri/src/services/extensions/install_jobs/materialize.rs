@@ -109,7 +109,7 @@ pub(super) fn prepare(
     let occupied_bytes = if super::super::installer::is_managed(&record) {
         let root = super::super::managed_store::install_root(&record)
             .map_err(|_| InstallInterruption::Failed)?;
-        super::super::managed_tree::measure_with_budget(&root, control.storage_budget())
+        super::super::managed_tree::measure_with_budget(&root, control.storage_budget()?)
             .map_err(|_| InstallInterruption::Failed)?
     } else {
         0

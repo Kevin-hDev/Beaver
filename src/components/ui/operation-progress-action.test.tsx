@@ -31,6 +31,12 @@ describe("operation progress", () => {
     expect(cancel).not.toHaveBeenCalled();
     expect(container.querySelector(".opa-stopped")).toBeTruthy();
   });
+  it("preserves known progress and shows cancellation only once", () => {
+    render(<OperationProgressAction {...labels} percent={42} cancelling canCancel onCancel={vi.fn()} />);
+    expect(screen.getByText("42%")).toBeVisible();
+    expect(screen.getAllByText("Annulation")).toHaveLength(1);
+    expect(screen.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "42");
+  });
   it("hides cancellation where the backend refuses it", () => {
     render(<OperationProgressAction {...labels} percent={Number.NaN} cancelling={false} canCancel={false} onCancel={vi.fn()} />);
     expect(screen.queryByRole("button")).toBeNull();

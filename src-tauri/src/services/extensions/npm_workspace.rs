@@ -1,21 +1,20 @@
 //! One private npm cache survives a stopped phase; the job owns its final cleanup.
 use std::path::{Path, PathBuf};
 
-pub(super) fn prepare(root: &Path) -> Result<PathBuf, String> {
+pub(super) fn prepare(root: &Path) -> Result<PathBuf, ()> {
     let workspace = root.join(".npm-cache");
     for name in ["cache", "tmp"] {
         crate::services::private_store::ensure_private_dir(&workspace.join(name))
-            .map_err(|_| "Cache npm indisponible.".to_string())?;
+            .map_err(|_| ())?;
     }
     for name in ["userconfig", "globalconfig"] {
-        crate::services::private_store::atomic_write(&workspace.join(name), b"")
-            .map_err(|_| "Configuration npm indisponible.".to_string())?;
+        crate::services::private_store::atomic_write(&workspace.join(name), b"").map_err(|_| ())?;
     }
     Ok(workspace)
 }
 
-pub(super) fn cleanup(workspace: &Path) -> Result<(), String> {
-    std::fs::remove_dir_all(workspace).map_err(|_| "Cache npm impossible à nettoyer.".to_string())
+pub(super) fn cleanup(workspace: &Path) -> Result<(), ()> {
+    std::fs::remove_dir_all(workspace).map_err(|_| ())
 }
 
 #[cfg(test)]

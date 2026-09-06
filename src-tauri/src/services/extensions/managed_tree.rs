@@ -61,6 +61,8 @@ fn inspect_entry(
         pending.push((path.to_path_buf(), depth + 1));
         return Ok(());
     }
+    // The consented total budget also bounds each file: a hidden 256 MiB cap
+    // would reject an otherwise approved large extension. Structural limits remain.
     if !kind.is_file() || metadata.len() > budget {
         return Err(OperationFailure::ManifestInvalid);
     }
@@ -76,6 +78,21 @@ mod tests {
     use super::validate;
     #[cfg(unix)]
     use super::OperationFailure;
+
+    #[test]
+    fn a_large_file_uses_the_approved_total_budget_without_a_hidden_cap() {
+        let directory = tempfile::tempdir().unwrap();
+        let bytes = 256 * 1024 * 1024 + 1;
+        std::fs::File::create(directory.path().join("large"))
+            .unwrap()
+            .set_len(bytes)
+            .unwrap();
+        assert_eq!(
+            super::measure_with_budget(directory.path(), bytes).unwrap(),
+            bytes
+        );
+        assert!(super::measure_with_budget(directory.path(), bytes - 1).is_err());
+    }
 
     #[test]
     fn accepts_a_small_regular_tree() {

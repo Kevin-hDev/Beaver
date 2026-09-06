@@ -2564,6 +2564,7 @@
     "noPlugins": "Keine Plugin-Verknüpfungen"
   },
   "extensionInstalls": {
+    "empty": "Keine laufenden oder kürzlich abgeschlossenen Installationen.",
     "title": "Downloads und Installationen",
     "cancel": "Abbrechen",
     "continue": "Installation fortsetzen",

@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, type CSSProperties, type ReactNode } from "react";
+import { useEmptyUpdatesClose } from "./use-empty-updates-close";
 import { ListPanelFooter } from "./list-panel-footer";
 import type { TabId } from "./nav-items";
 import { DragRegion } from "./drag-region";
@@ -49,10 +50,12 @@ export function AppLayout({
   const [agentSidebar, setAgentSidebar] = useState(INITIAL_AGENT_SIDEBAR_LAYOUT_STATE);
   const [searchOpen, setSearchOpen] = useState(false);
   const updatesAnchorRef = useRef<HTMLElement | null>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
   const [updatesOpen, setUpdatesOpen] = useState(false);
   const fullscreen = useWindowFullscreen();
   const updates = useUpdates();
   const installs = useExtensionInstallJobs();
+  const updatesCount = updates.totalCount + installs.jobs.length + (installs.loadError ? 1 : 0);
   const sidebarHiddenOffset = useSidebarHiddenOffset(agentSidebar.sidebarOpen);
 
   const [listWidth, setListWidth] = useState<number | null>(null);
@@ -87,6 +90,7 @@ export function AppLayout({
   const openSettings = useCallback(() => onTabChange("settings"), [onTabChange]);
   const toggleUpdates = useCallback(() => setUpdatesOpen((o) => !o), []);
   const closeUpdates = useCallback(() => setUpdatesOpen(false), []);
+  useEmptyUpdatesClose(updatesCount, updatesOpen, closeUpdates, rootRef);
   const handleAutoSidebarHide = useCallback(() => setAgentSidebar(autoHideAgentSidebar), []);
   const handleAgentPanelsTightChange = useCallback((tight: boolean) => {
     setAgentSidebar((state) => setAgentPanelsTight(state, tight));
@@ -117,6 +121,7 @@ export function AppLayout({
   return (
     <PanelSlotProvider>
       <div
+        ref={rootRef}
         className={`app-root ${IS_MAC ? "os-mac" : "os-other"} ${agentSidebar.sidebarOpen ? "" : "sidebar-hidden"} ${compactAgentChat ? "agent-chat-compact" : ""} ${fullscreen ? "is-fullscreen" : ""}`}
         style={layoutStyle}
         data-e2e="app-root"
@@ -132,7 +137,7 @@ export function AppLayout({
           onNewSession={() => onShowWelcome?.()}
           onSearch={openSearch}
           onToggleUpdates={toggleUpdates}
-          updatesCount={updates.totalCount + installs.jobs.length + (installs.loadError ? 1 : 0)}
+          updatesCount={updatesCount}
           canGoBack={canGoBack}
           canGoForward={canGoForward}
         />

@@ -2660,6 +2660,7 @@
     }
   },
   "extensionInstalls": {
+    "empty": "No current or recent installations.",
     "title": "Downloads and installations",
     "cancel": "Cancel",
     "continue": "Continue installation",

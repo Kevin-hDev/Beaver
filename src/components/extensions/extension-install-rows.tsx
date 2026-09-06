@@ -5,7 +5,7 @@ import { installJobErrorKey } from "@/lib/extension-install-job-errors";
 import { isTerminalInstall } from "@/lib/extension-install-job-parser";
 import { ExtensionInstallJobRow, type ExtensionInstallActions } from "./extension-install-job-row";
 
-export function ExtensionInstallRows({ onOpen }: { onOpen: (id: string) => void }) {
+export function ExtensionInstallRows({ onOpen, page = false }: { onOpen: (id: string) => void; page?: boolean }) {
   const { t } = useTranslation();
   const tracker = useExtensionInstallJobs();
   const root = useRef<HTMLDivElement>(null);
@@ -29,6 +29,10 @@ export function ExtensionInstallRows({ onOpen }: { onOpen: (id: string) => void 
     row?.scrollIntoView({ block: "nearest" });
   }
   return <div ref={root} className="eij-list">
+    {page && !tracker.loadError && visibleJobs.length === 0 &&
+      <div className="update-bubble eij-root eij-placeholder" role="status" aria-busy={tracker.loading}>
+        {t(tracker.loading ? "common.loading" : "extensionInstalls.empty")}
+      </div>}
     {tracker.loadError && <div className="update-bubble eij-root" role="alert">
       <p>{t(tracker.loadError)}</p>
       <button className="btn btn-sm" type="button" onClick={() => void tracker.refresh()}>{t("extensionInstalls.retry")}</button>

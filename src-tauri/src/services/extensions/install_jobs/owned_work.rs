@@ -5,9 +5,17 @@ pub(super) fn spawn<T: Send + 'static>(
     work: &ExtensionWorkServices,
     operation: impl FnOnce() -> T + Send + 'static,
 ) -> Result<tokio::sync::oneshot::Receiver<T>, String> {
-    let admission = work
-        .try_admit_operation()
-        .map_err(|e| e.public_code().to_string())?;
+    spawn_typed(work, operation).map_err(|error| error.public_code().to_string())
+}
+
+pub(super) fn spawn_typed<T: Send + 'static>(
+    work: &ExtensionWorkServices,
+    operation: impl FnOnce() -> T + Send + 'static,
+) -> Result<
+    tokio::sync::oneshot::Receiver<T>,
+    super::super::work_supervision::ExtensionWorkAdmissionError,
+> {
+    let admission = work.try_admit_operation()?;
     let (sender, receiver) = tokio::sync::oneshot::channel();
     // No abortable async handle owns this admission: deadline expiry must remain
     // unconfirmed until the real thread exits. The app's independent exit guard remains.

@@ -23,6 +23,11 @@ impl InstallJobStore {
         if job.view.status.terminal() || job.view.status == InstallStatus::Cancelling {
             return Err(INVALID.into());
         }
+        let immediate = job.view.status == InstallStatus::Queued && job.checkpoint.is_none();
+        // Make room before cancelling the irreversible token; failed eviction changes nothing.
+        state.evict(super::limits::MAX_RECENT - usize::from(immediate))?;
+        let index = state.index(id)?;
+        let job = &mut state.jobs[index];
         job.cancel.cancel();
         job.view.confirmation_id = None;
         // Queued jobs never owned a producer or files and need no asynchronous cleanup.
@@ -33,7 +38,6 @@ impl InstallJobStore {
             InstallStatus::Cancelling
         };
         job.view.can_cancel = false;
-        state.evict(super::limits::MAX_RECENT)?;
         self.changed(&mut state);
         Ok(state.jobs[state.index(id)?].view.clone())
     }

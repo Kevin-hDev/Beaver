@@ -61,12 +61,12 @@ pub fn materialize(
     drop(repository);
     std::fs::remove_dir_all(checkout.join(".git"))
         .map_err(|_| super::OperationFailure::StorageFailed)?;
-    super::managed_tree::measure_with_budget(destination, cancellation.storage_budget())?;
+    super::managed_tree::measure_with_budget(destination, cancellation.storage_budget()?)?;
     if super::git_package::has_runtime_dependencies(&checkout)? {
         cancellation.phase(super::install_jobs::InstallPhase::Dependencies)?;
         npm.install_dependencies(&checkout, cancellation)?;
     }
-    super::managed_tree::measure_with_budget(destination, cancellation.storage_budget())?;
+    super::managed_tree::measure_with_budget(destination, cancellation.storage_budget()?)?;
     Ok(GitMaterialization {
         root: checkout,
         revision,
