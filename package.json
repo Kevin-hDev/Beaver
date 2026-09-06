@@ -119,7 +119,7 @@
     "image-size": "file:src-tauri/resources/extension-host/vendor/image-size-disabled",
     "jiti": "2.7.0",
     "js-yaml": "4.3.1",
-    "jsdom": "^29.1.1",
+    "jsdom": "^30.0.1",
     "pdfjs-dist": "6.2.108",
     "pptxgenjs": "4.0.1",
     "typescript": "^6.0.3",
