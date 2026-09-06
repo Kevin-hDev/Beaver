@@ -44,6 +44,18 @@ impl OwnedProcessScope {
         }
     }
 
+    /// Identity must be checked by the job that admitted this process, not the
+    /// unrelated global job. Windows keeps these containment authorities distinct.
+    pub(crate) fn identity(
+        &self,
+        pid: u32,
+    ) -> Result<super::OwnedProcessIdentity, OwnedProcessError> {
+        #[cfg(windows)]
+        return self.job.identity(pid);
+        #[cfg(not(windows))]
+        super::OwnedProcess::identity(pid)
+    }
+
     pub(crate) fn terminate(&self) -> bool {
         #[cfg(windows)]
         return self.job.terminate().is_ok();

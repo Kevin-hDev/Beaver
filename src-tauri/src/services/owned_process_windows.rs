@@ -101,7 +101,7 @@ pub(super) fn identity_from_handle(
     process: HANDLE,
 ) -> Result<OwnedProcessIdentity, OwnedProcessError> {
     let executable = executable_identity(process)?;
-    identity_from_handle_observed(process, executable)
+    identity_from_handle_observed(process, executable, job()?.raw())
 }
 
 pub(super) fn identity_from_handle_with_executable(
@@ -112,19 +112,20 @@ pub(super) fn identity_from_handle_with_executable(
     if expected_executable == 0 || executable != expected_executable {
         return Err(OwnedProcessError::Admission);
     }
-    identity_from_handle_observed(process, executable)
+    identity_from_handle_observed(process, executable, job()?.raw())
 }
 
 fn identity_from_handle_observed(
     process: HANDLE,
     executable: u128,
+    owning_job: HANDLE,
 ) -> Result<OwnedProcessIdentity, OwnedProcessError> {
     let pid = unsafe { GetProcessId(process) };
     if pid < 2 {
         return Err(OwnedProcessError::Admission);
     }
     let native_start_time = start_time(process)?;
-    if !is_in_owned_job(process)? {
+    if !is_in_job(process, owning_job)? {
         return Err(OwnedProcessError::Admission);
     }
     Ok(OwnedProcessIdentity {
@@ -136,8 +137,12 @@ fn identity_from_handle_observed(
 }
 
 fn is_in_owned_job(process: HANDLE) -> Result<bool, OwnedProcessError> {
+    is_in_job(process, job()?.raw())
+}
+
+fn is_in_job(process: HANDLE, owning_job: HANDLE) -> Result<bool, OwnedProcessError> {
     let mut contained = 0;
-    if unsafe { IsProcessInJob(process, job()?.raw(), &mut contained) } == 0 {
+    if unsafe { IsProcessInJob(process, owning_job, &mut contained) } == 0 {
         return Err(OwnedProcessError::Admission);
     }
     Ok(contained != 0)

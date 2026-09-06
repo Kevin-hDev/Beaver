@@ -47,6 +47,18 @@ impl DedicatedJob {
         }
     }
 
+    pub(in crate::services::owned_process) fn identity(
+        &self,
+        pid: u32,
+    ) -> Result<crate::services::owned_process::OwnedProcessIdentity, OwnedProcessError> {
+        let process = ProcessHandle::open(pid, super::PROCESS_QUERY_LIMITED_INFORMATION)?;
+        super::identity_from_handle_observed(
+            process.0,
+            super::executable_identity(process.0)?,
+            self.0.raw(),
+        )
+    }
+
     pub(in crate::services::owned_process) fn terminate(&self) -> Result<(), OwnedProcessError> {
         (unsafe { windows_sys::Win32::System::JobObjects::TerminateJobObject(self.0.raw(), 1) }
             != 0)

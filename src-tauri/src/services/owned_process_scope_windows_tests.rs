@@ -28,6 +28,11 @@ async fn dedicated_jobs_are_distinct_and_targeted() {
     assert!(first_scope.contains(first_pid));
     assert!(!first_scope.contains(second_pid));
     assert!(second_scope.contains(second_pid));
+    assert_eq!(first_scope.identity(first_pid).unwrap().pid, first_pid);
+    assert!(first_scope.identity(second_pid).is_err());
+    assert!(second_scope.identity(first_pid).is_err());
+    assert_eq!(second_scope.identity(second_pid).unwrap().pid, second_pid);
+    assert!(super::super::OwnedProcess::identity(first_pid).is_err());
 
     assert!(first_scope.terminate());
     tokio::time::timeout(Duration::from_secs(3), first.wait())

@@ -33,7 +33,7 @@ pub(super) fn run(
             .map_err(|_| ProcessFailure::Unavailable)?;
         let pid = child.id().ok_or(ProcessFailure::Unavailable)?;
         let mut stdout = child.stdout.take().ok_or(ProcessFailure::Unavailable)?;
-        let identity = OwnedProcess::identity(pid).map_err(|_| ProcessFailure::Unavailable);
+        let identity = scope.identity(pid).map_err(|_| ProcessFailure::Unavailable);
         let admitted = identity.and_then(|identity| started(identity).map_err(|_| ProcessFailure::Unavailable));
         let mut owner_pipe = child.stdin.take();
         let released = if admitted.is_ok() && !cancelled() {
