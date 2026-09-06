@@ -1,0 +1,9 @@
+Livraison après review verte — 6 septembre 2026
+
+Kevin a explicitement autorisé la fusion sur main, le push et la suppression de codex/extension-startup-resilience. Les corrections revues restent dans dd73e70a et 4a350be1 ; leurs notes Git sont conservées.
+
+Ce commit ajoute uniquement docs/fonctionnalites/extension/CHECKLIST_STARTUP_RESILIENCE_WINDOWS_LINUX.md : 19 scénarios, deux colonnes indépendantes, préparation d'un profil jetable, preuve du paquet installé, appels cloud/Ollama réels, conservation des octets et fichiers, dégradation et reprise, langues/thèmes, particularités de chemins et cas nécessitant une injection de panne. Toutes les cases sont NON EXÉCUTÉES. La review verte ne valide pas les binaires installés Windows/Linux.
+
+Validation documentaire : document relu, statut différé explicite, git diff --cached --check sans erreur. Aucun code modifié et aucune nouvelle suite de tests exécutée pour ce commit documentaire. La tentative graphify . --update échoue sans clé API configurée ; l'index documentaire sémantique n'est pas déclaré à jour. Cette maintenance d'outillage est distincte de la validation produit différée.
+
+Fusion prévue par avance rapide depuis 6b8278a0, conservant les commits revus. Push des notes en plus de main. Les modifications préexistantes du site Beaver et les captures fast-mode restent hors des commits ; aucune autre branche de travail ne doit être supprimée.
