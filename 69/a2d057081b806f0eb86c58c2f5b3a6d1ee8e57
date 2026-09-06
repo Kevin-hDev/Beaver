@@ -1,0 +1,32 @@
+Installations d’extensions en arrière-plan — explication et validation locale
+
+Ce commit raccorde les écrans de Beaver au service d’installation backend introduit par les commits précédents. L’installation continue pendant la navigation ; son suivi reste accessible dans la barre supérieure, même lorsque la barre latérale est repliée, et dans la page Extensions.
+
+Changements principaux :
+- Progression partagée avec les composants existants, annulation, confirmation de volume et résultats accessibles sans maintenir la fenêtre d’ajout ouverte.
+- Une seule autorité backend, snapshots révisionnés, collections bornées et protection contre les doubles admissions.
+- Continuer, Reprendre et Réessayer ont des rôles distincts. Aucun consentement, redémarrage, changement d’écran ou accord de confiance automatique.
+- Traductions dans les sept langues et formatage partagé des volumes.
+- Journal de récupération contrôlé : doublons et révisions invalides refusés, historique borné après redémarrage, conservation des interruptions et des fichiers dont le nettoyage n’est pas confirmé.
+- Effacement explicite des permissions de l’ancienne extension avant son remplacement ; la suite de tests de sécurité a détecté puis confirmé cette correction.
+- Revalidation de reprise exécutée hors du fil de l’interface, avec suivi du travail jusqu’à sa fin réelle.
+- Visibilité des lignes indépendante de l’achèvement des animations, opérations actives avant l’historique et respect de la largeur maximale du composant.
+
+Validation locale sur macOS :
+- npm test : 3 112 tests frontend réussis, plus les suites de scripts et de l’hôte d’extensions.
+- cargo test : 5 063 tests bibliothèque réussis, 19 ignorés déclarés ; un test d’intégration supplémentaire réussi.
+- TypeScript, lint, contrats, contrôles de marque/release, cargo fmt et clippy strict sur toutes les cibles : réussis.
+- 80 tests UI ciblés réussis après la dernière correction de largeur.
+- Relance native complète sur ce commit après déverrouillage utilisateur : 72 tests réussis, aucun échec, sortie 0. CEF est prêt ; chargement d’une page et arrêt des processus confirmés. Aucun changement de code entre le précédent échec CEF et ce passage vert ne justifie d’attribuer à ce commit une correction du trousseau.
+- Captures claire et étroite inspectées ; la capture sombre reste sur le chargement et ne constitue pas une validation visuelle de cet état.
+
+Limites et suites restant ouvertes :
+- Inspection visuelle sombre à refaire.
+- Parcours natif complet après coupure/redémarrage et matrice exhaustive d’annulation par étape à compléter. Les preuves backend et le rechargement frontend ne sont pas présentés comme une preuve de ces parcours complets.
+- Windows et Linux ne sont pas validés par ces essais macOS.
+- Aucun push ni lancement de CI. Le plan global n’est pas déclaré entièrement validé.
+
+Preuves locales conservées dans :
+.superpowers/sdd/2026-09-05-extension-installation-background/
+En particulier : task-6-cargo-final.log, task-6-npm-final.log, task-6-ui-final.log et task-6-native-unlocked-retry.log.
+Captures et rapport natif : .e2e-artifacts/install-background-unlocked-retry/.
