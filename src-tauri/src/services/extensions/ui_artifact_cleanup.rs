@@ -61,3 +61,18 @@ pub(super) fn valid_token(value: &str, length: usize) -> bool {
 pub(super) fn invalid() -> String {
     super::super::ui_contract::UI_DIAGNOSTIC_UI_ARTIFACT_INVALID.to_string()
 }
+// Called only by the still-owned staging after its entire producer scope stopped.
+pub(super) fn reset_for_retry(
+    output: &std::path::Path,
+    temporary: &std::path::Path,
+) -> Result<(), String> {
+    for path in [output, temporary] {
+        let metadata = std::fs::symlink_metadata(path).map_err(|_| invalid())?;
+        if !metadata.is_dir() || metadata.file_type().is_symlink() {
+            return Err(invalid());
+        }
+        std::fs::remove_dir_all(path).map_err(|_| invalid())?;
+        crate::services::private_store::ensure_private_dir(path).map_err(|_| invalid())?;
+    }
+    Ok(())
+}

@@ -15,11 +15,13 @@ pub fn cancel_extension_install(job_id: String) -> Result<InstallJobView, String
     install_jobs::global()?.request_cancel(&job_id)
 }
 #[tauri::command]
-pub fn continue_extension_install(
+pub async fn continue_extension_install(
     job_id: String,
     confirmation_id: String,
 ) -> Result<InstallJobView, String> {
-    install_jobs::global()?.confirm(&job_id, &confirmation_id)
+    install_jobs::global()?
+        .confirm_reconciled(job_id, confirmation_id)
+        .await
 }
 #[tauri::command]
 pub async fn dismiss_extension_install(job_id: String) -> Result<(), String> {

@@ -15,6 +15,7 @@ pub(crate) use control::{InstallControl, InstallInterruption, InstallProgress};
 pub(crate) use store::InstallJobStore;
 pub(crate) use types::*;
 pub(crate) use worker::{InstallExecutor, InstallFuture, InstallOutcome};
+pub(super) const DEFAULT_STORAGE_BYTES: u64 = disk_policy::WARNING_BYTES;
 
 pub(crate) fn global() -> Result<InstallJobStore, String> {
     Ok(super::runtime::global()?.install_jobs.clone())
@@ -33,9 +34,16 @@ mod materialize;
 mod recovery;
 
 mod compatibility;
+mod dependency_lock;
+mod disk_control;
 mod disk_policy;
+#[cfg(test)]
+mod disk_policy_tests;
+mod disk_usage;
 mod resume;
 mod retry_cleanup;
+#[cfg(test)]
+mod volume_tests;
 
 #[cfg(test)]
 mod cleanup_tests;

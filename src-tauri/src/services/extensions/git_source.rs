@@ -1,14 +1,14 @@
 use super::npm_runner::NpmRunner;
 use super::source_validation::GitSource;
+use super::{git_reference::checkout_reference, git_transport::fetch_options};
 use git2::build::RepoBuilder;
-use git2::{AutotagOption, FetchOptions, RemoteCallbacks, Repository};
+use git2::Repository;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
 use super::install_signal::InstallSignal;
 
-const MAX_TRANSFER_BYTES: usize = 512 * 1024 * 1024;
-const MAX_GIT_OBJECTS: usize = 100_000;
+pub(super) const MAX_GIT_OBJECTS: usize = 100_000;
 const MIN_COMMIT_PREFIX_CHARS: usize = 7;
 const SHA1_CHARS: usize = 40;
 const SHA256_CHARS: usize = 64;
@@ -26,36 +26,69 @@ pub fn materialize(
     cancellation: &impl InstallSignal,
 ) -> Result<GitMaterialization, super::OperationFailure> {
     cancellation.phase(super::install_jobs::InstallPhase::Downloading)?;
-    let started = Instant::now();
+    let mut remaining = GIT_TIMEOUT;
+    let pinned = super::git_resolution::pin(source, destination, cancellation, &mut remaining)
+        .map_err(|error| clone_failure(&error, GIT_TIMEOUT.saturating_sub(remaining)))?;
+    cancellation.resolved_git(&pinned)?;
     let checkout = destination.join("repository");
-    let repository = clone_repository(source, &checkout, cancellation)
-        .map_err(|error| clone_failure(&error, started.elapsed()))?;
+    let repository = loop {
+        if remaining.is_zero() {
+            return Err(super::OperationFailure::GitTimeout);
+        }
+        let attempt_started = Instant::now();
+        let result = clone_with_timeout(&pinned, &checkout, cancellation, remaining)
+            .map_err(|error| clone_failure(&error, attempt_started.elapsed()));
+        remaining = remaining.saturating_sub(attempt_started.elapsed());
+        let continued = cancellation
+            .after_producer_stopped()
+            .map_err(super::OperationFailure::from)?;
+        match result {
+            Ok(repository) => break repository,
+            Err(_) if continued => super::git_resolution::remove_partial(&checkout)?,
+            Err(error) => return Err(error),
+        }
+    };
     let revision = repository
         .head()
         .and_then(|head| head.peel_to_commit())
         .map(|commit| commit.id().to_string())
         .map_err(|_| super::OperationFailure::GitDownloadFailed)?;
+    cancellation.resolved_git(&super::source_validation::GitSource {
+        locator: format!("{}#{revision}", pinned.clone_url),
+        clone_url: pinned.clone_url,
+        reference: Some(revision.clone()),
+    })?;
     drop(repository);
     std::fs::remove_dir_all(checkout.join(".git"))
         .map_err(|_| super::OperationFailure::StorageFailed)?;
-    super::managed_tree::validate(destination)?;
+    super::managed_tree::measure_with_budget(destination, cancellation.storage_budget())?;
     if super::git_package::has_runtime_dependencies(&checkout)? {
         cancellation.phase(super::install_jobs::InstallPhase::Dependencies)?;
         npm.install_dependencies(&checkout, cancellation)?;
     }
-    super::managed_tree::validate(destination)?;
+    super::managed_tree::measure_with_budget(destination, cancellation.storage_budget())?;
     Ok(GitMaterialization {
         root: checkout,
         revision,
     })
 }
 
+#[cfg(test)]
 pub(super) fn clone_repository(
     source: &GitSource,
     checkout: &Path,
     cancellation: &impl InstallSignal,
 ) -> Result<Repository, git2::Error> {
-    let deadline = Instant::now() + GIT_TIMEOUT;
+    clone_with_timeout(source, checkout, cancellation, GIT_TIMEOUT)
+}
+
+fn clone_with_timeout(
+    source: &GitSource,
+    checkout: &Path,
+    cancellation: &impl InstallSignal,
+    timeout: Duration,
+) -> Result<Repository, git2::Error> {
+    let deadline = Instant::now() + timeout;
     let fetch = fetch_options(
         deadline,
         should_use_shallow_clone(source),
@@ -69,112 +102,6 @@ pub(super) fn clone_repository(
         checkout_reference(&repository, reference, deadline, cancellation)?;
     }
     Ok(repository)
-}
-
-fn fetch_options(
-    deadline: Instant,
-    shallow: bool,
-    cancellation: impl InstallSignal,
-) -> Result<FetchOptions<'static>, git2::Error> {
-    let config = git2::Config::open_default()
-        .map_err(|_| git2::Error::from_str("git configuration unavailable"))?;
-    let mut credentials =
-        crate::services::git::remote_credentials::CredentialProvider::new(config, None);
-    let mut callbacks = RemoteCallbacks::new();
-    let credential_cancellation = cancellation.clone();
-    callbacks.credentials(move |url, username, allowed| {
-        if credential_cancellation.is_cancelled() || Instant::now() >= deadline {
-            return Err(git2::Error::new(
-                git2::ErrorCode::Timeout,
-                git2::ErrorClass::Net,
-                "extension clone expired",
-            ));
-        }
-        credentials.credentials(url, username, allowed)
-    });
-    let transfer_cancellation = cancellation.clone();
-    callbacks.transfer_progress(move |progress| {
-        !transfer_cancellation.is_cancelled()
-            && Instant::now() < deadline
-            && progress.received_bytes() <= MAX_TRANSFER_BYTES
-            && progress.total_objects() <= MAX_GIT_OBJECTS
-    });
-    let mut fetch = FetchOptions::new();
-    if shallow {
-        fetch.depth(1);
-    }
-    fetch
-        .download_tags(AutotagOption::Auto)
-        .remote_callbacks(callbacks);
-    Ok(fetch)
-}
-
-fn checkout_reference(
-    repository: &Repository,
-    reference: &str,
-    deadline: Instant,
-    cancellation: &impl InstallSignal,
-) -> Result<(), git2::Error> {
-    if let Some(commit) = resolve_commit(repository, reference) {
-        repository.checkout_tree(
-            commit.as_object(),
-            Some(&mut super::git_checkout::bounded(cancellation.clone())),
-        )?;
-        return repository.set_head_detached(commit.id());
-    }
-    let mut remote = repository.find_remote("origin")?;
-    let mut fetch = fetch_options(deadline, true, cancellation.clone())?;
-    let targeted = remote.fetch(&[reference], Some(&mut fetch), None);
-    if let Some(commit) = resolve_commit(repository, reference) {
-        return checkout_commit(repository, &commit, cancellation);
-    }
-    if looks_like_short_commit(reference) {
-        let mut complete = fetch_options(deadline, false, cancellation.clone())?;
-        remote.fetch(
-            &[
-                "+refs/heads/*:refs/remotes/origin/*",
-                "+refs/tags/*:refs/tags/*",
-            ],
-            Some(&mut complete),
-            None,
-        )?;
-    } else {
-        targeted?;
-    }
-    let commit = resolve_commit(repository, reference)
-        .ok_or_else(|| git2::Error::from_str("git reference unavailable"))?;
-    checkout_commit(repository, &commit, cancellation)
-}
-
-fn checkout_commit(
-    repository: &Repository,
-    commit: &git2::Commit<'_>,
-    cancellation: &impl InstallSignal,
-) -> Result<(), git2::Error> {
-    repository.checkout_tree(
-        commit.as_object(),
-        Some(&mut super::git_checkout::bounded(cancellation.clone())),
-    )?;
-    repository.set_head_detached(commit.id())
-}
-
-fn resolve_commit<'a>(repository: &'a Repository, reference: &str) -> Option<git2::Commit<'a>> {
-    let short = reference
-        .strip_prefix("refs/heads/")
-        .or_else(|| reference.strip_prefix("refs/tags/"))
-        .unwrap_or(reference);
-    [
-        reference.to_string(),
-        format!("refs/remotes/origin/{short}"),
-        format!("refs/tags/{short}"),
-    ]
-    .iter()
-    .find_map(|candidate| {
-        repository
-            .revparse_single(candidate)
-            .ok()
-            .and_then(|object| object.peel_to_commit().ok())
-    })
 }
 
 pub(super) fn should_use_shallow_clone(source: &GitSource) -> bool {

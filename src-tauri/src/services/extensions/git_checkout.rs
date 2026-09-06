@@ -12,7 +12,7 @@ pub fn bounded(cancellation: impl InstallSignal) -> CheckoutBuilder<'static> {
     checkout.disable_filters(true);
     checkout.notify_on(CheckoutNotificationType::all());
     checkout.notify(move |_, path, _, target, _| {
-        if cancellation.is_cancelled() {
+        if cancellation.producer_should_stop() {
             return false;
         }
         let Some(path) = path else {
@@ -28,16 +28,14 @@ pub fn bounded(cancellation: impl InstallSignal) -> CheckoutBuilder<'static> {
             return true;
         }
         let size = target.map(|file| file.size()).unwrap_or_default();
-        if paths.len() > super::managed_tree::MAX_ENTRIES
-            || size > super::managed_tree::MAX_FILE_BYTES
-        {
+        if paths.len() > super::managed_tree::MAX_ENTRIES {
             return false;
         }
         let Some(total) = bytes.checked_add(size) else {
             return false;
         };
         bytes = total;
-        bytes <= super::managed_tree::MAX_TOTAL_BYTES
+        cancellation.allows_volume(bytes)
     });
     checkout
 }

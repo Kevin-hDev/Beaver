@@ -14,6 +14,8 @@ pub(super) struct Job {
     pub checkpoint: Option<super::checkpoint::InstallCheckpoint>,
     #[serde(skip)]
     pub claimed_cleanup: bool,
+    #[serde(skip)]
+    pub monitor: super::disk_control::DiskMonitor,
     // Only the executor may attest that owned artifacts are gone.
     pub clean: bool,
     pub finished_revision: Option<u64>,
@@ -34,6 +36,9 @@ pub(crate) struct InstallJobStore {
     pub(super) executor: Option<Arc<dyn InstallExecutor>>,
     pub(super) app: Option<tauri::AppHandle>,
     pub(super) journal: Option<std::path::PathBuf>,
+    pub(super) disk_policy: super::disk_policy::DiskPolicy,
+    #[cfg(test)]
+    pub(super) free_bytes_for_test: Option<Arc<std::sync::atomic::AtomicU64>>,
 }
 impl InstallJobStore {
     pub(in crate::services::extensions) fn new(
@@ -54,6 +59,9 @@ impl InstallJobStore {
             executor,
             app,
             journal: None,
+            disk_policy: Default::default(),
+            #[cfg(test)]
+            free_bytes_for_test: None,
         }
     }
     pub(super) fn lock(&self) -> Result<MutexGuard<'_, State>, String> {
@@ -78,7 +86,8 @@ impl InstallJobStore {
             }
             log::warn!("extension install journal unavailable; work cancelled");
         }
-        self.notify.notify_one();
+        // Consent and legacy result waiters must all observe a state transition.
+        self.notify.notify_waiters();
         if let Some(app) = &self.app {
             use tauri::Emitter;
             if let Err(error) = app.emit(CHANGED_EVENT, state.snapshot()) {

@@ -201,3 +201,70 @@ fn git_materialization_accepts_a_pinned_commit() {
         expected_revision
     );
 }
+#[derive(Clone)]
+struct MovingRemote {
+    root: PathBuf,
+    stopped: std::sync::Arc<std::sync::atomic::AtomicBool>,
+    continued: std::sync::Arc<std::sync::atomic::AtomicBool>,
+}
+impl super::install_signal::InstallSignal for MovingRemote {
+    fn downloaded(&self, _bytes: u64) -> bool { !self.producer_should_stop() }
+    fn is_cancelled(&self) -> bool { false }
+    fn producer_should_stop(&self) -> bool { self.stopped.load(std::sync::atomic::Ordering::SeqCst) }
+    fn storage_budget(&self) -> u64 {
+        if self.continued.load(std::sync::atomic::Ordering::SeqCst) { 1024 * 1024 } else { 1024 }
+    }
+    fn allows_volume(&self, _bytes: u64) -> bool {
+        // Force the stop at checkout: libgit2 does not always populate target.size.
+        // Real byte sampling is exercised by the production-control volume tests.
+        if !self.continued.load(std::sync::atomic::Ordering::SeqCst) {
+            self.stopped.store(true, std::sync::atomic::Ordering::SeqCst);
+            false
+        } else { true }
+    }
+    fn after_producer_stopped(&self) -> Result<bool, super::process_runner::ProcessFailure> {
+        if self.stopped.swap(false, std::sync::atomic::Ordering::SeqCst) {
+            self.continued.store(true, std::sync::atomic::Ordering::SeqCst);
+            commit_payload(&self.root, b"different remote contents");
+            Ok(true)
+        } else { Ok(false) }
+    }
+}
+
+fn commit_payload(root: &Path, bytes: &[u8]) -> String {
+    std::fs::write(root.join("payload"), bytes).unwrap();
+    let repo = Repository::open(root).unwrap();
+    let parent = repo.head().unwrap().peel_to_commit().unwrap();
+    let mut index = repo.index().unwrap();
+    index.read_tree(&parent.tree().unwrap()).unwrap();
+    index.add_path(Path::new("payload")).unwrap();
+    let tree = repo.find_tree(index.write_tree().unwrap()).unwrap();
+    let signature = Signature::now("Fixture", "fixture@beaver.local").unwrap();
+    repo.commit(Some("HEAD"), &signature, &signature, "payload", &tree, &[&parent]).unwrap().to_string()
+}
+
+#[test]
+fn git_volume_replay_keeps_the_pinned_commit_when_remote_head_moves() {
+    for abbreviated in [false, true] {
+    let root = tempfile::tempdir().unwrap();
+    let remote = root.path().join("remote");
+    std::fs::create_dir(&remote).unwrap();
+    create_repository(&remote);
+    let bytes = vec![7_u8; 4096];
+    let expected = commit_payload(&remote, &bytes);
+    if abbreviated { commit_payload(&remote, b"new tip before resolving the old prefix"); }
+    let signal = MovingRemote {
+        root: remote.clone(), stopped: Default::default(), continued: Default::default(),
+    };
+    let source = GitSource { locator: "https://example.invalid/repo.git".into(),
+        clone_url: url::Url::from_file_path(&remote).unwrap().to_string(), reference: abbreviated.then(|| expected.chars().take(8).collect()) };
+    let destination = root.path().join("install");
+    std::fs::create_dir(&destination).unwrap();
+    let npm = NpmRunner::for_test("/node".into(), "/npm-cli.js".into());
+    let result = super::git_source::materialize(&source, &destination, &npm, &signal).unwrap();
+    assert!(signal.continued.load(std::sync::atomic::Ordering::SeqCst));
+    assert_eq!(result.revision, expected);
+    assert_eq!(std::fs::read(result.root.join("payload")).unwrap(), bytes);
+    assert_ne!(Repository::open(&remote).unwrap().head().unwrap().peel_to_commit().unwrap().id().to_string(), expected);
+    }
+}

@@ -40,8 +40,14 @@ pub(super) fn build(
         "--entry".into(),
         relative.into(),
     ];
-    let stdout =
-        super::ui_builder_process::run(runtime, &arguments, staging.temporary(), cancelled, owner)?;
+    let stdout = super::ui_builder_process::run(
+        runtime,
+        &arguments,
+        staging.temporary(),
+        cancelled,
+        owner,
+        || staging.reset_for_retry(),
+    )?;
     let artifact: ExtensionUiArtifact =
         serde_json::from_slice(&stdout).map_err(|_| super::OperationFailure::ManifestInvalid)?;
     super::ui_artifact::validate(&artifact)

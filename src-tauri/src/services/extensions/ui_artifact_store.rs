@@ -124,7 +124,25 @@ pub(super) fn unreferenced_from_registry() -> Result<(), String> {
     unreferenced(&super::registry::list()?)
 }
 
+#[cfg(test)]
+pub(super) fn cleanup_test_entry(path: &Path, records: &[ExtensionRecord]) -> Result<(), String> {
+    // Tests share the process data directory: never collect another test's artifacts.
+    let active = ACTIVE_STAGING.lock().map_err(|_| invalid())?;
+    let referenced = records
+        .iter()
+        .filter_map(|record| {
+            let artifact = record.ui_artifact.as_ref()?;
+            dunce::canonicalize(artifact_path(&record.manifest.id, &artifact.manifest_sha256).ok()?)
+                .ok()
+        })
+        .collect();
+    cleanup_entry(path, &referenced, &active)
+}
+
 impl StagingArtifact {
+    pub(super) fn reset_for_retry(&self) -> Result<(), String> {
+        cleanup::reset_for_retry(&self.output, &self.temporary)
+    }
     pub(super) fn output(&self) -> &Path {
         &self.output
     }

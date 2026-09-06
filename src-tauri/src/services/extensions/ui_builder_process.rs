@@ -11,25 +11,48 @@ pub(super) fn run(
     temporary: &Path,
     cancelled: impl Fn() -> bool,
     owner: Option<&super::install_jobs::InstallControl>,
+    reset: impl Fn() -> Result<(), String>,
 ) -> Result<Vec<u8>, super::OperationFailure> {
-    let path = super::process_environment::inherited_path()
-        .map_err(|_| super::OperationFailure::EnvironmentInvalid)?;
-    let mut command = Command::new(&runtime.node);
-    command.args(arguments).current_dir(&runtime.directory);
-    super::process_environment::configure_installer(&mut command, path, temporary)
-        .map_err(|_| super::OperationFailure::EnvironmentInvalid)?;
-    super::installer_process::run(
-        command,
-        BUILD_TIMEOUT,
-        cancelled,
-        |identity| {
-            owner.map_or(Ok(()), |owner| {
-                super::install_signal::InstallSignal::process_started(owner, identity)
-            })
+    use super::process_runner::ProcessFailure;
+    let mut first = true;
+    let mut remaining = BUILD_TIMEOUT;
+    super::install_retry::run(
+        &mut remaining,
+        |timeout| {
+            if !first {
+                reset().map_err(|_| ProcessFailure::Failed)?;
+            }
+            first = false;
+            let path = super::process_environment::inherited_path()
+                .map_err(|_| ProcessFailure::EnvironmentInvalid)?;
+            let mut command = Command::new(&runtime.node);
+            command.args(arguments).current_dir(&runtime.directory);
+            super::process_environment::configure_installer(&mut command, path, temporary)
+                .map_err(|_| ProcessFailure::EnvironmentInvalid)?;
+            super::installer_process::run(
+                command,
+                timeout,
+                || cancelled() || owner.is_some_and(|owner| owner.producer_should_stop()),
+                |identity| {
+                    owner.map_or(Ok(()), |owner| {
+                        super::install_signal::InstallSignal::process_started(owner, identity)
+                    })
+                },
+                || {
+                    owner.map_or(Ok(()), |owner| {
+                        super::install_signal::InstallSignal::process_stopped(owner)
+                    })
+                },
+            )
         },
         || {
-            owner.map_or(Ok(()), |owner| {
-                super::install_signal::InstallSignal::process_stopped(owner)
+            if cancelled() {
+                return Err(ProcessFailure::Interrupted);
+            }
+            owner.map_or(Ok(false), |owner| {
+                owner
+                    .after_producer_stopped()
+                    .map_err(|_| ProcessFailure::Interrupted)
             })
         },
     )

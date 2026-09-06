@@ -94,6 +94,7 @@ impl InstallJobStore {
             clean: true,
             checkpoint: None,
             claimed_cleanup: false,
+            monitor: Default::default(),
             finished_revision: None,
         });
         // Queued admission is durable before a producer starts or IPC acknowledges it.

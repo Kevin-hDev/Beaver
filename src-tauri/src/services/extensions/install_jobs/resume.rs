@@ -13,8 +13,7 @@ impl InstallJobStore {
             job.checkpoint.clone().ok_or(UNAVAILABLE)?
         };
         if !super::recovery::resumable(&candidate)
-            || super::disk_policy::free_bytes(&crate::services::paths::data_dir())?
-                < super::disk_policy::PUBLICATION_RESERVE
+            || self.available_disk_space()? <= self.disk_policy.reserve_bytes
         {
             return Err(UNAVAILABLE.into());
         }
@@ -57,8 +56,9 @@ impl InstallJobStore {
         job.finished_revision = None;
         // A new explicit resume invalidates all historical volume consent.
         if let Some(checkpoint) = &mut job.checkpoint {
-            checkpoint.consent_bytes = None;
+            checkpoint.allowance = super::disk_policy::StorageAllowance::new(self.disk_policy);
         }
+        job.monitor = Default::default();
         self.persist(&state)?;
         if let Some(admission) = admission {
             state.worker = true;

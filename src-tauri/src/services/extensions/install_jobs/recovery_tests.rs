@@ -64,7 +64,7 @@ async fn interrupted(
             token: uuid::Uuid::new_v4().simple().to_string(),
             record: Some(record),
             safe_phase: Some(InstallPhase::BuildingUi),
-            budget_bytes: super::super::managed_tree::MAX_TOTAL_BYTES,
+            allowance: Default::default(),
             ..Default::default()
         });
         old.persist(&state).unwrap();

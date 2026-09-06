@@ -17,6 +17,7 @@ pub(super) fn prepare(
     ui: &UiBuildRuntime,
 ) -> Result<ExtensionRecord, InstallInterruption> {
     if checkpoint.safe_phase == Some(InstallPhase::BuildingUi) {
+        control.after_producer_stopped()?;
         return checkpoint
             .record
             .clone()
@@ -105,7 +106,8 @@ pub(super) fn prepare(
     let occupied_bytes = if super::super::installer::is_managed(&record) {
         let root = super::super::managed_store::install_root(&record)
             .map_err(|_| InstallInterruption::Failed)?;
-        super::super::managed_tree::measure(&root).map_err(|_| InstallInterruption::Failed)?
+        super::super::managed_tree::measure_with_budget(&root, control.storage_budget())
+            .map_err(|_| InstallInterruption::Failed)?
     } else {
         0
     };
@@ -126,6 +128,7 @@ pub(super) fn prepare(
     checkpoint.safe_phase = Some(InstallPhase::BuildingUi);
     checkpoint.record = Some(record.clone());
     control.save(checkpoint.clone())?;
+    control.after_producer_stopped()?;
     Ok(record)
 }
 

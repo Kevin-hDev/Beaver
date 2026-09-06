@@ -4,14 +4,19 @@ use super::OperationFailure;
 
 pub(super) const MAX_ENTRIES: usize = 50_000;
 const MAX_DEPTH: usize = 64;
-pub(super) const MAX_FILE_BYTES: u64 = 256 * 1024 * 1024;
-pub(super) const MAX_TOTAL_BYTES: u64 = 1024 * 1024 * 1024;
+pub(super) const MAX_TOTAL_BYTES: u64 = super::install_jobs::DEFAULT_STORAGE_BYTES;
 
+#[cfg(test)]
 pub fn validate(root: &Path) -> Result<(), OperationFailure> {
     measure(root).map(|_| ())
 }
 
+#[cfg(test)]
 pub(super) fn measure(root: &Path) -> Result<u64, OperationFailure> {
+    measure_with_budget(root, MAX_TOTAL_BYTES)
+}
+
+pub(super) fn measure_with_budget(root: &Path, budget: u64) -> Result<u64, OperationFailure> {
     let root = root
         .canonicalize()
         .map_err(|_| OperationFailure::ManifestInvalid)?;
@@ -30,7 +35,7 @@ pub(super) fn measure(root: &Path) -> Result<u64, OperationFailure> {
                 .filter(|count| *count <= MAX_ENTRIES)
                 .ok_or(OperationFailure::ManifestInvalid)?;
             let path = child.map_err(|_| OperationFailure::ManifestInvalid)?.path();
-            inspect_entry(&path, depth, &mut total_bytes, &mut pending)?;
+            inspect_entry(&path, depth, &mut total_bytes, &mut pending, budget)?;
         }
     }
     Ok(total_bytes)
@@ -41,6 +46,7 @@ fn inspect_entry(
     depth: usize,
     total_bytes: &mut u64,
     pending: &mut Vec<(PathBuf, usize)>,
+    budget: u64,
 ) -> Result<(), OperationFailure> {
     let metadata =
         std::fs::symlink_metadata(path).map_err(|_| OperationFailure::ManifestInvalid)?;
@@ -55,12 +61,12 @@ fn inspect_entry(
         pending.push((path.to_path_buf(), depth + 1));
         return Ok(());
     }
-    if !kind.is_file() || metadata.len() > MAX_FILE_BYTES {
+    if !kind.is_file() || metadata.len() > budget {
         return Err(OperationFailure::ManifestInvalid);
     }
     *total_bytes = total_bytes
         .checked_add(metadata.len())
-        .filter(|size| *size <= MAX_TOTAL_BYTES)
+        .filter(|size| *size <= budget)
         .ok_or(OperationFailure::ManifestInvalid)?;
     Ok(())
 }

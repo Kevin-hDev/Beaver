@@ -52,7 +52,7 @@ fn execute(
         Ok(None) => InstallCheckpoint {
             version: super::checkpoint::FORMAT,
             token: uuid::Uuid::new_v4().simple().to_string(),
-            budget_bytes: super::super::managed_tree::MAX_TOTAL_BYTES,
+            allowance: super::disk_policy::StorageAllowance::new(control.store.disk_policy),
             ..Default::default()
         },
         Err(error) => {
@@ -91,6 +91,10 @@ pub(super) fn complete(
         Err(InstallInterruption::AppClosing)
     } else if result.is_err() && control.is_cancelled() {
         Err(InstallInterruption::Cancelled)
+    } else if result.is_err() && control.disk_interruption().is_some() {
+        Err(control
+            .disk_interruption()
+            .unwrap_or(InstallInterruption::Failed))
     } else {
         result
     };

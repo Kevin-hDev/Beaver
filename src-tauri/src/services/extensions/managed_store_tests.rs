@@ -82,7 +82,9 @@ fn successive_managed_installs_never_overwrite_each_other() {
     assert_ne!(first_install, second_install);
     assert!(first_install.is_dir());
     assert!(second_install.is_dir());
-    super::managed_cleanup::unreferenced(std::slice::from_ref(&second)).unwrap();
+    // This shared store may contain producers from other tests. Exercise global
+    // orphan collection in managed_cleanup's isolated directory fixtures instead.
+    super::managed_store::remove_record(&first).unwrap();
     assert!(!first_install.exists());
     assert!(second_install.is_dir());
     super::managed_store::remove_record(&second).unwrap();

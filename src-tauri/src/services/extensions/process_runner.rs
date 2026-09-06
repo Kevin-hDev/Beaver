@@ -24,7 +24,7 @@ pub fn run(
     arguments: &[OsString],
     working_directory: &Path,
     temporary_directory: &Path,
-    timeout: Duration,
+    remaining: &mut Duration,
     cancellation: &impl InstallSignal,
 ) -> Result<(), ProcessFailure> {
     if !program.is_absolute()
@@ -43,25 +43,36 @@ pub fn run(
     if cancellation.is_cancelled() {
         return Err(ProcessFailure::Interrupted);
     }
-    let path = super::process_environment::inherited_path()
-        .map_err(|_| ProcessFailure::EnvironmentInvalid)?;
-    let mut command = Command::new(program);
-    command
-        .args(arguments)
-        .current_dir(working_directory)
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null());
-    super::process_environment::configure_installer(&mut command, path, temporary_directory)
-        .map_err(|_| ProcessFailure::EnvironmentInvalid)?;
-    super::installer_process::run(
-        command,
-        timeout,
-        || cancellation.is_cancelled(),
-        |identity| cancellation.process_started(identity),
-        || cancellation.process_stopped(),
+    super::install_retry::run(
+        remaining,
+        |timeout| {
+            cancellation.validate_replay()?;
+            let path = super::process_environment::inherited_path()
+                .map_err(|_| ProcessFailure::EnvironmentInvalid)?;
+            let mut command = Command::new(program);
+            command
+                .args(arguments)
+                .current_dir(working_directory)
+                .stdin(Stdio::null())
+                .stdout(Stdio::null())
+                .stderr(Stdio::null());
+            super::process_environment::configure_installer(
+                &mut command,
+                path,
+                temporary_directory,
+            )
+            .map_err(|_| ProcessFailure::EnvironmentInvalid)?;
+            super::installer_process::run(
+                command,
+                timeout,
+                || cancellation.producer_should_stop(),
+                |identity| cancellation.process_started(identity),
+                || cancellation.process_stopped(),
+            )
+            .map(|_| ())
+        },
+        || cancellation.after_producer_stopped(),
     )
-    .map(|_| ())
 }
 
 #[cfg(test)]
@@ -91,7 +102,7 @@ mod tests {
                 &arguments,
                 &root,
                 &temporary,
-                Duration::from_secs(30),
+                &mut Duration::from_secs(30),
                 &cancellation,
             )
         });

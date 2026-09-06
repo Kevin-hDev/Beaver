@@ -158,6 +158,26 @@ mod tests {
     use super::*;
 
     #[test]
+    fn cleanup_keeps_referenced_version_and_removes_only_orphans() {
+        let root = tempfile::tempdir().unwrap();
+        let directory = root.path().join("fixture");
+        let old = directory.join("a".repeat(32));
+        let current = directory.join("b".repeat(32));
+        std::fs::create_dir_all(&old).unwrap();
+        std::fs::create_dir_all(&current).unwrap();
+        let referenced = HashSet::from([dunce::canonicalize(&current).unwrap()]);
+        unreferenced_at(
+            root.path(),
+            &referenced,
+            MAX_ROOT_ENTRIES,
+            MAX_VERSIONS_PER_EXTENSION,
+        )
+        .unwrap();
+        assert!(!old.exists());
+        assert!(current.is_dir());
+    }
+
+    #[test]
     fn overflow_still_removes_a_bounded_batch() {
         let temporary = tempfile::tempdir().unwrap();
         for index in 0..4 {

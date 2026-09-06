@@ -11,6 +11,6 @@ pub fn materialize(
     cancellation: &impl InstallSignal,
 ) -> Result<PathBuf, super::OperationFailure> {
     let package = npm.install_package(destination, source, cancellation)?;
-    super::managed_tree::validate(destination)?;
+    super::managed_tree::measure_with_budget(destination, cancellation.storage_budget())?;
     Ok(package)
 }

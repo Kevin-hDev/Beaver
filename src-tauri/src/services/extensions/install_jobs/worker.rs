@@ -99,6 +99,10 @@ pub(super) async fn run(
             Err(InstallInterruption::Cancelled) if job.clean => {
                 job.view.status = InstallStatus::Cancelled;
             }
+            Err(InstallInterruption::InsufficientSpace) => {
+                job.view.status = InstallStatus::Failed;
+                job.view.error_code = Some(super::limits::INSUFFICIENT_SPACE.into());
+            }
             Err(_) => {
                 job.view.status = InstallStatus::Failed;
                 job.view.error_code = Some(FAILED.into());

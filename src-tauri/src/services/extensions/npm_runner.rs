@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use super::install_signal::InstallSignal;
+use super::npm_workspace::{cleanup as cleanup_workspace, prepare as prepare_workspace};
 
 const INSTALL_TIMEOUT: Duration = Duration::from_secs(300);
 const REGISTRY: &str = "https://registry.npmjs.org/";
@@ -35,14 +36,26 @@ impl NpmRunner {
         cancellation: &impl InstallSignal,
     ) -> Result<PathBuf, OperationFailure> {
         let workspace = prepare_workspace(prefix).map_err(|_| OperationFailure::StorageFailed)?;
+        let mut remaining = INSTALL_TIMEOUT;
         let mut arguments = self.common_arguments("install", &workspace);
         arguments.extend([
-            OsString::from("--package-lock=false"),
-            OsString::from("--save=false"),
+            OsString::from("--package-lock-only"),
+            OsString::from("--save-exact"),
             OsString::from("--"),
             OsString::from(&source.locator),
         ]);
-        let result = self.run(prefix, &workspace, arguments, cancellation);
+        let result = self
+            .run(prefix, &workspace, arguments, &mut remaining, cancellation)
+            .and_then(|()| {
+                cancellation.lock_dependencies(prefix)?;
+                self.run(
+                    prefix,
+                    &workspace,
+                    self.common_arguments("ci", &workspace),
+                    &mut remaining,
+                    cancellation,
+                )
+            });
         if result == Err(OperationFailure::CleanupFailed) {
             return result.map(|_| prefix.to_path_buf());
         }
@@ -63,6 +76,7 @@ impl NpmRunner {
         cancellation: &impl InstallSignal,
     ) -> Result<(), OperationFailure> {
         let workspace = prepare_workspace(root).map_err(|_| OperationFailure::StorageFailed)?;
+        let mut remaining = INSTALL_TIMEOUT;
         let config = super::npm_environment::ProjectConfig::neutralize(root)
             .map_err(|_| OperationFailure::StorageFailed)?;
         let command = if root.join("package-lock.json").is_file()
@@ -73,13 +87,28 @@ impl NpmRunner {
             "install"
         };
         let mut arguments = self.common_arguments(command, &workspace);
-        if command == "install" {
-            arguments.extend([
-                OsString::from("--package-lock=false"),
-                OsString::from("--save=false"),
-            ]);
+        if command == "ci" {
+            cancellation.lock_dependencies(root)?;
         }
-        let result = self.run(root, &workspace, arguments, cancellation);
+        if command == "install" {
+            arguments.extend([OsString::from("--package-lock-only")]);
+        }
+        let result = self
+            .run(root, &workspace, arguments, &mut remaining, cancellation)
+            .and_then(|()| {
+                if command == "install" {
+                    cancellation.lock_dependencies(root)?;
+                    self.run(
+                        root,
+                        &workspace,
+                        self.common_arguments("ci", &workspace),
+                        &mut remaining,
+                        cancellation,
+                    )
+                } else {
+                    Ok(())
+                }
+            });
         if result == Err(OperationFailure::CleanupFailed) {
             config.retain();
             return result;
@@ -120,6 +149,7 @@ impl NpmRunner {
         root: &Path,
         workspace: &Path,
         arguments: Vec<OsString>,
+        remaining: &mut Duration,
         cancellation: &impl InstallSignal,
     ) -> Result<(), OperationFailure> {
         super::process_runner::run(
@@ -127,7 +157,7 @@ impl NpmRunner {
             &arguments,
             root,
             &workspace.join("tmp"),
-            INSTALL_TIMEOUT,
+            remaining,
             cancellation,
         )
         .map_err(OperationFailure::from)
@@ -151,56 +181,8 @@ impl NpmRunner {
     }
 }
 
-pub(super) fn resolve_cli(host_directory: &Path, _node: &Path) -> Result<PathBuf, String> {
-    let bundled = host_directory.join("runtime/npm/bin/npm-cli.js");
-    if bundled.is_file() {
-        return bundled
-            .canonicalize()
-            .map(super::host_paths::node_compatible_path)
-            .map_err(|_| "Gestionnaire npm indisponible.".to_string());
-    }
-    #[cfg(test)]
-    let bin = _node
-        .parent()
-        .ok_or_else(|| "Gestionnaire npm indisponible.".to_string())?;
-    #[cfg(test)]
-    #[cfg(windows)]
-    let inferred = bin.join("node_modules/npm/bin/npm-cli.js");
-    #[cfg(test)]
-    #[cfg(not(windows))]
-    let inferred = bin.join("../lib/node_modules/npm/bin/npm-cli.js");
-    #[cfg(test)]
-    if let Ok(candidate) = inferred.canonicalize() {
-        if candidate.is_file()
-            && candidate.file_name().and_then(|name| name.to_str()) == Some("npm-cli.js")
-        {
-            return Ok(super::host_paths::node_compatible_path(candidate));
-        }
-    }
-    Err("Gestionnaire npm indisponible.".to_string())
-}
-
-fn prepare_workspace(root: &Path) -> Result<PathBuf, String> {
-    let workspace = root.join(".npm-cache");
-    if workspace.exists() {
-        std::fs::remove_dir_all(&workspace)
-            .map_err(|_| "Cache npm impossible à nettoyer.".to_string())?;
-    }
-    crate::services::private_store::ensure_private_dir(&workspace.join("cache"))
-        .map_err(|_| "Cache npm indisponible.".to_string())?;
-    crate::services::private_store::ensure_private_dir(&workspace.join("tmp"))
-        .map_err(|_| "Cache npm indisponible.".to_string())?;
-    for name in ["userconfig", "globalconfig"] {
-        crate::services::private_store::atomic_write(&workspace.join(name), b"")
-            .map_err(|_| "Configuration npm indisponible.".to_string())?;
-    }
-    Ok(workspace)
-}
-
-fn cleanup_workspace(workspace: &Path) -> Result<(), String> {
-    std::fs::remove_dir_all(workspace).map_err(|_| "Cache npm impossible à nettoyer.".to_string())
-}
-
 pub(super) fn package_path(name: &str) -> PathBuf {
     name.split('/').collect()
 }
+
+pub(super) use super::npm_paths::resolve_cli;

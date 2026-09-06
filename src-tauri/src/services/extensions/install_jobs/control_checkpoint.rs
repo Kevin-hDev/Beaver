@@ -13,12 +13,23 @@ impl InstallControl {
     }
     pub(in crate::services::extensions) fn save(
         &self,
-        checkpoint: InstallCheckpoint,
+        mut checkpoint: InstallCheckpoint,
     ) -> Result<(), InstallInterruption> {
         let mut state = self.store.lock().map_err(|_| InstallInterruption::Failed)?;
         let index = state
             .index(&self.id)
             .map_err(|_| InstallInterruption::Failed)?;
+        // The store owns consent; a phase's older checkpoint cannot overwrite it.
+        if let Some(current) = &state.jobs[index].checkpoint {
+            if current.token == checkpoint.token {
+                checkpoint.allowance = current.allowance.clone();
+                checkpoint.dependency_lock = current.dependency_lock.clone();
+                checkpoint.resolved_source = current
+                    .resolved_source
+                    .clone()
+                    .or(checkpoint.resolved_source);
+            }
+        }
         state.jobs[index].checkpoint = Some(checkpoint);
         if self.store.persist(&state).is_err() {
             state.durable_error = true;

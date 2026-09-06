@@ -29,7 +29,6 @@ impl InstallControl {
     pub(crate) fn is_cancelled(&self) -> bool {
         self.cancel.is_cancelled() || self.app_cancel.is_cancelled()
     }
-    #[cfg(test)]
     pub(crate) async fn cancelled(&self) {
         tokio::select! { _ = self.cancel.cancelled() => {}, _ = self.app_cancel.cancelled() => {} }
     }
@@ -67,6 +66,12 @@ impl InstallControl {
         if job.view.status != InstallStatus::Running {
             return Err(InstallInterruption::Failed);
         }
+        if job.view.phase != phase {
+            // Network counters belong to one phase, never to subsequent npm/UI work.
+            job.monitor.downloaded = None;
+            job.view.downloaded_bytes = None;
+            job.view.download_total_bytes = None;
+        }
         job.view.phase = phase;
         self.store.changed(&mut state);
         Ok(())
@@ -99,7 +104,6 @@ impl InstallControl {
         Ok(())
     }
     /// Call only after every producer has stopped. On return, recheck disk before resuming.
-    #[cfg(test)] // Production consent is wired by the volume-policy task.
     pub(crate) async fn await_confirmation(&self) -> Result<(), InstallInterruption> {
         {
             let mut state = self.store.lock().map_err(|_| InstallInterruption::Failed)?;

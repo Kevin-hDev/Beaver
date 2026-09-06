@@ -18,9 +18,10 @@ pub(in crate::services::extensions) struct InstallCheckpoint {
     pub safe_phase: Option<InstallPhase>,
     pub record: Option<ExtensionRecord>,
     pub previous: Option<ExtensionRecord>,
-    // Effective policy is persisted even before Task3 can authorize an increase.
-    pub budget_bytes: u64,
-    pub consent_bytes: Option<u64>,
+    #[serde(default)]
+    pub allowance: super::disk_policy::StorageAllowance,
+    #[serde(default)]
+    pub dependency_lock: Option<super::dependency_lock::DependencyLock>,
     pub producer_active: bool,
     #[serde(default)]
     pub native_process: Option<crate::services::owned_process::OwnedProcessIdentity>,

@@ -75,7 +75,7 @@ fn cleanup_preserves_an_active_staging_artifact() {
     let sentinel = staging.output().join("active.js");
     std::fs::write(&sentinel, b"active").unwrap();
 
-    super::ui_artifact_store::unreferenced(&[]).unwrap();
+    super::ui_artifact_store::cleanup_test_entry(staging.output().parent().unwrap(), &[]).unwrap();
 
     assert!(sentinel.is_file());
 }

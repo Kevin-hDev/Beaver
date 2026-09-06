@@ -263,7 +263,10 @@ fn advanced_artifact_changes_are_fingerprinted_and_tampering_fails_closed() {
     record.ui_artifact = Some(second.clone());
     let changed = fingerprint::calculate(&record).unwrap();
     assert_ne!(initial, changed);
-    super::ui_artifact_store::unreferenced(std::slice::from_ref(&record)).unwrap();
+    super::ui_artifact_store::cleanup_test_entry(
+        &super::ui_artifact_store::root().join(&record.manifest.id),
+        std::slice::from_ref(&record),
+    ).unwrap();
 
     let path =
         super::ui_artifact_store::artifact_path(&record.manifest.id, &second.manifest_sha256)
