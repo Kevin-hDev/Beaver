@@ -1,0 +1,7 @@
+Windows installer root cause found by targeted run 34034581366 job 101490210613: minimal gate panics on OwnedProcess::identity(pid) with Admission before the owner acknowledgement. spawn_tokio_scoped admits into DedicatedJob, but global identity checks IsProcessInJob against GLOBAL_JOB. Production installer_process used this mismatched check too, mapping rejected identity into an interrupted installation. No npm or UI module can load.
+
+Fix: OwnedProcessScope validates identity through its own DedicatedJob. Factor the existing handle identity extraction to accept the actual owning job; global identity/recovery continue checking GLOBAL_JOB. No containment check is removed, and kill-on-close stays enabled. Windows test now checks own identities accepted, foreign dedicated identities rejected, and global identity still rejects a dedicated child. Run it before minimal gate and npm in Windows preflight.
+
+Temporary JS instrumentation removed; actual minimal-producer regression test retained. The speculative stdin Worker issue is not established and its code is unchanged.
+
+Local validation after changes: installer_process 6 pass, 1 ignored subprocess fixture (including parent death and descendant termination); CI contracts 25 pass; complementary Rust format check against 1ff5cf3d pass; git diff --check pass; Graphify update completed (45583 nodes, 95765 edges). Windows execution still requires CI. This normal commit must trigger full CI; no merge before all expected checks are green.
