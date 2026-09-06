@@ -1,7 +1,3 @@
-.cs-wrapper {
-  position: relative;
-}
-
 /* Occupe la largeur de son conteneur : cette liste sert dans des formulaires
    où elle s'aligne sur les champs de la même colonne. */
 .cs-trigger {
@@ -14,21 +10,32 @@
   font-size: 10px;
 }
 
+/* Portée hors de son conteneur par un portail : position, largeur et hauteur
+   disponible viennent de use-floating-menu-position, en style en ligne. Ne rien
+   repositionner ici, le style en ligne l'emporterait de toute façon. */
 .cs-dropdown {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
-  max-height: 200px;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   border-radius: var(--radius-sm);
   border: 1px solid var(--edge);
   background: var(--popover-bg, var(--shell-opaque));
   box-shadow: var(--shadow-lg);
-  z-index: var(--z-dropdown);
   backdrop-filter: var(--popover-backdrop-filter, none);
   -webkit-backdrop-filter: var(--popover-backdrop-filter, none);
   padding: 0 var(--list-gutter);
+}
+
+/* La hauteur posée en ligne par le hook ne borne que le débordement de l'écran.
+   Le plafond de la liste vit ici, sur ce qui défile, sinon le style en ligne
+   l'écraserait et une liste longue occuperait toute la hauteur disponible. */
+.cs-menu {
+  /* min-height: 0 : sans lui, un élément de boîte flexible refuse de passer
+     sous la hauteur de son contenu, et les dernières lignes d'une liste plus
+     haute que la place restante à l'écran deviennent inatteignables. */
+  min-height: 0;
+  overflow-y: auto;
+  max-height: 200px;
 }
 
 /* Forme, retrait et survol viennent de src/styles/menu-row.css. */

@@ -1,5 +1,6 @@
+/* Plus de position: relative ici : le panneau ne s'y accroche plus, il sort du
+   conteneur par un portail et se positionne sur l'écran. */
 .ss-wrap {
-  position: relative;
   display: inline-block;
 }
 
@@ -83,29 +84,34 @@
   transform: rotate(0deg);
 }
 
-/* Aligné sur le bord gauche du bouton, il déborde donc vers la droite. Aligné à
-   droite, il partait vers la gauche et recouvrait ce qui précède le bouton — le
-   champ de recherche des chats archivés, par exemple. */
+/* Porté hors de la page de Réglages par un portail : position, largeur minimale
+   et hauteur disponible viennent de use-floating-menu-position, en style en
+   ligne. Ne rien repositionner ici, le style en ligne l'emporterait de toute
+   façon. Le sens de l'alignement est passé au hook par le composant. */
 .ss-panel {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  min-width: 100%;
-  max-height: 280px;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   background: var(--popover-bg, var(--surface-raised));
   border: 1px solid var(--edge);
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow-card);
-  z-index: var(--z-dropdown);
   backdrop-filter: var(--popover-backdrop-filter, none);
   -webkit-backdrop-filter: var(--popover-backdrop-filter, none);
   padding: 0 var(--list-gutter);
 }
 
-.ss-wrap.ss-above .ss-panel {
-  top: auto;
-  bottom: calc(100% + var(--space-xs));
+/* Le champ de recherche reste en place, seule la liste défile. La hauteur posée
+   en ligne par le hook ne borne que le débordement de l'écran ; le plafond de la
+   liste vit ici, sinon le style en ligne l'écraserait et une liste longue
+   occuperait toute la hauteur disponible. */
+.ss-panel-scroll {
+  /* min-height: 0 : sans lui, un élément de boîte flexible refuse de passer
+     sous la hauteur de son contenu, et les dernières lignes d'une liste plus
+     haute que la place restante à l'écran deviennent inatteignables. */
+  min-height: 0;
+  overflow-y: auto;
+  max-height: 280px;
 }
 
 [data-theme="dark"] .ss-panel {

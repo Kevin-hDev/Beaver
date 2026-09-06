@@ -1,4 +1,4 @@
-import { act, fireEvent, render, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { GitMergeDialog } from "../git-merge-dialog";
 import { SessionSummaryGitSection, type SessionSummaryGitState } from "../session-summary-git-section";
@@ -83,7 +83,9 @@ describe("SessionSummaryGitSection Merge", () => {
     fireEvent.click(getByRole("button", { name: "Merge into main" }));
     const dialog = await findByRole("dialog", { name: "Merge into main" });
     fireEvent.click(within(dialog).getByRole("button", { name: "Source branch" }));
-    fireEvent.click(within(dialog).getByRole("option", { name: "release" }));
+    /* La liste sort du dialogue par un portail — sans quoi le débordement
+       masqué du dialogue la coupe — donc on la cherche dans le document. */
+    fireEvent.click(screen.getByRole("option", { name: "release" }));
     await waitFor(() => expect(within(dialog).getByText("2 commits into main")).toBeTruthy());
     fireEvent.click(within(dialog).getByRole("button", { name: "Merge into main" }));
 

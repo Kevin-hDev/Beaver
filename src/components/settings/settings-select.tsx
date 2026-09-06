@@ -1,6 +1,11 @@
 import { useState, useRef, useCallback, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { CaretDown, MagnifyingGlass } from "@/components/ui/icons";
 import { useClickOutside } from "@/hooks/use-click-outside";
+import {
+  floatingMenuPortalRoot,
+  useFloatingMenuPosition,
+} from "@/hooks/use-floating-menu-position";
 import { useKeyboard } from "@/hooks/use-keyboard";
 import { useLocalListNavigation, type LocalListNavItem } from "@/hooks/use-local-list-navigation";
 import { SettingsSelectList, groupNavId, optionNavId, sortedOptions } from "./settings-select-list";
@@ -59,7 +64,15 @@ export function SettingsSelect({
     setQuery("");
   }, []);
 
-  useClickOutside(ref, close);
+  /* Le panneau est porté hors de la page de Réglages : le fondu posé sous le
+     titre figé est un masque, et un masque sur un ancêtre interdit tout flou à
+     l'intérieur — la liste devenait transparente et laissait lire le texte
+     dessous. La carte le coupait aussi à son bord. Aligné à gauche du bouton :
+     aligné à droite, il partait vers la gauche et recouvrait ce qui le précède,
+     le champ de recherche des chats archivés par exemple. */
+  const { anchorRef, floatingRef, floatingStyle } =
+    useFloatingMenuPosition(open, "left", 4, placement, true);
+  useClickOutside(ref, close, floatingRef);
   useKeyboard({ onEscape: open ? close : undefined });
 
   const allOptions = useMemo(() => {
@@ -121,6 +134,43 @@ export function SettingsSelect({
     onEscape: close,
   });
 
+  const panel = open && !disabled ? (
+    <div
+      ref={floatingRef}
+      style={floatingStyle}
+      className={`ss-panel ${groups ? "ss-panel-fixed" : ""}`}
+      data-keyboard-scope="local"
+    >
+      {searchable && (
+        <div className="ss-search">
+          <MagnifyingGlass size="var(--icon-sm)" />
+          <input
+            autoFocus
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={listProps.onKeyDown}
+            placeholder={searchPlaceholder ?? ""}
+          />
+        </div>
+      )}
+      <div className="ss-panel-scroll">
+        <SettingsSelectList
+          filtered={filtered}
+          groups={groups}
+          options={options}
+          collapsed={collapsed}
+          value={value}
+          activate={activate}
+          getItemRef={getItemRef}
+          isActive={isActive}
+          onItemKeyDown={listProps.onKeyDown}
+          onSelect={handleSelect}
+          onToggleGroup={toggleGroup}
+        />
+      </div>
+    </div>
+  ) : null;
+
   return (
     <div
       className={`ss-wrap ss-${placement} ${fitLongestOption ? "ss-fit" : ""} ${open ? "open" : ""} ${disabled ? "disabled" : ""}`}
@@ -131,6 +181,7 @@ export function SettingsSelect({
         className="btn btn-sm btn-secondary btn-select ss-trigger"
         role="button"
         tabIndex={disabled ? -1 : 0}
+        ref={(node) => { anchorRef.current = node; }}
         onClick={() => !disabled && setOpen(!open)}
         onKeyDown={(event) => {
           if (disabled) return;
@@ -166,35 +217,7 @@ export function SettingsSelect({
         <CaretDown size="var(--icon-sm)" weight="bold" className="ss-trigger-icon" />
       </div>
 
-      {open && !disabled && (
-        <div className={`ss-panel ${groups ? "ss-panel-fixed" : ""}`}>
-          {searchable && (
-            <div className="ss-search">
-              <MagnifyingGlass size="var(--icon-sm)" />
-              <input
-                autoFocus
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={listProps.onKeyDown}
-                placeholder={searchPlaceholder ?? ""}
-              />
-            </div>
-          )}
-          <SettingsSelectList
-            filtered={filtered}
-            groups={groups}
-            options={options}
-            collapsed={collapsed}
-            value={value}
-            activate={activate}
-            getItemRef={getItemRef}
-            isActive={isActive}
-            onItemKeyDown={listProps.onKeyDown}
-            onSelect={handleSelect}
-            onToggleGroup={toggleGroup}
-          />
-        </div>
-      )}
+      {panel ? createPortal(panel, floatingMenuPortalRoot()) : null}
     </div>
   );
 }

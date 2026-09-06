@@ -1,5 +1,10 @@
 import { useCallback, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useClickOutside } from "@/hooks/use-click-outside";
+import {
+  floatingMenuPortalRoot,
+  useFloatingMenuPosition,
+} from "@/hooks/use-floating-menu-position";
 import { useLocalListNavigation } from "@/hooks/use-local-list-navigation";
 import "./custom-select.css";
 
@@ -27,8 +32,15 @@ export function CustomSelect({
 }: CustomSelectProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLElement | null>(null);
   const close = useCallback(() => setOpen(false), []);
-  useClickOutside(ref, close);
+  /* La liste est portée hors de son conteneur : un fondu, un flou ou un
+     débordement masqué posé sur un ancêtre la coupait au bord de la carte et
+     interdisait son propre flou. Elle reste sous le bouton et à sa largeur,
+     comme le faisaient top/left/right. */
+  const { anchorRef, floatingRef, floatingStyle } =
+    useFloatingMenuPosition(open, "left", 4, "below", false, triggerRef);
+  useClickOutside(ref, close, floatingRef);
 
   const selected = options.find((o) => o.value === value);
   const navItems = useMemo(() => options.map((option) => ({
@@ -45,10 +57,49 @@ export function CustomSelect({
     onEscape: close,
   });
 
+  const dropdown = open ? (
+    <div
+      ref={floatingRef}
+      style={floatingStyle}
+      className="cs-dropdown"
+      data-keyboard-scope="local"
+    >
+      <div className="cs-menu" role="listbox" tabIndex={-1} onKeyDown={listProps.onKeyDown}>
+        {options.map((opt) => {
+          const navId = optionNavId(opt.value);
+          return (
+          <div
+            key={opt.value}
+            className={`menu-row cs-option ${opt.value === value ? "active" : ""}`}
+            role="option"
+            ref={getItemRef(navId)}
+            tabIndex={isActive(navId) ? 0 : -1}
+            data-local-nav-item="true"
+            data-local-nav-active={isActive(navId) ? "true" : undefined}
+            aria-selected={opt.value === value}
+            onFocus={() => activate(navId)}
+            onMouseEnter={() => activate(navId)}
+            onKeyDown={listProps.onKeyDown}
+            onClick={() => {
+              onChange(opt.value);
+              setOpen(false);
+            }}
+          >
+            {opt.label}
+          </div>
+        ); })}
+      </div>
+    </div>
+  ) : null;
+
   return (
     <div ref={ref} className="cs-wrapper" data-keyboard-scope={open ? "local" : undefined}>
       <button
         type="button"
+        ref={(node) => {
+          anchorRef.current = node;
+          triggerRef.current = node;
+        }}
         className="btn btn-sm btn-secondary btn-select cs-trigger"
         onClick={() => !disabled && setOpen(!open)}
         onKeyDown={(event) => {
@@ -67,33 +118,7 @@ export function CustomSelect({
         </span>
         <span className="cs-trigger-caret">▾</span>
       </button>
-      {open && (
-        <div className="cs-dropdown" role="listbox" tabIndex={-1} onKeyDown={listProps.onKeyDown}>
-          {options.map((opt) => {
-            const navId = optionNavId(opt.value);
-            return (
-            <div
-              key={opt.value}
-              className={`menu-row cs-option ${opt.value === value ? "active" : ""}`}
-              role="option"
-              ref={getItemRef(navId)}
-              tabIndex={isActive(navId) ? 0 : -1}
-              data-local-nav-item="true"
-              data-local-nav-active={isActive(navId) ? "true" : undefined}
-              aria-selected={opt.value === value}
-              onFocus={() => activate(navId)}
-              onMouseEnter={() => activate(navId)}
-              onKeyDown={listProps.onKeyDown}
-              onClick={() => {
-                onChange(opt.value);
-                setOpen(false);
-              }}
-            >
-              {opt.label}
-            </div>
-          ); })}
-        </div>
-      )}
+      {dropdown ? createPortal(dropdown, floatingMenuPortalRoot()) : null}
     </div>
   );
 }
