@@ -12,6 +12,13 @@ process.stdin.once('data', (bytes) => {
   process.stdin.pause();
   process.stdin.unref();
   process.stdin.removeAllListeners('end');
+  // Windows Job Objects already kill all descendants when the owner dies.
+  // Reopening its stdin handle on a second event loop blocks during Socket open.
+  if (process.platform === 'win32') {
+    clearTimeout(launchTimeout);
+    import(pathToFileURL(process.argv[1]).href).catch(abortGroup);
+    return;
+  }
   const watcher = new Worker(`
     const { parentPort } = require('node:worker_threads');
     const { Socket } = require('node:net');

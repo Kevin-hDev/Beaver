@@ -44,6 +44,20 @@ impl OwnedProcessScope {
         }
     }
 
+    pub(super) async fn spawn_tokio_with_owner_pipe(
+        command: &mut tokio::process::Command,
+        kind: ProcessKind,
+    ) -> Result<(tokio::process::Child, Self), OwnedProcessError> {
+        #[cfg(target_os = "linux")]
+        {
+            command.process_group(0);
+            let child = super::OwnedProcess::spawn_tokio_configured(command, kind).await?;
+            Ok((child, Self {}))
+        }
+        #[cfg(not(target_os = "linux"))]
+        Self::spawn_tokio(command, kind).await
+    }
+
     /// Identity must be checked by the job that admitted this process, not the
     /// unrelated global job. Windows keeps these containment authorities distinct.
     pub(crate) fn identity(

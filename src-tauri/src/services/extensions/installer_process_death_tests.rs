@@ -27,7 +27,6 @@ fn parent_fixture() {
     assert!(result.is_ok(), "{result:?}");
 }
 
-#[cfg(unix)]
 #[tokio::test]
 async fn parent_death_stops_blocked_node_and_descendant_without_main_loop_cooperation() {
     let root = tempfile::tempdir().unwrap();
@@ -76,7 +75,11 @@ async fn parent_death_stops_blocked_node_and_descendant_without_main_loop_cooper
             if !OwnedProcess::process_exists(identity.pid)
                 && !OwnedProcess::process_exists(writer_pid)
             {
+                #[cfg(windows)]
+                break;
+                #[cfg(unix)]
                 let result = unsafe { libc::kill(-(identity.pid as i32), 0) };
+                #[cfg(unix)]
                 if result == -1
                     && std::io::Error::last_os_error().raw_os_error() == Some(libc::ESRCH)
                 {
@@ -92,6 +95,7 @@ async fn parent_death_stops_blocked_node_and_descendant_without_main_loop_cooper
     let stable = std::fs::read(root.path().join("writes")).unwrap() == before;
     if absent.is_err() {
         let _ = OwnedProcess::recover_exact(identity, Instant::now() + Duration::from_secs(2));
+        #[cfg(unix)]
         let _ = process_tree::confirm_recovered_group_absent(
             identity.pid,
             Instant::now() + Duration::from_secs(2),

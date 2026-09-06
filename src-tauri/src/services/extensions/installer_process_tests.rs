@@ -63,7 +63,7 @@ async fn parent_crash_before_identity_closes_gate_without_loading_producer() {
         .stdout(Stdio::null())
         .stderr(Stdio::null());
     let kind = process_tree::ProcessKind::ExtensionInstaller;
-    let (mut child, scope) = OwnedProcess::spawn_tokio_scoped(&mut command, kind)
+    let (mut child, scope) = OwnedProcess::spawn_tokio_scoped_with_owner_pipe(&mut command, kind)
         .await
         .unwrap();
     let pid = child.id().unwrap();

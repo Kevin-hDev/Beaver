@@ -110,6 +110,13 @@ impl OwnedProcess {
         kind: ProcessKind,
     ) -> Result<tokio::process::Child, OwnedProcessError> {
         process_tree::configure_tokio(command);
+        Self::spawn_tokio_configured(command, kind).await
+    }
+
+    async fn spawn_tokio_configured(
+        command: &mut tokio::process::Command,
+        kind: ProcessKind,
+    ) -> Result<tokio::process::Child, OwnedProcessError> {
         let mut child = command
             .spawn()
             .map_err(|error| OwnedProcessError::Spawn(error.kind()))?;
@@ -129,6 +136,16 @@ impl OwnedProcess {
         kind: ProcessKind,
     ) -> Result<(tokio::process::Child, OwnedProcessScope), OwnedProcessError> {
         OwnedProcessScope::spawn_tokio(command, kind).await
+    }
+
+    /// Only for a launch gate that watches owner-pipe EOF on an independent
+    /// thread and kills its entire group. Linux PDEATHSIG would kill that
+    /// watcher first and strand descendants; Windows still uses its Job Object.
+    pub(crate) async fn spawn_tokio_scoped_with_owner_pipe(
+        command: &mut tokio::process::Command,
+        kind: ProcessKind,
+    ) -> Result<(tokio::process::Child, OwnedProcessScope), OwnedProcessError> {
+        OwnedProcessScope::spawn_tokio_with_owner_pipe(command, kind).await
     }
 
     #[cfg(windows)]

@@ -15,7 +15,7 @@ async fn launch_gate_imports_a_minimal_producer_after_owner_acknowledgement() {
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
     let kind = process_tree::ProcessKind::ExtensionInstaller;
-    let (mut child, scope) = OwnedProcess::spawn_tokio_scoped(&mut command, kind)
+    let (mut child, scope) = OwnedProcess::spawn_tokio_scoped_with_owner_pipe(&mut command, kind)
         .await
         .unwrap();
     let pid = child.id().unwrap();

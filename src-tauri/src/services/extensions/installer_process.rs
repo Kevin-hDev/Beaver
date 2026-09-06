@@ -29,7 +29,7 @@ pub(super) fn run(
         if cancelled() { return Err(ProcessFailure::Interrupted); }
         let kind = process_tree::ProcessKind::ExtensionInstaller;
         let mut command = tokio::process::Command::from(command);
-        let (mut child, scope) = OwnedProcess::spawn_tokio_scoped(&mut command, kind).await
+        let (mut child, scope) = OwnedProcess::spawn_tokio_scoped_with_owner_pipe(&mut command, kind).await
             .map_err(|_| ProcessFailure::Unavailable)?;
         let pid = child.id().ok_or(ProcessFailure::Unavailable)?;
         let mut stdout = child.stdout.take().ok_or(ProcessFailure::Unavailable)?;
