@@ -4,6 +4,31 @@
 
 ---
 
+## v1.2.2
+
+### Expanded extension API
+
+- **Extension-centered discovery** — Agent mode keeps complete extension toolsets available while they fit within the 10% context budget, then exposes a compact extension list and bounded multi-extension inspection without requiring users to select tools manually for every request.
+- **On-demand skills and resources** — extensions can register bounded skills, text references, images, and files that the Agent loads explicitly only after inspecting the active and approved extension, without adding their descriptions to every system prompt.
+- **Rich tool results** — extension tools can return validated text, artifacts, and image previews with bounded paths, sizes, fingerprints, persistence, and honest intact, modified, missing, inaccessible, or unverified states.
+- **Provider-aware multimodal continuation** — compatible model routes can receive a bounded set of verified image previews after complete tool results, while text-only routes receive safe textual references and classic Chat mode remains free of agentic extensions.
+
+### Interface extensions
+
+- **Standard Beaver surfaces** — extensions can add localized tabs, settings pages, toolbar and Agent composer actions, declarative views, and token-based themes through versioned slots rendered by Beaver.
+- **Deterministic customization** — extensions can place, move, replace, or remove compatible public occupants while protected Beaver controls, conflict handling, limits, and cleanup keep the interface recoverable.
+- **Explicit advanced mode** — fully trusted extensions can load compiled JavaScript or TypeScript interface modules for deeper customization, with separate approval, artifact verification, bounded activation, and removal of owned mounts and styles during teardown.
+- **Safe interface recovery** — startup markers, Shift recovery, and `--safe-mode` allow Beaver to launch without third-party interface code so a faulty extension can be diagnosed or disabled.
+
+### Installation and runtime resilience
+
+- **Persistent background installations** — local, Git, and npm operations remain visible across navigation, run through a bounded owner-controlled queue, and pause for explicit storage confirmation without treating timeouts as consent.
+- **Honest cancellation and recovery** — Beaver confirms cancellation only after owned producers stop and temporary files are cleaned, preserves verifiable checkpoints after interruption, and never resumes an installation without an explicit user action.
+- **Fail-closed extension startup** — incompatible, future, truncated, or unreadable extension state is preserved for diagnosis and blocks extension mutations instead of being replaced or migrated destructively, while admissible native Agent tools remain available with a translated warning.
+- **Complete author documentation** — the root extension guide now documents capabilities, risks, manifests, JavaScript and TypeScript development, local/Git/npm installation, UI modes, permissions, limits, diagnostics, recovery, and distribution checks.
+
+---
+
 ## v1.2.1
 
 ### Official Beaver plugins
