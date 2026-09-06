@@ -19,8 +19,8 @@ pub(super) fn catalog(
         return Err(invalid());
     }
     if manifest.mode == ExtensionUiMode::Advanced {
-        // UI-P5 prendra en charge l'artefact avancé. Jusque-là sa déclaration
-        // valide reste inerte et ne peut pas emprunter le canal standard.
+        // L'interface avancée passe par son artefact compilé et le protocole UI ;
+        // sa déclaration reste donc vide sur le canal standard.
         return contributions.is_empty().then(Vec::new).ok_or_else(invalid);
     }
     if manifest.entry.is_some()
