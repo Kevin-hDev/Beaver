@@ -15,8 +15,16 @@ if (process.argv.includes('--package-lock-only')) {
 } else {
   fs.writeFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), 'pid'), String(process.pid));
   const marker = '.npm-cache/attempt';
-  if (!fs.existsSync(marker)) {
-    fs.writeFileSync(marker, 'started');
+  // Claim the first attempt atomically; only an existing marker means replay.
+  let firstAttempt;
+  try {
+    fs.writeFileSync(marker, 'started', { flag: 'wx' });
+    firstAttempt = true;
+  } catch (error) {
+    if (error.code !== 'EEXIST') throw error;
+    firstAttempt = false;
+  }
+  if (firstAttempt) {
     stage('writer-started');
     setInterval(() => fs.appendFileSync('.npm-cache/cache/payload', Buffer.alloc(256)), 10);
   } else {

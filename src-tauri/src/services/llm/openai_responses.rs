@@ -131,12 +131,9 @@ pub(super) async fn post(
         request_bytes,
         config.tools.len(),
     );
-    let log_code =
-        super::provider_error::safe_log_code(route.error_policy, status.as_u16(), &error_body);
-    ::log::warn!(
-        "[{} responses] HTTP {status} code={log_code}",
-        config.provider_id
-    );
+    // Structured diagnostics above own the bounded details; the general log
+    // must not carry values derived from credentials, sessions or response bodies.
+    ::log::warn!("[responses] provider HTTP request failed");
     Err(super::stream_http::classify_error(
         status.as_u16(),
         &error_body,
