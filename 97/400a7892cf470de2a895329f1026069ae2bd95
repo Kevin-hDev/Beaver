@@ -1,0 +1,43 @@
+Corrections de la revue d’exécution — 6 septembre 2026
+Commit : 97400a7892cf470de2a895329f1026069ae2bd95
+Base : 69a2d057081b806f0eb86c58c2f5b3a6d1ee8e57
+
+Les 5 importants sont traités : retour arrière complet des reprises refusées,
+fin des annulations abandonnées par un travailleur en échec, raison explicite du
+budget par fichier, repos après mesure disque et progression conservée pendant
+l’annulation. Mineurs confirmés corrigés/documentés ; MIN-11 était un faux positif
+(module et appel déjà sous cfg e2e). Deux variantes des mêmes erreurs sont couvertes :
+nettoyage jamais admis et fichiers conservés après refus du producteur.
+
+Décisions : le budget total accepté borne chaque fichier, sans plafond caché de
+256 Mio ; les bornes structurelles demeurent. Déduplication par source soumise,
+identité contrôlée avant publication par le travailleur unique. Aucun nouveau
+propriétaire des installations ni aucune réécriture des commits antérieurs.
+
+Preuves relues, commandes locales terminées avec exit 0 sauf premier essai signalé :
+- npm test : 572 fichiers / 3 116 tests frontend, puis suites des scripts.
+- cargo test complet : 5 074 tests bibliothèque / 0 échec / 19 ignorés + 1 intégration.
+- Dernier filtre install_jobs après renforcement/ajout des tests : 58 passés / 0 échec /
+  1 ignoré. Ces 58 recouvrent la suite précédente et ne s’y additionnent pas.
+- cargo clippy --all-targets -- -D warnings ; tsc --noEmit ; npm run lint ; fmt check.
+- npm run contracts:check : 15 tests exacts, chacun 1 passé / 0 échec.
+- graphify update . : 45 571 nœuds, 95 738 liens ; git diff --check.
+- Natif macOS/CEF : premier essai 71 passés / 1 échec (browser_capability, 15 s).
+  Rejeu du même binaire sans rebuild : 72 passés / 0 échec, CEF ready et arrêt des
+  processus possédés confirmé. Le délai initial reste inexpliqué, pas prétendument corrigé.
+
+Les logs review-*.log et la disposition détaillée sont conservés dans
+.superpowers/sdd/2026-09-05-extension-installation-background/review-corrections.md
+et son dossier. Captures/rapports natifs : .e2e-artifacts/install-review-corrections/
+et .e2e-artifacts/install-review-corrections-retry/. Premier échec de compilation
+complet : disque plein (os error 28), suivi d’un nettoyage des seuls caches du
+worktree, puis d’un rejeu complet réussi ; aucun rouge n’a été effacé du compte rendu.
+
+Limites : cause du délai CEF ; grande fenêtre sombre (capture encore sur le splash,
+seule la vue sombre étroite est inspectée) ; vrai arrêt/redémarrage natif d’une
+installation interrompue ; matrice native exhaustive et Windows/Linux. Les tests
+de journal/reprise ne sont pas présentés comme ce parcours natif complet.
+
+Cinq notes historiques rattachées à 5d38ac81, d252a602, bc1fe5ee, 45acd4dc, eee9bd72
+avec les preuves disponibles et leurs limites d’attribution. Worktree principal préservé.
+Aucun push, lancement CI, merge ou release. Travail réalisé seul.
