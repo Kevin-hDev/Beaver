@@ -1,5 +1,6 @@
 """Temporary isolated launch probe; remove after cross-platform root causes are proven."""
 import json
+import ctypes
 import os
 from pathlib import Path
 import shutil
@@ -36,11 +37,15 @@ def instrument(source):
 def launch_probe(root):
     script = root / 'producer.mjs'
     script.write_text("process.stdout.write('producer-loaded');")
-    for label, args in [('direct', [str(script)]), ('gated', ['--eval', instrument(GATE.read_text()), '--', str(script)])]:
+    variants = [('direct', [str(script)]), ('gated', ['--eval', instrument(GATE.read_text()), '--', str(script)])]
+    if os.name == 'nt':
+        source = GATE.read_text().replace("  const watcher = new Worker", "  clearTimeout(launchTimeout); import(pathToFileURL(process.argv[1]).href).catch(abortGroup); return; const watcher = new Worker", 1)
+        variants.append(('windows-kernel-guard-launch', ['--eval', source, '--', str(script)]))
+    for label, args in variants:
         child = subprocess.Popen([NODE, *args], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE, cwd=root, start_new_session=os.name != 'nt')
         try:
-            if label == 'gated':
+            if label != 'direct':
                 child.stdin.write(b'\x01')
                 child.stdin.flush()
             code = child.wait(timeout=8)
@@ -57,10 +62,16 @@ def launch_probe(root):
         print(json.dumps({'case': label, 'exit': code, 'loaded': output == b'producer-loaded', 'stages': markers}), flush=True)
 
 
+def parent_death_signal():
+    if ctypes.CDLL(None).prctl(1, signal.SIGKILL, 0, 0, 0) != 0:
+        os._exit(2)
+
+
 def parent(root):
     child = subprocess.Popen([NODE, '--eval', GATE.read_text(), '--', str(root / 'blocked.mjs')],
                              stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                             cwd=root, start_new_session=True)
+                             cwd=root, start_new_session=True,
+                             preexec_fn=parent_death_signal if root.name == 'kernel' else None)
     (root / 'producer.pid').write_text(str(child.pid))
     child.stdin.write(b'\x01')
     child.stdin.flush()
@@ -88,7 +99,7 @@ def linux_death_probe(root):
             states.append('absent')
     before = (root / 'writes').stat().st_size
     time.sleep(.15)
-    print(json.dumps({'case': 'parent-death', 'states': states,
+    print(json.dumps({'case': 'parent-death-' + root.name, 'states': states,
                       'writes_stable': before == (root / 'writes').stat().st_size}), flush=True)
     if any(state not in ['Z', 'X', 'absent'] for state in states):
         os.killpg(pids[0], signal.SIGKILL)
@@ -102,4 +113,7 @@ if __name__ == '__main__':
             root = Path(temporary)
             launch_probe(root)
             if sys.platform == 'linux':
-                linux_death_probe(root)
+                for mode in ['pipe', 'kernel']:
+                    scenario = root / mode
+                    scenario.mkdir()
+                    linux_death_probe(scenario)
