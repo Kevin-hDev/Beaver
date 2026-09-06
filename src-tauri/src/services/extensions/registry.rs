@@ -5,35 +5,18 @@ use std::sync::Mutex;
 pub(super) static MUTATIONS: Mutex<()> = Mutex::new(());
 
 pub fn init() -> Result<(), String> {
-    let loaded = super::storage::load()?;
-    let format = loaded.format;
-    let recovery_snapshot = loaded.recovery_snapshot;
-    let records = super::builtin::merge(super::registry_state::reset_hosted_runtime(
-        loaded.extensions,
-    ))?;
-    super::validation::records(&records)?;
-    super::storage::save(&records, &recovery_snapshot)?;
-    if super::managed_cleanup::unreferenced(&records).is_err() {
-        super::operation_error::report(
-            super::operation_error::Operation::Cleanup,
-            super::OperationFailure::CleanupFailed,
-        );
-    }
-    if super::ui_artifact_store::unreferenced(&records).is_err() {
-        super::operation_error::report(
-            super::operation_error::Operation::Cleanup,
-            super::OperationFailure::CleanupFailed,
-        );
-    }
-    super::registry_memory::replace(records, recovery_snapshot)?;
-    super::storage::finish_successful_startup(&super::storage::path(), format)
+    super::registry_startup::initialize()
 }
 
 pub fn list() -> Result<Vec<ExtensionRecord>, String> {
+    super::registry_availability().map_err(str::to_string)?;
     super::registry_memory::records()
 }
 
 pub(super) fn refresh_index() -> Result<(), String> {
+    let _guard = MUTATIONS
+        .lock()
+        .map_err(|_| super::error_codes::REGISTRY_UNAVAILABLE.to_string())?;
     super::registry_index::rebuild(&list()?)
 }
 
@@ -198,10 +181,16 @@ where
     E: super::registry_mutation_error::MutationError,
 {
     let _guard = MUTATIONS.lock().map_err(|_| E::storage())?;
+    super::registry_availability().map_err(|_| E::storage())?;
     let mut candidate = super::registry_memory::snapshot().map_err(|_| E::storage())?;
     operation(&mut candidate.records, &mut candidate.recovery_snapshot)?;
-    super::storage::save(&candidate.records, &candidate.recovery_snapshot)
-        .map_err(|_| E::storage())?;
-    super::registry_memory::replace(candidate.records, candidate.recovery_snapshot)
-        .map_err(|_| E::storage())
+    let publication = super::storage::save(&candidate.records, &candidate.recovery_snapshot)
+        .and_then(|()| {
+            super::registry_memory::replace(candidate.records, candidate.recovery_snapshot)
+        });
+    if let Err(error) = publication {
+        super::registry_index::mark_unavailable(&error).map_err(|_| E::storage())?;
+        return Err(E::storage());
+    }
+    Ok(())
 }

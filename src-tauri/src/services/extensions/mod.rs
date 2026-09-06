@@ -89,6 +89,7 @@ mod registry_managed;
 mod registry_memory;
 mod registry_mutation_error;
 pub(crate) mod registry_recovery;
+mod registry_startup;
 mod registry_state;
 mod registry_sync;
 mod resource_identifier;
@@ -195,12 +196,7 @@ pub use public_api::{
     discovery_preferences, invoke_ui_action, report_ui_mount_failure, set_discovery_preferences,
     ui_catalog,
 };
-pub use registry::{list, set_enabled, set_show_in_chat};
-pub(crate) use registry_index::{
-    catalog_snapshot, dynamic_tool_names, indexed_plugins, indexed_tool, plugin_id_for_tool,
-};
-pub use registry_index::{is_dynamic_tool, is_replacement};
-pub use registry_recovery::{disable_hosted_extensions, restore_recovery_snapshot};
+include!("registry_exports.inc.rs");
 pub use runtime::status;
 pub use runtime_dispatch::{dispatch_tool, emit_event};
 pub(crate) use runtime_lifecycle::{new_stop_deadline, CHANGED_EVENT};
@@ -229,3 +225,6 @@ pub(crate) use resource_identifier::parse as parse_qualified_contribution_id;
 pub(crate) use resource_loader::{
     load_skill_for_session as load_extension_skill_for_session, LoadedResource, ResourceLoadError,
 };
+
+#[cfg(test)]
+mod storage_resilience_tests;

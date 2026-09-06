@@ -59,13 +59,9 @@ pub(crate) async fn run(
         .await?
     };
     let enabled_tool_names = tool_catalog::tool_names(extension_tools.active());
-    crate::services::agent_local::extension_tool_set::record_selection(
-        &extension_tools,
-        &params.session_id,
-        &params.request_id,
-        "extension_tools_selected",
-    )
-    .await;
+    extension_tools
+        .report_prepared(&params.on_event, &params.session_id, &params.request_id)
+        .await?;
     let working_dir = common::resolve_working_dir(&params.working_dir)?;
     common::update_working_dir(&params.session_id, &working_dir).await?;
     let plan_mode_active =

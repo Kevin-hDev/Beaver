@@ -1,10 +1,7 @@
 use serde_json::Value;
 
-use super::extension_session_state::DiscoveryEpoch;
 use super::extension_tool_selection::decide_for_catalog;
-use super::extension_tool_set_apply::{
-    append_capacity_notice, base_tool_count, plugin_descriptors,
-};
+use super::extension_tool_set_apply::append_capacity_notice;
 
 pub struct PrepareContext<'a> {
     pub session_id: &'a str,
@@ -27,6 +24,8 @@ pub struct ExtensionToolSet {
     all: Vec<Value>,
     active: Vec<Value>,
     managed: bool,
+    degradation: Option<&'static str>,
+    _native_only: Option<native_only::NativeOnlyLease>,
     masked: bool,
     provider_tool_limit: usize,
     plugin_tool_capacity: usize,
@@ -45,6 +44,8 @@ impl ExtensionToolSet {
             active: tools.clone(),
             all: tools,
             managed: false,
+            degradation: None,
+            _native_only: None,
             masked: false,
             provider_tool_limit: usize::MAX,
             plugin_tool_capacity: 0,
@@ -58,55 +59,6 @@ impl ExtensionToolSet {
         }
     }
 
-    pub async fn prepare(tools: Vec<Value>, context: PrepareContext<'_>) -> Result<Self, String> {
-        let descriptors = plugin_descriptors(&tools);
-        let computed_mask = super::extension_tool_mask::should_mask(
-            &crate::services::extensions::extension_tool_definitions(),
-            context.context_window,
-        );
-        let route_policy =
-            crate::services::llm::route_profile::tool_limit_policy(context.provider, context.model)
-                .ok_or_else(|| "provider_configuration_invalid".to_string())?;
-        let provider_limit = super::provider_tool_limits::for_policy(route_policy);
-        let plugin_tool_capacity =
-            provider_limit.saturating_sub(base_tool_count(&tools).min(provider_limit));
-        let catalog = crate::services::extensions::catalog_snapshot();
-        let state = super::extension_session_state::configure(
-            context.session_id,
-            DiscoveryEpoch {
-                provider: context.provider.to_string(),
-                model: context.model.to_string(),
-                context_window: context.context_window,
-                catalog_version: catalog.version.clone(),
-                masked: computed_mask,
-            },
-            computed_mask,
-            plugin_tool_capacity,
-            descriptors.clone(),
-            context.preserve_dynamic_tools,
-        )
-        .await?;
-        let masked = state.epoch.as_ref().is_some_and(|epoch| epoch.masked)
-            && !context.preserve_dynamic_tools;
-        let mut result = Self {
-            all: tools,
-            active: Vec::new(),
-            managed: true,
-            masked,
-            provider_tool_limit: provider_limit,
-            plugin_tool_capacity,
-            plugin_descriptors: descriptors,
-            active_plugin_ids: Vec::new(),
-            discovered_plugin_ids: Vec::new(),
-            provider_id: context.provider.to_string(),
-            omitted_plugin_ids: Vec::new(),
-            omitted_tool_names: Vec::new(),
-            additional_omitted_tools: 0,
-        };
-        result.apply(&state.discovered_plugin_ids);
-        Ok(result)
-    }
-
     pub fn active(&self) -> &[Value] {
         &self.active
     }
@@ -116,20 +68,20 @@ impl ExtensionToolSet {
             return Ok(());
         }
         let state = super::extension_session_state::read(session_id).await?;
-        self.apply(&state.discovered_plugin_ids);
-        Ok(())
+        self.apply(&state.discovered_plugin_ids)
     }
 
-    fn apply(&mut self, discovered_plugin_ids: &[String]) {
+    fn apply(&mut self, discovered_plugin_ids: &[String]) -> Result<(), String> {
         if !self.managed {
-            return;
+            return Ok(());
         }
-        let catalog = crate::services::extensions::catalog_snapshot();
+        let catalog = crate::services::extensions::registry_catalog().map_err(str::to_string)?;
         self.apply_with_catalog(
             discovered_plugin_ids,
             &catalog,
             crate::services::extensions::plugin_id_for_tool,
         );
+        Ok(())
     }
 
     fn apply_with_catalog(
@@ -182,3 +134,16 @@ pub use super::extension_tool_set_diagnostics::{record_selection, refresh_and_re
 #[cfg(test)]
 #[path = "extension_tool_set_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "extension_tool_set_resilience_tests.rs"]
+mod resilience_tests;
+
+#[path = "extension_tool_set_degraded.rs"]
+mod degraded;
+#[path = "extension_tool_set_prepare.rs"]
+mod prepare;
+
+#[path = "extension_tool_set_native_only.rs"]
+mod native_only;
+pub(crate) use native_only::native_only_for_session;

@@ -28,6 +28,7 @@ fn prepared(id: &str, version: &str) -> (ExtensionRecord, String) {
 
 #[test]
 fn cancellation_preserves_old_version_and_success_retires_it_only_after_publication() {
+    crate::services::extensions::initialize_test_registry();
     let id = format!("test-{}", uuid::Uuid::new_v4().simple());
     let (old, _) = prepared(&id, "1.0.0");
     super::super::registry_managed::add(old.clone()).unwrap();

@@ -32,8 +32,8 @@ pub(super) fn replace(
     records: Vec<ExtensionRecord>,
     recovery_snapshot: Option<Vec<String>>,
 ) -> Result<(), String> {
-    super::registry_index::rebuild(&records)?;
     let mut state = STATE.write().map_err(|_| unavailable())?;
+    super::registry_index::rebuild(&records)?;
     *state = RegistryMemory {
         records,
         recovery_snapshot,

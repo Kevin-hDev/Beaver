@@ -58,6 +58,7 @@ pub(super) fn migrate_v0(
         return Err(super::storage::migration_error());
     }
     let mut extensions = super::storage::parse_entries(entries)?;
+    super::storage::validate_loaded_records(&extensions)?;
     for record in extensions
         .iter_mut()
         .filter(|record| record.kind == ExtensionKind::Local)

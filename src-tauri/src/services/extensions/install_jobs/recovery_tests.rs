@@ -21,6 +21,7 @@ impl InstallExecutor for Waiting {
     }
 }
 fn store(path: &std::path::Path, calls: Arc<AtomicUsize>) -> InstallJobStore {
+    crate::services::extensions::initialize_test_registry();
     let app = crate::app_exit::AppExitCoordinator::initialize().unwrap();
     InstallJobStore::new(
         super::super::work_supervision::ExtensionWorkServices::new(app.work_supervisor()),

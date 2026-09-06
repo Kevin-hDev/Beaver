@@ -6,7 +6,7 @@ pub trait MutationError {
 
 impl MutationError for String {
     fn storage() -> Self {
-        "Registre d'extensions indisponible.".to_string()
+        super::error_codes::REGISTRY_UNAVAILABLE.to_string()
     }
 }
 

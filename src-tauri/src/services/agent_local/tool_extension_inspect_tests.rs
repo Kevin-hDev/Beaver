@@ -161,6 +161,7 @@ fn inspection_records_discovery_when_plugin_tools_were_already_active() {
 
 #[tokio::test]
 async fn inspection_event_is_bounded_and_refresh_correlates_its_uuid() {
+    crate::services::extensions::initialize_test_registry();
     let session = super::super::session_store::create_full(
         "Inspection diagnostics",
         "qwen",

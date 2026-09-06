@@ -79,6 +79,7 @@ impl InstallExecutor for CheckUiJournal {
 
 #[tokio::test]
 async fn ui_destination_is_durable_before_rename_and_write_failure_prevents_rename() {
+    crate::services::extensions::initialize_test_registry();
     for fail in [false, true] {
         let root = tempfile::tempdir().unwrap();
         let journal = root.path().join("jobs.json");

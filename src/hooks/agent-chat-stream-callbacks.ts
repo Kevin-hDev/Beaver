@@ -158,7 +158,7 @@ export function applyStreamEvent(
       next.error = contextCapacityErrorMessage(rawMsg, event.data.contextCapacity)
         ?? (errorKey ? i18n.t(errorKey) : i18n.t("errors.streamInterrupted"));
       next.isConnectionError = (event.data as Record<string, unknown>).isConnection === true;
-      next.diagnosticSummary = rawMsg.startsWith("compression_") && errorKey
+      next.diagnosticSummary = errorKey && (rawMsg.startsWith("compression_") || rawMsg.startsWith("extensions_"))
         ? undefined
         : event.data.diagnostic?.safeSummary;
       const partial = finishInterruptedStream(next);

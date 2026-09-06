@@ -25,6 +25,19 @@ pub(super) async fn dispatch_inner(
     progress: Option<super::tool_bash_progress::ShellProgress>,
 ) -> ToolResult {
     let session_id = trace.session_id;
+    if super::extension_tool_set::native_only_for_session(session_id)
+        && matches!(
+            tool_name,
+            crate::services::extensions::LIST_EXTENSIONS_TOOL_NAME
+                | crate::services::extensions::INSPECT_EXTENSIONS_TOOL_NAME
+        )
+    {
+        return ToolResult::unavailable(
+            crate::services::extensions::error_codes::STATE_UNAVAILABLE,
+            "Extensions indisponibles.",
+            true,
+        );
+    }
     match tool_name {
         "bash" | "bash_control" => {
             super::tool_dispatcher_shell::dispatch(

@@ -100,3 +100,25 @@ fn compression_failure_keeps_its_stable_code() {
     );
     assert_eq!(safe_code("compression_failed"), "compression_failed");
 }
+
+#[test]
+fn extension_failures_keep_stable_codes_in_persisted_diagnostics() {
+    use crate::services::extensions::error_codes;
+    for code in [
+        error_codes::REGISTRY_UNAVAILABLE,
+        error_codes::REGISTRY_VERSION_UNSUPPORTED,
+        error_codes::REGISTRY_MIGRATION_FAILED,
+        error_codes::STATE_UNAVAILABLE,
+    ] {
+        assert_eq!(classify_error(code, false), code);
+        assert_eq!(safe_code(code), code);
+    }
+    assert_eq!(
+        safe_code("État d'extensions invalide."),
+        error_codes::STATE_UNAVAILABLE
+    );
+    assert_eq!(
+        classify_error("extensions_unknown_future_code", false),
+        "unknown"
+    );
+}

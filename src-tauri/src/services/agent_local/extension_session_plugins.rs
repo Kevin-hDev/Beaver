@@ -46,6 +46,9 @@ pub fn sanitize(state: &mut ExtensionSessionState) {
 }
 
 pub async fn is_tool_active(session_id: &str, tool_name: &str) -> Result<bool, String> {
+    if super::extension_tool_set::native_only_for_session(session_id) {
+        return Ok(false);
+    }
     let Some(plugin_id) = crate::services::extensions::plugin_id_for_tool(tool_name) else {
         return Ok(false);
     };

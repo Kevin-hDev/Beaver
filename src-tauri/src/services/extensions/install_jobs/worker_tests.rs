@@ -11,6 +11,7 @@ struct InstallFixture {
 }
 impl InstallFixture {
     fn new(script: &str) -> Self {
+        crate::services::extensions::initialize_test_registry();
         let root = tempfile::tempdir().unwrap();
         let node = which::which("node").unwrap().canonicalize().unwrap();
         let cli = root.path().join("fake-npm.mjs");

@@ -11,6 +11,7 @@ impl Fixture {
         Self::with_ui(false)
     }
     fn with_ui(real_ui: bool) -> Self {
+        crate::services::extensions::initialize_test_registry();
         let root = tempfile::tempdir().unwrap();
         let node = which::which("node").unwrap().canonicalize().unwrap();
         let cli = root.path().join("npm.mjs");

@@ -30,6 +30,10 @@ export const KNOWN_ERROR_KEYS: Readonly<Record<string, string>> = {
   compression_disabled_under_64k: "errors.compressionDisabledUnder64",
   compression_automatic_suspended: "errors.compressionAutomaticSuspended",
   compression_failed: "errors.compressionFailed",
+  extensions_registry_version_unsupported: "extensions.errors.codes.extensions_registry_version_unsupported",
+  extensions_registry_unavailable: "extensions.errors.codes.extensions_registry_unavailable",
+  extensions_registry_migration_failed: "extensions.errors.codes.extensions_registry_migration_failed",
+  extensions_state_unavailable: "extensions.errors.codes.extensions_state_unavailable",
 };
 
 export function isKnownAgentErrorCode(code: string): boolean {

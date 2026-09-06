@@ -24,6 +24,8 @@ pub(crate) struct IndexedTool {
 
 #[derive(Default)]
 struct DynamicIndex {
+    available: bool,
+    unavailable_reason: Option<&'static str>,
     plugins: Vec<IndexedPlugin>,
     tools: Vec<IndexedTool>,
     names: HashSet<String>,
@@ -68,6 +70,8 @@ pub fn rebuild(records: &[ExtensionRecord]) -> Result<(), String> {
         .write()
         .map_err(|_| "Index d'extensions indisponible.".to_string())?;
     *index = DynamicIndex {
+        available: true,
+        unavailable_reason: None,
         plugins,
         tools,
         names,
@@ -203,3 +207,8 @@ pub(crate) fn indexed_tool(tool_name: &str) -> Option<IndexedTool> {
 #[cfg(test)]
 #[path = "registry_index_tests.rs"]
 mod tests;
+
+#[path = "registry_availability.rs"]
+mod availability;
+pub(super) use availability::mark_unavailable;
+pub(crate) use availability::{registry_availability, registry_catalog};

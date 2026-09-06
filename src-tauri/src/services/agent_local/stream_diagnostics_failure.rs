@@ -97,6 +97,9 @@ fn safe_code(message: &str) -> String {
 }
 
 pub(super) fn classify_error(message: &str, is_connection: bool) -> String {
+    if let Some(code) = extension_failure_code(message) {
+        return code.to_string();
+    }
     let lower = message.to_ascii_lowercase();
     if matches!(
         lower.as_str(),
@@ -154,6 +157,21 @@ pub(super) fn classify_error(message: &str, is_connection: bool) -> String {
         return "tool_error".to_string();
     }
     "unknown".to_string()
+}
+
+fn extension_failure_code(message: &str) -> Option<&'static str> {
+    use crate::services::extensions::error_codes;
+    match message {
+        error_codes::REGISTRY_VERSION_UNSUPPORTED => {
+            Some(error_codes::REGISTRY_VERSION_UNSUPPORTED)
+        }
+        error_codes::REGISTRY_UNAVAILABLE => Some(error_codes::REGISTRY_UNAVAILABLE),
+        error_codes::REGISTRY_MIGRATION_FAILED => Some(error_codes::REGISTRY_MIGRATION_FAILED),
+        error_codes::STATE_UNAVAILABLE
+        | "État d'extensions invalide."
+        | "État d'extensions indisponible." => Some(error_codes::STATE_UNAVAILABLE),
+        _ => None,
+    }
 }
 
 pub(crate) fn is_connection_error(message: &str) -> bool {

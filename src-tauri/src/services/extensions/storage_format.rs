@@ -92,5 +92,5 @@ fn merge_objects(previous: &Value, candidate: &Value) -> Value {
 }
 
 fn unavailable() -> String {
-    "Registre d'extensions indisponible.".to_string()
+    super::error_codes::REGISTRY_UNAVAILABLE.to_string()
 }

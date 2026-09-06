@@ -78,7 +78,7 @@ pub fn active_definitions_with(
     cap_definitions(selected, provider_tool_limit)
 }
 
-fn cap_definitions(tools: Vec<Value>, provider_tool_limit: usize) -> ActiveDefinitions {
+pub(super) fn cap_definitions(tools: Vec<Value>, provider_tool_limit: usize) -> ActiveDefinitions {
     if tools.len() <= provider_tool_limit {
         return ActiveDefinitions {
             tools,

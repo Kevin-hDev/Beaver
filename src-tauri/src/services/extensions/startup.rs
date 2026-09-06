@@ -7,6 +7,18 @@ pub fn initialize_on_startup(app: &tauri::AppHandle) {
 }
 
 pub(crate) fn initialize(app: &tauri::AppHandle) -> Result<(), String> {
+    let result = initialize_runtime(app);
+    if let Err(error) = &result {
+        super::registry_startup::refuse(error)?;
+        let reason = super::registry_availability()
+            .err()
+            .unwrap_or(super::error_codes::REGISTRY_UNAVAILABLE);
+        ::log::warn!("[extensions] startup_refused code={reason}");
+    }
+    result
+}
+
+fn initialize_runtime(app: &tauri::AppHandle) -> Result<(), String> {
     let Some(coordinator) = app.try_state::<crate::app_exit::AppExitCoordinator>() else {
         ::log::error!("[extensions] shutdown supervision unavailable");
         return Err(super::error_codes::HOST_UNAVAILABLE.to_string());

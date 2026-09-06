@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { agentStreamManager } from "../agent-stream-manager";
 import { records } from "../agent-stream-records";
+import { registerToast } from "@/lib/toast-emitter";
+import i18n from "@/i18n";
 import type { AgentMessage, StreamEvent } from "@/types/agent";
 import type { AgentMessageView } from "@/types/agent-session.generated";
 
@@ -36,6 +38,27 @@ function emit(sessionId: string, event: StreamEvent, generation?: number) {
 }
 
 describe("agentStreamManager", () => {
+  it.each([
+    "extensions_registry_version_unsupported",
+    "extensions_registry_unavailable",
+    "extensions_registry_migration_failed",
+    "extensions_state_unavailable",
+  ])("affiche la notice %s sans interrompre la réponse", async (code) => {
+    const toast = vi.fn();
+    registerToast(toast);
+    try {
+      await agentStreamManager.startSession("extension-notice", [], 0);
+      const messageKey = `extensions.errors.codes.${code}`;
+      emit("extension-notice", { event: "notice", data: { messageKey } });
+      expect(toast).toHaveBeenCalledWith(i18n.t(messageKey), "info", undefined);
+      expect(agentStreamManager.getSnapshot("extension-notice")?.isStreaming).toBe(true);
+      emit("extension-notice", { event: "token", data: { content: "Bonjour", tokenCount: 1, tps: 1 } });
+      expect(agentStreamManager.getSnapshot("extension-notice")?.currentContent).toBe("Bonjour");
+    } finally {
+      registerToast(() => {});
+    }
+  });
+
   beforeEach(() => {
     records.clear();
     vi.clearAllMocks();

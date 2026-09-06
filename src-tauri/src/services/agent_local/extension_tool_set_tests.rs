@@ -10,7 +10,7 @@ fn passthrough_never_manages_chat_tools_as_extensions() {
     let definitions = vec![json!({"function": {"name": "web_search"}})];
     let mut tools = ExtensionToolSet::passthrough(definitions.clone());
 
-    tools.apply(&["example.replacement".to_string()]);
+    tools.apply(&["example.replacement".to_string()]).unwrap();
 
     assert_eq!(tools.active(), definitions);
 }
@@ -105,6 +105,8 @@ fn inspected_extension_schemas_arrive_only_after_the_next_set_application() {
         all: tools,
         active: Vec::new(),
         managed: true,
+        degradation: None,
+        _native_only: None,
         masked: true,
         provider_tool_limit: 8,
         plugin_tool_capacity: 2,

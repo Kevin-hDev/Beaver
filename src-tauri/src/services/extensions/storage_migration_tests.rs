@@ -211,7 +211,7 @@ fn clearing_known_ui_fields_cannot_resurrect_previous_values() {
         mode: super::types::ExtensionUiMode::Advanced,
         entry: Some("ui.ts".to_string()),
     });
-    advanced.manifest.ui_legacy = Some("legacy.ts".to_string());
+    advanced.manifest.api_level = super::types::ExtensionApiLevel::Advanced;
     advanced.ui_artifact = Some(super::types::ExtensionUiArtifact {
         version: 1,
         builder_version: "0.28.1".to_string(),
@@ -227,6 +227,9 @@ fn clearing_known_ui_fields_cannot_resurrect_previous_values() {
         inputs: vec!["ui.ts".to_string()],
         manifest_sha256: "b".repeat(64),
     });
+    let artifact = advanced.ui_artifact.as_mut().unwrap();
+    artifact.manifest_sha256 = super::ui_artifact::manifest_hash(artifact).unwrap();
+    super::validation::records(&[advanced.clone()]).unwrap();
     storage::save_to(&path, &[advanced.clone()], &None).unwrap();
 
     advanced.manifest.ui = Some(super::types::ExtensionUiManifest {

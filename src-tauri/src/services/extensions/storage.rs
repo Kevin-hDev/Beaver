@@ -47,7 +47,7 @@ pub fn save(
 }
 
 pub(crate) fn load_from(path: &Path) -> Result<LoadedRegistry, String> {
-    if !path.exists() {
+    if !registry_exists(path)? {
         return Ok(LoadedRegistry {
             extensions: Vec::new(),
             recovery_snapshot: None,
@@ -61,6 +61,9 @@ pub(crate) fn load_from(path: &Path) -> Result<LoadedRegistry, String> {
         Value::Object(_) => match value.get("version").and_then(Value::as_u64) {
             Some(1) => super::storage_migration::migrate_v1(path, &bytes, value),
             Some(2) => load_v2(value),
+            Some(version) if version > u64::from(VERSION) => {
+                Err(super::error_codes::REGISTRY_VERSION_UNSUPPORTED.to_string())
+            }
             _ => Err(migration_error()),
         },
         _ => Err(migration_error()),
@@ -68,15 +71,15 @@ pub(crate) fn load_from(path: &Path) -> Result<LoadedRegistry, String> {
 }
 
 fn read_registry(path: &Path) -> Result<Vec<u8>, String> {
-    let metadata = std::fs::metadata(path).map_err(|_| migration_error())?;
+    let metadata = std::fs::metadata(path).map_err(|_| unavailable_error())?;
     if metadata.len() > MAX_MESSAGE_BYTES as u64 {
         return Err(migration_error());
     }
-    let file = std::fs::File::open(path).map_err(|_| migration_error())?;
+    let file = std::fs::File::open(path).map_err(|_| unavailable_error())?;
     let mut bytes = Vec::with_capacity(metadata.len() as usize);
     file.take(MAX_MESSAGE_BYTES as u64 + 1)
         .read_to_end(&mut bytes)
-        .map_err(|_| migration_error())?;
+        .map_err(|_| unavailable_error())?;
     if bytes.len() > MAX_MESSAGE_BYTES {
         return Err(migration_error());
     }
@@ -90,6 +93,7 @@ pub(super) fn load_v2(value: Value) -> Result<LoadedRegistry, String> {
     }
     validate_recovery_snapshot(&raw.recovery_snapshot)?;
     let extensions = parse_entries(raw.extensions)?;
+    validate_loaded_records(&extensions)?;
     Ok(LoadedRegistry {
         extensions,
         recovery_snapshot: raw.recovery_snapshot,
@@ -122,15 +126,24 @@ pub(crate) fn save_to(
     recovery_snapshot: &Option<Vec<String>>,
 ) -> Result<(), String> {
     validate_recovery_snapshot(recovery_snapshot)?;
-    let existing = if path.exists() {
+    let existing = if registry_exists(path)? {
         let bytes = read_registry(path)?;
-        Some(serde_json::from_slice(&bytes).map_err(|_| migration_error())?)
+        let value: Value = serde_json::from_slice(&bytes).map_err(|_| migration_error())?;
+        if value
+            .get("version")
+            .and_then(Value::as_u64)
+            .is_some_and(|version| version > u64::from(VERSION))
+        {
+            return Err(super::error_codes::REGISTRY_VERSION_UNSUPPORTED.to_string());
+        }
+        // Never let a mutation repair or downgrade a refused registry.
+        load_v2(value.clone())?;
+        Some(value)
     } else {
         None
     };
     let bytes = super::storage_format::serialize(VERSION, records, recovery_snapshot, existing)?;
-    crate::services::private_store::atomic_write(path, &bytes)
-        .map_err(|_| "Registre d'extensions indisponible.".to_string())
+    crate::services::private_store::atomic_write(path, &bytes).map_err(|_| unavailable_error())
 }
 
 pub(super) fn serialize_envelope(
@@ -179,4 +192,22 @@ pub(crate) fn finish_successful_startup(path: &Path, format: LoadedFormat) -> Re
 
 pub(super) fn migration_error() -> String {
     super::error_codes::REGISTRY_MIGRATION_FAILED.to_string()
+}
+
+fn registry_exists(path: &Path) -> Result<bool, String> {
+    match std::fs::symlink_metadata(path) {
+        Ok(_) => Ok(true),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(false),
+        Err(_) => Err(unavailable_error()),
+    }
+}
+
+fn unavailable_error() -> String {
+    super::error_codes::REGISTRY_UNAVAILABLE.to_string()
+}
+
+pub(super) fn validate_loaded_records(records: &[ExtensionRecord]) -> Result<(), String> {
+    // Apply the same runtime reset as startup before validating legacy records.
+    let records = super::registry_state::reset_hosted_runtime(records.to_vec());
+    super::validation::records(&records).map_err(|_| migration_error())
 }

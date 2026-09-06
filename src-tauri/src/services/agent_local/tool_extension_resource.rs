@@ -5,6 +5,9 @@ use super::types_tools::ToolResult;
 pub(crate) const NAME: &str = "load_extension_resource";
 
 pub(crate) async fn execute(args: &Value, session_id: &str) -> ToolResult {
+    if super::extension_tool_set::native_only_for_session(session_id) {
+        return unavailable();
+    }
     let Some(resource_id) = args.get("resource_id").and_then(Value::as_str) else {
         return ToolResult::validation("resource_id_required", "Identifiant de ressource requis.");
     };
