@@ -24,16 +24,6 @@
   flex-shrink: 0;
 }
 
-.ob-shell.os-mac {
-  --popover-bg: var(--surface-glass);
-  --popover-backdrop-filter: blur(20px);
-}
-
-.ob-shell.os-other {
-  --popover-bg: var(--shell-opaque);
-  --popover-backdrop-filter: none;
-}
-
 .ob-track {
   flex: 1;
   min-height: 0;

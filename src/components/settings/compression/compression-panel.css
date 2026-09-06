@@ -9,9 +9,8 @@
 }
 
 /* Le voile est un bouton plein écran plutôt qu'un clic posé sur le conteneur :
-   il se ferme au clavier. Son flou vient du jeton, comme celui des autres
-   dialogues — il valait blur(2px) en dur, donc il floutait aussi sur Linux et
-   Windows, où ce jeton vaut none volontairement. */
+   il se ferme au clavier. Son flou vient du jeton et de nulle part ailleurs —
+   celui-ci vaut none sur Linux et Windows, volontairement. */
 .cpa-backdrop-dismiss,
 .cpd-backdrop-dismiss {
   position: absolute;

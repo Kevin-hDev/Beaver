@@ -1,5 +1,3 @@
-/* Plus de position: relative ici : le panneau ne s'y accroche plus, il sort du
-   conteneur par un portail et se positionne sur l'écran. */
 .ss-wrap {
   display: inline-block;
 }

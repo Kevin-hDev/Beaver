@@ -16,11 +16,6 @@
   -webkit-backdrop-filter: blur(20px);
 }
 
-/* Les deux contournements qui vivaient ici — remonter la carte au-dessus de ses
-   voisines et lui couper son flou pendant qu'une liste est ouverte — ont été
-   supprimés le 6 septembre 2026 : les listes sortent maintenant de la carte par
-   un portail, elles ne sont donc plus ni coupées ni privées de flou par elle. */
-
 .settings-row {
   display: flex;
   align-items: center;
