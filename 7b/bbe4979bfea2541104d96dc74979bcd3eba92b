@@ -1,0 +1,1 @@
+Diagnostic only: no production launcher change. Local direct/gated Node succeeds. Rust workflow layout test: 1 pass; JS CI contracts: 25 pass; Graphify updated. Manual installer-probe runs independently of the long existing CI. Windows and Linux conclusions require probe evidence before correction or full CI.
