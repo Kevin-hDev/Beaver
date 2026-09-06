@@ -4,6 +4,22 @@ use std::{
     time::{Duration, Instant},
 };
 
+// Preparation must finish before the global Tauri worker can reach production.
+struct PreparedExecutor {
+    ready: Arc<tokio::sync::Notify>,
+    inner: Arc<ProductionExecutor>,
+}
+impl InstallExecutor for PreparedExecutor {
+    fn execute(&self, request: InstallRequest, control: InstallControl) -> InstallFuture {
+        let ready = self.ready.clone();
+        let inner = self.inner.clone();
+        Box::pin(async move {
+            ready.notified().await;
+            inner.execute(request, control).await
+        })
+    }
+}
+
 #[tokio::test]
 async fn saturated_producer_admission_never_claims_retained_artifacts_are_clean() {
     for has_checkpoint in [false, true] {
@@ -21,9 +37,13 @@ async fn saturated_producer_admission_never_claims_retained_artifacts_are_clean(
                 directory: root.path().to_owned(),
             },
         };
+        let ready = Arc::new(tokio::sync::Notify::new());
         let store = crate::services::extensions::install_jobs::InstallJobStore::new(
             work.clone(),
-            Some(Arc::new(executor)),
+            Some(Arc::new(PreparedExecutor {
+                ready: ready.clone(),
+                inner: Arc::new(executor),
+            })),
             None,
         );
         store
@@ -47,6 +67,7 @@ async fn saturated_producer_admission_never_claims_retained_artifacts_are_clean(
             work.try_admit_operation(),
             Err(crate::services::extensions::work_supervision::ExtensionWorkAdmissionError::Busy)
         ));
+        ready.notify_one();
         tokio::time::timeout(Duration::from_secs(2), async {
             loop {
                 if store.snapshot().unwrap().jobs[0].status.terminal() {

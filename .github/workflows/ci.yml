@@ -621,6 +621,7 @@ jobs:
         working-directory: src-tauri
         shell: bash
         run: |
+          node ../scripts/ci/run-rust-test-filter.mjs --filter services::extensions::installer_process::gate_probe_tests --features windows-tests --nocapture
           node ../scripts/ci/run-rust-test-filter.mjs --filter services::extensions::git_dependencies_tests::git_materialization_installs_dependencies_without_running_scripts_or_npmrc --features windows-tests --exact --nocapture
           node ../scripts/ci/run-rust-test-filter.mjs --filter services::extensions::npm_runner_tests::local_fixture_install_never_runs_its_lifecycle_script --features windows-tests --exact --nocapture
 

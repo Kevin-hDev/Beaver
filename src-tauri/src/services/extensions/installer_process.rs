@@ -119,3 +119,7 @@ mod death_tests;
 #[cfg(test)]
 #[path = "installer_process_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "installer_gate_probe_tests.rs"]
+mod gate_probe_tests;
