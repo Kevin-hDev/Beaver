@@ -104,7 +104,7 @@ describe("API expansion packaged acceptance", () => {
 
   for (const theme of RESOLVED_THEME_OPTIONS) {
     it(`keeps the capability detail usable at narrow width in ${theme.id}`, async () => {
-      await setMinimumViewport(900, 600);
+      await setMinimumViewport();
       await setPresentation("en", theme.id);
       await openExtensionDetail(enLocale);
       assert.equal(

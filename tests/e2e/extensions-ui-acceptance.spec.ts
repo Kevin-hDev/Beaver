@@ -124,7 +124,7 @@ describe("extension UI installed acceptance", () => {
   for (const locale of LOCALES) {
     for (const theme of RESOLVED_THEME_OPTIONS) {
       it(`keeps installed surfaces usable for ${locale}/${theme.id} at minimum size`, async () => {
-        await setMinimumViewport(900, 600);
+        await setMinimumViewport();
         await browser.execute((nextLocale, nextTheme) => {
           window.localStorage.setItem("clgo-language", nextLocale);
           window.localStorage.setItem("clgo-theme", nextTheme);

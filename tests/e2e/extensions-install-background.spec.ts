@@ -26,7 +26,7 @@ describe("background extension installation", () => {
     baselineJobs = new Set((await snapshot()).jobs.map(job => job.id));
     fixture = await invokeTauri<Fixture>("e2e_extension_install_fixture", { enabled: true });
     await present("light");
-    await setMinimumViewport(1100, 760);
+    await setMinimumViewport();
   });
   after(async () => {
     for (const job of (await snapshot()).jobs.filter(candidate => !baselineJobs.has(candidate.id))) {
@@ -103,7 +103,7 @@ describe("background extension installation", () => {
       await clickText(`.update-list [data-install-job="${job.id}"] button`, copy.cancel);
       await waitJob(job.id, "cancelled");
       await closeTracking();
-      await setMinimumViewport(1100, 760);
+      await setMinimumViewport();
     }
   });
 
