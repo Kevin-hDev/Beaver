@@ -1,0 +1,9 @@
+Traçabilité ajoutée le 6 septembre 2026, sans réécrire l’historique.
+
+Revue tâche 1 : préserver la cause d’annulation et terminer la file quand le nettoyage du travailleur échoue.
+
+task-1-report.md, Round1 : filtre services::extensions::install_jobs::store_tests::review_tests, 3 échecs avant correction puis 3 passés / 0 échec. Rapports /tmp/beaver-install-jobs-review-{red,green}.log cités. La revue du 6 septembre a ensuite trouvé la variante Cancelling avec checkpoint, traitée dans la passe de corrections suivante.
+
+Autorité locale des rapports : .superpowers/sdd/2026-09-05-extension-installation-background/ (ignoré). Les logs historiques ne portent pas tous une empreinte de checkout ; aucun rejeu sur cet ancien commit n’est revendiqué. La note de 69a2d057 décrit la validation globale ultérieure et ses limites natives. Les corrections de la revue disposent de leurs propres logs review-*.log.
+
+Aucun push, CI, merge ou publication réalisé par cet ajout de note.
