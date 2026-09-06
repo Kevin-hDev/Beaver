@@ -1,0 +1,34 @@
+Suite de la revue startup resilience — 6 septembre 2026
+
+Base : dd73e70a. Branche : codex/extension-startup-resilience.
+Demande utilisateur : appliquer les corrections confirmées, seul, avec un nouveau commit et une note Git. Le rapport de référence est docs/fonctionnalites/extension/REVUE_STARTUP_RESILIENCE_2026-09-06.md. Ce rapport et le commit précédent ne sont pas réécrits.
+
+Décisions et traitement de chaque point
+
+IMP-1 : corrigé par refus complet du registre contenant un kind inconnu, avant migration, publication et nettoyage de démarrage. Le code existant extensions_registry_version_unsupported déclenche le repli natif et l'explication déjà traduite. Un kind absent/non textuel reste une erreur de format invalide. La politique remplace explicitement l'ancien comportement d'ignorance ; le test historique est adapté à cette nouvelle garantie. Pourquoi ne pas recopier simplement les entrées opaques comme proposé dans la revue : leurs fichiers pourraient ensuite être supprimés comme non référencés par le nettoyage de démarrage. Refuser le registre protège à la fois ses octets et empêche ce nettoyage. Aucun format n'est rétro-migré. Conséquence assumée : toutes les extensions de ce registre sont indisponibles jusqu'à utilisation d'une version compatible, mais les conversations gardent le repli natif.
+
+IMP-2 / MIN-2 : le scénario du rapport n'est pas établi par le chemin cité. refresh_from_session lit l'état sans l'écrire ; load/parse_state absorbent les erreurs de lecture ; configure est intercepté par prepare ; l'écriture d'inspection est interceptée par tool_extension_inspect. L'uniformisation reste faite : les erreurs produites par extension_session_state émettent STATE_UNAVAILABLE, y compris les véritables erreurs d'écriture provenant de private_store et la suppression. La classification des anciennes phrases demeure uniquement pour compatibilité historique, avec commentaire explicite. Un test frontend vérifie un code stable reçu après un token et la conservation du texte partiel ; il ne prétend pas reproduire le scénario mi-tour contesté.
+
+MIN-1 : erreurs des verrous/index et de RegistryMemory uniformisées vers REGISTRY_UNAVAILABLE.
+
+MIN-3 : distinction explicite. L'échec d'envoi de la notice est journalisé sans détail sensible et ne bloque plus à lui seul le tour. En revanche update_run sauvegarde le même fichier AgentSession que la conversation : son échec reste bloquant, pour éviter d'exécuter des outils lorsque leur conversation ne peut plus être enregistrée. Décision commentée au point d'appel, couverte par un test sur un vrai chemin de session rendu non inscriptible en tant que fichier. Le garde natif reste détenu tant que le jeu d'outils existe. L'émission des événements ultérieurs conserve ses règles normales : cette correction ne garantit pas une réponse affichée si tout le canal UI reste en panne.
+
+MIN-4 : les notices de la famille extensions.errors.codes. utilisent warning ; les autres restent info. Aucun nouveau texte, aucune nouvelle autorité de traduction, aucun changement CSS. Le résumé technique français persistant reste cohérent avec le module existant, conformément au report explicite de MIN-4(b).
+
+MIN-5 : refresh_index garde le verrou de mutation et retire la disponibilité si la reconstruction échoue. Les préférences étant déjà enregistrées, le catalogue précédent n'est plus servi comme valide ; le redémarrage peut reconstruire le nouvel état. Choix du retrait plutôt qu'un rollback sur disque qui pourrait lui-même échouer. Test isolé dans le processus du test de registre : catalogue disponible -> reconstruction simulée en erreur -> catalogue retiré et mutations refusées -> publication valide à nouveau disponible.
+
+Vérifications réellement exécutées
+
+- Test initial rouge : unknown_kinds_refuse_load_and_save_without_touching_any_bytes (0 succès, 1 échec) : l'ancien lecteur migrait l'entrée inconnue vers un registre vide. Après correction : cas v0/v1/v2, refus de load/save, octets du registre et sauvegarde existante inchangés, absence de nouvelle sauvegarde v0. Le test voisin avec extensions connues protège aussi leurs entrées.
+- Tests UI initialement rouges : 4 notices attendues warning mais reçues info (19 autres tests verts).
+- cargo test --lib extension : 601 passed, 0 failed, 10 ignored. Exécution parallèle normale. Inclut la nouvelle erreur publique d'écriture de cache, le journal de conversation indisponible, la notice en échec, les transitions du registre et le transport simulé du commit précédent.
+- npx vitest run src/hooks/__tests__/agent-chat-extension-errors.test.ts src/hooks/__tests__/agent-stream-manager.test.ts src/hooks/__tests__/agent-chat-stream-callbacks.test.ts src/components/ui/__tests__/toast.test.tsx : 65 passed, 4 fichiers, 0 échec. Le test d'une notice ordinaire confirme son maintien en info.
+- npx tsc --noEmit : succès. npm run lint : succès. ESLint ciblé sur les trois fichiers frontend changés : succès.
+- cargo clippy --all-targets -- -D warnings : succès. cargo fmt --all -- --check : succès. rustfmt explicite des fichiers Rust modifiés, contrôle des tailles des sources et git diff --check : succès.
+- Inspection visuelle du composant ToastProvider réel et des styles réels dans une page Vite temporaire, en sombre puis clair : avertissement visible et texte intégral lisible. Page supprimée, onglet fermé, serveur arrêté.
+- Graphify : maintenance AST exécutée après les modifications. Aucun document indexé ni contrat généré n'est modifié dans ce commit ; cette note Git porte les décisions de suivi.
+
+Limites et périmètre
+
+Pas de test dans un nouveau binaire installé, pas d'appel fournisseur payant/réel et pas de modification des conversations personnelles. Les dix tests Rust ignorés et la suite globale hors périmètre ne sont pas revendiqués. Les avertissements déjà observés sur ts-rs/deny_unknown_fields et le linker __eh_frame restent présents sans échec des commandes. La première commande Rust lancée avec --manifest-path depuis la racine a été interrompue puis relancée depuis src-tauri pour utiliser la configuration locale ; elle n'est pas comptée comme validation.
+Les modifications préexistantes de docs/beaver-site et les captures fast-mode sont conservées hors commit. Aucun push, merge, changement de version ou nouvelle délégation.
