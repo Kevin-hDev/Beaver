@@ -8,3 +8,5 @@
 /scripts/build/searxng-python-version.txt text eol=lf
 /src-tauri/resources/searxng-sidecar/runtime-manifest.golden.json text eol=lf
 /src-tauri/scripts/*.sh text eol=lf
+# This generated contract is compared byte-for-byte with Rust output on every OS.
+/src/types/extension-install-jobs.generated.ts text eol=lf

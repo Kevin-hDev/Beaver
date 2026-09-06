@@ -65,9 +65,11 @@ impl Fixture {
                 }
                 assert!(
                     !view.status.terminal(),
-                    "unexpected {:?}: {:?}",
+                    "unexpected {:?}: {:?}, phase {:?}, producer stage {:?}",
                     view.status,
-                    view.error_code
+                    view.error_code,
+                    view.phase,
+                    std::fs::read_to_string(self.root.path().join("stage")).ok()
                 );
                 tokio::time::sleep(Duration::from_millis(10)).await;
             }

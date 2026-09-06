@@ -31,11 +31,13 @@ async fn never_remembers_tools_excluded_from_session_allow() {
 #[tokio::test]
 async fn extension_authorization_is_bound_to_plugin_and_tool() {
     let session_id = uuid::Uuid::new_v4().to_string();
-    mark_extension_allowed(&session_id, "plugin-a", "shared-tool").await;
+    // clear_extension operates across sessions; parallel tests need distinct plugins.
+    let plugin = uuid::Uuid::new_v4().to_string();
+    mark_extension_allowed(&session_id, &plugin, "shared-tool").await;
 
-    assert!(is_extension_allowed(&session_id, "plugin-a", "shared-tool").await);
+    assert!(is_extension_allowed(&session_id, &plugin, "shared-tool").await);
     assert!(!is_extension_allowed(&session_id, "plugin-b", "shared-tool").await);
-    assert!(!is_extension_allowed(&session_id, "plugin-a", "other-tool").await);
+    assert!(!is_extension_allowed(&session_id, &plugin, "other-tool").await);
     clear_session(&session_id).await;
 }
 

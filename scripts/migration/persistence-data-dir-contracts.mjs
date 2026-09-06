@@ -62,6 +62,12 @@ export const EXPECTED_DATA_DIR_REFERENCES = Object.freeze([
   ["src-tauri/src/services/extensions/core_bridge.rs", 1],
   ["src-tauri/src/services/extensions/discovery_preferences.rs", 1],
   ["src-tauri/src/services/extensions/discovery_usage.rs", 1],
+  // Journal durable de reprise ; les deux sondes disque mesurent son volume.
+  ["src-tauri/src/services/extensions/install_jobs/checkpoint.rs", 1],
+  ["src-tauri/src/services/extensions/install_jobs/disk_control.rs", 1],
+  // Sources simulées uniquement dans le profil E2E isolé, absent des builds de production.
+  ["src-tauri/src/services/extensions/install_jobs/e2e_fixture.rs", 2],
+  ["src-tauri/src/services/extensions/install_jobs/materialize.rs", 1],
   ["src-tauri/src/services/extensions/loading_marker.rs", 1],
   ["src-tauri/src/services/extensions/managed_store.rs", 1],
   ["src-tauri/src/services/extensions/operation_log.rs", 1],

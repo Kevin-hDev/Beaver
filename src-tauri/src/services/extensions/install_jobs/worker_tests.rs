@@ -76,7 +76,8 @@ impl InstallFixture {
 #[tokio::test]
 async fn cancelling_real_npm_writer_confirms_process_death_before_cleaning_and_preserves_user_source(
 ) {
-    let fixture = InstallFixture::new("import fs from 'node:fs';import path from 'node:path';const root=path.dirname(new URL(import.meta.url).pathname);fs.writeFileSync(path.join(root,'pid'),String(process.pid));setInterval(()=>fs.appendFileSync('partial','x'),10);");
+    // URL.pathname is not a filesystem path on Windows (or with escaped characters).
+    let fixture = InstallFixture::new("import fs from 'node:fs';import path from 'node:path';import {fileURLToPath} from 'node:url';const root=path.dirname(fileURLToPath(import.meta.url));fs.writeFileSync(path.join(root,'pid'),String(process.pid));setInterval(()=>fs.appendFileSync('partial','x'),10);");
     let job = fixture
         .store
         .start(InstallRequest::Npm {
