@@ -38,6 +38,18 @@ function emit(sessionId: string, event: StreamEvent, generation?: number) {
 }
 
 describe("agentStreamManager", () => {
+  it("conserve le niveau info des notices ordinaires", async () => {
+    const toast = vi.fn();
+    registerToast(toast);
+    try {
+      await agentStreamManager.startSession("ordinary-notice", [], 0);
+      emit("ordinary-notice", { event: "notice", data: { messageKey: "fixture.information" } });
+      expect(toast).toHaveBeenCalledWith(i18n.t("fixture.information"), "info", undefined);
+    } finally {
+      registerToast(() => {});
+    }
+  });
+
   it.each([
     "extensions_registry_version_unsupported",
     "extensions_registry_unavailable",
@@ -50,7 +62,7 @@ describe("agentStreamManager", () => {
       await agentStreamManager.startSession("extension-notice", [], 0);
       const messageKey = `extensions.errors.codes.${code}`;
       emit("extension-notice", { event: "notice", data: { messageKey } });
-      expect(toast).toHaveBeenCalledWith(i18n.t(messageKey), "info", undefined);
+      expect(toast).toHaveBeenCalledWith(i18n.t(messageKey), "warning", undefined);
       expect(agentStreamManager.getSnapshot("extension-notice")?.isStreaming).toBe(true);
       emit("extension-notice", { event: "token", data: { content: "Bonjour", tokenCount: 1, tps: 1 } });
       expect(agentStreamManager.getSnapshot("extension-notice")?.currentContent).toBe("Bonjour");

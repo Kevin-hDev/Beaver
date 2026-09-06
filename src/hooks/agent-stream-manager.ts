@@ -171,7 +171,8 @@ function handleStreamEvent(sessionId: string, event: StreamEvent, generation: nu
   }
 
   if (event.event === "notice") {
-    showToast(i18n.t(event.data.messageKey), "info");
+    const severity = event.data.messageKey.startsWith("extensions.errors.codes.") ? "warning" : "info";
+    showToast(i18n.t(event.data.messageKey), severity);
     return;
   }
 

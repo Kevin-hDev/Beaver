@@ -104,16 +104,12 @@ pub(super) fn load_v2(value: Value) -> Result<LoadedRegistry, String> {
 pub(super) fn parse_entries(entries: Vec<Value>) -> Result<Vec<ExtensionRecord>, String> {
     let mut records = Vec::with_capacity(entries.len());
     for entry in entries {
-        let supported = matches!(
-            entry.get("kind").and_then(Value::as_str),
-            Some("builtin" | "local")
-        );
-        if !supported {
-            ::log::warn!(
-                "[extensions] {}",
-                super::error_codes::REGISTRY_ENTRY_IGNORED
-            );
-            continue;
+        // Unknown kinds may own files too: refuse the whole registry before
+        // migration, saving or startup cleanup can discard data we cannot interpret.
+        match entry.get("kind").and_then(Value::as_str) {
+            Some("builtin" | "local") => {}
+            Some(_) => return Err(super::error_codes::REGISTRY_VERSION_UNSUPPORTED.to_string()),
+            None => return Err(migration_error()),
         }
         records.push(serde_json::from_value(entry).map_err(|_| migration_error())?);
     }

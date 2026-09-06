@@ -159,6 +159,7 @@ pub(super) fn classify_error(message: &str, is_connection: bool) -> String {
     "unknown".to_string()
 }
 
+// Historical sentences are read compatibility only; current producers emit contract codes.
 fn extension_failure_code(message: &str) -> Option<&'static str> {
     use crate::services::extensions::error_codes;
     match message {

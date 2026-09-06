@@ -235,3 +235,40 @@ async fn ollama_preparation_also_degrades_without_extensions() {
         Err(crate::services::agent_local::tool_skill_loader::SkillLoadError::Unavailable)
     ));
 }
+
+#[tokio::test]
+async fn degraded_turn_stops_if_the_conversation_itself_cannot_be_saved() {
+    use crate::services::agent_local::{
+        session_store, stream_diagnostics, stream_events::AgentEventEmitter,
+    };
+    let session = session_store::create_full(
+        "journal failure fixture",
+        "gpt-5.6-luna",
+        "openai",
+        false,
+        None,
+    )
+    .await
+    .unwrap();
+    let request = stream_diagnostics::start_request(&session.id, 1).await;
+    let tools =
+        ExtensionToolSet::degraded(vec![], 0, error_codes::STATE_UNAVAILABLE, &session.id).unwrap();
+    let target = crate::services::paths::data_dir()
+        .join("agent-sessions")
+        .join(format!("{}.json", session.id));
+    std::fs::remove_file(&target).unwrap();
+    std::fs::create_dir(&target).unwrap();
+    let result = tools
+        .report_prepared(
+            &AgentEventEmitter::test(session.id.clone()),
+            &session.id,
+            &request,
+        )
+        .await;
+    let guard_held = native_only_for_session(&session.id);
+    std::fs::remove_dir(&target).unwrap();
+    session_store::save(&session).await.unwrap();
+    session_store::delete_one(&session.id).await.unwrap();
+    assert!(result.is_err());
+    assert!(guard_held);
+}

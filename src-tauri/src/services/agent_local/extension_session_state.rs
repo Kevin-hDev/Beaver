@@ -5,6 +5,7 @@ use std::sync::LazyLock;
 use tokio::sync::Mutex;
 
 use super::extension_tool_selection::PluginDescriptor;
+use crate::services::extensions::error_codes;
 
 use crate::services::extensions::DISCOVERY_STORE_MAX_BYTES as STORE_MAX_BYTES;
 const MAX_EPOCH_TEXT_CHARS: usize = 256;
@@ -42,7 +43,7 @@ pub async fn configure(
     preserve_dynamic_tools: bool,
 ) -> Result<ExtensionSessionState, String> {
     if invalid_epoch(&epoch) {
-        return Err("État d'extensions invalide.".to_string());
+        return Err(error_codes::STATE_UNAVAILABLE.to_string());
     }
     mutate(session_id, |state| {
         if state
@@ -89,7 +90,7 @@ pub async fn remove(session_id: &str) -> Result<(), String> {
     match tokio::fs::remove_file(path(session_id)).await {
         Ok(()) => Ok(()),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
-        Err(_) => Err("Suppression de l'état d'extensions impossible".into()),
+        Err(_) => Err(error_codes::STATE_UNAVAILABLE.to_string()),
     }
 }
 
@@ -163,17 +164,21 @@ fn parse_state(bytes: &[u8]) -> ExtensionSessionState {
 
 async fn save(session_id: &str, state: &ExtensionSessionState) -> Result<(), String> {
     let bytes =
-        serde_json::to_vec(state).map_err(|_| "État d'extensions indisponible.".to_string())?;
+        serde_json::to_vec(state).map_err(|_| error_codes::STATE_UNAVAILABLE.to_string())?;
     if bytes.len() as u64 > STORE_MAX_BYTES {
-        return Err("État d'extensions invalide.".to_string());
+        return Err(error_codes::STATE_UNAVAILABLE.to_string());
     }
     let path = path(session_id);
     let parent = path
         .parent()
-        .ok_or_else(|| "État d'extensions indisponible.".to_string())?
+        .ok_or_else(|| error_codes::STATE_UNAVAILABLE.to_string())?
         .to_path_buf();
-    crate::services::private_store::ensure_private_dir_async(parent).await?;
-    crate::services::private_store::atomic_write_async(path, bytes).await
+    crate::services::private_store::ensure_private_dir_async(parent)
+        .await
+        .map_err(|_| error_codes::STATE_UNAVAILABLE.to_string())?;
+    crate::services::private_store::atomic_write_async(path, bytes)
+        .await
+        .map_err(|_| error_codes::STATE_UNAVAILABLE.to_string())
 }
 
 #[cfg(test)]

@@ -42,5 +42,5 @@ pub(super) fn replace(
 }
 
 fn unavailable() -> String {
-    "Registre d'extensions indisponible.".to_string()
+    super::error_codes::REGISTRY_UNAVAILABLE.to_string()
 }

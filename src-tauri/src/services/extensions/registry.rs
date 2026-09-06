@@ -14,10 +14,25 @@ pub fn list() -> Result<Vec<ExtensionRecord>, String> {
 }
 
 pub(super) fn refresh_index() -> Result<(), String> {
+    refresh_index_with(|| super::registry_index::rebuild(&list()?))
+}
+
+pub(super) fn refresh_index_with(
+    rebuild: impl FnOnce() -> Result<(), String>,
+) -> Result<(), String> {
     let _guard = MUTATIONS
         .lock()
         .map_err(|_| super::error_codes::REGISTRY_UNAVAILABLE.to_string())?;
-    super::registry_index::rebuild(&list()?)
+    // Preferences are already durable: close the old catalog rather than serve
+    // priorities that no longer match disk. Startup can reconstruct it safely.
+    if let Err(error) = rebuild() {
+        super::registry_index::mark_unavailable(&error)?;
+        return Err(super::registry_availability()
+            .err()
+            .unwrap_or(super::error_codes::REGISTRY_UNAVAILABLE)
+            .to_string());
+    }
+    Ok(())
 }
 
 pub fn find(id: &str) -> Result<ExtensionRecord, String> {

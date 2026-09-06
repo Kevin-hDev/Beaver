@@ -78,5 +78,16 @@ mod tests {
             result,
             Err(super::super::error_codes::REGISTRY_UNAVAILABLE.to_string())
         );
+        super::super::registry_memory::replace(Vec::new(), None).unwrap();
+        assert!(super::super::registry_availability().is_ok());
+        let result = super::super::registry::refresh_index_with(|| Err("rebuild failed".into()));
+        assert_eq!(
+            result,
+            Err(super::super::error_codes::REGISTRY_UNAVAILABLE.to_string())
+        );
+        assert!(super::super::registry_catalog().is_err());
+        assert!(super::super::registry::mutate::<String>(|_| panic!("closed registry")).is_err());
+        super::super::registry_memory::replace(Vec::new(), None).unwrap();
+        assert!(super::super::registry_catalog().is_ok());
     }
 }

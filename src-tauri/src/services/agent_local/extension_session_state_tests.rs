@@ -149,3 +149,17 @@ fn legacy_discovery_state_ignores_extra_fields_and_sanitizes_identifiers() {
     );
     assert!(!state.discovered_plugin_ids.iter().any(|id| id == "bad id"));
 }
+
+#[tokio::test]
+async fn failed_state_write_returns_the_public_code_without_overwriting_the_target() {
+    let id = uuid::Uuid::new_v4().to_string();
+    let target = path(&id);
+    std::fs::create_dir_all(&target).unwrap();
+    let error = mutate(&id, |_| Ok(())).await.unwrap_err();
+    assert!(target.is_dir());
+    std::fs::remove_dir(&target).unwrap();
+    assert_eq!(
+        error,
+        crate::services::extensions::error_codes::STATE_UNAVAILABLE
+    );
+}

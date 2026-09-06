@@ -68,7 +68,7 @@ pub fn rebuild(records: &[ExtensionRecord]) -> Result<(), String> {
     let catalog = stable_catalog(previous_catalog, next_catalog);
     let mut index = INDEX
         .write()
-        .map_err(|_| "Index d'extensions indisponible.".to_string())?;
+        .map_err(|_| super::error_codes::REGISTRY_UNAVAILABLE.to_string())?;
     *index = DynamicIndex {
         available: true,
         unavailable_reason: None,

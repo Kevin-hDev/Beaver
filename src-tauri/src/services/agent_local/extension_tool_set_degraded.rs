@@ -54,6 +54,8 @@ impl ExtensionToolSet {
     ) -> Result<(), String> {
         if let Some(code) = self.degradation {
             log::warn!("[extensions] conversation_degraded code={code}");
+            // This writes the conversation journal itself, not a separate log.
+            // Refuse to execute tools if their conversation can no longer be saved.
             stream_diagnostics_support::update_run(session_id, request_id, |_, run| {
                 run.severity = "warning".to_string();
                 stream_diagnostics_support::push_event(
@@ -65,11 +67,37 @@ impl ExtensionToolSet {
                 );
             })
             .await?;
-            emitter.send(StreamEvent::Notice {
-                message_key: format!("extensions.errors.codes.{code}"),
-            })?;
+            send_notice(code, |event| emitter.send(event));
         }
         super::record_selection(self, session_id, request_id, "extension_tools_selected").await;
         Ok(())
+    }
+}
+
+// Notice delivery is ancillary; the durable warning above remains available.
+fn send_notice(code: &str, send: impl FnOnce(StreamEvent) -> Result<(), String>) {
+    if send(StreamEvent::Notice {
+        message_key: format!("extensions.errors.codes.{code}"),
+    })
+    .is_err()
+    {
+        log::warn!("[extensions] degradation_notice_delivery_failed");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn failed_notice_delivery_is_nonfatal() {
+        let mut attempted = false;
+        super::send_notice(
+            crate::services::extensions::error_codes::STATE_UNAVAILABLE,
+            |event| {
+                attempted = true;
+                assert!(matches!(event, super::StreamEvent::Notice { .. }));
+                Err("delivery failed".to_string())
+            },
+        );
+        assert!(attempted);
     }
 }

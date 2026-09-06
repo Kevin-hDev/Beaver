@@ -136,7 +136,7 @@ fn impossible_local_fingerprint_migrates_to_a_closed_record() {
 }
 
 #[test]
-fn unknown_external_entry_is_ignored_without_losing_supported_neighbors() {
+fn unknown_external_entry_refuses_migration_and_preserves_supported_neighbors() {
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path().join("extensions.json");
     let mut value: Value = serde_json::from_slice(BUILTIN_V0).unwrap();
@@ -146,13 +146,13 @@ fn unknown_external_entry_is_ignored_without_losing_supported_neighbors() {
     value.as_array_mut().unwrap().insert(2, external);
     std::fs::write(&path, serde_json::to_vec(&value).unwrap()).unwrap();
 
-    let loaded = storage::load_from(&path).unwrap();
-
-    assert_eq!(loaded.extensions.len(), 4);
-    assert!(loaded
-        .extensions
-        .iter()
-        .all(|record| record.manifest.id != "com.example.external"));
+    let original = std::fs::read(&path).unwrap();
+    assert_eq!(
+        storage::load_from(&path).unwrap_err(),
+        super::error_codes::REGISTRY_VERSION_UNSUPPORTED
+    );
+    assert_eq!(std::fs::read(&path).unwrap(), original);
+    assert!(!storage::v0_backup_path(&path).exists());
 }
 
 #[test]

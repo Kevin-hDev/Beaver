@@ -76,3 +76,29 @@ fn clearing_legacy_ui_does_not_resurrect_the_persisted_value() {
         .ui_legacy
         .is_none());
 }
+
+#[test]
+fn unknown_kinds_refuse_load_and_save_without_touching_any_bytes() {
+    for version in [0, 1, 2] {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("extensions.json");
+        let unknown = serde_json::json!({"kind":"external","manifest":{"id":"future.plugin"},"future":{"value":42}});
+        let value = if version == 0 {
+            serde_json::json!([unknown])
+        } else {
+            serde_json::json!({"version":version,"extensions":[unknown]})
+        };
+        let bytes = serde_json::to_vec(&value).unwrap();
+        std::fs::write(&path, &bytes).unwrap();
+        let backup = storage::v1_backup_path(&path);
+        std::fs::write(&backup, b"keep backup").unwrap();
+        assert_eq!(
+            storage::load_from(&path).unwrap_err(),
+            super::error_codes::REGISTRY_VERSION_UNSUPPORTED
+        );
+        assert!(storage::save_to(&path, &[], &None).is_err());
+        assert_eq!(std::fs::read(&path).unwrap(), bytes);
+        assert_eq!(std::fs::read(&backup).unwrap(), b"keep backup");
+        assert!(!storage::v0_backup_path(&path).exists());
+    }
+}

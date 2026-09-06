@@ -55,3 +55,15 @@ describe("erreurs d'extensions", () => {
     });
   });
 });
+
+it("conserve la réponse partielle et traduit une erreur stable reçue en cours de tour", () => {
+  const streaming = applyStreamEvent(createManagedStreamState([], 0), {
+    event: "token", data: { content: "Début de réponse", tokenCount: 3, tps: 1 },
+  }).state;
+  const result = applyStreamEvent(streaming, {
+    event: "error", data: { message: "extensions_state_unavailable" },
+  });
+  expect(result.state.error).toBe("extensions.errors.codes.extensions_state_unavailable");
+  expect(result.state.diagnosticSummary).toBeUndefined();
+  expect(result.assistantMessage?.content).toContain("Début de réponse");
+});
