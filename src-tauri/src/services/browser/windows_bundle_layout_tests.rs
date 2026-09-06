@@ -147,7 +147,18 @@ fn windows_backend_ci_checks_native_cef_and_isolates_it_from_unit_tests() {
     assert!(native_job.contains("src-tauri/.cef-tool-cache"));
     assert!(preparation < clippy);
     assert!(test_job.contains("runs-on: windows-2022"));
-    assert_eq!(test_job.matches("--features windows-tests").count(), 4);
+    // Every backend test invocation must select the compile-only CEF profile;
+    // adding a preflight must not invalidate an unrelated command counter.
+    let invocations: Vec<_> = test_job
+        .lines()
+        .filter(|line| {
+            line.contains("run-rust-test-filter.mjs") || line.contains("cargo test --lib")
+        })
+        .collect();
+    assert!(!invocations.is_empty());
+    assert!(invocations
+        .iter()
+        .all(|line| line.contains("--features windows-tests")));
     // --lib et non --all : configure_windows_test_manifest pose /MANIFESTINPUT
     // par cargo:rustc-link-arg, qui atteint toutes les cibles liées. Avec --all
     // les binaires reçoivent un second manifeste et l'éditeur de liens s'arrête

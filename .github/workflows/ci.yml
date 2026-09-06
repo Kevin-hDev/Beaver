@@ -19,6 +19,7 @@ on:
           - windows-native
           - windows-acceptance-diagnostic
           - macos-native
+          - installer-probe
       source_run_id:
         description: Prior CI run carrying the Windows installer for diagnostic acceptance
         required: false
@@ -41,10 +42,32 @@ env:
 # consommerait en entier. Ils sont larges exprès : macOS et Windows tournent
 # couramment 55 minutes.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ${{ inputs.target == 'installer-probe' && 'installer-probe' || 'ci' }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  installer-probe:
+    name: Isolated installer probe (${{ matrix.os }})
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.target == 'installer-probe' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, windows-2022, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.14'
+      - name: Install probe runner
+        run: pip install uv
+      - name: Observe launch and parent death without building Beaver
+        run: uv run python3 scripts/ci/installer-launch-probe.py
+
   backend:
     name: Backend (Rust)
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.target == 'all' }}

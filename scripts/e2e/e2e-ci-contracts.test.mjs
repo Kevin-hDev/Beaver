@@ -35,6 +35,7 @@ test("CI can target only the native boundary that needs diagnosis", () => {
     "windows-native",
     "windows-acceptance-diagnostic",
     "macos-native",
+    "installer-probe",
   ]);
   assert.match(ci.jobs["windows-extension-host-smoke"].if, /windows-host/u);
   assert.match(ci.jobs["backend-windows"].if, /windows-backend/u);
