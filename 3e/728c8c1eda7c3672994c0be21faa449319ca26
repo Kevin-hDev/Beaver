@@ -1,0 +1,25 @@
+# Persistence inventory follow-up
+
+Run 34037994809, commit 978348f97f21c7073e4eea263a48dd3470024c88: the Linux job passed 5016 Rust tests (21 ignored), its integration tests and the 340 Ollama manager tests. It then failed the persistence inventory with 9 contracts passing and one failing. Windows installer preflights passed, including the previously failing lifecycle fixtures and npm scenarios; the full Windows suite was still running at this observation.
+
+The exact diff is five data_dir() references across four new files, omitted from the reviewed inventory when background installation was introduced. Reviewed access purposes:
+
+- checkpoint.rs: the versioned, bounded private journal under extension-install-jobs/jobs.json; the store remains its writer.
+- disk_control.rs and materialize.rs: free space measurements of the existing data volume, no new storage location.
+- e2e_fixture.rs: two references to generated fixture sources under extension-install-e2e, compiled only with feature e2e and used in the isolated E2E profile.
+
+Register these exact counts and explain their purpose beside the entries. Keep the inventory's exact comparison and historical baseline attestation unchanged; do not exempt the installation module or generate expected counts from the source under test.
+
+Local validation: npm run test:persistence-migration passed all 10 contracts; cargo clippy --all-targets --features e2e -- -D warnings exited 0; git diff --check passed; graphify update . completed with no topology changes. Full local E2E-profile Rust test result will be appended when finished. No application behavior changed.
+
+## Completed Windows suite and grouped follow-up
+
+Windows job 101499490906 completed with 4912 passed, 3 failed, 20 ignored. Installer preflights passed 1 scoped identity test, 6 lifecycle tests (1 ignored fixture), and both actual npm tests. Remaining failures:
+
+- Generated TS contract comparison: the log shows identical content with CRLF on disk versus LF from the Rust generator. Add a targeted eol=lf attribute for this generated file, preserving byte-for-byte equality instead of weakening the assertion.
+- Cancellation fixture: URL.pathname produces a URL path rather than a Windows filesystem path. Use fileURLToPath, as the existing volume fixture already does.
+- Volume confirmation: only generic extension-install-failed is available. Cause still unproven. Add fixed stages written by the test producer, and include stage and install phase in the test assertion. Run the installation job module in the Windows preflight so this diagnostic is available before the entire suite. Do not claim this final failure corrected.
+
+The first full local E2E-profile attempt failed 4 tests (5077 passed). Compiling all binary targets created a 1584 MiB static archive and reduced available disk to 462 MiB, below the installer's 1 GiB reserve. Removing only that just-generated archive restored space; the exact same test binary then passed all 58 installation-job tests (1 ignored). The permission-cache failure was a separate test collision: one parallel test cleared plugin-a across all sessions while another asserted its permission. Give the authorization test a unique plugin ID, without changing the production cache.
+
+Final local test command after these changes: CARGO_INCREMENTAL=0 cargo test --manifest-path src-tauri/Cargo.toml --lib --features e2e, exit 0, 5081 passed, 19 ignored, 58.16 seconds. The 21 CI script contracts passed; complementary Rust formatting and diff checks passed; git check-attr confirms LF for the generated contract. Graphify refresh completed. Full --all integration/bin targets were not rerun after the earlier failed attempt. Native Windows volume diagnosis remains pending; only targeted backend CI is authorized at this stage.
