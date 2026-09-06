@@ -78,13 +78,22 @@ async fn forced_scans_serialize_but_do_not_hold_the_state_lock() {
             })
         });
         attempting.wait();
-        let state_available = control.store.state.try_lock().is_ok();
+        // A competing scan briefly locks state to obtain its scan mutex. Test
+        // progress while measurement is blocked, not a contention-free instant.
+        let (state_acquired, state_observed) = std::sync::mpsc::channel();
+        let state_store = &control.store;
+        let state_probe = scope.spawn(move || {
+            drop(state_store.lock().unwrap());
+            state_acquired.send(()).unwrap();
+        });
+        let state_available = state_observed.recv_timeout(Duration::from_secs(2)).is_ok();
         let overlapping = observed_scan
             .recv_timeout(Duration::from_millis(50))
             .is_ok();
         release.wait();
         first.join().unwrap().unwrap();
         second.join().unwrap().unwrap();
+        state_probe.join().unwrap();
         assert!(state_available);
         assert!(
             !overlapping,

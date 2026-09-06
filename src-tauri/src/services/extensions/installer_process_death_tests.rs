@@ -11,6 +11,14 @@ fn parent_fixture() {
     let mut command =
         std::process::Command::new(which::which("node").unwrap().canonicalize().unwrap());
     command.arg(root.join("blocked.mjs")).current_dir(&root);
+    // Production callers provide a minimal explicit environment. The gate
+    // intentionally clears inherited values; fixtures must use that same contract.
+    super::super::process_environment::configure_installer(
+        &mut command,
+        super::super::process_environment::inherited_path().unwrap(),
+        &root,
+    )
+    .unwrap();
     let result = run(
         command,
         Duration::from_secs(20),

@@ -8,6 +8,14 @@ fn fixture(script: &str) -> (tempfile::TempDir, std::process::Command) {
     let mut command =
         std::process::Command::new(which::which("node").unwrap().canonicalize().unwrap());
     command.arg(script_path).current_dir(root.path());
+    // Production callers provide a minimal explicit environment. The gate
+    // intentionally clears inherited values; fixtures must use that same contract.
+    super::super::process_environment::configure_installer(
+        &mut command,
+        super::super::process_environment::inherited_path().unwrap(),
+        root.path(),
+    )
+    .unwrap();
     (root, command)
 }
 
