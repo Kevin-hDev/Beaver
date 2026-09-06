@@ -1,0 +1,10 @@
+# CodeQL follow-up — 2026-09-06
+
+At 8d6675f417f199dce1af83301b7c01aaee2cce01 the complete CI 34045146584 succeeded, including both packaged acceptance jobs. CodeQL workflow 34045146574 succeeded but the separate CodeQL PR gate 101518851017 failed with two high alerts. Workflow success alone is not the security gate.
+
+- Alert 109 (js/file-system-race): the volume simulation checked marker absence before writing. Create with exclusive wx instead; only EEXIST means replay, all other failures propagate. This preserves explicit consent and stopped-producer replay.
+- Alert 84 (rust/cleartext-logging), created 2026-08-27: the Responses general log was flagged for sensitive data flow. Existing safe_log_code returns only static classified strings, so this is not evidence of an actual plaintext secret leak. Defense in depth: general warning is now constant; the existing bounded structured provider diagnostics remain the sole detailed diagnostic authority.
+
+Validation after both changes: rebuilt cargo test --lib --features e2e, volume_tests 5 passed; rebuilt binary provider_error tests 12 passed; openai_responses tests 13 passed. Complementary Rust formatting and git diff --check passed. Graphify AST update completed. Fresh CI and the separate CodeQL gate must pass on the resulting commit before merge.
+
+Strict cargo clippy --all-targets --features e2e -- -D warnings completed successfully (exit 0).
