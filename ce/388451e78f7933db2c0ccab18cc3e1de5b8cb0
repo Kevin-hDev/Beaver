@@ -1,0 +1,11 @@
+Root causes confirmed by isolated native experiments, 2026-09-06.
+
+Probe 34036713800 (commit 11c5cef3), Windows job 101496007557: direct Node loads, current gate reaches worker-boot and times out at five seconds, candidate using native Job Object protection loads. Reopening Windows stdin as a Socket in a second event loop blocks. Production now retains its gated owner acknowledgement but imports directly on Windows; the existing dedicated kill-on-close Job Object remains the independent whole-tree authority.
+
+Linux job 101496007679: pipe-only parent death => producer absent, writer absent, writes stable. With PR_SET_PDEATHSIG(SIGKILL), matching process_tree::configure_tokio => producer absent, writer state S, writes continue. This was a real live descendant leak, not a zombie-only assertion issue. SIGKILL killed the Node worker before it could react to EOF and kill its process group.
+
+Fix: explicit scoped owner-pipe spawn, used only by the controlled installer gate. Linux creates/adopts its process group without a competing PDEATHSIG; other spawn APIs keep their existing kernel behavior. macOS unchanged; Windows retains its native Job Object path. Startup is bounded and producer imports remain behind persisted identity + go byte. Whole-tree kill and journal cleanup confirmation remain mandatory. The native parent-death test is now enabled on Windows too. The wrong-global-job identity fix remains independently tested.
+
+Removed temporary isolated Python probe and job after preserving evidence in these run IDs. Added installer-tests target to run actual Linux and Windows Rust backends before complete package CI. Replaced the brittle workflow count in 7bbbe497 with per-invocation profile checks.
+
+Local after fix: installer_process 6 passed, 1 ignored subprocess fixture; CI JS contracts 25 passed; strict cargo clippy all targets exit0; complementary Rust format against base1ff5cf3d exit0; git diff check exit0; Graphify complete45586nodes95787edges. Actual Windows/Linux Rust validation remains pending. No complete package CI until the targeted backends pass.
