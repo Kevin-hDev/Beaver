@@ -1,0 +1,13 @@
+Task 4a: closed continuity policies and offline regression evidence
+
+Plan: /Users/kevinh/Projects/Beaver/docs/superpowers/plans/2026-09-07-ajout-gemini-glm-astra.md
+Journal: /Users/kevinh/Projects/Beaver/docs/providers/validation-modeles-2026-09-07.md section 11.
+Luna xHigh implemented; parent reviewed and corrected before committing.
+
+Six private static route registries now own their prior policies plus the September candidates. Previous activations, report IDs, dates and requirements are unchanged. Nine route/model pairs, 33 model/mode combinations, 66 user/tool policies are Disabled. Alibaba ZHIPU/GLM-5.3-Flash is explicitly Forbidden while its exact third-party output-limit contract remains unresolved; no inherited Qwen activation or guessed payload.
+
+Parent corrections: removed a misleading recovery test that manually deleted messages instead of invoking recovery. Retained legacy GLM-5.3 test coverage. Connected actual capture events through envelope serialization/reloading to the existing native replay adapters for all eight documented pairs, including OpenAI Astra and all three OpenRouter IDs; compare values and serialized bytes. Separate full request tests cover tool/result IDs and positions. Synthetic serde round-trips are not live disk-persistence evidence. Existing real conversation_transition tests cover a single missing envelope within a multi-assistant turn and current-tool-loop protection.
+
+Parent executed: cargo test --lib reasoning_wire (28), reasoning_continuity (36), ollama_wire (6), stream_http_payload (19), openai_responses::tests (16), conversation_transition (11), reasoning_fixture (25), all exit 0. cargo fmt applied, then --check exit 0; git diff --check exit 0; npm run lint:provider-boundaries exit 0, 57 authorized files. npm run test:reasoning-fixtures exit 0, 10 Node tests plus checked-in report validation. Existing ts-rs and macOS linker warnings remain visible, not test failures.
+
+Graphify AST maintenance exit 0: 41364 nodes, 92090 edges, 2095 communities; semantic labels not refreshed. No paid/live calls, vault access, app restart, production activation, push, PR or merge. Task 4b (runner safety/selection) and task 6 (actual proofs and activation) are not claimed complete. Unrelated site/mockup/screenshots excluded.
