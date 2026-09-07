@@ -1,0 +1,14 @@
+Task 1/5 — Persist browser tab order
+
+Plan: /Users/kevinh/Projects/Beaver/docs/superpowers/plans/2026-09-07-browser-tabs-ergonomie.md
+Implementation: Terra (gpt-5.6-terra, xhigh). Review/corrections: primary agent.
+
+Exact bounded permutation uses existing encrypted transaction. Active tab, contents and recency stay unchanged. Same order is a no-op. Saturated generation rejects before mutation. IPC adds no native CEF operation.
+Frontend reads authoritative state after rejection and signals the error last. Late A responses cannot replace the displayed conversation B.
+
+Review corrections: added A→B success/failure regression cases; removed temporary duplicated test API/casts; documented generation and error-order reasons.
+Validation: Rust order 5/5, model 9/9, storage 5/5; hook 12/12; cargo fmt, tsc, targeted ESLint, git diff --check all exit 0. Primary reran hook tests after cleanup.
+Native absent-session and real CEF interaction proofs are due in Task 5; no claim of native acceptance here.
+
+Local proof directory: /Users/kevinh/Projects/Beaver/.worktrees/browser-tabs-ergonomie/.superpowers/sdd/2026-09-07-browser-tabs-ergonomie
+Reports: task-1-implementation.md, task-1-review.md, task-1-verification.log, task-1-primary-tests.log, task-1-primary-lint.log.
