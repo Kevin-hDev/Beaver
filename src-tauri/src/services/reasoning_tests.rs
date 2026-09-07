@@ -39,6 +39,37 @@ fn regular_ollama_uses_boolean_thinking() {
 }
 
 #[test]
+fn cloud_glm_ollama_normalization_uses_max_for_legacy_defaults() {
+    for requested in [None, Some("off"), Some("auto")] {
+        assert_eq!(
+            normalize_for_model("ollama", "glm-5.3-flash:cloud", requested, true).as_deref(),
+            Some("max")
+        );
+    }
+}
+
+#[test]
+fn cloud_glm_effective_profile_keeps_mandatory_reasoning_active() {
+    let profile = crate::services::reasoning_profile::EffectiveReasoningProfile::ollama(
+        "glm-5.3-flash:cloud",
+        Some("off"),
+        false,
+        Some(&["thinking".into()]),
+    )
+    .unwrap();
+    assert_eq!(
+        profile.mode,
+        crate::services::reasoning_continuity::contract::ReasoningModeId::Max
+    );
+    assert_eq!(profile.mode_name.as_deref(), Some("max"));
+    assert!(profile.active);
+    assert_eq!(
+        profile.ollama_payload,
+        Some(OllamaThink::Level("max".into()))
+    );
+}
+
+#[test]
 fn provider_specific_modes_are_distinct() {
     assert_eq!(
         supported_modes("mistral", "mistral-medium-3", true),

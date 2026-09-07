@@ -86,6 +86,53 @@ fn chat_payload_disables_ollama_truncation() {
 }
 
 #[test]
+fn cloud_glm_payload_keeps_native_thinking_and_images_only() {
+    let messages = [
+        ChatMessage {
+            continuity_barrier_before: false,
+            role: "user".into(),
+            content: "décris cette image".into(),
+            images: Some(vec!["base64-image".into()]),
+            tool_calls: None,
+            tool_name: None,
+            tool_call_id: None,
+            display_thinking: None,
+            continuation: None,
+            tool_loop_reasoning: None,
+        },
+        ChatMessage::assistant(
+            "réponse".into(),
+            None,
+            None,
+            Some("opaque thinking".into()),
+            None,
+        ),
+    ];
+    let mut cloud = request();
+    cloud.model = "glm-5.3-flash:cloud".into();
+    cloud.think = Some(crate::services::agent_local::types_ollama::OllamaThink::Level(
+        "max".into(),
+    ));
+
+    let value = chat_request(&cloud, &messages).unwrap();
+    assert_eq!(value["model"], "glm-5.3-flash:cloud");
+    assert_eq!(value["think"], "max");
+    assert_eq!(value["messages"][0]["images"][0], "base64-image");
+    assert_eq!(value["messages"][1]["thinking"], "opaque thinking");
+    assert_eq!(value["truncate"], false);
+    let serialized = value.to_string();
+    for forbidden in [
+        "reasoning_effort",
+        "preserve_thinking",
+        "clear_thinking",
+        "enable_thinking",
+        "tool_stream",
+    ] {
+        assert!(!serialized.contains(forbidden), "unexpected {forbidden}");
+    }
+}
+
+#[test]
 fn only_live_validated_ollama_models_replay_in_production() {
     for model in ["qwen3.5:4b", "gemma4:e2b-it-q4_K_M"] {
         let target = target(model);
