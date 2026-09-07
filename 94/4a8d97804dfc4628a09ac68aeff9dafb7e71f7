@@ -1,0 +1,30 @@
+Task 3 — Preserve shells across main application navigation
+
+Scope:
+- CoreMainTabContent now keeps exactly one Agent Local occupant mounted and changes only its surface activity while Settings, Heartbeat, Personality or a standard extension is active.
+- Agent Local panels and dialogs stay mounted behind inactive hidden/inert boundaries.
+- Started TerminalInstance components retain their xterm instance, PTY bridge, Channel, id/token and output acknowledgements while inactive.
+- Never-started terminal tabs do not spawn in the background.
+- Surface return re-fits the terminal without taking focus; local opening/selection still focuses.
+- Existing explicit close, natural exit, sub-agent, welcome/home and final application-exit ownership boundaries remain unchanged.
+- No Rust/backend, durable format or translation change.
+
+Controller review and correction:
+- Found a real delayed-focus race: the nested requestAnimationFrame callbacks could survive a navigation away and call focus from the hidden surface.
+- Added cleanup cancellation for both frames and a deterministic red/green regression test.
+- Strengthened the PTY lifetime proof by capturing panel height before navigation and asserting one Channel and exactly one pty_spawn through return.
+
+Independent validation:
+- Task 3 targeted suite: 10 files / 58 tests passed.
+- Full npm test: 594 Vitest files / 3205 tests passed; all build, CI, CEF, E2E, extension-host, reasoning and contract suites passed. The expected Windows-only CEF hashing test was skipped on macOS.
+- npx tsc --noEmit: passed.
+- npm run lint: passed.
+- cargo test, using the repository verified CEF archive and Cargo cache: 5097 library tests plus 1 integration test passed, 19 explicitly ignored, 0 failed.
+- cargo clippy --all-targets -- -D warnings: passed with the same verified CEF configuration.
+- git diff --check 45296a7e..944a8d97: passed.
+- graphify update .: completed.
+- All four modified production sources remain below 230 lines.
+
+Native observation boundary:
+- Beaver Dev was launched successfully against the worktree Vite server and emitted normal startup logs.
+- The macOS accessibility controller listed the running Beaver Dev bundle but timed out attaching to its CEF window. Therefore the dark/light visual checklist and same-PID interaction were not claimed as observed in this run; CI/reviewer manual validation remains required for that visual step.
