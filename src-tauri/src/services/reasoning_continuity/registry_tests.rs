@@ -173,6 +173,7 @@ fn september_candidate_pairs_are_registered_disabled_before_live_proof() {
                 ReasoningModeId::High,
                 ReasoningModeId::Xhigh,
                 ReasoningModeId::Max,
+                ReasoningModeId::Ultra,
             ][..],
             ReplayRequirement::Required,
         ),

@@ -107,4 +107,5 @@ pub(crate) const LIVE_SPECS: &[LiveSpec] = &[
     variant_spec("codex-oauth", "gpt-6-astra", "local", "high"),
     variant_spec("codex-oauth", "gpt-6-astra", "local", "xhigh"),
     variant_spec("codex-oauth", "gpt-6-astra", "local", "max"),
+    variant_spec("codex-oauth", "gpt-6-astra", "local", "ultra"),
 ];

@@ -4,6 +4,20 @@ use super::registry_inventory::{disabled, live};
 
 // Codex account catalogue access does not itself validate continuation replay.
 pub(super) const CODEX: &[ModelPolicy] = &[
+    // 2026-09-07: this account's authenticated Codex catalogue advertises Ultra.
+    // This is not the public OpenAI API effort contract; require its own proof.
+    disabled(
+        "gpt-6-astra",
+        ReasoningModeId::Ultra,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Required,
+    ),
+    disabled(
+        "gpt-6-astra",
+        ReasoningModeId::Ultra,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Required,
+    ),
     live(
         "gpt-5.6-luna",
         ReasoningModeId::Medium,

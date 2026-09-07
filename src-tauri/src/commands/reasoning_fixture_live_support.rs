@@ -146,7 +146,7 @@ mod tests {
             (
                 "codex-oauth",
                 "gpt-6-astra",
-                ["low", "medium", "high", "xhigh", "max"].as_slice(),
+                ["low", "medium", "high", "xhigh", "max", "ultra"].as_slice(),
             ),
         ];
         for (provider, model, modes) in expected {
