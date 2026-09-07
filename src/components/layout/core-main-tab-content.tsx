@@ -9,6 +9,7 @@ import {
   StandardTabContent,
   useStandardEntry,
 } from "@/features/extension-ui/standard/standard-contributions";
+import { AppSurfaceActivityProvider } from "./app-surface-activity";
 import type { NavPanel } from "@/hooks/use-panel-focus";
 import type { ThemeChoice } from "@/hooks/use-theme";
 import type {
@@ -37,16 +38,32 @@ interface CoreMainTabContentProps {
 
 export function CoreMainTabContent(props: CoreMainTabContentProps) {
   const occupant = useSlotOccupantByTarget(props.activeTab, "tab");
+  const agentLocal = useSlotOccupantByTarget("agent-local", "tab");
+  const agentLocalActive = occupant?.target === "agent-local";
   const entry = useStandardEntry(occupant);
-  if (!occupant) return null;
-  if (entry) return <StandardTabContent entry={entry} />;
+  /* Agent Local garde ses PTY et flux vivants ; seule son activité change. */
+  const persistentAgentLocal = agentLocal ? (
+    <AppSurfaceActivityProvider active={agentLocalActive}>
+      <SlotRenderer
+        placement={agentLocal.placement}
+        occupantId={agentLocal.id}
+        context={props}
+        render={renderAgentLocal}
+      />
+    </AppSurfaceActivityProvider>
+  ) : null;
+
+  if (!occupant || agentLocalActive) return persistentAgentLocal;
+  if (entry) return <>{persistentAgentLocal}<StandardTabContent entry={entry} /></>;
   return (
-    <SlotRenderer
-      placement={occupant.placement}
-      occupantId={occupant.id}
-      context={props}
-      render={renderCoreMainTab}
-    />
+    <>{persistentAgentLocal}
+      <SlotRenderer
+        placement={occupant.placement}
+        occupantId={occupant.id}
+        context={props}
+        render={renderCoreMainTab}
+      />
+    </>
   );
 }
 
@@ -73,17 +90,6 @@ function renderCoreMainTab(
       />
     );
   }
-  if (occupant.target === "agent-local") {
-    return (
-      <AgentLocalTab
-        navState={context.agentNavState}
-        onSessionChange={context.onSessionChange}
-        onNavChange={context.onAgentNavChange}
-        onWorkspaceClear={context.onWorkspaceClear}
-        listFocused={listFocused}
-      />
-    );
-  }
   if (occupant.target === "settings") {
     return (
       <SettingsTab
@@ -98,4 +104,20 @@ function renderCoreMainTab(
     );
   }
   return null;
+}
+
+function renderAgentLocal(
+  occupant: SlotOccupant,
+  context: CoreMainTabContentProps,
+) {
+  if (occupant.target !== "agent-local") return null;
+  return (
+    <AgentLocalTab
+      navState={context.agentNavState}
+      onSessionChange={context.onSessionChange}
+      onNavChange={context.onAgentNavChange}
+      onWorkspaceClear={context.onWorkspaceClear}
+      listFocused={context.focusedPanel === "list" && context.activeTab === occupant.target}
+    />
+  );
 }

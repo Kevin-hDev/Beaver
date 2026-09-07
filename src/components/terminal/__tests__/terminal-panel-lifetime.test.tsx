@@ -247,6 +247,22 @@ describe("durée de vie des shells du panneau", () => {
     expect(invoke).not.toHaveBeenCalled();
   });
 
+  it("ne démarre pas un onglet pendant l'inactivité puis le démarre au retour", () => {
+    const view = render(
+      <AppSurfaceActivityProvider active={false}>
+        {panel(true)}
+      </AppSurfaceActivityProvider>,
+    );
+    expect(invoke).not.toHaveBeenCalledWith("pty_spawn", expect.anything());
+
+    view.rerender(
+      <AppSurfaceActivityProvider active>
+        {panel(true)}
+      </AppSurfaceActivityProvider>,
+    );
+    expect(invoke).toHaveBeenCalledWith("pty_spawn", expect.anything());
+  });
+
   it("suspend resize inactif et réinstalle un listener au retour", () => {
     const onSetMaxHeight = vi.fn();
     const add = vi.spyOn(window, "addEventListener");

@@ -163,12 +163,12 @@ describe("ChatView child read-only mode", () => {
     expect(document.querySelector("[data-message-id='first']")).toHaveClass("cfs-match-active");
   });
 
-  it("removes write surfaces when rerendered from a parent without unmounting", () => {
+  it("garde le dock dans la conversation racine puis le retire pour le sous-agent", () => {
     const { rerender } = render(<ChatView {...props} isSubagent={false} />);
 
     expect(screen.getByTestId("chat-input")).toBeInTheDocument();
     expect(screen.getByTestId("chat-input-footer")).toBeInTheDocument();
-    expect(screen.getByTestId("terminal-dock")).toBeInTheDocument();
+    expect(screen.getAllByTestId("terminal-dock")).toHaveLength(1);
     expect(screen.getByTestId("todo-panel")).toBeInTheDocument();
     expect(screen.getByTestId("permission-dialog")).toBeInTheDocument();
     expect(screen.getByTestId("subagent-accordion")).toBeInTheDocument();

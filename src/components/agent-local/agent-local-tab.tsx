@@ -13,6 +13,8 @@ import { useSessionSummary } from "@/hooks/use-session-summary";
 import { useSessionTabs } from "@/hooks/use-session-tabs";
 import { useAgentLocalTabGit } from "@/hooks/use-agent-local-tab-git";
 import { PanelSlot } from "@/components/ui/panel-slots";
+import { AppSurfaceBoundary } from "@/components/layout/app-surface-boundary";
+import { AgentLocalPanelSurface } from "./agent-local-panel-surface";
 import {
   resolveDisplayModel, resolveDisplayProject, resolveDisplayReasoningMode, resolveDisplaySession,
 } from "./agent-local-display";
@@ -203,5 +205,9 @@ export const AgentLocalTab = memo(function AgentLocalTab({
     setFastMode, welcomeFastModeEnabled, setWelcomeFastModeEnabled,
   ]);
 
-  return <><PanelSlot name="list">{list}</PanelSlot><PanelSlot name="detail">{detail}</PanelSlot>{tabGit.dialogs}</>;
+  return <>
+    <PanelSlot name="list"><AgentLocalPanelSurface>{list}</AgentLocalPanelSurface></PanelSlot>
+    <PanelSlot name="detail"><AgentLocalPanelSurface>{detail}</AgentLocalPanelSurface></PanelSlot>
+    <AppSurfaceBoundary className="al-overlay-surface">{tabGit.dialogs}</AppSurfaceBoundary>
+  </>;
 });

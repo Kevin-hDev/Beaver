@@ -4,6 +4,7 @@ import { FitAddon } from "@xterm/addon-fit";
 import { IS_MAC } from "@/lib/platform";
 import { createTerminalPtyBridge } from "./terminal-pty-bridge";
 import { readTerminalFont } from "./terminal-theme";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 import "@xterm/xterm/css/xterm.css";
 
 interface TerminalInstanceProps {
@@ -27,6 +28,7 @@ export function TerminalInstance({
   onActivity,
   onTogglePanel,
 }: TerminalInstanceProps) {
+  const surfaceActive = useAppSurfaceActive();
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
   const fitRef = useRef<FitAddon | null>(null);
@@ -37,6 +39,7 @@ export function TerminalInstance({
   const readyRef = useRef(onPtyReady);
   const exitRef = useRef(onExit);
   const toggleRef = useRef(onTogglePanel);
+  const wasSurfaceActiveRef = useRef(surfaceActive);
   useEffect(() => {
     visibleRef.current = isVisible;
     activityRef.current = onActivity;
@@ -131,17 +134,24 @@ export function TerminalInstance({
   }, []);
 
   useEffect(() => {
+    const returningToActive = surfaceActive && !wasSurfaceActiveRef.current;
+    wasSurfaceActiveRef.current = surfaceActive;
     if (!isVisible) return;
     /* Visible vaut vu : la marque tombe ici, et nulle part ailleurs. */
     onActivity(tabId, false);
     if (!fitRef.current) return;
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
+    let secondFrame: number | null = null;
+    const firstFrame = requestAnimationFrame(() => {
+      secondFrame = requestAnimationFrame(() => {
         fitRef.current?.fit();
-        termRef.current?.focus();
+        if (!returningToActive) termRef.current?.focus();
       });
     });
-  }, [isVisible, tabId, onActivity]);
+    return () => {
+      cancelAnimationFrame(firstFrame);
+      if (secondFrame !== null) cancelAnimationFrame(secondFrame);
+    };
+  }, [isVisible, surfaceActive, tabId, onActivity]);
 
   useEffect(() => {
     if (termRef.current) termRef.current.options.theme = theme;

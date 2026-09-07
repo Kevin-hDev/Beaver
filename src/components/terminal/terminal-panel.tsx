@@ -83,7 +83,7 @@ export function TerminalPanel({
   }, [onSetMaxHeight, surfaceActive]);
 
   useEffect(() => {
-    if (!isOpen || activeTabId === null
+    if (!surfaceActive || !isOpen || activeTabId === null
       || !allTabs.some(({ tab }) => tab.id === activeTabId)) return;
     if (startedTabIds.has(activeTabId)) {
       lastRejectedTabId.current = null;
@@ -102,7 +102,7 @@ export function TerminalPanel({
       if (current.has(activeTabId) || current.size >= MAX_LIVE_TERMINALS) return current;
       return new Set(current).add(activeTabId);
     });
-  }, [activeTabId, allTabs, isOpen, onLiveLimitReached, startedTabIds]);
+  }, [activeTabId, allTabs, isOpen, onLiveLimitReached, startedTabIds, surfaceActive]);
 
   useEffect(() => {
     const presentTabIds = new Set(allTabs.map(({ tab }) => tab.id));
@@ -198,7 +198,7 @@ export function TerminalPanel({
                 theme={theme}
                 /* Replié, aucun écran n'est actif : un terminal invisible qui
                  garde le focus avalerait les touches frappées ailleurs. */
-              isVisible={isOpen && groupKey === activeGroupKey && tab.id === activeTabId}
+              isVisible={surfaceActive && isOpen && groupKey === activeGroupKey && tab.id === activeTabId}
                 onPtyReady={onPtyReady}
                 onExit={() => onProcessExit(tab.id, groupKey)}
                 onActivity={onTabActivity}

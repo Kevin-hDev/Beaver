@@ -1,10 +1,15 @@
 import { act, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TerminalInstance } from "../terminal-instance";
+import { AppSurfaceActivityProvider } from "@/components/layout/app-surface-activity";
 
 const doubles = vi.hoisted(() => ({
   bridgeOptions: null as Record<string, (...args: never[]) => unknown> | null,
   keyHandler: null as ((event: KeyboardEvent) => boolean) | null,
+  focusCalls: 0,
+  fitCalls: 0,
+  rafCallbacks: new Map<number, FrameRequestCallback>(),
+  nextRafId: 1,
 }));
 
 vi.mock("../terminal-theme", () => ({ readTerminalFont: () => "Beaver Mono" }));
@@ -24,14 +29,14 @@ vi.mock("@xterm/xterm", () => ({
       doubles.keyHandler = handler;
     }
     dispose() {}
-    focus() {}
+    focus() { doubles.focusCalls += 1; }
     getSelection() { return ""; }
     loadAddon() {}
     onResize() { return { dispose() {} }; }
     open() {}
   },
 }));
-vi.mock("@xterm/addon-fit", () => ({ FitAddon: class { fit() {} } }));
+vi.mock("@xterm/addon-fit", () => ({ FitAddon: class { fit() { doubles.fitCalls += 1; } } }));
 vi.mock("@xterm/xterm/css/xterm.css", () => ({}));
 
 function callbacks() {
@@ -43,10 +48,34 @@ function callbacks() {
   };
 }
 
+function flushOneRaf() {
+  const first = doubles.rafCallbacks.entries().next().value;
+  if (!first) return;
+  doubles.rafCallbacks.delete(first[0]);
+  first[1](0);
+}
+
+function flushRafs() {
+  while (doubles.rafCallbacks.size > 0) flushOneRaf();
+}
+
 beforeEach(() => {
   doubles.bridgeOptions = null;
   doubles.keyHandler = null;
+  doubles.focusCalls = 0;
+  doubles.fitCalls = 0;
+  doubles.rafCallbacks.clear();
+  doubles.nextRafId = 1;
   vi.stubGlobal("ResizeObserver", class { disconnect() {} observe() {} });
+  vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+    const id = doubles.nextRafId;
+    doubles.nextRafId += 1;
+    doubles.rafCallbacks.set(id, callback);
+    return id;
+  });
+  vi.stubGlobal("cancelAnimationFrame", (id: number) => {
+    doubles.rafCallbacks.delete(id);
+  });
 });
 
 afterEach(() => vi.unstubAllGlobals());
@@ -93,5 +122,84 @@ describe("callbacks de TerminalInstance", () => {
     expect(latest.onExit).toHaveBeenCalledWith("tab-1");
     expect(latest.onActivity).toHaveBeenCalledWith("tab-1", true);
     expect(latest.onTogglePanel).toHaveBeenCalledOnce();
+  });
+
+  it("refait le fit au retour de surface sans reprendre le focus", () => {
+    const props = callbacks();
+    const view = render(
+      <AppSurfaceActivityProvider active={false}>
+        <TerminalInstance tabId="tab-1" groupKey="project" theme={{}} isVisible={false} {...props} />
+      </AppSurfaceActivityProvider>,
+    );
+    doubles.focusCalls = 0;
+    doubles.fitCalls = 0;
+
+    view.rerender(
+      <AppSurfaceActivityProvider active>
+        <TerminalInstance tabId="tab-1" groupKey="project" theme={{}} isVisible={true} {...props} />
+      </AppSurfaceActivityProvider>,
+    );
+    act(flushRafs);
+
+    expect(doubles.fitCalls).toBeGreaterThan(0);
+    expect(doubles.focusCalls).toBe(0);
+  });
+
+  it("reprend le focus lors d'une ouverture locale sur une surface active", () => {
+    const props = callbacks();
+    const view = render(
+      <AppSurfaceActivityProvider active>
+        <TerminalInstance tabId="tab-1" groupKey="project" theme={{}} isVisible={false} {...props} />
+      </AppSurfaceActivityProvider>,
+    );
+    doubles.focusCalls = 0;
+
+    view.rerender(
+      <AppSurfaceActivityProvider active>
+        <TerminalInstance tabId="tab-1" groupKey="project" theme={{}} isVisible={true} {...props} />
+      </AppSurfaceActivityProvider>,
+    );
+    act(flushRafs);
+
+    expect(doubles.focusCalls).toBe(1);
+  });
+
+  it("reprend le focus lors d'une sélection locale sur une surface active", () => {
+    const props = callbacks();
+    const view = render(
+      <AppSurfaceActivityProvider active>
+        <TerminalInstance tabId="tab-1" groupKey="project" theme={{}} isVisible={true} {...props} />
+      </AppSurfaceActivityProvider>,
+    );
+    act(flushRafs);
+    doubles.focusCalls = 0;
+
+    view.rerender(
+      <AppSurfaceActivityProvider active>
+        <TerminalInstance tabId="tab-2" groupKey="project" theme={{}} isVisible={true} {...props} />
+      </AppSurfaceActivityProvider>,
+    );
+    act(flushRafs);
+
+    expect(doubles.focusCalls).toBe(1);
+  });
+
+  it("annule le focus différé si la surface devient inactive avant la seconde frame", () => {
+    const props = callbacks();
+    const view = render(
+      <AppSurfaceActivityProvider active>
+        <TerminalInstance tabId="tab-1" groupKey="project" theme={{}} isVisible={true} {...props} />
+      </AppSurfaceActivityProvider>,
+    );
+
+    act(flushOneRaf);
+    view.rerender(
+      <AppSurfaceActivityProvider active={false}>
+        <TerminalInstance tabId="tab-1" groupKey="project" theme={{}} isVisible={false} {...props} />
+      </AppSurfaceActivityProvider>,
+    );
+    act(flushRafs);
+
+    expect(doubles.focusCalls).toBe(0);
   });
 });
