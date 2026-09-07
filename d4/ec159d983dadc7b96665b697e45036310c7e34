@@ -1,0 +1,9 @@
+Context: post-merge validation of codex/terminal-main-navigation-lifetime exposed a deterministic extension-host security-test cancellation on main.
+
+Root cause: invokeUiAction unreferenced its own timeout. With a hung extension action and no unrelated referenced event-loop handle, Node could exit before the authoritative timeout rejected, so the admission budget proof was environment-dependent.
+
+Fix: remove timer.unref(). The timeout remains strictly bounded by timeoutMs and is cleared in finally, so it now reliably enforces the security boundary without leaking a long-lived timer.
+
+Focused verification: node --test scripts/extensions/ui-runtime-security.test.mjs -> 18/18 passed, 0 failed, 0 cancelled.
+
+Full verification: npm test -> exit 0; Vitest 594 files / 3207 tests, build scripts 57/57, CI scripts 21/21, extension host 120/120, CEF and E2E suites passed. npx tsc --noEmit -> exit 0. npm run lint -> exit 0. git diff --check -> exit 0. graphify update . -> exit 0.
