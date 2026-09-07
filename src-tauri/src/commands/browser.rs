@@ -59,6 +59,18 @@ pub async fn browser_activate_tab(
 }
 
 #[tauri::command]
+pub async fn browser_reorder_tabs(
+    service: tauri::State<'_, BrowserSessionService>,
+    conversation_id: String,
+    tab_ids: Vec<String>,
+) -> Result<BrowserSessionState, BrowserCommandError> {
+    run_blocking(service.inner().clone(), move |service| {
+        service.reorder_tabs(&conversation_id, &tab_ids)
+    })
+    .await
+}
+
+#[tauri::command]
 pub async fn browser_close_tab(
     app: tauri::AppHandle,
     service: tauri::State<'_, BrowserSessionService>,

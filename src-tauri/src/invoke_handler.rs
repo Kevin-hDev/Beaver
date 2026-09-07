@@ -15,6 +15,7 @@ macro_rules! generate {
             crate::commands::browser_open_session,
             crate::commands::browser_create_tab,
             crate::commands::browser_activate_tab,
+            crate::commands::browser_reorder_tabs,
             crate::commands::browser_close_tab,
             crate::commands::browser_navigate,
             crate::commands::browser_navigation_action,

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { BrowserTabCreation } from "./browser-events";
 import {
   activateBrowserTab,
@@ -6,10 +6,12 @@ import {
   createBrowserTab,
   navigateBrowserTab,
   openBrowserSession,
+  reorderBrowserTabs,
   runBrowserNavigationAction,
 } from "./browser-ipc";
 import {
   isBrowserTabId,
+  MAX_BROWSER_TABS,
   normalizeBrowserUrl,
   type BrowserSessionState,
 } from "./browser-types";
@@ -24,9 +26,16 @@ export function useBrowserSession(conversationId: string, enabled: boolean) {
   const [storedSession, setStoredSession] = useState<ScopedValue<BrowserSessionState> | null>(null);
   const [loadedConversation, setLoadedConversation] = useState<string | null>(null);
   const [failedConversation, setFailedConversation] = useState<string | null>(null);
+  // Une réponse tardive ne doit pas remplacer la conversation qui vient d’être affichée.
+  const activeConversation = useRef(conversationId);
+  useLayoutEffect(() => {
+    activeConversation.current = conversationId;
+  }, [conversationId]);
   const accept = useCallback((next: BrowserSessionState) => {
+    if (activeConversation.current !== conversationId) return;
     setFailedConversation((failed) => failed === conversationId ? null : failed);
     setStoredSession((current) => {
+      // Un ordre identique réussit sans nouvelle génération ; conserver aussi les événements CEF plus récents.
       if (
         current?.conversationId === conversationId &&
         current.value.generation >= next.generation
@@ -35,7 +44,9 @@ export function useBrowserSession(conversationId: string, enabled: boolean) {
     });
   }, [conversationId]);
 
-  const fail = useCallback(() => setFailedConversation(conversationId), [conversationId]);
+  const fail = useCallback(() => {
+    if (activeConversation.current === conversationId) setFailedConversation(conversationId);
+  }, [conversationId]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -87,6 +98,26 @@ export function useBrowserSession(conversationId: string, enabled: boolean) {
     isBrowserTabId(tabId) && mutate(() => activateBrowserTab(conversationId, tabId))
   ), [conversationId, mutate]);
 
+  const reorderTabs = useCallback(async (tabIds: string[]): Promise<boolean> => {
+    if (
+      tabIds.length < 1 || tabIds.length > MAX_BROWSER_TABS ||
+      tabIds.some((tabId) => !isBrowserTabId(tabId))
+    ) {
+      fail();
+      return false;
+    }
+    if (await mutate(() => reorderBrowserTabs(conversationId, tabIds))) return true;
+    try {
+      accept(await openBrowserSession(conversationId));
+    } catch {
+      fail();
+      return false;
+    }
+    // accept efface l’erreur : signaler le refus seulement après la resynchronisation.
+    fail();
+    return false;
+  }, [accept, conversationId, fail, mutate]);
+
   const closeTab = useCallback((tabId: string) => (
     isBrowserTabId(tabId) && mutate(() => closeBrowserTab(conversationId, tabId))
   ), [conversationId, mutate]);
@@ -129,8 +160,10 @@ export function useBrowserSession(conversationId: string, enabled: boolean) {
     clearError,
     clearPopup: eventStream.clearPopup,
     clearNotice: eventStream.clearNotice,
+    reportError: fail,
     createTab,
     activateTab,
+    reorderTabs,
     closeTab,
     navigate,
     navigationAction,

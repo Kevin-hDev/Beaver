@@ -57,6 +57,19 @@ impl BrowserSessionService {
         })
     }
 
+    pub fn reorder_tabs(
+        &self,
+        session_id: &str,
+        tab_ids: &[String],
+    ) -> Result<BrowserSessionState, BrowserCommandError> {
+        self.mutate(session_id, |model| {
+            model
+                .reorder_tabs(tab_ids)
+                .map_err(|_| BrowserCommandError::InvalidInput)?;
+            Ok(model.state().clone())
+        })
+    }
+
     pub fn close_tab(
         &self,
         session_id: &str,

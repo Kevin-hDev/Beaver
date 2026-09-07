@@ -104,6 +104,7 @@ mod runtime_revision;
 mod session_model;
 #[cfg(any(test, target_os = "macos", target_os = "windows"))]
 mod session_model_runtime;
+mod session_order;
 mod session_persistence;
 mod session_service;
 mod session_store;
@@ -169,6 +170,8 @@ mod runtime_handle_tests;
 mod runtime_revision_tests;
 #[cfg(test)]
 mod session_model_tests;
+#[cfg(test)]
+mod session_order_tests;
 #[cfg(test)]
 mod session_store_tests;
 #[cfg(all(test, any(target_os = "macos", target_os = "windows")))]
