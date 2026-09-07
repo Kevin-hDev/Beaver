@@ -40,9 +40,16 @@ pub async fn record_model_result(
     turn: usize,
     result: &StreamResult,
 ) {
+    let message = result_summary(turn, result);
+    record(session_id, request_id, "model_result", &message).await;
+}
+
+fn result_summary(turn: usize, result: &StreamResult) -> String {
     let usage = result.usage.as_ref();
-    let message = format!(
-        "model_result turn={} content_chars={} thinking_chars={} tool_calls={} prompt_tokens={} eval_tokens={} cache_read_tokens={} cache_write_tokens={} cache_miss_tokens={} cache_status={} done_reason={} total_chunks={} empty_chunks={}",
+    // Numeric counts are not credential tokens. Keep their labels distinct so
+    // the unchanged secret redactor preserves both large counts and "unknown".
+    format!(
+        "model_result turn={} content_chars={} thinking_chars={} tool_calls={} input_count={} output_count={} cache_read_count={} cache_write_count={} cache_miss_count={} cache_status={} done_reason={} total_chunks={} empty_chunks={}",
         turn + 1,
         char_count(&result.content),
         char_count(&result.thinking),
@@ -58,8 +65,7 @@ pub async fn record_model_result(
         result.done_reason.as_deref().unwrap_or("unknown"),
         result.total_chunks,
         result.empty_chunks
-    );
-    record(session_id, request_id, "model_result", &message).await;
+    )
 }
 
 async fn record(session_id: &str, request_id: &str, phase: &str, message: &str) {

@@ -343,7 +343,7 @@ async fn terminal_cache_counter_reaches_persisted_diagnostics_after_reload() {
     assert!(run
         .safe_summary
         .as_deref()
-        .is_some_and(|summary| summary.contains("cache_read_tokens=800")));
+        .is_some_and(|summary| summary.contains("cache_read_count=800")));
     assert!(run
         .safe_summary
         .as_deref()

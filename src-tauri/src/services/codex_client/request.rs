@@ -125,7 +125,14 @@ async fn send_request(
         .map_err(|_| provider_error(ProviderErrorCode::ProviderConfigurationInvalid))?;
     cancel_aware(
         cancel,
-        request_http::post(&body_json, &routing_hint, model, tools.len(), deadline),
+        request_http::post(
+            &body_json,
+            &routing_hint,
+            body.prompt_cache_key.as_deref(),
+            model,
+            tools.len(),
+            deadline,
+        ),
     )
     .await
 }

@@ -3,6 +3,25 @@ use crate::services::agent_local::types_ollama::{ToolCallFunction, ToolCallOllam
 use serde_json::json;
 
 #[test]
+fn result_counts_survive_secret_redaction_without_exposing_model_text() {
+    let result = StreamResult {
+        content: "sk-private-answer".into(),
+        thinking: "private-thought".into(),
+        usage: crate::services::provider_usage::RequestUsage::from_json_with_context(
+            &json!({"input_tokens":2048,"output_tokens":5,
+                "input_tokens_details":{"cached_tokens":1024}}),
+            crate::services::provider_usage::UsageContext::responses("codex-oauth", "gpt-6-astra"),
+        ),
+        ..Default::default()
+    };
+    let summary = support::clip(&result_summary(0, &result));
+    assert!(summary.contains("cache_read_count=1024"), "{summary}");
+    assert!(summary.contains("cache_write_count=unknown"), "{summary}");
+    assert!(!summary.contains("sk-private-answer"));
+    assert!(!summary.contains("private-thought"));
+}
+
+#[test]
 fn request_stats_counts_reasoning_without_content() {
     let messages = vec![
         ChatMessage::assistant(
