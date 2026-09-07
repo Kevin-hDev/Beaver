@@ -64,6 +64,16 @@ fn valid_routed_endpoint(metric: &ProviderRequestMetric) -> bool {
 }
 
 fn valid_route(metric: &ProviderRequestMetric) -> bool {
+    // Current transport is owned by the route profile, not a second table here.
+    if crate::services::llm::route_profile::matches_current_usage(
+        &metric.connection_id,
+        &metric.canonical_provider_id,
+        metric.api_format,
+    ) {
+        return true;
+    }
+    // Read compatibility: metrics written before the Responses migration remain
+    // valid. xAI OAuth also retains its catalog-selected Chat transport.
     let (provider, format) = match metric.connection_id.as_str() {
         "codex-oauth" => ("openai", super::UsageApiFormat::Responses),
         "xai-oauth" => ("xai", super::UsageApiFormat::ChatCompletions),

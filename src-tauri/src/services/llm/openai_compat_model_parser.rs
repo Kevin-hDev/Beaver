@@ -21,6 +21,10 @@ fn parse_model(model: &Value, provider_id: &str) -> Option<ModelInfo> {
     if !super::runtime_models::valid_model_id(id) {
         return None;
     }
+    let id = super::route_profile::catalog_model_id(provider_id, id);
+    if !super::runtime_models::valid_model_id(id) {
+        return None;
+    }
     let local_limits = super::provider_model_lookup::local_limits(provider_id, id);
     let authoritative = super::openrouter_model_metadata::owns_catalog_metadata(provider_id);
     let context_length = if authoritative {

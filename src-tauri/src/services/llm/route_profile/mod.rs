@@ -69,6 +69,28 @@ pub(crate) fn is_local(provider_id: &str) -> bool {
     find(provider_id).is_some_and(|profile| profile.client == ClientSelector::OllamaLocal)
 }
 
+pub(super) fn catalog_model_id<'a>(provider_id: &str, model_id: &'a str) -> &'a str {
+    // Google /openai/models returns resource names, unlike Chat's model IDs
+    // (observed 2026-09-07). Normalize before enrichment and deduplication.
+    if find(provider_id).is_some_and(|profile| {
+        profile.id == crate::services::reasoning_continuity::contract::RouteId::Google
+    }) {
+        model_id.strip_prefix("models/").unwrap_or(model_id)
+    } else {
+        model_id
+    }
+}
+
+pub(crate) fn matches_current_usage(
+    connection_id: &str,
+    canonical_provider: &str,
+    format: crate::services::provider_usage::UsageApiFormat,
+) -> bool {
+    find(connection_id).is_some_and(|profile| {
+        profile.canonical_provider.as_str() == canonical_provider && profile.wire.usage == format
+    })
+}
+
 #[cfg(debug_assertions)]
 pub(crate) fn supports_bounded_fixture(provider_id: &str) -> bool {
     // Only transports with wired request/output budgets may run paid fixtures.

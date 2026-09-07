@@ -4,6 +4,40 @@ use super::{UsageApiFormat, UsageWorkload};
 use crate::services::llm::fast_mode::FastModeRequest;
 use serde_json::json;
 
+#[tokio::test]
+async fn live_openai_responses_measurement_is_persisted() {
+    let id = uuid::Uuid::new_v4().to_string();
+    let mut request = context(Some(&id));
+    request.request_id = &id;
+    request.api_format = UsageApiFormat::Responses;
+    request.model = "gpt-6-astra";
+    let measurement = RequestMeasurement::start(request).expect("Responses must be measured");
+    measurement
+        .finish(
+            super::RequestMetricStatus::Completed,
+            Some(&super::RequestUsage {
+                input_tokens: Some(100),
+                output_tokens: Some(10),
+                ..Default::default()
+            }),
+            true,
+        )
+        .await;
+    let snapshot = super::request_journal::snapshot("openai").await;
+    let saved = snapshot
+        .recent
+        .iter()
+        .find(|entry| entry.request_id == id)
+        .unwrap();
+    assert_eq!(saved.api_format, UsageApiFormat::Responses);
+    assert_eq!(saved.usage.as_ref().unwrap().input_tokens, Some(100));
+    let mut invalid = context(None);
+    invalid.api_format = UsageApiFormat::AnthropicMessages;
+    assert!(RequestMeasurement::start(invalid).is_none());
+    // Historical Chat entries must remain readable after the route migration.
+    assert!(RequestMeasurement::start(context(None)).is_some());
+}
+
 fn context<'a>(session_id: Option<&'a str>) -> RequestMeasurementContext<'a> {
     RequestMeasurementContext {
         connection_id: "openai",

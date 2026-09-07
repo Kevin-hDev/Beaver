@@ -1,5 +1,35 @@
 use super::types::ModelInfo;
 
+#[tokio::test]
+async fn live_google_resource_ids_reach_the_canonical_profile() {
+    let _guard = super::runtime_models::test_mutation_lock().await;
+    // Google /openai/models observed on 2026-09-07 returns resource IDs.
+    let parsed = super::openai_compat_parsing::parse_models_list(
+        &serde_json::json!({"data":[
+            {"id":"models/gemini-3.8-flash", "owned_by":"google"},
+            {"id":"gemini-3.8-flash", "owned_by":"google"}
+        ]}),
+        "google",
+    )
+    .unwrap();
+    let models = super::model_catalog::enrich_models("google", parsed, false)
+        .await
+        .unwrap();
+    assert_eq!(models.len(), 1);
+    let model = &models[0];
+    assert_eq!(model.id, "gemini-3.8-flash");
+    assert!(model.supports_tools && model.supports_vision && model.supports_thinking);
+    assert_eq!(model.reasoning_modes, ["low", "medium", "high"]);
+    assert_eq!(model.default_reasoning_mode.as_deref(), Some("medium"));
+    assert!(super::runtime_models::lookup("google", "gemini-3.8-flash").is_some());
+    let other = super::openai_compat_parsing::parse_models_list(
+        &serde_json::json!({"data":[{"id":"models/gemini-3.8-flash"}]}),
+        "openrouter",
+    )
+    .unwrap();
+    assert_eq!(other[0].id, "models/gemini-3.8-flash");
+}
+
 fn remote_anthropic_model() -> ModelInfo {
     remote_anthropic_model_with_id("claude-haiku-4-5-20251001")
 }
