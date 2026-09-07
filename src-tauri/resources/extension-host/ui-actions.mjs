@@ -55,7 +55,6 @@ export async function invokeUiAction(
       execution,
       new Promise((_, reject) => {
         timer = setTimeout(() => reject(new Error("ui_action_timeout")), timeoutMs);
-        timer.unref();
       }),
     ]);
     const result = validateActionResult(params.extensionId, raw);
