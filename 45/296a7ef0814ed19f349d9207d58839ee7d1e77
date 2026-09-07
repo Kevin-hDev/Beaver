@@ -25,3 +25,5 @@ Independent validation:
 
 Known baseline diagnostics:
 - Existing jsdom canvas warnings and historical keyboard-navigation act warnings remain unchanged; no new warning was accepted.
+
+Review addendum: external review reproduced act diagnostics from the new keyboard-navigation harnesses, so the earlier sentence claiming no new warning was accepted is superseded. The diagnostics concern test scheduling, not a production failure; the follow-up commit 548d76e7 records the corrected verification evidence.
