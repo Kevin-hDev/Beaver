@@ -1,61 +1,46 @@
-use crate::models::agent_turn_contract::{ChatStreamRequestInput, NewUserTurnInput, TurnStart};
-use crate::ActiveStreams;
-use std::time::{Duration, Instant};
-use tauri::Manager;
-
+#[path = "reasoning_fixture_live_evidence.rs"]
+mod evidence;
+#[path = "reasoning_fixture_live_runner.rs"]
+mod runner;
 #[path = "reasoning_fixture_live_support.rs"]
 mod support;
 #[path = "reasoning_fixture_live_vision.rs"]
 mod vision;
 
-use support::{LiveSpec, LIVE_SPECS};
+use support::LiveSpec;
+
+// 4b2 must add transport-level request/output caps and synthetic-context isolation first.
+const LIVE_RUNNER_BLOCKED_UNTIL_4B2: bool = true;
 
 pub(crate) async fn refresh_live_reasoning_fixture_matrix_once(
     app: &tauri::App,
 ) -> Result<(), String> {
+    let selected = support::select_specs_from_environment()?;
+    if LIVE_RUNNER_BLOCKED_UNTIL_4B2 {
+        return Err("fixture runner unavailable".to_string());
+    }
     crate::services::api_keys::init_for_runtime()
-        .expect("initialize configured credentials for this runtime");
-    let selected = std::env::var("BEAVER_FIXTURE_ROUTES").ok();
-    if selected
-        .as_deref()
-        .is_none_or(|routes| routes.split(',').any(|route| route.trim() == "ollama"))
-    {
+        .map_err(|_| "fixture credentials unavailable".to_string())?;
+    if selected.iter().any(|spec| spec.provider == "ollama") {
         support::prepare_ollama(app).await?;
     }
-    let mut failures = Vec::new();
-
-    for spec in LIVE_SPECS.iter().filter(|spec| {
-        selected
-            .as_deref()
-            .is_none_or(|routes| routes.split(',').any(|route| route.trim() == spec.provider))
-    }) {
-        if let Err(error) = run_spec(app, spec).await {
-            failures.push(format!("{}:{}={error}", spec.provider, spec.model));
-        }
+    for spec in &selected {
+        run_spec(app, spec)
+            .await
+            .map_err(|error| format!("{}:{}:{}={error}", spec.provider, spec.model, spec.mode))?;
     }
-    let vision_specs = LIVE_SPECS
-        .iter()
-        .filter(|spec| {
-            matches!(spec.provider, "anthropic" | "qwen")
-                && spec.mode == "medium"
-                && selected.as_deref().is_none_or(|routes| {
-                    routes.split(',').any(|route| route.trim() == spec.provider)
-                })
-                && !failures
-                    .iter()
-                    .any(|failure| failure.starts_with(&format!("{}:", spec.provider)))
-        })
-        .collect::<Vec<_>>();
-    for spec in vision_specs {
-        if let Err(error) = vision::run(app, spec).await {
-            failures.push(format!("{}:vision={error}", spec.provider));
-        }
+    for spec in selected
+        .into_iter()
+        .filter(|spec| support::vision_capable(spec))
+    {
+        vision::run(app, spec).await.map_err(|error| {
+            format!(
+                "{}:{}:{}:vision={error}",
+                spec.provider, spec.model, spec.mode
+            )
+        })?;
     }
-    if failures.is_empty() {
-        Ok(())
-    } else {
-        Err(failures.join("\n"))
-    }
+    Ok(())
 }
 
 async fn run_spec(app: &tauri::App, spec: &LiveSpec) -> Result<(), String> {
@@ -76,26 +61,28 @@ async fn run_spec(app: &tauri::App, spec: &LiveSpec) -> Result<(), String> {
     };
     crate::services::agent_local::session_store::save(&session).await?;
     let result = async {
-        run_turn(
+        let tool_turn = runner::run_turn(
             app,
             spec,
             &session.id,
-            "Call fixture.write_note with value fixture, then confirm briefly.",
+            "Use fixture.write_note with value fixture, then fixture.read_note in this same turn. Confirm the returned value briefly.",
             Vec::new(),
         )
         .await?;
-        run_turn(
+        evidence::require_tool_round(&session.id, &tool_turn).await?;
+        let recall_turn = runner::run_turn(
             app,
             spec,
             &session.id,
-            "Call fixture.read_note, then report its value briefly.",
+            "Without using any tool, recall the value from the previous turn. Reply with that value only.",
             Vec::new(),
         )
         .await?;
+        evidence::require_recall_without_tools(&session.id, &recall_turn, "fixture").await?;
         super::reasoning_fixture::export_reasoning_fixture_report_with_variant(
             session.id.clone(),
             spec.region.to_string(),
-            matches!(spec.provider, "deepseek" | "anthropic" | "qwen").then_some(spec.mode),
+            None,
         )
         .await
         .map(|_| ())
@@ -121,57 +108,6 @@ async fn run_spec(app: &tauri::App, spec: &LiveSpec) -> Result<(), String> {
         return Err(diagnostic);
     }
     Ok(())
-}
-
-async fn run_turn(
-    app: &tauri::App,
-    spec: &LiveSpec,
-    session_id: &str,
-    content: &str,
-    files: Vec<crate::models::agent_turn_contract::TurnAttachmentInput>,
-) -> Result<(), String> {
-    let request = super::agent_chat_run::ChatStreamRequest::from_input(ChatStreamRequestInput {
-        session_id: session_id.to_string(),
-        model: spec.model.to_string(),
-        provider: spec.provider.to_string(),
-        turn: TurnStart::New(NewUserTurnInput {
-            content: content.to_string(),
-            files,
-            skills: Vec::new(),
-        }),
-        working_dir: None,
-        permission_mode: Some("auto".to_string()),
-        plan_mode: Some(false),
-    });
-    super::agent_chat_run::start_fixture(
-        app.handle().clone(),
-        request,
-        &app.state::<ActiveStreams>(),
-    )
-    .await?;
-    let deadline = Instant::now() + Duration::from_secs(240);
-    loop {
-        if !app
-            .state::<ActiveStreams>()
-            .0
-            .lock()
-            .await
-            .contains_key(session_id)
-        {
-            break;
-        }
-        if Instant::now() >= deadline {
-            return Err("fixture timeout".to_string());
-        }
-        tokio::time::sleep(Duration::from_millis(100)).await;
-    }
-    let session = crate::services::agent_local::session_store::get(session_id).await?;
-    session
-        .diagnostic_runs
-        .last()
-        .filter(|run| run.status == "completed")
-        .map(|_| ())
-        .ok_or_else(|| "fixture request failed".to_string())
 }
 
 #[cfg(test)]
@@ -206,7 +142,7 @@ mod vision_tests {
 
     #[test]
     fn live_specs_include_each_validated_provider_mode_once() {
-        let tuples = super::LIVE_SPECS
+        let tuples = super::support::LIVE_SPECS
             .iter()
             .filter(|spec| matches!(spec.provider, "anthropic" | "qwen"))
             .map(|spec| (spec.provider, spec.model, spec.region, spec.mode))
