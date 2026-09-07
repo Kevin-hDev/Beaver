@@ -10,21 +10,24 @@ Scope:
 - No Rust/backend, durable format or translation change.
 
 Controller review and correction:
-- Found a real delayed-focus race: the nested requestAnimationFrame callbacks could survive a navigation away and call focus from the hidden surface.
+- Found a real delayed-focus race: nested requestAnimationFrame callbacks could survive navigation and call focus from the hidden surface.
 - Added cleanup cancellation for both frames and a deterministic red/green regression test.
 - Strengthened the PTY lifetime proof by capturing panel height before navigation and asserting one Channel and exactly one pty_spawn through return.
 
-Independent validation:
+Independent automated validation:
 - Task 3 targeted suite: 10 files / 58 tests passed.
 - Full npm test: 594 Vitest files / 3205 tests passed; all build, CI, CEF, E2E, extension-host, reasoning and contract suites passed. The expected Windows-only CEF hashing test was skipped on macOS.
-- npx tsc --noEmit: passed.
-- npm run lint: passed.
-- cargo test, using the repository verified CEF archive and Cargo cache: 5097 library tests plus 1 integration test passed, 19 explicitly ignored, 0 failed.
+- npx tsc --noEmit and npm run lint: passed.
+- cargo test with the repository verified CEF archive and Cargo cache: 5097 library tests plus 1 integration test passed, 19 explicitly ignored, 0 failed.
 - cargo clippy --all-targets -- -D warnings: passed with the same verified CEF configuration.
-- git diff --check 45296a7e..944a8d97: passed.
-- graphify update .: completed.
+- git diff --check 45296a7e..944a8d97 and graphify update .: passed.
 - All four modified production sources remain below 230 lines.
 
-Native observation boundary:
-- Beaver Dev was launched successfully against the worktree Vite server and emitted normal startup logs.
-- The macOS accessibility controller listed the running Beaver Dev bundle but timed out attaching to its CEF window. Therefore the dark/light visual checklist and same-PID interaction were not claimed as observed in this run; CI/reviewer manual validation remains required for that visual step.
+Observed native macOS validation:
+- Beaver Dev ran against the worktree Vite surface in the real CEF window.
+- Dark theme: shell PID 74560 survived Session -> Settings -> Heartbeat -> Personality -> Session while visible output advanced from TICK=1 to TICK=48.
+- Light theme: shell PID 75081 survived Settings and return while visible output advanced from LIGHT=1 to LIGHT=16.
+- Both returns preserved the open panel without visible collapse/reopen and left focus outside the terminal.
+- After an explicit click, terminal keyboard input worked and printed KEYBOARD_OK in the dark-theme cycle.
+- Explicitly closing each terminal tab removed its shell PID; navigation alone never did.
+- Standard-extension navigation and live dialog/menu preservation remain covered by the automated composition and boundary tests because no standard extension tab was available in this development profile.
