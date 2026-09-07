@@ -1,7 +1,7 @@
 use super::super::stream_http::{RequestConfig, RequestError};
 
 #[cfg(test)]
-pub(super) fn build_request(config: &RequestConfig<'_>) -> serde_json::Value {
+pub(in crate::services::llm) fn build_request(config: &RequestConfig<'_>) -> serde_json::Value {
     try_build_request(config).expect("a request without a continuation target cannot be rejected")
 }
 

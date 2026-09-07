@@ -110,6 +110,31 @@ fn new_models_use_the_registry_default_and_reject_unsupported_off() {
 }
 
 #[test]
+fn astra_effective_profile_normalizes_legacy_selections_to_a_valid_effort() {
+    for (requested, thinking_enabled) in [
+        (Some("off"), true),
+        (Some("auto"), true),
+        (None, true),
+        (Some("medium"), false),
+    ] {
+        let profile = crate::services::reasoning_profile::EffectiveReasoningProfile::api(
+            "openai",
+            "gpt-6-astra",
+            requested,
+            thinking_enabled,
+            true,
+        )
+        .expect("Astra has a mandatory reasoning effort");
+        assert_eq!(profile.mode_name.as_deref(), Some("medium"));
+        assert!(profile.active);
+        assert_ne!(
+            profile.mode,
+            super::reasoning_continuity::contract::ReasoningModeId::Off
+        );
+    }
+}
+
+#[test]
 fn grok_45_keeps_its_previous_medium_default() {
     assert_eq!(
         normalize_for_model("xai", "grok-4.5", None, true).as_deref(),

@@ -98,6 +98,7 @@ mod stream_metrics;
 pub(crate) mod stream_reasoning;
 #[cfg(test)]
 mod stream_reasoning_tests;
+mod stream_reasoning_zai;
 mod stream_silent;
 mod stream_silent_consume;
 pub(crate) mod stream_sse;

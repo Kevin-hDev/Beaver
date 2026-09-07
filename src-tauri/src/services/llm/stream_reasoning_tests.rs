@@ -88,12 +88,33 @@ fn zai_glm_53_keeps_forced_thinking_and_defaults_to_max() {
 }
 
 #[test]
+fn september_google_and_zai_payloads_match_selected_efforts() {
+    for mode in ["low", "medium", "high"] {
+        let body = payload("google", "gemini-3.8-flash", Some(mode));
+        assert_eq!(
+            body["extra_body"]["google"]["thinking_config"],
+            json!({ "include_thoughts": true, "thinking_level": mode })
+        );
+        assert!(body.get("reasoning_effort").is_none());
+    }
+    for mode in ["low", "high", "max"] {
+        let body = payload("zai", "glm-5.3-flash", Some(mode));
+        assert_eq!(body["reasoning_effort"], mode);
+        assert_eq!(body["thinking"]["type"], "enabled");
+        assert_eq!(body["thinking"]["clear_thinking"], false);
+    }
+}
+
+#[test]
 fn zai_glm_53_keeps_max_when_the_registry_is_unavailable() {
     assert_eq!(
-        stream_reasoning::resolve_glm_53_effort(Some("high"), None),
+        super::stream_reasoning_zai::resolve_glm_53_effort(Some("high"), None),
         "max"
     );
-    assert_eq!(stream_reasoning::resolve_glm_53_effort(None, None), "max");
+    assert_eq!(
+        super::stream_reasoning_zai::resolve_glm_53_effort(None, None),
+        "max"
+    );
 }
 
 #[test]

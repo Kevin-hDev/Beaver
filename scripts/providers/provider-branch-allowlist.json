@@ -24,6 +24,7 @@
   { "path": "src-tauri/src/services/llm/stream_chunk.rs", "owner": "provider_stream_parser", "reason": "Adaptation interne du compteur de tokens Moonshot dans les chunks OpenAI-compatibles.", "max_decisions": 1 },
   { "path": "src-tauri/src/services/llm/stream_http_send.rs", "owner": "openai_compat_client", "reason": "En-tête OAuth xAI interne après sélection de la route.", "max_decisions": 1 },
   { "path": "src-tauri/src/services/llm/stream_reasoning.rs", "owner": "provider_payload_adapter", "reason": "Adaptation des champs de raisonnement propres aux familles de modèles après résolution du profil.", "max_decisions": 3 },
+  { "path": "src-tauri/src/services/llm/stream_silent.rs", "owner": "internal_request_policy", "reason": "Effort léger des résumés indépendants pour les trois nouveaux modèles obligatoires, sans changer les conversations ou les autres modèles.", "max_decisions": 1 },
   { "path": "src-tauri/src/services/llm/tool_schema_names.rs", "owner": "provider_tool_schema", "reason": "Alias réversible du tool local search pour éviter sa collision avec le tool Qwen homonyme.", "max_decisions": 1 },
   { "path": "src-tauri/src/services/llm_oauth/device_flow.rs", "owner": "oauth_client", "reason": "Interne légitime du flux OAuth.", "max_decisions": 1 },
   { "path": "src-tauri/src/services/llm_oauth/headers.rs", "owner": "oauth_client", "reason": "Construction des en-têtes propres aux routes OAuth validées.", "max_decisions": 4 },

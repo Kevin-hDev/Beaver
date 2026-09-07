@@ -230,6 +230,41 @@ fn zai_opt_in_is_a_top_level_thinking_contract() {
 }
 
 #[test]
+fn zai_flash_replay_keeps_clear_thinking_disabled() {
+    let target = target(
+        RouteId::Zai,
+        "glm-5.3-flash",
+        ContinuationUse::ToolContinuation,
+    );
+    let envelope = envelope(
+        &target,
+        ContractId::ZaiChatV1,
+        ContinuationState::ChatReasoning {
+            reasoning_content: "opaque".into(),
+        },
+    );
+    let approval = approved(
+        ReplayDecision::Allowed,
+        policy(
+            ContractId::ZaiChatV1,
+            AdapterId::ChatReasoning,
+            ActivationState::LiveValidated,
+        ),
+        &envelope,
+        &target,
+    )
+    .unwrap();
+    let mut payload = json!({"messages": []});
+
+    apply_chat_payload_continuity(&approval, &mut payload).unwrap();
+
+    assert_eq!(
+        payload["thinking"],
+        json!({"type": "enabled", "clear_thinking": false})
+    );
+}
+
+#[test]
 fn native_adapters_preserve_their_opaque_shapes() {
     let cases = [
         (

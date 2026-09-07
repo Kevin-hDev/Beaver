@@ -173,6 +173,64 @@ fn api_request_uses_responses_reasoning_and_fast_contract() {
 }
 
 #[test]
+fn astra_api_request_uses_each_supported_effort_without_sampling_parameters() {
+    let messages = [ChatMessage::user("bonjour".into())];
+    for mode in ["low", "medium", "high", "xhigh", "max"] {
+        let mut config = request(&messages, &[], Some(mode), FastModeRequest::Standard);
+        config.model = "gpt-6-astra";
+        config.max_tokens = Some(1_234);
+
+        let body = build_request(&config);
+        assert_eq!(body["model"], "gpt-6-astra");
+        assert_eq!(
+            body["reasoning"],
+            serde_json::json!({
+                "effort": mode,
+                "summary": "auto"
+            })
+        );
+        assert_eq!(body["store"], false);
+        assert_eq!(body["service_tier"], "default");
+        assert_eq!(body["max_output_tokens"], 1_234);
+        for forbidden in ["temperature", "top_p", "top_logprobs"] {
+            assert!(body.get(forbidden).is_none(), "unexpected {forbidden}");
+        }
+        assert!(body["reasoning"].get("context").is_none());
+    }
+}
+
+#[test]
+fn astra_effective_profile_reaches_the_responses_constructor() {
+    let messages = [ChatMessage::user("bonjour".into())];
+    for (requested, thinking_enabled) in [
+        (Some("off"), true),
+        (Some("auto"), true),
+        (None, true),
+        (Some("medium"), false),
+    ] {
+        let profile = crate::services::reasoning_profile::EffectiveReasoningProfile::api(
+            "openai",
+            "gpt-6-astra",
+            requested,
+            thinking_enabled,
+            true,
+        )
+        .expect("Astra profile");
+        let mut config = request(
+            &messages,
+            &[],
+            profile.mode_name.as_deref(),
+            FastModeRequest::Standard,
+        );
+        config.model = "gpt-6-astra";
+        let body = build_request(&config);
+        assert_eq!(body["reasoning"]["effort"], "medium");
+        assert_eq!(body["reasoning"]["summary"], "auto");
+        assert_ne!(body["reasoning"]["effort"], "none");
+    }
+}
+
+#[test]
 fn responses_payload_receives_verified_preview_with_its_original_tool_call_id() {
     let messages = [ChatMessage::tool(
         "done".into(),
