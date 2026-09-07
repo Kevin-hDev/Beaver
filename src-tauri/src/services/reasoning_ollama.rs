@@ -84,7 +84,7 @@ pub(crate) fn payload(model: &str, mode: Option<&str>, fallback: bool) -> Ollama
     if let Some(profile) = effort_profile(model) {
         let effort = match mode {
             Some(requested) if profile.modes.contains(&requested) => requested,
-            Some("xhigh") if profile.modes.contains(&"high") => "high",
+            Some("xhigh") if !profile.mandatory && profile.modes.contains(&"high") => "high",
             _ => profile.default_mode,
         };
         return OllamaThink::Level(effort.to_string());

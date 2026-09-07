@@ -37,6 +37,27 @@ fn served_tier_accepts_only_the_closed_provider_values() {
 }
 
 #[test]
+fn historical_oauth_and_anthropic_metric_routes_remain_readable() {
+    for (connection, canonical, format) in [
+        ("xai-oauth", "xai", UsageApiFormat::ChatCompletions),
+        (
+            "moonshot-oauth",
+            "moonshot",
+            UsageApiFormat::ChatCompletions,
+        ),
+        ("anthropic", "anthropic", UsageApiFormat::AnthropicMessages),
+    ] {
+        let mut entry = metric(Some("session-1"), 1);
+        entry.connection_id = connection.into();
+        entry.canonical_provider_id = canonical.into();
+        entry.api_format = format;
+        assert!(entry.is_valid(), "{connection}");
+        entry.canonical_provider_id = "openai".into();
+        assert!(!entry.is_valid(), "{connection}");
+    }
+}
+
+#[test]
 fn journal_keeps_only_the_latest_two_hundred_attempts_per_session() {
     let mut entries: Vec<_> = (1..=205)
         .map(|attempt| metric(Some("session-1"), attempt))

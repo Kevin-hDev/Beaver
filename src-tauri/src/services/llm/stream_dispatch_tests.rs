@@ -205,15 +205,14 @@ async fn anthropic_live_route_supports_every_declared_invocation_kind() {
         reasoning_mode: ReasoningModeId::High,
         continuation_use: ContinuationUse::UserContinuation,
     });
-    let resolved = super::stream_dispatch::resolve_fixture_transport(
+    assert!(super::stream_dispatch::resolve_fixture_transport(
         "anthropic",
         "claude-haiku-4-5-20251001",
         &fixture,
         RequestPurpose::ManualChat,
     )
     .await
-    .unwrap();
-    assert_eq!(resolved.client, ClientKind::Anthropic);
+    .is_err());
     assert!(super::stream_dispatch::resolve_fixture_transport(
         "anthropic",
         "claude-haiku-4-5-20251001",

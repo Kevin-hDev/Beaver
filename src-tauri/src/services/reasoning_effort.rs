@@ -1,6 +1,8 @@
 pub fn codex(model: &str, mode: Option<&str>) -> String {
-    // Share the selector's validated default; a catalog without a default
-    // must never receive an effort it did not publish.
+    // Share the selector's validated default whenever model metadata exists.
+    // Legacy callers still require a String for an entirely unknown model:
+    // preserve medium here, not an admission guarantee or invented catalog entry.
+    // Changing that compatibility contract requires auditing every caller first.
     super::reasoning::normalize_for_model("codex-oauth", model, mode, true)
         .unwrap_or_else(|| "medium".to_string())
 }

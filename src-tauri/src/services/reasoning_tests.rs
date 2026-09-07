@@ -9,6 +9,13 @@ fn codex_default_is_medium_and_no_off() {
 }
 
 #[test]
+fn codex_unknown_model_preserves_legacy_fallback_without_catalog_entry() {
+    let model = "unknown-review-model";
+    assert!(supported_modes("codex-oauth", model, true).is_empty());
+    assert_eq!(codex_effort(model, Some("ultra")), "medium");
+}
+
+#[test]
 fn codex_effort_rejects_levels_unsupported_by_the_model() {
     assert_eq!(codex_effort("gpt-5.6-sol", Some("ultra")), "ultra");
     assert_eq!(codex_effort("gpt-5.6-terra", Some("max")), "max");
@@ -46,6 +53,23 @@ fn cloud_glm_ollama_normalization_uses_max_for_legacy_defaults() {
             Some("max")
         );
     }
+}
+
+#[test]
+fn mandatory_ollama_payload_and_resolution_agree_on_legacy_xhigh() {
+    let model = "glm-5.3-flash:cloud";
+    let resolved =
+        super::reasoning_ollama::resolve(model, Some("xhigh"), true, Some(&["thinking".into()]))
+            .unwrap();
+    assert_eq!(resolved.payload, OllamaThink::Level("max".into()));
+    assert_eq!(
+        super::reasoning_ollama::payload(model, Some("xhigh"), true),
+        resolved.payload
+    );
+    assert_eq!(
+        super::reasoning_ollama::payload("gpt-oss:20b", Some("xhigh"), true),
+        OllamaThink::Level("high".into())
+    );
 }
 
 #[test]

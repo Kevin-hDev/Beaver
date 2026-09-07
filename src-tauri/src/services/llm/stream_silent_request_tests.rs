@@ -71,50 +71,6 @@ fn internal_astra_config_reaches_the_real_responses_constructor() {
 }
 
 #[test]
-fn mandatory_google_and_zai_profiles_reach_the_real_chat_constructor() {
-    let messages = [ChatMessage::user("bonjour".into())];
-    for (provider, model, default) in [
-        ("google", "gemini-3.8-flash", "medium"),
-        ("zai", "glm-5.3-flash", "max"),
-    ] {
-        for (requested, enabled) in [
-            (Some("off"), true),
-            (Some("auto"), true),
-            (None, true),
-            (Some("low"), false),
-        ] {
-            let profile = crate::services::reasoning_profile::EffectiveReasoningProfile::api(
-                provider, model, requested, enabled, true,
-            )
-            .unwrap();
-            assert!(profile.active);
-            assert_eq!(profile.mode_name.as_deref(), Some(default));
-            let mut cfg = config(provider, model, &messages);
-            cfg.think = profile.active;
-            cfg.reasoning_mode = profile.mode_name.as_deref();
-            let body = build_chat_payload_for_test(
-                &cfg,
-                &route::resolve(provider).unwrap(),
-                cfg.max_tokens,
-            )
-            .unwrap();
-            if provider == "google" {
-                assert_eq!(
-                    body["extra_body"]["google"]["thinking_config"]["thinking_level"],
-                    default
-                );
-            } else {
-                assert_eq!(body["reasoning_effort"], default);
-                assert_eq!(
-                    body["thinking"],
-                    serde_json::json!({"type":"enabled","clear_thinking":false})
-                );
-            }
-        }
-    }
-}
-
-#[test]
 fn internal_google_and_zai_payloads_use_the_real_chat_constructor() {
     let messages = [ChatMessage::user("résume ceci".into())];
     let google = config("google", "gemini-3.8-flash", &messages);

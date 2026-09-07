@@ -1,6 +1,62 @@
 use super::stream_reasoning;
 use serde_json::json;
 
+#[test]
+fn mandatory_google_and_zai_profiles_reach_the_real_chat_constructor() {
+    let messages =
+        [crate::services::agent_local::types_ollama::ChatMessage::user("bonjour".into())];
+    for (provider, model, default) in [
+        ("google", "gemini-3.8-flash", "medium"),
+        ("zai", "glm-5.3-flash", "max"),
+    ] {
+        for (requested, enabled) in [
+            (Some("off"), true),
+            (Some("auto"), true),
+            (None, true),
+            (Some("low"), false),
+        ] {
+            let profile = crate::services::reasoning_profile::EffectiveReasoningProfile::api(
+                provider, model, requested, enabled, true,
+            )
+            .unwrap();
+            assert!(profile.active);
+            assert_eq!(profile.mode_name.as_deref(), Some(default));
+            let cfg = super::stream_http::RequestConfig {
+                provider_id: provider,
+                fast_mode: super::fast_mode::FastModeRequest::Standard,
+                model,
+                messages: &messages,
+                tools: &[],
+                think: profile.active,
+                reasoning_mode: profile.mode_name.as_deref(),
+                max_tokens: Some(1_234),
+                purpose: super::request_purpose::RequestPurpose::ManualChat,
+                session_id: None,
+                tool_result_previews: None,
+                continuation_target: None,
+            };
+            let body = super::build_chat_payload_for_test(
+                &cfg,
+                &super::route::resolve(provider).unwrap(),
+                cfg.max_tokens,
+            )
+            .unwrap();
+            if provider == "google" {
+                assert_eq!(
+                    body["extra_body"]["google"]["thinking_config"]["thinking_level"],
+                    default
+                );
+            } else {
+                assert_eq!(body["reasoning_effort"], default);
+                assert_eq!(
+                    body["thinking"],
+                    serde_json::json!({"type":"enabled","clear_thinking":false})
+                );
+            }
+        }
+    }
+}
+
 fn payload(provider: &str, model: &str, mode: Option<&str>) -> serde_json::Value {
     let mut payload = json!({});
     let policy = super::route_profile::payload_policy(provider, model).unwrap();

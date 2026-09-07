@@ -176,6 +176,10 @@ pub(super) async fn resolve_fixture_transport(
     }
     let replay = target.replay().ok_or(RouteSelectionError::Unavailable)?;
     let profile = route_profile::find(route_id).ok_or(RouteSelectionError::UnknownRoute)?;
+    // Recheck the sender's budget support even if admission was already checked upstream.
+    if !route_profile::supports_bounded_fixture(route_id) {
+        return Err(RouteSelectionError::Unavailable);
+    }
     let fixture_catalog = matches!(
         profile.catalog,
         CatalogPolicy::PublicApi { .. } | CatalogPolicy::ConfigurableApi { .. }

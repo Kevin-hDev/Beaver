@@ -12,6 +12,10 @@ pub(crate) async fn prepare(request: &mut CodexRequest) -> Result<(), String> {
     {
         return Ok(());
     }
+    #[cfg(test)]
+    if let Ok(models) = tests::TEST_CATALOG.try_with(Clone::clone) {
+        return apply_ultra(request, &models);
+    }
     apply_ultra(request, &super::load_catalog().await?)
 }
 

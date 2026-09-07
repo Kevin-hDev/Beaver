@@ -34,6 +34,13 @@ pub(super) fn select_specs(
                 && modes.contains(&spec.mode)
         })
         .collect::<Vec<_>>();
+    // Keep historical specs readable, but never start a partially bounded selection.
+    if selected
+        .iter()
+        .any(|spec| !crate::services::llm::route_profile::supports_bounded_fixture(spec.provider))
+    {
+        return Err("fixture transport budget unavailable".into());
+    }
     (!selected.is_empty())
         .then_some(selected)
         .ok_or_else(|| "fixture selection invalid".to_string())
@@ -108,6 +115,30 @@ pub(super) async fn prepare_ollama(app: &tauri::App) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::LIVE_SPECS;
+
+    #[test]
+    fn selection_rejects_every_route_without_bounded_transport() {
+        for spec in LIVE_SPECS.iter().filter(|spec| {
+            !crate::services::llm::route_profile::supports_bounded_fixture(spec.provider)
+        }) {
+            assert_eq!(
+                super::select_specs(Some(spec.provider), Some(spec.model), Some(spec.mode))
+                    .err()
+                    .as_deref(),
+                Some("fixture transport budget unavailable")
+            );
+        }
+        assert_eq!(
+            super::select_specs(
+                Some("google,anthropic"),
+                Some("gemini-3.8-flash,claude-haiku-4-5-20251001"),
+                Some("low,high")
+            )
+            .err()
+            .as_deref(),
+            Some("fixture transport budget unavailable")
+        );
+    }
 
     #[test]
     fn documented_new_direct_and_hosted_couples_have_exact_modes() {

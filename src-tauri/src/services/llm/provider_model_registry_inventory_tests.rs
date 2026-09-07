@@ -1,5 +1,16 @@
 use super::*;
 
+#[test]
+fn new_direct_models_do_not_grant_capabilities_to_unknown_neighbors() {
+    for (provider, model) in [
+        ("google", "gemini-3.9-flash"),
+        ("zai", "glm-5.3-flash-air"),
+        ("openai", "gpt-6-astra-mini"),
+    ] {
+        assert!(lookup(provider, model).is_none(), "{provider}/{model}");
+    }
+}
+
 fn ids(provider_id: &str) -> Vec<String> {
     list(provider_id)
         .iter()
