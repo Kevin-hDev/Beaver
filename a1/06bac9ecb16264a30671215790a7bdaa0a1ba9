@@ -5,3 +5,5 @@ Implementation: one AppSurfaceActivity context with safe true default; AppSurfac
 Review: controller inspected the complete 0d58838a..a106bac9 diff. No spec, quality, scope, lifecycle, CSS ownership, or 230-line findings. Exactly the 12 planned files changed.
 
 Evidence: TDD RED failures recorded in task-1-report.md for missing primitives and old DialogPortal behavior. Fresh controller GREEN: 5 test files / 9 tests; npx tsc --noEmit exit 0; npm run lint exit 0; git diff --check clean. Production files are 14-36 lines.
+
+Review addendum: the earlier 14-36 line range described only the newly created TSX production primitives. The complete modified production set also included dialog-portal.tsx at 10 lines and app-surface-portal.css at 7 lines; all remained safely below the 230-line limit.
