@@ -1,0 +1,9 @@
+Task 3 / Codex — catalog-driven default and native request tests
+
+Codex now reuses the same validated normalization as the selector. No independent Spark/high table is retained: the embedded fallback already owns that default. Runtime defaults win when published; absent defaults select an available effort, never an unconditional medium that the catalog omitted. Astra is not added to the static fallback.
+
+Parent review reproduced the missing-default case with modes [low,max]: previous implementation sent medium (exit 101). The parent added regression coverage for published max, selected low, missing default, and unsupported selections. An invalid explicit default is rejected by the existing runtime registry rather than admitted by the test. Existing Spark/high tests remain in the suite.
+
+Astra image/tools/encrypted-content contract is tested through the actual Codex constructor; existing WebSocket and HTTP fallback tests are included in the Codex suite. No transport rewrite and no claim of authenticated Astra access or live continuity.
+
+Parent task-3 verification: cargo test --lib reasoning (199 passed), cargo test --lib codex_client (exit 0), cargo test --lib services::llm:: (442 passed), cargo test --lib ollama_wire (5 passed). Format and diff checks green; routing guard green with 57 files. No paid calls, secret access, app restart or production continuity activation. Unrelated files excluded. AST graph maintained separately.
