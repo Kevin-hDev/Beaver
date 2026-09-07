@@ -13,13 +13,16 @@ use tokio_util::sync::CancellationToken;
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::types_ollama::{ChatMessage, StreamOutcome};
 use crate::services::compress::realtime_budget::RealtimeBudget;
-use crate::services::secure_http::LLM_BODY_LIMIT;
 
 use super::limits::STREAM_STALL_TIMEOUT;
 use super::stream_accumulator::StreamAccumulator;
 use super::stream_measurement::StreamMeasurement;
 use super::types::CodexRequest;
 use super::{request, websocket_connect};
+
+#[path = "websocket_payload.rs"]
+mod payload;
+use payload::build_payload;
 
 const SEND_TIMEOUT: Duration = Duration::from_secs(5);
 const WEBSOCKET_COOLDOWN_MS: u64 = 5 * 60 * 1_000;
@@ -43,7 +46,7 @@ pub(super) async fn stream_chat(
     realtime_budget: Option<RealtimeBudget>,
     measurement: &mut StreamMeasurement<'_>,
 ) -> Result<StreamOutcome, WebSocketFailure> {
-    let request = request::build_codex_request(
+    let mut request = request::build_codex_request(
         model,
         messages,
         tools,
@@ -51,6 +54,12 @@ pub(super) async fn stream_chat(
         Some(session_id),
         fast_mode,
     );
+    tokio::select! {
+        _ = cancel.cancelled() => return Err(WebSocketFailure::Cancelled),
+        result = super::model_catalog::reasoning::prepare(&mut request) => {
+            result.map_err(|_| configuration_rejected())?;
+        }
+    }
     let payload = build_payload(&request)?;
     let routing_hint =
         super::routing_hint::for_request(&request).map_err(|_| configuration_rejected())?;
@@ -88,21 +97,6 @@ pub(super) fn mark_unavailable() {
 
 pub(super) fn mark_available() {
     DISABLED_UNTIL_MS.store(0, Ordering::Relaxed);
-}
-
-fn build_payload(request: &CodexRequest) -> Result<String, WebSocketFailure> {
-    let mut payload = serde_json::to_value(request)
-        .map_err(|_| WebSocketFailure::Unavailable { partial: false })?;
-    let object = payload
-        .as_object_mut()
-        .ok_or(WebSocketFailure::Unavailable { partial: false })?;
-    object.insert("type".to_string(), "response.create".into());
-    let payload = serde_json::to_string(&payload)
-        .map_err(|_| WebSocketFailure::Unavailable { partial: false })?;
-    if payload.len() > LLM_BODY_LIMIT {
-        return Err(WebSocketFailure::Unavailable { partial: false });
-    }
-    Ok(payload)
 }
 
 async fn send_payload(

@@ -8,6 +8,9 @@ use super::request_http;
 use crate::services::llm::types::ModelInfo;
 use crate::services::secure_http::{read_json_bounded, CODEX_MODELS_BODY_LIMIT};
 
+#[path = "model_catalog_reasoning.rs"]
+pub(super) mod reasoning;
+
 const CACHE_TTL: Duration = Duration::from_secs(300);
 const FAILURE_TTL: Duration = Duration::from_secs(30);
 const DEFAULT_EFFECTIVE_PERCENT: u64 = 95;
@@ -20,6 +23,7 @@ const ALLOWED_MODES: &[&str] = &[
 struct CatalogModel {
     info: ModelInfo,
     visible: bool,
+    multi_agent_reasoning_effort: Option<String>,
 }
 
 struct CachedCatalog {
@@ -157,7 +161,7 @@ fn convert_model(wire: WireModel) -> Option<CatalogModel> {
         .unwrap_or(DEFAULT_EFFECTIVE_PERCENT);
     let context_length = effective_context(raw_context, percent)?;
     let supports_fast_mode = super::model_catalog_fast::supports_fast_mode(&wire);
-    let modes = validated_modes(wire.supported_reasoning_levels.0);
+    let modes = reasoning::validated_modes(wire.supported_reasoning_levels.0);
     let display_name = if valid_display_name(&wire.display_name) {
         wire.display_name.clone()
     } else {
@@ -172,6 +176,9 @@ fn convert_model(wire: WireModel) -> Option<CatalogModel> {
             super::model_catalog_fallback::compatible_default_reasoning_mode(&wire.slug, &modes)
         });
     Some(CatalogModel {
+        multi_agent_reasoning_effort: wire
+            .multi_agent_reasoning_effort
+            .filter(|mode| mode != "ultra" && modes.contains(mode)),
         visible: wire.visibility.as_deref().unwrap_or("list") == "list",
         info: ModelInfo {
             id: wire.slug,
@@ -197,16 +204,6 @@ fn effective_context(raw: u64, percent: u64) -> Option<u32> {
         return None;
     }
     u32::try_from(raw.checked_mul(percent)?.checked_div(100)?).ok()
-}
-
-fn validated_modes(levels: Vec<super::model_catalog_wire::ReasoningLevel>) -> Vec<String> {
-    let mut modes = Vec::with_capacity(levels.len());
-    for level in levels {
-        if ALLOWED_MODES.contains(&level.effort.as_str()) && !modes.contains(&level.effort) {
-            modes.push(level.effort);
-        }
-    }
-    modes
 }
 
 fn valid_display_name(value: &str) -> bool {

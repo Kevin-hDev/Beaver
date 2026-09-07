@@ -70,6 +70,8 @@ pub(super) struct WireModel {
     pub supported_reasoning_levels: BoundedVec<ReasoningLevel, MAX_REASONING_MODES>,
     #[serde(default)]
     pub default_reasoning_level: Option<String>,
+    #[serde(default)]
+    pub multi_agent_reasoning_effort: Option<String>,
     pub visibility: Option<String>,
     pub context_window: Option<u64>,
     pub max_context_window: Option<u64>,

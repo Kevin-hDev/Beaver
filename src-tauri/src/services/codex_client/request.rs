@@ -118,7 +118,8 @@ async fn send_request(
         &prepared.replayed,
     )
     .await;
-    let body = prepared.body;
+    let mut body = prepared.body;
+    cancel_aware(cancel, super::model_catalog::reasoning::prepare(&mut body)).await?;
     let routing_hint = super::routing_hint::for_request(&body)?;
     let body_json = serde_json::to_string(&body)
         .map_err(|_| provider_error(ProviderErrorCode::ProviderConfigurationInvalid))?;
