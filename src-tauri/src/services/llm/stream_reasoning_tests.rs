@@ -183,6 +183,97 @@ fn openrouter_gpt_56_keeps_nested_reasoning_shape() {
     assert!(payload.get("reasoning_effort").is_none());
 }
 
+#[tokio::test]
+async fn openrouter_september_models_use_only_their_catalog_effort() {
+    let _guard = super::runtime_models::test_mutation_lock().await;
+    let models = [
+        super::types::ModelInfo {
+            id: "google/gemini-3.8-flash".into(),
+            display_name: None,
+            owned_by: Some("google".into()),
+            context_length: Some(1_048_576),
+            max_output_tokens: Some(65_536),
+            supports_tools: true,
+            supports_vision: true,
+            supports_thinking: true,
+            reasoning_metadata_present: true,
+            supports_fast_mode: false,
+            reasoning_modes: vec!["low".into(), "medium".into(), "high".into()],
+            default_reasoning_mode: Some("medium".into()),
+            context_usage_includes_reasoning: true,
+            is_free: false,
+        },
+        super::types::ModelInfo {
+            id: "z-ai/glm-5.3-flash".into(),
+            display_name: None,
+            owned_by: Some("z-ai".into()),
+            context_length: Some(1_310_720),
+            max_output_tokens: Some(131_072),
+            supports_tools: true,
+            supports_vision: true,
+            supports_thinking: true,
+            reasoning_metadata_present: true,
+            supports_fast_mode: false,
+            reasoning_modes: vec!["low".into(), "high".into(), "max".into()],
+            default_reasoning_mode: Some("max".into()),
+            context_usage_includes_reasoning: true,
+            is_free: false,
+        },
+        super::types::ModelInfo {
+            id: "openai/gpt-6-astra".into(),
+            display_name: None,
+            owned_by: Some("openai".into()),
+            context_length: Some(1_050_000),
+            max_output_tokens: Some(128_000),
+            supports_tools: true,
+            supports_vision: true,
+            supports_thinking: true,
+            reasoning_metadata_present: true,
+            supports_fast_mode: false,
+            reasoning_modes: vec![
+                "low".into(),
+                "medium".into(),
+                "high".into(),
+                "xhigh".into(),
+                "max".into(),
+            ],
+            default_reasoning_mode: Some("medium".into()),
+            context_usage_includes_reasoning: true,
+            is_free: false,
+        },
+    ];
+    super::runtime_models::replace_provider("openrouter", &models);
+
+    for (model, modes) in [
+        (
+            "google/gemini-3.8-flash",
+            ["low", "medium", "high"].as_slice(),
+        ),
+        ("z-ai/glm-5.3-flash", ["low", "high", "max"].as_slice()),
+        (
+            "openai/gpt-6-astra",
+            ["low", "medium", "high", "xhigh", "max"].as_slice(),
+        ),
+    ] {
+        for mode in modes {
+            let body = payload("openrouter", model, Some(mode));
+            assert_eq!(body["reasoning"], json!({"effort": mode}), "{model}/{mode}");
+            let serialized = body.to_string();
+            for forbidden in [
+                "clear_thinking",
+                "enable_thinking",
+                "preserve_thinking",
+                "tool_stream",
+                "extra_body",
+            ] {
+                assert!(!serialized.contains(forbidden), "{model}/{forbidden}");
+            }
+        }
+    }
+
+    super::runtime_models::replace_provider("openrouter", &[]);
+}
+
 #[test]
 fn xai_only_sends_configurable_effort_for_supported_models() {
     assert_eq!(

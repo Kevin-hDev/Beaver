@@ -272,6 +272,119 @@ fn payload_parameters_are_resolved_before_serialization() {
 }
 
 #[tokio::test]
+async fn openrouter_september_payloads_keep_gateway_limits_and_native_fields_out() {
+    let _guard = super::super::runtime_models::test_mutation_lock().await;
+    let models = [
+        super::super::types::ModelInfo {
+            id: "google/gemini-3.8-flash".into(),
+            display_name: None,
+            owned_by: Some("google".into()),
+            context_length: Some(1_048_576),
+            max_output_tokens: Some(65_536),
+            supports_tools: true,
+            supports_vision: true,
+            supports_thinking: true,
+            reasoning_metadata_present: true,
+            supports_fast_mode: false,
+            reasoning_modes: vec!["low".into(), "medium".into(), "high".into()],
+            default_reasoning_mode: Some("medium".into()),
+            context_usage_includes_reasoning: true,
+            is_free: false,
+        },
+        super::super::types::ModelInfo {
+            id: "z-ai/glm-5.3-flash".into(),
+            display_name: None,
+            owned_by: Some("z-ai".into()),
+            context_length: Some(1_310_720),
+            max_output_tokens: Some(131_072),
+            supports_tools: true,
+            supports_vision: true,
+            supports_thinking: true,
+            reasoning_metadata_present: true,
+            supports_fast_mode: false,
+            reasoning_modes: vec!["low".into(), "high".into(), "max".into()],
+            default_reasoning_mode: Some("max".into()),
+            context_usage_includes_reasoning: true,
+            is_free: false,
+        },
+        super::super::types::ModelInfo {
+            id: "openai/gpt-6-astra".into(),
+            display_name: None,
+            owned_by: Some("openai".into()),
+            context_length: Some(1_050_000),
+            max_output_tokens: Some(128_000),
+            supports_tools: true,
+            supports_vision: true,
+            supports_thinking: true,
+            reasoning_metadata_present: true,
+            supports_fast_mode: false,
+            reasoning_modes: vec![
+                "low".into(),
+                "medium".into(),
+                "high".into(),
+                "xhigh".into(),
+                "max".into(),
+            ],
+            default_reasoning_mode: Some("medium".into()),
+            context_usage_includes_reasoning: true,
+            is_free: false,
+        },
+    ];
+    super::super::runtime_models::replace_provider("openrouter", &models);
+    let tools = [serde_json::json!({
+        "type": "function",
+        "function": {
+            "name": "search",
+            "description": "fixture",
+            "parameters": {"type": "object", "properties": {}}
+        }
+    })];
+    let messages = [
+        crate::services::agent_local::types_ollama::ChatMessage::user("describe".into())
+            .with_images(vec!["iVBORw0KGgo=".into()]),
+    ];
+
+    for model in [
+        "google/gemini-3.8-flash",
+        "z-ai/glm-5.3-flash",
+        "openai/gpt-6-astra",
+    ] {
+        let cfg = RequestConfig {
+            provider_id: "openrouter",
+            model,
+            messages: &messages,
+            tools: &tools,
+            think: true,
+            reasoning_mode: Some("high"),
+            max_tokens: Some(8_000),
+            purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
+            session_id: None,
+            fast_mode: FastModeRequest::Unsupported,
+            tool_result_previews: None,
+            continuation_target: None,
+        };
+        let payload = build_chat_payload(&cfg, &route::resolve("openrouter").unwrap(), Some(8_000))
+            .expect("OpenRouter payload");
+        assert_eq!(payload["reasoning"], serde_json::json!({"effort": "high"}));
+        assert_eq!(payload["max_tokens"], 8_000, "{model}");
+        assert_eq!(payload["tools"][0]["function"]["name"], "search");
+        assert_eq!(payload["messages"][0]["content"][1]["type"], "image_url");
+        let serialized = payload.to_string();
+        for forbidden in [
+            "clear_thinking",
+            "enable_thinking",
+            "preserve_thinking",
+            "tool_stream",
+            "extra_body",
+        ] {
+            assert!(!serialized.contains(forbidden), "{model}/{forbidden}");
+        }
+    }
+
+    super::super::runtime_models::replace_provider("openrouter", &[]);
+}
+
+#[tokio::test]
 async fn cerebras_payloads_omit_automatic_limits() {
     for (provider, model) in [("cerebras", "gpt-oss-120b")] {
         let route = route::resolve(provider).unwrap();
