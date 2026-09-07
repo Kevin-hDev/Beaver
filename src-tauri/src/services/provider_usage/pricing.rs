@@ -17,8 +17,10 @@ pub async fn resolve(connection_id: &str, model: &str, usage: &RequestUsage) -> 
         return ResolvedCost::default();
     }
     let provider = crate::services::llm::route::canonical_provider_id(connection_id);
+    // These models have tier/cache-write pricing that the scalar catalog cannot
+    // fully represent. Only the exact provider cost above can be authoritative.
     if matches!(provider, "openai" | "openrouter")
-        && crate::services::llm::providers::openai::is_gpt_56(model)
+        && crate::services::llm::providers::openai::supports_reported_cache_writes(model)
     {
         return ResolvedCost::default();
     }

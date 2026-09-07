@@ -37,6 +37,7 @@ pub fn process_chunk(
     }
 
     if chunk["done"].as_bool() == Some(true) {
+        result.usage = crate::services::provider_usage::RequestUsage::from_ollama_done(&chunk);
         result.eval_count = chunk["eval_count"]
             .as_u64()
             .and_then(|value| value.try_into().ok());
