@@ -1,0 +1,107 @@
+Context: Beaver's embedded terminal showed white-only text where the same
+commands are colored in a system terminal. Investigating that led to three
+further defects on the same screen. All four are fixed here; they share no
+code with codex/ajout-gemini-glm-astra (checked before starting: no file
+overlap).
+
+--- 1. No colors in the shell ---
+
+Root cause: portable_pty::CommandBuilder::new() snapshots std::env::vars_os()
+and hands the whole thing to the child. Beaver only overrode TERM. So every
+variable of whatever process launched Beaver reached the shell, including
+NO_COLOR=1 - set here by the coding agent that ran `npm run tauri dev`, but
+equally set by CI runners, by `npm run` under some configs, and by users who
+export it in their profile. ls, npm, cargo, git and anything honoring
+no-color.org then printed plain text, correctly, on a terminal that is in
+fact a 256-color emulator.
+
+Product decision: the terminal declares its own capability rather than
+relaying the launcher's directive. NO_COLOR describes the launcher's stdout,
+not Beaver's xterm surface; relaying it is a category error. A user who
+wants a colorless shell can still `export NO_COLOR=1` inside it.
+
+Fix: new src-tauri/src/services/terminal/shell_environment.rs, the single
+authority for what the shell receives. Two lists: DECLARED
+(TERM=xterm-256color, COLORTERM=truecolor) and DROPPED (NO_COLOR,
+FORCE_COLOR, COLOR, CLICOLOR, CLICOLOR_FORCE). Removals run before
+declarations so a name in both lists ends up declared, and a test pins that
+order. Both platform files - pty_session_unix.rs and pty_session_windows.rs,
+which each set TERM separately until now - go through it via a small
+ShellEnvironment trait implemented for portable_pty::CommandBuilder and for
+windows_spawn::Command. Nothing else in the environment is touched: PATH,
+HOME and the rest still traverse intact, and a test pins that too.
+
+--- 2. Clipped descenders and two glyph widths ---
+
+Root cause: xterm's CharSizeService measures the cell once at open() and
+re-measures only on a fontFamily or fontSize change. It never listens to
+document.fonts. Beaver names its web font first in --font-mono, so at mount
+the cell was measured on the system fallback, then the web font arrived and
+was rendered into a cell sized for another face: j, g, p, q, y were clipped
+at the baseline and column alignment drifted.
+
+Fix: src/components/terminal/terminal-font.ts. resolveTerminalFont() gives
+xterm only the font it actually renders - the fallback part of the stack
+while the web font is missing, the full stack once document.fonts.load
+resolves. The family string genuinely differs between the two states, which
+is what makes xterm re-measure (its OptionsService fires nothing when a
+setter receives an identical value). Rejected alternatives: awaiting the
+font before term.open() would make the mount effect async, delaying the PTY
+spawn and breaking five test files; poking the private CharSizeService would
+tie us to xterm internals.
+
+--- 3. Selection painted xterm's factory white ---
+
+Root cause: --term-selection is built with color-mix, which computes to
+`color(srgb 1 0.541176 0.298039 / 0.32)` in both Chromium and WebKit. xterm's
+css.toColor parses only #rgb[a], #rrggbb[aa] and comma-separated rgb()/rgba();
+everything else goes through a canvas litmus test that throws on any alpha
+below 0xFF. The throw is swallowed and the selection fell back to
+rgba(255,255,255,0.3), identical in every theme and every palette.
+
+Fix: toXtermColor() in terminal-theme.ts rewrites space-separated color()
+and rgb() forms into the comma-separated form xterm parses natively, scaling
+0-1 channels to 0-255 and accepting a percentage alpha. Anything unrecognized
+is returned untouched, so no previously working value changes. A test asserts
+the output against a verbatim copy of xterm's own regex.
+
+--- 4. Theme observer blind to the palette ---
+
+use-terminal-theme.ts watched data-theme only. Beaver's accent palette lives
+in data-palette, so switching palette left the terminal on the previous
+colors until the next theme change. Both attributes are now in the
+attributeFilter.
+
+--- Verification ---
+
+Mutation check (both directions): restoring `command.env("TERM",
+"xterm-256color")` in pty_session_unix.rs makes
+terminal_does_not_relay_the_launcher_refusal_of_color fail with
+`left: Some("1") right: None`. Restored afterwards.
+
+End-to-end proof, not just unit: the_launched_shell_never_receives_the_
+launcher_refusal_of_color spawns a real PTY and has the shell print
+`${NO_COLOR:-absent}_$COLORTERM`. The marker is built by arithmetic
+expansion (BEAVER$((21+21))_) so the shell's echo of the typed command
+cannot match it, and only a complete line counts as a report.
+
+cargo test --lib -> 5101 passed, 0 failed, 19 ignored.
+cargo test --lib services::terminal -> 90 passed.
+cargo clippy --all-targets -> no error. cargo fmt --check -> clean.
+npx vitest run -> 596 files, 3221 tests passed.
+npm test -> exit 0 (build, ci, cef, e2e, extensions, reasoning, contract suites).
+npm run lint -> clean. npx tsc --noEmit -> clean. graphify update . -> exit 0.
+
+On-screen verification, in the exact conditions of the defect: Beaver
+launched as `NO_COLOR=1 TERM=dumb COLORTERM= COLOR=0 npm run tauri dev`,
+with `ps -E -ww` confirming the app process really carries them. In its
+terminal, at native pixel density: vite's output green/dimmed/cyan, six
+distinct ANSI hues plus their six bright variants, descenders complete on
+jgpqy and columns aligned, and a drag-selection measured at pixel (80,27,27)
+- which back-computes to the theme's ~(229,63,63) accent at 32% over the
+dark ground, not xterm's white.
+
+--- Not covered ---
+
+Windows path is covered by the contract test and the unit tests over
+windows_spawn::Command, but was not run on a Windows machine.
