@@ -1,0 +1,14 @@
+Task 0 — reviewed preflight for the September model additions
+
+Execution base: d4ec159d983dadc7b96665b697e45036310c7e34.
+Branch: codex/ajout-gemini-glm-astra. No production code changed.
+
+Kevin requested one Luna/xhigh worker executing one task at a time, with parent review/corrections, scoped commits and notes, and parent-owned final validation. Task 0 followed that boundary.
+
+Evidence: checked-in model-validation/2026-09-07/preflight.md records a sanitized public OpenRouter snapshot, exact model-route contracts, code drift and internal request paths. Parent inspected the artifact and current code. Local provider registrations were projected without reading keys; Beaver and Ollama are not running. Bundled client reports 0.32.15, repository pin is 0.32.1. Runtime version, /api/show and authenticated catalogs are deferred to the coordinated app launch, not declared unavailable.
+
+Decision: proceed with independent routes. Alibaba ZHIPU/GLM-5.3-Flash alone remains pending exact output-limit parameter clarification; structured-output documentation also conflicts. Do not infer its wire fields from Z.AI or native Qwen. No account region changes. The absence of the OpenRouter :free variant was checked separately from the three-ID projection.
+
+Review: git diff --check succeeded. No code tests were needed for this documentation-only step. Unrelated site/mockup edits and screenshots were preserved. No paid requests, secret/vault access or app relaunch occurred. Agent attempted semantic Graphify maintenance, which could not run without its configured LLM credential; no successful graph update is claimed. These new documents are not indexed in the existing graph.
+
+Next: task 1 catalog profiles and remote metadata precedence. Final fixture runner must enforce actual output/call bounds before paid use; short prompts alone are not a spending limit. Budget remains cumulative EUR 1 per provider, and no live validation is claimed here.
