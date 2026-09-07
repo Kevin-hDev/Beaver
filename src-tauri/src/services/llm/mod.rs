@@ -21,6 +21,8 @@ mod endpoint_policy;
 #[cfg(test)]
 mod endpoint_policy_tests;
 pub mod fast_mode;
+#[cfg(all(test, debug_assertions))]
+mod fixture_tool_error_tests;
 mod kimi_models;
 #[cfg(test)]
 mod kimi_models_tests;

@@ -77,6 +77,34 @@ pub(super) fn vision_capable(spec: &LiveSpec) -> bool {
     spec.vision
 }
 
+pub(super) async fn prepare_ollama(app: &tauri::App) -> Result<(), String> {
+    let manager = app
+        .state::<crate::services::ollama_manager::OllamaManager>()
+        .inner()
+        .clone();
+    if let Ok(url) = std::env::var("BEAVER_FIXTURE_OLLAMA_URL") {
+        let endpoint = crate::services::ollama_manager::OllamaEndpoint::try_from_http_url(&url)
+            .map_err(|_| "ollama fixture runtime unavailable".to_string())?;
+        manager.publish_external_daemon(endpoint);
+        return Ok(());
+    }
+    if manager.usable_endpoint().await.is_ok() {
+        return Ok(());
+    }
+    if !matches!(
+        manager.run_startup_recovery().await,
+        crate::services::ollama_manager::StartupBarrierState::Ready
+    ) {
+        return Err("ollama fixture runtime unavailable".to_string());
+    }
+    match manager.start().await {
+        crate::services::ollama_manager::OllamaStartOutcome::OwnedStarted { .. }
+        | crate::services::ollama_manager::OllamaStartOutcome::OwnedAlreadyRunning { .. }
+        | crate::services::ollama_manager::OllamaStartOutcome::ExternalAvailable { .. } => Ok(()),
+        _ => Err("ollama fixture runtime unavailable".to_string()),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::LIVE_SPECS;
@@ -149,33 +177,5 @@ mod tests {
         assert!(
             super::select_specs(Some("google"), Some("gemini-3.8-flash"), Some("low,low")).is_err()
         );
-    }
-}
-
-pub(super) async fn prepare_ollama(app: &tauri::App) -> Result<(), String> {
-    let manager = app
-        .state::<crate::services::ollama_manager::OllamaManager>()
-        .inner()
-        .clone();
-    if let Ok(url) = std::env::var("BEAVER_FIXTURE_OLLAMA_URL") {
-        let endpoint = crate::services::ollama_manager::OllamaEndpoint::try_from_http_url(&url)
-            .map_err(|_| "ollama fixture runtime unavailable".to_string())?;
-        manager.publish_external_daemon(endpoint);
-        return Ok(());
-    }
-    if manager.usable_endpoint().await.is_ok() {
-        return Ok(());
-    }
-    if !matches!(
-        manager.run_startup_recovery().await,
-        crate::services::ollama_manager::StartupBarrierState::Ready
-    ) {
-        return Err("ollama fixture runtime unavailable".to_string());
-    }
-    match manager.start().await {
-        crate::services::ollama_manager::OllamaStartOutcome::OwnedStarted { .. }
-        | crate::services::ollama_manager::OllamaStartOutcome::OwnedAlreadyRunning { .. }
-        | crate::services::ollama_manager::OllamaStartOutcome::ExternalAvailable { .. } => Ok(()),
-        _ => Err("ollama fixture runtime unavailable".to_string()),
     }
 }
