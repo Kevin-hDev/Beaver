@@ -33,6 +33,10 @@ pub(crate) fn default_mode(model: &str) -> &'static str {
         .unwrap_or("auto")
 }
 
+pub(crate) fn requires_thinking(model: &str) -> bool {
+    effort_profile(model).is_some_and(|profile| profile.mandatory)
+}
+
 pub(crate) fn resolve(
     model: &str,
     requested_mode: Option<&str>,

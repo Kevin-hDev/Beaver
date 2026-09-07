@@ -1,6 +1,13 @@
 use crate::services::agent_local::types_ollama::{ChatRequest, OllamaThink};
 
 pub fn build_retry_request(request: &ChatRequest, error_body: &str) -> Option<ChatRequest> {
+    // A feature retry must not weaken mandatory thinking after an inconsistent
+    // server capability report. Ordinary bounded server retries stay unchanged.
+    if error_body.contains("does not support thinking")
+        && crate::services::reasoning_ollama::requires_thinking(&request.model)
+    {
+        return None;
+    }
     let mut retry = request.clone();
     let mut changed = false;
     if error_body.contains("does not support thinking")
@@ -21,3 +28,7 @@ pub fn build_retry_request(request: &ChatRequest, error_body: &str) -> Option<Ch
     }
     changed.then_some(retry)
 }
+
+#[cfg(test)]
+#[path = "ollama_stream_retry_tests.rs"]
+mod tests;
