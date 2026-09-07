@@ -198,7 +198,7 @@ export function TerminalPanel({
                 theme={theme}
                 /* Replié, aucun écran n'est actif : un terminal invisible qui
                  garde le focus avalerait les touches frappées ailleurs. */
-              isVisible={surfaceActive && isOpen && groupKey === activeGroupKey && tab.id === activeTabId}
+                isVisible={surfaceActive && isOpen && groupKey === activeGroupKey && tab.id === activeTabId}
                 onPtyReady={onPtyReady}
                 onExit={() => onProcessExit(tab.id, groupKey)}
                 onActivity={onTabActivity}

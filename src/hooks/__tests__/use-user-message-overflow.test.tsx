@@ -1,5 +1,5 @@
 /* @vitest-environment jsdom */
-import { act, render } from "@testing-library/react";
+import { act, render, waitFor } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { AppSurfaceActivityProvider } from "@/components/layout/app-surface-activity";
 import { useUserMessageOverflow } from "../use-user-message-overflow";
@@ -8,19 +8,21 @@ function Wrapper({ active, children }: { active: boolean; children: React.ReactN
   return <AppSurfaceActivityProvider active={active}>{children}</AppSurfaceActivityProvider>;
 }
 
-function Probe() {
-  const { contentRef, maxHeight } = useUserMessageOverflow("message long", false);
+function Probe({ expanded = false }: { expanded?: boolean }) {
+  const { contentRef, maxHeight } = useUserMessageOverflow("message long", expanded);
   return <div ref={contentRef} data-max-height={maxHeight ?? "none"} />;
 }
 
 describe("useUserMessageOverflow et l'activité", () => {
-  it("ignore une mesure nulle inactive et remesure au retour", () => {
+  it("régression: conserve une mesure réelle inactive et la remesure au retour", async () => {
     let active = true;
     const view = render(<Wrapper active={active}><Probe /></Wrapper>);
     const element = view.container.firstElementChild as HTMLDivElement;
-    Object.defineProperty(element, "scrollHeight", { configurable: true, value: 120 });
+    Object.defineProperty(element, "scrollHeight", { configurable: true, value: 600 });
     void act(() => window.dispatchEvent(new Event("resize")));
+    await waitFor(() => expect(element.dataset.maxHeight).toBe("434px"));
     const valid = element.dataset.maxHeight;
+    expect(valid).toMatch(/^\d+px$/);
 
     active = false;
     view.rerender(<Wrapper active={active}><Probe /></Wrapper>);
@@ -29,7 +31,10 @@ describe("useUserMessageOverflow et l'activité", () => {
     expect(element.dataset.maxHeight).toBe(valid);
 
     active = true;
+    Object.defineProperty(element, "scrollHeight", { configurable: true, value: 800 });
     view.rerender(<Wrapper active={active}><Probe /></Wrapper>);
-    expect(element.dataset.maxHeight).toBe(valid);
+    await waitFor(() => expect(element.dataset.maxHeight).toBe("434px"));
+    view.rerender(<Wrapper active={active}><Probe expanded /></Wrapper>);
+    await waitFor(() => expect(element.dataset.maxHeight).toBe("800px"));
   });
 });

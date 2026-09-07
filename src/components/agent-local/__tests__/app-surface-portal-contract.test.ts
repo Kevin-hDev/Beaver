@@ -14,6 +14,7 @@ const ROOTS = [
   "/src/components/file-preview/",
   "/src/components/forecast/",
   "/src/components/internal-browser/",
+  "/src/components/terminal/",
   "/src/components/ui/",
 ];
 

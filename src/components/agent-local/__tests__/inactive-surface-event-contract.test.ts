@@ -6,6 +6,7 @@ const SOURCES = import.meta.glob(
 );
 
 const EVENT_PATTERN = /(?:window|document)\.addEventListener\(\s*["'](?:keydown|mousedown|click|pointerdown|resize|scroll)["']/;
+const EVENT_PATTERN_GLOBAL = /(?:window|document)\.addEventListener\(\s*["'](?:keydown|mousedown|click|pointerdown|resize|scroll)["']/g;
 const SOURCE_ROOTS = [
   "/src/components/agent-local/",
   "/src/components/file-preview/",
@@ -26,19 +27,38 @@ function directEventSources(): Array<[string, string]> {
   return scannedSources().filter(([, source]) => EVENT_PATTERN.test(source));
 }
 
+function unguardedRegistrations(
+  source: string,
+  guardPattern: RegExp,
+): number {
+  return [...source.matchAll(EVENT_PATTERN_GLOBAL)]
+    .filter((match) => {
+      const registrationIndex = match.index ?? -1;
+      const effectIndex = Math.max(
+        source.lastIndexOf("useEffect(", registrationIndex),
+        source.lastIndexOf("useLayoutEffect(", registrationIndex),
+      );
+      if (effectIndex === -1) return true;
+      return !guardPattern.test(source.slice(effectIndex, registrationIndex));
+    })
+    .length;
+}
+
 describe("contrat des listeners d'interface des surfaces", () => {
   it("garde chaque listener DOM par l'activité de surface", () => {
     const failures = directEventSources().flatMap(([path, source]) => {
       if (path.endsWith("/use-browser-surface.ts")) {
-        return /if\s*\(\s*!args\.active\b[\s\S]{0,120}return/.test(source)
-          ? []
-          : [path];
+        return unguardedRegistrations(
+          source,
+          /if\s*\(\s*!args\.active\b[\s\S]{0,120}return/,
+        ) === 0 ? [] : [path];
       }
       if (path.endsWith("/use-dialog-keyboard.ts")) return [];
-      const addListener = source.search(EVENT_PATTERN);
-      const beforeListener = source.slice(0, addListener);
       const guarded = source.includes("useAppSurfaceActive")
-        && /if\s*\(\s*!surfaceActive\b[\s\S]{0,120}return/.test(beforeListener);
+        && unguardedRegistrations(
+          source,
+          /if\s*\(\s*!surfaceActive\b[\s\S]{0,120}return/,
+        ) === 0;
       return guarded ? [] : [path];
     });
 

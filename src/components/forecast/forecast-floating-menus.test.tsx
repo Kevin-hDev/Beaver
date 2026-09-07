@@ -59,6 +59,37 @@ describe("Forecast floating menus", () => {
     expect(container.contains(panel)).toBe(false);
   });
 
+  it("régression: conserve le panneau des filtres monté mais masqué pendant l'inactivité", () => {
+    const groups = [{
+      id: "series",
+      titleKey: "forecast.view.filters.series",
+      items: [{ id: "history", label: "Historique", interactive: true }],
+    }];
+    const view = render(
+      <AppSurfaceActivityProvider active>
+        <ForecastViewFilters groups={groups} layers={{ history: true }} onChange={vi.fn()} />
+      </AppSurfaceActivityProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /forecast\.view\.filters\.button/ }));
+    const panel = document.body.querySelector<HTMLElement>(".fcf-panel");
+    expect(panel).not.toBeNull();
+
+    view.rerender(
+      <AppSurfaceActivityProvider active={false}>
+        <ForecastViewFilters groups={groups} layers={{ history: true }} onChange={vi.fn()} />
+      </AppSurfaceActivityProvider>,
+    );
+    expect(panel?.isConnected).toBe(true);
+    expect(panel?.closest(".app-surface-portal-boundary")).toHaveAttribute("hidden");
+
+    view.rerender(
+      <AppSurfaceActivityProvider active>
+        <ForecastViewFilters groups={groups} layers={{ history: true }} onChange={vi.fn()} />
+      </AppSurfaceActivityProvider>,
+    );
+    expect(panel?.closest(".app-surface-portal-boundary")).not.toHaveAttribute("hidden");
+  });
+
   it("cache le menu ouvert quand la surface devient inactive sans perdre son état", () => {
     const view = render(
       <AppSurfaceActivityProvider active>

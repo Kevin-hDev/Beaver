@@ -1,5 +1,6 @@
 import { createContext, useContext, type ReactNode } from "react";
 
+// Hors d'une surface persistante, l'écran reste actif par défaut (réglages, heartbeat, etc.).
 const AppSurfaceActivityContext = createContext(true);
 
 export function AppSurfaceActivityProvider(props: {

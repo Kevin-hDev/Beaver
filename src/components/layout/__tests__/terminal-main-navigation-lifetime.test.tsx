@@ -145,6 +145,7 @@ describe("durée de vie PTY à travers la navigation principale", () => {
       .toBe(heightBefore);
     expect(doubles.channels).toHaveLength(1);
     expect(doubles.invoke.mock.calls.filter(([command]) => command === "pty_spawn")).toHaveLength(1);
+    expect(doubles.terminals[0]?.writes).toContain("frame-17");
     expect(doubles.invoke.mock.calls.filter(([command]) => command === "pty_spawn")).toHaveLength(spawnCount);
     expect(doubles.invoke).not.toHaveBeenCalledWith("pty_kill", expect.anything());
 
