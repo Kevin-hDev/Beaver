@@ -199,6 +199,94 @@ mod tests {
         }
     }
 
+    /// Beaver lancé depuis un agent hérite de son `NO_COLOR=1` ; le relayer au
+    /// shell rendait grise toute la sortie de vite, cargo et de la CLI tauri.
+    #[test]
+    fn terminal_does_not_relay_the_launcher_refusal_of_color() {
+        let _lock = ENV_LOCK.lock().unwrap_or_else(|error| error.into_inner());
+        let _refusal = EnvironmentGuard::set("NO_COLOR", "1");
+
+        #[cfg(unix)]
+        {
+            let command = PtySession::terminal_command_for_test().expect("terminal command");
+            assert_eq!(command.get_env("NO_COLOR"), None);
+            assert_eq!(
+                command.get_env("COLORTERM"),
+                Some(std::ffi::OsStr::new("truecolor"))
+            );
+        }
+
+        #[cfg(windows)]
+        {
+            let mut command = PtySession::terminal_command_for_test().expect("terminal command");
+            command.args([
+                "-NoLogo",
+                "-NoProfile",
+                "-NonInteractive",
+                "-Command",
+                "[Console]::Out.Write(\"$env:NO_COLOR|$env:COLORTERM\")",
+            ]);
+            let output = command.output().expect("PowerShell environment");
+            assert!(output.status.success());
+            assert_eq!(output.stdout, b"|truecolor");
+        }
+    }
+
+    /// Ce que le shell rapporte de son propre environnement, entre le préfixe
+    /// et la fin de sa ligne. `None` tant que la ligne n'est pas complète.
+    fn shell_report(output: &str) -> Option<&str> {
+        let tail = output.split("BEAVER42_").nth(1)?;
+        let (line, _) = tail.split_once('\n')?;
+        Some(line.trim_end_matches('\r'))
+    }
+
+    /// La même garantie, vérifiée sur un shell réellement lancé plutôt que sur
+    /// la commande qui le décrit. Le préfixe passe par une addition pour que
+    /// seule l'évaluation du shell puisse le produire : l'écho de la ligne
+    /// tapée, lui, contient encore l'expression.
+    #[cfg(unix)]
+    #[test]
+    fn the_launched_shell_never_receives_the_launcher_refusal_of_color() {
+        let _lock = ENV_LOCK.lock().unwrap_or_else(|error| error.into_inner());
+        let _refusal = EnvironmentGuard::set("NO_COLOR", "1");
+
+        let (session, mut reader) = PtySession::spawn(None, 80, 24).expect("spawn");
+        session
+            .write(b"printf '%s%s_%s\\n' \"BEAVER$((21+21))_\" \"${NO_COLOR:-absent}\" \"$COLORTERM\"\n")
+            .expect("write");
+
+        let (chunks, received) = std::sync::mpsc::sync_channel(4);
+        let reader_thread = std::thread::spawn(move || {
+            let mut buffer = [0_u8; 1024];
+            while let Ok(read) = reader.read(&mut buffer) {
+                if read == 0 || chunks.send(buffer[..read].to_vec()).is_err() {
+                    break;
+                }
+            }
+        });
+
+        let mut output = String::new();
+        let deadline = Instant::now() + Duration::from_secs(5);
+        while shell_report(&output).is_none() {
+            let remaining = deadline.saturating_duration_since(Instant::now());
+            match received.recv_timeout(remaining) {
+                Ok(chunk) => output.push_str(&String::from_utf8_lossy(&chunk)),
+                Err(error) => {
+                    drop(received);
+                    drop(session);
+                    reader_thread.join().expect("reader worker");
+                    panic!("PTY output deadline reached: {error}\n{output}");
+                }
+            }
+        }
+        let reported = shell_report(&output).expect("rapport du shell").to_string();
+        drop(received);
+        drop(session);
+        reader_thread.join().expect("reader worker");
+
+        assert_eq!(reported, "absent_truecolor", "sortie complète :\n{output}");
+    }
+
     #[test]
     fn test_pty_rejects_a_relative_cwd_path() {
         let error = PtySession::spawn(Some(Path::new("relative")), 80, 24)

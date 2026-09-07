@@ -105,4 +105,20 @@ describe("terminal limits contract", () => {
     expect(command).toContain(".spawn_linux(");
     expect(command).toContain("#[cfg(target_os = \"linux\")]");
   });
+
+  /* Chaque plateforme posait `TERM` de son côté. Une seule liste, appliquée aux
+     deux, évite qu'elles divergent — et c'est elle qui refuse de relayer le
+     `NO_COLOR` du processus qui a lancé Beaver. */
+  it("une seule autorité décide de l'environnement donné au shell", () => {
+    const authority = source(`${TERMINAL_RUST}/shell_environment.rs`);
+    const platforms = ["pty_session_unix.rs", "pty_session_windows.rs"];
+
+    expect(authority).toContain("xterm-256color");
+    expect(authority).toContain("NO_COLOR");
+    for (const platform of platforms) {
+      const file = source(`${TERMINAL_RUST}/${platform}`);
+      expect(file).toContain("shell_environment::apply(&mut command)");
+      expect(file).not.toContain("xterm-256color");
+    }
+  });
 });

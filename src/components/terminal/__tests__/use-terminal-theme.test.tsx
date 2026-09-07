@@ -138,9 +138,12 @@ describe("thème partagé du terminal", () => {
     expect(doubles.terminals).toHaveLength(3);
     expect(doubles.bridgeStarts).toHaveBeenCalledTimes(3);
     expect(doubles.observerCallbacks).toHaveLength(1);
+    /* `data-theme` ne dit que le clair ou le sombre : sans `data-palette`, un
+       passage d'une palette sombre à une autre laissait le terminal sur les
+       couleurs de la précédente. */
     expect(doubles.observerObservations).toEqual([{
       target: document.documentElement,
-      options: { attributes: true, attributeFilter: ["data-theme"] },
+      options: { attributes: true, attributeFilter: ["data-theme", "data-palette"] },
     }]);
 
     const lightTheme = { background: "light" };
