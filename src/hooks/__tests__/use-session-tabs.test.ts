@@ -1,8 +1,10 @@
+import { createElement } from "react";
 import { act, fireEvent, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { useSessionTabs } from "../use-session-tabs";
 import type { CloneSessionResult, SessionTabs } from "@/types/agent";
+import { AppSurfaceActivityProvider } from "@/components/layout/app-surface-activity";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(),
@@ -310,5 +312,33 @@ describe("useSessionTabs", () => {
       sessionId: "root",
       tabs: { ...tabsWithMainActive, active_tab_id: "branch-1" },
     });
+  });
+
+  it("ignore le raccourci de sélection quand la surface est inactive", async () => {
+    const tabsWithMainActive = { ...cloneTabs, active_tab_id: "main" };
+    vi.mocked(invoke).mockImplementation((command: string, args?: unknown) => {
+      if (command === "list_session_tabs") return Promise.resolve(tabsWithMainActive);
+      if (command === "save_session_tabs") {
+        return Promise.resolve((args as { tabs: SessionTabs }).tabs);
+      }
+      return Promise.resolve(rootTabs);
+    });
+    let active = true;
+    const wrapper = ({ children }: { children: React.ReactNode }) =>
+      createElement(AppSurfaceActivityProvider, { active } as never, children);
+    const { result, rerender } = renderHook(() => useSessionTabs("root"), { wrapper });
+    await waitFor(() => expect(result.current.tabs).toEqual(tabsWithMainActive));
+    vi.mocked(invoke).mockClear();
+
+    active = false;
+    rerender();
+    fireEvent.keyDown(window, { code: "Digit2", key: "2", ctrlKey: true });
+    expect(result.current.activeTab?.tab_id).toBe("main");
+    expect(invoke).not.toHaveBeenCalledWith("save_session_tabs", expect.anything());
+
+    active = true;
+    rerender();
+    fireEvent.keyDown(window, { code: "Digit2", key: "2", ctrlKey: true });
+    await waitFor(() => expect(result.current.activeTab?.tab_id).toBe("branch-1"));
   });
 });

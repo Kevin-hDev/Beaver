@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { AppSurfaceActivityProvider } from "@/components/layout/app-surface-activity";
 import { CloneSessionDialog } from "../clone-session-dialog";
 
 vi.mock("react-i18next", () => ({
@@ -53,5 +54,37 @@ describe("CloneSessionDialog", () => {
 
     expect(props.onAbort).toHaveBeenCalledOnce();
     expect(props.onCancel).not.toHaveBeenCalled();
+  });
+
+  it("ignore Escape inactif puis annule une seule fois au retour", () => {
+    const onCancel = vi.fn();
+    let active = true;
+    const props = {
+      canSummarize: true,
+      busy: false,
+      error: null,
+      onCancel,
+      onAbort: vi.fn(),
+      onSubmit: vi.fn(),
+    };
+    const view = render(
+      <AppSurfaceActivityProvider active={active}><CloneSessionDialog {...props} /></AppSurfaceActivityProvider>,
+    );
+    active = false;
+    view.rerender(
+      <AppSurfaceActivityProvider active={active}><CloneSessionDialog {...props} /></AppSurfaceActivityProvider>,
+    );
+    fireEvent.keyDown(window, { key: "Escape" });
+    fireEvent.click(view.getByRole("button", { name: "agentLocal.clone.close" }));
+    expect(onCancel).not.toHaveBeenCalled();
+    active = true;
+    view.rerender(
+      <AppSurfaceActivityProvider active={active}><CloneSessionDialog {...props} /></AppSurfaceActivityProvider>,
+    );
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(onCancel).toHaveBeenCalledOnce();
+    onCancel.mockClear();
+    fireEvent.click(view.getByRole("button", { name: "agentLocal.clone.close" }));
+    expect(onCancel).toHaveBeenCalledOnce();
   });
 });

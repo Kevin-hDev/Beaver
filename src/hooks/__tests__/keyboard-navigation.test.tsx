@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useArrowNavigation } from "../use-arrow-navigation";
 import { usePanelFocus } from "../use-panel-focus";
@@ -58,7 +58,7 @@ function KeyboardHarness() {
         ))}
         <textarea data-testid="chat-input" />
       </section>
-      <section data-nav-zone="detail" tabIndex={-1}>
+      <section data-nav-zone="detail" data-testid="active-detail" tabIndex={-1}>
         <button data-testid="detail-button">detail</button>
       </section>
       <div role="menu">
@@ -90,8 +90,58 @@ function EmptyListHarness() {
   );
 }
 
+function InactiveTerminalHarness() {
+  usePanelFocus();
+  return (
+    <>
+      <section data-nav-zone="detail" data-testid="active-detail" tabIndex={-1}>
+        <button data-testid="active-detail-button">detail</button>
+      </section>
+      <div hidden inert={true} data-testid="inactive-surface">
+        <section data-nav-zone="terminal" tabIndex={-1}>
+          <button data-testid="hidden-terminal">terminal</button>
+        </section>
+      </div>
+    </>
+  );
+}
+
+function DuplicateTerminalHarness() {
+  usePanelFocus();
+  return (
+    <>
+      <section data-nav-zone="detail" tabIndex={-1}>
+        <button data-testid="duplicate-detail">detail</button>
+      </section>
+      <div hidden inert={true}>
+        <section data-nav-zone="terminal" tabIndex={-1}>
+          <button data-testid="hidden-terminal-first">terminal caché</button>
+        </section>
+      </div>
+      <section data-nav-zone="terminal" tabIndex={-1}>
+        <button data-testid="visible-terminal-second">terminal visible</button>
+      </section>
+    </>
+  );
+}
+
+function NestedTerminalHarness() {
+  usePanelFocus();
+  return (
+    <section data-nav-zone="terminal" tabIndex={-1}>
+      <div hidden inert={true}>
+        <button data-testid="nested-hidden-terminal">terminal caché</button>
+      </div>
+      <button data-testid="nested-visible-terminal">terminal visible</button>
+    </section>
+  );
+}
+
 describe("keyboard navigation", () => {
-  afterEach(() => cleanup());
+  afterEach(() => {
+    cleanup();
+    vi.useRealTimers();
+  });
 
   beforeEach(() => {
     vi.spyOn(window, "requestAnimationFrame").mockImplementation((cb) => {
@@ -154,5 +204,41 @@ describe("keyboard navigation", () => {
     screen.getByTestId("terminal").focus();
     fireEvent.keyDown(screen.getByTestId("terminal"), { key: "ArrowDown" });
     expect(screen.getByTestId("state").textContent).toBe("agent-local:s1");
+  });
+
+  it("ne sélectionne pas un terminal sous une surface inactive", async () => {
+    render(<InactiveTerminalHarness />);
+    const detail = screen.getByTestId("active-detail-button");
+    detail.focus();
+    fireEvent.keyDown(detail, { key: "ArrowRight" });
+
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByTestId("active-detail-button")));
+    expect(document.activeElement).not.toBe(screen.getByTestId("hidden-terminal"));
+  });
+
+  it("ignore le premier terminal caché et focalise le terminal visible suivant", async () => {
+    render(<DuplicateTerminalHarness />);
+    const detail = screen.getByTestId("duplicate-detail");
+    act(() => {
+      detail.focus();
+      fireEvent.keyDown(detail, { key: "ArrowRight" });
+    });
+
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByTestId("visible-terminal-second")));
+    expect(document.activeElement).not.toBe(screen.getByTestId("hidden-terminal-first"));
+  });
+
+  it("filtre aussi les descendants cachés dans la zone active", () => {
+    vi.useFakeTimers();
+    render(<NestedTerminalHarness />);
+    const visibleSource = screen.getByTestId("nested-visible-terminal");
+    act(() => {
+      visibleSource.focus();
+      fireEvent.keyDown(visibleSource, { key: "ArrowLeft" });
+      vi.runAllTimers();
+    });
+
+    expect(document.activeElement).toBe(screen.getByTestId("nested-visible-terminal"));
+    expect(document.activeElement).not.toBe(screen.getByTestId("nested-hidden-terminal"));
   });
 });

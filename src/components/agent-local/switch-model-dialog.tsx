@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { X } from "@/components/ui/icons";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 
 interface SwitchModelDialogProps {
   fromModel: string;
@@ -26,8 +27,10 @@ export function SwitchModelDialog({
 }: SwitchModelDialogProps) {
   const { t } = useTranslation();
   const [remember, setRemember] = useState(false);
+  const surfaceActive = useAppSurfaceActive();
 
   useEffect(() => {
+    if (!surfaceActive) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key.startsWith("Esc")) {
         e.preventDefault();
@@ -36,7 +39,7 @@ export function SwitchModelDialog({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onCancel]);
+  }, [onCancel, surfaceActive]);
 
   return (
     <div className="wk-dialog-overlay" role="button" tabIndex={-1} aria-label="Close dialog" onClick={onCancel} onKeyDown={(e) => { if (e.key === "Escape") onCancel(); }}>

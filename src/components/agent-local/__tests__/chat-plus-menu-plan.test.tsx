@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { AppSurfaceActivityProvider } from "@/components/layout/app-surface-activity";
 import { ChatPlusMenu } from "../chat-plus-menu";
 
 const connectorState = vi.hoisted(() => ({
@@ -120,5 +121,40 @@ describe("ChatPlusMenu plan mode", () => {
     expect(view.queryByText("Plan mode")).toBeNull();
     expect(view.queryByText("Connectors")).toBeNull();
     expect(view.queryByText("Plugins")).toBeNull();
+  });
+
+  it("ignore Escape et le clic global inactif puis reprend une fois actif", () => {
+    let active = true;
+    const view = render(
+      <AppSurfaceActivityProvider active={active}>
+        <ChatPlusMenu
+          onFileImport={vi.fn()}
+          agentic
+          planModeEnabled={false}
+          onPlanModeChange={vi.fn()}
+        />
+      </AppSurfaceActivityProvider>,
+    );
+    fireEvent.click(view.getAllByRole("button")[0]);
+    expect(view.getByText("Plan mode")).toBeTruthy();
+
+    active = false;
+    view.rerender(
+      <AppSurfaceActivityProvider active={active}>
+        <ChatPlusMenu onFileImport={vi.fn()} agentic planModeEnabled={false} onPlanModeChange={vi.fn()} />
+      </AppSurfaceActivityProvider>,
+    );
+    fireEvent.keyDown(window, { key: "Escape" });
+    fireEvent.mouseDown(document.body);
+    expect(view.getByText("Plan mode")).toBeTruthy();
+
+    active = true;
+    view.rerender(
+      <AppSurfaceActivityProvider active={active}>
+        <ChatPlusMenu onFileImport={vi.fn()} agentic planModeEnabled={false} onPlanModeChange={vi.fn()} />
+      </AppSurfaceActivityProvider>,
+    );
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(view.queryByText("Plan mode")).toBeNull();
   });
 });

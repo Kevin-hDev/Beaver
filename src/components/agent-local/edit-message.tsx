@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { matchesAppShortcut } from "@/lib/app-shortcuts";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 import {
   USER_MESSAGE_EDIT_MIN_LINES,
   USER_MESSAGE_MAX_LINES,
@@ -21,6 +22,7 @@ export function EditMessage({ initialContent, onSave, onCancel }: EditMessagePro
   const [overflowing, setOverflowing] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const scrollFrameRef = useRef<number | null>(null);
+  const surfaceActive = useAppSurfaceActive();
 
   const measureHeight = useCallback(() => {
     const textarea = textareaRef.current;
@@ -49,10 +51,12 @@ export function EditMessage({ initialContent, onSave, onCancel }: EditMessagePro
   }, []);
 
   useLayoutEffect(() => {
+    if (!surfaceActive) return;
     measureHeight();
-  }, [content, measureHeight]);
+  }, [content, measureHeight, surfaceActive]);
 
   useLayoutEffect(() => {
+    if (!surfaceActive) return;
     const textarea = textareaRef.current;
     if (!textarea) return;
 
@@ -70,7 +74,7 @@ export function EditMessage({ initialContent, onSave, onCancel }: EditMessagePro
     });
     observer.observe(textarea);
     return () => observer.disconnect();
-  }, [measureHeight]);
+  }, [measureHeight, surfaceActive]);
 
   useEffect(() => {
     const textarea = textareaRef.current;

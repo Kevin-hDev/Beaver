@@ -1,6 +1,7 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { cleanupTauriListener } from "@/lib/tauri-listen";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 
 interface FileDropZoneProps {
   enabled: boolean;
@@ -11,6 +12,7 @@ interface FileDropZoneProps {
 }
 
 export function FileDropZone({ enabled, dragging, onDragChange, onDropPaths, children }: FileDropZoneProps) {
+  const surfaceActive = useAppSurfaceActive();
   const dragRef = useRef(onDragChange);
   const dropRef = useRef(onDropPaths);
   // eslint-disable-next-line react-hooks/refs -- callback capture pattern for stable event handler
@@ -19,7 +21,7 @@ export function FileDropZone({ enabled, dragging, onDragChange, onDropPaths, chi
   dropRef.current = onDropPaths;
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!surfaceActive || !enabled) return;
     let unlisten: ReturnType<ReturnType<typeof getCurrentWebview>["onDragDropEvent"]>;
     try {
       unlisten = getCurrentWebview().onDragDropEvent((event) => {
@@ -39,7 +41,7 @@ export function FileDropZone({ enabled, dragging, onDragChange, onDropPaths, chi
     }
 
     return () => { cleanupTauriListener(unlisten); };
-  }, [enabled]);
+  }, [enabled, surfaceActive]);
 
   return (
     <div style={{ position: "relative", height: "100%", overflow: "hidden", borderRadius: "inherit" }}>

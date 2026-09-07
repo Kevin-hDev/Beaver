@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { AppSurfacePortal } from "@/components/ui/app-surface-portal";
 import { useTranslation } from "react-i18next";
 import { Brain, CaretDown, Check } from "@/components/ui/icons";
 import { FastModeIcon } from "@/components/ui/fast-mode-icon";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useKeyboard } from "@/hooks/use-keyboard";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 import {
   floatingMenuPortalRoot,
   useFloatingMenuPosition,
@@ -40,6 +41,7 @@ export function ReasoningSelector({
 }: ReasoningSelectorProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const surfaceActive = useAppSurfaceActive();
   const rootRef = useRef<HTMLDivElement>(null);
   const { anchorRef, floatingRef, floatingStyle } = useFloatingMenuPosition(open, align, 4);
   const options = reasoningModeOptions(model);
@@ -53,7 +55,7 @@ export function ReasoningSelector({
   useKeyboard({ onEscape: () => setOpen(false) });
 
   useEffect(() => {
-    if (!open) return;
+    if (!surfaceActive || !open) return;
     const onDocumentMouseDown = (event: MouseEvent) => {
       const target = event.target as Node;
       if (rootRef.current?.contains(target) || floatingRef.current?.contains(target)) return;
@@ -61,7 +63,7 @@ export function ReasoningSelector({
     };
     document.addEventListener("mousedown", onDocumentMouseDown);
     return () => document.removeEventListener("mousedown", onDocumentMouseDown);
-  }, [floatingRef, open]);
+  }, [floatingRef, open, surfaceActive]);
 
   if (!selectedOption) return null;
 
@@ -124,7 +126,7 @@ export function ReasoningSelector({
           <CaretDown size="var(--icon-2xs)" className="rs-trigger-caret" />
         </button>
       </Tooltip>
-      {dropdown ? createPortal(dropdown, floatingMenuPortalRoot()) : null}
+      {dropdown ? <AppSurfacePortal target={floatingMenuPortalRoot()}>{dropdown}</AppSurfacePortal> : null}
     </div>
   );
 }

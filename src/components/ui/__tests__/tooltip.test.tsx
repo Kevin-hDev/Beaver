@@ -100,7 +100,9 @@ describe("Tooltip", () => {
 
     expect(bubble).toBeTruthy();
     expect(bubble?.textContent).toBe("Mon aide");
-    expect(bubble?.parentElement).toBe(document.body);
+    const boundary = bubble?.parentElement;
+    expect(boundary).toHaveClass("app-surface-portal-boundary");
+    expect(boundary?.parentElement).toBe(document.body);
     expect(container.querySelector(".tooltip-above")).toBeNull();
   });
 

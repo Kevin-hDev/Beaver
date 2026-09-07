@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from "react";
-import { createPortal } from "react-dom";
+import { AppSurfacePortal } from "@/components/ui/app-surface-portal";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 import { useTranslation } from "react-i18next";
 import { ClipboardText, DownloadSimple } from "@/components/ui/icons";
 import { FileIcon } from "@/components/file-preview/file-icon";
@@ -27,11 +28,13 @@ const FORMATS = [
 
 export function ExportDropdown({ analysisId, onExport }: ExportDropdownProps) {
   const { t } = useTranslation();
+  const surfaceActive = useAppSurfaceActive();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const { anchorRef, floatingRef, floatingStyle } =
     useFloatingMenuPosition(open, "right", 6, "auto");
   const pendingFocusDirection = useRef<1 | -1>(1);
+  const wasOpenRef = useRef(open);
   const navItems = useMemo<LocalListNavItem[]>(() => FORMATS.map((format) => ({
     id: format.key,
     onSelect: () => {
@@ -47,7 +50,7 @@ export function ExportDropdown({ analysisId, onExport }: ExportDropdownProps) {
   });
 
   useEffect(() => {
-    if (!open) return;
+    if (!surfaceActive || !open) return;
     const close = (e: MouseEvent) => {
       const target = e.target as Node;
       if (ref.current?.contains(target) || floatingRef.current?.contains(target)) return;
@@ -55,11 +58,13 @@ export function ExportDropdown({ analysisId, onExport }: ExportDropdownProps) {
     };
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
-  }, [floatingRef, open]);
+  }, [floatingRef, open, surfaceActive]);
 
   useEffect(() => {
-    if (open) focusLocalListItem(floatingRef.current, pendingFocusDirection.current);
-  }, [floatingRef, open]);
+    const shouldFocus = surfaceActive && open && !wasOpenRef.current;
+    wasOpenRef.current = open;
+    if (shouldFocus) focusLocalListItem(floatingRef.current, pendingFocusDirection.current);
+  }, [floatingRef, open, surfaceActive]);
 
   const menu = open ? (
     <div
@@ -115,7 +120,7 @@ export function ExportDropdown({ analysisId, onExport }: ExportDropdownProps) {
         <DownloadSimple size="var(--icon-md)" />
         {t("forecast.export.title")}
       </button>
-      {menu ? createPortal(menu, floatingMenuPortalRoot()) : null}
+      {menu ? <AppSurfacePortal target={floatingMenuPortalRoot()}>{menu}</AppSurfacePortal> : null}
     </div>
   );
 }

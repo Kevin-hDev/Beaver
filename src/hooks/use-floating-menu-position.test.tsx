@@ -1,6 +1,7 @@
 import { useRef } from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { AppSurfaceActivityProvider } from "@/components/layout/app-surface-activity";
 import { useFloatingMenuPosition } from "./use-floating-menu-position";
 
 function FloatingFixture() {
@@ -50,6 +51,25 @@ function SideFixture() {
       <button ref={(node) => { anchorRef.current = node; }} data-anchor>anchor</button>
       <div ref={floatingRef} style={floatingStyle}>side menu</div>
     </div>
+  );
+}
+
+function ActivityPositionProbe() {
+  const { anchorRef, floatingRef, floatingStyle } =
+    useFloatingMenuPosition(true, "left", 4, "below");
+  return (
+    <>
+      <button ref={(node) => { anchorRef.current = node; }} data-anchor>anchor</button>
+      <div ref={floatingRef} style={floatingStyle}>activity menu</div>
+    </>
+  );
+}
+
+function ActivityFixture({ active }: { active: boolean }) {
+  return (
+    <AppSurfaceActivityProvider active={active}>
+      <ActivityPositionProbe />
+    </AppSurfaceActivityProvider>
   );
 }
 
@@ -210,5 +230,38 @@ describe("useFloatingMenuPosition", () => {
       left: "288px",
       visibility: "visible",
     }));
+  });
+
+  it("suspend les mesures et le listener resize quand la surface est inactive", async () => {
+    const rect = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+      x: 20, y: 20, top: 20, right: 180, bottom: 48, left: 20,
+      width: 160, height: 28, toJSON: () => ({}),
+    });
+    vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(80);
+    vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(100);
+    vi.stubGlobal("innerWidth", 600);
+    vi.stubGlobal("innerHeight", 400);
+    const add = vi.spyOn(window, "addEventListener");
+    const remove = vi.spyOn(window, "removeEventListener");
+    const view = render(<ActivityFixture active />);
+
+    await waitFor(() => expect(screen.getByText("activity menu")).toHaveStyle({
+      visibility: "visible",
+    }));
+    const beforeInactive = rect.mock.calls.length;
+    fireEvent(window, new Event("resize"));
+    expect(rect.mock.calls.length).toBeGreaterThan(beforeInactive);
+    expect(add.mock.calls.filter(([type]) => type === "resize")).toHaveLength(1);
+
+    view.rerender(<ActivityFixture active={false} />);
+    const afterInactive = rect.mock.calls.length;
+    fireEvent(window, new Event("resize"));
+    expect(rect.mock.calls.length).toBe(afterInactive);
+    expect(remove.mock.calls.filter(([type]) => type === "resize")).toHaveLength(1);
+    expect(screen.getByText("activity menu")).toHaveStyle({ visibility: "visible" });
+
+    view.rerender(<ActivityFixture active />);
+    expect(rect.mock.calls.length).toBeGreaterThan(afterInactive);
+    expect(add.mock.calls.filter(([type]) => type === "resize")).toHaveLength(2);
   });
 });

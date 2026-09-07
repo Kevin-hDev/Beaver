@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Pencil, Trash } from "@/components/ui/icons";
 import { Tooltip } from "@/components/ui/tooltip";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 import "./editable-row-actions.css";
 
 interface EditableRowOptions {
@@ -33,6 +34,7 @@ export function useEditableRowActions({
   const [editing, setEditing] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [draft, setDraft] = useState(value);
+  const surfaceActive = useAppSurfaceActive();
 
   const cancel = useCallback(() => {
     setEditing(false);
@@ -64,7 +66,7 @@ export function useEditableRowActions({
   }, [onDelete, onInteractionChange]);
 
   useEffect(() => {
-    if (!editing && !confirmingDelete) return;
+    if (!surfaceActive || (!editing && !confirmingDelete)) return;
     const handlePointerDown = (event: MouseEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) cancel();
     };
@@ -84,7 +86,7 @@ export function useEditableRowActions({
       window.removeEventListener("mousedown", handlePointerDown);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [cancel, commitRename, confirmDelete, confirmingDelete, editing, rootRef]);
+  }, [cancel, commitRename, confirmDelete, confirmingDelete, editing, rootRef, surfaceActive]);
 
   return {
     editing,

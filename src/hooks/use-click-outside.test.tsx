@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { createPortal } from "react-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { AppSurfaceActivityProvider } from "@/components/layout/app-surface-activity";
 import { useClickOutside } from "./use-click-outside";
 
 afterEach(cleanup);
@@ -47,5 +48,32 @@ describe("useClickOutside", () => {
     render(<Probe onOutside={onOutside} withFloating={false} />);
     fireEvent.mouseDown(screen.getByText("flottant"));
     expect(onOutside).toHaveBeenCalledTimes(1);
+  });
+
+  it("ne signale plus les clics quand la surface devient inactive", () => {
+    const onOutside = vi.fn();
+    const view = render(
+      <AppSurfaceActivityProvider active>
+        <Probe onOutside={onOutside} withFloating={false} />
+      </AppSurfaceActivityProvider>,
+    );
+    fireEvent.mouseDown(document.body);
+    expect(onOutside).toHaveBeenCalledTimes(1);
+
+    view.rerender(
+      <AppSurfaceActivityProvider active={false}>
+        <Probe onOutside={onOutside} withFloating={false} />
+      </AppSurfaceActivityProvider>,
+    );
+    fireEvent.mouseDown(document.body);
+    expect(onOutside).toHaveBeenCalledTimes(1);
+
+    view.rerender(
+      <AppSurfaceActivityProvider active>
+        <Probe onOutside={onOutside} withFloating={false} />
+      </AppSurfaceActivityProvider>,
+    );
+    fireEvent.mouseDown(document.body);
+    expect(onOutside).toHaveBeenCalledTimes(2);
   });
 });

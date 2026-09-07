@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { act, fireEvent, render } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { SessionSummaryBubble } from "../session-summary-bubble";
 import type { SessionSummaryHookState } from "@/hooks/use-session-summary";
+import { AppSurfaceActivityProvider } from "@/components/layout/app-surface-activity";
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
@@ -182,6 +183,33 @@ describe("SessionSummaryBubble", () => {
 
     expect(summaryDialog).toBeInTheDocument();
     expect(commitDialog).toBeInTheDocument();
+  });
+
+  it("ne capture pas Échap quand la surface devient inactive", () => {
+    const view = render(
+      <AppSurfaceActivityProvider active>
+        <SessionSummaryBubble summary={summary()} git={git} />
+      </AppSurfaceActivityProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Toggle summary" }));
+    expect(screen.getByRole("dialog", { name: "Session summary" })).toBeInTheDocument();
+
+    view.rerender(
+      <AppSurfaceActivityProvider active={false}>
+        <SessionSummaryBubble summary={summary()} git={git} />
+      </AppSurfaceActivityProvider>,
+    );
+    fireEvent.keyDown(window, { key: "Escape" });
+
+    expect(screen.getByRole("dialog", { name: "Session summary" })).toBeInTheDocument();
+
+    view.rerender(
+      <AppSurfaceActivityProvider active>
+        <SessionSummaryBubble summary={summary()} git={git} />
+      </AppSurfaceActivityProvider>,
+    );
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByRole("dialog", { name: "Session summary" })).toBeNull();
   });
 });
 

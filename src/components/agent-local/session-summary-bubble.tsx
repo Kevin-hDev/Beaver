@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/session-summary-icons";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useClickOutside } from "@/hooks/use-click-outside";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 import type { useSessionSummary } from "@/hooks/use-session-summary";
 import type { AgentPlanRun } from "@/types/agent";
 import {
@@ -55,6 +56,7 @@ export function SessionSummaryBubble({
     plans: false,
     subagents: false,
   });
+  const surfaceActive = useAppSurfaceActive();
   const rootRef = useRef<HTMLSpanElement>(null);
   useClickOutside(rootRef, () => setOpen(false));
   const toggleSection = (key: SectionKey) => {
@@ -62,7 +64,7 @@ export function SessionSummaryBubble({
   };
 
   useEffect(() => {
-    if (!open) return;
+    if (!surfaceActive || !open) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       event.preventDefault();
@@ -72,7 +74,7 @@ export function SessionSummaryBubble({
     };
     window.addEventListener("keydown", onKeyDown, { capture: true });
     return () => window.removeEventListener("keydown", onKeyDown, { capture: true });
-  }, [open]);
+  }, [open, surfaceActive]);
 
   return (
     <span className="ssb-root" ref={rootRef}>

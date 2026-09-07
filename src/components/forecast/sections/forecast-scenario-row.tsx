@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Pencil, Trash } from "@/components/ui/icons";
 import { Tooltip } from "@/components/ui/tooltip";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 import type { ForecastScenario } from "./forecast-scenario-types";
 
 interface ForecastScenarioRowProps {
@@ -20,6 +21,7 @@ export function ForecastScenarioRow({
   onDelete,
 }: ForecastScenarioRowProps) {
   const { t, i18n } = useTranslation();
+  const surfaceActive = useAppSurfaceActive();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const adjustment = scenario.params_modified?.adjustment_percent;
@@ -27,7 +29,7 @@ export function ForecastScenarioRow({
   const contextCount = scenario.params_modified?.covariate_adjustments?.length ?? 0;
 
   useEffect(() => {
-    if (!confirmDelete) return;
+    if (!surfaceActive || !confirmDelete) return;
 
     const handlePointerDown = (event: MouseEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) {
@@ -52,7 +54,7 @@ export function ForecastScenarioRow({
       window.removeEventListener("mousedown", handlePointerDown);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [confirmDelete, onDelete, scenario.id]);
+  }, [confirmDelete, onDelete, scenario.id, surfaceActive]);
 
   return (
     <div

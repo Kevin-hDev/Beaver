@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { AppSurfacePortal } from "@/components/ui/app-surface-portal";
 import { useTranslation } from "react-i18next";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 import { CaretDown, MagnifyingGlass } from "@/components/ui/icons";
 import { useFavoriteModels } from "@/hooks/use-favorite-models";
 import {
@@ -44,6 +45,7 @@ export function ForecastModelSelector({
   align = "left",
 }: ForecastModelSelectorProps) {
   const { t } = useTranslation();
+  const surfaceActive = useAppSurfaceActive();
   const ref = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -55,7 +57,7 @@ export function ForecastModelSelector({
   useKeyboard({ onEscape: () => setOpen(false) });
 
   useEffect(() => {
-    if (!open) return;
+    if (!surfaceActive || !open) return;
     const close = (event: MouseEvent) => {
       const target = event.target as Node;
       if (ref.current?.contains(target) || floatingRef.current?.contains(target)) return;
@@ -63,7 +65,7 @@ export function ForecastModelSelector({
     };
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
-  }, [floatingRef, open]);
+  }, [floatingRef, open, surfaceActive]);
 
   const selectedModel = useMemo(
     () => models.find((model) => model.id === selectedModelId) ?? null,
@@ -168,7 +170,7 @@ export function ForecastModelSelector({
         </span>
         <CaretDown size="var(--icon-sm)" className={`fmsel-caret ${open ? "open" : ""}`} />
       </button>
-      {dropdown ? createPortal(dropdown, floatingMenuPortalRoot()) : null}
+      {dropdown ? <AppSurfacePortal target={floatingMenuPortalRoot()}>{dropdown}</AppSurfacePortal> : null}
     </div>
   );
 }

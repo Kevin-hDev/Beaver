@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { AppSurfacePortal } from "@/components/ui/app-surface-portal";
 import { useTranslation } from "react-i18next";
 import { useKeyboard } from "@/hooks/use-keyboard";
 import { Tooltip } from "@/components/ui/tooltip";
 import { floatingMenuPortalRoot, useFloatingMenuPosition } from "@/hooks/use-floating-menu-position";
 import { focusLocalListItem } from "@/hooks/use-local-list-navigation";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 import { CaretDown, MagnifyingGlass } from "@/components/ui/icons";
 import type { AvailableModel } from "@/hooks/use-available-models";
 import { useFavoriteModels } from "@/hooks/use-favorite-models";
@@ -30,6 +31,7 @@ export function ModelSelector({
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const surfaceActive = useAppSurfaceActive();
   const ref = useRef<HTMLDivElement>(null);
   const { anchorRef, floatingRef, floatingStyle, updateFloatingPosition } =
     useFloatingMenuPosition(open, align, 4);
@@ -42,7 +44,7 @@ export function ModelSelector({
   useKeyboard({ onEscape: () => setOpen(false) });
 
   useEffect(() => {
-    if (!open) return;
+    if (!surfaceActive || !open) return;
     const onDoc = (event: MouseEvent) => {
       const target = event.target as Node;
       if (ref.current?.contains(target) || floatingRef.current?.contains(target)) return;
@@ -50,7 +52,7 @@ export function ModelSelector({
     };
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
-  }, [floatingRef, open]);
+  }, [floatingRef, open, surfaceActive]);
 
   const filteredGroups = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -147,7 +149,7 @@ export function ModelSelector({
           <CaretDown size="var(--icon-2xs)" className="ms-trigger-caret" />
         </button>
       </Tooltip>
-      {dropdown ? createPortal(dropdown, portalRoot) : null}
+      {dropdown ? <AppSurfacePortal target={portalRoot}>{dropdown}</AppSurfacePortal> : null}
     </div>
   );
 }

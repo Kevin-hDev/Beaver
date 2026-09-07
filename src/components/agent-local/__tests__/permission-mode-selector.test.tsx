@@ -1,5 +1,6 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { AppSurfaceActivityProvider } from "@/components/layout/app-surface-activity";
 import { PermissionModeSelector } from "../permission-mode-selector";
 
 vi.mock("react-i18next", () => ({
@@ -21,7 +22,8 @@ vi.mock("react-i18next", () => ({
 
 afterEach(() => {
   cleanup();
-  vi.clearAllMocks();
+  vi.useRealTimers();
+  vi.restoreAllMocks();
 });
 
 describe("PermissionModeSelector", () => {
@@ -68,5 +70,39 @@ describe("PermissionModeSelector", () => {
     expect(screen.queryByText("Chatbot")).toBeNull();
     expect(screen.getAllByText("Demander l’autorisation").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Accès complet")).toBeTruthy();
+  });
+
+  it("ne refocalise pas un menu resté ouvert au retour de surface", () => {
+    vi.useFakeTimers();
+    const focus = vi.spyOn(HTMLElement.prototype, "focus");
+    let active = true;
+    const view = render(
+      <AppSurfaceActivityProvider active={active}>
+        <PermissionModeSelector mode="auto" onChange={vi.fn()} />
+      </AppSurfaceActivityProvider>,
+    );
+    act(() => { fireEvent.click(screen.getByRole("button")); });
+    act(() => { vi.runAllTimers(); });
+    expect(focus).toHaveBeenCalled();
+    const initialCalls = focus.mock.calls.length;
+
+    active = false;
+    act(() => {
+      view.rerender(
+        <AppSurfaceActivityProvider active={active}>
+          <PermissionModeSelector mode="auto" onChange={vi.fn()} />
+        </AppSurfaceActivityProvider>,
+      );
+    });
+    active = true;
+    act(() => {
+      view.rerender(
+        <AppSurfaceActivityProvider active={active}>
+          <PermissionModeSelector mode="auto" onChange={vi.fn()} />
+        </AppSurfaceActivityProvider>,
+      );
+    });
+    act(() => { vi.runAllTimers(); });
+    expect(focus.mock.calls.length).toBe(initialCalls);
   });
 });

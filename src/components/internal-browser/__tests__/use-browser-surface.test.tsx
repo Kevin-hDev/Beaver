@@ -91,6 +91,22 @@ describe("useBrowserSurface", () => {
     expect(invoke).toHaveBeenCalledTimes(1);
   });
 
+  it("retire puis réinstalle l'observateur et resize à la reprise", async () => {
+    const add = vi.spyOn(window, "addEventListener");
+    const remove = vi.spyOn(window, "removeEventListener");
+    const view = render(<Harness active url="https://example.com/" />);
+    await waitFor(() => expect(invoke).toHaveBeenCalledTimes(1));
+    expect(add.mock.calls.filter(([type]) => type === "resize")).toHaveLength(1);
+
+    view.rerender(<Harness active={false} url="https://example.com/" />);
+    await waitFor(() => expect(surfaceRequest(1)?.bounds.visible).toBe(false));
+    expect(remove.mock.calls.filter(([type]) => type === "resize")).toHaveLength(1);
+
+    view.rerender(<Harness active url="https://example.com/" />);
+    await waitFor(() => expect(invoke).toHaveBeenCalledTimes(3));
+    expect(add.mock.calls.filter(([type]) => type === "resize")).toHaveLength(2);
+  });
+
   it("cache la vue une seule fois pendant une superposition native", async () => {
     render(<Harness active url="https://example.com/" />);
     await waitFor(() => expect(invoke).toHaveBeenCalledTimes(1));

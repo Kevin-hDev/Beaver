@@ -9,6 +9,7 @@ import { memo, useEffect } from "react";
 import { useCodemirrorChat } from "@/hooks/use-codemirror-chat";
 import { activeSkillsInText } from "@/lib/skill-text";
 import { matchesAppShortcut } from "@/lib/app-shortcuts";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 import type { SkillInfo } from "@/types/agent";
 import type { SkillChipConfig } from "./skill-chip-extension";
 
@@ -45,8 +46,11 @@ function ChatInputEditorImpl({
     onChange: onTextChange,
     onKeyEvent: onKeyEvent,
   });
+  const surfaceActive = useAppSurfaceActive();
 
   useEffect(() => {
+    if (!surfaceActive) return;
+
     const handler = (event: KeyboardEvent) => {
       if (!matchesAppShortcut(event, "focusComposer")) return;
       event.preventDefault();
@@ -54,7 +58,7 @@ function ChatInputEditorImpl({
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [focus]);
+  }, [focus, surfaceActive]);
 
   return (
     <div className="chat-textarea-shell">

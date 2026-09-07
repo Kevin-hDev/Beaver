@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ChatInput } from "../chat-input";
 import type { PermissionMode } from "@/hooks/use-permission-mode";
+import { AppSurfaceActivityProvider } from "@/components/layout/app-surface-activity";
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -134,5 +135,20 @@ describe("ChatInput stop confirmation", () => {
     expect(action).toHaveAttribute("data-state", "send");
     fireEvent.click(action);
     expect(onSend).toHaveBeenCalledWith("Correction", undefined, []);
+  });
+
+  it("ignore Échap quand la surface du chat est inactive", () => {
+    const onStop = vi.fn();
+    render(
+      <AppSurfaceActivityProvider active={false}>
+        <ChatInput {...baseProps} onStop={onStop} />
+      </AppSurfaceActivityProvider>,
+    );
+    const stopAction = screen.getByText("stop action");
+
+    fireEvent.keyDown(window, { key: "Escape" });
+
+    expect(stopAction).toHaveAttribute("data-state", "stop");
+    expect(onStop).not.toHaveBeenCalled();
   });
 });

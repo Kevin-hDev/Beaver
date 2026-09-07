@@ -1,6 +1,6 @@
 import "./context-progress.css";
-import { useEffect, useId, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { AppSurfacePortal } from "@/components/ui/app-surface-portal";
 import { useTranslation } from "react-i18next";
 import type { ContextUsageBreakdown } from "@/hooks/context-usage-breakdown";
 import type { ResolvedCompressionProfileView } from "@/types/compression-profile.generated";
@@ -9,8 +9,10 @@ import {
   useFloatingMenuPosition,
 } from "@/hooks/use-floating-menu-position";
 import { ContextCompressionHelpPopover } from "./context-compression-help-popover";
+import { useContextProgressSurfaceEffects } from "./use-context-progress-surface-effects";
 import { formatTokenCount } from "@/lib/token-format";
 import { ContextUsageRow } from "./context-progress-row";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 
 interface ContextProgressProps {
   used: number;
@@ -42,6 +44,7 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 export function ContextProgress({ used, max, breakdown, compression }: ContextProgressProps) {
   const { t } = useTranslation();
+  const surfaceActive = useAppSurfaceActive();
   const [open, setOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const hostRef = useRef<HTMLSpanElement | null>(null);
@@ -70,39 +73,27 @@ export function ContextProgress({ used, max, breakdown, compression }: ContextPr
     if (helpOpen) return;
     closeTimer.current = setTimeout(() => setOpen(false), 100);
   };
+  const handleEscape = useCallback(() => {
+    setOpen(false);
+    suppressNextFocusOpen.current = true;
+    buttonRef.current?.focus();
+  }, []);
+  const handleOutsideClick = useCallback(() => setOpen(false), []);
 
-  useEffect(() => {
-    if (!open) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape" || helpOpen) return;
-      event.preventDefault();
-      setOpen(false);
-      suppressNextFocusOpen.current = true;
-      buttonRef.current?.focus();
-    };
-    const onOutsideClick = (event: MouseEvent) => {
-      if (helpOpen) return;
-      const target = event.target as Node;
-      if (hostRef.current?.contains(target) || floatingRef.current?.contains(target)) return;
-      event.preventDefault();
-      event.stopPropagation();
-      setOpen(false);
-    };
-    document.addEventListener("keydown", onKeyDown);
-    document.addEventListener("click", onOutsideClick, true);
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-      document.removeEventListener("click", onOutsideClick, true);
-    };
-  }, [floatingRef, helpOpen, open]);
-
-  useEffect(() => {
-    if (!open || !focusPanelOnOpen.current) return;
-    focusPanelOnOpen.current = false;
-    requestAnimationFrame(() => floatingRef.current?.focus());
-  }, [floatingRef, open]);
+  useContextProgressSurfaceEffects({
+    open,
+    helpOpen,
+    hostRef,
+    floatingRef,
+    focusPanelOnOpenRef: focusPanelOnOpen,
+    onEscape: handleEscape,
+    onOutsideClick: handleOutsideClick,
+  });
 
   useEffect(() => () => cancelClose(), []);
+  useEffect(() => {
+    if (!surfaceActive) cancelClose();
+  }, [surfaceActive]);
 
   if (!max || max <= 0) return null;
   const resolvedUsed = breakdown?.used ?? used;
@@ -169,7 +160,7 @@ export function ContextProgress({ used, max, breakdown, compression }: ContextPr
           />
         </svg>
       </button>
-      {open && createPortal(<div
+      {open && <AppSurfacePortal target={floatingMenuPortalRoot()}><div
         ref={floatingRef}
         id={panelId}
         className="context-ring-panel"
@@ -218,7 +209,7 @@ export function ContextProgress({ used, max, breakdown, compression }: ContextPr
             </>
           )}
         </div>
-      </div>, floatingMenuPortalRoot())}
+      </div></AppSurfacePortal>}
     </span>
   );
 }

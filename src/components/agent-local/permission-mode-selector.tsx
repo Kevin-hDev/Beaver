@@ -1,11 +1,12 @@
 import { useMemo, useState, useRef, useEffect } from "react";
-import { createPortal } from "react-dom";
+import { AppSurfacePortal } from "@/components/ui/app-surface-portal";
 import { useTranslation } from "react-i18next";
 import { CaretDown, ChatCircleDots, Check, Hand, ShieldWarning } from "@/components/ui/icons";
 import { Tooltip } from "@/components/ui/tooltip";
 import type { PermissionMode } from "@/hooks/use-permission-mode";
 import { floatingMenuPortalRoot, useFloatingMenuPosition } from "@/hooks/use-floating-menu-position";
 import { focusLocalListItem, useLocalListNavigation } from "@/hooks/use-local-list-navigation";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 import "./permission-mode-selector.css";
 
 interface Props {
@@ -22,7 +23,10 @@ const MODES: PermissionMode[] = ["chat", "manual", "auto"];
 export function PermissionModeSelector({ mode, availableModes = MODES, onChange, widthRef }: Props) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const surfaceActive = useAppSurfaceActive();
   const rootRef = useRef<HTMLDivElement>(null);
+  const wasOpenRef = useRef(open);
+  const focusFrameRef = useRef<number | null>(null);
   const { anchorRef, floatingRef, floatingStyle } = useFloatingMenuPosition(open, "left", 6, "above", false, widthRef);
   const navItems = useMemo(() => availableModes.map((m) => ({
     id: modeNavId(m),
@@ -39,7 +43,7 @@ export function PermissionModeSelector({ mode, availableModes = MODES, onChange,
   });
 
   useEffect(() => {
-    if (!open) return;
+    if (!surfaceActive || !open) return;
     const onDoc = (e: MouseEvent) => {
       const target = e.target as Node;
       if (rootRef.current?.contains(target) || floatingRef.current?.contains(target)) return;
@@ -72,12 +76,23 @@ export function PermissionModeSelector({ mode, availableModes = MODES, onChange,
       document.removeEventListener("mousedown", onDoc);
       document.removeEventListener("keydown", onKey);
     };
-  }, [availableModes, floatingRef, open, onChange]);
+  }, [availableModes, floatingRef, onChange, open, surfaceActive]);
 
   useEffect(() => {
-    if (!open) return;
-    requestAnimationFrame(() => focusLocalListItem(floatingRef.current, 1));
-  }, [floatingRef, open]);
+    const shouldFocus = surfaceActive && open && !wasOpenRef.current;
+    wasOpenRef.current = open;
+    if (!shouldFocus) return;
+    focusFrameRef.current = requestAnimationFrame(() => {
+      focusFrameRef.current = null;
+      focusLocalListItem(floatingRef.current, 1);
+    });
+    return () => {
+      if (focusFrameRef.current !== null) {
+        cancelAnimationFrame(focusFrameRef.current);
+        focusFrameRef.current = null;
+      }
+    };
+  }, [floatingRef, open, surfaceActive]);
 
   const label = t(`permissionMode.${mode}Label`);
   const portalRoot = floatingMenuPortalRoot();
@@ -104,7 +119,7 @@ export function PermissionModeSelector({ mode, availableModes = MODES, onChange,
         </button>
       </Tooltip>
 
-      {open && createPortal(
+      {open && <AppSurfacePortal target={portalRoot}>
         <div
           ref={floatingRef}
           className="perm-mode-dropdown"
@@ -145,9 +160,8 @@ export function PermissionModeSelector({ mode, availableModes = MODES, onChange,
               </button>
             );
           })}
-        </div>,
-        portalRoot,
-      )}
+        </div>
+      </AppSurfacePortal>}
     </div>
   );
 }

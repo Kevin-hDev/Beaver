@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { PermissionDialog } from "../permission-dialog";
+import { AppSurfaceActivityProvider } from "@/components/layout/app-surface-activity";
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
@@ -69,5 +70,22 @@ describe("PermissionDialog", () => {
     }} onDecide={vi.fn()} />);
 
     expect(screen.queryByText("permissionDialog.allowSession")).toBeNull();
+  });
+
+  it("ne transforme pas un Échap de Réglages en refus quand la surface est inactive", () => {
+    const onDecide = vi.fn();
+    render(
+      <AppSurfaceActivityProvider active={false}>
+        <PermissionDialog request={{
+          id: "request", toolName: "plugin.tool", arguments: {},
+          extensionId: "plugin-id", extensionName: "Plugin",
+          effectClass: "local-write", actionSummary: "{}",
+        }} onDecide={onDecide} />
+      </AppSurfaceActivityProvider>,
+    );
+
+    fireEvent.keyDown(window, { key: "Escape" });
+
+    expect(onDecide).not.toHaveBeenCalled();
   });
 });

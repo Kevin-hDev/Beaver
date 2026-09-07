@@ -1,12 +1,25 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { useRef } from "react";
 import { describe, expect, it, vi } from "vitest";
+import { AppSurfaceActivityProvider } from "@/components/layout/app-surface-activity";
 import {
   EditableRowActions,
   useEditableRowActions,
 } from "@/components/ui/editable-row-actions";
 
-function Harness({ onRename, onDelete }: {
+function Harness({ onRename, onDelete, active = true }: {
+  onRename: (name: string) => Promise<void>;
+  onDelete: () => Promise<void>;
+  active?: boolean;
+}) {
+  return (
+    <AppSurfaceActivityProvider active={active}>
+      <EditableRow onRename={onRename} onDelete={onDelete} />
+    </AppSurfaceActivityProvider>
+  );
+}
+
+function EditableRow({ onRename, onDelete }: {
   onRename: (name: string) => Promise<void>;
   onDelete: () => Promise<void>;
 }) {
@@ -63,6 +76,28 @@ describe("EditableRowActions", () => {
     fireEvent.click(screen.getByRole("button", { name: "Supprimer" }));
     expect(remove).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Valider" }));
+    await waitFor(() => expect(remove).toHaveBeenCalledOnce());
+  });
+
+  it("conserve la confirmation ouverte inactive et confirme une fois au retour", async () => {
+    const remove = vi.fn(() => Promise.resolve());
+    const view = render(<Harness onRename={() => Promise.resolve()} onDelete={remove} />);
+    fireEvent.click(screen.getByRole("button", { name: "Supprimer" }));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+    void act(() => view.rerender(
+      <Harness active={false} onRename={() => Promise.resolve()} onDelete={remove} />,
+    ));
+    fireEvent.keyDown(window, { key: "Enter" });
+    fireEvent.keyDown(window, { key: "Escape" });
+    fireEvent.mouseDown(document.body);
+    expect(remove).not.toHaveBeenCalled();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+    void act(() => view.rerender(
+      <Harness active onRename={() => Promise.resolve()} onDelete={remove} />,
+    ));
+    fireEvent.keyDown(window, { key: "Enter" });
     await waitFor(() => expect(remove).toHaveBeenCalledOnce());
   });
 });

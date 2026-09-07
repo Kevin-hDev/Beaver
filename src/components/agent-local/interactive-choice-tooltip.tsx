@@ -1,5 +1,5 @@
 import { useState, useRef, type ReactNode } from "react";
-import { createPortal } from "react-dom";
+import { AppSurfacePortal } from "@/components/ui/app-surface-portal";
 import { floatingMenuPortalRoot, useFloatingMenuPosition } from "@/hooks/use-floating-menu-position";
 import "./interactive-choice-tooltip.css";
 
@@ -57,12 +57,11 @@ export function InteractiveChoiceTooltip({ children, fullText, className }: Inte
       >
         {children}
       </span>
-      {truncated && open && createPortal(
+      {truncated && open && <AppSurfacePortal target={floatingMenuPortalRoot()}>
         <div ref={floatingRef} className="icp-tt-bubble" style={floatingStyle} role="tooltip">
           {fullText}
-        </div>,
-        floatingMenuPortalRoot(),
-      )}
+        </div>
+      </AppSurfacePortal>}
     </>
   );
 }

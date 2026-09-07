@@ -13,6 +13,8 @@ import { useStopConfirmation } from "./use-stop-confirmation";
 import type { ChatInputProps } from "./chat-input-types";
 import { useComposerDraft } from "@/hooks/use-composer-draft";
 import { sameChatFiles } from "./chat-input-snapshot";
+import { useChatStopShortcut } from "./use-chat-stop-shortcut";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 import { matchesAppShortcut } from "@/lib/app-shortcuts";
 import "./chat.css";
 import "./chat-input-textarea.css";
@@ -57,10 +59,15 @@ export function ChatInput({
   const { isConfirmingStop, requestStop, stopNow } = useStopConfirmation(isStreaming, onStop);
 
   const interactivePending = !!interactiveRequest;
+  const surfaceActive = useAppSurfaceActive();
   const interactiveFeedback = useInteractiveChoiceFeedback(
     interactiveRequest,
     onInteractiveResolved,
   );
+  useChatStopShortcut({
+    enabled: isStreaming && !interactivePending,
+    onStop: requestStop,
+  });
   const hasText = text.trim().length > 0;
   const hasFiles = files != null && files.length > 0;
   const hasContent = hasText || hasFiles;
@@ -131,24 +138,13 @@ export function ChatInput({
   }, [handleEnter, isStreaming, requestStop, slash]);
 
   useEffect(() => {
-    if (!isStreaming || interactivePending) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key !== K_ESC) return;
-      e.preventDefault();
-      requestStop();
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [interactivePending, isStreaming, requestStop]);
-
-  useEffect(() => {
-    if (!slash.showDropdown) return;
+    if (!surfaceActive || !slash.showDropdown) return;
     const handler = (e: MouseEvent) => {
       if (bubbleRef.current && !bubbleRef.current.contains(e.target as Node)) slash.close();
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
-  }, [slash.showDropdown, slash]);
+  }, [slash, slash.showDropdown, surfaceActive]);
 
   const buttonState = hasContent && !interactivePending ? "send" as const
     : isStreaming ? (isConfirmingStop ? "confirmStop" as const : "stop" as const)

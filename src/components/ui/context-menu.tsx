@@ -1,5 +1,5 @@
 import { useRef, useCallback, type ReactNode } from "react";
-import { createPortal } from "react-dom";
+import { AppSurfacePortal } from "@/components/ui/app-surface-portal";
 import { useClickOutside } from "@/hooks/use-click-outside";
 import { useKeyboard } from "@/hooks/use-keyboard";
 import "./context-menu.css";
@@ -38,7 +38,7 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
     [onClose],
   );
 
-  return createPortal(
+  return <AppSurfacePortal target={document.body}>
     <div
       ref={ref}
       role="menu"
@@ -58,7 +58,6 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
           {item.label}
         </div>
       ))}
-    </div>,
-    document.body,
-  );
+    </div>
+  </AppSurfacePortal>;
 }

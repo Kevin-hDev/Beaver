@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 import { ChevronDown } from "@/components/ui/icons";
 import type { ForecastSection } from "@/hooks/use-forecast-panel";
 import { focusLocalListItem, useLocalListNavigation, type LocalListNavItem } from "@/hooks/use-local-list-navigation";
@@ -20,9 +21,11 @@ interface ForecastNavProps {
 
 export function ForecastNav({ open, activeSection, onToggle, onSelect }: ForecastNavProps) {
   const { t } = useTranslation();
+  const surfaceActive = useAppSurfaceActive();
   const rootRef = useRef<HTMLDivElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const pendingFocusDirection = useRef<1 | -1>(1);
+  const wasOpenRef = useRef(open);
   const activeItem = NAV_ITEMS.find((item) => item.id === activeSection) ?? NAV_ITEMS[0];
   const navItems = useMemo<LocalListNavItem[]>(() => NAV_ITEMS.map((item) => ({
     id: item.id,
@@ -36,11 +39,13 @@ export function ForecastNav({ open, activeSection, onToggle, onSelect }: Forecas
   });
 
   useEffect(() => {
-    if (open) focusLocalListItem(panelRef.current, pendingFocusDirection.current);
-  }, [open]);
+    const shouldFocus = surfaceActive && open && !wasOpenRef.current;
+    wasOpenRef.current = open;
+    if (shouldFocus) focusLocalListItem(panelRef.current, pendingFocusDirection.current);
+  }, [open, surfaceActive]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!surfaceActive || !open) return;
 
     const handlePointerDown = (event: MouseEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) onToggle();
@@ -55,7 +60,7 @@ export function ForecastNav({ open, activeSection, onToggle, onSelect }: Forecas
       window.removeEventListener("mousedown", handlePointerDown);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [open, onToggle]);
+  }, [open, onToggle, surfaceActive]);
 
   return (
     <div ref={rootRef} className="fc-nav-root" data-keyboard-scope="local">

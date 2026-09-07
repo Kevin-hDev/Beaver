@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { AppSurfaceActivityProvider } from "@/components/layout/app-surface-activity";
 import { WorktreeSwitchDialog } from "../worktree-switch-dialog";
 
 vi.mock("react-i18next", () => ({
@@ -54,5 +55,35 @@ describe("WorktreeSwitchDialog", () => {
 
     expect(newSession).toHaveBeenCalledOnce();
     expect(cancel).toHaveBeenCalledOnce();
+  });
+
+  it("ignore Escape inactif puis annule une seule fois au retour", () => {
+    const onCancel = vi.fn();
+    let active = true;
+    const props = {
+      branch: "feature/worktree",
+      path: "/tmp/worktree",
+      onCancel,
+      onNewSession: vi.fn(),
+    };
+    const view = render(
+      <AppSurfaceActivityProvider active={active}><WorktreeSwitchDialog {...props} /></AppSurfaceActivityProvider>,
+    );
+    active = false;
+    view.rerender(
+      <AppSurfaceActivityProvider active={active}><WorktreeSwitchDialog {...props} /></AppSurfaceActivityProvider>,
+    );
+    fireEvent.keyDown(window, { key: "Escape" });
+    fireEvent.click(view.getByRole("button", { name: "Fermer" }));
+    expect(onCancel).not.toHaveBeenCalled();
+    active = true;
+    view.rerender(
+      <AppSurfaceActivityProvider active={active}><WorktreeSwitchDialog {...props} /></AppSurfaceActivityProvider>,
+    );
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(onCancel).toHaveBeenCalledOnce();
+    onCancel.mockClear();
+    fireEvent.click(view.getByRole("button", { name: "Fermer" }));
+    expect(onCancel).toHaveBeenCalledOnce();
   });
 });

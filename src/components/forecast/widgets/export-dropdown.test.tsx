@@ -1,5 +1,6 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { AppSurfaceActivityProvider } from "@/components/layout/app-surface-activity";
 import { ExportDropdown } from "./export-dropdown";
 
 vi.mock("react-i18next", () => ({
@@ -32,5 +33,51 @@ describe("ExportDropdown", () => {
     expect(container.contains(menu)).toBe(false);
     fireEvent.click(screen.getByRole("button", { name: "CSV" }));
     expect(onExport).toHaveBeenCalledWith("csv", "analysis-id");
+  });
+
+  it("conserve le menu ouvert masqué pendant l'inactivité", () => {
+    const view = render(
+      <AppSurfaceActivityProvider active>
+        <ExportDropdown analysisId="analysis-id" onExport={vi.fn()} />
+      </AppSurfaceActivityProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Exporter" }));
+    const menu = document.body.querySelector<HTMLElement>(".exd-menu");
+    expect(menu).not.toBeNull();
+
+    view.rerender(
+      <AppSurfaceActivityProvider active={false}>
+        <ExportDropdown analysisId="analysis-id" onExport={vi.fn()} />
+      </AppSurfaceActivityProvider>,
+    );
+    expect(menu?.closest(".app-surface-portal-boundary")).toHaveAttribute("hidden");
+  });
+
+  it("ne refocalise pas le menu resté ouvert au retour de surface", async () => {
+    const focus = vi.spyOn(HTMLElement.prototype, "focus");
+    let active = true;
+    const view = render(
+      <AppSurfaceActivityProvider active={active}>
+        <ExportDropdown analysisId="analysis-id" onExport={vi.fn()} />
+      </AppSurfaceActivityProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Exporter" }));
+    await waitFor(() => expect(focus).toHaveBeenCalled());
+    const initialCalls = focus.mock.calls.length;
+
+    active = false;
+    view.rerender(
+      <AppSurfaceActivityProvider active={active}>
+        <ExportDropdown analysisId="analysis-id" onExport={vi.fn()} />
+      </AppSurfaceActivityProvider>,
+    );
+    active = true;
+    view.rerender(
+      <AppSurfaceActivityProvider active={active}>
+        <ExportDropdown analysisId="analysis-id" onExport={vi.fn()} />
+      </AppSurfaceActivityProvider>,
+    );
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    expect(focus.mock.calls.length).toBe(initialCalls);
   });
 });

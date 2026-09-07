@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Check } from "@/components/ui/icons";
 import { ConfirmButton } from "@/components/settings/confirm-button";
 import { Tooltip } from "@/components/ui/tooltip";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 import { useModelDownloads } from "@/hooks/use-model-downloads";
 import { showToast } from "@/lib/toast-emitter";
 import "../../ollama/ollama.css";
@@ -25,6 +26,7 @@ export function ModelInstallBtn({
   onDone,
 }: ModelInstallBtnProps) {
   const { t } = useTranslation();
+  const surfaceActive = useAppSurfaceActive();
   const [uninstalling, setUninstalling] = useState(false);
   const [startFailed, setStartFailed] = useState(false);
   const { startDownload, cancelDownload, downloads } = useModelDownloads();
@@ -73,13 +75,13 @@ export function ModelInstallBtn({
   }, [modelId, onDone, t]);
 
   useEffect(() => {
-    if (!ownDownload) return;
+    if (!surfaceActive || !ownDownload) return;
     const onEsc = (e: KeyboardEvent) => {
       if (e.code === "Escape") void handleCancel();
     };
     window.addEventListener("keydown", onEsc);
     return () => window.removeEventListener("keydown", onEsc);
-  }, [handleCancel, ownDownload]);
+  }, [handleCancel, ownDownload, surfaceActive]);
 
   if (ownDownload) {
     const queued = ownDownload.status === "queued";

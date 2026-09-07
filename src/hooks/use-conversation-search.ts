@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { matchesAppShortcut } from "@/lib/app-shortcuts";
 import { isCompressionContextOnlyMessage, isCompressionSummaryMessage } from "@/lib/context-messages";
 import type { AgentMessage } from "@/types/agent";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 
 const MAX_QUERY_LENGTH = 120;
 // La session est déjà bornée, mais le résultat l’est aussi pour garder une
@@ -9,6 +10,7 @@ const MAX_QUERY_LENGTH = 120;
 const MAX_MATCHES = 200;
 
 export function useConversationSearch(messages: AgentMessage[]) {
+  const surfaceActive = useAppSurfaceActive();
   const [open, setOpen] = useState(false);
   const [query, setRawQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
@@ -27,6 +29,8 @@ export function useConversationSearch(messages: AgentMessage[]) {
   }, [matches.length]);
 
   useEffect(() => {
+    if (!surfaceActive) return;
+
     const handler = (event: KeyboardEvent) => {
       if (matchesAppShortcut(event, "searchConversation")) {
         event.preventDefault();
@@ -42,16 +46,16 @@ export function useConversationSearch(messages: AgentMessage[]) {
     };
     window.addEventListener("keydown", handler, true);
     return () => window.removeEventListener("keydown", handler, true);
-  }, [close, open]);
+  }, [close, open, surfaceActive]);
 
   useEffect(() => {
-    if (!open || !activeMessageId) return;
+    if (!surfaceActive || !open || !activeMessageId) return;
     const targets = document.querySelectorAll<HTMLElement>("[data-message-id]");
     const target = Array.from(targets).find((element) => (
       element.dataset.messageId === activeMessageId
     ));
     target?.scrollIntoView({ block: "center", behavior: "smooth" });
-  }, [activeMessageId, open]);
+  }, [activeMessageId, open, surfaceActive]);
 
   return {
     open,

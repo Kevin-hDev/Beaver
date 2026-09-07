@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { shouldIgnoreKeyboardNavigation } from "./use-arrow-navigation";
+import { isElementInsideInactiveSurface } from "@/lib/app-surface-dom";
 
 export type NavPanel = "sidebar" | "list" | "detail" | "filePreview" | "fileTree" | "terminal";
 
@@ -12,7 +13,10 @@ const PANEL_FOCUS_TARGETS = [
 ];
 
 function panelElement(panel: NavPanel) {
-  return document.querySelector<HTMLElement>(`[data-nav-zone='${panel}']:not([aria-hidden='true'])`);
+  const elements = document.querySelectorAll<HTMLElement>(
+    `[data-nav-zone='${panel}']`,
+  );
+  return Array.from(elements).find((element) => !isElementInsideInactiveSurface(element)) ?? null;
 }
 
 function panelFromTarget(target: EventTarget | null): NavPanel | null {
@@ -25,11 +29,13 @@ function focusPanel(panel: NavPanel) {
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       const root = panelElement(panel);
-      const target = PANEL_FOCUS_TARGETS.find((selector) => root?.matches(selector))
-        ? root
-        : PANEL_FOCUS_TARGETS
-          .map((selector) => root?.querySelector<HTMLElement>(selector))
-          .find((element): element is HTMLElement => Boolean(element));
+      const target = PANEL_FOCUS_TARGETS
+        .map((selector) => {
+          if (root?.matches(selector)) return root;
+          return Array.from(root?.querySelectorAll<HTMLElement>(selector) ?? [])
+            .find((element) => !isElementInsideInactiveSurface(element));
+        })
+        .find((element): element is HTMLElement => Boolean(element));
       (target ?? root)?.focus();
     });
   });

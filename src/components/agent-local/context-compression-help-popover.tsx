@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useId, useRef, useState, type CSSProperties } from "react";
-import { createPortal } from "react-dom";
+import { AppSurfacePortal } from "@/components/ui/app-surface-portal";
 import { useTranslation } from "react-i18next";
 import badgeQuestionMark from "@/assets/lucide--badge-question-mark.svg";
 import {
   floatingMenuPortalRoot,
   useFloatingMenuPosition,
 } from "@/hooks/use-floating-menu-position";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 import "./context-compression-help-popover.css";
 
 interface ContextCompressionHelpPopoverProps {
@@ -19,6 +20,7 @@ export function ContextCompressionHelpPopover({
   const [open, setOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const panelRef = useRef<HTMLElement | null>(null);
+  const surfaceActive = useAppSurfaceActive();
   const popoverId = useId();
   const titleId = useId();
   const { anchorRef, floatingRef, floatingStyle } = useFloatingMenuPosition(
@@ -37,7 +39,7 @@ export function ContextCompressionHelpPopover({
   }, [onOpenChange]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!surfaceActive || !open) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       event.preventDefault();
@@ -49,7 +51,7 @@ export function ContextCompressionHelpPopover({
     return () => {
       document.removeEventListener("keydown", onKeyDown, true);
     };
-  }, [changeOpen, floatingRef, open]);
+  }, [changeOpen, floatingRef, open, surfaceActive]);
 
   const setButton = (node: HTMLButtonElement | null) => {
     buttonRef.current = node;
@@ -74,7 +76,7 @@ export function ContextCompressionHelpPopover({
           aria-hidden="true"
         />
       </button>
-      {open && createPortal(<>
+      {open && <AppSurfacePortal target={floatingMenuPortalRoot()}><>
         <button
           type="button"
           className="cch-shield"
@@ -97,9 +99,7 @@ export function ContextCompressionHelpPopover({
           <strong id={titleId}>{t("agentLocal.contextUsage.compressionHelpTitle")}</strong>
           <p>{t("agentLocal.contextUsage.compressionHelp")}</p>
         </div>
-      </>,
-        floatingMenuPortalRoot(),
-      )}
+      </></AppSurfacePortal>}
     </>
   );
 }

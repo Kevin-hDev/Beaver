@@ -1,4 +1,5 @@
 import { useEffect, type RefObject } from "react";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 
 /* floatingRef : la couche portée ailleurs dans le document par un portail. Sans
    elle, un panneau sorti de son conteneur compte comme « dehors » et le premier
@@ -8,7 +9,11 @@ export function useClickOutside(
   onClickOutside: () => void,
   floatingRef?: RefObject<HTMLElement | null>,
 ) {
+  const surfaceActive = useAppSurfaceActive();
+
   useEffect(() => {
+    if (!surfaceActive) return;
+
     function handleClick(e: MouseEvent) {
       if (!ref.current) return;
       const target = e.target as Node;
@@ -19,5 +24,5 @@ export function useClickOutside(
 
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, [floatingRef, onClickOutside, ref]);
+  }, [floatingRef, onClickOutside, ref, surfaceActive]);
 }

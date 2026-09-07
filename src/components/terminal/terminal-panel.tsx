@@ -9,6 +9,7 @@ import type { TerminalTab } from "@/hooks/use-terminal";
 import { MAX_LIVE_TERMINALS } from "@/hooks/terminal-types";
 import { TERMINAL_MAX_VIEWPORT_RATIO } from "@/hooks/terminal-layout";
 import { showToast } from "@/lib/toast-emitter";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 import "./terminal-panel.css";
 
 interface TerminalPanelProps {
@@ -55,6 +56,7 @@ export function TerminalPanel({
   onSetMaxHeight,
 }: TerminalPanelProps) {
   const { t } = useTranslation();
+  const surfaceActive = useAppSurfaceActive();
   const theme = useTerminalTheme();
   const panelRef = useRef<HTMLDivElement>(null);
   const resizing = useRef(false);
@@ -71,13 +73,14 @@ export function TerminalPanel({
   });
 
   useEffect(() => {
+    if (!surfaceActive) return;
     const updateMax = () => {
       onSetMaxHeight(Math.floor(window.innerHeight * TERMINAL_MAX_VIEWPORT_RATIO));
     };
     updateMax();
     window.addEventListener("resize", updateMax);
     return () => window.removeEventListener("resize", updateMax);
-  }, [onSetMaxHeight]);
+  }, [onSetMaxHeight, surfaceActive]);
 
   useEffect(() => {
     if (!isOpen || activeTabId === null

@@ -1,4 +1,5 @@
 import { useCallback, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 
 type FloatingAlign = "left" | "right" | "before" | "after";
 type FloatingPlacement = "above" | "below" | "auto";
@@ -28,6 +29,7 @@ export function useFloatingMenuPosition(
   horizontalRef?: React.RefObject<HTMLElement | null>,
   providedAnchorRef?: React.RefObject<HTMLElement | null>,
 ) {
+  const surfaceActive = useAppSurfaceActive();
   const anchorRef = useRef<HTMLElement | null>(null);
   const floatingRef = useRef<HTMLDivElement | null>(null);
   const resolvedPlacementRef = useRef<"above" | "below" | null>(null);
@@ -36,7 +38,7 @@ export function useFloatingMenuPosition(
   const update = useCallback(() => {
     const anchor = providedAnchorRef?.current ?? anchorRef.current;
     const floating = floatingRef.current;
-    if (!open || !anchor || !floating) return;
+    if (!surfaceActive || !open || !anchor || !floating) return;
 
     const anchorRect = anchor.getBoundingClientRect();
     const spanRect = spanRef?.current?.getBoundingClientRect() ?? null;
@@ -89,9 +91,11 @@ export function useFloatingMenuPosition(
       visibility: "visible",
       zIndex: 1000,
     });
-  }, [align, providedAnchorRef, gap, horizontalRef, matchAnchorWidth, open, placement, spanRef]);
+  }, [align, providedAnchorRef, gap, horizontalRef, matchAnchorWidth, open, placement, spanRef, surfaceActive]);
 
   useLayoutEffect(() => {
+    if (!surfaceActive) return;
+
     if (!open) {
       resolvedPlacementRef.current = null;
       return;
@@ -104,7 +108,7 @@ export function useFloatingMenuPosition(
       window.removeEventListener("resize", update);
       window.removeEventListener("scroll", update, true);
     };
-  }, [open, update]);
+  }, [open, surfaceActive, update]);
 
   return { anchorRef, floatingRef, floatingStyle: style, updateFloatingPosition: update };
 }

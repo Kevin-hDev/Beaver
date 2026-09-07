@@ -163,6 +163,26 @@ describe("BrowserPanel", () => {
     expect(container.querySelector(".ib-surface")).toHaveAttribute("data-native-active", "true");
   });
 
+  it("transmet active true puis false puis true sans démonter le panneau", () => {
+    api.session = {
+      ...blankSession(2),
+      tabs: [{ ...blankSession().tabs[0], url: "https://example.com/" }],
+    };
+    const view = render(
+      <BrowserPanel conversationId="session-test" active fullscreen={false} onFullscreenChange={vi.fn()} />,
+    );
+    const surface = view.container.querySelector(".ib-surface");
+    expect(surface).not.toBeNull();
+    expect(mocks.useSurface).toHaveBeenLastCalledWith(expect.objectContaining({ active: true }));
+
+    view.rerender(<BrowserPanel conversationId="session-test" active={false} fullscreen={false} onFullscreenChange={vi.fn()} />);
+    expect(mocks.useSurface).toHaveBeenLastCalledWith(expect.objectContaining({ active: false }));
+
+    view.rerender(<BrowserPanel conversationId="session-test" active fullscreen={false} onFullscreenChange={vi.fn()} />);
+    expect(mocks.useSurface).toHaveBeenLastCalledWith(expect.objectContaining({ active: true }));
+    expect(view.container.querySelector(".ib-surface")).toBe(surface);
+  });
+
   it("confirme avant de remplacer le plus ancien onglet inactif", async () => {
     vi.mocked(api.createTab)
       .mockResolvedValueOnce({

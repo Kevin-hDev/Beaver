@@ -3,6 +3,7 @@ import {
   USER_MESSAGE_MAX_LINES,
   userMessageHeightForLines,
 } from "@/lib/user-message-layout";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 
 interface OverflowLayout {
   hasOverflow: boolean;
@@ -16,6 +17,7 @@ function getUserMessageCollapsedHeight(element: HTMLElement, maxLines = USER_MES
 
 export function useUserMessageOverflow(content: string, expanded: boolean, maxLines = USER_MESSAGE_MAX_LINES) {
   const contentRef = useRef<HTMLDivElement>(null);
+  const surfaceActive = useAppSurfaceActive();
   const [layout, setLayout] = useState<OverflowLayout>({
     hasOverflow: false,
     fullHeight: 0,
@@ -23,6 +25,7 @@ export function useUserMessageOverflow(content: string, expanded: boolean, maxLi
   });
 
   const measure = useCallback(() => {
+    if (!surfaceActive) return;
     const element = contentRef.current;
     if (!element) return;
 
@@ -40,9 +43,10 @@ export function useUserMessageOverflow(content: string, expanded: boolean, maxLi
       }
       return { hasOverflow, fullHeight, collapsedHeight };
     });
-  }, [maxLines]);
+  }, [maxLines, surfaceActive]);
 
   useLayoutEffect(() => {
+    if (!surfaceActive) return;
     measure();
     const element = contentRef.current;
     if (!element) return;
@@ -66,7 +70,7 @@ export function useUserMessageOverflow(content: string, expanded: boolean, maxLi
     }
 
     return cleanup;
-  }, [content, measure]);
+  }, [content, measure, surfaceActive]);
 
   const maxHeight = layout.hasOverflow
     ? `${expanded ? layout.fullHeight : layout.collapsedHeight}px`

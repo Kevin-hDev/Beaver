@@ -3,6 +3,7 @@ import { act, fireEvent, render } from "@testing-library/react";
 import { readFileSync } from "node:fs";
 import { TerminalPanel } from "../terminal-panel";
 import type { TerminalTab } from "@/hooks/use-terminal";
+import { AppSurfaceActivityProvider } from "@/components/layout/app-surface-activity";
 
 /* Le repli ne démonte plus les écrans : seuls la croix d'un onglet ou l'arrêt
    de l'application mettent fin aux shells. */
@@ -74,6 +75,7 @@ function panel(
   panelHeight = 200,
   onResize = vi.fn(),
   instantLayout = false,
+  onSetMaxHeight = vi.fn(),
 ) {
   return (
     <TerminalPanel
@@ -95,7 +97,7 @@ function panel(
       onProcessExit={vi.fn()}
       onLiveLimitReached={vi.fn()}
       onResize={onResize}
-      onSetMaxHeight={vi.fn()}
+      onSetMaxHeight={onSetMaxHeight}
     />
   );
 }
@@ -243,5 +245,39 @@ describe("durée de vie des shells du panneau", () => {
 
     expect(screenOf(container)).toBeNull();
     expect(invoke).not.toHaveBeenCalled();
+  });
+
+  it("suspend resize inactif et réinstalle un listener au retour", () => {
+    const onSetMaxHeight = vi.fn();
+    const add = vi.spyOn(window, "addEventListener");
+    const remove = vi.spyOn(window, "removeEventListener");
+    let active = true;
+    const view = render(
+      <AppSurfaceActivityProvider active={active}>
+        {panel(true, undefined, undefined, undefined, undefined, 200, undefined, false, onSetMaxHeight)}
+      </AppSurfaceActivityProvider>,
+    );
+    expect(onSetMaxHeight).toHaveBeenCalledOnce();
+    expect(add.mock.calls.filter(([type]) => type === "resize")).toHaveLength(1);
+
+    active = false;
+    view.rerender(
+      <AppSurfaceActivityProvider active={active}>
+        {panel(true, undefined, undefined, undefined, undefined, 200, undefined, false, onSetMaxHeight)}
+      </AppSurfaceActivityProvider>,
+    );
+    fireEvent(window, new Event("resize"));
+    expect(onSetMaxHeight).toHaveBeenCalledOnce();
+    expect(remove.mock.calls.filter(([type]) => type === "resize")).toHaveLength(1);
+
+    active = true;
+    view.rerender(
+      <AppSurfaceActivityProvider active={active}>
+        {panel(true, undefined, undefined, undefined, undefined, 200, undefined, false, onSetMaxHeight)}
+      </AppSurfaceActivityProvider>,
+    );
+    expect(onSetMaxHeight).toHaveBeenCalledTimes(2);
+    expect(onSetMaxHeight.mock.calls[1]).toEqual(onSetMaxHeight.mock.calls[0]);
+    expect(add.mock.calls.filter(([type]) => type === "resize")).toHaveLength(2);
   });
 });

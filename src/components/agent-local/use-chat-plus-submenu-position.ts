@@ -1,4 +1,5 @@
 import { useLayoutEffect, useState, type RefObject } from "react";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 
 export function useChatPlusSubmenuPosition(
   open: boolean,
@@ -8,9 +9,10 @@ export function useChatPlusSubmenuPosition(
   submenuRef: RefObject<HTMLDivElement | null>,
 ) {
   const [left, setLeft] = useState(0);
+  const surfaceActive = useAppSurfaceActive();
 
   useLayoutEffect(() => {
-    if (!open || !submenu) return;
+    if (!surfaceActive || !open || !submenu) return;
     const position = () => {
       const dropdown = dropdownRef.current;
       const submenuElement = submenuRef.current;
@@ -28,7 +30,7 @@ export function useChatPlusSubmenuPosition(
     position();
     window.addEventListener("resize", position);
     return () => window.removeEventListener("resize", position);
-  }, [dropdownRef, open, submenu, submenuRef, wrapperRef]);
+  }, [dropdownRef, open, submenu, submenuRef, surfaceActive, wrapperRef]);
 
   return left;
 }

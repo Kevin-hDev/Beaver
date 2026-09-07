@@ -5,6 +5,7 @@ import { admissionErrorMessage } from "@/lib/admission-error";
 import { showToast } from "@/lib/toast-emitter";
 import i18n from "@/i18n";
 import { matchesAppShortcut } from "@/lib/app-shortcuts";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 
 export type PermissionMode = "auto" | "manual" | "chat";
 export type PermissionFamily = "chat" | "tools";
@@ -22,6 +23,7 @@ const ALL_MODES: PermissionMode[] = ["chat", "manual", "auto"];
 let defaultMode: PermissionMode = "auto";
 
 export function usePermissionMode(sessionId?: string, enabled = true) {
+  const surfaceActive = useAppSurfaceActive();
   const [mode, setMode] = useState<PermissionMode>(defaultMode);
   const [family, setFamily] = useState<PermissionFamily | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -91,7 +93,7 @@ export function usePermissionMode(sessionId?: string, enabled = true) {
   }, [availableModes, mode, change]);
 
   useEffect(() => {
-    if (!enabled || !loaded) return;
+    if (!surfaceActive || !enabled || !loaded) return;
     const onKey = (event: KeyboardEvent) => {
       if (!matchesAppShortcut(event, "changePermissions")) return;
       const target = event.target as HTMLElement | null;
@@ -102,7 +104,7 @@ export function usePermissionMode(sessionId?: string, enabled = true) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [enabled, loaded, toggle]);
+  }, [enabled, loaded, surfaceActive, toggle]);
 
   return { mode, family, availableModes, change, toggle, refresh: reload, loaded };
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Trash } from "@/components/ui/icons";
 import { Tooltip } from "@/components/ui/tooltip";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 
 interface GitDeleteButtonProps {
   label: string;
@@ -17,9 +18,10 @@ export function GitDeleteButton({
 }: GitDeleteButtonProps) {
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
+  const surfaceActive = useAppSurfaceActive();
 
   useEffect(() => {
-    if (!confirming) return;
+    if (!surfaceActive || !confirming) return;
     const timer = window.setTimeout(() => setConfirming(false), 5000);
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setConfirming(false);
@@ -29,7 +31,7 @@ export function GitDeleteButton({
       window.clearTimeout(timer);
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [confirming]);
+  }, [confirming, surfaceActive]);
 
   const handleClick = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();

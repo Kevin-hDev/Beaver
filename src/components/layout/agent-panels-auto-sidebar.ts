@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { shouldAutoHideSidebarForAgentPanels } from "@/hooks/agent-panel-layout-solver";
+import { isElementInsideInactiveSurface } from "@/lib/app-surface-dom";
 
 export { shouldAutoHideSidebarForAgentPanels };
 
@@ -45,8 +46,10 @@ export function useAgentPanelsAutoSidebar(
     let raf = 0;
     const sync = () => {
       const agentDetail = detail.querySelector(".agent-detail-with-preview");
-      const previewOpen = !!agentDetail?.querySelector(".asp-panel.open");
-      const fileTreeOpen = !!agentDetail?.querySelector(".ft-panel.open");
+      const previewPanel = agentDetail?.querySelector<HTMLElement>(".asp-panel.open");
+      const fileTreePanel = agentDetail?.querySelector<HTMLElement>(".ft-panel.open");
+      const previewOpen = Boolean(previewPanel && !isElementInsideInactiveSurface(previewPanel));
+      const fileTreeOpen = Boolean(fileTreePanel && !isElementInsideInactiveSurface(fileTreePanel));
       const sidebarWidth = sidebarProjectionWidth(sidebar);
       const projectedDetailWidth = projectedDetailWidthWithSidebarOpen(
         detail.getBoundingClientRect().width,

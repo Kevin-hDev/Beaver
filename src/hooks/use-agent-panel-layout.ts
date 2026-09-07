@@ -1,5 +1,6 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { CHAT_MIN_WIDTH } from "./file-preview-storage";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 import {
   computeAgentPanelLayout,
   type AgentPanelLayout,
@@ -28,12 +29,14 @@ export function useAgentPanelLayout(input: UseAgentPanelLayoutInput): {
   layout: AgentPanelLayout;
 } {
   const containerRef = useRef<HTMLDivElement>(null);
+  const surfaceActive = useAppSurfaceActive();
   const [measurement, setMeasurement] = useState<AgentPanelMeasurement>({
     containerWidth: 0,
     chatTargetWidth: CHAT_MIN_WIDTH,
   });
 
   const updateMeasurement = useCallback(() => {
+    if (!surfaceActive) return;
     const container = containerRef.current;
     if (!container) return;
     const next = {
@@ -48,11 +51,11 @@ export function useAgentPanelLayout(input: UseAgentPanelLayoutInput): {
         ? current
         : next
     ));
-  }, [input.previewFullscreen]);
+  }, [input.previewFullscreen, surfaceActive]);
 
   useLayoutEffect(() => {
     const container = containerRef.current;
-    if (!container) return;
+    if (!surfaceActive || !container) return;
     updateMeasurement();
     const appRoot = container.closest(".app-root");
     const resizeObserver = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(updateMeasurement);
@@ -65,7 +68,7 @@ export function useAgentPanelLayout(input: UseAgentPanelLayoutInput): {
       mutationObserver.disconnect();
       window.removeEventListener("resize", updateMeasurement);
     };
-  }, [updateMeasurement]);
+  }, [surfaceActive, updateMeasurement]);
 
   const layout = useMemo(() => computeAgentPanelLayout({
     containerWidth: measurement.containerWidth,

@@ -50,7 +50,9 @@ describe("ExtensionPriorityDialog", () => {
     expect(container.querySelector(".wk-dialog-overlay")).toBeNull();
     const overlay = document.body.querySelector(".wk-dialog-overlay");
     expect(overlay).not.toBeNull();
-    expect(overlay?.parentElement).toBe(document.body);
+    const boundary = overlay?.parentElement;
+    expect(boundary).toHaveClass("app-surface-portal-boundary");
+    expect(boundary?.parentElement).toBe(document.body);
   });
   it("exclut les plugins désactivés et enregistre la sélection", () => {
     const onSave = vi.fn(() => Promise.resolve());

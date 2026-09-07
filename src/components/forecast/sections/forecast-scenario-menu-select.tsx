@@ -1,5 +1,6 @@
 import { CaretDown } from "@/components/ui/icons";
-import { createPortal } from "react-dom";
+import { AppSurfacePortal } from "@/components/ui/app-surface-portal";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { focusLocalListItem, useLocalListNavigation, type LocalListNavItem } from "@/hooks/use-local-list-navigation";
 import {
@@ -23,9 +24,11 @@ export function ForecastScenarioMenuSelect({
   placeholder,
   className,
 }: ForecastScenarioMenuSelectProps) {
+  const surfaceActive = useAppSurfaceActive();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const pendingFocusDirection = useRef<1 | -1>(1);
+  const wasOpenRef = useRef(open);
   const { anchorRef, floatingRef, floatingStyle } =
     useFloatingMenuPosition(open, "left", 6, "auto", true);
   const selected = options.find((option) => option.value === value);
@@ -44,7 +47,7 @@ export function ForecastScenarioMenuSelect({
   });
 
   useEffect(() => {
-    if (!open) return;
+    if (!surfaceActive || !open) return;
     const handlePointerDown = (event: MouseEvent) => {
       const target = event.target as Node;
       if (
@@ -63,11 +66,13 @@ export function ForecastScenarioMenuSelect({
       window.removeEventListener("mousedown", handlePointerDown);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [floatingRef, open]);
+  }, [floatingRef, open, surfaceActive]);
 
   useEffect(() => {
-    if (open) focusLocalListItem(floatingRef.current, pendingFocusDirection.current);
-  }, [floatingRef, open]);
+    const shouldFocus = surfaceActive && open && !wasOpenRef.current;
+    wasOpenRef.current = open;
+    if (shouldFocus) focusLocalListItem(floatingRef.current, pendingFocusDirection.current);
+  }, [floatingRef, open, surfaceActive]);
 
   const panel = open ? (
     <div
@@ -126,7 +131,7 @@ export function ForecastScenarioMenuSelect({
         <span className="fcs-menu-label">{selected?.label ?? placeholder ?? ""}</span>
         <CaretDown size="var(--icon-13)" className={`fcs-menu-caret ${open ? "is-open" : ""}`} />
       </button>
-      {panel ? createPortal(panel, floatingMenuPortalRoot()) : null}
+      {panel ? <AppSurfacePortal target={floatingMenuPortalRoot()}>{panel}</AppSurfacePortal> : null}
     </div>
   );
 }

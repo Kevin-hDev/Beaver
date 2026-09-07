@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { AppSurfacePortal } from "@/components/ui/app-surface-portal";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 import { ChevronDown } from "@/components/ui/icons";
 import { useTranslation } from "react-i18next";
 import {
@@ -27,15 +28,17 @@ export function ForecastViewFilters({
   onChange,
 }: ForecastViewFiltersProps) {
   const { t } = useTranslation();
+  const surfaceActive = useAppSurfaceActive();
   const [open, setOpen] = useState(false);
   const [openGroups, setOpenGroups] = useState<string[]>([]);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const pendingFocusDirection = useRef<1 | -1>(1);
+  const wasOpenRef = useRef(open);
   const { anchorRef, floatingRef, floatingStyle } =
     useFloatingMenuPosition(open, "right", 6, "auto");
 
   useEffect(() => {
-    if (!open) return;
+    if (!surfaceActive || !open) return;
     const handlePointerDown = (event: MouseEvent) => {
       const target = event.target as Node;
       if (
@@ -58,7 +61,7 @@ export function ForecastViewFilters({
       window.removeEventListener("mousedown", handlePointerDown);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [floatingRef, open]);
+  }, [floatingRef, open, surfaceActive]);
 
   const toggleGroup = useCallback((groupId: string) => {
     setOpenGroups((current) =>
@@ -99,8 +102,10 @@ export function ForecastViewFilters({
   const chips = useMemo(() => buildForecastFilterChips(groups), [groups]);
 
   useEffect(() => {
-    if (open) focusLocalListItem(floatingRef.current, pendingFocusDirection.current);
-  }, [floatingRef, open]);
+    const shouldFocus = surfaceActive && open && !wasOpenRef.current;
+    wasOpenRef.current = open;
+    if (shouldFocus) focusLocalListItem(floatingRef.current, pendingFocusDirection.current);
+  }, [floatingRef, open, surfaceActive]);
 
   const panel = open ? (
     <div
@@ -173,7 +178,7 @@ export function ForecastViewFilters({
         <span>{t("forecast.view.filters.button")}</span>
         <ChevronDown size="var(--icon-sm)" className={`fcf-chevron ${open ? "is-open" : ""}`} />
       </button>
-      {panel ? createPortal(panel, floatingMenuPortalRoot()) : null}
+      {panel ? <AppSurfacePortal target={floatingMenuPortalRoot()}>{panel}</AppSurfacePortal> : null}
     </div>
   );
 }

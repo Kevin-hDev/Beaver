@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { X } from "@/components/ui/icons";
 import { CloneSummaryRunIndicator } from "./clone-summary-run-button";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 import type { CloneMode } from "@/types/agent";
 import "./clone-session-dialog.css";
 
@@ -27,14 +28,16 @@ export function CloneSessionDialog({
   const { t } = useTranslation();
   const [choice, setChoice] = useState<CloneChoice>(canSummarize ? "summary" : "cut");
   const [focus, setFocus] = useState("");
+  const surfaceActive = useAppSurfaceActive();
 
   useEffect(() => {
+    if (!surfaceActive) return;
     const onKey = (event: KeyboardEvent) => {
       if (event.key.startsWith("Esc")) onCancel();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onCancel]);
+  }, [onCancel, surfaceActive]);
 
   const submit = (nextChoice = choice) => {
     if (busy) return;
@@ -51,8 +54,8 @@ export function CloneSessionDialog({
       role="button"
       tabIndex={-1}
       aria-label={t("agentLocal.clone.close")}
-      onClick={onCancel}
-      onKeyDown={(event) => { if (event.key === "Escape") onCancel(); }}
+      onClick={() => { if (surfaceActive) onCancel(); }}
+      onKeyDown={(event) => { if (surfaceActive && event.key === "Escape") onCancel(); }}
     >
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- dialog stop-propagation pattern */}
       <div

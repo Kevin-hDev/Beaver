@@ -19,6 +19,7 @@ import { useTranslation } from "react-i18next";
 import type { SkillReference } from "@/types/agent-turn.generated";
 import { useSessionLayoutSwitch } from "@/hooks/use-session-layout-switch";
 import { cn } from "@/lib/utils";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 
 interface AgentChatDetailProps {
   workspaceSessionId: string;
@@ -67,6 +68,7 @@ interface AgentChatDetailProps {
 
 export function AgentChatDetail(props: AgentChatDetailProps) {
   const { t } = useTranslation();
+  const surfaceActive = useAppSurfaceActive();
   const sessionSwitching = useSessionLayoutSwitch(props.workspaceSessionId);
   const previewDesiredWidth = props.filePreview.width + props.filePreview.extraWidth;
   const previewFullscreen = props.panelMode !== "forecast" && props.filePreview.fullscreen;
@@ -170,7 +172,10 @@ export function AgentChatDetail(props: AgentChatDetailProps) {
         browserContent={(
           <BrowserPanel
             conversationId={props.sessionId}
-            active={props.filePreview.open && props.panelMode === "browser" && !props.fullscreenSwitching}
+            active={surfaceActive
+              && props.filePreview.open
+              && props.panelMode === "browser"
+              && !props.fullscreenSwitching}
             fullscreen={props.filePreview.fullscreen}
             onFullscreenChange={props.onPreviewFullscreenChange}
           />

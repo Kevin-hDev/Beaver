@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useCallback, useLayoutEffect } from "react";
-import { createPortal } from "react-dom";
+import { AppSurfacePortal } from "@/components/ui/app-surface-portal";
 import { useTranslation } from "react-i18next";
 import { Tooltip } from "@/components/ui/tooltip";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 import type { BrowserCapability } from "@/hooks/use-browser-capability";
 import type { PanelMode } from "@/hooks/use-forecast-panel";
 import { resolveModeMenuPosition } from "./mode-selector-position";
@@ -16,6 +17,7 @@ interface ModeSelectorProps {
 export function ModeSelector({ mode, browserStatus = "hidden", onChange }: ModeSelectorProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const surfaceActive = useAppSurfaceActive();
   const btnRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState({ top: 0, right: 0 });
@@ -48,7 +50,7 @@ export function ModeSelector({ mode, browserStatus = "hidden", onChange }: ModeS
   }, [open]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!surfaceActive || !open) return;
     const close = (e: MouseEvent) => {
       const target = e.target as Node;
       if (btnRef.current?.contains(target)) return;
@@ -57,7 +59,7 @@ export function ModeSelector({ mode, browserStatus = "hidden", onChange }: ModeS
     };
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
-  }, [closeMenu, open]);
+  }, [closeMenu, open, surfaceActive]);
 
   const pick = (m: PanelMode) => { onChange(m); closeMenu(); };
 
@@ -78,7 +80,7 @@ export function ModeSelector({ mode, browserStatus = "hidden", onChange }: ModeS
           </svg>
         </button>
       </Tooltip>
-      {open && createPortal(
+      {open && <AppSurfacePortal target={document.body}>
         <div
           ref={menuRef}
           className="asp-mode-menu"
@@ -103,9 +105,8 @@ export function ModeSelector({ mode, browserStatus = "hidden", onChange }: ModeS
               {t("browser.title")}
             </button>
           )}
-        </div>,
-        document.body,
-      )}
+        </div>
+      </AppSurfacePortal>}
     </>
   );
 }

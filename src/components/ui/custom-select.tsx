@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { AppSurfacePortal } from "@/components/ui/app-surface-portal";
 import { useClickOutside } from "@/hooks/use-click-outside";
 import {
   floatingMenuPortalRoot,
@@ -118,7 +118,7 @@ export function CustomSelect({
         </span>
         <span className="cs-trigger-caret">▾</span>
       </button>
-      {dropdown ? createPortal(dropdown, floatingMenuPortalRoot()) : null}
+      {dropdown ? <AppSurfacePortal target={floatingMenuPortalRoot()}>{dropdown}</AppSurfacePortal> : null}
     </div>
   );
 }

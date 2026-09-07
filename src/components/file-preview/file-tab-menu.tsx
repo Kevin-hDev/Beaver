@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { createPortal } from "react-dom";
+import { AppSurfacePortal } from "@/components/ui/app-surface-portal";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 import type { PreviewEditor } from "@/types/file-preview";
 import "./file-tab-menu.css";
 
@@ -20,7 +21,9 @@ function editorLabel(editor: PreviewEditor, suffix: string): string {
 
 export function FileTabMenu({ x, y, editors, onOpen, onOpenWith, onClose }: FileTabMenuProps) {
   const { t } = useTranslation();
+  const surfaceActive = useAppSurfaceActive();
   useEffect(() => {
+    if (!surfaceActive) return;
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
     };
@@ -31,11 +34,11 @@ export function FileTabMenu({ x, y, editors, onOpen, onOpenWith, onClose }: File
       window.removeEventListener("keydown", closeOnEscape);
       window.removeEventListener("pointerdown", closeOnClick);
     };
-  }, [onClose]);
+  }, [onClose, surfaceActive]);
 
   const suffix = ` (${t("filePreview.default")})`;
 
-  return createPortal(
+  return <AppSurfacePortal target={document.body}>
     <div
       className="fp-menu"
       style={{ left: x, top: y }}
@@ -58,7 +61,6 @@ export function FileTabMenu({ x, y, editors, onOpen, onOpenWith, onClose }: File
           {editorLabel(editor, suffix)}
         </button>
       ))}
-    </div>,
-    document.body,
-  );
+    </div>
+  </AppSurfacePortal>;
 }

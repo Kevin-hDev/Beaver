@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 
 interface KeyboardHandlers {
   onEscape?: () => void;
@@ -13,7 +14,11 @@ const KEY_MAP: Record<string, keyof KeyboardHandlers> = {
 const TEXTAREA_TAG = "TEXTAREA";
 
 export function useKeyboard(handlers: KeyboardHandlers) {
+  const surfaceActive = useAppSurfaceActive();
+
   useEffect(() => {
+    if (!surfaceActive) return;
+
     function handleKeyDown(e: KeyboardEvent) {
       const handlerName = KEY_MAP[e.key];
       if (!handlerName) return;
@@ -33,5 +38,5 @@ export function useKeyboard(handlers: KeyboardHandlers) {
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [handlers]);
+  }, [handlers, surfaceActive]);
 }

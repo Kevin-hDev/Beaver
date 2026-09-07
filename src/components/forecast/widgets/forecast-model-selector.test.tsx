@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import { AppSurfaceActivityProvider } from "@/components/layout/app-surface-activity";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ForecastModelEntry } from "../forecast-model-meta";
 import { ForecastModelSelector } from "./forecast-model-selector";
@@ -171,5 +172,39 @@ describe("ForecastModelSelector", () => {
     expect(screen.getByText("Mise à jour requise")).toBeVisible();
     fireEvent.click(item!);
     expect(onSelectModel).not.toHaveBeenCalled();
+  });
+
+  it("conserve la liste montée mais masquée pendant l'inactivité", () => {
+    const view = render(
+      <AppSurfaceActivityProvider active>
+        <ForecastModelSelector
+          selectedModelId={MODEL.id}
+          selectionMode="manual"
+          allowCloudInAuto={false}
+          selectionReady
+          onSelectModel={vi.fn()}
+          onModeChange={vi.fn()}
+          onCloudAllowedChange={vi.fn()}
+        />
+      </AppSurfaceActivityProvider>,
+    );
+    fireEvent.click(screen.getByText(MODEL.display_name));
+    const menu = document.body.querySelector<HTMLElement>(".fmsel-dropdown");
+    expect(menu).not.toBeNull();
+
+    view.rerender(
+      <AppSurfaceActivityProvider active={false}>
+        <ForecastModelSelector
+          selectedModelId={MODEL.id}
+          selectionMode="manual"
+          allowCloudInAuto={false}
+          selectionReady
+          onSelectModel={vi.fn()}
+          onModeChange={vi.fn()}
+          onCloudAllowedChange={vi.fn()}
+        />
+      </AppSurfaceActivityProvider>,
+    );
+    expect(menu?.closest(".app-surface-portal-boundary")).toHaveAttribute("hidden");
   });
 });

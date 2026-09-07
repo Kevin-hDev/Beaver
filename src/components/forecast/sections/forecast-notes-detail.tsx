@@ -2,6 +2,7 @@ import type { TFunction } from "i18next";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowSquareOut, Pencil, Trash } from "@/components/ui/icons";
 import { Tooltip } from "@/components/ui/tooltip";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 import { ForecastScenarioMenuSelect } from "./forecast-scenario-menu-select";
 import { ForecastNotesMarkdown } from "./forecast-notes-markdown";
 import type { ForecastNote, ForecastNoteDraft } from "./forecast-notes-types";
@@ -23,8 +24,9 @@ interface ForecastNotesDetailProps {
 
 export function ForecastNotesDetail(props: ForecastNotesDetailProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const surfaceActive = useAppSurfaceActive();
   useEffect(() => {
-    if (!confirmDelete) return;
+    if (!surfaceActive || !confirmDelete) return;
     const timer = window.setTimeout(() => setConfirmDelete(false), 5000);
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape" || event.key.startsWith("Esc")) {
@@ -37,7 +39,7 @@ export function ForecastNotesDetail(props: ForecastNotesDetailProps) {
       window.clearTimeout(timer);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [confirmDelete]);
+  }, [confirmDelete, surfaceActive]);
 
   if (props.draft) return <ForecastNoteForm {...props} />;
   if (!props.note) return <div className="fcn-detail-empty">{props.t("forecast.notes.selectNote")}</div>;

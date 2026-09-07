@@ -1,6 +1,7 @@
-import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { AppSurfaceActivityProvider } from "@/components/layout/app-surface-activity";
 import { ContextProgress } from "../context-progress";
 import type { ContextUsageBreakdown } from "@/hooks/context-usage-breakdown";
 
@@ -26,6 +27,7 @@ vi.mock("../context-progress.css", () => ({}));
 
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
   vi.clearAllMocks();
 });
 
@@ -111,5 +113,34 @@ describe("ContextProgress", () => {
     await user.tab();
 
     expect(getByRole("button", { name: "Après l’anneau" })).toHaveFocus();
+  });
+
+  it("conserve le panneau ouvert si son délai de fermeture expire inactive", () => {
+    vi.useFakeTimers();
+    let active = true;
+    const view = render(
+      <AppSurfaceActivityProvider active={active}>
+        <ContextProgress used={100} max={1000} breakdown={breakdown} />
+      </AppSurfaceActivityProvider>,
+    );
+    const ring = view.getByLabelText("Context window");
+    void act(() => fireEvent.mouseEnter(ring));
+    expect(view.getByRole("dialog", { name: "Context window" })).toBeInTheDocument();
+    void act(() => fireEvent.mouseLeave(ring));
+
+    active = false;
+    void act(() => view.rerender(
+      <AppSurfaceActivityProvider active={active}>
+        <ContextProgress used={100} max={1000} breakdown={breakdown} />
+      </AppSurfaceActivityProvider>,
+    ));
+    void act(() => vi.advanceTimersByTime(150));
+    active = true;
+    void act(() => view.rerender(
+      <AppSurfaceActivityProvider active={active}>
+        <ContextProgress used={100} max={1000} breakdown={breakdown} />
+      </AppSurfaceActivityProvider>,
+    ));
+    expect(view.getByRole("dialog", { name: "Context window" })).toBeInTheDocument();
   });
 });

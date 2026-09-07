@@ -1,8 +1,10 @@
+import { createElement } from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { invoke } from "@tauri-apps/api/core";
 import { usePermissionMode } from "../use-permission-mode";
 import { showToast } from "@/lib/toast-emitter";
+import { AppSurfaceActivityProvider } from "@/components/layout/app-surface-activity";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(),
@@ -225,5 +227,29 @@ describe("usePermissionMode", () => {
 
     expect(invoke).not.toHaveBeenCalled();
     expect(result.current.mode).toBe("auto");
+  });
+
+  it("ignore le raccourci inactif tout en conservant le chargement", async () => {
+    let active = true;
+    const wrapper = ({ children }: { children: React.ReactNode }) =>
+      createElement(AppSurfaceActivityProvider, { active } as never, children);
+    const { result, rerender } = renderHook(() => usePermissionMode("child-session"), { wrapper });
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+    vi.mocked(invoke).mockClear();
+
+    active = false;
+    rerender();
+    window.dispatchEvent(new KeyboardEvent("keydown", {
+      code: "Tab", key: "Tab", shiftKey: true,
+    }));
+    expect(result.current.mode).toBe("auto");
+    expect(invoke).not.toHaveBeenCalledWith("set_permission_mode", expect.anything());
+
+    active = true;
+    rerender();
+    window.dispatchEvent(new KeyboardEvent("keydown", {
+      code: "Tab", key: "Tab", shiftKey: true,
+    }));
+    await waitFor(() => expect(result.current.mode).toBe("chat"));
   });
 });

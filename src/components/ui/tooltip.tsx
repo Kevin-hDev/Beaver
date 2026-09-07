@@ -1,5 +1,5 @@
 import { useState, useRef, type ReactNode } from "react";
-import { createPortal } from "react-dom";
+import { AppSurfacePortal } from "@/components/ui/app-surface-portal";
 import "./tooltip.css";
 
 interface TooltipProps {
@@ -50,15 +50,14 @@ export function Tooltip({
     <span ref={wrapper} className="tooltip-wrapper" onMouseEnter={show} onMouseLeave={hide}>
       {children}
       {visible && above
-        ? createPortal(
+        ? <AppSurfacePortal target={document.body}>
             <span
               className="tooltip-bubble tooltip-above"
               style={{ left: anchor.left, bottom: anchor.bottom }}
             >
               {label}
-            </span>,
-            document.body,
-          )
+            </span>
+          </AppSurfacePortal>
         : visible && <span className={cls}>{label}</span>}
     </span>
   );

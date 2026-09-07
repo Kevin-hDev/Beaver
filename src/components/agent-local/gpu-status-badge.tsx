@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback } from "react";
-import { createPortal } from "react-dom";
+import { AppSurfacePortal } from "@/components/ui/app-surface-portal";
 import { useGpuStatus } from "@/hooks/use-gpu-status";
 import { useSettingValue } from "@/hooks/use-setting-value";
 import "./gpu-status-badge.css";
@@ -50,15 +50,14 @@ export function GpuStatusBadge() {
       onMouseLeave={hideTip}
     >
       {label}
-      {tipPos && createPortal(
+      {tipPos && <AppSurfacePortal target={document.body}>
         <span
           className="gpu-badge-tooltip"
           style={{ top: tipPos.top, right: tipPos.right }}
         >
           {tooltip}
-        </span>,
-        document.body,
-      )}
+        </span>
+      </AppSurfacePortal>}
     </span>
   );
 }

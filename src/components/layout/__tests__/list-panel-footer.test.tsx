@@ -63,7 +63,7 @@ describe("rangée de navigation du panneau liste", () => {
   it("ouvre les infobulles vers le haut", () => {
     vi.useFakeTimers();
     try {
-      renderFooter("agent-local");
+      const { container } = renderFooter("agent-local");
 
       act(() => {
         fireEvent.mouseEnter(document.querySelectorAll(".tooltip-wrapper")[1]);
@@ -75,7 +75,10 @@ describe("rangée de navigation du panneau liste", () => {
       const bubble = document.querySelector(".tooltip-above");
 
       expect(bubble?.textContent).toBe("nav.heartbeat");
-      expect(bubble?.parentElement).toBe(document.body);
+      const boundary = bubble?.parentElement;
+      expect(container.contains(bubble)).toBe(false);
+      expect(boundary).toHaveClass("app-surface-portal-boundary");
+      expect(boundary?.parentElement).toBe(document.body);
     } finally {
       vi.useRealTimers();
     }

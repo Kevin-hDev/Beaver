@@ -122,6 +122,7 @@ export function useBrowserSurface(args: BrowserSurfaceArgs) {
 
   useEffect(() => {
     const host = hostRef.current;
+    if (!args.active) return;
     if (!host) return;
     const observer = new ResizeObserver(schedule);
     observer.observe(host);
@@ -134,7 +135,7 @@ export function useBrowserSurface(args: BrowserSurfaceArgs) {
       guards.detach();
       movingRef.current = () => false;
     };
-  }, [hide, schedule]);
+  }, [args.active, hide, schedule]);
 
   useEffect(() => {
     const handleNativeEvent = (value: unknown, stopped: boolean) => {

@@ -1,4 +1,4 @@
-import { createPortal } from "react-dom";
+import { AppSurfacePortal } from "@/components/ui/app-surface-portal";
 import { useTranslation } from "react-i18next";
 
 interface BrowserReplaceDialogProps {
@@ -11,7 +11,7 @@ interface BrowserReplaceDialogProps {
 export function BrowserReplaceDialog(props: BrowserReplaceDialogProps) {
   const { t } = useTranslation();
   const title = props.candidateTitle || t("browser.newTab");
-  return createPortal(
+  return <AppSurfacePortal target={document.body}>
     <div className="ib-dialog-overlay" role="presentation">
       <section className="ib-dialog" role="dialog" aria-modal="true" aria-labelledby="ib-dialog-title">
         <h2 id="ib-dialog-title">{t("browser.tabLimitTitle")}</h2>
@@ -25,7 +25,6 @@ export function BrowserReplaceDialog(props: BrowserReplaceDialogProps) {
           </button>
         </div>
       </section>
-    </div>,
-    document.body,
-  );
+    </div>
+  </AppSurfacePortal>;
 }

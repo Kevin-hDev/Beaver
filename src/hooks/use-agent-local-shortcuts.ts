@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 import { matchesAppShortcut } from "@/lib/app-shortcuts";
 
 interface AgentLocalShortcutsParams {
@@ -8,6 +9,7 @@ interface AgentLocalShortcutsParams {
 }
 
 export function useAgentLocalShortcuts(params: AgentLocalShortcutsParams) {
+  const surfaceActive = useAppSurfaceActive();
   const {
     activeSessionId,
     onToggleTerminal,
@@ -15,6 +17,8 @@ export function useAgentLocalShortcuts(params: AgentLocalShortcutsParams) {
   } = params;
 
   useEffect(() => {
+    if (!surfaceActive) return;
+
     const handleKeyDown = (event: KeyboardEvent) => {
       const toggleTerminal = matchesAppShortcut(event, "toggleTerminal");
       const togglePreview = matchesAppShortcut(event, "togglePreview");
@@ -31,7 +35,7 @@ export function useAgentLocalShortcuts(params: AgentLocalShortcutsParams) {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [
-    activeSessionId, onTogglePreview, onToggleTerminal,
+    activeSessionId, onTogglePreview, onToggleTerminal, surfaceActive,
   ]);
 }
 

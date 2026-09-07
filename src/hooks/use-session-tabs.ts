@@ -14,6 +14,7 @@ import {
 } from "@/hooks/use-session-tabs-helpers";
 import type { CloneMode, CloneSessionResult, SessionTab, SessionTabs } from "@/types/agent";
 import { sessionTabIndexFromShortcut } from "@/lib/app-shortcuts";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 
 interface CloneMessageOptions {
   messageId: string;
@@ -32,6 +33,7 @@ export function useSessionTabs(
   rootSessionId: string | null | undefined,
   onSessionsRefresh?: () => Promise<void> | void,
 ) {
+  const surfaceActive = useAppSurfaceActive();
   const [loadedTabs, setLoadedTabs] = useState<LoadedTabs | null>(null);
   const [attentionTabs, setAttentionTabs] = useState<Record<string, string[]>>({});
   const rootSessionIdRef = useRef(rootSessionId);
@@ -176,7 +178,7 @@ export function useSessionTabs(
   }, [rootSessionId, setTabs]);
 
   useEffect(() => {
-    if (!tabs) return;
+    if (!surfaceActive || !tabs) return;
     const handler = (event: KeyboardEvent) => {
       const index = sessionTabIndexFromShortcut(event);
       if (index === null) return;
@@ -187,7 +189,7 @@ export function useSessionTabs(
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [selectTab, tabs]);
+  }, [selectTab, surfaceActive, tabs]);
 
   return {
     tabs,

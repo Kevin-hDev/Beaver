@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { AppSurfacePortal } from "@/components/ui/app-surface-portal";
 import { CopyIcon } from "@/components/ui/copy-icon";
 import { ValidateIcon } from "@/components/ui/validate-icon";
 import errorIcon from "@/assets/tool-status/error.svg?url";
@@ -52,7 +52,7 @@ export function ToolStatusIcon({
     });
   }, [message]);
 
-  const tooltip = visible && message && position && createPortal(
+  const tooltip = visible && message && position && <AppSurfacePortal target={document.body}>
     <div
       className="tb-error-tooltip"
       style={{ top: position.top, left: position.left }}
@@ -63,9 +63,8 @@ export function ToolStatusIcon({
       <button type="button" className="icon-btn tb-error-tooltip-copy" onClick={copy}>
         {copied ? <ValidateIcon size="var(--icon-xs)" /> : <CopyIcon size="var(--icon-xs)" />}
       </button>
-    </div>,
-    document.body,
-  );
+    </div>
+  </AppSurfacePortal>;
 
   return (
     <span ref={anchorRef} className="tb-status-anchor" onMouseEnter={enter} onMouseLeave={leave}>

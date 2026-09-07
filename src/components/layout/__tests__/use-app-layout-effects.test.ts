@@ -148,6 +148,23 @@ describe("useAgentPanelsAutoSidebar", () => {
     await waitFor(() => expect(onTightChange).toHaveBeenLastCalledWith(false));
     expect(onAutoHide).not.toHaveBeenCalled();
   });
+
+  it("ignore un panneau ouvert sous une frontiere inactive", async () => {
+    installLayoutDom(760);
+    const detail = document.querySelector(".app-detail-panel")!;
+    const boundary = document.createElement("div");
+    boundary.setAttribute("hidden", "");
+    const panel = detail.querySelector(".asp-panel")!;
+    panel.replaceWith(boundary);
+    boundary.append(panel);
+    const onAutoHide = vi.fn();
+    const onTightChange = vi.fn();
+
+    renderHook(() => useAgentPanelsAutoSidebar(true, false, onAutoHide, onTightChange));
+
+    await waitFor(() => expect(onTightChange).toHaveBeenCalledWith(false));
+    expect(onAutoHide).not.toHaveBeenCalled();
+  });
 });
 
 describe("useSidebarHiddenOffset", () => {

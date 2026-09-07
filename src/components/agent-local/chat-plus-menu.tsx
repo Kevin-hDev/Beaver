@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Plus, Image, Plugs, PuzzlePiece, CaretRight, ClipboardText, ArrowsClockwise,
@@ -10,6 +10,7 @@ import { useExtensions } from "@/hooks/use-extensions";
 import { ChatPlusConnectorRow } from "./chat-plus-connector-row";
 import { ChatPlusPluginMenu, chatPluginShortcuts } from "./chat-plus-plugin-menu";
 import { useChatPlusSubmenuPosition } from "./use-chat-plus-submenu-position";
+import { useChatPlusMenuDismiss } from "./use-chat-plus-menu-dismiss";
 import { ChatPlusCompressionMenu } from "./chat-plus-compression-menu";
 import type { CompressionProfileView } from "@/types/compression-profile.generated";
 import "./chat-plus-menu.css";
@@ -51,17 +52,7 @@ export function ChatPlusMenu({
   const extensionRegistry = useExtensions();
 
   const close = useCallback(() => { setOpen(false); setSubmenu(null); }, []);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") close(); };
-    const onClick = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) close();
-    };
-    window.addEventListener("keydown", onKey);
-    document.addEventListener("mousedown", onClick);
-    return () => { window.removeEventListener("keydown", onKey); document.removeEventListener("mousedown", onClick); };
-  }, [open, close]);
+  useChatPlusMenuDismiss(open, menuRef, close);
 
   const handleFileImport = () => { close(); onFileImport(); };
 

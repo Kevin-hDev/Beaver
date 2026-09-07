@@ -9,6 +9,7 @@ import {
   notePosition,
 } from "./forecast-notes-utils";
 import "./forecast-notes-timeline.css";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 
 interface ForecastNotesTimelineProps {
   notes: ForecastNote[];
@@ -30,18 +31,22 @@ export function ForecastNotesTimeline({
   onSelect,
 }: ForecastNotesTimelineProps) {
   const rootRef = useRef<HTMLElement | null>(null);
+  const surfaceActive = useAppSurfaceActive();
   const [width, setWidth] = useState(0);
   const markers = useMemo(() => buildMarkers(notes, range, width), [notes, range, width]);
 
   useLayoutEffect(() => {
     const element = rootRef.current;
-    if (!element) return;
-    const syncWidth = () => setWidth(element.getBoundingClientRect().width);
+    if (!surfaceActive || !element) return;
+    const syncWidth = () => {
+      const next = element.getBoundingClientRect().width;
+      if (next > 0) setWidth(next);
+    };
     syncWidth();
     const observer = new ResizeObserver(syncWidth);
     observer.observe(element);
     return () => observer.disconnect();
-  }, []);
+  }, [surfaceActive]);
 
   return (
     <section ref={rootRef} className="fcn-timeline" aria-label={t("forecast.notes.timeline")}>

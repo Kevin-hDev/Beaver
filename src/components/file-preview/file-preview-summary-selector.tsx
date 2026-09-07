@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
-import { createPortal } from "react-dom";
+import { AppSurfacePortal } from "@/components/ui/app-surface-portal";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 import { useTranslation } from "react-i18next";
 import { CaretDown, Check } from "@/components/ui/icons";
 import { floatingMenuPortalRoot } from "@/hooks/use-floating-menu-position";
@@ -29,6 +30,7 @@ export function FilePreviewSummarySelector({
   onModeChange,
 }: FilePreviewSummarySelectorProps) {
   const { t } = useTranslation();
+  const surfaceActive = useAppSurfaceActive();
   const [open, setOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -37,7 +39,7 @@ export function FilePreviewSummarySelector({
   const updatePosition = useCallback(() => {
     const anchor = buttonRef.current;
     const menu = menuRef.current;
-    if (!open || !anchor || !menu) return;
+    if (!surfaceActive || !open || !anchor || !menu) return;
 
     const rect = anchor.getBoundingClientRect();
     const width = Math.max(190, rect.width);
@@ -57,10 +59,10 @@ export function FilePreviewSummarySelector({
       visibility: "visible",
       zIndex: 1000,
     });
-  }, [open]);
+  }, [open, surfaceActive]);
 
   useLayoutEffect(() => {
-    if (!open) return;
+    if (!surfaceActive || !open) return;
     updatePosition();
     window.addEventListener("resize", updatePosition);
     window.addEventListener("scroll", updatePosition, true);
@@ -68,10 +70,10 @@ export function FilePreviewSummarySelector({
       window.removeEventListener("resize", updatePosition);
       window.removeEventListener("scroll", updatePosition, true);
     };
-  }, [open, updatePosition]);
+  }, [open, surfaceActive, updatePosition]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!surfaceActive || !open) return;
     const closeOnPointer = (event: PointerEvent) => {
       const target = event.target as Node;
       if (buttonRef.current?.contains(target) || menuRef.current?.contains(target)) return;
@@ -86,7 +88,7 @@ export function FilePreviewSummarySelector({
       document.removeEventListener("pointerdown", closeOnPointer);
       document.removeEventListener("keydown", closeOnEscape);
     };
-  }, [open]);
+  }, [open, surfaceActive]);
 
   const selectMode = (next: FilePreviewListMode) => {
     onModeChange(next);
@@ -111,7 +113,7 @@ export function FilePreviewSummarySelector({
         <CaretDown size="var(--icon-2xs)" className="fps-trigger-caret" />
       </button>
 
-      {open && createPortal(
+      {open && <AppSurfacePortal target={floatingMenuPortalRoot()}>
         <div
           ref={menuRef}
           className="fps-menu"
@@ -132,9 +134,8 @@ export function FilePreviewSummarySelector({
               {item === mode && <Check size="var(--icon-sm)" />}
             </button>
           ))}
-        </div>,
-        floatingMenuPortalRoot(),
-      )}
+        </div>
+      </AppSurfacePortal>}
     </>
   );
 }

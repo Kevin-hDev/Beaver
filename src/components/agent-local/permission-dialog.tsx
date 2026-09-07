@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import type { PermissionRequest, PermissionDecision } from "@/hooks/use-permission-requests";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 import "./permission-dialog.css";
 
 interface Props {
@@ -19,8 +20,11 @@ function extractTarget(args: Record<string, unknown>): string {
 
 export function PermissionDialog({ request, onDecide }: Props) {
   const { t } = useTranslation();
+  const surfaceActive = useAppSurfaceActive();
 
   useEffect(() => {
+    if (!surfaceActive) return;
+
     const onKey = (e: KeyboardEvent) => {
       if (e.key.startsWith("Esc")) {
         e.preventDefault();
@@ -29,7 +33,7 @@ export function PermissionDialog({ request, onDecide }: Props) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [request.id, onDecide]);
+  }, [onDecide, request.id, surfaceActive]);
 
   const target = extractTarget(request.arguments);
   const externalRead = request.effectClass === "external-read";

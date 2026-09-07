@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { X } from "@/components/ui/icons";
+import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 import "./worktree-switch-dialog.css";
 
 interface WorktreeSwitchDialogProps {
@@ -18,8 +19,10 @@ export function WorktreeSwitchDialog({
 }: WorktreeSwitchDialogProps) {
   const { t } = useTranslation();
   const target = branch ? `${branch} - ${path}` : path;
+  const surfaceActive = useAppSurfaceActive();
 
   useEffect(() => {
+    if (!surfaceActive) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key.startsWith("Esc")) {
         e.preventDefault();
@@ -28,7 +31,7 @@ export function WorktreeSwitchDialog({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onCancel]);
+  }, [onCancel, surfaceActive]);
 
   return (
     <div
@@ -36,8 +39,8 @@ export function WorktreeSwitchDialog({
       role="button"
       tabIndex={-1}
       aria-label={t("switchWorktree.close")}
-      onClick={onCancel}
-      onKeyDown={(e) => { if (e.key === "Escape") onCancel(); }}
+      onClick={() => { if (surfaceActive) onCancel(); }}
+      onKeyDown={(e) => { if (surfaceActive && e.key === "Escape") onCancel(); }}
     >
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- dialog stop-propagation pattern */}
       <div className="wk-dialog" onClick={(e) => e.stopPropagation()} role="dialog">
