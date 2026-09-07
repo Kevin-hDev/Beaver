@@ -72,24 +72,39 @@ pub(super) async fn enrich_models(
 
 async fn enrich_compat_model(provider_id: &str, model: &mut ModelInfo) {
     let remote_modes = model.reasoning_modes.clone();
+    let remote_reasoning_present = model.reasoning_metadata_present;
     let local = super::provider_model_lookup::local_capabilities(provider_id, &model.id).is_some();
-    let resolved = super::provider_model_lookup::resolve(provider_id, &model.id).await;
+    let authoritative = super::openrouter_model_metadata::owns_catalog_metadata(provider_id);
+    let resolved = if authoritative {
+        super::provider_model_capabilities::resolve_for_catalog(provider_id, &model.id).await
+    } else {
+        super::provider_model_lookup::resolve(provider_id, &model.id).await
+    };
     model.supports_fast_mode = resolved
         .as_ref()
         .is_some_and(|value| value.supports_fast_mode);
     if let Some(limits) = super::provider_model_lookup::local_limits(provider_id, &model.id) {
-        model.context_length = limits.context_window;
-        model.max_output_tokens = limits.max_output_tokens;
+        if !authoritative {
+            model.context_length = limits.context_window;
+            model.max_output_tokens = limits.max_output_tokens;
+        } else {
+            model.context_length = model.context_length.or(limits.context_window);
+            model.max_output_tokens = model.max_output_tokens.or(limits.max_output_tokens);
+        }
     }
     let Some(capabilities) = resolved else { return };
     if local {
         model.supports_tools = capabilities.supports_tools;
         model.supports_vision = capabilities.supports_vision;
         model.supports_thinking = capabilities.supports_thinking;
-        model.reasoning_modes = crate::services::reasoning::restrict_to_dynamic_modes(
-            capabilities.reasoning_modes.clone(),
-            (!remote_modes.is_empty()).then_some(remote_modes.as_slice()),
-        );
+        model.reasoning_modes = if remote_reasoning_present && remote_modes.is_empty() {
+            Vec::new()
+        } else {
+            crate::services::reasoning::restrict_to_dynamic_modes(
+                capabilities.reasoning_modes.clone(),
+                (!remote_modes.is_empty()).then_some(remote_modes.as_slice()),
+            )
+        };
     } else {
         model.supports_tools |= capabilities.supports_tools;
         model.supports_vision |= capabilities.supports_vision;
@@ -97,7 +112,7 @@ async fn enrich_compat_model(provider_id: &str, model: &mut ModelInfo) {
     }
     if !model.supports_thinking {
         model.reasoning_modes.clear();
-    } else if model.reasoning_modes.is_empty() {
+    } else if !remote_reasoning_present && model.reasoning_modes.is_empty() {
         model.reasoning_modes = capabilities.reasoning_modes;
     }
     model.default_reasoning_mode = model

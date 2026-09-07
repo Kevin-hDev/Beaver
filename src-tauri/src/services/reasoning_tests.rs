@@ -146,6 +146,7 @@ fn supported_modes_and_default_use_validated_runtime_restrictions() {
         supports_tools: true,
         supports_vision: false,
         supports_thinking: true,
+        reasoning_metadata_present: false,
         supports_fast_mode: false,
         reasoning_modes: vec!["auto".into()],
         default_reasoning_mode: Some("auto".into()),

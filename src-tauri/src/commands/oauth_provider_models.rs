@@ -188,6 +188,7 @@ mod tests {
                 supports_tools: true,
                 supports_vision: true,
                 supports_thinking: true,
+                reasoning_metadata_present: false,
                 supports_fast_mode: true,
                 reasoning_modes: vec!["high".to_string()],
                 default_reasoning_mode: Some("high".to_string()),

@@ -1,10 +1,11 @@
 {
   "provider": "openai",
   "schema_version": 1,
-  "verified_at": "2026-07-30",
+  "verified_at": "2026-09-07",
   "source_urls": [
     "https://developers.openai.com/api/docs/models",
-    "https://developers.openai.com/api/docs/models/all"
+    "https://developers.openai.com/api/docs/models/all",
+    "https://developers.openai.com/api/docs/models/gpt-6-astra"
   ],
   "models": [
     {"id":"gpt-5.6-sol","aliases":["gpt-5.6"],"context_window":1050000,"max_output_tokens":128000,"supports_tools":true,"supports_vision":true,"supports_thinking":true,"supports_fast_mode":true,"reasoning_modes":["off","low","medium","high","xhigh","max"]},
@@ -25,6 +26,7 @@
     {"id":"o3-mini","context_window":200000,"max_output_tokens":100000,"supports_tools":true,"supports_vision":false,"supports_thinking":true,"reasoning_modes":["off","low","medium","high","xhigh"]},
     {"id":"o4-mini","context_window":200000,"max_output_tokens":100000,"supports_tools":true,"supports_vision":true,"supports_thinking":true,"reasoning_modes":["off","low","medium","high","xhigh"]},
     {"id":"gpt-4o","context_window":128000,"max_output_tokens":16384,"supports_tools":true,"supports_vision":true,"supports_thinking":false},
-    {"id":"gpt-4o-mini","context_window":128000,"max_output_tokens":16384,"supports_tools":true,"supports_vision":true,"supports_thinking":false}
+    {"id":"gpt-4o-mini","context_window":128000,"max_output_tokens":16384,"supports_tools":true,"supports_vision":true,"supports_thinking":false},
+    {"id":"gpt-6-astra","context_window":1050000,"max_output_tokens":128000,"supports_tools":true,"supports_vision":true,"supports_thinking":true,"reasoning_modes":["low","medium","high","xhigh","max"]}
   ]
 }

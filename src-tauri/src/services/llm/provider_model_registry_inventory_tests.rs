@@ -10,15 +10,15 @@ fn ids(provider_id: &str) -> Vec<String> {
 #[test]
 fn canonical_inventory_sizes_match_the_official_catalogs() {
     for (provider, expected) in [
-        ("google", 14),
+        ("google", 15),
         ("mistral", 8),
         ("cerebras", 3),
         ("openrouter", 0),
-        ("openai", 19),
+        ("openai", 20),
         ("deepseek", 2),
         ("xai", 7),
         ("moonshot", 15),
-        ("zai", 20),
+        ("zai", 21),
         ("anthropic", 1),
         ("qwen", 76),
     ] {

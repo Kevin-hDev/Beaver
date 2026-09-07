@@ -14,7 +14,9 @@ pub async fn resolve(
     provider_fallback: Option<u32>,
     estimated_input_tokens: usize,
 ) -> Result<Option<u32>, ResolveError> {
-    let local = provider_model_lookup::local_limits(provider_id, model_id);
+    let local = (!super::openrouter_model_metadata::owns_catalog_metadata(provider_id))
+        .then(|| provider_model_lookup::local_limits(provider_id, model_id))
+        .flatten();
     let runtime = super::runtime_models::lookup(provider_id, model_id);
     let registered = if local.is_none() {
         provider_model_lookup::limits(provider_id, model_id).await

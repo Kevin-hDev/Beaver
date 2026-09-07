@@ -14,7 +14,10 @@ fn computes_the_effective_context_from_openai_metadata() {
 
     assert_eq!(models[0].info.context_length, Some(258_400));
     assert_eq!(models[0].info.reasoning_modes, ["low", "max"]);
-    assert_eq!(models[0].info.default_reasoning_mode, None);
+    assert_eq!(
+        models[0].info.default_reasoning_mode.as_deref(),
+        Some("low")
+    );
     assert!(models[0].info.supports_vision);
     assert!(models[0].info.supports_fast_mode);
     assert!(models[0].visible);
@@ -121,4 +124,36 @@ fn fallback_matches_the_current_conservative_codex_limit() {
         ["low", "medium", "high", "xhigh", "max"]
     );
     assert!(!models.iter().any(|model| model.supports_fast_mode));
+}
+
+#[test]
+fn astra_is_visible_only_when_the_authenticated_catalog_returns_it() {
+    let astra = parse(
+        r#"{"models":[{"slug":"gpt-6-astra","display_name":"GPT-6 Astra","supported_reasoning_levels":[{"effort":"low"},{"effort":"medium"},{"effort":"high"},{"effort":"xhigh"},{"effort":"max"}],"default_reasoning_level":"medium","visibility":"list","context_window":1050000,"effective_context_window_percent":100,"input_modalities":["text","image"]}]}"#,
+    )
+    .unwrap();
+
+    assert_eq!(astra.len(), 1);
+    assert_eq!(astra[0].info.id, "gpt-6-astra");
+    assert_eq!(astra[0].info.context_length, Some(1_050_000));
+    assert!(astra[0].info.supports_vision);
+    assert_eq!(
+        astra[0].info.reasoning_modes,
+        ["low", "medium", "high", "xhigh", "max"]
+    );
+    assert_eq!(
+        astra[0].info.default_reasoning_mode.as_deref(),
+        Some("medium")
+    );
+    assert!(!fallback_models()
+        .iter()
+        .any(|model| model.id == "gpt-6-astra"));
+
+    let without_astra = parse(
+        r#"{"models":[{"slug":"gpt-5.6-sol","display_name":"GPT-5.6 Sol","supported_reasoning_levels":[{"effort":"low"}],"context_window":1050000}]}"#,
+    )
+    .unwrap();
+    assert!(!without_astra
+        .iter()
+        .any(|model| model.info.id == "gpt-6-astra"));
 }

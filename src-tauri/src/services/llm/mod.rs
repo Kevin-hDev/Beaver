@@ -41,6 +41,9 @@ mod openai_compat_parsing;
 mod openai_compat_parsing_tests;
 mod openai_responses;
 mod openai_responses_reasoning;
+mod openrouter_model_metadata;
+#[cfg(test)]
+mod openrouter_model_metadata_tests;
 pub(crate) mod prompt_cache_policy;
 #[cfg(test)]
 mod prompt_cache_policy_tests;
@@ -141,6 +144,13 @@ pub(crate) async fn model_context_length(provider_id: &str, model_id: &str) -> O
         return (context > 0).then_some(context);
     }
     let canonical = profile.canonical_provider.as_str();
+    if openrouter_model_metadata::owns_catalog_metadata(canonical) {
+        if let Some(context) =
+            runtime_models::lookup(canonical, model_id).and_then(|model| model.context_length)
+        {
+            return Some(u64::from(context));
+        }
+    }
     if let Some(context) = provider_model_lookup::local_limits(canonical, model_id)
         .and_then(|limits| limits.context_window)
     {
