@@ -1,0 +1,56 @@
+Google Chat token accounting — root cause and verification, 2026-09-08
+
+Reason: live Gemini 3.8 Flash medium usage exposes only prompt_tokens,
+completion_tokens and total_tokens. Before fix, the probe returned 134/3/217
+and Beaver persisted output=3. Google's total includes thoughts, while this
+compatibility completion count excludes them. No hidden reasoning field was
+being discarded by the parser (fixed numeric debug projection, 3 keys only).
+Official source: https://ai.google.dev/api/generate-content#UsageMetadata
+
+Decision: reconcile generated output as checked total-input at the existing
+RequestUsage parse authority, exclusively for Google Chat Completions and
+before generic normalize can synthesize a total. Both interactive/silent SSE
+readers, the journal, aggregate counters and estimated pricing reuse it.
+Explicit consistent reasoning remains a subset, not double-added. Unknown
+reasoning/cache details remain None. Missing/invalid/contradictory totals leave
+output unknown, avoiding false pricing. Other providers/formats unchanged.
+Historical stored observations are not rewritten; old estimates may undercount.
+
+Security: no raw HTTP body, keys, arbitrary field names or content logged.
+Numeric diagnostic has a fixed five-field bounded projection, only in debug
+with an active fixture. Release code has no diagnostic helper/call. No key
+extraction; live calls use Beaver's vault through the existing debug fixture IPC.
+One justified provider-boundary exception at its legitimate usage authority.
+
+Tests: actual red-green demonstrated (1 vs31,18 vs96) before implementing
+reconciliation; then cargo test --lib: 5215 passed,0 failed,19 ignored. Eight
+new tests cover exact real samples, explicit reasoning, absent/invalid totals,
+zero output, non-Google routes/other format, bounded evidence and both readers.
+Clippy --all-targets -D warnings, cargo fmt --check, git diff --check, boundary
+guard (61 files), cargo build all exit0. Existing ts-rs/linker warnings remain.
+Graphify AST update exit0; no LLM/API used. Full diff self-reviewed, no agents.
+
+Live corrected binary session: 1d5d5063-80a8-44a5-98a8-9ef8ab45012b (medium).
+Three completed user turns: arithmetic323; real write_note/read_note cedar;
+no-tool recall cedar. Five completed HTTP responses. Raw input/visible/total
+134/3/226,252/19/327,348/12/368,389/2/427,441/2/477 -> normalized output
+92,75,20,38,36. Raw projection and persisted journal compared by Node assertions.
+The last call increments aggregate input441/output36/total477 and estimated
+cost466 microdollars, proving the actual pricing path uses the corrected value.
+Five successful calls estimated $0.00215175 (1564 input,261 output), not invoice.
+Initial HTTP503 retained as failed with unknown usage; one successful retry.
+App left open on the validated conversation, answers seen on screen.
+Two app restarts only: numeric observation build and final corrected build.
+
+Private continuity report exported and read:
+google-api-gemini-3-8-flash-medium-france-2026-09-07.json under that session.
+Capture/persist and replay/continue passed. UTC filename date is intentional.
+No global continuity activation or claim that all Task6/cache-expiration work
+is done. No retest of already-proven Astra/ZAI here. No frontend change.
+
+Reviewer report (ignored local docs):
+docs/superpowers/plans/2026-09-07-validation-live-complementaire.md,
+new leading Google correction addendum. Logs: /tmp/beaver-google-final-rust-tests.log,
+/tmp/beaver-google-final-clippy.log,/tmp/beaver-google-final-build.log,
+/tmp/beaver-google-probe-app-live.log,/tmp/beaver-google-fixed-app.log.
+Unrelated website/mockup/assets/THIRD_PARTY_NOTICES changes left untouched.
