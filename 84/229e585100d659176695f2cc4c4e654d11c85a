@@ -1,0 +1,16 @@
+Review follow-up for 889273a3: closes the five minor findings in rapport-perimetre-A-rust.md and rapport-perimetre-B-typescript.md.
+
+Decisions and scope:
+- Remove NODE_DISABLE_COLORS through the existing shared shell environment authority; extend the independent regression expectation.
+- Make the real PTY test use an executable temporary POSIX shell relay. The relay ignores the login argument and clears ENV/BASH_ENV before executing /bin/sh, so personal shell syntax and startup profiles cannot alter the environment under test. Production shell startup is unchanged.
+- Clamp converted RGB channels to 0..255 and alpha to 0..1 because xterm encodes channels without clamping. Preserve unsupported or non-finite input unchanged. Tests cover extreme finite channels, negative opacity and fallback formats.
+- Add component behavior tests using the real font resolver: delayed font completion changes the terminal family and triggers fit; a zero-height panel is not measured; completion after unmount does not mutate disposed terminal options. Shell bridge startup is asserted before font completion.
+
+Executed before commit on macOS:
+- npx vitest run src/components/terminal: 14 files, 114 passed.
+- cargo test --lib services::terminal: 91 passed, 0 failed, 1 ignored subprocess entry point.
+- Re-ran the exact real-PTY color test with SHELL=/nonexistent/beaver-review-shell: 1 passed, confirming independence from the launcher shell.
+- npx tsc --noEmit, npm run lint, cargo fmt --check, explicit rustfmt --check --edition 2021 on all three changed Rust files, and git diff --check: exit 0.
+- graphify update .: exit 0; graph rebuilt. It reported automatic community label adjustments.
+
+Limitations: Windows and Linux were not executed. No new visual validation was performed for this follow-up. Compilation emitted ts-rs deny_unknown_fields and macOS linker unwind-size warnings; no test failure. Final diff reviewed; only the six intended files are included.
