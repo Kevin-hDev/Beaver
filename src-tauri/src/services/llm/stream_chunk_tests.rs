@@ -57,6 +57,31 @@ fn parses_mistral_content_chunks() {
 }
 
 #[test]
+fn openrouter_structured_display_takes_priority_over_duplicated_legacy_aliases() {
+    let chunks = parse(json!({"choices":[{"delta":{
+        "reasoning":"step", "reasoning_content":"step",
+        "reasoning_details":[{"type":"reasoning.text","text":"step"}],
+        "content":"answer"
+    }}]}));
+    assert_eq!(
+        chunks,
+        vec![
+            ParsedChunk::Thinking("step".into()),
+            ParsedChunk::Content("answer".into())
+        ]
+    );
+}
+
+#[test]
+fn opaque_openrouter_details_never_become_display_text_and_keep_legacy_fallback() {
+    let chunks = parse(json!({"choices":[{"delta":{
+        "reasoning":"visible",
+        "reasoning_details":[{"type":"reasoning.encrypted","data":"opaque","text":"not-display"}]
+    }}]}));
+    assert_eq!(chunks, vec![ParsedChunk::Thinking("visible".into())]);
+}
+
+#[test]
 fn parses_gemini_extra_content_thoughts_without_signature() {
     let chunks = parse(json!({
         "choices": [{

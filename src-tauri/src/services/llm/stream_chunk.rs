@@ -81,11 +81,16 @@ fn parse_usage(chunk: &Value, context: UsageContext<'_>) -> Option<RequestUsage>
 }
 
 fn parse_delta(delta: &Value, out: &mut Vec<ParsedChunk>) {
-    push_string(out, ParsedChunk::Thinking, &delta["reasoning_content"]);
-    push_string(out, ParsedChunk::Thinking, &delta["reasoning"]);
+    // OpenRouter can mirror the same delta in its structured and legacy fields.
+    // Prefer displayable native details; opaque-only details keep the fallback.
+    let before_details = out.len();
+    append_openrouter_display(&delta["reasoning_details"], out);
+    if out.len() == before_details {
+        push_string(out, ParsedChunk::Thinking, &delta["reasoning_content"]);
+        push_string(out, ParsedChunk::Thinking, &delta["reasoning"]);
+    }
     push_string(out, ParsedChunk::Thinking, &delta["thought"]);
     push_string(out, ParsedChunk::Thinking, &delta["thought_summary"]);
-    append_openrouter_display(&delta["reasoning_details"], out);
     append_google_display(&delta["extra_content"], out);
     parse_content(&delta["content"], out);
     if let Some(tcs) = delta["tool_calls"].as_array() {
@@ -98,9 +103,12 @@ fn append_openrouter_display(value: &Value, out: &mut Vec<ParsedChunk>) {
         return;
     };
     for item in items {
-        for key in ["text", "summary"] {
-            push_string(out, ParsedChunk::Thinking, &item[key]);
-        }
+        let key = match item["type"].as_str() {
+            Some("reasoning.text") => "text",
+            Some("reasoning.summary") => "summary",
+            _ => continue,
+        };
+        push_string(out, ParsedChunk::Thinking, &item[key]);
     }
 }
 
