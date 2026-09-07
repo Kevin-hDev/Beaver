@@ -1,0 +1,7 @@
+Review follow-up: strengthen inactive surface proofs
+
+Scope: corrected the empty overflow measurement test so it establishes a real 434px collapsed height, preserves it while inactive, and remasures an 800px full height on return. Expanded the portal contract to the terminal root and the global-listener contract to every matching registration within its owning effect. Added direct mounted-hidden Forecast filter coverage, positive-width preservation and zero-width rejection for the Forecast timeline, direct terminal-buffer proof after return, the default-active rationale, and the formatting correction.
+
+Controller adversarial proof: with both useUserMessageOverflow inactivity guards temporarily removed, the regression test failed with expected 434px and received none. With the Forecast surface guard temporarily removed, its test failed because the marker count changed from 6 to 2; with the positive-width guard temporarily removed, it failed because the marker count changed from 6 to 3. All production guards were restored before validation.
+
+Fresh validation: targeted modified suites 6 files / 15 tests passed; full npm test passed 594 Vitest files / 3207 tests plus all build, CI, CEF, E2E, extension-host, reasoning and contract suites; npx tsc --noEmit passed; npm run lint passed; git diff --check passed; graphify update . completed. No Rust/backend or production behavior changed.
