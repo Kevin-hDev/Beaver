@@ -54,3 +54,35 @@ new leading Google correction addendum. Logs: /tmp/beaver-google-final-rust-test
 /tmp/beaver-google-final-clippy.log,/tmp/beaver-google-final-build.log,
 /tmp/beaver-google-probe-app-live.log,/tmp/beaver-google-fixed-app.log.
 Unrelated website/mockup/assets/THIRD_PARTY_NOTICES changes left untouched.
+
+Additional missing-test pass, 2026-09-08, same 9d026847 binary/source.
+
+No code changes, no application restart, no agents, no key extraction.
+16 real synthetic fixture attempts:14 completed,Google429 once,one local
+OpenRouter Gemini provider_configuration_invalid with no HTTP/usage.
+The latter is suspected oversized opaque history, NOT a proven serialized
+length measurement. Fresh shorter Gemini session completed both turns.
+
+New positive evidence: ZAI GLM5.3Flash cache read4800/input4840. Astra direct
+after idle read0/write3832,then read3832/write20; OpenRouter Astra after idle
+read0/write3748,then read3748/write20. These prove refill/reuse,NOT exact TTL
+expiration (minimum lifetime and routing behavior cannot identify miss cause).
+Google cache absent; OR Gemini/GLM and Codex cache explicitly zero remain
+unproven hits. Existing stable session/cache keys checked; not missing.
+
+Authenticated Model Studio catalog Singapore lacks ZHIPU/GLM-5.3-Flash.
+Actual managed Ollama /api/show refuses cloud. Requested regional/cloud
+access decision from user; no region change, service activation or purchase.
+No candidate policy activated, no 100-percent completion claim.
+
+Commands completed exit0: npx tsc --noEmit, npm run lint, npm test,
+npm run test:provider-usage (88+6 tests), cargo test --test prelogger_diagnostics
+(1 passed,0 ignored). Prior same-source Rust lib5215passed/19ignored remains
+separate evidence; no claim Linux/Windows-only integration ran on macOS.
+
+This pass OR exact USD .064596; direct Astra estimate .052542; Google success
+estimate .00471525,429costunknown; ZAI uncached upper estimate .0014529.
+All calls ended. Budget remains cumulative EUR1/provider, no reset.
+Full session identifiers/results/sources in ignored local reviewer report:
+docs/superpowers/plans/2026-09-07-validation-live-complementaire.md
+No unrelated working tree changes staged or altered.
