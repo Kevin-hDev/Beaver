@@ -1,0 +1,7 @@
+Correction parent : affichage du reasoning OpenRouter dupliqué, observé pendant la validation des modèles du 7 septembre 2026.
+
+Cause : un même delta est fourni dans reasoning et reasoning_details ; Beaver concaténait les deux représentations. Le premier flux natif affichable prend maintenant priorité sur les alias historiques. Les détails opaques ne sont jamais affichés ; en leur absence de texte, le repli historique reste disponible. Capture native, signatures et rejeu inchangés. Aucune migration destructive des anciennes sessions.
+
+Preuves : deux tests réellement rouges avant correction (/tmp/beaver-reasoning-display-red.log), puis 17 tests stream_chunk verts et 467 tests LLM verts. Suite Rust du lot final : 5200 réussis, 19 ignorés, zéro échec (/tmp/beaver-ultra-full-rust.log). Clippy toutes cibles, fmt, garde provider à 60 et diff-check verts. Graphify AST actualisé, sans recalcul des labels sémantiques. Aucun nouveau test API spécifique à l'affichage depuis le correctif ; ne pas présenter les anciennes sessions comme corrigées rétroactivement.
+
+Seuls les deux fichiers stream_chunk sont inclus. Les changements site, notices et assets préexistants sont laissés intacts. Aucun push/PR/fusion/release.
