@@ -1,0 +1,7 @@
+Task 3 / OpenRouter — exact gateway payload regression tests
+
+Tests load a runtime catalog for google/gemini-3.8-flash, z-ai/glm-5.3-flash and openai/gpt-6-astra. They cover each published effort, the real Chat Completions payload, gateway max_tokens, images and tools, and absence of incompatible native-provider fields. Existing structured reasoning_details tests remain in the reasoning/LLM suite. No extra transport or catalog allowlist introduced.
+
+Parent verification for task 3 is recorded in the local journal; this is offline payload proof, not live activation. Alibaba ZHIPU/GLM-5.3-Flash remains blocked: its exact output-limit contract is unconfirmed, and Alibaba's max_completion_tokens reference explicitly excludes third-party-direct models from the compatibility list. No region/account configuration was changed and no Alibaba model profile was fabricated.
+
+Parent task-3 verification: cargo test --lib reasoning (199 passed), cargo test --lib codex_client (exit 0), cargo test --lib services::llm:: (442 passed), cargo test --lib ollama_wire (5 passed). Format and diff checks green; routing guard green with 57 files. No paid calls, credentials, app restarts or continuity activation. Unrelated site/mockup changes excluded. AST graph maintenance performed.
