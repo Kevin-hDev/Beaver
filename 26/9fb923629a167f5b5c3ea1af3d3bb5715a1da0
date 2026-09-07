@@ -1,0 +1,50 @@
+Task 6 — offline error-path verification; live validation NOT complete
+
+Base for this commit: 63e20cb6. Overall implementation base:
+d4ec159d983dadc7b96665b697e45036310c7e34. Review range is that base..this commit.
+Branch codex/ajout-gemini-glm-astra; no push, PR, merge or release.
+
+Parent-owned P06 characterization tests execute the actual isolated fixture
+read failure, inspect generic errors and internal-path exclusion, then exercise
+the real Chat, direct Responses, Codex converter and native Ollama wire paths.
+Call IDs correlate in Chat/Responses; native wrapping preserves name/order.
+Fixture directory cleanup is checked. Three tests passed; no production fix
+required and no red/green claim for this characterization coverage.
+Alibaba generic error placement does not prove its unresolved thinking contract.
+These tests are debug-test-only, like the fixture machinery they call.
+
+Clippy all-targets exposed a task 4b1 function below the test module. Moved the
+unchanged prepare_ollama function before that module; no behavior/lint waiver.
+
+Final complete tested code tree is this commit (plus unrelated uncommitted user
+files, excluded from both commits). No code changes since final validations:
+- cargo test exit 0: 5184 unit passed, 19 ignored; 1 integration passed.
+- cargo clippy --all-targets -- -D warnings and fmt check: exit 0.
+- npx tsc --noEmit and npm run lint: exit 0.
+- npm test full exit 0: 3211 Vitest tests / 594 files, then all chained suites.
+- Provider boundary guard: 60 assigned files; 11 guard tests pass.
+- git diff --check: exit 0. Graphify AST exit 0 (41490 nodes, 92352 edges).
+ts-rs/linker/jsdom warnings remain visible; ignored tests are not passed tests.
+
+One required command is NOT green: npm run test:provider-usage exit 2,
+Set PROVIDER_API_KEY or OPENAI_API_KEY before running this check.
+No request sent. That legacy Node script lacks output/deadline budgets and needs
+an env key; no vault secret was exported to JS. Its safe replacement by actual
+bounded Rust fixture usage evidence requires an explicit plan decision.
+
+Nine-route status before live tests:
+- Google gemini-3.8-flash; Z.AI glm-5.3-flash; OpenAI gpt-6-astra;
+  OpenRouter google/gemini-3.8-flash, z-ai/glm-5.3-flash, openai/gpt-6-astra;
+  Codex gpt-6-astra; Ollama glm-5.3-flash:cloud: offline contracts covered,
+  account access and live reasoning/tools/vision/counters/cold replay pending.
+- Alibaba ZHIPU/GLM-5.3-Flash: exact thinking/output-cap contract and Beijing
+  account access unresolved; remains Forbidden, not enabled as Qwen auto.
+All new continuity policies remain Disabled; no LiveValidated report fabricated.
+P08 expiry remains blocked until observed, not inferred from an implicit TTL.
+Spend: zero across every provider. No keychain/app restart or live generation.
+
+Local ignored docs updated: validation-modeles-2026-09-07.md sections 14-16 and
+plan-de-tests.md nine-route table/P08/P14 Ollama. Neither document is indexed in
+the current graph; no semantic extraction or API spend performed.
+Await coordinated switch from installed Beaver to this branch and exact
+Alibaba access/contract resolution. Whole plan is NOT complete or merge-ready.
