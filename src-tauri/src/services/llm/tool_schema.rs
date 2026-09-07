@@ -48,7 +48,7 @@ fn normalize_schema(value: &mut Value, profile: SchemaPolicy) {
                     normalize_schema(child, profile);
                 }
             }
-            repair_structural_schema(map);
+            repair_structural_schema(map, profile);
         }
         Value::Array(items) => {
             for item in items {
@@ -80,7 +80,7 @@ fn is_generic_schema(profile: SchemaPolicy) -> bool {
     matches!(profile, SchemaPolicy::Generic | SchemaPolicy::Qwen)
 }
 
-fn repair_structural_schema(map: &mut serde_json::Map<String, Value>) {
+fn repair_structural_schema(map: &mut serde_json::Map<String, Value>, profile: SchemaPolicy) {
     if map.is_empty() {
         map.insert("type".to_string(), Value::String("string".to_string()));
         return;
@@ -89,7 +89,10 @@ fn repair_structural_schema(map: &mut serde_json::Map<String, Value>) {
         Some("array") if !map.contains_key("items") => {
             map.insert("items".to_string(), json!({"type": "string"}));
         }
-        Some("object") => {
+        // Generic JSON Schema permits empty/free-form objects. Inventing an
+        // argument makes the wire contract disagree with local validation
+        // (observed with Astra on OpenRouter, 2026-09-07).
+        Some("object") if !is_generic_schema(profile) => {
             let missing = map
                 .get("properties")
                 .and_then(Value::as_object)

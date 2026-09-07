@@ -176,10 +176,14 @@ pub(super) async fn resolve_fixture_transport(
     }
     let replay = target.replay().ok_or(RouteSelectionError::Unavailable)?;
     let profile = route_profile::find(route_id).ok_or(RouteSelectionError::UnknownRoute)?;
-    if !matches!(
+    let fixture_catalog = matches!(
         profile.catalog,
         CatalogPolicy::PublicApi { .. } | CatalogPolicy::ConfigurableApi { .. }
-    ) || replay.route_id != profile.id
+    ) || profile.client == ClientSelector::Codex;
+    // Codex fixtures already use the bounded HTTP sender. Its OAuth catalogue
+    // must not reject a registered candidate before reaching that sender.
+    if !fixture_catalog
+        || replay.route_id != profile.id
         || replay.model_id != model
         || replay.validate().is_err()
         || crate::services::reasoning_continuity::registry::replay_policy(replay).is_none()

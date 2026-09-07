@@ -84,6 +84,23 @@ fn config<'a>(
 }
 
 #[tokio::test]
+async fn fixture_empty_tool_schema_survives_the_openrouter_payload_builder() {
+    let run = FixtureRunContext::start().await.unwrap();
+    let tools = run.definitions();
+    let payload = super::stream_http_payload::build_chat_payload(
+        &config("openrouter", "openai/gpt-6-astra", &[], &tools),
+        &super::route::test_route("openrouter"),
+        Some(64),
+    )
+    .unwrap();
+    assert_eq!(
+        payload["tools"][1]["function"]["parameters"],
+        tools[1]["function"]["parameters"]
+    );
+    assert!(!payload.to_string().contains("_unused"));
+}
+
+#[tokio::test]
 async fn fixture_error_keeps_call_id_in_chat_compatible_payloads() {
     let (messages, tools) = failed_tool_history().await;
     for (provider, model) in [
