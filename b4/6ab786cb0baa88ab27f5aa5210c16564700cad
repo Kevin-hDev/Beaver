@@ -1,0 +1,11 @@
+Task 2 — direct-provider reasoning payloads and independent internal summaries
+
+Scope: Gemini 3.8 Flash (Google), GLM 5.3 Flash (Z.AI), GPT 6 Astra (OpenAI Responses). No Alibaba contract guessed and no continuity activation.
+
+Decisions: Flash explicitly sends clear_thinking:false from its first Z.AI request; existing GLM 5.3 behavior is unchanged. Z.AI implementation extracted without changing other provider policies. Internal summaries select the documented minimum low only for these three exact direct models, retain the caller's output cap, and do not inherit Fast or conversation continuity. Existing models retain their prior selection. This decision has one bounded routing-guard owner.
+
+Review: parent inspected payload and normalization paths and added actual-constructor tests for internal Astra and mandatory Google/Z.AI legacy selections. A compile failure caused by test-helper visibility was corrected using test-only scoped visibility, without exposing a new production API. Astra's five efforts, summary:auto, store:false, standard tier and absence of sampling/context are covered offline. Z.AI replay and tool_stream covered. Worker obtained a behavioral failing test before implementation.
+
+Parent verification on this tree: cargo test --lib services::llm:: (440 passed); cargo test --lib reasoning_tests (42 passed); cargo fmt --all -- --check; npm run lint:provider-boundaries (57 allowed files); git diff --check. All exit 0. Existing ts-rs and macOS linker warnings remain, not hidden. AST graph maintenance run separately.
+
+No paid calls, app restarts, secret access, complete final suite, or live validation claimed. Unrelated site/mockup/image changes excluded. Remaining tasks and the Alibaba documentary blocker are recorded in the local validation journal and implementation plan.
