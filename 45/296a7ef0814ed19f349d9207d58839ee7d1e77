@@ -1,0 +1,27 @@
+Task 2 — Suspend inactive Agent Local surface effects
+
+Scope:
+- Added one inactive-surface guard path for Agent Local listeners, shortcuts, focus owners, floating menus, dialogs, portals, drag/drop and layout effects.
+- Kept data, streaming and PTY lifetimes active; this task changes only UI effects.
+- Added structural contracts covering the audited roots and direct global listener owners.
+
+Controller review and corrections:
+- Removed ten accidental comma text nodes introduced during portal conversion.
+- Made panel focus search all matching zones and reject both inactive roots and inactive descendants.
+- Added exact coverage for chat-plus/context/clone/worktree/terminal/browser paths.
+- Prevented permission and Forecast controls from refocusing on surface reactivation.
+- Suspended and cancelled ContextProgress close/focus scheduling while inactive.
+- Strengthened FileDropZone teardown proof and cleaned new act/timer warnings.
+- Updated three historical portal tests to assert the new body-level surface boundary instead of direct body parenting.
+
+Independent validation:
+- 24 targeted Vitest files: 105 tests passed.
+- Full npm test: 592 Vitest files / 3196 tests passed; build scripts 57/57; CI scripts 21/21; CEF 45 passed with the expected Windows-only test skipped on macOS; E2E 100/100; extension host 120/120; reasoning validation 12/12.
+- npx tsc --noEmit: passed.
+- npm run lint: passed.
+- git diff --check a106bac9..45296a7e: passed.
+- graphify update .: completed.
+- All modified production TypeScript/TSX files remain at or below 230 lines.
+
+Known baseline diagnostics:
+- Existing jsdom canvas warnings and historical keyboard-navigation act warnings remain unchanged; no new warning was accepted.
