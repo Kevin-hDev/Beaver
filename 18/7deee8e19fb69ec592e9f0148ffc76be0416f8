@@ -49,3 +49,46 @@ Journaux locaux : `/tmp/beaver-review-minors-rust.log`, `/tmp/beaver-review-mino
 L'ancien script demandant une clé en clair a déjà été remplacé dans `656d5bd3`. Ollama Cloud direct n'est pas intégré : son ajout reste un chantier prévu, et Kevin n'a pas de crédits actuellement. Le blocage historique du relais local n'est pas une décision de confidentialité de Kevin.
 
 Finaliser les preuves live manquantes dans les budgets restants, vérifier les rapports exacts et n'activer que les politiques prouvées avec leurs rapports dans le même commit. Ne pas confondre les 5 207 tests hors ligne avec cette validation réelle. B2 reste une décision produit ; D1 et D3 sont de la dette explicitement conservée, pas des constats de code éteints.
+
+Validation live complémentaire du 8 septembre 2026 (heure de Paris), sur 187deee8.
+
+Aucun changement source, aucune reconstruction ni relance de l'application.
+Rapport détaillé local : docs/superpowers/plans/2026-09-07-validation-live-complementaire.md,
+addendum du 8 septembre. Docs ignoré par Git, à lire dans le dépôt principal.
+
+Preuves nouvelles relues et assertées :
+- Z.AI GLM 5.3 Flash low : rappel de l'image réussi, réponse Red, session
+  1f342f2a-2fc0-42de-85da-97b05336937b ; ancien timeout conservé.
+- Astra OpenAI low : cache écrit 3789 puis lu 3789, session
+  ddaff719-01dd-423c-8493-d2a25c95422a.
+- Astra OpenAI low : image 256x256, write_note/read_note, nouveau tour sans
+  image -> green ; session cc1200e7-a0fd-4fd2-bdd9-d14975681648. Deux tours
+  completed, quatre requêtes, rapport de continuité exporté et contrôlé.
+- Astra OpenRouter low : image 256x256, outils puis rappel green, session
+  8eda364f-6186-4c87-90f1-8e887b399698 ; preuve exportée et contrôlée.
+  Attention : son premier essai 64x64 inversait deux couleurs. L'export de
+  continuité ne prouve pas à lui seul la justesse des réponses visuelles.
+- Session finale directe ouverte et vue à l'écran avec image et réponses.
+
+Échecs non masqués : image 64x64 non reconnue en direct ; un rappel refusé
+dans la session préliminaire 9f308c7c-ac50-4e96-ba8a-046f4935ceb5. Sa requête
+reconstituée mesure environ 8254 octets contre 8192 dans le banc ; pas de
+réponse HTTP commencée. Le scénario court passe sans relever la borne.
+La cause exacte des erreurs de perception du 64x64 n'est pas prouvée.
+
+Budget : chiffres dashboard Kevin (.06 USD OpenAI, .08 USD ZAI) remplacent
+les provisions historiques excessives. Nouvelle passe OpenAI .099919 USD
+estimés selon usages, ZAI .00005355 USD estimés ; OR .031940 USD exacts.
+Pas de secret extrait, aucun budget d'API attribué à OAuth.
+
+Google : écart persisté de 30 puis 25 tokens entre total et entrée+sortie.
+Chemin identifié : request_usage -> stream_consume/stream_silent_consume ->
+eval_count/pricing/ledger. Omission amont probable, signalée historiquement
+sur l'API compatible OpenAI ; aucune capture brute actuelle ne permet encore
+d'exclure un champ inconnu perdu. Aucun correctif Google appliqué : prochain
+contrôle = compteurs numériques seuls à réception, puis normalisation propre
+à Google ou estimation marquée incomplète, sans modifier les autres routes.
+
+Pas de re-exécution des suites hors ligne inchangées, pas de nouvelles
+politiques activées. Tâche 6 entière non déclarée close : Google et les limites
+de preuve cache/expiration restent explicitement documentés. Aucun push.
