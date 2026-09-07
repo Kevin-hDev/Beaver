@@ -9,16 +9,10 @@ mod vision;
 
 use support::LiveSpec;
 
-// 4b2 must add transport-level request/output caps and synthetic-context isolation first.
-const LIVE_RUNNER_BLOCKED_UNTIL_4B2: bool = true;
-
 pub(crate) async fn refresh_live_reasoning_fixture_matrix_once(
     app: &tauri::App,
 ) -> Result<(), String> {
     let selected = support::select_specs_from_environment()?;
-    if LIVE_RUNNER_BLOCKED_UNTIL_4B2 {
-        return Err("fixture runner unavailable".to_string());
-    }
     crate::services::api_keys::init_for_runtime()
         .map_err(|_| "fixture credentials unavailable".to_string())?;
     if selected.iter().any(|spec| spec.provider == "ollama") {

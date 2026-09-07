@@ -35,6 +35,21 @@ pub fn build_request(
         keep_alive
     };
 
+    let options = {
+        #[cfg(debug_assertions)]
+        {
+            crate::services::reasoning_fixture_budget::output_limit(None).map(|num_predict| {
+                crate::services::agent_local::types_ollama::ChatOptions {
+                    num_ctx: None,
+                    num_predict: Some(num_predict),
+                }
+            })
+        }
+        #[cfg(not(debug_assertions))]
+        {
+            None
+        }
+    };
     ChatRequest {
         model: model.to_string(),
         messages: messages.to_vec(),
@@ -44,7 +59,7 @@ pub fn build_request(
         } else {
             Some(tools.to_vec())
         },
-        options: None,
+        options,
         keep_alive: Some(keep_alive),
         think: Some(think),
         capture_reasoning: false,
@@ -129,3 +144,7 @@ pub async fn ensure_more_turns(turn: usize, model: &str) -> Result<(), String> {
         Ok(())
     }
 }
+
+#[cfg(test)]
+#[path = "agent_loop_support_tests.rs"]
+mod tests;

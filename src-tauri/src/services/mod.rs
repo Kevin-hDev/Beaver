@@ -67,6 +67,8 @@ pub mod reasoning;
 pub mod reasoning_continuity;
 mod reasoning_effort;
 #[cfg(debug_assertions)]
+pub(crate) mod reasoning_fixture_budget;
+#[cfg(debug_assertions)]
 pub mod reasoning_fixture_run;
 #[cfg(debug_assertions)]
 pub mod reasoning_fixture_run_dedup;

@@ -9,13 +9,20 @@ const READ_NOTE: &str = "fixture.read_note";
 
 pub struct FixtureRunContext {
     tools: FixtureToolset,
+    limits: super::reasoning_fixture_budget::FixtureLimits,
 }
 
 impl FixtureRunContext {
     pub async fn start() -> Result<Self, String> {
+        let limits = super::reasoning_fixture_budget::FixtureLimits::from_env()?;
         Ok(Self {
             tools: super::reasoning_fixture_tools::isolated_toolset().await?,
+            limits,
         })
+    }
+
+    pub(crate) fn limits(&self) -> super::reasoning_fixture_budget::FixtureLimits {
+        self.limits
     }
 
     /// Ces définitions ne sont jamais ajoutées au catalogue Agent Local normal.
@@ -90,5 +97,13 @@ mod tests {
             run.root_for_test()
         };
         assert!(!root.exists());
+    }
+
+    #[tokio::test]
+    async fn run_carries_limits_before_allocating_fixture_tools() {
+        let run = FixtureRunContext::start().await.expect("run");
+        assert_eq!(run.limits().output_tokens, 512);
+        assert_eq!(run.limits().attempts, 4);
+        assert_eq!(run.limits().input_bytes, 8_192);
     }
 }

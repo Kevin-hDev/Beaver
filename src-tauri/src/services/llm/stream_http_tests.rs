@@ -7,6 +7,58 @@ use super::*;
 use crate::services::llm::fast_mode::FastModeRequest;
 
 #[tokio::test]
+async fn fixture_scope_caps_chat_wire_output_and_preserves_smaller_caps() {
+    let mut cfg = RequestConfig {
+        provider_id: "openai",
+        model: "gpt-5.6-luna",
+        messages: &[],
+        tools: &[],
+        think: false,
+        reasoning_mode: None,
+        max_tokens: Some(127),
+        purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
+        session_id: Some("bounded-chat-wire"),
+        fast_mode: FastModeRequest::Standard,
+        tool_result_previews: None,
+        continuation_target: None,
+    };
+    use super::super::stream_test_transport::{ScriptedResponse, StreamScenario};
+    let scenario = StreamScenario::start("bounded-chat-wire", [ScriptedResponse::Success; 4]).await;
+    post_chat_request_with_timeout(&cfg, Duration::from_secs(2))
+        .await
+        .unwrap();
+    assert_eq!(scenario.payloads()[0]["max_output_tokens"], 127);
+    let limits = crate::services::reasoning_fixture_budget::FixtureLimits::from_values(
+        Some("17"),
+        Some("2"),
+        None,
+    )
+    .unwrap();
+    crate::services::reasoning_fixture_budget::run_scoped(
+        limits,
+        tokio_util::sync::CancellationToken::new(),
+        async {
+            post_chat_request_with_timeout(&cfg, Duration::from_secs(2))
+                .await
+                .unwrap();
+            assert_eq!(scenario.payloads()[1]["max_output_tokens"], 17);
+            cfg.max_tokens = Some(3);
+            post_chat_request_with_timeout(&cfg, Duration::from_secs(2))
+                .await
+                .unwrap();
+            assert_eq!(scenario.payloads()[2]["max_output_tokens"], 3);
+            assert!(post_chat_request_with_timeout(&cfg, Duration::from_secs(2))
+                .await
+                .is_err());
+            assert_eq!(scenario.payloads().len(), 3);
+            Ok::<(), String>(())
+        },
+    )
+    .await
+    .unwrap();
+}
+
+#[tokio::test]
 async fn chat_request_refuses_redirects_before_forwarding_the_body() {
     let destination = MockServer::start().await;
     let origin = MockServer::start().await;

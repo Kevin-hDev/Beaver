@@ -154,6 +154,8 @@ async fn send_once(
     body: &str,
     routing_hint: &str,
 ) -> Result<Response, String> {
+    #[cfg(debug_assertions)]
+    crate::services::reasoning_fixture_budget::authorize_serialized_len(body.len())?;
     let request = client
         .post(endpoint)
         .bearer_auth(credentials.access.as_str())

@@ -57,7 +57,17 @@ pub(super) fn try_build_request_with_evidence(
     if let Some(tier) = config.fast_mode.api_value() {
         body["service_tier"] = tier.into();
     }
-    if let Some(limit) = config.max_tokens {
+    let max_tokens = {
+        #[cfg(debug_assertions)]
+        {
+            crate::services::reasoning_fixture_budget::output_limit(config.max_tokens)
+        }
+        #[cfg(not(debug_assertions))]
+        {
+            config.max_tokens
+        }
+    };
+    if let Some(limit) = max_tokens {
         body[payload_policy.output_limit_field] = limit.into();
     }
     if let Some(effort) = super::super::openai_responses_reasoning::requested_effort(config) {

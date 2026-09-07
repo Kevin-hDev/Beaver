@@ -8,6 +8,43 @@ use super::request_purpose::RequestPurpose;
 use super::{route, stream_http_send};
 
 #[tokio::test]
+async fn fixture_scope_stops_real_http_after_the_last_allowed_attempt() {
+    use crate::services::reasoning_fixture_budget::{run_scoped, FixtureLimits};
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&server)
+        .await;
+    let client =
+        crate::services::secure_http::AuthenticatedClient::new_loopback(Duration::from_secs(2))
+            .unwrap();
+    let route = route::test_route("google");
+    run_scoped(
+        FixtureLimits::from_values(None, Some("2"), None).unwrap(),
+        tokio_util::sync::CancellationToken::new(),
+        async {
+            for permitted in [true, true, false] {
+                let response = stream_http_send::send_json_request(
+                    &client,
+                    &route,
+                    &server.uri(),
+                    &serde_json::json!({"model":"gemini-3.8-flash", "max_tokens":17}),
+                    RequestPurpose::ManualChat,
+                    "gemini-3.8-flash",
+                    None,
+                )
+                .await;
+                assert_eq!(response.is_ok(), permitted);
+            }
+            Ok(())
+        },
+    )
+    .await
+    .unwrap();
+    assert_eq!(server.received_requests().await.unwrap().len(), 2);
+}
+
+#[tokio::test]
 async fn emitted_request_merges_auth_and_outbound_headers() {
     let server = MockServer::start().await;
     Mock::given(method("POST"))

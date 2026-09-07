@@ -69,6 +69,21 @@ pub(crate) fn is_local(provider_id: &str) -> bool {
     find(provider_id).is_some_and(|profile| profile.client == ClientSelector::OllamaLocal)
 }
 
+#[cfg(debug_assertions)]
+pub(crate) fn supports_bounded_fixture(provider_id: &str) -> bool {
+    // Only transports with wired request/output budgets may run paid fixtures.
+    // Codex is subscription-only and uses the separately bounded HTTP sender.
+    find(provider_id).is_some_and(|profile| {
+        matches!(
+            profile.client,
+            ClientSelector::Codex | ClientSelector::OllamaLocal
+        ) || (matches!(
+            profile.client,
+            ClientSelector::OpenAiCompat | ClientSelector::OpenAiResponses
+        ) && matches!(profile.auth, AuthKind::ApiKey { .. }))
+    })
+}
+
 pub(crate) fn diagnostic_payload_kind(provider_id: &str) -> Option<&'static str> {
     let family = find(provider_id)?.wire.family;
     Some(match family {

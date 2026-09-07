@@ -4,7 +4,6 @@ use crate::ActiveStreams;
 use std::time::{Duration, Instant};
 use tauri::Manager;
 
-const TURN_TIMEOUT: Duration = Duration::from_secs(240);
 const CLEANUP_TIMEOUT: Duration = Duration::from_secs(5);
 
 pub(super) struct TurnEvidence {
@@ -50,7 +49,7 @@ async fn wait_for_turn(
     generation: u64,
     turn_id: String,
 ) -> Result<TurnEvidence, String> {
-    let deadline = Instant::now() + TURN_TIMEOUT;
+    let deadline = Instant::now() + crate::services::reasoning_fixture_budget::TURN_TIMEOUT;
     loop {
         let active_generation = app
             .state::<ActiveStreams>()

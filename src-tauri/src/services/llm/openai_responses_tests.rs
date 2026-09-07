@@ -4,6 +4,32 @@ use crate::services::llm::fast_mode::FastModeRequest;
 use crate::services::llm::request_purpose::RequestPurpose;
 use crate::services::llm::stream_http::RequestConfig;
 
+#[tokio::test]
+async fn fixture_scope_caps_responses_wire_output() {
+    let mut config = request(&[], &[], Some("medium"), FastModeRequest::Standard);
+    config.max_tokens = Some(127);
+    assert_eq!(build_request(&config)["max_output_tokens"], 127);
+    let limits = crate::services::reasoning_fixture_budget::FixtureLimits::from_values(
+        Some("19"),
+        None,
+        None,
+    )
+    .unwrap();
+    crate::services::reasoning_fixture_budget::run_scoped(
+        limits,
+        tokio_util::sync::CancellationToken::new(),
+        async {
+            let body = build_request(&config);
+            assert_eq!(body["max_output_tokens"], 19);
+            config.max_tokens = Some(7);
+            assert_eq!(build_request(&config)["max_output_tokens"], 7);
+            Ok::<(), String>(())
+        },
+    )
+    .await
+    .unwrap();
+}
+
 fn request<'a>(
     messages: &'a [ChatMessage],
     tools: &'a [serde_json::Value],
