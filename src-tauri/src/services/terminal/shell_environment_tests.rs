@@ -2,8 +2,9 @@ use super::shell_environment::{apply, ShellEnvironment};
 use portable_pty::CommandBuilder;
 use std::ffi::OsStr;
 
-const REFUSED: [&str; 5] = [
+const REFUSED: [&str; 6] = [
     "NO_COLOR",
+    "NODE_DISABLE_COLORS",
     "FORCE_COLOR",
     "COLOR",
     "CLICOLOR",

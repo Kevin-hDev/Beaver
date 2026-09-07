@@ -22,10 +22,11 @@ const DECLARED: [(&str, &str); 2] = [("TERM", "xterm-256color"), ("COLORTERM", "
 
 /// Les directives de couleur du lanceur, qui ne concernent pas ce terminal.
 /// `NO_COLOR` vient de la convention no-color.org, `FORCE_COLOR` de l'écosystème
-/// Node, `COLOR` est posée par npm, `CLICOLOR` et `CLICOLOR_FORCE` viennent des
+/// Node (avec `NODE_DISABLE_COLORS`), `COLOR` est posée par npm, `CLICOLOR` et `CLICOLOR_FORCE` viennent des
 /// outils BSD — dont le `ls` de macOS.
-const DROPPED: [&str; 5] = [
+const DROPPED: [&str; 6] = [
     "NO_COLOR",
+    "NODE_DISABLE_COLORS",
     "FORCE_COLOR",
     "COLOR",
     "CLICOLOR",

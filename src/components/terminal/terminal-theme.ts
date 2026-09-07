@@ -67,9 +67,11 @@ export function toXtermColor(css: string): string {
   const scale = written[1].startsWith("color") ? 255 : 1;
   if (channels.length !== 3 || !channels.every(Number.isFinite)) return css;
 
-  const [red, green, blue] = channels.map((value) => Math.round(value * scale));
-  const opacity = readAlpha(alpha);
-  if (!Number.isFinite(opacity)) return css;
+  /* CSS accepte les canaux hors gamut ; xterm les encode sans les borner. */
+  const [red, green, blue] = channels.map((value) => Math.round(Math.min(255, Math.max(0, value * scale))));
+  const parsedAlpha = readAlpha(alpha);
+  if (!Number.isFinite(parsedAlpha)) return css;
+  const opacity = Math.min(1, Math.max(0, parsedAlpha));
 
   return opacity >= 1
     ? `rgb(${red}, ${green}, ${blue})`

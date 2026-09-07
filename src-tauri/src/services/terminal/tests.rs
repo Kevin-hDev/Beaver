@@ -247,8 +247,19 @@ mod tests {
     #[cfg(unix)]
     #[test]
     fn the_launched_shell_never_receives_the_launcher_refusal_of_color() {
+        use std::os::unix::fs::PermissionsExt;
+
         let _lock = ENV_LOCK.lock().unwrap_or_else(|error| error.into_inner());
         let _refusal = EnvironmentGuard::set("NO_COLOR", "1");
+        // Le relais ignore -l : aucun profil personnel ou système ne doit
+        // changer l'environnement dont ce test vérifie la transmission.
+        let fixture = tempfile::tempdir().expect("shell fixture");
+        let shell = fixture.path().join("shell");
+        std::fs::write(&shell, "#!/bin/sh\nunset ENV BASH_ENV\nexec /bin/sh\n")
+            .expect("write shell fixture");
+        std::fs::set_permissions(&shell, std::fs::Permissions::from_mode(0o700))
+            .expect("executable shell fixture");
+        let _shell = EnvironmentGuard::set("SHELL", shell.to_str().expect("shell path"));
 
         let (session, mut reader) = PtySession::spawn(None, 80, 24).expect("spawn");
         session

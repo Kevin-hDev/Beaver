@@ -8,6 +8,23 @@ import { toXtermColor } from "../terminal-theme";
    terminal était donc refusée en silence et remplacée par le blanc d'usine. */
 
 describe("couleurs données à xterm", () => {
+  it.each([
+    ["color(srgb 1.2 -0.1 0.5 / 0.5)", "rgba(255, 0, 128, 0.5)"],
+    ["rgb(306 -25 128 / -0.5)", "rgba(255, 0, 128, 0)"],
+    ["color(srgb 1e308 0 0 / 150%)", "rgb(255, 0, 0)"],
+  ])("borne les composantes de %s", (input, expected) => {
+    expect(toXtermColor(input)).toBe(expected);
+  });
+
+  it.each([
+    "", "rgb()", "color(display-p3 1 0 0)", "oklch(0.5 0.1 20)",
+    "color(srgb-linear 1 0 0)", "color(srgb none 0 0)",
+    "color(srgb 0 0)", "color(srgb 1e309 0 0)",
+    "color(srgb 0 0 0 / nope)", "color(srgb 0 0 0 / 1e309)",
+  ])("conserve intacte une écriture non prise en charge : %s", (input) => {
+    expect(toXtermColor(input)).toBe(input);
+  });
+
   it("traduit une couleur translucide, celle de la sélection", () => {
     expect(toXtermColor("color(srgb 1 0.541176 0.298039 / 0.32)")).toBe(
       "rgba(255, 138, 76, 0.32)",
