@@ -39,6 +39,7 @@
   { "path": "src-tauri/src/services/provider_usage/request_journal_validation.rs", "owner": "provider_usage", "reason": "Validation du journal de métriques.", "max_decisions": 1 },
   { "path": "src-tauri/src/services/provider_usage/request_measurement.rs", "owner": "provider_usage", "reason": "Mesure des requêtes selon leur source.", "max_decisions": 2 },
   { "path": "src-tauri/src/services/provider_usage/request_usage.rs", "owner": "provider_usage", "reason": "Normalisation des compteurs propres aux réponses Moonshot.", "max_decisions": 2 },
+  { "path": "src-tauri/src/services/provider_usage/request_usage_google.rs", "owner": "provider_usage", "reason": "Google Chat : sortie totale réconciliée depuis total moins entrée, détails non publiés conservés inconnus ; preuve live du 8 septembre 2026.", "max_decisions": 1 },
   { "path": "src-tauri/src/services/provider_usage/request_usage_cache.rs", "owner": "provider_usage", "reason": "Normalisation bornée des compteurs de cache publiés par chaque source, dont total_cached_tokens du contrat Google Chat.", "max_decisions": 11 },
   { "path": "src-tauri/src/services/provider_usage/snapshot.rs", "owner": "provider_usage", "reason": "Instantané de métriques par source.", "max_decisions": 1 },
   { "path": "src-tauri/src/services/reasoning_fixture_store_id.rs", "owner": "reasoning_contract", "reason": "Identifiant stable des fixtures de rejeu.", "max_decisions": 1 },

@@ -94,6 +94,7 @@ impl RequestUsage {
             total_tokens: count(value, &["total_tokens", "totalTokenCount"]),
             exact_cost_usd_micros: parse_cost(value, context),
         };
+        super::request_usage_google::reconcile(value, context, &mut usage);
         usage.normalize();
         (!usage.is_empty()).then_some(usage)
     }

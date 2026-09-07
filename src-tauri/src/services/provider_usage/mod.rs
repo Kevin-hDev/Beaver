@@ -18,6 +18,7 @@ mod request_measurement;
 mod request_usage;
 mod request_usage_cache;
 mod request_usage_cache_anthropic;
+mod request_usage_google;
 mod request_usage_validation;
 mod snapshot;
 mod types;
