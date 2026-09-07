@@ -371,6 +371,93 @@ fn responses_continuity_replays_native_items_at_the_assistant_position_without_t
 }
 
 #[test]
+fn astra_fixture_candidate_replays_persisted_response_items_after_a_tool_turn() {
+    use crate::services::reasoning_continuity::contract::{
+        ContinuationTarget, ContinuationUse, CredentialScope, ReasoningModeId, ReplayTarget,
+        RouteId,
+    };
+    use crate::services::reasoning_continuity::envelope::{
+        CompletionState, ContinuationState, ReasoningEnvelope, ReasoningSource,
+    };
+
+    let target = ContinuationTarget::FixtureCandidate(ReplayTarget {
+        route_id: RouteId::OpenAi,
+        model_id: "gpt-6-astra".into(),
+        credential_scope: CredentialScope::authenticated("astra-scope").unwrap(),
+        reasoning_mode: ReasoningModeId::Medium,
+        continuation_use: ContinuationUse::UserContinuation,
+    });
+    let replay = target.replay().unwrap();
+    let envelope = ReasoningEnvelope::new(
+        crate::services::reasoning_continuity::contract::ContractId::OpenAiResponsesV1,
+        ReasoningSource::from_target(replay),
+        CompletionState::Complete,
+        ContinuationState::ResponsesLocal {
+            items: vec![
+                serde_json::json!({
+                    "type": "reasoning",
+                    "encrypted_content": "opaque-astra-Δ"
+                }),
+                serde_json::json!({
+                    "type": "function_call", "call_id": "call-astra",
+                    "name": "lookup", "arguments": "{\"city\":\"Paris\"}"
+                }),
+            ],
+        },
+        Vec::new(),
+    );
+    let reloaded: ReasoningEnvelope =
+        serde_json::from_slice(&serde_json::to_vec(&envelope).expect("persisted Astra envelope"))
+            .expect("reloaded Astra envelope");
+    let messages = [
+        ChatMessage::assistant(
+            "visible".into(),
+            None,
+            Some(reloaded),
+            None,
+            Some(vec![
+                crate::services::agent_local::types_ollama::ToolCallOllama {
+                    id: Some("call-astra".into()),
+                    function: crate::services::agent_local::types_ollama::ToolCallFunction {
+                        name: "lookup".into(),
+                        arguments: serde_json::json!({"city": "Paris"}),
+                    },
+                    extra_content: None,
+                },
+            ]),
+        ),
+        ChatMessage::tool(
+            "18 C".into(),
+            Some("call-astra".into()),
+            Some("lookup".into()),
+        ),
+        ChatMessage::user("continue".into()),
+    ];
+    let mut config = request(&messages, &[], Some("medium"), FastModeRequest::Standard);
+    config.model = "gpt-6-astra";
+    config.continuation_target = Some(&target);
+
+    let prepared = try_build_request_with_evidence(&config).expect("Astra fixture replay");
+    assert_eq!(prepared.body["input"][0]["type"], "reasoning");
+    assert_eq!(
+        prepared.body["input"][0]["encrypted_content"],
+        "opaque-astra-Δ"
+    );
+    assert_eq!(prepared.body["input"][1]["type"], "function_call");
+    assert_eq!(prepared.body["input"][1]["call_id"], "call-astra");
+    assert_eq!(prepared.body["input"][2]["type"], "function_call_output");
+    assert_eq!(prepared.body["input"][2]["call_id"], "call-astra");
+    assert_eq!(
+        prepared.body["input"]
+            .as_array()
+            .and_then(|items| items.last())
+            .and_then(|item| item.get("role")),
+        Some(&serde_json::json!("user"))
+    );
+    assert_eq!(prepared.replayed.len(), 1);
+}
+
+#[test]
 fn responses_continuity_blocks_wrong_scope_and_required_missing_state() {
     let target = fixture_target("openai-scope");
     let messages = [

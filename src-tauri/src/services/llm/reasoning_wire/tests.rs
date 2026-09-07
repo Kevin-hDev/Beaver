@@ -67,6 +67,158 @@ fn r02_r03_preserve_native_values_and_serialized_bytes() {
     }
 }
 
+#[cfg(debug_assertions)]
+#[test]
+fn september_candidate_capture_round_trips_into_each_native_replay_adapter() {
+    let cases = [
+        (
+            "gemini",
+            RouteId::Google,
+            "gemini-3.8-flash",
+            ReasoningModeId::Low,
+        ),
+        ("zai", RouteId::Zai, "glm-5.3-flash", ReasoningModeId::High),
+        (
+            "openrouter",
+            RouteId::OpenRouter,
+            "google/gemini-3.8-flash",
+            ReasoningModeId::Medium,
+        ),
+        (
+            "openrouter",
+            RouteId::OpenRouter,
+            "z-ai/glm-5.3-flash",
+            ReasoningModeId::High,
+        ),
+        (
+            "openrouter",
+            RouteId::OpenRouter,
+            "openai/gpt-6-astra",
+            ReasoningModeId::High,
+        ),
+        (
+            "codex",
+            RouteId::OpenAi,
+            "gpt-6-astra",
+            ReasoningModeId::High,
+        ),
+        (
+            "ollama",
+            RouteId::Ollama,
+            "glm-5.3-flash:cloud",
+            ReasoningModeId::Low,
+        ),
+        (
+            "codex",
+            RouteId::CodexOauth,
+            "gpt-6-astra",
+            ReasoningModeId::High,
+        ),
+    ];
+
+    for (name, route_id, model_id, reasoning_mode) in cases {
+        let credential_scope = if route_id == RouteId::Ollama {
+            CredentialScope::local_uncredentialed()
+        } else {
+            CredentialScope::authenticated("fixture-scope").expect("fixture scope")
+        };
+        let mut capture = ReasoningCapture::new(ReasoningCaptureContext {
+            route_id,
+            model_id: model_id.into(),
+            credential_scope,
+            reasoning_mode,
+        })
+        .expect("candidate capture");
+        for event in fixture(name)["events"].as_array().expect("events") {
+            capture.observe_json(event);
+        }
+        capture.observe_done(fixture(name)["events"].as_array().unwrap().last().unwrap());
+        let envelope = capture.finish_complete().expect("candidate envelope");
+        let reloaded: crate::services::reasoning_continuity::envelope::ReasoningEnvelope =
+            serde_json::from_slice(&serde_json::to_vec(&envelope).expect("persist"))
+                .expect("reload");
+        assert_eq!(reloaded.source.model_id, model_id, "{name}");
+        assert_eq!(reloaded.source.reasoning_mode, reasoning_mode, "{name}");
+        assert_eq!(reloaded, envelope, "{name}");
+        assert_captured_replay(reloaded, fixture(name)["expected_native"].clone());
+    }
+}
+
+// This exercises the production replay adapters with the captured, serialized
+// envelope. Full request constructors are covered by their separate wire tests.
+#[cfg(debug_assertions)]
+fn assert_captured_replay(
+    envelope: crate::services::reasoning_continuity::envelope::ReasoningEnvelope,
+    expected: Value,
+) {
+    use super::replay;
+    use crate::services::agent_local::types_ollama::ChatMessage;
+    use crate::services::reasoning_continuity::contract::{
+        ContinuationTarget, ContinuationUse, ReplayTarget,
+    };
+    let target = ContinuationTarget::FixtureCandidate(ReplayTarget {
+        route_id: envelope.source.route_id,
+        model_id: envelope.source.model_id.clone(),
+        credential_scope: envelope.source.credential_scope.clone(),
+        reasoning_mode: envelope.source.reasoning_mode,
+        continuation_use: ContinuationUse::UserContinuation,
+    });
+    let approval = replay::approval_for_target(&target, &envelope).expect("candidate approval");
+    let messages = [ChatMessage::assistant(
+        "answer".into(),
+        None,
+        Some(envelope.clone()),
+        None,
+        None,
+    )];
+    let mut outgoing = vec![json!({"role": "assistant", "content": "answer", "tool_calls": [{}]})];
+    let actual = match &envelope.continuation {
+        ContinuationState::ResponsesLocal { .. } => {
+            outgoing.clear();
+            replay::apply_responses_continuity(&messages, &approval, &mut outgoing).unwrap();
+            Value::Array(outgoing)
+        }
+        ContinuationState::OllamaNative { .. } => {
+            replay::apply_ollama_continuity(&messages, &approval, &mut outgoing).unwrap();
+            outgoing[0]["thinking"].clone()
+        }
+        continuation => {
+            replay::apply_chat_continuity(&messages, &approval, &mut outgoing).unwrap();
+            match continuation {
+                ContinuationState::ChatReasoning { .. } => outgoing[0]["reasoning_content"].clone(),
+                ContinuationState::OpenRouterDetails { .. } => {
+                    outgoing[0]["reasoning_details"].clone()
+                }
+                ContinuationState::GeminiParts { .. } => json!([
+                    {"tool_call": {"index": 0, "extra_content": outgoing[0]["tool_calls"][0]["extra_content"]}},
+                    {"extra_content": outgoing[0]["extra_content"]}
+                ]),
+                _ => panic!("unexpected September contract"),
+            }
+        }
+    };
+    assert_eq!(actual, expected, "{}", envelope.source.model_id);
+    assert_eq!(
+        serde_json::to_vec(&actual).unwrap(),
+        serde_json::to_vec(&expected).unwrap()
+    );
+}
+
+#[test]
+fn cancelled_capture_is_partial_and_cannot_be_replayed() {
+    let mut capture = ReasoningCapture::new(ReasoningCaptureContext {
+        route_id: RouteId::Google,
+        model_id: "gemini-3.8-flash".into(),
+        credential_scope: CredentialScope::authenticated("fixture-scope").unwrap(),
+        reasoning_mode: ReasoningModeId::Low,
+    })
+    .expect("capture");
+    capture.observe_json(&fixture("gemini")["events"][0]);
+    assert!(capture.finish_partial().is_none());
+    assert!(capture.is_partial());
+    assert!(capture.finish_complete().is_none());
+}
+
 #[test]
 fn chat_and_ollama_complete_only_on_their_native_terminal_signal() {
     let mut chat = ReasoningCapture::new(context(RouteId::Moonshot, "kimi-k2.7-code")).unwrap();

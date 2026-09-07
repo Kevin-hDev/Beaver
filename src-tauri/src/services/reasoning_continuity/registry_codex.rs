@@ -1,0 +1,83 @@
+use super::contract::{ContinuationUse, ReasoningModeId};
+use super::registry::{ModelPolicy, ReplayRequirement};
+use super::registry_inventory::{disabled, live};
+
+// Codex account catalogue access does not itself validate continuation replay.
+pub(super) const CODEX: &[ModelPolicy] = &[
+    live(
+        "gpt-5.6-luna",
+        ReasoningModeId::Medium,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Required,
+        "codex-oauth-gpt-5-6-luna-local-2026-08-26",
+        "2026-08-26",
+    ),
+    live(
+        "gpt-5.6-luna",
+        ReasoningModeId::Medium,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Required,
+        "codex-oauth-gpt-5-6-luna-local-2026-08-26",
+        "2026-08-26",
+    ),
+    disabled(
+        "gpt-6-astra",
+        ReasoningModeId::Low,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Required,
+    ),
+    disabled(
+        "gpt-6-astra",
+        ReasoningModeId::Low,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Required,
+    ),
+    disabled(
+        "gpt-6-astra",
+        ReasoningModeId::Medium,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Required,
+    ),
+    disabled(
+        "gpt-6-astra",
+        ReasoningModeId::Medium,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Required,
+    ),
+    disabled(
+        "gpt-6-astra",
+        ReasoningModeId::High,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Required,
+    ),
+    disabled(
+        "gpt-6-astra",
+        ReasoningModeId::High,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Required,
+    ),
+    disabled(
+        "gpt-6-astra",
+        ReasoningModeId::Xhigh,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Required,
+    ),
+    disabled(
+        "gpt-6-astra",
+        ReasoningModeId::Xhigh,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Required,
+    ),
+    disabled(
+        "gpt-6-astra",
+        ReasoningModeId::Max,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Required,
+    ),
+    disabled(
+        "gpt-6-astra",
+        ReasoningModeId::Max,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Required,
+    ),
+];

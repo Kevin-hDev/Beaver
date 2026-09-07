@@ -1,0 +1,87 @@
+use super::contract::{ContinuationUse, ReasoningModeId};
+use super::registry::{ModelPolicy, ReplayRequirement};
+use super::registry_inventory::{disabled, live};
+
+// Cloud hosting is a distinct route from the locally validated Ollama models.
+pub(super) const OLLAMA: &[ModelPolicy] = &[
+    live(
+        "gemma4:e2b-it-q4_K_M",
+        ReasoningModeId::Auto,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Optional,
+        "ollama-local-gemma4-e2b-it-q4-k-m-local-2026-08-26",
+        "2026-08-26",
+    ),
+    live(
+        "gemma4:e2b-it-q4_K_M",
+        ReasoningModeId::Auto,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Optional,
+        "ollama-local-gemma4-e2b-it-q4-k-m-local-2026-08-26",
+        "2026-08-26",
+    ),
+    live(
+        "qwen3.5:4b",
+        ReasoningModeId::Auto,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Optional,
+        "ollama-local-qwen3-5-4b-local-2026-08-26",
+        "2026-08-26",
+    ),
+    live(
+        "qwen3.5:4b",
+        ReasoningModeId::Auto,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Optional,
+        "ollama-local-qwen3-5-4b-local-2026-08-26",
+        "2026-08-26",
+    ),
+    disabled(
+        "deepseek-r1:latest",
+        ReasoningModeId::Auto,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Optional,
+    ),
+    disabled(
+        "deepseek-r1:latest",
+        ReasoningModeId::Auto,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Optional,
+    ),
+    disabled(
+        "glm-5.3-flash:cloud",
+        ReasoningModeId::Low,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Required,
+    ),
+    disabled(
+        "glm-5.3-flash:cloud",
+        ReasoningModeId::Low,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Required,
+    ),
+    disabled(
+        "glm-5.3-flash:cloud",
+        ReasoningModeId::High,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Required,
+    ),
+    disabled(
+        "glm-5.3-flash:cloud",
+        ReasoningModeId::High,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Required,
+    ),
+    disabled(
+        "glm-5.3-flash:cloud",
+        ReasoningModeId::Max,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Required,
+    ),
+    disabled(
+        "glm-5.3-flash:cloud",
+        ReasoningModeId::Max,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Required,
+    ),
+];

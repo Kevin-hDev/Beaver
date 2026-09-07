@@ -77,6 +77,147 @@ fn inventory_has_exactly_thirteen_contracts_fifteen_closed_routes_and_fifteen_ac
 }
 
 #[test]
+fn september_candidate_pairs_are_registered_disabled_before_live_proof() {
+    let authenticated = CredentialScope::authenticated("fixture-scope").unwrap();
+    let cases = [
+        (
+            RouteId::Google,
+            "gemini-3.8-flash",
+            &[
+                ReasoningModeId::Low,
+                ReasoningModeId::Medium,
+                ReasoningModeId::High,
+            ][..],
+            ReplayRequirement::Required,
+        ),
+        (
+            RouteId::Zai,
+            "glm-5.3-flash",
+            &[
+                ReasoningModeId::Low,
+                ReasoningModeId::High,
+                ReasoningModeId::Max,
+            ][..],
+            ReplayRequirement::Required,
+        ),
+        (
+            RouteId::OpenAi,
+            "gpt-6-astra",
+            &[
+                ReasoningModeId::Low,
+                ReasoningModeId::Medium,
+                ReasoningModeId::High,
+                ReasoningModeId::Xhigh,
+                ReasoningModeId::Max,
+            ][..],
+            ReplayRequirement::Required,
+        ),
+        (
+            RouteId::OpenRouter,
+            "google/gemini-3.8-flash",
+            &[
+                ReasoningModeId::Low,
+                ReasoningModeId::Medium,
+                ReasoningModeId::High,
+            ][..],
+            ReplayRequirement::Required,
+        ),
+        (
+            RouteId::OpenRouter,
+            "z-ai/glm-5.3-flash",
+            &[
+                ReasoningModeId::Low,
+                ReasoningModeId::High,
+                ReasoningModeId::Max,
+            ][..],
+            ReplayRequirement::Required,
+        ),
+        (
+            RouteId::OpenRouter,
+            "openai/gpt-6-astra",
+            &[
+                ReasoningModeId::Low,
+                ReasoningModeId::Medium,
+                ReasoningModeId::High,
+                ReasoningModeId::Xhigh,
+                ReasoningModeId::Max,
+            ][..],
+            ReplayRequirement::Required,
+        ),
+        (
+            RouteId::Qwen,
+            "ZHIPU/GLM-5.3-Flash",
+            &[
+                ReasoningModeId::Low,
+                ReasoningModeId::High,
+                ReasoningModeId::Max,
+            ][..],
+            ReplayRequirement::Forbidden,
+        ),
+        (
+            RouteId::Ollama,
+            "glm-5.3-flash:cloud",
+            &[
+                ReasoningModeId::Low,
+                ReasoningModeId::High,
+                ReasoningModeId::Max,
+            ][..],
+            ReplayRequirement::Required,
+        ),
+        (
+            RouteId::CodexOauth,
+            "gpt-6-astra",
+            &[
+                ReasoningModeId::Low,
+                ReasoningModeId::Medium,
+                ReasoningModeId::High,
+                ReasoningModeId::Xhigh,
+                ReasoningModeId::Max,
+            ][..],
+            ReplayRequirement::Required,
+        ),
+    ];
+
+    for (route_id, model_id, modes, requirement) in cases {
+        for reasoning_mode in modes {
+            for continuation_use in [
+                ContinuationUse::UserContinuation,
+                ContinuationUse::ToolContinuation,
+            ] {
+                let credential_scope = if route_id == RouteId::Ollama {
+                    CredentialScope::local_uncredentialed()
+                } else {
+                    authenticated.clone()
+                };
+                let policy = replay_policy(&ReplayTarget {
+                    route_id,
+                    model_id: model_id.into(),
+                    credential_scope,
+                    reasoning_mode: *reasoning_mode,
+                    continuation_use,
+                })
+                .expect("candidate policy");
+                assert_eq!(policy.activation(), ActivationState::Disabled);
+                assert_eq!(policy.requirement(), requirement);
+            }
+        }
+    }
+}
+
+#[test]
+fn every_route_model_mode_use_policy_is_unique() {
+    for route in active_routes() {
+        for (index, policy) in route.models.iter().enumerate() {
+            assert!(!route.models[index + 1..].iter().any(|other| {
+                other.model_id == policy.model_id
+                    && other.reasoning_mode == policy.reasoning_mode
+                    && other.continuation_use == policy.continuation_use
+            }));
+        }
+    }
+}
+
+#[test]
 fn every_live_activation_has_one_checked_in_capture_and_replay_proof() {
     let root =
         std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("test-fixtures/reasoning-reports");

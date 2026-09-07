@@ -1,9 +1,15 @@
 use super::contract::{ContinuationUse, ContractId, ReasoningModeId, RouteId};
 use super::registry::{ActivationState, AdapterId, ModelPolicy, ReplayRequirement, RouteContract};
 use super::registry_anthropic::ANTHROPIC;
+use super::registry_codex::CODEX;
+use super::registry_google::GOOGLE;
+use super::registry_ollama::OLLAMA;
+use super::registry_openai::OPENAI;
+use super::registry_openrouter::OPENROUTER;
 use super::registry_qwen::QWEN;
-use super::registry_validated_cloud::{CODEX, MISTRAL, OLLAMA, OPENAI, XAI_OAUTH, ZAI};
-use super::registry_validated_reasoning::{CEREBRAS, DEEPSEEK, GOOGLE, MOONSHOT, OPENROUTER, XAI};
+use super::registry_validated_cloud::{MISTRAL, XAI_OAUTH};
+use super::registry_validated_reasoning::{CEREBRAS, DEEPSEEK, MOONSHOT, XAI};
+use super::registry_zai::ZAI;
 
 use ReplayRequirement::Required;
 

@@ -1,6 +1,8 @@
 use super::*;
 use crate::services::agent_local::types_ollama::{ToolCallFunction, ToolCallOllama};
-use crate::services::reasoning_continuity::contract::{CredentialScope, ReasoningModeId, RouteId};
+use crate::services::reasoning_continuity::contract::{
+    ContinuationTarget, CredentialScope, ReasoningModeId, RouteId,
+};
 use crate::services::reasoning_continuity::envelope::{CompletionState, ReasoningSource};
 use crate::services::reasoning_continuity::registry::{ActivationState, ReplayRequirement};
 use serde_json::json;
@@ -370,4 +372,42 @@ fn ollama_and_responses_adapters_keep_their_distinct_wires() {
     apply_responses_continuity(&messages, &approval, &mut input).unwrap();
     assert_eq!(input[0]["call_id"], "call_1");
     assert!(input[0].get("extra_content").is_none());
+}
+
+#[cfg(debug_assertions)]
+#[test]
+fn codex_astra_fixture_candidate_replays_persisted_response_items() {
+    let target = ReplayTarget {
+        route_id: RouteId::CodexOauth,
+        model_id: "gpt-6-astra".into(),
+        credential_scope: CredentialScope::authenticated("codex-scope").unwrap(),
+        reasoning_mode: ReasoningModeId::High,
+        continuation_use: ContinuationUse::ToolContinuation,
+    };
+    let envelope = envelope(
+        &target,
+        ContractId::CodexResponsesV1,
+        ContinuationState::ResponsesLocal {
+            items: vec![
+                json!({"type": "reasoning", "encrypted_content": "codex-opaque-Δ"}),
+                json!({"type": "function_call", "call_id": "call-codex"}),
+            ],
+        },
+    );
+    let reloaded: ReasoningEnvelope = serde_json::from_slice(
+        &serde_json::to_vec(&envelope).expect("persisted Codex Astra envelope"),
+    )
+    .expect("reloaded Codex Astra envelope");
+    let candidate = ContinuationTarget::FixtureCandidate(target.clone());
+    let approval = approval_for_target(&candidate, &reloaded).expect("Codex fixture approval");
+    let messages = [
+        assistant(reloaded.clone(), true),
+        ChatMessage::user("continue".into()),
+    ];
+    let mut input = Vec::new();
+
+    apply_responses_continuity(&messages, &approval, &mut input).expect("Codex fixture replay");
+
+    assert_eq!(input[0]["encrypted_content"], "codex-opaque-Δ");
+    assert_eq!(input[1]["call_id"], "call-codex");
 }

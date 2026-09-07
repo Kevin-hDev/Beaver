@@ -17,6 +17,16 @@ fn target(model_id: &str) -> ReplayTarget {
     }
 }
 
+fn cloud_target(reasoning_mode: ReasoningModeId) -> ReplayTarget {
+    ReplayTarget {
+        route_id: RouteId::Ollama,
+        model_id: "glm-5.3-flash:cloud".into(),
+        credential_scope: CredentialScope::local_uncredentialed(),
+        reasoning_mode,
+        continuation_use: ContinuationUse::UserContinuation,
+    }
+}
+
 fn message(target: &ReplayTarget, thinking: &str) -> ChatMessage {
     ChatMessage::assistant(
         "answer".into(),
@@ -173,4 +183,26 @@ fn fixture_candidate_replays_multiple_native_messages_while_normal_stays_closed(
     let replay = chat_request(&candidate, &messages).unwrap();
     assert_eq!(replay["messages"][0]["thinking"], "opaque historic");
     assert_eq!(replay["messages"][1]["thinking"], "opaque later");
+}
+
+#[cfg(debug_assertions)]
+#[test]
+fn cloud_glm_fixture_candidate_replays_persisted_native_thinking() {
+    let target = cloud_target(ReasoningModeId::Low);
+    let first = message(&target, "pensée Δ-日本");
+    let second = message(&target, "pensée finale");
+    let messages = [first, second, ChatMessage::user("continue".into())];
+    let mut candidate = request();
+    candidate.model = "glm-5.3-flash:cloud".into();
+    candidate.think = Some(crate::services::agent_local::types_ollama::OllamaThink::Level(
+        "low".into(),
+    ));
+    candidate.fixture_candidate = Some(target);
+
+    let prepared = chat_request_with_evidence(&candidate, &messages).expect("Ollama fixture replay");
+
+    assert_eq!(prepared.payload["messages"][0]["thinking"], "pensée Δ-日本");
+    assert_eq!(prepared.payload["messages"][1]["thinking"], "pensée finale");
+    assert_eq!(prepared.payload["messages"][2]["content"], "continue");
+    assert_eq!(prepared.replayed.len(), 2);
 }

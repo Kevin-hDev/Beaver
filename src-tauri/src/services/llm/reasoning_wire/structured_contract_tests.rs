@@ -209,3 +209,116 @@ fn openrouter_reasoning_fixture_payload_keeps_encrypted_details_in_order_and_dis
     assert_eq!(payload["provider"]["allow_fallbacks"], false);
     assert!(payload["messages"][0].get("reasoning_content").is_none());
 }
+
+#[test]
+fn september_google_fixture_replays_persisted_parts_for_the_exact_flash_model() {
+    let replay = replay_target(RouteId::Google, "gemini-3.8-flash", ReasoningModeId::Low);
+    let target = ContinuationTarget::FixtureCandidate(replay.clone());
+    let parts = vec![
+        json!({
+            "tool_call": {
+                "index": 0,
+                "extra_content": {"google": {"thought_signature": "Δ-signature"}}
+            }
+        }),
+        json!({
+            "extra_content": {"google": {"thought_signature": "fin-日本"}}
+        }),
+    ];
+    let envelope = ReasoningEnvelope::new(
+        ContractId::GeminiCompatV1,
+        ReasoningSource::from_target(&replay),
+        CompletionState::Complete,
+        ContinuationState::GeminiParts {
+            parts: parts.clone(),
+        },
+        Vec::new(),
+    );
+    let reloaded: ReasoningEnvelope = serde_json::from_slice(
+        &serde_json::to_vec(&envelope).expect("persisted Gemini Flash envelope"),
+    )
+    .expect("reloaded Gemini Flash envelope");
+    let messages = [
+        ChatMessage::assistant(
+            "réponse".into(),
+            None,
+            Some(reloaded),
+            None,
+            Some(vec![
+                crate::services::agent_local::types_ollama::ToolCallOllama {
+                    id: Some("call-flash".into()),
+                    extra_content: None,
+                    function: crate::services::agent_local::types_ollama::ToolCallFunction {
+                        name: "lookup".into(),
+                        arguments: json!({"q": "東京"}),
+                    },
+                },
+            ]),
+        ),
+        ChatMessage::tool(
+            "Tokyo".into(),
+            Some("call-flash".into()),
+            Some("lookup".into()),
+        ),
+        ChatMessage::user("continue après outil".into()),
+    ];
+
+    let payload = payload("google", "gemini-3.8-flash", &messages, &target, "low")
+        .expect("Gemini Flash fixture payload");
+
+    assert_eq!(
+        payload["messages"][0]["tool_calls"][0]["extra_content"],
+        json!({"google": {"thought_signature": "Δ-signature"}})
+    );
+    assert_eq!(
+        payload["messages"][0]["extra_content"],
+        json!({"google": {"thought_signature": "fin-日本"}})
+    );
+}
+
+#[test]
+fn september_openrouter_fixture_replays_persisted_details_for_the_exact_gemini_model() {
+    let replay = replay_target(
+        RouteId::OpenRouter,
+        "google/gemini-3.8-flash",
+        ReasoningModeId::Medium,
+    );
+    let target = ContinuationTarget::FixtureCandidate(replay.clone());
+    let details = vec![
+        json!({"type": "reasoning.encrypted", "data": "opaque-Δ"}),
+        json!({"type": "reasoning.summary", "text": "outil-日本"}),
+    ];
+    let envelope = ReasoningEnvelope::new(
+        ContractId::OpenRouterDetailsV1,
+        ReasoningSource::from_target(&replay),
+        CompletionState::Complete,
+        ContinuationState::OpenRouterDetails {
+            details: details.clone(),
+        },
+        Vec::new(),
+    );
+    let reloaded: ReasoningEnvelope = serde_json::from_slice(
+        &serde_json::to_vec(&envelope).expect("persisted OpenRouter envelope"),
+    )
+    .expect("reloaded OpenRouter envelope");
+    let messages = [
+        ChatMessage::assistant("answer".into(), None, Some(reloaded), None, None),
+        ChatMessage::tool(
+            "résultat".into(),
+            Some("call-1".into()),
+            Some("lookup".into()),
+        ),
+    ];
+
+    let payload = payload(
+        "openrouter",
+        "google/gemini-3.8-flash",
+        &messages,
+        &target,
+        "medium",
+    )
+    .expect("OpenRouter Gemini fixture payload");
+
+    assert_eq!(payload["messages"][0]["reasoning_details"], json!(details));
+    assert_eq!(payload["provider"]["allow_fallbacks"], false);
+}
