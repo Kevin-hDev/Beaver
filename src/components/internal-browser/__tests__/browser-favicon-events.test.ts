@@ -22,6 +22,12 @@ describe("favicon snapshot boundary", () => {
       expect(parseFaviconSnapshot({ ...snapshot, icons }, "a")).toBeNull();
     }
   });
+  it("rejects malformed envelopes and non-array icon collections", () => {
+    for (const value of [null, "text", [], 42, { ...snapshot, icons: null },
+      { ...snapshot, icons: {} }, { ...snapshot, icons: "icons" }]) {
+      expect(parseFaviconSnapshot(value, "a")).toBeNull();
+    }
+  });
   it("accepts an empty replacement snapshot to remove stale icons", () => {
     expect(parseFaviconSnapshot({ ...snapshot, icons: [] }, "a")?.icons).toEqual([]);
   });

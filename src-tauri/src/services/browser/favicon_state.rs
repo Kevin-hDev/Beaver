@@ -9,6 +9,7 @@ use std::time::Instant;
 pub(super) struct FaviconState {
     pub(super) entries: Vec<FaviconEntry>,
     pub(super) revision: u64,
+    // Global cache matches the global native view budget, across conversations.
     // Permits outlive evicted views and logical deadlines: neither cancels CEF.
     running: Vec<FaviconJob>,
 }
@@ -16,7 +17,12 @@ pub(super) struct FaviconState {
 impl FaviconState {
     fn next_revision(&mut self) -> Option<u64> {
         self.revision = self.revision.checked_add(1)?.min(MAX_REVISION);
-        (self.revision < MAX_REVISION).then_some(self.revision)
+        if self.revision == MAX_REVISION {
+            // Publish one final empty snapshot before the counter becomes inert.
+            self.entries.clear();
+            return None;
+        }
+        Some(self.revision)
     }
 
     pub(super) fn begin_document(&mut self, key: BrowserViewKey, epoch: u64) {
@@ -27,6 +33,8 @@ impl FaviconState {
         {
             return;
         }
+        // A globe during navigation avoids attributing the previous site icon
+        // to the newly requested origin; this is an explicit browser decision.
         self.entries.retain(|e| e.key != key);
         let Some(document) = self.next_revision() else {
             return;
@@ -78,7 +86,16 @@ impl FaviconState {
         }
     }
 
+    #[cfg(test)]
     pub(super) fn take_ready(&mut self, now: Instant) -> Vec<FaviconJob> {
+        self.take_available(now, |_, _| true)
+    }
+
+    pub(super) fn take_available(
+        &mut self,
+        now: Instant,
+        available: impl Fn(&BrowserViewKey, u64) -> bool,
+    ) -> Vec<FaviconJob> {
         let mut jobs = Vec::new();
         if self.revision >= MAX_REVISION {
             return jobs;
@@ -88,6 +105,10 @@ impl FaviconState {
                 break;
             }
             if entry.candidates.is_empty() || self.running.iter().any(|j| j.key == entry.key) {
+                continue;
+            }
+            // Leave candidates queued until the native host really exists.
+            if !available(&entry.key, entry.ticket.view_epoch) {
                 continue;
             }
             let job = FaviconJob {

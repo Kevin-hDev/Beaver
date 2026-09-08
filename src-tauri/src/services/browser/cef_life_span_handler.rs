@@ -68,6 +68,7 @@ cef::wrap_life_span_handler! {
                     close_browser(browser);
                     return;
                 }
+                super::cef_favicon_scheduler::schedule(&self.app);
                 let Some(generation) = next_event_generation() else {
                     close_browser(browser);
                     return;

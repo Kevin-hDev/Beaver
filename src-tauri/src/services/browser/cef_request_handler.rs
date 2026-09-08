@@ -31,7 +31,7 @@ cef::wrap_request_handler! {
                     validated_cef_url(&value).is_some()
                 });
                 if allowed && frame.is_some_and(|frame| frame.is_main() == 1) {
-                    if let Some(epoch) = self.slot.epoch() {
+                    if let Some(epoch) = self.slot.live_epoch() {
                         super::favicon_runtime::mutate(&self.app, |state| state.begin_document(self.key.clone(), epoch));
                     }
                 }

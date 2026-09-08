@@ -11,11 +11,25 @@ export function useBrowserFavicons(conversationId: string, enabled: boolean, tab
     if (!enabled) return;
     let disposed = false;
     let revision = -1;
+    let reported = false;
+    const report = () => {
+      if (!reported && !disposed) {
+        reported = true;
+        console.warn("[browser] favicon synchronization unavailable");
+      }
+    };
     let unlisten: UnlistenFn | undefined;
     const accept = (payload: unknown) => {
       if (disposed) return;
       const next = parseFaviconSnapshot(payload, conversationId);
-      if (!next || next.revision <= revision) return;
+      if (!next) {
+        // Events for other conversations are normal on the shared event bus.
+        if (!payload || typeof payload !== "object" ||
+          !("conversationId" in payload) || typeof payload.conversationId !== "string" ||
+          payload.conversationId === conversationId) report();
+        return;
+      }
+      if (next.revision <= revision) return;
       revision = next.revision;
       setStored(next);
     };
@@ -25,6 +39,7 @@ export function useBrowserFavicons(conversationId: string, enabled: boolean, tab
         if (disposed) { unlisten(); return; }
         accept(await invoke("browser_favicon_snapshot", { conversationId }));
       } catch {
+        report();
         // A valid event may have arrived while the initial read failed.
         if (!disposed && revision < 0) setStored(null);
       }

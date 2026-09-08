@@ -81,6 +81,7 @@ fn overflow_fails_closed() {
     queue(&mut state, 0, 1);
     let now = Instant::now();
     let job = state.take_ready(now).remove(0);
+    queue(&mut state, 1, 2);
     state.revision = MAX_REVISION - 1;
     state.begin_document(key(0), 1);
     assert!(state.entries.is_empty());

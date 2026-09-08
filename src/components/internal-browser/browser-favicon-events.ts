@@ -7,7 +7,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isPng(value: unknown): value is string {
   if (typeof value !== "string" || value.length > Math.ceil(MAX_FAVICON_PNG_BYTES / 3) * 4
-      || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(value)) return false;
+      || (value.length % 4 !== 0 || !/^[A-Za-z0-9+/]*={0,2}$/.test(value))) return false;
   try {
     const bytes = atob(value);
     return bytes.length <= MAX_FAVICON_PNG_BYTES && bytes.startsWith("\x89PNG\r\n\x1a\n") && btoa(bytes) === value;

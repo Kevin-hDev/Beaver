@@ -1,4 +1,4 @@
-use super::{cef_text::validated_cef_url, favicon_policy::MAX_CANDIDATES};
+use super::{favicon_policy::MAX_CANDIDATES, url_policy::MAX_BROWSER_URL_LENGTH};
 use cef::{sys, CefString, CefStringList};
 
 pub(super) fn read(list: &CefStringList) -> Vec<String> {
@@ -18,8 +18,14 @@ pub(super) fn read(list: &CefStringList) -> Vec<String> {
                 continue;
             }
             let borrowed = CefString::from(std::ptr::from_ref(&value.0));
-            if let Some(url) = validated_cef_url(&borrowed) {
-                result.push(url);
+            if let Some(units) = borrowed
+                .as_slice()
+                .filter(|s| s.len() <= MAX_BROWSER_URL_LENGTH)
+            {
+                if let Ok(url) = String::from_utf16(units) {
+                    // URL policy is applied once, when candidates enter the state.
+                    result.push(url);
+                }
             }
         }
         result

@@ -35,7 +35,7 @@ describe("useBrowserFavicons", () => {
     const { result } = renderHook(() => useBrowserFavicons("a", true, tabs));
     await waitFor(() => expect(invoke).toHaveBeenCalledWith("browser_favicon_snapshot", { conversationId: "a" }));
     act(() => deliver({ payload: snapshot(3) }));
-    await act(async () => pending.resolve(snapshot(2, "a", [])));
+    await act(async () => { pending.resolve(snapshot(2, "a", [])); await Promise.resolve(); });
     expect(result.current.get(id)).toBe(png);
     act(() => deliver({ payload: snapshot(4, "a", []) }));
     expect(result.current.size).toBe(0);
@@ -61,7 +61,7 @@ describe("useBrowserFavicons", () => {
     vi.mocked(invoke).mockClear();
     const { unmount } = renderHook(() => useBrowserFavicons("a", true, tabs));
     unmount();
-    await act(async () => pending.resolve(unlisten));
+    await act(async () => { pending.resolve(unlisten); await Promise.resolve(); });
     expect(unlisten).toHaveBeenCalledTimes(1);
     expect(invoke).not.toHaveBeenCalled();
   });
@@ -71,7 +71,7 @@ describe("useBrowserFavicons", () => {
     const { result } = renderHook(() => useBrowserFavicons("a", true, tabs));
     await act(async () => { await Promise.resolve(); });
     act(() => deliver({ payload: snapshot(3) }));
-    await act(async () => pending.reject(new Error("read failed")));
+    await act(async () => { pending.reject(new Error("read failed")); await Promise.resolve(); });
     expect(result.current.get(id)).toBe(png);
   });
   it("falls back to empty state when subscription fails", async () => {
@@ -79,6 +79,32 @@ describe("useBrowserFavicons", () => {
     const { result } = renderHook(() => useBrowserFavicons("a", true, tabs));
     await act(async () => { await Promise.resolve(); });
     expect(result.current.size).toBe(0);
+  });
+  it("reports failures once without including rejected data", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const pending = deferred<unknown>();
+    vi.mocked(invoke).mockReturnValue(pending.promise);
+    const { unmount } = renderHook(() => useBrowserFavicons("a", true, tabs));
+    await act(async () => { await Promise.resolve(); });
+    act(() => deliver({ payload: snapshot(2, "b") }));
+    expect(warn).not.toHaveBeenCalled();
+    act(() => deliver({ payload: { conversationId: "a", secret: "private" } }));
+    act(() => deliver({ payload: null }));
+    await act(async () => { pending.reject(new Error("private")); await Promise.resolve(); });
+    expect(warn).toHaveBeenCalledExactlyOnceWith("[browser] favicon synchronization unavailable");
+    unmount();
+    warn.mockRestore();
+  });
+  it("ignores duplicate revisions and late events after disabling", async () => {
+    const { result, rerender } = renderHook(({ active }) => useBrowserFavicons("a", active, tabs),
+      { initialProps: { active: true } });
+    await waitFor(() => expect(result.current.size).toBe(1));
+    act(() => deliver({ payload: snapshot(1, "a", []) }));
+    expect(result.current.size).toBe(1);
+    rerender({ active: false });
+    act(() => deliver({ payload: snapshot(9) }));
+    expect(result.current.size).toBe(0);
+    expect(unlisten).toHaveBeenCalledTimes(1);
   });
   it("restores from a snapshot on remount and stays empty when disabled", async () => {
     const first = renderHook(() => useBrowserFavicons("a", true, tabs));

@@ -116,11 +116,7 @@ impl CefBrowserView {
     ) -> Option<super::runtime_revision::RuntimeStamp> {
         let stamp = self.slot.next_runtime_stamp();
         if let Some(epoch) = self.slot.epoch() {
-            if let Some(app) = app {
-                super::favicon_runtime::mutate(app, |state| state.release_view(&self.key, epoch));
-            } else if let Ok(mut state) = super::favicon_runtime::FAVICONS.lock() {
-                state.release_view(&self.key, epoch);
-            }
+            super::favicon_runtime::access(app, |state| state.release_view(&self.key, epoch));
         }
         if let Some(app) = app {
             let _ = self.hide_current(app);

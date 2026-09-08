@@ -43,6 +43,11 @@ impl BrowserSlot {
         })
     }
 
+    pub(super) fn live_epoch(&self) -> Option<u64> {
+        let inner = self.inner.lock().ok()?;
+        inner.lifecycle.is_live().then_some(inner.runtime_epoch)
+    }
+
     pub(super) fn epoch(&self) -> Option<u64> {
         self.inner.lock().ok().map(|inner| inner.runtime_epoch)
     }

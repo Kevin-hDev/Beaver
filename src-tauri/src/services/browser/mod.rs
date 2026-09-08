@@ -1,20 +1,5 @@
 mod favicon_events;
 pub use favicon_events::{read_snapshot as favicon_snapshot, BrowserFaviconSnapshot};
-mod favicon_png;
-mod favicon_runtime;
-#[cfg(native_browser)]
-mod cef_favicon_candidates;
-#[cfg(native_browser)]
-mod cef_favicon_handler;
-#[cfg(native_browser)]
-mod cef_favicon_image;
-#[cfg(native_browser)]
-mod cef_favicon_scheduler;
-mod favicon_policy;
-mod favicon_types;
-mod favicon_state;
-#[cfg(test)]
-mod favicon_state_tests;
 mod browser_api_types;
 #[cfg(native_browser)]
 mod browser_events;
@@ -46,6 +31,14 @@ mod cef_download_handler;
 mod cef_engine;
 #[cfg(native_browser)]
 mod cef_engine_config;
+#[cfg(native_browser)]
+mod cef_favicon_candidates;
+#[cfg(native_browser)]
+mod cef_favicon_handler;
+#[cfg(native_browser)]
+mod cef_favicon_image;
+#[cfg(native_browser)]
+mod cef_favicon_scheduler;
 #[cfg(target_os = "macos")]
 mod cef_library;
 #[cfg(native_browser)]
@@ -61,6 +54,20 @@ mod cef_request_handler;
 mod cef_runtime_policy;
 #[cfg(native_browser)]
 mod cef_state_bridge;
+mod favicon_png;
+mod favicon_policy;
+#[cfg(test)]
+mod favicon_review_tests;
+mod favicon_runtime;
+mod favicon_state;
+#[cfg(test)]
+mod favicon_state_tests;
+mod favicon_store;
+#[cfg(any(test, native_browser))]
+mod favicon_task_gate;
+mod favicon_types;
+#[cfg(native_browser)]
+mod favicon_watchdog;
 // La condition suit les appels de cef_runtime_policy, gardés par l'OS et non
 // par native_browser : sous windows-tests le module disparaissait de la lib
 // hors test alors que ces appels restaient.
@@ -141,7 +148,8 @@ pub(crate) mod windows_sandbox;
 mod windows_surface_order;
 
 // Keep test registration separate from the production module boundary.
-include!("test_modules.rs");
+#[cfg(test)]
+mod test_modules;
 
 use tauri::Manager;
 

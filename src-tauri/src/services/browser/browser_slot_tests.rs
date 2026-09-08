@@ -39,3 +39,24 @@ fn closing_a_creating_slot_hides_its_pending_surface() {
         Some(false)
     );
 }
+
+#[test]
+fn closed_slot_cannot_recreate_favicon_state_via_late_navigation() {
+    let slot = BrowserSlot::new().unwrap();
+    slot.begin_creation();
+    let epoch = slot.live_epoch().unwrap();
+    let key = super::browser_view_key::BrowserViewKey {
+        session_id: "test".into(),
+        tab_id: "tab".into(),
+    };
+    let mut state = super::favicon_state::FaviconState::default();
+    state.begin_document(key.clone(), epoch);
+    slot.close();
+    state.release_view(&key, epoch);
+    slot.mark_closed();
+    if let Some(epoch) = slot.live_epoch() {
+        state.begin_document(key, epoch);
+    }
+    assert!(state.entries.is_empty());
+    assert_eq!(slot.epoch(), Some(epoch)); // cleanup still has its identity
+}
