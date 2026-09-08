@@ -1,0 +1,15 @@
+Review corrections for 93fea85b / 647a752f / 3c6aa1bf.
+
+Verified on this correction: 198 browser Rust tests passed, one ignored explicit contract exporter; ordinary cargo check passed; cargo clippy --all-targets -- -D warnings passed. Frontend lint and TypeScript passed; CEF JavaScript integration tests: 45 passed, one skipped. Full internal-browser UI suite: 82 passed in the working tree, including the pending task-4 image component; do not attribute that whole UI count to this commit alone. Graphify AST update completed.
+
+M1: one independently scheduled, permit-owned diagnostic timer per native download, at most four. After 60 seconds it logs only request identity and the retained-permit condition; destruction aborts its timer and logs recovery if stalled. Tests cover diagnostic deadline/cancellation. Deliberate limitation remains: CEF DownloadImage has no cancellation handle or hard predecode/network bound. If all four native callbacks remain held forever, further favicon downloads cannot proceed until real release or app restart. Do not recycle permits on elapsed time or add a second unbounded pool; that would break the native resource bound. This is diagnostic mitigation, not a hard timeout guarantee.
+
+m1/m2/m4/m5/m6/m7/m9/m10/m12/m13: defer candidate consumption until the native host is ready; kick the pump on creation; reject navigation/icon notifications from closing or closed slots; central store for all access and teardown; poison invalidates existing icons once, fails closed permanently and preserves pre-panic identities; RAII task reservations survive destruction without execution; URL policy applied once after bounded UTF-16 conversion; actual test module instead of include; generic once-per-subscription frontend diagnostics without payloads; notify only changed conversations including evictions; final empty snapshot at revision exhaustion.
+
+All nine missing unit-test categories from the consolidated review are now represented, with additional poison, scheduler-reservation and watchdog tests.
+
+m3: retain a global cache of ten, matching the existing global native ViewRecency budget; reason is beside the policy constant and tested across sessions. m8: retain the explicitly specified globe at accepted navigation to avoid attributing the prior site's icon to a new origin. m11: icons remain decorative; no new loading/error UI was requested. Failures are diagnostic, and the globe remains the visual fallback.
+
+Additional defect found independently: ts-rs is a dev-dependency; gate imports/derives/attributes to tests so the ordinary library build works. Contract equality test remains green.
+
+Historical commit IDs are deliberately preserved for the user's existing review. Notes on the intermediate revisions now disclose their failures; this correction does not retrospectively make those old trees green. Native rendering/cookie acceptance is still separate pending task 4, not claimed by this commit. Windows cross-check previously failed on an unchanged portable_pty import in terminal/shell_environment.rs; no native Windows validation claimed.
