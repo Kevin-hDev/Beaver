@@ -1,0 +1,30 @@
+# Task 2 review — primary (in progress)
+
+## Findings sent during implementation
+
+1. Successful incoming tab order initially cleared pending focus before the focus effect could run. Test must rerender authoritative order and observe actual focus and scrollIntoView.
+2. Incoming order initially cleared pendingRef before the IPC promise settled, allowing another save. Same-conversation wait must last until completion; consider tab membership changes separately from gesture cancellation.
+3. Inactive panel initially reset on every render because tabIds was recreated and disabled caused setOffsets(new Map), risking a render loop. Test initial disabled and disable transition.
+4. Native pointerdown normally moves focus from URL to tab and triggers BrowserPanel's draft-clearing blur. Tests must exercise real focus semantics; prevent this for drag while retaining simple click and keyboard behavior.
+
+## Shared mechanism review
+
+- resetOrder delegates to stop and clears settled order; no second drag engine.
+- pointercancel changed from committing onUp to cancellation.
+- Escape listener is active only with a held pointer and does not stop propagation; consumers keep menu/rename handling.
+- UI handle excludes close button; uses explicit post-pointerup click guard.
+
+## Pending review
+
+- Final hook races, membership change while saving, failure/retry, conversation A→B→A, unmount.
+- Tests for unchanged title updates, true focus/scroll, rapid gestures, disabled panel, close during drag.
+- Final i18n and authority tests, native drag across CEF and input draft retention.
+- Keyboard activation after a mouse drag: shared didDrag remains true until another pointerdown, so a subsequent Enter/Space click may be swallowed. Distinguish genuine keyboard activation from the pointer click following a drag and test both (pointer click detail=1, keyboard detail=0).
+
+## Primary final correction pass
+- Added red regressions: keyboard activation after drag was swallowed; closing a tab released an in-flight save. Both failed as expected (task-2-primary-red.log).
+- Permit keyboard/accessible click detail=0 after a drag; pointer post-drag test clicks now explicitly use detail=1. This corrects the plan example to distinguish actual pointer clicks from keyboard activation.
+- Membership change clears gesture/focus intent but preserves same-conversation pending IPC until finally. Prevents a concurrent second reorder and resurrected removed tabs.
+- Restore geometry mocks after panel tests.
+- Primary browser/shared-drag/terminal/i18n suite: 15 files / 86 tests PASS. tsc, targeted lint, diff check exit0. Agent conversation suite 4 files / 36 PASS.
+- Native gesture verification remains part of the final native journey: the latest isolated app launch reported CEF unavailable, without any security bypass. Native build passed; final corrected build is running. Do not infer native success from these unit tests.
