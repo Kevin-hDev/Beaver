@@ -1,10 +1,14 @@
+mod favicon_policy;
+mod favicon_types;
+mod favicon_state;
+#[cfg(test)]
+mod favicon_state_tests;
 mod browser_api_types;
 #[cfg(native_browser)]
 mod browser_events;
 #[cfg(native_browser)]
 mod browser_slot;
 mod browser_surface_api;
-#[cfg(any(test, target_os = "macos", target_os = "windows"))]
 mod browser_view_key;
 #[cfg(native_browser)]
 mod cef_app;
