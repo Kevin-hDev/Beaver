@@ -5,7 +5,6 @@ import { ConversationSectionToggle } from "./conversation-section-toggle";
 import { ConversationSessionItem } from "./conversation-session-item";
 import { ConversationEmptyNote } from "./conversation-empty-note";
 import { useDragReorder } from "@/hooks/use-drag-reorder";
-import { useKeyboard } from "@/hooks/use-keyboard";
 import { idMatch } from "@/lib/utils";
 import type { AgentSessionMeta } from "@/types/agent";
 
@@ -53,7 +52,6 @@ export function ConversationSessionSection({
     group: dragGroup,
     onReorder,
   });
-  useKeyboard({ onEscape: () => drag.cancel() });
   const byId = new Map(sessions.map((s) => [s.id, s]));
 
   return (

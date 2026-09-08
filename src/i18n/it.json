@@ -1187,6 +1187,7 @@
     "startDescription": "Inserisci un URL o cerca sul web",
     "invalidUrl": "Inserisci un indirizzo HTTP o HTTPS valido.",
     "tabsLabel": "Schede del browser",
+    "reorderTabsHint": "Trascina una scheda per spostarla oppure usa {{alt}} + Shift + Left / Right.",
     "newTab": "Nuova scheda",
     "closeTab": "Chiudi {{title}}",
     "addTab": "Aggiungi una scheda",

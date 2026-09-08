@@ -32,6 +32,7 @@ describe("autorité unique du réordonnancement par glissement", () => {
       "/src/components/agent-local/conversation-list.tsx",
       "/src/components/agent-local/conversation-session-section.tsx",
       "/src/components/agent-local/project-section.tsx",
+      "/src/components/internal-browser/use-browser-tab-reorder.ts",
       "/src/components/terminal/terminal-tab-bar.tsx",
     ]);
   });

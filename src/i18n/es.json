@@ -1191,6 +1191,7 @@
     "startDescription": "Introduce una URL o busca en la web",
     "invalidUrl": "Introduce una dirección HTTP o HTTPS válida.",
     "tabsLabel": "Pestañas del navegador",
+    "reorderTabsHint": "Arrastra una pestaña para moverla o usa {{alt}} + Shift + Left / Right.",
     "newTab": "Nueva pestaña",
     "closeTab": "Cerrar {{title}}",
     "addTab": "Añadir una pestaña",

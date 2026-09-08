@@ -63,7 +63,6 @@ export function ConversationList({
     onEscape: () => {
       setRenamingId(null);
       setCtx(null);
-      drag.cancel();
     },
   });
 

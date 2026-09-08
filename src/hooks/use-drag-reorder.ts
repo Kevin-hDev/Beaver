@@ -86,6 +86,13 @@ export function useDragReorder({ ids, axis, containerRef, group, onReorder }: Dr
     setOffsets(new Map());
   }, []);
 
+  /* Un refus de l'autorité persistée rend les props de nouveau seules
+     responsables de l'ordre affiché. */
+  const resetOrder = useCallback(() => {
+    stop();
+    setSettled(null);
+  }, [stop]);
+
   useEffect(() => {
     const onMove = (e: PointerEvent) => {
       const held = grab.current;
@@ -119,13 +126,21 @@ export function useDragReorder({ ids, axis, containerRef, group, onReorder }: Dr
       reorder.current(after, held.from, to);
     };
 
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || grab.current === null) return;
+      event.preventDefault();
+      stop();
+    };
+
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
-    window.addEventListener("pointercancel", onUp);
+    window.addEventListener("pointercancel", stop);
+    window.addEventListener("keydown", onKeyDown);
     return () => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
-      window.removeEventListener("pointercancel", onUp);
+      window.removeEventListener("pointercancel", stop);
+      window.removeEventListener("keydown", onKeyDown);
       /* Démonté en plein geste, la page resterait insélectionnable. */
       document.body.removeAttribute(DRAG_ACTIVE_ATTR);
     };
@@ -161,7 +176,7 @@ export function useDragReorder({ ids, axis, containerRef, group, onReorder }: Dr
      c'est là qu'un appelant doit décider de l'ignorer. */
   const didDrag = useCallback(() => dragged.current, []);
 
-  return { order, draggingId, itemProps, handleProps, didDrag, cancel: stop };
+  return { order, draggingId, itemProps, handleProps, didDrag, cancel: stop, resetOrder };
 }
 
 export type DragItemProps = ReturnType<ReturnType<typeof useDragReorder>["itemProps"]>;

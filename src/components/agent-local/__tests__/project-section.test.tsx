@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, fireEvent, render } from "@testing-library/react";
 import { ProjectSection } from "../project-section";
 import type { Project } from "@/types/agent";
 
@@ -55,15 +55,11 @@ vi.mock("@/components/ui/compose-icon", () => ({
 }));
 
 vi.mock("@/components/ui/context-menu", () => ({
-  ContextMenu: () => <div />,
+  ContextMenu: () => <div data-testid="context-menu" />,
 }));
 
 vi.mock("../conversation-session-item", () => ({
   ConversationSessionItem: () => <div />,
-}));
-
-vi.mock("@/hooks/use-keyboard", () => ({
-  useKeyboard: () => {},
 }));
 
 afterEach(() => {
@@ -81,5 +77,14 @@ describe("ProjectSection", () => {
     const { getByTestId } = render(<ProjectSection {...baseProps} collapsed />);
 
     expect(getByTestId("folder-state-icon").getAttribute("data-open")).toBe("false");
+  });
+
+  it("laisse Échap fermer le menu de projet sans glissement", () => {
+    const { container, queryByTestId } = render(<ProjectSection {...baseProps} collapsed={false} />);
+
+    fireEvent.click(container.querySelector(".conv-project-action-btn") as HTMLElement);
+    expect(queryByTestId("context-menu")).not.toBeNull();
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(queryByTestId("context-menu")).toBeNull();
   });
 });

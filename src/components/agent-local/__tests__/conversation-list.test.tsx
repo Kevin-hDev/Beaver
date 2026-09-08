@@ -49,10 +49,6 @@ vi.mock("../project-section", () => ({
   ),
 }));
 
-vi.mock("@/hooks/use-keyboard", () => ({
-  useKeyboard: () => {},
-}));
-
 vi.mock("@/hooks/use-session-activity-indicators", () => ({
   useSessionActivityIndicators: () => activityMocks,
 }));
@@ -200,13 +196,29 @@ describe("ConversationList", () => {
 	    expect(container.querySelector(".conv-session-menu-btn")).not.toBeNull();
 	  });
 
-	  it("ouvre le menu de session au clic sur les trois points", () => {
+  it("ouvre le menu de session au clic sur les trois points", () => {
     const session = makeSession({ id: "s1" });
     const { container, getByTestId } = render(
       <ConversationList {...defaultProps} sessions={[session]} />,
     );
     fireEvent.click(container.querySelector(".conv-session-menu-btn") as HTMLElement);
     expect(getByTestId("context-menu")).not.toBeNull();
+  });
+
+  it("laisse Échap fermer le renommage et le menu sans geste", () => {
+    const { container, queryByTestId } = render(
+      <ConversationList {...defaultProps} sessions={[makeSession()]} />,
+    );
+
+    fireEvent.doubleClick(container.querySelector(".conv-session-main") as HTMLElement);
+    expect(container.querySelector("input.conv-rename")).not.toBeNull();
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(container.querySelector("input.conv-rename")).toBeNull();
+
+    fireEvent.click(container.querySelector(".conv-session-menu-btn") as HTMLElement);
+    expect(queryByTestId("context-menu")).not.toBeNull();
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(queryByTestId("context-menu")).toBeNull();
   });
 
   /* L'icône de session marquait l'état actif par son remplissage et a été

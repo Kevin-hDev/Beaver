@@ -1272,6 +1272,7 @@
     "startDescription": "Saisissez une URL ou lancez une recherche",
     "invalidUrl": "Saisissez une adresse HTTP ou HTTPS valide.",
     "tabsLabel": "Onglets du navigateur",
+    "reorderTabsHint": "Glissez un onglet pour le déplacer, ou utilisez {{alt}} + Shift + Left / Right.",
     "newTab": "Nouvel onglet",
     "closeTab": "Fermer {{title}}",
     "addTab": "Ajouter un onglet",

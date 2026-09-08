@@ -1186,6 +1186,7 @@
     "startDescription": "输入网址或搜索网页",
     "invalidUrl": "请输入有效的 HTTP 或 HTTPS 地址。",
     "tabsLabel": "浏览器标签页",
+    "reorderTabsHint": "拖动标签页以移动位置，或使用 {{alt}} + Shift + Left / Right。",
     "newTab": "新标签页",
     "closeTab": "关闭 {{title}}",
     "addTab": "添加标签页",

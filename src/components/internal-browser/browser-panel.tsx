@@ -39,9 +39,11 @@ export function BrowserPanel(props: BrowserPanelProps) {
     clearNotice,
     createTab,
     activateTab,
+    reorderTabs,
     closeTab: closeSessionTab,
     navigate,
     navigationAction,
+    reportError,
   } = useBrowserSession(props.conversationId, props.active);
   const [draft, setDraft] = useState<AddressDraft | null>(null);
   const [invalidTabId, setInvalidTabId] = useState<string | null>(null);
@@ -107,6 +109,10 @@ export function BrowserPanel(props: BrowserPanelProps) {
         <BrowserTabStrip
           tabs={session.tabs}
           activeTabId={session.activeTabId}
+          enabled={props.active}
+          conversationId={props.conversationId}
+          onReorder={reorderTabs}
+          onReorderError={reportError}
           onSelect={selectTab}
           onClose={closeTab}
           onAdd={() => { void tabCreation.requestNewTab(); }}
