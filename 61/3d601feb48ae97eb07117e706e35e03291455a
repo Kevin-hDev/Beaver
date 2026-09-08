@@ -28,3 +28,32 @@ Source https://ai.google.dev/gemini-api/docs/generate-content/caching read today
 This closes Google direct cache READ proof; implicit expiration and global
 continuity activation are NOT claimed. Local ignored live report updated.
 No source modification and no unnecessary repeat of unchanged unit suites.
+
+Scheduled live pass 2026-09-08 01:46-01:48UTC, unchanged613d601f, existing app
+and seven sessions in docs/providers/cache/mesures-cache.md.13 attempts:
+12 successes on six routes,1 LOCAL Google failure. No source changes,
+restart,key export,region switch,push or automatic repetition.
+First/second read,input; write separately:
+ZAI GLM after174.2min:0/4854 ->4800/4868,write unknown.
+OpenAI Astra169.8min:0/3875 write3872 ->3872/3895 write20.
+Codex Astra117.9min:0/3949 ->3712/3969,write0 both.
+OR Gemini82.7min:5599/5648 write5599 ->5599/5658 write0.
+OR GLM133.2min:0/5788 ->5760/5802,write0, same GMICloud upstream.
+OR Astra168.6min:0/3791 write3788 ->3788/3811 write20, same OpenAI upstream.
+Second calls ~57s after first starts, only after all six first successes.
+Saved sessions/metrics checked; all12 responses OK. Codex metrics from
+persisted diagnostics. This proves cache renewal/reuse after inactivity,
+not exact implicit TTL or semantic recall/tool-loop behavior.
+Google dense session6c55e4fb-1258-4a1d-bce8-db65e62f5efc after57.8min failed
+provider_configuration_invalid after replay, before HTTP headers. Payload
+byte ceiling32768 suspected: first user JSON string31092bytes plus two signed
+responses and envelope. Exact serialized size not retained: hypothesis not
+misrepresented as measured fact. No quota429 observed. No second Google
+call or history trimming to fake green. Needs suitably budgeted larger
+fixture ceiling on next authorized app launch; earlier read16340 proof stands.
+OR six exact costs sum .053702USD, cumulative conservative .4201082.
+OpenAI two-call upper estimate .0531315USD, ZAI .0014613USD, not invoices.
+Google unknown failure provision retained, unused second reserve released.
+Automation v-rifier-les-caches-apr-s-inactivit confirmed PAUSED. No global
+activation or100percent completion claimed. Dated measurements document
+contains complete table and failure, no new source tests claimed.
