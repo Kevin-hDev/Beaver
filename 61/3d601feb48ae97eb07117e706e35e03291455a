@@ -9,3 +9,22 @@ Live evidence from the built/running app, existing vault, four bounded one-attem
 Verification: marker tests observed RED then 21 prompt_cache tests GREEN; parser+journal overlap tests RED then GREEN; seeded-pricing regression RED (invented4633microUSD) then GREEN. Six new tests cover reference/replay stability, short/later messages, other routes, overlap bounds, disk roundtrip and cost guard. Full cargo test --lib:5225 passed,0 failed,19 ignored. Strict clippy --all-targets -D warnings exit0; cargo fmt --check and git diff --check exit0; targeted usage-card Vitest9 passed; provider boundaries61 files pass; cargo build exit0; graphify update . exit0. Existing ts-rs/linker warnings are not claimed absent. Self-review checked shared policy authority, unchanged signed blocks, metadata header inclusion, persisted validation and pricing test restoring existing catalog capabilities.
 
 Sources read 2026-09-08: https://openrouter.ai/docs/guides/best-practices/prompt-caching ; https://ai.google.dev/gemini-api/docs/generate-content/caching ; https://openrouter.ai/api/v1/models/google/gemini-3.8-flash/endpoints . Local ignored report: docs/superpowers/plans/2026-09-08-enquete-cache-gemini-openrouter.md; overall live report updated with scoped result, not global task closure. Unrelated website/assets/notices changes preserved and unstaged.
+
+Additional live verification, 2026-09-08 00:48UTC, unchanged code613d601f.
+After user credit top-up, Google direct completed two existing-prefix calls
+input5676/5702 with cache absent. Debug projection proved only three usage
+fields arrived, so no dropped cached_tokens in Beaver was demonstrated.
+Then controlled denser synthetic prefix, same Google gemini-3.8-flash medium,
+session6c55e4fb-1258-4a1d-bce8-db65e62f5efc: first input21015/output65 with
+cache absent; second input21091/output21/cached16340/miss4751,reported.
+Actual incoming fourth field prompt_tokens_details.cached_tokens=16340,
+verified in bounded debug projection and persisted provider-request journal;
+both session runs completed. No patch, no restart, no key export or changed
+region. Two calls bounded32768bytes/256output/one attempt, .051072USD total
+conservative reservation retained. No exact provider price claim.
+Official Google caching docs say implicit hit is not guaranteed; the larger
+prefix success does not establish a new fixed minimum or internal miss cause.
+Source https://ai.google.dev/gemini-api/docs/generate-content/caching read today.
+This closes Google direct cache READ proof; implicit expiration and global
+continuity activation are NOT claimed. Local ignored live report updated.
+No source modification and no unnecessary repeat of unchanged unit suites.
