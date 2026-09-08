@@ -2,12 +2,13 @@ import { useId, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, X } from "@/components/ui/icons";
 import { ALT_LABEL } from "@/lib/platform";
-import { BrowserIcon } from "./browser-icon";
+import { BrowserTabFavicon } from "./browser-tab-favicon";
 import type { BrowserTabState } from "./browser-types";
 import { useBrowserTabReorder } from "./use-browser-tab-reorder";
 
 interface BrowserTabStripProps {
   tabs: BrowserTabState[];
+  favicons?: ReadonlyMap<string, string>;
   activeTabId: string;
   enabled: boolean;
   conversationId: string;
@@ -75,7 +76,7 @@ export function BrowserTabStrip(props: BrowserTabStripProps) {
                   }
                 }}
               >
-                <BrowserIcon className="ib-tab-icon" />
+                <BrowserTabFavicon pngBase64={props.favicons?.get(tab.id)} />
                 <span className="ib-tab-title">{title}</span>
               </button>
               <button
