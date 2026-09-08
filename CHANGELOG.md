@@ -6,6 +6,24 @@
 
 ## v1.2.2
 
+### New AI models
+
+- **Gemini 3.8 Flash** — available through Google and OpenRouter.
+- **GLM 5.3 Flash** — available through Z.AI and OpenRouter, including image input on compatible routes.
+- **GPT 6 Astra** — available through the OpenAI API, Codex with ChatGPT sign-in, and OpenRouter.
+- **Provider-specific capabilities** — model profiles expose the supported reasoning effort levels, tool calling, image input, and context limits for each connection, including Astra's Ultra effort through Codex.
+
+### Cache and usage reliability
+
+- **Prompt cache support** — improved cache handling and reuse reporting for the new models, with validated conversation resumption after inactivity on supported connections.
+- **Accurate usage accounting** — corrected Google token reconciliation and provider-specific cache read and write accounting without inventing missing usage or cost data.
+
+### Integrated browser
+
+- **Reorderable tabs** — move browser tabs with the pointer or keyboard and restore their saved order when reopening the application.
+- **Site icons** — native CEF browser tabs display validated, temporary favicons on macOS and Windows, with safe fallbacks when an icon cannot be loaded.
+- **Compact navigation** — slimmer tabs and toolbar, more predictable address selection, and improved keyboard focus behavior.
+
 ### Expanded extension API
 
 - **Extension-centered discovery** — Agent mode keeps complete extension toolsets available while they fit within the 10% context budget, then exposes a compact extension list and bounded multi-extension inspection without requiring users to select tools manually for every request.

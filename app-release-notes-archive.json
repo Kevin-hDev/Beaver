@@ -1,4 +1,55 @@
 {
+  "1.2.1": {
+    "fr": [
+      "Les extensions JavaScript et TypeScript peuvent maintenant être ajoutées depuis des fichiers locaux, des dépôts Git et des packages npm.",
+      "Documents, PDF, Feuilles de calcul et Présentations fonctionnent maintenant comme plugins officiels, séparés des Tools intégrés.",
+      "Chaque extension tierce utilise son propre processus géré avec approbation, empreinte des fichiers, permissions bornées et reprise après panne.",
+      "L’API d’extension donne accès aux outils, événements, sessions, projets, connecteurs MCP, canaux et secrets approuvés par l’utilisateur.",
+      "Les réglages proposent maintenant l’activation, les mises à jour, les priorités, les diagnostics et la récupération des extensions."
+    ],
+    "en": [
+      "JavaScript and TypeScript extensions can now be added from local files, Git repositories, and npm packages.",
+      "Documents, PDF, Spreadsheets, and Presentations now run as official plugins, separate from the built-in Tools.",
+      "Each third-party extension uses its own managed process with approval, file fingerprints, bounded permissions, and crash recovery.",
+      "The extension API provides tools, events, sessions, projects, MCP connectors, channels, and user-approved secrets.",
+      "Settings now provides extension activation, updates, priorities, diagnostics, and recovery."
+    ],
+    "es": [
+      "Las extensiones JavaScript y TypeScript ya se pueden añadir desde archivos locales, repositorios Git y paquetes npm.",
+      "Documentos, PDF, Hojas de cálculo y Presentaciones funcionan ahora como plugins oficiales, separados de las Tools integradas.",
+      "Cada extensión de terceros usa su propio proceso gestionado con aprobación, huellas de archivos, permisos limitados y recuperación.",
+      "La API de extensiones ofrece herramientas, eventos, sesiones, proyectos, conectores MCP, canales y secretos aprobados por el usuario.",
+      "Los ajustes permiten ahora activar, actualizar, priorizar, diagnosticar y recuperar extensiones."
+    ],
+    "de": [
+      "JavaScript- und TypeScript-Erweiterungen lassen sich jetzt aus lokalen Dateien, Git-Repositorys und npm-Paketen hinzufügen.",
+      "Dokumente, PDF, Tabellen und Präsentationen laufen jetzt als offizielle Plugins, getrennt von den integrierten Tools.",
+      "Jede Drittanbieter-Erweiterung nutzt einen eigenen verwalteten Prozess mit Freigabe, Dateiprüfsummen, Grenzen und Wiederherstellung.",
+      "Die Erweiterungs-API bietet Werkzeuge, Ereignisse, Sitzungen, Projekte, MCP-Konnektoren, Kanäle und freigegebene Geheimnisse.",
+      "In den Einstellungen lassen sich Erweiterungen jetzt aktivieren, aktualisieren, priorisieren, diagnostizieren und wiederherstellen."
+    ],
+    "it": [
+      "Le estensioni JavaScript e TypeScript possono ora essere aggiunte da file locali, repository Git e pacchetti npm.",
+      "Documenti, PDF, Fogli di calcolo e Presentazioni ora funzionano come plugin ufficiali, separati dai Tools integrati.",
+      "Ogni estensione di terze parti usa un processo gestito separato con approvazione, impronte dei file, limiti e ripristino.",
+      "L’API delle estensioni offre strumenti, eventi, sessioni, progetti, connettori MCP, canali e segreti approvati dall’utente.",
+      "Le impostazioni consentono ora di attivare, aggiornare, ordinare, diagnosticare e ripristinare le estensioni."
+    ],
+    "zh": [
+      "现在可以从本地文件、Git 仓库和 npm 包添加 JavaScript 与 TypeScript 扩展。",
+      "文档、PDF、电子表格和演示文稿现作为官方插件运行，并与内置 Tools 分开管理。",
+      "每个第三方扩展都使用独立的托管进程，并具备明确授权、文件指纹、权限限制和崩溃恢复。",
+      "扩展 API 提供工具、事件、会话、项目、MCP 连接器、通道以及用户批准的密钥访问。",
+      "设置中现可管理扩展的启用、更新、优先级、诊断和恢复。"
+    ],
+    "ja": [
+      "JavaScript と TypeScript の拡張機能を、ローカルファイル、Git リポジトリ、npm パッケージから追加できるようになりました。",
+      "文書、PDF、スプレッドシート、プレゼンテーションが、内蔵 Tools とは別の公式プラグインとして動作します。",
+      "各サードパーティ拡張機能は、承認、ファイル指紋、権限制限、障害復旧を備えた専用プロセスで動作します。",
+      "拡張 API からツール、イベント、セッション、プロジェクト、MCP コネクタ、チャンネル、承認済み秘密情報を利用できます。",
+      "設定画面で拡張機能の有効化、更新、優先順位、診断、復旧を管理できるようになりました。"
+    ]
+  },
   "1.2.0": {
     "fr": [
       "Beaver inclut désormais onze parcours d’audit de sécurité fondés sur des preuves pour le code, l’authentification, les dépendances, les secrets et les releases.",
