@@ -211,6 +211,11 @@ pub(crate) use runtime_integration::{
 pub use session_model::{BrowserSessionState, BrowserTabCreation};
 pub use session_service::BrowserSessionService;
 
+#[cfg(feature = "e2e")]
+pub(crate) fn seed_e2e_session_key_fixture() -> Result<(), ()> {
+    session_store::seed_e2e_session_key_fixture()
+}
+
 #[cfg(target_os = "macos")]
 pub(crate) use macos_helper_entry::run as run_macos_cef_helper;
 

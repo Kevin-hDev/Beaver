@@ -71,7 +71,11 @@ export function BrowserNavigationBar(props: BrowserNavigationBarProps) {
           placeholder={t("browser.addressPlaceholder")}
           aria-invalid={props.invalid}
           onPointerDown={(event) => {
-            selectAfterPointer.current = document.activeElement !== event.currentTarget;
+            /* Une vue CEF native peut prendre le focus macOS sans remettre à
+               zéro activeElement dans le document Tauri. hasFocus est alors
+               la seule autorité qui indique que ce clic entre dans le champ. */
+            selectAfterPointer.current = !document.hasFocus() ||
+              document.activeElement !== event.currentTarget;
           }}
           onPointerCancel={() => { selectAfterPointer.current = false; }}
           onFocus={(event) => {

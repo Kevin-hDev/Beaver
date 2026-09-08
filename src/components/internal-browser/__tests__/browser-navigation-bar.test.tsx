@@ -145,6 +145,30 @@ describe("BrowserNavigationBar", () => {
     expect(onChange).toHaveBeenCalled();
   });
 
+  it("resélectionne au retour de CEF malgré un activeElement resté sur l'adresse", () => {
+    render(<NavigationHarness address="https://initial.example/" />);
+    const address = input();
+    address.focus();
+    address.setSelectionRange(address.value.length, address.value.length);
+    const hasFocus = vi.spyOn(document, "hasFocus").mockReturnValue(false);
+
+    fireEvent.pointerDown(address, { button: 0 });
+    hasFocus.mockReturnValue(true);
+    fireEvent.focus(window);
+    fireEvent.focus(address);
+    address.setSelectionRange(address.value.length, address.value.length);
+    fireEvent.click(address);
+
+    expect(address.selectionStart).toBe(0);
+    expect(address.selectionEnd).toBe(address.value.length);
+    address.setSelectionRange(5, 5);
+    fireEvent.pointerDown(address, { button: 0 });
+    fireEvent.click(address);
+    expect(address.selectionStart).toBe(5);
+    expect(address.selectionEnd).toBe(5);
+    hasFocus.mockRestore();
+  });
+
   it("oublie le premier clic interrompu par pointercancel", () => {
     render(<NavigationHarness address="https://initial.example/" />);
     const address = input();

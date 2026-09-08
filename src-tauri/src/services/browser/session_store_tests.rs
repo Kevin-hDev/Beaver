@@ -1,13 +1,50 @@
-use super::{session_model::SessionModel, session_store, session_types::BrowserRuntimeTabUpdate};
+use super::{
+    session_model::SessionModel,
+    session_store::{self, E2eSessionKeyAction, SESSION_KEY_BYTES},
+    session_types::BrowserRuntimeTabUpdate,
+};
+use base64::Engine;
 use std::fs;
 use zeroize::Zeroizing;
 
 fn key() -> Zeroizing<Vec<u8>> {
-    Zeroizing::new(vec![7_u8; 32])
+    Zeroizing::new(vec![7_u8; SESSION_KEY_BYTES])
 }
 
 fn id(index: usize) -> String {
     format!("{index:032x}")
+}
+
+fn e2e_key(byte: u8) -> zeroize::Zeroizing<String> {
+    zeroize::Zeroizing::new(
+        base64::engine::general_purpose::STANDARD.encode([byte; SESSION_KEY_BYTES]),
+    )
+}
+
+#[test]
+fn e2e_fixture_seeds_before_random_generation_and_keeps_the_same_second_key() {
+    let key = e2e_key(7);
+
+    assert!(matches!(
+        session_store::e2e_session_key_action(None, &key),
+        Ok(E2eSessionKeyAction::Seed)
+    ));
+    assert!(matches!(
+        session_store::e2e_session_key_action(Some(&key), &key),
+        Ok(E2eSessionKeyAction::Keep)
+    ));
+}
+
+#[test]
+fn e2e_fixture_rejects_invalid_or_replaced_keys_without_a_seed_action() {
+    let key = e2e_key(7);
+    let replacement = e2e_key(8);
+    let malformed = format!("{}%", &key[..43]);
+
+    assert!(session_store::e2e_session_key_action(None, "").is_err());
+    assert!(session_store::e2e_session_key_action(None, &key[..43]).is_err());
+    assert!(session_store::e2e_session_key_action(None, &malformed).is_err());
+    assert!(session_store::e2e_session_key_action(Some(&key), &replacement).is_err());
 }
 
 #[test]
