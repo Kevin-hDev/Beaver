@@ -1,0 +1,1 @@
+Post-main integration formatting correction required by cargo fmt --check. No behavior change. This commit follows the merge from origin/main so the CI tests the current main baseline plus the reviewed favicon work.
