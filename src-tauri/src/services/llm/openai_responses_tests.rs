@@ -4,6 +4,32 @@ use crate::services::llm::fast_mode::FastModeRequest;
 use crate::services::llm::request_purpose::RequestPurpose;
 use crate::services::llm::stream_http::RequestConfig;
 
+#[tokio::test]
+async fn fixture_scope_caps_responses_wire_output() {
+    let mut config = request(&[], &[], Some("medium"), FastModeRequest::Standard);
+    config.max_tokens = Some(127);
+    assert_eq!(build_request(&config)["max_output_tokens"], 127);
+    let limits = crate::services::reasoning_fixture_budget::FixtureLimits::from_values(
+        Some("19"),
+        None,
+        None,
+    )
+    .unwrap();
+    crate::services::reasoning_fixture_budget::run_scoped(
+        limits,
+        tokio_util::sync::CancellationToken::new(),
+        async {
+            let body = build_request(&config);
+            assert_eq!(body["max_output_tokens"], 19);
+            config.max_tokens = Some(7);
+            assert_eq!(build_request(&config)["max_output_tokens"], 7);
+            Ok::<(), String>(())
+        },
+    )
+    .await
+    .unwrap();
+}
+
 fn request<'a>(
     messages: &'a [ChatMessage],
     tools: &'a [serde_json::Value],
@@ -173,6 +199,64 @@ fn api_request_uses_responses_reasoning_and_fast_contract() {
 }
 
 #[test]
+fn astra_api_request_uses_each_supported_effort_without_sampling_parameters() {
+    let messages = [ChatMessage::user("bonjour".into())];
+    for mode in ["low", "medium", "high", "xhigh", "max"] {
+        let mut config = request(&messages, &[], Some(mode), FastModeRequest::Standard);
+        config.model = "gpt-6-astra";
+        config.max_tokens = Some(1_234);
+
+        let body = build_request(&config);
+        assert_eq!(body["model"], "gpt-6-astra");
+        assert_eq!(
+            body["reasoning"],
+            serde_json::json!({
+                "effort": mode,
+                "summary": "auto"
+            })
+        );
+        assert_eq!(body["store"], false);
+        assert_eq!(body["service_tier"], "default");
+        assert_eq!(body["max_output_tokens"], 1_234);
+        for forbidden in ["temperature", "top_p", "top_logprobs"] {
+            assert!(body.get(forbidden).is_none(), "unexpected {forbidden}");
+        }
+        assert!(body["reasoning"].get("context").is_none());
+    }
+}
+
+#[test]
+fn astra_effective_profile_reaches_the_responses_constructor() {
+    let messages = [ChatMessage::user("bonjour".into())];
+    for (requested, thinking_enabled) in [
+        (Some("off"), true),
+        (Some("auto"), true),
+        (None, true),
+        (Some("medium"), false),
+    ] {
+        let profile = crate::services::reasoning_profile::EffectiveReasoningProfile::api(
+            "openai",
+            "gpt-6-astra",
+            requested,
+            thinking_enabled,
+            true,
+        )
+        .expect("Astra profile");
+        let mut config = request(
+            &messages,
+            &[],
+            profile.mode_name.as_deref(),
+            FastModeRequest::Standard,
+        );
+        config.model = "gpt-6-astra";
+        let body = build_request(&config);
+        assert_eq!(body["reasoning"]["effort"], "medium");
+        assert_eq!(body["reasoning"]["summary"], "auto");
+        assert_ne!(body["reasoning"]["effort"], "none");
+    }
+}
+
+#[test]
 fn responses_payload_receives_verified_preview_with_its_original_tool_call_id() {
     let messages = [ChatMessage::tool(
         "done".into(),
@@ -309,6 +393,93 @@ fn responses_continuity_replays_native_items_at_the_assistant_position_without_t
     assert_eq!(body["input"][0]["encrypted_content"], "opaque");
     assert_eq!(body["input"][1]["type"], "message");
     assert_eq!(body["input"][2]["role"], "user");
+    assert_eq!(prepared.replayed.len(), 1);
+}
+
+#[test]
+fn astra_fixture_candidate_replays_persisted_response_items_after_a_tool_turn() {
+    use crate::services::reasoning_continuity::contract::{
+        ContinuationTarget, ContinuationUse, CredentialScope, ReasoningModeId, ReplayTarget,
+        RouteId,
+    };
+    use crate::services::reasoning_continuity::envelope::{
+        CompletionState, ContinuationState, ReasoningEnvelope, ReasoningSource,
+    };
+
+    let target = ContinuationTarget::FixtureCandidate(ReplayTarget {
+        route_id: RouteId::OpenAi,
+        model_id: "gpt-6-astra".into(),
+        credential_scope: CredentialScope::authenticated("astra-scope").unwrap(),
+        reasoning_mode: ReasoningModeId::Medium,
+        continuation_use: ContinuationUse::UserContinuation,
+    });
+    let replay = target.replay().unwrap();
+    let envelope = ReasoningEnvelope::new(
+        crate::services::reasoning_continuity::contract::ContractId::OpenAiResponsesV1,
+        ReasoningSource::from_target(replay),
+        CompletionState::Complete,
+        ContinuationState::ResponsesLocal {
+            items: vec![
+                serde_json::json!({
+                    "type": "reasoning",
+                    "encrypted_content": "opaque-astra-Δ"
+                }),
+                serde_json::json!({
+                    "type": "function_call", "call_id": "call-astra",
+                    "name": "lookup", "arguments": "{\"city\":\"Paris\"}"
+                }),
+            ],
+        },
+        Vec::new(),
+    );
+    let reloaded: ReasoningEnvelope =
+        serde_json::from_slice(&serde_json::to_vec(&envelope).expect("persisted Astra envelope"))
+            .expect("reloaded Astra envelope");
+    let messages = [
+        ChatMessage::assistant(
+            "visible".into(),
+            None,
+            Some(reloaded),
+            None,
+            Some(vec![
+                crate::services::agent_local::types_ollama::ToolCallOllama {
+                    id: Some("call-astra".into()),
+                    function: crate::services::agent_local::types_ollama::ToolCallFunction {
+                        name: "lookup".into(),
+                        arguments: serde_json::json!({"city": "Paris"}),
+                    },
+                    extra_content: None,
+                },
+            ]),
+        ),
+        ChatMessage::tool(
+            "18 C".into(),
+            Some("call-astra".into()),
+            Some("lookup".into()),
+        ),
+        ChatMessage::user("continue".into()),
+    ];
+    let mut config = request(&messages, &[], Some("medium"), FastModeRequest::Standard);
+    config.model = "gpt-6-astra";
+    config.continuation_target = Some(&target);
+
+    let prepared = try_build_request_with_evidence(&config).expect("Astra fixture replay");
+    assert_eq!(prepared.body["input"][0]["type"], "reasoning");
+    assert_eq!(
+        prepared.body["input"][0]["encrypted_content"],
+        "opaque-astra-Δ"
+    );
+    assert_eq!(prepared.body["input"][1]["type"], "function_call");
+    assert_eq!(prepared.body["input"][1]["call_id"], "call-astra");
+    assert_eq!(prepared.body["input"][2]["type"], "function_call_output");
+    assert_eq!(prepared.body["input"][2]["call_id"], "call-astra");
+    assert_eq!(
+        prepared.body["input"]
+            .as_array()
+            .and_then(|items| items.last())
+            .and_then(|item| item.get("role")),
+        Some(&serde_json::json!("user"))
+    );
     assert_eq!(prepared.replayed.len(), 1);
 }
 

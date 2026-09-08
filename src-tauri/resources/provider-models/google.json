@@ -1,8 +1,8 @@
 {
   "provider": "google",
   "schema_version": 1,
-  "verified_at": "2026-08-22",
-  "source_urls": ["https://ai.google.dev/gemini-api/docs/models"],
+  "verified_at": "2026-09-07",
+  "source_urls": ["https://ai.google.dev/gemini-api/docs/models", "https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash"],
   "models": [
     {"id":"gemini-3.7-flash","context_window":1048576,"max_output_tokens":65536,"supports_tools":true,"supports_vision":true,"supports_thinking":true,"reasoning_modes":["low","medium","high"],"default_reasoning_mode":"medium"},
     {"id":"gemini-3.6-flash","context_window":1048576,"max_output_tokens":65536,"supports_tools":true,"supports_vision":true,"supports_thinking":true,"reasoning_modes":["low","medium","high"]},
@@ -17,6 +17,7 @@
     {"id":"gemini-2.5-flash-lite","context_window":1048576,"max_output_tokens":65536,"supports_tools":true,"supports_vision":true,"supports_thinking":true,"reasoning_modes":["off","low","medium","high"]},
     {"id":"gemini-flash-latest","context_window":1048576,"max_output_tokens":65536,"supports_tools":true,"supports_vision":true,"supports_thinking":true,"reasoning_modes":["off","low","medium","high"]},
     {"id":"gemini-flash-lite-latest","context_window":1048576,"max_output_tokens":65536,"supports_tools":true,"supports_vision":true,"supports_thinking":true,"reasoning_modes":["off","low","medium","high"]},
-    {"id":"gemini-pro-latest","context_window":1048576,"max_output_tokens":65536,"supports_tools":true,"supports_vision":true,"supports_thinking":true,"reasoning_modes":["off","low","medium","high"]}
+    {"id":"gemini-pro-latest","context_window":1048576,"max_output_tokens":65536,"supports_tools":true,"supports_vision":true,"supports_thinking":true,"reasoning_modes":["off","low","medium","high"]},
+    {"id":"gemini-3.8-flash","context_window":1048576,"max_output_tokens":65536,"supports_tools":true,"supports_vision":true,"supports_thinking":true,"reasoning_modes":["low","medium","high"],"default_reasoning_mode":"medium"}
   ]
 }

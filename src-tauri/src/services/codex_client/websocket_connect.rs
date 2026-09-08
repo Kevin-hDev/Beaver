@@ -21,23 +21,23 @@ pub(super) type CodexSocket =
     tokio_tungstenite::WebSocketStream<tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>>;
 
 pub(super) async fn connect(
-    session_id: &str,
+    cache_key: &str,
     routing_hint: &str,
 ) -> Result<CodexSocket, ConnectError> {
     #[cfg(test)]
-    if let Some(socket) = super::test_transport::connect_websocket(session_id, routing_hint).await {
+    if let Some(socket) = super::test_transport::connect_websocket(cache_key, routing_hint).await {
         return socket;
     }
     let credentials = token::ensure_valid()
         .await
         .map_err(|_| ConnectError::Unavailable)?;
-    match connect_once(&credentials, Some(session_id), routing_hint).await {
+    match connect_once(&credentials, Some(cache_key), routing_hint).await {
         Ok(socket) => Ok(socket),
         Err(ConnectError::Unauthorized) => {
             let refreshed = token::recover_after_unauthorized(credentials.access.as_str())
                 .await
                 .map_err(|_| ConnectError::Unavailable)?;
-            connect_once(&refreshed, Some(session_id), routing_hint).await
+            connect_once(&refreshed, Some(cache_key), routing_hint).await
         }
         Err(error) => Err(error),
     }

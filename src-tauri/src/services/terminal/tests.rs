@@ -234,6 +234,7 @@ mod tests {
 
     /// Ce que le shell rapporte de son propre environnement, entre le préfixe
     /// et la fin de sa ligne. `None` tant que la ligne n'est pas complète.
+    #[cfg(unix)]
     fn shell_report(output: &str) -> Option<&str> {
         let tail = output.split("BEAVER42_").nth(1)?;
         let (line, _) = tail.split_once('\n')?;

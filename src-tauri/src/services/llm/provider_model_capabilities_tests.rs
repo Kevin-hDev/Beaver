@@ -16,6 +16,7 @@ async fn codex_runtime_catalog_resolves_a_model_absent_from_the_fallback() {
             supports_tools: true,
             supports_vision: true,
             supports_thinking: true,
+            reasoning_metadata_present: false,
             supports_fast_mode: false,
             reasoning_modes: vec!["low".to_string(), "high".to_string()],
             default_reasoning_mode: Some("high".to_string()),
@@ -32,4 +33,42 @@ async fn codex_runtime_catalog_resolves_a_model_absent_from_the_fallback() {
     assert!(resolved.supports_vision);
     assert!(resolved.supports_thinking);
     assert_eq!(resolved.reasoning_modes, ["low", "high"]);
+}
+
+#[tokio::test]
+async fn openrouter_explicit_empty_reasoning_stays_empty_in_backend_normalization() {
+    let _guard = super::runtime_models::test_mutation_lock().await;
+    super::runtime_models::replace_provider(
+        "openrouter",
+        &[ModelInfo {
+            id: "openai/o3".to_string(),
+            display_name: None,
+            owned_by: Some("openrouter".to_string()),
+            context_length: Some(200_000),
+            max_output_tokens: Some(100_000),
+            supports_tools: true,
+            supports_vision: true,
+            supports_thinking: true,
+            reasoning_metadata_present: true,
+            supports_fast_mode: false,
+            reasoning_modes: Vec::new(),
+            default_reasoning_mode: None,
+            context_usage_includes_reasoning: true,
+            is_free: false,
+        }],
+    );
+
+    assert!(
+        super::provider_model_lookup::resolve_reasoning_modes("openrouter", "openai/o3", true)
+            .is_empty()
+    );
+    assert_eq!(
+        crate::services::reasoning::normalize_for_model(
+            "openrouter",
+            "openai/o3",
+            Some("medium"),
+            true,
+        ),
+        None
+    );
 }

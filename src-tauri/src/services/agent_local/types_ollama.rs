@@ -136,6 +136,8 @@ pub struct ChatRequest {
 pub struct ChatOptions {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub num_ctx: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub num_predict: Option<u32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

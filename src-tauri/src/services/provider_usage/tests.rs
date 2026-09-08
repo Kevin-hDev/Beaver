@@ -4,6 +4,84 @@ use super::types::{LocalSnapshot, RemoteData};
 use super::usage_context::{UsageApiFormat, UsageContext};
 use serde_json::json;
 
+#[tokio::test]
+async fn gemini_cache_writes_require_reported_cost_even_with_catalog_pricing() {
+    use crate::services::llm::litellm_catalog;
+    let key = "openrouter/google/gemini-3.8-flash";
+    let mut entries = litellm_catalog::parse_catalog(
+        r#"{
+        "openrouter/google/gemini-3.8-flash":{"litellm_provider":"openrouter","mode":"chat",
+        "input_cost_per_token":0.00000075,"output_cost_per_token":0.00000375,
+        "cache_creation_input_token_cost":0.0000000416667}
+    }"#,
+    );
+    let replacement = entries.remove(key).unwrap();
+    let previous = {
+        let mut catalog = litellm_catalog::get_lock().write().await;
+        let previous = catalog.get(key).cloned();
+        let mut priced = previous.clone().unwrap_or_else(|| replacement.clone());
+        priced.input_cost_per_token = replacement.input_cost_per_token;
+        priced.output_cost_per_token = replacement.output_cost_per_token;
+        priced.cache_creation_input_token_cost = replacement.cache_creation_input_token_cost;
+        catalog.insert(key.into(), priced);
+        previous
+    };
+    let usage = RequestUsage {
+        input_tokens: Some(10000),
+        output_tokens: Some(10),
+        cached_input_tokens: Some(4100),
+        cache_write_input_tokens: Some(4100),
+        ..Default::default()
+    };
+    let estimated = super::pricing::resolve("openrouter", "google/gemini-3.8-flash", &usage).await;
+    let exact = super::pricing::resolve(
+        "openrouter",
+        "google/gemini-3.8-flash",
+        &RequestUsage {
+            exact_cost_usd_micros: Some(739),
+            ..usage
+        },
+    )
+    .await;
+    {
+        let mut catalog = litellm_catalog::get_lock().write().await;
+        if let Some(old) = previous {
+            catalog.insert(key.into(), old);
+        } else {
+            catalog.remove(key);
+        }
+    }
+    assert_eq!(estimated.micros, None);
+    assert_eq!(exact.micros, Some(739));
+    assert!(exact.exact);
+}
+
+#[test]
+fn gemini_explicit_cache_can_write_and_read_the_same_prefix() {
+    let value = json!({"prompt_tokens":5618,"completion_tokens":19,
+        "prompt_tokens_details":{"cached_tokens":5599,"cache_write_tokens":5599}});
+    let usage = RequestUsage::from_json_with_context(
+        &value,
+        UsageContext::chat("openrouter", "google/gemini-3.8-flash"),
+    )
+    .unwrap();
+    assert_eq!(usage.cache_status, CacheUsageStatus::Reported);
+    assert_eq!(usage.cached_input_tokens, Some(5599));
+    assert_eq!(usage.cache_write_input_tokens, Some(5599));
+    assert_eq!(usage.cache_miss_input_tokens, Some(19));
+    for model in ["openai/gpt-6-astra", "z-ai/glm-5.3-flash"] {
+        let usage =
+            RequestUsage::from_json_with_context(&value, UsageContext::chat("openrouter", model))
+                .unwrap();
+        assert_eq!(usage.cache_status, CacheUsageStatus::Invalid);
+    }
+    let usage = RequestUsage::from_json_with_context(
+        &json!({"prompt_tokens":100,"prompt_tokens_details":{"cached_tokens":101,"cache_write_tokens":0}}),
+        UsageContext::chat("openrouter","google/gemini-3.8-flash")
+    ).unwrap();
+    assert_eq!(usage.cache_status, CacheUsageStatus::Invalid);
+}
+
 #[test]
 fn openai_reasoning_is_not_added_twice() {
     let usage = RequestUsage::from_json(&json!({
@@ -163,6 +241,96 @@ fn gpt_56_reads_both_cache_directions() {
     assert_eq!(usage.cache_miss_input_tokens, Some(400));
     assert_eq!(usage.cache_miss_source, CacheMissSource::Calculated);
     assert_eq!(usage.cache_status, CacheUsageStatus::Reported);
+}
+
+#[test]
+fn google_chat_usage_reads_total_cached_tokens_without_double_counting_input() {
+    let usage = RequestUsage::from_json_with_context(
+        &json!({
+            "prompt_tokens": 1200,
+            "completion_tokens": 20,
+            "total_cached_tokens": 800
+        }),
+        UsageContext::chat("google", "gemini-3.8-flash"),
+    )
+    .unwrap();
+
+    assert_eq!(usage.cached_input_tokens, Some(800));
+    assert_eq!(usage.cache_miss_input_tokens, Some(400));
+    assert_eq!(usage.cache_miss_source, CacheMissSource::Calculated);
+    assert_eq!(usage.cache_status, CacheUsageStatus::Reported);
+    assert_eq!(usage.input_tokens, Some(1200));
+}
+
+#[test]
+fn astra_responses_usage_reads_cache_writes() {
+    let usage = RequestUsage::from_json_with_context(
+        &json!({
+            "input_tokens": 1200,
+            "output_tokens": 20,
+            "input_tokens_details": {
+                "cached_tokens": 800,
+                "cache_write_tokens": 400
+            }
+        }),
+        UsageContext::responses("openai", "gpt-6-astra"),
+    )
+    .unwrap();
+
+    assert_eq!(usage.cached_input_tokens, Some(800));
+    assert_eq!(usage.cache_write_input_tokens, Some(400));
+    assert_eq!(usage.cache_miss_input_tokens, Some(400));
+    assert_eq!(usage.cache_status, CacheUsageStatus::Reported);
+}
+
+#[test]
+fn google_cache_counter_distinguishes_absent_zero_and_invalid() {
+    let absent = RequestUsage::from_json_with_context(
+        &json!({"prompt_tokens": 120}),
+        UsageContext::chat("google", "gemini-3.8-flash"),
+    )
+    .unwrap();
+    assert_eq!(absent.cached_input_tokens, None);
+    assert_eq!(absent.cache_status, CacheUsageStatus::Unknown);
+
+    let zero = RequestUsage::from_json_with_context(
+        &json!({"prompt_tokens": 120, "total_cached_tokens": 0}),
+        UsageContext::chat("google", "gemini-3.8-flash"),
+    )
+    .unwrap();
+    assert_eq!(zero.cached_input_tokens, Some(0));
+    assert_eq!(zero.cache_miss_input_tokens, Some(120));
+    assert_eq!(zero.cache_status, CacheUsageStatus::Reported);
+
+    let invalid = RequestUsage::from_json_with_context(
+        &json!({"prompt_tokens": 120, "total_cached_tokens": 121}),
+        UsageContext::chat("google", "gemini-3.8-flash"),
+    )
+    .unwrap();
+    assert_eq!(invalid.cached_input_tokens, None);
+    assert_eq!(invalid.cache_miss_input_tokens, None);
+    assert_eq!(invalid.cache_status, CacheUsageStatus::Invalid);
+}
+
+#[test]
+fn google_total_cached_tokens_belongs_only_to_its_chat_contract() {
+    for context in [
+        UsageContext::responses("google", "gemini-3.8-flash"),
+        UsageContext {
+            canonical_provider_id: "google",
+            model: "gemini-3.8-flash",
+            api_format: UsageApiFormat::GeminiNative,
+        },
+        UsageContext::chat("zai", "glm-5.3-flash"),
+    ] {
+        let usage = RequestUsage::from_json_with_context(
+            &json!({"prompt_tokens":120, "total_cached_tokens":80}),
+            context,
+        )
+        .unwrap();
+        assert_eq!(usage.cached_input_tokens, None);
+        assert_eq!(usage.cache_status, CacheUsageStatus::Unknown);
+    }
 }
 
 #[test]
@@ -509,7 +677,7 @@ async fn oauth_routes_never_inherit_public_api_prices() {
 }
 
 #[tokio::test]
-async fn gpt_56_never_uses_an_unverified_catalog_price() {
+async fn gpt_56_and_astra_never_use_an_unverified_catalog_price() {
     let usage = RequestUsage {
         input_tokens: Some(300_000),
         output_tokens: Some(10_000),
@@ -523,4 +691,80 @@ async fn gpt_56_never_uses_an_unverified_catalog_price() {
             .micros,
         None,
     );
+    assert_eq!(
+        super::pricing::resolve("openai", "gpt-6-astra", &usage)
+            .await
+            .micros,
+        None,
+    );
+}
+
+#[tokio::test]
+async fn astra_loaded_catalog_cannot_override_unknown_or_reported_cost() {
+    use crate::services::llm::{litellm_catalog, model_pricing};
+    let entries = litellm_catalog::parse_catalog(
+        r#"{
+        "openai/gpt-6-astra": {"litellm_provider":"openai", "mode":"chat",
+            "input_cost_per_token":0.00001, "output_cost_per_token":0.00005,
+            "cache_creation_input_token_cost":0.0000125},
+        "openrouter/openai/gpt-6-astra": {"litellm_provider":"openrouter", "mode":"chat",
+            "input_cost_per_token":0.00001, "output_cost_per_token":0.00005,
+            "cache_creation_input_token_cost":0.0000125}
+    }"#,
+    );
+    let mut previous = Vec::with_capacity(2);
+    {
+        let mut catalog = litellm_catalog::get_lock().write().await;
+        for (key, entry) in entries {
+            // Preserve any existing capabilities; only pricing is under test.
+            let old = catalog.get(&key).cloned();
+            let mut replacement = old.clone().unwrap_or(entry.clone());
+            replacement.input_cost_per_token = entry.input_cost_per_token;
+            replacement.output_cost_per_token = entry.output_cost_per_token;
+            replacement.cache_creation_input_token_cost = entry.cache_creation_input_token_cost;
+            catalog.insert(key.clone(), replacement);
+            previous.push((key, old));
+        }
+    }
+    let usage = RequestUsage {
+        input_tokens: Some(300_000),
+        output_tokens: Some(100),
+        cache_write_input_tokens: Some(20_000),
+        ..Default::default()
+    };
+    let mut results = Vec::with_capacity(2);
+    for (provider, model) in [
+        ("openai", "gpt-6-astra"),
+        ("openrouter", "openai/gpt-6-astra"),
+    ] {
+        let loaded = model_pricing::lookup(provider, model).await;
+        let estimated = super::pricing::resolve(provider, model, &usage).await;
+        let exact = super::pricing::resolve(
+            provider,
+            model,
+            &RequestUsage {
+                exact_cost_usd_micros: Some(1234),
+                ..usage.clone()
+            },
+        )
+        .await;
+        results.push((loaded, estimated, exact));
+    }
+    {
+        let mut catalog = litellm_catalog::get_lock().write().await;
+        for (key, entry) in previous {
+            if let Some(entry) = entry {
+                catalog.insert(key, entry);
+            } else {
+                catalog.remove(&key);
+            }
+        }
+    }
+    for (loaded, estimated, exact) in results {
+        assert_eq!(loaded.unwrap().input_cost_per_token, Some(0.00001));
+        assert_eq!(estimated.micros, None);
+        assert!(!estimated.exact);
+        assert_eq!(exact.micros, Some(1234));
+        assert!(exact.exact);
+    }
 }

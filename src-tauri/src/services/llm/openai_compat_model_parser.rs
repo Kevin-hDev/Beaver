@@ -21,13 +21,28 @@ fn parse_model(model: &Value, provider_id: &str) -> Option<ModelInfo> {
     if !super::runtime_models::valid_model_id(id) {
         return None;
     }
+    let id = super::route_profile::catalog_model_id(provider_id, id);
+    if !super::runtime_models::valid_model_id(id) {
+        return None;
+    }
     let local_limits = super::provider_model_lookup::local_limits(provider_id, id);
-    let context_length = local_limits
-        .and_then(|limits| limits.context_window)
-        .or_else(|| remote_context(model));
-    let max_output_tokens = local_limits
-        .map(|limits| limits.max_output_tokens)
-        .unwrap_or_else(|| super::model_metadata::output_limit(model));
+    let authoritative = super::openrouter_model_metadata::owns_catalog_metadata(provider_id);
+    let context_length = if authoritative {
+        remote_context(model, true)
+            .or_else(|| local_limits.and_then(|limits| limits.context_window))
+    } else {
+        local_limits
+            .and_then(|limits| limits.context_window)
+            .or_else(|| remote_context(model, false))
+    };
+    let max_output_tokens = if authoritative {
+        remote_output_limit(model)
+            .or_else(|| local_limits.and_then(|limits| limits.max_output_tokens))
+    } else {
+        local_limits
+            .and_then(|limits| limits.max_output_tokens)
+            .or_else(|| super::model_metadata::output_limit(model))
+    };
     let supported_parameters = supported_parameters(model);
     let has_param = |name: &str| {
         supported_parameters
@@ -61,7 +76,14 @@ fn parse_model(model: &Value, provider_id: &str) -> Option<ModelInfo> {
             .is_some_and(|capabilities| capabilities.supports_thinking);
     // `supported_parameters` annonce une fonctionnalité, pas les niveaux permis.
     // Le catalogue dynamique reste vide tant qu'il ne publie pas ces valeurs.
-    let (reasoning_modes, default_reasoning_mode) = (Vec::new(), None);
+    let reasoning_metadata = if authoritative {
+        super::openrouter_model_metadata::reasoning(&model["reasoning"])
+    } else {
+        None
+    };
+    let (reasoning_modes, default_reasoning_mode) = reasoning_metadata
+        .clone()
+        .unwrap_or_else(|| (Vec::new(), None));
 
     Some(ModelInfo {
         id: id.to_string(),
@@ -72,6 +94,7 @@ fn parse_model(model: &Value, provider_id: &str) -> Option<ModelInfo> {
         supports_tools,
         supports_vision,
         supports_thinking,
+        reasoning_metadata_present: reasoning_metadata.is_some(),
         supports_fast_mode: false,
         reasoning_modes,
         default_reasoning_mode,
@@ -81,14 +104,42 @@ fn parse_model(model: &Value, provider_id: &str) -> Option<ModelInfo> {
     })
 }
 
-fn remote_context(model: &Value) -> Option<u32> {
+fn remote_output_limit(model: &Value) -> Option<u32> {
     [
+        model.pointer("/top_provider/max_completion_tokens"),
+        model.pointer("/limits/max_completion_tokens"),
+        model.get("max_output_tokens"),
+        model.get("max_completion_tokens"),
+        model.get("max_tokens"),
+    ]
+    .into_iter()
+    .flatten()
+    .filter_map(super::model_metadata::positive_u32)
+    .min()
+}
+
+fn remote_context(model: &Value, use_top_provider_limit: bool) -> Option<u32> {
+    let advertised = [
         &model["context_length"],
         &model["context_window"],
         &model["max_context_length"],
     ]
     .into_iter()
-    .find_map(super::model_metadata::positive_u32)
+    .find_map(super::model_metadata::positive_u32);
+    if !use_top_provider_limit {
+        return advertised;
+    }
+    if advertised.is_none() {
+        return super::model_metadata::positive_u32(&model["top_provider"]["context_length"]);
+    }
+    let top_provider =
+        super::model_metadata::positive_u32(&model["top_provider"]["context_length"]);
+    match (advertised, top_provider) {
+        (Some(advertised), Some(top_provider)) => Some(advertised.min(top_provider)),
+        (Some(advertised), None) => Some(advertised),
+        (None, Some(top_provider)) => Some(top_provider),
+        (None, None) => None,
+    }
 }
 
 fn architecture_supports_vision(model: &Value) -> bool {

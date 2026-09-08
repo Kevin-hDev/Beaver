@@ -45,6 +45,44 @@ pub(super) const QWEN: &[ModelPolicy] = &[
         ContinuationUse::ToolContinuation,
         ReplayRequirement::Required,
     ),
+    // Alibaba's exact third-party contract still lacks a safe output-limit field;
+    // block it instead of inheriting Qwen transport or inventing a payload.
+    disabled(
+        "ZHIPU/GLM-5.3-Flash",
+        ReasoningModeId::Low,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Forbidden,
+    ),
+    disabled(
+        "ZHIPU/GLM-5.3-Flash",
+        ReasoningModeId::Low,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Forbidden,
+    ),
+    disabled(
+        "ZHIPU/GLM-5.3-Flash",
+        ReasoningModeId::High,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Forbidden,
+    ),
+    disabled(
+        "ZHIPU/GLM-5.3-Flash",
+        ReasoningModeId::High,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Forbidden,
+    ),
+    disabled(
+        "ZHIPU/GLM-5.3-Flash",
+        ReasoningModeId::Max,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Forbidden,
+    ),
+    disabled(
+        "ZHIPU/GLM-5.3-Flash",
+        ReasoningModeId::Max,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Forbidden,
+    ),
 ];
 
 const fn policy(

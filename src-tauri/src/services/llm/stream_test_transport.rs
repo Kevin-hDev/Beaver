@@ -89,6 +89,9 @@ pub(super) async fn dispatch(
         if !state.active || cfg.session_id != Some(state.session_id.as_str()) {
             return None;
         }
+        if crate::services::reasoning_fixture_budget::authorize_payload(payload).is_err() {
+            return Some(Err(RequestError::InvalidConfiguration));
+        }
         if state.payloads.len() >= MAX_RECORDED_PAYLOADS {
             return Some(Err(RequestError::InvalidConfiguration));
         }

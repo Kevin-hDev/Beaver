@@ -177,3 +177,45 @@ fn exhausted_context_and_zero_requests_fail_closed() {
         Err(ResolveError::InvalidLimit)
     );
 }
+
+#[tokio::test]
+async fn openrouter_runtime_limits_are_used_before_upstream_embedded_limits() {
+    let _guard = super::super::runtime_models::test_mutation_lock().await;
+    super::super::runtime_models::replace_provider(
+        "openrouter",
+        &[crate::services::llm::types::ModelInfo {
+            id: "z-ai/glm-5.3-flash".into(),
+            display_name: None,
+            owned_by: Some("openrouter".into()),
+            context_length: Some(1_048_576),
+            max_output_tokens: Some(131_072),
+            supports_tools: true,
+            supports_vision: true,
+            supports_thinking: true,
+            reasoning_metadata_present: true,
+            supports_fast_mode: false,
+            reasoning_modes: vec!["low".into(), "high".into(), "max".into()],
+            default_reasoning_mode: Some("max".into()),
+            context_usage_includes_reasoning: true,
+            is_free: false,
+        }],
+    );
+
+    assert_eq!(
+        crate::services::llm::model_context_length("openrouter", "z-ai/glm-5.3-flash").await,
+        Some(1_048_576)
+    );
+
+    assert_eq!(
+        super::resolve(
+            "openrouter",
+            "z-ai/glm-5.3-flash",
+            None,
+            true,
+            Some(999_999),
+            1_000,
+        )
+        .await,
+        Ok(Some(131_072))
+    );
+}

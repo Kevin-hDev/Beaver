@@ -1,0 +1,71 @@
+use super::contract::{ContinuationUse, ReasoningModeId};
+use super::registry::{ModelPolicy, ReplayRequirement};
+use super::registry_inventory::{disabled, live};
+
+// GLM Flash candidates are kept closed until the exact API replay is proven.
+pub(super) const ZAI: &[ModelPolicy] = &[
+    live(
+        "glm-4.5-flash",
+        ReasoningModeId::Auto,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Optional,
+        "zai-api-glm-4-5-flash-local-2026-08-26",
+        "2026-08-26",
+    ),
+    live(
+        "glm-4.5-flash",
+        ReasoningModeId::Auto,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Optional,
+        "zai-api-glm-4-5-flash-local-2026-08-26",
+        "2026-08-26",
+    ),
+    disabled(
+        "glm-5.3",
+        ReasoningModeId::Max,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Optional,
+    ),
+    disabled(
+        "glm-5.3",
+        ReasoningModeId::Max,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Optional,
+    ),
+    disabled(
+        "glm-5.3-flash",
+        ReasoningModeId::Low,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Required,
+    ),
+    disabled(
+        "glm-5.3-flash",
+        ReasoningModeId::Low,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Required,
+    ),
+    disabled(
+        "glm-5.3-flash",
+        ReasoningModeId::High,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Required,
+    ),
+    disabled(
+        "glm-5.3-flash",
+        ReasoningModeId::High,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Required,
+    ),
+    disabled(
+        "glm-5.3-flash",
+        ReasoningModeId::Max,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Required,
+    ),
+    disabled(
+        "glm-5.3-flash",
+        ReasoningModeId::Max,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Required,
+    ),
+];

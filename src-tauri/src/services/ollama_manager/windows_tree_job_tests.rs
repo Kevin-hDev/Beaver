@@ -10,11 +10,15 @@ fn ollama_job_termination_removes_root_and_model_runner() {
     let temp = tempfile::tempdir().expect("temp root");
     let gate = temp.path().join("start.gate");
     let pids = temp.path().join("tree.pids");
-    let script = "import os,pathlib,subprocess,sys,time; gate=pathlib.Path(sys.argv[1]);\nwhile not gate.exists(): time.sleep(.01)\nchild=subprocess.Popen([sys.executable,'-c','import time;time.sleep(120)']); target=pathlib.Path(sys.argv[2]); pending=target.with_suffix('.tmp'); pending.write_text(f'{os.getpid()},{child.pid}'); os.replace(pending,target); time.sleep(120)";
+    let phase = temp.path().join("tree.phase");
+    // Fixed phase markers distinguish interpreter startup from child creation;
+    // a missing PID file alone concealed which boundary timed out in Windows CI.
+    let script = "import os,pathlib,subprocess,sys,time; gate=pathlib.Path(sys.argv[1]); phase=pathlib.Path(sys.argv[3]); phase.write_text('waiting_gate');\nwhile not gate.exists(): time.sleep(.01)\nphase.write_text('creating_child'); child=subprocess.Popen([sys.executable,'-c','import time;time.sleep(120)']); phase.write_text('publishing_pids'); target=pathlib.Path(sys.argv[2]); pending=target.with_suffix('.tmp'); pending.write_text(f'{os.getpid()},{child.pid}'); os.replace(pending,target); time.sleep(120)";
     let mut root = Command::new(python)
         .args(["-c", script])
         .arg(&gate)
         .arg(&pids)
+        .arg(&phase)
         .spawn()
         .expect("start Ollama tree fixture");
     let job = OllamaTreeJob::create().expect("create Ollama job");
@@ -29,7 +33,19 @@ fn ollama_job_termination_removes_root_and_model_runner() {
     while !pids.exists() && Instant::now() < started_deadline {
         std::thread::sleep(Duration::from_millis(10));
     }
-    let ids = std::fs::read_to_string(&pids).expect("root and runner started");
+    let ids = std::fs::read_to_string(&pids).unwrap_or_else(|error| {
+        let status = root.try_wait().expect("inspect fixture root");
+        let phase = std::fs::read_to_string(&phase).unwrap_or_else(|_| "not_started".into());
+        // Reap the admitted fixture even on assertion failure; do not leave
+        // diagnostic retries holding children until the entire test binary exits.
+        let cleanup = job.terminate_and_wait(Instant::now() + Duration::from_secs(5));
+        let reaped = cleanup.as_ref().ok().map(|_| root.wait());
+        panic!(
+            "fixture readiness failed: error={:?}, root={status:?}, phase={phase}, gate={}, cleanup={cleanup:?}, reaped={reaped:?}",
+            error.kind(),
+            gate.exists(),
+        );
+    });
     let ids = ids
         .split(',')
         .map(|pid| pid.parse::<u32>().expect("numeric pid"))

@@ -41,6 +41,14 @@ pub struct RequestUsage {
 }
 
 impl RequestUsage {
+    pub fn cache_status_label(&self) -> &'static str {
+        match self.cache_status {
+            CacheUsageStatus::Unknown => "unknown",
+            CacheUsageStatus::Reported => "reported",
+            CacheUsageStatus::Invalid => "invalid",
+        }
+    }
+
     #[cfg(test)]
     pub fn from_json(value: &serde_json::Value) -> Option<Self> {
         Self::from_json_with_context(
@@ -86,6 +94,45 @@ impl RequestUsage {
             total_tokens: count(value, &["total_tokens", "totalTokenCount"]),
             exact_cost_usd_micros: parse_cost(value, context),
         };
+        super::request_usage_google::reconcile(value, context, &mut usage);
+        usage.normalize();
+        (!usage.is_empty()).then_some(usage)
+    }
+
+    pub fn from_ollama_done(value: &serde_json::Value) -> Option<Self> {
+        let input = count(value, &["prompt_eval_count"]);
+        let output = count(value, &["eval_count"]);
+        let cache_field = value.get("prompt_eval_cached_count");
+        let cached = count(value, &["prompt_eval_cached_count"]);
+        let cache_status = match cache_field {
+            None => CacheUsageStatus::Unknown,
+            Some(_) if cached.is_none() => CacheUsageStatus::Invalid,
+            Some(_) if input.is_some_and(|total| cached.is_some_and(|read| read > total)) => {
+                CacheUsageStatus::Invalid
+            }
+            Some(_) => CacheUsageStatus::Reported,
+        };
+        let cached_input_tokens = (cache_status == CacheUsageStatus::Reported)
+            .then_some(cached)
+            .flatten();
+        let cache_miss_input_tokens = input
+            .zip(cached_input_tokens)
+            .and_then(|(total, read)| total.checked_sub(read));
+        let cache_miss_source = cache_miss_input_tokens
+            .map(|_| CacheMissSource::Calculated)
+            .unwrap_or_default();
+        let mut usage = Self {
+            input_tokens: input,
+            output_tokens: output,
+            cached_input_tokens,
+            cache_write_input_tokens: None,
+            cache_miss_input_tokens,
+            cache_miss_source,
+            cache_status,
+            reasoning_output_tokens: None,
+            total_tokens: None,
+            exact_cost_usd_micros: None,
+        };
         usage.normalize();
         (!usage.is_empty()).then_some(usage)
     }
@@ -103,8 +150,8 @@ impl RequestUsage {
             && self.exact_cost_usd_micros.is_none()
     }
 
-    pub(super) fn is_valid_observation(&self) -> bool {
-        super::request_usage_validation::is_valid(self)
+    pub(super) fn is_valid_observation(&self, context: UsageContext<'_>) -> bool {
+        super::request_usage_validation::is_valid(self, context)
     }
 
     fn normalize(&mut self) {

@@ -65,6 +65,9 @@ pub async fn open_chat_response(
     .await;
     let wire_request = prepared.payload;
 
+    #[cfg(debug_assertions)]
+    crate::services::reasoning_fixture_budget::authorize_payload(&wire_request)?;
+
     let client = reqwest::Client::new();
     let base_url = ollama.base_url().await?;
     let resp = match client

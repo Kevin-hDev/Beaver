@@ -1,0 +1,83 @@
+use super::contract::{ContinuationUse, ReasoningModeId};
+use super::registry::{ModelPolicy, ReplayRequirement};
+use super::registry_inventory::{disabled, live};
+
+// Exact model/mode pairs remain closed until their route-specific live proof exists.
+pub(super) const GOOGLE: &[ModelPolicy] = &[
+    disabled(
+        "gemini-3.7-flash",
+        ReasoningModeId::Medium,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Required,
+    ),
+    disabled(
+        "gemini-3.7-flash",
+        ReasoningModeId::Medium,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Required,
+    ),
+    live(
+        "gemini-3.5-flash",
+        ReasoningModeId::Medium,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Required,
+        "google-api-gemini-3-5-flash-france-2026-08-26",
+        "2026-08-26",
+    ),
+    live(
+        "gemini-3.5-flash",
+        ReasoningModeId::Medium,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Required,
+        "google-api-gemini-3-5-flash-france-2026-08-26",
+        "2026-08-26",
+    ),
+    disabled(
+        "gemini-3.5-flash-lite",
+        ReasoningModeId::Medium,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Required,
+    ),
+    disabled(
+        "gemini-3.5-flash-lite",
+        ReasoningModeId::Medium,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Required,
+    ),
+    disabled(
+        "gemini-3.8-flash",
+        ReasoningModeId::Low,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Required,
+    ),
+    disabled(
+        "gemini-3.8-flash",
+        ReasoningModeId::Low,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Required,
+    ),
+    disabled(
+        "gemini-3.8-flash",
+        ReasoningModeId::Medium,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Required,
+    ),
+    disabled(
+        "gemini-3.8-flash",
+        ReasoningModeId::Medium,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Required,
+    ),
+    disabled(
+        "gemini-3.8-flash",
+        ReasoningModeId::High,
+        ContinuationUse::UserContinuation,
+        ReplayRequirement::Required,
+    ),
+    disabled(
+        "gemini-3.8-flash",
+        ReasoningModeId::High,
+        ContinuationUse::ToolContinuation,
+        ReplayRequirement::Required,
+    ),
+];

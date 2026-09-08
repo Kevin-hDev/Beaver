@@ -19,6 +19,9 @@ pub(crate) async fn start_fixture(
     mut request: ChatStreamRequest,
     streams: &ActiveStreams,
 ) -> Result<ChatStreamAdmission, String> {
+    if !crate::services::llm::route_profile::supports_bounded_fixture(&request.provider) {
+        return Err(generic_error());
+    }
     request.fixture_run = Some(
         crate::services::reasoning_fixture_run::FixtureRunContext::start()
             .await

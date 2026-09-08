@@ -19,6 +19,10 @@ pub struct ModelInfo {
     pub supports_vision: bool,
     #[serde(default)]
     pub supports_thinking: bool,
+    /// True when OpenRouter explicitly supplied a supported-efforts array.
+    /// `false` preserves the historical capability fallback for older catalogs.
+    #[serde(skip)]
+    pub reasoning_metadata_present: bool,
     #[serde(default)]
     pub supports_fast_mode: bool,
     #[serde(default)]

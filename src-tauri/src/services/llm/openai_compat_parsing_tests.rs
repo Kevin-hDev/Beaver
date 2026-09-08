@@ -219,3 +219,85 @@ fn openrouter_feature_flags_do_not_duplicate_static_reasoning_modes() {
     assert!(grok.reasoning_modes.is_empty());
     assert!(terra.reasoning_modes.is_empty());
 }
+
+#[test]
+fn openrouter_reasoning_metadata_and_effective_limits_are_preserved() {
+    let body = json!({
+        "data": [{
+            "id": "z-ai/glm-5.3-flash",
+            "context_length": 1_310_720,
+            "top_provider": {
+                "context_length": 1_048_576,
+                "max_completion_tokens": 131072
+            },
+            "reasoning": {
+                "mandatory": true,
+                "supported_efforts": ["max", "high", "low"],
+                "default_effort": "max"
+            },
+            "supported_parameters": ["reasoning", "tools"]
+        }]
+    });
+
+    let model = parse_models_list(&body, "openrouter").unwrap().remove(0);
+
+    assert_eq!(model.context_length, Some(1_048_576));
+    assert_eq!(model.max_output_tokens, Some(131072));
+    assert!(model.supports_thinking);
+    assert!(model.reasoning_metadata_present);
+    assert_eq!(model.reasoning_modes, ["max", "high", "low"]);
+    assert_eq!(model.default_reasoning_mode.as_deref(), Some("max"));
+}
+
+#[test]
+fn openrouter_explicit_empty_reasoning_metadata_is_not_a_historical_absence() {
+    let body = json!({
+        "data": [{
+            "id": "openai/o3",
+            "supported_parameters": ["reasoning"],
+            "reasoning": {"supported_efforts": []}
+        }]
+    });
+
+    let model = parse_models_list(&body, "openrouter").unwrap().remove(0);
+
+    assert!(model.supports_thinking);
+    assert!(model.reasoning_modes.is_empty());
+    assert!(model.reasoning_metadata_present);
+}
+
+#[test]
+fn openrouter_reasoning_object_without_efforts_keeps_historical_fallbacks_available() {
+    let body = json!({
+        "data": [{
+            "id": "qwen/qwen3.8-flash",
+            "reasoning": {
+                "mandatory": false,
+                "default_enabled": true,
+                "supports_max_tokens": true
+            },
+            "supported_parameters": ["reasoning"]
+        }]
+    });
+
+    let model = parse_models_list(&body, "openrouter").unwrap().remove(0);
+
+    assert!(model.supports_thinking);
+    assert!(model.reasoning_modes.is_empty());
+    assert!(!model.reasoning_metadata_present);
+}
+
+#[test]
+fn openrouter_output_limit_uses_the_most_restrictive_positive_remote_value() {
+    let body = json!({
+        "data": [{
+            "id": "openai/gpt-6-astra",
+            "top_provider": {"max_completion_tokens": 131072},
+            "max_output_tokens": 65536
+        }]
+    });
+
+    let model = parse_models_list(&body, "openrouter").unwrap().remove(0);
+
+    assert_eq!(model.max_output_tokens, Some(65536));
+}

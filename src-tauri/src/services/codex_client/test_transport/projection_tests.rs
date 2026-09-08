@@ -4,6 +4,24 @@ use std::sync::Arc;
 use super::super::sensitive_buffer::SensitiveBuffer;
 
 #[test]
+fn reasoning_capture_is_scoped_bounded_and_rejects_duplicates() {
+    let projection = super::parse(br#"{"model":"gpt-6-astra","reasoning":{"effort":"max","summary":"auto"},"input":[{"reasoning":{"effort":"secret"}}]}"#).unwrap();
+    assert_eq!(projection.reasoning_effort.as_deref(), Some("max"));
+    for body in [
+        br#"{"model":"gpt-6-astra","reasoning":{"effort":"secret"}}"#.as_slice(),
+        br#"{"model":"gpt-6-astra","reasoning":{"effort":"max","effort":"low"}}"#,
+        br#"{"model":"gpt-6-astra","reasoning":{},"reasoning":{}}"#,
+    ] {
+        assert!(super::parse(body).is_err());
+    }
+    let projection = super::parse(
+        br#"{"model":"gpt-6-astra","reasoning":{"effort":"max","access_token":"secret"}}"#,
+    )
+    .unwrap();
+    assert!(projection.forbidden_field_present);
+}
+
+#[test]
 fn projection_has_one_raw_json_authority_without_serde_scratch() {
     for source in [
         include_str!("projection.rs"),

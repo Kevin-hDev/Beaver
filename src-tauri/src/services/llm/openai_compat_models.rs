@@ -38,6 +38,7 @@ fn to_model_info(
         supports_tools: model.supports_tools,
         supports_vision: model.supports_vision,
         supports_thinking: model.supports_thinking,
+        reasoning_metadata_present: false,
         supports_fast_mode: model.supports_fast_mode,
         reasoning_modes,
         default_reasoning_mode: model.default_reasoning_mode,
@@ -69,7 +70,7 @@ mod tests {
         let glm_vision_flash = models.iter().find(|m| m.id == "glm-4.6v-flash").unwrap();
         let glm_vision_flashx = models.iter().find(|m| m.id == "glm-4.6v-flashx").unwrap();
 
-        assert_eq!(models.len(), 20);
+        assert_eq!(models.len(), 21);
         assert_eq!(models[0].id, "glm-5.3");
         assert_eq!(glm_53.reasoning_modes, ["low", "high", "max"]);
         assert_eq!(glm_53.default_reasoning_mode.as_deref(), Some("max"));

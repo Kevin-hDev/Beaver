@@ -26,6 +26,7 @@ pub(super) fn parse(body_bytes: &[u8]) -> Result<RequestProjection, String> {
     let scanned = scan::parse(body_bytes).map_err(|_| invalid())?;
     Ok(RequestProjection {
         model: scanned.model,
+        reasoning_effort: scanned.reasoning_effort,
         service_tier: scanned.service_tier,
         envelope_type: scanned.envelope_type,
         input_count: scanned.input_count,

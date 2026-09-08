@@ -1,3 +1,4 @@
+use super::runner::TurnEvidence;
 use super::support::LiveSpec;
 use crate::services::agent_local::types_session::PreserveReasoningSetting;
 use serde::Serialize;
@@ -36,50 +37,63 @@ pub(super) async fn run(app: &tauri::App, spec: &LiveSpec) -> Result<(), String>
     .await?;
     session.reasoning_mode = Some(spec.mode.to_string());
     session.thinking_enabled = true;
-    session.preserve_reasoning = PreserveReasoningSetting::Remote;
+    session.preserve_reasoning = if spec.provider == "ollama" {
+        PreserveReasoningSetting::Local
+    } else {
+        PreserveReasoningSetting::Remote
+    };
     crate::services::agent_local::session_store::save(&session).await?;
 
     let attachment = super::super::reasoning_fixture_vision::inline_attachment()?;
     let encoded = super::super::reasoning_fixture_vision::inline_base64()?;
-    super::run_turn(
+    let image_turn = super::runner::run_turn(
         app,
         spec,
         &session.id,
-        "Inspect the attached four-quadrant image and reply exactly VISION_OK.",
+        "Inspect the attached four-quadrant image. In this same turn use fixture.write_note with value fixture, then fixture.read_note. Reply only with the four quadrant colors in reading order, separated by commas.",
         vec![attachment],
     )
     .await?;
-    require_last_assistant(&session.id, "VISION_OK").await?;
+    super::evidence::require_tool_round(&session.id, &image_turn).await?;
+    require_color_answer(&session.id, &image_turn).await?;
 
-    super::run_turn(
+    let recall_turn = super::runner::run_turn(
         app,
         spec,
         &session.id,
-        "Without a new attachment, reply exactly RED for the top-left quadrant.",
+        "Without a new attachment or tool, what color is the top-left quadrant? Reply with the color only.",
         Vec::new(),
     )
     .await?;
-    require_last_assistant(&session.id, "RED").await?;
-    let request_ids = validate_history(&session.id, &encoded).await?;
-    write_report(&session.id, spec, &request_ids).await
+    require_top_left_answer(&session.id, &recall_turn).await?;
+    validate_history(&session.id, &encoded, &image_turn, &recall_turn).await?;
+    write_report(&session.id, spec, &image_turn, &recall_turn).await
 }
 
-async fn require_last_assistant(session_id: &str, marker: &str) -> Result<(), String> {
+async fn require_color_answer(session_id: &str, turn: &TurnEvidence) -> Result<(), String> {
     let session = crate::services::agent_local::session_store::get(session_id).await?;
     let content = session
         .messages
         .iter()
-        .rev()
-        .find(|message| message.role == "assistant")
-        .map(|message| message.content.trim())
-        .ok_or_else(unavailable)?;
-    content
-        .contains(marker)
+        .filter(|message| message.role == "assistant" && message.turn_id == turn.turn_id)
+        .map(|message| message.content.as_str())
+        .collect::<String>()
+        .to_ascii_lowercase();
+    super::evidence::answer_matches(&content, "red green blue yellow")
         .then_some(())
         .ok_or_else(unavailable)
 }
 
-async fn validate_history(session_id: &str, encoded: &str) -> Result<[String; 2], String> {
+async fn require_top_left_answer(session_id: &str, turn: &TurnEvidence) -> Result<(), String> {
+    super::evidence::require_recall_without_tools(session_id, turn, "red").await
+}
+
+async fn validate_history(
+    session_id: &str,
+    encoded: &str,
+    image_turn: &TurnEvidence,
+    recall_turn: &TurnEvidence,
+) -> Result<(), String> {
     let session = crate::services::agent_local::session_store::get(session_id).await?;
     let images = session
         .messages
@@ -94,31 +108,37 @@ async fn validate_history(session_id: &str, encoded: &str) -> Result<[String; 2]
     if diagnostics.contains(encoded) || diagnostics.contains("data:image/png;base64,") {
         return Err(unavailable());
     }
-    let request_ids = session
-        .diagnostic_runs
-        .iter()
-        .filter(|run| {
-            run.status == "completed"
-                && run
-                    .events
-                    .iter()
-                    .any(|event| event.phase == "provider_payload")
-        })
-        .map(|run| run.request_id.clone())
-        .collect::<Vec<_>>();
-    request_ids.try_into().map_err(|_| unavailable())
+    for request_id in [&image_turn.request_id, &recall_turn.request_id] {
+        let run = session
+            .diagnostic_runs
+            .iter()
+            .find(|run| &run.request_id == request_id)
+            .ok_or_else(unavailable)?;
+        if run.status != "completed"
+            || run
+                .events
+                .iter()
+                .filter(|event| event.phase == "provider_payload")
+                .count()
+                == 0
+        {
+            return Err(unavailable());
+        }
+    }
+    Ok(())
 }
 
 async fn write_report(
     session_id: &str,
     spec: &LiveSpec,
-    request_ids: &[String; 2],
+    image_turn: &TurnEvidence,
+    recall_turn: &TurnEvidence,
 ) -> Result<(), String> {
     let generated_at = chrono::Utc::now();
     let fixture_id = crate::services::reasoning_fixture_store::derive_fixture_id_with_variant(
         spec.provider,
         spec.model,
-        "vision-medium",
+        &format!("vision-{}", spec.mode),
         spec.region,
         generated_at.date_naive(),
     )
@@ -126,17 +146,17 @@ async fn write_report(
     let scenarios = vec![
         scenario(
             "image_input_and_response",
-            &request_ids[..1],
+            &[image_turn],
             "vision decision=\"image_accepted\" count=1",
         )?,
         scenario(
             "history_image_continuity",
-            &request_ids[1..],
+            &[recall_turn],
             "vision decision=\"history_reused\" new_images=0",
         )?,
         scenario(
             "diagnostics_redacted",
-            request_ids,
+            &[image_turn, recall_turn],
             "vision decision=\"diagnostics_redacted\"",
         )?,
     ];
@@ -159,16 +179,23 @@ async fn write_report(
 
 fn scenario(
     requirement: &'static str,
-    request_ids: &[String],
+    turns: &[&TurnEvidence],
     decision: &'static str,
 ) -> Result<VisionScenario, String> {
-    let run_id = request_ids.last().cloned().ok_or_else(unavailable)?;
+    let run_id = turns
+        .last()
+        .map(|turn| turn.request_id.clone())
+        .ok_or_else(unavailable)?;
+    let request_count = turns.iter().map(|turn| turn.payload_count).sum();
+    if request_count == 0 {
+        return Err(unavailable());
+    }
     Ok(VisionScenario {
         requirement,
         run_id,
         status: "passe",
-        request_count: request_ids.len(),
-        reasoning_event_count: 0,
+        request_count,
+        reasoning_event_count: turns.iter().map(|turn| turn.reasoning_event_count).sum(),
         decisions: vec![decision],
     })
 }

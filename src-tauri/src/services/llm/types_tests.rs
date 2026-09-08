@@ -11,6 +11,7 @@ fn empty_reasoning_modes_cross_the_model_info_serialization_boundary() {
         supports_tools: false,
         supports_vision: false,
         supports_thinking: true,
+        reasoning_metadata_present: true,
         supports_fast_mode: false,
         reasoning_modes: Vec::new(),
         default_reasoning_mode: None,
@@ -21,4 +22,5 @@ fn empty_reasoning_modes_cross_the_model_info_serialization_boundary() {
     let serialized = serde_json::to_value(model).expect("serializable ModelInfo");
 
     assert_eq!(serialized["reasoning_modes"], serde_json::json!([]));
+    assert!(serialized.get("reasoning_metadata_present").is_none());
 }

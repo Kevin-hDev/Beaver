@@ -97,10 +97,20 @@ async fn post_chat_request_with_timeout_and_policy(
     let url = format!("{}/chat/completions", route.base_url);
     let estimated_input_tokens =
         crate::services::compress::token_estimate::estimate_request_tokens(cfg.messages, cfg.tools);
+    let requested_max_tokens = {
+        #[cfg(debug_assertions)]
+        {
+            crate::services::reasoning_fixture_budget::output_limit(cfg.max_tokens)
+        }
+        #[cfg(not(debug_assertions))]
+        {
+            cfg.max_tokens
+        }
+    };
     let max_tokens = super::stream_max_tokens::resolve(
         route.canonical_provider_id,
         cfg.model,
-        cfg.max_tokens,
+        requested_max_tokens,
         route.auto_max_tokens,
         route.fallback_max_tokens,
         estimated_input_tokens,

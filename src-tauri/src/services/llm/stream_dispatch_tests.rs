@@ -21,6 +21,38 @@ fn xai_model(backend: XaiBackend) -> XaiCatalogModel {
     }
 }
 
+#[cfg(debug_assertions)]
+#[tokio::test]
+async fn codex_fixture_candidate_reaches_its_bounded_transport() {
+    let fixture = ContinuationTarget::FixtureCandidate(ReplayTarget {
+        route_id: RouteId::CodexOauth,
+        model_id: "gpt-6-astra".into(),
+        credential_scope: CredentialScope::authenticated("fixture-scope").unwrap(),
+        reasoning_mode: ReasoningModeId::Medium,
+        continuation_use: ContinuationUse::UserContinuation,
+    });
+    let resolved = super::stream_dispatch::resolve_fixture_transport(
+        "codex-oauth",
+        "gpt-6-astra",
+        &fixture,
+        RequestPurpose::ManualChat,
+    )
+    .await
+    .unwrap();
+    assert_eq!(resolved.client, ClientKind::Codex);
+    for (route, model, purpose) in [
+        ("codex-oauth", "other-model", RequestPurpose::ManualChat),
+        ("xai-oauth", "gpt-6-astra", RequestPurpose::ManualChat),
+        ("codex-oauth", "gpt-6-astra", RequestPurpose::Automation),
+    ] {
+        assert!(
+            super::stream_dispatch::resolve_fixture_transport(route, model, &fixture, purpose)
+                .await
+                .is_err()
+        );
+    }
+}
+
 #[test]
 fn stream_dispatch_and_stream_metrics_select_clients_and_formats_once() {
     let rows = [
@@ -173,15 +205,14 @@ async fn anthropic_live_route_supports_every_declared_invocation_kind() {
         reasoning_mode: ReasoningModeId::High,
         continuation_use: ContinuationUse::UserContinuation,
     });
-    let resolved = super::stream_dispatch::resolve_fixture_transport(
+    assert!(super::stream_dispatch::resolve_fixture_transport(
         "anthropic",
         "claude-haiku-4-5-20251001",
         &fixture,
         RequestPurpose::ManualChat,
     )
     .await
-    .unwrap();
-    assert_eq!(resolved.client, ClientKind::Anthropic);
+    .is_err());
     assert!(super::stream_dispatch::resolve_fixture_transport(
         "anthropic",
         "claude-haiku-4-5-20251001",

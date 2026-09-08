@@ -12,6 +12,10 @@ use crate::services::codex_oauth::token;
 use crate::services::llm::provider_error::ProviderErrorCode;
 use crate::services::secure_http::{AuthenticatedClient, SecureHttpError};
 
+#[path = "request_credentials.rs"]
+mod credentials;
+pub(super) use credentials::RequestCredentials;
+
 #[derive(Clone, Copy)]
 pub(super) enum RequestDeadline {
     Streaming,
@@ -21,13 +25,20 @@ pub(super) enum RequestDeadline {
 pub(super) async fn post(
     body: &str,
     routing_hint: &str,
+    session_key: Option<&str>,
     model: &str,
     tool_count: usize,
     deadline: RequestDeadline,
 ) -> Result<Response, String> {
     #[cfg(test)]
-    if let Some(response) =
-        super::test_transport::dispatch_http(body, routing_hint, model, tool_count).await
+    if let Some(response) = super::test_transport::dispatch_http_with_session(
+        body,
+        routing_hint,
+        session_key,
+        model,
+        tool_count,
+    )
+    .await
     {
         return response;
     }
@@ -40,6 +51,7 @@ pub(super) async fn post(
         &endpoint,
         body,
         routing_hint,
+        session_key,
         model,
         tool_count,
         |rejected_access| async move {
@@ -59,6 +71,7 @@ pub(super) async fn post_with_refresh<F, Fut>(
     endpoint: &str,
     body: &str,
     routing_hint: &str,
+    session_key: Option<&str>,
     model: &str,
     tool_count: usize,
     refresh: F,
@@ -67,7 +80,15 @@ where
     F: FnOnce(Zeroizing<String>) -> Fut,
     Fut: Future<Output = Result<CodexTokens, String>>,
 {
-    let response = send_once(client, &credentials.tokens, endpoint, body, routing_hint).await?;
+    let response = send_once(
+        client,
+        &credentials.tokens,
+        endpoint,
+        body,
+        routing_hint,
+        session_key,
+    )
+    .await?;
     #[cfg(test)]
     let response = super::test_transport::observe_initial_response(response);
     if response.status() == StatusCode::UNAUTHORIZED {
@@ -75,49 +96,21 @@ where
         let rejected_access = Zeroizing::new(credentials.tokens.access.to_string());
         drop(credentials);
         let refreshed = refresh(rejected_access).await?;
-        let response = send_once(client, &refreshed, endpoint, body, routing_hint).await?;
+        let response = send_once(
+            client,
+            &refreshed,
+            endpoint,
+            body,
+            routing_hint,
+            session_key,
+        )
+        .await?;
         return http_error::require_success(response, model, body.len(), tool_count).await;
     }
     drop(credentials);
     #[cfg(test)]
     let response = response.into_inner();
     http_error::require_success(response, model, body.len(), tool_count).await
-}
-
-pub(super) struct RequestCredentials {
-    tokens: CodexTokens,
-    #[cfg(test)]
-    drop_observer: Option<std::sync::Arc<std::sync::atomic::AtomicBool>>,
-}
-
-impl RequestCredentials {
-    fn new(tokens: CodexTokens) -> Self {
-        Self {
-            tokens,
-            #[cfg(test)]
-            drop_observer: None,
-        }
-    }
-
-    #[cfg(test)]
-    pub(super) fn observed(
-        tokens: CodexTokens,
-        observer: std::sync::Arc<std::sync::atomic::AtomicBool>,
-    ) -> Self {
-        Self {
-            tokens,
-            drop_observer: Some(observer),
-        }
-    }
-}
-
-impl Drop for RequestCredentials {
-    fn drop(&mut self) {
-        #[cfg(test)]
-        if let Some(observer) = &self.drop_observer {
-            observer.store(true, std::sync::atomic::Ordering::SeqCst);
-        }
-    }
 }
 
 pub(super) async fn get_models() -> Result<Response, String> {
@@ -153,7 +146,10 @@ async fn send_once(
     endpoint: &str,
     body: &str,
     routing_hint: &str,
+    session_key: Option<&str>,
 ) -> Result<Response, String> {
+    #[cfg(debug_assertions)]
+    crate::services::reasoning_fixture_budget::authorize_serialized_len(body.len())?;
     let request = client
         .post(endpoint)
         .bearer_auth(credentials.access.as_str())
@@ -164,6 +160,13 @@ async fn send_once(
         .header("Accept", "text/event-stream")
         .header("x-codex-routing-hint", routing_hint)
         .body(body.to_string());
+    // Codex's HTTP route needs session affinity too, not only WebSocket.
+    // Reuse the canonical hashed cache key; never expose a raw session identifier.
+    let request = if let Some(key) = session_key {
+        request.header("session-id", key)
+    } else {
+        request
+    };
     client
         .send(request)
         .await

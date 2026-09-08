@@ -62,9 +62,9 @@ fn static_providers_keep_the_verified_order_and_limits() {
     assert_eq!(xai.len(), 7);
     assert_eq!(zai.first().unwrap().id, "glm-5.3");
     assert_eq!(zai.first().unwrap().context_window, 1_000_000);
-    assert_eq!(zai.len(), 20);
+    assert_eq!(zai.len(), 21);
     assert_eq!(google.first().unwrap().id, "gemini-3.7-flash");
-    assert_eq!(google.len(), 14);
+    assert_eq!(google.len(), 15);
 }
 
 #[test]
@@ -82,6 +82,48 @@ fn new_models_publish_their_official_reasoning_contracts() {
     assert!(!glm.is_free);
     assert!(!grok.is_free);
     assert!(!gemini.is_free);
+}
+
+#[test]
+fn september_direct_models_have_exact_reasoning_contracts() {
+    for (provider, id, modes, context, output, default_mode) in [
+        (
+            "google",
+            "gemini-3.8-flash",
+            &(["low", "medium", "high"] as [&str; 3])[..],
+            1_048_576,
+            Some(65_536),
+            Some("medium"),
+        ),
+        (
+            "zai",
+            "glm-5.3-flash",
+            &(["low", "high", "max"] as [&str; 3])[..],
+            1_048_576,
+            Some(131_072),
+            Some("max"),
+        ),
+        (
+            "openai",
+            "gpt-6-astra",
+            &(["low", "medium", "high", "xhigh", "max"] as [&str; 5])[..],
+            1_050_000,
+            Some(128_000),
+            None,
+        ),
+    ] {
+        let model = lookup(provider, id).expect("exact model");
+        assert_eq!(model.reasoning_modes, modes, "{provider}/{id}");
+        assert_eq!(model.context_window, context, "{provider}/{id}");
+        assert_eq!(model.max_output_tokens, output, "{provider}/{id}");
+        assert_eq!(model.default_output_tokens, None, "{provider}/{id}");
+        assert_eq!(model.default_reasoning_mode.as_deref(), default_mode);
+        assert!(
+            model.supports_tools && model.supports_vision && model.supports_thinking,
+            "{provider}/{id} capabilities"
+        );
+        assert!(!model.is_free, "{provider}/{id} must not be marked free");
+    }
 }
 
 #[test]

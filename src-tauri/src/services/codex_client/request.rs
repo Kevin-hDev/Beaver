@@ -118,13 +118,21 @@ async fn send_request(
         &prepared.replayed,
     )
     .await;
-    let body = prepared.body;
+    let mut body = prepared.body;
+    cancel_aware(cancel, super::model_catalog::reasoning::prepare(&mut body)).await?;
     let routing_hint = super::routing_hint::for_request(&body)?;
     let body_json = serde_json::to_string(&body)
         .map_err(|_| provider_error(ProviderErrorCode::ProviderConfigurationInvalid))?;
     cancel_aware(
         cancel,
-        request_http::post(&body_json, &routing_hint, model, tools.len(), deadline),
+        request_http::post(
+            &body_json,
+            &routing_hint,
+            body.prompt_cache_key.as_deref(),
+            model,
+            tools.len(),
+            deadline,
+        ),
     )
     .await
 }

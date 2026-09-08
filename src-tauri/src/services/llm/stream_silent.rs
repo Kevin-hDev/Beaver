@@ -147,14 +147,18 @@ fn request_config<'a>(
     purpose: RequestPurpose,
     session_id: Option<&'a str>,
 ) -> RequestConfig<'a> {
+    let reasoning_mode = internal_reasoning_mode(provider_id, model);
+    let fast_mode = reasoning_mode
+        .map(|_| super::fast_mode::standard_for_internal(provider_id))
+        .unwrap_or(fast_mode);
     RequestConfig {
         provider_id,
         fast_mode,
         model,
         messages,
         tools: &[],
-        think: false,
-        reasoning_mode: None,
+        think: reasoning_mode.is_some(),
+        reasoning_mode,
         max_tokens,
         purpose,
         session_id,
@@ -162,3 +166,18 @@ fn request_config<'a>(
         continuation_target: None,
     }
 }
+
+fn internal_reasoning_mode(provider_id: &str, model: &str) -> Option<&'static str> {
+    // Independent summaries use the lightest documented effort, never the
+    // user's conversational selection or a costly remote default.
+    match provider_id {
+        "google" if model == "gemini-3.8-flash" => Some("low"),
+        "zai" if model == "glm-5.3-flash" => Some("low"),
+        "openai" if model == "gpt-6-astra" => Some("low"),
+        _ => None,
+    }
+}
+
+#[cfg(test)]
+#[path = "stream_silent_request_tests.rs"]
+mod stream_silent_request_tests;

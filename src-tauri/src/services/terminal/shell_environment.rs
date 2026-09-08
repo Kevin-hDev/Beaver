@@ -15,6 +15,7 @@
 //! côté séparément : une seule liste, appliquée aux deux, évite qu'elles
 //! divergent.
 
+#[cfg(unix)]
 use portable_pty::CommandBuilder;
 
 /// Ce que le terminal déclare, quel que soit son lanceur.
@@ -49,6 +50,8 @@ pub(crate) fn apply(command: &mut impl ShellEnvironment) {
     }
 }
 
+// portable-pty is Unix-only; Windows keeps its Job-owned ConPTY command below.
+#[cfg(unix)]
 impl ShellEnvironment for CommandBuilder {
     fn set(&mut self, name: &str, value: &str) {
         self.env(name, value);

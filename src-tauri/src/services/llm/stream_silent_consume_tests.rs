@@ -50,6 +50,33 @@ async fn consume_text_fixture(
 }
 
 #[tokio::test]
+async fn google_silent_usage_counts_all_generated_tokens() {
+    let (_server, response) = streaming_response(concat!(
+        "data: {\"choices\":[{\"delta\":{\"content\":\"323\"}}]}\n\n",
+        "data: {\"usage\":{\"prompt_tokens\":134,\"completion_tokens\":3,\"total_tokens\":217}}\n\n",
+        "data: [DONE]\n\n",
+    )).await;
+    let result = consume_silent(
+        response,
+        CancellationToken::new(),
+        Duration::from_secs(2),
+        crate::services::provider_usage::UsageContext::chat("google", "gemini-3.8-flash"),
+        crate::services::llm::route_profile::FragmentMode::DifferentialFragments,
+        crate::services::llm::route_profile::ErrorPolicy::Responses,
+        None,
+    )
+    .await
+    .unwrap();
+    assert_eq!(result.content, "323");
+    assert_eq!(result.eval_count, Some(83));
+    assert_eq!(result.prompt_tokens, Some(134));
+    let usage = result.usage.unwrap();
+    assert_eq!(usage.output_tokens, Some(83));
+    assert_eq!(usage.total_tokens, Some(217));
+    assert_eq!(usage.reasoning_output_tokens, None);
+}
+
+#[tokio::test]
 async fn silent_sse_reader_preserves_differential_and_cumulative_text() {
     let differential = consume_text_fixture(
         concat!(

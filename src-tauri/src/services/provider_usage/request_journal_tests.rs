@@ -4,6 +4,28 @@ use super::request_journal::{
 };
 use super::{RequestUsage, UsageApiFormat};
 
+#[test]
+fn gemini_explicit_cache_overlap_survives_journal_validation_only_on_its_route() {
+    let mut entry = metric(Some("session-cache"), 1);
+    entry.connection_id = "openrouter".into();
+    entry.canonical_provider_id = "openrouter".into();
+    entry.model = "google/gemini-3.8-flash".into();
+    entry.usage = Some(RequestUsage {
+        input_tokens: Some(5618),
+        cached_input_tokens: Some(5599),
+        cache_write_input_tokens: Some(5599),
+        cache_miss_input_tokens: Some(19),
+        cache_status: super::request_usage::CacheUsageStatus::Reported,
+        cache_miss_source: super::request_usage::CacheMissSource::Calculated,
+        ..Default::default()
+    });
+    let restored: ProviderRequestMetric =
+        serde_json::from_value(serde_json::to_value(&entry).unwrap()).unwrap();
+    assert!(restored.is_valid());
+    entry.model = "openai/gpt-6-astra".into();
+    assert!(!entry.is_valid());
+}
+
 fn metric(session_id: Option<&str>, attempt: u32) -> ProviderRequestMetric {
     ProviderRequestMetric {
         started_at_ms: 1_780_000_000_000_i64.saturating_add(i64::from(attempt)),
@@ -34,6 +56,27 @@ fn served_tier_accepts_only_the_closed_provider_values() {
     assert_eq!(served_tier("default"), ServiceTierServed::Default);
     assert_eq!(served_tier("auto"), ServiceTierServed::Unknown);
     assert_eq!(served_tier("ultrafast"), ServiceTierServed::Unknown);
+}
+
+#[test]
+fn historical_oauth_and_anthropic_metric_routes_remain_readable() {
+    for (connection, canonical, format) in [
+        ("xai-oauth", "xai", UsageApiFormat::ChatCompletions),
+        (
+            "moonshot-oauth",
+            "moonshot",
+            UsageApiFormat::ChatCompletions,
+        ),
+        ("anthropic", "anthropic", UsageApiFormat::AnthropicMessages),
+    ] {
+        let mut entry = metric(Some("session-1"), 1);
+        entry.connection_id = connection.into();
+        entry.canonical_provider_id = canonical.into();
+        entry.api_format = format;
+        assert!(entry.is_valid(), "{connection}");
+        entry.canonical_provider_id = "openai".into();
+        assert!(!entry.is_valid(), "{connection}");
+    }
 }
 
 #[test]

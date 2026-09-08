@@ -24,6 +24,74 @@ fn codex_request_keeps_only_model_supported_effort() {
     assert_eq!(luna.reasoning.unwrap().effort, "medium");
 }
 
+#[tokio::test]
+async fn astra_request_uses_catalog_effort_and_responses_media_contract() {
+    let _guard = crate::services::llm::runtime_models::test_mutation_lock().await;
+    crate::services::llm::runtime_models::replace_provider(
+        "codex-oauth",
+        &[crate::services::llm::types::ModelInfo {
+            id: "gpt-6-astra".into(),
+            display_name: Some("GPT-6 Astra".into()),
+            owned_by: Some("openai".into()),
+            context_length: Some(1_050_000),
+            max_output_tokens: Some(128_000),
+            supports_tools: true,
+            supports_vision: true,
+            supports_thinking: true,
+            reasoning_metadata_present: false,
+            supports_fast_mode: false,
+            reasoning_modes: vec![
+                "low".into(),
+                "medium".into(),
+                "high".into(),
+                "xhigh".into(),
+                "max".into(),
+            ],
+            default_reasoning_mode: Some("medium".into()),
+            context_usage_includes_reasoning: true,
+            is_free: false,
+        }],
+    );
+    let messages = [
+        crate::services::agent_local::types_ollama::ChatMessage::user("describe".into())
+            .with_images(vec!["iVBORw0KGgo=".into()]),
+    ];
+    let tools = [serde_json::json!({
+        "type": "function",
+        "function": {
+            "name": "search",
+            "description": "fixture",
+            "parameters": {"type": "object", "properties": {}}
+        }
+    })];
+
+    let request = build_codex_request(
+        "gpt-6-astra",
+        &messages,
+        &tools,
+        Some("max"),
+        None,
+        FastModeRequest::Unsupported,
+    );
+    let body = serde_json::to_value(request).unwrap();
+    assert_eq!(
+        body["reasoning"],
+        serde_json::json!({"effort": "max", "summary": "auto"})
+    );
+    assert_eq!(body["store"], false);
+    assert_eq!(body["input"][0]["content"][1]["type"], "input_image");
+    assert_eq!(body["tools"][0]["type"], "function");
+    assert_eq!(
+        body["include"],
+        serde_json::json!(["reasoning.encrypted_content"])
+    );
+    for forbidden in ["all_turns", "sampling", "thinking", "clear_thinking"] {
+        assert!(body.get(forbidden).is_none(), "unexpected {forbidden}");
+    }
+
+    crate::services::llm::runtime_models::replace_provider("codex-oauth", &[]);
+}
+
 #[test]
 fn request_keeps_the_official_empty_tools_contract() {
     let request = build_codex_request(

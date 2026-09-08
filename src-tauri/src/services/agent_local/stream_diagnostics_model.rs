@@ -40,25 +40,38 @@ pub async fn record_model_result(
     turn: usize,
     result: &StreamResult,
 ) {
-    let message = format!(
-        "model_result turn={} content_chars={} thinking_chars={} tool_calls={} prompt_tokens={} eval_tokens={} done_reason={} total_chunks={} empty_chunks={}",
+    let message = result_summary(turn, result);
+    record(session_id, request_id, "model_result", &message).await;
+}
+
+fn result_summary(turn: usize, result: &StreamResult) -> String {
+    let usage = result.usage.as_ref();
+    // Numeric counts are not credential tokens. Keep their labels distinct so
+    // the unchanged secret redactor preserves both large counts and "unknown".
+    format!(
+        "model_result turn={} content_chars={} thinking_chars={} tool_calls={} input_count={} output_count={} cache_read_count={} cache_write_count={} cache_miss_count={} cache_status={} done_reason={} total_chunks={} empty_chunks={}",
         turn + 1,
         char_count(&result.content),
         char_count(&result.thinking),
         result.tool_calls.len(),
         opt_count(result.prompt_tokens),
         opt_count(result.eval_count),
+        opt_count_u64(usage.and_then(|usage| usage.cached_input_tokens)),
+        opt_count_u64(usage.and_then(|usage| usage.cache_write_input_tokens)),
+        opt_count_u64(usage.and_then(|usage| usage.cache_miss_input_tokens)),
+        usage
+            .map(crate::services::provider_usage::RequestUsage::cache_status_label)
+            .unwrap_or("unknown"),
         result.done_reason.as_deref().unwrap_or("unknown"),
         result.total_chunks,
         result.empty_chunks
-    );
-    record(session_id, request_id, "model_result", &message).await;
+    )
 }
 
 async fn record(session_id: &str, request_id: &str, phase: &str, message: &str) {
     let _ = support::update_run(session_id, request_id, |_session, run| {
         run.phase = phase.to_string();
-        run.safe_summary = Some(message.to_string());
+        run.safe_summary = Some(support::clip(message));
         support::push_event(run, phase, message, None, None);
     })
     .await;
@@ -105,125 +118,12 @@ fn opt_count(value: Option<u32>) -> String {
         .unwrap_or_else(|| "unknown".to_string())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::services::agent_local::types_ollama::{ToolCallFunction, ToolCallOllama};
-    use serde_json::json;
-
-    #[test]
-    fn request_stats_counts_reasoning_without_content() {
-        let messages = vec![
-            ChatMessage::assistant(
-                "".to_string(),
-                Some("réflexion".to_string()),
-                None,
-                Some("réflexion".to_string()),
-                Some(vec![ToolCallOllama {
-                    id: Some("call_1".to_string()),
-                    extra_content: None,
-                    function: ToolCallFunction {
-                        name: "grep".to_string(),
-                        arguments: json!({"pattern": "x"}),
-                    },
-                }]),
-            ),
-            ChatMessage::tool("ok".to_string(), Some("call_1".to_string()), None),
-        ];
-
-        assert_eq!(
-            request_stats(&messages),
-            ModelRequestStats {
-                messages: 2,
-                assistant_messages: 1,
-                assistant_reasoning_messages: 1,
-                assistant_reasoning_chars: 9,
-                assistant_content_chars: 0,
-                assistant_tool_calls: 1,
-                tool_messages: 1,
-            }
-        );
-    }
-
-    #[test]
-    fn char_count_is_utf8_safe() {
-        assert_eq!(char_count("é🙂x"), 3);
-    }
-
-    #[test]
-    fn request_stats_counts_persisted_ollama_continuity() {
-        use crate::services::reasoning_continuity::contract::{
-            ContractId, CredentialScope, ReasoningModeId, RouteId,
-        };
-        use crate::services::reasoning_continuity::envelope::{
-            CompletionState, ReasoningEnvelope, ReasoningSource,
-        };
-
-        let continuation = ReasoningEnvelope::new(
-            ContractId::OllamaNativeV1,
-            ReasoningSource {
-                route_id: RouteId::Ollama,
-                model_id: "qwen3.5:4b".into(),
-                credential_scope: CredentialScope::local_uncredentialed(),
-                reasoning_mode: ReasoningModeId::Auto,
-            },
-            CompletionState::Complete,
-            ContinuationState::OllamaNative {
-                thinking: "raisonnement durable".into(),
-            },
-            Vec::new(),
-        );
-        let messages = [ChatMessage::assistant(
-            "réponse".into(),
-            None,
-            Some(continuation),
-            None,
-            None,
-        )];
-
-        let stats = request_stats(&messages);
-        assert_eq!(stats.assistant_reasoning_messages, 1);
-        assert_eq!(stats.assistant_reasoning_chars, 20);
-    }
-
-    #[test]
-    fn request_stats_never_turns_anthropic_opaque_blocks_into_diagnostic_text() {
-        use crate::services::reasoning_continuity::contract::{
-            ContractId, CredentialScope, ReasoningModeId, RouteId,
-        };
-        use crate::services::reasoning_continuity::envelope::{
-            CompletionState, ReasoningEnvelope, ReasoningSource,
-        };
-
-        let continuation = ReasoningEnvelope::new(
-            ContractId::AnthropicMessagesV1,
-            ReasoningSource {
-                route_id: RouteId::Anthropic,
-                model_id: "claude-haiku-4-5-20251001".into(),
-                credential_scope: CredentialScope::authenticated("fixture-scope").unwrap(),
-                reasoning_mode: ReasoningModeId::Low,
-            },
-            CompletionState::Complete,
-            ContinuationState::AnthropicBlocks {
-                blocks: vec![serde_json::json!({
-                    "type":"thinking",
-                    "thinking":"opaque-secret",
-                    "signature":"AAE+/=="
-                })],
-            },
-            Vec::new(),
-        );
-        let messages = [ChatMessage::assistant(
-            "answer".into(),
-            None,
-            Some(continuation),
-            None,
-            None,
-        )];
-
-        let stats = request_stats(&messages);
-        assert_eq!(stats.assistant_reasoning_messages, 0);
-        assert_eq!(stats.assistant_reasoning_chars, 0);
-        assert_eq!(stats.assistant_content_chars, 6);
-    }
+fn opt_count_u64(value: Option<u64>) -> String {
+    value
+        .map(|count| count.to_string())
+        .unwrap_or_else(|| "unknown".to_string())
 }
+
+#[cfg(test)]
+#[path = "stream_diagnostics_model_tests.rs"]
+mod tests;

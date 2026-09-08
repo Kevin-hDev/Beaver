@@ -2,7 +2,7 @@ use super::request_usage::{
     CacheMissSource, CacheUsageStatus, RequestUsage, MAX_COST_USD, MAX_REQUEST_TOKENS,
 };
 
-pub(super) fn is_valid(usage: &RequestUsage) -> bool {
+pub(super) fn is_valid(usage: &RequestUsage, context: super::UsageContext<'_>) -> bool {
     let counts = [
         usage.input_tokens,
         usage.output_tokens,
@@ -16,33 +16,24 @@ pub(super) fn is_valid(usage: &RequestUsage) -> bool {
         .into_iter()
         .flatten()
         .all(|value| value <= MAX_REQUEST_TOKENS)
-        && valid_token_relations(usage)
+        && valid_token_relations(usage, context)
         && valid_cache_state(usage)
         && usage
             .exact_cost_usd_micros
             .is_none_or(|micros| micros <= (MAX_COST_USD * 1_000_000.0) as u64)
 }
 
-fn valid_token_relations(usage: &RequestUsage) -> bool {
-    usage
-        .cached_input_tokens
+fn valid_token_relations(usage: &RequestUsage, context: super::UsageContext<'_>) -> bool {
+    usage.input_tokens.is_none_or(|input| {
+        context.cache_counts_fit_input(
+            input,
+            usage.cached_input_tokens,
+            usage.cache_write_input_tokens,
+        )
+    }) && usage
+        .cache_miss_input_tokens
         .zip(usage.input_tokens)
-        .is_none_or(|(cached, input)| cached <= input)
-        && usage
-            .cache_write_input_tokens
-            .zip(usage.input_tokens)
-            .is_none_or(|(written, input)| written <= input)
-        && usage
-            .cache_miss_input_tokens
-            .zip(usage.input_tokens)
-            .is_none_or(|(miss, input)| miss <= input)
-        && usage.input_tokens.is_none_or(|input| {
-            usage
-                .cached_input_tokens
-                .unwrap_or(0)
-                .saturating_add(usage.cache_write_input_tokens.unwrap_or(0))
-                <= input
-        })
+        .is_none_or(|(miss, input)| miss <= input)
         && usage
             .reasoning_output_tokens
             .zip(usage.output_tokens)
