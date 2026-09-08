@@ -15,3 +15,5 @@ Additional defect found independently: ts-rs is a dev-dependency; gate imports/d
 Historical commit IDs are deliberately preserved for the user's existing review. Notes on the intermediate revisions now disclose their failures; this correction does not retrospectively make those old trees green. Native rendering/cookie acceptance is still separate pending task 4, not claimed by this commit. Windows cross-check previously failed on an unchanged portable_pty import in terminal/shell_environment.rs; no native Windows validation claimed.
 
 Commit-local frontend boundary verification: npx vitest run browser-favicon-events.test.ts use-browser-favicons.test.tsx (full repository paths) executed separately: 12 passed, 0 failed. This count excludes pending task-4 rendering files.
+
+After replacing textual include with a real test module, the explicit exporter is: cargo test services::browser::test_modules::favicon_contract_tests::export_favicon_contract --lib -- --ignored --exact. Executed: 1 passed, generated TypeScript unchanged.
