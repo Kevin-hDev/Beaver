@@ -1,0 +1,35 @@
+Task5 — reviewed acceptance and native correction
+
+# Task 5 — Primary review
+
+Implementation is limited to restart-test support and the native URL-focus defect found during acceptance. No dependency or release change.
+
+## E2E support
+- Browser key name remains private single authority. Shared byte-size constant replaces literal32.
+- Stable runner-owned random key is accepted only under feature=e2e, validated as canonical base64 of32bytes, compared in constant time, zeroizing decoded/encoded buffers.
+- Optional environment seed happens before the normal session_key generation because CEF capability may run before JS bridge. Explicit fixture command requires configuration; absent optional configuration preserves existing E2E behavior.
+- Existing different/invalid key rejects; normal production excludes fixture. Tauri command returns only unit/generic error.
+- Primary corrected cfg of environment constant, documented startup ordering, and verified standard plus E2E strict clippy.
+
+## Native finding corrected
+Observed native CEF focus loss leaves document.activeElement stale. Captured window/input events establish document.hasFocus=false at URL pointerdown, before focus returns. Terra added this condition to first-click marker and regression; primary reviewed and reran navigation/panel tests13pass. Correction belongs to Task5 acceptance because native testing discovered it after Task3 unit review.
+
+## Executed checks on final sources
+- Full Vitest:601files3276tests PASS, exit0 (91.32s).
+- Rust browser:177tests PASS, exit0 (2.09s).
+- Standard clippy all-targets strict and e2e lib strict:exit0.
+- TypeScript:exit0.
+- CEF preparation/supervision scripts:45PASS,1Windows-only skipped; this is not a native UI test.
+- Native final build with focus correction:exit0.
+- Graphify AST update:exit0, no code topology change after extraction.
+- Final lint and native acceptance:see final summary when complete.
+
+Known native prerequisite: each newly signed macOS test build can ask for Chromium Keychain access. One final-build attempt failed with `Native CEF did not become ready; check macOS Keychain approval`; it remains a failed attempt, not a passed native test. Current retry waits for user approval. No security bypass or production data access used.
+
+Original provider branch checked at fc040ec5; feature41files have no overlap with its commits or local changes. See final-overlap.json. No push/merge/release.
+
+## Acceptance completed
+User approved Keychain; same final binary completed initial native journey1/1 and actual restart1/1, runner exit0. Primary saw restored Page A, exact persisted order/IDs/active/title/URL verified. First/second URL clicks, partial selection, Tab and both submission methods observed. Final lint exit0. See final-review.md for visual matrix, real dimensions, limits and previous failed attempts. No native acceptance blocker remains on macOS.
+
+Proof directory: /Users/kevinh/Projects/Beaver/.worktrees/browser-tabs-ergonomie/.superpowers/sdd/2026-09-07-browser-tabs-ergonomie
+Final report: final-review.md. Five task commits, no push/merge/release. Native validation macOS only.
