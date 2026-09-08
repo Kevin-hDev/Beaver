@@ -1,0 +1,9 @@
+Task 4 — primary review
+
+Compact authority: controls/tabs/field use shared24px tier, rows29px including padding/border; inner Go22px. Replaced existing tokens rather than duplicate. Local line-height1.1 justified by measured31.5px inherited line at root24; now tab23.1px and input21.45px fit. No global typography/color/radius changes.
+
+Review corrections: preserved existing close-button width; included line-height token uniqueness; restored local keyboard focus because global focus.css removes outlines. Inward ring uses existing width/pulse tokens and cannot be clipped outside tab scroll area.
+
+Primary density1/1 PASS (task-4-primary.log), implementer tsc/ESLint/diff pass. Source CSS217lines, tokens229lines. Actual before dimensions in native-before-review.md; AFTER native measurements pending Task5. User confirmed Keychain request authorized before relaunch.
+
+Proofs: .superpowers/sdd/2026-09-07-browser-tabs-ergonomie; task-4-implementation.md and task-4-validation.log.
