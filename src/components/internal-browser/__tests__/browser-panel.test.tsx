@@ -147,7 +147,7 @@ describe("BrowserPanel", () => {
     fireEvent.click(screen.getByRole("button", { name: /Application locale/ }));
     expect(api.navigate).toHaveBeenCalledWith(TAB_ONE, "http://localhost:3000/");
 
-    const address = screen.getByPlaceholderText("Saisir une URL");
+    const address = screen.getByPlaceholderText<HTMLInputElement>("Saisir une URL");
     fireEvent.focus(address);
     fireEvent.change(address, { target: { value: "file:///tmp/test" } });
     fireEvent.submit(screen.getByRole("form", { name: "Adresse du navigateur" }));
@@ -158,13 +158,19 @@ describe("BrowserPanel", () => {
     await waitFor(() => expect(api.navigate).toHaveBeenCalledWith(TAB_ONE, "https://example.com/"));
   });
 
-  it("ne remplace pas le texte en cours de saisie lors d'une mise à jour CEF", () => {
+  it("ne remplace pas le texte sélectionné pendant une mise à jour CEF", async () => {
+    api.session = {
+      ...blankSession(),
+      tabs: [{ ...blankSession().tabs[0], url: "https://initial.example/", title: "Initial" }],
+    };
+    const user = userEvent.setup();
     const { rerender } = render(
       <BrowserPanel conversationId="session-test" active fullscreen={false} onFullscreenChange={vi.fn()} />,
     );
-    const address = screen.getByPlaceholderText("Saisir une URL");
-    fireEvent.focus(address);
-    fireEvent.change(address, { target: { value: "https://typing.example/" } });
+    const address = screen.getByPlaceholderText<HTMLInputElement>("Saisir une URL");
+    await user.click(address);
+    expect(address.selectionStart).toBe(0);
+    await user.keyboard("https://typing.example/");
     api.session = {
       ...blankSession(2),
       tabs: [{ ...blankSession().tabs[0], url: "https://runtime.example/", title: "Runtime" }],

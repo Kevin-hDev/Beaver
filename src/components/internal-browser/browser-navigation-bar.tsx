@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ArrowLeft,
@@ -25,6 +26,10 @@ interface BrowserNavigationBarProps {
 
 export function BrowserNavigationBar(props: BrowserNavigationBarProps) {
   const { t } = useTranslation();
+  /* Le clic qui donne le focus replace parfois le curseur après onFocus. On
+     mémorise seulement cette entrée dans le champ, puis on resélectionne à la
+     fin de ce clic ; les clics d'édition suivants restent donc normaux. */
+  const selectAfterPointer = useRef(false);
   const iconButton = (
     label: string,
     disabled: boolean,
@@ -65,8 +70,23 @@ export function BrowserNavigationBar(props: BrowserNavigationBarProps) {
           maxLength={MAX_BROWSER_URL_LENGTH}
           placeholder={t("browser.addressPlaceholder")}
           aria-invalid={props.invalid}
-          onFocus={props.onAddressFocus}
-          onBlur={props.onAddressBlur}
+          onPointerDown={(event) => {
+            selectAfterPointer.current = document.activeElement !== event.currentTarget;
+          }}
+          onPointerCancel={() => { selectAfterPointer.current = false; }}
+          onFocus={(event) => {
+            props.onAddressFocus();
+            event.currentTarget.select();
+          }}
+          onBlur={() => {
+            selectAfterPointer.current = false;
+            props.onAddressBlur();
+          }}
+          onClick={(event) => {
+            const shouldSelect = selectAfterPointer.current;
+            selectAfterPointer.current = false;
+            if (shouldSelect) event.currentTarget.select();
+          }}
           onChange={(event) => props.onAddressChange(event.target.value)}
         />
         <button
