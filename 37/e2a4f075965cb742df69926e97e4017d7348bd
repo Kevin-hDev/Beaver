@@ -7,3 +7,6 @@ Review corrections: preserved existing close-button width; included line-height 
 Primary density1/1 PASS (task-4-primary.log), implementer tsc/ESLint/diff pass. Source CSS217lines, tokens229lines. Actual before dimensions in native-before-review.md; AFTER native measurements pending Task5. User confirmed Keychain request authorized before relaunch.
 
 Proofs: .superpowers/sdd/2026-09-07-browser-tabs-ergonomie; task-4-implementation.md and task-4-validation.log.
+
+Final acceptance update (supersedes pending status above):
+Native AFTER acceptance complete: font10/18/24, light/dark, normal/full/narrow,1/2/10tabs and long title observed; terminal neighbor and keyboard focus inspected. Real rows29px, tab/form24px, input/Go22px. At root18 before38.125/38.4375px, after29/29px. See native-initial-matrix-*.png/json and final-review.md; transition zero-height captures are not acceptance measurements.
