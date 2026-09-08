@@ -355,7 +355,18 @@ fn real_v1_registry_migrates_with_exact_backup_and_preserves_unknown_fields() {
 fn legacy_ui_string_is_retained_but_never_inferred_as_advanced() {
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path().join("extensions.json");
-    std::fs::write(&path, LEGACY_UI_V1).unwrap();
+    // Preserve the historical manifest, but use an absolute path for the host OS.
+    // `/tmp/legacy-ui` from the Unix fixture is not absolute on Windows.
+    let mut value: Value = serde_json::from_slice(LEGACY_UI_V1).unwrap();
+    value["extensions"][0]["source"] = Value::String(
+        directory
+            .path()
+            .join("legacy-ui")
+            .to_str()
+            .unwrap()
+            .to_owned(),
+    );
+    std::fs::write(&path, serde_json::to_vec(&value).unwrap()).unwrap();
 
     let loaded = storage::load_from(&path).unwrap();
     assert_eq!(loaded.extensions.len(), 1);
