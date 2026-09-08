@@ -1,4 +1,6 @@
-use super::{favicon_policy::STALL_DIAGNOSTIC_DELAY, favicon_types::FaviconJob};
+use super::favicon_policy::STALL_DIAGNOSTIC_DELAY;
+#[cfg(native_browser)]
+use super::favicon_types::FaviconJob;
 use std::sync::{
     atomic::{AtomicBool, Ordering},
     Arc,
@@ -6,11 +8,13 @@ use std::sync::{
 
 // One timer per actual permit (at most four), owned and aborted with that permit.
 // It never owns the CEF callback or returns a native permit on elapsed time.
+#[cfg(native_browser)]
 pub(super) struct DownloadWatchdog {
     task: tauri::async_runtime::JoinHandle<()>,
     stalled: Arc<AtomicBool>,
     request: u64,
 }
+#[cfg(native_browser)]
 impl DownloadWatchdog {
     pub(super) fn start(job: &FaviconJob) -> Self {
         let stalled = Arc::new(AtomicBool::new(false));
@@ -24,6 +28,7 @@ impl DownloadWatchdog {
         }
     }
 }
+#[cfg(native_browser)]
 impl Drop for DownloadWatchdog {
     fn drop(&mut self) {
         self.task.abort();

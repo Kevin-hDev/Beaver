@@ -1,8 +1,11 @@
-use super::{favicon_runtime::access, favicon_state::FaviconState, BrowserCommandError};
+use super::BrowserCommandError;
+#[cfg(any(test, native_browser))]
+use super::{favicon_runtime::access, favicon_state::FaviconState};
 use serde::Serialize;
 #[cfg(test)]
 use ts_rs::TS;
 
+#[cfg(any(test, native_browser))]
 pub(super) const FAVICON_EVENT: &str = "browser-favicons-changed-v1";
 pub(super) const EVENT_VERSION: u8 = 1;
 
@@ -25,6 +28,7 @@ pub struct BrowserFaviconSnapshot {
     pub icons: Vec<BrowserFaviconIcon>,
 }
 
+#[cfg(any(test, native_browser))]
 pub(super) fn snapshot(state: &FaviconState, conversation: &str) -> BrowserFaviconSnapshot {
     BrowserFaviconSnapshot {
         event_version: EVENT_VERSION,
@@ -47,5 +51,18 @@ pub(super) fn snapshot(state: &FaviconState, conversation: &str) -> BrowserFavic
 pub fn read_snapshot(conversation: &str) -> Result<BrowserFaviconSnapshot, BrowserCommandError> {
     crate::services::agent_local::session_store::validate_session_id(conversation)
         .map_err(|_| BrowserCommandError::InvalidInput)?;
-    Ok(access(None, |state| snapshot(state, conversation)))
+    #[cfg(any(test, native_browser))]
+    {
+        Ok(access(None, |state| snapshot(state, conversation)))
+    }
+    #[cfg(not(any(test, native_browser)))]
+    {
+        // Linux has no CEF surface; keep the cross-platform IPC contract stable.
+        Ok(BrowserFaviconSnapshot {
+            event_version: EVENT_VERSION,
+            revision: 0,
+            conversation_id: conversation.to_owned(),
+            icons: Vec::new(),
+        })
+    }
 }

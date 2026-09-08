@@ -37,6 +37,7 @@ pub(super) fn access<R>(
     }
 }
 
+#[cfg(native_browser)]
 pub(super) fn mutate(app: &tauri::AppHandle, operation: impl FnOnce(&mut FaviconState)) {
     access(Some(app), operation);
 }

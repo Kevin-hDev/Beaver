@@ -8,6 +8,7 @@ pub(super) const MAX_CANDIDATES: usize = 8;
 pub(super) const MAX_DOWNLOADS: usize = 4;
 pub(super) const MAX_PNG_BYTES: usize = 32 * 1024;
 pub(super) const MAX_PIXELS: i32 = 64;
+#[cfg(native_browser)]
 pub(super) const REQUEST_DIP: u32 = 32;
 pub(super) const DOWNLOAD_DEADLINE: Duration = Duration::from_secs(5);
 pub(super) const MAX_REVISION: u64 = (1 << 53) - 1;

@@ -6,6 +6,7 @@ mod browser_events;
 #[cfg(native_browser)]
 mod browser_slot;
 mod browser_surface_api;
+#[cfg(any(test, native_browser))]
 mod browser_view_key;
 #[cfg(native_browser)]
 mod cef_app;
@@ -54,19 +55,25 @@ mod cef_request_handler;
 mod cef_runtime_policy;
 #[cfg(native_browser)]
 mod cef_state_bridge;
+#[cfg(any(test, native_browser))]
 mod favicon_png;
+#[cfg(any(test, native_browser))]
 mod favicon_policy;
 #[cfg(test)]
 mod favicon_review_tests;
+#[cfg(any(test, native_browser))]
 mod favicon_runtime;
+#[cfg(any(test, native_browser))]
 mod favicon_state;
 #[cfg(test)]
 mod favicon_state_tests;
+#[cfg(any(test, native_browser))]
 mod favicon_store;
 #[cfg(any(test, native_browser))]
 mod favicon_task_gate;
+#[cfg(any(test, native_browser))]
 mod favicon_types;
-#[cfg(native_browser)]
+#[cfg(any(test, native_browser))]
 mod favicon_watchdog;
 // La condition suit les appels de cef_runtime_policy, gardés par l'OS et non
 // par native_browser : sous windows-tests le module disparaissait de la lib
