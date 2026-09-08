@@ -1,4 +1,4 @@
-# Task 2 review — primary (in progress)
+# Task 2 review — primary; native journey pending
 
 ## Findings sent during implementation
 
@@ -13,13 +13,6 @@
 - pointercancel changed from committing onUp to cancellation.
 - Escape listener is active only with a held pointer and does not stop propagation; consumers keep menu/rename handling.
 - UI handle excludes close button; uses explicit post-pointerup click guard.
-
-## Pending review
-
-- Final hook races, membership change while saving, failure/retry, conversation A→B→A, unmount.
-- Tests for unchanged title updates, true focus/scroll, rapid gestures, disabled panel, close during drag.
-- Final i18n and authority tests, native drag across CEF and input draft retention.
-- Keyboard activation after a mouse drag: shared didDrag remains true until another pointerdown, so a subsequent Enter/Space click may be swallowed. Distinguish genuine keyboard activation from the pointer click following a drag and test both (pointer click detail=1, keyboard detail=0).
 
 ## Primary final correction pass
 - Added red regressions: keyboard activation after drag was swallowed; closing a tab released an in-flight save. Both failed as expected (task-2-primary-red.log).
