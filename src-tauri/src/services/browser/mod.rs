@@ -1,3 +1,5 @@
+mod favicon_events;
+pub use favicon_events::{read_snapshot as favicon_snapshot, BrowserFaviconSnapshot};
 mod favicon_png;
 mod favicon_runtime;
 #[cfg(native_browser)]

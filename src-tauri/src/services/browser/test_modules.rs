@@ -65,3 +65,5 @@ mod windows_surface_order_tests;
 
 #[cfg(test)]
 mod favicon_png_tests;
+#[cfg(test)]
+mod favicon_contract_tests;

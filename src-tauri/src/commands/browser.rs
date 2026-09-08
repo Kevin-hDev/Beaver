@@ -152,3 +152,8 @@ pub async fn browser_detect_local_sites(
     }
     Ok(result)
 }
+
+#[tauri::command]
+pub fn browser_favicon_snapshot(conversation_id: String) -> Result<crate::services::browser::BrowserFaviconSnapshot, BrowserCommandError> {
+    crate::services::browser::favicon_snapshot(&conversation_id)
+}

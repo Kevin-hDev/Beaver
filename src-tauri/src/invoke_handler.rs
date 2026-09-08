@@ -13,6 +13,7 @@ macro_rules! generate {
             crate::commands::restart_application,
             crate::commands::browser_surface,
             crate::commands::browser_open_session,
+            crate::commands::browser_favicon_snapshot,
             crate::commands::browser_create_tab,
             crate::commands::browser_activate_tab,
             crate::commands::browser_reorder_tabs,
