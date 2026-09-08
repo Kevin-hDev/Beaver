@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ArrowLeft,
@@ -26,10 +26,42 @@ interface BrowserNavigationBarProps {
 
 export function BrowserNavigationBar(props: BrowserNavigationBarProps) {
   const { t } = useTranslation();
-  /* Le clic qui donne le focus replace parfois le curseur après onFocus. On
-     mémorise seulement cette entrée dans le champ, puis on resélectionne à la
-     fin de ce clic ; les clics d'édition suivants restent donc normaux. */
+  /* Le clic qui donne le focus replace parfois le curseur après onFocus. CEF
+     peut ensuite réduire une sélection déjà complète : on garde une réparation
+     jusqu'au premier selectionchange non complet, sans toucher aux clics suivants. */
   const selectAfterPointer = useRef(false);
+  const addressRef = useRef<HTMLInputElement>(null);
+  const tabIdRef = useRef(props.tab.id);
+  const repairAfterNativeClick = useRef<{ tabId: string; value: string } | null>(null);
+
+  useLayoutEffect(() => {
+    tabIdRef.current = props.tab.id;
+    repairAfterNativeClick.current = null;
+  }, [props.address, props.tab.id]);
+
+  useEffect(() => {
+    const repairNativeSelection = () => {
+      const repair = repairAfterNativeClick.current;
+      const address = addressRef.current;
+      if (!repair || !address || repair.tabId !== tabIdRef.current ||
+        repair.value !== address.value || document.activeElement !== address || !document.hasFocus()) {
+        repairAfterNativeClick.current = null;
+        return;
+      }
+      if (address.selectionStart === 0 && address.selectionEnd === address.value.length) return;
+      repairAfterNativeClick.current = null;
+      address.setSelectionRange(0, address.value.length);
+    };
+    const cancelNativeSelectionRepair = () => { repairAfterNativeClick.current = null; };
+    document.addEventListener("selectionchange", repairNativeSelection);
+    window.addEventListener("blur", cancelNativeSelectionRepair);
+    return () => {
+      repairAfterNativeClick.current = null;
+      document.removeEventListener("selectionchange", repairNativeSelection);
+      window.removeEventListener("blur", cancelNativeSelectionRepair);
+    };
+  }, []);
+
   const iconButton = (
     label: string,
     disabled: boolean,
@@ -65,32 +97,46 @@ export function BrowserNavigationBar(props: BrowserNavigationBarProps) {
         props.onSubmit();
       }}>
         <input
+          ref={addressRef}
           className="ib-address-input"
           value={props.address}
           maxLength={MAX_BROWSER_URL_LENGTH}
           placeholder={t("browser.addressPlaceholder")}
           aria-invalid={props.invalid}
           onPointerDown={(event) => {
+            repairAfterNativeClick.current = null;
             /* Une vue CEF native peut prendre le focus macOS sans remettre à
                zéro activeElement dans le document Tauri. hasFocus est alors
                la seule autorité qui indique que ce clic entre dans le champ. */
             selectAfterPointer.current = !document.hasFocus() ||
               document.activeElement !== event.currentTarget;
           }}
-          onPointerCancel={() => { selectAfterPointer.current = false; }}
+          onPointerCancel={() => {
+            selectAfterPointer.current = false;
+            repairAfterNativeClick.current = null;
+          }}
           onFocus={(event) => {
             props.onAddressFocus();
             event.currentTarget.select();
           }}
           onBlur={() => {
             selectAfterPointer.current = false;
+            repairAfterNativeClick.current = null;
             props.onAddressBlur();
           }}
           onClick={(event) => {
             const shouldSelect = selectAfterPointer.current;
             selectAfterPointer.current = false;
-            if (shouldSelect) event.currentTarget.select();
+            if (shouldSelect) {
+              event.currentTarget.select();
+              repairAfterNativeClick.current = {
+                tabId: props.tab.id,
+                value: event.currentTarget.value,
+              };
+            }
           }}
+          onKeyDown={() => { repairAfterNativeClick.current = null; }}
+          onInput={() => { repairAfterNativeClick.current = null; }}
           onChange={(event) => props.onAddressChange(event.target.value)}
         />
         <button

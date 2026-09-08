@@ -74,18 +74,8 @@
   cursor: pointer;
 }
 
-/* focus.css retire le contour natif. L'offset négatif garde ce repère dans les
-   24 px du contrôle, sans qu'il soit coupé par le défilement des onglets. */
-.ib-tab-select:focus-visible,
-.ib-tab-close:focus-visible,
-.ib-tab-add:focus-visible,
-.ib-nav-button:focus-visible,
-.ib-address-go:focus-visible,
-.ib-address-form:focus-within {
-  outline: var(--focus-visible-ring-width) solid var(--pulse);
-  outline-offset: calc(var(--focus-visible-ring-width) * -1);
-}
-
+/* Le navigateur reprend le focus global sans contour ajouté, conformément
+   au choix visuel demandé ; ne pas réintroduire de cadre coloré local. */
 .ib-tab-title {
   overflow: hidden;
   text-overflow: ellipsis;

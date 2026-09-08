@@ -33,6 +33,8 @@ const tab: BrowserTabState = {
 
 interface HarnessProps {
   address: string;
+  controlled?: boolean;
+  tabId?: string;
   onFocus?: () => void;
   onBlur?: () => void;
   onChange?: (value: string) => void;
@@ -41,6 +43,8 @@ interface HarnessProps {
 
 function NavigationHarness({
   address,
+  controlled = false,
+  tabId = tab.id,
   onFocus = vi.fn(),
   onBlur = vi.fn(),
   onChange = vi.fn(),
@@ -49,8 +53,8 @@ function NavigationHarness({
   const [value, setValue] = useState(address);
   return (
     <BrowserNavigationBar
-      tab={tab}
-      address={value}
+      tab={{ ...tab, id: tabId }}
+      address={controlled ? address : value}
       invalid={false}
       fullscreen={false}
       onAddressFocus={onFocus}
@@ -69,6 +73,15 @@ function NavigationHarness({
 function input(): HTMLInputElement {
   return screen.getByRole("textbox");
 }
+
+const repairCancellationEvents: Array<[string, (address: HTMLInputElement) => void]> = [
+  ["un nouveau pointerdown", (address) => fireEvent.pointerDown(address, { button: 0 })],
+  ["le clavier", (address) => fireEvent.keyDown(address, { key: "ArrowRight" })],
+  ["une saisie", (address) => fireEvent.input(address)],
+  ["le blur du champ", (address) => fireEvent.blur(address)],
+  ["pointercancel", (address) => fireEvent.pointerCancel(address)],
+  ["le blur de la fenêtre", () => fireEvent.blur(window)],
+];
 
 describe("BrowserNavigationBar", () => {
   it("sélectionne l'adresse au premier clic complet, pas au second", async () => {
@@ -166,6 +179,93 @@ describe("BrowserNavigationBar", () => {
     fireEvent.click(address);
     expect(address.selectionStart).toBe(5);
     expect(address.selectionEnd).toBe(5);
+    hasFocus.mockRestore();
+  });
+
+  it("répare les deux retours CEF réduits après une sélection déjà complète", () => {
+    render(<NavigationHarness address="https://initial.example/" />);
+    const address = input();
+    const hasFocus = vi.spyOn(document, "hasFocus").mockReturnValue(false);
+
+    for (let round = 0; round < 2; round += 1) {
+      address.focus();
+      address.setSelectionRange(0, address.value.length);
+      fireEvent.pointerDown(address, { button: 0 });
+      hasFocus.mockReturnValue(true);
+      fireEvent.click(address);
+      fireEvent(document, new Event("selectionchange"));
+      address.setSelectionRange(address.value.length, address.value.length);
+      fireEvent(document, new Event("selectionchange"));
+      expect(address.selectionStart).toBe(0);
+      expect(address.selectionEnd).toBe(address.value.length);
+      hasFocus.mockReturnValue(false);
+    }
+
+    hasFocus.mockReturnValue(true);
+    address.setSelectionRange(5, 5);
+    fireEvent.pointerDown(address, { button: 0 });
+    fireEvent.click(address);
+    expect(address.selectionStart).toBe(5);
+    expect(address.selectionEnd).toBe(5);
+    hasFocus.mockRestore();
+  });
+
+  it.each(repairCancellationEvents)("annule la réparation après %s", (_name, cancel) => {
+    render(<NavigationHarness address="https://initial.example/" />);
+    const address = input();
+    address.focus();
+    const hasFocus = vi.spyOn(document, "hasFocus").mockReturnValue(false);
+    fireEvent.pointerDown(address, { button: 0 });
+    hasFocus.mockReturnValue(true);
+    fireEvent.click(address);
+    fireEvent(document, new Event("selectionchange"));
+
+    cancel(address);
+    address.setSelectionRange(address.value.length, address.value.length);
+    fireEvent(document, new Event("selectionchange"));
+    expect(address.selectionStart).toBe(address.value.length);
+    expect(address.selectionEnd).toBe(address.value.length);
+    hasFocus.mockRestore();
+  });
+
+  it.each([
+    ["le texte", "https://updated.example/", tab.id],
+    ["l'onglet", "https://initial.example/", "22222222222222222222222222222222"],
+  ])("annule la réparation après changement de %s", (_name, address, tabId) => {
+    const view = render(<NavigationHarness address="https://initial.example/" controlled />);
+    const field = input();
+    field.focus();
+    const hasFocus = vi.spyOn(document, "hasFocus").mockReturnValue(false);
+    fireEvent.pointerDown(field, { button: 0 });
+    hasFocus.mockReturnValue(true);
+    fireEvent.click(field);
+    fireEvent(document, new Event("selectionchange"));
+
+    view.rerender(<NavigationHarness address={address} controlled tabId={tabId} />);
+    const updated = input();
+    updated.focus();
+    updated.setSelectionRange(updated.value.length, updated.value.length);
+    fireEvent(document, new Event("selectionchange"));
+    expect(updated.selectionStart).toBe(updated.value.length);
+    expect(updated.selectionEnd).toBe(updated.value.length);
+    hasFocus.mockRestore();
+  });
+
+  it("retire sa réparation au démontage", () => {
+    const view = render(<NavigationHarness address="https://initial.example/" />);
+    const address = input();
+    address.focus();
+    const hasFocus = vi.spyOn(document, "hasFocus").mockReturnValue(false);
+    fireEvent.pointerDown(address, { button: 0 });
+    hasFocus.mockReturnValue(true);
+    fireEvent.click(address);
+    fireEvent(document, new Event("selectionchange"));
+
+    view.unmount();
+    address.setSelectionRange(address.value.length, address.value.length);
+    fireEvent(document, new Event("selectionchange"));
+    expect(address.selectionStart).toBe(address.value.length);
+    expect(address.selectionEnd).toBe(address.value.length);
     hasFocus.mockRestore();
   });
 

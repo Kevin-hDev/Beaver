@@ -48,8 +48,8 @@ describe("browser toolbar density", () => {
     expect(shell).toMatch(/\.ib-address-input\s*{[^}]*height: 100%;[^}]*padding: 0 var\(--space-sm\);/s);
     expect(shell).toMatch(/\.ib-address-go\s*{[^}]*height: 100%;[^}]*aspect-ratio: 1;/s);
     expect(shell.match(/line-height: var\(--browser-control-line-height\);/g)).toHaveLength(2);
-    expect(shell).toMatch(/\.ib-tab-select:focus-visible,[\s\S]*\.ib-tab-close:focus-visible,[\s\S]*\.ib-tab-add:focus-visible,[\s\S]*\.ib-nav-button:focus-visible,[\s\S]*\.ib-address-go:focus-visible,[\s\S]*\.ib-address-form:focus-within\s*{/);
-    expect(shell.match(/outline: var\(--focus-visible-ring-width\) solid var\(--pulse\);/g)).toHaveLength(1);
-    expect(shell.match(/outline-offset: calc\(var\(--focus-visible-ring-width\) \* -1\);/g)).toHaveLength(1);
+    // Aucun cadre de focus propre au navigateur : choix explicite de l’interface.
+    expect(shell).not.toMatch(/outline:\s*var\(--focus-visible-ring-width\)/);
+    expect(shell).not.toContain(".ib-address-form:focus-within");
   });
 });
