@@ -102,6 +102,7 @@ mod tests {
                 error_type: Some("invalid_request".to_string()),
                 error_code: Some("bad_schema".to_string()),
                 error_param: Some("tools[0]".to_string()),
+                ..Default::default()
             },
             request_bytes: 100,
             tool_count: 2,

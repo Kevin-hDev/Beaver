@@ -1,5 +1,16 @@
 use super::*;
 
+#[test]
+fn new_direct_models_do_not_grant_capabilities_to_unknown_neighbors() {
+    for (provider, model) in [
+        ("google", "gemini-3.9-flash"),
+        ("zai", "glm-5.3-flash-air"),
+        ("openai", "gpt-6-astra-mini"),
+    ] {
+        assert!(lookup(provider, model).is_none(), "{provider}/{model}");
+    }
+}
+
 fn ids(provider_id: &str) -> Vec<String> {
     list(provider_id)
         .iter()
@@ -10,15 +21,15 @@ fn ids(provider_id: &str) -> Vec<String> {
 #[test]
 fn canonical_inventory_sizes_match_the_official_catalogs() {
     for (provider, expected) in [
-        ("google", 14),
+        ("google", 15),
         ("mistral", 8),
         ("cerebras", 3),
         ("openrouter", 0),
-        ("openai", 19),
+        ("openai", 20),
         ("deepseek", 2),
         ("xai", 7),
         ("moonshot", 15),
-        ("zai", 20),
+        ("zai", 21),
         ("anthropic", 1),
         ("qwen", 76),
     ] {

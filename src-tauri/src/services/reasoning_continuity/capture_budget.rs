@@ -38,6 +38,25 @@ impl CaptureBudget {
         result
     }
 
+    /// Un fragment prolonge un item existant, sans créer un nouvel item natif.
+    /// On facture conservativement tout son JSON, avant toute concaténation.
+    pub(crate) fn observe_fragment(&mut self, fragment: &Value) -> Result<(), LimitError> {
+        self.ensure_open()?;
+        let result = (|| {
+            if self.item_count == 0 {
+                return Err(LimitError::CaptureSkeleton);
+            }
+            validate_json_depth(fragment)?;
+            self.serialized_bytes =
+                serialized_len_bounded_from(fragment, self.serialized_bytes, MAX_ENVELOPE_BYTES)?;
+            Ok(())
+        })();
+        if result.is_err() {
+            self.closed = true;
+        }
+        result
+    }
+
     #[cfg(test)]
     pub const fn item_count(&self) -> usize {
         self.item_count

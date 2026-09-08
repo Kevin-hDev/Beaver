@@ -50,6 +50,7 @@ pub(super) fn models() -> Vec<ModelInfo> {
         supports_tools: super::supports_tools(id),
         supports_vision: vision,
         supports_thinking: true,
+        reasoning_metadata_present: false,
         // Le fallback ne prouve pas l'éligibilité Fast du compte OAuth.
         supports_fast_mode: false,
         reasoning_modes: modes.iter().map(|mode| (*mode).to_string()).collect(),

@@ -21,7 +21,12 @@ impl EffectiveReasoningProfile {
         if !supports_thinking {
             return Ok(Self::off(false, None));
         }
-        let requested = if thinking_enabled {
+        // Mandatory reasoning cannot be turned off: retain a valid remembered effort
+        // instead of replacing it with the model default during legacy-session migration.
+        let can_disable = super::reasoning::supported_modes(provider, model, supports_thinking)
+            .iter()
+            .any(|mode| mode == "off");
+        let requested = if thinking_enabled || !can_disable {
             requested_mode
         } else {
             Some("off")

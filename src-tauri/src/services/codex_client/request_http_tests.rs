@@ -62,6 +62,14 @@ async fn http_post_carries_the_canonical_fast_body_and_routing_hint() {
         .contains(";tier="));
 }
 
+#[tokio::test]
+async fn http_post_keeps_session_affinity_aligned_with_the_cache_key() {
+    let received = capture_request(FastModeRequest::Standard).await;
+    let body: serde_json::Value = serde_json::from_str(request_body(&received)).unwrap();
+    let key = body["prompt_cache_key"].as_str().expect("stable cache key");
+    assert_eq!(header_value(&received, "session-id"), Some(key));
+}
+
 async fn capture_request(fast_mode: FastModeRequest) -> String {
     let listener = tokio::net::TcpListener::bind((std::net::Ipv4Addr::LOCALHOST, 0))
         .await
@@ -76,7 +84,7 @@ async fn capture_request(fast_mode: FastModeRequest) -> String {
         &[],
         &[],
         None,
-        None,
+        Some("cache-test-session"),
         fast_mode,
     );
     let body = serde_json::to_string(&request).unwrap();
@@ -84,9 +92,16 @@ async fn capture_request(fast_mode: FastModeRequest) -> String {
     let client = AuthenticatedClient::new_loopback(Duration::from_secs(2)).unwrap();
     let url = format!("http://{address}/responses");
 
-    let response = send_once(&client, &credentials(), &url, &body, &routing_hint)
-        .await
-        .unwrap();
+    let response = send_once(
+        &client,
+        &credentials(),
+        &url,
+        &body,
+        &routing_hint,
+        request.prompt_cache_key.as_deref(),
+    )
+    .await
+    .unwrap();
     assert_eq!(response.status(), StatusCode::OK);
     let received = server.await.unwrap();
     assert!(received.starts_with("POST /responses HTTP/1.1\r\n"));

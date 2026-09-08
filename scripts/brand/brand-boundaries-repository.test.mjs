@@ -63,6 +63,11 @@ test("les ressources binaires ne consomment pas le budget des textes", () => {
   assert.deepEqual(selectScannableFiles(files, new Set()), ["src/app.ts"]);
 });
 
+test("analyse tout un inventaire Git valide même composé uniquement de textes", () => {
+  const files = Array.from({ length: MAX_GIT_ENTRIES }, (_, index) => `src/file-${index}.ts`);
+  assert.deepEqual(selectScannableFiles(files, new Set()), files);
+});
+
 test("refuse un inventaire Git ou texte au-delà de sa borne", () => {
   const raw = `${Array.from(
     { length: MAX_GIT_ENTRIES + 1 },

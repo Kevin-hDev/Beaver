@@ -15,6 +15,14 @@ async fn consume_text_fixture(
     body: &str,
     mode: crate::services::llm::route_profile::FragmentMode,
 ) -> String {
+    consume_fixture(body, mode, "openai").await.content
+}
+
+async fn consume_fixture(
+    body: &str,
+    mode: crate::services::llm::route_profile::FragmentMode,
+    provider: &str,
+) -> crate::services::agent_local::types_ollama::StreamResult {
     let server = MockServer::start().await;
     Mock::given(any())
         .respond_with(
@@ -36,7 +44,7 @@ async fn consume_text_fixture(
         true,
         None,
         &[],
-        crate::services::provider_usage::UsageContext::chat("openai", "fixture"),
+        crate::services::provider_usage::UsageContext::chat(provider, "fixture"),
         mode,
         crate::services::llm::route_profile::ErrorPolicy::Responses,
         None,
@@ -45,7 +53,26 @@ async fn consume_text_fixture(
     .await
     .unwrap()
     .into_result()
-    .content
+}
+
+#[tokio::test]
+async fn google_interactive_usage_counts_all_generated_tokens() {
+    let result = consume_fixture(
+        concat!(
+            "data: {\"choices\":[{\"delta\":{\"content\":\"323\"}}]}\n\n",
+            "data: {\"usage\":{\"prompt_tokens\":134,\"completion_tokens\":3,\"total_tokens\":217}}\n\n",
+            "data: [DONE]\n\n",
+        ),
+        crate::services::llm::route_profile::FragmentMode::DifferentialFragments,
+        "google",
+    ).await;
+    assert_eq!(result.content, "323");
+    assert_eq!(result.eval_count, Some(83));
+    assert_eq!(result.prompt_tokens, Some(134));
+    let usage = result.usage.unwrap();
+    assert_eq!(usage.output_tokens, Some(83));
+    assert_eq!(usage.total_tokens, Some(217));
+    assert_eq!(usage.reasoning_output_tokens, None);
 }
 
 #[tokio::test]

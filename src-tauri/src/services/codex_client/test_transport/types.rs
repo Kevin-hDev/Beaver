@@ -37,6 +37,7 @@ pub(crate) struct WebSocketCapture {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct RequestProjection {
     pub model: String,
+    pub reasoning_effort: Option<String>,
     pub service_tier: Option<String>,
     pub envelope_type: Option<String>,
     pub input_count: usize,

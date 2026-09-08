@@ -2,6 +2,9 @@ use serde::Serialize;
 
 use super::types::LlmError;
 
+#[path = "provider_error_quota.rs"]
+mod quota;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ProviderErrorCode {
@@ -23,6 +26,8 @@ pub struct SafeProviderDetails {
     pub error_type: Option<String>,
     pub error_code: Option<String>,
     pub error_param: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub quota: Option<quota::QuotaDetails>,
 }
 
 impl ProviderErrorCode {
@@ -119,10 +124,18 @@ pub fn safe_log_code(
 
 pub fn safe_details(body: &str) -> SafeProviderDetails {
     let parsed = serde_json::from_str::<serde_json::Value>(body).ok();
+    // Streaming APIs can wrap one Google RPC error in an array. Do not
+    // interpret an arbitrary batch or copy the provider's free-form message.
+    let document = parsed.as_ref().and_then(|value| match value.as_array() {
+        Some(items) if items.len() == 1 => items.first(),
+        Some(_) => None,
+        None => Some(value),
+    });
     SafeProviderDetails {
-        error_type: json_field(parsed.as_ref(), &["/error/type", "/type"]),
-        error_code: json_field(parsed.as_ref(), &["/error/code", "/code"]),
-        error_param: json_field(parsed.as_ref(), &["/error/param", "/param"]),
+        error_type: json_field(document, &["/error/type", "/type", "/error/status"]),
+        error_code: json_field(document, &["/error/code", "/code"]),
+        error_param: json_field(document, &["/error/param", "/param"]),
+        quota: quota::extract(document),
     }
 }
 

@@ -76,6 +76,7 @@ fn parse_model(value: &Value) -> Option<Result<ModelInfo, LlmError>> {
             local_capabilities.supports_vision,
         ),
         supports_thinking,
+        reasoning_metadata_present: false,
         supports_fast_mode: false,
         reasoning_modes,
         default_reasoning_mode,

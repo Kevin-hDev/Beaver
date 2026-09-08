@@ -55,8 +55,18 @@ pub(super) async fn dispatch_http(
     model: &str,
     tool_count: usize,
 ) -> Option<Result<reqwest::Response, String>> {
+    dispatch_http_with_session(body, routing_hint, None, model, tool_count).await
+}
+
+pub(super) async fn dispatch_http_with_session(
+    body: &str,
+    routing_hint: &str,
+    session_key: Option<&str>,
+    model: &str,
+    tool_count: usize,
+) -> Option<Result<reqwest::Response, String>> {
     let context = ACTIVE_SCENARIO.try_with(Arc::clone).ok()?;
-    Some(http::dispatch_http(context, body, routing_hint, model, tool_count).await)
+    Some(http::dispatch_http(context, body, routing_hint, session_key, model, tool_count).await)
 }
 
 pub(super) async fn connect_websocket(

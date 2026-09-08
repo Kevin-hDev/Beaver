@@ -21,6 +21,12 @@ pub struct ResolvedModelCapabilities {
 }
 
 pub fn resolve_local(provider_id: &str, model_id: &str) -> Option<ResolvedModelCapabilities> {
+    if super::openrouter_model_metadata::owns_catalog_metadata(provider_id) {
+        if let Some(model) = super::runtime_models::lookup(provider_id, model_id) {
+            // The same enriched object feeds UI and backend, including its default.
+            return Some(from_runtime(model));
+        }
+    }
     if provider_id == crate::services::codex_client::PROVIDER_ID {
         if let Some(model) = super::runtime_models::lookup(provider_id, model_id) {
             return Some(from_runtime(model));
@@ -53,6 +59,18 @@ pub async fn resolve(provider_id: &str, model_id: &str) -> Option<ResolvedModelC
         .map(from_litellm)
 }
 
+pub(super) async fn resolve_for_catalog(
+    provider_id: &str,
+    model_id: &str,
+) -> Option<ResolvedModelCapabilities> {
+    if let Some(model) = super::provider_model_lookup::local_entry(provider_id, model_id) {
+        return Some(from_embedded_unrestricted(model));
+    }
+    super::litellm_catalog_lookup::capabilities(provider_id, model_id)
+        .await
+        .map(from_litellm)
+}
+
 pub fn resolve_reasoning_modes(
     provider_id: &str,
     model_id: &str,
@@ -71,12 +89,18 @@ fn from_embedded(
     model_id: &str,
     model: ProviderModelConfig,
 ) -> ResolvedModelCapabilities {
+    let mut resolved = from_embedded_unrestricted(model);
+    resolved.reasoning_modes = restrict_runtime(provider_id, model_id, resolved.reasoning_modes);
+    resolved
+}
+
+fn from_embedded_unrestricted(model: ProviderModelConfig) -> ResolvedModelCapabilities {
     ResolvedModelCapabilities {
         supports_tools: model.supports_tools,
         supports_vision: model.supports_vision,
         supports_thinking: model.supports_thinking,
         supports_fast_mode: model.supports_fast_mode,
-        reasoning_modes: restrict_runtime(provider_id, model_id, model.reasoning_modes),
+        reasoning_modes: model.reasoning_modes,
         default_reasoning_mode: model.default_reasoning_mode,
         provenance: CapabilityProvenance::EmbeddedRegistry,
     }

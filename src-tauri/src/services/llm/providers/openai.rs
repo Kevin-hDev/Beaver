@@ -8,6 +8,15 @@ pub fn is_gpt_56(model: &str) -> bool {
     )
 }
 
+pub fn is_gpt_6_astra(model: &str) -> bool {
+    let model = model.rsplit_once('/').map(|(_, id)| id).unwrap_or(model);
+    model.eq_ignore_ascii_case("gpt-6-astra")
+}
+
+pub fn supports_reported_cache_writes(model: &str) -> bool {
+    is_gpt_56(model) || is_gpt_6_astra(model)
+}
+
 pub fn uses_max_completion_tokens(model: &str) -> bool {
     let model = model.rsplit_once('/').map(|(_, id)| id).unwrap_or(model);
     let model = model.to_lowercase();
@@ -30,6 +39,14 @@ mod tests {
         assert!(is_gpt_56("openai/gpt-5.6-terra"));
         assert!(!is_gpt_56("openai/gpt-5.6-terra-pro"));
         assert!(!is_gpt_56("gpt-5.5"));
+    }
+
+    #[test]
+    fn scopes_reported_cache_writes_to_supported_families() {
+        assert!(supports_reported_cache_writes("gpt-5.6-luna"));
+        assert!(supports_reported_cache_writes("openai/gpt-6-astra"));
+        assert!(!supports_reported_cache_writes("gpt-5.5"));
+        assert!(!supports_reported_cache_writes("gpt-6-astra-pro"));
     }
 
     #[test]

@@ -53,12 +53,13 @@ pub(crate) fn build_model_from_tags(
         Vec::new()
     };
     let default_reasoning_mode = supports_thinking.then(|| {
-        if reasoning_modes.iter().any(|mode| mode == "medium") {
-            "medium".to_string()
-        } else {
-            "auto".to_string()
-        }
+        let preferred = crate::services::reasoning_ollama::default_mode(&name);
+        reasoning_modes
+            .iter()
+            .any(|mode| mode == preferred)
+            .then(|| preferred.to_string())
     });
+    let default_reasoning_mode = default_reasoning_mode.flatten();
     OllamaModel {
         name,
         size: m["size"].as_u64().unwrap_or(0),
@@ -148,4 +149,49 @@ fn parse_capabilities(json: &serde_json::Value) -> Result<Vec<String>, &'static 
 
 fn s(v: &serde_json::Value, key: &str) -> String {
     v[key].as_str().unwrap_or("").to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn thinking_info(name: &str) -> ModelInfo {
+        ModelInfo {
+            name: name.to_string(),
+            modelfile: String::new(),
+            parameters: String::new(),
+            template: String::new(),
+            family: String::new(),
+            parameter_size: String::new(),
+            quantization: String::new(),
+            architecture: String::new(),
+            is_moe: false,
+            context_length: 32_768,
+            capabilities: vec!["completion".into(), "thinking".into()],
+            has_audio: false,
+            license: String::new(),
+        }
+    }
+
+    #[test]
+    fn cloud_glm_constructor_uses_a_published_default() {
+        let model = build_model_from_tags(
+            &serde_json::json!({"name": "glm-5.3-flash:cloud"}),
+            Some(thinking_info("glm-5.3-flash:cloud")),
+            false,
+        );
+        assert_eq!(model.reasoning_modes, ["low", "high", "max"]);
+        assert_eq!(model.default_reasoning_mode.as_deref(), Some("max"));
+    }
+
+    #[test]
+    fn legacy_ollama_constructor_keeps_auto_default() {
+        let model = build_model_from_tags(
+            &serde_json::json!({"name": "qwen3.5:4b"}),
+            Some(thinking_info("qwen3.5:4b")),
+            false,
+        );
+        assert_eq!(model.reasoning_modes, ["off", "auto"]);
+        assert_eq!(model.default_reasoning_mode.as_deref(), Some("auto"));
+    }
 }

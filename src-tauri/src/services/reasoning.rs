@@ -60,8 +60,12 @@ pub fn normalize_for_model(
     if let Some(mode) = requested.filter(|mode| modes.iter().any(|candidate| candidate == mode)) {
         return Some(mode.to_string());
     }
-    let preferred = crate::services::llm::provider_model_lookup::resolve_local(provider, model)
-        .and_then(|resolved| resolved.default_reasoning_mode);
+    let preferred = if crate::services::llm::route_profile::is_local(provider) {
+        Some(super::reasoning_ollama::default_mode(model).to_string())
+    } else {
+        crate::services::llm::provider_model_lookup::resolve_local(provider, model)
+            .and_then(|resolved| resolved.default_reasoning_mode)
+    };
     if preferred
         .as_ref()
         .is_some_and(|mode| modes.iter().any(|candidate| candidate == mode))

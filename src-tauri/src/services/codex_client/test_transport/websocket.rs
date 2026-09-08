@@ -78,7 +78,9 @@ async fn serve(
             originator_valid: handshake.originator_valid,
             user_agent_present: handshake.user_agent_present,
             beta_header_valid: handshake.beta_header_valid,
-            session_headers_valid: handshake.session_headers_valid,
+            // The real stream must pass a derived affinity key, never its local session ID.
+            session_headers_valid: handshake.session_headers_valid
+                && expected_session.starts_with("bv1_"),
         },
     )?;
     websocket_raw::write_reply(&mut stream, reply).await

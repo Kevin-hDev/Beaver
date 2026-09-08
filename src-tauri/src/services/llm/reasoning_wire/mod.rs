@@ -78,7 +78,7 @@ impl ReasoningCapture {
             ContractId::OllamaNativeV1 => self.append_ollama(event),
             ContractId::GeminiCompatV1 => self.append_items(gemini::parts(event)),
             ContractId::MistralChunksV1 => self.append_items(mistral::chunks(event)),
-            ContractId::OpenRouterDetailsV1 => self.append_items(openrouter::details(event)),
+            ContractId::OpenRouterDetailsV1 => self.append_openrouter(event),
             ContractId::OpenAiResponsesV1
             | ContractId::XaiResponsesV1
             | ContractId::CodexResponsesV1 => self.append_response_items(event),
@@ -194,5 +194,7 @@ impl ReasoningCapture {
     }
 }
 
+#[cfg(test)]
+mod openrouter_tests;
 #[cfg(test)]
 mod tests;

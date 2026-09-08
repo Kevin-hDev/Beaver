@@ -25,6 +25,7 @@ pub(super) async fn dispatch_http(
     context: Arc<ScenarioContext>,
     body: &str,
     routing_hint: &str,
+    session_key: Option<&str>,
     model: &str,
     tool_count: usize,
 ) -> Result<reqwest::Response, String> {
@@ -77,6 +78,7 @@ pub(super) async fn dispatch_http(
         &endpoint,
         body,
         routing_hint,
+        session_key,
         model,
         tool_count,
         refresh,

@@ -7,6 +7,58 @@ use super::*;
 use crate::services::llm::fast_mode::FastModeRequest;
 
 #[tokio::test]
+async fn fixture_scope_caps_chat_wire_output_and_preserves_smaller_caps() {
+    let mut cfg = RequestConfig {
+        provider_id: "openai",
+        model: "gpt-5.6-luna",
+        messages: &[],
+        tools: &[],
+        think: false,
+        reasoning_mode: None,
+        max_tokens: Some(127),
+        purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
+        session_id: Some("bounded-chat-wire"),
+        fast_mode: FastModeRequest::Standard,
+        tool_result_previews: None,
+        continuation_target: None,
+    };
+    use super::super::stream_test_transport::{ScriptedResponse, StreamScenario};
+    let scenario = StreamScenario::start("bounded-chat-wire", [ScriptedResponse::Success; 4]).await;
+    post_chat_request_with_timeout(&cfg, Duration::from_secs(2))
+        .await
+        .unwrap();
+    assert_eq!(scenario.payloads()[0]["max_output_tokens"], 127);
+    let limits = crate::services::reasoning_fixture_budget::FixtureLimits::from_values(
+        Some("17"),
+        Some("2"),
+        None,
+    )
+    .unwrap();
+    crate::services::reasoning_fixture_budget::run_scoped(
+        limits,
+        tokio_util::sync::CancellationToken::new(),
+        async {
+            post_chat_request_with_timeout(&cfg, Duration::from_secs(2))
+                .await
+                .unwrap();
+            assert_eq!(scenario.payloads()[1]["max_output_tokens"], 17);
+            cfg.max_tokens = Some(3);
+            post_chat_request_with_timeout(&cfg, Duration::from_secs(2))
+                .await
+                .unwrap();
+            assert_eq!(scenario.payloads()[2]["max_output_tokens"], 3);
+            assert!(post_chat_request_with_timeout(&cfg, Duration::from_secs(2))
+                .await
+                .is_err());
+            assert_eq!(scenario.payloads().len(), 3);
+            Ok::<(), String>(())
+        },
+    )
+    .await
+    .unwrap();
+}
+
+#[tokio::test]
 async fn chat_request_refuses_redirects_before_forwarding_the_body() {
     let destination = MockServer::start().await;
     let origin = MockServer::start().await;
@@ -269,6 +321,119 @@ fn payload_parameters_are_resolved_before_serialization() {
     assert!(!openrouter_glm.tool_stream);
     assert!(openrouter.upstream_routing);
     assert_eq!(openrouter.output_limit_field, "max_completion_tokens");
+}
+
+#[tokio::test]
+async fn openrouter_september_payloads_keep_gateway_limits_and_native_fields_out() {
+    let _guard = super::super::runtime_models::test_mutation_lock().await;
+    let models = [
+        super::super::types::ModelInfo {
+            id: "google/gemini-3.8-flash".into(),
+            display_name: None,
+            owned_by: Some("google".into()),
+            context_length: Some(1_048_576),
+            max_output_tokens: Some(65_536),
+            supports_tools: true,
+            supports_vision: true,
+            supports_thinking: true,
+            reasoning_metadata_present: true,
+            supports_fast_mode: false,
+            reasoning_modes: vec!["low".into(), "medium".into(), "high".into()],
+            default_reasoning_mode: Some("medium".into()),
+            context_usage_includes_reasoning: true,
+            is_free: false,
+        },
+        super::super::types::ModelInfo {
+            id: "z-ai/glm-5.3-flash".into(),
+            display_name: None,
+            owned_by: Some("z-ai".into()),
+            context_length: Some(1_310_720),
+            max_output_tokens: Some(131_072),
+            supports_tools: true,
+            supports_vision: true,
+            supports_thinking: true,
+            reasoning_metadata_present: true,
+            supports_fast_mode: false,
+            reasoning_modes: vec!["low".into(), "high".into(), "max".into()],
+            default_reasoning_mode: Some("max".into()),
+            context_usage_includes_reasoning: true,
+            is_free: false,
+        },
+        super::super::types::ModelInfo {
+            id: "openai/gpt-6-astra".into(),
+            display_name: None,
+            owned_by: Some("openai".into()),
+            context_length: Some(1_050_000),
+            max_output_tokens: Some(128_000),
+            supports_tools: true,
+            supports_vision: true,
+            supports_thinking: true,
+            reasoning_metadata_present: true,
+            supports_fast_mode: false,
+            reasoning_modes: vec![
+                "low".into(),
+                "medium".into(),
+                "high".into(),
+                "xhigh".into(),
+                "max".into(),
+            ],
+            default_reasoning_mode: Some("medium".into()),
+            context_usage_includes_reasoning: true,
+            is_free: false,
+        },
+    ];
+    super::super::runtime_models::replace_provider("openrouter", &models);
+    let tools = [serde_json::json!({
+        "type": "function",
+        "function": {
+            "name": "search",
+            "description": "fixture",
+            "parameters": {"type": "object", "properties": {}}
+        }
+    })];
+    let messages = [
+        crate::services::agent_local::types_ollama::ChatMessage::user("describe".into())
+            .with_images(vec!["iVBORw0KGgo=".into()]),
+    ];
+
+    for model in [
+        "google/gemini-3.8-flash",
+        "z-ai/glm-5.3-flash",
+        "openai/gpt-6-astra",
+    ] {
+        let cfg = RequestConfig {
+            provider_id: "openrouter",
+            model,
+            messages: &messages,
+            tools: &tools,
+            think: true,
+            reasoning_mode: Some("high"),
+            max_tokens: Some(8_000),
+            purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
+            session_id: None,
+            fast_mode: FastModeRequest::Unsupported,
+            tool_result_previews: None,
+            continuation_target: None,
+        };
+        let payload = build_chat_payload(&cfg, &route::resolve("openrouter").unwrap(), Some(8_000))
+            .expect("OpenRouter payload");
+        assert_eq!(payload["reasoning"], serde_json::json!({"effort": "high"}));
+        assert_eq!(payload["max_tokens"], 8_000, "{model}");
+        assert_eq!(payload["tools"][0]["function"]["name"], "search");
+        assert_eq!(payload["messages"][0]["content"][1]["type"], "image_url");
+        let serialized = payload.to_string();
+        for forbidden in [
+            "clear_thinking",
+            "enable_thinking",
+            "preserve_thinking",
+            "tool_stream",
+            "extra_body",
+        ] {
+            assert!(!serialized.contains(forbidden), "{model}/{forbidden}");
+        }
+    }
+
+    super::super::runtime_models::replace_provider("openrouter", &[]);
 }
 
 #[tokio::test]

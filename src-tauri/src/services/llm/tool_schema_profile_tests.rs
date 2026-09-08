@@ -1,5 +1,38 @@
 use super::*;
 
+#[cfg(debug_assertions)]
+#[tokio::test]
+async fn generic_empty_tool_schema_does_not_invent_rejected_arguments() {
+    let mut run = crate::services::reasoning_fixture_run::FixtureRunContext::start()
+        .await
+        .unwrap();
+    let original = run.definitions();
+    for profile in [SchemaPolicy::Generic, SchemaPolicy::Qwen] {
+        let wire = tools_for_policy(profile, false, &original);
+        assert_eq!(
+            wire[1]["function"]["parameters"],
+            original[1]["function"]["parameters"]
+        );
+        let nested = json!({"type":"object", "properties":{
+            "empty":{"type":"object", "properties":{}, "additionalProperties":false},
+            "free":{"type":"object"}
+        }});
+        let fixed = tools_for_policy(profile, false, &[tool("inspect", nested.clone())]);
+        assert_eq!(fixed[0]["function"]["parameters"], nested);
+    }
+    run.dispatch("fixture.write_note", &json!({"value":"fixture"}))
+        .await
+        .unwrap();
+    assert_eq!(
+        run.dispatch("fixture.read_note", &json!({})).await.unwrap(),
+        json!({"value":"fixture"})
+    );
+    assert!(run
+        .dispatch("fixture.read_note", &json!({"_unused":""}))
+        .await
+        .is_err());
+}
+
 fn tool(name: &str, parameters: Value) -> Value {
     json!({
         "type": "function",

@@ -30,7 +30,7 @@ fn parse_with_hook(
         key_zeroized,
     };
     scanner.whitespace();
-    scanner.object(0, true)?;
+    scanner.object(0, true, false)?;
     scanner.whitespace();
     if scanner.cursor != body.len() {
         return Err(ScanError);
@@ -50,7 +50,7 @@ impl JsonScanner<'_> {
         self.depth(depth)?;
         self.whitespace();
         match self.body.get(self.cursor).copied() {
-            Some(b'{') => self.object(depth, false),
+            Some(b'{') => self.object(depth, false, false),
             Some(b'[') => self.array(depth),
             Some(b'"') => string::skip(self.body, &mut self.cursor),
             Some(b't') => lex::literal(self.body, &mut self.cursor, b"true"),
@@ -61,7 +61,7 @@ impl JsonScanner<'_> {
         }
     }
 
-    fn object(&mut self, depth: usize, root: bool) -> Result<(), ScanError> {
+    fn object(&mut self, depth: usize, root: bool, reasoning: bool) -> Result<(), ScanError> {
         self.depth(depth)?;
         lex::byte(self.body, &mut self.cursor, b'{')?;
         self.whitespace();
@@ -76,13 +76,13 @@ impl JsonScanner<'_> {
                 MAX_KEY_BYTES,
                 self.key_zeroized.as_ref().map(Arc::clone),
             )?;
-            let field = self.state.observe_key(key.as_str()?, root);
+            let field = self.state.observe_key(key.as_str()?, root, reasoning);
             // Les clés peuvent elles-mêmes être sensibles : elles sont effacées avant la valeur.
             key.erase();
             self.whitespace();
             lex::byte(self.body, &mut self.cursor, b':')?;
             self.state.count_element()?;
-            if root {
+            if root || reasoning {
                 self.state.claim(field)?;
                 self.root_value(field, depth.saturating_add(1))?;
             } else {
@@ -126,6 +126,11 @@ impl JsonScanner<'_> {
         self.depth(depth)?;
         self.whitespace();
         match field {
+            RootField::Reasoning => self.object(depth, false, true),
+            RootField::Effort => {
+                let value = self.identifier(MAX_TIER_BYTES)?;
+                self.state.set_effort(value)
+            }
             RootField::Model => {
                 let value = self.identifier(MAX_MODEL_BYTES)?;
                 self.state.set_model(value)

@@ -22,6 +22,67 @@ fn uses_usage(provider: &str) -> bool {
 }
 
 #[test]
+fn gemini_openrouter_marks_the_initial_long_reference_and_keeps_replay_intact() {
+    let reference = "alpha beta gamma delta epsilon zeta eta theta.\n".repeat(550);
+    let mut value = json!({"messages":[
+        {"role":"system","content":"stable instruction"},
+        {"role":"user","content":reference},
+        {"role":"assistant","content":"OK","reasoning_details":[{"data":"signed-private"}]},
+        {"role":"user","content":"next question"}
+    ]});
+    let before = value.clone();
+    apply(
+        "openrouter",
+        "google/gemini-3.8-flash",
+        &mut value,
+        Some("session-1"),
+    );
+    assert_eq!(
+        value["messages"][1]["content"][0]["cache_control"]["type"],
+        "ephemeral"
+    );
+    assert_eq!(
+        value["messages"][1]["content"][0]["text"],
+        before["messages"][1]["content"]
+    );
+    assert_eq!(value["messages"][2], before["messages"][2]);
+    assert_eq!(value["messages"][3], before["messages"][3]);
+    assert_eq!(value["messages"][0], before["messages"][0]);
+    assert!(value["session_id"].is_string());
+}
+
+#[test]
+fn gemini_openrouter_does_not_mark_short_or_later_messages() {
+    let mut value = json!({"messages":[
+        {"role":"user","content":"short"},
+        {"role":"assistant","content":"OK"},
+        {"role":"user","content":"long later message".repeat(2000)}
+    ]});
+    let messages = value["messages"].clone();
+    apply(
+        "openrouter",
+        "google/gemini-3.8-flash",
+        &mut value,
+        Some("s"),
+    );
+    assert_eq!(value["messages"], messages);
+}
+
+#[test]
+fn gemini_openrouter_marker_does_not_change_other_routes() {
+    for (provider, model) in [
+        ("google", "gemini-3.8-flash"),
+        ("openrouter", "z-ai/glm-5.3-flash"),
+        ("openrouter", "openai/gpt-6-astra"),
+    ] {
+        let mut value = json!({"messages":[{"role":"user","content":"reference".repeat(3000)}]});
+        let messages = value["messages"].clone();
+        apply(provider, model, &mut value, Some("s"));
+        assert_eq!(value["messages"], messages);
+    }
+}
+
+#[test]
 fn anthropic_cache_marker_does_not_depend_on_a_session() {
     let mut value = payload();
     apply("anthropic", "claude-haiku-4-5-20251001", &mut value, None);

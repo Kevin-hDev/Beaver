@@ -6,6 +6,7 @@ pub(crate) mod common;
 mod compress;
 mod context_usage_seed;
 mod conversation;
+mod fixture_prompt;
 mod gemma4_thinking_guard;
 mod ollama;
 mod ollama_setup;
@@ -48,8 +49,21 @@ pub(crate) type SpawnedStreamTask =
 
 pub(crate) fn run_stream_task(params: StreamTaskParams) -> SpawnedStreamTask {
     let mascot_session = params.on_event.start_mascot_session();
+    #[cfg(debug_assertions)]
+    let fixture_limits = params.fixture_run.as_ref().map(|run| run.limits());
+    #[cfg(debug_assertions)]
+    let fixture_cancel = params.cancel.clone();
     let inner = Box::pin(run_stream_task_inner(params));
     Box::pin(async move {
+        #[cfg(debug_assertions)]
+        let result = match fixture_limits {
+            Some(limits) => {
+                crate::services::reasoning_fixture_budget::run_scoped(limits, fixture_cancel, inner)
+                    .await
+            }
+            None => inner.await,
+        };
+        #[cfg(not(debug_assertions))]
         let result = inner.await;
         if let Some(session) = mascot_session {
             session.finish(mascot_outcome(&result));
@@ -92,7 +106,18 @@ async fn run_stream_task_inner(
         return Ok(CompletedStreamTurn::compression(messages));
     }
 
-    let response_language = common::response_language();
+    let response_language = {
+        #[cfg(debug_assertions)]
+        if params.fixture_run.is_some() {
+            String::new()
+        } else {
+            common::response_language()
+        }
+        #[cfg(not(debug_assertions))]
+        {
+            common::response_language()
+        }
+    };
     session_events::emit_started(&params.session_id, &mode.mode);
 
     if chat_engine(&params.provider) == ChatEngine::Ollama {

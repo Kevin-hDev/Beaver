@@ -5,6 +5,8 @@ const MAX_FIXTURE_OPERATIONS: usize = 8;
 
 #[path = "reasoning_fixture_scenarios.rs"]
 mod fixture_scenarios;
+#[path = "reasoning_fixture_live_specs.rs"]
+pub(crate) mod live_specs;
 
 #[derive(Debug, Deserialize)]
 pub struct FixtureOperation {
@@ -45,6 +47,12 @@ pub(crate) async fn export_reasoning_fixture_report_with_variant(
         .map_err(|_| unavailable())?;
     fixture_scenarios::validate_session(&session)?;
     let generated_at = chrono::Utc::now();
+    let variant = variant.or_else(|| {
+        session
+            .reasoning_mode
+            .as_deref()
+            .and_then(|mode| fixture_report_variant(&session.provider, &session.model, mode))
+    });
     if variant.is_some_and(|variant| session.reasoning_mode.as_deref() != Some(variant)) {
         return Err(unavailable());
     }
@@ -86,6 +94,18 @@ pub(crate) async fn export_reasoning_fixture_report_with_variant(
         .await
         .map_err(|_| unavailable())?;
     Ok(report)
+}
+
+pub(crate) fn fixture_report_variant<'a>(
+    provider: &str,
+    model: &str,
+    mode: &'a str,
+) -> Option<&'a str> {
+    let new_documented_pair = live_specs::LIVE_SPECS.iter().any(|spec| {
+        spec.report_variant && spec.provider == provider && spec.model == model && spec.mode == mode
+    });
+    let historic_variant = matches!(provider, "deepseek" | "anthropic" | "qwen");
+    (new_documented_pair || historic_variant).then_some(mode)
 }
 
 /// Exécute un lot debug borné. L'outil lui-même garde la allowlist et les

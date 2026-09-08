@@ -599,21 +599,20 @@ fn zai_and_cerebras_apply_their_distinct_native_contracts() {
         ContinuationUse::UserContinuation,
     ));
     let zai_replay = zai_target.replay().unwrap();
+    let zai_envelope = envelope(
+        zai_replay,
+        ContractId::ZaiChatV1,
+        CompletionState::Complete,
+        ContinuationState::ChatReasoning {
+            reasoning_content: "zai-opaque".into(),
+        },
+    );
+    let zai_reloaded: ReasoningEnvelope = serde_json::from_slice(
+        &serde_json::to_vec(&zai_envelope).expect("serialized Z.AI envelope"),
+    )
+    .expect("reloaded Z.AI envelope");
     let zai_messages = [
-        ChatMessage::assistant(
-            "answer".into(),
-            None,
-            Some(envelope(
-                zai_replay,
-                ContractId::ZaiChatV1,
-                CompletionState::Complete,
-                ContinuationState::ChatReasoning {
-                    reasoning_content: "zai-opaque".into(),
-                },
-            )),
-            None,
-            None,
-        ),
+        ChatMessage::assistant("answer".into(), None, Some(zai_reloaded), None, None),
         ChatMessage::user("continue".into()),
     ];
     let zai =

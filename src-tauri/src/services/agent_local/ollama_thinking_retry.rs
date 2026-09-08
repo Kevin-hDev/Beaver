@@ -37,9 +37,12 @@ pub fn is_thinking_only_dead_end(result: &StreamResult) -> bool {
 
 /// Construit une requête de retry avec `think=false` si le résultat détecté
 /// correspond au bug thinking-only. Renvoie `None` sinon (ou si le thinking
-/// était déjà désactivé).
+/// était déjà désactivé ou est obligatoire pour ce modèle).
 pub fn build_thinking_disabled_retry(request: &ChatRequest) -> Option<ChatRequest> {
-    if !request.think.as_ref().is_some_and(|t| t.enabled()) {
+    // Un contournement ne peut pas affaiblir le contrat obligatoire du modèle.
+    if crate::services::reasoning_ollama::requires_thinking(&request.model)
+        || !request.think.as_ref().is_some_and(|t| t.enabled())
+    {
         return None;
     }
     let mut retry = request.clone();
@@ -128,6 +131,28 @@ mod tests {
         let retry = build_thinking_disabled_retry(&req).unwrap();
         assert_eq!(retry.think, Some(OllamaThink::Bool(false)));
         assert_eq!(retry.model, "qwen3.5");
+    }
+
+    #[test]
+    fn thinking_only_retry_respects_mandatory_model_profiles() {
+        let mut request = ChatRequest {
+            model: "glm-5.3-flash:cloud".into(),
+            messages: vec![],
+            stream: true,
+            tools: Some(vec![]),
+            options: None,
+            keep_alive: None,
+            think: Some(OllamaThink::Level("high".into())),
+            capture_reasoning: false,
+            live_replay_target: None,
+            fixture_candidate: None,
+        };
+        assert!(build_thinking_disabled_retry(&request).is_none());
+        request.model = "gpt-oss:20b".into();
+        assert_eq!(
+            build_thinking_disabled_retry(&request).unwrap().think,
+            Some(OllamaThink::Bool(false))
+        );
     }
 
     #[test]

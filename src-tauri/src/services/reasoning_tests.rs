@@ -9,6 +9,13 @@ fn codex_default_is_medium_and_no_off() {
 }
 
 #[test]
+fn codex_unknown_model_preserves_legacy_fallback_without_catalog_entry() {
+    let model = "unknown-review-model";
+    assert!(supported_modes("codex-oauth", model, true).is_empty());
+    assert_eq!(codex_effort(model, Some("ultra")), "medium");
+}
+
+#[test]
 fn codex_effort_rejects_levels_unsupported_by_the_model() {
     assert_eq!(codex_effort("gpt-5.6-sol", Some("ultra")), "ultra");
     assert_eq!(codex_effort("gpt-5.6-terra", Some("max")), "max");
@@ -36,6 +43,54 @@ fn gpt_oss_uses_string_effort() {
 fn regular_ollama_uses_boolean_thinking() {
     let think = super::reasoning_ollama::payload("qwen3", Some("off"), true);
     assert_eq!(think, OllamaThink::Bool(false));
+}
+
+#[test]
+fn cloud_glm_ollama_normalization_uses_max_for_legacy_defaults() {
+    for requested in [None, Some("off"), Some("auto")] {
+        assert_eq!(
+            normalize_for_model("ollama", "glm-5.3-flash:cloud", requested, true).as_deref(),
+            Some("max")
+        );
+    }
+}
+
+#[test]
+fn mandatory_ollama_payload_and_resolution_agree_on_legacy_xhigh() {
+    let model = "glm-5.3-flash:cloud";
+    let resolved =
+        super::reasoning_ollama::resolve(model, Some("xhigh"), true, Some(&["thinking".into()]))
+            .unwrap();
+    assert_eq!(resolved.payload, OllamaThink::Level("max".into()));
+    assert_eq!(
+        super::reasoning_ollama::payload(model, Some("xhigh"), true),
+        resolved.payload
+    );
+    assert_eq!(
+        super::reasoning_ollama::payload("gpt-oss:20b", Some("xhigh"), true),
+        OllamaThink::Level("high".into())
+    );
+}
+
+#[test]
+fn cloud_glm_effective_profile_keeps_mandatory_reasoning_active() {
+    let profile = crate::services::reasoning_profile::EffectiveReasoningProfile::ollama(
+        "glm-5.3-flash:cloud",
+        Some("off"),
+        false,
+        Some(&["thinking".into()]),
+    )
+    .unwrap();
+    assert_eq!(
+        profile.mode,
+        crate::services::reasoning_continuity::contract::ReasoningModeId::Max
+    );
+    assert_eq!(profile.mode_name.as_deref(), Some("max"));
+    assert!(profile.active);
+    assert_eq!(
+        profile.ollama_payload,
+        Some(OllamaThink::Level("max".into()))
+    );
 }
 
 #[test]
@@ -110,6 +165,31 @@ fn new_models_use_the_registry_default_and_reject_unsupported_off() {
 }
 
 #[test]
+fn astra_effective_profile_normalizes_legacy_selections_to_a_valid_effort() {
+    for (requested, thinking_enabled) in [
+        (Some("off"), true),
+        (Some("auto"), true),
+        (None, true),
+        (Some("medium"), false),
+    ] {
+        let profile = crate::services::reasoning_profile::EffectiveReasoningProfile::api(
+            "openai",
+            "gpt-6-astra",
+            requested,
+            thinking_enabled,
+            true,
+        )
+        .expect("Astra has a mandatory reasoning effort");
+        assert_eq!(profile.mode_name.as_deref(), Some("medium"));
+        assert!(profile.active);
+        assert_ne!(
+            profile.mode,
+            super::reasoning_continuity::contract::ReasoningModeId::Off
+        );
+    }
+}
+
+#[test]
 fn grok_45_keeps_its_previous_medium_default() {
     assert_eq!(
         normalize_for_model("xai", "grok-4.5", None, true).as_deref(),
@@ -146,6 +226,7 @@ fn supported_modes_and_default_use_validated_runtime_restrictions() {
         supports_tools: true,
         supports_vision: false,
         supports_thinking: true,
+        reasoning_metadata_present: false,
         supports_fast_mode: false,
         reasoning_modes: vec!["auto".into()],
         default_reasoning_mode: Some("auto".into()),

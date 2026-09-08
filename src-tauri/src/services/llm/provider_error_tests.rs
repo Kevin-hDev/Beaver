@@ -173,3 +173,32 @@ fn safe_details_keep_only_whitelisted_fields() {
     assert_eq!(details.error_param.as_deref(), Some("tools[0]"));
     assert!(!format!("{details:?}").contains("private prompt"));
 }
+
+#[test]
+fn safe_details_extract_google_status_from_single_error_envelopes() {
+    let body = r#"{"error":{"code":429,"status":"RESOURCE_EXHAUSTED","message":"private prompt"}}"#;
+    for envelope in [body.to_string(), format!("[{body}]")] {
+        let details = safe_details(&envelope);
+        assert_eq!(details.error_type.as_deref(), Some("RESOURCE_EXHAUSTED"));
+        assert_eq!(details.error_code.as_deref(), Some("429"));
+        assert!(!format!("{details:?}").contains("private prompt"));
+    }
+}
+
+#[test]
+fn safe_details_keep_quota_categories_but_not_provider_messages_or_identifiers() {
+    let details = safe_details(
+        r#"[{"error":{"code":429,"status":"RESOURCE_EXHAUSTED","message":"private message","details":[
+        {"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[
+            {"quotaId":"GenerateRequestsPerDayPerProjectPerModel-FreeTier","quotaValue":"20","quotaDimensions":{"project":"private project"}},
+            {"quotaId":"private-secret","quotaValue":"0"}
+        ]},
+        {"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"12s"}
+    ]}}]"#,
+    );
+    let value = serde_json::to_value(details).unwrap();
+    assert_eq!(value["quota"]["requests_per_day"], true);
+    assert_eq!(value["quota"]["zero_limit"], true);
+    assert_eq!(value["quota"]["retry_after_seconds"], 12);
+    assert!(!value.to_string().contains("private"));
+}

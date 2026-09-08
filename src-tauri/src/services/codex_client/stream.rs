@@ -39,7 +39,11 @@ pub async fn stream_chat_with_budget(
     let mut measurement = StreamMeasurement::new(measurement);
     // Le WebSocket ne fournit pas encore les items opaques nécessaires au rejeu.
     // Dès qu'une capture est autorisée, HTTPS est le seul transport sûr.
-    if reasoning_capture.is_none() && websocket::should_attempt() {
+    #[cfg(debug_assertions)]
+    let fixture_http_only = crate::services::reasoning_fixture_budget::is_active();
+    #[cfg(not(debug_assertions))]
+    let fixture_http_only = false;
+    if !fixture_http_only && reasoning_capture.is_none() && websocket::should_attempt() {
         match websocket::stream_chat(
             on_event,
             session_id,

@@ -1,6 +1,81 @@
 use super::stream_reasoning;
 use serde_json::json;
 
+#[test]
+fn optional_reasoning_stays_disabled_despite_a_remembered_effort() {
+    let profile = crate::services::reasoning_profile::EffectiveReasoningProfile::api(
+        "deepseek",
+        "deepseek-v4-pro",
+        Some("low"),
+        false,
+        true,
+    )
+    .unwrap();
+    assert!(!profile.active);
+    assert_eq!(profile.mode_name.as_deref(), Some("off"));
+}
+
+#[test]
+fn mandatory_google_and_zai_profiles_reach_the_real_chat_constructor() {
+    let messages =
+        [crate::services::agent_local::types_ollama::ChatMessage::user("bonjour".into())];
+    for (provider, model, default) in [
+        ("google", "gemini-3.8-flash", "medium"),
+        ("zai", "glm-5.3-flash", "max"),
+    ] {
+        for (requested, enabled) in [
+            (Some("off"), true),
+            (Some("auto"), true),
+            (None, true),
+            (Some("low"), false),
+        ] {
+            let expected = if requested == Some("low") {
+                "low"
+            } else {
+                default
+            };
+            let profile = crate::services::reasoning_profile::EffectiveReasoningProfile::api(
+                provider, model, requested, enabled, true,
+            )
+            .unwrap();
+            assert!(profile.active);
+            assert_eq!(profile.mode_name.as_deref(), Some(expected));
+            let cfg = super::stream_http::RequestConfig {
+                provider_id: provider,
+                fast_mode: super::fast_mode::FastModeRequest::Standard,
+                model,
+                messages: &messages,
+                tools: &[],
+                think: profile.active,
+                reasoning_mode: profile.mode_name.as_deref(),
+                max_tokens: Some(1_234),
+                purpose: super::request_purpose::RequestPurpose::ManualChat,
+                session_id: None,
+                tool_result_previews: None,
+                continuation_target: None,
+            };
+            let body = super::build_chat_payload_for_test(
+                &cfg,
+                &super::route::resolve(provider).unwrap(),
+                cfg.max_tokens,
+            )
+            .unwrap();
+            if provider == "google" {
+                assert_eq!(
+                    body["extra_body"]["google"]["thinking_config"]["thinking_level"],
+                    expected
+                );
+            } else {
+                assert_eq!(body["reasoning_effort"], expected);
+                assert_eq!(
+                    body["thinking"],
+                    serde_json::json!({"type":"enabled","clear_thinking":false})
+                );
+            }
+        }
+    }
+}
+
 fn payload(provider: &str, model: &str, mode: Option<&str>) -> serde_json::Value {
     let mut payload = json!({});
     let policy = super::route_profile::payload_policy(provider, model).unwrap();
@@ -88,12 +163,33 @@ fn zai_glm_53_keeps_forced_thinking_and_defaults_to_max() {
 }
 
 #[test]
+fn september_google_and_zai_payloads_match_selected_efforts() {
+    for mode in ["low", "medium", "high"] {
+        let body = payload("google", "gemini-3.8-flash", Some(mode));
+        assert_eq!(
+            body["extra_body"]["google"]["thinking_config"],
+            json!({ "include_thoughts": true, "thinking_level": mode })
+        );
+        assert!(body.get("reasoning_effort").is_none());
+    }
+    for mode in ["low", "high", "max"] {
+        let body = payload("zai", "glm-5.3-flash", Some(mode));
+        assert_eq!(body["reasoning_effort"], mode);
+        assert_eq!(body["thinking"]["type"], "enabled");
+        assert_eq!(body["thinking"]["clear_thinking"], false);
+    }
+}
+
+#[test]
 fn zai_glm_53_keeps_max_when_the_registry_is_unavailable() {
     assert_eq!(
-        stream_reasoning::resolve_glm_53_effort(Some("high"), None),
+        super::stream_reasoning_zai::resolve_glm_53_effort(Some("high"), None),
         "max"
     );
-    assert_eq!(stream_reasoning::resolve_glm_53_effort(None, None), "max");
+    assert_eq!(
+        super::stream_reasoning_zai::resolve_glm_53_effort(None, None),
+        "max"
+    );
 }
 
 #[test]
@@ -160,6 +256,97 @@ fn openrouter_gpt_56_keeps_nested_reasoning_shape() {
 
     assert_eq!(payload["reasoning"], json!({ "effort": "max" }));
     assert!(payload.get("reasoning_effort").is_none());
+}
+
+#[tokio::test]
+async fn openrouter_september_models_use_only_their_catalog_effort() {
+    let _guard = super::runtime_models::test_mutation_lock().await;
+    let models = [
+        super::types::ModelInfo {
+            id: "google/gemini-3.8-flash".into(),
+            display_name: None,
+            owned_by: Some("google".into()),
+            context_length: Some(1_048_576),
+            max_output_tokens: Some(65_536),
+            supports_tools: true,
+            supports_vision: true,
+            supports_thinking: true,
+            reasoning_metadata_present: true,
+            supports_fast_mode: false,
+            reasoning_modes: vec!["low".into(), "medium".into(), "high".into()],
+            default_reasoning_mode: Some("medium".into()),
+            context_usage_includes_reasoning: true,
+            is_free: false,
+        },
+        super::types::ModelInfo {
+            id: "z-ai/glm-5.3-flash".into(),
+            display_name: None,
+            owned_by: Some("z-ai".into()),
+            context_length: Some(1_310_720),
+            max_output_tokens: Some(131_072),
+            supports_tools: true,
+            supports_vision: true,
+            supports_thinking: true,
+            reasoning_metadata_present: true,
+            supports_fast_mode: false,
+            reasoning_modes: vec!["low".into(), "high".into(), "max".into()],
+            default_reasoning_mode: Some("max".into()),
+            context_usage_includes_reasoning: true,
+            is_free: false,
+        },
+        super::types::ModelInfo {
+            id: "openai/gpt-6-astra".into(),
+            display_name: None,
+            owned_by: Some("openai".into()),
+            context_length: Some(1_050_000),
+            max_output_tokens: Some(128_000),
+            supports_tools: true,
+            supports_vision: true,
+            supports_thinking: true,
+            reasoning_metadata_present: true,
+            supports_fast_mode: false,
+            reasoning_modes: vec![
+                "low".into(),
+                "medium".into(),
+                "high".into(),
+                "xhigh".into(),
+                "max".into(),
+            ],
+            default_reasoning_mode: Some("medium".into()),
+            context_usage_includes_reasoning: true,
+            is_free: false,
+        },
+    ];
+    super::runtime_models::replace_provider("openrouter", &models);
+
+    for (model, modes) in [
+        (
+            "google/gemini-3.8-flash",
+            ["low", "medium", "high"].as_slice(),
+        ),
+        ("z-ai/glm-5.3-flash", ["low", "high", "max"].as_slice()),
+        (
+            "openai/gpt-6-astra",
+            ["low", "medium", "high", "xhigh", "max"].as_slice(),
+        ),
+    ] {
+        for mode in modes {
+            let body = payload("openrouter", model, Some(mode));
+            assert_eq!(body["reasoning"], json!({"effort": mode}), "{model}/{mode}");
+            let serialized = body.to_string();
+            for forbidden in [
+                "clear_thinking",
+                "enable_thinking",
+                "preserve_thinking",
+                "tool_stream",
+                "extra_body",
+            ] {
+                assert!(!serialized.contains(forbidden), "{model}/{forbidden}");
+            }
+        }
+    }
+
+    super::runtime_models::replace_provider("openrouter", &[]);
 }
 
 #[test]

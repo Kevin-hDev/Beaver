@@ -8,9 +8,11 @@ use super::stream_http::{RequestConfig, RequestError};
 
 #[path = "openai_responses_request.rs"]
 mod request_builder;
-use request_builder::try_build_request_with_evidence;
 #[cfg(test)]
-use request_builder::{build_request, try_build_request};
+pub(super) use request_builder::build_request;
+#[cfg(test)]
+use request_builder::try_build_request;
+use request_builder::try_build_request_with_evidence;
 
 pub(super) struct ResponseStreamOptions<'a> {
     pub buffer_content: bool,

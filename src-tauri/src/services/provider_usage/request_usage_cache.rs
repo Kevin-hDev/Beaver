@@ -1,7 +1,5 @@
-use super::request_usage::{CacheMissSource, CacheUsageStatus};
+use super::request_usage::{CacheMissSource, CacheUsageStatus, MAX_REQUEST_TOKENS};
 use super::usage_context::{UsageApiFormat, UsageContext};
-
-const MAX_REQUEST_TOKENS: u64 = 10_000_000_000;
 
 #[derive(Debug, Default)]
 pub(super) struct ParsedCacheUsage {
@@ -41,7 +39,9 @@ pub(super) fn parse(
     };
     let cache_write_supported = matches!(context.canonical_provider_id, "openrouter" | "qwen")
         || (context.canonical_provider_id == "openai"
-            && crate::services::llm::providers::openai::is_gpt_56(context.model));
+            && crate::services::llm::providers::openai::supports_reported_cache_writes(
+                context.model,
+            ));
     let mut parsed = ParsedCacheUsage {
         read: first_count(value, read_paths),
         write: cache_write_supported
@@ -69,6 +69,12 @@ pub(super) fn parse(
     }
     if context.api_format == UsageApiFormat::GeminiNative && parsed.read.is_none() {
         parsed.read = field_count(value, "cachedContentTokenCount");
+    }
+    let google_cache_seen = context.canonical_provider_id == "google"
+        && context.api_format == UsageApiFormat::ChatCompletions
+        && value.get("total_cached_tokens").is_some();
+    if google_cache_seen && parsed.read.is_none() {
+        parsed.read = field_count(value, "total_cached_tokens");
     }
     let mistral_cache_seen = context.canonical_provider_id == "mistral"
         && (read_paths
@@ -104,10 +110,26 @@ pub(super) fn parse(
         || (context.canonical_provider_id == "moonshot" && value.get("cached_tokens").is_some())
         || (context.api_format == UsageApiFormat::GeminiNative
             && value.get("cachedContentTokenCount").is_some())
+        || google_cache_seen
         || mistral_cache_seen
         || (context.canonical_provider_id == "mistral" && input.is_some());
 
-    parsed.status = status_for(cache_field_seen, parsed.read, parsed.write, None, input);
+    #[cfg(debug_assertions)]
+    if crate::services::reasoning_fixture_budget::is_active() {
+        log::info!(
+            "cache_fixture_counts input={input:?} read={:?} write={:?}",
+            parsed.read,
+            parsed.write
+        );
+    }
+    parsed.status = status_for(
+        cache_field_seen,
+        parsed.read,
+        parsed.write,
+        None,
+        input,
+        context,
+    );
     if context.canonical_provider_id == "mistral"
         && parsed.read.is_some_and(|tokens| tokens % 64 != 0)
     {
@@ -160,7 +182,7 @@ fn parse_deepseek(value: &serde_json::Value, input: Option<u64>) -> ParsedCacheU
 fn should_calculate_miss(context: UsageContext<'_>) -> bool {
     matches!(
         context.canonical_provider_id,
-        "openai" | "openrouter" | "xai" | "mistral" | "cerebras" | "zai" | "moonshot"
+        "google" | "openai" | "openrouter" | "xai" | "mistral" | "cerebras" | "zai" | "moonshot"
     ) || context.api_format == UsageApiFormat::GeminiNative
         || (context.canonical_provider_id == "deepseek"
             && context.api_format == UsageApiFormat::Responses)
@@ -172,16 +194,15 @@ fn status_for(
     write: Option<u64>,
     miss: Option<u64>,
     input: Option<u64>,
+    context: UsageContext<'_>,
 ) -> CacheUsageStatus {
     if !seen {
         return CacheUsageStatus::Unknown;
     }
     let invalid = read.is_none() && write.is_none() && miss.is_none()
         || input.is_some_and(|total| {
-            read.is_some_and(|count| count > total)
-                || write.is_some_and(|count| count > total)
+            !context.cache_counts_fit_input(total, read, write)
                 || miss.is_some_and(|count| count > total)
-                || read.unwrap_or(0).saturating_add(write.unwrap_or(0)) > total
         });
     if invalid {
         CacheUsageStatus::Invalid

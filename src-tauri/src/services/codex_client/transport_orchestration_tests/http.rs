@@ -5,6 +5,30 @@ use crate::services::llm::fast_mode::FastModeRequest;
 use tokio_util::sync::CancellationToken;
 
 #[tokio::test]
+async fn fixture_scope_counts_authentication_retry_as_a_physical_request() {
+    use crate::services::reasoning_fixture_budget::{run_scoped, FixtureLimits};
+    let scenario = CodexTransportScenario::start(Some(vec![HttpReply::Unauthorized]), None).await;
+    let limits = FixtureLimits::from_values(None, Some("1"), None).unwrap();
+    let result = scenario
+        .scope(run_scoped(limits, CancellationToken::new(), async {
+            request::post_codex_stream(
+                "gpt-6-astra",
+                &messages(),
+                &[],
+                Some("medium"),
+                None,
+                FastModeRequest::Standard,
+                &CancellationToken::new(),
+            )
+            .await
+        }))
+        .await;
+    assert_eq!(result.unwrap_err(), "fixture attempt limit exceeded");
+    assert_eq!(scenario.http_captures().len(), 1);
+    assert_eq!(scenario.refresh_count(), 1);
+}
+
+#[tokio::test]
 async fn transport_scenario_never_intercepts_a_concurrent_task_outside_its_scope() {
     let scenario = CodexTransportScenario::start(Some(vec![HttpReply::Success]), None).await;
     let barrier = std::sync::Arc::new(tokio::sync::Barrier::new(2));

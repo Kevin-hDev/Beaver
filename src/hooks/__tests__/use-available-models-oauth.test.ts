@@ -1,5 +1,20 @@
-import { describe, expect, it } from "vitest";
-import { mapOAuthModels, mapOAuthResponse, withoutInteractiveOnlyModels } from "../use-available-models";
+import { act, renderHook, waitFor } from "@testing-library/react";
+import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { normalizeReasoningMode, reasoningModeOptions } from "@/lib/reasoning-modes";
+import {
+  mapOAuthModels, mapOAuthResponse, useAvailableModels, withoutInteractiveOnlyModels,
+} from "../use-available-models";
+
+vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
+vi.mock("@tauri-apps/api/event", () => ({
+  listen: vi.fn(() => Promise.resolve(() => {})),
+}));
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
 
 describe("OAuth models", () => {
   it("accepte un provider futur uniquement depuis ses métadonnées publiques", () => {
@@ -82,5 +97,121 @@ describe("OAuth models", () => {
     expect(model?.display_name).toBe("K3");
     expect(model?.reasoning_modes).toEqual(["low", "high", "max"]);
     expect(model?.default_reasoning_mode).toBe("max");
+  });
+
+  it("préserve le catalogue Codex rempli pour Astra sans le fabriquer si absent", () => {
+    const response = mapOAuthResponse({
+      models: [{
+        id: "gpt-6-astra",
+        provider_id: "openai",
+        connection_id: "codex-oauth",
+        provider_display_name: "OpenAI",
+        display_name: "GPT-6 Astra",
+        context_length: 1050000,
+        supports_tools: true,
+        supports_vision: true,
+        supports_thinking: true,
+        supports_fast_mode: false,
+        reasoning_modes: ["low", "medium", "high", "xhigh", "max"],
+        default_reasoning_mode: "medium",
+        context_usage_includes_reasoning: false,
+        interactive_only: false,
+      }],
+      issues: [],
+    });
+    const astra = response.groups.get("codex-oauth")?.[0];
+    expect(astra?.reasoning_modes).toEqual(["low", "medium", "high", "xhigh", "max"]);
+    expect(astra?.default_reasoning_mode).toBe("medium");
+    expect(mapOAuthResponse({ models: [], issues: [] }).groups.has("codex-oauth")).toBe(false);
+  });
+
+  it("relie le catalogue rempli aux options du sélecteur pour les neuf couples", async () => {
+    const cloudSpecs = ["google", "zai", "openai", "openrouter", "qwen"].map((id) => ({
+      id,
+      display_name: id,
+      category: "llm" as const,
+      signup_url: "https://example.invalid",
+      connection_kind: id === "qwen" ? "qwen_model_studio" as const : "api_key" as const,
+    }));
+    const cloudModels = {
+      google: [{ id: "gemini-3.8-flash", supports_tools: true, supports_vision: true, supports_thinking: true, supports_fast_mode: false, reasoning_modes: ["low", "medium", "high"] as const, default_reasoning_mode: "medium" as const, context_usage_includes_reasoning: true }],
+      zai: [{ id: "glm-5.3-flash", supports_tools: true, supports_vision: true, supports_thinking: true, supports_fast_mode: false, reasoning_modes: ["low", "high", "max"] as const, default_reasoning_mode: "max" as const, context_usage_includes_reasoning: true }],
+      openai: [{ id: "gpt-6-astra", supports_tools: true, supports_vision: true, supports_thinking: true, supports_fast_mode: false, reasoning_modes: ["low", "medium", "high", "xhigh", "max"] as const, context_usage_includes_reasoning: true }],
+      openrouter: [
+        { id: "google/gemini-3.8-flash", supports_tools: true, supports_vision: true, supports_thinking: true, supports_fast_mode: false, reasoning_modes: ["low", "medium", "high"] as const, default_reasoning_mode: "medium" as const, context_usage_includes_reasoning: true },
+        { id: "z-ai/glm-5.3-flash", supports_tools: true, supports_vision: true, supports_thinking: true, supports_fast_mode: false, reasoning_modes: ["low", "high", "max"] as const, default_reasoning_mode: "max" as const, context_usage_includes_reasoning: true },
+        { id: "openai/gpt-6-astra", supports_tools: true, supports_vision: true, supports_thinking: true, supports_fast_mode: false, reasoning_modes: ["low", "medium", "high", "xhigh", "max"] as const, context_usage_includes_reasoning: true },
+      ],
+      // Synthetic metadata only: auto is NOT an established Alibaba contract or activation.
+      qwen: [{ id: "ZHIPU/GLM-5.3-Flash", supports_tools: true, supports_vision: true, supports_thinking: true, supports_fast_mode: false, reasoning_modes: ["auto"] as const, default_reasoning_mode: "auto" as const, context_usage_includes_reasoning: true }],
+    };
+    const ollamaModel = {
+      name: "glm-5.3-flash:cloud", size: 0, family: "glm", parameter_size: "cloud",
+      quantization: "unknown", architecture: "cloud", is_moe: false, context_length: 1048576,
+      capabilities: ["thinking", "tools"], reasoning_modes: ["low", "high", "max"],
+      default_reasoning_mode: "max", context_usage_includes_reasoning: true,
+      digest_short: "fixture", aliases: [], is_customized: false,
+    };
+    const codexModel = {
+      id: "gpt-6-astra", provider_id: "openai", connection_id: "codex-oauth",
+      provider_display_name: "OpenAI", display_name: "GPT-6 Astra", context_length: 1050000,
+      supports_tools: true, supports_vision: true, supports_thinking: true, supports_fast_mode: false,
+      reasoning_modes: ["low", "medium", "high", "xhigh", "max"], default_reasoning_mode: "medium",
+      context_usage_includes_reasoning: false, interactive_only: false,
+    };
+
+    vi.mocked(invoke).mockImplementation((command, args) => {
+      if (command === "list_ollama_models") return Promise.resolve([ollamaModel]);
+      if (command === "list_llm_providers_catalog") return Promise.resolve(cloudSpecs);
+      if (command === "list_configured_providers") return Promise.resolve(cloudSpecs.map((spec) => spec.id));
+      if (command === "list_llm_models") {
+        const provider = (args as { providerId?: string } | undefined)?.providerId as keyof typeof cloudModels;
+        return Promise.resolve(cloudModels[provider] ?? []);
+      }
+      if (command === "list_oauth_provider_models") return Promise.resolve({ models: [codexModel], issues: [] });
+      return Promise.reject(new Error(`unexpected command: ${command}`));
+    });
+
+    const { result } = renderHook(() => useAvailableModels());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    const expected = [
+      ["google", "gemini-3.8-flash", ["low", "medium", "high"], "medium"],
+      ["zai", "glm-5.3-flash", ["low", "high", "max"], "max"],
+      ["openai", "gpt-6-astra", ["low", "medium", "high", "xhigh", "max"], "medium"],
+      ["openrouter", "google/gemini-3.8-flash", ["low", "medium", "high"], "medium"],
+      ["openrouter", "z-ai/glm-5.3-flash", ["low", "high", "max"], "max"],
+      ["openrouter", "openai/gpt-6-astra", ["low", "medium", "high", "xhigh", "max"], "medium"],
+      ["qwen", "ZHIPU/GLM-5.3-Flash", ["auto"], "auto"],
+      ["ollama", "glm-5.3-flash:cloud", ["low", "high", "max"], "max"],
+      ["codex-oauth", "gpt-6-astra", ["low", "medium", "high", "xhigh", "max"], "medium"],
+    ] as const;
+    for (const [provider, id, modes, preferred] of expected) {
+      const available = result.current.groups.get(provider)?.find((model) => model.id === id);
+      expect(available, `${provider}/${id}`).toBeDefined();
+      const options = reasoningModeOptions(available ?? null);
+      expect(options.map((entry) => entry.mode)).toEqual(modes);
+      expect(normalizeReasoningMode("off", options, available?.default_reasoning_mode)).toBe(preferred);
+    }
+
+    // A changed account default must reach the selector, not be replaced by medium.
+    codexModel.default_reasoning_mode = "high";
+    const oauthChanged = vi.mocked(listen).mock.calls
+      .find(([event]) => event === "oauth-provider-status-changed")?.[1];
+    expect(oauthChanged).toBeDefined();
+    act(() => { oauthChanged?.({ event: "oauth-provider-status-changed", id: 1, payload: null }); });
+    await waitFor(() => expect(result.current.groups.get("codex-oauth")?.[0]
+      ?.default_reasoning_mode).toBe("high"));
+    const refreshed = result.current.groups.get("codex-oauth")?.[0];
+    expect(normalizeReasoningMode("off", reasoningModeOptions(refreshed ?? null),
+      refreshed?.default_reasoning_mode)).toBe("high");
+
+    vi.mocked(invoke).mockImplementation((command) => Promise.resolve(
+      command === "list_oauth_provider_models" ? { models: [], issues: [] } : [],
+    ));
+    act(() => { oauthChanged?.({ event: "oauth-provider-status-changed", id: 2, payload: null }); });
+    await waitFor(() => expect(result.current.groups.size).toBe(0));
+    vi.mocked(invoke).mockRejectedValue(new Error("catalogue indisponible"));
+    await act(async () => { await result.current.refresh(); });
+    expect(result.current.groups.size).toBe(0);
   });
 });
