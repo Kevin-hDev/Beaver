@@ -17,6 +17,16 @@ pub async fn resolve(connection_id: &str, model: &str, usage: &RequestUsage) -> 
         return ResolvedCost::default();
     }
     let provider = crate::services::llm::route::canonical_provider_id(connection_id);
+    // A Gemini explicit write is storage of a prefix also read for generation.
+    // The scalar catalog cannot safely price this as a disjoint input bucket.
+    // OpenRouter's reported cost above remains authoritative, never estimated.
+    if usage
+        .cache_write_input_tokens
+        .is_some_and(|count| count > 0)
+        && super::UsageContext::chat(provider, model).cache_writes_overlap_reads()
+    {
+        return ResolvedCost::default();
+    }
     // These models have tier/cache-write pricing that the scalar catalog cannot
     // fully represent. Only the exact provider cost above can be authoritative.
     if matches!(provider, "openai" | "openrouter")

@@ -4,6 +4,84 @@ use super::types::{LocalSnapshot, RemoteData};
 use super::usage_context::{UsageApiFormat, UsageContext};
 use serde_json::json;
 
+#[tokio::test]
+async fn gemini_cache_writes_require_reported_cost_even_with_catalog_pricing() {
+    use crate::services::llm::litellm_catalog;
+    let key = "openrouter/google/gemini-3.8-flash";
+    let mut entries = litellm_catalog::parse_catalog(
+        r#"{
+        "openrouter/google/gemini-3.8-flash":{"litellm_provider":"openrouter","mode":"chat",
+        "input_cost_per_token":0.00000075,"output_cost_per_token":0.00000375,
+        "cache_creation_input_token_cost":0.0000000416667}
+    }"#,
+    );
+    let replacement = entries.remove(key).unwrap();
+    let previous = {
+        let mut catalog = litellm_catalog::get_lock().write().await;
+        let previous = catalog.get(key).cloned();
+        let mut priced = previous.clone().unwrap_or_else(|| replacement.clone());
+        priced.input_cost_per_token = replacement.input_cost_per_token;
+        priced.output_cost_per_token = replacement.output_cost_per_token;
+        priced.cache_creation_input_token_cost = replacement.cache_creation_input_token_cost;
+        catalog.insert(key.into(), priced);
+        previous
+    };
+    let usage = RequestUsage {
+        input_tokens: Some(10000),
+        output_tokens: Some(10),
+        cached_input_tokens: Some(4100),
+        cache_write_input_tokens: Some(4100),
+        ..Default::default()
+    };
+    let estimated = super::pricing::resolve("openrouter", "google/gemini-3.8-flash", &usage).await;
+    let exact = super::pricing::resolve(
+        "openrouter",
+        "google/gemini-3.8-flash",
+        &RequestUsage {
+            exact_cost_usd_micros: Some(739),
+            ..usage
+        },
+    )
+    .await;
+    {
+        let mut catalog = litellm_catalog::get_lock().write().await;
+        if let Some(old) = previous {
+            catalog.insert(key.into(), old);
+        } else {
+            catalog.remove(key);
+        }
+    }
+    assert_eq!(estimated.micros, None);
+    assert_eq!(exact.micros, Some(739));
+    assert!(exact.exact);
+}
+
+#[test]
+fn gemini_explicit_cache_can_write_and_read_the_same_prefix() {
+    let value = json!({"prompt_tokens":5618,"completion_tokens":19,
+        "prompt_tokens_details":{"cached_tokens":5599,"cache_write_tokens":5599}});
+    let usage = RequestUsage::from_json_with_context(
+        &value,
+        UsageContext::chat("openrouter", "google/gemini-3.8-flash"),
+    )
+    .unwrap();
+    assert_eq!(usage.cache_status, CacheUsageStatus::Reported);
+    assert_eq!(usage.cached_input_tokens, Some(5599));
+    assert_eq!(usage.cache_write_input_tokens, Some(5599));
+    assert_eq!(usage.cache_miss_input_tokens, Some(19));
+    for model in ["openai/gpt-6-astra", "z-ai/glm-5.3-flash"] {
+        let usage =
+            RequestUsage::from_json_with_context(&value, UsageContext::chat("openrouter", model))
+                .unwrap();
+        assert_eq!(usage.cache_status, CacheUsageStatus::Invalid);
+    }
+    let usage = RequestUsage::from_json_with_context(
+        &json!({"prompt_tokens":100,"prompt_tokens_details":{"cached_tokens":101,"cache_write_tokens":0}}),
+        UsageContext::chat("openrouter","google/gemini-3.8-flash")
+    ).unwrap();
+    assert_eq!(usage.cache_status, CacheUsageStatus::Invalid);
+}
+
 #[test]
 fn openai_reasoning_is_not_added_twice() {
     let usage = RequestUsage::from_json(&json!({

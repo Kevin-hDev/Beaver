@@ -1,5 +1,5 @@
 use super::request_journal::{ProviderRequestMetric, RequestTiming};
-use super::RequestUsage;
+use super::UsageContext;
 
 const MAX_ATTEMPT: u32 = 1_000;
 const MAX_DURATION_MS: u64 = 24 * 60 * 60 * 1_000;
@@ -41,10 +41,13 @@ impl ProviderRequestMetric {
             && (!self.usage_complete
                 || (self.status == super::request_journal::RequestMetricStatus::Completed
                     && self.usage.is_some()))
-            && self
-                .usage
-                .as_ref()
-                .is_none_or(RequestUsage::is_valid_observation)
+            && self.usage.as_ref().is_none_or(|usage| {
+                usage.is_valid_observation(UsageContext {
+                    canonical_provider_id: &self.canonical_provider_id,
+                    model: &self.model,
+                    api_format: self.api_format,
+                })
+            })
     }
 }
 

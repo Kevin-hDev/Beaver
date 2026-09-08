@@ -150,8 +150,8 @@ impl RequestUsage {
             && self.exact_cost_usd_micros.is_none()
     }
 
-    pub(super) fn is_valid_observation(&self) -> bool {
-        super::request_usage_validation::is_valid(self)
+    pub(super) fn is_valid_observation(&self, context: UsageContext<'_>) -> bool {
+        super::request_usage_validation::is_valid(self, context)
     }
 
     fn normalize(&mut self) {

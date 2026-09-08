@@ -114,7 +114,22 @@ pub(super) fn parse(
         || mistral_cache_seen
         || (context.canonical_provider_id == "mistral" && input.is_some());
 
-    parsed.status = status_for(cache_field_seen, parsed.read, parsed.write, None, input);
+    #[cfg(debug_assertions)]
+    if crate::services::reasoning_fixture_budget::is_active() {
+        log::info!(
+            "cache_fixture_counts input={input:?} read={:?} write={:?}",
+            parsed.read,
+            parsed.write
+        );
+    }
+    parsed.status = status_for(
+        cache_field_seen,
+        parsed.read,
+        parsed.write,
+        None,
+        input,
+        context,
+    );
     if context.canonical_provider_id == "mistral"
         && parsed.read.is_some_and(|tokens| tokens % 64 != 0)
     {
@@ -179,16 +194,15 @@ fn status_for(
     write: Option<u64>,
     miss: Option<u64>,
     input: Option<u64>,
+    context: UsageContext<'_>,
 ) -> CacheUsageStatus {
     if !seen {
         return CacheUsageStatus::Unknown;
     }
     let invalid = read.is_none() && write.is_none() && miss.is_none()
         || input.is_some_and(|total| {
-            read.is_some_and(|count| count > total)
-                || write.is_some_and(|count| count > total)
+            !context.cache_counts_fit_input(total, read, write)
                 || miss.is_some_and(|count| count > total)
-                || read.unwrap_or(0).saturating_add(write.unwrap_or(0)) > total
         });
     if invalid {
         CacheUsageStatus::Invalid

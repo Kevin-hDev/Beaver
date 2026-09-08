@@ -31,6 +31,7 @@ pub(crate) enum CachePolicy {
     Google,
     OpenAi56,
     OpenRouter,
+    OpenRouterGemini,
     PromptKey,
     XaiHeader,
 }

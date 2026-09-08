@@ -5,6 +5,9 @@ use sha2::{Digest, Sha256};
 use super::request_purpose::RequestPurpose;
 use super::route_profile::{CachePolicy, ResolvedCachePolicy};
 
+#[path = "prompt_cache_gemini.rs"]
+mod gemini;
+
 const CACHE_KEY_PREFIX: &str = "bv1_";
 const CACHE_KEY_BYTES: usize = 16;
 const MAX_SESSION_ID_BYTES: usize = 128;
@@ -31,6 +34,10 @@ pub(super) fn apply_payload(
     match policy.kind {
         CachePolicy::OpenAi56 => apply_gpt_56(payload, key),
         CachePolicy::OpenRouter => payload["session_id"] = key.into(),
+        CachePolicy::OpenRouterGemini => {
+            payload["session_id"] = key.into();
+            gemini::mark_initial_reference(payload);
+        }
         CachePolicy::PromptKey => payload["prompt_cache_key"] = key.into(),
         CachePolicy::None
         | CachePolicy::AnthropicAutomatic
@@ -84,7 +91,11 @@ pub(super) fn request_headers(
             HeaderValue::from_static(concat!("beaver-desktop/", env!("CARGO_PKG_VERSION"))),
         );
     }
-    if policy.kind == CachePolicy::OpenRouter && purpose != RequestPurpose::AccountMetadata {
+    if matches!(
+        policy.kind,
+        CachePolicy::OpenRouter | CachePolicy::OpenRouterGemini
+    ) && purpose != RequestPurpose::AccountMetadata
+    {
         headers.insert("x-openrouter-metadata", HeaderValue::from_static("enabled"));
     }
     if policy.kind != CachePolicy::XaiHeader {
