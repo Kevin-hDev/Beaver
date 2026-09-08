@@ -9,3 +9,6 @@ Primary rerun: 2 files / 12 tests PASS (task-3-primary.log). Implementer tsc, ta
 Native first/second click remains pending final native journey. Repeated recent isolated CEF launches report unavailable after initialization timeout; no security gate bypassed.
 
 Proof directory: .superpowers/sdd/2026-09-07-browser-tabs-ergonomie in the isolated worktree. No push/merge/release.
+
+Final acceptance update (supersedes pending status above):
+Native review discovered a CEF-specific stale activeElement. Corrected during Task5 in 86276ce7 using document.hasFocus() at pointerdown, with regression. Final native first-click all-selection, second-click caret, partial selection, Tab and Return/Go submissions all observed. See native-focus-first-fixed.json, native-focus-second-fixed.json and final-review.md.
