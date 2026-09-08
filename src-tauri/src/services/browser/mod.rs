@@ -1,10 +1,12 @@
+mod favicon_events;
+pub use favicon_events::{read_snapshot as favicon_snapshot, BrowserFaviconSnapshot};
 mod browser_api_types;
 #[cfg(native_browser)]
 mod browser_events;
 #[cfg(native_browser)]
 mod browser_slot;
 mod browser_surface_api;
-#[cfg(any(test, target_os = "macos", target_os = "windows"))]
+#[cfg(any(test, native_browser))]
 mod browser_view_key;
 #[cfg(native_browser)]
 mod cef_app;
@@ -30,6 +32,14 @@ mod cef_download_handler;
 mod cef_engine;
 #[cfg(native_browser)]
 mod cef_engine_config;
+#[cfg(native_browser)]
+mod cef_favicon_candidates;
+#[cfg(native_browser)]
+mod cef_favicon_handler;
+#[cfg(native_browser)]
+mod cef_favicon_image;
+#[cfg(native_browser)]
+mod cef_favicon_scheduler;
 #[cfg(target_os = "macos")]
 mod cef_library;
 #[cfg(native_browser)]
@@ -45,6 +55,26 @@ mod cef_request_handler;
 mod cef_runtime_policy;
 #[cfg(native_browser)]
 mod cef_state_bridge;
+#[cfg(any(test, native_browser))]
+mod favicon_png;
+#[cfg(any(test, native_browser))]
+mod favicon_policy;
+#[cfg(test)]
+mod favicon_review_tests;
+#[cfg(any(test, native_browser))]
+mod favicon_runtime;
+#[cfg(any(test, native_browser))]
+mod favicon_state;
+#[cfg(test)]
+mod favicon_state_tests;
+#[cfg(any(test, native_browser))]
+mod favicon_store;
+#[cfg(any(test, native_browser))]
+mod favicon_task_gate;
+#[cfg(any(test, native_browser))]
+mod favicon_types;
+#[cfg(any(test, native_browser))]
+mod favicon_watchdog;
 // La condition suit les appels de cef_runtime_policy, gardés par l'OS et non
 // par native_browser : sous windows-tests le module disparaissait de la lib
 // hors test alors que ces appels restaient.
@@ -104,6 +134,7 @@ mod runtime_revision;
 mod session_model;
 #[cfg(any(test, target_os = "macos", target_os = "windows"))]
 mod session_model_runtime;
+mod session_order;
 mod session_persistence;
 mod session_service;
 mod session_store;
@@ -123,68 +154,9 @@ pub(crate) mod windows_sandbox;
 #[cfg(target_os = "windows")]
 mod windows_surface_order;
 
-#[cfg(all(test, native_browser))]
-mod browser_slot_tests;
+// Keep test registration separate from the production module boundary.
 #[cfg(test)]
-mod build_policy_tests;
-#[cfg(all(test, target_os = "macos"))]
-mod bundle_layout_tests;
-#[cfg(test)]
-mod cef_cookie_gate_policy_tests;
-#[cfg(all(test, native_browser))]
-mod cef_diagnostics_tests;
-#[cfg(test)]
-mod cef_preflight_tests;
-#[cfg(test)]
-mod cookie_store_probe_tests;
-#[cfg(all(test, any(target_os = "macos", target_os = "windows")))]
-mod ffi_guard_tests;
-#[cfg(test)]
-mod lifecycle_tests;
-#[cfg(test)]
-mod live_session_registry_tests;
-#[cfg(test)]
-mod local_site_candidates_tests;
-#[cfg(test)]
-mod local_site_policy_tests;
-#[cfg(test)]
-mod local_site_probe_tests;
-#[cfg(test)]
-mod local_site_scan_state_tests;
-#[cfg(test)]
-mod local_site_scan_throttle_tests;
-#[cfg(test)]
-mod native_paths_tests;
-#[cfg(all(test, target_os = "macos"))]
-mod native_pump_policy_tests;
-#[cfg(test)]
-mod navigation_target_tests;
-#[cfg(test)]
-mod process_role_tests;
-#[cfg(all(test, target_os = "macos"))]
-mod pump_gate_tests;
-#[cfg(test)]
-mod runtime_handle_tests;
-#[cfg(test)]
-mod runtime_revision_tests;
-#[cfg(test)]
-mod session_model_tests;
-#[cfg(test)]
-mod session_store_tests;
-#[cfg(all(test, any(target_os = "macos", target_os = "windows")))]
-mod settings_tests;
-#[cfg(test)]
-mod surface_bounds_tests;
-#[cfg(test)]
-mod url_policy_tests;
-#[cfg(test)]
-mod view_recency_tests;
-#[cfg(test)]
-mod view_state_tests;
-#[cfg(test)]
-mod windows_bundle_layout_tests;
-#[cfg(all(test, target_os = "windows"))]
-mod windows_surface_order_tests;
+mod test_modules;
 
 use tauri::Manager;
 
@@ -207,6 +179,11 @@ pub(crate) use runtime_integration::{
 };
 pub use session_model::{BrowserSessionState, BrowserTabCreation};
 pub use session_service::BrowserSessionService;
+
+#[cfg(feature = "e2e")]
+pub(crate) fn seed_e2e_session_key_fixture() -> Result<(), ()> {
+    session_store::seed_e2e_session_key_fixture()
+}
 
 #[cfg(target_os = "macos")]
 pub(crate) use macos_helper_entry::run as run_macos_cef_helper;

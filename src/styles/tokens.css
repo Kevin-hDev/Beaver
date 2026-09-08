@@ -129,11 +129,18 @@
   --summary-file-icon-column: var(--chrome-icon-lg);
   --switch-unit: 10px;
 
-  --browser-toolbar-height: 2rem;
-  --browser-control-size: var(--btn-height);
   --compact-control-height: 24px;
-  --browser-toolbar-padding-y: 0.125rem;
-  --browser-field-padding-y: var(--space-xs);
+  /* Les contrôles internes définissent la rangée : le bouton d'ouverture ne
+     doit pas imposer une hauteur supérieure à celle du champ compact. */
+  --browser-control-size: var(--compact-control-height);
+  --browser-field-height: var(--compact-control-height);
+  --browser-tab-height: var(--compact-control-height);
+  --browser-toolbar-padding-y: calc(var(--chrome-1) / 2);
+  --browser-toolbar-border-width: 1px;
+  --browser-toolbar-height: calc(var(--browser-control-size) + 2 * var(--browser-toolbar-padding-y) + var(--browser-toolbar-border-width));
+  /* À la police racine de 24 px, --text-sm vaut 19,5 px : 1,1 donne une ligne
+     de 21,45 px, lisible dans les 22 px intérieurs du champ bordé. */
+  --browser-control-line-height: 1.1;
   --browser-tab-max-width: 12rem;
   /* Terminal — la poignée porte un trait visible, d'où sa hauteur et sa
      largeur ; sans repère, on cherche une bande transparente à la souris.

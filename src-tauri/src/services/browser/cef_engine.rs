@@ -136,3 +136,14 @@ pub(super) fn shutdown(runtime: &BrowserRuntimeHandle) {
     });
     let _ = runtime.mark_stopped();
 }
+
+pub(super) fn favicon_browser(key: &BrowserViewKey, epoch: u64) -> Option<cef::Browser> {
+    ENGINE.with(|engine| {
+        engine
+            .try_borrow()
+            .ok()?
+            .as_ref()?
+            .surface
+            .favicon_browser(key, epoch)
+    })
+}

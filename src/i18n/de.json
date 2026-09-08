@@ -1187,6 +1187,7 @@
     "startDescription": "Gib eine URL ein oder suche im Web",
     "invalidUrl": "Gib eine gültige HTTP- oder HTTPS-Adresse ein.",
     "tabsLabel": "Browser-Tabs",
+    "reorderTabsHint": "Ziehe einen Tab zum Verschieben oder verwende {{alt}} + Shift + Left / Right.",
     "newTab": "Neuer Tab",
     "closeTab": "{{title}} schließen",
     "addTab": "Tab hinzufügen",

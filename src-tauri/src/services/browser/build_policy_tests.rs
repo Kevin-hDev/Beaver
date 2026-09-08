@@ -17,7 +17,6 @@ fn native_runtime_modules_are_not_built_in_linux_library() {
     let module = normalized_source("src/services/browser/mod.rs");
 
     for runtime_module in [
-        "browser_view_key",
         "lifecycle",
         "native_paths",
         "navigation_target",
@@ -36,6 +35,31 @@ fn native_runtime_modules_are_not_built_in_linux_library() {
     }
 
     assert!(module.contains("#[cfg(any(test, target_os = \"macos\"))]\nmod cookie_store_probe;"));
+}
+
+#[test]
+fn native_favicon_modules_are_not_built_in_linux_library() {
+    let module = normalized_source("src/services/browser/mod.rs");
+
+    // Linux exposes the portable empty snapshot through IPC, while the CEF
+    // download engine remains native-only so strict production builds stay clean.
+    assert!(module.contains("#[cfg(any(test, native_browser))]\nmod browser_view_key;"));
+    for runtime_module in [
+        "favicon_png",
+        "favicon_policy",
+        "favicon_runtime",
+        "favicon_state",
+        "favicon_store",
+        "favicon_task_gate",
+        "favicon_types",
+        "favicon_watchdog",
+    ] {
+        let guarded = format!("#[cfg(any(test, native_browser))]\nmod {runtime_module};");
+        assert!(
+            module.contains(&guarded),
+            "{runtime_module} must be excluded from the Linux library build"
+        );
+    }
 }
 
 #[test]

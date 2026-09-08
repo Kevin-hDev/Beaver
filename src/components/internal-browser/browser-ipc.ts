@@ -33,6 +33,13 @@ export function activateBrowserTab(conversationId: string, tabId: string) {
   return sessionCommand("browser_activate_tab", { conversationId, tabId });
 }
 
+export function reorderBrowserTabs(
+  conversationId: string,
+  tabIds: string[],
+): Promise<BrowserSessionState> {
+  return sessionCommand("browser_reorder_tabs", { conversationId, tabIds });
+}
+
 export function closeBrowserTab(conversationId: string, tabId: string) {
   return sessionCommand("browser_close_tab", { conversationId, tabId });
 }

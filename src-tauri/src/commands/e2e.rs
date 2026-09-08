@@ -17,6 +17,11 @@ pub fn e2e_extension_install_fixture(
 }
 
 #[tauri::command]
+pub fn e2e_browser_session_key_fixture() -> Result<(), String> {
+    crate::services::browser::seed_e2e_session_key_fixture().map_err(|_| fixture_error())
+}
+
+#[tauri::command]
 pub fn e2e_initialize_extension_host(app: tauri::AppHandle) -> Result<(), String> {
     // The ordinary E2E startup suppresses every external process. Acceptance tests
     // opt into only the extension host, inside the already isolated E2E profile.

@@ -49,6 +49,12 @@ impl CefBrowserView {
         })
     }
 
+    pub(super) fn favicon_browser(&self, epoch: u64) -> Option<Browser> {
+        (self.slot.epoch() == Some(epoch))
+            .then(|| self.slot.browser())
+            .flatten()
+    }
+
     pub(super) fn key(&self) -> &BrowserViewKey {
         &self.key
     }
@@ -109,6 +115,9 @@ impl CefBrowserView {
         app: Option<&tauri::AppHandle>,
     ) -> Option<super::runtime_revision::RuntimeStamp> {
         let stamp = self.slot.next_runtime_stamp();
+        if let Some(epoch) = self.slot.epoch() {
+            super::favicon_runtime::access(app, |state| state.release_view(&self.key, epoch));
+        }
         if let Some(app) = app {
             let _ = self.hide_current(app);
         }

@@ -115,6 +115,18 @@ impl SessionModel {
         self.bump()
     }
 
+    pub(super) fn reorder_tabs(&mut self, ordered_ids: &[String]) -> Result<(), ()> {
+        let next = super::session_order::ordered_tabs(&self.state.tabs, ordered_ids)?;
+        // Les permutations idempotentes gardent leur génération pour ne pas écraser un état plus récent.
+        if next == self.state.tabs {
+            return Ok(());
+        }
+        // Refuser une génération saturée avant de remplacer l’ordre en mémoire.
+        self.bump()?;
+        self.state.tabs = next;
+        Ok(())
+    }
+
     pub(super) fn close_tab(&mut self, id: &str, new_id: String) -> Result<(), ()> {
         let index = self
             .state

@@ -68,6 +68,13 @@ impl BrowserSurfaceManager {
         Ok(())
     }
 
+    pub(super) fn favicon_browser(&self, key: &BrowserViewKey, epoch: u64) -> Option<cef::Browser> {
+        self.views
+            .iter()
+            .find(|view| view.key() == key)?
+            .favicon_browser(epoch)
+    }
+
     pub(super) fn action(
         &mut self,
         key: &BrowserViewKey,

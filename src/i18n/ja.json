@@ -1186,6 +1186,7 @@
     "startDescription": "URLを入力するかウェブを検索します",
     "invalidUrl": "有効なHTTPまたはHTTPSアドレスを入力してください。",
     "tabsLabel": "ブラウザーのタブ",
+    "reorderTabsHint": "タブをドラッグするか、{{alt}} + Shift + Left / Right で移動できます。",
     "newTab": "新しいタブ",
     "closeTab": "{{title}} を閉じる",
     "addTab": "タブを追加",

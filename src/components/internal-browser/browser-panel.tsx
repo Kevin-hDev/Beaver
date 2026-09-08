@@ -5,6 +5,7 @@ import { BrowserReplaceDialog } from "./browser-replace-dialog";
 import { BrowserTabStrip } from "./browser-tab-strip";
 import { BrowserViewport } from "./browser-viewport";
 import { resolveBrowserAddress } from "./browser-address";
+import { useBrowserFavicons } from "./use-browser-favicons";
 import { useBrowserSession } from "./use-browser-session";
 import { useBrowserSurface } from "./use-browser-surface";
 import { useBrowserTabCreation } from "./use-browser-tab-creation";
@@ -39,10 +40,13 @@ export function BrowserPanel(props: BrowserPanelProps) {
     clearNotice,
     createTab,
     activateTab,
+    reorderTabs,
     closeTab: closeSessionTab,
     navigate,
     navigationAction,
+    reportError,
   } = useBrowserSession(props.conversationId, props.active);
+  const favicons = useBrowserFavicons(props.conversationId, props.active, session?.tabs ?? []);
   const [draft, setDraft] = useState<AddressDraft | null>(null);
   const [invalidTabId, setInvalidTabId] = useState<string | null>(null);
   const [surfaceError, setSurfaceError] = useState(false);
@@ -106,7 +110,12 @@ export function BrowserPanel(props: BrowserPanelProps) {
       {session && (
         <BrowserTabStrip
           tabs={session.tabs}
+          favicons={favicons}
           activeTabId={session.activeTabId}
+          enabled={props.active}
+          conversationId={props.conversationId}
+          onReorder={reorderTabs}
+          onReorderError={reportError}
           onSelect={selectTab}
           onClose={closeTab}
           onAdd={() => { void tabCreation.requestNewTab(); }}

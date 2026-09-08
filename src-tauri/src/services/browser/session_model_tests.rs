@@ -123,3 +123,32 @@ fn runtime_updates_change_only_the_target_tab_and_bound_its_title() {
     assert!(model.state().tabs[0].released);
     assert!(!model.state().tabs[0].loading);
 }
+
+#[test]
+fn reorders_tabs_preserving_active_content_and_recency() {
+    let mut model = SessionModel::new(id(1)).unwrap();
+    model.create_tab(id(2), None).unwrap();
+    model.navigate(&id(1), "https://example.com/a").unwrap();
+    let before = model.persisted();
+
+    model.reorder_tabs(&[id(2), id(1)]).unwrap();
+
+    let after = model.persisted();
+    assert_eq!(after.state.active_tab_id, before.state.active_tab_id);
+    assert_eq!(after.recency, before.recency);
+    assert_eq!(after.state.tabs[0], before.state.tabs[1]);
+    assert_eq!(after.state.tabs[1], before.state.tabs[0]);
+    assert_eq!(after.state.generation, before.state.generation + 1);
+}
+
+#[test]
+fn keeps_the_generation_for_an_identical_tab_order() {
+    let mut model = SessionModel::new(id(1)).unwrap();
+    model.create_tab(id(2), None).unwrap();
+    let before = model.persisted();
+
+    model.reorder_tabs(&[id(1), id(2)]).unwrap();
+
+    assert_eq!(model.persisted().state, before.state);
+    assert_eq!(model.persisted().recency, before.recency);
+}

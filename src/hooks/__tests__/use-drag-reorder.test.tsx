@@ -21,6 +21,7 @@ function Reorderable({ ids, onReorder }: { ids: string[]; onReorder: (ids: strin
   const drag = useDragReorder({ ids, axis: "y", containerRef: ref, group: "essai", onReorder });
   return (
     <div ref={ref} data-testid="list">
+      <button type="button" onClick={drag.resetOrder}>réinitialiser</button>
       {drag.order.map((id) => (
         <div key={id} data-testid={`item-${id}`} {...drag.itemProps(id)} {...drag.handleProps(id)}>
           {drag.didDrag() ? "glissé" : "posé"}
@@ -161,6 +162,22 @@ describe("useDragReorder", () => {
     expect(shown).toEqual(["b", "a", "c"]);
   });
 
+  it("revient aux props après le refus de sauvegarde et sa réinitialisation", () => {
+    const onReorder = vi.fn();
+    const { getByTestId, getByText, getAllByTestId } = render(
+      <Reorderable ids={["a", "b", "c"]} onReorder={onReorder} />,
+    );
+
+    grab(getByTestId("item-a"), 10);
+    fireEvent.pointerMove(window, { clientX: 0, clientY: 56 });
+    fireEvent.pointerUp(window);
+    expect(onReorder).toHaveBeenCalledWith(["b", "a", "c"], 0, 1);
+
+    fireEvent.click(getByText("réinitialiser"));
+    expect(getAllByTestId(/^item-/).map((el) => el.getAttribute("data-drag-id")))
+      .toEqual(["a", "b", "c"]);
+  });
+
   /* Une liste de deux n'est faite que d'extrémités : si les bords sont
      inatteignables, plus rien ne se réordonne du tout. */
   it("fait passer la première case sous la seconde", () => {
@@ -263,6 +280,41 @@ describe("useDragReorder", () => {
     grab(getByTestId("item-a"), 10);
     fireEvent.pointerMove(window, { clientX: 0, clientY: 56 });
     fireEvent.click(getByText("annuler"));
+    fireEvent.pointerUp(window);
+
+    expect(onReorder).not.toHaveBeenCalled();
+    expect(getByTestId("item-a").style.transform).toBe("");
+  });
+
+  it("annule un geste avec le véritable Échap de la fenêtre", () => {
+    const onReorder = vi.fn();
+    const { getByTestId } = render(<Reorderable ids={["a", "b", "c"]} onReorder={onReorder} />);
+
+    grab(getByTestId("item-a"), 10);
+    fireEvent.pointerMove(window, { clientX: 0, clientY: 56 });
+    expect(fireEvent.keyDown(window, { key: "Escape" })).toBe(false);
+    fireEvent.pointerUp(window);
+
+    expect(onReorder).not.toHaveBeenCalled();
+    expect(getByTestId("item-a").style.transform).toBe("");
+  });
+
+  it("laisse Échap intact sans geste et après démontage", () => {
+    const onReorder = vi.fn();
+    const view = render(<Reorderable ids={["a", "b", "c"]} onReorder={onReorder} />);
+
+    expect(fireEvent.keyDown(window, { key: "Escape" })).toBe(true);
+    view.unmount();
+    expect(fireEvent.keyDown(window, { key: "Escape" })).toBe(true);
+  });
+
+  it("abandonne pointercancel sans traiter le geste comme un relâchement", () => {
+    const onReorder = vi.fn();
+    const { getByTestId } = render(<Reorderable ids={["a", "b", "c"]} onReorder={onReorder} />);
+
+    grab(getByTestId("item-a"), 10);
+    fireEvent.pointerMove(window, { clientX: 0, clientY: 56 });
+    fireEvent.pointerCancel(window);
     fireEvent.pointerUp(window);
 
     expect(onReorder).not.toHaveBeenCalled();

@@ -73,7 +73,6 @@ export function ProjectSection({
       setRenaming(false);
       setSessionCtx(null);
       setRenamingSessionId(null);
-      sessionDrag.cancel();
     },
   });
 
