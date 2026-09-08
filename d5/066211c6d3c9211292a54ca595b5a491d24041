@@ -13,3 +13,5 @@ m3: retain a global cache of ten, matching the existing global native ViewRecenc
 Additional defect found independently: ts-rs is a dev-dependency; gate imports/derives/attributes to tests so the ordinary library build works. Contract equality test remains green.
 
 Historical commit IDs are deliberately preserved for the user's existing review. Notes on the intermediate revisions now disclose their failures; this correction does not retrospectively make those old trees green. Native rendering/cookie acceptance is still separate pending task 4, not claimed by this commit. Windows cross-check previously failed on an unchanged portable_pty import in terminal/shell_environment.rs; no native Windows validation claimed.
+
+Commit-local frontend boundary verification: npx vitest run browser-favicon-events.test.ts use-browser-favicons.test.tsx (full repository paths) executed separately: 12 passed, 0 failed. This count excludes pending task-4 rendering files.
