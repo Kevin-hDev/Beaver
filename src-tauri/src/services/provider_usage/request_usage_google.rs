@@ -21,6 +21,7 @@ pub(super) fn reconcile(
     // exclude thoughts. Google's total is prompt + thoughts + candidates:
     // https://ai.google.dev/api/generate-content#UsageMetadata
     // Reconcile generated output once for both stream readers and pricing.
+    // Both input and total are required; missing either deliberately makes output unknown.
     // Do not invent reasoning/cache detail, or price contradictory totals.
     let generated = usage
         .input_tokens

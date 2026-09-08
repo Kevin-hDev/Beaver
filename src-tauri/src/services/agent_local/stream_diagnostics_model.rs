@@ -71,7 +71,7 @@ fn result_summary(turn: usize, result: &StreamResult) -> String {
 async fn record(session_id: &str, request_id: &str, phase: &str, message: &str) {
     let _ = support::update_run(session_id, request_id, |_session, run| {
         run.phase = phase.to_string();
-        run.safe_summary = Some(message.to_string());
+        run.safe_summary = Some(support::clip(message));
         support::push_event(run, phase, message, None, None);
     })
     .await;

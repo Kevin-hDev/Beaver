@@ -2,6 +2,20 @@ use super::stream_reasoning;
 use serde_json::json;
 
 #[test]
+fn optional_reasoning_stays_disabled_despite_a_remembered_effort() {
+    let profile = crate::services::reasoning_profile::EffectiveReasoningProfile::api(
+        "deepseek",
+        "deepseek-v4-pro",
+        Some("low"),
+        false,
+        true,
+    )
+    .unwrap();
+    assert!(!profile.active);
+    assert_eq!(profile.mode_name.as_deref(), Some("off"));
+}
+
+#[test]
 fn mandatory_google_and_zai_profiles_reach_the_real_chat_constructor() {
     let messages =
         [crate::services::agent_local::types_ollama::ChatMessage::user("bonjour".into())];
@@ -15,12 +29,17 @@ fn mandatory_google_and_zai_profiles_reach_the_real_chat_constructor() {
             (None, true),
             (Some("low"), false),
         ] {
+            let expected = if requested == Some("low") {
+                "low"
+            } else {
+                default
+            };
             let profile = crate::services::reasoning_profile::EffectiveReasoningProfile::api(
                 provider, model, requested, enabled, true,
             )
             .unwrap();
             assert!(profile.active);
-            assert_eq!(profile.mode_name.as_deref(), Some(default));
+            assert_eq!(profile.mode_name.as_deref(), Some(expected));
             let cfg = super::stream_http::RequestConfig {
                 provider_id: provider,
                 fast_mode: super::fast_mode::FastModeRequest::Standard,
@@ -44,10 +63,10 @@ fn mandatory_google_and_zai_profiles_reach_the_real_chat_constructor() {
             if provider == "google" {
                 assert_eq!(
                     body["extra_body"]["google"]["thinking_config"]["thinking_level"],
-                    default
+                    expected
                 );
             } else {
-                assert_eq!(body["reasoning_effort"], default);
+                assert_eq!(body["reasoning_effort"], expected);
                 assert_eq!(
                     body["thinking"],
                     serde_json::json!({"type":"enabled","clear_thinking":false})

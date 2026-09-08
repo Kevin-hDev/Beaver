@@ -2,6 +2,24 @@ use super::*;
 use crate::services::agent_local::types_ollama::{ToolCallFunction, ToolCallOllama};
 use serde_json::json;
 
+#[tokio::test]
+async fn persisted_model_summary_filters_secrets_and_bounds_provider_text() {
+    use crate::services::agent_local::{session_store, stream_diagnostics};
+    let session = session_store::create_full("Safe summary", "test", "ollama", false, None)
+        .await.unwrap();
+    let request_id = stream_diagnostics::start_request(&session.id, 1).await;
+    // Exercise the same record boundary used by both model request/result.
+    let message = format!("done_reason=Bearer test-secret {}", "é".repeat(300));
+    record(&session.id, &request_id, "model_result", &message).await;
+    let stored = session_store::get(&session.id).await.unwrap();
+    session_store::delete_one(&session.id).await.unwrap();
+    let run = stored.diagnostic_runs.last().unwrap();
+    let summary = run.safe_summary.as_deref().unwrap();
+    assert!(!summary.contains("test-secret"));
+    assert!(summary.chars().count() <= 203);
+    assert_eq!(summary, run.events.last().unwrap().message);
+}
+
 #[test]
 fn result_counts_survive_secret_redaction_without_exposing_model_text() {
     let result = StreamResult {

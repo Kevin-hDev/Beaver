@@ -63,7 +63,12 @@ pub(super) async fn stream_chat(
     let payload = build_payload(&request)?;
     let routing_hint =
         super::routing_hint::for_request(&request).map_err(|_| configuration_rejected())?;
-    let mut socket = websocket_connect::connect(session_id, &routing_hint)
+    // Use the same derived affinity as the HTTP path and payload, never the local UUID.
+    let cache_key = request
+        .prompt_cache_key
+        .as_deref()
+        .ok_or_else(configuration_rejected)?;
+    let mut socket = websocket_connect::connect(cache_key, &routing_hint)
         .await
         .map_err(|_| WebSocketFailure::Unavailable { partial: false })?;
     measurement.mark_headers();
