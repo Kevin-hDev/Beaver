@@ -21,3 +21,6 @@
 - Restore geometry mocks after panel tests.
 - Primary browser/shared-drag/terminal/i18n suite: 15 files / 86 tests PASS. tsc, targeted lint, diff check exit0. Agent conversation suite 4 files / 36 PASS.
 - Native gesture verification remains part of the final native journey: the latest isolated app launch reported CEF unavailable, without any security bypass. Native build passed; final corrected build is running. Do not infer native success from these unit tests.
+
+Final acceptance update (supersedes pending status above):
+Native acceptance completed: real macOS CEF pointer/keyboard reorder passed; active tab, Page A text, Page B scroll800 and one load per page retained. Draft retained and drag release over CEF cleaned. Conversation reopen and real app restart preserved order. See native-first-pass.md, native-pages-after-reorder.json and final-review.md.
