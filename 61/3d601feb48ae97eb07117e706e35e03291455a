@@ -57,3 +57,21 @@ Google unknown failure provision retained, unused second reserve released.
 Automation v-rifier-les-caches-apr-s-inactivit confirmed PAUSED. No global
 activation or100percent completion claimed. Dated measurements document
 contains complete table and failure, no new source tests claimed.
+
+Google inactivity retry completed2026-09-08 07:43UTC on unchanged613d601f.
+User requested retry. One relaunch of existing signed dev bundle, no rebuild
+or source edits. Verified running fixture env49152input bytes/256output/
+one attempt (previous input ceiling32768). Same dense session
+6c55e4fb-1258-4a1d-bce8-db65e62f5efc/modelGemini3.8Flash/medium, intact history
+and signatures. No key export or region change. First after~6h54 idle:
+input21123/output15/cache absent. Second29s later input21149/output16,
+read16322/miss4827,reported. Both completed with OK, saved session and
+request journal verified.77.2percent input reuse. Local ceiling obstacle
+resolved for these requests without fabricating historical payload length.
+Google post-idle operational test now passes; with prior pass all7routes
+have successful post-idle pairs and cache reads on second calls. Unknown
+first cache count is NOT zero or proof of exact expiration. No global
+continuity activation or fresh unchanged unit-suite execution claimed.
+Two-call conservative provision .075648USD retained, not exact charge.
+Updated docs/providers/cache/mesures-cache.md and main live report.
+Automation remains PAUSED, no further calls, app left open, no push/merge.
