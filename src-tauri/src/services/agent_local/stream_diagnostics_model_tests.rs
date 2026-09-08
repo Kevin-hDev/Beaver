@@ -6,7 +6,8 @@ use serde_json::json;
 async fn persisted_model_summary_filters_secrets_and_bounds_provider_text() {
     use crate::services::agent_local::{session_store, stream_diagnostics};
     let session = session_store::create_full("Safe summary", "test", "ollama", false, None)
-        .await.unwrap();
+        .await
+        .unwrap();
     let request_id = stream_diagnostics::start_request(&session.id, 1).await;
     // Exercise the same record boundary used by both model request/result.
     let message = format!("done_reason=Bearer test-secret {}", "é".repeat(300));

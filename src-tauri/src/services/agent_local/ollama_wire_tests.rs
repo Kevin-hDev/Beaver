@@ -120,9 +120,8 @@ fn cloud_glm_payload_keeps_native_thinking_and_images_only() {
     ];
     let mut cloud = request();
     cloud.model = "glm-5.3-flash:cloud".into();
-    cloud.think = Some(crate::services::agent_local::types_ollama::OllamaThink::Level(
-        "max".into(),
-    ));
+    cloud.think =
+        Some(crate::services::agent_local::types_ollama::OllamaThink::Level("max".into()));
 
     let value = chat_request(&cloud, &messages).unwrap();
     assert_eq!(value["model"], "glm-5.3-flash:cloud");
@@ -194,12 +193,12 @@ fn cloud_glm_fixture_candidate_replays_persisted_native_thinking() {
     let messages = [first, second, ChatMessage::user("continue".into())];
     let mut candidate = request();
     candidate.model = "glm-5.3-flash:cloud".into();
-    candidate.think = Some(crate::services::agent_local::types_ollama::OllamaThink::Level(
-        "low".into(),
-    ));
+    candidate.think =
+        Some(crate::services::agent_local::types_ollama::OllamaThink::Level("low".into()));
     candidate.fixture_candidate = Some(target);
 
-    let prepared = chat_request_with_evidence(&candidate, &messages).expect("Ollama fixture replay");
+    let prepared =
+        chat_request_with_evidence(&candidate, &messages).expect("Ollama fixture replay");
 
     assert_eq!(prepared.payload["messages"][0]["thinking"], "pensée Δ-日本");
     assert_eq!(prepared.payload["messages"][1]["thinking"], "pensée finale");

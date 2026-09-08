@@ -1,8 +1,8 @@
 use super::ollama_stream_process::{done_generation_duration, process_chunk, ProcessChunkOptions};
 use crate::services::agent_local::agent_loop_support::build_assistant_message;
-use crate::services::agent_local::{session_store, stream_diagnostics, stream_diagnostics_model};
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::types_ollama::StreamResult;
+use crate::services::agent_local::{session_store, stream_diagnostics, stream_diagnostics_model};
 use crate::services::llm::reasoning_wire::{ReasoningCapture, ReasoningCaptureContext};
 use crate::services::reasoning_continuity::contract::{CredentialScope, ReasoningModeId, RouteId};
 use crate::services::stream_utils::ThinkTagFilter;
@@ -85,7 +85,8 @@ fn native_cache_rejects_out_of_range_counts_even_without_input_total() {
     ] {
         let chunk = serde_json::json!({
             "done": true, "done_reason": "stop", "prompt_eval_cached_count": value,
-        }).to_string();
+        })
+        .to_string();
         let result = replay_text_fragments(
             crate::services::llm::stream_fragments::StreamFragmentState::ollama(),
             &[&chunk],
@@ -266,9 +267,24 @@ fn terminal_chunk_captures_native_cache_counter_in_typed_usage() {
 #[test]
 fn terminal_chunk_keeps_ollama_cache_unknown_zero_and_invalid_distinct() {
     for (chunk, status, cached, miss) in [
-        (r#"{"done":true,"prompt_eval_count":120}"#, "unknown", None, None),
-        (r#"{"done":true,"prompt_eval_count":120,"prompt_eval_cached_count":0}"#, "reported", Some(0), Some(120)),
-        (r#"{"done":true,"prompt_eval_count":120,"prompt_eval_cached_count":121}"#, "invalid", None, None),
+        (
+            r#"{"done":true,"prompt_eval_count":120}"#,
+            "unknown",
+            None,
+            None,
+        ),
+        (
+            r#"{"done":true,"prompt_eval_count":120,"prompt_eval_cached_count":0}"#,
+            "reported",
+            Some(0),
+            Some(120),
+        ),
+        (
+            r#"{"done":true,"prompt_eval_count":120,"prompt_eval_cached_count":121}"#,
+            "invalid",
+            None,
+            None,
+        ),
     ] {
         let mut result = StreamResult::default();
         let mut token_count = 0;
@@ -330,7 +346,9 @@ async fn terminal_cache_counter_reaches_persisted_diagnostics_after_reload() {
     .expect("valid terminal Ollama fixture");
 
     stream_diagnostics_model::record_model_result(&session.id, &request_id, 0, &result).await;
-    let persisted = session_store::get(&session.id).await.expect("reload session");
+    let persisted = session_store::get(&session.id)
+        .await
+        .expect("reload session");
     session_store::delete_one(&session.id)
         .await
         .expect("cleanup session");
