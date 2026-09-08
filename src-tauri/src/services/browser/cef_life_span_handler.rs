@@ -94,7 +94,12 @@ cef::wrap_life_span_handler! {
         }
 
         fn on_before_close(&self, _browser: Option<&mut Browser>) {
-            super::ffi_guard::unit(|| self.slot.mark_closed());
+            super::ffi_guard::unit(|| {
+                if let Some(epoch) = self.slot.epoch() {
+                    super::favicon_runtime::mutate(&self.app, |state| state.release_view(&self.key, epoch));
+                }
+                self.slot.mark_closed();
+            });
         }
     }
 }

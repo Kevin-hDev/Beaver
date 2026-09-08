@@ -16,8 +16,9 @@ fn build_script_never_embeds_dotenv_values_in_the_binary() {
 fn native_runtime_modules_are_not_built_in_linux_library() {
     let module = normalized_source("src/services/browser/mod.rs");
 
+    // View keys are now shared by the portable favicon snapshot contract;
+    // they contain only validated IDs, not native CEF handles.
     for runtime_module in [
-        "browser_view_key",
         "lifecycle",
         "native_paths",
         "navigation_target",

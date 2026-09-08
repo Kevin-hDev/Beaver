@@ -19,7 +19,7 @@ cef::wrap_request_handler! {
         fn on_before_browse(
             &self,
             _browser: Option<&mut Browser>,
-            _frame: Option<&mut Frame>,
+            frame: Option<&mut Frame>,
             request: Option<&mut Request>,
             _user_gesture: std::os::raw::c_int,
             _is_redirect: std::os::raw::c_int,
@@ -30,6 +30,11 @@ cef::wrap_request_handler! {
                     let value = CefString::from(&raw);
                     validated_cef_url(&value).is_some()
                 });
+                if allowed && frame.is_some_and(|frame| frame.is_main() == 1) {
+                    if let Some(epoch) = self.slot.epoch() {
+                        super::favicon_runtime::mutate(&self.app, |state| state.begin_document(self.key.clone(), epoch));
+                    }
+                }
                 i32::from(!allowed)
             })
         }
@@ -54,6 +59,9 @@ cef::wrap_request_handler! {
         ) {
             super::ffi_guard::unit(|| {
                 super::cef_diagnostics::log_renderer_termination(status, error_code);
+                if let Some(epoch) = self.slot.epoch() {
+                    super::favicon_runtime::mutate(&self.app, |state| state.release_view(&self.key, epoch));
+                }
                 let key = self.key.clone();
                 let app = self.app.clone();
                 if let Some(stamp) = self.slot.next_runtime_stamp() {
