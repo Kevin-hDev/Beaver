@@ -1,6 +1,10 @@
 use super::stream_diagnostics_support as support;
 use super::types_ollama::{ChatMessage, ChatRequest};
 
+#[cfg(test)]
+#[path = "stream_diagnostics_payload_tests.rs"]
+mod tests;
+
 #[path = "stream_diagnostics_payload_stats.rs"]
 mod payload_stats;
 use payload_stats::{
@@ -107,7 +111,7 @@ async fn record_payload(
     );
     let _ = support::update_run(session_id, request_id, |_session, run| {
         run.phase = "provider_payload".to_string();
-        run.safe_summary = Some(message.clone());
+        run.safe_summary = Some(support::clip(&message));
         support::push_event(run, "provider_payload", &message, None, None);
     })
     .await;
