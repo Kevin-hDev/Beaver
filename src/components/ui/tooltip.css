@@ -1,13 +1,9 @@
 .tooltip-wrapper {
-  position: relative;
   display: inline-flex;
 }
 
 .tooltip-bubble {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 50%;
-  transform: translateX(-50%);
+  position: fixed;
   padding: 4px 10px;
   border-radius: var(--radius-xs);
   background: var(--popover-bg, var(--tooltip-bg));
@@ -20,38 +16,31 @@
   white-space: nowrap;
   pointer-events: none;
   z-index: var(--z-tooltip);
-  animation: tooltip-in 100ms ease-out;
 }
 
-.tooltip-right {
-  left: auto;
-  right: 0;
-  transform: none;
-  animation: tooltip-in-right 100ms ease-out;
+/* Le temps d'une frame, la bulle est montée sans avoir encore de place : sa
+   taille ne se mesure qu'une fois dans le document. Elle attend là, invisible,
+   plutôt que d'apparaître au coin de la fenêtre. */
+.tooltip-measuring {
+  visibility: hidden;
+  top: 0;
+  left: 0;
 }
 
-/* Posée sur le document et non dans le flux de son élément : au bas d'un panneau
-   qui rogne son débordement, une bulle placée au-dessus serait coupée. Son bord
-   gauche s'aligne sur l'élément plutôt que de se centrer dessus, sans quoi une
-   bulle plus large que l'élément sort de l'écran en bord de fenêtre. */
+.tooltip-below {
+  animation: tooltip-in-below 100ms ease-out;
+}
+
 .tooltip-above {
-  position: fixed;
-  top: auto;
-  transform: none;
   animation: tooltip-in-above 100ms ease-out;
+}
+
+@keyframes tooltip-in-below {
+  from { opacity: 0; transform: translateY(-2px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes tooltip-in-above {
   from { opacity: 0; transform: translateY(2px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes tooltip-in {
-  from { opacity: 0; transform: translateX(-50%) translateY(-2px); }
-  to { opacity: 1; transform: translateX(-50%) translateY(0); }
-}
-
-@keyframes tooltip-in-right {
-  from { opacity: 0; transform: translateY(-2px); }
   to { opacity: 1; transform: translateY(0); }
 }

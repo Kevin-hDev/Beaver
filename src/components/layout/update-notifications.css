@@ -10,6 +10,18 @@
 .update-list {
   position: fixed;
   z-index: var(--z-toast);
+  /* Débordement réservé à la croix de fermeture, posée à cheval sur le coin de
+     sa bulle. Cette liste défile, et un conteneur qui défile rogne tout ce qui
+     dépasse de lui : sans ce remplissage la croix est coupée en deux. La marge
+     négative l'annule pour que la pile reste là où le placement l'a posée, et
+     content-box garde les bornes de taille sur le seul contenu — un
+     remplissage en bas ferait dépasser la pile sous le bord de la fenêtre. */
+  --bubble-dismiss-overhang: 16px;
+  box-sizing: content-box;
+  padding-top: var(--bubble-dismiss-overhang);
+  padding-left: var(--bubble-dismiss-overhang);
+  margin-top: calc(-1 * var(--bubble-dismiss-overhang));
+  margin-left: calc(-1 * var(--bubble-dismiss-overhang));
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -62,10 +74,12 @@
   animation: bubble-in 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* Le décalage vient de la même valeur que la place réservée par la liste : le
+   cercle se pose alors à cheval sur le coin, entier, sans être rogné. */
 .update-bubble-dismiss {
   position: absolute;
-  top: -1px;
-  left: -1px;
+  top: calc(-1 * var(--bubble-dismiss-overhang));
+  left: calc(-1 * var(--bubble-dismiss-overhang));
   z-index: 1;
   width: 40px;
   height: 40px;
@@ -76,7 +90,6 @@
   color: var(--ink-muted);
   cursor: pointer;
   opacity: 0;
-  transform: translate(-38%, -38%);
   transition: opacity var(--ease-fast), color var(--ease-fast);
 }
 

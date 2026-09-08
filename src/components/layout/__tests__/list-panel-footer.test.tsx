@@ -56,11 +56,10 @@ describe("rangée de navigation du panneau liste", () => {
     expect(onTabChange).toHaveBeenCalledWith("personality");
   });
 
-  /* La rangée est au ras du bord inférieur de la fenêtre, dans deux panneaux qui
-     rognent leur débordement : une bulle ouverte vers le bas s'y perd sans
-     laisser de trace visible. Retirer le placement casserait les quatre
-     infobulles en silence. */
-  it("ouvre les infobulles vers le haut", () => {
+  /* La rangée vit dans deux panneaux qui rognent leur débordement : une bulle
+     rendue dans leur flux y serait coupée. Le côté d'ouverture, lui, est choisi
+     par la primitive et vérifié chez elle. */
+  it("pose les infobulles sur le document", () => {
     vi.useFakeTimers();
     try {
       const { container } = renderFooter("agent-local");
@@ -72,7 +71,7 @@ describe("rangée de navigation du panneau liste", () => {
         vi.advanceTimersByTime(300);
       });
 
-      const bubble = document.querySelector(".tooltip-above");
+      const bubble = document.querySelector(".tooltip-bubble");
 
       expect(bubble?.textContent).toBe("nav.heartbeat");
       const boundary = bubble?.parentElement;

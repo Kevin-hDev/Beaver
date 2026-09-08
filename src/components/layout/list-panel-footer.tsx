@@ -61,7 +61,7 @@ function NavigationOccupant({
   const active = context.activeTab === item.id;
   const label = context.t(item.i18nKey);
   return (
-    <Tooltip label={label} placement="top">
+    <Tooltip label={label}>
       <button
         type="button"
         className="icon-btn lpf-btn"

@@ -61,7 +61,7 @@ export function StandardNavigationButton({
   const label = localizedText(contribution.label);
   return (
     <StandardContributionBoundary entry={entry}>
-      <Tooltip label={label} placement="top">
+      <Tooltip label={label}>
         <button
           type="button"
           className="icon-btn lpf-btn"

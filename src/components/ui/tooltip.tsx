@@ -1,5 +1,6 @@
-import { useState, useRef, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { AppSurfacePortal } from "@/components/ui/app-surface-portal";
+import { useTooltipPosition } from "./use-tooltip-position";
 import "./tooltip.css";
 
 interface TooltipProps {
@@ -7,35 +8,21 @@ interface TooltipProps {
   children: ReactNode;
   delay?: number;
   align?: "center" | "right";
-  placement?: "bottom" | "top";
 }
-
-/* Écart entre la bulle et l'élément qu'elle décrit. */
-const GAP = 6;
 
 export function Tooltip({
   label,
   children,
   delay = 300,
   align = "center",
-  placement = "bottom",
 }: TooltipProps) {
   const [visible, setVisible] = useState(false);
-  const [anchor, setAnchor] = useState<{ left: number; bottom: number } | null>(null);
   const wrapper = useRef<HTMLSpanElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const { position, bubbleRef } = useTooltipPosition(visible, wrapper, align);
 
   const show = () => {
-    timer.current = setTimeout(() => {
-      /* Au-dessus, la bulle sort du panneau qui porte l'élément, et ce panneau
-         rogne son débordement. Elle est donc posée sur le document, à une
-         position relevée à l'ouverture. */
-      if (placement === "top" && wrapper.current) {
-        const rect = wrapper.current.getBoundingClientRect();
-        setAnchor({ left: rect.left, bottom: window.innerHeight - rect.top + GAP });
-      }
-      setVisible(true);
-    }, delay);
+    timer.current = setTimeout(() => setVisible(true), delay);
   };
 
   const hide = () => {
@@ -43,22 +30,23 @@ export function Tooltip({
     setVisible(false);
   };
 
-  const cls = align === "right" ? "tooltip-bubble tooltip-right" : "tooltip-bubble";
-  const above = placement === "top" && anchor;
-
   return (
     <span ref={wrapper} className="tooltip-wrapper" onMouseEnter={show} onMouseLeave={hide}>
       {children}
-      {visible && above
-        ? <AppSurfacePortal target={document.body}>
-            <span
-              className="tooltip-bubble tooltip-above"
-              style={{ left: anchor.left, bottom: anchor.bottom }}
-            >
-              {label}
-            </span>
-          </AppSurfacePortal>
-        : visible && <span className={cls}>{label}</span>}
+      {visible && (
+        /* Posée sur le document et non dans le flux de son élément : les
+           panneaux qui portent un bouton rognent leur débordement, et une bulle
+           rendue dedans y est coupée. */
+        <AppSurfacePortal target={document.body}>
+          <span
+            ref={bubbleRef}
+            className={`tooltip-bubble tooltip-${position ? position.side : "measuring"}`}
+            style={position?.style}
+          >
+            {label}
+          </span>
+        </AppSurfacePortal>
+      )}
     </span>
   );
 }
