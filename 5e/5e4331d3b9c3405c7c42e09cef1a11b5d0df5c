@@ -1,0 +1,11 @@
+Task 3 — primary review
+
+Commit selects URL on focus after the panel callback; a one-click pointer-entry marker restores selection at the end of the entering click and resets on click, blur and pointercancel. Subsequent clicks and selection gestures remain normal. No timer or address-validation change.
+
+Primary review requested a real user.pointer partial selection and substring replacement test; implemented. Tab asserts full selection end. Draft test uses complete click and typing, followed by CEF props update.
+
+Primary rerun: 2 files / 12 tests PASS (task-3-primary.log). Implementer tsc, targeted ESLint, diff check exit0; initial red failures recorded in task-3-validation.log.
+
+Native first/second click remains pending final native journey. Repeated recent isolated CEF launches report unavailable after initialization timeout; no security gate bypassed.
+
+Proof directory: .superpowers/sdd/2026-09-07-browser-tabs-ergonomie in the isolated worktree. No push/merge/release.
