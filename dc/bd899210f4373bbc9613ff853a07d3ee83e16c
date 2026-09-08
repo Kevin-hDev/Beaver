@@ -1,0 +1,27 @@
+# Correctif demandé après revue utilisateur
+
+Périmètre : suppression des contours de focus ajoutés au navigateur ; fiabilisation de la sélection lors des retours depuis CEF. DnD conservé. Branche isolée codex/browser-tabs-ergonomie.
+
+Le choix utilisateur explicite de ne plus avoir ces cadres remplace la décision antérieure de focus coloré et sa règle locale. Le CSS revient au comportement global de l’application. Test de densité adapté pour empêcher le retour du cadre local.
+
+Défaut natif effectivement reproduit, pas seulement supposé. Voir reproduction.md. Le premier correctif livré traitait uniquement le retour de focus, mais la sélection était ensuite réduite par la WebView native. La correction réagit au changement de sélection et ne consomme son autorisation qu’en réparant effectivement cette réduction ; un signal de sélection déjà complète ne la consomme pas. Les gestes d’édition suivants l’annulent.
+
+L’expérience de diagnostic a passé20 retours consécutifs avec sélection totale, puis le clic d’édition a conservé le curseur. Cette expérience n’est pas encore la validation du binaire final : nouvelle compilation et nouvelle série requises.
+
+## Relecture du code définitif
+
+Terra a implémenté la réparation bornée dans browser-navigation-bar.tsx (164lignes), relue par le parent. Un ref contient uniquement la valeur et l’identifiant de l’onglet pour le clic d’entrée ; le listener vérifie toujours document.hasFocus et l’élément actif. La correction désarme le ref avant setSelectionRange, empêchant une boucle. Les événements déjà complets ne consomment rien. Annulation sur prochain geste, frappe, input, blur natif/champ, pointercancel, démontage ; useLayoutEffect annule avant peinture quand valeur ou onglet change. Pas de timer ni de sélection inconditionnelle à chaque clic.
+
+Tests navigation16PASS (Terra), suite navigateur parent12fichiers69testsPASS, lint final exit0, TypeScript Terra exit0. Aucun Rust modifié ; aucune dépendance ajoutée. Le nouveau build natif est encore en cours.
+
+## État au 8 septembre, après compilation
+
+Build natif final exit0 ; graphify update exit0 ; diff --check exit0. Quatre fichiers modifiés, pas encore de commit en attente du contrôle natif définitif. Binaire e2e corrigé relancé, PID76680, runner session78024, WebDriver8a719cfd-6c2a-4d94-909b-66ca0b2ed048, conversation691f13cc-940d-4122-a36d-f9585ebdd203. CEF bloqué dans SecItemCopyMatching/SecurityServer decrypt (native-startup-sample.txt), nouvelle question utilisateur envoyée pour la nouvelle demande Trousseau. Capability restartRecommended=true : après confirmation utilisateur, relancer ce même binaire signé si nécessaire. Runner attend600s. Page locale http://127.0.0.1:61712/a, serveur session20955.
+
+À terminer :20 cycles natifs propres page→adresse (tous sélection entière), clic d’édition/selectionpartielle/Tab ; absence de contours sur adresse et onglet en dark/light. Conserver captures/calculs dans ce dossier, finir via finish-inspection (runner une seule phase), lire exit0, commit local + Git note pour ce correctif, aucun push/merge. L’ancienne expérimentation temporaire20cycles est conservée comme expérience, pas comme preuve du binaire final.
+
+## Validation utilisateur et livraison
+
+Kevin confirme après essai de la compilation corrigée : « j'ai tester … ça fonctionne ». Sa capture du 8 septembre16:36 montre les onglets et l’adresse sans les contours ajoutés. Cette confirmation est attribuée à l’utilisateur ; le parent ne prétend pas avoir achevé20cycles sur le binaire final. Ses20cycles étaient sur l’expérience native préalable. Les attentes Trousseau/délais expirés restent consignés comme essais incomplets.
+
+Livraison du correctif sur la branche isolée, tests navigateur69PASS, lint/TypeScriptPASS, build natifPASS, GraphifyPASS. Pas de changement du DnD ni de prise en charge des favicons dans ce correctif.
