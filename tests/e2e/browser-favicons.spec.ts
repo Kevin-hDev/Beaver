@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { completeOnboarding } from "./onboarding-flow";
+import { setExtensionPresentation } from "./extension-presentation";
 import { invokeTauri, waitForTauriBridge } from "./tauri-invoke";
 import { startFaviconFixture } from "./browser-favicon-fixture";
 import type { BrowserSessionState } from "../../src/components/internal-browser/browser-types";
@@ -71,8 +72,8 @@ describe("Native browser favicons", () => {
       assert.ok(fixture.requests.filter((r) => r.path === '/cookie-proof').every((r) => !r.cookie.includes('favicon_response')));
       assert.ok(fixture.peak() <= 4);
       await browser.saveScreenshot(join(proof, 'native-favicon-dark.png'));
-      await browser.execute(() => { localStorage.setItem('clgo-theme', 'light'); localStorage.setItem('clgo-theme-base', 'light'); });
-      await browser.refresh(); await waitForTauriBridge();
+      await setExtensionPresentation("en", "light");
+      await waitForTauriBridge();
       await $(".conv-item[data-drag-id='" + session.id + "']").click();
       await waitIcon();
       await browser.saveScreenshot(join(proof, 'native-favicon-light.png'));
