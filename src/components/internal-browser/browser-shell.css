@@ -16,8 +16,9 @@
   display: flex;
   align-items: center;
   min-width: 0;
-  min-height: var(--browser-toolbar-height);
-  border-bottom: 1px solid var(--edge);
+  height: var(--browser-toolbar-height);
+  box-sizing: border-box;
+  border-bottom: var(--browser-toolbar-border-width) solid var(--edge);
   flex-shrink: 0;
 }
 
@@ -43,6 +44,7 @@
 .ib-tab {
   display: inline-flex;
   align-items: center;
+  height: var(--browser-tab-height);
   min-width: 0;
   max-width: var(--browser-tab-max-width);
   border-radius: var(--radius-md);
@@ -60,13 +62,28 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-sm);
+  height: 100%;
+  box-sizing: border-box;
   min-width: 0;
-  padding: var(--browser-field-padding-y) var(--space-xs) var(--browser-field-padding-y) var(--space-sm);
+  padding: 0 var(--space-xs) 0 var(--space-sm);
   border: 0;
   background: transparent;
   color: inherit;
   font: inherit;
+  line-height: var(--browser-control-line-height);
   cursor: pointer;
+}
+
+/* focus.css retire le contour natif. L'offset négatif garde ce repère dans les
+   24 px du contrôle, sans qu'il soit coupé par le défilement des onglets. */
+.ib-tab-select:focus-visible,
+.ib-tab-close:focus-visible,
+.ib-tab-add:focus-visible,
+.ib-nav-button:focus-visible,
+.ib-address-go:focus-visible,
+.ib-address-form:focus-within {
+  outline: var(--focus-visible-ring-width) solid var(--pulse);
+  outline-offset: calc(var(--focus-visible-ring-width) * -1);
 }
 
 .ib-tab-title {
@@ -103,7 +120,7 @@
 
 .ib-tab-close {
   width: var(--space-lg);
-  height: var(--space-lg);
+  height: var(--browser-tab-height);
   margin-right: var(--space-xs);
 }
 
@@ -135,22 +152,33 @@
 .ib-address-form {
   display: flex;
   align-items: center;
+  height: var(--browser-field-height);
+  box-sizing: border-box;
   min-width: 0;
-  border: 1px solid var(--edge);
+  border: var(--browser-toolbar-border-width) solid var(--edge);
   border-radius: var(--radius-md);
   background: var(--surface);
   flex: 1;
 }
 
+.ib-address-go {
+  width: auto;
+  height: 100%;
+  aspect-ratio: 1;
+}
+
 .ib-address-input {
+  height: 100%;
+  box-sizing: border-box;
   min-width: 0;
-  padding: var(--browser-field-padding-y) var(--space-sm);
+  padding: 0 var(--space-sm);
   border: 0;
   outline: 0;
   background: transparent;
   color: var(--ink);
   font: inherit;
   font-size: var(--text-sm);
+  line-height: var(--browser-control-line-height);
   flex: 1;
 }
 
