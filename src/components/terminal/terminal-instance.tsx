@@ -3,7 +3,7 @@ import { Terminal, type ITheme } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { IS_MAC } from "@/lib/platform";
 import { createTerminalPtyBridge } from "./terminal-pty-bridge";
-import { readTerminalFont } from "./terminal-theme";
+import { resolveTerminalFont, TERMINAL_FONT_SIZE } from "./terminal-font";
 import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 import "@xterm/xterm/css/xterm.css";
 
@@ -51,10 +51,11 @@ export function TerminalInstance({
   useEffect(() => {
     if (!containerRef.current) return;
 
+    const font = resolveTerminalFont();
     const term = new Terminal({
       theme,
-      fontFamily: readTerminalFont(),
-      fontSize: 13,
+      fontFamily: font.family,
+      fontSize: TERMINAL_FONT_SIZE,
       cursorBlink: true,
       cursorStyle: "bar",
       cursorWidth: 2,
@@ -68,6 +69,23 @@ export function TerminalInstance({
     fit.fit();
     termRef.current = term;
     fitRef.current = fit;
+
+    /* Replié, le panneau donne une hauteur nulle à ses écrans : ajuster
+       là-dessus réduirait le terminal à une ligne et bousculerait ce qui y
+       tourne. */
+    const fitIfSized = () => {
+      const host = containerRef.current;
+      if (host && host.offsetWidth > 0 && host.offsetHeight > 0) fit.fit();
+    };
+
+    /* La cellule vient d'être mesurée sur la police de secours. Nommer la pile
+       complète quand la police web arrive est ce qui fait remesurer xterm. */
+    let disposed = false;
+    void font.completed?.then((family) => {
+      if (disposed) return;
+      term.options.fontFamily = family;
+      fitIfSized();
+    });
 
     term.attachCustomKeyEventHandler((e) => {
       if (e.type !== "keydown") return true;
@@ -111,19 +129,12 @@ export function TerminalInstance({
     let resizeTimer: ReturnType<typeof setTimeout>;
     const resizeObserver = new ResizeObserver(() => {
       clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => {
-        /* Replié, le panneau donne une hauteur nulle à ses écrans : ajuster
-           là-dessus réduirait le terminal à une ligne et bousculerait ce qui y
-           tourne. */
-        const host = containerRef.current;
-        if (host && host.offsetWidth > 0 && host.offsetHeight > 0) {
-          fit.fit();
-        }
-      }, 100);
+      resizeTimer = setTimeout(fitIfSized, 100);
     });
     resizeObserver.observe(containerRef.current);
 
     return () => {
+      disposed = true;
       clearTimeout(resizeTimer);
       resizeObserver.disconnect();
       resizeSubscription.dispose();

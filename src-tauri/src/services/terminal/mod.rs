@@ -11,6 +11,7 @@ pub mod pty_session;
 mod public_error;
 mod reader;
 mod session_handle;
+mod shell_environment;
 pub(crate) mod shell_helper;
 mod shutdown;
 pub mod tab_store;
@@ -51,6 +52,9 @@ mod macos_parent_death_tests;
 
 #[cfg(test)]
 mod session_handle_tests;
+
+#[cfg(test)]
+mod shell_environment_tests;
 
 #[cfg(test)]
 mod shell_helper_tests;

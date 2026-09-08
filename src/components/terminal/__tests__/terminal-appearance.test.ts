@@ -43,9 +43,23 @@ describe("apparence du terminal", () => {
 
   it("le terminal ne nomme aucune police lui-même", () => {
     const instance = read("src/components/terminal/terminal-instance.tsx");
+    const font = read("src/components/terminal/terminal-font.ts");
 
-    expect(instance).toContain("fontFamily: readTerminalFont()");
+    expect(instance).toContain("resolveTerminalFont()");
+    expect(instance).toContain("fontFamily: font.family");
+    expect(font).toContain("readTerminalFont()");
     expect(instance).not.toMatch(/JetBrains|Fira Code|monospace/);
+    expect(font).not.toMatch(/JetBrains|Fira Code|monospace/);
+  });
+
+  /* xterm mesure la cellule à l'ouverture et ne remesure qu'au changement de
+     famille : ouvrir avant l'arrivée de la police web laissait la cellule trop
+     courte, et le bas des lettres qui descendent coupé par le débordement. */
+  it("la police mesurée est celle qui est rendue, avant comme après", () => {
+    const instance = read("src/components/terminal/terminal-instance.tsx");
+
+    expect(instance).toContain("font.completed?.then");
+    expect(instance).toContain("term.options.fontFamily = family");
   });
 
   it("le terminal ne nomme aucune couleur lui-même", () => {

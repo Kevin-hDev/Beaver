@@ -37,11 +37,51 @@ function resolveColors(tokens: string[]): string[] {
     return tokens.map((token) => {
       probe.style.color = "";
       probe.style.color = `var(${token})`;
-      return getComputedStyle(probe).color;
+      return toXtermColor(getComputedStyle(probe).color);
     });
   } finally {
     probe.remove();
   }
+}
+
+/**
+ * Remet une couleur calculée dans la seule écriture que xterm sait lire.
+ *
+ * Il n'analyse lui-même que `#rrggbb[aa]` et `rgb()/rgba()` séparés par des
+ * virgules ; tout le reste passe par un essai sur un canevas, qui rejette les
+ * couleurs translucides. Or `color-mix` se calcule en `color(srgb …)` dans les
+ * deux moteurs : la couleur de sélection de Beaver, translucide, était refusée
+ * en silence et remplacée par le blanc d'usine de xterm.
+ *
+ * Seules les écritures à espaces sont retouchées : celle à virgules est déjà
+ * lisible par xterm, et tout ce qui ne se lit pas ici ressort tel quel, donc
+ * comme avant.
+ */
+export function toXtermColor(css: string): string {
+  const written = /^(color\(srgb|rgba?\()([^)]*)\)$/.exec(css);
+  if (!written) return css;
+
+  const [values, alpha] = written[2].split("/");
+  const channels = values.trim().split(/ +/).map(Number);
+  /* Les canaux de `color(srgb …)` vont de 0 à 1, ceux de `rgb()` de 0 à 255. */
+  const scale = written[1].startsWith("color") ? 255 : 1;
+  if (channels.length !== 3 || !channels.every(Number.isFinite)) return css;
+
+  /* CSS accepte les canaux hors gamut ; xterm les encode sans les borner. */
+  const [red, green, blue] = channels.map((value) => Math.round(Math.min(255, Math.max(0, value * scale))));
+  const parsedAlpha = readAlpha(alpha);
+  if (!Number.isFinite(parsedAlpha)) return css;
+  const opacity = Math.min(1, Math.max(0, parsedAlpha));
+
+  return opacity >= 1
+    ? `rgb(${red}, ${green}, ${blue})`
+    : `rgba(${red}, ${green}, ${blue}, ${opacity})`;
+}
+
+function readAlpha(alpha: string | undefined): number {
+  if (alpha === undefined) return 1;
+  const trimmed = alpha.trim();
+  return trimmed.endsWith("%") ? Number(trimmed.slice(0, -1)) / 100 : Number(trimmed);
 }
 
 function tokenText(name: string, fallback: string): string {

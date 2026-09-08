@@ -162,7 +162,7 @@ fn terminal_command() -> Result<windows_spawn::Command, String> {
     let powershell =
         crate::services::system_executable::powershell().map_err(|_| terminal_error())?;
     let mut command = windows_spawn::Command::new(powershell);
-    command.env("TERM", "xterm-256color");
+    super::super::shell_environment::apply(&mut command);
     Ok(command)
 }
 

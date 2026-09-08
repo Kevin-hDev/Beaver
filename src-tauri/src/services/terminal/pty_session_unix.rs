@@ -178,7 +178,7 @@ fn terminal_command() -> Result<CommandBuilder, String> {
     #[cfg(any(not(target_os = "linux"), test))]
     let mut command = CommandBuilder::new(shell);
     command.arg("-l");
-    command.env("TERM", "xterm-256color");
+    super::super::shell_environment::apply(&mut command);
     Ok(command)
 }
 
