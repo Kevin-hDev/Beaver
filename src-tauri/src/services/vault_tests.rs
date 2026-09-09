@@ -3,9 +3,7 @@ use rand::RngCore;
 
 // Clé master 32 octets (XChaCha20-Poly1305) pour les tests.
 fn test_bytes<const N: usize>() -> [u8; N] {
-    let mut bytes = [0_u8; N];
-    rand::rngs::OsRng.fill_bytes(&mut bytes);
-    bytes
+    std::array::from_fn(|_| rand::rngs::OsRng.next_u32().to_ne_bytes()[0])
 }
 
 fn test_key() -> [u8; 32] {
