@@ -8,6 +8,40 @@ use super::request_purpose::RequestPurpose;
 use super::{route, stream_http_send};
 
 #[tokio::test]
+async fn openrouter_metadata_opt_in_is_sent_only_to_openrouter() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&server)
+        .await;
+    let client =
+        crate::services::secure_http::AuthenticatedClient::new_loopback(Duration::from_secs(2))
+            .unwrap();
+    for provider in ["openrouter", "google", "mistral", "qwen", "openai"] {
+        let route = route::test_route(provider);
+        stream_http_send::send_json_request(
+            &client,
+            &route,
+            &server.uri(),
+            &serde_json::json!({"model":"fixture"}),
+            RequestPurpose::ManualChat,
+            "fixture",
+            None,
+        )
+        .await
+        .unwrap();
+    }
+    let requests = server.received_requests().await.unwrap();
+    assert_eq!(
+        requests[0].headers.get("x-openrouter-metadata").unwrap(),
+        "enabled"
+    );
+    for request in &requests[1..] {
+        assert!(!request.headers.contains_key("x-openrouter-metadata"));
+    }
+}
+
+#[tokio::test]
 async fn fixture_scope_stops_real_http_after_the_last_allowed_attempt() {
     use crate::services::reasoning_fixture_budget::{run_scoped, FixtureLimits};
     let server = MockServer::start().await;

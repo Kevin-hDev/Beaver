@@ -27,11 +27,20 @@ pub struct RequestConfig<'a> {
 use super::stream_http_payload::build_chat_payload;
 use super::stream_http_payload::build_chat_payload_with_evidence;
 
-async fn read_provider_error(response: reqwest::Response) -> zeroize::Zeroizing<String> {
-    match read_bounded(response, PROVIDER_ERROR_LIMIT).await {
+pub(super) async fn read_provider_error(
+    mut response: reqwest::Response,
+) -> zeroize::Zeroizing<String> {
+    let mut routing = super::provider_diagnostics::openrouter::take(&mut response);
+    let body = match read_bounded(response, PROVIDER_ERROR_LIMIT).await {
         Ok(bytes) => zeroize::Zeroizing::new(String::from_utf8_lossy(&bytes).into_owned()),
         Err(_) => zeroize::Zeroizing::new(String::new()),
+    };
+    if let Some(routing) = routing.as_mut() {
+        if let Ok(value) = serde_json::from_str(&body) {
+            routing.observe(&value);
+        }
     }
+    body
 }
 
 pub(super) async fn post_chat_request_measured(
@@ -144,7 +153,7 @@ async fn post_chat_request_with_timeout_and_policy(
     })?;
     let usage_generation =
         crate::services::provider_usage::credential_generation(route.chat_provider_id);
-    let resp = super::stream_http_send::send_json_request(
+    let mut resp = super::stream_http_send::send_json_request(
         &client,
         &route,
         &url,
@@ -154,6 +163,12 @@ async fn post_chat_request_with_timeout_and_policy(
         cfg.session_id,
     )
     .await?;
+    super::provider_diagnostics::openrouter::attach(
+        &mut resp,
+        route.canonical_provider_id,
+        cfg.model,
+        request_id,
+    );
     if let Some(measurement) = measurement.as_mut() {
         measurement.mark_headers();
     }

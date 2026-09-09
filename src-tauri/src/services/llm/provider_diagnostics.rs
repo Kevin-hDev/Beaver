@@ -6,6 +6,13 @@ use std::path::Path;
 mod stream;
 pub(crate) use stream::record_stream_failure;
 
+#[path = "provider_diagnostics_openrouter.rs"]
+pub(crate) mod openrouter;
+
+#[cfg(test)]
+#[path = "openrouter_routing_tests.rs"]
+mod openrouter_routing_tests;
+
 const FILE_NAME: &str = "provider-errors.jsonl";
 const MAX_LOG_BYTES: usize = 64 * 1024;
 const MAX_IDENTIFIER_CHARS: usize = 128;

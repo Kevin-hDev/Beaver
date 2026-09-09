@@ -13,7 +13,7 @@ use tokio_util::sync::CancellationToken;
 
 pub(super) async fn consume_stream(
     on_event: &AgentEventEmitter,
-    resp: reqwest::Response,
+    mut resp: reqwest::Response,
     cancel: CancellationToken,
     buffer_content: bool,
     mut realtime_budget: Option<crate::services::compress::realtime_budget::RealtimeBudget>,
@@ -24,6 +24,7 @@ pub(super) async fn consume_stream(
     mut reasoning_capture: Option<super::reasoning_wire::ReasoningCapture>,
     mut measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
 ) -> Result<StreamOutcome, String> {
+    let mut routing = super::provider_diagnostics::openrouter::take(&mut resp);
     let stream = super::stream_sse::bounded_response(resp).eventsource();
     futures_util::pin_mut!(stream);
     let mut result = StreamResult::default();
@@ -53,6 +54,9 @@ pub(super) async fn consume_stream(
                     break;
                 }
                 let value = super::stream_sse::parse_json(&event.data)?;
+                if let Some(routing) = routing.as_mut() {
+                    routing.observe(&value);
+                }
                 if let Some(measurement) = measurement.as_mut() {
                     measurement.mark_first_event();
                     measurement.observe_response_metadata(&value);

@@ -11,7 +11,7 @@ use std::time::Duration;
 use tokio_util::sync::CancellationToken;
 
 pub(super) async fn consume_silent(
-    resp: reqwest::Response,
+    mut resp: reqwest::Response,
     cancel: CancellationToken,
     idle_timeout: Duration,
     usage_context: crate::services::provider_usage::UsageContext<'_>,
@@ -19,6 +19,7 @@ pub(super) async fn consume_silent(
     error_policy: super::route_profile::ErrorPolicy,
     mut measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
 ) -> Result<StreamResult, String> {
+    let mut routing = super::provider_diagnostics::openrouter::take(&mut resp);
     let stream = super::stream_sse::bounded_response(resp).eventsource();
     futures_util::pin_mut!(stream);
     let mut result = StreamResult::default();
@@ -39,6 +40,9 @@ pub(super) async fn consume_silent(
                 let event = event.map_err(|_| "provider_connection_failed".to_string())?;
                 if is_done_marker(&event.data) { break; }
                 let value = super::stream_sse::parse_json(&event.data)?;
+                if let Some(routing) = routing.as_mut() {
+                    routing.observe(&value);
+                }
                 if let Some(measurement) = measurement.as_mut() {
                     measurement.mark_first_event();
                     measurement.observe_response_metadata(&value);

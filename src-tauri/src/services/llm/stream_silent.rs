@@ -95,7 +95,7 @@ pub async fn collect_chat_silent_for_compression(
                 &cfg,
                 request_timeout,
                 measurement.as_mut(),
-                None,
+                Some(request_id),
             )
             .await
             {
