@@ -10,6 +10,7 @@ export const KNOWN_ERROR_KEYS: Readonly<Record<string, string>> = {
   provider_quota_exhausted: "errors.providerQuotaExhausted",
   stream_interrupted: "errors.streamInterrupted",
   reasoning_continuity_invalid: "errors.reasoningContinuityInvalid",
+  reasoning_configuration_invalid: "errors.reasoningConfigurationInvalid",
   provider_connection_failed: "errors.providerConnectionFailed",
   provider_temporarily_unavailable: "errors.providerTemporarilyUnavailable",
   provider_request_rejected: "errors.providerRequestRejected",

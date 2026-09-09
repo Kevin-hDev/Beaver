@@ -40,6 +40,18 @@ describe("KNOWN_ERROR_KEYS", () => {
       expect(readTranslation(catalog, "errors.modelCatalogUnavailable")).not.toBeUndefined();
     }
   });
+
+  it("distingue un réglage de raisonnement invalide d'un rejeu incompatible", () => {
+    const key = KNOWN_ERROR_KEYS.reasoning_configuration_invalid;
+    expect(key).toBe("errors.reasoningConfigurationInvalid");
+    expect(key).not.toBe(KNOWN_ERROR_KEYS.reasoning_continuity_invalid);
+    for (const catalog of catalogs) {
+      expect(readTranslation(catalog, key)).toEqual(expect.any(String));
+    }
+    expect(readTranslation(fr, key)).toBe(
+      "Le réglage de raisonnement n’est pas compatible avec ce modèle. Choisis un autre réglage puis réessaie.",
+    );
+  });
 });
 
 function readTranslation(catalog: Record<string, unknown>, path: string): unknown {

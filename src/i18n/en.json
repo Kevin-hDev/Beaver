@@ -1343,6 +1343,7 @@
     "rateLimited": "Too many requests, try again shortly",
     "authFailed": "Authentication failed, check your API key",
     "modelCatalogUnavailable": "The model catalog is temporarily unavailable. Try again later.",
+    "reasoningConfigurationInvalid": "The reasoning setting is not compatible with this model. Choose another setting and try again.",
     "moonshotMembershipUnverified": "Moonshot cannot confirm an active Kimi Code membership.",
     "xaiSubscriptionOrCreditsRequired": "xAI reports that a Grok subscription or credits are required.",
     "providerAccessUnavailable": "The provider is currently refusing access to the model.",
