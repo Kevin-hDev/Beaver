@@ -1,0 +1,7 @@
+Motif: publier un catalogue LiteLLM complet ou conserver le dernier état sain, jamais un préfixe dépendant de l ordre.
+Cause: la désérialisation en HashMap puis coupure à 3500 supprimait 318 entrées du cas observé et masquait doublons/entrées invalides.
+Avant/après: Visitor/MapAccess compte et déduplique avant insertion, borne 10000, erreurs fermées; sample_spec compte mais est filtré avant conversion; refresh écrit atomiquement puis remplace le registre seulement après validation. Les nombres JSON intégraux comme 2000000.0 du catalogue public sont normalisés en u64.
+Autorités: catalog_limits.rs pour la borne; litellm_catalog_parser.rs pour le parsing; litellm_catalog_refresh.rs pour la publication. Tous les consommateurs parse_catalog, dont les deux tests model_pricing, sont adaptés au Result.
+RED: complete_catalog 2 échecs (3500 au lieu de 3818 et ensembles différents selon ordre); interface Result 15 erreurs de compilation; catalogue embarqué a révélé xai/grok-4-1-fast avec compte entier sérialisé en float.
+GREEN: filtre litellm_catalog 28/28; model_pricing 2/2; deux consommateurs provider_usage 1/1 chacun; fmt et diffcheck exit0.
+Non exécuté: suite Rust complète réservée à fin lot2; aucun réseau/live.
