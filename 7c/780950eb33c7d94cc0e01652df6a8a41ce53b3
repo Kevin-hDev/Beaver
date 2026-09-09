@@ -1,0 +1,3 @@
+Reason: the approved lot 2 interface names the single authority is_valid_model_id; retaining the shorter provisional name would diverge from the contract.
+Behavior: name-only change across runtime, continuity, and diagnostics.
+Verification: parent run-rust-test-filter reasoning_continuity 36 passed, 0 failed, exit 0 with this exact working-tree change; cached diff check exit 0.
