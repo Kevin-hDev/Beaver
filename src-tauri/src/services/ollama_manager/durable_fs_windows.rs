@@ -198,13 +198,18 @@ fn sync_parent_path(path: &Path) -> Result<(), OllamaFsError> {
 }
 
 fn win_error(code: u32) -> OllamaFsError {
-    let kind = match code {
-        ERROR_FILE_NOT_FOUND | ERROR_PATH_NOT_FOUND => OllamaFsErrorKind::NotFound,
-        ERROR_ALREADY_EXISTS | ERROR_FILE_EXISTS => OllamaFsErrorKind::AlreadyExists,
-        ERROR_SHARING_VIOLATION | ERROR_LOCK_VIOLATION => OllamaFsErrorKind::SharingViolation,
-        ERROR_ACCESS_DENIED => OllamaFsErrorKind::PermissionDenied,
-        ERROR_INVALID_PARAMETER => OllamaFsErrorKind::InvalidInput,
-        _ => OllamaFsErrorKind::Other,
+    let kind = if code == ERROR_FILE_NOT_FOUND || code == ERROR_PATH_NOT_FOUND {
+        OllamaFsErrorKind::NotFound
+    } else if code == ERROR_ALREADY_EXISTS || code == ERROR_FILE_EXISTS {
+        OllamaFsErrorKind::AlreadyExists
+    } else if code == ERROR_SHARING_VIOLATION || code == ERROR_LOCK_VIOLATION {
+        OllamaFsErrorKind::SharingViolation
+    } else if code == ERROR_ACCESS_DENIED {
+        OllamaFsErrorKind::PermissionDenied
+    } else if code == ERROR_INVALID_PARAMETER {
+        OllamaFsErrorKind::InvalidInput
+    } else {
+        OllamaFsErrorKind::Other
     };
     OllamaFsError::from_os_code(kind, code)
 }

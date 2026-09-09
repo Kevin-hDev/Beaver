@@ -70,7 +70,7 @@ async function fontAsset(id) {
   try {
     return await loading;
   } catch (error) {
-    if (cache.get(id) === loading) cache.delete(id);
+    if (Object.is(cache.get(id), loading)) cache.delete(id);
     throw error;
   }
 }
