@@ -81,6 +81,13 @@ impl RequestMeasurement {
     }
 
     pub(crate) fn observe_response_metadata(&mut self, value: &serde_json::Value) {
+        // Shared by interactive, silent and WebSocket readers, before error classification.
+        crate::services::llm::provider_diagnostics::record_stream_failure(
+            &self.metric.connection_id,
+            &self.metric.model,
+            &self.metric.request_id,
+            value,
+        );
         if self.metric.canonical_provider_id == "openai" {
             let observed = value
                 .get("service_tier")

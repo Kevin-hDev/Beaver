@@ -2,6 +2,10 @@ use super::provider_error::SafeProviderDetails;
 use serde::Serialize;
 use std::path::Path;
 
+#[path = "provider_diagnostics_stream.rs"]
+mod stream;
+pub(crate) use stream::record_stream_failure;
+
 const FILE_NAME: &str = "provider-errors.jsonl";
 const MAX_LOG_BYTES: usize = 64 * 1024;
 const MAX_IDENTIFIER_CHARS: usize = 128;
@@ -130,7 +134,7 @@ fn log_path() -> std::path::PathBuf {
         .join(FILE_NAME)
 }
 
-fn write_at(path: &Path, entry: &ProviderDiagnostic) -> Result<(), String> {
+fn write_at(path: &Path, entry: &impl Serialize) -> Result<(), String> {
     let mut existing = bounded_existing(path)?;
     let mut line = serde_json::to_vec(entry).map_err(|_| "diagnostic unavailable".to_string())?;
     line.push(b'\n');
