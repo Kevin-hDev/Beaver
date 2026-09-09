@@ -20,14 +20,19 @@ async fn catalog_http_statuses_keep_api_categories() {
     use crate::services::llm::provider_error::ProviderErrorCode;
     use crate::services::llm::types::LlmError;
 
-    assert!(matches!(mapped_error(401, "{}").await, LlmError::Unauthorized));
+    assert!(matches!(
+        mapped_error(401, "{}").await,
+        LlmError::Unauthorized
+    ));
     assert!(matches!(
         mapped_error(403, r#"{"error":{"type":"labs_not_enabled","code":1913}}"#).await,
         LlmError::KnownProvider(ProviderErrorCode::ProviderAccessUnavailable)
     ));
     assert!(matches!(
         mapped_error(429, "{}").await,
-        LlmError::RateLimit { retry_after_secs: None }
+        LlmError::RateLimit {
+            retry_after_secs: None
+        }
     ));
 }
 

@@ -68,7 +68,10 @@ fn api_catalog_commands_return_closed_error_codes() {
             },
             "rate_limit",
         ),
-        (LlmError::Network("private".into()), "model_catalog_unavailable"),
+        (
+            LlmError::Network("private".into()),
+            "model_catalog_unavailable",
+        ),
     ] {
         assert_eq!(super::api_catalog_error(error), expected);
     }

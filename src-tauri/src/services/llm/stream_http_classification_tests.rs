@@ -52,18 +52,39 @@ fn labs_access_denied_is_not_bad_api_key() {
 #[test]
 fn api_auth_rate_and_unknown_payment_keep_distinct_codes() {
     assert_eq!(
-        classify_error(401, "", "Mistral", ErrorPolicy::OpenAiCompatible, false, false)
-            .to_string(),
+        classify_error(
+            401,
+            "",
+            "Mistral",
+            ErrorPolicy::OpenAiCompatible,
+            false,
+            false
+        )
+        .to_string(),
         "auth_failed"
     );
     assert_eq!(
-        classify_error(429, "", "Mistral", ErrorPolicy::OpenAiCompatible, false, false)
-            .to_string(),
+        classify_error(
+            429,
+            "",
+            "Mistral",
+            ErrorPolicy::OpenAiCompatible,
+            false,
+            false
+        )
+        .to_string(),
         "rate_limit"
     );
     assert_eq!(
-        classify_error(402, "{}", "Mistral", ErrorPolicy::OpenAiCompatible, false, false)
-            .to_string(),
+        classify_error(
+            402,
+            "{}",
+            "Mistral",
+            ErrorPolicy::OpenAiCompatible,
+            false,
+            false
+        )
+        .to_string(),
         "provider_access_unavailable"
     );
 }
