@@ -1,6 +1,47 @@
 use super::*;
 
 #[test]
+fn concurrent_failures_keep_every_correlated_diagnostic() {
+    let temporary = tempfile::tempdir().unwrap();
+    let path = temporary.path().join(FILE_NAME);
+    const WRITERS: usize = 16;
+    let barrier = std::sync::Barrier::new(WRITERS);
+    std::thread::scope(|scope| {
+        for index in 0..WRITERS {
+            let path = &path;
+            let barrier = &barrier;
+            scope.spawn(move || {
+                let diagnostic = entry(ProviderDiagnosticContext::from_payload(
+                    Some(&format!("parallel-request-{index}")),
+                    &serde_json::Value::Null,
+                ));
+                barrier.wait();
+                write_at(path, &diagnostic).unwrap();
+            });
+        }
+    });
+    let text = std::fs::read_to_string(path).unwrap();
+    let entries = text
+        .lines()
+        .map(|line| serde_json::from_str::<serde_json::Value>(line).unwrap())
+        .collect::<Vec<_>>();
+    assert_eq!(
+        entries.len(),
+        WRITERS,
+        "atomic replacement must not lose concurrent entries"
+    );
+    for index in 0..WRITERS {
+        assert_eq!(
+            entries
+                .iter()
+                .filter(|entry| entry["request_id"] == format!("parallel-request-{index}"))
+                .count(),
+            1
+        );
+    }
+}
+
+#[test]
 fn diagnostic_redacts_credentials_in_retained_error_fields() {
     let temporary = tempfile::tempdir().unwrap();
     let path = temporary.path().join(FILE_NAME);

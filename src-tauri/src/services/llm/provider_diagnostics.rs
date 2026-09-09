@@ -9,6 +9,7 @@ pub(crate) use stream::record_stream_failure;
 const FILE_NAME: &str = "provider-errors.jsonl";
 const MAX_LOG_BYTES: usize = 64 * 1024;
 const MAX_IDENTIFIER_CHARS: usize = 128;
+static WRITE_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 #[derive(Serialize)]
 struct ProviderDiagnostic {
@@ -135,6 +136,10 @@ fn log_path() -> std::path::PathBuf {
 }
 
 fn write_at(path: &Path, entry: &impl Serialize) -> Result<(), String> {
+    // Atomic replacement alone loses entries when HTTP/stream failures overlap.
+    let _guard = WRITE_LOCK
+        .lock()
+        .map_err(|_| "diagnostic unavailable".to_string())?;
     let mut existing = bounded_existing(path)?;
     let mut line = serde_json::to_vec(entry).map_err(|_| "diagnostic unavailable".to_string())?;
     line.push(b'\n');
