@@ -153,6 +153,8 @@ pub fn safe_details(body: &str) -> SafeProviderDetails {
 
 fn safe_provider_name(value: &str) -> Option<String> {
     const MAX_PROVIDER_NAME_CHARS: usize = 128;
+    // Structured provider fields are untrusted too: reuse the shared secret filter.
+    let value = super::sanitize_log_body(value);
     let clipped: String = value.chars().take(MAX_PROVIDER_NAME_CHARS + 1).collect();
     let trimmed = clipped.trim();
     (!trimmed.is_empty()
@@ -174,6 +176,7 @@ fn json_field(document: Option<&serde_json::Value>, pointers: &[&str]) -> Option
             serde_json::Value::Number(number) => number.to_string(),
             _ => return None,
         };
+        let text = super::sanitize_log_body(&text);
         let clipped: String = text.chars().take(MAX_SAFE_FIELD_CHARS + 1).collect();
         (clipped.chars().count() <= MAX_SAFE_FIELD_CHARS
             && !clipped.is_empty()

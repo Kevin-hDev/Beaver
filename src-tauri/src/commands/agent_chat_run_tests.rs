@@ -12,7 +12,11 @@ use tokio_util::sync::CancellationToken;
 
 #[test]
 fn all_post_start_failures_use_the_same_rollback_boundary() {
-    let run = include_str!("agent_chat_run.rs");
+    // Structural guard only; the behavior is exercised by the rollback tests below.
+    let run: String = include_str!("agent_chat_run.rs")
+        .chars()
+        .filter(|character| !character.is_whitespace())
+        .collect();
     let spawn = include_str!("agent_chat_run_spawn.rs");
     assert!(run.matches("rollback(streams").count() >= 4);
     assert!(spawn.contains("rollback(streams, &session_id, &stream, &error)"));

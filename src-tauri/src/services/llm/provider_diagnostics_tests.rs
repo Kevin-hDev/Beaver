@@ -1,5 +1,26 @@
 use super::*;
 
+#[test]
+fn diagnostic_redacts_credentials_in_retained_error_fields() {
+    let temporary = tempfile::tempdir().unwrap();
+    let path = temporary.path().join(FILE_NAME);
+    let body = serde_json::json!({"error": {
+        "type": "sk-test-sentinel-type-12345678",
+        "code": "sk-test-sentinel-code-12345678",
+        "param": "sk-test-sentinel-param-12345678",
+        "metadata": {"provider_name": "sk-test-sentinel-provider-12345678"}
+    }})
+    .to_string();
+    let mut diagnostic = entry(ProviderDiagnosticContext::from_payload(
+        None,
+        &serde_json::Value::Null,
+    ));
+    diagnostic.details = super::super::provider_error::safe_details(&body);
+    write_at(&path, &diagnostic).unwrap();
+    let stored = std::fs::read_to_string(path).unwrap();
+    assert!(!stored.contains("sk-test-sentinel"));
+}
+
 fn entry(context: ProviderDiagnosticContext) -> ProviderDiagnostic {
     ProviderDiagnostic {
         timestamp: "safe".to_string(),
