@@ -12,7 +12,6 @@ async fn spawn(
     mut admission_rollback: super::agent_chat_turn::AdmissionRollback,
     target: super::agent_chat_target::ResolvedChatTarget,
     resolved_dir: super::agent_working_dir::ResolvedWorkingDir,
-    result: ChatStreamAdmission,
 ) -> Result<(), String> {
     let session_id = request.session_id.clone();
     let task_session = session_id.clone();
@@ -31,12 +30,7 @@ async fn spawn(
         Box::pin(async move {
             // No accepted event escapes a failed spawn. Later errors retain the
             // admitted message rather than invalidating the UI's retry identity.
-            admission_rollback.accept_execution();
-            let _ = emitter.send(StreamEvent::TurnAdmitted {
-                turn_id: result.turn_id,
-                user_message_id: result.user_message_id,
-                assistant_message_id: result.assistant_message_id,
-            });
+            let _ = emitter.send(admission_rollback.accept_execution_event());
             let stream_request_id = request_id.clone();
             let outcome = run_stream_task(StreamTaskParams {
                 on_event: emitter.clone(),

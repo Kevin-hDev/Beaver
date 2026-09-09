@@ -16,6 +16,7 @@ pub(crate) struct AdmissionRollback {
     execution_accepted: bool,
     turn_id: String,
     user_message_id: String,
+    assistant_message_id: String,
     before: crate::services::agent_local::types_session::AgentSession,
     kind: AdmittedTurnKind,
 }
@@ -26,6 +27,7 @@ impl AdmittedCurrentTurn {
             execution_accepted: false,
             turn_id: self.turn.turn_id.clone(),
             user_message_id: self.turn.user_message_id.clone(),
+            assistant_message_id: self.turn.assistant_message_id.clone(),
             before: self.before.clone(),
             kind: self.kind,
         }
@@ -33,8 +35,17 @@ impl AdmittedCurrentTurn {
 }
 
 impl AdmissionRollback {
-    pub(crate) fn accept_execution(&mut self) {
+    /// This is the single boundary where an admitted turn becomes durable:
+    /// publishing the UI event and retaining the user message must stay atomic.
+    pub(crate) fn accept_execution_event(
+        &mut self,
+    ) -> crate::services::agent_local::types_ollama::StreamEvent {
         self.execution_accepted = true;
+        crate::services::agent_local::types_ollama::StreamEvent::TurnAdmitted {
+            turn_id: self.turn_id.clone(),
+            user_message_id: self.user_message_id.clone(),
+            assistant_message_id: self.assistant_message_id.clone(),
+        }
     }
 }
 

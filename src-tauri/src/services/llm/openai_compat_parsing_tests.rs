@@ -424,6 +424,35 @@ fn openrouter_empty_efforts_use_the_provider_default_without_inventing_a_level()
 }
 
 #[test]
+fn openrouter_unknown_effort_keeps_the_model_on_provider_default() {
+    let body = json!({
+        "data": [{
+            "id": "future/model",
+            "supported_parameters": ["reasoning", "tools"],
+            "reasoning": {
+                "mandatory": true,
+                "supported_efforts": ["quantum"]
+            }
+        }]
+    });
+
+    let models = parse_models_list(&body, "openrouter").unwrap();
+    let model = models
+        .first()
+        .expect("the usable model must remain visible");
+    assert!(model.supports_thinking);
+    assert_eq!(model.reasoning_modes, ["auto"]);
+    assert_eq!(model.default_reasoning_mode.as_deref(), Some("auto"));
+    assert!(matches!(
+        model
+            .reasoning_contract
+            .as_ref()
+            .map(|contract| &contract.control),
+        Some(super::model_reasoning_contract::ReasoningControl::ProviderDefault)
+    ));
+}
+
+#[test]
 fn openrouter_documented_optional_reasoning_projects_a_toggle_without_efforts() {
     let body = json!({
         "data": [{

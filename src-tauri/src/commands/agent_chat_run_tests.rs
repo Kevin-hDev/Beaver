@@ -223,7 +223,17 @@ async fn accepted_execution_failure_keeps_the_user_message_resumable() {
     .await
     .unwrap();
     let mut rollback = admitted.rollback();
-    rollback.accept_execution();
+    let event = rollback.accept_execution_event();
+    assert!(matches!(
+        event,
+        crate::services::agent_local::types_ollama::StreamEvent::TurnAdmitted {
+            ref turn_id,
+            ref user_message_id,
+            ref assistant_message_id,
+        } if turn_id == &admitted.turn.turn_id
+            && user_message_id == &admitted.turn.user_message_id
+            && assistant_message_id == &admitted.turn.assistant_message_id
+    ));
     super::agent_chat_turn::rollback_current(&streams, &session.id, stream.generation, &rollback)
         .await
         .unwrap();

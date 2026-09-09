@@ -1312,6 +1312,8 @@
     "providerAgeConfirmationRequired": "このモデルを使用するには OpenRouter で年齢確認が必要です。openrouter.ai/settings/preferences で18歳以上であることを確認してから再試行してください。",
     "authFailed": "認証に失敗しました。API キーを確認してください",
     "modelCatalogUnavailable": "モデルカタログは一時的に利用できません。後でもう一度お試しください。",
+    "sessionInconsistent": "この会話は不整合な状態です。新しい会話を開いて続行してください。",
+    "modelInvalid": "このモデルは利用できなくなりました。別のモデルを選んで、もう一度お試しください。",
     "reasoningConfigurationInvalid": "この推論設定はモデルと互換性がありません。別の設定を選んで、もう一度お試しください。",
     "moonshotMembershipUnverified": "Moonshot は有効な Kimi Code サブスクリプションを確認できません。",
     "xaiSubscriptionOrCreditsRequired": "xAI は Grok サブスクリプションまたはクレジットが必要だと報告しています。",

@@ -189,9 +189,15 @@ mod tests {
         let cache = temporary.path().join("litellm-models.json");
         let registry = tokio::sync::RwLock::new(std::collections::HashMap::new());
         let healthy = build_json(100);
-        assert!(litellm_catalog_refresh::publish_catalog(&cache, &registry, &healthy).await);
+        litellm_catalog_refresh::publish_catalog(&cache, &registry, &healthy)
+            .await
+            .unwrap();
 
-        assert!(!litellm_catalog_refresh::publish_catalog(&cache, &registry, "broken").await);
+        let rejection = litellm_catalog_refresh::publish_catalog(&cache, &registry, "broken")
+            .await
+            .unwrap_err();
+        assert_eq!(rejection.reason(), "invalid_json");
+        assert_eq!(rejection.entries(), 0);
         assert_eq!(std::fs::read_to_string(&cache).unwrap(), healthy);
         let current = registry.read().await;
         assert_eq!(current.len(), 100);

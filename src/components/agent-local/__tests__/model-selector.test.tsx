@@ -110,6 +110,25 @@ describe("ModelSelector", () => {
     expect(container.querySelector(".ms-dropdown")).toBeNull();
   });
 
+  it("affiche le motif traduit d'un catalogue API indisponible", () => {
+    render(
+      <ModelSelector
+        groups={new Map()}
+        issues={new Map([["mistral", {
+          providerName: "Mistral",
+          code: "provider_access_unavailable",
+        }]])}
+        selectedModel=""
+        selectedProvider=""
+        onSelect={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("Select model"));
+    fireEvent.click(screen.getByText("Mistral"));
+    expect(screen.getByText("errors.providerAccessUnavailable")).toBeTruthy();
+  });
+
   it("affiche le nom officiel mais sélectionne l'identifiant technique", () => {
     const onSelect = vi.fn();
     groups = new Map([["moonshot-oauth", [model({

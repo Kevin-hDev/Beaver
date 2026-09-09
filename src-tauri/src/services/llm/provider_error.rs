@@ -11,7 +11,7 @@ mod attestation;
 pub(super) const MAX_RETRY_SECONDS: u64 = 86_400;
 
 // Catalog failures and stream diagnostics must accept the same safe delay.
-pub(super) fn retry_after_seconds(headers: &reqwest::header::HeaderMap) -> Option<u64> {
+pub(crate) fn retry_after_seconds(headers: &reqwest::header::HeaderMap) -> Option<u64> {
     headers
         .get(reqwest::header::RETRY_AFTER)
         .and_then(|value| value.to_str().ok())

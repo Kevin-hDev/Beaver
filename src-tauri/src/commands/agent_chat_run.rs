@@ -171,7 +171,6 @@ pub(crate) async fn start(
         admission_rollback,
         target,
         resolved_dir,
-        result.clone(),
     )
     .await?;
     Ok(result)

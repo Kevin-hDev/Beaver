@@ -2,12 +2,15 @@ import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { CaretDown, CaretRight } from "@/components/ui/icons";
 import type { AvailableModel } from "@/hooks/use-available-models";
+import type { ModelCatalogIssue } from "@/hooks/cloud-models";
+import { KNOWN_ERROR_KEYS } from "@/lib/agent-error-codes";
 import type { FavoriteModel } from "@/hooks/use-favorite-models";
 import { useLocalListNavigation, type LocalListNavItem } from "@/hooks/use-local-list-navigation";
 import { ModelSelectorItem } from "./model-selector-item";
 
 interface Props {
   groups: Map<string, AvailableModel[]>;
+  issues?: Map<string, ModelCatalogIssue>;
   favorites: FavoriteModel[];
   isFavorite: (provider: string, model: string) => boolean;
   onToggleFavorite: (provider: string, model: string) => void;
@@ -18,6 +21,7 @@ interface Props {
 
 export function ModelSelectorList({
   groups,
+  issues = new Map(),
   favorites,
   isFavorite,
   onToggleFavorite,
@@ -37,13 +41,17 @@ export function ModelSelectorList({
 
   const favModels = useMemo(() => favoriteModels(groups, favorites), [favorites, groups]);
 
-  const sortedGroups = useMemo(() => Array.from(groups.entries()), [groups]);
+  const sortedProviderIds = useMemo(
+    () => Array.from(new Set([...groups.keys(), ...issues.keys()])),
+    [groups, issues],
+  );
   const navItems = useMemo<LocalListNavItem[]>(() => {
     const items: LocalListNavItem[] = favModels.filter((m) => !m.disabled).map((m) => ({
       id: navModelId("fav", m.provider_id, m.id),
       onSelect: () => onSelect(m.id, m.provider_id),
     }));
-    for (const [providerId, models] of sortedGroups) {
+    for (const providerId of sortedProviderIds) {
+      const models = groups.get(providerId) ?? [];
       const isOpen = expanded.has(providerId);
       items.push({
         id: navProviderId(providerId),
@@ -62,12 +70,12 @@ export function ModelSelectorList({
       }
     }
     return items;
-  }, [expanded, favModels, onSelect, sortedGroups, toggle]);
+  }, [expanded, favModels, groups, onSelect, sortedProviderIds, toggle]);
 
   const selectedNavId = navItems.find((item) => item.id.endsWith(`:${selectedProvider}:${selectedModel}`))?.id ?? null;
   const { activate, getItemRef, isActive, listProps } = useLocalListNavigation({ items: navItems, selectedId: selectedNavId });
 
-  if (groups.size === 0 && favModels.length === 0) {
+  if (groups.size === 0 && issues.size === 0 && favModels.length === 0) {
     return <div className="ms-empty">{t("agentLocal.modelEmpty")}</div>;
   }
 
@@ -94,9 +102,11 @@ export function ModelSelectorList({
         </div>
       )}
 
-      {sortedGroups.map(([providerId, models]) => {
+      {sortedProviderIds.map((providerId) => {
+        const models = groups.get(providerId) ?? [];
+        const issue = issues.get(providerId);
         const isOpen = expanded.has(providerId);
-        const name = models[0]?.provider_name ?? providerId;
+        const name = models[0]?.provider_name ?? issue?.providerName ?? providerId;
         const freeCount = models.filter((m) => m.is_free || m.is_local).length;
         const providerNavId = navProviderId(providerId);
         return (
@@ -125,6 +135,13 @@ export function ModelSelectorList({
             </div>
             <div className={`ms-provider-body ${isOpen ? "open" : ""}`}>
               <div className="ms-provider-body-inner">
+                {issue && (
+                  <div className="menu-row ms-item ms-item-disabled">
+                    <span className="ms-item-name">
+                      {t(KNOWN_ERROR_KEYS[issue.code] ?? "errors.modelCatalogUnavailable")}
+                    </span>
+                  </div>
+                )}
                 {sortedModels(models).map((m) => (
                   <ModelSelectorItem
                     key={`${m.provider_id}:${m.id}`}

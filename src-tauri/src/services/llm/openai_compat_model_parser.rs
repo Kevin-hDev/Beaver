@@ -18,6 +18,7 @@ pub(super) fn parse_models_list(
     let mut models = Vec::with_capacity(data.len().min(limit));
     let mut raw_ids = HashSet::with_capacity(data.len().min(limit));
     let mut invalid_ids = 0usize;
+    let mut degraded_reasoning_contracts = 0usize;
     for model in data.iter().take(limit) {
         let raw_id = model["id"].as_str();
         if !raw_id.is_some_and(super::runtime_models::valid_model_id) {
@@ -27,17 +28,26 @@ pub(super) fn parse_models_list(
         if provider_id == "openrouter" && raw_id.is_some_and(|id| !raw_ids.insert(id)) {
             return Err(invalid_catalog(provider_id));
         }
-        if let Some(model) = parse_model(model, provider_id) {
+        if let Some(model) = parse_model(model, provider_id, &mut degraded_reasoning_contracts) {
             models.push(model);
         }
     }
     if invalid_ids > 0 {
         ::log::warn!("[model catalog] ignored invalid identifiers count={invalid_ids}");
     }
+    if degraded_reasoning_contracts > 0 {
+        ::log::warn!(
+            "event=openrouter_reasoning_metadata_degraded reason=unknown_contract count={degraded_reasoning_contracts}"
+        );
+    }
     Ok(models)
 }
 
-fn parse_model(model: &Value, provider_id: &str) -> Option<ModelInfo> {
+fn parse_model(
+    model: &Value,
+    provider_id: &str,
+    degraded_reasoning_contracts: &mut usize,
+) -> Option<ModelInfo> {
     let id = model["id"].as_str()?;
     let id = super::route_profile::catalog_model_id(provider_id, id);
     if !super::runtime_models::valid_model_id(id) {
@@ -101,13 +111,25 @@ fn parse_model(model: &Value, provider_id: &str) -> Option<ModelInfo> {
     // Le catalogue dynamique reste vide tant qu'il ne publie pas ces valeurs.
     let reasoning_value = &model["reasoning"];
     let reasoning_metadata = if authoritative {
-        super::openrouter_model_metadata::reasoning(reasoning_value)
+        match super::openrouter_model_metadata::reasoning(reasoning_value) {
+            Some(contract) => Some(contract),
+            None if !reasoning_value.is_null() => {
+                // A new upstream control must not hide an otherwise usable model.
+                // ProviderDefault sends no invented effort and keeps the route fail-closed.
+                *degraded_reasoning_contracts = degraded_reasoning_contracts.saturating_add(1);
+                Some(super::model_reasoning_contract::ModelReasoningContract {
+                    mandatory: None,
+                    default_enabled: None,
+                    supports_max_tokens: None,
+                    default_effort: None,
+                    control: super::model_reasoning_contract::ReasoningControl::ProviderDefault,
+                })
+            }
+            None => None,
+        }
     } else {
         None
     };
-    if authoritative && !reasoning_value.is_null() && reasoning_metadata.is_none() {
-        return None;
-    }
     let (reasoning_modes, default_reasoning_mode) = reasoning_metadata
         .as_ref()
         .map(super::model_reasoning_contract::ModelReasoningContract::legacy_projection)

@@ -348,7 +348,7 @@ async fn openrouter_missing_reasoning_metadata_keeps_historical_capabilities() {
 }
 
 #[tokio::test]
-async fn invalid_openrouter_reasoning_never_reactivates_embedded_efforts() {
+async fn unknown_openrouter_reasoning_keeps_only_the_provider_default() {
     let _guard = super::runtime_models::test_mutation_lock().await;
     let parsed = super::openai_compat_parsing::parse_models_list(
         &serde_json::json!({"data":[{
@@ -363,8 +363,15 @@ async fn invalid_openrouter_reasoning_never_reactivates_embedded_efforts() {
         .await
         .unwrap();
 
-    assert!(models.is_empty());
-    assert!(super::runtime_models::lookup("openrouter", "z-ai/glm-5.3-flash").is_none());
+    assert_eq!(models.len(), 1);
+    assert_eq!(models[0].reasoning_modes, ["auto"]);
+    assert_eq!(models[0].default_reasoning_mode.as_deref(), Some("auto"));
+    let runtime = super::runtime_models::lookup("openrouter", "z-ai/glm-5.3-flash").unwrap();
+    assert_eq!(runtime.reasoning_modes, ["auto"]);
+    assert_eq!(
+        runtime.reasoning_contract.unwrap().control,
+        super::model_reasoning_contract::ReasoningControl::ProviderDefault
+    );
 }
 
 #[tokio::test]
@@ -401,7 +408,7 @@ async fn explicit_remote_contract_and_catalog_projection_cannot_diverge() {
 }
 
 #[tokio::test]
-async fn invalid_reasoning_shapes_never_become_absent_metadata() {
+async fn invalid_reasoning_shapes_degrade_to_provider_default() {
     let _guard = super::runtime_models::test_mutation_lock().await;
     for reasoning in [
         serde_json::json!(false),
@@ -416,7 +423,12 @@ async fn invalid_reasoning_shapes_never_become_absent_metadata() {
         let models = super::model_catalog::enrich_models("openrouter", parsed, false)
             .await
             .unwrap();
-        assert!(models.is_empty());
+        assert_eq!(models.len(), 1);
+        assert_eq!(models[0].reasoning_modes, ["auto"]);
+        assert_eq!(
+            models[0].reasoning_contract.as_ref().unwrap().control,
+            super::model_reasoning_contract::ReasoningControl::ProviderDefault
+        );
     }
 }
 

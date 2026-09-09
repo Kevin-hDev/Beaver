@@ -1,5 +1,5 @@
 use super::litellm_catalog::{
-    get_lock, is_body_size_ok, is_trusted_host, parse_catalog, MAX_BODY_BYTES,
+    get_lock, is_body_size_ok, is_trusted_host, CatalogParseError, MAX_BODY_BYTES,
 };
 use futures_util::StreamExt;
 use std::io::Read;
@@ -54,7 +54,29 @@ pub async fn refresh() {
         Some(body) => body,
         None => return,
     };
-    let _ = publish_catalog(&cached, get_lock(), &body).await;
+    if let Err(rejection) = publish_catalog(&cached, get_lock(), &body).await {
+        log::warn!(
+            "event=litellm_refresh_rejected reason={} entries={}",
+            rejection.reason(),
+            rejection.entries()
+        );
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) struct CatalogRefreshRejection {
+    reason: &'static str,
+    entries: usize,
+}
+
+impl CatalogRefreshRejection {
+    pub(super) const fn reason(self) -> &'static str {
+        self.reason
+    }
+
+    pub(super) const fn entries(self) -> usize {
+        self.entries
+    }
 }
 
 pub(super) async fn publish_catalog(
@@ -63,23 +85,35 @@ pub(super) async fn publish_catalog(
         std::collections::HashMap<String, super::litellm_catalog::ModelEntry>,
     >,
     body: &str,
-) -> bool {
-    let Ok(catalog) = parse_catalog(body) else {
-        return false;
-    };
+) -> Result<(), CatalogRefreshRejection> {
+    let catalog = super::litellm_catalog_parser::parse_catalog_detailed(body).map_err(
+        |(reason, entries): (CatalogParseError, usize)| CatalogRefreshRejection {
+            reason: reason.as_str(),
+            entries,
+        },
+    )?;
     if catalog.len() < 100 {
-        return false;
+        return Err(CatalogRefreshRejection {
+            reason: "too_few_entries",
+            entries: catalog.len(),
+        });
     }
     if let Some(parent) = cache.parent() {
         if std::fs::create_dir_all(parent).is_err() {
-            return false;
+            return Err(CatalogRefreshRejection {
+                reason: "cache_directory_unavailable",
+                entries: catalog.len(),
+            });
         }
     }
     if crate::services::private_store::atomic_write(cache, body.as_bytes()).is_err() {
-        return false;
+        return Err(CatalogRefreshRejection {
+            reason: "cache_write_failed",
+            entries: catalog.len(),
+        });
     }
     *registry.write().await = catalog;
-    true
+    Ok(())
 }
 
 async fn read_body(response: reqwest::Response) -> Option<String> {

@@ -6,6 +6,7 @@ import { normalizeReasoningMode, reasoningModeOptions } from "@/lib/reasoning-mo
 import {
   mapOAuthModels, mapOAuthResponse, useAvailableModels, withoutInteractiveOnlyModels,
 } from "../use-available-models";
+import { mapCloudModelSettlements } from "../cloud-models";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 vi.mock("@tauri-apps/api/event", () => ({
@@ -17,6 +18,32 @@ beforeEach(() => {
 });
 
 describe("OAuth models", () => {
+  it("conserve un refus sûr du catalogue API sans exposer le détail technique", () => {
+    const specs = [{
+      id: "mistral",
+      display_name: "Mistral",
+      category: "llm" as const,
+      signup_url: "https://example.invalid",
+      connection_kind: "api_key" as const,
+    }];
+    const result = mapCloudModelSettlements(specs, [{
+      status: "rejected",
+      reason: "provider_access_unavailable",
+    }]);
+
+    expect(result.groups.size).toBe(0);
+    expect(result.issues.get("mistral")).toEqual({
+      providerName: "Mistral",
+      code: "provider_access_unavailable",
+    });
+
+    const unknown = mapCloudModelSettlements(specs, [{
+      status: "rejected",
+      reason: "private upstream response",
+    }]);
+    expect(unknown.issues.get("mistral")?.code).toBe("model_catalog_unavailable");
+  });
+
   it("accepte un provider futur uniquement depuis ses métadonnées publiques", () => {
     const groups = mapOAuthModels([{
       id: "model-v1",

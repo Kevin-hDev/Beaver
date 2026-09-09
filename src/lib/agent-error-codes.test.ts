@@ -66,6 +66,16 @@ describe("KNOWN_ERROR_KEYS", () => {
       "Le réglage de raisonnement n’est pas compatible avec ce modèle. Choisis un autre réglage puis réessaie.",
     );
   });
+
+  it.each([
+    ["session_inconsistent", "errors.sessionInconsistent"],
+    ["model_invalid", "errors.modelInvalid"],
+  ])("restaure le motif précis %s dans les sept langues", (code, key) => {
+    expect(KNOWN_ERROR_KEYS[code]).toBe(key);
+    for (const catalog of catalogs) {
+      expect(readTranslation(catalog, key)).toEqual(expect.any(String));
+    }
+  });
 });
 
 function readTranslation(catalog: Record<string, unknown>, path: string): unknown {

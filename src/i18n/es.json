@@ -1317,6 +1317,8 @@
     "providerAgeConfirmationRequired": "OpenRouter exige confirmar la mayoría de edad para este modelo. Confirma que tienes 18 años o más en openrouter.ai/settings/preferences y vuelve a intentarlo.",
     "authFailed": "Autenticación fallida, verifica tu clave API",
     "modelCatalogUnavailable": "El catálogo de modelos no está disponible temporalmente. Inténtalo de nuevo más tarde.",
+    "sessionInconsistent": "Esta conversación se encuentra en un estado incoherente. Abre una conversación nueva para continuar.",
+    "modelInvalid": "Este modelo ya no está disponible. Elige otro modelo e inténtalo de nuevo.",
     "reasoningConfigurationInvalid": "El ajuste de razonamiento no es compatible con este modelo. Elige otro ajuste e inténtalo de nuevo.",
     "moonshotMembershipUnverified": "Moonshot no puede confirmar una suscripción activa a Kimi Code.",
     "xaiSubscriptionOrCreditsRequired": "xAI indica que se requiere una suscripción a Grok o créditos.",

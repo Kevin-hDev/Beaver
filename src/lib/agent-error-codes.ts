@@ -4,6 +4,8 @@ export const KNOWN_ERROR_KEYS: Readonly<Record<string, string>> = {
   rate_limit: "errors.rateLimited",
   auth_failed: "errors.authFailed",
   model_catalog_unavailable: "errors.modelCatalogUnavailable",
+  session_inconsistent: "errors.sessionInconsistent",
+  model_invalid: "errors.modelInvalid",
   moonshot_membership_unverified: "errors.moonshotMembershipUnverified",
   xai_subscription_or_credits_required: "errors.xaiSubscriptionOrCreditsRequired",
   provider_access_unavailable: "errors.providerAccessUnavailable",

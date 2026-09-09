@@ -1,4 +1,18 @@
 use super::xai_catalog_wire::{parse_catalog, XaiBackend};
+
+#[test]
+fn catalog_retry_after_uses_the_shared_bounded_contract() {
+    for (header, expected) in [
+        ("7", Some(7)),
+        ("+7", None),
+        ("86400", Some(86_400)),
+        ("86401", None),
+    ] {
+        let mut headers = reqwest::header::HeaderMap::new();
+        headers.insert(reqwest::header::RETRY_AFTER, header.parse().unwrap());
+        assert_eq!(super::xai_catalog::catalog_retry_after(&headers), expected);
+    }
+}
 use serde_json::json;
 
 #[test]

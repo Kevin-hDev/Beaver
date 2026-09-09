@@ -1,3 +1,4 @@
+use std::cell::Cell;
 use std::collections::{HashMap, HashSet};
 
 use serde::de::{Error as _, MapAccess, Visitor};
@@ -19,20 +20,42 @@ pub(crate) enum CatalogParseError {
     InvalidEntry,
 }
 
+impl CatalogParseError {
+    pub(crate) const fn as_str(self) -> &'static str {
+        match self {
+            Self::InvalidJson => "invalid_json",
+            Self::TooManyEntries => "too_many_entries",
+            Self::DuplicateId => "duplicate_id",
+            Self::InvalidEntry => "invalid_entry",
+        }
+    }
+}
+
 pub(crate) fn parse_catalog(json: &str) -> Result<HashMap<String, ModelEntry>, CatalogParseError> {
+    parse_catalog_detailed(json).map_err(|(reason, _)| reason)
+}
+
+pub(crate) fn parse_catalog_detailed(
+    json: &str,
+) -> Result<HashMap<String, ModelEntry>, (CatalogParseError, usize)> {
+    let input_count = Cell::new(0_usize);
     let mut deserializer = serde_json::Deserializer::from_str(json);
     let result = deserializer
-        .deserialize_map(CatalogVisitor)
-        .map_err(classify_error)?;
+        .deserialize_map(CatalogVisitor {
+            input_count: &input_count,
+        })
+        .map_err(|error| (classify_error(error), input_count.get()))?;
     deserializer
         .end()
-        .map_err(|_| CatalogParseError::InvalidJson)?;
+        .map_err(|_| (CatalogParseError::InvalidJson, input_count.get()))?;
     Ok(result)
 }
 
-struct CatalogVisitor;
+struct CatalogVisitor<'a> {
+    input_count: &'a Cell<usize>,
+}
 
-impl<'de> Visitor<'de> for CatalogVisitor {
+impl<'de> Visitor<'de> for CatalogVisitor<'_> {
     type Value = HashMap<String, ModelEntry>;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -49,9 +72,9 @@ impl<'de> Visitor<'de> for CatalogVisitor {
             .min(MAX_LITELLM_CATALOG_ENTRIES);
         let mut result = HashMap::with_capacity(capacity);
         let mut seen = HashSet::with_capacity(capacity);
-        let mut input_count = 0_usize;
         while let Some(key) = map.next_key::<String>()? {
-            input_count = input_count.saturating_add(1);
+            let input_count = self.input_count.get().saturating_add(1);
+            self.input_count.set(input_count);
             if input_count > MAX_LITELLM_CATALOG_ENTRIES {
                 return Err(A::Error::custom(TOO_MANY_MARKER));
             }
