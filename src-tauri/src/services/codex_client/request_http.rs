@@ -28,6 +28,7 @@ pub(super) async fn post(
     session_key: Option<&str>,
     model: &str,
     tool_count: usize,
+    request_id: Option<&str>,
     deadline: RequestDeadline,
 ) -> Result<Response, String> {
     #[cfg(test)]
@@ -54,6 +55,7 @@ pub(super) async fn post(
         session_key,
         model,
         tool_count,
+        request_id,
         |rejected_access| async move {
             token::recover_after_unauthorized(rejected_access.as_str()).await
         },
@@ -74,6 +76,7 @@ pub(super) async fn post_with_refresh<F, Fut>(
     session_key: Option<&str>,
     model: &str,
     tool_count: usize,
+    request_id: Option<&str>,
     refresh: F,
 ) -> Result<Response, String>
 where
@@ -105,12 +108,20 @@ where
             session_key,
         )
         .await?;
-        return http_error::require_success(response, model, body.len(), tool_count).await;
+        return http_error::require_success(
+            response,
+            model,
+            body.len(),
+            tool_count,
+            request_id,
+            body,
+        )
+        .await;
     }
     drop(credentials);
     #[cfg(test)]
     let response = response.into_inner();
-    http_error::require_success(response, model, body.len(), tool_count).await
+    http_error::require_success(response, model, body.len(), tool_count, request_id, body).await
 }
 
 pub(super) async fn get_models() -> Result<Response, String> {

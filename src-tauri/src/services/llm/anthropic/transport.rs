@@ -141,7 +141,15 @@ async fn post(
     if response.status().is_success() {
         return Ok(response);
     }
-    classify_response(response, &route, config, request_bytes).await
+    classify_response(
+        response,
+        &route,
+        config,
+        request_bytes,
+        request_id,
+        &prepared.payload,
+    )
+    .await
 }
 
 async fn classify_response(
@@ -149,6 +157,8 @@ async fn classify_response(
     route: &crate::services::llm::route::LlmRoute,
     config: &RequestConfig<'_>,
     request_bytes: usize,
+    request_id: Option<&str>,
+    payload: &serde_json::Value,
 ) -> Result<reqwest::Response, RequestError> {
     let status = response.status();
     let has_retry_after = response.headers().contains_key("retry-after");
@@ -168,6 +178,9 @@ async fn classify_response(
         crate::services::llm::provider_error::safe_details(&body),
         request_bytes,
         config.tools.len(),
+        crate::services::llm::provider_diagnostics::ProviderDiagnosticContext::from_payload(
+            request_id, payload,
+        ),
     );
     ::log::warn!("[anthropic messages] HTTP {status} code={code}");
     Err(crate::services::llm::stream_http::classify_error(

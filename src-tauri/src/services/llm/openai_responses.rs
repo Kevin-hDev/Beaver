@@ -132,6 +132,7 @@ pub(super) async fn post(
         details,
         request_bytes,
         config.tools.len(),
+        super::provider_diagnostics::ProviderDiagnosticContext::from_payload(request_id, &body),
     );
     // Structured diagnostics above own the bounded details; the general log
     // must not carry values derived from credentials, sessions or response bodies.

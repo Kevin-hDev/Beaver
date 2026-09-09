@@ -9,6 +9,8 @@ pub async fn require_success(
     model: &str,
     request_bytes: usize,
     tool_count: usize,
+    request_id: Option<&str>,
+    serialized_request: &str,
 ) -> Result<Response, String> {
     let status = response.status();
     if status.is_success() {
@@ -23,6 +25,10 @@ pub async fn require_success(
         crate::services::llm::provider_error::safe_details(&body),
         request_bytes,
         tool_count,
+        crate::services::llm::provider_diagnostics::ProviderDiagnosticContext::from_serialized(
+            request_id,
+            serialized_request,
+        ),
     );
     let safe_code = safe_status_code(status);
     ::log::warn!("[codex stream] HTTP {status} code={safe_code}");

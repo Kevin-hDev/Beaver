@@ -63,8 +63,14 @@ pub(super) async fn stream_chat(
                 &prepared.replayed,
             )
             .await;
-            let response =
-                post_responses(catalog_model, &prepared.payload, request.purpose).await?;
+            let response = post_responses(
+                catalog_model,
+                &prepared.payload,
+                request.purpose,
+                Some(request_id),
+                request.tools.len(),
+            )
+            .await?;
             crate::services::codex_client::stream::consume_external_responses_sse(
                 on_event,
                 response,
@@ -135,6 +141,8 @@ async fn post_responses(
     model: &XaiCatalogModel,
     payload: &serde_json::Value,
     purpose: super::request_purpose::RequestPurpose,
+    request_id: Option<&str>,
+    tool_count: usize,
 ) -> Result<reqwest::Response, String> {
     let route = super::route::resolve("xai-oauth")
         .ok_or_else(|| "provider_configuration_invalid".to_string())?;
@@ -168,10 +176,22 @@ async fn post_responses(
     }
     let status = response.status().as_u16();
     let has_retry_after = response.headers().contains_key("retry-after");
+    let request_bytes = serde_json::to_vec(payload)
+        .map(zeroize::Zeroizing::new)
+        .map_or(0, |bytes| bytes.len());
     let body = read_bounded(response, PROVIDER_ERROR_LIMIT)
         .await
-        .map(|bytes| String::from_utf8_lossy(&bytes).into_owned())
+        .map(|bytes| zeroize::Zeroizing::new(String::from_utf8_lossy(&bytes).into_owned()))
         .unwrap_or_default();
+    super::provider_diagnostics::record_http_failure(
+        "xai-oauth",
+        &model.id,
+        status,
+        super::provider_error::safe_details(&body),
+        request_bytes,
+        tool_count,
+        super::provider_diagnostics::ProviderDiagnosticContext::from_payload(request_id, payload),
+    );
     Err(classify_status(route.error_policy, status, &body, has_retry_after).to_string())
 }
 

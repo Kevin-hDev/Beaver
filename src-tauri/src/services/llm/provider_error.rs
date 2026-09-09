@@ -28,6 +28,8 @@ pub struct SafeProviderDetails {
     pub error_code: Option<String>,
     pub error_param: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub upstream_provider: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub quota: Option<quota::QuotaDetails>,
 }
 
@@ -141,8 +143,26 @@ pub fn safe_details(body: &str) -> SafeProviderDetails {
         error_type: json_field(document, &["/error/type", "/type", "/error/status"]),
         error_code: json_field(document, &["/error/code", "/code"]),
         error_param: json_field(document, &["/error/param", "/param"]),
+        upstream_provider: document
+            .and_then(|value| value.pointer("/error/metadata/provider_name"))
+            .and_then(serde_json::Value::as_str)
+            .and_then(safe_provider_name),
         quota: quota::extract(document),
     }
+}
+
+fn safe_provider_name(value: &str) -> Option<String> {
+    const MAX_PROVIDER_NAME_CHARS: usize = 128;
+    let clipped: String = value.chars().take(MAX_PROVIDER_NAME_CHARS + 1).collect();
+    let trimmed = clipped.trim();
+    (!trimmed.is_empty()
+        && trimmed.chars().count() <= MAX_PROVIDER_NAME_CHARS
+        && trimmed.chars().all(|character| {
+            character.is_alphanumeric()
+                || character == ' '
+                || matches!(character, '_' | '-' | '.' | '/' | '(' | ')' | '&')
+        }))
+    .then(|| trimmed.to_string())
 }
 
 fn json_field(document: Option<&serde_json::Value>, pointers: &[&str]) -> Option<String> {

@@ -178,6 +178,9 @@ async fn post_chat_request_with_timeout_and_policy(
             super::provider_error::safe_details(&body),
             request_bytes,
             cfg.tools.len(),
+            super::provider_diagnostics::ProviderDiagnosticContext::from_payload(
+                request_id, &payload,
+            ),
         );
         ::log::warn!("[llm stream] HTTP {status} code={log_code}");
         return Err(classify_error(

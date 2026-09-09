@@ -175,6 +175,20 @@ fn safe_details_keep_only_whitelisted_fields() {
 }
 
 #[test]
+fn openrouter_details_keep_provider_name_but_never_raw_upstream_body() {
+    let details = safe_details(
+        r#"{"error":{"metadata":{"provider_name":"Google AI Studio","raw":"Bearer secret-sentinel upstream body"}}}"#,
+    );
+    let value = serde_json::to_value(details).unwrap();
+
+    assert_eq!(value["upstream_provider"], "Google AI Studio");
+    let serialized = value.to_string();
+    assert!(!serialized.contains("secret-sentinel"));
+    assert!(!serialized.contains("upstream body"));
+    assert!(!serialized.contains("raw"));
+}
+
+#[test]
 fn safe_details_extract_google_status_from_single_error_envelopes() {
     let body = r#"{"error":{"code":429,"status":"RESOURCE_EXHAUSTED","message":"private prompt"}}"#;
     for envelope in [body.to_string(), format!("[{body}]")] {

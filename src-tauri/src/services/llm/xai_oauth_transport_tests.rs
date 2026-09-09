@@ -230,6 +230,20 @@ fn resource_exhausted_without_retry_after_is_not_a_retryable_rate_limit() {
 }
 
 #[test]
+fn responses_http_failures_use_the_bounded_common_diagnostic() {
+    let source = include_str!("xai_oauth_transport.rs");
+    let responses = source
+        .split_once("async fn post_responses")
+        .expect("Responses transport boundary")
+        .1;
+
+    assert!(responses.contains("read_bounded(response, PROVIDER_ERROR_LIMIT)"));
+    assert!(responses.contains("provider_diagnostics::record_http_failure("));
+    assert!(responses.contains("ProviderDiagnosticContext::from_payload(request_id, payload)"));
+    assert!(responses.contains("zeroize::Zeroizing::new"));
+}
+
+#[test]
 fn oauth_responses_replays_local_items_without_exposing_a_public_xai_route() {
     let target = fixture_target("xai-oauth-scope");
     let assistant = ChatMessage::assistant(
