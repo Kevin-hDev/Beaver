@@ -2,8 +2,8 @@
 
 **Emplacement site** — Agent › Skills (le mockup les regroupe avec la mémoire ; ils méritent leur page)
 **Répond à** — « Comment j'apprends à l'agent une procédure qu'il doit suivre, sans la répéter à chaque fois ? »
-**Sources** — `src-tauri/src/services/agent_local/skill_catalog.rs` (lignes 8-10, 106-118), `skill_parser.rs` (lignes 4-5, 28-64), `tool_skill_loader.rs` (lignes 4-5, 12-27), `src-tauri/src/services/agent_import/` (skills importés)
-**Vérification** — Vérifié dans le code : format du fichier, noms acceptés, limites, tri, sources
+**Sources** — `src-tauri/src/services/agent_local/skill_catalog.rs` (lignes 8-9, 17-42, 141-165), `skill_parser.rs` (lignes 7-8), `skill_limits.rs`, `src-tauri/src/services/skill_manifest_policy.rs` (ligne 3), `tool_skill_loader.rs` (lignes 4-5, 19-27), `models/agent_turn_contract.rs` (ligne 12), `subagent_tool_profile.rs` (lignes 46-48), `src/hooks/use-active-skills.ts`, `src/components/agent-local/slash-autocomplete.tsx`, `src-tauri/src/services/agent_import/` (skills importés)
+**Vérification** — Vérifié dans le code, revérifié le 9 septembre 2026 : format du fichier, noms acceptés, limites, tri, sources, invocation par commande
 
 ---
 
@@ -74,11 +74,23 @@ D'où l'importance de la description : c'est le seul élément sur lequel l'agen
 
 L'outil `load_skill` appartient au groupe **Skills**, actif par défaut.
 
+**Vous pouvez aussi appeler un skill vous-même.** Chaque skill reçoit une **commande** construite depuis sa source et son nom. Dans la zone de saisie, taper `/` ouvre une liste d'autocomplétion des skills disponibles ; en choisir un insère sa commande dans le message.
+
+- Un skill **local** s'invoque par `/nom-du-skill`.
+- Un skill **importé** s'invoque par `/source:nom`.
+- Quand deux skills aboutiraient à la même commande, un suffixe tiré de leur identifiant les distingue — les commandes sont rendues uniques après le tri. Les identifiants, eux, restent distincts en toutes circonstances puisqu'ils intègrent la source.
+
+**Les sous-agents n'y ont presque pas accès** : seul un sous-agent de type **codeur** reçoit `load_skill`, et seulement si le groupe Skills est activé. Un sous-agent explorateur n'a jamais accès aux skills. Voir `05-outils/sous-agents-outils.md`.
+
 ### 5. Les skills importés
 
 Les skills reprises d'un autre assistant apparaissent dans le même catalogue, avec l'indication de leur **source d'origine**.
 
 Les skills sont triés par nom, sans distinction de casse.
+
+**Une troisième source existe, invisible dans le catalogue : les skills d'extension.** Leur identifiant est préfixé par `extension:`, et ils sont **délibérément retirés du catalogue global** — le code le dit sans ambiguïté : cet espace de noms est autorisé session par session et ne doit jamais entrer dans le catalogue global. Ils ne se comptent donc pas dans les 2 048 skills locaux et n'apparaissent pas dans la liste permanente.
+
+Sans conséquence directe aujourd'hui pour qui n'installe pas d'extension, mais la page doit dire que le catalogue affiché n'est pas la totalité des skills que l'agent peut charger.
 
 ### 6. Les limites
 
@@ -111,6 +123,9 @@ Conseils, pas description :
 **Encadré « La description décide de tout »**
 > L'agent choisit de charger un skill à partir de sa description seule, limitée à 250 caractères. Précisez ce que fait le skill **et quand l'employer** : une description vague donne un skill qui ne se déclenche jamais.
 
+**Encadré « Appeler un skill soi-même »**
+> Tapez `/` dans la zone de saisie : la liste des skills disponibles s'ouvre, et en choisir un insère sa commande dans votre message. Un skill local répond à `/nom-du-skill`, un skill importé à `/source:nom`.
+
 **Encadré « Skill ou AGENTS.md ? »**
 > Ce qui doit toujours s'appliquer va dans `AGENTS.md`. Ce qui ne sert que dans certaines situations va dans un skill : il n'occupe du contexte que lorsqu'il est chargé.
 
@@ -127,6 +142,8 @@ Conseils, pas description :
 | « Identifiant de skill invalide » | Identifiant contenant `..`, `/` ou `\` | Protection volontaire |
 | Une partie du skill semble ignorée | Fichier au-delà de 256 Ko | Le scinder en plusieurs skills |
 | Des skills inconnus apparaissent | Reprises lors de l'import d'un autre assistant | Leur source est indiquée dans le catalogue |
+| La commande d'un skill porte un suffixe illisible | Deux skills aboutissaient à la même commande | Normal : le suffixe les distingue ; renommer l'un des deux pour retrouver une commande courte |
+| Un sous-agent n'utilise aucun skill | Seul le codeur y a droit, et seulement si le groupe Skills est activé | Vérifier le groupe Skills, ou confier la tâche à l'agent principal |
 
 ---
 
@@ -143,8 +160,7 @@ Conseils, pas description :
 ## Points à confirmer
 
 - **Les skills sont-ils gérables depuis l'interface**, ou seulement en déposant des dossiers ? Détermine la forme de la page : procédure guidée, ou mode d'emploi de fichiers.
-- **Le champ `command` associé à chaque skill.** Le code en construit un par skill, à partir de la source et du nom. Vérifier s'il correspond à une façon de l'invoquer explicitement — ce serait une fonctionnalité à documenter.
 - **Le rechargement à chaud.** Un événement de changement des skills existe dans la surveillance de fichiers. Confirmer qu'ajouter un dossier est pris en compte sans redémarrer.
-- **Le comportement en cas de noms identiques** entre un skill local et un skill importé.
 - **Un skill peut-il en charger un autre ?** Non vérifié.
-- **L'accès des sous-agents aux skills.** Le profil d'outils d'un sous-agent mentionne un indicateur d'activation des skills : vérifier lesquels y ont droit.
+- **L'aspect de la liste d'autocomplétion** ouverte par `/` : ce qu'elle affiche pour chaque skill, et le comportement quand aucun skill ne correspond. Non relevé à l'écran.
+- **Les skills d'extension** sont autorisés session par session. Le mécanisme d'autorisation lui-même — qui l'accorde, à quel moment, ce que voit l'utilisateur — n'a pas été lu. À traiter avec la section Extensions.

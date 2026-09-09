@@ -150,10 +150,25 @@ are licensed under
 
 Copyright (c) Fonticons, Inc.
 
+### Bootstrap Icons
+
+The microphone asset (`src/assets/bi--mic.svg`), selected for the voice dictation
+button, is `bi:mic` from [Bootstrap Icons](https://icons.getbootstrap.com/icons/mic/),
+provided through [Iconify](https://icon-sets.iconify.design/bi/mic/).
+
+Copyright (c) 2019-2024 The Bootstrap Authors
+
+Licensed under the [MIT License](https://github.com/twbs/icons/blob/main/LICENSE),
+whose permission notice is reproduced below.
+
+Changes made: none; the supplied SVG is preserved byte for byte, including its
+16 × 16 viewBox, paths and `currentColor` fill. The asset is reserved for the
+planned dictation interface; this notice does not imply that interface is implemented.
+
 ### MIT License
 
-Applies to teenyicons, Phosphor Icons, Hugeicons, Famicons, Heroicons and
-Tabler Icons above.
+Applies to teenyicons, Phosphor Icons, Hugeicons, Famicons, Heroicons,
+Tabler Icons and Bootstrap Icons above.
 
 Changes made to the Hugeicons, Famicons, Heroicons, Streamline, Font Awesome
 and Tabler icons: each SVG was converted to a React component and its colour

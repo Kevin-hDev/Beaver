@@ -2,8 +2,8 @@
 
 **Emplacement site** — Démarrage › Mise à jour (ou Référence › Mises à jour)
 **Répond à** — « Comment Beaver se met à jour, qu'est-ce qui est vérifié, et que faire si ça casse ? »
-**Sources** — `CROSS-PLATFORM.md` (lignes 3-58), `src-tauri/src/commands/app_update.rs`, `app_update_install.rs`, `app_update_manifest.rs`, `app_update_source.rs`, `app_update_notes.rs`, `services/app_update_helper.rs`, `services/update_health.rs`, `src/hooks/use-update-checker.ts`, `src/components/layout/update-notifications.tsx`
-**Vérification** — Issu de `CROSS-PLATFORM.md`, recoupé avec les noms de fichiers présents dans le dépôt ; le détail du processus n'a pas été relu ligne à ligne
+**Sources** — `CROSS-PLATFORM.md` (lignes 3-58), `src-tauri/src/commands/app_update.rs`, `app_update_install.rs`, `app_update_manifest.rs`, `app_update_source.rs`, `app_update_notes.rs`, `app_update_assets.rs`, `app_update_download.rs`, `app_update_release.rs`, `app_update_source_validation.rs`, `services/app_update_helper.rs`, `services/update_health.rs`, `services/update_handoff.rs`, `src/hooks/use-update-checker.ts:13` et `:112`, `src/components/layout/update-notifications.tsx`, `.github/workflows/release.yml:436-443`
+**Vérification** — Vérifié dans le code pour la fréquence de vérification (une heure) et le statut publié de la release CI ; issu de `CROSS-PLATFORM.md` pour le reste, recoupé avec les noms de fichiers présents dans le dépôt — le détail du processus d'installation et de retour arrière n'a pas été relu ligne à ligne
 
 ---
 
@@ -23,7 +23,7 @@
 ### 1. Comment les mises à jour sont détectées
 
 - Beaver interroge la **dernière release publiée du dépôt GitHub officiel**.
-- Vérification **au lancement, puis toutes les heures**.
+- Vérification **au lancement, puis toutes les heures** — `CHECK_INTERVAL_MS = 60 * 60 * 1000` (`src/hooks/use-update-checker.ts:13`), appliqué en `:112`.
 - La version locale est comparée au tag de la release.
 - Quand une mise à jour existe, une **notification** apparaît, avec une barre de progression pendant le téléchargement.
 
@@ -143,8 +143,8 @@ Le dossier de données est indépendant de l'application installée.
 
 ## Points à confirmer
 
-- **Le processus complet n'a pas été relu ligne à ligne.** Cette page s'appuie principalement sur `CROSS-PLATFORM.md`, document daté d'avril 2026 alors que la version courante est 1.1.2. Les fichiers cités existent bien dans le dépôt, mais leur comportement doit être revérifié avant publication — c'est le sujet où une documentation fausse coûte le plus cher.
-- **Contradiction sur le statut de la release.** `CLAUDE.md` affirme que « la release CI est créée directement en non-draft ». Le workflow `.github/workflows/release.yml` utilise pourtant `--draft`. Sans incidence pour l'utilisateur final, mais l'une des deux affirmations est fausse et doit être corrigée dans le dépôt.
+- **Le processus complet n'a pas été relu ligne à ligne.** Cette page s'appuie principalement sur `CROSS-PLATFORM.md`, document daté d'avril 2026 alors que la version courante est **1.2.2**. Les fichiers cités existent tous dans le dépôt et le lot s'est même étoffé (`app_update_assets.rs`, `app_update_download.rs`, `app_update_release.rs`, `app_update_source_validation.rs`, `update_handoff.rs`), mais leur comportement n'a pas été revérifié. **En particulier, la section 4 et la colonne « Retour arrière automatique » du tableau — macOS restaure seul, Linux et Windows non — restent non vérifiées.** C'est l'affirmation la plus coûteuse en cas d'erreur de toute la section : une passe dédiée s'impose avant publication.
+- ~~Contradiction sur le statut de la release.~~ **Tranché, la contradiction n'existe plus** : le workflow crée la release directement publiée, sans `--draft` (`.github/workflows/release.yml:438-443`, avec `--verify-tag --latest`), et bascule explicitement en publiée toute release déjà présente en brouillon pour ce tag (`:436` : `gh release edit "$RELEASE_TAG" --draft=false --prerelease=false --latest`). `CLAUDE.md` a raison.
 - **La migration depuis l'ancien nom CL-GO.** Un mécanisme de version-pont est décrit pour les installations `v1.0.1`. Vérifier s'il concerne encore quelqu'un, et s'il mérite une mention publique ou seulement une note d'archive.
 - **Le rôle exact de `update_health.rs`.** Le README mentionne des contrôles de santé et une installation « qui échoue fermé ». À détailler pour la page *Sécurité › Mises à jour vérifiées*.
 - **Les notes de version affichées dans l'application.** Plusieurs fichiers y sont consacrés (`app_update_notes.rs`, `app_update_notes_wire.rs`) et `app-release-notes.json` existe à la racine en sept langues. Décrire ce que voit l'utilisateur au moment de la mise à jour.

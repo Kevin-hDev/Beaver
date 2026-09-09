@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Beaver Docs — Modes de permission</title>
-<meta name="description" content="Les trois modes de permission d'une session Beaver : accès complet, demande d'approbation, et chatbot sans outils.">
+<meta name="description" content="Les trois modes de permission d'une session Beaver : accès complet, demande d'approbation, et chatbot sans outils locaux.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
@@ -51,7 +51,7 @@
         <h2>Extensions</h2>
         <a href="#">Centre d'extensions</a>
         <a href="#">Remplacer un outil</a>
-        <a href="#">Réécrire le prompt système</a>
+        <a href="#">Prompt système et extensions</a>
         <a href="#">Écrire une extension</a>
       </div>
       <div class="group">
@@ -90,16 +90,16 @@
     recommandé au quotidien.</p>
 
     <h2 id="chatbot">Chatbot</h2>
-    <p>Aucun outil actif : Beaver répond uniquement en texte, comme un chat
-    classique. Utile pour explorer, rédiger ou raisonner sans rien toucher sur
-    ta machine.</p>
+    <p>Aucun outil sur ta machine : Beaver répond en texte et peut au plus
+    chercher sur le web. Utile pour explorer, rédiger ou raisonner sans rien
+    toucher sur ton disque.</p>
 
     <table>
       <caption class="crumb">Ce que chaque mode autorise sans confirmation</caption>
       <tr><th>Action</th><th>Accès complet</th><th>Approbation</th><th>Chatbot</th></tr>
       <tr><td>Lire des fichiers</td><td>Automatique</td><td>Automatique</td><td>—</td></tr>
       <tr><td>Écrire ou modifier</td><td>Automatique</td><td>Approbation</td><td>—</td></tr>
-      <tr><td>Commandes shell</td><td>Automatique</td><td>Approbation</td><td>—</td></tr>
+      <tr><td>Commandes shell</td><td>Automatique</td><td>Approbation, sauf lectures sûres (ls, cat…)</td><td>—</td></tr>
       <tr><td>Outils d'extension</td><td>Automatique</td><td>Approbation</td><td>—</td></tr>
     </table>
 
@@ -116,7 +116,7 @@
       <div class="term-bar"><i></i><i></i><i></i></div>
       <pre class="term-body"><span class="prompt">#</span> Réglages → Agent → Mode par défaut
 <span class="prompt">$</span> cat ~/.local/share/cl-go-dash/agent-settings.json
-{ "permission_mode": "approval" }</pre>
+{ "permission_mode": "manual" }   # valeurs : "auto" · "manual" · "chat"</pre>
     </div>
   </main>
 

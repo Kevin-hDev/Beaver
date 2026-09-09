@@ -59,14 +59,14 @@
       <article class="feat">
         <span class="num">01 /</span>
         <h3>Tous tes <em>modèles</em></h3>
-        <p>Ollama installé et géré par Beaver, <b>dix fournisseurs cloud</b>,
+        <p>Ollama installé et géré par Beaver, <b>onze fournisseurs cloud</b>,
         et tes comptes web OpenAI, Grok et Kimi. Local ou distant, il construit.</p>
       </article>
       <article class="feat">
         <span class="num">02 /</span>
         <h3>Il fait le <em>travail</em></h3>
-        <p>Fichiers, web, documents Office. Des sous-agents isolés dans
-        leurs propres branches Git. Un mode Plan. <b>Une mémoire qui tient</b>.</p>
+        <p>Fichiers, web, documents Office. Des sous-agents isolés chacun
+        dans son propre worktree Git. Un mode Plan. <b>Une mémoire qui tient</b>.</p>
       </article>
       <article class="feat">
         <span class="num">03 /</span>
@@ -85,7 +85,7 @@
         <h3>Le web, <em>sur place</em></h3>
         <p>Un Chromium embarqué qui <b>repère les serveurs qui tournent</b> et
         affiche tes pages sans quitter Beaver. Et il reste un vrai navigateur
-        quand tu veux t'en servir comme tel.</p>
+        quand tu veux t'en servir comme tel. Sur macOS et Windows.</p>
       </article>
       <article class="feat">
         <span class="num">06 /</span>
@@ -143,7 +143,7 @@
   </div>
 
   <div class="models">
-    <span class="chip">Chronos</span>
+    <span class="chip">Chronos-2</span>
     <span class="chip">Chronos-Bolt</span>
     <span class="chip">TimesFM</span>
     <span class="chip">MOIRAI 2.0</span>
@@ -151,8 +151,9 @@
     <span class="chip">FlowState</span>
     <span class="chip">TabPFN-TS</span>
     <span class="chip">TiRex</span>
+    <span class="chip">Kairos</span>
     <span class="chip">Sundial</span>
-    <span class="chip cloud">TimeGPT-2 ☁</span>
+    <span class="chip cloud">TimeGPT-2 ☁ Nixtla</span>
   </div>
 </section>
 
@@ -169,9 +170,13 @@
   <div class="term">
     <div class="term-bar">
       <i></i><i></i><i></i>
+      <div class="term-os" role="tablist" aria-label="Choisir le système">
+        <button class="os-tab is-active" data-os="unix" type="button" role="tab" aria-selected="true">macOS / Linux</button>
+        <button class="os-tab" data-os="windows" type="button" role="tab" aria-selected="false">Windows</button>
+      </div>
       <button class="copy" id="copy-install" type="button">Copier</button>
     </div>
-    <p class="term-body"><span class="prompt">$</span> <span id="typed"></span><span class="cursor" aria-hidden="true"></span></p>
+    <p class="term-body"><span class="prompt" id="prompt-char">$</span> <span id="typed"></span><span class="cursor" aria-hidden="true"></span></p>
   </div>
   <p class="stack">Rust · Tauri 2 · React 19 · 3 systèmes · AGPL-3.0</p>
 </section>
@@ -182,7 +187,7 @@
     <div class="foot-nav">
       <a href="index.html">Le harnais</a>
       <a href="docs.html">Docs</a>
-      <a href="#">GitHub</a>
+      <a href="https://github.com/Kevin-hDev/Beaver">GitHub</a>
     </div>
     <div>
       <div class="beaver-sleep" aria-hidden="true"></div>

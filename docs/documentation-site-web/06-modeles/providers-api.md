@@ -2,8 +2,8 @@
 
 **Emplacement site** — Modèles › Fournisseurs API
 **Répond à** — « Quels services puis-je connecter, où récupérer ma clé, et où va-t-elle ? »
-**Sources** — `services/llm/catalog.rs`, `services/api_keys.rs`, `services/vault.rs`, `commands/api_keys.rs`, `services/llm/provider_error.rs`, `src/i18n/fr.json` (clés `apiKeys.providers.*`)
-**Vérification** — Vérifié dans le code
+**Sources** — `services/llm/route_profile/catalog_api.rs` (**l'autorité** : un profil par fournisseur), `services/llm/catalog.rs` (vue publique dérivée, ne contient plus aucune donnée de fournisseur), `services/api_keys.rs`, `services/api_keys_retired.rs`, `services/vault.rs`, `commands/api_keys.rs`, `services/llm/provider_error.rs`, `src/i18n/fr.json` (clés `apiKeys.providers.*`)
+**Vérification** — Vérifié dans le code (relu le 9 septembre 2026 sur `catalog_api.rs:42-191`)
 
 > **Aucun tarif ne figure sur cette page ni sur le site.** Les prix changent régulièrement, et Beaver les récupère lui-même d'une source qui se met à jour — publier des chiffres créerait une seconde autorité qui divergerait. Chaque fournisseur est accompagné du lien vers sa page officielle. Décision et raison complètes dans `differents-points-a-traiter.md`.
 
@@ -12,12 +12,13 @@
 ## Plan de page proposé
 
 1. Ce qu'apporte une clé API
-2. Les dix fournisseurs
+2. Les onze fournisseurs
 3. Ajouter une clé
 4. Où va la clé — et ce qui n'y a jamais accès
 5. Tester la connexion
 6. Retirer une clé
-7. Quand une clé ne marche pas
+7. Un fournisseur retiré : Groq
+8. Quand une clé ne marche pas
 
 ---
 
@@ -29,11 +30,10 @@ Beaver fonctionne sans aucune clé, avec des modèles locaux. Ajouter une clé d
 
 Le choix entre local et distant est traité dans `01-decouverte/local-vs-cloud.md`. Cette page traite de la mise en place.
 
-### Les dix fournisseurs
+### Les onze fournisseurs
 
 | Fournisseur | Où créer la clé |
 |---|---|
-| **Groq** | `console.groq.com/keys` |
 | **Google Gemini** | `aistudio.google.com/app/apikey` |
 | **Mistral** | `console.mistral.ai/api-keys` |
 | **Cerebras** | `cloud.cerebras.ai` |
@@ -43,10 +43,17 @@ Le choix entre local et distant est traité dans `01-decouverte/local-vs-cloud.m
 | **xAI** | `console.x.ai` |
 | **Moonshot Kimi** | `platform.kimi.ai/console/api-keys` |
 | **Z.ai GLM** | `z.ai/manage-apikey/apikey-list` |
+| **Anthropic Claude** | `console.anthropic.com/settings/keys` |
+| **Qwen** | `modelstudio.console.alibabacloud.com` |
 
 Ces adresses sont celles que Beaver affiche dans son écran de configuration : un bouton y mène directement, il n'y a pas à les recopier.
 
 **Trois de ces fournisseurs proposent aussi une connexion par compte**, sans clé — voir `06-modeles/providers-comptes-web.md`.
+
+Deux fournisseurs sortent du cadre commun, et le site n'a pas besoin d'en dire plus que ceci :
+
+- **Anthropic Claude** n'emploie pas le même mode d'authentification que les autres : sa clé voyage dans un en-tête qui lui est propre, accompagné d'un en-tête de version. C'est transparent pour l'utilisateur — la saisie et le test se font comme partout ailleurs.
+- **Qwen** n'a pas d'adresse de service fixe : le point d'entrée est déterminé au moment de l'appel, à partir de la connexion configurée (région et type de compte Model Studio).
 
 ### Ajouter une clé
 
@@ -85,6 +92,14 @@ Chaque fournisseur dispose d'un test qui envoie une requête minimale et rend un
 Supprimer une clé la retire du coffre. Le fournisseur disparaît de la liste des services configurés et ses modèles quittent le sélecteur.
 
 L'écriture dans le coffre est **transactionnelle** : soit l'opération aboutit entièrement, soit le coffre reste dans son état précédent. Une interruption au mauvais moment ne peut pas laisser un coffre à moitié écrit — donc illisible, donc toutes les clés perdues.
+
+### Un fournisseur retiré : Groq
+
+**Groq a été retiré du produit.** Il n'apparaît plus dans la liste ci-dessus et ne peut plus être configuré ; trois tests du dépôt interdisent son retour.
+
+Ce qu'il faut écrire pour les utilisateurs qui l'avaient configuré : **au premier démarrage d'une version qui ne le propose plus, sa clé est effacée du coffre et du gestionnaire de mots de passe du système.** L'effacement suit la même prudence que le reste : une copie du coffre est faite avant l'opération et n'est supprimée qu'au démarrage suivant réussi, et un marqueur empêche que le nettoyage recommence.
+
+Le mot « groq » peut encore apparaître comme **préfixe de noms de modèles revendus par OpenRouter**. Ce n'est pas un fournisseur configurable, c'est une indication d'origine dans un nom de modèle.
 
 ### Quand une clé ne marche pas
 
@@ -171,8 +186,11 @@ Les erreurs des fournisseurs sont traduites en messages exploitables, qui distin
 
 ## Points à confirmer
 
-- **Les descriptions et les paliers gratuits des fournisseurs vivent dans les fichiers de traduction**, pas dans le code. Deux commentaires du code (`catalog.rs`, vérifiés le 30 juillet 2026) signalent que **les paliers gratuits affichés pour Google et Mistral ne sont plus publiables** : ces fournisseurs ne les affichent plus publiquement, et les chiffres présents dans Beaver reposent sur des sources tierces. **À faire vérifier avant publication** — et c'est un argument de plus pour ne rien chiffrer sur le site.
 - **Le lien entre un fournisseur configuré et les modèles réellement disponibles** n'est pas décrit ici : il dépend du catalogue interrogé chez le fournisseur. À traiter dans `catalogue-et-favoris.md`.
 - **La liste des messages d'erreur** est reconstituée à partir du classement des erreurs de fournisseurs. Les libellés exacts affichés à l'utilisateur n'ont pas été relevés dans les fichiers de traduction. À compléter.
-- Le fournisseur **Z.ai GLM** a une configuration particulière (pas de chemin de catalogue standard). Vérifier que la découverte de ses modèles fonctionne comme pour les autres.
 - Affichage à vérifier lors de la passe d'interface : présentation de l'écran des fournisseurs, retour visuel du test de connexion, et ce qui s'affiche à la place d'une clé enregistrée.
+
+**Points tranchés le 9 septembre 2026, conservés pour mémoire :**
+
+- **Les paliers gratuits de Google et Mistral** — réglé côté produit. Les textes affichés dans l'application ont été réécrits sans aucun chiffre (`src/i18n/fr.json`, clés `apiKeys.providers.google.freeTier` et `mistral.freeTier` : « Niveau gratuit pour certains modèles, selon le compte et les limites » et « Mode gratuit et plan payant ; disponibilité selon le compte »). Il n'y a donc plus de chiffre invérifiable à reprendre — et rien à chiffrer sur le site.
+- **La configuration particulière de Z.ai GLM** — confirmée et sans conséquence pour l'utilisateur : son point d'entrée ne déclare pas de chemin de catalogue standard (`catalog_api.rs:157`, champ `models_endpoint` vide). La découverte de ses modèles passe par un autre chemin ; la saisie et le test de la clé sont identiques aux autres fournisseurs.

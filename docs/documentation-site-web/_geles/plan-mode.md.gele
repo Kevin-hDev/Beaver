@@ -3,7 +3,19 @@
 **Emplacement site** — Agent › Mode Plan
 **Répond à** — « Je veux que l'agent réfléchisse avant d'agir, et que je valide avant qu'il touche à quoi que ce soit. »
 **Sources** — `src-tauri/src/services/agent_local/tool_plan_guard.rs` (lignes 3-34), `plan_mode_controller.rs`, `tool_plan.rs` (lignes 12-13, 95), `types_plan.rs` (lignes 16-25, 45), `tool_plan_approval.rs`, `tool_plan_storage.rs`, `agent_loop_plan.rs`
-**Vérification** — Vérifié dans le code : liste des outils autorisés, limites, états du parcours et mécanisme de correction
+**Vérification** — Vérifié dans le code au moment de la rédaction. **Périmé sur un point, exact sur le reste** — voir l'avertissement ci-dessous
+
+> ⏸️ **Brief gelé — ne pas publier, et ne pas corriger tant que le gel dure.**
+>
+> Relecture du 9 septembre 2026 contre le code. Ce que ce fichier dit de faux :
+>
+> - la section 2 annonce **dix-neuf** outils autorisés ; il y en a **vingt et un** ;
+> - elle liste `search_extension_tools`, qui **n'existe plus du tout dans le code**. Il a été remplacé par trois entrées liées aux extensions : lister les extensions, les inspecter, et lire une ressource d'extension ;
+> - aux trois outils conditionnels décrits s'ajoute une **quatrième règle**, absente d'ici : tout outil fourni par une extension est autorisé en mode Plan **si et seulement si son effet est « lecture seule »**.
+>
+> Ce que la relecture confirme, au chiffre près : les **sept** états du parcours, les **quatre** corrections automatiques avant échec, le titre limité à **120** caractères, le contenu à **40 000**, les **vingt** plans conservés par conversation, la liste des outils interdits, l'autorisation des commandes de test et de compilation — et l'argument central : **le mode Plan protège même en Accès complet**, la garde ne consulte pas le mode de permission.
+>
+> Le gel reste en place : c'est une décision produit, le mode Plan doit être modifié. Voir `_geles/README.md`.
 
 ---
 

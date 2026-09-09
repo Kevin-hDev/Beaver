@@ -8,9 +8,16 @@ tableaux et pièges. Ce n'est pas la prose finale.
 Le gabarit et les conventions sont dans `00-comment-utiliser-ces-fichiers.md`.
 Mockup de référence : `docs/beaver-site/mockup/docs.html`.
 
-Référence projet : Beaver v1.1.2 (+ v1.1.3 et Unreleased au CHANGELOG).
+Référence projet : Beaver **v1.2.2** (`package.json`, `src-tauri/Cargo.toml`, relu le 9 septembre 2026).
 
 On coche au fur et à mesure.
+
+> **Passe d'audit du 9 septembre 2026.** Les sections 06, 07 et les fichiers
+> transverses ont été relus contre le code. Les points réglés depuis leur
+> relevé sont marqués **✅ RÉGLÉ** avec leur date et leur référence dans le code
+> — ils ne sont pas supprimés : un point réglé garde sa trace. Les points dont
+> la référence était périmée mais dont le fond tient sont marqués ⚠️ et
+> corrigés sur place. Les constats nouveaux sont marqués 🆕.
 
 ---
 
@@ -88,10 +95,10 @@ On coche au fur et à mesure.
 
 ## 6 — Modèles et providers
 
-- [x] `06-modeles/ollama-runtime.md` — runtime managé, réutilisation d'un daemon existant, port 11434, arrêt propre, logs
+- [x] `06-modeles/ollama-runtime.md` — runtime managé, réutilisation d'un daemon existant, port attribué par le système (11434 n'est que le port de détection), arrêt propre, absence de journal du moteur — **brief réécrit de zéro le 9 septembre 2026**, le module `ollama_manager/` ayant remplacé l'ancien `ollama_lifecycle.rs`
 - [x] `06-modeles/ollama-modeles.md` — parcourir, installer, supprimer, modèles partagés avec Ollama.app, téléchargements
 - [x] `06-modeles/ollama-personnalisation.md` — modelfiles, paramètres, prompts système par modèle, modèles custom
-- [x] `06-modeles/providers-api.md` — table des 10 providers LLM, où récupérer la clé, comment la saisir, test de connexion — **sans aucun tarif**, voir la décision ci-dessous
+- [x] `06-modeles/providers-api.md` — table des **11** providers LLM (Groq retiré, Anthropic et Qwen ajoutés — `route_profile/catalog_api.rs:42-191`), où récupérer la clé, comment la saisir, test de connexion — **sans aucun tarif**, voir la décision ci-dessous
 - [x] `06-modeles/providers-comptes-web.md` — OpenAI/Codex, Grok, Kimi : authentification web, jetons, limites
 - [x] `06-modeles/catalogue-et-favoris.md` — explorateur LLM, familles, détails d'un modèle, favoris
 - [x] `06-modeles/raisonnement.md` — effort de raisonnement, différences par provider, affichage du thinking
@@ -103,20 +110,24 @@ On coche au fur et à mesure.
 - [x] `07-integrations/recherche-web.md` — Brave, Exa, Firecrawl, SearXNG local : différences, configuration, routage
 - [x] `07-integrations/mcp-connecteurs.md` — ajouter un connecteur local ou distant, activation par conversation, runtime, durcissement
 - [x] `07-integrations/mcp-oauth.md` — connecteurs cloud, callback OAuth, stockage des jetons, révocation
-- [ ] ⏸️ `07-integrations/extensions-centre.md` — **en attente** : centre d'extensions, découverte, catalogue, installation, mise à jour, désactivation, suppression
-- [ ] ⏸️ `07-integrations/extensions-remplacer-un-outil.md` — **en attente** : substitution d'un outil natif, masquage, priorité, diagnostics
-- [ ] ⏸️ `07-integrations/extensions-prompt-systeme.md` — **en attente** : réécriture du prompt système par une extension, portée, précédence
-- [ ] ⏸️ `07-integrations/extensions-ecrire.md` — **en attente** : écrire sa propre extension, structure, hôte, canal de communication, source Git, limites et sécurité
+- [x] `07-integrations/extensions-centre.md` — écrit le 9 septembre 2026 : centre d'extensions, découverte, catalogue, installation (double consentement), mise à jour, désactivation, suppression
+- [x] `07-integrations/extensions-remplacer-un-outil.md` — écrit le 9 septembre 2026 : substitution d'un outil natif (API advanced, instable, sans liste blanche), masquage, priorité, diagnostics
+- [x] `07-integrations/extensions-prompt-systeme.md` — écrit le 9 septembre 2026, **recadré** : l'enquête code a établi qu'aucune API d'extension ne touche au prompt système (contrat de 12 méthodes, aucune sur les prompts) ; la page documente ce qui est réellement possible ; décision tranchée par Kevin le 9 septembre 2026 : la capacité ne sera jamais construite côté extensions (inutile, c'est natif), la page recadrée est la forme définitive
+- [x] `07-integrations/extensions-ecrire.md` — écrit le 9 septembre 2026 : écrire sa propre extension, structure, manifeste, hôte, cycle de vie, outils, vues, événements, limites et sécurité
 
-> ⏸️ **Les quatre pages Extensions sont gelées.** L'implémentation a été
-> interrompue en cours de route et doit être finalisée avant qu'on documente
-> quoi que ce soit — documenter un comportement qui va changer produit une doc
-> fausse le jour de la sortie.
+> ✅ **Les quatre pages Extensions sont dégelées depuis le 9 septembre 2026.**
+> Le gel portait sur une implémentation interrompue ; ce n'est plus le cas :
+> `EXTENSIONS.md` fait autorité sur le sujet, le module `services/extensions/`
+> est implémenté et couvert de tests, les deux outils de découverte sont
+> intégrés au mode Plan, et la politique de permission par effet d'extension est
+> en place et testée (`agent_local/tool_plan_guard.rs:46-48`).
+> **Les quatre briefs restent à écrire**, avec `EXTENSIONS.md` comme source
+> principale.
 >
-> C'est la section qui demandera le plus de soin quand elle sera débloquée :
-> installer du code tiers qui remplace des outils et réécrit le prompt système
-> engage la sécurité de l'utilisateur. Il devra être guidé pas à pas, avec les
-> risques énoncés explicitement.
+> C'est la section qui demandera le plus de soin : installer du code tiers qui
+> remplace des outils et réécrit le prompt système engage la sécurité de
+> l'utilisateur. Il devra être guidé pas à pas, avec les risques énoncés
+> explicitement.
 - [x] `07-integrations/channels-gateway.md` — Telegram, Slack, Discord : mise en place, mapping vers les sessions, audit, sécurité
 
 ## 8 — Forecast
@@ -186,10 +197,12 @@ On coche au fur et à mesure.
 
 ## Suivi
 
-- Fichiers prévus : 94
-- Fichiers rédigés : 63 (sections 0 à 7 terminées — section 7 complète hors les 4 pages Extensions gelées)
-- Fichiers gelés : 6 (4 Extensions + Mode Plan + Compression) — voir `_geles/README.md`
-- Fichiers rédigeables maintenant : 88
+Compteurs recomptés le 9 septembre 2026. **Les précédents étaient périmés** : ils annonçaient 94 fichiers prévus et 6 gelés.
+
+- Fichiers prévus : **111** (toutes les entrées cochables de ce fichier, `00-comment-utiliser-ces-fichiers.md` compris)
+- Fichiers rédigés : **67** (sections 0 à 7 terminées, pages Extensions comprises — écrites le 9 septembre 2026)
+- Fichiers gelés : **2** — Mode Plan et Compression du contexte, voir `_geles/README.md`
+- Fichiers restant à écrire : **44** (sections 8 à 14), dont **42 rédigeables immédiatement**
 
 ### Règle de sourcing
 
@@ -256,8 +269,14 @@ Relevées en écrivant, indépendantes du site mais à traiter :
 - **`CROSS-PLATFORM.md` annonce un support Fedora/RHEL via `dnf`.** `install.sh`
   n'appelle que `apt-get` (ligne 153) et ne construit que le suffixe `_amd64.deb`.
   L'affirmation est fausse.
-- **`CLAUDE.md` affirme que la release CI est créée en non-draft.**
-  `.github/workflows/release.yml` utilise `--draft` (lignes 353-385).
+- ✅ **RÉGLÉ le 9 septembre 2026 — `CLAUDE.md` affirme que la release CI est
+  créée en non-draft.** C'était faux, ça ne l'est plus :
+  `.github/workflows/release.yml:439-443` crée la release avec
+  `--verify-tag --latest` et **sans** `--draft`, et le chemin de reprise force
+  explicitement `--draft=false` (`:436`). `CLAUDE.md` dit désormais vrai.
+  *Conservé ici parce que ce constat sert d'exemple dans
+  `00-comment-utiliser-ces-fichiers.md` : la hiérarchie des sources y est
+  illustrée par cette erreur. L'exemple reste pédagogique, le fait ne l'est plus.*
 - **Le mode de permission par défaut est `auto`.** `storage_migration.rs` crée
   `agent-settings.json` avec `{"permissionMode":"auto"}`, alors que le mockup
   présente « Demande d'approbation » comme le mode recommandé au quotidien.
@@ -287,10 +306,13 @@ code. Rangés du plus au moins urgent.
   activer atteint donc la limite au caractère près, et la troncature se fait en
   silence (`.take(32)`). Le jour où un outil optionnel est ajouté, activer tous
   les groupes en désactivera un sans le dire.
-- **`search_extension_tools` est verrouillé mais n'appartient à aucun groupe.**
-  Il est donc toujours actif et **absent de l'écran Réglages › Agent › Outils**.
-  Relève du chantier Extensions gelé : le documenter ou le retirer du catalogue
-  tant que les extensions ne sont pas livrées.
+- ✅ **RÉGLÉ le 9 septembre 2026 — `search_extension_tools` est verrouillé mais
+  n'appartient à aucun groupe.** L'outil **n'existe plus** : aucune occurrence
+  dans `src-tauri/src/`. Il a été remplacé par deux outils de découverte
+  distincts, `list_extensions` et `inspect_extensions`
+  (`services/extensions/mod.rs:192-193`), tous deux autorisés en mode Plan
+  (`agent_local/tool_plan_guard.rs:10-11`). Le chantier Extensions est par
+  ailleurs dégelé.
 - **L'écran des outils dit « Tools essentiels » et « Tools optionnels ».** Le
   mot anglais apparaît dans une interface française, alors que le reste de la
   page parle d'outils (`fr.json`, clés `settings.tools.lockedTitle` et
@@ -314,11 +336,14 @@ code. Rangés du plus au moins urgent.
 
 ### Relevé en écrivant la section 6
 
-- **Les paliers gratuits de Google et Mistral affichés dans l'application ne sont
-  plus publiables.** Deux commentaires de `services/llm/catalog.rs` (vérifiés le
-  30 juillet 2026) le disent : ces fournisseurs ont retiré ces chiffres de leurs
-  pages publiques, et ce qu'affiche Beaver repose sur des sources tierces. À
-  revérifier ou à retirer des textes de l'application.
+- ✅ **RÉGLÉ le 9 septembre 2026 — Les paliers gratuits de Google et Mistral
+  affichés dans l'application ne sont plus publiables.** Réglé côté produit :
+  les textes ont été réécrits **sans aucun chiffre** — `src/i18n/fr.json:41`
+  (« Niveau gratuit pour certains modèles, selon le compte et les limites ») et
+  `:42` (« Mode gratuit et plan payant ; disponibilité selon le compte »). Les
+  commentaires datés du 30 juillet 2026 ont disparu avec la réécriture du
+  module : `services/llm/catalog.rs` n'est plus qu'une vue publique dérivée de
+  l'autorité `route_profile/catalog_api.rs`.
 - **Aucune borne sur le nombre de modèles favoris** (`services/favorite_models.rs`).
   Le fichier grandit sans limite, alors que le projet borne ses collections
   partout ailleurs. Défaut mineur, mais c'est une exception à une règle tenue.
@@ -326,9 +351,21 @@ code. Rangés du plus au moins urgent.
   (`commands/ollama_updates.rs`) sans le signaler. Au-delà, certains modèles ne
   sont jamais examinés et rien ne l'indique.
 - **Rien ne signale à l'utilisateur que Beaver réutilise un moteur Ollama
-  existant.** Dans ce cas, les réglages de moteur de Beaver n'ont aucun effet
-  (`ollama_lifecycle.rs:69-79`) — et l'utilisateur n'a aucun moyen de le
-  comprendre. Recommandation : l'afficher dans l'écran des modèles.
+  existant.** Le constat reste ouvert ; **sa référence, elle, était périmée** :
+  `ollama_lifecycle.rs` n'existe plus, le module a été réécrit. La détection
+  d'un moteur externe est désormais dans
+  `services/ollama_manager/manager_process.rs` (adoption après une sonde sur
+  `127.0.0.1:11434`, `port.rs:66-84`). Dans ce cas, les réglages de moteur de
+  Beaver n'ont aucun effet, la création de modèle personnalisé est refusée, et
+  l'utilisateur n'a aucun moyen de le comprendre. Recommandation inchangée :
+  l'afficher dans l'écran des modèles.
+- 🆕 **Relevé le 9 septembre 2026 — le moteur Ollama n'écrit plus aucun fichier
+  de traces.** Sa sortie est redirigée vers `/dev/null` sous macOS et Linux (`ollama_manager/spawn_gate_unix.rs:63-67`) et
+  n'est redirigée nulle part sous Windows (`spawn_gate_windows.rs`, `STARTUPINFOW`
+  sans handles). Le fichier `logs/ollama-sidecar.log` que `CLAUDE.md` documente
+  encore **n'est plus écrit par le code**. Un modèle qui refuse de se charger ne
+  laisse donc aucune trace exploitable. **À trancher côté produit**, et
+  `CLAUDE.md` est à corriger.
 - **Sur Mac Intel, la mémoire n'est pas mesurée** (`gpu_vram/macos.rs` sort
   immédiatement hors architecture Apple), et le contexte tombe au palier minimal
   de 8 192 jetons. À confirmer comme volontaire.
@@ -339,25 +376,49 @@ code. Rangés du plus au moins urgent.
 
 ### Relevé en écrivant la section 7
 
-- **La recherche web sans clé exige un interpréteur Python 3 installé sur la
+- **La recherche web sans clé exige un interpréteur Python installé sur la
   machine**, et ce prérequis n'est documenté nulle part — ni README, ni prérequis
-  d'installation, ni interface. `services/searxng/runtime.rs:106` cherche
-  `python3.13` à `python`, et échoue avec « runtime Python introuvable » sinon.
-  Python est présent par défaut sur Linux, généralement sur macOS, **jamais sur
-  Windows**. Un utilisateur Windows découvrira donc que la recherche ne fonctionne
-  pas, sans message explicite. **Le point le plus urgent de cette section** :
-  embarquer un interpréteur, ou l'annoncer dans les prérequis avec un message
-  clair dans l'application.
-- **Le moteur de recherche local semble ne jamais s'arrêter en cours de
-  session.** `lifecycle.rs` l'arrête à la fermeture de l'application, mais aucune
-  mise en veille après inactivité n'a été trouvée — contrairement aux processus
-  MCP, arrêtés après 10 minutes. À vérifier : un processus Python résident
-  consomme de la mémoire en continu.
-- **Le mode de permission appliqué aux messages reçus par le gateway n'est pas
-  déterminé.** Un message arrivé par Telegram déclenche un agent qui accède aux
-  fichiers et lance des commandes ; on ne sait pas s'il passe par les demandes
-  d'approbation, ni comment y répondre depuis une messagerie. **Question de
-  sécurité à clarifier avant de publier la page.**
+  d'installation, ni interface. **Toujours d'actualité, et aggravé.** ⚠️ *La
+  description technique de ce point était fausse : `services/searxng/runtime.rs:106`
+  ne contient plus ce code, et la règle a changé.* Beaver n'accepte plus
+  « n'importe quel Python 3 récent » : un manifeste livré avec le moteur
+  (`resources/searxng-sidecar/wheels/.runtime.json`) déclare **une version
+  exacte**, et chaque commande candidate est interrogée puis rejetée si elle ne
+  la rapporte pas au numéro près (`services/searxng/python_runtime.rs:75-95` et
+  `:137-152`). Au 9 septembre 2026, le manifeste demande **CPython 3.14** — une
+  version que presque aucune machine ne porte par défaut, sur aucun des trois
+  systèmes. Un utilisateur ayant déjà Python peut donc se voir refuser la
+  recherche sans clé, sans message explicite. **Le point le plus urgent de cette
+  section** : embarquer un interpréteur, ou l'annoncer dans les prérequis avec un
+  message qui dit quelle version installer.
+- **Le moteur de recherche local ne s'arrête jamais en cours de session.**
+  ✅ *Vérifié le 9 septembre 2026 : c'est bien le comportement du code.* Le seul
+  appel d'arrêt vient du nettoyage de fermeture de l'application
+  (`src/app_exit/cleanup.rs:124-125`). Aucune mise en veille après inactivité
+  n'existe — contrairement aux processus MCP, arrêtés après 10 minutes. Un
+  processus Python résident consomme donc de la mémoire pendant toute la session.
+  **Le constat produit reste ouvert.**
+- ✅ **RÉGLÉ le 9 septembre 2026 — le mode de permission appliqué aux messages
+  reçus par le gateway n'est pas déterminé.** Il l'est désormais, et la réponse
+  tient en deux parties :
+  1. Le gateway **demande** le mode « Accès complet » pour la conversation qu'il
+     lance (`services/gateway/agent_bridge_run.rs:110-112`), **mais cette demande
+     est plafonnée par le réglage de l'utilisateur** : si le mode demandé est plus
+     permissif que celui enregistré, c'est le mode enregistré qui l'emporte
+     (`commands/agent_chat_task/common.rs:49-56`). Un utilisateur en « Demande
+     d'approbation » n'est donc **pas** basculé en « Accès complet » par un
+     message Telegram. Le mode Plan est explicitement désactivé pour ces
+     conversations (`agent_bridge_run.rs:116`).
+  2. **Aucune demande d'approbation ne part vers la messagerie**
+     (`agent_bridge_run.rs:113`, aucun émetteur dédié) : elle s'affiche dans la
+     fenêtre de Beaver, sur la machine. **Personne ne peut y répondre à
+     distance.**
+
+  Ce qui reste ouvert, c'est le point voisin déjà listé plus haut : **le mode par
+  défaut de l'application est « Accès complet »** (`storage_migration.rs:83`).
+  Sur une installation où l'utilisateur n'a rien changé, un message reçu par
+  messagerie déclenche donc un agent en accès complet. Le réglage par défaut
+  devient d'autant plus important avec ce point tranché.
 - **Les identifiants d'application OAuth pour Google et GitHub** sont rangés dans
   le coffre (`mcp_oauth/static_credentials.rs`). Leur origine n'est pas claire :
   si l'utilisateur doit enregistrer sa propre application chez le service, c'est

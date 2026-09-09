@@ -2,8 +2,8 @@
 
 **Emplacement site** — Interface › Terminal intégré (ou Outils › Fichiers et terminal dans le regroupement du mockup)
 **Répond à** — « Comment j'ouvre un terminal dans Beaver, quel shell, et quelles limites ? »
-**Sources** — `src-tauri/src/services/terminal/mod.rs` (lignes 39-75), `pty_session.rs` (lignes 30-124), `src-tauri/src/commands/terminal.rs`, `src/components/terminal/`, `src/hooks/use-agent-local-shortcuts.ts`
-**Vérification** — Vérifié dans le code : limites, choix du shell et mécanisme d'authentification
+**Sources** — `src-tauri/src/services/terminal/manager.rs:35`, `terminal/limits.rs:1-7`, `terminal/shell_environment.rs:22` et `:28-35`, `terminal/shell_environment_tests.rs:50-55`, `terminal/shell_helper.rs:72-74`, `terminal/pty_session_windows.rs:161-164`, `terminal/tab_store.rs:181`, `terminal/mod.rs:92-95`, `src-tauri/src/commands/terminal.rs`, `src/components/terminal/`, `src/hooks/use-agent-local-shortcuts.ts`
+**Vérification** — Vérifié dans le code : les deux limites de seize, le choix du shell par système, les variables d'environnement imposées et retirées, et le mécanisme d'authentification
 
 ---
 
@@ -41,7 +41,14 @@ Il évite l'aller-retour vers une application externe quand on veut vérifier so
 
 Sur macOS et Linux, le chemin du shell est validé avant lancement : un chemin invalide est refusé plutôt que d'être exécuté.
 
-Détail à mentionner pour les utilisateurs de zsh : Beaver neutralise le passage en mode vi que déclenche une variable `EDITOR` contenant « vi ». Sans cela, le terminal se retrouverait dans un mode d'édition déroutant.
+**Ce que Beaver change à l'environnement du shell** — une autorité unique s'en charge (`src-tauri/src/services/terminal/shell_environment.rs`), et c'est le point qui mérite le paragraphe :
+
+- Elle **impose** `TERM=xterm-256color` et `COLORTERM=truecolor` (`:22`).
+- Elle **retire** six variables posées par le lanceur de l'application : `NO_COLOR`, `NODE_DISABLE_COLORS`, `FORCE_COLOR`, `COLOR`, `CLICOLOR`, `CLICOLOR_FORCE` (`:28-35`).
+
+Le motif est écrit dans le fichier : sans cela, un lanceur qui désactive la couleur rendait la sortie de `vite`, `cargo` et de la ligne de commande Tauri uniformément grise dans le terminal intégré.
+
+`EDITOR`, en revanche, est **transmise telle quelle** : Beaver n'y touche pas, et un test le verrouille (`src-tauri/src/services/terminal/shell_environment_tests.rs:50-55`).
 
 ### 4. Les onglets
 
@@ -50,12 +57,17 @@ Détail à mentionner pour les utilisateurs de zsh : Beaver neutralise le passag
 
 ### 5. Les limites
 
-| Limite | Valeur |
-|---|---|
-| Terminaux ouverts simultanément | **16** |
-| Taille d'une écriture | **65 536 octets** |
+**Deux limites différentes portent la valeur 16** : ne pas les confondre.
 
-Au-delà de seize terminaux, l'ouverture est refusée avec un message explicite. La limite est volontaire : chaque terminal est un processus système, et une application qui en ouvre sans compter finit par épuiser les ressources de la machine.
+| Limite | Valeur | Portée | Source |
+|---|---|---|---|
+| Processus de terminal vivants | **16** | **Globale**, toutes conversations confondues | `terminal/manager.rs:35` (`MAX_PTY_SESSIONS`) |
+| Onglets enregistrés par groupe | **16** | Par conversation | `terminal/limits.rs:6` (`MAX_TABS_PER_GROUP`) |
+| Groupes d'onglets | **128** | Globale | `terminal/limits.rs:5` |
+| Onglets enregistrés au total | **256** | Globale | `terminal/limits.rs:7` |
+| Taille d'une écriture | **65 536 octets** | Par écriture | `terminal/limits.rs:1` |
+
+Au-delà de seize **processus**, l'ouverture est refusée avec un message explicite. La limite est volontaire : chaque terminal vivant est un processus système, et une application qui en ouvre sans compter finit par épuiser les ressources de la machine. Un onglet enregistré mais dont le processus n'est pas lancé ne consomme pas ce quota.
 
 ### 6. Terminal de l'utilisateur et commandes de l'agent
 
@@ -77,8 +89,9 @@ Les deux partagent le répertoire de travail de la conversation, mais ce sont de
 | Raccourci | ⌘J / Ctrl+J |
 | Shell sur macOS et Linux | `$SHELL`, sinon `/bin/bash` |
 | Shell sur Windows | `powershell.exe` |
-| Terminaux simultanés | 16 |
-| Écriture maximale | 65 536 octets |
+| Processus de terminal simultanés | **16**, globalement |
+| Onglets par conversation | **16**, et **256** au total |
+| Écriture maximale | **65 536 octets** |
 | Onglets conservés | Oui, dans `terminal-tabs.json` |
 | Répertoire initial | Répertoire de travail de la conversation |
 
@@ -90,7 +103,7 @@ Les deux partagent le répertoire de travail de la conversation, mais ce sont de
 > Le terminal intégré est le vôtre : l'agent ne voit pas ce que vous y tapez. Les commandes que l'agent exécute passent par son propre outil, soumis aux permissions.
 
 **Encadré « Seize au maximum »**
-> Beaver n'ouvre pas plus de seize terminaux à la fois. Chacun est un processus système ; la limite protège les ressources de votre machine.
+> Beaver n'ouvre pas plus de seize terminaux à la fois, toutes conversations confondues. Chacun est un processus système ; la limite protège les ressources de votre machine.
 
 ---
 
@@ -99,7 +112,7 @@ Les deux partagent le répertoire de travail de la conversation, mais ce sont de
 | Symptôme | Cause | Résolution |
 |---|---|---|
 | ⌘J ne fait rien | Pas de conversation active, ou curseur dans un champ de saisie | Cliquer hors du champ, ou ouvrir une conversation |
-| « Trop de terminaux ouverts » | Seize terminaux déjà actifs | Fermer des onglets |
+| « Trop de terminaux ouverts » | Seize processus de terminal déjà actifs, toutes conversations confondues | Fermer des onglets, y compris dans d'autres conversations |
 | Le terminal démarre dans le mauvais dossier | Il suit le répertoire de travail de la conversation | Changer le répertoire de travail de la conversation |
 | Le shell n'est pas celui attendu | La variable `SHELL` n'est pas celle du terminal habituel | Vérifier `SHELL` dans l'environnement d'où l'application est lancée |
 | Un collage volumineux est tronqué | Écriture plafonnée à 65 536 octets | Passer par un fichier |
@@ -119,6 +132,6 @@ Les deux partagent le répertoire de travail de la conversation, mais ce sont de
 
 - **Le comportement au changement de répertoire de travail** alors qu'un terminal est déjà ouvert : suit-il, ou reste-t-il où il était ?
 - **La restauration des onglets au lancement.** `terminal-tabs.json` conserve les onglets, mais les processus ne survivent évidemment pas à la fermeture. Vérifier ce qui est réellement restauré : les onglets vides, le répertoire, l'historique ?
-- **Le shell sous Windows.** `powershell.exe` est lancé en dur. Vérifier s'il existe un moyen de préférer `cmd.exe` ou PowerShell 7, et sinon le dire.
-- **La limite de seize est-elle globale ou par conversation ?** Le gestionnaire semble global. À confirmer, la formulation en dépend.
+- ~~Le shell sous Windows.~~ **Tranché** : `powershell.exe`, résolu par un chemin système validé (`terminal/pty_session_windows.rs:161-164`). **Aucun réglage** ne permet de préférer `cmd.exe` ou PowerShell 7 ; le dire franchement sur le site.
+- ~~La limite de seize est-elle globale ou par conversation ?~~ **Tranché** : **seize processus au total** (`terminal/manager.rs:35`), seize onglets par conversation et deux cent cinquante-six onglets au total (`terminal/limits.rs:5-7`).
 - **Le jeton d'authentification des sessions.** Chaque session reçoit un jeton vérifié à chaque écriture. Détail interne, sans intérêt pour l'utilisateur, mais à mentionner dans la page *Sécurité › Durcissement*.

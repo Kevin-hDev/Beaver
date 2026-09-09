@@ -2,8 +2,8 @@
 
 **Emplacement site** — Agent › Instructions permanentes
 **Répond à** — « Comment je donne à l'agent des consignes qu'il applique à chaque conversation, sans les répéter ? »
-**Sources** — `src-tauri/src/services/agent_local/agent_md.rs` (lignes 3-4, 26-112), `src-tauri/src/services/personality_injection.rs`, `src-tauri/src/storage_migration.rs` (défauts d'injection), `src-tauri/src/commands/agent_md.rs`, `src-tauri/src/commands/personality.rs`, `src/components/personality/`
-**Vérification** — Vérifié dans le code : ordre d'assemblage, limite globale, sources prises en compte
+**Sources** — `src-tauri/src/services/agent_local/agent_md.rs` (lignes 3-4, 26-112), `src-tauri/src/services/personality_injection.rs`, `src-tauri/src/storage_migration.rs` (lignes 88-114, défauts d'injection et fichiers créés), `src-tauri/src/commands/agent_md.rs`, `src-tauri/src/commands/personality.rs` (lignes 30-42), `src-tauri/src/commands/agent_chat_task/common.rs` (lignes 104-107), `src/components/personality/`
+**Vérification** — Vérifié dans le code, revérifié le 9 septembre 2026 : ordre d'assemblage, limite globale, sources prises en compte, emplacement réel des fichiers
 
 ---
 
@@ -21,8 +21,9 @@ C'est l'information qu'un utilisateur cherche quand une consigne semble ignorée
 2. AGENTS.md — l'ordre d'assemblage
 3. Où placer ses instructions
 4. La personnalité
-5. La limite de taille
-6. Écrire de bonnes instructions
+5. Où les instructions permanentes ne sont pas injectées
+6. La limite de taille
+7. Écrire de bonnes instructions
 
 ---
 
@@ -37,7 +38,7 @@ Deux façons distinctes de donner des consignes permanentes :
 | Contenu | Conventions, commandes du projet, interdits | Ton, comportement, façon de travailler |
 | Portée | Global et par projet | Global |
 | Format | Markdown libre | Fichiers Markdown activables un par un |
-| Emplacement | Dossier de données et dossier du projet | `memory/core/` |
+| Emplacement | Dossier de données et dossier du projet | `memory/core/` et `inbox/` |
 
 Elles se cumulent. Un troisième mécanisme existe pour ce qui doit évoluer tout seul : la **mémoire**. Renvoyer vers sa page — la distinction vaut d'être posée : `AGENTS.md` est ce que **vous** écrivez, la mémoire est ce que l'**agent** retient.
 
@@ -68,20 +69,33 @@ Recommandation à donner clairement, sinon on hésite entre six emplacements :
 
 ### 4. La personnalité
 
-Des fichiers Markdown rangés dans `memory/core/`, **activables individuellement**. Quatre existent à l'installation, **tous désactivés par défaut** :
+Des fichiers Markdown **activables individuellement**. Quatre existent à l'installation, **tous désactivés par défaut** — et ils ne vivent pas tous au même endroit :
 
-| Fichier | Objet |
-|---|---|
-| `identity.md` | Qui est l'agent |
-| `principles.md` | Ses principes de travail |
-| `user.md` | Qui vous êtes |
-| `idea-discovery.md` | Sa façon d'explorer des idées |
+| Fichier | Emplacement | Objet |
+|---|---|---|
+| `identity.md` | `memory/core/` | Qui est l'agent |
+| `principles.md` | `memory/core/` | Ses principes de travail |
+| `user.md` | `memory/core/` | Qui vous êtes |
+| `idea-discovery.md` | **`inbox/`** | Sa façon d'explorer des idées |
 
 L'activation de chacun est enregistrée dans `personality-injection.json`. Seuls les fichiers activés sont injectés.
 
+À ces quatre s'ajoute le fichier `AGENTS.md` global, présenté dans le même écran : c'est le fichier racine du dossier de données, et c'est **celui-là** que l'application modifie quand on édite `AGENTS.md` depuis la section Personnalité — jamais celui d'un projet.
+
+**La liste est figée.** Les trois emplacements — racine, `memory/core/`, `inbox/` — et les noms de fichiers sont des constantes du code. Un fichier déposé à la main dans `memory/core/` n'apparaîtra pas dans l'écran Personnalité et ne sera jamais injecté.
+
 La section **Personnalité** de la navigation principale permet de les consulter et de les modifier.
 
-### 5. La limite de taille
+### 5. Où les instructions permanentes ne sont pas injectées
+
+Point à écrire clairement, parce qu'il explique une consigne apparemment ignorée : **ni `AGENTS.md` ni les fichiers de personnalité ne sont injectés** dans deux situations :
+
+- **en mode Chatbot** ;
+- **dans une session de sous-agent**.
+
+C'est cohérent avec le principe des sous-agents — un enfant ne voit rien de la conversation parente — mais quelqu'un qui a écrit ses conventions de projet dans `AGENTS.md` doit savoir que ses sous-agents ne les ont pas.
+
+### 6. La limite de taille
 
 **200 Ko au total**, toutes sources confondues.
 
@@ -89,7 +103,7 @@ Quand la limite est atteinte, les instructions restantes sont omises et un avert
 
 Point important : **l'ordre détermine ce qui survit**. Les sources lues en premier — les instructions globales — passent ; celles de la fin — les règles de projet — sont les premières sacrifiées. Quelqu'un qui accumule des règles doit le savoir.
 
-### 6. Écrire de bonnes instructions
+### 7. Écrire de bonnes instructions
 
 Section de conseils, pas de description. Ce qui vaut la peine d'être dit :
 
@@ -111,6 +125,9 @@ Section de conseils, pas de description. Ce qui vaut la peine d'être dit :
 **Encadré « Personnalité désactivée par défaut »**
 > Les quatre fichiers de personnalité existent mais sont inactifs à l'installation. Activez ceux qui vous intéressent depuis la section Personnalité.
 
+**Encadré « Deux situations sans instructions permanentes »** — avertissement.
+> En mode Chatbot et dans une session de sous-agent, ni `AGENTS.md` ni les fichiers de personnalité ne sont injectés. Une consigne qui semble ignorée dans l'un de ces deux cas l'est réellement : elle n'a pas été transmise.
+
 ---
 
 ## Pièges et erreurs fréquentes
@@ -120,6 +137,9 @@ Section de conseils, pas de description. Ce qui vaut la peine d'être dit :
 | Une consigne semble ignorée | Contredite par une source lue plus tard | Vérifier l'ordre d'assemblage |
 | Une règle de projet n'a aucun effet | Limite de 200 Ko atteinte, les dernières sources sont omises | Alléger les instructions globales |
 | Les fichiers de personnalité n'ont pas d'effet | Désactivés par défaut | Les activer dans la section Personnalité |
+| Aucune instruction permanente ne semble appliquée | Conversation en mode Chatbot, ou session de sous-agent | Changer de mode ; pour un sous-agent, écrire la consigne dans l'instruction de délégation |
+| Un fichier ajouté à la main dans `memory/core/` n'apparaît nulle part | La liste des fichiers de personnalité est figée dans le code | Employer `AGENTS.md` pour une consigne supplémentaire |
+| `idea-discovery.md` est introuvable dans `memory/core/` | Il vit dans `inbox/` | Normal |
 | Un fichier de `.cl-go/rules/` est ignoré | Seuls les fichiers `.md` sont lus | Renommer avec l'extension `.md` |
 | L'ordre des règles de projet n'est pas celui voulu | Tri alphabétique | Préfixer par un numéro |
 | Des instructions importées apparaissent sans avoir été écrites | Reprises d'un autre assistant lors de l'import | Les désactiver dans les réglages d'import |
@@ -138,8 +158,6 @@ Section de conseils, pas de description. Ce qui vaut la peine d'être dit :
 ## Points à confirmer
 
 - **Le dossier `.cl-go/` porte l'ancien nom du projet.** Vérifier si un dossier `.beaver/` est également reconnu, ou s'il est prévu. Un utilisateur qui découvre Beaver ne devinera pas `.cl-go`.
-- **L'édition de `AGENTS.md` depuis l'application** — quel fichier est modifié, le global ou celui du projet ?
-- **Le contenu par défaut des quatre fichiers de personnalité.** Ils sont créés à l'installation ; leur contenu n'a pas été relevé. Nécessaire pour dire à quoi sert chacun.
-- **Peut-on ajouter ses propres fichiers de personnalité** dans `memory/core/`, ou la liste est-elle figée à quatre ?
+- **Le contenu par défaut des quatre fichiers de personnalité.** Les fichiers sont créés **vides** à l'installation ; ce qui est affiché à côté de chacun dans l'écran Personnalité vient d'une clé de traduction, pas du fichier. Reste à relever le texte de ces quatre descriptions dans les traductions pour dire sur le site à quoi sert chacun.
 - **La sensibilité à la casse des noms de fichiers** (`AGENTS.md` contre `agents.md`), en particulier sous Windows et macOS où le système de fichiers ne distingue pas toujours.
 - **Ce que voit l'utilisateur de l'assemblage final.** Peut-il consulter le texte réellement envoyé au modèle ? Ce serait le meilleur outil de diagnostic pour cette page.

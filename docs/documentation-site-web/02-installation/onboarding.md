@@ -2,8 +2,8 @@
 
 **Emplacement site** — Démarrage › Premier lancement › Parcours d'accueil
 **Répond à** — « Qu'est-ce qu'on me demande au démarrage, et que se passe-t-il si je passe une étape ? »
-**Sources** — `src/components/onboarding/onboarding-screen.tsx`, `onboarding-welcome.tsx`, `onboarding-preferences.tsx`, `onboarding-agent-import.tsx`, `onboarding-api.tsx`, `onboarding-provider-grid.tsx`, `src/components/ollama/ollama-setup-screen.tsx`
-**Vérification** — Vérifié dans le code : l'ordre des étapes, leur contenu et la condition d'affichage de la dernière
+**Sources** — `src/components/onboarding/onboarding-screen.tsx:47-89`, `onboarding-welcome.tsx`, `onboarding-preferences.tsx:23`, `onboarding-agent-import.tsx`, `onboarding-api.tsx:39`, `onboarding-provider-grid.tsx`, `src/components/ollama/ollama-setup-screen.tsx`, `src-tauri/src/services/llm/route_profile/catalog_api.rs:42-191`
+**Vérification** — Vérifié dans le code : l'ordre des étapes, leur contenu, la condition d'affichage de la dernière, la limite de 32 fournisseurs et la clé de stockage de la langue
 
 ---
 
@@ -37,7 +37,7 @@
 Deux réglages, et deux seulement :
 
 - **Thème** — parmi les thèmes disponibles.
-- **Langue** — parmi les sept langues de l'interface. Le choix est mémorisé côté navigateur sous la clé `clgo-language`.
+- **Langue** — parmi les sept langues de l'interface. Le choix est mémorisé côté navigateur sous la clé `clgo-language` (`onboarding-preferences.tsx:23`, `src/components/settings/general-settings.tsx:81`, `src/i18n/index.ts:33`).
 
 Ces deux réglages se retrouvent ensuite dans Réglages › Général.
 
@@ -135,5 +135,5 @@ Tableau de correspondance en section Tableaux. C'est l'information la plus utile
 - **Le parcours peut-il être relancé ?** Le code ne montre pas de commande pour le rejouer. Confirmer, et si ce n'est pas possible, le dire explicitement sur le site.
 - **Le comportement quand aucune étape n'est validée.** Vérifier qu'on arrive bien dans une application utilisable, et ce qui s'affiche alors dans une conversation neuve sans modèle disponible.
 - **L'emplacement exact de l'assistant d'import dans les réglages.** À vérifier avant de publier le tableau de correspondance : l'onglet exact n'est pas confirmé.
-- **La limite de 32 fournisseurs affichés.** Sans effet aujourd'hui puisqu'il y en a dix, mais à garder en tête si le catalogue s'étoffe.
+- ~~La limite de 32 fournisseurs affichés.~~ **Tranché** : confirmée et bien à 32, sur la seule catégorie `llm` (`src/components/onboarding/onboarding-api.tsx:39`). Sans effet aujourd'hui puisque le catalogue en compte **onze** (`catalog_api.rs:42-191`), mais à garder en tête s'il s'étoffe.
 - **Le mode de permission n'est pas proposé pendant le parcours.** L'application démarre en **Accès complet**. Envisager de le mentionner à l'étape de bienvenue, et en attendant, le signaler sur cette page.

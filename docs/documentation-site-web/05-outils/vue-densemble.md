@@ -2,8 +2,8 @@
 
 **Emplacement site** — Outils › Vue d'ensemble (page d'entrée de la section)
 **Répond à** — « Qu'est-ce que l'agent sait faire, et comment je décide de ce qu'il a le droit de faire ? »
-**Sources** — `src-tauri/src/services/agent_local/tool_group_catalog.rs`, `tool_catalog.rs`, `tool_catalog_filter.rs`, `tool_availability.rs`, `tool_definitions.rs`, `tool_prompt_filter.rs`, `tool_result_truncate.rs`, `tool_result_budget.rs`, `tool_validate.rs`, `src/components/settings/tools-settings.tsx`, `src/i18n/fr.json` (clé `settings.tools`)
-**Vérification** — Vérifié dans le code, sauf les points listés en fin de fiche
+**Sources** — `src-tauri/src/services/agent_local/tool_group_catalog.rs`, `tool_catalog.rs` (lignes 29-50 pour les outils verrouillés), `tool_catalog_filter.rs`, `tool_availability.rs`, `tool_definitions.rs`, `tool_extension_resource.rs`, `src-tauri/src/services/extensions/mod.rs`, `tool_prompt_filter.rs`, `tool_result_truncate.rs`, `tool_result_budget.rs`, `tool_validate.rs`, `src/components/settings/tools-settings.tsx`, `src/i18n/fr.json` (clé `settings.tools`)
+**Vérification** — Vérifié dans le code, revérifié le 9 septembre 2026, sauf les points listés en fin de fiche
 
 ---
 
@@ -45,6 +45,10 @@ Voir les deux tableaux plus bas. Résumé chiffré, à donner en une ligne sur l
 - **5 groupes essentiels**, 11 outils.
 - **11 groupes optionnels**, 32 outils.
 - **5 groupes optionnels sont actifs par défaut**, 6 sont éteints.
+
+**Trois outils verrouillés supplémentaires n'appartiennent à aucun groupe** et n'apparaissent donc dans aucun des deux tableaux de l'écran des réglages : `list_extensions`, `inspect_extensions` et `load_extension_resource`. Ils servent aux extensions et sont toujours actifs.
+
+Le catalogue verrouillé compte donc **14 outils** : les 11 répartis dans les 5 groupes essentiels, plus ces 3 outils d'extension hors groupe.
 
 ### Ce qui est actif à l'installation
 
@@ -111,6 +115,16 @@ Tout appel d'outil est validé avant exécution :
 | Recherche de fichiers | `file_search` | `grep`, `glob` | Chercher un fichier ou un motif dans le projet |
 | Web | `web` | `web_search`, `web_fetch` | Chercher en ligne et ouvrir une page |
 | Connecteurs externes | `mcp` | `search_mcp_tools` | Utiliser les connecteurs MCP configurés |
+
+### Outils verrouillés hors groupe
+
+| Outil | Rôle | Visible dans les réglages |
+|---|---|---|
+| `list_extensions` | Lister les extensions disponibles | **Non** |
+| `inspect_extensions` | Consulter le détail d'une extension | **Non** |
+| `load_extension_resource` | Charger une ressource fournie par une extension | **Non** |
+
+Ces trois outils sont **toujours actifs** et **n'ont aucun interrupteur**. Ils n'apparaissent ni dans la carte des outils essentiels, ni dans celle des outils optionnels.
 
 ### Groupes optionnels
 
@@ -201,7 +215,7 @@ Budget cumulé de tous les résultats d'outils dans une conversation : **100 000
 ## Points à confirmer
 
 - **Le nombre d'outils optionnels est exactement égal à la limite interne.** Le catalogue compte 32 outils optionnels et la borne `MAX_OPTIONAL_TOOLS` vaut 32. Tout activer atteint donc pile la limite. Le point est sans conséquence aujourd'hui, mais la troncature se fait **en silence** (`.take(32)`, sans message) : le jour où un outil optionnel est ajouté, activer tous les groupes en désactivera un sans le dire. À signaler à l'équipe produit ; ne pas écrire sur le site.
-- **Un douzième outil essentiel existe dans le catalogue mais n'appartient à aucun groupe** : `search_extension_tools`. Il est donc toujours actif et **n'apparaît pas dans l'écran Réglages**. Il relève des extensions, chantier gelé. À trancher quand la section Extensions sera dégelée : le documenter, ou le retirer du catalogue tant que les extensions ne sont pas livrées.
+- **Les trois outils d'extension verrouillés hors groupe** — `list_extensions`, `inspect_extensions`, `load_extension_resource` — sont toujours actifs et invisibles dans l'écran des réglages. À trancher avec l'équipe produit : les documenter dans la section Extensions, leur donner un groupe visible, ou expliquer ici pourquoi ils n'en ont pas.
 - **Le groupe Plan mode est actif par défaut** alors que le mode Plan doit être revu (chantier gelé). Vérifier avant publication si le réglage par défaut change en même temps que la fonctionnalité.
 - Je n'ai **pas ouvert l'écran Réglages › Agent › Outils**. La disposition décrite vient de la lecture du composant : titre, phrase d'introduction, une carte « Tools essentiels » puis une carte « Tools optionnels ». À vérifier visuellement, notamment l'ordre d'affichage des groupes et le libellé exact des deux titres — le code affiche « Tools essentiels » et « Tools optionnels », avec le mot anglais *tools* alors que le reste de la page dit « outils ». **Incohérence de vocabulaire à remonter à l'équipe produit.**
-- Le comportement quand une extension remplace un outil natif désactivé est implémenté (le remplacement reste indisponible) mais relève du chantier gelé Extensions. Ne pas documenter maintenant.
+- **Le remplacement d'un outil natif par une extension est bien implémenté et actif** : le filtre du catalogue interroge, pour chaque outil, s'il est activé, s'il vient d'une extension et s'il est un remplacement. Les extensions étant livrées, la consigne antérieure « ne pas documenter maintenant » est levée — reste à décider **où** l'expliquer : ici, ou dans la section Extensions. À trancher avec le propriétaire de la section.

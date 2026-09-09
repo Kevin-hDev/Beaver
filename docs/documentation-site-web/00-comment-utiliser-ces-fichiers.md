@@ -68,11 +68,12 @@ Le code fait foi. Toujours. Dans cet ordre de confiance décroissante :
 2. **`README.md`, `CHANGELOG.md`, `SECURITY.md`** — maintenus avec les releases, donc à jour, mais orientés vitrine : ils décrivent ce que fait le produit, pas comment on s'en sert.
 3. **Le contenu de `docs/`** — **daté, non maintenu, partiellement faux**. À traiter comme une piste à vérifier, jamais comme une source.
 
-Cette hiérarchie n'est pas théorique. Trois erreurs ont déjà été relevées en écrivant ces fichiers :
+Cette hiérarchie n'est pas théorique. Deux erreurs ont déjà été relevées en écrivant ces fichiers :
 
-- `CROSS-PLATFORM.md` annonce un support Fedora/RHEL que `install.sh` n'implémente pas ;
-- `CLAUDE.md` affirme que la release CI est publiée directement, alors que le workflow la crée en brouillon ;
-- plusieurs constats matériels de `CROSS-PLATFORM.md` datent d'avril 2026, pour une version courante 1.1.2.
+- `CROSS-PLATFORM.md` annonce un support Fedora/RHEL que `install.sh` n'implémente pas — l'écart tient toujours, le script n'appelle que `apt-get` (`install.sh:153`) ;
+- plusieurs constats matériels de `CROSS-PLATFORM.md` datent d'avril 2026, pour une version courante **1.2.2**.
+
+Une troisième figurait ici — « `CLAUDE.md` affirme que la release CI est publiée directement, alors que le workflow la crée en brouillon » — et **elle est périmée** : le workflow crée aujourd'hui la release directement publiée, sans `--draft` (`.github/workflows/release.yml:438-443`), et bascule en publiée toute release trouvée en brouillon pour ce tag (`:436`). Elle est conservée ici comme illustration d'un deuxième piège, symétrique du premier : **un écart relevé une fois ne reste pas vrai**, et une note de vérification vieillit exactement comme la source qu'elle corrige.
 
 Quand un fichier de `docs/` est la seule source disponible, le signaler dans le champ *Vérification* et dans *Points à confirmer*. Ne pas publier sans vérification.
 

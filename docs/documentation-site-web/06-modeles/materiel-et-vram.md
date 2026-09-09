@@ -2,8 +2,8 @@
 
 **Emplacement site** — Modèles › Matériel
 **Répond à** — « Quel modèle local puis-je faire tourner avec ma machine ? »
-**Sources** — `src/components/settings/vram-table.tsx`, `services/gpu_vram.rs`, `services/gpu_detect.rs`, `services/ollama_env.rs`, `src/components/ollama/model-profile-specs.ts`
-**Vérification** — Vérifié dans le code
+**Sources** — `src/components/settings/vram-table.tsx`, `services/gpu_vram.rs`, `services/gpu_vram/macos.rs`, `services/gpu_detect.rs`, `services/ollama_manager/spawn_settings.rs`, `src/components/ollama/model-profile-specs.ts`
+**Vérification** — Vérifié dans le code (relu le 9 septembre 2026)
 
 ---
 
@@ -86,7 +86,7 @@ Au démarrage, Beaver identifie la carte graphique et mesure la mémoire disponi
 
 Quand la mesure échoue, Beaver prend la valeur la plus prudente plutôt que d'espérer.
 
-Il réserve par ailleurs **un gigaoctet de mémoire vidéo** au système : sans cette marge, un modèle qui remplit exactement la mémoire rend l'affichage saccadé ou fait échouer le chargement.
+**Beaver ne réserve aucune mémoire vidéo au système.** La marge doit donc être prise par l'utilisateur au moment de choisir sa variante — c'est la raison du conseil de prévoir un à deux gigaoctets au-delà de la valeur du tableau.
 
 L'écran de détail d'un modèle affiche ses caractéristiques réelles avant installation : taille du fichier, nombre de paramètres, longueur de contexte, niveau de compression, architecture, et s'il s'agit d'un modèle à experts spécialisés.
 
@@ -155,8 +155,13 @@ Par ordre de préférence :
 
 ## Points à confirmer
 
-- **La table de mémoire est codée en dur dans l'interface** (`vram-table.tsx`), avec cinq tailles et quatre niveaux de compression. Elle ne s'adapte pas aux formats plus récents qui pourraient apparaître. Sans conséquence aujourd'hui — ce sont des estimations et les ordres de grandeur restent valables — mais à surveiller.
-- **La formule de calcul affichée sous la table** vient d'une clé de traduction que je n'ai pas relevée. À récupérer si le site reproduit la table.
 - Les **recommandations par configuration** (8 Go, 16 Go, 24 Go…) sont ma déduction à partir de la table, pas une donnée du produit. À faire valider avant publication — c'est le tableau que les lecteurs utiliseront le plus.
 - Le **conseil « grand modèle compressé plutôt que petit modèle peu compressé »** est un consensus du domaine, pas une affirmation vérifiée dans le code de Beaver. À conserver, mais sans le présenter comme une mesure faite par l'équipe.
 - Affichage à vérifier lors de la passe d'interface : emplacement exact de la table dans les réglages, et présence d'un avertissement quand le modèle sélectionné dépasse la mémoire détectée.
+
+**Points tranchés le 9 septembre 2026, conservés pour mémoire :**
+
+- **La table de mémoire est codée en dur dans l'interface** — confirmé (`src/components/settings/vram-table.tsx`), avec cinq tailles (`3B`, `7B`, `13B`, `30B`, `70B`) et quatre niveaux de compression (`Q4_K_M`, `Q5_K_M`, `Q8_0`, `f16`). **Les vingt valeurs du tableau ci-dessus correspondent une à une au code.** La table ne s'adapte pas aux formats plus récents qui pourraient apparaître : sans conséquence aujourd'hui — ce sont des estimations — mais à surveiller.
+- **La formule affichée sous la table** est retrouvée : elle vient de la clé de traduction `settings.advanced.vramFormula` et se lit, en français, **« VRAM ≈ taille modèle + (contexte/1000 × 0.5 GB) + 0.5 GB »**. Elle est reproductible telle quelle sur le site.
+- **Le gigaoctet de mémoire vidéo réservé au système**, affirmé dans une version précédente de ce fichier, **n'existe pas** : aucune trace dans `services/ollama_manager/` ni dans `services/gpu_vram.rs`. L'affirmation a été retirée.
+- **Le cas du Mac à processeur Intel** — confirmé : `services/gpu_vram/macos.rs` sort immédiatement hors architecture `aarch64`, donc la mémoire n'est pas mesurée et le contexte tombe au palier de **8 192 jetons**. Reste à confirmer côté produit que c'est un choix et non un effet de bord.

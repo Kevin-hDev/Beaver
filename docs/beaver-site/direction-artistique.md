@@ -25,8 +25,12 @@ Le site doit vendre ça comme un pilier à part entière (« hackable », pas
 
 ### Pitch
 
-- **Accroche principale** : « Beaver — l'agent qui construit, branche par branche. »
+- **Accroche principale** : « Tout est déjà là — et tu peux tout reprendre. »
+  (depuis août 2026 : le harnais est la thèse du site ; la métaphore castor
+  devient la colonne vertébrale visuelle — barrage, sciure, mascotte)
 - **Sous-titre** : « Local, cloud, ou les deux. Un seul endroit, toutes tes machines à penser. »
+- **Accroche historique** (conservée pour la métaphore) : « L'agent qui
+  construit, branche par branche. »
 - **Version EN** : "Beaver builds while you sleep." / "The agent that builds, branch by branch."
 
 ### La métaphore castor = les vraies features
@@ -103,11 +107,12 @@ seuls les tokens changent (une seule couche de variables CSS, comme dans l'app).
 
 Pas de polices "classiques" (Inter, Roboto, SF…).
 
-| Rôle | Police proposée | Fallback |
+| Rôle | Police retenue (mockups v2) | Fallback |
 |---|---|---|
-| Display (titres géants, all-caps condensé) | **Clash Display** ou **Unbounded** | Archivo Black |
-| Tension (1 mot en italique dans les titres) | **EB Garamond Italic** ou **Instrument Serif Italic** | Georgia italic |
-| Mono / terminal / labels | **Departure Mono** ou **Martian Mono** | Geist Mono, JetBrains Mono |
+| Display (titres géants, all-caps condensé) | **Anton** | Archivo Black |
+| Tension (1 mot en italique dans les titres) | **Instrument Serif Italic** | Georgia italic |
+| Corps de texte | **Instrument Sans** (400/500/600) | system-ui |
+| Mono / terminal / labels | **Martian Mono** (300/400/600) | Geist Mono, JetBrains Mono |
 
 Signature typographique : titre display condensé géant avec **un mot en italique serif**
 (la tension OpenClaw), labels en mono uppercase espacé (`letter-spacing` large).
@@ -123,17 +128,30 @@ chaque section ajoute une couche / une branche. Rien ne "défile" platement.
   réapparaît entre les sections (elle pousse une branche, elle dort, elle pointe)
 - Transitions de section : wipe/morph, jamais de simple fade-in en cascade
 
-## 6. Structure de la page (one-page v1)
+## 6. Structure du site
+
+> **Depuis août 2026, trois pages au lieu d'une one-page :**
+> - `index.html` — loader, hero + démo « l'app se remodule », manifeste,
+>   harnais (la branche 06 promue en section dédiée), import (« tu viens
+>   d'ailleurs »), footer
+> - `barrage.html` — « ce qu'il embarque » : le barrage 01–07, le forecast
+>   (section `#forecast`), l'installation (`#install`), footer
+> - `docs.html` — la documentation (voir section 10)
+>
+> Le code est passé de HTML monolithiques à des modules partagés :
+> `css/{base,nav,hero,dam,harness,forecast,docs,footer,motion}.css` et
+> `js/{theme,dust,demo,dam,chart,install}.js`.
 
 ### 6.0 Loader
 Compteur 0→100 en mono, petite animation mascotte, puis reveal du hero (clip-path).
 
 ### 6.1 Hero
-- Titre display géant : « L'AGENT QUI *construit* BRANCHE PAR BRANCHE »
-- Sous-titre sobre, 2 CTA : `Télécharger` (accent plein) / `Voir le repo` (outline)
-- Mascotte animée + ligne terminal qui se tape toute seule :
-  `$ brew install beaver` ou la commande curl réelle
-- Fond : dot-matrix + particules discrètes
+- Titre display géant : « TOUT EST DÉJÀ LÀ — *et tu peux tout* REPRENDRE »
+- Sous-titre sobre, 2 CTA : `Télécharger` (accent plein) / `Voir comment →` (outline)
+- **Démo « l'app se remodule »** : wireframe de l'UI qui se réorganise tout
+  seul en 3 états (installation → tu ajoutes ton panneau → tu remplaces ce que
+  tu veux) — la thèse du site jouée avant d'être écrite
+- Fond : particules de sciure (Canvas 2D) qui s'assemblent en barrage au scroll
 
 ### 6.2 Manifeste (éditorial, microsoft.ai)
 2-3 phrases grandes, posées. « Tes LLM locaux. Tes providers cloud. Tes clés
@@ -160,21 +178,25 @@ remodulée par extensions, avec un mini-bloc de code d'exemple d'extension.
 ### 6.4 Forecast — la signature
 « Ce que les autres agents n'ont pas. » Un vrai graphique de séries temporelles
 animé (tracé qui se dessine, intervalle de confiance), modèles listés en mono
-(Chronos, TimesFM, MOIRAI, TimeGPT…). C'est LA section mémorable.
+(Chronos-Bolt, TimesFM, MOIRAI 2.0, Toto 2.0, FlowState, TabPFN-TS, TiRex,
+Sundial, TimeGPT-2 ☁…). C'est LA section mémorable.
 Forecast V2 : backtests glissants, métriques MASE/sMAPE/MAE/couverture, anomalies,
 décomposition, ensembles pondérés, 7 vues, exports CSV→PDF.
+Vit dans `barrage.html#forecast` (la page dédiée a été fusionnée).
 
-### 6.5 Install (OpenClaw-style)
-Bloc terminal à onglets : `macOS / Linux` | `Windows` — la commande curl réelle.
-Bouton copier. Rien d'autre.
+### 6.5 Install
+Bloc terminal unique : `curl -fsSL https://beaver.dev/install.sh | bash` qui
+se tape tout seul à l'arrivée dans le viewport + bouton Copier.
+~~Onglets macOS/Linux | Windows~~ → simplifié en une ligne (août 2026) ;
+à revalider pour Windows (PowerShell ?). Vit dans `barrage.html#install`.
 
 ### 6.6 Stack & chiffres
 Bandeau mono : `Rust · Tauri 2 · React 19 · 3 OS · AGPL-3.0`.
 Éventuellement stars GitHub plus tard.
 
 ### 6.7 Footer
-CTA typographique géant « CONSTRUIS *ton* BARRAGE » façon Glenn Catteeuw.
-Liens : GitHub, docs, changelog. Mascotte qui dort.
+CTA typographique géant « CONSTRUIS *ton* BARRAGE. PUIS DÉMONTE LE NÔTRE. »
+façon Glenn Catteeuw. Liens : GitHub, docs, changelog. Mascotte qui dort.
 
 ## 7. Inventaire des animations
 
@@ -235,7 +257,8 @@ Stack recommandée : Astro (statique, rapide, îles JS, i18n possible).
 
 ## 11. Questions ouvertes
 
-1. Nom de domaine ? (beaver.dev / beaverapp… — impacte le hero et le SEO)
+1. Nom de domaine ? → `beaver.dev` est utilisé dans les mockups
+   (commande d'install) — **à confirmer et réserver** avant publication
 2. Langue du site : EN uniquement, ou FR + EN ?
 3. ~~Screenshots réels de l'app~~ → **décision 2026-08 : images uniquement, pas de vidéo pour le moment** (section 6.3 montrera des captures fixes)
 4. Déclinaisons de la mascotte : qui les produit ?
@@ -244,11 +267,29 @@ Stack recommandée : Astro (statique, rapide, îles JS, i18n possible).
 ### Notes de session (2026-08)
 - Le chart forecast de l'app est passé en v2 : courbes lissées (monotone), aire en
   dégradé sous l'historique, zone de forecast teintée, bande de confiance subtile,
-  fan chart q10/q90 + saisonnalité, drag pan / wheel zoom. Le mockup `forecast.html`
-  a été aligné sur ce langage visuel.
+  fan chart q10/q90 + saisonnalité, drag pan / wheel zoom. Le mockup forecast
+  a été aligné sur ce langage visuel (dans `barrage.html#forecast`).
+
+### Notes de session (2026-08-08 — refonte v2)
+- **Pitch pivoté** : le harnais (« tout reprendre, pas un fork ») devient la
+  thèse du site et le titre du hero. La métaphore castor reste visuelle.
+- **Trois pages** : `index.html` (hero + démo remodulage, manifeste, harnais,
+  import), `barrage.html` (barrage 01–07, forecast, install), `docs.html`
+  (vraie page « Modes de permission » avec tableau, callouts, sidebar 6 groupes).
+- **Code modularisé** : `css/` × 9, `js/` × 6. `forecast.html` monolithe
+  supprimé (section déplacée dans `barrage.html`).
+- **Nouveautés visuelles** : loader compteur (une fois par session), sciure
+  Canvas 2D qui s'assemble en barrage au scroll (`dust.js`), démo hero qui
+  remodule l'UI en 3 états (`demo.js`), footer « PUIS DÉMONTE LE NÔTRE. ».
+- **`prefers-reduced-motion` respecté partout** ; params de debug conservés :
+  `?theme=light`, `?state=all`, `?skip=loader`.
+- Modèles forecast listés : Chronos(-Bolt), TimesFM, MOIRAI 2.0, Toto 2.0,
+  FlowState, TabPFN-TS, TiRex, Sundial, TimeGPT-2 ☁.
+- Install simplifiée en une ligne curl (`beaver.dev`) — onglets par OS abandonnés.
+- Previews v2 archivées dans `mockup/preview-site-beaver/` (suffixe `-v2`).
 - L'app a maintenant plusieurs thèmes (dark, light, astral-mist, emerald-night,
   cobalt-frost) — le site reste sur dark + light pour la v1.
-- Source de vérité produit lue : `Beaver/docs/contexte/features-embarquees.md`
+- Source de vérité produit lue : `Beaver/docs/produit/fonctionnalites-embarquees.md`
   (28 juillet 2026), copiée dans `docs/beaver-site/ref/`. Nouveautés intégrées au
   site : navigateur Chromium intégré (macOS/Windows), système d'extensions +
   4 plugins Office officiels, mémoire persistante, comptes web (OpenAI/Grok/Kimi),

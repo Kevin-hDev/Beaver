@@ -2,8 +2,8 @@
 
 **Emplacement site** — Démarrage › Choisir son modèle (à placer avant la page Fournisseurs & comptes web du mockup)
 **Répond à** — « Je dois choisir entre faire tourner un modèle chez moi ou payer un service. Quelle différence, et laquelle pour mon cas ? »
-**Sources** — `README.md`, `src-tauri/src/services/llm/catalog.rs`, `src-tauri/src/services/llm/`, `src-tauri/src/services/oauth_providers/`, `src/components/agent-local/chat-input-actions-row.tsx`
-**Vérification** — Liste des fournisseurs vérifiée dans le code (`services/llm/`, identifiants `groq`, `gemini`/`google`, `mistral`, `cerebras`, `openrouter`, `openai`, `deepseek`, `xai`, `kimi`/`moonshot`, `glm`/`zai`) ; comparatif issu du README et du fonctionnement général
+**Sources** — `README.md`, `src-tauri/src/services/llm/route_profile/catalog_api.rs:42-191` (clés API), `src-tauri/src/services/llm/route_profile/catalog_oauth.rs:28-56` (comptes web), `src-tauri/src/services/oauth_providers/mod.rs:57`, `src-tauri/src/services/search/mod.rs`, `src/components/agent-local/chat-input-actions-row.tsx`
+**Vérification** — Vérifié dans le code : les onze fournisseurs par clé API sont lus dans `catalog_api.rs` (identifiants de secret `google`, `mistral`, `cerebras`, `openrouter`, `openai`, `deepseek`, `xai`, `moonshot`, `zai`, `anthropic`, `qwen`) et les trois comptes web dans `catalog_oauth.rs` ; comparatif issu du README et du fonctionnement général
 
 ---
 
@@ -53,7 +53,7 @@ Critères à énumérer :
 
 ### 5. Les fournisseurs disponibles
 
-Tableau complet en section Tableaux. Deux mentions obligatoires en dessous :
+Tableau complet en section Tableaux : **onze** fournisseurs LLM par clé API (`catalog_api.rs:42-191`), dont **trois** acceptant aussi une connexion par compte web (`catalog_oauth.rs:28-56`). Deux mentions obligatoires en dessous :
 
 - Les modèles proposés, les quotas et les tarifs sont décidés par le fournisseur et **changent sans préavis**. Ne jamais publier de prix sur le site.
 - Beaver affiche les informations de compte **que le fournisseur accepte de communiquer** — la couverture varie de l'un à l'autre.
@@ -92,7 +92,6 @@ Décrire une organisation type plutôt qu'imposer une règle :
 
 | Type | Fournisseur | Connexion |
 |---|---|---|
-| LLM | Groq | Clé API |
 | LLM | Google Gemini | Clé API |
 | LLM | Mistral | Clé API |
 | LLM | Cerebras | Clé API |
@@ -102,6 +101,8 @@ Décrire une organisation type plutôt qu'imposer une règle :
 | LLM | xAI | Clé API ou compte web Grok |
 | LLM | Moonshot Kimi | Clé API ou compte web Kimi (expérimental) |
 | LLM | Z.ai GLM | Clé API |
+| LLM | Anthropic Claude | Clé API Console (en-tête `x-api-key`) |
+| LLM | Qwen | Clé API (point d'accès résolu via Alibaba Model Studio) |
 | Recherche | Brave Search | Clé API |
 | Recherche | Exa | Clé API |
 | Recherche et extraction | Firecrawl | Clé API |
@@ -114,7 +115,7 @@ Les URL de création de clé figurent dans le README et doivent être reprises s
 
 ## Encadrés
 
-**Encadré « Le compte web Kimi est expérimental »** — le README le signale explicitement. Ne pas le présenter au même niveau de fiabilité que les deux autres connexions par compte.
+**Encadré « Le compte web Kimi est expérimental »** — vérifié dans le code : `src-tauri/src/services/oauth_providers/mod.rs:57` marque `experimental` **uniquement** pour Moonshot ; les comptes OpenAI/Codex et xAI ne portent pas ce drapeau. Ne pas le présenter au même niveau de fiabilité que les deux autres connexions par compte.
 
 **Encadré « Aucun prix sur le site »** — note interne pour le rédacteur, pas pour la page : les tarifs des fournisseurs changent trop souvent pour être maintenus. Renvoyer vers leurs pages de tarification.
 
@@ -142,7 +143,7 @@ Les URL de création de clé figurent dans le README et doivent être reprises s
 
 ## Points à confirmer
 
-- **Le statut « expérimental » du compte web Kimi.** Repris du README ; vérifier qu'il est toujours d'actualité au moment de publier.
+- ~~Le statut « expérimental » du compte web Kimi.~~ **Tranché** : toujours d'actualité, et propre à ce seul fournisseur (`services/oauth_providers/mod.rs:57`).
+- ~~Les identifiants internes `google`/`gemini` et `zai`/`glm`.~~ **Tranché** : l'identifiant de secret est `google` et le nom affiché « Google Gemini » (`catalog_api.rs:48`) ; côté prévision, `google` désigne TimesFM, collision documentée en tête de `src-tauri/src/services/forecast/catalog.rs:1-7`. Sans incidence sur la documentation utilisateur.
 - **La couverture réelle des informations d'usage par fournisseur.** Le README annonce limites, crédits, jetons, requêtes et estimation de coût « quand le fournisseur les expose ». Établir la liste exacte de ce qui s'affiche pour chacun, sinon la page *Usage et coûts* promettra plus que ce qui existe.
 - **Le comportement du changement de modèle en cours de conversation.** Confirmé pour l'historique, mais non vérifié pour les cas limites : que se passe-t-il si le nouveau modèle a une fenêtre de contexte plus petite que l'historique déjà accumulé ? À trancher avant de rédiger la section 7.
-- **Les identifiants internes `google`/`gemini` et `zai`/`glm`.** Le code emploie les deux formes. Sans incidence sur la documentation utilisateur, mais à garder en tête si le site affiche un jour des identifiants techniques.

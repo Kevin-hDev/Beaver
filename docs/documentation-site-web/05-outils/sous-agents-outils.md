@@ -2,8 +2,8 @@
 
 **Emplacement site** — Outils › Sous-agents
 **Répond à** — « Quels sont les outils qui servent à déléguer, suivre et récupérer le travail d'un sous-agent ? »
-**Sources** — `tool_definitions_subagent.rs`, `tool_delegate.rs`, `tool_subagent_control.rs`, `tool_subagent_changes.rs`, `subagent_git_actions.rs`, `subagent_registry.rs`, `tool_catalog.rs`, `tool_automation_validation.rs`
-**Vérification** — Vérifié dans le code
+**Sources** — `tool_definitions_subagent.rs`, `tool_delegate.rs`, `tool_subagent_control.rs`, `tool_subagent_changes.rs`, `subagent_git_actions.rs`, `subagent_registry.rs`, `subagent_tool_profile.rs` (lignes 22-50), `subagent_explorer_bash.rs` (lignes 44-144), `subagent_profile.rs`, `tool_catalog.rs`
+**Vérification** — Vérifié dans le code, revérifié le 9 septembre 2026
 
 > Cette page décrit **les outils**. Le fonctionnement des sous-agents — sessions isolées, espaces de travail Git séparés, limites — est expliqué dans `04-agent/sous-agents.md`. Les deux pages se lisent ensemble ; celle-ci est la référence, l'autre l'explication.
 
@@ -47,8 +47,13 @@ Deux types de sous-agents, et le choix détermine ce qu'ils peuvent faire :
 
 | Type | Outils dont il dispose | Écrit dans le projet |
 |---|---|---|
-| **Explorateur** | Lecture de fichiers, listing, recherche par motif, recherche par nom, recherche web, ouverture de page | **Non** |
-| **Codeur** | Création et modification de fichiers, dans un espace de travail Git isolé | **Oui**, mais à l'écart |
+| **Explorateur** | **Sept** : commandes d'exploration en liste blanche, lecture de fichiers, listing, recherche par motif, recherche par nom, recherche web, ouverture de page | **Non** |
+| **Codeur** | **Dix**, plus le chargement de skills si le groupe Skills est activé : commandes shell et pilotage d'un processus, lecture, création et modification de fichiers, listing, recherche par motif, recherche par nom, recherche web, ouverture de page | **Oui**, mais à l'écart |
+
+Le détail complet est dans le tableau « Les outils par type de sous-agent », plus bas. Deux points à ne pas manquer :
+
+- **L'explorateur dispose de commandes shell**, contrairement à ce que « il ne fait que lire » laisse croire. Ce sont des commandes d'exploration en liste blanche stricte, sans opérateur de shell — voir le tableau « Ce que l'explorateur peut lancer comme commande ». Il n'écrit toujours rien dans le projet.
+- **Le chargement de skills n'est donné qu'au codeur**, et seulement si le groupe Skills est activé dans les réglages. Un utilisateur qui coupe ce groupe prive aussi ses sous-agents codeurs de leurs guides. L'explorateur n'y a jamais accès.
 
 Points à retenir :
 
@@ -126,21 +131,52 @@ Le message d'échec d'intégration est explicite et **dit quoi faire** : le chan
 
 ### Les outils par type de sous-agent
 
-| Explorateur | Codeur |
+| Outil | Explorateur | Codeur |
+|---|---|---|
+| Lancer une commande (`bash`) | **Oui**, liste blanche de lecture seule | **Oui**, commandes complètes dans son espace isolé |
+| Piloter un processus lancé (`bash_control`) | Non | **Oui** |
+| Lire un fichier (`read_file`) | **Oui** | **Oui** |
+| Créer un fichier (`write_file`) | Non | **Oui** |
+| Modifier un fichier (`edit_file`) | Non | **Oui** |
+| Lister un dossier (`list_dir`) | **Oui** | **Oui** |
+| Chercher par motif (`grep`) | **Oui** | **Oui** |
+| Chercher par nom (`glob`) | **Oui** | **Oui** |
+| Chercher sur le web (`web_search`) | **Oui** | **Oui** |
+| Ouvrir une page (`web_fetch`) | **Oui** | **Oui** |
+| Charger un skill (`load_skill`) | **Jamais** | **Oui**, si le groupe Skills est activé |
+| **Total** | **7** | **10**, ou **11** avec les skills |
+
+Un sous-agent reçoit en plus les outils fournis par les extensions installées, dans les limites de son profil : le codeur y a accès sans restriction d'effet, l'explorateur seulement à ceux déclarés en lecture seule.
+
+### Ce que l'explorateur peut lancer comme commande
+
+Le `bash` de l'explorateur n'est pas le `bash` ordinaire. C'est une liste blanche stricte, vérifiée avant toute exécution :
+
+| Commande autorisée | Contrainte |
 |---|---|
-| Lire un fichier | Lire un fichier |
-| Lister un dossier | Créer un fichier |
-| Chercher par motif | Modifier un fichier |
-| Chercher par nom | Travailler dans un espace Git isolé |
-| Chercher sur le web | |
-| Ouvrir une page | |
+| `pwd` | Sans aucun argument |
+| `ls` | Options d'affichage seulement, chemins confinés au dossier de travail |
+| `tree` | **`-L` obligatoire**, profondeur de **1 à 8**, aucune autre option |
+| `file`, `stat`, `wc`, `du`, `df` | Options d'affichage seulement, chemins confinés |
+| `git status`, `git diff`, `git log`, `git show`, `git rev-parse`, `git ls-files` | Options de mise en forme et de sélection seulement, chemins confinés |
+| `git remote -v`, `git tag --list` | Exactement cette forme |
+| `git branch` | Seules les options d'affichage : `-a`, `--all`, `-r`, `--remotes`, `-v`, `-vv`, `--list`, `--show-current` |
+
+Chaque commande a sa propre liste d'options acceptées, courte et explicite. Une option hors liste est refusée avec « Option d'exploration refusée. » ; une commande ou une sous-commande hors liste, avec « Commande d'exploration refusée. »
+
+S'y ajoutent trois règles de forme :
+
+- **aucun opérateur de shell** — `;` `|` `>` `<` `` ` `` `$(` `&&` `||`, retour à la ligne, retour chariot, guillemets simples et doubles, antislash : leur seule présence fait refuser la commande ;
+- **32 mots au maximum**, sinon « Commande d'exploration trop longue. » ;
+- **tous les chemins confinés** au dossier de travail du sous-agent.
 
 ### Où ces outils sont interdits
 
 | Contexte | Raison |
 |---|---|
-| Dans un sous-agent | Pas de récursion |
-| Dans une automatisation programmée | Une tâche planifiée ne doit pas se ramifier |
+| Dans un sous-agent | Pas de récursion : un sous-agent ne délègue pas |
+
+Il n'existe **pas** d'autre contexte où ces outils sont refusés. En particulier, une automatisation programmée dispose des neuf outils de délégation comme n'importe quelle conversation — voir `05-outils/skills-et-automatisations.md`.
 
 ---
 
@@ -158,6 +194,12 @@ Le message d'échec d'intégration est explicite et **dit quoi faire** : le chan
 > **Après une intégration manuelle, abandonner le changement.**
 > Sinon la branche temporaire et le changement en attente restent sur le disque.
 
+> **L'explorateur peut lancer des commandes, mais seulement pour regarder.**
+> Il dispose d'un shell restreint à une liste blanche de commandes de lecture — `pwd`, `ls`, `tree`, `file`, `stat`, `wc`, `du`, `df` et quelques sous-commandes Git — sans aucun opérateur d'enchaînement ni de redirection, et confiné à son dossier de travail. Il n'écrit rien dans le projet.
+
+> **Couper le groupe Skills coupe aussi les skills des sous-agents codeurs.**
+> `load_skill` n'est ajouté au profil du codeur que si le groupe est activé, et n'est jamais donné à l'explorateur.
+
 ---
 
 ## Pièges et erreurs fréquentes
@@ -171,6 +213,9 @@ Le message d'échec d'intégration est explicite et **dit quoi faire** : le chan
 | « Des branches temporaires traînent dans mon dépôt » | Changements ni intégrés ni abandonnés | Demander l'abandon des changements en attente |
 | « Le sous-agent ne répond pas à mon message » | Il travaille : l'instruction est en file | Elle sera traitée à la fin du travail en cours |
 | « L'agent a refait lui-même ce qu'il avait délégué » | Le modèle n'a pas suivi la consigne | Signaler ; c'est un défaut de comportement du modèle |
+| « Commande d'exploration refusée » | L'explorateur a tenté une commande hors liste blanche, ou contenant un opérateur de shell | Comportement voulu ; confier la tâche à un sous-agent codeur |
+| « Option d'exploration refusée » | L'option demandée ne figure pas dans la liste acceptée pour cette commande | Reformuler la commande sans l'option |
+| « Mon sous-agent codeur ne charge aucun skill » | Groupe Skills coupé dans les réglages | L'activer : `load_skill` n'entre dans son profil que si le groupe l'est |
 
 ---
 
@@ -180,14 +225,14 @@ Le message d'échec d'intégration est explicite et **dit quoi faire** : le chan
 - `05-outils/git.md` — les opérations Git de l'agent principal
 - `09-automatisation/git-workflow.md` — le parcours Git complet côté interface
 - `04-agent/permissions.md` — pourquoi seule l'intégration demande une approbation
-- `05-outils/skills-et-automatisations.md` — pourquoi ces outils sont interdits en automatisation
+- `05-outils/skills-et-automatisations.md` — pourquoi une automatisation dispose, elle aussi, de ces neuf outils
 
 ---
 
 ## Points à confirmer
 
-- **Les sous-agents portent des noms visibles fixes** — « Claudiator » pour le codeur, « Geminitor » pour l'explorateur. Ce sont des noms qui évoquent d'autres produits. **À trancher par l'équipe produit avant publication** : sont-ils réellement affichés à l'utilisateur ? Si oui, le site les documentera, et il faut être sûr qu'ils sont voulus. Je ne les ai pas repris dans le corps de la page.
+- **Les noms « Claudiator » et « Geminitor » sont confirmés dans le code, et ils sont imposés.** `Claudiator` est le nom du codeur, `Geminitor` celui de l'explorateur, et un nom fourni par l'agent à la délégation est **écrasé** par ces valeurs. Ce sont des noms qui évoquent deux produits concurrents. La question posée à l'équipe produit reste donc entière, et devient plus urgente : soit ils sont assumés et le site les documente, soit ils changent avant la publication. Je ne les ai pas repris dans le corps de la page.
 - Deux paramètres de l'outil de délégation sont marqués comme **hérités d'une version antérieure** dans le code. À ignorer pour le site, à nettoyer côté produit.
 - La **définition d'agent spécialisé** — un fichier Markdown dans le projet décrivant un sous-agent réutilisable — est mentionnée mais je n'ai pas lu son format ni sa validation. **Fonctionnalité potentiellement importante et non documentée.** À explorer avant publication, ou à laisser de côté explicitement.
-- Le nombre maximal de **projets isolés simultanés** n'a pas été relevé ; il apparaît dans les erreurs de capacité.
+- ~~Le nombre maximal de **projets isolés simultanés**~~ **Tranché indirectement** : il n'existe pas de plafond distinct. La borne réelle est le nombre de sous-agents actifs — **4** par conversation, **8** au total. Reste à vérifier quel message accompagne l'erreur de capacité affichée dans le tableau « Ce qui peut mal tourner ».
 - Je n'ai **pas vérifié à l'écran** comment se présentent la conversation d'un sous-agent, la liste des changements en attente et l'écran de différentiel.

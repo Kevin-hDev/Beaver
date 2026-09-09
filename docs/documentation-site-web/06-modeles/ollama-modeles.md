@@ -2,8 +2,8 @@
 
 **Emplacement site** — Modèles › Modèles locaux
 **Répond à** — « Comment j'installe un modèle sur ma machine, et comment je choisis ? »
-**Sources** — `commands/ollama_setup.rs`, `commands/ollama_updates.rs`, `services/agent_local/ollama_registry_details.rs`, `services/agent_local/ollama_client.rs`, `src/components/ollama/` (`model-search.tsx`, `model-variants-list.tsx`, `model-profile.tsx`, `model-profile-specs.ts`, `model-install-button.tsx`), `services/ollama_lifecycle.rs`
-**Vérification** — Vérifié dans le code pour les mécanismes ; parcours d'interface à confirmer
+**Sources** — `commands/ollama_setup.rs`, `commands/ollama_updates.rs`, `services/agent_local/ollama_registry_details.rs`, `services/agent_local/ollama_client.rs`, `src/components/ollama/` (`model-search.tsx`, `model-variants-list.tsx`, `model-profile.tsx`, `model-profile-specs.ts`, `model-install-button.tsx`), `services/ollama_manager/` (cycle de vie du moteur), `services/ollama_manager/spawn_profile_paths.rs` (dossier des modèles)
+**Vérification** — Vérifié dans le code pour les mécanismes (sources relues le 9 septembre 2026) ; parcours d'interface à confirmer
 
 ---
 
@@ -76,7 +76,12 @@ Supprimer un modèle libère l'espace disque correspondant. C'est réversible au
 
 Point important, déjà abordé dans `06-modeles/ollama-runtime.md` et à rappeler ici :
 
-**Si l'application Ollama officielle est installée et en cours d'exécution, Beaver réutilise son moteur — donc ses modèles.** Tout ce qui a été téléchargé d'un côté est disponible de l'autre, sans copie ni retéléchargement.
+**Le stockage des modèles est commun, dans les deux cas de figure.**
+
+- Si l'application Ollama officielle est **en cours d'exécution**, Beaver réutilise son moteur — donc ses modèles.
+- Si Beaver lance **son propre moteur**, il le fait pointer vers **le dossier de modèles habituel d'Ollama** (`~/.ollama/models`, ou l'emplacement indiqué par la variable d'environnement `OLLAMA_MODELS` si elle est définie sur la machine).
+
+Dans les deux cas, tout ce qui a été téléchargé d'un côté est disponible de l'autre, sans copie ni retéléchargement.
 
 Conséquence à écrire : **supprimer un modèle depuis Beaver le supprime aussi pour l'application Ollama**, puisque c'est le même stockage. Ce n'est pas une copie.
 
@@ -126,6 +131,9 @@ Conséquence à écrire : **supprimer un modèle depuis Beaver le supprime aussi
 
 - **Le parcours exact d'installation dans l'interface** n'est pas décrit : où se trouve la recherche, comment la liste des variantes se présente, ce qu'affiche la barre de progression. Le code des composants existe (`model-search`, `model-variants-list`, `model-install-button`) mais je n'ai pas reconstitué l'enchaînement des écrans. **À compléter avant rédaction du site.**
 - **Le téléchargement est-il reprenable** après une interruption ? Le code gère l'annulation et le nettoyage, mais je n'ai pas vérifié la reprise d'un téléchargement partiel. Affirmation à valider — je l'ai indiquée dans le tableau des pièges, à retirer si elle est fausse.
-- **La limite de 100 familles** pour la vérification des mises à jour est silencieuse : un utilisateur avec beaucoup de modèles ne saura pas que tous n'ont pas été examinés. À signaler à l'équipe.
 - **La suppression d'un modèle** n'a pas été lue dans le code : je décris le comportement attendu. À vérifier, notamment s'il existe une confirmation.
 - **Les modèles recommandés** — s'il en existe une liste mise en avant pour un premier usage — n'ont pas été identifiés. Ce serait très utile sur le site : un utilisateur qui découvre ne sait pas par où commencer.
+
+**Point tranché le 9 septembre 2026, conservé pour mémoire :**
+
+- **La limite de 100 familles est réelle et silencieuse** — confirmé dans `commands/ollama_updates.rs` : la collecte des familles s'arrête à cent, et seules cent sont examinées. Rien n'informe l'utilisateur au-delà. La ligne correspondante du tableau des pièges est donc exacte, et le signalement à l'équipe reste justifié.

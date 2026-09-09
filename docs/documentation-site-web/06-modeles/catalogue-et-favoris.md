@@ -2,8 +2,8 @@
 
 **Emplacement site** — Modèles › Catalogue et favoris
 **Répond à** — « Comment je m'y retrouve parmi les centaines de modèles disponibles ? »
-**Sources** — `services/favorite_models.rs`, `commands/favorite_models.rs`, `services/llm/litellm_catalog_search.rs`, `services/llm/provider_model_registry.rs`, `services/llm/openai_compat_models.rs`, `services/llm/model_metadata.rs`, `services/llm/tool_capable.rs`, `services/llm/vision.rs`
-**Vérification** — Vérifié dans le code pour les mécanismes ; parcours d'interface à confirmer
+**Sources** — `services/favorite_models.rs`, `commands/favorite_models.rs`, `services/llm/litellm_catalog_search.rs`, `services/llm/provider_model_registry.rs`, `services/llm/openai_compat_models.rs`, `services/llm/model_metadata.rs`, `services/llm/provider_model_capabilities.rs`, `services/llm/vision.rs`
+**Vérification** — Vérifié dans le code pour les mécanismes (sources relues le 9 septembre 2026) ; parcours d'interface à confirmer
 
 ---
 
@@ -56,7 +56,9 @@ Un modèle peut être épinglé. Les favoris sont enregistrés localement, dans 
 
 L'écriture est **atomique** : fichier temporaire puis renommage. Une interruption au mauvais moment ne peut pas laisser une liste de favoris corrompue.
 
-Ajouter un favori déjà présent, ou en retirer un absent, ne provoque pas d'erreur : l'opération est simplement sans effet.
+Ajouter un favori déjà présent, ou en retirer un absent, ne provoque pas d'erreur : l'opération est simplement sans effet, et le fichier n'est même pas réécrit.
+
+**Le nombre de favoris n'est borné par rien.** Aucun plafond n'existe dans le code : la liste peut grandir indéfiniment. Sans conséquence à l'usage — personne n'épingle mille modèles —, mais c'est la seule collection du produit qui échappe à la règle des collections bornées appliquée partout ailleurs. Ce n'est pas à écrire sur le site ; c'est noté ici pour l'équipe.
 
 ### Choisir un modèle pour une conversation
 
@@ -111,6 +113,10 @@ Le choix vaut pour la conversation en cours. Changer de modèle en cours de rout
 
 - **L'écran d'exploration des modèles** — filtres, recherche, groupement par famille, page de détail — n'a pas été reconstitué. Le fichier de suivi mentionne un « explorateur LLM » avec familles et détails ; le code correspondant existe mais je n'ai pas relié les composants au parcours. **À compléter avant rédaction du site** : c'est le cœur de la page.
 - **Où s'affichent les favoris** — liste séparée, épingle dans le sélecteur, section en tête — reste à déterminer.
-- **Le nombre maximal de favoris** n'est pas borné dans le code lu. À vérifier : une liste sans limite est un manquement au principe des collections bornées appliqué partout ailleurs dans le projet. **À signaler à l'équipe.**
 - **Les modèles gratuits** sont détectés par leur tarif nul chez certains fournisseurs. Vérifier si l'interface les met en avant, ce qui serait très utile à documenter.
-- **La liste des modèles capables d'utiliser des outils** est déterminée par un module dédié qui combine plusieurs sources. Je n'ai pas vérifié son degré de fiabilité sur les modèles récents ni ce qui se passe quand la capacité est inconnue.
+- **La liste des modèles capables d'utiliser des outils** est déterminée par un module dédié (`services/llm/provider_model_capabilities.rs`) qui combine plusieurs sources. Je n'ai pas vérifié son degré de fiabilité sur les modèles récents ni ce qui se passe quand la capacité est inconnue.
+
+**Points tranchés le 9 septembre 2026, conservés pour mémoire :**
+
+- **Le nombre maximal de favoris n'est pas borné** — confirmé : aucun plafond ni aucune troncature dans `services/favorite_models.rs`. Le constat est intégré au corps du fichier, et le signalement à l'équipe reste justifié.
+- **Ajouter un favori déjà présent est sans effet** — confirmé : la fonction d'ajout compare l'entrée à la liste existante et sort sans réécrire le fichier quand elle s'y trouve déjà ; la suppression fait de même quand rien ne change.

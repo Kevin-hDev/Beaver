@@ -2,8 +2,8 @@
 
 **Emplacement site** — Agent › Sous-agents
 **Répond à** — « L'agent peut-il déléguer, et comment je garde le contrôle de ce que font ses enfants ? »
-**Sources** — `src-tauri/src/services/agent_local/tool_catalog.rs` (lignes 17-27), `subagent_instruction_delivery.rs` (lignes 5-7), `types_subagent_change.rs` (lignes 4-22), `subagent_change_store.rs` (lignes 6-7), `subagent_directory_limits.rs` (lignes 4-6), `subagent_archive.rs`, `subagent_cancellation.rs`, `subagent_directory_git.rs`, `permission_policy.rs`
-**Vérification** — Vérifié dans le code : les neuf outils, les limites, les états et les deux types d'espace de travail
+**Sources** — `src-tauri/src/services/agent_local/tool_catalog.rs` (lignes 17-27), `tool_delegate.rs` (lignes 22-37 pour les types, 59-64 pour la cascade, 65-70 pour la contrainte du codeur), `subagent_tool_profile.rs` (lignes 14-20), `subagent_tool_guard.rs` (lignes 93-104 pour la mémoire, 107-145 pour le confinement des chemins), `commands/agent_chat_task/common.rs` (lignes 104-107), `subagent_instruction_delivery.rs` (lignes 5-7), `types_subagent_change.rs` (lignes 4-22), `subagent_change_store.rs` (lignes 6-7), `subagent_directory_limits.rs` (lignes 4-6), `subagent_archive.rs`, `subagent_cancellation.rs`, `subagent_directory_git.rs`, `permission_policy.rs`
+**Vérification** — Vérifié dans le code, revérifié le 9 septembre 2026 : les neuf outils, les limites, les états, les deux types d'espace de travail et le confinement disque
 
 ---
 
@@ -135,11 +135,17 @@ C'est un choix de conception à expliquer plutôt qu'à subir : la délégation 
 **Autres restrictions :**
 
 - **Être cloné** — le clonage est refusé sur une conversation de sous-agent.
-- **Écrire dans la mémoire** — un sous-agent peut la lire, pas la modifier. Le contrôle est explicite dans le code : sur les fichiers de mémoire, seule la lecture passe.
-- **Disposer de tous les outils** — chaque sous-agent reçoit un **profil d'outils restreint** selon son type. Un outil hors profil est refusé.
+- **Écrire dans la mémoire** — un sous-agent peut la lire, pas la modifier. Le contrôle est explicite dans le code : sur les fichiers de mémoire, seule la lecture passe, et la tentative reçoit le message « Les sous-agents peuvent seulement lire une mémoire sélectionnée et suggérer une modification au parent. »
+- **Sortir de son dossier de travail** — voir juste en dessous.
+- **Recevoir vos instructions permanentes** — ni `AGENTS.md`, ni les fichiers de personnalité ne sont injectés dans une session de sous-agent. C'est cohérent avec le principe de la page (un sous-agent ne voit rien de la conversation parente), mais quelqu'un qui a écrit ses conventions dans `AGENTS.md` doit savoir qu'elles ne le suivent pas : elles doivent être reprises dans l'instruction de délégation.
+- **Disposer de tous les outils** — chaque sous-agent reçoit un **profil d'outils restreint** selon son type. Un outil hors profil est refusé. Le détail des deux profils est dans `05-outils/sous-agents-outils.md`.
 - **Être archivé dans n'importe quel état** — l'archivage passe par un mécanisme dédié qui refuse certains cas.
 
-**Un type particulier** : le sous-agent de type `coder` exige d'être lancé depuis un dossier valide, sans quoi la délégation est refusée avec « Un sous-agent code doit être lancé depuis un dossier valide. »
+**La portée disque d'un sous-agent est confinée à son espace isolé**, pas à celle du parent. Chaque chemin passé à un outil est vérifié comme contenu dans le répertoire de travail du sous-agent, et toute remontée d'arborescence (`..`) est refusée — y compris le dossier de travail indiqué pour une commande shell. Message de refus : « Chemin hors du dossier autorisé. »
+
+**Deux types de sous-agents, et deux seulement** : `explorer` et `coder`. Toute autre valeur est refusée à la délégation avec « Type de sous-agent invalide. »
+
+Le sous-agent de type `coder` exige en plus d'être lancé depuis un dossier valide, sans quoi la délégation est refusée avec « Un sous-agent code doit être lancé depuis un dossier valide. »
 
 ---
 
@@ -202,6 +208,9 @@ C'est un choix de conception à expliquer plutôt qu'à subir : la délégation 
 | « Les sous-agents ne peuvent pas lancer d'autres sous-agents » | La délégation en cascade est interdite | Faire déléguer par la conversation principale |
 | « Un sous-agent code doit être lancé depuis un dossier valide » | Type `coder` sans répertoire de travail utilisable | Définir un répertoire de travail valide |
 | Un sous-agent ne peut pas écrire en mémoire | Accès en lecture seule | Normal : il peut proposer une note, pas l'écrire |
+| « Chemin hors du dossier autorisé. » | Le sous-agent a visé un fichier hors de son espace isolé | Normal : sa portée disque est confinée |
+| « Type de sous-agent invalide. » | Type autre que `explorer` ou `coder` | Il n'en existe que deux |
+| Un sous-agent ignore les conventions de mon `AGENTS.md` | Les instructions permanentes ne sont pas injectées dans une session de sous-agent | Les reprendre dans l'instruction de délégation |
 | Un sous-agent refuse d'être archivé | État incompatible | Attendre qu'il termine, ou l'interrompre |
 | Un ancien lot de changements a disparu | 256 lots conservés | Normal |
 
@@ -219,10 +228,10 @@ C'est un choix de conception à expliquer plutôt qu'à subir : la délégation 
 
 ## Points à confirmer
 
-- ~~Un sous-agent peut-il lui-même déléguer ?~~ **Tranché** : non, la cascade est interdite explicitement (`tool_delegate.rs:55-60`).
+- ~~Un sous-agent peut-il lui-même déléguer ?~~ **Tranché** : non, la cascade est interdite explicitement (`tool_delegate.rs:59-64`).
 - ~~Combien de sous-agents simultanément ?~~ **Tranché** : 4 par session, 8 au total.
-- **La portée d'accès disque d'un sous-agent** — celle du parent, ou restreinte à son espace isolé ? Question de sécurité, à trancher avant publication.
+- ~~La portée d'accès disque d'un sous-agent ?~~ **Tranché** : confinée à son espace isolé, `..` refusé (`subagent_tool_guard.rs`).
+- ~~La liste des types de sous-agents ?~~ **Tranché** : `explorer` et `coder`, toute autre valeur refusée.
 - **Le modèle employé par un sous-agent** — celui du parent, ou configurable à la délégation ?
-- **La liste complète des types de sous-agents et de leurs profils d'outils.** Un type `coder` est identifié, avec sa contrainte propre. Les autres types et le contenu exact de chaque profil restent à établir — c'est une information utile : savoir qu'un sous-agent n'a pas accès à tel outil évite de lui confier une tâche qu'il ne peut pas faire.
 - **Ce que voit l'utilisateur** : où s'affiche la liste des sous-agents, leur état, l'écran d'inspection des changements. Non relevé.
 - **Le nettoyage des espaces isolés** après application ou abandon — automatique, différé, manuel ?

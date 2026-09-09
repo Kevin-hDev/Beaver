@@ -2,8 +2,8 @@
 
 **Emplacement site** — Démarrage › Premier lancement
 **Répond à** — « J'ai installé, je lance, que va-t-il se passer et qu'est-ce qui est créé sur mon disque ? »
-**Sources** — `src-tauri/src/storage_migration.rs` (lignes 3-95), `src-tauri/src/services/paths.rs`, `src/components/onboarding/onboarding-screen.tsx`, `index.html` (écran d'attente), `CROSS-PLATFORM.md`
-**Vérification** — Vérifié dans le code pour la structure créée, la migration et les valeurs par défaut
+**Sources** — `src-tauri/src/storage_migration.rs:19-115`, `src-tauri/src/services/paths.rs:9-14`, `src-tauri/src/services/ollama_manager/release_source.rs:15-25`, `src-tauri/src/app_events.rs:13-19` et `:42-48`, `src-tauri/src/app_build.rs:59-60`, `src/components/onboarding/onboarding-screen.tsx`, `index.html` (écran d'attente), `CROSS-PLATFORM.md`
+**Vérification** — Vérifié dans le code pour la structure créée, la migration, les valeurs par défaut et le comportement du bouton de fermeture
 
 ---
 
@@ -60,9 +60,14 @@ Deux points à expliquer, sinon ça surprend :
 | `configured-providers.json` | `[]` |
 | `favorite-models.json` | `[]` |
 | `projects.json` | `[]` |
-| `terminal-tabs.json` | `[]` |
 | `inbox/pending.json` | `[]` |
-| `personality-injection.json` | Quatre fichiers de personnalité, tous désactivés |
+| `personality-injection.json` | Quatre fichiers de personnalité, tous désactivés (`identity.md`, `principles.md`, `user.md`, `idea-discovery.md`) |
+
+**Fichiers créés vides** (`storage_migration.rs:101-115`) — ce sont les quatre fichiers de personnalité listés juste au-dessus, plus le fichier d'instructions permanentes :
+
+`AGENTS.md`, `memory/core/identity.md`, `memory/core/principles.md`, `memory/core/user.md`, `inbox/idea-discovery.md`
+
+`terminal-tabs.json` **n'est plus créé à l'initialisation** : il vit bien dans le dossier de données (`src-tauri/src/services/terminal/tab_store.rs:181`), mais il n'apparaît qu'à la première utilisation du terminal.
 
 **Information importante à ne pas manquer** : le mode de permission par défaut est **Accès complet** (`auto` dans le fichier), c'est-à-dire que l'agent exécute ses outils sans demander confirmation. Ce n'est pas le mode le plus prudent. La page *Permissions* doit le dire, et cette page aussi : quelqu'un qui installe et lance immédiatement une tâche doit savoir dans quel mode il se trouve.
 
@@ -164,7 +169,7 @@ Le comportement macOS est conforme aux usages du système, mais surprend qui vie
 
 - **Le mode de permission par défaut reste un arbitrage produit ouvert.** `agent-settings.json` est créé avec `{"permissionMode":"auto"}`, soit **Accès complet**, alors que le mockup présente **Demande d'approbation** comme le mode recommandé au quotidien. Les libellés sont désormais fixés, mais la contradiction de fond demeure : soit le défaut change, soit la documentation assume qu'on démarre en Accès complet et le dit clairement. Ne pas laisser les deux discours coexister sur le site.
 - **Le nom exact du composant de prévision installé au premier lancement.** Vérifier ce qui est réellement déposé et où, pour la page *Forecast*.
-- **La migration Windows depuis `%APPDATA%`.** Le mécanisme existe dans le code ; confirmer qu'il fonctionne encore en 1.1.2 et sur quelles versions d'origine.
+- ~~La migration Windows depuis `%APPDATA%`.~~ **Tranché** : toujours active en **1.2.2** — marqueur `.migrated-from-appdata`, copie depuis l'ancien emplacement, témoin écrit après la copie (`storage_migration.rs:49-53`). Les trois migrations du tableau ci-dessus sont confirmées (`:19-23`, `:37-41`, `:49-53`). Reste ouvert : la liste des versions d'origine réellement concernées.
 - **Le dossier `translations/`** créé au premier lancement — son rôle n'est documenté nulle part. À élucider avant d'écrire la page *Stockage local*.
-- **Le dossier `inbox/`** et son fichier `pending.json` — non documentés non plus. Probablement lié aux messages entre agent parent et sous-agents, à confirmer.
+- ~~Le rôle du dossier `inbox/`.~~ **Tranché** : il contient `pending.json` (`storage_migration.rs:88`) et `idea-discovery.md` (`:110`), ce dernier étant l'un des quatre fichiers de personnalité listés dans `personality-injection.json` (`:92-97`). Il n'est **pas** lié aux messages entre agent parent et sous-agents.
 - **La taille réelle du téléchargement d'Ollama** par système, pour pouvoir l'annoncer à l'utilisateur avant qu'il lance l'opération.

@@ -2,8 +2,8 @@
 
 **Emplacement site** — Interface › Vue d'ensemble (première page de la section)
 **Répond à** — « Je viens d'ouvrir l'application. Qu'est-ce que je regarde ? »
-**Sources** — `src/components/layout/nav-items.ts`, `app-layout.tsx`, `window-toolbar.tsx`, `window-controls.tsx`, `panel-slots.tsx`, `sidebar-compact-state.ts`, `src/components/settings/settings-sections.ts`
-**Vérification** — Vérifié dans le code : les quatre sections de navigation et l'organisation des réglages
+**Sources** — `src/features/extension-ui/core-occupants.tsx:20-65` (destinations de navigation et onglets de réglages), `src/components/settings/settings-sections.ts:33-91`, `src/components/layout/app-layout.tsx`, `window-toolbar.tsx`, `window-controls.tsx`, `panel-slots.tsx`, `sidebar-compact-state.ts`, `src-tauri/src/app_events.rs:13-19`
+**Vérification** — Vérifié dans le code : les quatre destinations de navigation, les dix-sept onglets de réglages, leur construction par slots et le comportement du bouton de fermeture
 
 ---
 
@@ -61,7 +61,7 @@ En haut de la fenêtre :
 
 ### 4. Les réglages
 
-**Cinq sections, seize onglets.** Le regroupement suit ce qu'on configure, pas l'usage qu'on en fait.
+**Cinq sections, dix-sept onglets d'origine — davantage si vous installez des extensions.**  Le regroupement suit ce qu'on configure, pas l'usage qu'on en fait.
 
 | Section | Onglets |
 |---|---|
@@ -69,7 +69,9 @@ En haut de la fenêtre :
 | Agent | Mémoire, Prompt système, Outils, Avancé |
 | Modèles | Ollama, Forecast, LLM |
 | Intégrations | Fournisseurs, Connecteurs, Canaux, Extensions |
-| Application | Conversations archivées, À propos |
+| Application | Mises à jour, Conversations archivées, À propos |
+
+**Cette liste n'est pas figée.** Les sections sont construites à partir d'emplacements de slots, et une extension installée peut contribuer son propre onglet de réglages (`src/components/settings/settings-sections.ts:33-40` et `:73-91`, branche `occupant.source.kind === "extension"`). Le nombre d'onglets dépend donc des extensions installées : la page doit annoncer les dix-sept onglets d'origine, pas un total définitif.
 
 Point de conception intéressant à mentionner : Ollama et Forecast voisinent parce qu'on y installe et paramètre tous deux des modèles locaux, même si l'un produit du texte et l'autre des prévisions. Les fournisseurs sont rangés dans les intégrations parce qu'on y saisit une clé et une connexion, pas un modèle.
 
@@ -98,7 +100,7 @@ Renvoyer vers *Premier lancement* pour le détail.
 | Symptôme | Cause | Résolution |
 |---|---|---|
 | La barre latérale disparaît | Repli automatique sur fenêtre étroite | Élargir la fenêtre, ou ⌘B |
-| Un réglage attendu est introuvable | Seize onglets répartis en cinq sections | Voir le tableau ci-dessus |
+| Un réglage attendu est introuvable | Dix-sept onglets répartis en cinq sections, plus ceux des extensions | Voir le tableau ci-dessus |
 | L'application semble fermée mais tourne (macOS) | La fermeture masque la fenêtre | ⌘Q pour quitter |
 
 ---

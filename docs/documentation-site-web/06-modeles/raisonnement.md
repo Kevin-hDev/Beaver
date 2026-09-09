@@ -2,8 +2,8 @@
 
 **Emplacement site** — Modèles › Raisonnement
 **Répond à** — « À quoi sert le réglage d'effort, et pourquoi ses options changent d'un modèle à l'autre ? »
-**Sources** — `services/reasoning.rs`, `services/reasoning_effort.rs`, `services/reasoning_google.rs`, `services/llm/stream_reasoning.rs`, `services/llm/providers/` (`openai.rs`, `groq.rs`, `moonshot.rs`, `xai.rs`, `mistral.rs`), `services/stream_utils.rs`
-**Vérification** — Vérifié dans le code
+**Sources** — `services/reasoning.rs` (les huit paliers et le repli), `services/reasoning_effort.rs`, `services/reasoning_profile.rs`, `services/reasoning_ollama.rs` (paliers des modèles locaux), `services/llm/stream_reasoning.rs` (traduction par fournisseur, dont le budget Google), `services/llm/provider_model_lookup.rs`, `services/llm/providers/` (`openai.rs`, `moonshot.rs`, `xai.rs`), `services/stream_utils.rs`
+**Vérification** — Vérifié dans le code (sources relues le 9 septembre 2026)
 
 ---
 
@@ -55,7 +55,7 @@ Trois conséquences concrètes :
 - **Certains ne peuvent pas être désactivés** — leur réflexion fait partie de leur fonctionnement.
 - **Le nombre de paliers varie de deux à six** selon le modèle.
 
-Une règle vaut partout : **un réglage non supporté n'est jamais envoyé de force.** Beaver écarte silencieusement une demande incompatible plutôt que de risquer un refus du fournisseur.
+Une règle vaut partout : **un réglage non supporté n'est jamais envoyé de force.** Plutôt que de risquer un refus du fournisseur, Beaver retombe sur le palier supporté le plus proche, dans cet ordre : **Moyen**, puis **Automatique**, puis le premier palier disponible autre que **Désactivé**. Le changement de modèle en cours de conversation ne laisse donc jamais un réglage orphelin.
 
 ### Ce que ça coûte
 
@@ -82,7 +82,7 @@ Deux points à préciser :
 
 - **Modèles locaux** — la plupart n'offrent que « désactivé » ou « automatique ». Quelques familles récentes acceptent trois paliers.
 - **Modèles à réflexion imposée** — le réglage est absent ou limité à « automatique ».
-- **Google** — l'effort se traduit par un budget de réflexion chiffré, différent selon la génération du modèle.
+- **Google** — la traduction dépend de la génération du modèle. Sur les modèles de la génération Gemini 2.5, l'effort devient un **budget de réflexion chiffré, en jetons** : **1 024** pour un effort faible, **8 192** par défaut, **24 576** pour un effort élevé. Sur les générations plus récentes, c'est un **niveau de réflexion nommé** qui est transmis, pas un chiffre. Dans les deux cas, désactiver le raisonnement est bien transmis comme une désactivation.
 - **Certains modèles récents** ajoutent des paliers au-delà du maximum habituel.
 
 ---
@@ -160,5 +160,11 @@ Deux points à préciser :
 - **La correspondance exacte entre les paliers de Beaver et ceux de chaque fournisseur** existe dans le code, modèle par modèle. Je ne la reproduis volontairement pas : elle change à chaque sortie de modèle et serait fausse en quelques semaines. **Décision à valider par l'équipe** — si le site veut une table nominative, il faut prévoir qui la maintient.
 - **Les libellés affichés dans l'interface** pour ces paliers n'ont pas été relevés dans les fichiers de traduction. Le site doit reprendre les mots de l'application, pas les miens. À compléter.
 - **Où se règle l'effort** — sélecteur dédié, menu du modèle, réglage global avec exception par conversation — n'est pas déterminé. J'ai écrit « par conversation, à côté du modèle » d'après la structure du code ; **à vérifier avant publication.**
-- Le **palier Ultra** n'existe que pour de très rares modèles. Vérifier qu'il est réellement atteignable depuis l'interface, et pas seulement présent dans le code.
+- Le **palier Ultra** existe bien dans le code, mais n'est proposé que pour de très rares modèles. Reste à vérifier qu'il est réellement atteignable depuis l'interface.
 - Affichage à vérifier lors de la passe d'interface : présentation de la zone de raisonnement, repliée ou dépliée par défaut, et comportement pendant la génération.
+
+**Points tranchés le 9 septembre 2026, conservés pour mémoire :**
+
+- **Les huit paliers du tableau sont exacts** — `services/reasoning.rs` n'accepte que ces huit valeurs : `off`, `auto`, `low`, `medium`, `high`, `xhigh`, `max`, `ultra`. La correspondance avec les libellés du tableau (Désactivé, Automatique, Faible, Moyen, Élevé, Très élevé, Maximum, Ultra) est cohérente ; seuls les mots exacts de l'interface restent à relever.
+- **Le palier Ultra existe dans le code** — même ligne. Ce qui reste ouvert, c'est son accessibilité depuis l'interface, pas son existence.
+- **Le budget de réflexion Google** — retrouvé. La logique a changé de fichier : elle ne vit plus dans un fichier dédié mais dans `services/llm/stream_reasoning.rs`, et elle distingue désormais deux traitements selon la génération du modèle (budget chiffré ou niveau nommé). Le détail est intégré au corps du fichier.

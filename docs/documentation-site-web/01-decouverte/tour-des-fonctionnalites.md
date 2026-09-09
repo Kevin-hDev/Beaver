@@ -2,8 +2,8 @@
 
 **Emplacement site** — Démarrage › Tour des fonctionnalités (page d'aiguillage, à placer juste après la présentation)
 **Répond à** — « Qu'est-ce que ça sait faire, et où est-ce que je lis le détail ? »
-**Sources** — `README.md`, `src/components/` (23 domaines), `src-tauri/src/services/`, `src/components/layout/nav-items.ts`, `src/components/settings/settings-sections.ts`
-**Vérification** — Issu du README, recoupé avec l'arborescence réelle des composants et des services
+**Sources** — `README.md`, `src/components/` (23 domaines), `src-tauri/src/services/`, `src/features/extension-ui/core-occupants.tsx`, `src/components/settings/settings-sections.ts`, `src-tauri/src/services/llm/route_profile/catalog_api.rs:42-191`, `src-tauri/src/services/forecast/catalog_specs/mod.rs:16-41`, `src-tauri/src/services/agent_import/source_specs.rs:49-101`, `src-tauri/src/services/browser/cef_runtime_policy.rs:72-75`
+**Vérification** — Vérifié dans le code pour les nombres (fournisseurs, familles Forecast, sources d'import, langues, thèmes, navigateur sur Linux) ; issu du README pour le reste, recoupé avec l'arborescence réelle des composants et des services
 
 ---
 
@@ -17,7 +17,7 @@ Contrainte de rédaction : **un paragraphe court par domaine, jamais plus de qua
 
 ## Plan de page proposé
 
-Seize domaines, dans cet ordre. L'ordre suit l'usage réel — ce qu'on découvre en premier vient en premier — et non l'architecture technique.
+Dix-sept domaines, dans cet ordre. L'ordre suit l'usage réel — ce qu'on découvre en premier vient en premier — et non l'architecture technique.
 
 1. Agent et outils
 2. Planification et permissions
@@ -29,12 +29,13 @@ Seize domaines, dans cet ordre. L'ordre suit l'usage réel — ce qu'on découvr
 8. Forecast
 9. Fournisseurs et usage
 10. Connecteurs MCP et canaux
-11. Réveils
-12. Runtime Ollama géré
-13. Espace de travail
-14. Démarrage guidé et migration
-15. Stockage local sécurisé
-16. Langues et apparence
+11. Extensions
+12. Réveils
+13. Runtime Ollama géré
+14. Espace de travail
+15. Démarrage guidé et migration
+16. Stockage local sécurisé
+17. Langues et apparence
 
 ---
 
@@ -62,7 +63,7 @@ Notes conservées entre conversations, en portée globale ou par projet, en mode
 
 ### 6. Navigateur intégré
 Jusqu'à **dix onglets par conversation**. Sessions connectées conservées d'une fois sur l'autre. Détection des serveurs de développement locaux. Partage du panneau latéral avec les prévisualisations et Forecast.
-**Disponible sur macOS et Windows uniquement** — mention obligatoire, c'est la seule fonctionnalité majeure non disponible partout.
+**Disponible sur macOS et Windows uniquement** — mention obligatoire, c'est la seule fonctionnalité majeure non disponible partout. Il s'agit d'une limitation **par conception, pas temporaire** : hors macOS et Windows, la capacité vaut `BrowserCapability::Hidden` (`src-tauri/src/services/browser/cef_runtime_policy.rs:72-75`) et l'entrée disparaît du sélecteur au lieu de s'afficher en panne (`src/components/agent-local/mode-selector.tsx:97`).
 → *Interface › Navigateur intégré*
 
 ### 7. Git
@@ -70,38 +71,42 @@ Créer, changer, fusionner, supprimer branches et copies de travail. Committer e
 → *Automatisation › Workflow Git*
 
 ### 8. Forecast
-Prévision de séries temporelles : audit de qualité des données, choix de modèle manuel ou automatique, exécution locale ou cloud, backtests glissants, comparaison, ensembles pondérés, analyse avancée, scénarios, notes, rapport, exports. **Neuf familles** de modèles locaux, plus TimeGPT en cloud.
+Prévision de séries temporelles : audit de qualité des données, choix de modèle manuel ou automatique, exécution locale ou cloud, backtests glissants, comparaison, ensembles pondérés, analyse avancée, scénarios, notes, rapport, exports. **Dix familles** de modèles locaux — `chronos-bolt`, `chronos-2`, `timesfm-2-5`, `toto-2`, `moirai-2`, `flowstate`, `tabpfn-ts`, `tirex`, `kairos`, `sundial` — plus **TimeGPT** (`timegpt-2`) en cloud, soit onze familles au total.
 → *Forecast*
 
 ### 9. Fournisseurs et usage
-**Dix** fournisseurs LLM par clé API, dont **trois** acceptant aussi une connexion par compte web. Affichage des limites, crédits, jetons consommés, requêtes et estimation de coût quand le fournisseur expose ces informations.
+**Onze** fournisseurs LLM par clé API, dont **trois** acceptant aussi une connexion par compte web. Affichage des limites, crédits, jetons consommés, requêtes et estimation de coût quand le fournisseur expose ces informations.
 → *Modèles et providers*
 
 ### 10. Connecteurs MCP et canaux
 Connecteurs MCP locaux ou distants, activables conversation par conversation, ajoutant leurs outils à l'agent. Passerelle d'arrière-plan vers Telegram, Slack et Discord, avec journal d'audit.
 → *Intégrations*
 
-### 11. Réveils
+### 11. Extensions
+Modules installables qui **modifient l'interface elle-même**, distribués et mis à jour depuis une source Git. Une extension contribue son propre onglet de réglages, des entrées de navigation, un thème et des skills. Trois outils verrouillés du groupe `extensions` les rendent visibles à l'agent. À ne pas confondre avec un connecteur MCP, qui n'ajoute que des outils.
+→ *Intégrations › Extensions*
+
+### 12. Réveils
 Instructions programmées une fois, chaque jour ou chaque semaine. Ordonnanceur interne à l'application. Chaque exécution atterrit dans une conversation dédiée, l'historique est conservé.
 → *Automatisation › Réveils*
 
-### 12. Runtime Ollama géré
+### 13. Runtime Ollama géré
 Téléchargé au premier lancement dans le dossier de données. Réutilisation d'un démon déjà présent. Parcours et installation de modèles depuis l'application, édition des modelfiles, réglage des paramètres et des prompts système. Modèles partagés avec une installation Ollama existante.
 → *Modèles › Ollama*
 
-### 13. Espace de travail
+### 14. Espace de travail
 Terminal multi-onglets multiplateforme. Arbre de fichiers avec surveillance des modifications. Prévisualisations riches : texte, images, tableurs, documents bureautiques, aperçus de liens. Détail de l'occupation du contexte. Castor interactif.
 → *Interface*
 
-### 14. Démarrage guidé et migration
+### 15. Démarrage guidé et migration
 Parcours d'accueil au premier lancement. Assistant d'import des instructions, skills et règles depuis **neuf** applications : Claude Code, Codex, Agents, Hermes, Qwen Code, ZCode, OpenClaw, OpenCode, Kimi Code.
 → *Installation › Onboarding*, *Installation › Import*
 
-### 15. Stockage local sécurisé
+### 16. Stockage local sécurisé
 Identifiants dans un coffre chiffré **XChaCha20-Poly1305**, clé maîtresse dans le trousseau du système. Aucun secret brut ne parvient à l'interface graphique.
 → *Sécurité*
 
-### 16. Langues et apparence
+### 17. Langues et apparence
 Interface en **sept langues** : français, anglais, espagnol, allemand, italien, chinois, japonais. **Six thèmes** visuels. Réglage de la taille de police et du thème de coloration du code.
 → *Interface › Thèmes*, *Interface › Langues*
 
@@ -109,7 +114,7 @@ Interface en **sept langues** : français, anglais, espagnol, allemand, italien,
 
 ## Tableaux
 
-Aucun tableau sur cette page. Un panorama en seize entrées se lit en liste ; le mettre en tableau le rend illisible sur mobile.
+Aucun tableau sur cette page. Un panorama en dix-sept entrées se lit en liste ; le mettre en tableau le rend illisible sur mobile.
 
 **Suggestion de conception** : une grille de cartes cliquables, une par domaine, avec titre et une phrase. Le mockup dispose déjà des styles nécessaires.
 
@@ -118,7 +123,7 @@ Aucun tableau sur cette page. Un panorama en seize entrées se lit en liste ; le
 ## Encadrés
 
 **Encadré « Disponibilité par plateforme »** — à placer au domaine 6.
-> Le navigateur intégré est disponible sur macOS et Windows. Toutes les autres fonctionnalités sont disponibles sur les trois systèmes.
+> Le navigateur intégré est disponible sur macOS et Windows. Sur Linux, il n'apparaît pas dans l'interface : la fonctionnalité est masquée plutôt qu'affichée en panne. Toutes les autres fonctionnalités sont disponibles sur les trois systèmes.
 
 ---
 
@@ -128,7 +133,7 @@ Aucun tableau sur cette page. Un panorama en seize entrées se lit en liste ; le
 
 **Oublier la restriction du navigateur.** Un utilisateur Linux qui découvre après installation que le navigateur intégré n'existe pas chez lui a été mal informé. La restriction doit apparaître dès le panorama.
 
-**Annoncer des fonctionnalités au futur.** Cette page ne décrit que ce qui existe dans la version publiée. Ce qui figure au CHANGELOG sous *Unreleased* n'y a pas sa place.
+**Annoncer des fonctionnalités au futur.** Cette page ne décrit que ce qui existe dans la version publiée — **1.2.2** au moment de l'audit. Tout ce qui n'est pas encore sorti, quelle qu'en soit la forme dans le CHANGELOG, n'y a pas sa place.
 
 ---
 
@@ -140,7 +145,8 @@ Cette page renvoie vers toutes les sections. Elle est le point de départ nature
 
 ## Points à confirmer
 
-- **Le nombre exact de langues et de thèmes.** Sept fichiers de traduction et six fichiers de thème existent dans le dépôt (`src/i18n/*.json`, `src/styles/themes/*.css`). Vérifier que tous sont réellement proposés dans l'interface — un fichier présent n'est pas forcément un choix offert à l'utilisateur.
-- **La disponibilité du navigateur intégré sur Linux.** Le README indique macOS et Windows. Confirmer si c'est une limitation définitive ou temporaire, ce qui change la formulation.
-- **La liste des neuf applications sources d'import.** Reprise du README ; recouper avec le registre réel dans `services/agent_import/registry.rs`.
-- **Le nombre de familles de modèles Forecast.** Neuf annoncées au README ; à recouper avec le catalogue réel avant publication.
+- ~~Le nombre exact de langues et de thèmes.~~ **Tranché** : les **sept** langues sont toutes proposées dans le sélecteur (`src/components/settings/general-settings-options.ts:14-22`) et les **six** thèmes le sont aussi, plus l'option Système (`src/lib/app-themes.ts:1-30`).
+- ~~La disponibilité du navigateur intégré sur Linux.~~ **Tranché** : limitation **par conception**, état `Hidden` (`services/browser/cef_runtime_policy.rs:72-75`).
+- ~~La liste des neuf applications sources d'import.~~ **Tranché** : `claude`, `codex`, `agents`, `hermes`, `qwen`, `zcode`, `openclaw`, `opencode`, `kimi`, plafonnées à neuf (`services/agent_import/source_specs.rs:49-101`, `agent_import/limits.rs:1`). Le registre est `source_specs.rs`, pas `registry.rs`.
+- ~~Le nombre de familles de modèles Forecast.~~ **Tranché** : **dix** familles locales plus TimeGPT en cloud (`services/forecast/catalog_specs/mod.rs:16-41`).
+- **La formulation des noms de fournisseurs et de familles de modèles sur le site.** Le code donne les identifiants techniques ; les noms commerciaux exacts à afficher restent à arrêter avec l'équipe du site.

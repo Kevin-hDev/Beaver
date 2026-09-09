@@ -2,8 +2,8 @@
 
 **Emplacement site** — Démarrage › Présentation (page d'entrée de la documentation)
 **Répond à** — « Je viens d'arriver sur ce site, c'est quoi Beaver et est-ce que ça me concerne ? »
-**Sources** — `README.md`, `CHANGELOG.md`, `LICENSE`, `package.json` (version), `src-tauri/tauri.conf.json`
-**Vérification** — Issu du README pour le positionnement ; version et licence vérifiées dans les fichiers du dépôt
+**Sources** — `README.md`, `CHANGELOG.md`, `LICENSE`, `package.json:3`, `src-tauri/Cargo.toml:4`, `src-tauri/tauri.conf.json:4`
+**Vérification** — Issu du README pour le positionnement ; version vérifiée dans le code (les trois fichiers qui font autorité) ; licence vérifiée dans les fichiers du dépôt
 
 ---
 
@@ -29,7 +29,7 @@
 - Elle héberge un **agent autonome** : il reçoit un objectif, décide des étapes, exécute des outils, constate les résultats, recommence.
 - Il travaille avec des modèles **locaux** (via Ollama) ou **distants** (clé API ou compte web).
 - Plateformes : **macOS, Windows, Linux**.
-- Version courante au moment de la rédaction : **1.1.2** (`package.json`). Une v1.1.3 est décrite au CHANGELOG, et une section *Unreleased* couvre le changement de licence.
+- Version courante au moment de la rédaction : **1.2.2**, valeur identique dans les trois fichiers qui font autorité (`package.json:3`, `src-tauri/Cargo.toml:4`, `src-tauri/tauri.conf.json:4`).
 
 Éviter absolument le mot « chatbot » dans cette définition : Beaver possède un mode chat, mais le présenter comme tel désoriente sur ce qui fait sa valeur.
 
@@ -148,6 +148,6 @@ Un seul risque de rédaction : **survendre l'autonomie**. Un agent qui exécute 
 
 ## Points à confirmer
 
-- **La version affichée sur le site.** `package.json` indique 1.1.2, le CHANGELOG décrit une v1.1.3 et une section *Unreleased*. Déterminer quelle version fait référence au lancement du site, et prévoir comment cette mention se met à jour.
+- **La version affichée sur le site.** La version du dépôt est **1.2.2** et ne fait plus débat ; ce qui reste à décider est éditorial : quelle version le site affiche au lancement, et par quel mécanisme cette mention se met à jour à chaque publication.
 - **L'adresse de contact commercial.** Présente dans le README ; confirmer qu'elle doit apparaître sur le site public.
 - ~~Le nom des modes de permission côté utilisateur.~~ **Tranché** : Accès complet (`auto`), Demande d'approbation (`manual`), Chatbot (`chat`).

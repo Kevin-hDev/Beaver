@@ -2,7 +2,7 @@
 
 **Emplacement site** — Démarrage › Concepts clés (et source du glossaire de référence)
 **Répond à** — « Qu'est-ce que ça veut dire ? » pour chaque terme employé ailleurs dans la documentation
-**Sources** — `README.md`, `CLAUDE.md`, `src-tauri/src/services/agent_local/`, `src/components/`, `src-tauri/src/services/agent_local/tool_catalog.rs`
+**Sources** — `README.md`, `CLAUDE.md`, `src-tauri/src/services/agent_local/`, `src-tauri/src/services/agent_local/tool_catalog.rs:16-85`, `src-tauri/src/services/llm/route_profile/catalog_api.rs:42-191`, `src-tauri/src/services/extensions/`, `src/components/settings/settings-sections.ts`, `src/features/extension-ui/core-occupants.tsx`, `src/lib/app-themes.ts`
 **Vérification** — Vérifié dans le code pour les termes techniques marqués ✓ ; issu du README pour les autres
 
 ---
@@ -35,11 +35,11 @@ Une page de définitions courtes, groupées par thème, chaque terme en `<dt>`/`
 
 **Outil** — une capacité concrète : lire un fichier, lancer une commande, chercher sur le web. L'agent choisit lui-même lequel appeler et avec quels arguments.
 
-**Groupe d'outils** — les outils sont rangés par famille. On active ou désactive un groupe entier. ✓ Groupes réels : `terminal`, `files`, `file_search`, `web`, `mcp`, `skills`, `automations`, `user_choice`, `subagents`, `plan_mode`, `todo_list`, `git_branches`, `forecast`, `spreadsheet`, `document`, `images`.
+**Groupe d'outils** — les outils sont rangés par famille. On active ou désactive un groupe entier. ✓ **Onze** groupes réels (`tool_catalog.rs:29-85`) : quatre verrouillés — `core`, `web`, `mcp`, `extensions` — et sept optionnels — `workflow`, `automation`, `subagents`, `todo`, `git`, `forecast`, `office`.
 
-**Outil verrouillé** — toujours disponible, non désactivable. ✓ Les cinq groupes verrouillés : `terminal`, `files`, `file_search`, `web`, `mcp`.
+**Outil verrouillé** — toujours disponible, non désactivable. ✓ **Quatre** groupes verrouillés portant **quatorze** outils (`tool_catalog.rs:29-50`) : `core` (huit outils de fichiers, de recherche et de commandes), `web` (deux), `mcp` (un) et `extensions` (trois).
 
-**Outil optionnel** — s'active dans les réglages. ✓ Maximum **32** outils optionnels actifs simultanément (`MAX_OPTIONAL_TOOLS`).
+**Outil optionnel** — s'active dans les réglages. ✓ Maximum **32** outils optionnels actifs simultanément (`MAX_OPTIONAL_TOOLS`, `tool_catalog.rs:16`). Le catalogue compte aujourd'hui **exactement 32** outils optionnels (`tool_catalog.rs:52-85`) : le plafond n'écarte donc rien à ce jour, et ne doit pas être présenté comme une limite qui gêne.
 
 ### Groupe 2 — Le contrôle de ce que fait l'agent
 
@@ -83,7 +83,7 @@ Une page de définitions courtes, groupées par thème, chaque terme en `<dt>`/`
 
 **Modèle distant** — exécuté chez un fournisseur, atteint par le réseau. Généralement plus rapide et plus capable, facturé à l'usage.
 
-**Provider (fournisseur)** — le service qui héberge un modèle distant. **Dix** fournisseurs LLM sont gérés.
+**Provider (fournisseur)** — le service qui héberge un modèle distant. ✓ **Onze** fournisseurs LLM sont gérés par clé API (`catalog_api.rs:42-191`) : Google Gemini, Mistral, Cerebras, OpenRouter, OpenAI, DeepSeek, xAI, Moonshot Kimi, Z.ai GLM, Anthropic Claude et Qwen.
 
 **Clé API** — l'identifiant secret d'authentification auprès d'un fournisseur. Stockée chiffrée, jamais exposée à l'interface. ✓
 
@@ -99,7 +99,7 @@ Une page de définitions courtes, groupées par thème, chaque terme en `<dt>`/`
 
 **Connecteur** — une instance de serveur MCP configurée dans Beaver, locale ou distante. ✓ Configuration dans `mcp-connectors.json`.
 
-**Extension** — un module installable qui étend l'application elle-même, distribué et mis à jour depuis une source Git. ✓
+**Extension** — un module installable qui **modifie l'interface elle-même**, distribué et mis à jour depuis une source Git. ✓ Une extension peut contribuer son propre onglet de réglages (`src/components/settings/settings-sections.ts:73-91`, branche `occupant.source.kind === "extension"`), des entrées de navigation (`src/features/extension-ui/core-occupants.tsx`), un thème (`src/lib/app-themes.ts:35`, `ExtensionThemeChoice`) et des skills. Trois outils verrouillés du groupe `extensions` la rendent visible à l'agent (`tool_catalog.rs:41-49`). C'est ce qui la distingue d'un connecteur MCP, qui n'ajoute que des outils.
 
 **Channel (canal)** — passerelle vers Telegram, Slack ou Discord. ✓
 
@@ -155,4 +155,4 @@ Chaque terme renvoie vers sa page détaillée. Les renvois structurants :
 
 - **Le nom français de « worktree ».** Le terme anglais est répandu chez les utilisateurs de Git, mais opaque pour les autres. Décider entre « worktree », « copie de travail » ou les deux (terme anglais entre parenthèses).
 - **Le terme « provider ».** L'interface l'emploie en anglais. Choisir entre « fournisseur » et « provider » et s'y tenir dans les sept langues.
-- **La liste des dix fournisseurs LLM.** Comptée d'après le tableau du README ; recouper avec le catalogue réel du code avant publication.
+- ~~La liste des dix fournisseurs LLM.~~ **Tranché** : **onze** fournisseurs par clé API dans le catalogue du code (`catalog_api.rs:42-191`). Le catalogue a gagné Anthropic Claude et Qwen, et perdu un fournisseur retiré du produit dont une migration efface la clé du coffre (`src-tauri/src/services/api_keys_retired.rs`).

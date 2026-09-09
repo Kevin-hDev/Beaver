@@ -6,6 +6,16 @@ Briefs mis de côté parce que la fonctionnalité correspondante n'est pas final
 
 Les fichiers portent l'extension `.gele` pour qu'aucun outil de génération ne les ramasse par erreur.
 
+**État au 9 septembre 2026 — deux chantiers gelés, un dégelé.**
+
+| Chantier | État |
+|---|---|
+| Mode Plan | **Gelé** — décision produit : le mode Plan va être modifié |
+| Compression du contexte | **Gelé** — la compression va être revue |
+| Extensions (4 briefs) | **Dégelé le 9 septembre 2026, briefs écrits le jour même** — voir `07-integrations/extensions-*.md` |
+
+La fiche Extensions reste dans ce fichier pour garder la trace du gel et de sa levée. Elle n'interdit plus rien.
+
 ---
 
 ## Mode Plan — `plan-mode.md.gele`
@@ -16,13 +26,22 @@ Les fichiers portent l'extension `.gele` pour qu'aucun outil de génération ne 
 
 **À refaire après modification** : la liste des outils autorisés est le cœur du sujet et va changer. Le reste du brief — parcours, limites, articulation avec les modes de permission — restera probablement valable.
 
+**Le gel était justifié, et la liste a déjà bougé** (relevé le 9 septembre 2026, sans reprise du brief) : **21 outils autorisés** au lieu de 19, `search_extension_tools` a disparu du code au profit de trois entrées liées aux extensions, et une règle conditionnelle supplémentaire s'applique désormais par **effet d'extension**. Le reste du brief — sept états du parcours, quatre corrections automatiques, limites de titre et de contenu, vingt plans conservés, outils interdits, protection en Accès complet — a été revérifié et reste exact au chiffre près.
+
 **Ce qui reste vrai quoi qu'il arrive** : le mode Plan protège même en Accès complet, les deux mécanismes se cumulent. C'est l'argument à conserver.
 
 ---
 
-## Extensions — quatre briefs non écrits
+## Extensions — dégelé le 9 septembre 2026, quatre briefs à écrire
 
-**Raison du gel** : l'implémentation a été interrompue en cours de route et doit être finalisée.
+**Le gel est levé.** Il portait sur une implémentation interrompue en cours de route ; ce n'est plus le cas. Vérifié dans le dépôt :
+
+- `EXTENSIONS.md`, à la racine, fait autorité sur le sujet et **doit être la source principale** des quatre briefs ;
+- le module `services/extensions/` existe et est largement couvert de tests ;
+- les deux outils de découverte d'extensions sont publiés et **intégrés au mode Plan** (`services/extensions/mod.rs`, repris dans `agent_local/tool_plan_guard.rs`) ;
+- la politique de permission **par effet d'extension** est en place et testée : en mode Plan, seuls les outils d'extension en lecture seule sont autorisés.
+
+**Fait le 9 septembre 2026** : les quatre briefs sont écrits (voir `07-integrations/`). Attention au troisième : la page « prompt système par une extension » a été **recadrée** — l'enquête dans le code a montré qu'aucune API d'extension ne touche au prompt système ; le brief documente ce qui est réellement possible et porte en tête une décision produit à trancher.
 
 **Briefs prévus** :
 
@@ -31,7 +50,7 @@ Les fichiers portent l'extension `.gele` pour qu'aucun outil de génération ne 
 - `extensions-prompt-systeme.md` — réécriture du prompt système par une extension, portée, précédence
 - `extensions-ecrire.md` — structure, hôte, canal de communication, source Git, limites et sécurité
 
-**Niveau d'exigence attendu** : le plus élevé du site. Installer du code tiers qui remplace des outils et réécrit le prompt système engage la sécurité de l'utilisateur. Il devra être guidé pas à pas, avec les risques énoncés explicitement plutôt que mentionnés en note de bas de page.
+**Niveau d'exigence attendu** : le plus élevé du site. Installer du code tiers qui remplace des outils et réécrit le prompt système engage la sécurité de l'utilisateur. Il devra être guidé pas à pas, avec les risques énoncés explicitement plutôt que mentionnés en note de bas de page. **Cette exigence reste entièrement valable maintenant que le gel est levé.**
 
 ---
 
@@ -46,7 +65,7 @@ Les fichiers portent l'extension `.gele` pour qu'aucun outil de génération ne 
 
 ## Compression du contexte — brief non écrit
 
-**Raison du gel** : la compression va être revue.
+**Raison du gel** : la compression va être revue. **Toujours d'actualité au 9 septembre 2026** : le chantier est visiblement actif dans le code — le module de compression existe et des fichiers de test récents y sont attachés.
 
 **Brief prévu** : `04-agent/compression.md` — quand la compression se déclenche, ce qu'elle résume, ce qu'elle conserve, ce que l'utilisateur voit, et ce qu'il peut régler.
 
