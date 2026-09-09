@@ -68,7 +68,7 @@ pub fn checked_session_continuity_bytes(
 }
 
 pub fn validate_model_id(value: &str) -> Result<(), LimitError> {
-    crate::services::model_identifier::is_valid(value)
+    crate::services::model_identifier::is_valid_model_id(value)
         .then_some(())
         .ok_or(LimitError::ModelId)
 }

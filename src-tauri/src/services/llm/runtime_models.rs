@@ -67,7 +67,7 @@ impl RuntimeRegistry {
 }
 
 pub(crate) fn valid_model_id(model_id: &str) -> bool {
-    crate::services::model_identifier::is_valid(model_id)
+    crate::services::model_identifier::is_valid_model_id(model_id)
 }
 
 fn valid_provider_id(provider_id: &str) -> bool {

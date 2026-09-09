@@ -107,7 +107,7 @@ fn safe_identifier(value: &str) -> String {
 }
 
 fn safe_model_identifier(value: &str) -> String {
-    crate::services::model_identifier::is_valid(value)
+    crate::services::model_identifier::is_valid_model_id(value)
         .then(|| value.to_string())
         .unwrap_or_else(|| "unknown".to_string())
 }

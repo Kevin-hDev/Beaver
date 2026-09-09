@@ -1,6 +1,6 @@
 pub(crate) const MAX_MODEL_ID_BYTES: usize = 128;
 
-pub(crate) fn is_valid(value: &str) -> bool {
+pub(crate) fn is_valid_model_id(value: &str) -> bool {
     !value.is_empty()
         && value.len() <= MAX_MODEL_ID_BYTES
         && !value.contains("..")
@@ -26,12 +26,12 @@ mod tests {
 
     #[test]
     fn model_id_contract_accepts_routes_and_rejects_unsafe_input() {
-        assert!(is_valid("google/gemma-4-31b-it:free"));
-        assert!(is_valid("plain-model"));
-        assert!(!is_valid("../x"));
-        assert!(!is_valid("/x"));
-        assert!(!is_valid("model\nx"));
-        assert!(!is_valid(&"a".repeat(MAX_MODEL_ID_BYTES + 1)));
+        assert!(is_valid_model_id("google/gemma-4-31b-it:free"));
+        assert!(is_valid_model_id("plain-model"));
+        assert!(!is_valid_model_id("../x"));
+        assert!(!is_valid_model_id("/x"));
+        assert!(!is_valid_model_id("model\nx"));
+        assert!(!is_valid_model_id(&"a".repeat(MAX_MODEL_ID_BYTES + 1)));
     }
 
     #[test]
