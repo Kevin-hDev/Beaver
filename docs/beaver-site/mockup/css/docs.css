@@ -5,8 +5,9 @@
   display: flex; align-items: center; gap: 22px;
   padding: 13px 26px;
   border-bottom: 1px solid var(--line);
-  background: var(--pill);
-  backdrop-filter: blur(10px);
+  /* Fond opaque obligatoire : un bandeau pleine largeur laisse défiler tout le
+     contenu sous lui — semi-transparent, le texte restait lisible à travers. */
+  background: var(--bg);
 }
 .docs-top .logo { font-size: 18px; }
 

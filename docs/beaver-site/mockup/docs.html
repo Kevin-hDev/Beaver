@@ -19,6 +19,10 @@
   <a class="logo" href="index.html">Beaver<em>.</em></a>
   <span class="crumb">Docs / Agent / Modes de permission</span>
   <button class="search" type="button">Rechercher… <kbd>Ctrl K</kbd></button>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="docs.html" hreflang="fr" aria-current="true">FR</a>
+    <a class="lang-opt" href="en/docs.html" hreflang="en">EN</a>
+  </span>
   <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
 </header>
 
@@ -107,8 +111,8 @@
       <span class="t">Sécurité</span>
       Quel que soit le mode, tes clés d'API restent dans le coffre chiffré
       <b>XChaCha20-Poly1305</b>. Elles ne sont exposées ni à l'interface ni à
-      l'agent : le cœur Rust les charge au moment de l'appel, puis efface sa
-      copie en mémoire.
+      l'agent : seul le cœur Rust y accède, aucune commande ne permet de les
+      lire, et la copie utilisée pour chaque appel est effacée après usage.
     </div>
 
     <h2 id="default">Définir le mode par défaut</h2>

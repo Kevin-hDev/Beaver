@@ -1,6 +1,9 @@
 /* Beaver — navigation flottante et boutons d'action */
 
-nav {
+/* Enfant direct de body uniquement : le sélecteur nu `nav` attrapait aussi le
+   sommaire latéral des pages Docs et lui donnait le z-index du bandeau — le
+   texte de la colonne passait alors par-dessus l'en-tête en défilant. */
+body > nav {
   position: fixed; top: 18px; left: var(--pad-x); right: var(--pad-x); z-index: 20;
   display: flex; justify-content: space-between; align-items: center;
 }
@@ -34,6 +37,20 @@ nav {
   font-family: inherit; font-size: 13px; padding: 0; transition: color .3s;
 }
 .tbtn:hover, .tbtn:focus-visible { color: var(--accent); }
+
+/* Commutateur de langue : ses propres réglages typographiques, car il vit
+   aussi dans l'en-tête de la doc, hors de .nav-pill. */
+.lang {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: var(--f-mono);
+  font-size: 10.5px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+.lang-opt { color: var(--ink-dim); text-decoration: none; transition: color .3s; }
+.lang-opt:hover, .lang-opt:focus-visible { color: var(--accent); }
+.lang-opt[aria-current] { color: var(--ink); }
+.lang-opt + .lang-opt::before { content: "/"; margin-right: 5px; color: var(--ink-dim); }
 
 .ctas { margin-top: 34px; display: flex; gap: 14px; flex-wrap: wrap; }
 

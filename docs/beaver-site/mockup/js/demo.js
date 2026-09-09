@@ -9,7 +9,15 @@
   var dots = document.getElementById('demo-dots');
   if (!demo || !label || !dots) return;
 
-  var STATES = [
+  // Les légendes suivent la langue de la page : le même script sert /index.html
+  // et /en/index.html.
+  var english = document.documentElement.lang === 'en';
+
+  var STATES = english ? [
+    { id: '1', text: 'Beaver, as installed' },
+    { id: '2', text: 'you add <b>your panel</b>' },
+    { id: '3', text: 'you replace <b>whatever you want</b>' }
+  ] : [
     { id: '1', text: 'Beaver, à l\'installation' },
     { id: '2', text: 'tu ajoutes <b>ton panneau</b>' },
     { id: '3', text: 'tu remplaces <b>ce que tu veux</b>' }
@@ -23,7 +31,9 @@
   var buttons = STATES.map(function (_state, i) {
     var button = document.createElement('button');
     button.type = 'button';
-    button.setAttribute('aria-label', 'Étape ' + (i + 1) + ' sur ' + STATES.length);
+    button.setAttribute('aria-label', english
+      ? 'Step ' + (i + 1) + ' of ' + STATES.length
+      : 'Étape ' + (i + 1) + ' sur ' + STATES.length);
     button.addEventListener('click', function () { show(i); hold(); });
     dots.appendChild(button);
     return button;

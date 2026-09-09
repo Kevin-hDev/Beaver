@@ -27,10 +27,14 @@
   function current() { return COMMANDS[os]; }
 
   if (copy) {
+    // Le libellé au repos vient du HTML ; seul l'état « copié » est ici,
+    // choisi sur la langue de la page.
+    var idleLabel = copy.textContent;
+    var copiedLabel = document.documentElement.lang === 'en' ? 'Copied' : 'Copié';
     copy.addEventListener('click', function () {
       if (navigator.clipboard) navigator.clipboard.writeText(current().text);
-      copy.textContent = 'Copié';
-      setTimeout(function () { copy.textContent = 'Copier'; }, 1500);
+      copy.textContent = copiedLabel;
+      setTimeout(function () { copy.textContent = idleLabel; }, 1500);
     });
   }
 

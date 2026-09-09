@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Permission modes</title>
+<meta name="description" content="The three permission modes of a Beaver session: full access, approval required, and chatbot with no local tools.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Agent / Permission modes</span>
+  <button class="search" type="button">Search… <kbd>Ctrl K</kbd></button>
+  <span class="lang" role="group" aria-label="Language">
+    <a class="lang-opt" href="../docs.html" hreflang="fr">FR</a>
+    <a class="lang-opt" href="docs.html" hreflang="en" aria-current="true">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Documentation contents">
+      <div class="group">
+        <h2>Getting started</h2>
+        <a href="#">Installation</a>
+        <a href="#">First launch</a>
+        <a href="#">Providers &amp; web accounts</a>
+        <a href="#">Importing from another agent</a>
+      </div>
+      <div class="group">
+        <h2>Agent</h2>
+        <a href="#" aria-current="page">Permission modes</a>
+        <a href="#">Plan mode</a>
+        <a href="#">Branching a conversation</a>
+        <a href="#">Subagents</a>
+        <a href="#">Memory &amp; skills</a>
+      </div>
+      <div class="group">
+        <h2>Tools</h2>
+        <a href="#">Files &amp; terminal</a>
+        <a href="#">Web search</a>
+        <a href="#">Built-in browser</a>
+        <a href="#">External channels</a>
+      </div>
+      <div class="group">
+        <h2>Extensions</h2>
+        <a href="#">Extension center</a>
+        <a href="#">Replacing a tool</a>
+        <a href="#">System prompt and extensions</a>
+        <a href="#">Writing an extension</a>
+      </div>
+      <div class="group">
+        <h2>Forecast</h2>
+        <a href="#">Workshop</a>
+        <a href="#">Local models</a>
+        <a href="#">Backtests &amp; metrics</a>
+        <a href="#">Scenarios &amp; exports</a>
+      </div>
+      <div class="group">
+        <h2>Reference</h2>
+        <a href="#">Scheduled wake-ups</a>
+        <a href="#">Security &amp; vault</a>
+        <a href="#">Keyboard shortcuts</a>
+        <a href="#">Themes &amp; languages</a>
+      </div>
+    </nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Permission <em>modes</em></h1>
+    <p>Every agent session runs in one of three permission modes.
+    The mode you choose determines what Beaver can do <b>without asking you first</b>.
+    You can switch at any time from the session, and set a default mode
+    in the settings.</p>
+
+    <h2 id="full">Full access</h2>
+    <p>The agent runs its tools freely: reading and writing files,
+    shell commands, Git actions, connector calls. It's the smoothest mode
+    for long autonomous tasks — keep it for projects you trust.</p>
+
+    <h2 id="approval">Approval required</h2>
+    <p>Every sensitive action — a write, a shell command, a deletion — raises
+    an <b>approval request</b> in the conversation. You see exactly what
+    the agent is about to do, and you accept or refuse. This is the mode
+    recommended for day-to-day work.</p>
+
+    <h2 id="chatbot">Chatbot</h2>
+    <p>No tools on your machine: Beaver answers in text and can at most
+    search the web. Useful for exploring, drafting or reasoning without
+    touching anything on your disk.</p>
+
+    <table>
+      <caption class="crumb">What each mode allows without confirmation</caption>
+      <tr><th>Action</th><th>Full access</th><th>Approval</th><th>Chatbot</th></tr>
+      <tr><td>Read files</td><td>Automatic</td><td>Automatic</td><td>—</td></tr>
+      <tr><td>Write or modify</td><td>Automatic</td><td>Approval</td><td>—</td></tr>
+      <tr><td>Shell commands</td><td>Automatic</td><td>Approval, except safe reads (ls, cat…)</td><td>—</td></tr>
+      <tr><td>Extension tools</td><td>Automatic</td><td>Approval</td><td>—</td></tr>
+    </table>
+
+    <div class="callout">
+      <span class="t">Security</span>
+      Whatever the mode, your API keys stay in the encrypted
+      <b>XChaCha20-Poly1305</b> vault. They are exposed neither to the interface
+      nor to the agent: only the Rust core touches them, no command can read
+      them out, and the copy used for each call is wiped after use.
+    </div>
+
+    <h2 id="default">Setting the default mode</h2>
+    <div class="term">
+      <div class="term-bar"><i></i><i></i><i></i></div>
+      <pre class="term-body"><span class="prompt">#</span> Settings → Agent → Default mode
+<span class="prompt">$</span> cat ~/.local/share/cl-go-dash/agent-settings.json
+{ "permission_mode": "manual" }   # values: "auto" · "manual" · "chat"</pre>
+    </div>
+  </main>
+
+  <div class="toc">
+    <h2>On this page</h2>
+    <a href="#full">Full access</a>
+    <a href="#approval">Approval required</a>
+    <a href="#chatbot">Chatbot</a>
+    <a href="#default">Default mode</a>
+    <div class="mascot">
+      <div class="beaver-book" aria-hidden="true"></div>
+      <span>beaver — reading</span>
+    </div>
+  </div>
+</div>
+
+<script src="../js/theme.js"></script>
+<script src="../js/install.js"></script>
+</body>
+</html>
