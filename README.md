@@ -1,43 +1,103 @@
+<div align="center">
+
 # Beaver
 
-Beaver is a multi-provider agentic desktop workspace, supporting cloud models through API keys or connected web accounts, as well as local models through Ollama. It combines conversations, tools, planning, subagents, persistent memory, an embedded browser, Git workflows, forecasting, MCP connectors, automated wakeups, file previews, and a terminal in one application.
+**Other agents give you what they decided.<br>Beaver gives you everything — then the keys.**
+
+Beaver is an open-source desktop AI agent that ships complete: cloud models through API keys or connected web accounts, fully local models through Ollama, and the standard tools of the big agent harnesses working from the first launch. Then it hands you the keys — swap its tools, rewrite its system prompts, tune its context compression, reshape its interface. Through extensions, without maintaining a fork.
+
+[![Latest release](https://img.shields.io/github/v/release/Kevin-hDev/Beaver?label=release)](https://github.com/Kevin-hDev/Beaver/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/Kevin-hDev/Beaver/total?label=downloads)](https://github.com/Kevin-hDev/Beaver/releases)
+[![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-orange)](LICENSE)
+
+**[Install](#installation)** · **[Everything's already there](#everythings-already-there)** · **[Then the keys](#then-the-keys)** · **[Security](SECURITY.md)** · **[Français](README_FR.md)**
+
+macOS (Apple Silicon) · Linux · Windows
+
+<!-- TODO: hero demo GIF and screenshots -->
+
+</div>
 
 Beaver runs on your computer; the selected model can run in the cloud or locally. The Agent workspace supports both, rather than being dedicated to local AI.
 
-## Features
+## Everything's already there
+
+### The agent
 
 - **Agent and tools**: use cloud or local models with files, shell commands, web search, Office documents, Git, MCP, Forecast, diagnostics, todos, and interactive choices
 - **Planning and permissions**: explore safely in Plan mode, save Markdown plans, approve implementation, and choose automatic, manual, or per-chat tool permissions
-- **Conversations and projects**: manage tabbed chats, attachments, favorites, queued messages, session branches, archived chats, hidden summaries, and project folders
 - **Parent-controlled subagents**: coordinate isolated child sessions, follow their live status, correct or reuse them, review their changes, and clean up their worktrees safely
 - **Persistent memory**: keep optional global and per-project memory with manual or automatic modes, bounded summaries, topic files, live activity, and read-only access for subagents
-- **Customizable context compression**: create reusable profiles, choose them globally or per conversation, tune what is retained for each context-window range, and preview the next bounded checkpoint before it runs
+- **Reasoning and multimodal continuity**: use the reasoning controls and image inputs validated for each model while Beaver preserves provider-native reasoning across messages and tool continuations without exposing private provider state
+
+### The workspace
+
+- **Conversations and projects**: manage tabbed chats, attachments, favorites, queued messages, session branches, archived chats, hidden summaries, and project folders
 - **Embedded browser**: browse in up to ten tabs per conversation, keep signed-in sessions, detect local development sites, and share the side panel with previews and Forecast. Available on macOS and Windows
 - **Complete Git workflow**: create, switch, merge, and delete branches or worktrees; commit and push; browse uncommitted changes; and inspect recent or historical diffs
-- **Forecast V2**: audit time-series data, select models manually or automatically, run local or cloud forecasts, compare backtests, build ensembles, explore advanced analysis, and export results
-- **Providers and usage**: connect OpenAI/Codex, Grok, and Kimi through web authentication; configure Anthropic, Alibaba Cloud Qwen, and other API-key providers; and view available limits, credits, token usage, request counts, and estimated costs
-- **Reasoning and multimodal continuity**: use the reasoning controls and image inputs validated for each model while Beaver preserves provider-native reasoning across messages and tool continuations without exposing private provider state
-- **MCP connectors and channels**: activate local or cloud MCP connectors per chat and optionally connect the background Gateway to Telegram, Slack, or Discord
-- **Custom extensions**: install trusted JavaScript or TypeScript extensions from a local source, Git, or npm; add agent tools, events, tabs, settings, actions, and themes through the versioned [Beaver Extension API](./EXTENSIONS.md)
-- **Wakeups**: schedule one-time, daily, or weekly prompts with the internal scheduler and keep each result in a dedicated conversation
-- **Local models through Ollama**: Beaver manages runtime downloads and reuse of an available daemon; browse and install local models, edit modelfiles, and configure their parameters or system prompts
 - **Desktop workspace**: use the cross-platform tabbed terminal, file tree, rich text and Office previews, link previews, context usage breakdown, six visual themes, and the interactive Beaver companion
 - **Guided onboarding and migration**: configure Beaver on first launch and import instructions, skills, or rules from Claude Code, Codex, Agents, Hermes, Qwen Code, ZCode, OpenClaw, OpenCode, and Kimi Code
+
+### Models and providers
+
+- **Providers and usage**: connect OpenAI/Codex, Grok, and Kimi through web authentication; configure Anthropic, Alibaba Cloud Qwen, and other API-key providers; and view available limits, credits, token usage, request counts, and estimated costs
+- **Local models through Ollama**: Beaver manages runtime downloads and reuse of an available daemon; browse and install local models, edit modelfiles, and configure their parameters or system prompts
 - **Secure local storage**: keep credentials in an XChaCha20-Poly1305 encrypted vault whose master key stays in the OS keyring
 
-## Plugins and extensions
+### Automation and connectors
 
-Beaver can be extended without maintaining a fork. The extension system is available and still evolving:
+- **MCP connectors and channels**: activate local or cloud MCP connectors per chat and optionally connect the background Gateway to Telegram, Slack, or Discord
+- **Wakeups**: schedule one-time, daily, or weekly prompts with the internal scheduler and keep each result in a dedicated conversation
+- **Forecast V2**: audit time-series data, select models manually or automatically, run local or cloud forecasts, compare backtests, build ensembles, explore advanced analysis, and export results
 
-- **Beaver plugins**: enable Documents, PDF, Spreadsheets, and Presentations independently. These Office plugins remain separate from the built-in Tools
-- **Custom extensions**: create JavaScript or TypeScript extensions, or install a trusted extension from a local file or folder, Git, or npm
+## Then the keys
+
+Nothing above is welded shut. Beaver can be reshaped without maintaining a fork — the extension system is available and still evolving:
+
+- **Custom extensions**: install trusted JavaScript or TypeScript extensions from a local source, Git, or npm; add agent tools, events, tabs, settings, actions, and themes through the versioned [Beaver Extension API](./EXTENSIONS.md)
+- **Tool control**: enable or disable built-in tools directly in the app — the core file, shell, and web tools stay active; explicitly replaceable native tools can be swapped for your own through the advanced extension API
+- **Custom system prompts**: adjust the global system prompt or per-model Ollama prompts directly in the app
+- **Customizable context compression**: create reusable profiles, choose them globally or per conversation, tune what is retained for each context-window range, and preview the next bounded checkpoint before it runs
 - **Agent capabilities**: contribute tools, on-demand skills, resources, and results containing files or image previews. Classic Chat remains separate: its only tools are web search and fetch
 - **Interface customization**: add tabs, panels, settings, actions, and themes through supported extension surfaces; advanced interface modules require explicit approval
+- **Beaver plugins**: enable Documents, PDF, Spreadsheets, and Presentations independently. These Office plugins remain separate from the built-in Tools
 - **Management and recovery**: activate or deactivate extensions, choose chat shortcuts, inspect diagnostics, and recover from problematic extensions using safe mode
 
 Extensions run trusted code, not sandboxed code. Only install code you trust: an approved extension can access local resources and supported credentials through the extension API. Advanced interface modules carry additional risks.
 
 See **[EXTENSIONS.md](EXTENSIONS.md)** for the complete user and author guide, including installation, examples, compatibility, limits, permissions, and troubleshooting. The guide is currently in French.
+
+## Installation
+
+### macOS / Linux (one command)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Kevin-hDev/Beaver/main/install.sh | bash
+```
+
+Downloads the latest release, installs the app, and launches it automatically.
+- **macOS**: installs into `/Applications/`
+- **Linux**: installs the Debian package through `apt-get` (Ubuntu/Debian only)
+
+The Linux installer uses the `.deb` release asset so the app is visible in the system application menu.
+
+### Windows (PowerShell)
+
+```powershell
+irm https://raw.githubusercontent.com/Kevin-hDev/Beaver/main/install.ps1 | iex
+```
+
+Downloads the latest release and launches the Windows NSIS `-setup.exe` installer automatically.
+
+> **Windows Defender**: on first launch, "Controlled folder access" may block `ollama.exe`. Click "Allow" in the notification — it will not ask again.
+
+### Updates
+
+Updates are automatic: a notification appears in the app when a new version is available, with localized release notes when the release provides them. One click and the app updates itself.
+
+### From CL-GO to Beaver
+
+Beaver is the new name of CL-GO. Existing users migrate through the CL-GO 1.0.2 bridge release and keep their conversations, settings, credentials, MCP connectors, memory, Forecast models, Ollama data, and browser sessions. Historical internal identifiers and the data directory described below are intentionally preserved for compatibility.
 
 ## Supported providers
 
@@ -85,9 +145,7 @@ Beaver includes a dedicated Forecast workspace for time-series analysis:
 - **Security**: XChaCha20-Poly1305 vault, master key in the OS keyring (macOS Keychain / Windows DPAPI / Linux Secret Service)
 - **File watching**: `notify` crate (FSEvents on macOS, inotify on Linux, ReadDirectoryChangesW on Windows)
 
-## Prerequisites
-
-### External runtimes
+## External runtimes (optional)
 
 - macOS (Apple Silicon), Linux, or Windows
 - Node.js 24 LTS — for development and external tools that require a system installation
@@ -204,43 +262,11 @@ python3.14 --version
 
 Rust (via [`rustup`](https://rustup.rs/)) is required only to build or develop Beaver; it is not required by an installed application.
 
-## Installation
-
-### macOS / Linux (one command)
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/Kevin-hDev/Beaver/main/install.sh | bash
-```
-
-Downloads the latest release, installs the app, and launches it automatically.
-- **macOS**: installs into `/Applications/`
-- **Linux**: installs the Debian package through `apt-get` (Ubuntu/Debian only)
-
-The Linux installer uses the `.deb` release asset so the app is visible in the system application menu.
-
-### Windows (PowerShell)
-
-```powershell
-irm https://raw.githubusercontent.com/Kevin-hDev/Beaver/main/install.ps1 | iex
-```
-
-Downloads the latest release and launches the Windows NSIS `-setup.exe` installer automatically.
-
-> **Windows Defender**: on first launch, "Controlled folder access" may block `ollama.exe`. Click "Allow" in the notification — it will not ask again.
-
-### Updates
-
-Updates are automatic: a notification appears in the app when a new version is available, with localized release notes when the release provides them. One click and the app updates itself.
-
-### From CL-GO to Beaver
-
-Beaver is the new name of CL-GO. Existing users migrate through the CL-GO 1.0.2 bridge release and keep their conversations, settings, credentials, MCP connectors, memory, Forecast models, Ollama data, and browser sessions. Historical internal identifiers and the data directory described below are intentionally preserved for compatibility.
-
 ---
 
 ## Development
 
-Install Node.js and the development prerequisites above first. CPython is only needed for local SearXNG. Then install the project dependencies:
+Install Node.js from the external runtimes section above first. CPython is only needed for local SearXNG. Then install the project dependencies:
 
 ```bash
 # 1. Clone the repo

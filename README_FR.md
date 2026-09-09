@@ -1,43 +1,103 @@
+<div align="center">
+
 # Beaver
 
-Beaver est un espace de travail agentique multi-fournisseurs, compatible avec les modèles cloud par clé API ou compte web connecté, ainsi qu'avec les modèles locaux via Ollama. L'application réunit les conversations, les outils, la planification, les sous-agents, la mémoire persistante, un navigateur intégré, Git, les prévisions, les connecteurs MCP, les réveils automatiques, les aperçus de fichiers et un terminal.
+**Les autres agents te donnent ce qu'ils ont décidé.<br>Beaver te donne tout, puis les clés.**
+
+Beaver est un agent IA de bureau open source qui arrive complet : modèles cloud par clé API ou compte web connecté, modèles entièrement locaux via Ollama, et les outils standard des grands harnais agentiques, opérationnels dès le premier lancement. Puis il te tend les clés — remplace ses outils, réécris ses prompts système, règle sa compression de contexte, remodèle son interface. Par extensions, sans maintenir un fork.
+
+[![Dernière version](https://img.shields.io/github/v/release/Kevin-hDev/Beaver?label=version)](https://github.com/Kevin-hDev/Beaver/releases/latest)
+[![Téléchargements](https://img.shields.io/github/downloads/Kevin-hDev/Beaver/total?label=t%C3%A9l%C3%A9chargements)](https://github.com/Kevin-hDev/Beaver/releases)
+[![Licence : AGPL-3.0](https://img.shields.io/badge/licence-AGPL--3.0-orange)](LICENSE)
+
+**[Installer](#installation)** · **[Tout est déjà là](#tout-est-déjà-là)** · **[Puis les clés](#puis-les-clés)** · **[Sécurité](SECURITY.md)** · **[English](README.md)**
+
+macOS (Apple Silicon) · Linux · Windows
+
+<!-- TODO : GIF de démonstration et captures d'écran -->
+
+</div>
 
 Beaver fonctionne sur ton ordinateur ; le modèle choisi peut fonctionner dans le cloud ou localement. L'espace Agent prend en charge les deux, sans être réservé à l'IA locale.
 
-## Fonctionnalités
+## Tout est déjà là
+
+### L'agent
 
 - **Agent et outils** : utilise les modèles cloud ou locaux avec les fichiers, les commandes système, la recherche web, les documents Office, Git, MCP, Forecast, les diagnostics, les todos et les choix interactifs
 - **Planification et permissions** : explore en sécurité avec le mode Plan, enregistre des plans Markdown, valide leur mise en œuvre et choisis des permissions automatiques, manuelles ou propres à chaque chat
-- **Conversations et projets** : gère les discussions en onglets, les pièces jointes, les favoris, les messages en attente, les branches de conversation, les archives, les résumés cachés et les dossiers de projet
 - **Sous-agents contrôlés par le parent** : coordonne des sessions enfant isolées, suis leur activité, corrige-les ou réutilise-les, examine leurs changements et nettoie leurs worktrees en sécurité
 - **Mémoire persistante** : conserve une mémoire globale et une mémoire par projet, avec modes manuel ou automatique, résumés limités, fichiers par sujet, activité visible et accès en lecture seule pour les sous-agents
-- **Compression du contexte personnalisable** : crée des profils réutilisables, choisis-les globalement ou par conversation, règle les éléments conservés selon la taille du contexte et prévisualise le prochain point de compression limité avant son exécution
+- **Raisonnement et continuité multimodale** : utilise les réglages de raisonnement et les images validées pour chaque modèle pendant que Beaver conserve le raisonnement natif du fournisseur entre les messages et les appels d'outils sans exposer son état privé
+
+### L'espace de travail
+
+- **Conversations et projets** : gère les discussions en onglets, les pièces jointes, les favoris, les messages en attente, les branches de conversation, les archives, les résumés cachés et les dossiers de projet
 - **Navigateur intégré** : navigue dans dix onglets maximum par conversation, conserve les connexions web, détecte les sites locaux et partage le panneau latéral avec les aperçus et Forecast. Disponible sur macOS et Windows
 - **Workflow Git complet** : crée, change, fusionne et supprime des branches ou worktrees ; crée des commits et pousse-les ; parcours les changements et consulte les différences récentes ou historiques
-- **Forecast V2** : contrôle les séries temporelles, sélectionne les modèles manuellement ou automatiquement, lance des prévisions locales ou cloud, compare les backtests, crée des ensembles, explore les analyses avancées et exporte les résultats
-- **Fournisseurs et consommation** : connecte OpenAI/Codex, Grok et Kimi avec un compte web ; configure Anthropic, Alibaba Cloud Qwen et les autres fournisseurs par clé API ; puis consulte les limites, crédits, tokens, requêtes et coûts estimés disponibles
-- **Raisonnement et continuité multimodale** : utilise les réglages de raisonnement et les images validées pour chaque modèle pendant que Beaver conserve le raisonnement natif du fournisseur entre les messages et les appels d'outils sans exposer son état privé
-- **Connecteurs MCP et canaux** : active des connecteurs MCP locaux ou cloud par conversation et relie éventuellement la Gateway à Telegram, Slack ou Discord
-- **Extensions personnalisées** : installe des extensions JavaScript ou TypeScript de confiance depuis une source locale, Git ou npm ; ajoute des outils agentiques, événements, onglets, réglages, actions et thèmes via l'[API d'extensions Beaver](./EXTENSIONS.md) versionnée
-- **Réveils** : programme des demandes ponctuelles, quotidiennes ou hebdomadaires avec le scheduler interne et conserve chaque résultat dans une conversation dédiée
-- **Modèles locaux via Ollama** : Beaver gère le téléchargement du runtime et la réutilisation d'un service disponible ; parcours et installe les modèles locaux, modifie leurs modelfiles et configure leurs paramètres ou instructions
 - **Espace de travail desktop** : utilise le terminal à onglets, l'arbre de fichiers, les aperçus enrichis et Office, les liens, le détail du contexte, six thèmes visuels et le compagnon Beaver interactif
 - **Démarrage et migration guidés** : configure Beaver au premier lancement et importe des instructions, skills ou règles depuis Claude Code, Codex, Agents, Hermes, Qwen Code, ZCode, OpenClaw, OpenCode et Kimi Code
+
+### Modèles et fournisseurs
+
+- **Fournisseurs et consommation** : connecte OpenAI/Codex, Grok et Kimi avec un compte web ; configure Anthropic, Alibaba Cloud Qwen et les autres fournisseurs par clé API ; puis consulte les limites, crédits, tokens, requêtes et coûts estimés disponibles
+- **Modèles locaux via Ollama** : Beaver gère le téléchargement du runtime et la réutilisation d'un service disponible ; parcours et installe les modèles locaux, modifie leurs modelfiles et configure leurs paramètres ou instructions
 - **Stockage local sécurisé** : conserve les identifiants dans un coffre chiffré XChaCha20-Poly1305 dont la clé maître reste dans le trousseau du système
 
-## Plugins et extensions
+### Automatisation et connecteurs
 
-Beaver peut être enrichi sans maintenir une copie modifiée de l'application. Le système d'extensions est disponible et continue d'évoluer :
+- **Connecteurs MCP et canaux** : active des connecteurs MCP locaux ou cloud par conversation et relie éventuellement la Gateway à Telegram, Slack ou Discord
+- **Réveils** : programme des demandes ponctuelles, quotidiennes ou hebdomadaires avec le scheduler interne et conserve chaque résultat dans une conversation dédiée
+- **Forecast V2** : contrôle les séries temporelles, sélectionne les modèles manuellement ou automatiquement, lance des prévisions locales ou cloud, compare les backtests, crée des ensembles, explore les analyses avancées et exporte les résultats
 
-- **Plugins Beaver** : active Documents, PDF, Feuilles de calcul et Présentations indépendamment. Ces plugins Office restent distincts des Tools internes
-- **Extensions personnalisées** : crée des extensions JavaScript ou TypeScript, ou installe une extension de confiance depuis un fichier ou dossier local, Git ou npm
+## Puis les clés
+
+Rien de tout ça n'est soudé. Beaver peut être remodelé sans maintenir une copie modifiée de l'application — le système d'extensions est disponible et continue d'évoluer :
+
+- **Extensions personnalisées** : installe des extensions JavaScript ou TypeScript de confiance depuis une source locale, Git ou npm ; ajoute des outils agentiques, événements, onglets, réglages, actions et thèmes via l'[API d'extensions Beaver](./EXTENSIONS.md) versionnée
+- **Contrôle des outils** : active ou désactive les outils intégrés directement dans l'application — le socle fichiers, shell et web reste actif ; les outils natifs explicitement remplaçables peuvent être remplacés par les tiens via l'API d'extensions avancée
+- **Prompts système personnalisés** : ajuste le prompt système global ou les prompts propres aux modèles Ollama directement dans l'application
+- **Compression du contexte personnalisable** : crée des profils réutilisables, choisis-les globalement ou par conversation, règle les éléments conservés selon la taille du contexte et prévisualise le prochain point de compression limité avant son exécution
 - **Capacités de l'agent** : ajoute des outils, des skills chargés à la demande, des ressources et des résultats contenant des fichiers ou aperçus d'images. Le Chat classique reste séparé : ses seuls outils sont la recherche web et la lecture de pages
 - **Personnalisation de l'interface** : ajoute des onglets, panneaux, réglages, actions et thèmes dans les emplacements prévus ; les modules d'interface avancés demandent une approbation explicite
+- **Plugins Beaver** : active Documents, PDF, Feuilles de calcul et Présentations indépendamment. Ces plugins Office restent distincts des Tools internes
 - **Gestion et récupération** : active ou désactive les extensions, choisis les raccourcis du chat, consulte les diagnostics et récupère une application perturbée par une extension grâce au mode sûr
 
 Les extensions exécutent du code de confiance, pas du code enfermé dans un bac à sable. Installe uniquement du code auquel tu fais confiance : une extension approuvée peut accéder aux ressources locales et aux identifiants pris en charge par l'API d'extensions. Les modules d'interface avancés comportent des risques supplémentaires.
 
 Le guide **[EXTENSIONS.md](EXTENSIONS.md)** détaille l'utilisation et la création d'extensions : installation, exemples, compatibilité, limites, permissions et dépannage. Ce guide est actuellement en français.
+
+## Installation
+
+### macOS / Linux (une commande)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Kevin-hDev/Beaver/main/install.sh | bash
+```
+
+Télécharge la dernière release, installe l'app et la lance automatiquement.
+- **macOS** : installe dans `/Applications/`
+- **Linux** : installe le paquet Debian via `apt-get` (Ubuntu/Debian uniquement)
+
+L'installateur Linux utilise le fichier `.deb` de la release pour rendre l'app visible dans le menu système.
+
+### Windows (PowerShell)
+
+```powershell
+irm https://raw.githubusercontent.com/Kevin-hDev/Beaver/main/install.ps1 | iex
+```
+
+Télécharge la dernière release et lance l'installeur Windows NSIS `-setup.exe` automatiquement.
+
+> **Windows Defender** : au premier lancement, l'« Accès contrôlé aux dossiers » peut bloquer `ollama.exe`. Clique sur « Autoriser » dans la notification — ça ne redemande plus ensuite.
+
+### Mises à jour
+
+Les mises à jour sont automatiques : une notification apparaît dans l'app quand une nouvelle version est disponible, avec les notes de version traduites lorsque la release les fournit. Un clic et l'app se met à jour toute seule.
+
+### De CL-GO à Beaver
+
+Beaver est le nouveau nom de CL-GO. Les utilisateurs existants passent par la version-pont CL-GO 1.0.2 et conservent leurs conversations, réglages, identifiants, connecteurs MCP, mémoire, modèles Forecast, données Ollama et sessions du navigateur. Les anciens identifiants internes et le dossier de données décrit plus bas sont volontairement conservés pour assurer la compatibilité.
 
 ## Fournisseurs compatibles
 
@@ -85,9 +145,7 @@ Beaver inclut un espace Forecast dédié à l'analyse des séries temporelles :
 - **Sécurité** : vault XChaCha20-Poly1305, master key dans keyring OS (macOS Keychain / Windows DPAPI / Linux Secret Service)
 - **File watching** : crate `notify` (FSEvents macOS, inotify Linux, ReadDirectoryChangesW Windows)
 
-## Prérequis
-
-### Runtimes externes
+## Runtimes externes (optionnels)
 
 - macOS (Apple Silicon), Linux ou Windows
 - Node.js 24 LTS — pour le développement et les outils externes nécessitant une installation système
@@ -204,43 +262,11 @@ python3.14 --version
 
 Rust (via [`rustup`](https://rustup.rs/)) est nécessaire uniquement pour compiler ou développer Beaver ; il n'est pas requis par l'application installée.
 
-## Installation
-
-### macOS / Linux (une commande)
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/Kevin-hDev/Beaver/main/install.sh | bash
-```
-
-Télécharge la dernière release, installe l'app et la lance automatiquement.
-- **macOS** : installe dans `/Applications/`
-- **Linux** : installe le paquet Debian via `apt-get` (Ubuntu/Debian uniquement)
-
-L'installateur Linux utilise le fichier `.deb` de la release pour rendre l'app visible dans le menu système.
-
-### Windows (PowerShell)
-
-```powershell
-irm https://raw.githubusercontent.com/Kevin-hDev/Beaver/main/install.ps1 | iex
-```
-
-Télécharge la dernière release et lance l'installeur Windows NSIS `-setup.exe` automatiquement.
-
-> **Windows Defender** : au premier lancement, l'« Accès contrôlé aux dossiers » peut bloquer `ollama.exe`. Clique sur « Autoriser » dans la notification — ça ne redemande plus ensuite.
-
-### Mises à jour
-
-Les mises à jour sont automatiques : une notification apparaît dans l'app quand une nouvelle version est disponible, avec les notes de version traduites lorsque la release les fournit. Un clic et l'app se met à jour toute seule.
-
-### De CL-GO à Beaver
-
-Beaver est le nouveau nom de CL-GO. Les utilisateurs existants passent par la version-pont CL-GO 1.0.2 et conservent leurs conversations, réglages, identifiants, connecteurs MCP, mémoire, modèles Forecast, données Ollama et sessions du navigateur. Les anciens identifiants internes et le dossier de données décrit plus bas sont volontairement conservés pour assurer la compatibilité.
-
 ---
 
 ## Développement
 
-Installe d'abord Node.js et les prérequis de développement ci-dessus. CPython est nécessaire uniquement pour SearXNG local. Installe ensuite les dépendances du projet :
+Installe d'abord Node.js depuis la section des runtimes externes ci-dessus. CPython est nécessaire uniquement pour SearXNG local. Installe ensuite les dépendances du projet :
 
 ```bash
 # 1. Cloner le repo
