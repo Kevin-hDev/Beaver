@@ -131,6 +131,7 @@ async fn send_request(
             body.prompt_cache_key.as_deref(),
             model,
             tools.len(),
+            request_id,
             deadline,
         ),
     )

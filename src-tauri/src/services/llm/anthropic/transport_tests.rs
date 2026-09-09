@@ -69,3 +69,45 @@ async fn silent_transport_uses_requested_limit_without_tools_or_thinking() {
     assert_eq!(payloads[0]["thinking"]["type"], "disabled");
     assert!(payloads[0].get("tools").is_none());
 }
+
+#[tokio::test]
+async fn fixture_budget_caps_anthropic_output_and_stops_the_next_transport_attempt() {
+    let scenario = StreamScenario::start(
+        "anthropic-budget",
+        [ScriptedResponse::Success, ScriptedResponse::Success],
+    )
+    .await;
+    let messages = [ChatMessage::user("Bound this fixture".into())];
+    crate::services::reasoning_fixture_budget::run_scoped(
+        crate::services::reasoning_fixture_budget::FixtureLimits::from_values(
+            Some("32"),
+            Some("1"),
+            None,
+        )
+        .unwrap(),
+        CancellationToken::new(),
+        async {
+            assert!(super::collect_silent(
+                &config(&messages, "anthropic-budget"),
+                CancellationToken::new(),
+                None,
+            )
+            .await
+            .is_ok());
+            assert!(super::collect_silent(
+                &config(&messages, "anthropic-budget"),
+                CancellationToken::new(),
+                None,
+            )
+            .await
+            .is_err());
+            Ok(())
+        },
+    )
+    .await
+    .unwrap();
+
+    let payloads = scenario.payloads();
+    assert_eq!(payloads.len(), 1);
+    assert_eq!(payloads[0]["max_tokens"], 32);
+}

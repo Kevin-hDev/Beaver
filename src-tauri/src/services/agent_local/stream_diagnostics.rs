@@ -16,11 +16,31 @@ use super::types_session::AgentSession;
 pub use super::stream_diagnostics_tool_record::record_tool;
 
 pub async fn start_request(session_id: &str, generation: u64) -> String {
+    start_request_with_target(session_id, generation, None, None).await
+}
+
+pub async fn start_request_for_target(
+    session_id: &str,
+    generation: u64,
+    provider: &str,
+    model: &str,
+) -> String {
+    start_request_with_target(session_id, generation, Some(provider), Some(model)).await
+}
+
+async fn start_request_with_target(
+    session_id: &str,
+    generation: u64,
+    provider: Option<&str>,
+    model: Option<&str>,
+) -> String {
     let request_id = Uuid::new_v4().to_string();
     let _ = support::update_session(session_id, |session| {
         let now = Utc::now();
         session.diagnostic_runs.push(AgentDiagnosticRun {
             request_id: request_id.clone(),
+            provider: provider.map(support::clip),
+            model: model.map(support::clip),
             generation,
             status: "running".to_string(),
             severity: "info".to_string(),

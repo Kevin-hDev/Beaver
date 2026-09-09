@@ -9,6 +9,26 @@ use super::registry::{
 };
 
 #[test]
+fn kimi_toggle_auto_has_a_live_adapter_after_exact_mode_proof() {
+    for continuation_use in [
+        ContinuationUse::UserContinuation,
+        ContinuationUse::ToolContinuation,
+    ] {
+        let target = ReplayTarget {
+            route_id: RouteId::OpenRouter,
+            model_id: "moonshotai/kimi-k2.5".into(),
+            credential_scope: CredentialScope::authenticated("fixture-scope").unwrap(),
+            reasoning_mode: ReasoningModeId::Auto,
+            continuation_use,
+        };
+        let policy = replay_policy(&target).expect("current toggle mode has a proven contract");
+        assert_eq!(policy.activation(), ActivationState::LiveValidated);
+        assert_eq!(policy.requirement(), ReplayRequirement::Required);
+        assert!(policy.fixture_adapter().is_some());
+    }
+}
+
+#[test]
 fn reasoning_transport_accepts_only_modes_advertised_by_the_model_contract() {
     for mode in [
         ReasoningModeId::Low,
@@ -673,6 +693,13 @@ fn only_exact_live_fixture_pairs_are_activated() {
     }
     let expected = [
         (
+            RouteId::OpenRouter,
+            "moonshotai/kimi-k2.5",
+            ReasoningModeId::Auto,
+            ReplayRequirement::Required,
+            "openrouter-api-moonshotai-kimi-k2-5-auto-france-2026-09-09",
+        ),
+        (
             RouteId::Anthropic,
             "claude-haiku-4-5-20251001",
             ReasoningModeId::Low,
@@ -834,7 +861,12 @@ fn only_exact_live_fixture_pairs_are_activated() {
             model.continuation_use,
             ContinuationUse::UserContinuation | ContinuationUse::ToolContinuation
         ));
-        let expected_date = if matches!(
+        let expected_date = if *route == RouteId::OpenRouter
+            && model.model_id == "moonshotai/kimi-k2.5"
+            && model.reasoning_mode == ReasoningModeId::Auto
+        {
+            "2026-09-09"
+        } else if matches!(
             *route,
             RouteId::DeepSeek | RouteId::Anthropic | RouteId::Qwen
         ) {

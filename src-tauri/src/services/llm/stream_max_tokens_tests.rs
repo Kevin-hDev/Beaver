@@ -189,17 +189,20 @@ async fn openrouter_runtime_limits_are_used_before_upstream_embedded_limits() {
             owned_by: Some("openrouter".into()),
             context_length: Some(1_048_576),
             max_output_tokens: Some(131_072),
+            supported_parameters: None,
+            catalog_capabilities: Default::default(),
             supports_tools: true,
             supports_vision: true,
             supports_thinking: true,
-            reasoning_metadata_present: true,
+            reasoning_contract: None,
             supports_fast_mode: false,
             reasoning_modes: vec!["low".into(), "high".into(), "max".into()],
             default_reasoning_mode: Some("max".into()),
             context_usage_includes_reasoning: true,
             is_free: false,
         }],
-    );
+    )
+    .unwrap();
 
     assert_eq!(
         crate::services::llm::model_context_length("openrouter", "z-ai/glm-5.3-flash").await,

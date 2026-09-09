@@ -12,7 +12,10 @@ pub(crate) async fn resolve(
     reasoning_mode_hint: Option<&str>,
     supports_thinking_hint: Option<bool>,
     fixture_run: &crate::services::reasoning_fixture_run::FixtureRunContext,
-) -> Result<super::agent_chat_target::ResolvedChatTarget, String> {
+) -> Result<
+    super::agent_chat_target::ResolvedChatTarget,
+    super::agent_chat_target_error::ChatTargetError,
+> {
     // La possession du contexte, créé seulement par l'IPC de fixture debug,
     // est la capacité qui empêche ce chemin d'exister pour le chat normal.
     let _ = fixture_run;
@@ -29,8 +32,9 @@ pub(crate) async fn resolve(
     }
     let session = crate::services::agent_local::session_store::get(session_id)
         .await
-        .map_err(|_| error())?;
-    let route_id = RouteId::from_provider_id(provider).ok_or_else(error)?;
+        .map_err(|_| super::agent_chat_target_error::ChatTargetError::SessionInconsistent)?;
+    let route_id = RouteId::from_provider_id(provider)
+        .ok_or(super::agent_chat_target_error::ChatTargetError::ModelInvalid)?;
     if session.provider != provider || session.model != model {
         return Ok(resolved);
     }
@@ -38,11 +42,13 @@ pub(crate) async fn resolve(
         route_id,
         model_id: model.to_owned(),
         credential_scope: crate::services::api_keys::credential_scope(route_id)
-            .map_err(|_| error())?,
+            .map_err(|_| super::agent_chat_target_error::ChatTargetError::SessionInconsistent)?,
         reasoning_mode: resolved.reasoning.mode,
         continuation_use: ContinuationUse::UserContinuation,
     };
-    target.validate().map_err(|_| error())?;
+    target
+        .validate()
+        .map_err(|_| super::agent_chat_target_error::ChatTargetError::ModelInvalid)?;
     let Some(policy) = crate::services::reasoning_continuity::registry::replay_policy(&target)
     else {
         return Ok(resolved);
@@ -51,8 +57,4 @@ pub(crate) async fn resolve(
         resolved.continuation = ContinuationTarget::FixtureCandidate(target);
     }
     Ok(resolved)
-}
-
-fn error() -> String {
-    "conversation_admission_failed".to_string()
 }

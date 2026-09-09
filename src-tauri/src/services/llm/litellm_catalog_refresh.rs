@@ -1,5 +1,5 @@
 use super::litellm_catalog::{
-    get_lock, is_body_size_ok, is_trusted_host, parse_catalog, MAX_BODY_BYTES,
+    get_lock, is_body_size_ok, is_trusted_host, CatalogParseError, MAX_BODY_BYTES,
 };
 use futures_util::StreamExt;
 use std::io::Read;
@@ -30,7 +30,10 @@ pub async fn refresh() {
         .build()
     {
         Ok(client) => client,
-        Err(_) => return,
+        Err(_) => {
+            log_refresh_rejection("client_build_failed", None, None);
+            return;
+        }
     };
     let cached = cache_path();
     let mut request = client.get(SOURCE_URL);
@@ -39,37 +42,124 @@ pub async fn refresh() {
     }
     let response = match request.send().await {
         Ok(response) => response,
-        Err(_) => return,
+        Err(_) => {
+            log_refresh_rejection("fetch_failed", None, None);
+            return;
+        }
     };
-    if response.status() == 304 || !response.status().is_success() {
+    if response.status() == 304 {
         return;
     }
-    if !response.url().host_str().is_some_and(is_trusted_host) {
-        return;
-    }
-    if !is_body_size_ok(response.content_length().unwrap_or(0) as usize) {
+    let status = response.status();
+    if let Some(reason) = response_rejection(
+        status,
+        response.url().host_str().is_some_and(is_trusted_host),
+        response.content_length(),
+    ) {
+        log_refresh_rejection(reason, Some(status.as_u16()), None);
         return;
     }
     let body = match read_body(response).await {
-        Some(body) => body,
-        None => return,
-    };
-    let catalog = parse_catalog(&body);
-    if catalog.len() < 100 {
-        return;
-    }
-    if let Some(parent) = cached.parent() {
-        if std::fs::create_dir_all(parent).is_err() {
+        Ok(body) => body,
+        Err(reason) => {
+            log_refresh_rejection(reason, Some(status.as_u16()), None);
             return;
         }
+    };
+    if let Err(rejection) = publish_catalog(&cached, get_lock(), &body).await {
+        log_refresh_rejection(
+            rejection.reason(),
+            Some(status.as_u16()),
+            Some(rejection.entries_observed()),
+        );
     }
-    if crate::services::private_store::atomic_write(&cached, body.as_bytes()).is_err() {
-        return;
-    }
-    *get_lock().write().await = catalog;
 }
 
-async fn read_body(response: reqwest::Response) -> Option<String> {
+pub(super) fn response_rejection(
+    status: reqwest::StatusCode,
+    trusted_host: bool,
+    content_length: Option<u64>,
+) -> Option<&'static str> {
+    if !status.is_success() {
+        return Some("upstream_status");
+    }
+    if !trusted_host {
+        return Some("untrusted_redirect");
+    }
+    if content_length
+        .is_some_and(|length| usize::try_from(length).map_or(true, |size| !is_body_size_ok(size)))
+    {
+        return Some("body_too_large");
+    }
+    None
+}
+
+fn log_refresh_rejection(
+    reason: &'static str,
+    status: Option<u16>,
+    entries_observed: Option<usize>,
+) {
+    log::warn!(
+        "event=litellm_refresh_rejected reason={reason} status={} entries_observed={}",
+        status.map_or_else(|| "unknown".to_string(), |value| value.to_string()),
+        entries_observed.map_or_else(|| "unknown".to_string(), |value| value.to_string())
+    );
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) struct CatalogRefreshRejection {
+    reason: &'static str,
+    entries_observed: usize,
+}
+
+impl CatalogRefreshRejection {
+    pub(super) const fn reason(self) -> &'static str {
+        self.reason
+    }
+
+    pub(super) const fn entries_observed(self) -> usize {
+        self.entries_observed
+    }
+}
+
+pub(super) async fn publish_catalog(
+    cache: &std::path::Path,
+    registry: &tokio::sync::RwLock<
+        std::collections::HashMap<String, super::litellm_catalog::ModelEntry>,
+    >,
+    body: &str,
+) -> Result<(), CatalogRefreshRejection> {
+    let catalog = super::litellm_catalog_parser::parse_catalog_detailed(body).map_err(
+        |(reason, entries): (CatalogParseError, usize)| CatalogRefreshRejection {
+            reason: reason.as_str(),
+            entries_observed: entries,
+        },
+    )?;
+    if catalog.len() < 100 {
+        return Err(CatalogRefreshRejection {
+            reason: "too_few_entries",
+            entries_observed: catalog.len(),
+        });
+    }
+    if let Some(parent) = cache.parent() {
+        if std::fs::create_dir_all(parent).is_err() {
+            return Err(CatalogRefreshRejection {
+                reason: "cache_directory_unavailable",
+                entries_observed: catalog.len(),
+            });
+        }
+    }
+    if crate::services::private_store::atomic_write(cache, body.as_bytes()).is_err() {
+        return Err(CatalogRefreshRejection {
+            reason: "cache_write_failed",
+            entries_observed: catalog.len(),
+        });
+    }
+    *registry.write().await = catalog;
+    Ok(())
+}
+
+async fn read_body(response: reqwest::Response) -> Result<String, &'static str> {
     let mut bytes = Vec::with_capacity(
         response
             .content_length()
@@ -79,11 +169,15 @@ async fn read_body(response: reqwest::Response) -> Option<String> {
     );
     let mut stream = response.bytes_stream();
     while let Some(chunk) = stream.next().await {
-        let chunk = chunk.ok()?;
-        if bytes.len().checked_add(chunk.len())? > MAX_BODY_BYTES {
-            return None;
+        let chunk = chunk.map_err(|_| "body_stream_failed")?;
+        if bytes
+            .len()
+            .checked_add(chunk.len())
+            .is_none_or(|length| length > MAX_BODY_BYTES)
+        {
+            return Err("body_too_large");
         }
         bytes.extend_from_slice(&chunk);
     }
-    String::from_utf8(bytes).ok()
+    String::from_utf8(bytes).map_err(|_| "body_invalid_utf8")
 }

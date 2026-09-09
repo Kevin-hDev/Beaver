@@ -41,10 +41,12 @@ fn remote_anthropic_model_with_id(id: &str) -> ModelInfo {
         owned_by: Some("anthropic".into()),
         context_length: Some(180_000),
         max_output_tokens: Some(32_000),
+        supported_parameters: None,
+        catalog_capabilities: Default::default(),
         supports_tools: false,
         supports_vision: true,
         supports_thinking: true,
-        reasoning_metadata_present: false,
+        reasoning_contract: None,
         supports_fast_mode: false,
         reasoning_modes: vec!["off".into(), "low".into()],
         default_reasoning_mode: Some("low".into()),
@@ -60,10 +62,12 @@ fn remote_qwen_model(id: &str) -> ModelInfo {
         owned_by: Some("qwen".into()),
         context_length: None,
         max_output_tokens: None,
+        supported_parameters: None,
+        catalog_capabilities: Default::default(),
         supports_tools: false,
         supports_vision: false,
         supports_thinking: false,
-        reasoning_metadata_present: false,
+        reasoning_contract: None,
         supports_fast_mode: false,
         reasoning_modes: Vec::new(),
         default_reasoning_mode: None,
@@ -79,16 +83,32 @@ fn remote_openrouter_model(id: &str, reasoning_metadata_present: bool) -> ModelI
         owned_by: Some("openrouter".into()),
         context_length: Some(1_310_720),
         max_output_tokens: Some(131_072),
+        supported_parameters: None,
+        catalog_capabilities: Default::default(),
         supports_tools: true,
         supports_vision: true,
         supports_thinking: true,
-        reasoning_metadata_present,
+        reasoning_contract: reasoning_metadata_present.then_some({
+            super::model_reasoning_contract::ModelReasoningContract {
+                mandatory: None,
+                default_enabled: None,
+                supports_max_tokens: None,
+                default_effort: None,
+                control: super::model_reasoning_contract::ReasoningControl::ProviderDefault,
+            }
+        }),
         supports_fast_mode: false,
         reasoning_modes: Vec::new(),
         default_reasoning_mode: None,
         context_usage_includes_reasoning: true,
         is_free: false,
     }
+}
+
+fn remote_openrouter_catalog(count: usize) -> Vec<ModelInfo> {
+    (0..count)
+        .map(|index| remote_openrouter_model(&format!("vendor/model-{index}"), false))
+        .collect()
 }
 
 #[tokio::test]
@@ -107,15 +127,92 @@ async fn native_catalog_keeps_explicit_remote_values() {
 }
 
 #[tokio::test]
-async fn catalog_is_deduplicated_before_runtime_registration() {
+async fn catalog_rows_preserve_native_deduplication() {
     let _guard = super::runtime_models::test_mutation_lock().await;
     let model = remote_anthropic_model();
     let models = super::model_catalog::enrich_models("anthropic", vec![model.clone(), model], true)
         .await
         .unwrap();
-
     assert_eq!(models.len(), 1);
     assert!(super::runtime_models::lookup("anthropic", "claude-haiku-4-5-20251001").is_some());
+}
+
+#[tokio::test]
+async fn duplicate_catalog_ids_are_rejected_before_runtime_registration() {
+    let _guard = super::runtime_models::test_mutation_lock().await;
+    super::runtime_models::replace_provider(
+        "openrouter",
+        &[remote_openrouter_model("stable-model", false)],
+    )
+    .unwrap();
+    let model = remote_openrouter_model("vendor/duplicate", false);
+    let result =
+        super::model_catalog::enrich_models("openrouter", vec![model.clone(), model], false).await;
+
+    assert!(matches!(result, Err(super::types::LlmError::Parse(_))));
+    assert!(super::runtime_models::lookup("openrouter", "stable-model").is_some());
+    assert!(super::runtime_models::lookup("openrouter", "vendor/duplicate").is_none());
+}
+
+#[tokio::test]
+async fn catalog_rows_enrichment_retains_valid_ids_only() {
+    let _guard = super::runtime_models::test_mutation_lock().await;
+    let models = super::model_catalog::enrich_models(
+        "openrouter",
+        vec![
+            remote_openrouter_model("../invalid", false),
+            remote_openrouter_model("vendor/valid", false),
+        ],
+        false,
+    )
+    .await
+    .unwrap();
+    assert_eq!(models.len(), 1);
+    assert_eq!(models[0].id, "vendor/valid");
+    assert!(super::runtime_models::lookup("openrouter", "vendor/valid").is_some());
+}
+
+#[tokio::test]
+async fn openrouter_keeps_its_full_bounded_catalog_in_any_order() {
+    let _guard = super::runtime_models::test_mutation_lock().await;
+    let forward = remote_openrouter_catalog(501);
+    let mut reverse = forward.clone();
+    reverse.reverse();
+
+    let first = super::model_catalog::enrich_models("openrouter", forward, false)
+        .await
+        .unwrap();
+    let second = super::model_catalog::enrich_models("openrouter", reverse, false)
+        .await
+        .unwrap();
+    let ids = |models: &[ModelInfo]| {
+        models
+            .iter()
+            .map(|model| model.id.clone())
+            .collect::<std::collections::BTreeSet<_>>()
+    };
+
+    assert_eq!(first.len(), 501);
+    assert_eq!(ids(&first), ids(&second));
+    assert!(super::runtime_models::lookup("openrouter", "vendor/model-500").is_some());
+}
+
+#[tokio::test]
+async fn oversized_openrouter_catalog_preserves_the_last_healthy_registry() {
+    let _guard = super::runtime_models::test_mutation_lock().await;
+    super::runtime_models::replace_provider(
+        "openrouter",
+        &[remote_openrouter_model("vendor/stable", false)],
+    )
+    .unwrap();
+
+    let result =
+        super::model_catalog::enrich_models("openrouter", remote_openrouter_catalog(1_001), false)
+            .await;
+
+    assert!(matches!(result, Err(super::types::LlmError::Parse(_))));
+    assert!(super::runtime_models::lookup("openrouter", "vendor/stable").is_some());
+    assert!(super::runtime_models::lookup("openrouter", "vendor/model-0").is_none());
 }
 
 #[tokio::test]
@@ -224,8 +321,13 @@ async fn openrouter_explicit_empty_reasoning_is_not_reactivated_by_embedded_capa
 
     assert_eq!(models.len(), 1);
     assert!(models[0].supports_thinking);
-    assert!(models[0].reasoning_modes.is_empty());
-    assert_eq!(models[0].default_reasoning_mode, None);
+    // `auto` is the internal native-default state, not an exposed effort choice.
+    assert_eq!(models[0].reasoning_modes, ["auto"]);
+    assert_eq!(models[0].default_reasoning_mode.as_deref(), Some("auto"));
+    assert_eq!(
+        models[0].reasoning_contract.as_ref().unwrap().control,
+        super::model_reasoning_contract::ReasoningControl::ProviderDefault
+    );
     assert_eq!(models[0].context_length, Some(1_310_720));
     assert_eq!(models[0].max_output_tokens, Some(131_072));
 }
@@ -246,16 +348,110 @@ async fn openrouter_missing_reasoning_metadata_keeps_historical_capabilities() {
 }
 
 #[tokio::test]
+async fn unknown_openrouter_reasoning_keeps_only_the_provider_default() {
+    let _guard = super::runtime_models::test_mutation_lock().await;
+    let parsed = super::openai_compat_parsing::parse_models_list(
+        &serde_json::json!({"data":[{
+            "id":"z-ai/glm-5.3-flash",
+            "supported_parameters":["reasoning"],
+            "reasoning":{"supported_efforts":["quantum"]}
+        }]}),
+        "openrouter",
+    )
+    .unwrap();
+    let models = super::model_catalog::enrich_models("openrouter", parsed, false)
+        .await
+        .unwrap();
+
+    assert_eq!(models.len(), 1);
+    assert_eq!(models[0].reasoning_modes, ["auto"]);
+    assert_eq!(models[0].default_reasoning_mode.as_deref(), Some("auto"));
+    let runtime = super::runtime_models::lookup("openrouter", "z-ai/glm-5.3-flash").unwrap();
+    assert_eq!(runtime.reasoning_modes, ["auto"]);
+    assert_eq!(
+        runtime.reasoning_contract.unwrap().control,
+        super::model_reasoning_contract::ReasoningControl::ProviderDefault
+    );
+}
+
+#[tokio::test]
+async fn explicit_remote_contract_and_catalog_projection_cannot_diverge() {
+    let _guard = super::runtime_models::test_mutation_lock().await;
+    let parsed = super::openai_compat_parsing::parse_models_list(
+        &serde_json::json!({"data":[{
+            "id":"z-ai/glm-5.3-flash", "supported_parameters":["reasoning"],
+            "reasoning":{"supported_efforts":["low","high","max"]}
+        }]}),
+        "openrouter",
+    )
+    .unwrap();
+    let models = super::model_catalog::enrich_models("openrouter", parsed, false)
+        .await
+        .unwrap();
+    let model = &models[0];
+    assert_eq!(
+        model.default_reasoning_mode, None,
+        "no embedded default over an explicit contract"
+    );
+    assert_eq!(
+        model
+            .reasoning_contract
+            .as_ref()
+            .unwrap()
+            .legacy_projection(),
+        (
+            model.reasoning_modes.clone(),
+            model.default_reasoning_mode.clone()
+        )
+    );
+    super::runtime_models::replace_provider("openrouter", &[]).unwrap();
+}
+
+#[tokio::test]
+async fn invalid_reasoning_shapes_degrade_to_provider_default() {
+    let _guard = super::runtime_models::test_mutation_lock().await;
+    for reasoning in [
+        serde_json::json!(false),
+        serde_json::json!(42),
+        serde_json::json!("high"),
+    ] {
+        let parsed = super::openai_compat_parsing::parse_models_list(
+            &serde_json::json!({"data":[{
+                "id":"z-ai/glm-5.3-flash", "supported_parameters":["reasoning"], "reasoning":reasoning
+            }]}), "openrouter",
+        ).unwrap();
+        let models = super::model_catalog::enrich_models("openrouter", parsed, false)
+            .await
+            .unwrap();
+        assert_eq!(models.len(), 1);
+        assert_eq!(models[0].reasoning_modes, ["auto"]);
+        assert_eq!(
+            models[0].reasoning_contract.as_ref().unwrap().control,
+            super::model_reasoning_contract::ReasoningControl::ProviderDefault
+        );
+    }
+}
+
+#[tokio::test]
 async fn openrouter_catalog_enrichment_does_not_reuse_a_previous_runtime_restriction() {
     let _guard = super::runtime_models::test_mutation_lock().await;
     super::runtime_models::replace_provider(
         "openrouter",
         &[ModelInfo {
             reasoning_modes: vec!["low".into()],
-            reasoning_metadata_present: true,
+            reasoning_contract: Some(super::model_reasoning_contract::ModelReasoningContract {
+                mandatory: None,
+                default_enabled: None,
+                supports_max_tokens: None,
+                default_effort: None,
+                control: super::model_reasoning_contract::ReasoningControl::Efforts(vec![
+                    crate::services::reasoning_continuity::contract::ReasoningModeId::Low,
+                ]),
+            }),
             ..remote_openrouter_model("z-ai/glm-5.3-flash", true)
         }],
-    );
+    )
+    .unwrap();
 
     let models = super::model_catalog::enrich_models(
         "openrouter",
@@ -272,13 +468,12 @@ async fn openrouter_catalog_enrichment_does_not_reuse_a_previous_runtime_restric
 async fn openrouter_catalog_default_and_limits_reach_the_backend_after_refresh() {
     let _guard = super::runtime_models::test_mutation_lock().await;
     for (efforts, default, expected) in [
-        (serde_json::json!([]), "max", None),
         (
             serde_json::json!(["low", "high", "max"]),
             "low",
             Some("low"),
         ),
-        (serde_json::json!(["medium"]), "medium", None),
+        (serde_json::json!(["medium"]), "medium", Some("medium")),
     ] {
         let parsed = super::openai_compat_parsing::parse_models_list(
             &serde_json::json!({"data":[{

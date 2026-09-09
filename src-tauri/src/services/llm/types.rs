@@ -2,6 +2,8 @@
 
 use serde::{Deserialize, Serialize};
 
+use super::model_reasoning_contract::ModelReasoningContract;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModelInfo {
     pub id: String,
@@ -13,16 +15,19 @@ pub struct ModelInfo {
     pub context_length: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub max_output_tokens: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub supported_parameters: Option<Vec<String>>,
+    // Parsing provenance, not a second user-facing capability contract.
+    #[serde(skip)]
+    pub(crate) catalog_capabilities: super::openrouter_model_metadata::CatalogCapabilities,
     #[serde(default)]
     pub supports_tools: bool,
     #[serde(default)]
     pub supports_vision: bool,
     #[serde(default)]
     pub supports_thinking: bool,
-    /// True when OpenRouter explicitly supplied a supported-efforts array.
-    /// `false` preserves the historical capability fallback for older catalogs.
-    #[serde(skip)]
-    pub reasoning_metadata_present: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reasoning_contract: Option<ModelReasoningContract>,
     #[serde(default)]
     pub supports_fast_mode: bool,
     #[serde(default)]

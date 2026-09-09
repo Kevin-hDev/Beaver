@@ -61,6 +61,11 @@ pub(crate) const LIVE_SPECS: &[LiveSpec] = &[
     spec("google", "gemini-3.5-flash", "france", "medium"),
     spec("mistral", "mistral-small-2603", "france", "high"),
     spec("openrouter", "moonshotai/kimi-k2.5", "france", "medium"),
+    // The current toggle uses auto; keep its proof separate from historical medium.
+    LiveSpec {
+        report_variant: true,
+        ..spec("openrouter", "moonshotai/kimi-k2.5", "france", "auto")
+    },
     spec("openai", "gpt-5.6-luna", "france", "medium"),
     spec("deepseek", "deepseek-v4-flash", "france", "low"),
     spec("deepseek", "deepseek-v4-flash", "france", "high"),

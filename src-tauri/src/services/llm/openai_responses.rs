@@ -120,6 +120,9 @@ pub(super) async fn post(
     }
     let status = response.status();
     let has_retry_after = response.headers().contains_key("retry-after");
+    let diagnostic_context =
+        super::provider_diagnostics::ProviderDiagnosticContext::from_payload(request_id, &body)
+            .with_retry_after(response.headers());
     let error_body = read_bounded(response, PROVIDER_ERROR_LIMIT)
         .await
         .map(|bytes| zeroize::Zeroizing::new(String::from_utf8_lossy(&bytes).into_owned()))
@@ -132,6 +135,7 @@ pub(super) async fn post(
         details,
         request_bytes,
         config.tools.len(),
+        diagnostic_context,
     );
     // Structured diagnostics above own the bounded details; the general log
     // must not carry values derived from credentials, sessions or response bodies.

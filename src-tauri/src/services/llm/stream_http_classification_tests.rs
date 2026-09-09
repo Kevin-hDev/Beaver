@@ -35,6 +35,61 @@ fn unknown_payment_error_stays_generic() {
 }
 
 #[test]
+fn labs_access_denied_is_not_bad_api_key() {
+    let error = classify_error(
+        403,
+        r#"{"error":{"type":"labs_not_enabled","code":1913}}"#,
+        "Mistral",
+        ErrorPolicy::OpenAiCompatible,
+        false,
+        false,
+    );
+
+    assert_ne!(error.to_string(), "auth_failed");
+    assert_eq!(error.to_string(), "provider_access_unavailable");
+}
+
+#[test]
+fn api_auth_rate_and_unknown_payment_keep_distinct_codes() {
+    assert_eq!(
+        classify_error(
+            401,
+            "",
+            "Mistral",
+            ErrorPolicy::OpenAiCompatible,
+            false,
+            false
+        )
+        .to_string(),
+        "auth_failed"
+    );
+    assert_eq!(
+        classify_error(
+            429,
+            "",
+            "Mistral",
+            ErrorPolicy::OpenAiCompatible,
+            false,
+            false
+        )
+        .to_string(),
+        "rate_limit"
+    );
+    assert_eq!(
+        classify_error(
+            402,
+            "{}",
+            "Mistral",
+            ErrorPolicy::OpenAiCompatible,
+            false,
+            false
+        )
+        .to_string(),
+        "provider_access_unavailable"
+    );
+}
+
+#[test]
 fn oauth_auth_and_rate_errors_use_frontend_codes() {
     assert_eq!(
         classify_error(401, "", "xAI", ErrorPolicy::XaiOauth, true, false).to_string(),

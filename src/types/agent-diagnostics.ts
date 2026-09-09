@@ -11,4 +11,4 @@ export type AgentExtensionDiagnostic = { origin: string, reason: string, correla
 
 export type AgentDiagnosticEvent = { at: string, phase: string, message: string, tool_name?: string, error_type?: string, extension?: AgentExtensionDiagnostic, };
 
-export type AgentDiagnosticRun = { request_id: string, generation: number, status: string, severity: string, started_at: string, updated_at: string, ended_at?: string, phase: string, error_type?: string, last_tool?: AgentDiagnosticTool, recent_tools?: Array<AgentDiagnosticTool>, active_todo?: AgentDiagnosticTodo, safe_summary?: string, events?: Array<AgentDiagnosticEvent>, };
+export type AgentDiagnosticRun = { request_id: string, provider?: string, model?: string, generation: number, status: string, severity: string, started_at: string, updated_at: string, ended_at?: string, phase: string, error_type?: string, last_tool?: AgentDiagnosticTool, recent_tools?: Array<AgentDiagnosticTool>, active_todo?: AgentDiagnosticTodo, safe_summary?: string, events?: Array<AgentDiagnosticEvent>, };

@@ -4,7 +4,7 @@ use super::{
 use crate::services::llm::litellm_catalog::parse_catalog;
 
 fn embedded_registry() -> std::collections::HashMap<String, super::ModelEntry> {
-    parse_catalog(include_str!("../../../resources/litellm-models.json"))
+    parse_catalog(include_str!("../../../resources/litellm-models.json")).expect("embedded catalog")
 }
 
 #[test]
@@ -70,10 +70,31 @@ fn route_and_upstream_capabilities_are_merged() {
             "openrouter/vendor/model":{"litellm_provider":"openrouter","mode":"chat","supports_function_calling":true},
             "model":{"litellm_provider":"vendor","mode":"chat","supports_vision":true,"supports_reasoning":true}
         }"#,
-    );
+    )
+    .unwrap();
 
     assert_eq!(
         capabilities_for(&registry, "openrouter", "vendor/model"),
+        Some(CatalogCapabilities {
+            supports_tools: true,
+            supports_vision: true,
+            supports_thinking: true,
+        })
+    );
+}
+
+#[test]
+fn mistralai_route_keeps_route_metadata_and_inherits_mistral_metadata() {
+    let registry = parse_catalog(
+        r#"{
+            "openrouter/mistralai/mistral-small-2603":{"litellm_provider":"openrouter","mode":"chat","supports_function_calling":true},
+            "mistral/mistral-small-2603":{"litellm_provider":"mistral","mode":"chat","supports_vision":true,"supports_reasoning":true}
+        }"#,
+    )
+    .unwrap();
+
+    assert_eq!(
+        capabilities_for(&registry, "openrouter", "mistralai/mistral-small-2603"),
         Some(CatalogCapabilities {
             supports_tools: true,
             supports_vision: true,
@@ -90,7 +111,8 @@ fn invalid_or_ambiguous_output_limits_fail_closed() {
             "oversized":{"litellm_provider":"openai","mode":"chat","max_input_tokens":100,"max_output_tokens":4294967296},
             "copied-context":{"litellm_provider":"openai","mode":"chat","max_input_tokens":100,"max_output_tokens":100}
         }"#,
-    );
+    )
+    .unwrap();
 
     assert_eq!(
         limits_for(&registry, "openai", "zero").and_then(|limits| limits.max_output_tokens),
@@ -129,7 +151,8 @@ fn qwen_uses_the_dashscope_catalog_namespace() {
                 "max_output_tokens":131072
             }
         }"#,
-    );
+    )
+    .unwrap();
 
     assert_eq!(
         capabilities_for(&registry, "qwen", "qwen3.8-max"),

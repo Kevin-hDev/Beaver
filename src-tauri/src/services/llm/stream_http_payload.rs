@@ -32,6 +32,10 @@ pub(super) fn build_chat_payload_with_policy(
     payload_policy: super::route_profile::ResolvedPayloadPolicy,
 ) -> Result<PreparedChatPayload, super::reasoning_wire::replay::ReplayApplyError> {
     let provider_id = route.canonical_provider_id;
+    let is_openrouter = super::openrouter_model_metadata::owns_catalog_metadata(provider_id);
+    let catalog_model = is_openrouter
+        .then(|| super::runtime_models::lookup(provider_id, cfg.model))
+        .flatten();
     let cache_policy = super::route_profile::cache_policy(route.chat_provider_id, cfg.model)
         .expect("LlmRoute is constructed from a route profile");
     let mut messages = super::stream_convert::messages_to_openai_with_tools(
@@ -63,7 +67,11 @@ pub(super) fn build_chat_payload_with_policy(
         payload["service_tier"] = value.into();
     }
     if let Some(max) = max_tokens {
-        payload[payload_policy.output_limit_field] = max.into();
+        let output_limit_field = catalog_model.as_ref().map_or(
+            payload_policy.output_limit_field,
+            super::openrouter_request_contract::output_limit_field,
+        );
+        payload[output_limit_field] = max.into();
     }
     super::stream_reasoning::apply(
         &mut payload,
@@ -72,7 +80,14 @@ pub(super) fn build_chat_payload_with_policy(
         cfg.think,
         cfg.reasoning_mode,
     );
-    apply_tools(&mut payload, cfg, provider_id, payload_policy);
+    apply_tools(
+        &mut payload,
+        cfg,
+        provider_id,
+        payload_policy,
+        is_openrouter,
+        catalog_model.as_ref(),
+    );
     if payload_policy.upstream_routing {
         payload["provider"] = serde_json::json!({
             "require_parameters": true,
@@ -93,6 +108,8 @@ fn apply_tools(
     cfg: &RequestConfig<'_>,
     provider_id: &str,
     payload_policy: super::route_profile::ResolvedPayloadPolicy,
+    is_openrouter: bool,
+    catalog_model: Option<&super::types::ModelInfo>,
 ) {
     if cfg.tools.is_empty() {
         return;
@@ -101,14 +118,21 @@ fn apply_tools(
         .expect("LlmRoute is constructed from a route profile");
     let tools = super::tool_schema::tools_for_policy(policy.schema, policy.strict, cfg.tools);
     payload["tools"] = serde_json::Value::Array(tools);
-    if payload_policy.emit_tool_choice {
+    let supports = |parameter| {
+        catalog_model.is_some_and(|model| {
+            super::openrouter_request_contract::supports_parameter(model, parameter)
+        })
+    };
+    if payload_policy.emit_tool_choice && (!is_openrouter || supports("tool_choice")) {
         payload["tool_choice"] = "auto".into();
     }
     if payload_policy.tool_stream {
         payload["tool_stream"] = true.into();
     }
-    if payload_policy.parallel_tool_calls {
-        payload["n"] = 1.into();
+    if payload_policy.parallel_tool_calls || (is_openrouter && supports("parallel_tool_calls")) {
+        if payload_policy.parallel_tool_calls {
+            payload["n"] = 1.into();
+        }
         payload["parallel_tool_calls"] = true.into();
     }
 }

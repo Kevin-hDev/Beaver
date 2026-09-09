@@ -45,6 +45,7 @@ pub fn zai(mode: Option<&str>) -> Option<&'static str> {
 pub fn openrouter(mode: Option<&str>) -> Option<&'static str> {
     match mode {
         Some("off") => Some("none"),
+        Some("minimal") => Some("minimal"),
         Some("low") => Some("low"),
         Some("medium") => Some("medium"),
         Some("high") => Some("high"),

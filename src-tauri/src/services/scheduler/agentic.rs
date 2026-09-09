@@ -3,7 +3,6 @@ use crate::models::agent_turn_contract::{NewUserTurnInput, TurnStart};
 use crate::models::ScheduledWakeup;
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::types_ollama::ChatMessage;
-use crate::services::agent_local::types_ollama::StreamEvent;
 #[cfg(test)]
 use crate::services::agent_local::{conversation_admission, conversation_input};
 use tauri::{AppHandle, Manager};
@@ -27,7 +26,8 @@ pub async fn run(
         None,
         None,
     )
-    .await?;
+    .await
+    .map_err(|error| error.ui_code().to_string())?;
     let stream = crate::commands::agent_chat_admission::admit_background(app, session_id).await?;
     let streams = app.state::<crate::ActiveStreams>();
     let turn = crate::commands::agent_chat_turn::prepare(TurnStart::New(NewUserTurnInput {
@@ -57,7 +57,7 @@ pub async fn run(
             return Err(error);
         }
     };
-    let admission_rollback = admitted.rollback();
+    let mut admission_rollback = admitted.rollback();
     // A projectless workspace needs the durable first user message as its label.
     let resolved_dir =
         match crate::commands::agent_working_dir::resolve_for_session(session_id, None).await {
@@ -81,11 +81,7 @@ pub async fn run(
         };
     let emitter =
         AgentEventEmitter::with_generation(app.clone(), session_id.to_string(), stream.generation);
-    let _ = emitter.send(StreamEvent::TurnAdmitted {
-        turn_id: admitted.turn.turn_id.clone(),
-        user_message_id: admitted.turn.user_message_id.clone(),
-        assistant_message_id: admitted.turn.assistant_message_id.clone(),
-    });
+    let _ = emitter.send(admission_rollback.accept_execution_event());
     let run_cancel = stream.cancel.clone();
     let linked_cancel = run_cancel.clone();
     let cancel_link = tokio::spawn(async move {

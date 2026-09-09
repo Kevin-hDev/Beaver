@@ -8,6 +8,40 @@ use super::request_purpose::RequestPurpose;
 use super::{route, stream_http_send};
 
 #[tokio::test]
+async fn openrouter_metadata_opt_in_is_sent_only_to_openrouter() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&server)
+        .await;
+    let client =
+        crate::services::secure_http::AuthenticatedClient::new_loopback(Duration::from_secs(2))
+            .unwrap();
+    for provider in ["openrouter", "google", "mistral", "qwen", "openai"] {
+        let route = route::test_route(provider);
+        stream_http_send::send_json_request(
+            &client,
+            &route,
+            &server.uri(),
+            &serde_json::json!({"model":"fixture"}),
+            RequestPurpose::ManualChat,
+            "fixture",
+            None,
+        )
+        .await
+        .unwrap();
+    }
+    let requests = server.received_requests().await.unwrap();
+    assert_eq!(
+        requests[0].headers.get("x-openrouter-metadata").unwrap(),
+        "enabled"
+    );
+    for request in &requests[1..] {
+        assert!(!request.headers.contains_key("x-openrouter-metadata"));
+    }
+}
+
+#[tokio::test]
 async fn fixture_scope_stops_real_http_after_the_last_allowed_attempt() {
     use crate::services::reasoning_fixture_budget::{run_scoped, FixtureLimits};
     let server = MockServer::start().await;
@@ -42,6 +76,62 @@ async fn fixture_scope_stops_real_http_after_the_last_allowed_attempt() {
     .await
     .unwrap();
     assert_eq!(server.received_requests().await.unwrap().len(), 2);
+}
+
+#[tokio::test]
+async fn fixture_budget_counts_each_physical_oauth_send_across_a_401() {
+    for (attempts, expected_requests, succeeds) in [("1", 1, false), ("2", 2, true)] {
+        let server = MockServer::start().await;
+        let sent = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let observed = sent.clone();
+        Mock::given(method("POST"))
+            .respond_with(move |_: &wiremock::Request| {
+                if observed.fetch_add(1, std::sync::atomic::Ordering::SeqCst) == 0 {
+                    ResponseTemplate::new(401)
+                } else {
+                    ResponseTemplate::new(200)
+                }
+            })
+            .mount(&server)
+            .await;
+        let client =
+            crate::services::secure_http::AuthenticatedClient::new_loopback(Duration::from_secs(2))
+                .unwrap();
+        let route = route::test_oauth_route("xai-oauth");
+        let result = crate::services::reasoning_fixture_budget::run_scoped(
+            crate::services::reasoning_fixture_budget::FixtureLimits::from_values(
+                None,
+                Some(attempts),
+                None,
+            )
+            .unwrap(),
+            tokio_util::sync::CancellationToken::new(),
+            async {
+                stream_http_send::send_json_request(
+                    &client,
+                    &route,
+                    &server.uri(),
+                    &serde_json::json!({"model":"grok-4.6", "max_tokens":17}),
+                    RequestPurpose::ManualChat,
+                    "grok-4.6",
+                    None,
+                )
+                .await
+                .map(|_| ())
+                .map_err(|error| error.to_string())
+            },
+        )
+        .await;
+        assert_eq!(result.is_ok(), succeeds, "attempts={attempts}");
+        if !succeeds {
+            assert_eq!(result.unwrap_err(), "fixture attempt limit exceeded");
+        }
+        assert_eq!(
+            server.received_requests().await.unwrap().len(),
+            expected_requests,
+            "attempts={attempts}"
+        );
+    }
 }
 
 #[tokio::test]

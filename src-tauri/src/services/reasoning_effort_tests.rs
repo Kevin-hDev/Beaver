@@ -10,29 +10,31 @@ async fn codex_catalog_default_is_validated_or_replaced_by_a_published_mode() {
         owned_by: Some("openai".into()),
         context_length: Some(128_000),
         max_output_tokens: None,
+        supported_parameters: None,
+        catalog_capabilities: Default::default(),
         supports_tools: true,
         supports_vision: true,
         supports_thinking: true,
-        reasoning_metadata_present: false,
+        reasoning_contract: None,
         supports_fast_mode: false,
         reasoning_modes: vec!["low".into(), "max".into()],
         default_reasoning_mode: Some("max".into()),
         context_usage_includes_reasoning: true,
         is_free: false,
     };
-    runtime_models::replace_provider("codex-oauth", &[model.clone()]);
+    runtime_models::replace_provider("codex-oauth", &[model.clone()]).unwrap();
     assert_eq!(codex(&model.id, None), "max");
     assert_eq!(codex(&model.id, Some("low")), "low");
 
     model.default_reasoning_mode = None;
-    runtime_models::replace_provider("codex-oauth", &[model.clone()]);
+    runtime_models::replace_provider("codex-oauth", &[model.clone()]).unwrap();
     assert!(runtime_models::lookup("codex-oauth", &model.id).is_some());
     for requested in [None, Some("off"), Some("medium")] {
         assert_eq!(codex(&model.id, requested), "low");
     }
     // Invalid defaults cannot enter the runtime registry at all.
     model.default_reasoning_mode = Some("high".into());
-    runtime_models::replace_provider("codex-oauth", &[model.clone()]);
+    runtime_models::replace_provider("codex-oauth", &[model.clone()]).unwrap();
     assert!(runtime_models::lookup("codex-oauth", &model.id).is_none());
-    runtime_models::replace_provider("codex-oauth", &[]);
+    runtime_models::replace_provider("codex-oauth", &[]).unwrap();
 }

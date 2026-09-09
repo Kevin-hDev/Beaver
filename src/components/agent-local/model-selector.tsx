@@ -8,6 +8,7 @@ import { focusLocalListItem } from "@/hooks/use-local-list-navigation";
 import { useAppSurfaceActive } from "@/components/layout/app-surface-activity";
 import { CaretDown, MagnifyingGlass } from "@/components/ui/icons";
 import type { AvailableModel } from "@/hooks/use-available-models";
+import type { ModelCatalogIssue } from "@/hooks/cloud-models";
 import { useFavoriteModels } from "@/hooks/use-favorite-models";
 import { ModelSelectorList } from "./model-selector-list";
 import "./model-selector.css";
@@ -15,6 +16,7 @@ import "./model-selector-controls.css";
 
 interface ModelSelectorProps {
   groups: Map<string, AvailableModel[]>;
+  issues?: Map<string, ModelCatalogIssue>;
   selectedModel: string;
   selectedProvider: string;
   onSelect: (model: string, provider: string) => void;
@@ -23,6 +25,7 @@ interface ModelSelectorProps {
 
 export function ModelSelector({
   groups,
+  issues = new Map(),
   selectedModel,
   selectedProvider,
   onSelect,
@@ -67,6 +70,13 @@ export function ModelSelector({
     }
     return out;
   }, [groups, query]);
+  const filteredIssues = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return issues;
+    return new Map(Array.from(issues.entries()).filter(([providerId, issue]) =>
+      providerId.toLowerCase().includes(q)
+      || issue.providerName.toLowerCase().includes(q)));
+  }, [issues, query]);
   const focusDropdownList = (direction: 1 | -1) => {
     focusLocalListItem(floatingRef.current, direction);
   };
@@ -102,6 +112,7 @@ export function ModelSelector({
         <div className="ms-list">
           <ModelSelectorList
             groups={filteredGroups}
+            issues={filteredIssues}
             favorites={favorites}
             isFavorite={isFavorite}
             onToggleFavorite={(p, m) => void toggleFav(p, m)}

@@ -63,8 +63,14 @@ pub(super) async fn stream_chat(
                 &prepared.replayed,
             )
             .await;
-            let response =
-                post_responses(catalog_model, &prepared.payload, request.purpose).await?;
+            let response = post_responses(
+                catalog_model,
+                &prepared.payload,
+                request.purpose,
+                Some(request_id),
+                request.tools.len(),
+            )
+            .await?;
             crate::services::codex_client::stream::consume_external_responses_sse(
                 on_event,
                 response,
@@ -88,14 +94,26 @@ pub(super) fn prepare_responses_request(
 ) -> Result<super::xai_oauth_payload::PreparedResponsesPayload, String> {
     // xAI OAuth is explicitly text-only: preview bytes never cross this
     // builder boundary until its own wire contract is proven.
-    super::xai_oauth_payload::build_with_evidence(
+    let prepared = super::xai_oauth_payload::build_with_evidence(
         catalog_model,
         request.messages,
         request.tools,
         request.reasoning_mode,
         request.session_id,
         request.continuation_target,
-    )
+    )?;
+    #[cfg(debug_assertions)]
+    let prepared = {
+        let mut prepared = prepared;
+        if crate::services::reasoning_fixture_budget::is_active() {
+            let output_limit =
+                crate::services::reasoning_fixture_budget::output_limit(request.max_tokens)
+                    .ok_or_else(|| "fixture limits invalid".to_string())?;
+            prepared.payload["max_output_tokens"] = output_limit.into();
+        }
+        prepared
+    };
+    Ok(prepared)
 }
 
 pub(super) fn validate_backend(
@@ -135,6 +153,8 @@ async fn post_responses(
     model: &XaiCatalogModel,
     payload: &serde_json::Value,
     purpose: super::request_purpose::RequestPurpose,
+    request_id: Option<&str>,
+    tool_count: usize,
 ) -> Result<reqwest::Response, String> {
     let route = super::route::resolve("xai-oauth")
         .ok_or_else(|| "provider_configuration_invalid".to_string())?;
@@ -147,7 +167,7 @@ async fn post_responses(
         .map_err(|_| "provider_configuration_invalid".to_string())?;
     let url = format!("{}{}", route.base_url, backend_path(model.backend));
     let response = route
-        .send_authenticated(&client, purpose, |token, auth_headers| {
+        .send_generation_authenticated(&client, purpose, payload, |token, auth_headers| {
             let mut combined = auth_headers;
             combined.extend(headers.clone());
             client
@@ -159,19 +179,36 @@ async fn post_responses(
         })
         .await
         .map_err(|error| match error {
-            super::route::RouteError::Unauthorized => "oauth_reauthentication_required",
-            super::route::RouteError::Forbidden => "provider_access_unavailable",
-            super::route::RouteError::Network => "provider_connection_failed",
+            super::route::RouteError::Unauthorized => "oauth_reauthentication_required".to_owned(),
+            super::route::RouteError::Forbidden => "provider_access_unavailable".to_owned(),
+            super::route::RouteError::Network => "provider_connection_failed".to_owned(),
+            #[cfg(debug_assertions)]
+            super::route::RouteError::FixtureBudget(message) => message,
         })?;
     if response.status().is_success() {
         return Ok(response);
     }
     let status = response.status().as_u16();
     let has_retry_after = response.headers().contains_key("retry-after");
+    let diagnostic_context =
+        super::provider_diagnostics::ProviderDiagnosticContext::from_payload(request_id, payload)
+            .with_retry_after(response.headers());
+    let request_bytes = serde_json::to_vec(payload)
+        .map(zeroize::Zeroizing::new)
+        .map_or(0, |bytes| bytes.len());
     let body = read_bounded(response, PROVIDER_ERROR_LIMIT)
         .await
-        .map(|bytes| String::from_utf8_lossy(&bytes).into_owned())
+        .map(|bytes| zeroize::Zeroizing::new(String::from_utf8_lossy(&bytes).into_owned()))
         .unwrap_or_default();
+    super::provider_diagnostics::record_http_failure(
+        "xai-oauth",
+        &model.id,
+        status,
+        super::provider_error::safe_details(&body),
+        request_bytes,
+        tool_count,
+        diagnostic_context,
+    );
     Err(classify_status(route.error_policy, status, &body, has_retry_after).to_string())
 }
 

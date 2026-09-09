@@ -95,7 +95,7 @@ pub async fn collect_chat_silent_for_compression(
                 &cfg,
                 request_timeout,
                 measurement.as_mut(),
-                None,
+                Some(request_id),
             )
             .await
             {
@@ -135,7 +135,7 @@ pub async fn collect_chat_silent_for_compression(
         }
     };
     super::stream_metrics::finish_silent(measurement, &result).await;
-    result
+    result.and_then(super::stream_completion::require_complete)
 }
 
 fn request_config<'a>(

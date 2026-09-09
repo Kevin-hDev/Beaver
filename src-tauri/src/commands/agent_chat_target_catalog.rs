@@ -3,6 +3,12 @@ pub(super) async fn ensure_reasoning_contract(
     model: &str,
     thinking_enabled: bool,
 ) -> Result<(), ()> {
+    if crate::services::llm::openrouter_catalog::ensure_model_for_route(provider, model)
+        .await
+        .map_err(|_| ())?
+    {
+        return Ok(());
+    }
     if !needs_refresh(provider, model, thinking_enabled) {
         return Ok(());
     }

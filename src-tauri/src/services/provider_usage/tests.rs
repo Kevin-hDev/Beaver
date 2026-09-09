@@ -14,7 +14,8 @@ async fn gemini_cache_writes_require_reported_cost_even_with_catalog_pricing() {
         "input_cost_per_token":0.00000075,"output_cost_per_token":0.00000375,
         "cache_creation_input_token_cost":0.0000000416667}
     }"#,
-    );
+    )
+    .unwrap();
     let replacement = entries.remove(key).unwrap();
     let previous = {
         let mut catalog = litellm_catalog::get_lock().write().await;
@@ -711,7 +712,8 @@ async fn astra_loaded_catalog_cannot_override_unknown_or_reported_cost() {
             "input_cost_per_token":0.00001, "output_cost_per_token":0.00005,
             "cache_creation_input_token_cost":0.0000125}
     }"#,
-    );
+    )
+    .unwrap();
     let mut previous = Vec::with_capacity(2);
     {
         let mut catalog = litellm_catalog::get_lock().write().await;

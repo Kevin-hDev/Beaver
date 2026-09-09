@@ -14,6 +14,42 @@ fn reasoning_mode_id(mode: Option<&str>) -> Result<ReasoningModeId, String> {
     ReasoningModeId::from_name(mode).ok_or_else(generic_error)
 }
 
+fn openrouter_contract_model(
+    control: crate::services::llm::model_reasoning_contract::ReasoningControl,
+    default_enabled: Option<bool>,
+    default_effort: Option<ReasoningModeId>,
+) -> crate::services::llm::types::ModelInfo {
+    crate::services::llm::types::ModelInfo {
+        id: "vendor/native-reasoning".into(),
+        display_name: None,
+        owned_by: Some("vendor".into()),
+        context_length: Some(128_000),
+        max_output_tokens: Some(16_000),
+        supported_parameters: None,
+        catalog_capabilities: Default::default(),
+        supports_tools: true,
+        supports_vision: false,
+        supports_thinking: true,
+        reasoning_contract: Some(
+            crate::services::llm::model_reasoning_contract::ModelReasoningContract {
+                mandatory: Some(!matches!(
+                    &control,
+                    crate::services::llm::model_reasoning_contract::ReasoningControl::Toggle
+                )),
+                default_enabled,
+                supports_max_tokens: None,
+                default_effort,
+                control,
+            },
+        ),
+        supports_fast_mode: false,
+        reasoning_modes: Vec::new(),
+        default_reasoning_mode: None,
+        context_usage_includes_reasoning: true,
+        is_free: false,
+    }
+}
+
 #[test]
 fn api_and_oauth_routes_keep_distinct_scopes_without_exposing_them() {
     let api = build_with_scope(
@@ -35,6 +71,57 @@ fn api_and_oauth_routes_keep_distinct_scopes_without_exposing_them() {
     assert_eq!(oauth.route_id, RouteId::XaiOauth);
     assert_ne!(api.credential_scope, oauth.credential_scope);
     assert_eq!(api.reasoning_mode, ReasoningModeId::High);
+}
+
+#[tokio::test]
+async fn kimi_legacy_effort_resolves_to_proven_auto_replay_but_off_stays_forbidden() {
+    use crate::services::llm::model_reasoning_contract::ReasoningControl;
+    let _guard = crate::services::llm::runtime_models::test_mutation_lock().await;
+    let mut model = openrouter_contract_model(ReasoningControl::Toggle, Some(true), None);
+    model.id = "moonshotai/kimi-k2.5".into();
+    crate::services::llm::runtime_models::replace_provider("openrouter", &[model]).unwrap();
+    let session: crate::services::agent_local::types_session::AgentSession =
+        serde_json::from_value(serde_json::json!({
+            "schema_version": 1, "id": "test", "name": "test",
+            "created_at": "2026-09-09T00:00:00Z", "model": "moonshotai/kimi-k2.5",
+            "provider": "openrouter", "thinking_enabled": true, "reasoning_mode": "medium",
+            "preserve_reasoning": "remote", "accumulated_tokens": 0, "messages": []
+        }))
+        .unwrap();
+    let scope = CredentialScope::authenticated("test-scope").unwrap();
+    let active = resolve_session(
+        session.clone(),
+        RouteId::OpenRouter,
+        None,
+        Some(true),
+        Some(scope.clone()),
+    )
+    .unwrap();
+    let mut off = session;
+    off.thinking_enabled = false;
+    let inactive = resolve_session(
+        off,
+        RouteId::OpenRouter,
+        None,
+        Some(true),
+        Some(scope.clone()),
+    )
+    .unwrap();
+    crate::services::llm::runtime_models::replace_provider("openrouter", &[]).unwrap();
+    assert_eq!(active.reasoning.mode, ReasoningModeId::Auto);
+    let replay = active
+        .continuation
+        .replay()
+        .expect("proven current toggle mode must capture");
+    assert_eq!(replay.reasoning_mode, ReasoningModeId::Auto);
+    assert_eq!(replay.model_id, "moonshotai/kimi-k2.5");
+    assert_eq!(replay.route_id, RouteId::OpenRouter);
+    assert_eq!(replay.credential_scope, scope);
+    assert_eq!(inactive.reasoning.mode, ReasoningModeId::Off);
+    assert!(matches!(
+        inactive.continuation,
+        ContinuationTarget::Forbidden(_)
+    ));
 }
 
 #[test]
@@ -146,6 +233,108 @@ async fn api_legacy_thinking_never_resolves_off_before_admission() {
         "la cible et le runtime doivent partager le défaut canonique"
     );
     cleanup(&session.id).await;
+}
+
+#[tokio::test]
+async fn provider_default_contract_admits_without_an_invented_effort() {
+    use crate::services::llm::model_reasoning_contract::ReasoningControl;
+
+    let _guard = crate::services::llm::runtime_models::test_mutation_lock().await;
+    crate::services::llm::runtime_models::replace_provider(
+        "openrouter",
+        &[openrouter_contract_model(
+            ReasoningControl::ProviderDefault,
+            Some(true),
+            None,
+        )],
+    )
+    .unwrap();
+    let mut session = crate::services::agent_local::session_store::create_full(
+        "Provider default reasoning",
+        "vendor/native-reasoning",
+        "openrouter",
+        true,
+        None,
+    )
+    .await
+    .unwrap();
+    session.thinking_enabled = false;
+    crate::services::agent_local::session_store::save(&session)
+        .await
+        .unwrap();
+
+    let target =
+        resolve_with_api_capability(&session.id, "openrouter", "vendor/native-reasoning", true)
+            .await
+            .unwrap();
+
+    assert!(target.reasoning.active);
+    assert_eq!(target.reasoning.mode_name.as_deref(), Some("auto"));
+    session.thinking_enabled = true;
+    crate::services::agent_local::session_store::save(&session)
+        .await
+        .unwrap();
+    let enabled =
+        resolve_with_api_capability(&session.id, "openrouter", "vendor/native-reasoning", true)
+            .await
+            .unwrap();
+    assert!(enabled.reasoning.active);
+    assert_eq!(enabled.reasoning.mode_name.as_deref(), Some("auto"));
+    cleanup(&session.id).await;
+    crate::services::llm::runtime_models::replace_provider("openrouter", &[]).unwrap();
+}
+
+#[tokio::test]
+async fn admission_keeps_a_published_effort_and_replaces_a_removed_one() {
+    use crate::services::llm::model_reasoning_contract::ReasoningControl;
+
+    let _guard = crate::services::llm::runtime_models::test_mutation_lock().await;
+    let mut session = crate::services::agent_local::session_store::create_full(
+        "Changing reasoning contract",
+        "vendor/native-reasoning",
+        "openrouter",
+        true,
+        None,
+    )
+    .await
+    .unwrap();
+    session.thinking_enabled = true;
+    session.reasoning_mode = Some("high".into());
+    crate::services::agent_local::session_store::save(&session)
+        .await
+        .unwrap();
+    crate::services::llm::runtime_models::replace_provider(
+        "openrouter",
+        &[openrouter_contract_model(
+            ReasoningControl::Efforts(vec![ReasoningModeId::Low, ReasoningModeId::High]),
+            Some(true),
+            Some(ReasoningModeId::Low),
+        )],
+    )
+    .unwrap();
+    let current =
+        resolve_with_api_capability(&session.id, "openrouter", "vendor/native-reasoning", true)
+            .await
+            .unwrap();
+    assert_eq!(current.reasoning.mode_name.as_deref(), Some("high"));
+
+    crate::services::llm::runtime_models::replace_provider(
+        "openrouter",
+        &[openrouter_contract_model(
+            ReasoningControl::Efforts(vec![ReasoningModeId::Low]),
+            Some(true),
+            Some(ReasoningModeId::Low),
+        )],
+    )
+    .unwrap();
+    let removed =
+        resolve_with_api_capability(&session.id, "openrouter", "vendor/native-reasoning", true)
+            .await
+            .unwrap();
+    assert_eq!(removed.reasoning.mode_name.as_deref(), Some("low"));
+
+    cleanup(&session.id).await;
+    crate::services::llm::runtime_models::replace_provider("openrouter", &[]).unwrap();
 }
 
 #[tokio::test]
@@ -492,6 +681,38 @@ async fn admit_resolved(
     )
     .await
     .unwrap()
+}
+
+#[tokio::test]
+async fn mismatched_attempt_has_a_closed_internal_reason() {
+    let session = crate::services::agent_local::session_store::create_full(
+        "Typed admission failure",
+        "qwen3.5:4b",
+        "ollama",
+        false,
+        None,
+    )
+    .await
+    .unwrap();
+
+    let error = match resolve_with_ollama_capabilities(
+        &session.id,
+        "ollama",
+        "another-model",
+        None,
+        None,
+        &["completion".into()],
+    )
+    .await
+    {
+        Ok(_) => panic!("mismatched attempt must be rejected"),
+        Err(error) => error,
+    };
+
+    assert_eq!(error, super::ChatTargetError::SessionInconsistent);
+    assert_eq!(error.diagnostic_code(), "session_inconsistent");
+    assert_eq!(error.ui_code(), "conversation_admission_failed");
+    cleanup(&session.id).await;
 }
 
 async fn cleanup(session_id: &str) {

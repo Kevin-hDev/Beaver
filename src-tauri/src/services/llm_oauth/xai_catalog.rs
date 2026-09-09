@@ -22,6 +22,14 @@ struct CachedCatalog {
 
 static CACHE: LazyLock<Mutex<Option<CachedCatalog>>> = LazyLock::new(|| Mutex::new(None));
 
+#[cfg(test)]
+pub(super) async fn seed_for_test(model: XaiCatalogModel) {
+    *CACHE.lock().await = Some(CachedCatalog {
+        fetched_at: Instant::now(),
+        models: vec![model],
+    });
+}
+
 pub async fn list_models() -> Result<Vec<ModelInfo>, LlmError> {
     Ok(catalog().await?.iter().map(to_model_info).collect())
 }
@@ -90,16 +98,14 @@ async fn fetch() -> Result<Vec<XaiCatalogModel>, LlmError> {
                 crate::services::llm::provider_error::ProviderErrorCode::ProviderAccessUnavailable,
             ),
             route::RouteError::Network => network_error(),
+            #[cfg(debug_assertions)]
+            route::RouteError::FixtureBudget(message) => LlmError::Provider(message),
         })?;
     if !response.status().is_success() {
         return Err(match response.status().as_u16() {
             401 | 403 => LlmError::Unauthorized,
             429 => LlmError::RateLimit {
-                retry_after_secs: response
-                    .headers()
-                    .get("retry-after")
-                    .and_then(|value| value.to_str().ok())
-                    .and_then(|value| value.parse().ok()),
+                retry_after_secs: catalog_retry_after(response.headers()),
             },
             _ => LlmError::KnownProvider(
                 crate::services::llm::provider_error::ProviderErrorCode::ModelCatalogUnavailable,
@@ -110,6 +116,10 @@ async fn fetch() -> Result<Vec<XaiCatalogModel>, LlmError> {
         .await
         .map_err(|_| catalog_error())?;
     parse_catalog(&body).map_err(|_| catalog_error())
+}
+
+pub(super) fn catalog_retry_after(headers: &reqwest::header::HeaderMap) -> Option<u64> {
+    crate::services::llm::provider_error::retry_after_seconds(headers)
 }
 
 fn to_model_info(model: &XaiCatalogModel) -> ModelInfo {
@@ -123,10 +133,12 @@ fn to_model_info(model: &XaiCatalogModel) -> ModelInfo {
         owned_by: None,
         context_length: Some(model.context_window),
         max_output_tokens: model.max_output_tokens,
+        supported_parameters: None,
+        catalog_capabilities: Default::default(),
         supports_tools: local.supports_tools,
         supports_vision: local.supports_vision,
         supports_thinking: local.supports_thinking || !model.reasoning_modes.is_empty(),
-        reasoning_metadata_present: false,
+        reasoning_contract: None,
         supports_fast_mode: false,
         reasoning_modes: if model.reasoning_modes.is_empty() {
             local_reasoning

@@ -117,7 +117,20 @@ mod tests {
     use super::LIVE_SPECS;
 
     #[test]
-    fn selection_rejects_every_route_without_bounded_transport() {
+    fn kimi_toggle_auto_selects_an_exact_non_vision_fixture() {
+        let selected = super::select_specs(
+            Some("openrouter"),
+            Some("moonshotai/kimi-k2.5"),
+            Some("auto"),
+        )
+        .expect("current Kimi toggle mode");
+        assert_eq!(selected.len(), 1);
+        assert!(selected[0].report_variant);
+        assert!(!selected[0].vision);
+    }
+
+    #[test]
+    fn selection_rejects_unbudgeted_routes_and_accepts_the_new_bounded_transports() {
         for spec in LIVE_SPECS.iter().filter(|spec| {
             !crate::services::llm::route_profile::supports_bounded_fixture(spec.provider)
         }) {
@@ -128,16 +141,12 @@ mod tests {
                 Some("fixture transport budget unavailable")
             );
         }
-        assert_eq!(
-            super::select_specs(
-                Some("google,anthropic"),
-                Some("gemini-3.8-flash,claude-haiku-4-5-20251001"),
-                Some("low,high")
-            )
-            .err()
-            .as_deref(),
-            Some("fixture transport budget unavailable")
-        );
+        assert!(super::select_specs(
+            Some("google,anthropic,xai-oauth"),
+            Some("gemini-3.8-flash,claude-haiku-4-5-20251001,grok-4.6"),
+            Some("low,high")
+        )
+        .is_ok());
     }
 
     #[test]

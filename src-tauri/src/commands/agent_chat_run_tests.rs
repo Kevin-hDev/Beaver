@@ -12,10 +12,14 @@ use tokio_util::sync::CancellationToken;
 
 #[test]
 fn all_post_start_failures_use_the_same_rollback_boundary() {
-    let run = include_str!("agent_chat_run.rs");
+    // Structural guard only; the behavior is exercised by the rollback tests below.
+    let run: String = include_str!("agent_chat_run.rs")
+        .chars()
+        .filter(|character| !character.is_whitespace())
+        .collect();
     let spawn = include_str!("agent_chat_run_spawn.rs");
     assert!(run.matches("rollback(streams").count() >= 4);
-    assert!(spawn.contains("rollback(streams, &session_id, &stream)"));
+    assert!(spawn.contains("rollback(streams, &session_id, &stream, &error)"));
 }
 
 #[tokio::test]
@@ -27,8 +31,20 @@ async fn rollback_terminalizes_the_current_request_exactly_once() {
         entry(&stream),
     )])));
 
-    super::agent_chat_run::rollback(&streams, &session.id, &stream).await;
-    super::agent_chat_run::rollback(&streams, &session.id, &stream).await;
+    super::agent_chat_run::rollback(
+        &streams,
+        &session.id,
+        &stream,
+        "conversation_admission_failed",
+    )
+    .await;
+    super::agent_chat_run::rollback(
+        &streams,
+        &session.id,
+        &stream,
+        "conversation_admission_failed",
+    )
+    .await;
 
     assert!(streams.0.lock().await.is_empty());
     assert!(stream.cancel.is_cancelled());
@@ -38,26 +54,78 @@ async fn rollback_terminalizes_the_current_request_exactly_once() {
 }
 
 #[tokio::test]
+async fn current_pre_http_rejection_keeps_the_attempt_identity_and_reason() {
+    let session = session("Sequential model rejection").await;
+    let first = admission_for_target(&session.id, 1, "first-provider", "first-model").await;
+    crate::services::agent_local::stream_diagnostics::record_cancelled(
+        &session.id,
+        &first.request_id,
+    )
+    .await;
+    let second = admission_for_target(&session.id, 2, "second-provider", "second-model").await;
+    let streams = ActiveStreams(Mutex::new(HashMap::from([(
+        session.id.clone(),
+        entry(&second),
+    )])));
+
+    super::agent_chat_rollback::rollback(
+        &streams,
+        &session.id,
+        &second,
+        super::agent_chat_target_error::ChatTargetError::CatalogUnavailable.diagnostic_code(),
+    )
+    .await;
+
+    let stored = crate::services::agent_local::session_store::get(&session.id)
+        .await
+        .unwrap();
+    let run = stored
+        .diagnostic_runs
+        .iter()
+        .find(|run| run.request_id == second.request_id)
+        .unwrap();
+    assert_eq!(run.provider.as_deref(), Some("second-provider"));
+    assert_eq!(run.model.as_deref(), Some("second-model"));
+    assert_eq!(run.error_type.as_deref(), Some("model_catalog_unavailable"));
+    assert_eq!(run.status, "failed");
+    assert!(streams.0.lock().await.is_empty());
+    cleanup(&session.id).await;
+}
+
+#[tokio::test]
 async fn stale_rollback_preserves_the_replacement_cancellation_terminal() {
     let session = session("Stale rollback").await;
-    let old = admission(&session.id, 1).await;
+    let old = admission_for_target(&session.id, 1, "old-provider", "old-model").await;
     crate::services::agent_local::stream_diagnostics::record_cancelled(
         &session.id,
         &old.request_id,
     )
     .await;
-    let current = admission(&session.id, 2).await;
+    let current = admission_for_target(&session.id, 2, "new-provider", "new-model").await;
     let streams = ActiveStreams(Mutex::new(HashMap::from([(
         session.id.clone(),
         entry(&current),
     )])));
 
-    super::agent_chat_run::rollback(&streams, &session.id, &old).await;
+    super::agent_chat_run::rollback(&streams, &session.id, &old, "conversation_admission_failed")
+        .await;
 
     let map = streams.0.lock().await;
     assert_eq!(map.get(&session.id).unwrap().1, 2);
     drop(map);
     assert_terminal(&session.id, "cancelled", 1).await;
+    let stored = crate::services::agent_local::session_store::get(&session.id)
+        .await
+        .unwrap();
+    let replacement = stored
+        .diagnostic_runs
+        .iter()
+        .find(|run| run.request_id == current.request_id)
+        .unwrap();
+    assert_eq!(replacement.provider.as_deref(), Some("new-provider"));
+    assert_eq!(replacement.model.as_deref(), Some("new-model"));
+    assert_eq!(replacement.status, "running");
+    assert!(replacement.error_type.is_none());
     cleanup(&session.id).await;
 }
 
@@ -136,6 +204,71 @@ async fn projectless_main_chat_rolls_back_the_durable_turn_when_workspace_resolu
     cleanup(&session.id).await;
 }
 
+#[tokio::test]
+async fn accepted_execution_failure_keeps_the_user_message_resumable() {
+    let session = session("Retry after accepted provider failure").await;
+    let stream = admission(&session.id, 9).await;
+    let streams = ActiveStreams(Mutex::new(HashMap::from([(
+        session.id.clone(),
+        entry(&stream),
+    )])));
+    let admitted = super::agent_chat_turn::admit_current(
+        &streams,
+        &session.id,
+        stream.generation,
+        prepared_turn("Retry this message").await,
+        forbidden_target(),
+        reasoning_update(&session),
+    )
+    .await
+    .unwrap();
+    let mut rollback = admitted.rollback();
+    let event = rollback.accept_execution_event();
+    assert!(matches!(
+        event,
+        crate::services::agent_local::types_ollama::StreamEvent::TurnAdmitted {
+            ref turn_id,
+            ref user_message_id,
+            ref assistant_message_id,
+        } if turn_id == &admitted.turn.turn_id
+            && user_message_id == &admitted.turn.user_message_id
+            && assistant_message_id == &admitted.turn.assistant_message_id
+    ));
+    super::agent_chat_turn::rollback_current(&streams, &session.id, stream.generation, &rollback)
+        .await
+        .unwrap();
+    let stored = crate::services::agent_local::session_store::get(&session.id)
+        .await
+        .unwrap();
+    assert_eq!(
+        stored.messages.len(),
+        1,
+        "accepted failures must not erase the user message"
+    );
+    assert_eq!(stored.messages[0].id, admitted.turn.user_message_id);
+    crate::services::agent_local::session_ops::edit_user_message(
+        &session.id,
+        crate::models::agent_session_contract::EditUserMessageInput {
+            message_id: admitted.turn.user_message_id.clone(),
+            new_content: "Retry this message".into(),
+        },
+    )
+    .await
+    .expect("Retry can find the persisted message");
+    let resumed = crate::services::agent_local::conversation_resume::resume_for_continuation(
+        &session.id,
+        crate::models::agent_turn_contract::ResumeTurnInput {
+            message_id: admitted.turn.user_message_id.clone(),
+        },
+        forbidden_target(),
+    )
+    .await
+    .expect("Retry resumes the same admitted turn");
+    assert_eq!(resumed.user_message_id, admitted.turn.user_message_id);
+    assert_eq!(resumed.turn_id, admitted.turn.turn_id);
+    cleanup(&session.id).await;
+}
+
 async fn session(title: &str) -> crate::services::agent_local::types_session::AgentSession {
     crate::services::agent_local::session_store::create_full(
         title,
@@ -159,6 +292,24 @@ async fn admission(
         permission_mode: "manual".into(),
         request_id: crate::services::agent_local::stream_diagnostics::start_request(
             session_id, generation,
+        )
+        .await,
+    }
+}
+
+async fn admission_for_target(
+    session_id: &str,
+    generation: u64,
+    provider: &str,
+    model: &str,
+) -> super::agent_chat_admission::AgentChatAdmission {
+    super::agent_chat_admission::AgentChatAdmission {
+        cancel: CancellationToken::new(),
+        generation,
+        parent_message_inbox: Arc::new(ParentMessageInbox::new()),
+        permission_mode: "manual".into(),
+        request_id: crate::services::agent_local::stream_diagnostics::start_request_for_target(
+            session_id, generation, provider, model,
         )
         .await,
     }

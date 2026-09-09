@@ -5,6 +5,10 @@ use super::route_profile::ClientSelector;
 use super::types::{LlmError, ModelInfo};
 
 pub async fn list_models_for(provider_id: &str) -> Result<Vec<ModelInfo>, LlmError> {
+    if super::openrouter_model_metadata::owns_catalog_metadata(provider_id) {
+        // The public loader already enriches and atomically publishes this list.
+        return super::openrouter_catalog::list_models().await;
+    }
     let profile = super::route_profile::find(provider_id).ok_or_else(configuration_error)?;
     let models = match profile.client {
         ClientSelector::Anthropic => super::anthropic::list_models().await?,
@@ -47,13 +51,36 @@ pub(super) async fn enrich_models(
     mut models: Vec<ModelInfo>,
     preserve_native_metadata: bool,
 ) -> Result<Vec<ModelInfo>, LlmError> {
-    models.truncate(500);
-    let mut seen = HashSet::with_capacity(models.len());
-    models.retain(|model| seen.insert(model.id.clone()));
     let canonical = super::route::canonical_provider_id(provider_id);
+    let limit = super::catalog_limits::max_dynamic_models(canonical);
+    if super::openrouter_model_metadata::owns_catalog_metadata(canonical) && models.len() > limit {
+        return Err(invalid_catalog());
+    }
+    models.truncate(limit);
+    let count_before_validation = models.len();
+    models.retain(|model| crate::services::model_identifier::is_valid_model_id(&model.id));
+    let invalid_ids = count_before_validation - models.len();
+    if invalid_ids > 0 {
+        ::log::warn!("[model catalog] ignored invalid identifiers count={invalid_ids}");
+    }
+    let mut seen = HashSet::with_capacity(models.len());
+    let count_before_deduplication = models.len();
+    // Keep native alias normalization (notably Google's resource names) unchanged.
+    models.retain(|model| seen.insert(model.id.clone()));
+    if super::openrouter_model_metadata::owns_catalog_metadata(canonical)
+        && models.len() != count_before_deduplication
+    {
+        return Err(invalid_catalog());
+    }
     let mut filtered = Vec::with_capacity(models.len());
     for model in models {
-        let accepted = super::provider_model_lookup::is_chat_model(canonical, &model.id).await;
+        // OpenRouter rows already crossed the output-modality filter; its batch
+        // variants belong to the documented asynchronous API, not this chat path.
+        let accepted = if super::openrouter_model_metadata::owns_catalog_metadata(canonical) {
+            super::openrouter_model_metadata::supports_synchronous_chat(&model.id)
+        } else {
+            super::provider_model_lookup::is_chat_model(canonical, &model.id).await
+        };
         if accepted {
             filtered.push(model);
         }
@@ -64,15 +91,15 @@ pub(super) async fn enrich_models(
         if !preserve_native_metadata {
             enrich_compat_model(canonical, model).await;
         }
-        repair_reasoning_default(model);
+        repair_reasoning_default(canonical, model);
     }
-    super::runtime_models::replace_provider(canonical, &filtered);
+    super::runtime_models::replace_provider(canonical, &filtered).map_err(|_| invalid_catalog())?;
     Ok(filtered)
 }
 
 async fn enrich_compat_model(provider_id: &str, model: &mut ModelInfo) {
     let remote_modes = model.reasoning_modes.clone();
-    let remote_reasoning_present = model.reasoning_metadata_present;
+    let remote_reasoning_present = model.reasoning_contract.is_some();
     let local = super::provider_model_lookup::local_capabilities(provider_id, &model.id).is_some();
     let authoritative = super::openrouter_model_metadata::owns_catalog_metadata(provider_id);
     let resolved = if authoritative {
@@ -93,12 +120,26 @@ async fn enrich_compat_model(provider_id: &str, model: &mut ModelInfo) {
         }
     }
     let Some(capabilities) = resolved else { return };
-    if local {
+    if authoritative {
+        // Presence is independent for each capability: parameters do not describe vision.
+        model.supports_tools = model
+            .catalog_capabilities
+            .tools
+            .unwrap_or(capabilities.supports_tools);
+        model.supports_vision = model
+            .catalog_capabilities
+            .vision
+            .unwrap_or(capabilities.supports_vision);
+        model.supports_thinking = model
+            .catalog_capabilities
+            .thinking
+            .unwrap_or(capabilities.supports_thinking);
+    } else if local {
         model.supports_tools = capabilities.supports_tools;
         model.supports_vision = capabilities.supports_vision;
         model.supports_thinking = capabilities.supports_thinking;
-        model.reasoning_modes = if remote_reasoning_present && remote_modes.is_empty() {
-            Vec::new()
+        model.reasoning_modes = if authoritative && remote_reasoning_present {
+            remote_modes
         } else {
             crate::services::reasoning::restrict_to_dynamic_modes(
                 capabilities.reasoning_modes.clone(),
@@ -124,12 +165,17 @@ async fn enrich_compat_model(provider_id: &str, model: &mut ModelInfo) {
                 .default_reasoning_mode
                 .filter(|mode| model.reasoning_modes.contains(mode))
         });
+    if !remote_reasoning_present {
+        model.reasoning_contract = capabilities.reasoning_contract;
+    }
 }
 
-fn repair_reasoning_default(model: &mut ModelInfo) {
+fn repair_reasoning_default(provider_id: &str, model: &mut ModelInfo) {
     if !model.supports_thinking {
         model.reasoning_modes.clear();
         model.default_reasoning_mode = None;
+        model.reasoning_contract = None;
+        return;
     } else if model
         .default_reasoning_mode
         .as_ref()
@@ -137,8 +183,27 @@ fn repair_reasoning_default(model: &mut ModelInfo) {
     {
         model.default_reasoning_mode = None;
     }
+    // Native controls have already passed their route's restrictions. Do not publish
+    // an earlier unrestricted contract next to the restricted legacy projection.
+    if !super::openrouter_model_metadata::owns_catalog_metadata(provider_id)
+        || model.reasoning_contract.is_none()
+    {
+        model.reasoning_contract =
+            super::model_reasoning_contract::ModelReasoningContract::from_legacy_modes(
+                model.supports_thinking,
+                &model.reasoning_modes,
+                model.default_reasoning_mode.as_deref(),
+            );
+    }
+    if let Some(contract) = &model.reasoning_contract {
+        (model.reasoning_modes, model.default_reasoning_mode) = contract.legacy_projection();
+    }
 }
 
 fn configuration_error() -> LlmError {
     LlmError::KnownProvider(super::provider_error::ProviderErrorCode::ProviderConfigurationInvalid)
+}
+
+fn invalid_catalog() -> LlmError {
+    LlmError::Parse("catalogue distant invalide".to_string())
 }

@@ -1,7 +1,6 @@
 use super::types::{LlmError, ModelInfo};
 use serde_json::Value;
 
-const MAX_MODELS: usize = 500;
 const MAX_EFFORTS: usize = 8;
 const MAX_DISPLAY_NAME_CHARS: usize = 96;
 
@@ -11,7 +10,7 @@ pub fn parse_models_list(body: &Value) -> Result<Vec<ModelInfo>, LlmError> {
         .ok_or_else(|| LlmError::Parse("catalogue Kimi invalide".to_string()))?;
 
     data.iter()
-        .take(MAX_MODELS)
+        .take(super::catalog_limits::max_dynamic_models("moonshot"))
         .filter_map(parse_model)
         .collect()
 }
@@ -65,6 +64,8 @@ fn parse_model(value: &Value) -> Option<Result<ModelInfo, LlmError>> {
         owned_by: Some("moonshot".to_string()),
         context_length: Some(context_length),
         max_output_tokens: super::model_metadata::positive_u32(&value["max_output_tokens"]),
+        supported_parameters: None,
+        catalog_capabilities: Default::default(),
         supports_tools: declared_bool(
             value,
             "supports_tool_use",
@@ -76,7 +77,7 @@ fn parse_model(value: &Value) -> Option<Result<ModelInfo, LlmError>> {
             local_capabilities.supports_vision,
         ),
         supports_thinking,
-        reasoning_metadata_present: false,
+        reasoning_contract: None,
         supports_fast_mode: false,
         reasoning_modes,
         default_reasoning_mode,

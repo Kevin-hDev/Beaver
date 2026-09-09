@@ -13,7 +13,7 @@ use tokio_util::sync::CancellationToken;
 
 pub(super) async fn consume_stream(
     on_event: &AgentEventEmitter,
-    resp: reqwest::Response,
+    mut resp: reqwest::Response,
     cancel: CancellationToken,
     buffer_content: bool,
     mut realtime_budget: Option<crate::services::compress::realtime_budget::RealtimeBudget>,
@@ -24,6 +24,7 @@ pub(super) async fn consume_stream(
     mut reasoning_capture: Option<super::reasoning_wire::ReasoningCapture>,
     mut measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
 ) -> Result<StreamOutcome, String> {
+    let mut routing = super::provider_diagnostics::openrouter::take(&mut resp);
     let stream = super::stream_sse::bounded_response(resp).eventsource();
     futures_util::pin_mut!(stream);
     let mut result = StreamResult::default();
@@ -53,6 +54,9 @@ pub(super) async fn consume_stream(
                     break;
                 }
                 let value = super::stream_sse::parse_json(&event.data)?;
+                if let Some(routing) = routing.as_mut() {
+                    routing.observe(&value);
+                }
                 if let Some(measurement) = measurement.as_mut() {
                     measurement.mark_first_event();
                     measurement.observe_response_metadata(&value);
@@ -93,6 +97,9 @@ pub(super) async fn consume_stream(
         );
     }
 
+    if super::stream_completion::terminal_error(&result).is_some() {
+        acc = ToolCallAccumulator::new();
+    }
     let (tool_calls, ids, extra_content) = acc.finalize();
     for (index, (wire_name, arguments)) in tool_calls.iter().enumerate() {
         let name = super::tool_schema::restore_tool_name_for_provider(
@@ -122,8 +129,11 @@ pub(super) async fn consume_stream(
             .tool_call_extra_content
             .push(extra_content.get(index).cloned().flatten());
     }
+    if !interrupted {
+        super::stream_completion::finish(&mut result);
+    }
     result.continuation = reasoning_capture.and_then(|mut capture| {
-        if interrupted {
+        if interrupted || result.completion_error.is_some() {
             capture.finish_partial()
         } else {
             capture.observe_persisted_tool_links(&result.tool_calls, &result.tool_call_ids);
@@ -202,6 +212,7 @@ fn process_chunk(
             ParsedChunk::GenerationDuration(duration_ns) => {
                 result.generation.record_native_duration(duration_ns);
             }
+            ParsedChunk::FinishReason(reason) => result.done_reason = Some(reason.into()),
             ParsedChunk::ProviderError(status) => {
                 return Err(stream_chunk::provider_error_code(error_policy, status).to_string());
             }

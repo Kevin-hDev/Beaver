@@ -1,5 +1,7 @@
+use super::model_metadata::has_zero_pricing;
 use super::types::{LlmError, ModelInfo};
 use serde_json::Value;
+use std::collections::HashSet;
 
 pub(super) fn parse_models_list(
     body: &Value,
@@ -8,19 +10,47 @@ pub(super) fn parse_models_list(
     let data = body["data"].as_array().ok_or_else(|| {
         LlmError::Parse(format!("champ 'data' absent ou invalide ({provider_id})"))
     })?;
+    let limit = super::catalog_limits::max_dynamic_models(provider_id);
+    if provider_id == "openrouter" && data.len() > limit {
+        return Err(invalid_catalog(provider_id));
+    }
 
-    Ok(data
-        .iter()
-        .take(500)
-        .filter_map(|model| parse_model(model, provider_id))
-        .collect())
+    let mut models = Vec::with_capacity(data.len().min(limit));
+    let mut raw_ids = HashSet::with_capacity(data.len().min(limit));
+    let mut invalid_ids = 0usize;
+    let mut degraded_reasoning_contracts = 0usize;
+    for model in data.iter().take(limit) {
+        let raw_id = model["id"].as_str();
+        if !raw_id.is_some_and(super::runtime_models::valid_model_id) {
+            invalid_ids += 1;
+            continue;
+        }
+        if provider_id == "openrouter" && raw_id.is_some_and(|id| !raw_ids.insert(id)) {
+            return Err(invalid_catalog(provider_id));
+        }
+        if let Some(model) = parse_model(model, provider_id, &mut degraded_reasoning_contracts) {
+            models.push(model);
+        }
+    }
+    if invalid_ids > 0 {
+        ::log::warn!(
+            "event=model_catalog_entries_ignored reason=invalid_identifier count={invalid_ids}"
+        );
+    }
+    if degraded_reasoning_contracts > 0 {
+        ::log::warn!(
+            "event=openrouter_reasoning_metadata_degraded reason=unknown_contract count={degraded_reasoning_contracts}"
+        );
+    }
+    Ok(models)
 }
 
-fn parse_model(model: &Value, provider_id: &str) -> Option<ModelInfo> {
+fn parse_model(
+    model: &Value,
+    provider_id: &str,
+    degraded_reasoning_contracts: &mut usize,
+) -> Option<ModelInfo> {
     let id = model["id"].as_str()?;
-    if !super::runtime_models::valid_model_id(id) {
-        return None;
-    }
     let id = super::route_profile::catalog_model_id(provider_id, id);
     if !super::runtime_models::valid_model_id(id) {
         return None;
@@ -28,24 +58,36 @@ fn parse_model(model: &Value, provider_id: &str) -> Option<ModelInfo> {
     let local_limits = super::provider_model_lookup::local_limits(provider_id, id);
     let authoritative = super::openrouter_model_metadata::owns_catalog_metadata(provider_id);
     let context_length = if authoritative {
-        remote_context(model, true)
+        super::openai_compat_model_limits::remote_context(model, true)
             .or_else(|| local_limits.and_then(|limits| limits.context_window))
     } else {
         local_limits
             .and_then(|limits| limits.context_window)
-            .or_else(|| remote_context(model, false))
+            .or_else(|| super::openai_compat_model_limits::remote_context(model, false))
     };
     let max_output_tokens = if authoritative {
-        remote_output_limit(model)
+        super::openai_compat_model_limits::remote_output_limit(model)
             .or_else(|| local_limits.and_then(|limits| limits.max_output_tokens))
     } else {
         local_limits
             .and_then(|limits| limits.max_output_tokens)
             .or_else(|| super::model_metadata::output_limit(model))
     };
-    let supported_parameters = supported_parameters(model);
+    if authoritative && !super::openai_compat_model_fields::supports_text_output(model) {
+        return None;
+    }
+    let supported_parameters = match super::openai_compat_model_fields::supported_parameters(model)
+    {
+        Some(parameters) => parameters,
+        None if authoritative => return None,
+        // OpenRouter owns this field. Other OpenAI-compatible providers may
+        // publish a different shape, which must not hide an otherwise usable model.
+        None => None,
+    };
     let has_param = |name: &str| {
         supported_parameters
+            .as_deref()
+            .unwrap_or_default()
             .iter()
             .any(|parameter| parameter == name)
     };
@@ -76,25 +118,53 @@ fn parse_model(model: &Value, provider_id: &str) -> Option<ModelInfo> {
             .is_some_and(|capabilities| capabilities.supports_thinking);
     // `supported_parameters` annonce une fonctionnalité, pas les niveaux permis.
     // Le catalogue dynamique reste vide tant qu'il ne publie pas ces valeurs.
+    let reasoning_value = &model["reasoning"];
     let reasoning_metadata = if authoritative {
-        super::openrouter_model_metadata::reasoning(&model["reasoning"])
+        match super::openrouter_model_metadata::reasoning(reasoning_value) {
+            Some(contract) => Some(contract),
+            None if !reasoning_value.is_null() => {
+                // A new upstream control must not hide an otherwise usable model.
+                // ProviderDefault sends no invented effort and keeps the route fail-closed.
+                *degraded_reasoning_contracts = degraded_reasoning_contracts.saturating_add(1);
+                Some(super::model_reasoning_contract::ModelReasoningContract {
+                    mandatory: None,
+                    default_enabled: None,
+                    supports_max_tokens: None,
+                    default_effort: None,
+                    control: super::model_reasoning_contract::ReasoningControl::ProviderDefault,
+                })
+            }
+            None => None,
+        }
     } else {
         None
     };
     let (reasoning_modes, default_reasoning_mode) = reasoning_metadata
-        .clone()
+        .as_ref()
+        .map(super::model_reasoning_contract::ModelReasoningContract::legacy_projection)
         .unwrap_or_else(|| (Vec::new(), None));
 
+    let catalog_capabilities = if authoritative {
+        super::openrouter_model_metadata::capabilities(
+            model,
+            supported_parameters.as_deref(),
+            reasoning_metadata.is_some(),
+        )
+    } else {
+        Default::default()
+    };
     Some(ModelInfo {
         id: id.to_string(),
         display_name: None,
-        owned_by: safe_owner(&model["owned_by"]),
+        owned_by: super::openai_compat_model_fields::safe_owner(&model["owned_by"]),
         context_length,
         max_output_tokens,
-        supports_tools,
-        supports_vision,
-        supports_thinking,
-        reasoning_metadata_present: reasoning_metadata.is_some(),
+        supported_parameters,
+        catalog_capabilities,
+        supports_tools: catalog_capabilities.tools.unwrap_or(supports_tools),
+        supports_vision: catalog_capabilities.vision.unwrap_or(supports_vision),
+        supports_thinking: catalog_capabilities.thinking.unwrap_or(supports_thinking),
+        reasoning_contract: reasoning_metadata,
         supports_fast_mode: false,
         reasoning_modes,
         default_reasoning_mode,
@@ -104,42 +174,8 @@ fn parse_model(model: &Value, provider_id: &str) -> Option<ModelInfo> {
     })
 }
 
-fn remote_output_limit(model: &Value) -> Option<u32> {
-    [
-        model.pointer("/top_provider/max_completion_tokens"),
-        model.pointer("/limits/max_completion_tokens"),
-        model.get("max_output_tokens"),
-        model.get("max_completion_tokens"),
-        model.get("max_tokens"),
-    ]
-    .into_iter()
-    .flatten()
-    .filter_map(super::model_metadata::positive_u32)
-    .min()
-}
-
-fn remote_context(model: &Value, use_top_provider_limit: bool) -> Option<u32> {
-    let advertised = [
-        &model["context_length"],
-        &model["context_window"],
-        &model["max_context_length"],
-    ]
-    .into_iter()
-    .find_map(super::model_metadata::positive_u32);
-    if !use_top_provider_limit {
-        return advertised;
-    }
-    if advertised.is_none() {
-        return super::model_metadata::positive_u32(&model["top_provider"]["context_length"]);
-    }
-    let top_provider =
-        super::model_metadata::positive_u32(&model["top_provider"]["context_length"]);
-    match (advertised, top_provider) {
-        (Some(advertised), Some(top_provider)) => Some(advertised.min(top_provider)),
-        (Some(advertised), None) => Some(advertised),
-        (None, Some(top_provider)) => Some(top_provider),
-        (None, None) => None,
-    }
+fn invalid_catalog(provider_id: &str) -> LlmError {
+    LlmError::Parse(format!("catalogue distant invalide ({provider_id})"))
 }
 
 fn architecture_supports_vision(model: &Value) -> bool {
@@ -149,51 +185,4 @@ fn architecture_supports_vision(model: &Value) -> bool {
         || model["architecture"]["input_modalities"]
             .as_array()
             .is_some_and(|values| values.iter().any(|value| value.as_str() == Some("image")))
-}
-
-fn supported_parameters(model: &Value) -> Vec<String> {
-    model["supported_parameters"]
-        .as_array()
-        .map(|values| {
-            values
-                .iter()
-                .filter_map(|value| safe_text(value, 64))
-                .take(64)
-                .collect()
-        })
-        .unwrap_or_default()
-}
-
-fn safe_owner(value: &Value) -> Option<String> {
-    safe_text(value, 96)
-}
-
-fn safe_text(value: &Value, max_bytes: usize) -> Option<String> {
-    value
-        .as_str()
-        .filter(|text| {
-            !text.is_empty() && text.len() <= max_bytes && !text.chars().any(char::is_control)
-        })
-        .map(str::to_string)
-}
-
-fn has_zero_pricing(pricing: &Value) -> bool {
-    let Some(prices) = pricing.as_object() else {
-        return false;
-    };
-    let Some(prompt) = prices.get("prompt") else {
-        return false;
-    };
-    let Some(completion) = prices.get("completion") else {
-        return false;
-    };
-    price_is_zero(prompt) && price_is_zero(completion) && prices.values().all(price_is_zero)
-}
-
-fn price_is_zero(value: &Value) -> bool {
-    let price = value
-        .as_str()
-        .and_then(|raw| raw.parse::<f64>().ok())
-        .or_else(|| value.as_f64());
-    price.is_some_and(|amount| amount.is_finite() && amount == 0.0)
 }

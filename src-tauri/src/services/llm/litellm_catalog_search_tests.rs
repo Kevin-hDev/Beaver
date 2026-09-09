@@ -4,7 +4,8 @@ use super::*;
 fn settings_search_still_reads_the_embedded_litellm_catalog() {
     let catalog = super::super::litellm_catalog::parse_catalog(include_str!(
         "../../../resources/litellm-models.json"
-    ));
+    ))
+    .expect("embedded catalog");
 
     let results = search_in(&catalog, "gpt-4o", 100);
 
@@ -18,7 +19,8 @@ fn settings_search_still_reads_the_embedded_litellm_catalog() {
 fn settings_search_remains_bounded() {
     let catalog = super::super::litellm_catalog::parse_catalog(include_str!(
         "../../../resources/litellm-models.json"
-    ));
+    ))
+    .expect("embedded catalog");
 
     assert_eq!(search_in(&catalog, "", 3).len(), 3);
 }

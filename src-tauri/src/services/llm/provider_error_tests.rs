@@ -2,6 +2,29 @@ use super::*;
 use crate::services::llm::route_profile::ErrorPolicy;
 
 #[test]
+fn age_attestation_requires_the_exact_access_refusal() {
+    let body = r#"{"error":{"code":403,"message":"This model requires you to complete the following before use: 18+ age confirmation. Confirm at https://openrouter.ai/settings/preferences."}}"#;
+    assert_eq!(
+        classify_http(ErrorPolicy::OpenAiCompatible, 403, body).as_str(),
+        "provider_age_confirmation_required"
+    );
+    assert_eq!(
+        safe_log_code(ErrorPolicy::OpenAiCompatible, 403, body),
+        "provider_age_confirmation_required"
+    );
+    for (status, body) in [
+        (401, body),
+        (403, "18+ age confirmation"),
+        (403, r#"{"error":{"message":"18+ age confirmation"}}"#),
+    ] {
+        assert_ne!(
+            classify_http(ErrorPolicy::OpenAiCompatible, status, body).as_str(),
+            "provider_age_confirmation_required"
+        );
+    }
+}
+
+#[test]
 fn service_tier_rejection_uses_only_closed_structured_fields() {
     let by_param =
         r#"{"error":{"code":"invalid_request_error","param":"service_tier","message":"private"}}"#;
@@ -142,6 +165,26 @@ async fn catalog_rate_limit_preserves_the_retry_after_delay() {
     ));
 }
 
+#[tokio::test]
+async fn catalog_retry_after_uses_the_same_bounded_decimal_contract_as_streams() {
+    for (header, expected) in [("+7", None), ("86401", None), ("86400", Some(86_400))] {
+        let response = tauri::http::Response::builder()
+            .status(429)
+            .header("retry-after", header)
+            .body("")
+            .unwrap();
+        let error = crate::services::llm::openai_compat_parsing::map_error_status(
+            reqwest::Response::from(response),
+            ErrorPolicy::OpenAiCompatible,
+        )
+        .await;
+        let crate::services::llm::types::LlmError::RateLimit { retry_after_secs } = error else {
+            panic!("expected rate-limit category");
+        };
+        assert_eq!(retry_after_secs, expected, "{header}");
+    }
+}
+
 #[test]
 fn transport_failures_have_stable_safe_codes() {
     assert_eq!(
@@ -172,6 +215,20 @@ fn safe_details_keep_only_whitelisted_fields() {
     assert_eq!(details.error_code.as_deref(), Some("bad_schema"));
     assert_eq!(details.error_param.as_deref(), Some("tools[0]"));
     assert!(!format!("{details:?}").contains("private prompt"));
+}
+
+#[test]
+fn openrouter_details_keep_provider_name_but_never_raw_upstream_body() {
+    let details = safe_details(
+        r#"{"error":{"metadata":{"provider_name":"Google AI Studio","raw":"Bearer secret-sentinel upstream body"}}}"#,
+    );
+    let value = serde_json::to_value(details).unwrap();
+
+    assert_eq!(value["upstream_provider"], "Google AI Studio");
+    let serialized = value.to_string();
+    assert!(!serialized.contains("secret-sentinel"));
+    assert!(!serialized.contains("upstream body"));
+    assert!(!serialized.contains("raw"));
 }
 
 #[test]

@@ -168,8 +168,7 @@ async fn active_registry_entry_survives_missing_child_session() {
 }
 
 #[test]
-fn api_and_ollama_ack_only_after_a_successful_model_outcome() {
-    assert_shared_model_outcomes(include_str!("../llm/agent_loop_request.rs"));
+fn ollama_ack_only_after_a_successful_model_outcome() {
     assert_shared_model_outcomes(include_str!("agent_loop_ollama_request.rs"));
 }
 

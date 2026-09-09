@@ -3,8 +3,6 @@ use serde_json::Value;
 
 const MAX_DETAILS: usize = 16;
 const MAX_VIOLATIONS: usize = 16;
-const MAX_RETRY_SECONDS: u64 = 86_400;
-
 /// Diagnostic categories only: never persist quota IDs, projects or messages.
 /// These hints do not authorize retries or change the user-facing error.
 #[derive(Debug, Default, Clone, PartialEq, Eq, Serialize)]
@@ -45,7 +43,7 @@ pub(super) fn extract(document: Option<&Value>) -> Option<QuotaDetails> {
                     .as_str()
                     .and_then(|delay| delay.strip_suffix('s'))
                     .and_then(|seconds| seconds.parse::<u64>().ok())
-                    .filter(|seconds| *seconds <= MAX_RETRY_SECONDS);
+                    .filter(|seconds| *seconds <= super::MAX_RETRY_SECONDS);
             }
             _ => {}
         }

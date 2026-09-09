@@ -63,6 +63,43 @@ fn responses_payload_uses_catalog_reasoning_and_never_a_remote_route() {
     assert!(payload.get("base_url").is_none());
 }
 
+#[tokio::test]
+async fn fixture_budget_adds_a_bounded_xai_responses_output_limit() {
+    crate::services::reasoning_fixture_budget::run_scoped(
+        crate::services::reasoning_fixture_budget::FixtureLimits::from_values(
+            Some("32"),
+            Some("1"),
+            None,
+        )
+        .unwrap(),
+        tokio_util::sync::CancellationToken::new(),
+        async {
+            let messages = [ChatMessage::user("Bound this fixture".into())];
+            let request = RequestConfig {
+                provider_id: "xai-oauth",
+                model: "grok-4.6",
+                messages: &messages,
+                tools: &[],
+                think: true,
+                reasoning_mode: Some("high"),
+                max_tokens: None,
+                purpose: RequestPurpose::ManualChat,
+                session_id: Some("xai-budget"),
+                fast_mode: crate::services::llm::fast_mode::FastModeRequest::Unsupported,
+                tool_result_previews: None,
+                continuation_target: None,
+            };
+            let payload = prepare_responses_request(&catalog_model(), &request)
+                .unwrap()
+                .payload;
+            assert_eq!(payload["max_output_tokens"], 32);
+            Ok(())
+        },
+    )
+    .await
+    .unwrap();
+}
+
 #[test]
 fn chat_reasoning_is_restricted_by_the_subscription_catalog() {
     let mut model = catalog_model();
@@ -227,6 +264,27 @@ fn resource_exhausted_without_retry_after_is_not_a_retryable_rate_limit() {
         ),
         "provider_access_unavailable"
     );
+}
+
+#[test]
+fn oauth_payment_refusal_uses_common_access_classification_without_guessing_credits() {
+    for (body, expected) in [
+        ("{}", "provider_access_unavailable"),
+        (
+            r#"{"code":"personal-team-blocked:spending-limit"}"#,
+            "xai_subscription_or_credits_required",
+        ),
+    ] {
+        assert_eq!(
+            classify_status(
+                crate::services::llm::route_profile::ErrorPolicy::XaiOauth,
+                402,
+                body,
+                false
+            ),
+            expected
+        );
+    }
 }
 
 #[test]

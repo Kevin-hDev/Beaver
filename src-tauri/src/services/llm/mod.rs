@@ -16,6 +16,7 @@ pub(crate) mod api_key_probe;
 #[cfg(test)]
 mod api_key_probe_tests;
 pub mod catalog;
+pub(crate) mod catalog_limits;
 pub mod compress_hook;
 mod endpoint_policy;
 #[cfg(test)]
@@ -28,6 +29,7 @@ mod kimi_models;
 mod kimi_models_tests;
 pub mod litellm_catalog;
 mod litellm_catalog_lookup;
+mod litellm_catalog_parser;
 mod litellm_catalog_refresh;
 pub mod litellm_catalog_search;
 pub(crate) mod model_catalog;
@@ -35,7 +37,12 @@ pub(crate) mod model_catalog;
 mod model_catalog_tests;
 mod model_metadata;
 pub mod model_pricing;
+pub(crate) mod model_reasoning_contract;
+#[cfg(test)]
+mod model_reasoning_contract_tests;
 pub mod openai_compat;
+mod openai_compat_model_fields;
+mod openai_compat_model_limits;
 mod openai_compat_model_parser;
 mod openai_compat_models;
 mod openai_compat_parsing;
@@ -43,9 +50,17 @@ mod openai_compat_parsing;
 mod openai_compat_parsing_tests;
 mod openai_responses;
 mod openai_responses_reasoning;
+pub(crate) mod openrouter_catalog;
+#[cfg(test)]
+mod openrouter_catalog_inventory_tests;
+#[cfg(test)]
+mod openrouter_catalog_tests;
 mod openrouter_model_metadata;
 #[cfg(test)]
 mod openrouter_model_metadata_tests;
+mod openrouter_request_contract;
+#[cfg(test)]
+mod openrouter_request_contract_tests;
 pub(crate) mod prompt_cache_policy;
 #[cfg(test)]
 mod prompt_cache_policy_tests;
@@ -75,6 +90,7 @@ pub mod stream;
 mod stream_chunk;
 #[cfg(test)]
 mod stream_chunk_tests;
+mod stream_completion;
 mod stream_consume;
 mod stream_consume_budget;
 mod stream_consume_record;

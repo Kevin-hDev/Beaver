@@ -2,6 +2,7 @@
 export const CONTRACT_TESTS = Object.freeze([
   "services::extensions::install_jobs::contract_tests::checked_in_typescript_matches_rust",
   "models::provider_contract_tests::checked_in_typescript_matches_the_rust_contract",
+  "services::llm::model_reasoning_contract_tests::checked_in_typescript_matches_the_rust_reasoning_contract",
   "services::agent_local::types_diagnostics_contract_tests::checked_in_typescript_matches_the_rust_diagnostics_contract",
   "models::agent_session_contract_tests::checked_in_agent_session_types_match_rust",
   "models::compression_profile_contract_tests::checked_in_compression_profile_types_match_rust",

@@ -6,6 +6,8 @@ use crate::services::agent_local::types_diagnostics::{AgentDiagnosticRun, AgentD
 fn run(phase: &str, tool_status: &str) -> AgentDiagnosticRun {
     AgentDiagnosticRun {
         request_id: "request".to_string(),
+        provider: None,
+        model: None,
         generation: 1,
         status: "running".to_string(),
         severity: "info".to_string(),
@@ -30,6 +32,15 @@ fn run(phase: &str, tool_status: &str) -> AgentDiagnosticRun {
         active_todo: None,
         safe_summary: None,
         events: Vec::new(),
+    }
+}
+
+#[test]
+fn completion_failures_keep_their_specific_diagnostic_codes() {
+    for code in ["provider_empty_response", "provider_output_limit", "provider_content_filtered"] {
+        assert_eq!(classify_error(code, false), code);
+        assert_eq!(safe_code(code), code);
+        assert!(!is_connection_error(code));
     }
 }
 

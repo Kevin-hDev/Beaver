@@ -101,10 +101,12 @@ fn fixture_admission_rejects_unbudgeted_transports() {
         "codex-oauth",
         "ollama",
         "qwen",
+        "anthropic",
+        "xai-oauth",
     ] {
         assert!(supports_bounded_fixture(provider), "{provider}");
     }
-    for provider in ["anthropic", "moonshot-oauth", "xai-oauth", "unknown"] {
+    for provider in ["moonshot-oauth", "unknown"] {
         assert!(!supports_bounded_fixture(provider), "{provider}");
     }
 }

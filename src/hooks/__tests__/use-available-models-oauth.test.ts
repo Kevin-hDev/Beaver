@@ -6,6 +6,7 @@ import { normalizeReasoningMode, reasoningModeOptions } from "@/lib/reasoning-mo
 import {
   mapOAuthModels, mapOAuthResponse, useAvailableModels, withoutInteractiveOnlyModels,
 } from "../use-available-models";
+import { fetchCloudModels, mapCloudModelSettlements } from "../cloud-models";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 vi.mock("@tauri-apps/api/event", () => ({
@@ -17,6 +18,52 @@ beforeEach(() => {
 });
 
 describe("OAuth models", () => {
+  it("conserve un refus sûr du catalogue API sans exposer le détail technique", () => {
+    const specs = [{
+      id: "mistral",
+      display_name: "Mistral",
+      category: "llm" as const,
+      signup_url: "https://example.invalid",
+      connection_kind: "api_key" as const,
+    }];
+    const result = mapCloudModelSettlements(specs, [{
+      status: "rejected",
+      reason: "provider_access_unavailable",
+    }]);
+
+    expect(result.groups.size).toBe(0);
+    expect(result.issues.get("mistral")).toEqual({
+      providerName: "Mistral",
+      code: "provider_access_unavailable",
+    });
+
+    const unknown = mapCloudModelSettlements(specs, [{
+      status: "rejected",
+      reason: "private upstream response",
+    }]);
+    expect(unknown.issues.get("mistral")?.code).toBe("model_catalog_unavailable");
+  });
+
+  it("rend une panne globale du catalogue visible pour chaque provider configuré", async () => {
+    vi.mocked(invoke).mockImplementation((command) => {
+      if (command === "list_llm_providers_catalog") {
+        return Promise.reject(new Error("private catalog failure"));
+      }
+      if (command === "list_configured_providers") {
+        return Promise.resolve(["mistral", "openrouter"]);
+      }
+      return Promise.reject(new Error(`unexpected command: ${command}`));
+    });
+
+    const result = await fetchCloudModels();
+
+    expect(Array.from(result.issues.entries())).toEqual([
+      ["mistral", { providerName: "mistral", code: "model_catalog_unavailable" }],
+      ["openrouter", { providerName: "openrouter", code: "model_catalog_unavailable" }],
+    ]);
+    expect(result.groups.size).toBe(0);
+  });
+
   it("accepte un provider futur uniquement depuis ses métadonnées publiques", () => {
     const groups = mapOAuthModels([{
       id: "model-v1",
@@ -30,6 +77,11 @@ describe("OAuth models", () => {
       supports_thinking: true,
       supports_fast_mode: false,
       reasoning_modes: ["low", "high"],
+      reasoning_contract: {
+        mandatory: true,
+        default_effort: "minimal",
+        control: { kind: "efforts", efforts: ["minimal", "high"] },
+      },
       default_reasoning_mode: "low",
       context_usage_includes_reasoning: false,
       interactive_only: false,
@@ -39,8 +91,16 @@ describe("OAuth models", () => {
       provider_name: "Provider fictif · OAuth",
       context_length: 64000,
       reasoning_modes: ["low", "high"],
+      reasoning_contract: {
+        mandatory: true,
+        default_effort: "minimal",
+        control: { kind: "efforts", efforts: ["minimal", "high"] },
+      },
       context_usage_includes_reasoning: false,
     });
+    const model = groups.get("provider-fictif-oauth")?.[0];
+    expect(reasoningModeOptions(model ?? null).map((entry) => entry.mode))
+      .toEqual(["minimal", "high"]);
   });
 
   it("utilise des ids et libellés distincts des providers API", () => {
@@ -138,7 +198,7 @@ describe("OAuth models", () => {
       zai: [{ id: "glm-5.3-flash", supports_tools: true, supports_vision: true, supports_thinking: true, supports_fast_mode: false, reasoning_modes: ["low", "high", "max"] as const, default_reasoning_mode: "max" as const, context_usage_includes_reasoning: true }],
       openai: [{ id: "gpt-6-astra", supports_tools: true, supports_vision: true, supports_thinking: true, supports_fast_mode: false, reasoning_modes: ["low", "medium", "high", "xhigh", "max"] as const, context_usage_includes_reasoning: true }],
       openrouter: [
-        { id: "google/gemini-3.8-flash", supports_tools: true, supports_vision: true, supports_thinking: true, supports_fast_mode: false, reasoning_modes: ["low", "medium", "high"] as const, default_reasoning_mode: "medium" as const, context_usage_includes_reasoning: true },
+        { id: "google/gemini-3.8-flash", supports_tools: true, supports_vision: true, supports_thinking: true, supports_fast_mode: false, supported_parameters: ["tools"], reasoning_modes: ["low", "medium", "high"] as const, default_reasoning_mode: "medium" as const, context_usage_includes_reasoning: true },
         { id: "z-ai/glm-5.3-flash", supports_tools: true, supports_vision: true, supports_thinking: true, supports_fast_mode: false, reasoning_modes: ["low", "high", "max"] as const, default_reasoning_mode: "max" as const, context_usage_includes_reasoning: true },
         { id: "openai/gpt-6-astra", supports_tools: true, supports_vision: true, supports_thinking: true, supports_fast_mode: false, reasoning_modes: ["low", "medium", "high", "xhigh", "max"] as const, context_usage_includes_reasoning: true },
       ],
@@ -192,6 +252,8 @@ describe("OAuth models", () => {
       expect(options.map((entry) => entry.mode)).toEqual(modes);
       expect(normalizeReasoningMode("off", options, available?.default_reasoning_mode)).toBe(preferred);
     }
+    expect(result.current.groups.get("openrouter")?.[0].supported_parameters)
+      .toEqual(["tools"]);
 
     // A changed account default must reach the selector, not be replaced by medium.
     codexModel.default_reasoning_mode = "high";

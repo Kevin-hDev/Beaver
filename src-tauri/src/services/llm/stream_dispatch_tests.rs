@@ -8,6 +8,8 @@ use crate::services::provider_usage::UsageApiFormat;
 use crate::services::reasoning_continuity::contract::{
     ContinuationTarget, ContinuationUse, CredentialScope, ReasoningModeId, ReplayTarget, RouteId,
 };
+use wiremock::matchers::{method, path};
+use wiremock::{Mock, MockServer, ResponseTemplate};
 
 fn xai_model(backend: XaiBackend) -> XaiCatalogModel {
     XaiCatalogModel {
@@ -19,6 +21,130 @@ fn xai_model(backend: XaiBackend) -> XaiCatalogModel {
         reasoning_modes: vec![],
         default_reasoning_mode: None,
     }
+}
+
+fn openrouter_fixture_body() -> serde_json::Value {
+    serde_json::json!({"data":[{
+        "id":"moonshotai/kimi-k2.5",
+        "architecture":{"input_modalities":["text"],"output_modalities":["text"]},
+        "supported_parameters":["reasoning"],
+        "reasoning":{
+            "mandatory":false,
+            "default_enabled":false,
+            "supported_efforts":["medium"],
+            "default_effort":"medium"
+        }
+    }]})
+}
+
+#[tokio::test]
+async fn openrouter_common_and_silent_transport_keep_the_final_catalog_object() {
+    let _guard = super::runtime_models::test_mutation_lock().await;
+    super::runtime_models::replace_provider("openrouter", &[]).unwrap();
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/models"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .set_delay(std::time::Duration::from_millis(30))
+                .set_body_json(openrouter_fixture_body()),
+        )
+        .expect(1)
+        .mount(&server)
+        .await;
+    let url = format!("{}/models", server.uri());
+    let (loading, silent) = tokio::join!(
+        super::openrouter_catalog::list_models_from_url_for_test(&url),
+        super::stream_dispatch::resolve_transport(
+            "openrouter",
+            "moonshotai/kimi-k2.5",
+            InvocationKind::Silent,
+            RequestPurpose::Automation,
+        )
+    );
+    loading.unwrap();
+    assert_eq!(silent.unwrap().client, ClientKind::ChatCompletions);
+    assert_eq!(
+        super::stream_dispatch::resolve_transport(
+            "openrouter",
+            "moonshotai/kimi-k2.5",
+            InvocationKind::Interactive,
+            RequestPurpose::ManualChat,
+        )
+        .await
+        .unwrap()
+        .client,
+        ClientKind::ChatCompletions
+    );
+    let model = super::runtime_models::lookup("openrouter", "moonshotai/kimi-k2.5")
+        .expect("final OpenRouter catalog model");
+    assert!(!model.supports_tools);
+    assert!(!model.supports_vision);
+    assert_eq!(model.default_reasoning_mode.as_deref(), Some("off"));
+    assert_eq!(
+        model
+            .reasoning_contract
+            .as_ref()
+            .and_then(|contract| contract.default_effort),
+        Some(ReasoningModeId::Medium)
+    );
+    assert_eq!(
+        model.supported_parameters.as_deref().unwrap(),
+        ["reasoning"]
+    );
+    assert_eq!(server.received_requests().await.unwrap().len(), 1);
+}
+
+#[cfg(debug_assertions)]
+#[tokio::test]
+async fn openrouter_debug_fixture_transport_keeps_the_final_catalog_object() {
+    let _guard = super::runtime_models::test_mutation_lock().await;
+    super::runtime_models::replace_provider("openrouter", &[]).unwrap();
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/models"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .set_delay(std::time::Duration::from_millis(30))
+                .set_body_json(openrouter_fixture_body()),
+        )
+        .expect(1)
+        .mount(&server)
+        .await;
+    let fixture = ContinuationTarget::FixtureCandidate(ReplayTarget {
+        route_id: RouteId::OpenRouter,
+        model_id: "moonshotai/kimi-k2.5".into(),
+        credential_scope: CredentialScope::authenticated("fixture-scope").unwrap(),
+        reasoning_mode: ReasoningModeId::Medium,
+        continuation_use: ContinuationUse::UserContinuation,
+    });
+
+    let url = format!("{}/models", server.uri());
+    let (loading, resolved) = tokio::join!(
+        super::openrouter_catalog::list_models_from_url_for_test(&url),
+        super::stream_dispatch::resolve_fixture_transport(
+            "openrouter",
+            "moonshotai/kimi-k2.5",
+            &fixture,
+            RequestPurpose::ManualChat,
+        )
+    );
+
+    loading.unwrap();
+    assert_eq!(resolved.unwrap().client, ClientKind::ChatCompletions);
+    let model = super::runtime_models::lookup("openrouter", "moonshotai/kimi-k2.5")
+        .expect("final OpenRouter catalog model");
+    assert!(!model.supports_tools);
+    assert!(!model.supports_vision);
+    assert_eq!(model.default_reasoning_mode.as_deref(), Some("off"));
+    assert_eq!(
+        model
+            .reasoning_contract
+            .as_ref()
+            .and_then(|contract| contract.default_effort),
+        Some(ReasoningModeId::Medium)
+    );
+    assert_eq!(server.received_requests().await.unwrap().len(), 1);
 }
 
 #[cfg(debug_assertions)]
@@ -205,14 +331,18 @@ async fn anthropic_live_route_supports_every_declared_invocation_kind() {
         reasoning_mode: ReasoningModeId::High,
         continuation_use: ContinuationUse::UserContinuation,
     });
-    assert!(super::stream_dispatch::resolve_fixture_transport(
-        "anthropic",
-        "claude-haiku-4-5-20251001",
-        &fixture,
-        RequestPurpose::ManualChat,
-    )
-    .await
-    .is_err());
+    assert_eq!(
+        super::stream_dispatch::resolve_fixture_transport(
+            "anthropic",
+            "claude-haiku-4-5-20251001",
+            &fixture,
+            RequestPurpose::ManualChat,
+        )
+        .await
+        .unwrap()
+        .client,
+        ClientKind::Anthropic
+    );
     assert!(super::stream_dispatch::resolve_fixture_transport(
         "anthropic",
         "claude-haiku-4-5-20251001",
@@ -221,6 +351,38 @@ async fn anthropic_live_route_supports_every_declared_invocation_kind() {
     )
     .await
     .is_err());
+}
+
+#[cfg(debug_assertions)]
+#[tokio::test]
+async fn xai_fixture_transport_uses_the_backend_from_its_real_catalog_resolution() {
+    let mut catalog_model = xai_model(XaiBackend::Responses);
+    catalog_model.id = "grok-4.6".into();
+    catalog_model.reasoning_modes = vec!["high".into()];
+    catalog_model.default_reasoning_mode = Some("high".into());
+    crate::services::llm_oauth::seed_xai_catalog_for_test(catalog_model).await;
+    let fixture = ContinuationTarget::FixtureCandidate(ReplayTarget {
+        route_id: RouteId::XaiOauth,
+        model_id: "grok-4.6".into(),
+        credential_scope: CredentialScope::authenticated("fixture-scope").unwrap(),
+        reasoning_mode: ReasoningModeId::High,
+        continuation_use: ContinuationUse::UserContinuation,
+    });
+
+    let resolved = super::stream_dispatch::resolve_fixture_transport(
+        "xai-oauth",
+        "grok-4.6",
+        &fixture,
+        RequestPurpose::ManualChat,
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(resolved.client, ClientKind::XaiOauth(XaiBackend::Responses));
+    assert_eq!(
+        resolved.xai_catalog_model.unwrap().backend,
+        XaiBackend::Responses
+    );
 }
 
 #[tokio::test]

@@ -81,6 +81,7 @@ pub(super) async fn dispatch_http(
         session_key,
         model,
         tool_count,
+        None,
         refresh,
     )
     .await;

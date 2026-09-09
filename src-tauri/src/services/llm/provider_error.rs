@@ -5,14 +5,31 @@ use super::types::LlmError;
 #[path = "provider_error_quota.rs"]
 mod quota;
 
+#[path = "provider_error_attestation.rs"]
+mod attestation;
+
+pub(super) const MAX_RETRY_SECONDS: u64 = 86_400;
+
+// Catalog failures and stream diagnostics must accept the same safe delay.
+pub(crate) fn retry_after_seconds(headers: &reqwest::header::HeaderMap) -> Option<u64> {
+    headers
+        .get(reqwest::header::RETRY_AFTER)
+        .and_then(|value| value.to_str().ok())
+        .filter(|value| !value.is_empty() && value.bytes().all(|byte| byte.is_ascii_digit()))
+        .and_then(|value| value.parse::<u64>().ok())
+        .filter(|seconds| *seconds <= MAX_RETRY_SECONDS)
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ProviderErrorCode {
+    AuthenticationFailed,
     MoonshotMembershipUnverified,
     XaiSubscriptionOrCreditsRequired,
     OAuthReauthenticationRequired,
     RateLimited,
     ProviderAccessUnavailable,
+    ProviderAgeConfirmationRequired,
     ProviderConnectionFailed,
     ProviderTemporarilyUnavailable,
     ProviderRequestRejected,
@@ -27,17 +44,21 @@ pub struct SafeProviderDetails {
     pub error_code: Option<String>,
     pub error_param: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub upstream_provider: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub quota: Option<quota::QuotaDetails>,
 }
 
 impl ProviderErrorCode {
     pub const fn as_str(self) -> &'static str {
         match self {
+            Self::AuthenticationFailed => "auth_failed",
             Self::MoonshotMembershipUnverified => "moonshot_membership_unverified",
             Self::XaiSubscriptionOrCreditsRequired => "xai_subscription_or_credits_required",
             Self::OAuthReauthenticationRequired => "oauth_reauthentication_required",
             Self::RateLimited => "rate_limit",
             Self::ProviderAccessUnavailable => "provider_access_unavailable",
+            Self::ProviderAgeConfirmationRequired => "provider_age_confirmation_required",
             Self::ProviderConnectionFailed => "provider_connection_failed",
             Self::ProviderTemporarilyUnavailable => "provider_temporarily_unavailable",
             Self::ProviderRequestRejected => "provider_request_rejected",
@@ -48,41 +69,21 @@ impl ProviderErrorCode {
     }
 }
 
-pub fn is_service_tier_rejection(body: &str) -> bool {
-    let Ok(document) = serde_json::from_str::<serde_json::Value>(body) else {
-        return false;
-    };
-    service_tier_error_fields(
-        document.pointer("/error/param"),
-        document.pointer("/error/code"),
-    )
-}
-
-pub fn is_service_tier_response_error(event: &serde_json::Value) -> bool {
-    service_tier_error_fields(
-        event.pointer("/response/error/param"),
-        event.pointer("/response/error/code"),
-    )
-}
-
-fn service_tier_error_fields(
-    param: Option<&serde_json::Value>,
-    code: Option<&serde_json::Value>,
-) -> bool {
-    if param.and_then(serde_json::Value::as_str) == Some("service_tier") {
-        return true;
-    }
-    // Hypothèse défensive fermée, à retirer si la campagne réelle ne l'observe pas.
-    code.and_then(serde_json::Value::as_str) == Some("unsupported_service_tier")
-}
+#[path = "provider_error_service_tier.rs"]
+mod service_tier;
+pub use service_tier::{is_service_tier_rejection, is_service_tier_response_error};
 
 pub fn classify_http(
     policy: super::route_profile::ErrorPolicy,
     status: u16,
     body: &str,
 ) -> ProviderErrorCode {
-    if status != 402 {
-        return ProviderErrorCode::ProviderAccessUnavailable;
+    match status {
+        401 => return ProviderErrorCode::AuthenticationFailed,
+        403 => return attestation::classify(body),
+        429 => return ProviderErrorCode::RateLimited,
+        402 => {}
+        _ => return ProviderErrorCode::ProviderRequestRejected,
     }
     let parsed = serde_json::from_str::<serde_json::Value>(body).ok();
     if policy == super::route_profile::ErrorPolicy::Moonshot
@@ -116,7 +117,7 @@ pub fn safe_log_code(
     match status {
         401 => "authentication_required",
         402 => classify_http(policy, status, body).as_str(),
-        403 => "provider_access_unavailable",
+        403 => classify_http(policy, status, body).as_str(),
         429 => "rate_limit",
         _ => "provider_http_error",
     }
@@ -135,8 +136,28 @@ pub fn safe_details(body: &str) -> SafeProviderDetails {
         error_type: json_field(document, &["/error/type", "/type", "/error/status"]),
         error_code: json_field(document, &["/error/code", "/code"]),
         error_param: json_field(document, &["/error/param", "/param"]),
+        upstream_provider: document
+            .and_then(|value| value.pointer("/error/metadata/provider_name"))
+            .and_then(serde_json::Value::as_str)
+            .and_then(safe_provider_name),
         quota: quota::extract(document),
     }
+}
+
+fn safe_provider_name(value: &str) -> Option<String> {
+    const MAX_PROVIDER_NAME_CHARS: usize = 128;
+    // Structured provider fields are untrusted too: reuse the shared secret filter.
+    let value = super::sanitize_log_body(value);
+    let clipped: String = value.chars().take(MAX_PROVIDER_NAME_CHARS + 1).collect();
+    let trimmed = clipped.trim();
+    (!trimmed.is_empty()
+        && trimmed.chars().count() <= MAX_PROVIDER_NAME_CHARS
+        && trimmed.chars().all(|character| {
+            character.is_alphanumeric()
+                || character == ' '
+                || matches!(character, '_' | '-' | '.' | '/' | '(' | ')' | '&')
+        }))
+    .then(|| trimmed.to_string())
 }
 
 fn json_field(document: Option<&serde_json::Value>, pointers: &[&str]) -> Option<String> {
@@ -148,6 +169,7 @@ fn json_field(document: Option<&serde_json::Value>, pointers: &[&str]) -> Option
             serde_json::Value::Number(number) => number.to_string(),
             _ => return None,
         };
+        let text = super::sanitize_log_body(&text);
         let clipped: String = text.chars().take(MAX_SAFE_FIELD_CHARS + 1).collect();
         (clipped.chars().count() <= MAX_SAFE_FIELD_CHARS
             && !clipped.is_empty()
@@ -164,6 +186,15 @@ pub fn catalog_code(error: &LlmError) -> ProviderErrorCode {
         LlmError::KnownProvider(code) => *code,
         LlmError::Unauthorized => ProviderErrorCode::OAuthReauthenticationRequired,
         LlmError::RateLimit { .. } => ProviderErrorCode::RateLimited,
+        _ => ProviderErrorCode::ModelCatalogUnavailable,
+    }
+}
+
+pub fn api_catalog_code(error: &LlmError) -> ProviderErrorCode {
+    match error {
+        LlmError::Unauthorized => ProviderErrorCode::AuthenticationFailed,
+        LlmError::RateLimit { .. } => ProviderErrorCode::RateLimited,
+        LlmError::KnownProvider(code) => *code,
         _ => ProviderErrorCode::ModelCatalogUnavailable,
     }
 }

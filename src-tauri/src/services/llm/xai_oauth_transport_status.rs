@@ -9,6 +9,8 @@ pub(super) fn classify_status(
     }
     match status {
         401 => "oauth_reauthentication_required",
+        // OAuth also returns 402: preserve the shared distinction without guessing a balance.
+        402 => super::provider_error::classify_http(policy, status, body).as_str(),
         403 => "provider_access_unavailable",
         429 if !has_retry_after
             && crate::services::llm::provider_error::safe_details(body)

@@ -50,3 +50,29 @@ async fn model_context_comes_from_the_registered_route_metadata() {
         None
     );
 }
+
+#[test]
+fn api_catalog_commands_return_closed_error_codes() {
+    use crate::services::llm::provider_error::ProviderErrorCode;
+    use crate::services::llm::types::LlmError;
+
+    for (error, expected) in [
+        (LlmError::Unauthorized, "auth_failed"),
+        (
+            LlmError::KnownProvider(ProviderErrorCode::ProviderAccessUnavailable),
+            "provider_access_unavailable",
+        ),
+        (
+            LlmError::RateLimit {
+                retry_after_secs: Some(3),
+            },
+            "rate_limit",
+        ),
+        (
+            LlmError::Network("private".into()),
+            "model_catalog_unavailable",
+        ),
+    ] {
+        assert_eq!(super::api_catalog_error(error), expected);
+    }
+}

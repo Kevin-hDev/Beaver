@@ -10,6 +10,7 @@ use tauri::Manager;
 
 #[path = "agent_chat_request.rs"]
 mod request;
+pub(crate) use super::agent_chat_rollback::rollback;
 use request::generic_error;
 pub(crate) use request::ChatStreamRequest;
 
@@ -40,7 +41,7 @@ pub(crate) async fn start(
     let work = match super::agent_chat_work::admit(&app.state::<AgentWorkServices>()) {
         Ok(work) => work,
         Err(error) => {
-            rollback(streams, &request.session_id, &stream).await;
+            rollback(streams, &request.session_id, &stream, &error).await;
             return Err(error);
         }
     };
@@ -80,8 +81,14 @@ pub(crate) async fn start(
     let target = match target_result {
         Ok(target) => target,
         Err(error) => {
-            rollback(streams, &request.session_id, &stream).await;
-            return Err(error);
+            rollback(
+                streams,
+                &request.session_id,
+                &stream,
+                error.diagnostic_code(),
+            )
+            .await;
+            return Err(error.ui_code().to_string());
         }
     };
     #[cfg(debug_assertions)]
@@ -101,7 +108,7 @@ pub(crate) async fn start(
     {
         Ok(turn) => turn,
         Err(error) => {
-            rollback(streams, &request.session_id, &stream).await;
+            rollback(streams, &request.session_id, &stream, &error).await;
             return Err(error);
         }
     };
@@ -117,7 +124,7 @@ pub(crate) async fn start(
     {
         Ok(admitted) => admitted,
         Err(error) => {
-            rollback(streams, &request.session_id, &stream).await;
+            rollback(streams, &request.session_id, &stream, &error).await;
             return Err(error);
         }
     };
@@ -137,7 +144,13 @@ pub(crate) async fn start(
                 &admission_rollback,
             )
             .await;
-            rollback(streams, &request.session_id, &stream).await;
+            rollback(
+                streams,
+                &request.session_id,
+                &stream,
+                generic_error().as_str(),
+            )
+            .await;
             return rollback_result.and(Err(generic_error()));
         }
     };
@@ -158,7 +171,6 @@ pub(crate) async fn start(
         admission_rollback,
         target,
         resolved_dir,
-        result.clone(),
     )
     .await?;
     Ok(result)
@@ -172,6 +184,8 @@ async fn admit_stream(
     let replacement_app = app.clone();
     let cancelled_session = request.session_id.clone();
     let diagnostic_session = request.session_id.clone();
+    let diagnostic_provider = request.provider.clone();
+    let diagnostic_model = request.model.clone();
     super::agent_chat_admission::admit(
         &request.session_id,
         request.permission_mode.as_deref(),
@@ -195,38 +209,16 @@ async fn admit_stream(
             .await;
         },
         move |generation| async move {
-            crate::services::agent_local::stream_diagnostics::start_request(
+            crate::services::agent_local::stream_diagnostics::start_request_for_target(
                 &diagnostic_session,
                 generation,
+                &diagnostic_provider,
+                &diagnostic_model,
             )
             .await
         },
     )
     .await
-}
-
-pub(crate) async fn rollback(
-    streams: &ActiveStreams,
-    session_id: &str,
-    stream: &super::agent_chat_admission::AgentChatAdmission,
-) {
-    stream.cancel.cancel();
-    stream.parent_message_inbox.close().await;
-    let mut map = streams.0.lock().await;
-    let current = matches!(map.get(session_id), Some((_, generation, _, _)) if *generation == stream.generation);
-    if current {
-        map.remove(session_id);
-    }
-    drop(map);
-    if current {
-        crate::services::agent_local::stream_diagnostics::record_failure(
-            session_id,
-            Some(&stream.request_id),
-            generic_error().as_str(),
-            false,
-        )
-        .await;
-    }
 }
 
 include!("agent_chat_run_spawn.rs");

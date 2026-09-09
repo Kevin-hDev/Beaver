@@ -79,6 +79,8 @@ fn map_route_error(error: RouteError) -> LlmError {
         RouteError::Unauthorized => LlmError::Unauthorized,
         RouteError::Forbidden => configuration_error(),
         RouteError::Network => network_error(),
+        #[cfg(debug_assertions)]
+        RouteError::FixtureBudget(message) => LlmError::Provider(message),
     }
 }
 

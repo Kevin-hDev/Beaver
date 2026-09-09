@@ -13,17 +13,20 @@ async fn codex_runtime_catalog_resolves_a_model_absent_from_the_fallback() {
             owned_by: Some("openai".to_string()),
             context_length: Some(128_000),
             max_output_tokens: Some(32_000),
+            supported_parameters: None,
+            catalog_capabilities: Default::default(),
             supports_tools: true,
             supports_vision: true,
             supports_thinking: true,
-            reasoning_metadata_present: false,
+            reasoning_contract: None,
             supports_fast_mode: false,
             reasoning_modes: vec!["low".to_string(), "high".to_string()],
             default_reasoning_mode: Some("high".to_string()),
             context_usage_includes_reasoning: false,
             is_free: false,
         }],
-    );
+    )
+    .unwrap();
 
     let resolved = resolve_local(crate::services::codex_client::PROVIDER_ID, model_id)
         .expect("a validated runtime Codex model must keep its capabilities");
@@ -36,7 +39,7 @@ async fn codex_runtime_catalog_resolves_a_model_absent_from_the_fallback() {
 }
 
 #[tokio::test]
-async fn openrouter_explicit_empty_reasoning_stays_empty_in_backend_normalization() {
+async fn openrouter_provider_default_contract_reaches_backend_normalization() {
     let _guard = super::runtime_models::test_mutation_lock().await;
     super::runtime_models::replace_provider(
         "openrouter",
@@ -46,21 +49,30 @@ async fn openrouter_explicit_empty_reasoning_stays_empty_in_backend_normalizatio
             owned_by: Some("openrouter".to_string()),
             context_length: Some(200_000),
             max_output_tokens: Some(100_000),
+            supported_parameters: None,
+            catalog_capabilities: Default::default(),
             supports_tools: true,
             supports_vision: true,
             supports_thinking: true,
-            reasoning_metadata_present: true,
+            reasoning_contract: Some(super::model_reasoning_contract::ModelReasoningContract {
+                mandatory: None,
+                default_enabled: None,
+                supports_max_tokens: None,
+                default_effort: None,
+                control: super::model_reasoning_contract::ReasoningControl::ProviderDefault,
+            }),
             supports_fast_mode: false,
             reasoning_modes: Vec::new(),
             default_reasoning_mode: None,
             context_usage_includes_reasoning: true,
             is_free: false,
         }],
-    );
+    )
+    .unwrap();
 
-    assert!(
-        super::provider_model_lookup::resolve_reasoning_modes("openrouter", "openai/o3", true)
-            .is_empty()
+    assert_eq!(
+        super::provider_model_lookup::resolve_reasoning_modes("openrouter", "openai/o3", true),
+        ["auto"]
     );
     assert_eq!(
         crate::services::reasoning::normalize_for_model(
@@ -69,6 +81,28 @@ async fn openrouter_explicit_empty_reasoning_stays_empty_in_backend_normalizatio
             Some("medium"),
             true,
         ),
-        None
+        Some("auto".to_string())
     );
+}
+
+#[tokio::test]
+async fn normalized_native_contract_preserves_runtime_restrictions() {
+    let _guard = super::runtime_models::test_mutation_lock().await;
+    let parsed = super::openai_compat_parsing::parse_models_list(
+        &serde_json::json!({"data":[{"id":"qwen3.8-flash"}]}),
+        "qwen",
+    )
+    .unwrap();
+    let mut model = parsed.into_iter().next().unwrap();
+    model.supports_thinking = true;
+    model.reasoning_modes = vec!["low".into()];
+    model.default_reasoning_mode = Some("low".into());
+    super::runtime_models::replace_provider("qwen", &[model]).unwrap();
+    let resolved = resolve_local("qwen", "qwen3.8-flash").unwrap();
+    assert_eq!(resolved.reasoning_modes, ["low"]);
+    assert_eq!(
+        resolved.reasoning_contract.unwrap().legacy_projection().0,
+        resolved.reasoning_modes
+    );
+    super::runtime_models::replace_provider("qwen", &[]).unwrap();
 }

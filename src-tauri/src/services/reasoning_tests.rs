@@ -223,17 +223,19 @@ fn supported_modes_and_default_use_validated_runtime_restrictions() {
         owned_by: None,
         context_length: Some(32_000),
         max_output_tokens: None,
+        supported_parameters: None,
+        catalog_capabilities: Default::default(),
         supports_tools: true,
         supports_vision: false,
         supports_thinking: true,
-        reasoning_metadata_present: false,
+        reasoning_contract: None,
         supports_fast_mode: false,
         reasoning_modes: vec!["auto".into()],
         default_reasoning_mode: Some("auto".into()),
         context_usage_includes_reasoning: true,
         is_free: false,
     };
-    crate::services::llm::runtime_models::replace_provider("dynamic-fixture", &[model]);
+    crate::services::llm::runtime_models::replace_provider("dynamic-fixture", &[model]).unwrap();
 
     assert_eq!(
         supported_modes("dynamic-fixture", "dynamic-model", true),

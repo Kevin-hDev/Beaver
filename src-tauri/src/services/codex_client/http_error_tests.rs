@@ -86,9 +86,16 @@ async fn codex_http_consumer_returns_the_service_tier_code_without_exposing_body
         .body(body)
         .unwrap();
 
-    let error = require_success(reqwest::Response::from(response), "gpt-5.6-sol", 128, 1)
-        .await
-        .unwrap_err();
+    let error = require_success(
+        reqwest::Response::from(response),
+        "gpt-5.6-sol",
+        128,
+        1,
+        Some("request-test"),
+        r#"{"max_output_tokens":1024}"#,
+    )
+    .await
+    .unwrap_err();
 
     assert_eq!(error, "service_tier_unavailable");
     assert!(!error.contains("private account detail"));

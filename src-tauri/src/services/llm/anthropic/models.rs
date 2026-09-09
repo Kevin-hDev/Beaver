@@ -65,6 +65,8 @@ fn merge_remote_model(item: &Value) -> Result<ModelInfo, LlmError> {
             .or_else(|| local.as_ref().map(|model| model.context_window)),
         max_output_tokens: optional_u32(item, "max_tokens")?
             .or_else(|| local.as_ref().and_then(|model| model.max_output_tokens)),
+        supported_parameters: None,
+        catalog_capabilities: Default::default(),
         supports_tools: capability(item, &["tools", "tool_use"])
             .or_else(|| local.as_ref().map(|model| model.supports_tools))
             // L'API Models Anthropic ne publie pas cette capacité. Tous les
@@ -74,7 +76,7 @@ fn merge_remote_model(item: &Value) -> Result<ModelInfo, LlmError> {
         supports_vision: capability(item, &["image_input"])
             .or_else(|| local.as_ref().map(|model| model.supports_vision))
             .unwrap_or(false),
-        reasoning_metadata_present: false,
+        reasoning_contract: None,
         supports_thinking,
         supports_fast_mode: false,
         reasoning_modes,
@@ -195,10 +197,12 @@ fn from_embedded(model: ProviderModelConfig) -> ModelInfo {
         owned_by: Some(PROVIDER_ID.to_string()),
         context_length: Some(model.context_window),
         max_output_tokens: model.max_output_tokens,
+        supported_parameters: None,
+        catalog_capabilities: Default::default(),
         supports_tools: model.supports_tools,
         supports_vision: model.supports_vision,
         supports_thinking: model.supports_thinking,
-        reasoning_metadata_present: false,
+        reasoning_contract: None,
         supports_fast_mode: false,
         reasoning_modes: model.reasoning_modes,
         default_reasoning_mode: model.default_reasoning_mode,

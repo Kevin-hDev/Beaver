@@ -8,6 +8,12 @@ fn api_key_probe_declares_active_routes_without_network_calls() {
     assert_eq!(openai.auth, ProbeAuth::Bearer);
     assert!(openai.body.is_none());
 
+    let openrouter = resolve("openrouter").unwrap();
+    assert_eq!(openrouter.method, ProbeMethod::Get);
+    assert_eq!(openrouter.url, "https://openrouter.ai/api/v1/key");
+    assert_eq!(openrouter.auth, ProbeAuth::Bearer);
+    assert!(openrouter.body.is_none());
+
     let zai = resolve("zai").unwrap();
     assert_eq!(zai.method, ProbeMethod::Post);
     assert_eq!(zai.url, "https://api.z.ai/api/paas/v4/chat/completions");

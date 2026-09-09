@@ -20,12 +20,12 @@ async fn ultra_http_orchestration_serializes_catalog_effort_not_logical_mode() {
         &["low", "medium", "high", "xhigh", "max", "ultra"],
     );
     models[0].info.id = "gpt-6-astra".into();
-    runtime_models::replace_provider("codex-oauth", &[models[0].info.clone()]);
+    runtime_models::replace_provider("codex-oauth", &[models[0].info.clone()]).unwrap();
     // Cleanup also runs if an assertion fails; no other runtime writer interleaves.
     struct ResetRuntime;
     impl Drop for ResetRuntime {
         fn drop(&mut self) {
-            runtime_models::replace_provider("codex-oauth", &[]);
+            runtime_models::replace_provider("codex-oauth", &[]).unwrap();
         }
     }
     let _reset = ResetRuntime;

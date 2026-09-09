@@ -5,7 +5,6 @@ use super::security::audit::{self, AuditAction};
 use crate::commands::agent_chat_task::{run_stream_task, StreamCapabilityHints, StreamTaskParams};
 use crate::models::agent_turn_contract::{NewUserTurnInput, TurnStart};
 use crate::services::agent_local::stream_events::AgentEventEmitter;
-use crate::services::agent_local::types_ollama::StreamEvent;
 use tauri::Manager;
 use tokio_util::sync::CancellationToken;
 
@@ -54,7 +53,7 @@ pub(super) async fn run(
             return Err(BridgeError::SessionError(error));
         }
     };
-    let admission_rollback = admitted.rollback();
+    let mut admission_rollback = admitted.rollback();
     emit_session_updated(&app, &session_id);
     let resolved_working_dir =
         match crate::commands::agent_working_dir::resolve_for_session(&session_id, None).await {
@@ -78,11 +77,7 @@ pub(super) async fn run(
         };
     let emitter =
         AgentEventEmitter::with_generation(app.clone(), session_id.clone(), stream.generation);
-    let _ = emitter.send(StreamEvent::TurnAdmitted {
-        turn_id: admitted.turn.turn_id.clone(),
-        user_message_id: admitted.turn.user_message_id.clone(),
-        assistant_message_id: admitted.turn.assistant_message_id.clone(),
-    });
+    let _ = emitter.send(admission_rollback.accept_execution_event());
     let request_id = stream.request_id.clone();
     let run_cancel = stream.cancel.clone();
     let linked_cancel = run_cancel.clone();

@@ -4,6 +4,75 @@ use super::{UsageApiFormat, UsageWorkload};
 use crate::services::llm::fast_mode::FastModeRequest;
 use serde_json::json;
 
+#[test]
+fn response_failure_preserves_safe_details_and_exact_connection_on_disk() {
+    let request_id = uuid::Uuid::new_v4().to_string();
+    let mut request = context(None);
+    request.connection_id = "xai-oauth";
+    request.canonical_provider_id = "xai";
+    request.api_format = UsageApiFormat::Responses;
+    request.model = "grok-4.6";
+    request.request_id = &request_id;
+    let mut measurement = RequestMeasurement::start(request).unwrap();
+    measurement.observe_response_metadata(&json!({
+        "type": "response.failed",
+        "response": {"error": {
+            "type": "invalid_request_error",
+            "code": "unsupported_parameter",
+            "param": "include",
+            "message": "private content sk-test-do-not-persist-1234567890"
+        }}
+    }));
+
+    let path = crate::services::paths::data_dir().join("logs/provider-errors.jsonl");
+    let bytes = std::fs::read_to_string(path).unwrap_or_default();
+    let saved = bytes
+        .lines()
+        .filter_map(|line| serde_json::from_str::<serde_json::Value>(line).ok())
+        .find(|entry| entry["request_id"] == request_id)
+        .expect("the real response failure must leave a correlated diagnostic");
+    assert_eq!(saved["provider"], "xai-oauth");
+    assert_eq!(saved["model"], "grok-4.6");
+    assert_eq!(saved["transport"], "stream");
+    assert_eq!(saved["details"]["error_code"], "unsupported_parameter");
+    assert_eq!(saved["details"]["error_param"], "include");
+    assert!(
+        saved.get("status").is_none(),
+        "do not invent an HTTP failure status"
+    );
+    assert!(!saved.to_string().contains("private content"));
+    assert!(!saved.to_string().contains("sk-test"));
+}
+
+#[test]
+fn response_failure_accepts_top_level_error_without_recording_regular_events() {
+    let request_id = uuid::Uuid::new_v4().to_string();
+    let mut request = context(None);
+    request.request_id = &request_id;
+    let mut measurement = RequestMeasurement::start(request).unwrap();
+    let path = crate::services::paths::data_dir().join("logs/provider-errors.jsonl");
+    measurement.observe_response_metadata(&json!({
+        "type": "response.output_text.delta", "delta": "private content"
+    }));
+    let before = std::fs::read_to_string(&path).unwrap_or_default();
+    assert!(!before.contains(&request_id));
+
+    measurement.observe_response_metadata(&json!({
+        "type": "error", "code": "resource-exhausted",
+        "param": "sk-live-1234567890abcdefghijklmnop",
+        "message": "private content"
+    }));
+    let bytes = std::fs::read_to_string(path).unwrap();
+    let saved = bytes
+        .lines()
+        .filter_map(|line| serde_json::from_str::<serde_json::Value>(line).ok())
+        .find(|entry| entry["request_id"] == request_id)
+        .unwrap();
+    assert_eq!(saved["details"]["error_code"], "resource-exhausted");
+    assert!(!saved.to_string().contains("sk-live"));
+    assert!(!saved.to_string().contains("private content"));
+}
+
 #[tokio::test]
 async fn live_openai_responses_measurement_is_persisted() {
     let id = uuid::Uuid::new_v4().to_string();

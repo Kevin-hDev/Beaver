@@ -1,4 +1,5 @@
 import type { ReasoningMode } from "@/lib/reasoning-modes";
+import type { ModelReasoningContract } from "@/types/model-reasoning-contract";
 
 export interface AvailableModel {
   id: string;
@@ -8,10 +9,12 @@ export interface AvailableModel {
   auth_source?: "local" | "api" | "oauth";
   is_local: boolean;
   supports_tools: boolean;
+  supported_parameters?: string[];
   supports_vision?: boolean;
   supports_thinking?: boolean;
   supports_fast_mode?: boolean;
   reasoning_modes?: ReasoningMode[];
+  reasoning_contract?: ModelReasoningContract;
   default_reasoning_mode?: ReasoningMode;
   context_length?: number;
   context_usage_includes_reasoning: boolean;
@@ -28,10 +31,12 @@ export interface LlmModelInfo {
   owned_by?: string;
   context_length?: number;
   supports_tools: boolean;
+  supported_parameters?: string[];
   supports_vision?: boolean;
   supports_thinking?: boolean;
   supports_fast_mode: boolean;
   reasoning_modes?: ReasoningMode[];
+  reasoning_contract?: ModelReasoningContract;
   default_reasoning_mode?: ReasoningMode;
   context_usage_includes_reasoning: boolean;
   is_free?: boolean;

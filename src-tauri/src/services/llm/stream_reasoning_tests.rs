@@ -268,10 +268,12 @@ async fn openrouter_september_models_use_only_their_catalog_effort() {
             owned_by: Some("google".into()),
             context_length: Some(1_048_576),
             max_output_tokens: Some(65_536),
+            supported_parameters: None,
+            catalog_capabilities: Default::default(),
             supports_tools: true,
             supports_vision: true,
             supports_thinking: true,
-            reasoning_metadata_present: true,
+            reasoning_contract: None,
             supports_fast_mode: false,
             reasoning_modes: vec!["low".into(), "medium".into(), "high".into()],
             default_reasoning_mode: Some("medium".into()),
@@ -284,10 +286,12 @@ async fn openrouter_september_models_use_only_their_catalog_effort() {
             owned_by: Some("z-ai".into()),
             context_length: Some(1_310_720),
             max_output_tokens: Some(131_072),
+            supported_parameters: None,
+            catalog_capabilities: Default::default(),
             supports_tools: true,
             supports_vision: true,
             supports_thinking: true,
-            reasoning_metadata_present: true,
+            reasoning_contract: None,
             supports_fast_mode: false,
             reasoning_modes: vec!["low".into(), "high".into(), "max".into()],
             default_reasoning_mode: Some("max".into()),
@@ -300,10 +304,12 @@ async fn openrouter_september_models_use_only_their_catalog_effort() {
             owned_by: Some("openai".into()),
             context_length: Some(1_050_000),
             max_output_tokens: Some(128_000),
+            supported_parameters: None,
+            catalog_capabilities: Default::default(),
             supports_tools: true,
             supports_vision: true,
             supports_thinking: true,
-            reasoning_metadata_present: true,
+            reasoning_contract: None,
             supports_fast_mode: false,
             reasoning_modes: vec![
                 "low".into(),
@@ -317,7 +323,7 @@ async fn openrouter_september_models_use_only_their_catalog_effort() {
             is_free: false,
         },
     ];
-    super::runtime_models::replace_provider("openrouter", &models);
+    super::runtime_models::replace_provider("openrouter", &models).unwrap();
 
     for (model, modes) in [
         (
@@ -346,7 +352,109 @@ async fn openrouter_september_models_use_only_their_catalog_effort() {
         }
     }
 
-    super::runtime_models::replace_provider("openrouter", &[]);
+    super::runtime_models::replace_provider("openrouter", &[]).unwrap();
+}
+
+#[tokio::test]
+async fn openrouter_contract_controls_minimal_and_provider_default_payloads() {
+    use super::model_reasoning_contract::{ModelReasoningContract, ReasoningControl};
+    use crate::services::reasoning_continuity::contract::ReasoningModeId;
+
+    let _guard = super::runtime_models::test_mutation_lock().await;
+    let base = super::types::ModelInfo {
+        id: "vendor/minimal".into(),
+        display_name: None,
+        owned_by: Some("vendor".into()),
+        context_length: Some(128_000),
+        max_output_tokens: Some(16_000),
+        supported_parameters: None,
+        catalog_capabilities: Default::default(),
+        supports_tools: true,
+        supports_vision: false,
+        supports_thinking: true,
+        reasoning_contract: Some(ModelReasoningContract {
+            mandatory: Some(true),
+            default_enabled: Some(true),
+            supports_max_tokens: None,
+            default_effort: Some(ReasoningModeId::Minimal),
+            control: ReasoningControl::Efforts(vec![ReasoningModeId::Minimal]),
+        }),
+        supports_fast_mode: false,
+        reasoning_modes: vec!["minimal".into()],
+        default_reasoning_mode: Some("minimal".into()),
+        context_usage_includes_reasoning: true,
+        is_free: false,
+    };
+    let provider_default = super::types::ModelInfo {
+        id: "vendor/native".into(),
+        reasoning_contract: Some(ModelReasoningContract {
+            mandatory: Some(true),
+            default_enabled: Some(true),
+            supports_max_tokens: None,
+            default_effort: None,
+            control: ReasoningControl::ProviderDefault,
+        }),
+        reasoning_modes: vec!["auto".into()],
+        default_reasoning_mode: Some("auto".into()),
+        ..base.clone()
+    };
+    super::runtime_models::replace_provider("openrouter", &[base, provider_default]).unwrap();
+
+    assert_eq!(
+        payload("openrouter", "vendor/minimal", Some("minimal"))["reasoning"],
+        json!({"effort":"minimal"})
+    );
+    assert!(payload("openrouter", "vendor/native", Some("auto"))
+        .get("reasoning")
+        .is_none());
+    super::runtime_models::replace_provider("openrouter", &[]).unwrap();
+}
+
+#[tokio::test]
+async fn openrouter_toggle_emits_enabled_false_without_an_invented_effort() {
+    let _guard = super::runtime_models::test_mutation_lock().await;
+    let parsed = super::openai_compat_parsing::parse_models_list(
+        &json!({"data":[{
+            "id":"vendor/toggle", "supported_parameters":["reasoning"],
+            "reasoning":{"mandatory":false,"supported_efforts":[],"default_enabled":false}
+        }]}),
+        "openrouter",
+    )
+    .unwrap();
+    super::runtime_models::replace_provider("openrouter", &parsed).unwrap();
+    assert_eq!(
+        payload("openrouter", "vendor/toggle", Some("off"))["reasoning"],
+        json!({"enabled":false})
+    );
+    assert_eq!(
+        payload("openrouter", "vendor/toggle", Some("auto"))["reasoning"],
+        json!({"enabled":true})
+    );
+    super::runtime_models::replace_provider("openrouter", &[]).unwrap();
+}
+
+#[tokio::test]
+async fn openrouter_optional_efforts_disable_without_inventing_none() {
+    let _guard = super::runtime_models::test_mutation_lock().await;
+    let parsed = super::openai_compat_parsing::parse_models_list(
+        &json!({"data":[{
+            "id":"vendor/optional-efforts", "supported_parameters":["reasoning"],
+            "reasoning":{"mandatory":false,"supported_efforts":["low","high"]}
+        }]}),
+        "openrouter",
+    )
+    .unwrap();
+    super::runtime_models::replace_provider("openrouter", &parsed).unwrap();
+
+    assert_eq!(
+        payload("openrouter", "vendor/optional-efforts", Some("off"))["reasoning"],
+        json!({"enabled":false})
+    );
+    assert_eq!(
+        payload("openrouter", "vendor/optional-efforts", Some("high"))["reasoning"],
+        json!({"effort":"high"})
+    );
+    super::runtime_models::replace_provider("openrouter", &[]).unwrap();
 }
 
 #[test]

@@ -5,10 +5,7 @@ pub use super::reasoning_effort::{
 
 pub fn sanitize_mode(mode: Option<String>) -> Option<String> {
     mode.filter(|value| {
-        matches!(
-            value.as_str(),
-            "off" | "auto" | "low" | "medium" | "high" | "xhigh" | "max" | "ultra"
-        )
+        super::reasoning_continuity::contract::ReasoningModeId::from_name(Some(value)).is_some()
     })
 }
 

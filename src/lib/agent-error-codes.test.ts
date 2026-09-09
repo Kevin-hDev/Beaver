@@ -11,6 +11,20 @@ import { isKnownAgentErrorCode, KNOWN_ERROR_KEYS } from "./agent-error-codes";
 const catalogs: ReadonlyArray<Record<string, unknown>> = [fr, en, es, de, itCatalog, zh, ja];
 
 describe("KNOWN_ERROR_KEYS", () => {
+  it.each(["provider_empty_response", "provider_output_limit", "provider_content_filtered"])(
+    "distingue %s d’une erreur de clé dans les sept langues",
+    (code) => {
+      expect(isKnownAgentErrorCode(code)).toBe(true);
+      expect(KNOWN_ERROR_KEYS[code]).not.toBe(KNOWN_ERROR_KEYS.auth_failed);
+      for (const catalog of catalogs) {
+        expect(readTranslation(catalog, KNOWN_ERROR_KEYS[code])).toEqual(expect.any(String));
+      }
+    },
+  );
+  it("reconnaît le prérequis de majorité sans le confondre avec une clé invalide", () => {
+    expect(isKnownAgentErrorCode("provider_age_confirmation_required")).toBe(true);
+    expect(KNOWN_ERROR_KEYS.provider_age_confirmation_required).not.toBe(KNOWN_ERROR_KEYS.auth_failed);
+  });
   it("pointe vers un message traduit dans les sept langues", () => {
     for (const translationKey of Object.values(KNOWN_ERROR_KEYS)) {
       for (const catalog of catalogs) {
@@ -32,6 +46,35 @@ describe("KNOWN_ERROR_KEYS", () => {
       "快速模式不适用于此请求。请将其关闭或选择兼容的模型。",
       "高速モードはこのリクエストでは利用できません。無効にするか、対応モデルを選択してください。",
     ]);
+  });
+
+  it("traduit l'indisponibilite du catalogue API dans les sept langues", () => {
+    expect(isKnownAgentErrorCode("model_catalog_unavailable")).toBe(true);
+    for (const catalog of catalogs) {
+      expect(readTranslation(catalog, "errors.modelCatalogUnavailable")).not.toBeUndefined();
+    }
+  });
+
+  it("distingue un réglage de raisonnement invalide d'un rejeu incompatible", () => {
+    const key = KNOWN_ERROR_KEYS.reasoning_configuration_invalid;
+    expect(key).toBe("errors.reasoningConfigurationInvalid");
+    expect(key).not.toBe(KNOWN_ERROR_KEYS.reasoning_continuity_invalid);
+    for (const catalog of catalogs) {
+      expect(readTranslation(catalog, key)).toEqual(expect.any(String));
+    }
+    expect(readTranslation(fr, key)).toBe(
+      "Le réglage de raisonnement n’est pas compatible avec ce modèle. Choisis un autre réglage puis réessaie.",
+    );
+  });
+
+  it.each([
+    ["session_inconsistent", "errors.sessionInconsistent"],
+    ["model_invalid", "errors.modelInvalid"],
+  ])("restaure le motif précis %s dans les sept langues", (code, key) => {
+    expect(KNOWN_ERROR_KEYS[code]).toBe(key);
+    for (const catalog of catalogs) {
+      expect(readTranslation(catalog, key)).toEqual(expect.any(String));
+    }
   });
 });
 

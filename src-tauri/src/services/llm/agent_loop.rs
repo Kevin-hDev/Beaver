@@ -111,6 +111,15 @@ pub async fn run_agent_loop(
         let plan_active = request_output.plan_active;
         let input_tokens = request_output.input_tokens;
         let result = request_output.result;
+        super::stream_completion::reject_if_failed(
+            on_event,
+            &result,
+            plan_active,
+            journal.as_deref_mut(),
+            input_tokens,
+            configured_context,
+        )
+        .await?;
         if interrupted {
             if let Some(journal) = journal.as_deref_mut() {
                 journal

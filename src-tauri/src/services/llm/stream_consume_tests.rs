@@ -56,6 +56,59 @@ async fn consume_fixture(
 }
 
 #[tokio::test]
+async fn chat_sse_preserves_token_limit_finish_reason_and_billed_usage() {
+    let result = consume_fixture(
+        concat!(
+            "data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"length\"}]}\n\n",
+            "data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"length\"}],\"usage\":{\"prompt_tokens\":739,\"completion_tokens\":512,\"total_tokens\":1251,\"completion_tokens_details\":{\"reasoning_tokens\":505}}}\n\n",
+            "data: [DONE]\n\n",
+        ),
+        crate::services::llm::route_profile::FragmentMode::DifferentialFragments,
+        "openrouter",
+    ).await;
+    assert_eq!(result.done_reason.as_deref(), Some("length"));
+    assert!(result.content.is_empty());
+    assert_eq!(result.completion_error, Some("provider_output_limit"));
+    let usage = result.usage.unwrap();
+    assert_eq!(usage.output_tokens, Some(512));
+    assert_eq!(usage.reasoning_output_tokens, Some(505));
+}
+
+#[tokio::test]
+async fn terminal_limits_discard_tools_even_when_the_arguments_are_valid_json() {
+    for reason in ["length", "content_filter", "tool_calls"] {
+        let body = format!(
+            "data: {{\"choices\":[{{\"delta\":{{\"tool_calls\":[{{\"index\":0,\"id\":\"call_1\",\"type\":\"function\",\"function\":{{\"name\":\"write_note\",\"arguments\":\"{{}}\"}}}}]}},\"finish_reason\":\"{reason}\"}}]}}\n\ndata: [DONE]\n\n"
+        );
+        let result = consume_fixture(
+            &body,
+            crate::services::llm::route_profile::FragmentMode::DifferentialFragments,
+            "openrouter",
+        )
+        .await;
+        if reason == "tool_calls" {
+            assert_eq!(result.tool_calls.len(), 1);
+            assert_eq!(result.completion_error, None);
+        } else {
+            assert!(result.tool_calls.is_empty());
+            assert!(result.tool_call_ids.is_empty());
+            assert!(result.completion_error.is_some());
+        }
+    }
+}
+
+#[tokio::test]
+async fn done_without_answer_or_tool_is_not_a_success() {
+    let result = consume_fixture(
+        "data: {\"choices\":[{\"delta\":{\"reasoning\":\"thinking only\"},\"finish_reason\":\"stop\"}]}\n\ndata: [DONE]\n\n",
+        crate::services::llm::route_profile::FragmentMode::DifferentialFragments,
+        "openrouter",
+    ).await;
+    assert_eq!(result.thinking, "thinking only");
+    assert_eq!(result.completion_error, Some("provider_empty_response"));
+}
+
+#[tokio::test]
 async fn google_interactive_usage_counts_all_generated_tokens() {
     let result = consume_fixture(
         concat!(

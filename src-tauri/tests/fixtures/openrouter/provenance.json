@@ -1,0 +1,23 @@
+{
+  "snapshot_date": "2026-09-09",
+  "timezone": "Europe/Paris",
+  "fetched_at": null,
+  "captures": [
+    {
+      "source_file": "openrouter-models-2026-09-09.json",
+      "fixture_file": "catalog-text-2026-09-09.json",
+      "url": "https://openrouter.ai/api/v1/models",
+      "sha256": "8f2a7cec33b15322dc9a27089bd7c4494878badf50cd111b2a775d552cf89ff7",
+      "bytes": 710140,
+      "models": 431
+    },
+    {
+      "source_file": "openrouter-models-all-2026-09-09.json",
+      "fixture_file": "catalog-all-2026-09-09.json",
+      "url": "https://openrouter.ai/api/v1/models?output_modalities=all",
+      "sha256": "1de9ab28dc03f3bd258df8917fb7db601e70be542fcdcf4e38cfebf7e5926fca",
+      "bytes": 879966,
+      "models": 582
+    }
+  ]
+}

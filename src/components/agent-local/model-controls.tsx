@@ -27,7 +27,7 @@ export function ModelControls({
   onFastModeChange,
   align = "left",
 }: ModelControlsProps) {
-  const { groups } = useAvailableModels();
+  const { groups, issues } = useAvailableModels();
   const selectedEntry = useMemo(
     () => groups.get(selectedProvider)?.find((model) => model.id === selectedModel) ?? null,
     [groups, selectedModel, selectedProvider],
@@ -37,6 +37,7 @@ export function ModelControls({
     <>
       <ModelSelector
         groups={groups}
+        issues={issues}
         selectedModel={selectedModel}
         selectedProvider={selectedProvider}
         onSelect={onSelect}

@@ -340,10 +340,12 @@ async fn every_claude_5_family_uses_visible_adaptive_thinking() {
                 owned_by: Some("anthropic".into()),
                 context_length: Some(1_000_000),
                 max_output_tokens: Some(128_000),
+                supported_parameters: None,
+                catalog_capabilities: Default::default(),
                 supports_tools: true,
                 supports_vision: true,
                 supports_thinking: true,
-                reasoning_metadata_present: false,
+                reasoning_contract: None,
                 supports_fast_mode: false,
                 reasoning_modes: vec!["auto".into(), "low".into(), "xhigh".into()],
                 default_reasoning_mode: Some("auto".into()),
@@ -351,7 +353,8 @@ async fn every_claude_5_family_uses_visible_adaptive_thinking() {
                 is_free: false,
             })
             .collect::<Vec<_>>(),
-    );
+    )
+    .unwrap();
     let messages = vec![message("user", "Hi")];
     for model_id in model_ids {
         let payload = super::build_payload(
@@ -379,17 +382,20 @@ async fn stale_off_mode_uses_the_default_for_an_always_adaptive_model() {
             owned_by: Some("anthropic".into()),
             context_length: Some(1_000_000),
             max_output_tokens: Some(128_000),
+            supported_parameters: None,
+            catalog_capabilities: Default::default(),
             supports_tools: true,
             supports_vision: true,
             supports_thinking: true,
-            reasoning_metadata_present: false,
+            reasoning_contract: None,
             supports_fast_mode: false,
             reasoning_modes: vec!["auto".into(), "low".into(), "high".into()],
             default_reasoning_mode: Some("high".into()),
             context_usage_includes_reasoning: true,
             is_free: false,
         }],
-    );
+    )
+    .unwrap();
     let messages = vec![message("user", "Hi")];
     let payload = super::build_payload(
         &config_for_model(&messages, &[], "claude-always-adaptive-test", "off"),

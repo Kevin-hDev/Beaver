@@ -5,6 +5,7 @@ import {
   type ReasoningMode,
 } from "@/lib/reasoning-modes";
 import type { AvailableModel } from "@/hooks/use-available-models";
+import type { ModelReasoningContract } from "@/types/model-reasoning-contract";
 
 function model(
   modes: ReasoningMode[],
@@ -27,6 +28,25 @@ describe("reasoning modes", () => {
   it("utilise uniquement les modes fournis par les métadonnées du modèle", () => {
     expect(reasoningModeOptions(model(["low", "max"])).map((entry) => entry.mode))
       .toEqual(["low", "max"]);
+  });
+
+  it("consomme le contrôle normalisé et expose minimal sans autre effort inventé", () => {
+    const reasoning_contract: ModelReasoningContract = {
+      mandatory: true,
+      control: { kind: "efforts", efforts: ["minimal", "high"] },
+    };
+
+    expect(reasoningModeOptions(model(["low"], { reasoning_contract })).map((entry) => entry.mode))
+      .toEqual(["minimal", "high"]);
+  });
+
+  it("ne transforme pas un défaut provider natif en faux sélecteur", () => {
+    const reasoning_contract: ModelReasoningContract = {
+      mandatory: true,
+      control: { kind: "provider_default" },
+    };
+
+    expect(reasoningModeOptions(model(["auto"], { reasoning_contract }))).toEqual([]);
   });
 
   it("ne présente pas le mode technique auto comme un niveau d'effort", () => {

@@ -3,8 +3,8 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { cleanupTauriListener } from "@/lib/tauri-listen";
 import type { OllamaModel } from "@/types/agent";
-import type { ProviderSpec } from "@/types/api";
-import type { AvailableModel, LlmModelInfo } from "./available-model-types";
+import type { AvailableModel } from "./available-model-types";
+import { fetchCloudModels, type ModelCatalogIssue } from "./cloud-models";
 import {
   fetchOAuthModels, invalidateOAuthModelsCache, mapOAuthModels, mapOAuthResponse,
   OAUTH_MODELS_UPDATED_EVENT,
@@ -14,7 +14,13 @@ export { mapOAuthModels, mapOAuthResponse };
 export type { AvailableModel } from "./available-model-types";
 
 let cachedGroups: Map<string, AvailableModel[]> = new Map();
-let pendingFetchAll: Promise<Map<string, AvailableModel[]>> | null = null;
+let cachedIssues: Map<string, ModelCatalogIssue> = new Map();
+let pendingFetchAll: Promise<AvailableModelsResult> | null = null;
+
+interface AvailableModelsResult {
+  groups: Map<string, AvailableModel[]>;
+  issues: Map<string, ModelCatalogIssue>;
+}
 
 async function fetchOllamaModels(): Promise<AvailableModel[]> {
   const ollamaModels = await invoke<OllamaModel[]>("list_ollama_models");
@@ -29,6 +35,7 @@ async function fetchOllamaModels(): Promise<AvailableModel[]> {
       supports_vision: m.capabilities?.includes("vision") ?? false,
       supports_thinking: m.capabilities?.includes("thinking") ?? false,
       reasoning_modes: m.reasoning_modes,
+      reasoning_contract: undefined,
       default_reasoning_mode: m.default_reasoning_mode ?? undefined,
       context_length: m.context_length,
       context_usage_includes_reasoning: m.context_usage_includes_reasoning,
@@ -37,54 +44,9 @@ async function fetchOllamaModels(): Promise<AvailableModel[]> {
   );
 }
 
-async function fetchCloudModels(): Promise<Map<string, AvailableModel[]>> {
-  const [catalog, configuredIds] = await Promise.all([
-    invoke<ProviderSpec[]>("list_llm_providers_catalog"),
-    invoke<string[]>("list_configured_providers"),
-  ]);
-
-  const configured = catalog.filter((spec) => configuredIds.includes(spec.id));
-
-  const results = await Promise.allSettled(
-    configured.map(async (spec) => {
-      const models = await invoke<LlmModelInfo[]>("list_llm_models", {
-        providerId: spec.id,
-      });
-      return { spec, models };
-    }),
-  );
-
+async function fetchAllModels(): Promise<AvailableModelsResult> {
   const result = new Map<string, AvailableModel[]>();
-  for (const entry of results) {
-    if (entry.status !== "fulfilled") continue;
-    const { spec, models } = entry.value;
-    const mapped = models.map(
-      (m): AvailableModel => ({
-        id: m.id,
-        display_name: m.display_name,
-        provider_id: spec.id,
-        provider_name: spec.display_name,
-        auth_source: "api",
-        is_local: false,
-        supports_tools: m.supports_tools,
-        supports_vision: m.supports_vision ?? false,
-        supports_thinking: m.supports_thinking ?? false,
-        supports_fast_mode: m.supports_fast_mode,
-        reasoning_modes: m.reasoning_modes,
-        default_reasoning_mode: m.default_reasoning_mode,
-        context_length: m.context_length,
-        context_usage_includes_reasoning: m.context_usage_includes_reasoning,
-        is_free: m.is_free ?? false,
-        hint: m.context_length ? `${Math.round(m.context_length / 1000)}K ctx` : undefined,
-      }),
-    );
-    if (mapped.length > 0) result.set(spec.id, mapped);
-  }
-  return result;
-}
-
-async function fetchAllModels(): Promise<Map<string, AvailableModel[]>> {
-  const result = new Map<string, AvailableModel[]>();
+  let issues = new Map<string, ModelCatalogIssue>();
 
   const [ollamaResult, cloudResult, oauthResult] = await Promise.allSettled([
     fetchOllamaModels(),
@@ -96,17 +58,19 @@ async function fetchAllModels(): Promise<Map<string, AvailableModel[]>> {
     result.set("ollama", ollamaResult.value);
   }
   if (cloudResult.status === "fulfilled") {
-    for (const [k, v] of cloudResult.value) result.set(k, v);
+    for (const [k, v] of cloudResult.value.groups) result.set(k, v);
+    issues = cloudResult.value.issues;
   }
   if (oauthResult.status === "fulfilled") {
     for (const [key, models] of oauthResult.value.groups) result.set(key, models);
   }
 
   cachedGroups = result;
-  return result;
+  cachedIssues = issues;
+  return { groups: result, issues };
 }
 
-function getAllModels(): Promise<Map<string, AvailableModel[]>> {
+function getAllModels(): Promise<AvailableModelsResult> {
   pendingFetchAll ??= fetchAllModels().finally(() => {
     pendingFetchAll = null;
   });
@@ -115,11 +79,13 @@ function getAllModels(): Promise<Map<string, AvailableModel[]>> {
 
 export function useAvailableModels() {
   const [groups, setGroups] = useState<Map<string, AvailableModel[]>>(cachedGroups);
+  const [issues, setIssues] = useState<Map<string, ModelCatalogIssue>>(cachedIssues);
   const [loading, setLoading] = useState(cachedGroups.size === 0);
 
   const refresh = useCallback(async () => {
     const result = await getAllModels();
-    setGroups(result);
+    setGroups(result.groups);
+    setIssues(result.issues);
     setLoading(false);
   }, []);
 
@@ -166,7 +132,7 @@ export function useAvailableModels() {
     };
   }, [refresh, refreshOllama]);
 
-  return { groups, loading, refresh };
+  return { groups, issues, loading, refresh };
 }
 
 export function withoutInteractiveOnlyModels(

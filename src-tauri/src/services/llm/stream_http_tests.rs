@@ -140,8 +140,21 @@ fn legacy_openai_chat_payload_never_reintroduces_flat_reasoning() {
     assert!(payload.get("reasoning").is_none());
 }
 
-#[test]
-fn openrouter_gpt_56_uses_max_completion_tokens() {
+#[tokio::test]
+async fn openrouter_uses_published_max_completion_tokens() {
+    let _guard = super::super::runtime_models::test_mutation_lock().await;
+    let parsed = super::super::openai_compat_parsing::parse_models_list(
+        &serde_json::json!({"data":[{
+            "id":"openai/gpt-5.6-sol",
+            "architecture":{"output_modalities":["text"]},
+            "supported_parameters":["max_completion_tokens"]
+        }]}),
+        "openrouter",
+    )
+    .unwrap();
+    super::super::model_catalog::enrich_models("openrouter", parsed, false)
+        .await
+        .unwrap();
     let cfg = RequestConfig {
         provider_id: "openrouter",
         model: "openai/gpt-5.6-sol",
@@ -257,8 +270,20 @@ fn chat_payload_respects_each_route_cache_and_usage_contract() {
     }
 }
 
-#[test]
-fn streaming_output_limit_field_matches_model_family() {
+#[tokio::test]
+async fn streaming_output_limit_field_matches_the_published_gateway_contract() {
+    let _guard = super::super::runtime_models::test_mutation_lock().await;
+    let parsed = super::super::openai_compat_parsing::parse_models_list(
+        &serde_json::json!({"data":[
+            {"id":"openai/o3","architecture":{"output_modalities":["text"]},"supported_parameters":["max_completion_tokens"]},
+            {"id":"openai/gpt-4o","architecture":{"output_modalities":["text"]},"supported_parameters":["max_tokens"]}
+        ]}),
+        "openrouter",
+    )
+    .unwrap();
+    super::super::model_catalog::enrich_models("openrouter", parsed, false)
+        .await
+        .unwrap();
     for (provider, model, expected, absent) in [
         (
             "openrouter",
@@ -320,7 +345,7 @@ fn payload_parameters_are_resolved_before_serialization() {
     assert!(!qwen.tool_stream);
     assert!(!openrouter_glm.tool_stream);
     assert!(openrouter.upstream_routing);
-    assert_eq!(openrouter.output_limit_field, "max_completion_tokens");
+    assert_eq!(openrouter.output_limit_field, "max_tokens");
 }
 
 #[tokio::test]
@@ -333,10 +358,12 @@ async fn openrouter_september_payloads_keep_gateway_limits_and_native_fields_out
             owned_by: Some("google".into()),
             context_length: Some(1_048_576),
             max_output_tokens: Some(65_536),
+            supported_parameters: None,
+            catalog_capabilities: Default::default(),
             supports_tools: true,
             supports_vision: true,
             supports_thinking: true,
-            reasoning_metadata_present: true,
+            reasoning_contract: None,
             supports_fast_mode: false,
             reasoning_modes: vec!["low".into(), "medium".into(), "high".into()],
             default_reasoning_mode: Some("medium".into()),
@@ -349,10 +376,12 @@ async fn openrouter_september_payloads_keep_gateway_limits_and_native_fields_out
             owned_by: Some("z-ai".into()),
             context_length: Some(1_310_720),
             max_output_tokens: Some(131_072),
+            supported_parameters: None,
+            catalog_capabilities: Default::default(),
             supports_tools: true,
             supports_vision: true,
             supports_thinking: true,
-            reasoning_metadata_present: true,
+            reasoning_contract: None,
             supports_fast_mode: false,
             reasoning_modes: vec!["low".into(), "high".into(), "max".into()],
             default_reasoning_mode: Some("max".into()),
@@ -365,10 +394,12 @@ async fn openrouter_september_payloads_keep_gateway_limits_and_native_fields_out
             owned_by: Some("openai".into()),
             context_length: Some(1_050_000),
             max_output_tokens: Some(128_000),
+            supported_parameters: None,
+            catalog_capabilities: Default::default(),
             supports_tools: true,
             supports_vision: true,
             supports_thinking: true,
-            reasoning_metadata_present: true,
+            reasoning_contract: None,
             supports_fast_mode: false,
             reasoning_modes: vec![
                 "low".into(),
@@ -382,7 +413,7 @@ async fn openrouter_september_payloads_keep_gateway_limits_and_native_fields_out
             is_free: false,
         },
     ];
-    super::super::runtime_models::replace_provider("openrouter", &models);
+    super::super::runtime_models::replace_provider("openrouter", &models).unwrap();
     let tools = [serde_json::json!({
         "type": "function",
         "function": {
@@ -433,7 +464,7 @@ async fn openrouter_september_payloads_keep_gateway_limits_and_native_fields_out
         }
     }
 
-    super::super::runtime_models::replace_provider("openrouter", &[]);
+    super::super::runtime_models::replace_provider("openrouter", &[]).unwrap();
 }
 
 #[tokio::test]

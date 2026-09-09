@@ -71,10 +71,20 @@ async fn post(
         config.messages,
         config.tools,
     );
+    let requested_max_tokens = {
+        #[cfg(debug_assertions)]
+        {
+            crate::services::reasoning_fixture_budget::output_limit(config.max_tokens)
+        }
+        #[cfg(not(debug_assertions))]
+        {
+            config.max_tokens
+        }
+    };
     let max_tokens = crate::services::llm::stream_max_tokens::resolve(
         route.canonical_provider_id,
         config.model,
-        config.max_tokens,
+        requested_max_tokens,
         route.auto_max_tokens,
         route.fallback_max_tokens,
         estimated,
@@ -118,15 +128,20 @@ async fn post(
     let usage_generation =
         crate::services::provider_usage::credential_generation(config.provider_id);
     let response = route
-        .send_authenticated(&client, config.purpose, |token, inherited| {
-            let request = client.post(&url).headers(inherited).json(&prepared.payload);
-            let request = crate::services::llm::request_auth::apply(request, header, token);
-            static_headers
-                .iter()
-                .fold(request, |request, (name, value)| {
-                    request.header(*name, *value)
-                })
-        })
+        .send_generation_authenticated(
+            &client,
+            config.purpose,
+            &prepared.payload,
+            |token, inherited| {
+                let request = client.post(&url).headers(inherited).json(&prepared.payload);
+                let request = crate::services::llm::request_auth::apply(request, header, token);
+                static_headers
+                    .iter()
+                    .fold(request, |request, (name, value)| {
+                        request.header(*name, *value)
+                    })
+            },
+        )
         .await
         .map_err(map_route_error)?;
     if let Some(measurement) = measurement.as_mut() {
@@ -141,7 +156,15 @@ async fn post(
     if response.status().is_success() {
         return Ok(response);
     }
-    classify_response(response, &route, config, request_bytes).await
+    classify_response(
+        response,
+        &route,
+        config,
+        request_bytes,
+        request_id,
+        &prepared.payload,
+    )
+    .await
 }
 
 async fn classify_response(
@@ -149,9 +172,16 @@ async fn classify_response(
     route: &crate::services::llm::route::LlmRoute,
     config: &RequestConfig<'_>,
     request_bytes: usize,
+    request_id: Option<&str>,
+    payload: &serde_json::Value,
 ) -> Result<reqwest::Response, RequestError> {
     let status = response.status();
     let has_retry_after = response.headers().contains_key("retry-after");
+    let diagnostic_context =
+        crate::services::llm::provider_diagnostics::ProviderDiagnosticContext::from_payload(
+            request_id, payload,
+        )
+        .with_retry_after(response.headers());
     let body = read_bounded(response, PROVIDER_ERROR_LIMIT)
         .await
         .map(|bytes| zeroize::Zeroizing::new(String::from_utf8_lossy(&bytes).into_owned()))
@@ -168,6 +198,7 @@ async fn classify_response(
         crate::services::llm::provider_error::safe_details(&body),
         request_bytes,
         config.tools.len(),
+        diagnostic_context,
     );
     ::log::warn!("[anthropic messages] HTTP {status} code={code}");
     Err(crate::services::llm::stream_http::classify_error(
@@ -190,6 +221,10 @@ fn map_route_error(error: crate::services::llm::route::RouteError) -> RequestErr
         }
         crate::services::llm::route::RouteError::Network => {
             RequestError::Fatal("provider_connection_failed".into())
+        }
+        #[cfg(debug_assertions)]
+        crate::services::llm::route::RouteError::FixtureBudget(message) => {
+            RequestError::Fatal(message)
         }
     }
 }

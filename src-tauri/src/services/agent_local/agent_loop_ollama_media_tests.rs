@@ -11,7 +11,7 @@ async fn ollama_vision_payload_appends_one_verified_follow_up_after_tools() {
     install_model(true);
     let payload = final_payload();
     assert_eq!(payload["messages"], fixture()["vision"]);
-    crate::services::llm::runtime_models::replace_provider("ollama", &[]);
+    crate::services::llm::runtime_models::replace_provider("ollama", &[]).unwrap();
 }
 
 #[tokio::test]
@@ -20,7 +20,7 @@ async fn ollama_text_payload_stays_text_only_when_vision_is_not_available() {
     install_model(false);
     let payload = final_payload();
     assert_eq!(payload["messages"], fixture()["text"]);
-    crate::services::llm::runtime_models::replace_provider("ollama", &[]);
+    crate::services::llm::runtime_models::replace_provider("ollama", &[]).unwrap();
 }
 
 fn final_payload() -> serde_json::Value {
@@ -85,17 +85,20 @@ fn install_model(supports_vision: bool) {
             owned_by: None,
             context_length: Some(8_192),
             max_output_tokens: Some(1_024),
+            supported_parameters: None,
+            catalog_capabilities: Default::default(),
             supports_tools: true,
             supports_vision,
             supports_thinking: false,
-            reasoning_metadata_present: false,
+            reasoning_contract: None,
             supports_fast_mode: false,
             reasoning_modes: Vec::new(),
             default_reasoning_mode: None,
             context_usage_includes_reasoning: true,
             is_free: false,
         }],
-    );
+    )
+    .unwrap();
 }
 
 fn fixture() -> serde_json::Value {
