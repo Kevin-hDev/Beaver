@@ -6,14 +6,19 @@ use tokio::sync::RwLock;
 static CATALOG: OnceLock<RwLock<HashMap<String, ModelEntry>>> = OnceLock::new();
 
 const EMBEDDED_JSON: &str = include_str!("../../../resources/litellm-models.json");
-const MAX_CATALOG_ENTRIES: usize = 3_500;
 pub(crate) const MAX_BODY_BYTES: usize = 20 * 1024 * 1024; // 20 Mo max
+
+pub(crate) use super::litellm_catalog_parser::parse_catalog;
+pub(crate) use super::litellm_catalog_parser::CatalogParseError;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct ModelEntry {
     pub litellm_provider: Option<String>,
+    #[serde(default, deserialize_with = "deserialize_optional_token_count")]
     pub max_input_tokens: Option<u64>,
+    #[serde(default, deserialize_with = "deserialize_optional_token_count")]
     pub max_output_tokens: Option<u64>,
+    #[serde(default, deserialize_with = "deserialize_optional_token_count")]
     pub max_tokens: Option<u64>,
     #[serde(default)]
     pub supports_vision: bool,
@@ -40,39 +45,41 @@ pub struct ModelEntry {
     pub mode: Option<String>,
 }
 
-pub(crate) fn parse_catalog(json: &str) -> HashMap<String, ModelEntry> {
-    let raw: HashMap<String, serde_json::Value> = match serde_json::from_str(json) {
-        Ok(m) => m,
-        Err(_) => return HashMap::new(),
+fn deserialize_optional_token_count<'de, D>(deserializer: D) -> Result<Option<u64>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let value = Option::<serde_json::Number>::deserialize(deserializer)?;
+    let Some(value) = value else {
+        return Ok(None);
     };
-    let cap = raw.len().min(MAX_CATALOG_ENTRIES);
-    let mut result = HashMap::with_capacity(cap);
-    for (key, val) in raw {
-        if result.len() >= MAX_CATALOG_ENTRIES {
-            ::log::warn!(
-                "[litellm-catalog] borne atteinte ({MAX_CATALOG_ENTRIES}), entrées ignorées"
-            );
-            break;
-        }
-        if let Ok(entry) = serde_json::from_value::<ModelEntry>(val) {
-            result.insert(key, entry);
-        }
+    if let Some(integer) = value.as_u64() {
+        return Ok(Some(integer));
     }
-    result
+    let float = value
+        .as_f64()
+        .filter(|number| number.is_finite() && *number >= 0.0 && number.fract() == 0.0)
+        .ok_or_else(|| serde::de::Error::custom("invalid token count"))?;
+    if float > u64::MAX as f64 {
+        return Err(serde::de::Error::custom("invalid token count"));
+    }
+    Ok(Some(float as u64))
 }
 
 pub(crate) fn get_lock() -> &'static RwLock<HashMap<String, ModelEntry>> {
     CATALOG.get_or_init(|| {
         let data = super::litellm_catalog_refresh::read_cache()
             .and_then(|s| {
-                let map = parse_catalog(&s);
+                let map = parse_catalog(&s).ok()?;
                 if map.len() > 100 {
                     Some(map)
                 } else {
                     None
                 }
             })
-            .unwrap_or_else(|| parse_catalog(EMBEDDED_JSON));
+            .unwrap_or_else(|| {
+                parse_catalog(EMBEDDED_JSON).expect("embedded LiteLLM catalog must stay valid")
+            });
         RwLock::new(data)
     })
 }

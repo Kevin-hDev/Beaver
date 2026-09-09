@@ -16,6 +16,7 @@ pub(crate) mod api_key_probe;
 #[cfg(test)]
 mod api_key_probe_tests;
 pub mod catalog;
+pub(crate) mod catalog_limits;
 pub mod compress_hook;
 mod endpoint_policy;
 #[cfg(test)]
@@ -28,6 +29,7 @@ mod kimi_models;
 mod kimi_models_tests;
 pub mod litellm_catalog;
 mod litellm_catalog_lookup;
+mod litellm_catalog_parser;
 mod litellm_catalog_refresh;
 pub mod litellm_catalog_search;
 pub(crate) mod model_catalog;

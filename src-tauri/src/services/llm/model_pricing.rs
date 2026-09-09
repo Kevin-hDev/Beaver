@@ -31,7 +31,8 @@ mod tests {
                 "shared-model": {"litellm_provider":"openai","mode":"chat"},
                 "xai/shared-model": {"litellm_provider":"xai","mode":"chat"}
             }"#,
-        );
+        )
+        .unwrap();
 
         assert_eq!(
             find_provider_entry(&registry, "xai", "shared-model")
@@ -46,7 +47,8 @@ mod tests {
     fn google_uses_the_gemini_registry_identity() {
         let registry = super::super::litellm_catalog::parse_catalog(
             r#"{"flash":{"litellm_provider":"gemini","mode":"chat"}}"#,
-        );
+        )
+        .unwrap();
 
         assert!(find_provider_entry(&registry, "google", "flash").is_some());
     }

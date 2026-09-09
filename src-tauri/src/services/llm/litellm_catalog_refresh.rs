@@ -54,19 +54,32 @@ pub async fn refresh() {
         Some(body) => body,
         None => return,
     };
-    let catalog = parse_catalog(&body);
+    let _ = publish_catalog(&cached, get_lock(), &body).await;
+}
+
+pub(super) async fn publish_catalog(
+    cache: &std::path::Path,
+    registry: &tokio::sync::RwLock<
+        std::collections::HashMap<String, super::litellm_catalog::ModelEntry>,
+    >,
+    body: &str,
+) -> bool {
+    let Ok(catalog) = parse_catalog(body) else {
+        return false;
+    };
     if catalog.len() < 100 {
-        return;
+        return false;
     }
-    if let Some(parent) = cached.parent() {
+    if let Some(parent) = cache.parent() {
         if std::fs::create_dir_all(parent).is_err() {
-            return;
+            return false;
         }
     }
-    if crate::services::private_store::atomic_write(&cached, body.as_bytes()).is_err() {
-        return;
+    if crate::services::private_store::atomic_write(cache, body.as_bytes()).is_err() {
+        return false;
     }
-    *get_lock().write().await = catalog;
+    *registry.write().await = catalog;
+    true
 }
 
 async fn read_body(response: reqwest::Response) -> Option<String> {
