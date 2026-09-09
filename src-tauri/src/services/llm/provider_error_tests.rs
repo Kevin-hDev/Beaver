@@ -2,6 +2,29 @@ use super::*;
 use crate::services::llm::route_profile::ErrorPolicy;
 
 #[test]
+fn age_attestation_requires_the_exact_access_refusal() {
+    let body = r#"{"error":{"code":403,"message":"This model requires you to complete the following before use: 18+ age confirmation. Confirm at https://openrouter.ai/settings/preferences."}}"#;
+    assert_eq!(
+        classify_http(ErrorPolicy::OpenAiCompatible, 403, body).as_str(),
+        "provider_age_confirmation_required"
+    );
+    assert_eq!(
+        safe_log_code(ErrorPolicy::OpenAiCompatible, 403, body),
+        "provider_age_confirmation_required"
+    );
+    for (status, body) in [
+        (401, body),
+        (403, "18+ age confirmation"),
+        (403, r#"{"error":{"message":"18+ age confirmation"}}"#),
+    ] {
+        assert_ne!(
+            classify_http(ErrorPolicy::OpenAiCompatible, status, body).as_str(),
+            "provider_age_confirmation_required"
+        );
+    }
+}
+
+#[test]
 fn service_tier_rejection_uses_only_closed_structured_fields() {
     let by_param =
         r#"{"error":{"code":"invalid_request_error","param":"service_tier","message":"private"}}"#;

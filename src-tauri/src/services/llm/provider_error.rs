@@ -5,6 +5,9 @@ use super::types::LlmError;
 #[path = "provider_error_quota.rs"]
 mod quota;
 
+#[path = "provider_error_attestation.rs"]
+mod attestation;
+
 pub(super) const MAX_RETRY_SECONDS: u64 = 86_400;
 
 // Catalog failures and stream diagnostics must accept the same safe delay.
@@ -26,6 +29,7 @@ pub enum ProviderErrorCode {
     OAuthReauthenticationRequired,
     RateLimited,
     ProviderAccessUnavailable,
+    ProviderAgeConfirmationRequired,
     ProviderConnectionFailed,
     ProviderTemporarilyUnavailable,
     ProviderRequestRejected,
@@ -54,6 +58,7 @@ impl ProviderErrorCode {
             Self::OAuthReauthenticationRequired => "oauth_reauthentication_required",
             Self::RateLimited => "rate_limit",
             Self::ProviderAccessUnavailable => "provider_access_unavailable",
+            Self::ProviderAgeConfirmationRequired => "provider_age_confirmation_required",
             Self::ProviderConnectionFailed => "provider_connection_failed",
             Self::ProviderTemporarilyUnavailable => "provider_temporarily_unavailable",
             Self::ProviderRequestRejected => "provider_request_rejected",
@@ -64,33 +69,9 @@ impl ProviderErrorCode {
     }
 }
 
-pub fn is_service_tier_rejection(body: &str) -> bool {
-    let Ok(document) = serde_json::from_str::<serde_json::Value>(body) else {
-        return false;
-    };
-    service_tier_error_fields(
-        document.pointer("/error/param"),
-        document.pointer("/error/code"),
-    )
-}
-
-pub fn is_service_tier_response_error(event: &serde_json::Value) -> bool {
-    service_tier_error_fields(
-        event.pointer("/response/error/param"),
-        event.pointer("/response/error/code"),
-    )
-}
-
-fn service_tier_error_fields(
-    param: Option<&serde_json::Value>,
-    code: Option<&serde_json::Value>,
-) -> bool {
-    if param.and_then(serde_json::Value::as_str) == Some("service_tier") {
-        return true;
-    }
-    // Hypothèse défensive fermée, à retirer si la campagne réelle ne l'observe pas.
-    code.and_then(serde_json::Value::as_str) == Some("unsupported_service_tier")
-}
+#[path = "provider_error_service_tier.rs"]
+mod service_tier;
+pub use service_tier::{is_service_tier_rejection, is_service_tier_response_error};
 
 pub fn classify_http(
     policy: super::route_profile::ErrorPolicy,
@@ -99,7 +80,7 @@ pub fn classify_http(
 ) -> ProviderErrorCode {
     match status {
         401 => return ProviderErrorCode::AuthenticationFailed,
-        403 => return ProviderErrorCode::ProviderAccessUnavailable,
+        403 => return attestation::classify(body),
         429 => return ProviderErrorCode::RateLimited,
         402 => {}
         _ => return ProviderErrorCode::ProviderRequestRejected,
@@ -136,7 +117,7 @@ pub fn safe_log_code(
     match status {
         401 => "authentication_required",
         402 => classify_http(policy, status, body).as_str(),
-        403 => "provider_access_unavailable",
+        403 => classify_http(policy, status, body).as_str(),
         429 => "rate_limit",
         _ => "provider_http_error",
     }

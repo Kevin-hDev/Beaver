@@ -11,6 +11,10 @@ import { isKnownAgentErrorCode, KNOWN_ERROR_KEYS } from "./agent-error-codes";
 const catalogs: ReadonlyArray<Record<string, unknown>> = [fr, en, es, de, itCatalog, zh, ja];
 
 describe("KNOWN_ERROR_KEYS", () => {
+  it("reconnaît le prérequis de majorité sans le confondre avec une clé invalide", () => {
+    expect(isKnownAgentErrorCode("provider_age_confirmation_required")).toBe(true);
+    expect(KNOWN_ERROR_KEYS.provider_age_confirmation_required).not.toBe(KNOWN_ERROR_KEYS.auth_failed);
+  });
   it("pointe vers un message traduit dans les sept langues", () => {
     for (const translationKey of Object.values(KNOWN_ERROR_KEYS)) {
       for (const catalog of catalogs) {

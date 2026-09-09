@@ -7,6 +7,7 @@ export const KNOWN_ERROR_KEYS: Readonly<Record<string, string>> = {
   moonshot_membership_unverified: "errors.moonshotMembershipUnverified",
   xai_subscription_or_credits_required: "errors.xaiSubscriptionOrCreditsRequired",
   provider_access_unavailable: "errors.providerAccessUnavailable",
+  provider_age_confirmation_required: "errors.providerAgeConfirmationRequired",
   provider_quota_exhausted: "errors.providerQuotaExhausted",
   stream_interrupted: "errors.streamInterrupted",
   reasoning_continuity_invalid: "errors.reasoningContinuityInvalid",
