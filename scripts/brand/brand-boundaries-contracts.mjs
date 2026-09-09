@@ -10,7 +10,7 @@ export const EXPECTED_INTERNAL_REFERENCE_COUNTS = Object.freeze({
   // Les parcours E2E nomment explicitement le binaire historique sur chaque OS.
   // Le test de surcouche Windows crée aussi ce binaire dans son installation isolée.
   // Les guides d'installation citent les noms techniques réellement présents sur disque.
-  "cl-go-dash": 340,
+  "cl-go-dash": 341,
   // Les thèmes d'extension et leurs parcours rejouent les clés persistantes historiques.
   clgo: 135,
   // Les guides citent le nom exact de l'ancien paquet Linux pour migration et dépannage.
