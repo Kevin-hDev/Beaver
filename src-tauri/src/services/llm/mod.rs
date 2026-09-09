@@ -38,6 +38,7 @@ mod model_catalog_tests;
 mod model_metadata;
 pub mod model_pricing;
 pub mod openai_compat;
+mod openai_compat_model_limits;
 mod openai_compat_model_parser;
 mod openai_compat_models;
 mod openai_compat_parsing;

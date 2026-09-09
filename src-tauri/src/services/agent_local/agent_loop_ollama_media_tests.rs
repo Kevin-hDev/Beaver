@@ -11,7 +11,7 @@ async fn ollama_vision_payload_appends_one_verified_follow_up_after_tools() {
     install_model(true);
     let payload = final_payload();
     assert_eq!(payload["messages"], fixture()["vision"]);
-    crate::services::llm::runtime_models::replace_provider("ollama", &[]);
+    crate::services::llm::runtime_models::replace_provider("ollama", &[]).unwrap();
 }
 
 #[tokio::test]
@@ -20,7 +20,7 @@ async fn ollama_text_payload_stays_text_only_when_vision_is_not_available() {
     install_model(false);
     let payload = final_payload();
     assert_eq!(payload["messages"], fixture()["text"]);
-    crate::services::llm::runtime_models::replace_provider("ollama", &[]);
+    crate::services::llm::runtime_models::replace_provider("ollama", &[]).unwrap();
 }
 
 fn final_payload() -> serde_json::Value {
@@ -95,7 +95,8 @@ fn install_model(supports_vision: bool) {
             context_usage_includes_reasoning: true,
             is_free: false,
         }],
-    );
+    )
+    .unwrap();
 }
 
 fn fixture() -> serde_json::Value {

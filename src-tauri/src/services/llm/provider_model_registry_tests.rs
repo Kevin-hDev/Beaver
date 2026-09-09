@@ -373,6 +373,50 @@ fn rejects_unbounded_aliases_and_missing_sources() {
 }
 
 #[test]
+fn embedded_registry_limit_counts_aliases_without_using_dynamic_catalog_policy() {
+    let models = (0..468)
+        .map(|index| {
+            let aliases = if index == 0 {
+                (0..32)
+                    .map(|alias| format!("alias-{alias}"))
+                    .collect::<Vec<_>>()
+            } else {
+                Vec::new()
+            };
+            serde_json::json!({
+                "id": format!("model-{index}"),
+                "aliases": aliases,
+                "context_window": 10,
+                "supports_tools": false,
+                "supports_vision": false,
+                "supports_thinking": false
+            })
+        })
+        .collect::<Vec<_>>();
+    let json = serde_json::json!({
+        "provider": "test",
+        "schema_version": 1,
+        "verified_at": "2026-07-30",
+        "source_urls": ["https://example.com/models"],
+        "models": models
+    })
+    .to_string();
+
+    assert!(parse_sources(&[source("test", &json)]).is_ok());
+
+    let mut above_limit: serde_json::Value = serde_json::from_str(&json).unwrap();
+    above_limit["models"][0]["aliases"]
+        .as_array_mut()
+        .unwrap()
+        .push(serde_json::json!("extra-alias"));
+    let above_limit = above_limit.to_string();
+    assert_eq!(
+        parse_sources(&[source("test", &above_limit)]).err(),
+        Some("model_count")
+    );
+}
+
+#[test]
 fn rejects_invalid_reasoning_contracts() {
     let unknown = source(
         "test",

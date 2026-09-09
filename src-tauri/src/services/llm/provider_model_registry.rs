@@ -10,7 +10,9 @@ use super::provider_model_registry_validation::{
 
 pub use super::provider_model_registry_schema::ProviderModelConfig;
 
-const MAX_MODELS_PER_PROVIDER: usize = 500;
+// This bounds an embedded configuration file, aliases included; it is separate
+// from remote-catalog limits and must not grow with OpenRouter's live catalog.
+const MAX_EMBEDDED_MODEL_IDS: usize = 500;
 const MAX_ALIASES_PER_MODEL: usize = 32;
 const MAX_SOURCE_URLS: usize = 16;
 const MAX_CONTEXT_TOKENS: u32 = 4_000_000;
@@ -124,7 +126,7 @@ fn validate_file(expected_provider: &str, file: &ProviderModelFile) -> Result<()
     {
         return Err("provenance");
     }
-    if file.models.len() > MAX_MODELS_PER_PROVIDER
+    if file.models.len() > MAX_EMBEDDED_MODEL_IDS
         || (file.models.is_empty() && !file.inherits_upstream)
     {
         return Err("model_count");
@@ -134,7 +136,7 @@ fn validate_file(expected_provider: &str, file: &ProviderModelFile) -> Result<()
         .iter()
         .map(|model| 1 + model.aliases.len())
         .sum::<usize>();
-    if total_ids > MAX_MODELS_PER_PROVIDER {
+    if total_ids > MAX_EMBEDDED_MODEL_IDS {
         return Err("model_count");
     }
     let mut ids = HashSet::with_capacity(total_ids);

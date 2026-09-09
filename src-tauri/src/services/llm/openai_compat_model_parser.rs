@@ -1,5 +1,6 @@
 use super::types::{LlmError, ModelInfo};
 use serde_json::Value;
+use std::collections::HashSet;
 
 pub(super) fn parse_models_list(
     body: &Value,
@@ -8,19 +9,35 @@ pub(super) fn parse_models_list(
     let data = body["data"].as_array().ok_or_else(|| {
         LlmError::Parse(format!("champ 'data' absent ou invalide ({provider_id})"))
     })?;
+    let limit = super::catalog_limits::max_dynamic_models(provider_id);
+    if provider_id == "openrouter" && data.len() > limit {
+        return Err(invalid_catalog(provider_id));
+    }
 
-    Ok(data
-        .iter()
-        .take(500)
-        .filter_map(|model| parse_model(model, provider_id))
-        .collect())
+    let mut models = Vec::with_capacity(data.len().min(limit));
+    let mut raw_ids = HashSet::with_capacity(data.len().min(limit));
+    let mut invalid_ids = 0usize;
+    for model in data.iter().take(limit) {
+        let raw_id = model["id"].as_str();
+        if !raw_id.is_some_and(super::runtime_models::valid_model_id) {
+            invalid_ids += 1;
+            continue;
+        }
+        if provider_id == "openrouter" && raw_id.is_some_and(|id| !raw_ids.insert(id)) {
+            return Err(invalid_catalog(provider_id));
+        }
+        if let Some(model) = parse_model(model, provider_id) {
+            models.push(model);
+        }
+    }
+    if invalid_ids > 0 {
+        ::log::warn!("[model catalog] ignored invalid identifiers count={invalid_ids}");
+    }
+    Ok(models)
 }
 
 fn parse_model(model: &Value, provider_id: &str) -> Option<ModelInfo> {
     let id = model["id"].as_str()?;
-    if !super::runtime_models::valid_model_id(id) {
-        return None;
-    }
     let id = super::route_profile::catalog_model_id(provider_id, id);
     if !super::runtime_models::valid_model_id(id) {
         return None;
@@ -28,15 +45,15 @@ fn parse_model(model: &Value, provider_id: &str) -> Option<ModelInfo> {
     let local_limits = super::provider_model_lookup::local_limits(provider_id, id);
     let authoritative = super::openrouter_model_metadata::owns_catalog_metadata(provider_id);
     let context_length = if authoritative {
-        remote_context(model, true)
+        super::openai_compat_model_limits::remote_context(model, true)
             .or_else(|| local_limits.and_then(|limits| limits.context_window))
     } else {
         local_limits
             .and_then(|limits| limits.context_window)
-            .or_else(|| remote_context(model, false))
+            .or_else(|| super::openai_compat_model_limits::remote_context(model, false))
     };
     let max_output_tokens = if authoritative {
-        remote_output_limit(model)
+        super::openai_compat_model_limits::remote_output_limit(model)
             .or_else(|| local_limits.and_then(|limits| limits.max_output_tokens))
     } else {
         local_limits
@@ -104,42 +121,8 @@ fn parse_model(model: &Value, provider_id: &str) -> Option<ModelInfo> {
     })
 }
 
-fn remote_output_limit(model: &Value) -> Option<u32> {
-    [
-        model.pointer("/top_provider/max_completion_tokens"),
-        model.pointer("/limits/max_completion_tokens"),
-        model.get("max_output_tokens"),
-        model.get("max_completion_tokens"),
-        model.get("max_tokens"),
-    ]
-    .into_iter()
-    .flatten()
-    .filter_map(super::model_metadata::positive_u32)
-    .min()
-}
-
-fn remote_context(model: &Value, use_top_provider_limit: bool) -> Option<u32> {
-    let advertised = [
-        &model["context_length"],
-        &model["context_window"],
-        &model["max_context_length"],
-    ]
-    .into_iter()
-    .find_map(super::model_metadata::positive_u32);
-    if !use_top_provider_limit {
-        return advertised;
-    }
-    if advertised.is_none() {
-        return super::model_metadata::positive_u32(&model["top_provider"]["context_length"]);
-    }
-    let top_provider =
-        super::model_metadata::positive_u32(&model["top_provider"]["context_length"]);
-    match (advertised, top_provider) {
-        (Some(advertised), Some(top_provider)) => Some(advertised.min(top_provider)),
-        (Some(advertised), None) => Some(advertised),
-        (None, Some(top_provider)) => Some(top_provider),
-        (None, None) => None,
-    }
+fn invalid_catalog(provider_id: &str) -> LlmError {
+    LlmError::Parse(format!("catalogue distant invalide ({provider_id})"))
 }
 
 fn architecture_supports_vision(model: &Value) -> bool {

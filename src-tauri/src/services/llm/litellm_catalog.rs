@@ -9,6 +9,7 @@ const EMBEDDED_JSON: &str = include_str!("../../../resources/litellm-models.json
 pub(crate) const MAX_BODY_BYTES: usize = 20 * 1024 * 1024; // 20 Mo max
 
 pub(crate) use super::litellm_catalog_parser::parse_catalog;
+#[cfg(test)]
 pub(crate) use super::litellm_catalog_parser::CatalogParseError;
 
 #[derive(Debug, Clone, Deserialize)]

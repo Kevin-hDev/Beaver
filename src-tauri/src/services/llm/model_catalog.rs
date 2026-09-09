@@ -47,10 +47,25 @@ pub(super) async fn enrich_models(
     mut models: Vec<ModelInfo>,
     preserve_native_metadata: bool,
 ) -> Result<Vec<ModelInfo>, LlmError> {
-    models.truncate(500);
-    let mut seen = HashSet::with_capacity(models.len());
-    models.retain(|model| seen.insert(model.id.clone()));
     let canonical = super::route::canonical_provider_id(provider_id);
+    let limit = super::catalog_limits::max_dynamic_models(canonical);
+    if canonical == "openrouter" && models.len() > limit {
+        return Err(invalid_catalog());
+    }
+    models.truncate(limit);
+    let count_before_validation = models.len();
+    models.retain(|model| crate::services::model_identifier::is_valid_model_id(&model.id));
+    let invalid_ids = count_before_validation - models.len();
+    if invalid_ids > 0 {
+        ::log::warn!("[model catalog] ignored invalid identifiers count={invalid_ids}");
+    }
+    let mut seen = HashSet::with_capacity(models.len());
+    let count_before_deduplication = models.len();
+    // Keep native alias normalization (notably Google's resource names) unchanged.
+    models.retain(|model| seen.insert(model.id.clone()));
+    if canonical == "openrouter" && models.len() != count_before_deduplication {
+        return Err(invalid_catalog());
+    }
     let mut filtered = Vec::with_capacity(models.len());
     for model in models {
         let accepted = super::provider_model_lookup::is_chat_model(canonical, &model.id).await;
@@ -66,7 +81,7 @@ pub(super) async fn enrich_models(
         }
         repair_reasoning_default(model);
     }
-    super::runtime_models::replace_provider(canonical, &filtered);
+    super::runtime_models::replace_provider(canonical, &filtered).map_err(|_| invalid_catalog())?;
     Ok(filtered)
 }
 
@@ -141,4 +156,8 @@ fn repair_reasoning_default(model: &mut ModelInfo) {
 
 fn configuration_error() -> LlmError {
     LlmError::KnownProvider(super::provider_error::ProviderErrorCode::ProviderConfigurationInvalid)
+}
+
+fn invalid_catalog() -> LlmError {
+    LlmError::Parse("catalogue distant invalide".to_string())
 }

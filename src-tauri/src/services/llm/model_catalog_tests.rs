@@ -91,6 +91,12 @@ fn remote_openrouter_model(id: &str, reasoning_metadata_present: bool) -> ModelI
     }
 }
 
+fn remote_openrouter_catalog(count: usize) -> Vec<ModelInfo> {
+    (0..count)
+        .map(|index| remote_openrouter_model(&format!("vendor/model-{index}"), false))
+        .collect()
+}
+
 #[tokio::test]
 async fn native_catalog_keeps_explicit_remote_values() {
     let _guard = super::runtime_models::test_mutation_lock().await;
@@ -107,15 +113,92 @@ async fn native_catalog_keeps_explicit_remote_values() {
 }
 
 #[tokio::test]
-async fn catalog_is_deduplicated_before_runtime_registration() {
+async fn catalog_rows_preserve_native_deduplication() {
     let _guard = super::runtime_models::test_mutation_lock().await;
     let model = remote_anthropic_model();
     let models = super::model_catalog::enrich_models("anthropic", vec![model.clone(), model], true)
         .await
         .unwrap();
-
     assert_eq!(models.len(), 1);
     assert!(super::runtime_models::lookup("anthropic", "claude-haiku-4-5-20251001").is_some());
+}
+
+#[tokio::test]
+async fn duplicate_catalog_ids_are_rejected_before_runtime_registration() {
+    let _guard = super::runtime_models::test_mutation_lock().await;
+    super::runtime_models::replace_provider(
+        "openrouter",
+        &[remote_openrouter_model("stable-model", false)],
+    )
+    .unwrap();
+    let model = remote_openrouter_model("vendor/duplicate", false);
+    let result =
+        super::model_catalog::enrich_models("openrouter", vec![model.clone(), model], false).await;
+
+    assert!(matches!(result, Err(super::types::LlmError::Parse(_))));
+    assert!(super::runtime_models::lookup("openrouter", "stable-model").is_some());
+    assert!(super::runtime_models::lookup("openrouter", "vendor/duplicate").is_none());
+}
+
+#[tokio::test]
+async fn catalog_rows_enrichment_retains_valid_ids_only() {
+    let _guard = super::runtime_models::test_mutation_lock().await;
+    let models = super::model_catalog::enrich_models(
+        "openrouter",
+        vec![
+            remote_openrouter_model("../invalid", false),
+            remote_openrouter_model("vendor/valid", false),
+        ],
+        false,
+    )
+    .await
+    .unwrap();
+    assert_eq!(models.len(), 1);
+    assert_eq!(models[0].id, "vendor/valid");
+    assert!(super::runtime_models::lookup("openrouter", "vendor/valid").is_some());
+}
+
+#[tokio::test]
+async fn openrouter_keeps_its_full_bounded_catalog_in_any_order() {
+    let _guard = super::runtime_models::test_mutation_lock().await;
+    let forward = remote_openrouter_catalog(501);
+    let mut reverse = forward.clone();
+    reverse.reverse();
+
+    let first = super::model_catalog::enrich_models("openrouter", forward, false)
+        .await
+        .unwrap();
+    let second = super::model_catalog::enrich_models("openrouter", reverse, false)
+        .await
+        .unwrap();
+    let ids = |models: &[ModelInfo]| {
+        models
+            .iter()
+            .map(|model| model.id.clone())
+            .collect::<std::collections::BTreeSet<_>>()
+    };
+
+    assert_eq!(first.len(), 501);
+    assert_eq!(ids(&first), ids(&second));
+    assert!(super::runtime_models::lookup("openrouter", "vendor/model-500").is_some());
+}
+
+#[tokio::test]
+async fn oversized_openrouter_catalog_preserves_the_last_healthy_registry() {
+    let _guard = super::runtime_models::test_mutation_lock().await;
+    super::runtime_models::replace_provider(
+        "openrouter",
+        &[remote_openrouter_model("vendor/stable", false)],
+    )
+    .unwrap();
+
+    let result =
+        super::model_catalog::enrich_models("openrouter", remote_openrouter_catalog(1_001), false)
+            .await;
+
+    assert!(matches!(result, Err(super::types::LlmError::Parse(_))));
+    assert!(super::runtime_models::lookup("openrouter", "vendor/stable").is_some());
+    assert!(super::runtime_models::lookup("openrouter", "vendor/model-0").is_none());
 }
 
 #[tokio::test]
@@ -255,7 +338,8 @@ async fn openrouter_catalog_enrichment_does_not_reuse_a_previous_runtime_restric
             reasoning_metadata_present: true,
             ..remote_openrouter_model("z-ai/glm-5.3-flash", true)
         }],
-    );
+    )
+    .unwrap();
 
     let models = super::model_catalog::enrich_models(
         "openrouter",

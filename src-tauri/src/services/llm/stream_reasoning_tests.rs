@@ -317,7 +317,7 @@ async fn openrouter_september_models_use_only_their_catalog_effort() {
             is_free: false,
         },
     ];
-    super::runtime_models::replace_provider("openrouter", &models);
+    super::runtime_models::replace_provider("openrouter", &models).unwrap();
 
     for (model, modes) in [
         (
@@ -346,7 +346,7 @@ async fn openrouter_september_models_use_only_their_catalog_effort() {
         }
     }
 
-    super::runtime_models::replace_provider("openrouter", &[]);
+    super::runtime_models::replace_provider("openrouter", &[]).unwrap();
 }
 
 #[test]

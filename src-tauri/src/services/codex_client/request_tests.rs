@@ -51,7 +51,8 @@ async fn astra_request_uses_catalog_effort_and_responses_media_contract() {
             context_usage_includes_reasoning: true,
             is_free: false,
         }],
-    );
+    )
+    .unwrap();
     let messages = [
         crate::services::agent_local::types_ollama::ChatMessage::user("describe".into())
             .with_images(vec!["iVBORw0KGgo=".into()]),
@@ -89,7 +90,7 @@ async fn astra_request_uses_catalog_effort_and_responses_media_contract() {
         assert!(body.get(forbidden).is_none(), "unexpected {forbidden}");
     }
 
-    crate::services::llm::runtime_models::replace_provider("codex-oauth", &[]);
+    crate::services::llm::runtime_models::replace_provider("codex-oauth", &[]).unwrap();
 }
 
 #[test]

@@ -107,9 +107,11 @@ fn safe_identifier(value: &str) -> String {
 }
 
 fn safe_model_identifier(value: &str) -> String {
-    crate::services::model_identifier::is_valid_model_id(value)
-        .then(|| value.to_string())
-        .unwrap_or_else(|| "unknown".to_string())
+    if crate::services::model_identifier::is_valid_model_id(value) {
+        value.to_string()
+    } else {
+        "unknown".to_string()
+    }
 }
 
 fn log_path() -> std::path::PathBuf {

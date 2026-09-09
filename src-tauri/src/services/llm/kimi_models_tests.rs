@@ -90,3 +90,15 @@ fn bounds_and_validates_provider_metadata() {
     assert!(parse_models_list(&json!({ "data": [{ "id": "k3" }] })).is_err());
     assert!(parse_models_list(&json!({ "models": [] })).is_err());
 }
+
+#[test]
+fn kimi_keeps_its_existing_five_hundred_model_policy() {
+    let data = (0..501)
+        .map(|index| json!({"id": format!("kimi-{index}"), "context_length": 128_000}))
+        .collect::<Vec<_>>();
+
+    let models = parse_models_list(&json!({"data": data})).unwrap();
+
+    assert_eq!(models.len(), 500);
+    assert_eq!(models.last().unwrap().id, "kimi-499");
+}

@@ -70,7 +70,13 @@ async fn add_codex_models(
             crate::services::codex_client::model_catalog::fallback_models()
         }
     };
-    crate::services::llm::runtime_models::replace_provider("codex-oauth", &models);
+    if crate::services::llm::runtime_models::replace_provider("codex-oauth", &models).is_err() {
+        response.issues.push(OAuthProviderModelIssue {
+            provider_id: ProviderId::OpenAi,
+            code: ProviderErrorCode::ModelCatalogUnavailable,
+        });
+        return;
+    }
     response.models.extend(models.into_iter().map(|model| {
         let display_name = model
             .display_name
@@ -127,7 +133,15 @@ async fn add_external_models(
                 ProviderId::Moonshot => "moonshot",
                 ProviderId::OpenAi => return,
             };
-            crate::services::llm::runtime_models::replace_provider(canonical_provider, &models);
+            if crate::services::llm::runtime_models::replace_provider(canonical_provider, &models)
+                .is_err()
+            {
+                response.issues.push(OAuthProviderModelIssue {
+                    provider_id: id,
+                    code: ProviderErrorCode::ModelCatalogUnavailable,
+                });
+                return;
+            }
             response
                 .models
                 .extend(models.into_iter().map(|model| oauth_model(id, model)));

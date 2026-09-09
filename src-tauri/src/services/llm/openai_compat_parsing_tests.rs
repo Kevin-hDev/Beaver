@@ -103,7 +103,7 @@ fn invalid_runtime_output_limits_are_ignored() {
 }
 
 #[test]
-fn invalid_provider_model_ids_and_metadata_are_filtered() {
+fn catalog_rows_keep_valid_models_when_one_id_is_invalid() {
     let body = json!({
         "data": [
             {"id": "../invalid"},
@@ -111,11 +111,45 @@ fn invalid_provider_model_ids_and_metadata_are_filtered() {
         ]
     });
 
-    let models = parse_models_list(&body, "openai").unwrap();
+    for provider in ["openai", "openrouter"] {
+        let models = parse_models_list(&body, provider).unwrap();
+        assert_eq!(models.len(), 1);
+        assert_eq!(models[0].id, "valid-model");
+        assert!(models[0].owned_by.is_none());
+    }
+}
 
-    assert_eq!(models.len(), 1);
-    assert_eq!(models[0].id, "valid-model");
-    assert!(models[0].owned_by.is_none());
+#[test]
+fn openrouter_parser_keeps_its_exact_limit_and_rejects_one_more() {
+    let body = |count| {
+        json!({
+            "data": (0..count)
+                .map(|index| json!({"id": format!("vendor/model-{index}")}))
+                .collect::<Vec<_>>()
+        })
+    };
+
+    assert_eq!(
+        parse_models_list(&body(1_000), "openrouter").unwrap().len(),
+        1_000
+    );
+    assert!(matches!(
+        parse_models_list(&body(1_001), "openrouter"),
+        Err(super::types::LlmError::Parse(_))
+    ));
+}
+
+#[test]
+fn openrouter_parser_rejects_an_exact_duplicate_id() {
+    let body = json!({"data": [
+        {"id": "vendor/model"},
+        {"id": "vendor/model"}
+    ]});
+
+    assert!(matches!(
+        parse_models_list(&body, "openrouter"),
+        Err(super::types::LlmError::Parse(_))
+    ));
 }
 
 #[test]

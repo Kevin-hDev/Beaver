@@ -351,7 +351,8 @@ async fn every_claude_5_family_uses_visible_adaptive_thinking() {
                 is_free: false,
             })
             .collect::<Vec<_>>(),
-    );
+    )
+    .unwrap();
     let messages = vec![message("user", "Hi")];
     for model_id in model_ids {
         let payload = super::build_payload(
@@ -389,7 +390,8 @@ async fn stale_off_mode_uses_the_default_for_an_always_adaptive_model() {
             context_usage_includes_reasoning: true,
             is_free: false,
         }],
-    );
+    )
+    .unwrap();
     let messages = vec![message("user", "Hi")];
     let payload = super::build_payload(
         &config_for_model(&messages, &[], "claude-always-adaptive-test", "off"),

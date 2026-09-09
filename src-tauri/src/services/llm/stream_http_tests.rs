@@ -382,7 +382,7 @@ async fn openrouter_september_payloads_keep_gateway_limits_and_native_fields_out
             is_free: false,
         },
     ];
-    super::super::runtime_models::replace_provider("openrouter", &models);
+    super::super::runtime_models::replace_provider("openrouter", &models).unwrap();
     let tools = [serde_json::json!({
         "type": "function",
         "function": {
@@ -433,7 +433,7 @@ async fn openrouter_september_payloads_keep_gateway_limits_and_native_fields_out
         }
     }
 
-    super::super::runtime_models::replace_provider("openrouter", &[]);
+    super::super::runtime_models::replace_provider("openrouter", &[]).unwrap();
 }
 
 #[tokio::test]

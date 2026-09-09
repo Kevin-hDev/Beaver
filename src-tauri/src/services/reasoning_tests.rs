@@ -233,7 +233,7 @@ fn supported_modes_and_default_use_validated_runtime_restrictions() {
         context_usage_includes_reasoning: true,
         is_free: false,
     };
-    crate::services::llm::runtime_models::replace_provider("dynamic-fixture", &[model]);
+    crate::services::llm::runtime_models::replace_provider("dynamic-fixture", &[model]).unwrap();
 
     assert_eq!(
         supported_modes("dynamic-fixture", "dynamic-model", true),

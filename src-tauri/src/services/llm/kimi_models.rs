@@ -1,7 +1,6 @@
 use super::types::{LlmError, ModelInfo};
 use serde_json::Value;
 
-const MAX_MODELS: usize = 500;
 const MAX_EFFORTS: usize = 8;
 const MAX_DISPLAY_NAME_CHARS: usize = 96;
 
@@ -11,7 +10,7 @@ pub fn parse_models_list(body: &Value) -> Result<Vec<ModelInfo>, LlmError> {
         .ok_or_else(|| LlmError::Parse("catalogue Kimi invalide".to_string()))?;
 
     data.iter()
-        .take(MAX_MODELS)
+        .take(super::catalog_limits::max_dynamic_models("moonshot"))
         .filter_map(parse_model)
         .collect()
 }

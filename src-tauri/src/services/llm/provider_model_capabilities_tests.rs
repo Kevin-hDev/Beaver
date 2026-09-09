@@ -23,7 +23,8 @@ async fn codex_runtime_catalog_resolves_a_model_absent_from_the_fallback() {
             context_usage_includes_reasoning: false,
             is_free: false,
         }],
-    );
+    )
+    .unwrap();
 
     let resolved = resolve_local(crate::services::codex_client::PROVIDER_ID, model_id)
         .expect("a validated runtime Codex model must keep its capabilities");
@@ -56,7 +57,8 @@ async fn openrouter_explicit_empty_reasoning_stays_empty_in_backend_normalizatio
             context_usage_includes_reasoning: true,
             is_free: false,
         }],
-    );
+    )
+    .unwrap();
 
     assert!(
         super::provider_model_lookup::resolve_reasoning_modes("openrouter", "openai/o3", true)

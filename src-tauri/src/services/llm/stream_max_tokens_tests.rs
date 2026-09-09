@@ -199,7 +199,8 @@ async fn openrouter_runtime_limits_are_used_before_upstream_embedded_limits() {
             context_usage_includes_reasoning: true,
             is_free: false,
         }],
-    );
+    )
+    .unwrap();
 
     assert_eq!(
         crate::services::llm::model_context_length("openrouter", "z-ai/glm-5.3-flash").await,
