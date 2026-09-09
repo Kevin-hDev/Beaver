@@ -68,6 +68,7 @@ async function fetchCloudModels(): Promise<Map<string, AvailableModel[]>> {
         auth_source: "api",
         is_local: false,
         supports_tools: m.supports_tools,
+        supported_parameters: m.supported_parameters,
         supports_vision: m.supports_vision ?? false,
         supports_thinking: m.supports_thinking ?? false,
         supports_fast_mode: m.supports_fast_mode,

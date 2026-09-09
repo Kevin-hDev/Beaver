@@ -189,6 +189,8 @@ async fn openrouter_runtime_limits_are_used_before_upstream_embedded_limits() {
             owned_by: Some("openrouter".into()),
             context_length: Some(1_048_576),
             max_output_tokens: Some(131_072),
+            supported_parameters: None,
+            catalog_capabilities: Default::default(),
             supports_tools: true,
             supports_vision: true,
             supports_thinking: true,

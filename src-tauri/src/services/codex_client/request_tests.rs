@@ -35,6 +35,8 @@ async fn astra_request_uses_catalog_effort_and_responses_media_contract() {
             owned_by: Some("openai".into()),
             context_length: Some(1_050_000),
             max_output_tokens: Some(128_000),
+            supported_parameters: None,
+            catalog_capabilities: Default::default(),
             supports_tools: true,
             supports_vision: true,
             supports_thinking: true,

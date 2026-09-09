@@ -31,13 +31,102 @@ fn openrouter_models_use_supported_parameters_for_reasoning() {
         .unwrap();
 
     assert!(reasoning.supports_tools);
+    assert_eq!(
+        reasoning
+            .supported_parameters
+            .as_ref()
+            .unwrap()
+            .iter()
+            .map(String::as_str)
+            .collect::<Vec<_>>(),
+        ["tools", "reasoning", "include_reasoning"]
+    );
     assert!(reasoning.supports_thinking);
     assert!(reasoning.is_free);
     assert_eq!(reasoning.max_output_tokens, Some(65_535));
     assert!(reasoning.reasoning_modes.is_empty());
     assert!(!plain.supports_thinking);
+    assert_eq!(plain.supported_parameters.as_deref().unwrap(), ["tools"]);
     assert!(!plain.is_free);
     assert!(plain.reasoning_modes.is_empty());
+}
+
+#[test]
+fn openrouter_supported_parameters_preserve_absence_and_reject_invalid_lists() {
+    let too_many = (0..65)
+        .map(|index| format!("parameter-{index}"))
+        .collect::<Vec<_>>();
+    let body = json!({"data": [
+        {"id":"vendor/published", "supported_parameters":["tools"]},
+        {"id":"vendor/absent"},
+        {"id":"vendor/non-string", "supported_parameters":["tools", 3]},
+        {"id":"vendor/too-many", "supported_parameters":too_many},
+        {"id":"vendor/too-long", "supported_parameters":["x".repeat(65)]}
+    ]});
+
+    let models = parse_models_list(&body, "openrouter").unwrap();
+
+    assert_eq!(models.len(), 2);
+    assert_eq!(
+        models[0].supported_parameters.as_deref().unwrap(),
+        ["tools"]
+    );
+    assert!(models[1].supported_parameters.is_none());
+}
+
+#[test]
+fn openrouter_catalog_keeps_only_models_that_publish_text_output() {
+    let body = json!({"data": [
+        {"id":"vendor/text", "architecture":{"output_modalities":["text"]}},
+        {"id":"vendor/image", "architecture":{"output_modalities":["image"]}},
+        {"id":"vendor/text-image", "architecture":{"output_modalities":["text","image"]}}
+    ]});
+
+    let models = parse_models_list(&body, "openrouter").unwrap();
+
+    assert_eq!(
+        models
+            .iter()
+            .map(|model| model.id.as_str())
+            .collect::<Vec<_>>(),
+        ["vendor/text", "vendor/text-image"]
+    );
+}
+
+#[tokio::test]
+async fn openrouter_explicit_capability_absence_is_not_overwritten_by_embedded_data() {
+    let _guard = super::runtime_models::test_mutation_lock().await;
+    let explicit = parse_models_list(
+        &json!({"data": [{
+            "id":"z-ai/glm-5.3-flash",
+            "architecture":{"input_modalities":["text"],"output_modalities":["text"]},
+            "supported_parameters":[]
+        }]}),
+        "openrouter",
+    )
+    .unwrap()
+    .remove(0);
+    let explicit = super::model_catalog::enrich_models("openrouter", vec![explicit], false)
+        .await
+        .unwrap()
+        .remove(0);
+    let absent = parse_models_list(
+        &json!({"data": [{"id":"z-ai/glm-5.3-flash"}]}),
+        "openrouter",
+    )
+    .unwrap()
+    .remove(0);
+    let absent = super::model_catalog::enrich_models("openrouter", vec![absent], false)
+        .await
+        .unwrap()
+        .remove(0);
+
+    assert!(!explicit.supports_tools);
+    assert!(!explicit.supports_vision);
+    assert!(!explicit.supports_thinking);
+    assert!(absent.supports_tools);
+    assert!(absent.supports_vision);
+    assert!(absent.supports_thinking);
 }
 
 #[test]
@@ -54,6 +143,39 @@ fn feature_flags_do_not_invent_dynamic_reasoning_levels() {
     assert!(model.supports_thinking);
     assert!(model.reasoning_modes.is_empty());
     assert!(model.default_reasoning_mode.is_none());
+}
+
+#[tokio::test]
+async fn root_catalog_regression_capabilities_keep_independent_presence() {
+    let _guard = super::runtime_models::test_mutation_lock().await;
+    let rows = [
+        json!({"id":"z-ai/glm-5.3-flash", "architecture":{"input_modalities":["text"]}}),
+        json!({"id":"z-ai/glm-5.3-flash", "supported_parameters":["tools"]}),
+        json!({"id":"z-ai/glm-5.3-flash", "capabilities":{"function_calling":false}}),
+        json!({"id":"vendor/fixed", "reasoning":{"mandatory":true}}),
+    ];
+    let mut actual = Vec::new();
+    for row in rows {
+        let parsed = parse_models_list(&json!({"data":[row]}), "openrouter").unwrap();
+        let models = super::model_catalog::enrich_models("openrouter", parsed, false)
+            .await
+            .unwrap();
+        let model = &models[0];
+        actual.push((
+            model.supports_tools,
+            model.supports_vision,
+            model.supports_thinking,
+        ));
+    }
+    assert_eq!(
+        actual,
+        [
+            (true, false, true),
+            (true, true, false),
+            (false, true, true),
+            (false, false, true)
+        ]
+    );
 }
 
 #[test]

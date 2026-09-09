@@ -123,6 +123,8 @@ fn to_model_info(model: &XaiCatalogModel) -> ModelInfo {
         owned_by: None,
         context_length: Some(model.context_window),
         max_output_tokens: model.max_output_tokens,
+        supported_parameters: None,
+        catalog_capabilities: Default::default(),
         supports_tools: local.supports_tools,
         supports_vision: local.supports_vision,
         supports_thinking: local.supports_thinking || !model.reasoning_modes.is_empty(),

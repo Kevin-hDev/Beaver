@@ -10,6 +10,8 @@ async fn codex_catalog_default_is_validated_or_replaced_by_a_published_mode() {
         owned_by: Some("openai".into()),
         context_length: Some(128_000),
         max_output_tokens: None,
+        supported_parameters: None,
+        catalog_capabilities: Default::default(),
         supports_tools: true,
         supports_vision: true,
         supports_thinking: true,

@@ -110,6 +110,8 @@ mod tests {
             owned_by: None,
             context_length: Some(256_000),
             max_output_tokens: Some(64_000),
+            supported_parameters: None,
+            catalog_capabilities: Default::default(),
             supports_tools: true,
             supports_vision: true,
             supports_thinking: true,

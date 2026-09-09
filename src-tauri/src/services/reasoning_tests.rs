@@ -223,6 +223,8 @@ fn supported_modes_and_default_use_validated_runtime_restrictions() {
         owned_by: None,
         context_length: Some(32_000),
         max_output_tokens: None,
+        supported_parameters: None,
+        catalog_capabilities: Default::default(),
         supports_tools: true,
         supports_vision: false,
         supports_thinking: true,

@@ -151,7 +151,7 @@ describe("OAuth models", () => {
       zai: [{ id: "glm-5.3-flash", supports_tools: true, supports_vision: true, supports_thinking: true, supports_fast_mode: false, reasoning_modes: ["low", "high", "max"] as const, default_reasoning_mode: "max" as const, context_usage_includes_reasoning: true }],
       openai: [{ id: "gpt-6-astra", supports_tools: true, supports_vision: true, supports_thinking: true, supports_fast_mode: false, reasoning_modes: ["low", "medium", "high", "xhigh", "max"] as const, context_usage_includes_reasoning: true }],
       openrouter: [
-        { id: "google/gemini-3.8-flash", supports_tools: true, supports_vision: true, supports_thinking: true, supports_fast_mode: false, reasoning_modes: ["low", "medium", "high"] as const, default_reasoning_mode: "medium" as const, context_usage_includes_reasoning: true },
+        { id: "google/gemini-3.8-flash", supports_tools: true, supports_vision: true, supports_thinking: true, supports_fast_mode: false, supported_parameters: ["tools"], reasoning_modes: ["low", "medium", "high"] as const, default_reasoning_mode: "medium" as const, context_usage_includes_reasoning: true },
         { id: "z-ai/glm-5.3-flash", supports_tools: true, supports_vision: true, supports_thinking: true, supports_fast_mode: false, reasoning_modes: ["low", "high", "max"] as const, default_reasoning_mode: "max" as const, context_usage_includes_reasoning: true },
         { id: "openai/gpt-6-astra", supports_tools: true, supports_vision: true, supports_thinking: true, supports_fast_mode: false, reasoning_modes: ["low", "medium", "high", "xhigh", "max"] as const, context_usage_includes_reasoning: true },
       ],
@@ -205,6 +205,8 @@ describe("OAuth models", () => {
       expect(options.map((entry) => entry.mode)).toEqual(modes);
       expect(normalizeReasoningMode("off", options, available?.default_reasoning_mode)).toBe(preferred);
     }
+    expect(result.current.groups.get("openrouter")?.[0].supported_parameters)
+      .toEqual(["tools"]);
 
     // A changed account default must reach the selector, not be replaced by medium.
     codexModel.default_reasoning_mode = "high";

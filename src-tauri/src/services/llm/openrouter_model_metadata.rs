@@ -4,6 +4,45 @@ use super::model_reasoning_contract::{ModelReasoningContract, ReasoningControl};
 use crate::services::reasoning_continuity::contract::ReasoningModeId;
 
 const MAX_REASONING_EFFORTS: usize = 8;
+
+#[derive(Debug, Clone, Copy, Default)]
+pub(crate) struct CatalogCapabilities {
+    pub tools: Option<bool>,
+    pub vision: Option<bool>,
+    pub thinking: Option<bool>,
+}
+
+pub(super) fn capabilities(
+    model: &Value,
+    parameters: Option<&[String]>,
+    reasoning_present: bool,
+) -> CatalogCapabilities {
+    let has_parameter = |names: &[&str]| {
+        parameters.map(|values| values.iter().any(|value| names.contains(&value.as_str())))
+    };
+    let input = &model["architecture"]["input_modalities"];
+    let vision = model["capabilities"]["vision"]
+        .as_bool()
+        .or_else(|| {
+            input
+                .as_array()
+                .map(|values| values.iter().any(|value| value.as_str() == Some("image")))
+        })
+        .or_else(|| {
+            model["architecture"]["modality"]
+                .as_str()
+                .map(|value| value.contains("image->") || value.contains("image+"))
+        });
+    CatalogCapabilities {
+        tools: model["capabilities"]["function_calling"]
+            .as_bool()
+            .or_else(|| has_parameter(&["tools"])),
+        vision,
+        thinking: reasoning_present
+            .then_some(true)
+            .or_else(|| has_parameter(&["reasoning", "reasoning_effort", "include_reasoning"])),
+    }
+}
 const GATEWAY_EFFORTS: [ReasoningModeId; 7] = [
     ReasoningModeId::Off,
     ReasoningModeId::Minimal,
@@ -16,6 +55,11 @@ const GATEWAY_EFFORTS: [ReasoningModeId; 7] = [
 /// One authority for the gateway catalog's priority over upstream defaults.
 pub(super) fn owns_catalog_metadata(provider_id: &str) -> bool {
     provider_id == "openrouter"
+}
+
+/// Batch variants use OpenRouter's asynchronous batches API, not synchronous chat.
+pub(super) fn supports_synchronous_chat(model_id: &str) -> bool {
+    !model_id.ends_with(":batch")
 }
 
 pub(super) fn reasoning(value: &Value) -> Option<ModelReasoningContract> {

@@ -9,6 +9,7 @@ export interface AvailableModel {
   auth_source?: "local" | "api" | "oauth";
   is_local: boolean;
   supports_tools: boolean;
+  supported_parameters?: string[];
   supports_vision?: boolean;
   supports_thinking?: boolean;
   supports_fast_mode?: boolean;
@@ -30,6 +31,7 @@ export interface LlmModelInfo {
   owned_by?: string;
   context_length?: number;
   supports_tools: boolean;
+  supported_parameters?: string[];
   supports_vision?: boolean;
   supports_thinking?: boolean;
   supports_fast_mode: boolean;

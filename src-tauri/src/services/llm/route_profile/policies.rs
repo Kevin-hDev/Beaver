@@ -89,7 +89,7 @@ pub(super) const OPENROUTER: RoutePolicies = RoutePolicies {
         CachePolicy::OpenRouter,
         ParameterPolicy::OpenRouter,
         ErrorPolicy::OpenAiCompatible,
-        AuthProbePolicy::ModelsGet,
+        AuthProbePolicy::CurrentApiKeyGet,
         ToolLimitPolicy::OpenRouterUpstream,
     )
 };

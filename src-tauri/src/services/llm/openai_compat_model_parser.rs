@@ -1,3 +1,4 @@
+use super::model_metadata::has_zero_pricing;
 use super::types::{LlmError, ModelInfo};
 use serde_json::Value;
 use std::collections::HashSet;
@@ -60,9 +61,14 @@ fn parse_model(model: &Value, provider_id: &str) -> Option<ModelInfo> {
             .and_then(|limits| limits.max_output_tokens)
             .or_else(|| super::model_metadata::output_limit(model))
     };
-    let supported_parameters = supported_parameters(model);
+    if authoritative && !supports_text_output(model) {
+        return None;
+    }
+    let supported_parameters = supported_parameters(model)?;
     let has_param = |name: &str| {
         supported_parameters
+            .as_deref()
+            .unwrap_or_default()
             .iter()
             .any(|parameter| parameter == name)
     };
@@ -107,15 +113,26 @@ fn parse_model(model: &Value, provider_id: &str) -> Option<ModelInfo> {
         .map(super::model_reasoning_contract::ModelReasoningContract::legacy_projection)
         .unwrap_or_else(|| (Vec::new(), None));
 
+    let catalog_capabilities = if authoritative {
+        super::openrouter_model_metadata::capabilities(
+            model,
+            supported_parameters.as_deref(),
+            reasoning_metadata.is_some(),
+        )
+    } else {
+        Default::default()
+    };
     Some(ModelInfo {
         id: id.to_string(),
         display_name: None,
         owned_by: safe_owner(&model["owned_by"]),
         context_length,
         max_output_tokens,
-        supports_tools,
-        supports_vision,
-        supports_thinking,
+        supported_parameters,
+        catalog_capabilities,
+        supports_tools: catalog_capabilities.tools.unwrap_or(supports_tools),
+        supports_vision: catalog_capabilities.vision.unwrap_or(supports_vision),
+        supports_thinking: catalog_capabilities.thinking.unwrap_or(supports_thinking),
         reasoning_contract: reasoning_metadata,
         supports_fast_mode: false,
         reasoning_modes,
@@ -139,17 +156,37 @@ fn architecture_supports_vision(model: &Value) -> bool {
             .is_some_and(|values| values.iter().any(|value| value.as_str() == Some("image")))
 }
 
-fn supported_parameters(model: &Value) -> Vec<String> {
-    model["supported_parameters"]
-        .as_array()
-        .map(|values| {
-            values
-                .iter()
-                .filter_map(|value| safe_text(value, 64))
-                .take(64)
-                .collect()
-        })
-        .unwrap_or_default()
+fn supported_parameters(model: &Value) -> Option<Option<Vec<String>>> {
+    let Some(value) = model.get("supported_parameters") else {
+        return Some(None);
+    };
+    if value.is_null() {
+        return Some(None);
+    }
+    let values = value.as_array()?;
+    if values.len() > 64 {
+        return None;
+    }
+    values
+        .iter()
+        .map(|value| safe_text(value, 64))
+        .collect::<Option<Vec<_>>>()
+        .map(Some)
+}
+
+fn supports_text_output(model: &Value) -> bool {
+    let value = &model["architecture"]["output_modalities"];
+    if value.is_null() {
+        return true;
+    }
+    let Some(values) = value.as_array().filter(|values| values.len() <= 8) else {
+        return false;
+    };
+    values
+        .iter()
+        .map(|value| safe_text(value, 32))
+        .collect::<Option<Vec<_>>>()
+        .is_some_and(|modalities| modalities.iter().any(|modality| modality == "text"))
 }
 
 fn safe_owner(value: &Value) -> Option<String> {
@@ -163,25 +200,4 @@ fn safe_text(value: &Value, max_bytes: usize) -> Option<String> {
             !text.is_empty() && text.len() <= max_bytes && !text.chars().any(char::is_control)
         })
         .map(str::to_string)
-}
-
-fn has_zero_pricing(pricing: &Value) -> bool {
-    let Some(prices) = pricing.as_object() else {
-        return false;
-    };
-    let Some(prompt) = prices.get("prompt") else {
-        return false;
-    };
-    let Some(completion) = prices.get("completion") else {
-        return false;
-    };
-    price_is_zero(prompt) && price_is_zero(completion) && prices.values().all(price_is_zero)
-}
-
-fn price_is_zero(value: &Value) -> bool {
-    let price = value
-        .as_str()
-        .and_then(|raw| raw.parse::<f64>().ok())
-        .or_else(|| value.as_f64());
-    price.is_some_and(|amount| amount.is_finite() && amount == 0.0)
 }

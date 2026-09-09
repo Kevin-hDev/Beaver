@@ -25,6 +25,8 @@ fn openrouter_contract_model(
         owned_by: Some("vendor".into()),
         context_length: Some(128_000),
         max_output_tokens: Some(16_000),
+        supported_parameters: None,
+        catalog_capabilities: Default::default(),
         supports_tools: true,
         supports_vision: false,
         supports_thinking: true,

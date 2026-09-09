@@ -30,6 +30,9 @@ impl OpenAiCompatProvider {
             return crate::services::llm_oauth::xai_models().await;
         }
         let canonical = self.route.canonical_provider_id;
+        if super::openrouter_model_metadata::owns_catalog_metadata(canonical) {
+            return super::openrouter_catalog::list_models().await;
+        }
         if let Some(models) = openai_compat_models::static_model_infos(canonical) {
             return Ok(models);
         }
@@ -51,10 +54,31 @@ impl OpenAiCompatProvider {
     }
 
     pub async fn test_connection(&self) -> Result<(), LlmError> {
+        if super::api_key_probe::requires_current_key_probe(self.route.chat_provider_id) {
+            return self.test_auth_probe().await;
+        }
         if openai_compat_models::has_static_models(self.route.canonical_provider_id) {
             return self.ping_chat().await;
         }
         self.list_models().await.map(|_| ())
+    }
+
+    async fn test_auth_probe(&self) -> Result<(), LlmError> {
+        let probe = super::api_key_probe::resolve(self.route.chat_provider_id).map_err(|_| {
+            LlmError::KnownProvider(
+                super::provider_error::ProviderErrorCode::ProviderConfigurationInvalid,
+            )
+        })?;
+        let response = self
+            .send(RequestPurpose::AccountMetadata, |token, headers| {
+                super::api_key_probe::request(&self.client, &probe, token).headers(headers)
+            })
+            .await?;
+        if response.status().is_success() {
+            Ok(())
+        } else {
+            Err(map_error_status(response, self.route.error_policy).await)
+        }
     }
 
     async fn ping_chat(&self) -> Result<(), LlmError> {

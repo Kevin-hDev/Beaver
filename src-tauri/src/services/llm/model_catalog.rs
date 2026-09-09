@@ -5,6 +5,10 @@ use super::route_profile::ClientSelector;
 use super::types::{LlmError, ModelInfo};
 
 pub async fn list_models_for(provider_id: &str) -> Result<Vec<ModelInfo>, LlmError> {
+    if super::openrouter_model_metadata::owns_catalog_metadata(provider_id) {
+        // The public loader already enriches and atomically publishes this list.
+        return super::openrouter_catalog::list_models().await;
+    }
     let profile = super::route_profile::find(provider_id).ok_or_else(configuration_error)?;
     let models = match profile.client {
         ClientSelector::Anthropic => super::anthropic::list_models().await?,
@@ -49,7 +53,7 @@ pub(super) async fn enrich_models(
 ) -> Result<Vec<ModelInfo>, LlmError> {
     let canonical = super::route::canonical_provider_id(provider_id);
     let limit = super::catalog_limits::max_dynamic_models(canonical);
-    if canonical == "openrouter" && models.len() > limit {
+    if super::openrouter_model_metadata::owns_catalog_metadata(canonical) && models.len() > limit {
         return Err(invalid_catalog());
     }
     models.truncate(limit);
@@ -63,12 +67,20 @@ pub(super) async fn enrich_models(
     let count_before_deduplication = models.len();
     // Keep native alias normalization (notably Google's resource names) unchanged.
     models.retain(|model| seen.insert(model.id.clone()));
-    if canonical == "openrouter" && models.len() != count_before_deduplication {
+    if super::openrouter_model_metadata::owns_catalog_metadata(canonical)
+        && models.len() != count_before_deduplication
+    {
         return Err(invalid_catalog());
     }
     let mut filtered = Vec::with_capacity(models.len());
     for model in models {
-        let accepted = super::provider_model_lookup::is_chat_model(canonical, &model.id).await;
+        // OpenRouter rows already crossed the output-modality filter; its batch
+        // variants belong to the documented asynchronous API, not this chat path.
+        let accepted = if super::openrouter_model_metadata::owns_catalog_metadata(canonical) {
+            super::openrouter_model_metadata::supports_synchronous_chat(&model.id)
+        } else {
+            super::provider_model_lookup::is_chat_model(canonical, &model.id).await
+        };
         if accepted {
             filtered.push(model);
         }
@@ -108,7 +120,21 @@ async fn enrich_compat_model(provider_id: &str, model: &mut ModelInfo) {
         }
     }
     let Some(capabilities) = resolved else { return };
-    if local {
+    if authoritative {
+        // Presence is independent for each capability: parameters do not describe vision.
+        model.supports_tools = model
+            .catalog_capabilities
+            .tools
+            .unwrap_or(capabilities.supports_tools);
+        model.supports_vision = model
+            .catalog_capabilities
+            .vision
+            .unwrap_or(capabilities.supports_vision);
+        model.supports_thinking = model
+            .catalog_capabilities
+            .thinking
+            .unwrap_or(capabilities.supports_thinking);
+    } else if local {
         model.supports_tools = capabilities.supports_tools;
         model.supports_vision = capabilities.supports_vision;
         model.supports_thinking = capabilities.supports_thinking;

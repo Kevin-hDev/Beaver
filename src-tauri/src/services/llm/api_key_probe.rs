@@ -69,6 +69,13 @@ pub(crate) fn resolve(provider_id: &str) -> Result<ProbeSpec, &'static str> {
             headers,
             body: None,
         }),
+        AuthProbePolicy::CurrentApiKeyGet => Ok(ProbeSpec {
+            method: ProbeMethod::Get,
+            url: format!("{base_url}/key"),
+            auth,
+            headers,
+            body: None,
+        }),
         AuthProbePolicy::ChatPing => Ok(ProbeSpec {
             method: ProbeMethod::Post,
             url: format!("{base_url}/chat/completions"),
@@ -84,6 +91,11 @@ pub(crate) fn resolve(provider_id: &str) -> Result<ProbeSpec, &'static str> {
         | AuthProbePolicy::OAuthCatalog
         | AuthProbePolicy::ClientNative => Err("provider_configuration_invalid"),
     }
+}
+
+pub(crate) fn requires_current_key_probe(provider_id: &str) -> bool {
+    super::route_profile::find(provider_id)
+        .is_some_and(|profile| profile.policies.auth_probe == AuthProbePolicy::CurrentApiKeyGet)
 }
 
 pub(crate) fn request(

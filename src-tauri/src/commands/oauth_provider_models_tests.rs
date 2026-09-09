@@ -10,6 +10,8 @@ fn oauth_model_transports_public_metadata_without_recalculating_it() {
             owned_by: Some("openai".to_string()),
             context_length: Some(258_400),
             max_output_tokens: None,
+            supported_parameters: None,
+            catalog_capabilities: Default::default(),
             supports_tools: true,
             supports_vision: true,
             supports_thinking: true,

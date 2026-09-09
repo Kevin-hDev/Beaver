@@ -85,6 +85,8 @@ fn install_model(supports_vision: bool) {
             owned_by: None,
             context_length: Some(8_192),
             max_output_tokens: Some(1_024),
+            supported_parameters: None,
+            catalog_capabilities: Default::default(),
             supports_tools: true,
             supports_vision,
             supports_thinking: false,

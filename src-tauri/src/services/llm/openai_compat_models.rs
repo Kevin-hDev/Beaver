@@ -35,6 +35,8 @@ fn to_model_info(
         owned_by: None,
         context_length: Some(model.context_window),
         max_output_tokens: model.max_output_tokens,
+        supported_parameters: None,
+        catalog_capabilities: Default::default(),
         supports_tools: model.supports_tools,
         supports_vision: model.supports_vision,
         supports_thinking: model.supports_thinking,

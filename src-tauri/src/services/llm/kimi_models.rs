@@ -64,6 +64,8 @@ fn parse_model(value: &Value) -> Option<Result<ModelInfo, LlmError>> {
         owned_by: Some("moonshot".to_string()),
         context_length: Some(context_length),
         max_output_tokens: super::model_metadata::positive_u32(&value["max_output_tokens"]),
+        supported_parameters: None,
+        catalog_capabilities: Default::default(),
         supports_tools: declared_bool(
             value,
             "supports_tool_use",

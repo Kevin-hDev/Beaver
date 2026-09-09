@@ -44,6 +44,7 @@ pub(super) enum RouteSelectionError {
     UnknownRoute,
     Unavailable,
     InvalidModel,
+    ModelCatalogUnavailable,
 }
 
 impl RouteSelectionError {
@@ -51,6 +52,7 @@ impl RouteSelectionError {
         match self {
             Self::UnknownRoute | Self::InvalidModel => "provider_configuration_invalid",
             Self::Unavailable => "provider_access_unavailable",
+            Self::ModelCatalogUnavailable => "model_catalog_unavailable",
         }
     }
 }
@@ -62,6 +64,7 @@ pub(super) async fn resolve_transport(
     purpose: RequestPurpose,
 ) -> Result<ResolvedTransport, RouteSelectionError> {
     let profile = checked_profile(route_id, invocation, purpose)?;
+    ensure_catalog_model(profile, model).await?;
     let xai_model = if profile.client == ClientSelector::XaiOauth {
         Some(
             crate::services::llm_oauth::xai_catalog_model(model)
@@ -72,6 +75,16 @@ pub(super) async fn resolve_transport(
         None
     };
     resolve_checked(profile, xai_model)
+}
+
+async fn ensure_catalog_model(
+    profile: &'static RouteProfile,
+    model: &str,
+) -> Result<(), RouteSelectionError> {
+    super::openrouter_catalog::ensure_model_for_route(profile.canonical_provider.as_str(), model)
+        .await
+        .map(|_| ())
+        .map_err(|_| RouteSelectionError::ModelCatalogUnavailable)
 }
 
 pub(crate) fn is_available(
@@ -194,6 +207,7 @@ pub(super) async fn resolve_fixture_transport(
     {
         return Err(RouteSelectionError::InvalidModel);
     }
+    ensure_catalog_model(profile, model).await?;
     resolve_checked(profile, None)
 }
 

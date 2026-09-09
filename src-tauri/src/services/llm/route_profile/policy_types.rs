@@ -86,6 +86,7 @@ impl ErrorPolicy {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum AuthProbePolicy {
     ModelsGet,
+    CurrentApiKeyGet,
     ChatPing,
     OAuthCatalog,
     ClientNative,

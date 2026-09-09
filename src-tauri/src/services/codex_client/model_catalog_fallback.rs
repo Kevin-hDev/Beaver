@@ -47,6 +47,8 @@ pub(super) fn models() -> Vec<ModelInfo> {
         owned_by: Some("openai".to_string()),
         context_length: Some(context),
         max_output_tokens: None,
+        supported_parameters: None,
+        catalog_capabilities: Default::default(),
         supports_tools: super::supports_tools(id),
         supports_vision: vision,
         supports_thinking: true,

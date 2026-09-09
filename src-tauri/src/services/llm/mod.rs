@@ -49,6 +49,11 @@ mod openai_compat_parsing;
 mod openai_compat_parsing_tests;
 mod openai_responses;
 mod openai_responses_reasoning;
+pub(crate) mod openrouter_catalog;
+#[cfg(test)]
+mod openrouter_catalog_inventory_tests;
+#[cfg(test)]
+mod openrouter_catalog_tests;
 mod openrouter_model_metadata;
 #[cfg(test)]
 mod openrouter_model_metadata_tests;

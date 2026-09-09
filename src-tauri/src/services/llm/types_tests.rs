@@ -8,6 +8,8 @@ fn empty_reasoning_modes_cross_the_model_info_serialization_boundary() {
         owned_by: None,
         context_length: None,
         max_output_tokens: None,
+        supported_parameters: None,
+        catalog_capabilities: Default::default(),
         supports_tools: false,
         supports_vision: false,
         supports_thinking: true,

@@ -186,6 +186,8 @@ fn convert_model(wire: WireModel) -> Option<CatalogModel> {
             owned_by: Some("openai".to_string()),
             context_length: Some(context_length),
             max_output_tokens: None,
+            supported_parameters: None,
+            catalog_capabilities: Default::default(),
             supports_tools,
             supports_vision,
             supports_thinking: !modes.is_empty(),
