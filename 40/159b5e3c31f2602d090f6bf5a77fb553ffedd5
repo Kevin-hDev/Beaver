@@ -1,0 +1,5 @@
+Motif: retirer une assertion textuelle qui donnait une fausse impression de preuve comportementale du journal Grok Responses.
+Cause: le test vérifiait seulement des sous-chaînes du source, sans traverser le transport ni le fichier JSONL.
+Avant/après: raccord production conservé et relu; aucun faux test. La preuve live Grok OAuth Responses reste explicitement au lot 5, sans créer un nouveau framework de transport pour cette assertion.
+GREEN: filtre xai_oauth_transport 8/8 après retrait.
+Non exécuté: aucun appel live/provider.
