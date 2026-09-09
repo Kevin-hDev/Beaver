@@ -1,0 +1,168 @@
+# Mode Plan
+
+**Emplacement site** — Agent › Mode Plan
+**Répond à** — « Je veux que l'agent réfléchisse avant d'agir, et que je valide avant qu'il touche à quoi que ce soit. »
+**Sources** — `src-tauri/src/services/agent_local/tool_plan_guard.rs` (lignes 3-34), `plan_mode_controller.rs`, `tool_plan.rs` (lignes 12-13, 95), `types_plan.rs` (lignes 16-25, 45), `tool_plan_approval.rs`, `tool_plan_storage.rs`, `agent_loop_plan.rs`
+**Vérification** — Vérifié dans le code : liste des outils autorisés, limites, états du parcours et mécanisme de correction
+
+---
+
+## Plan de page proposé
+
+1. À quoi ça sert
+2. Ce que l'agent peut faire en mode Plan
+3. Ce qu'il ne peut pas faire
+4. Le déroulement
+5. Le plan lui-même
+6. Approuver, ajuster, refuser
+7. Les limites
+8. Mode Plan et modes de permission
+
+---
+
+## Contenu
+
+### 1. À quoi ça sert
+
+Le mode Plan fait explorer l'agent **sans rien modifier**, lui fait rédiger un plan d'action, et attend votre validation avant toute écriture.
+
+C'est le contrôle le plus fort du produit. Là où le mode Demande d'approbation vous fait valider action par action — au risque de la lassitude —, le mode Plan vous fait valider **une fois, sur une intention complète**, avant que rien ne commence.
+
+À recommander avant toute modification importante sur un projet auquel on tient.
+
+### 2. Ce que l'agent peut faire en mode Plan
+
+**Dix-neuf outils** sont autorisés :
+
+| Catégorie | Outils |
+|---|---|
+| Lecture de fichiers | `read_file`, `list_dir`, `read_spreadsheet`, `read_document` |
+| Recherche | `grep`, `glob` |
+| Web | `web_search`, `web_fetch` |
+| Découverte d'outils | `search_extension_tools` |
+| Terminal | `bash_control` |
+| Skills | `load_skill` |
+| Liste de tâches, en lecture et contrôle | `todo_history`, `todo_pause`, `todo_resume`, `todo_delete` |
+| Interaction | `ask_user_choice` |
+| Plan | `plan_mode` |
+| Prévision, en lecture | `forecast_read`, `forecast_models` |
+
+**Trois outils sont autorisés sous condition** :
+
+- **`bash`** — uniquement les commandes reconnues comme sûres. C'est **exactement la même règle** que celle du mode Demande d'approbation : mêmes motifs, mêmes opérateurs interdits, mêmes chemins sensibles. Concrètement, `git status`, `cargo test` et `cargo build` passent ; `rm fichier` non.
+- **`transform_image`** — seulement si aucune opération n'est demandée, c'est-à-dire en simple inspection.
+- **`search_mcp_tools`** — recherche autorisée, appel d'outil refusé.
+
+Point qui surprend et mérite d'être expliqué : **les commandes de test et de compilation sont autorisées**. Le mode Plan n'est pas un mode « lecture seule » strict, c'est un mode « sans modification de vos fichiers ». Lancer les tests pour comprendre l'état du projet fait partie de l'exploration.
+
+### 3. Ce qu'il ne peut pas faire
+
+Tout le reste, notamment :
+
+- écrire ou modifier un fichier (`write_file`, `edit_file`) ;
+- écrire un tableur ou un document ;
+- créer ou changer de branche Git ;
+- **déléguer à un sous-agent** (`delegate_task`) ;
+- **écrire dans la liste de tâches** (`todo_write`) — la lecture et le contrôle restent permis ;
+- appeler un outil de connecteur externe.
+
+### 4. Le déroulement
+
+Le parcours passe par **sept états** :
+
+| État | Signification |
+|---|---|
+| `NeedsContext` | L'agent explore, il lui manque du contexte |
+| `CollectingQuestions` | L'agent pose des questions de clarification |
+| `PlanPublished` | Le plan est rédigé |
+| `AwaitingApproval` | Le plan attend votre décision |
+| `Approved` | Vous avez approuvé |
+| `Rejected` | Vous avez refusé |
+| `Cancelled` | Le mode Plan a été interrompu |
+
+Pendant les deux premiers états, l'agent doit **soit appeler un outil, soit poser une question, soit publier le plan**. S'il se contente de bavarder, une consigne de correction lui est renvoyée automatiquement — **quatre fois au maximum**, après quoi le mode Plan échoue avec un message explicite.
+
+C'est un détail d'implémentation, mais il explique un comportement visible : on peut voir l'agent se reprendre tout seul.
+
+### 5. Le plan lui-même
+
+- Rédigé en **Markdown**.
+- Titre limité à **120 caractères**, contenu à **40 000 caractères**.
+- Enregistré sur le disque dans `plans/<identifiant de conversation>/`.
+- **Vingt plans au maximum** sont conservés par conversation ; les plus anciens sont écartés.
+
+### 6. Approuver, ajuster, refuser
+
+Trois issues :
+
+- **Approuver** — l'agent passe à l'exécution, avec tous ses outils.
+- **Demander des ajustements** — un choix dédié permet de renvoyer le plan avec des remarques.
+- **Refuser** — le plan est écarté.
+
+### 7. Les limites
+
+| Limite | Valeur |
+|---|---|
+| Titre du plan | 120 caractères |
+| Contenu du plan | 40 000 caractères |
+| Plans conservés par conversation | 20 |
+| Corrections automatiques avant échec | 4 |
+
+### 8. Mode Plan et modes de permission
+
+Les deux mécanismes sont **indépendants et cumulables** :
+
+| | Mode Plan | Mode de permission |
+|---|---|---|
+| Portée | Interdit les outils modifiants | Demande confirmation avant certaines actions |
+| Moment | Avant tout, sur l'intention globale | Action par action |
+| Effet en Accès complet | Le mode Plan bloque quand même les écritures | Aucune confirmation |
+
+Autrement dit : **le mode Plan protège même en Accès complet.** C'est le point à retenir.
+
+---
+
+## Encadrés
+
+**Encadré « Le mode Plan protège même en Accès complet »**
+> Le mode Plan interdit les outils qui modifient, quel que soit votre mode de permission. Les deux réglages se cumulent.
+
+**Encadré « Tests et compilation autorisés »**
+> Le mode Plan n'interdit pas de lancer les tests ou de compiler. Il interdit de modifier vos fichiers. L'agent peut donc vérifier l'état réel du projet avant de proposer son plan.
+
+**Encadré « Vingt plans conservés »**
+> Les plans sont enregistrés en Markdown dans le dossier de données. Les vingt derniers de chaque conversation sont conservés.
+
+---
+
+## Pièges et erreurs fréquentes
+
+| Symptôme | Cause | Résolution |
+|---|---|---|
+| L'agent lance des tests en mode Plan | Les commandes sûres, tests inclus, sont autorisées | Comportement voulu |
+| L'agent ne peut pas déléguer | `delegate_task` est interdit en mode Plan | Approuver le plan d'abord |
+| L'agent ne peut pas écrire ses tâches | `todo_write` est interdit ; lecture et contrôle restent permis | Normal |
+| « Le parcours du mode Plan n'a pas pu être appliqué » | Quatre corrections successives sans résultat | Reformuler la demande, ou essayer un autre modèle |
+| Une commande shell est refusée | Elle n'est pas reconnue comme sûre | Voir *Agent › Permissions* |
+| Un ancien plan a disparu | Vingt plans conservés par conversation | Les plans sont sur le disque, dans `plans/` |
+
+---
+
+## Renvois
+
+- *Agent › Permissions* — la règle des commandes sûres, commune aux deux mécanismes
+- *Agent › Todos*
+- *Agent › Sous-agents*
+- *Outils › Vue d'ensemble*
+- *Référence › Stockage local* — où sont rangés les plans
+
+---
+
+## Points à confirmer
+
+- **Comment on active le mode Plan.** Un sélecteur dédié existe dans l'interface, mais son emplacement et son libellé n'ont pas été relevés.
+- **Ce qui se passe après approbation** : le mode Plan se désactive-t-il automatiquement, ou faut-il le désactiver soi-même ?
+- **Le libellé des trois issues** dans l'interface. Le code emploie un identifiant `other` pour la demande d'ajustements, ce qui suggère une liste de choix dont les libellés n'ont pas été relevés.
+- **La consultation des anciens plans** depuis l'interface — possible, ou seulement en ouvrant les fichiers ?
+- **Le comportement d'un plan en cours quand on change de mode de permission** en cours de route.
+- **`search_extension_tools` figure dans les outils autorisés** alors que le catalogue principal expose `search_mcp_tools`. Vérifier s'il s'agit de deux outils distincts ou d'un reliquat — les extensions étant en cours de finalisation, ce point est à revoir avec elles.
