@@ -17,7 +17,11 @@ test("les trois OS publient explicitement Python 3.14 dans le PATH utilisateur",
 });
 
 test("le refus Linux reste dans un sous-shell sans fermer le terminal", () => {
-  const linux = readme.slice(readme.indexOf("### Linux (x64)"), readme.indexOf("### Windows"));
+  const linuxStart = readme.indexOf("### Linux (x64)");
+  const windowsStart = readme.indexOf("### Windows", linuxStart);
+  assert.ok(linuxStart >= 0);
+  assert.ok(windowsStart > linuxStart);
+  const linux = readme.slice(linuxStart, windowsStart);
   const block = /```bash\n([\s\S]+?)\n```/u.exec(linux)?.[1];
   assert.ok(block);
   assert.ok(block.startsWith("(\nset -e\n"));
