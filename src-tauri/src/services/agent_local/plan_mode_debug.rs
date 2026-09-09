@@ -3,7 +3,6 @@ use super::types_ollama::StreamResult;
 use super::types_plan::AgentPlanWorkflowStatus;
 
 pub fn controller_decision(
-    session_id: &str,
     workflow: AgentPlanWorkflowStatus,
     repair_count: usize,
     result: &StreamResult,
@@ -15,45 +14,43 @@ pub fn controller_decision(
         PlanModeDecision::Fail(_) => "fail",
     };
     ::log::info!(
-        "[plan-mode] session={} workflow={workflow:?} repairs={repair_count} content_chars={} question={} tools=[{}] decision={decision_label}",
-        short_id(session_id),
+        "[plan-mode] decision workflow={workflow:?} repairs={repair_count} content_chars={} question={} tool_calls={} decision={decision_label}",
         result.content.chars().count(),
         has_question(&result.content),
-        tool_names(result),
+        result.tool_calls.len(),
     );
 }
 
-pub fn workflow_failed(session_id: &str, request_id: &str, message: &str) {
+pub fn workflow_failed(message: &str) {
     ::log::error!(
-        "[plan-mode] failed session={} request={} reason={}",
-        short_id(session_id),
-        short_id(request_id),
-        sanitize_reason(message),
+        "[plan-mode] failed reason={}",
+        failure_code(message),
     );
-}
-
-fn tool_names(result: &StreamResult) -> String {
-    result
-        .tool_calls
-        .iter()
-        .take(8)
-        .map(|(name, _)| name.as_str())
-        .collect::<Vec<_>>()
-        .join(",")
-}
-
-fn short_id(value: &str) -> &str {
-    value.get(..8).unwrap_or(value)
 }
 
 fn has_question(content: &str) -> bool {
     content.contains('?') || content.contains('？')
 }
 
-fn sanitize_reason(message: &str) -> String {
-    message
-        .chars()
-        .filter(|ch| ch.is_ascii_alphanumeric() || ch.is_ascii_whitespace())
-        .take(120)
-        .collect()
+fn failure_code(message: &str) -> &'static str {
+    match message {
+        "Plan Mode was cancelled." => "cancelled",
+        "Plan Mode workflow could not be enforced." => "enforcement_failed",
+        _ => "unknown",
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::failure_code;
+
+    #[test]
+    fn failure_codes_never_echo_untrusted_text() {
+        assert_eq!(failure_code("Plan Mode was cancelled."), "cancelled");
+        assert_eq!(
+            failure_code("Plan Mode workflow could not be enforced."),
+            "enforcement_failed"
+        );
+        assert_eq!(failure_code("token=secret-value"), "unknown");
+    }
 }

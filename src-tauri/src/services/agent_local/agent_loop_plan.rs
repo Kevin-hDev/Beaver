@@ -16,7 +16,6 @@ pub async fn check_result(
     _on_event: &AgentEventEmitter,
     messages: &mut Vec<ChatMessage>,
     session_id: &str,
-    request_id: &str,
     result: &StreamResult,
     active: bool,
     repair_count: usize,
@@ -34,7 +33,7 @@ pub async fn check_result(
             PlanLoopAction::Retry
         }
         PlanModeDecision::Fail(message) => {
-            super::plan_mode_debug::workflow_failed(session_id, request_id, message);
+            super::plan_mode_debug::workflow_failed(message);
             PlanLoopAction::Stop(message)
         }
     }

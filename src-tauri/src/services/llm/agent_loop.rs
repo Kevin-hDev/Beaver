@@ -150,7 +150,6 @@ pub async fn run_agent_loop(
             on_event,
             messages,
             &session_id,
-            &request_id,
             &result,
             plan_active,
             plan_repairs,

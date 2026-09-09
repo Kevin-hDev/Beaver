@@ -93,10 +93,9 @@ async fn stream_chat_inner(
     let mut lines = BufReader::new(StreamReader::new(byte_stream)).lines();
 
     ::log::info!(
-        "[ollama-stream] stream ouvert HTTP {} model={} think={:?} msgs={} tools={}",
+        "[ollama-stream] opened status={} thinking={} messages={} tools={}",
         http_status,
-        request.model,
-        request.think,
+        request.think.as_ref().is_some_and(|think| think.enabled()),
         request.messages.len(),
         request.tools.as_ref().map_or(0, Vec::len)
     );

@@ -23,7 +23,6 @@ pub async fn evaluate(
     }
     let decision = decide(session.plan_workflow_status, result, repair_count);
     plan_mode_debug::controller_decision(
-        session_id,
         session.plan_workflow_status,
         repair_count,
         result,
