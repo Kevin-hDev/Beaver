@@ -267,6 +267,27 @@ fn resource_exhausted_without_retry_after_is_not_a_retryable_rate_limit() {
 }
 
 #[test]
+fn oauth_payment_refusal_uses_common_access_classification_without_guessing_credits() {
+    for (body, expected) in [
+        ("{}", "provider_access_unavailable"),
+        (
+            r#"{"code":"personal-team-blocked:spending-limit"}"#,
+            "xai_subscription_or_credits_required",
+        ),
+    ] {
+        assert_eq!(
+            classify_status(
+                crate::services::llm::route_profile::ErrorPolicy::XaiOauth,
+                402,
+                body,
+                false
+            ),
+            expected
+        );
+    }
+}
+
+#[test]
 fn oauth_responses_replays_local_items_without_exposing_a_public_xai_route() {
     let target = fixture_target("xai-oauth-scope");
     let assistant = ChatMessage::assistant(
