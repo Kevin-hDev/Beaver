@@ -75,6 +75,16 @@ test("classe les identifiants compatibles comme internes", () => {
       'Provides 2>/dev/null)" = "cl-go"',
       "install.sh",
     ],
+    [
+      "cl-go",
+      "Le paquet `cl-go`, l'ancien nom.",
+      "docs/documentation-site-web/02-installation/installation-linux.md",
+    ],
+    [
+      "cl-go",
+      "`Provides`, `Conflicts`, `Replaces` valent tous `cl-go`.",
+      "docs/documentation-site-web/13-depannage/installation.md",
+    ],
   ];
 
   for (const [value, line, file] of samples) {

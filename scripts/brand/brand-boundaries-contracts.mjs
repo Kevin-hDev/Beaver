@@ -5,16 +5,16 @@ const contract = (name, file, snippets) => ({ name, file, snippets });
 
 export const EXPECTED_INTERNAL_REFERENCE_COUNTS = Object.freeze({
   "CL-GO-DASH": 3,
-  "CL-GO": 38,
+  "CL-GO": 40,
   CLGO: 32,
   // Les parcours E2E nomment explicitement le binaire historique sur chaque OS.
   // Le test de surcouche Windows crée aussi ce binaire dans son installation isolée.
-  // La checklist de résilience suivie dans docs/ cite aussi le chemin de données
-  // compatible (.local/share/cl-go-dash), pas une marque visible dans l'interface.
-  "cl-go-dash": 262,
+  // Les guides d'installation citent les noms techniques réellement présents sur disque.
+  "cl-go-dash": 340,
   // Les thèmes d'extension et leurs parcours rejouent les clés persistantes historiques.
-  clgo: 128,
-  "cl-go": 72,
+  clgo: 135,
+  // Les guides citent le nom exact de l'ancien paquet Linux pour migration et dépannage.
+  "cl-go": 95,
   // Les deux branches main appellent explicitement la bibliothèque Rust.
   cl_go_dash: 48,
 });
