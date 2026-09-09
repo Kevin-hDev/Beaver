@@ -117,7 +117,7 @@ mod tests {
     use super::LIVE_SPECS;
 
     #[test]
-    fn selection_rejects_every_route_without_bounded_transport() {
+    fn selection_rejects_unbudgeted_routes_and_accepts_the_new_bounded_transports() {
         for spec in LIVE_SPECS.iter().filter(|spec| {
             !crate::services::llm::route_profile::supports_bounded_fixture(spec.provider)
         }) {
@@ -128,16 +128,12 @@ mod tests {
                 Some("fixture transport budget unavailable")
             );
         }
-        assert_eq!(
-            super::select_specs(
-                Some("google,anthropic"),
-                Some("gemini-3.8-flash,claude-haiku-4-5-20251001"),
-                Some("low,high")
-            )
-            .err()
-            .as_deref(),
-            Some("fixture transport budget unavailable")
-        );
+        assert!(super::select_specs(
+            Some("google,anthropic,xai-oauth"),
+            Some("gemini-3.8-flash,claude-haiku-4-5-20251001,grok-4.6"),
+            Some("low,high")
+        )
+        .is_ok());
     }
 
     #[test]

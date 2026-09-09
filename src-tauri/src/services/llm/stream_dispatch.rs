@@ -196,7 +196,10 @@ pub(super) async fn resolve_fixture_transport(
     let fixture_catalog = matches!(
         profile.catalog,
         CatalogPolicy::PublicApi { .. } | CatalogPolicy::ConfigurableApi { .. }
-    ) || profile.client == ClientSelector::Codex;
+    ) || matches!(
+        profile.client,
+        ClientSelector::Codex | ClientSelector::XaiOauth
+    );
     // Codex fixtures already use the bounded HTTP sender. Its OAuth catalogue
     // must not reject a registered candidate before reaching that sender.
     if !fixture_catalog
@@ -208,7 +211,16 @@ pub(super) async fn resolve_fixture_transport(
         return Err(RouteSelectionError::InvalidModel);
     }
     ensure_catalog_model(profile, model).await?;
-    resolve_checked(profile, None)
+    let xai_model = if profile.client == ClientSelector::XaiOauth {
+        Some(
+            crate::services::llm_oauth::xai_catalog_model(model)
+                .await
+                .map_err(|_| RouteSelectionError::InvalidModel)?,
+        )
+    } else {
+        None
+    };
+    resolve_checked(profile, xai_model)
 }
 
 #[cfg(test)]

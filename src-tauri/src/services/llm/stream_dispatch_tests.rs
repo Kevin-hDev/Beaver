@@ -331,14 +331,18 @@ async fn anthropic_live_route_supports_every_declared_invocation_kind() {
         reasoning_mode: ReasoningModeId::High,
         continuation_use: ContinuationUse::UserContinuation,
     });
-    assert!(super::stream_dispatch::resolve_fixture_transport(
-        "anthropic",
-        "claude-haiku-4-5-20251001",
-        &fixture,
-        RequestPurpose::ManualChat,
-    )
-    .await
-    .is_err());
+    assert_eq!(
+        super::stream_dispatch::resolve_fixture_transport(
+            "anthropic",
+            "claude-haiku-4-5-20251001",
+            &fixture,
+            RequestPurpose::ManualChat,
+        )
+        .await
+        .unwrap()
+        .client,
+        ClientKind::Anthropic
+    );
     assert!(super::stream_dispatch::resolve_fixture_transport(
         "anthropic",
         "claude-haiku-4-5-20251001",
@@ -347,6 +351,38 @@ async fn anthropic_live_route_supports_every_declared_invocation_kind() {
     )
     .await
     .is_err());
+}
+
+#[cfg(debug_assertions)]
+#[tokio::test]
+async fn xai_fixture_transport_uses_the_backend_from_its_real_catalog_resolution() {
+    let mut catalog_model = xai_model(XaiBackend::Responses);
+    catalog_model.id = "grok-4.6".into();
+    catalog_model.reasoning_modes = vec!["high".into()];
+    catalog_model.default_reasoning_mode = Some("high".into());
+    crate::services::llm_oauth::seed_xai_catalog_for_test(catalog_model).await;
+    let fixture = ContinuationTarget::FixtureCandidate(ReplayTarget {
+        route_id: RouteId::XaiOauth,
+        model_id: "grok-4.6".into(),
+        credential_scope: CredentialScope::authenticated("fixture-scope").unwrap(),
+        reasoning_mode: ReasoningModeId::High,
+        continuation_use: ContinuationUse::UserContinuation,
+    });
+
+    let resolved = super::stream_dispatch::resolve_fixture_transport(
+        "xai-oauth",
+        "grok-4.6",
+        &fixture,
+        RequestPurpose::ManualChat,
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(resolved.client, ClientKind::XaiOauth(XaiBackend::Responses));
+    assert_eq!(
+        resolved.xai_catalog_model.unwrap().backend,
+        XaiBackend::Responses
+    );
 }
 
 #[tokio::test]

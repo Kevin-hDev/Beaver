@@ -15,3 +15,10 @@ pub(super) fn test_route(chat_provider_id: &'static str) -> LlmRoute {
         auth_source: AuthSource::TestToken("fixture-secret"),
     }
 }
+
+pub(super) fn test_oauth_route(chat_provider_id: &'static str) -> LlmRoute {
+    LlmRoute {
+        auth_source: AuthSource::TestOAuth("fixture-secret"),
+        ..test_route(chat_provider_id)
+    }
+}

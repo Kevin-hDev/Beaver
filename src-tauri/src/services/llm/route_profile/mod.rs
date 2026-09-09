@@ -98,7 +98,10 @@ pub(crate) fn supports_bounded_fixture(provider_id: &str) -> bool {
     find(provider_id).is_some_and(|profile| {
         matches!(
             profile.client,
-            ClientSelector::Codex | ClientSelector::OllamaLocal
+            ClientSelector::Anthropic
+                | ClientSelector::Codex
+                | ClientSelector::OllamaLocal
+                | ClientSelector::XaiOauth
         ) || (matches!(
             profile.client,
             ClientSelector::OpenAiCompat | ClientSelector::OpenAiResponses

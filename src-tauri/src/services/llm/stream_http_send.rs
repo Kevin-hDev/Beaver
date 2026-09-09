@@ -30,12 +30,9 @@ pub async fn send_json_request(
     model: &str,
     session_id: Option<&str>,
 ) -> Result<Response, RequestError> {
-    #[cfg(debug_assertions)]
-    crate::services::reasoning_fixture_budget::authorize_payload(payload)
-        .map_err(|_| RequestError::InvalidConfiguration)?;
     let outbound_headers = outbound_headers(route, model, session_id, purpose)?;
     route
-        .send_authenticated(client, purpose, |token, headers| {
+        .send_generation_authenticated(client, purpose, payload, |token, headers| {
             json_request_builder(client, url, payload, token, headers, &outbound_headers)
         })
         .await
@@ -50,6 +47,8 @@ pub async fn send_json_request(
                     .as_str()
                     .into(),
             ),
+            #[cfg(debug_assertions)]
+            RouteError::FixtureBudget(message) => RequestError::Fatal(message),
         })
 }
 

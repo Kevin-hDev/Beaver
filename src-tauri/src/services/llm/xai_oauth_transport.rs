@@ -94,14 +94,26 @@ pub(super) fn prepare_responses_request(
 ) -> Result<super::xai_oauth_payload::PreparedResponsesPayload, String> {
     // xAI OAuth is explicitly text-only: preview bytes never cross this
     // builder boundary until its own wire contract is proven.
-    super::xai_oauth_payload::build_with_evidence(
+    let prepared = super::xai_oauth_payload::build_with_evidence(
         catalog_model,
         request.messages,
         request.tools,
         request.reasoning_mode,
         request.session_id,
         request.continuation_target,
-    )
+    )?;
+    #[cfg(debug_assertions)]
+    let prepared = {
+        let mut prepared = prepared;
+        if crate::services::reasoning_fixture_budget::is_active() {
+            let output_limit =
+                crate::services::reasoning_fixture_budget::output_limit(request.max_tokens)
+                    .ok_or_else(|| "fixture limits invalid".to_string())?;
+            prepared.payload["max_output_tokens"] = output_limit.into();
+        }
+        prepared
+    };
+    Ok(prepared)
 }
 
 pub(super) fn validate_backend(
@@ -155,7 +167,7 @@ async fn post_responses(
         .map_err(|_| "provider_configuration_invalid".to_string())?;
     let url = format!("{}{}", route.base_url, backend_path(model.backend));
     let response = route
-        .send_authenticated(&client, purpose, |token, auth_headers| {
+        .send_generation_authenticated(&client, purpose, payload, |token, auth_headers| {
             let mut combined = auth_headers;
             combined.extend(headers.clone());
             client
@@ -167,9 +179,11 @@ async fn post_responses(
         })
         .await
         .map_err(|error| match error {
-            super::route::RouteError::Unauthorized => "oauth_reauthentication_required",
-            super::route::RouteError::Forbidden => "provider_access_unavailable",
-            super::route::RouteError::Network => "provider_connection_failed",
+            super::route::RouteError::Unauthorized => "oauth_reauthentication_required".to_owned(),
+            super::route::RouteError::Forbidden => "provider_access_unavailable".to_owned(),
+            super::route::RouteError::Network => "provider_connection_failed".to_owned(),
+            #[cfg(debug_assertions)]
+            super::route::RouteError::FixtureBudget(message) => message,
         })?;
     if response.status().is_success() {
         return Ok(response);

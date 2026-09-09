@@ -143,6 +143,8 @@ impl OpenAiCompatProvider {
                 RouteError::Unauthorized => LlmError::Unauthorized,
                 RouteError::Forbidden => LlmError::Provider("usage non interactif refusé".into()),
                 RouteError::Network => network_error(),
+                #[cfg(debug_assertions)]
+                RouteError::FixtureBudget(message) => LlmError::Provider(message),
             })
     }
 }

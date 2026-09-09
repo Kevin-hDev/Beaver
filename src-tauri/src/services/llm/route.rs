@@ -4,8 +4,11 @@ use reqwest::{header::HeaderMap, RequestBuilder, Response};
 
 use super::request_purpose::RequestPurpose;
 use super::route_profile::{self, AuthKind, ClientSelector};
-use crate::services::llm_oauth::{self, LlmOAuthProvider};
+use crate::services::llm_oauth::LlmOAuthProvider;
 use crate::services::secure_http::AuthenticatedClient;
+
+#[path = "route_authenticated_send.rs"]
+mod authenticated_send;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum UsageScope {
@@ -19,6 +22,8 @@ enum AuthSource {
     OAuth(LlmOAuthProvider),
     #[cfg(test)]
     TestToken(&'static str),
+    #[cfg(test)]
+    TestOAuth(&'static str),
 }
 
 #[derive(Debug, Clone)]
@@ -35,11 +40,13 @@ pub struct LlmRoute {
     auth_source: AuthSource,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RouteError {
     Unauthorized,
     Forbidden,
     Network,
+    #[cfg(debug_assertions)]
+    FixtureBudget(String),
 }
 
 impl LlmRoute {
@@ -52,58 +59,20 @@ impl LlmRoute {
     where
         F: Fn(&str, HeaderMap) -> RequestBuilder,
     {
-        if !self.permits(purpose) {
-            return Err(RouteError::Forbidden);
-        }
-        match self.auth_source {
-            AuthSource::ApiKey(provider_id) => {
-                let key = crate::services::api_keys::get_key(provider_id)
-                    .map_err(|_| RouteError::Unauthorized)?;
-                client
-                    .send(build(&key, HeaderMap::new()))
-                    .await
-                    .map_err(|_| RouteError::Network)
-            }
-            AuthSource::OAuth(provider) => {
-                let token = llm_oauth::access_token(provider)
-                    .await
-                    .map_err(|_| RouteError::Unauthorized)?;
-                let response = send_oauth(
-                    client,
-                    provider,
-                    purpose,
-                    &token.value,
-                    token.user_id.as_ref().map(|value| value.as_str()),
-                    &build,
-                )
-                .await?;
-                if oauth_401_action(response.status().as_u16(), false) != OAuth401Action::Refresh {
-                    return Ok(response);
-                }
-                let refreshed = llm_oauth::force_refresh(provider, token.generation)
-                    .await
-                    .map_err(|_| RouteError::Unauthorized)?;
-                let response = send_oauth(
-                    client,
-                    provider,
-                    purpose,
-                    &refreshed.value,
-                    refreshed.user_id.as_ref().map(|value| value.as_str()),
-                    &build,
-                )
-                .await?;
-                if oauth_401_action(response.status().as_u16(), true) == OAuth401Action::Invalidate
-                {
-                    llm_oauth::invalidate(provider).await;
-                }
-                Ok(response)
-            }
-            #[cfg(test)]
-            AuthSource::TestToken(token) => client
-                .send(build(token, HeaderMap::new()))
-                .await
-                .map_err(|_| RouteError::Network),
-        }
+        authenticated_send::send(self, client, purpose, None, build).await
+    }
+
+    pub async fn send_generation_authenticated<F>(
+        &self,
+        client: &AuthenticatedClient,
+        purpose: RequestPurpose,
+        payload: &serde_json::Value,
+        build: F,
+    ) -> Result<Response, RouteError>
+    where
+        F: Fn(&str, HeaderMap) -> RequestBuilder,
+    {
+        authenticated_send::send(self, client, purpose, Some(payload), build).await
     }
 
     pub const fn is_oauth(&self) -> bool {
@@ -128,25 +97,6 @@ fn oauth_401_action(status: u16, already_refreshed: bool) -> OAuth401Action {
         (401, true) => OAuth401Action::Invalidate,
         _ => OAuth401Action::None,
     }
-}
-
-async fn send_oauth<F>(
-    client: &AuthenticatedClient,
-    provider: LlmOAuthProvider,
-    purpose: RequestPurpose,
-    token: &str,
-    user_id: Option<&str>,
-    build: &F,
-) -> Result<Response, RouteError>
-where
-    F: Fn(&str, HeaderMap) -> RequestBuilder,
-{
-    let headers = llm_oauth::request_headers_with_identity(provider, purpose, user_id)
-        .map_err(|_| RouteError::Network)?;
-    client
-        .send(build(token, headers))
-        .await
-        .map_err(|_| RouteError::Network)
 }
 
 pub fn resolve(provider_id: &str) -> Option<LlmRoute> {
@@ -218,6 +168,10 @@ mod test_support;
 #[cfg(test)]
 pub(super) fn test_route(chat_provider_id: &'static str) -> LlmRoute {
     test_support::test_route(chat_provider_id)
+}
+#[cfg(test)]
+pub(super) fn test_oauth_route(chat_provider_id: &'static str) -> LlmRoute {
+    test_support::test_oauth_route(chat_provider_id)
 }
 
 #[cfg(test)]

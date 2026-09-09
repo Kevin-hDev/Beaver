@@ -37,6 +37,11 @@ pub(crate) async fn xai_catalog_model(model: &str) -> Result<XaiCatalogModel, St
         .await
         .map_err(|_| "provider_configuration_invalid".to_string())
 }
+
+#[cfg(test)]
+pub(crate) async fn seed_xai_catalog_for_test(model: XaiCatalogModel) {
+    xai_catalog::seed_for_test(model).await;
+}
 pub use types::{AccessToken, DeviceAuthorization, LlmOAuthProvider, OAuthFailure, TokenBundle};
 
 const PROGRESS_EVENT: &str = "oauth-login-progress";

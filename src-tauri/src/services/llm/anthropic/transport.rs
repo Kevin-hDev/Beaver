@@ -71,10 +71,20 @@ async fn post(
         config.messages,
         config.tools,
     );
+    let requested_max_tokens = {
+        #[cfg(debug_assertions)]
+        {
+            crate::services::reasoning_fixture_budget::output_limit(config.max_tokens)
+        }
+        #[cfg(not(debug_assertions))]
+        {
+            config.max_tokens
+        }
+    };
     let max_tokens = crate::services::llm::stream_max_tokens::resolve(
         route.canonical_provider_id,
         config.model,
-        config.max_tokens,
+        requested_max_tokens,
         route.auto_max_tokens,
         route.fallback_max_tokens,
         estimated,
@@ -118,15 +128,20 @@ async fn post(
     let usage_generation =
         crate::services::provider_usage::credential_generation(config.provider_id);
     let response = route
-        .send_authenticated(&client, config.purpose, |token, inherited| {
-            let request = client.post(&url).headers(inherited).json(&prepared.payload);
-            let request = crate::services::llm::request_auth::apply(request, header, token);
-            static_headers
-                .iter()
-                .fold(request, |request, (name, value)| {
-                    request.header(*name, *value)
-                })
-        })
+        .send_generation_authenticated(
+            &client,
+            config.purpose,
+            &prepared.payload,
+            |token, inherited| {
+                let request = client.post(&url).headers(inherited).json(&prepared.payload);
+                let request = crate::services::llm::request_auth::apply(request, header, token);
+                static_headers
+                    .iter()
+                    .fold(request, |request, (name, value)| {
+                        request.header(*name, *value)
+                    })
+            },
+        )
         .await
         .map_err(map_route_error)?;
     if let Some(measurement) = measurement.as_mut() {
@@ -206,6 +221,10 @@ fn map_route_error(error: crate::services::llm::route::RouteError) -> RequestErr
         }
         crate::services::llm::route::RouteError::Network => {
             RequestError::Fatal("provider_connection_failed".into())
+        }
+        #[cfg(debug_assertions)]
+        crate::services::llm::route::RouteError::FixtureBudget(message) => {
+            RequestError::Fatal(message)
         }
     }
 }

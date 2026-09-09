@@ -22,6 +22,14 @@ struct CachedCatalog {
 
 static CACHE: LazyLock<Mutex<Option<CachedCatalog>>> = LazyLock::new(|| Mutex::new(None));
 
+#[cfg(test)]
+pub(super) async fn seed_for_test(model: XaiCatalogModel) {
+    *CACHE.lock().await = Some(CachedCatalog {
+        fetched_at: Instant::now(),
+        models: vec![model],
+    });
+}
+
 pub async fn list_models() -> Result<Vec<ModelInfo>, LlmError> {
     Ok(catalog().await?.iter().map(to_model_info).collect())
 }
@@ -90,6 +98,8 @@ async fn fetch() -> Result<Vec<XaiCatalogModel>, LlmError> {
                 crate::services::llm::provider_error::ProviderErrorCode::ProviderAccessUnavailable,
             ),
             route::RouteError::Network => network_error(),
+            #[cfg(debug_assertions)]
+            route::RouteError::FixtureBudget(message) => LlmError::Provider(message),
         })?;
     if !response.status().is_success() {
         return Err(match response.status().as_u16() {
