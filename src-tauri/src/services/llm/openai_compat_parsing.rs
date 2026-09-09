@@ -29,11 +29,7 @@ pub async fn map_error_status(
             ))
         }
         429 => {
-            let retry_after_secs = resp
-                .headers()
-                .get("retry-after")
-                .and_then(|v| v.to_str().ok())
-                .and_then(|s| s.parse().ok());
+            let retry_after_secs = super::provider_error::retry_after_seconds(resp.headers());
             LlmError::RateLimit { retry_after_secs }
         }
         _ => {

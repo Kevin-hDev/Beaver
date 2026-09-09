@@ -5,6 +5,18 @@ use super::types::LlmError;
 #[path = "provider_error_quota.rs"]
 mod quota;
 
+pub(super) const MAX_RETRY_SECONDS: u64 = 86_400;
+
+// Catalog failures and stream diagnostics must accept the same safe delay.
+pub(super) fn retry_after_seconds(headers: &reqwest::header::HeaderMap) -> Option<u64> {
+    headers
+        .get(reqwest::header::RETRY_AFTER)
+        .and_then(|value| value.to_str().ok())
+        .filter(|value| !value.is_empty() && value.bytes().all(|byte| byte.is_ascii_digit()))
+        .and_then(|value| value.parse::<u64>().ok())
+        .filter(|seconds| *seconds <= MAX_RETRY_SECONDS)
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ProviderErrorCode {

@@ -142,6 +142,26 @@ async fn catalog_rate_limit_preserves_the_retry_after_delay() {
     ));
 }
 
+#[tokio::test]
+async fn catalog_retry_after_uses_the_same_bounded_decimal_contract_as_streams() {
+    for (header, expected) in [("+7", None), ("86401", None), ("86400", Some(86_400))] {
+        let response = tauri::http::Response::builder()
+            .status(429)
+            .header("retry-after", header)
+            .body("")
+            .unwrap();
+        let error = crate::services::llm::openai_compat_parsing::map_error_status(
+            reqwest::Response::from(response),
+            ErrorPolicy::OpenAiCompatible,
+        )
+        .await;
+        let crate::services::llm::types::LlmError::RateLimit { retry_after_secs } = error else {
+            panic!("expected rate-limit category");
+        };
+        assert_eq!(retry_after_secs, expected, "{header}");
+    }
+}
+
 #[test]
 fn transport_failures_have_stable_safe_codes() {
     assert_eq!(

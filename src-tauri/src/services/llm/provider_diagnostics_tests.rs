@@ -37,6 +37,7 @@ fn entry(context: ProviderDiagnosticContext) -> ProviderDiagnostic {
         tool_count: 2,
         request_id: context.request_id,
         output_limit: context.output_limit,
+        retry_after_seconds: context.retry_after_seconds,
     }
 }
 
@@ -70,6 +71,35 @@ fn diagnostic_keeps_valid_request_and_serialized_output_limit_only() {
     assert_eq!(value["request_id"], "request-123");
     assert_eq!(value["output_limit"]["field"], "max_completion_tokens");
     assert_eq!(value["output_limit"]["value"], 321);
+}
+
+#[test]
+fn retry_after_diagnostic_accepts_only_one_bounded_decimal_delay() {
+    let mut headers = reqwest::header::HeaderMap::new();
+    headers.insert(
+        "retry-after",
+        reqwest::header::HeaderValue::from_static("120"),
+    );
+    let context = ProviderDiagnosticContext::from_payload(
+        Some("request-retry"),
+        &serde_json::json!({"max_tokens": 64}),
+    )
+    .with_retry_after(&headers);
+    let value = serde_json::to_value(entry(context)).unwrap();
+    assert_eq!(value["retry_after_seconds"], 120);
+
+    for invalid in ["Wed, 21 Oct 2015 07:28:00 GMT", "+120", "120, 240", "86401"] {
+        headers.insert(
+            "retry-after",
+            reqwest::header::HeaderValue::from_str(invalid).unwrap(),
+        );
+        let value = serde_json::to_value(entry(
+            ProviderDiagnosticContext::from_payload(None, &serde_json::Value::Null)
+                .with_retry_after(&headers),
+        ))
+        .unwrap();
+        assert!(value.get("retry_after_seconds").is_none(), "{invalid}");
+    }
 }
 
 #[test]

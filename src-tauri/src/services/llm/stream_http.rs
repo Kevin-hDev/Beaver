@@ -168,6 +168,11 @@ async fn post_chat_request_with_timeout_and_policy(
     let status = resp.status();
     if !status.is_success() {
         let has_retry_after = resp.headers().contains_key("retry-after");
+        let diagnostic_context =
+            super::provider_diagnostics::ProviderDiagnosticContext::from_payload(
+                request_id, &payload,
+            )
+            .with_retry_after(resp.headers());
         let body = read_provider_error(resp).await;
         let log_code =
             super::provider_error::safe_log_code(route.error_policy, status.as_u16(), &body);
@@ -178,9 +183,7 @@ async fn post_chat_request_with_timeout_and_policy(
             super::provider_error::safe_details(&body),
             request_bytes,
             cfg.tools.len(),
-            super::provider_diagnostics::ProviderDiagnosticContext::from_payload(
-                request_id, &payload,
-            ),
+            diagnostic_context,
         );
         ::log::warn!("[llm stream] HTTP {status} code={log_code}");
         return Err(classify_error(

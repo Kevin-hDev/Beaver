@@ -162,6 +162,11 @@ async fn classify_response(
 ) -> Result<reqwest::Response, RequestError> {
     let status = response.status();
     let has_retry_after = response.headers().contains_key("retry-after");
+    let diagnostic_context =
+        crate::services::llm::provider_diagnostics::ProviderDiagnosticContext::from_payload(
+            request_id, payload,
+        )
+        .with_retry_after(response.headers());
     let body = read_bounded(response, PROVIDER_ERROR_LIMIT)
         .await
         .map(|bytes| zeroize::Zeroizing::new(String::from_utf8_lossy(&bytes).into_owned()))
@@ -178,9 +183,7 @@ async fn classify_response(
         crate::services::llm::provider_error::safe_details(&body),
         request_bytes,
         config.tools.len(),
-        crate::services::llm::provider_diagnostics::ProviderDiagnosticContext::from_payload(
-            request_id, payload,
-        ),
+        diagnostic_context,
     );
     ::log::warn!("[anthropic messages] HTTP {status} code={code}");
     Err(crate::services::llm::stream_http::classify_error(

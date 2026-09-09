@@ -17,6 +17,12 @@ pub async fn require_success(
         return Ok(response);
     }
 
+    let diagnostic_context =
+        crate::services::llm::provider_diagnostics::ProviderDiagnosticContext::from_serialized(
+            request_id,
+            serialized_request,
+        )
+        .with_retry_after(response.headers());
     let body = read_error_body(response).await;
     crate::services::llm::provider_diagnostics::record_http_failure(
         "codex-oauth",
@@ -25,10 +31,7 @@ pub async fn require_success(
         crate::services::llm::provider_error::safe_details(&body),
         request_bytes,
         tool_count,
-        crate::services::llm::provider_diagnostics::ProviderDiagnosticContext::from_serialized(
-            request_id,
-            serialized_request,
-        ),
+        diagnostic_context,
     );
     let safe_code = safe_status_code(status);
     ::log::warn!("[codex stream] HTTP {status} code={safe_code}");

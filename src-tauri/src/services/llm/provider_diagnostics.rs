@@ -19,6 +19,8 @@ struct ProviderDiagnostic {
     request_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     output_limit: Option<SerializedOutputLimit>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    retry_after_seconds: Option<u64>,
 }
 
 #[derive(Clone, Serialize)]
@@ -30,6 +32,7 @@ struct SerializedOutputLimit {
 pub(crate) struct ProviderDiagnosticContext {
     request_id: Option<String>,
     output_limit: Option<SerializedOutputLimit>,
+    retry_after_seconds: Option<u64>,
 }
 
 impl ProviderDiagnosticContext {
@@ -46,7 +49,13 @@ impl ProviderDiagnosticContext {
         Self {
             request_id: request_id.and_then(safe_request_id),
             output_limit,
+            retry_after_seconds: None,
         }
+    }
+
+    pub(crate) fn with_retry_after(mut self, headers: &reqwest::header::HeaderMap) -> Self {
+        self.retry_after_seconds = super::provider_error::retry_after_seconds(headers);
+        self
     }
 
     pub(crate) fn from_serialized(request_id: Option<&str>, payload: &str) -> Self {
@@ -76,6 +85,7 @@ pub fn record_http_failure(
         tool_count,
         request_id: context.request_id,
         output_limit: context.output_limit,
+        retry_after_seconds: context.retry_after_seconds,
     };
     if write_at(&log_path(), &entry).is_err() {
         ::log::warn!("[llm] provider diagnostic log unavailable");

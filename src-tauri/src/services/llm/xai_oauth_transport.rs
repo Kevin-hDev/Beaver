@@ -176,6 +176,9 @@ async fn post_responses(
     }
     let status = response.status().as_u16();
     let has_retry_after = response.headers().contains_key("retry-after");
+    let diagnostic_context =
+        super::provider_diagnostics::ProviderDiagnosticContext::from_payload(request_id, payload)
+            .with_retry_after(response.headers());
     let request_bytes = serde_json::to_vec(payload)
         .map(zeroize::Zeroizing::new)
         .map_or(0, |bytes| bytes.len());
@@ -190,7 +193,7 @@ async fn post_responses(
         super::provider_error::safe_details(&body),
         request_bytes,
         tool_count,
-        super::provider_diagnostics::ProviderDiagnosticContext::from_payload(request_id, payload),
+        diagnostic_context,
     );
     Err(classify_status(route.error_policy, status, &body, has_retry_after).to_string())
 }
