@@ -1,11 +1,14 @@
 pub(crate) const MAX_MODEL_ID_BYTES: usize = 128;
 
 pub(crate) fn is_valid_model_id(value: &str) -> bool {
-    !value.is_empty()
+    // OpenRouter documents a single leading `~` for latest aliases (2026-09-09).
+    // Validate its suffix without changing the exact ID used by transport/replay.
+    let identifier = value.strip_prefix('~').unwrap_or(value);
+    !identifier.is_empty()
         && value.len() <= MAX_MODEL_ID_BYTES
-        && !value.contains("..")
-        && !value.starts_with('/')
-        && value.bytes().all(|byte| {
+        && !identifier.contains("..")
+        && !identifier.starts_with('/')
+        && identifier.bytes().all(|byte| {
             byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.' | b'/' | b':')
         })
 }
@@ -39,5 +42,29 @@ mod tests {
         assert_eq!(canonical_upstream_owner("mistralai"), "mistral");
         assert_eq!(canonical_upstream_owner("x-ai"), "xai");
         assert_eq!(canonical_upstream_owner("mistral"), "mistral");
+    }
+
+    #[test]
+    fn latest_alias_prefix_is_valid_without_relaxing_path_or_size_checks() {
+        assert!(is_valid_model_id("~openai/gpt-latest"));
+        assert!(is_valid_model_id("~anthropic/claude-sonnet-latest"));
+        assert!(is_valid_model_id(&format!(
+            "~{}",
+            "a".repeat(MAX_MODEL_ID_BYTES - 1)
+        )));
+        for invalid in [
+            "~",
+            "~~openai/gpt-latest",
+            "openai/~gpt-latest",
+            "~/x",
+            "~../x",
+            "~model\nx",
+        ] {
+            assert!(!is_valid_model_id(invalid), "{invalid:?}");
+        }
+        assert!(!is_valid_model_id(&format!(
+            "~{}",
+            "a".repeat(MAX_MODEL_ID_BYTES)
+        )));
     }
 }
