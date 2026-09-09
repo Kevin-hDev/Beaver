@@ -1,0 +1,4 @@
+Reason: runtime admission, continuity replay, diagnostics, and upstream lookups must agree on one bounded model-ID syntax and one owner-alias mapping.
+RED: routed :free runtime lookup 0/1; mistralai local inheritance 0/1; LiteLLM route/upstream merge 0/1; routed diagnostic retention 0/1.
+GREEN: model_identifier 2/2; runtime_models 4/4; provider_model_lookup 8/8; litellm_catalog_lookup 8/8; provider_diagnostics 6/6. cargo fmt --check and git diff --check exit 0.
+Warnings: existing ts-rs deny_unknown_fields and macOS ld __eh_frame; CatalogParseError unused import introduced by adjacent reviewed commit remains for final common checks.
