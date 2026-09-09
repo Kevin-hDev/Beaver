@@ -19,19 +19,16 @@ pub(super) fn valid_reasoning_contract(
     modes: &[String],
     default_mode: Option<&str>,
 ) -> Result<(), &'static str> {
-    const ALLOWED_MODES: [&str; 8] = [
-        "off", "auto", "low", "medium", "high", "xhigh", "max", "ultra",
-    ];
-
     if !supports_thinking && (!modes.is_empty() || default_mode.is_some()) {
         return Err("reasoning_modes");
     }
-    // Borne implicite : huit valeurs autorisées et uniques, avec entrées bornées en amont.
-    let mut seen = std::collections::HashSet::with_capacity(modes.len());
-    if modes
-        .iter()
-        .any(|mode| !ALLOWED_MODES.contains(&mode.as_str()) || !seen.insert(mode.as_str()))
-    {
+    // The finite mode enum bounds this set; never reserve from an external list length.
+    let mut seen = std::collections::HashSet::new();
+    if modes.iter().any(|mode| {
+        crate::services::reasoning_continuity::contract::ReasoningModeId::from_name(Some(mode))
+            .is_none()
+            || !seen.insert(mode.as_str())
+    }) {
         return Err("reasoning_modes");
     }
     if default_mode.is_some_and(|mode| !seen.contains(mode)) {

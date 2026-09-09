@@ -13,7 +13,7 @@ async fn codex_catalog_default_is_validated_or_replaced_by_a_published_mode() {
         supports_tools: true,
         supports_vision: true,
         supports_thinking: true,
-        reasoning_metadata_present: false,
+        reasoning_contract: None,
         supports_fast_mode: false,
         reasoning_modes: vec!["low".into(), "max".into()],
         default_reasoning_mode: Some("max".into()),

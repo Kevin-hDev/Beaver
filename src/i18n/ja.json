@@ -278,6 +278,7 @@
     "fastMode": "高速",
     "reasoningOff": "オフ",
     "reasoningAuto": "オン",
+    "reasoningMinimal": "最小",
     "reasoningLow": "低",
     "reasoningMedium": "中",
     "reasoningHigh": "高",

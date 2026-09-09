@@ -192,7 +192,7 @@ async fn openrouter_runtime_limits_are_used_before_upstream_embedded_limits() {
             supports_tools: true,
             supports_vision: true,
             supports_thinking: true,
-            reasoning_metadata_present: true,
+            reasoning_contract: None,
             supports_fast_mode: false,
             reasoning_modes: vec!["low".into(), "high".into(), "max".into()],
             default_reasoning_mode: Some("max".into()),

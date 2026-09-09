@@ -79,7 +79,7 @@ pub(super) async fn enrich_models(
         if !preserve_native_metadata {
             enrich_compat_model(canonical, model).await;
         }
-        repair_reasoning_default(model);
+        repair_reasoning_default(canonical, model);
     }
     super::runtime_models::replace_provider(canonical, &filtered).map_err(|_| invalid_catalog())?;
     Ok(filtered)
@@ -87,7 +87,7 @@ pub(super) async fn enrich_models(
 
 async fn enrich_compat_model(provider_id: &str, model: &mut ModelInfo) {
     let remote_modes = model.reasoning_modes.clone();
-    let remote_reasoning_present = model.reasoning_metadata_present;
+    let remote_reasoning_present = model.reasoning_contract.is_some();
     let local = super::provider_model_lookup::local_capabilities(provider_id, &model.id).is_some();
     let authoritative = super::openrouter_model_metadata::owns_catalog_metadata(provider_id);
     let resolved = if authoritative {
@@ -112,8 +112,8 @@ async fn enrich_compat_model(provider_id: &str, model: &mut ModelInfo) {
         model.supports_tools = capabilities.supports_tools;
         model.supports_vision = capabilities.supports_vision;
         model.supports_thinking = capabilities.supports_thinking;
-        model.reasoning_modes = if remote_reasoning_present && remote_modes.is_empty() {
-            Vec::new()
+        model.reasoning_modes = if authoritative && remote_reasoning_present {
+            remote_modes
         } else {
             crate::services::reasoning::restrict_to_dynamic_modes(
                 capabilities.reasoning_modes.clone(),
@@ -139,18 +139,38 @@ async fn enrich_compat_model(provider_id: &str, model: &mut ModelInfo) {
                 .default_reasoning_mode
                 .filter(|mode| model.reasoning_modes.contains(mode))
         });
+    if !remote_reasoning_present {
+        model.reasoning_contract = capabilities.reasoning_contract;
+    }
 }
 
-fn repair_reasoning_default(model: &mut ModelInfo) {
+fn repair_reasoning_default(provider_id: &str, model: &mut ModelInfo) {
     if !model.supports_thinking {
         model.reasoning_modes.clear();
         model.default_reasoning_mode = None;
+        model.reasoning_contract = None;
+        return;
     } else if model
         .default_reasoning_mode
         .as_ref()
         .is_some_and(|mode| !model.reasoning_modes.contains(mode))
     {
         model.default_reasoning_mode = None;
+    }
+    // Native controls have already passed their route's restrictions. Do not publish
+    // an earlier unrestricted contract next to the restricted legacy projection.
+    if !super::openrouter_model_metadata::owns_catalog_metadata(provider_id)
+        || model.reasoning_contract.is_none()
+    {
+        model.reasoning_contract =
+            super::model_reasoning_contract::ModelReasoningContract::from_legacy_modes(
+                model.supports_thinking,
+                &model.reasoning_modes,
+                model.default_reasoning_mode.as_deref(),
+            );
+    }
+    if let Some(contract) = &model.reasoning_contract {
+        (model.reasoning_modes, model.default_reasoning_mode) = contract.legacy_projection();
     }
 }
 

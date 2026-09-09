@@ -18,8 +18,9 @@ const languages: ReadonlyArray<Record<string, unknown>> = [
 ];
 
 describe("reasoning translations", () => {
-  it("traduit Max et Ultra dans les sept langues", () => {
+  it("traduit Minimal, Max et Ultra dans les sept langues", () => {
     for (const translations of languages) {
+      expect(translations.reasoningMinimal).toBeTruthy();
       expect(translations.reasoningMax).toBeTruthy();
       expect(translations.reasoningUltra).toBeTruthy();
     }

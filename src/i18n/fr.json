@@ -285,6 +285,7 @@
     "fastMode": "Rapide",
     "reasoningOff": "Désactivée",
     "reasoningAuto": "Activée",
+    "reasoningMinimal": "Minimal",
     "reasoningLow": "Limitée",
     "reasoningMedium": "Moyenne",
     "reasoningHigh": "Forte",

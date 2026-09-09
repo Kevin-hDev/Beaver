@@ -13,6 +13,7 @@ vi.mock("react-i18next", () => ({
         "agentLocal.reasoningTitle": "Réflexion",
         "agentLocal.reasoningOff": "Désactivée",
         "agentLocal.reasoningAuto": "Activée",
+        "agentLocal.reasoningMinimal": "Minimale",
         "agentLocal.reasoningMedium": "Moyenne",
         "agentLocal.reasoningHigh": "Forte",
         "agentLocal.fastMode": "Rapide",
@@ -70,6 +71,44 @@ describe("ReasoningSelector", () => {
     const { container } = renderSelector({ reasoning_modes: [] });
 
     expect(container.firstChild).toBeNull();
+  });
+
+  it("reste masqué lorsque le provider garde le contrôle", () => {
+    const { container } = renderSelector({
+      reasoning_contract: { control: { kind: "provider_default" } },
+      reasoning_modes: ["high"],
+    });
+
+    expect(container.firstChild).toBeNull();
+  });
+
+  it("projette uniquement la bascule documentée", () => {
+    renderSelector({
+      reasoning_contract: { control: { kind: "toggle" } },
+      reasoning_modes: ["high"],
+    }, "auto");
+
+    fireEvent.click(screen.getByRole("button", { name: /Activée/ }));
+
+    expect(screen.getByRole("button", { name: "Désactivée" })).toBeTruthy();
+    expect(screen.getAllByText("Activée").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Forte")).toBeNull();
+  });
+
+  it("affiche minimal depuis le contrat sans reprendre la projection historique", () => {
+    renderSelector({
+      reasoning_contract: {
+        default_effort: "minimal",
+        control: { kind: "efforts", efforts: ["minimal", "high"] },
+      },
+      reasoning_modes: ["low"],
+    }, "minimal");
+
+    fireEvent.click(screen.getByRole("button", { name: /Minimale/ }));
+
+    expect(screen.getAllByText("Minimale").length).toBeGreaterThan(0);
+    expect(screen.getByRole("button", { name: "Forte" })).toBeTruthy();
+    expect(screen.queryByText("agentLocal.reasoningLow")).toBeNull();
   });
 
   it("affiche le niveau dans un bouton séparé", () => {

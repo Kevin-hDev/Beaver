@@ -74,7 +74,7 @@ fn merge_remote_model(item: &Value) -> Result<ModelInfo, LlmError> {
         supports_vision: capability(item, &["image_input"])
             .or_else(|| local.as_ref().map(|model| model.supports_vision))
             .unwrap_or(false),
-        reasoning_metadata_present: false,
+        reasoning_contract: None,
         supports_thinking,
         supports_fast_mode: false,
         reasoning_modes,
@@ -198,7 +198,7 @@ fn from_embedded(model: ProviderModelConfig) -> ModelInfo {
         supports_tools: model.supports_tools,
         supports_vision: model.supports_vision,
         supports_thinking: model.supports_thinking,
-        reasoning_metadata_present: false,
+        reasoning_contract: None,
         supports_fast_mode: false,
         reasoning_modes: model.reasoning_modes,
         default_reasoning_mode: model.default_reasoning_mode,

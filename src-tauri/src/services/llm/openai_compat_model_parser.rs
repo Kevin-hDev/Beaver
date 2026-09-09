@@ -93,13 +93,18 @@ fn parse_model(model: &Value, provider_id: &str) -> Option<ModelInfo> {
             .is_some_and(|capabilities| capabilities.supports_thinking);
     // `supported_parameters` annonce une fonctionnalité, pas les niveaux permis.
     // Le catalogue dynamique reste vide tant qu'il ne publie pas ces valeurs.
+    let reasoning_value = &model["reasoning"];
     let reasoning_metadata = if authoritative {
-        super::openrouter_model_metadata::reasoning(&model["reasoning"])
+        super::openrouter_model_metadata::reasoning(reasoning_value)
     } else {
         None
     };
+    if authoritative && !reasoning_value.is_null() && reasoning_metadata.is_none() {
+        return None;
+    }
     let (reasoning_modes, default_reasoning_mode) = reasoning_metadata
-        .clone()
+        .as_ref()
+        .map(super::model_reasoning_contract::ModelReasoningContract::legacy_projection)
         .unwrap_or_else(|| (Vec::new(), None));
 
     Some(ModelInfo {
@@ -111,7 +116,7 @@ fn parse_model(model: &Value, provider_id: &str) -> Option<ModelInfo> {
         supports_tools,
         supports_vision,
         supports_thinking,
-        reasoning_metadata_present: reasoning_metadata.is_some(),
+        reasoning_contract: reasoning_metadata,
         supports_fast_mode: false,
         reasoning_modes,
         default_reasoning_mode,

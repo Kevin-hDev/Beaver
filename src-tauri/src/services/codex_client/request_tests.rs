@@ -38,7 +38,7 @@ async fn astra_request_uses_catalog_effort_and_responses_media_contract() {
             supports_tools: true,
             supports_vision: true,
             supports_thinking: true,
-            reasoning_metadata_present: false,
+            reasoning_contract: None,
             supports_fast_mode: false,
             reasoning_modes: vec![
                 "low".into(),

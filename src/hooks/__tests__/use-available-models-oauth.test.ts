@@ -30,6 +30,11 @@ describe("OAuth models", () => {
       supports_thinking: true,
       supports_fast_mode: false,
       reasoning_modes: ["low", "high"],
+      reasoning_contract: {
+        mandatory: true,
+        default_effort: "minimal",
+        control: { kind: "efforts", efforts: ["minimal", "high"] },
+      },
       default_reasoning_mode: "low",
       context_usage_includes_reasoning: false,
       interactive_only: false,
@@ -39,8 +44,16 @@ describe("OAuth models", () => {
       provider_name: "Provider fictif · OAuth",
       context_length: 64000,
       reasoning_modes: ["low", "high"],
+      reasoning_contract: {
+        mandatory: true,
+        default_effort: "minimal",
+        control: { kind: "efforts", efforts: ["minimal", "high"] },
+      },
       context_usage_includes_reasoning: false,
     });
+    const model = groups.get("provider-fictif-oauth")?.[0];
+    expect(reasoningModeOptions(model ?? null).map((entry) => entry.mode))
+      .toEqual(["minimal", "high"]);
   });
 
   it("utilise des ids et libellés distincts des providers API", () => {

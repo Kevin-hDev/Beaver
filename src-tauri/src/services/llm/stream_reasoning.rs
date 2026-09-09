@@ -88,6 +88,33 @@ pub(super) fn apply_thinking(payload: &mut Value, reasoning_mode: Option<&str>) 
 }
 
 fn apply_openrouter(payload: &mut Value, model: &str, think: bool, reasoning_mode: Option<&str>) {
+    if let Some(contract) = crate::services::llm::runtime_models::lookup("openrouter", model)
+        .and_then(|model| model.reasoning_contract)
+    {
+        use super::model_reasoning_contract::ReasoningControl;
+        match contract.control {
+            ReasoningControl::Unknown | ReasoningControl::ProviderDefault => return,
+            ReasoningControl::Toggle => {
+                // A documented toggle is not an effort selector, including when disabled.
+                if let Some(enabled) = match reasoning_mode {
+                    Some("off") => Some(false),
+                    Some("auto") => Some(think),
+                    _ => None,
+                } {
+                    payload["reasoning"] = serde_json::json!({"enabled": enabled});
+                }
+                return;
+            }
+            ReasoningControl::Efforts(_)
+                if reasoning_mode == Some("off") && contract.mandatory == Some(false) =>
+            {
+                // Optional reasoning proves a disable switch, not support for effort:none.
+                payload["reasoning"] = serde_json::json!({"enabled": false});
+                return;
+            }
+            ReasoningControl::Efforts(_) => {}
+        }
+    }
     let supported = crate::services::reasoning::supported_modes("openrouter", model, true);
     if reasoning_mode.is_some_and(|mode| !supported.iter().any(|candidate| candidate == mode)) {
         return;

@@ -88,7 +88,7 @@ fn install_model(supports_vision: bool) {
             supports_tools: true,
             supports_vision,
             supports_thinking: false,
-            reasoning_metadata_present: false,
+            reasoning_contract: None,
             supports_fast_mode: false,
             reasoning_modes: Vec::new(),
             default_reasoning_mode: None,

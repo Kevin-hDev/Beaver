@@ -278,6 +278,7 @@
     "fastMode": "快速",
     "reasoningOff": "关闭",
     "reasoningAuto": "开启",
+    "reasoningMinimal": "最低",
     "reasoningLow": "低",
     "reasoningMedium": "中",
     "reasoningHigh": "高",

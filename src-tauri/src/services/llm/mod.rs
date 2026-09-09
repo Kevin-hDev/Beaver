@@ -37,6 +37,9 @@ pub(crate) mod model_catalog;
 mod model_catalog_tests;
 mod model_metadata;
 pub mod model_pricing;
+pub(crate) mod model_reasoning_contract;
+#[cfg(test)]
+mod model_reasoning_contract_tests;
 pub mod openai_compat;
 mod openai_compat_model_limits;
 mod openai_compat_model_parser;

@@ -278,13 +278,13 @@ fn openrouter_reasoning_metadata_and_effective_limits_are_preserved() {
     assert_eq!(model.context_length, Some(1_048_576));
     assert_eq!(model.max_output_tokens, Some(131072));
     assert!(model.supports_thinking);
-    assert!(model.reasoning_metadata_present);
+    assert!(model.reasoning_contract.is_some());
     assert_eq!(model.reasoning_modes, ["max", "high", "low"]);
     assert_eq!(model.default_reasoning_mode.as_deref(), Some("max"));
 }
 
 #[test]
-fn openrouter_explicit_empty_reasoning_metadata_is_not_a_historical_absence() {
+fn openrouter_empty_efforts_use_the_provider_default_without_inventing_a_level() {
     let body = json!({
         "data": [{
             "id": "openai/o3",
@@ -296,12 +296,13 @@ fn openrouter_explicit_empty_reasoning_metadata_is_not_a_historical_absence() {
     let model = parse_models_list(&body, "openrouter").unwrap().remove(0);
 
     assert!(model.supports_thinking);
-    assert!(model.reasoning_modes.is_empty());
-    assert!(model.reasoning_metadata_present);
+    assert_eq!(model.reasoning_modes, ["auto"]);
+    assert_eq!(model.default_reasoning_mode.as_deref(), Some("auto"));
+    assert!(model.reasoning_contract.is_some());
 }
 
 #[test]
-fn openrouter_reasoning_object_without_efforts_keeps_historical_fallbacks_available() {
+fn openrouter_documented_optional_reasoning_projects_a_toggle_without_efforts() {
     let body = json!({
         "data": [{
             "id": "qwen/qwen3.8-flash",
@@ -317,8 +318,9 @@ fn openrouter_reasoning_object_without_efforts_keeps_historical_fallbacks_availa
     let model = parse_models_list(&body, "openrouter").unwrap().remove(0);
 
     assert!(model.supports_thinking);
-    assert!(model.reasoning_modes.is_empty());
-    assert!(!model.reasoning_metadata_present);
+    assert_eq!(model.reasoning_modes, ["off", "auto"]);
+    assert_eq!(model.default_reasoning_mode.as_deref(), Some("auto"));
+    assert!(model.reasoning_contract.is_some());
 }
 
 #[test]

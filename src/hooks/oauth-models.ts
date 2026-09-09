@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type { AvailableModel } from "./available-model-types";
 import type { ReasoningMode } from "@/lib/reasoning-modes";
 import type { OAuthProviderId } from "@/types/oauth-provider";
+import type { ModelReasoningContract } from "@/types/model-reasoning-contract";
 
 export interface OAuthModelInfo {
   id: string;
@@ -15,6 +16,7 @@ export interface OAuthModelInfo {
   supports_thinking: boolean;
   supports_fast_mode: boolean;
   reasoning_modes?: ReasoningMode[];
+  reasoning_contract?: ModelReasoningContract;
   default_reasoning_mode?: ReasoningMode;
   context_usage_includes_reasoning: boolean;
   interactive_only: boolean;
@@ -56,6 +58,7 @@ export function mapOAuthModels(models: OAuthModelInfo[]): Map<string, AvailableM
       supports_thinking: model.supports_thinking,
       supports_fast_mode: model.supports_fast_mode,
       reasoning_modes: model.reasoning_modes,
+      reasoning_contract: model.reasoning_contract,
       default_reasoning_mode: model.default_reasoning_mode,
       context_length: model.context_length,
       context_usage_includes_reasoning: model.context_usage_includes_reasoning,

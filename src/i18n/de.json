@@ -278,6 +278,7 @@
     "fastMode": "Schnell",
     "reasoningOff": "Aus",
     "reasoningAuto": "Ein",
+    "reasoningMinimal": "Minimal",
     "reasoningLow": "Niedrig",
     "reasoningMedium": "Mittel",
     "reasoningHigh": "Hoch",

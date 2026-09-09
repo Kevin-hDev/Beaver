@@ -189,7 +189,7 @@ fn convert_model(wire: WireModel) -> Option<CatalogModel> {
             supports_tools,
             supports_vision,
             supports_thinking: !modes.is_empty(),
-            reasoning_metadata_present: false,
+            reasoning_contract: None,
             supports_fast_mode,
             reasoning_modes: modes,
             default_reasoning_mode,

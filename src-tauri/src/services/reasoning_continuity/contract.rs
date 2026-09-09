@@ -114,10 +114,13 @@ impl RouteId {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
 #[serde(rename_all = "lowercase")]
+#[cfg_attr(test, ts(rename_all = "lowercase"))]
 pub enum ReasoningModeId {
     Off,
     Auto,
+    Minimal,
     Low,
     Medium,
     High,
@@ -131,6 +134,7 @@ impl ReasoningModeId {
         match mode.unwrap_or("off") {
             "off" => Some(Self::Off),
             "auto" => Some(Self::Auto),
+            "minimal" => Some(Self::Minimal),
             "low" => Some(Self::Low),
             "medium" => Some(Self::Medium),
             "high" => Some(Self::High),
@@ -138,6 +142,20 @@ impl ReasoningModeId {
             "max" => Some(Self::Max),
             "ultra" => Some(Self::Ultra),
             _ => None,
+        }
+    }
+
+    pub const fn as_name(self) -> &'static str {
+        match self {
+            Self::Off => "off",
+            Self::Auto => "auto",
+            Self::Minimal => "minimal",
+            Self::Low => "low",
+            Self::Medium => "medium",
+            Self::High => "high",
+            Self::Xhigh => "xhigh",
+            Self::Max => "max",
+            Self::Ultra => "ultra",
         }
     }
 }
