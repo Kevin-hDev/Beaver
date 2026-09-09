@@ -1,0 +1,15 @@
+Lot 5 preparation: bounded native and OAuth fixture generation
+
+Cause and authority: the debug live runner could not safely admit Anthropic or Grok OAuth, and the old shared HTTP budget guard counted a logical call rather than each physical generation request after an OAuth401 resend. Extract the existing authenticated sender into route_authenticated_send.rs and apply the existing budget immediately before each physical generation send. Catalog traffic keeps its original non-generation path; permissions and token refresh semantics are retained. No second budget count upstream.
+
+Anthropic clamps fixture output before its existing payload validation. Grok Responses receives max_output_tokens only inside the active debug fixture scope; admission resolves its actual cached OAuth backend rather than assuming one. Budget failures retain their explicit fixture error. No production continuity policy activation, provider region change, unbounded client or plaintext credential access.
+
+Implementation by the same GPT-5.6 Sol medium agent, reviewed with direct callers by root. Agent executed fixture budget12, dispatch9, Anthropic transport3, xAI transport9, HTTP send6, route7 and live runner support3 tests successfully; root inspected their saved outputs. HTTP loopback tests cover budget1 rejecting the second OAuth send and budget2 admitting it. Fake OAuth uses no real vault/refresh service: this is physical-send proof, NOT live OAuth proof. Anthropic payload tests use the existing interceptor, not a real endpoint.
+
+Root correction: FixtureBudget variant and consumers are debug-only. First release check exposed an unused new variant; gating it exposed E0283 in the Grok mapping because String inference depended on the debug arm. Explicit owned strings fixed that error. Final cargo check --release --lib succeeds with10 pre-existing fixture-store/app-build warnings; no new warning and no blanket suppression. Production files producing those warnings are unchanged in this step.
+
+Final root verification on this exact code: cargo test exit0,5359 unit tests+1 integration passed,0failed,21ignored; cargo clippy --all-targets -- -D warnings exit0; cargo fmt --check and git diff --check exit0; TypeScript and contracts16 green; provider boundaries65; test:provider-usage91+6 passed. Logs /tmp/beaver-root-final-rust-after-cfg.log, /tmp/beaver-root-fixture-final-clippy.log, /tmp/beaver-root-release-check-corrected.log, /tmp/beaver-root-final-usage.log. Graph updated separately and ignored.
+
+Frontend/scripts unchanged since15e947b3: root full npm test3313 Vitest tests+355 Node annex tests passed,1 Windows-only PowerShell test skipped on macOS; lint green (documented in that commit note). Skips and zero-test platform executables are not validation claims.
+
+No real provider call, app launch, UI validation or paid expenditure in this campaign yet. Mac locked; user unlock requested. Mistral429, Grok OAuth, historical OpenRouter402/403 and lot6 live matrix remain OPEN, not solved by this test-harness preparation. No push/PR/merge/release.
