@@ -117,6 +117,19 @@ mod tests {
     use super::LIVE_SPECS;
 
     #[test]
+    fn kimi_toggle_auto_selects_an_exact_non_vision_fixture() {
+        let selected = super::select_specs(
+            Some("openrouter"),
+            Some("moonshotai/kimi-k2.5"),
+            Some("auto"),
+        )
+        .expect("current Kimi toggle mode");
+        assert_eq!(selected.len(), 1);
+        assert!(selected[0].report_variant);
+        assert!(!selected[0].vision);
+    }
+
+    #[test]
     fn selection_rejects_unbudgeted_routes_and_accepts_the_new_bounded_transports() {
         for spec in LIVE_SPECS.iter().filter(|spec| {
             !crate::services::llm::route_profile::supports_bounded_fixture(spec.provider)

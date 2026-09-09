@@ -9,6 +9,26 @@ use super::registry::{
 };
 
 #[test]
+fn kimi_toggle_auto_has_a_fixture_adapter_without_activating_production_replay() {
+    for continuation_use in [
+        ContinuationUse::UserContinuation,
+        ContinuationUse::ToolContinuation,
+    ] {
+        let target = ReplayTarget {
+            route_id: RouteId::OpenRouter,
+            model_id: "moonshotai/kimi-k2.5".into(),
+            credential_scope: CredentialScope::authenticated("fixture-scope").unwrap(),
+            reasoning_mode: ReasoningModeId::Auto,
+            continuation_use,
+        };
+        let policy = replay_policy(&target).expect("current toggle mode has a candidate contract");
+        assert_eq!(policy.activation(), ActivationState::Disabled);
+        assert_eq!(policy.requirement(), ReplayRequirement::Required);
+        assert!(policy.fixture_adapter().is_some());
+    }
+}
+
+#[test]
 fn reasoning_transport_accepts_only_modes_advertised_by_the_model_contract() {
     for mode in [
         ReasoningModeId::Low,
