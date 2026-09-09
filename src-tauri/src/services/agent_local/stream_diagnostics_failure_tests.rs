@@ -6,6 +6,8 @@ use crate::services::agent_local::types_diagnostics::{AgentDiagnosticRun, AgentD
 fn run(phase: &str, tool_status: &str) -> AgentDiagnosticRun {
     AgentDiagnosticRun {
         request_id: "request".to_string(),
+        provider: None,
+        model: None,
         generation: 1,
         status: "running".to_string(),
         severity: "info".to_string(),

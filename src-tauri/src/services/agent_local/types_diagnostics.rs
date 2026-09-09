@@ -9,6 +9,12 @@ pub(crate) const MAX_EXTENSION_DIAGNOSTIC_TEXT_CHARS: usize = 200;
 #[cfg_attr(test, derive(ts_rs::TS))]
 pub struct AgentDiagnosticRun {
     pub request_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(test, ts(optional))]
+    pub provider: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(test, ts(optional))]
+    pub model: Option<String>,
     #[cfg_attr(test, ts(type = "number"))]
     pub generation: u64,
     pub status: String,

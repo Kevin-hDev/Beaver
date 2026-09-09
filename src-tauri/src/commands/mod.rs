@@ -6,6 +6,7 @@ pub(crate) mod agent_chat_fixture_candidate;
 pub mod agent_chat_queue;
 #[cfg(test)]
 mod agent_chat_request_runtime_tests;
+pub(crate) mod agent_chat_rollback;
 pub(crate) mod agent_chat_run;
 #[cfg(test)]
 mod agent_chat_run_tests;
@@ -14,6 +15,7 @@ mod agent_chat_stream_replacement_tests;
 pub(crate) mod agent_chat_streams;
 pub(crate) mod agent_chat_target;
 mod agent_chat_target_catalog;
+pub(crate) mod agent_chat_target_error;
 pub(crate) mod agent_chat_task;
 pub(crate) mod agent_chat_turn;
 pub(crate) mod agent_chat_work;

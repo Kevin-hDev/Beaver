@@ -494,6 +494,38 @@ async fn admit_resolved(
     .unwrap()
 }
 
+#[tokio::test]
+async fn mismatched_attempt_has_a_closed_internal_reason() {
+    let session = crate::services::agent_local::session_store::create_full(
+        "Typed admission failure",
+        "qwen3.5:4b",
+        "ollama",
+        false,
+        None,
+    )
+    .await
+    .unwrap();
+
+    let error = match resolve_with_ollama_capabilities(
+        &session.id,
+        "ollama",
+        "another-model",
+        None,
+        None,
+        &["completion".into()],
+    )
+    .await
+    {
+        Ok(_) => panic!("mismatched attempt must be rejected"),
+        Err(error) => error,
+    };
+
+    assert_eq!(error, super::ChatTargetError::SessionInconsistent);
+    assert_eq!(error.diagnostic_code(), "session_inconsistent");
+    assert_eq!(error.ui_code(), "conversation_admission_failed");
+    cleanup(&session.id).await;
+}
+
 async fn cleanup(session_id: &str) {
     crate::services::agent_local::session_store::delete_one(session_id)
         .await

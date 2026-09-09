@@ -1,3 +1,4 @@
+use super::agent_chat_target_error::ChatTargetError;
 use crate::services::reasoning_continuity::contract::{
     ContinuationTarget, ContinuationUse, CredentialScope, NonReplayTarget, ReasoningModeId,
     ReplayTarget, RouteId,
@@ -17,28 +18,28 @@ pub(crate) async fn resolve(
     model: &str,
     _reasoning_mode_hint: Option<&str>,
     _supports_thinking_hint: Option<bool>,
-) -> Result<ResolvedChatTarget, String> {
+) -> Result<ResolvedChatTarget, ChatTargetError> {
     let session = crate::services::agent_local::session_store::get(session_id)
         .await
-        .map_err(|_| generic_error())?;
+        .map_err(|_| ChatTargetError::SessionInconsistent)?;
     if session.provider != provider || session.model != model {
-        return Err(generic_error());
+        return Err(ChatTargetError::SessionInconsistent);
     }
-    let route_id = RouteId::from_provider_id(provider).ok_or_else(generic_error)?;
+    let route_id = RouteId::from_provider_id(provider).ok_or(ChatTargetError::ModelInvalid)?;
     super::agent_chat_target_catalog::ensure_reasoning_contract(
         provider,
         model,
         session.thinking_enabled,
     )
     .await
-    .map_err(|_| generic_error())?;
+    .map_err(|_| ChatTargetError::CatalogUnavailable)?;
     let ollama_capabilities = if route_id == RouteId::Ollama {
         Some(
             crate::services::agent_local::ollama_client::OllamaClient::from_global()
-                .map_err(|_| generic_error())?
+                .map_err(|_| ChatTargetError::CatalogUnavailable)?
                 .show_model(model)
                 .await
-                .map_err(|_| generic_error())?
+                .map_err(|_| ChatTargetError::CatalogUnavailable)?
                 .capabilities,
         )
     } else {
@@ -69,7 +70,7 @@ fn resolve_session(
     ollama_capabilities: Option<&[String]>,
     supports_api_thinking: Option<bool>,
     credential_scope: Option<CredentialScope>,
-) -> Result<ResolvedChatTarget, String> {
+) -> Result<ResolvedChatTarget, ChatTargetError> {
     let reasoning = if route_id == RouteId::Ollama {
         crate::services::reasoning_profile::EffectiveReasoningProfile::ollama(
             &session.model,
@@ -78,7 +79,8 @@ fn resolve_session(
             ollama_capabilities,
         )
     } else {
-        let supports_thinking = supports_api_thinking.ok_or_else(generic_error)?;
+        let supports_thinking =
+            supports_api_thinking.ok_or(ChatTargetError::ReasoningConfigurationInvalid)?;
         crate::services::reasoning_profile::EffectiveReasoningProfile::api(
             &session.provider,
             &session.model,
@@ -87,9 +89,10 @@ fn resolve_session(
             supports_thinking,
         )
     }
-    .map_err(|_| generic_error())?;
+    .map_err(|_| ChatTargetError::ReasoningConfigurationInvalid)?;
     let continuation =
-        continuation_for_session(&session, route_id, credential_scope, reasoning.mode)?;
+        continuation_for_session(&session, route_id, credential_scope, reasoning.mode)
+            .map_err(|_| ChatTargetError::ModelInvalid)?;
     let session_reasoning =
         crate::services::agent_local::conversation_reasoning_state::SessionReasoningUpdate::new(
             &session, &reasoning,
@@ -159,12 +162,12 @@ async fn resolve_with_ollama_capabilities(
     _reasoning_mode_hint: Option<&str>,
     _supports_thinking_hint: Option<bool>,
     capabilities: &[String],
-) -> Result<ResolvedChatTarget, String> {
+) -> Result<ResolvedChatTarget, ChatTargetError> {
     let session = crate::services::agent_local::session_store::get(session_id)
         .await
-        .map_err(|_| generic_error())?;
+        .map_err(|_| ChatTargetError::SessionInconsistent)?;
     if session.provider != provider || session.model != model {
-        return Err(generic_error());
+        return Err(ChatTargetError::SessionInconsistent);
     }
     resolve_session(
         session,
@@ -181,15 +184,18 @@ async fn resolve_with_api_capability(
     provider: &str,
     model: &str,
     supports_thinking: bool,
-) -> Result<ResolvedChatTarget, String> {
+) -> Result<ResolvedChatTarget, ChatTargetError> {
     let session = crate::services::agent_local::session_store::get(session_id)
         .await
-        .map_err(|_| generic_error())?;
+        .map_err(|_| ChatTargetError::SessionInconsistent)?;
     if session.provider != provider || session.model != model {
-        return Err(generic_error());
+        return Err(ChatTargetError::SessionInconsistent);
     }
-    let route_id = RouteId::from_provider_id(provider).ok_or_else(generic_error)?;
-    let scope = Some(CredentialScope::authenticated("test-scope").map_err(|_| generic_error())?);
+    let route_id = RouteId::from_provider_id(provider).ok_or(ChatTargetError::ModelInvalid)?;
+    let scope = Some(
+        CredentialScope::authenticated("test-scope")
+            .map_err(|_| ChatTargetError::SessionInconsistent)?,
+    );
     resolve_session(session, route_id, None, Some(supports_thinking), scope)
 }
 

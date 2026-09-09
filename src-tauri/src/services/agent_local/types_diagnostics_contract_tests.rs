@@ -14,6 +14,25 @@ fn checked_in_typescript_matches_the_rust_diagnostics_contract() {
 }
 
 #[test]
+fn legacy_diagnostic_run_without_attempt_identity_remains_readable() {
+    let run: super::types_diagnostics::AgentDiagnosticRun = serde_json::from_value(
+        serde_json::json!({
+            "request_id": "legacy-request",
+            "generation": 1,
+            "status": "failed",
+            "severity": "error",
+            "started_at": "2026-09-09T00:00:00Z",
+            "updated_at": "2026-09-09T00:00:01Z",
+            "phase": "failed"
+        }),
+    )
+    .unwrap();
+
+    assert!(run.provider.is_none());
+    assert!(run.model.is_none());
+}
+
+#[test]
 #[ignore = "developer command that refreshes the checked-in TypeScript contract"]
 fn export_typescript_diagnostics_contract() {
     let types_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../src/types");

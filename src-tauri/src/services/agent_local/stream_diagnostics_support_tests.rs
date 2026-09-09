@@ -142,6 +142,8 @@ fn test_run() -> AgentDiagnosticRun {
     let now = Utc::now();
     AgentDiagnosticRun {
         request_id: "req-1".to_string(),
+        provider: None,
+        model: None,
         generation: 1,
         status: "running".to_string(),
         severity: "info".to_string(),

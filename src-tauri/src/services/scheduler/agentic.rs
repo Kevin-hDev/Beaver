@@ -27,7 +27,8 @@ pub async fn run(
         None,
         None,
     )
-    .await?;
+    .await
+    .map_err(|error| error.ui_code().to_string())?;
     let stream = crate::commands::agent_chat_admission::admit_background(app, session_id).await?;
     let streams = app.state::<crate::ActiveStreams>();
     let turn = crate::commands::agent_chat_turn::prepare(TurnStart::New(NewUserTurnInput {

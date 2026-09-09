@@ -98,7 +98,7 @@ async fn spawn(
             &spawn_rollback,
         )
         .await;
-        rollback(streams, &session_id, &stream).await;
+        rollback(streams, &session_id, &stream, &error).await;
         return Err(error);
     }
     Ok(())
