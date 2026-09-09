@@ -148,7 +148,7 @@ function displaySummary(tool: RenderableTool, projectPath?: string): string {
 export function shortenPath(path: string, projectPath?: string): string {
   const normalized = path.replace(/\\/g, "/");
   const normalizedProject = projectPath?.replace(/\\/g, "/").replace(/\/+$/, "");
-  let displayPath = normalized;
+  let displayPath: string;
   if (normalizedProject && isInsideProject(normalized, normalizedProject)) {
     const rootName = basename(normalizedProject);
     const relative = normalized.slice(normalizedProject.length).replace(/^\/+/, "");

@@ -52,24 +52,20 @@ export function useUserMessageOverflow(content: string, expanded: boolean, maxLi
     if (!element) return;
 
     const frame = window.requestAnimationFrame(measure);
-    let cleanup = () => window.cancelAnimationFrame(frame);
-
     if (typeof ResizeObserver !== "undefined") {
       const observer = new ResizeObserver(measure);
       observer.observe(element);
-      cleanup = () => {
+      return () => {
         window.cancelAnimationFrame(frame);
         observer.disconnect();
       };
-    } else {
-      window.addEventListener("resize", measure);
-      cleanup = () => {
-        window.cancelAnimationFrame(frame);
-        window.removeEventListener("resize", measure);
-      };
     }
 
-    return cleanup;
+    window.addEventListener("resize", measure);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("resize", measure);
+    };
   }, [content, measure, surfaceActive]);
 
   const maxHeight = layout.hasOverflow

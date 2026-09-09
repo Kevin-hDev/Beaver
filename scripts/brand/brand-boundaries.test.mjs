@@ -11,10 +11,7 @@ import {
   scanEntries,
   validateTrackedPath,
 } from "./brand-boundaries.mjs";
-import {
-  COMPATIBILITY_CONTRACTS,
-  EXPECTED_INTERNAL_REFERENCE_COUNTS,
-} from "./brand-boundaries-contracts.mjs";
+import { EXPECTED_INTERNAL_REFERENCE_COUNTS } from "./brand-boundaries-contracts.mjs";
 import { loadTrackedEntries } from "./brand-boundaries-repository.mjs";
 import { EXPECTED_VISIBLE_REFERENCE_CONTRACT } from "./brand-boundaries-visible-contracts.mjs";
 

@@ -101,7 +101,7 @@ async function buildRuntime(runtime, artifact) {
     await writeFile(archivePath, bytes, { mode: 0o600 });
     const extracted = join(temporary, "extracted");
     await mkdir(extracted);
-    await extractArchive(archivePath, extracted, temporary);
+    await extractArchive(archivePath, extracted);
     await mkdir(runtime, { recursive: true, mode: 0o700 });
     const destination = join(
       runtime,
