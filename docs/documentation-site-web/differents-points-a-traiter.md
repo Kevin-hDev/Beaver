@@ -159,12 +159,12 @@ On coche au fur et à mesure.
 
 ## 11 — Sécurité et confidentialité
 
-- [ ] `11-securite/modele-de-securite.md` — vue d'ensemble : ce qui sort de la machine, ce qui n'en sort jamais
-- [ ] `11-securite/vault-et-cles-api.md` — XChaCha20-Poly1305, clé maîtresse dans le keyring OS, zéroïsation, JS n'accède jamais à une clé
+- [x] `11-securite/modele-de-securite.md` — écrit le 9 septembre 2026 : ce qui sort de la machine, ce qui n'en sort jamais, les 5 couches, le bac à sable noyau et sa condition d'activation, les limites assumées (mode par défaut `auto`)
+- [x] `11-securite/vault-et-cles-api.md` — écrit le 9 septembre 2026 : XChaCha20-Poly1305, clé maîtresse dans le keyring OS, cycle de vie réel (déchiffré une fois au démarrage, copies zéroïsées), les 7 commandes exposées — aucune ne renvoie de secret
 - [ ] `11-securite/acces-fichiers.md` — portée du répertoire, protection contre la traversée de chemin, permissions par plateforme
 - [ ] `11-securite/durcissement.md` — collections bornées, HTTP sécurisé, MCP (allowlist, pas de shell), navigateur isolé, logs filtrés
 - [ ] `11-securite/mises-a-jour-verifiees.md` — métadonnées strictes, téléchargements bornés, health checks, échec fermé
-- [ ] `11-securite/confidentialite-des-donnees.md` — ce que voient les providers, télémétrie, données locales, effacement
+- [x] `11-securite/confidentialite-des-donnees.md` — écrit le 9 septembre 2026 : qui voit les conversations, les 6 connexions automatiques recensées, télémétrie absente (vérifiée par recherche exhaustive, méthode publiée), effacement complet
 - [ ] `11-securite/signaler-une-vulnerabilite.md` — procédure, périmètre, délais
 
 ## 12 — Référence
@@ -177,7 +177,7 @@ On coche au fur et à mesure.
 
 ## 13 — Dépannage
 
-- [ ] `13-depannage/installation.md` — Gatekeeper, SmartScreen, dépendances Linux, permissions disque
+- [x] `13-depannage/installation.md` — écrit le 9 septembre 2026 : 13 sections symptôme → cause → résolution (Gatekeeper avec signature ad hoc, SmartScreen, Linux .deb/apt uniquement, téléchargement d'Ollama, permissions disque, machine sans réseau, GPU, désinstallation)
 - [ ] `13-depannage/ollama.md` — daemon indisponible, port occupé, téléchargement interrompu, GPU non détecté, modèle trop lourd
 - [ ] `13-depannage/providers-et-cles.md` — clé refusée, quota atteint, expiration OAuth, erreurs réseau
 - [ ] `13-depannage/agent-et-outils.md` — outil bloqué, permission refusée, contexte saturé, boucle interrompue
@@ -200,9 +200,9 @@ On coche au fur et à mesure.
 Compteurs recomptés le 9 septembre 2026. **Les précédents étaient périmés** : ils annonçaient 94 fichiers prévus et 6 gelés.
 
 - Fichiers prévus : **111** (toutes les entrées cochables de ce fichier, `00-comment-utiliser-ces-fichiers.md` compris)
-- Fichiers rédigés : **67** (sections 0 à 7 terminées, pages Extensions comprises — écrites le 9 septembre 2026)
+- Fichiers rédigés : **71** (sections 0 à 7 terminées, plus les 4 briefs bloquants pour le lancement écrits le 9 septembre 2026 : modèle de sécurité, coffre, confidentialité, dépannage installation)
 - Fichiers gelés : **2** — Mode Plan et Compression du contexte, voir `_geles/README.md`
-- Fichiers restant à écrire : **44** (sections 8 à 14), dont **42 rédigeables immédiatement**
+- Fichiers restant à écrire : **40** (sections 8 à 14), dont **38 rédigeables immédiatement**
 
 ### Règle de sourcing
 
@@ -430,6 +430,54 @@ code. Rangés du plus au moins urgent.
   dans le code (`stdio_catalog.rs`) : une mise à jour de connecteur demande une
   mise à jour de Beaver. C'est une protection — pas de version compromise
   installée silencieusement — mais aussi une contrainte à documenter.
+
+### Relevé en écrivant les sections 11 et 13 (9 septembre 2026)
+
+Constats sur le code et le produit, rangés du plus au moins urgent. Le détail
+sourcé est dans les « Points à confirmer » des quatre briefs concernés.
+
+- ✅ **TRANCHÉ le 9 septembre 2026 — Les réveils programmés tournent en Accès
+  complet sans plafonnement, et c'est voulu.** Le scheduler demande `FullAccess`
+  (`scheduler/agentic.rs:112`), non plafonné par le réglage utilisateur
+  (`commands/agent_chat_task/common.rs:48`), contrairement au gateway. Décision
+  de Kevin : le but d'un réveil est précisément de s'exécuter sans demande
+  d'approbation — l'utilisateur n'est pas devant l'écran dans la quasi-totalité
+  des cas, une demande sans personne pour y répondre bloquerait l'exécution.
+  Le consentement se donne à la création du réveil. À documenter comme un
+  fonctionnement voulu (fait dans `modele-de-securite.md` ; à reprendre dans
+  `09-automatisation/reveils.md` quand il sera écrit).
+- **`SECURITY.md` est doublement décalé** : il écrit « all inbound messages are
+  hashed and logged » alors que c'est l'**identifiant de l'expéditeur** qui est
+  haché (le contenu n'est jamais journalisé — la réalité est meilleure que le
+  document), et il ne mentionne **nulle part** le bac à sable du shell, la
+  protection la plus forte du produit. À corriger au prochain passage.
+- **Le message d'erreur du trousseau accuse la mauvaise cause** : il s'affiche
+  pour toute panne du coffre et cite `gnome-keyring`/`kwallet`, y compris sous
+  Windows et macOS. À corriger dans les 7 langues.
+- **L'aperçu des liens contacte n'importe quel site sans clic**, dès qu'une
+  adresse s'affiche dans une conversation, et il est activé par défaut
+  (`chat-markdown.tsx:78`, `models/config.rs:54`). Désactivable, mais le défaut
+  est bavard. À trancher côté produit.
+- **Trois vérifications de version partent toutes les heures** (app via
+  `api.github.com`, moteur Ollama via `github.com`, modèles via `ollama.com` —
+  qui reçoit le nom des familles installées), sans aucun réglage pour les
+  couper, alors que l'aperçu des liens, lui, se désactive. Incohérence à
+  trancher.
+- **Le compte web Kimi transmet le nom de la machine** et un identifiant stable
+  (`llm_oauth/headers.rs:86-88`, `:103-109`). À énoncer sur la page comptes web.
+- **Le caviardage `sanitize_chat_messages` n'est appelé que sur le chemin
+  Ollama** ; aucun équivalent trouvé côté providers cloud. À confirmer, puis à
+  trancher.
+- **Aucune procédure ne supprime l'entrée de trousseau** `cl-go-dash`/`master-key` :
+  l'effacement complet documenté reste inapplicable sur ce dernier pas.
+- **`install.ps1` n'a qu'un seul message d'erreur** pour tous ses contrôles
+  (`install.ps1:182-186`) : l'utilisateur n'apprend jamais lequel a échoué.
+- **Aucun contrôle d'espace disque** avant le téléchargement d'Ollama (~3 Gio).
+- Erreurs corrigées dans des briefs existants le jour même : `premier-lancement.md`
+  décrivait deux contrôles de téléchargement inexistants ; `installation-linux.md`
+  renvoyait vers `logs/ollama-sidecar.log`, disparu ; `modele-de-securite.md`
+  aligné sur la liste complète des connexions automatiques de
+  `confidentialite-des-donnees.md`.
 
 ### Constat de conception à mettre en avant sur le site
 

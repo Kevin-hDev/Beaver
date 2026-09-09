@@ -102,10 +102,12 @@ Ollama n'est pas inclus dans l'application. Il est téléchargé au premier lanc
 | Windows | `ollama-windows-amd64.zip` | Non — archive unique |
 | Linux | `ollama-linux-amd64.tar.zst` ou la variante ROCm | Oui — détection du constructeur du GPU |
 
-**Contrôles appliqués au téléchargement** :
+**Contrôles appliqués au téléchargement** (corrigés le 9 septembre 2026 — la version précédente de cette liste décrivait deux contrôles qui n'existent pas dans le code) :
 
-- taille minimale de **10 Mo** — en dessous, c'est une page d'erreur ou un téléchargement incomplet ;
-- rejet si le type de contenu est `text/html` ;
+- taille exacte annoncée par une requête préalable, puis vérifiée **à l'octet près** à la réception (`ollama_manager/download_stream.rs:99-105` et `:161`) ;
+- plafond de **3 Gio** (`ollama_manager/download.rs:10`) ;
+- délai maximal de **1800 secondes** (`ollama_manager/download_stream.rs:12`) ;
+- empreinte **SHA-256** comparée en temps constant à celle publiée par le projet Ollama (`ollama_manager/download.rs:126-148`) ;
 - vérification que le binaire existe après extraction ;
 - nettoyage automatique de l'archive temporaire et du dossier de destination en cas d'échec.
 
@@ -147,7 +149,7 @@ Le comportement macOS est conforme aux usages du système, mais surprend qui vie
 | Symptôme | Cause | Résolution |
 |---|---|---|
 | L'écran de configuration d'Ollama échoue | Pas de connexion, ou GitHub injoignable | Réessayer plus tard ; l'étape est reprenable |
-| Le téléchargement s'arrête tout de suite | Fichier reçu inférieur à 10 Mo ou page HTML | Réseau intercepté par un portail captif ou un proxy |
+| Le téléchargement s'arrête tout de suite | Taille reçue différente de la taille annoncée, ou empreinte SHA-256 qui ne correspond pas | Réseau intercepté par un portail captif ou un proxy |
 | Sous Windows, le téléchargement de modèle échoue | Accès contrôlé aux dossiers bloque `ollama.exe` | Cliquer « Autoriser » dans la notification |
 | L'application semble fermée mais tourne encore (macOS) | La fermeture masque la fenêtre | Cliquer l'icône du Dock, ou `Cmd+Q` pour quitter |
 | Un second lancement ne fait rien | Instance unique | Normal : le focus revient sur la fenêtre existante |

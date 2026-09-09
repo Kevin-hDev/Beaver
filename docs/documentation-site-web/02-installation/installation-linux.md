@@ -150,7 +150,7 @@ Ce qui est certain :
 | « Paquet d'installation invalide » | Une métadonnée du `.deb` ne correspond pas | Signaler le problème : cela signifie que l'asset publié ne correspond pas à ce qu'attend le script |
 | Dépendances manquantes après `dpkg -i` | `dpkg` ne résout pas les dépendances | `sudo apt install -f`, ou réinstaller avec `apt install ./fichier.deb` |
 | Fenêtre transparente | Problème ouvert, cause inconnue | Aucune solution documentée ; essayer une session X11 si vous êtes sous Wayland |
-| Modèles très lents malgré un GPU | GPU non exploité par Ollama | Consulter `~/.local/share/cl-go-dash/logs/ollama-sidecar.log` |
+| Modèles très lents malgré un GPU | GPU non exploité par Ollama | Vérifier la détection GPU dans Réglages › Ollama — le moteur n'écrit aucun fichier de traces : sa sortie part vers `/dev/null` (`ollama_manager/spawn_gate_unix.rs:63-66`), l'ancien `logs/ollama-sidecar.log` n'existe plus |
 
 ---
 
