@@ -108,3 +108,14 @@ fn diagnostic_round_trip_is_utf8_safe_and_never_persists_a_secret_body() {
     assert!(!text.contains("秘密"));
     assert!(!text.contains("secret-sentinel"));
 }
+
+#[test]
+fn diagnostic_keeps_the_same_valid_routed_model_id_as_runtime() {
+    let mut diagnostic = entry(ProviderDiagnosticContext::from_payload(
+        None,
+        &serde_json::Value::Null,
+    ));
+    diagnostic.model = safe_model_identifier("google/gemma-4-31b-it:free");
+
+    assert_eq!(diagnostic.model, "google/gemma-4-31b-it:free");
+}

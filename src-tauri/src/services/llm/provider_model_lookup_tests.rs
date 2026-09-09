@@ -72,6 +72,14 @@ async fn openrouter_inherits_beavers_upstream_model_configuration() {
     );
 }
 
+#[test]
+fn mistralai_routes_inherit_the_canonical_mistral_configuration() {
+    assert_eq!(
+        local_capabilities("openrouter", "mistralai/mistral-small-2603"),
+        local_capabilities("mistral", "mistral-small-2603")
+    );
+}
+
 #[tokio::test]
 async fn litellm_remains_the_fallback_for_unknown_local_models() {
     assert_eq!(

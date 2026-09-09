@@ -67,13 +67,7 @@ impl RuntimeRegistry {
 }
 
 pub(crate) fn valid_model_id(model_id: &str) -> bool {
-    !model_id.is_empty()
-        && model_id.len() <= 128
-        && !model_id.contains("..")
-        && !model_id.starts_with('/')
-        && model_id
-            .bytes()
-            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.' | b'/'))
+    crate::services::model_identifier::is_valid(model_id)
 }
 
 fn valid_provider_id(provider_id: &str) -> bool {
@@ -138,6 +132,16 @@ mod tests {
             Some(64_000)
         );
         assert!(lookup("unknown", "shared").is_none());
+    }
+
+    #[tokio::test]
+    async fn runtime_catalog_accepts_a_routed_model_suffix() {
+        let _guard = test_mutation_lock().await;
+        let id = "google/gemma-4-31b-it:free";
+
+        replace_provider("openrouter", &[model(id.to_string())]);
+
+        assert!(lookup("openrouter", id).is_some());
     }
 
     #[test]

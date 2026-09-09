@@ -6,7 +6,6 @@ pub const MAX_ENVELOPE_BYTES: usize = 8 * 1024 * 1024;
 pub const MAX_TOOL_CALLS: usize = 64;
 pub const MAX_SESSION_CONTINUITY_BYTES: usize = 16 * 1024 * 1024;
 pub const MAX_JSON_DEPTH: usize = 32;
-pub const MAX_MODEL_ID_BYTES: usize = 128;
 pub const MAX_CREDENTIAL_SCOPE_BYTES: usize = 128;
 pub const MAX_PROVIDER_CALL_ID_BYTES: usize = 512;
 pub const MAX_TOOL_NAME_BYTES: usize = 256;
@@ -69,14 +68,9 @@ pub fn checked_session_continuity_bytes(
 }
 
 pub fn validate_model_id(value: &str) -> Result<(), LimitError> {
-    let valid = !value.is_empty()
-        && value.len() <= MAX_MODEL_ID_BYTES
-        && !value.contains("..")
-        && !value.starts_with('/')
-        && value.bytes().all(|byte| {
-            byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.' | b'/' | b':')
-        });
-    valid.then_some(()).ok_or(LimitError::ModelId)
+    crate::services::model_identifier::is_valid(value)
+        .then_some(())
+        .ok_or(LimitError::ModelId)
 }
 
 pub fn validate_credential_scope(value: &str) -> Result<(), LimitError> {

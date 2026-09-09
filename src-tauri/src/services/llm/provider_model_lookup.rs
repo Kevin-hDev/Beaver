@@ -103,7 +103,7 @@ pub(super) fn local_entry(provider_id: &str, model_id: &str) -> Option<ProviderM
 pub(super) fn direct_entry(provider_id: &str, model_id: &str) -> Option<ProviderModelConfig> {
     provider_model_registry::lookup(provider_id, model_id).or_else(|| {
         let (owner, stripped) = model_id.split_once('/')?;
-        (canonical_owner(owner) == provider_id)
+        (crate::services::model_identifier::canonical_upstream_owner(owner) == provider_id)
             .then(|| provider_model_registry::lookup(provider_id, stripped))
             .flatten()
     })
@@ -114,16 +114,10 @@ fn upstream_entry(provider_id: &str, model_id: &str) -> Option<ProviderModelConf
         return None;
     }
     let (owner, model) = model_id.split_once('/')?;
-    provider_model_registry::lookup(canonical_owner(owner), model)
-}
-
-fn canonical_owner(owner: &str) -> &str {
-    match owner {
-        "x-ai" => "xai",
-        "z-ai" => "zai",
-        "moonshotai" => "moonshot",
-        other => other,
-    }
+    provider_model_registry::lookup(
+        crate::services::model_identifier::canonical_upstream_owner(owner),
+        model,
+    )
 }
 
 #[cfg(test)]

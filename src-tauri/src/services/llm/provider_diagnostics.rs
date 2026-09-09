@@ -69,7 +69,7 @@ pub fn record_http_failure(
     let entry = ProviderDiagnostic {
         timestamp: chrono::Utc::now().to_rfc3339(),
         provider: safe_identifier(provider),
-        model: safe_identifier(model),
+        model: safe_model_identifier(model),
         status,
         details,
         request_bytes,
@@ -104,6 +104,12 @@ fn safe_identifier(value: &str) -> String {
     } else {
         clipped
     }
+}
+
+fn safe_model_identifier(value: &str) -> String {
+    crate::services::model_identifier::is_valid(value)
+        .then(|| value.to_string())
+        .unwrap_or_else(|| "unknown".to_string())
 }
 
 fn log_path() -> std::path::PathBuf {
