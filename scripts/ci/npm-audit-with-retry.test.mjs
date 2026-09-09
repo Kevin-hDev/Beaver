@@ -79,7 +79,7 @@ test("the workflow falls back only when npm's advisory service is unavailable", 
   );
   assert.match(
     auditWorkflow,
-    /google\/osv-scanner-action\/osv-scanner-action@baa4139e56d6312335d899e6ba045fa16d1d3d0b/u,
+    /google\/osv-scanner-action\/osv-scanner-action@[0-9a-f]{40} # v\d+\.\d+\.\d+/u,
   );
   assert.match(auditWorkflow, /--lockfile=package-lock\.json/u);
   assert.match(
