@@ -1,6 +1,6 @@
 # Security Policy
 
-Beaver is a desktop application (Tauri 2 + React 19) that runs local LLMs via Ollama and connects to cloud providers. It handles API keys, MCP connectors, external channels (Telegram, Slack, Discord), and agent tools that can read and write files on your machine. This document explains how secrets are protected, how to report a vulnerability, and how to use the app safely.
+Beaver is a desktop application (Tauri 2 + React 19) that runs local LLMs via Ollama and connects to cloud providers. It handles API keys, MCP connectors, external channels (Telegram, Slack, Discord), and agent tools that can read and write files on your machine. It also supports trusted custom extensions, including advanced interface modules. This document explains the security boundaries, how to report a vulnerability, and how to use the app safely.
 
 ## Supported versions
 
@@ -30,8 +30,9 @@ Beaver is a **local desktop app**, not a public server. The most relevant attack
 - **A malicious or compromised LLM provider** returning crafted responses (redirects, error bodies) to leak credentials.
 - **A malicious MCP connector or model** attempting command injection or environment poisoning.
 - **Local abuse of agent tools** running in auto-permission mode (writing sensitive paths, running destructive shell commands).
+- **A malicious or compromised extension or dependency** abusing the access granted when the user approves its execution.
 
-The controls below are designed for these threats. Out of scope: physical access to an unlocked machine, malicious OS-level software with the user's privileges, and compromise of an OS keyring.
+The controls below protect Beaver's own interfaces and managed execution paths. They do not sandbox approved extension code. Out of scope for those protections: physical access to an unlocked machine, malicious OS-level software with the user's privileges, and compromise of an OS keyring. Report defects in Beaver's validation, approval, or isolation mechanisms even when an extension exposes them.
 
 ## Secret management
 
@@ -40,22 +41,38 @@ API keys (LLM, search, forecast, MCP, gateway) are the most sensitive data handl
 - **Encrypted vault**: keys are stored in `secrets.enc`, encrypted with **XChaCha20-Poly1305** (authenticated encryption, random nonce per write via `OsRng`).
 - **Master key in the OS keyring**: the encryption key lives in macOS Keychain, Windows DPAPI, or the Linux Secret Service — never on disk, never in the source code.
 - **One keyring access at startup**: the master key is loaded once and kept in memory only.
-- **Zeroization**: all secrets in memory use `Zeroizing<String>` and `ZeroizeOnDrop`. Intermediate buffers are zeroized after use; the garbage collector alone is not trusted to clear them.
-- **Constant-time comparison**: tokens, hashes, and API keys are compared with XOR byte-by-byte or `subtle::ConstantTimeEq` — never with `==`.
-- **Frontend never sees a key**: no Tauri command exposes `get_api_key`. The available commands are `set_api_key`, `delete_api_key`, `has_api_key`, `list_configured_providers`, and `test_api_key`. Rust loads the key only at the moment of the HTTPS call and zeroizes it afterward.
+- **Zeroization boundary**: Rust uses zeroizing containers for stored keys and sensitive transport buffers. This is not a guarantee that every copy is erased: once an approved extension receives a JavaScript string, Beaver cannot guarantee immediate erasure or prevent the extension from retaining it.
+- **Secret comparisons**: authentication checks use constant-time comparison, including `subtle::ConstantTimeEq`. This requirement concerns secret values, not ordinary identifiers or public file-integrity checks.
+- **Built-in credential interface**: the settings interface can set, delete, check, and test credentials, but does not expose a command to read stored API keys. This is distinct from the extension API: approved extensions can request supported provider keys, MCP credentials, and channel tokens.
+
+## Plugins and custom extensions
+
+Installing an extension from a local source, Git, or npm does not make it trustworthy. Review its source, dependencies, and origin before approving it. Beaver's official plugins remain distinct from built-in Tools.
+
+- **Trusted Node.js code**: third-party extensions run in separate host processes, with controlled access to Beaver's core through an identity-bound bridge. Process separation helps contain failures; it does not restrict the extension's direct filesystem, network, or process access under the user's OS account.
+- **Approval and integrity**: Beaver checks the files covered by its extension fingerprint and requires renewed approval when covered content changes. This is an integrity check, not a security audit of the extension or everything it may load later.
+- **Tool permissions**: Beaver applies confirmation and Plan-mode rules according to the tool's declared effect. These rules govern calls dispatched by Beaver, not arbitrary code executed directly by the extension. An effect declaration is not proof that the code behaves as declared.
+- **Secret access**: approved extensions can request supported secrets through the SDK. Beaver validates the requested resource and requires its sensitive-access audit step to succeed before releasing the secret. An extension can still retain or disclose a secret once received; disabling it cannot revoke copies it already holds.
+- **Standard interface contributions**: Beaver validates and renders declarative tabs, panels, settings, actions, and themes. The extension's host code remains trusted code even when its interface is declarative.
+- **Advanced interface modules**: these require additional explicit approval and execute in Beaver's own WebView. They share the page and its privileges; a restricted-looking SDK object is not a sandbox. Such a module can interfere with the interface and access capabilities available to that WebView.
+- **Recovery**: diagnostics and safe mode help recover from loading failures or a broken interface. Safe mode is a recovery mechanism, not a way to safely execute untrusted code. Some advanced changes require restarting Beaver to clear.
+
+See **[EXTENSIONS.md](EXTENSIONS.md)** for the supported API, approval lifecycle, fingerprint coverage, limits, and exact safe-mode recovery instructions. The guide is currently in French.
 
 ## Path traversal protection
 
-Every file path coming from the frontend is validated before any read or write:
+Beaver's managed file-access paths use validation appropriate to the operation:
 
 - `canonicalize()` resolves symlinks and `..` segments.
-- `starts_with()` checks the resolved path is inside an allowed root (working directory or registered project roots).
+- Root checks keep access within the scope authorized for the operation, such as a project directory or an explicitly granted attachment.
 - Paths containing `..` are rejected by validation.
 - Attachment access uses an HMAC grant model with bounded size and count limits.
 
+These checks do not constrain filesystem operations performed directly by approved extension code.
+
 ## Bounded collections and resource limits
 
-All collections that can grow from external input are capped to prevent memory and disk exhaustion:
+Beaver caps managed resources to reduce memory and disk exhaustion risks. These application limits do not cap allocations or files created directly by approved extension code:
 
 | Resource | Limit |
 |---|---|
@@ -75,14 +92,18 @@ All collections that can grow from external input are capped to prevent memory a
 | Scheduler log (rolling) | 500 lines |
 | Gateway audit line size | 2 KB |
 
+Extension protocol and interface limits are documented in [EXTENSIONS.md](EXTENSIONS.md), with the executable contracts linked there as their authority.
+
 ## Secure HTTP for credentials
 
-Outbound calls that carry credentials go through a centralized `AuthenticatedClient` that:
+Beaver's `AuthenticatedClient` protects the credential-bearing requests routed through it:
 
 - Blocks HTTP redirects (`Policy::none()`) — prevents credential leakage via malicious 302 redirects to attacker-controlled URLs.
 - Enforces HTTPS for secret-bearing requests.
 - Bounds response bodies to prevent memory DoS.
 - Sanitizes error messages so no internal path, stack trace, or raw body reaches the UI.
+
+It does not mediate network requests made directly by an approved extension.
 
 ## MCP connector hardening
 
@@ -101,20 +122,23 @@ The optional Gateway lets external channels (Telegram, Slack, Discord) reach a l
 - **Conversation isolation**: per-conversation locks prevent cross-talk; channel and message IDs are validated against a restricted charset (no `/` or `..`).
 - **Rate limiting**: per-user token buckets bound request frequency.
 - **Audit logging**: all inbound messages are hashed and logged to a rolling JSONL file. Log forging (newline injection) is rejected.
-- **Credential isolation**: each channel's tokens are namespaced (`mcp_{id}_{key}`) and never mixed.
+- **Credential isolation**: channel tokens are namespaced by channel, account, and token kind (`gateway.<channel>.<account>` with a kind suffix where applicable), separately from MCP credentials.
 
 ## Safe diagnostics and logs
 
-- **Generic user errors**: the frontend only sees generic messages such as `operation_failed` or `attachment_access_denied`. Internal paths, table names, library versions, and stack traces never leave the backend.
-- **Filtered logs**: provider HTTP bodies are truncated to 200 characters via `sanitize_log_body()` before any logging. Known credential formats (`sk-...`, `Bearer ...`, `AKIA...`, `xoxb-...`, `ghp_...`, JWT) are redacted. No secret is ever written to logs.
+- **User-facing errors**: managed error paths use safe error categories and translated messages instead of exposing raw internal errors. This does not make arbitrary extension output safe to publish.
+- **Filtered logs**: Beaver's provider-log sanitization truncates bodies and redacts recognized credential formats. Redaction is not a guarantee that arbitrary sensitive text or a secret in an unrecognized format will be removed. Review diagnostics before sharing them.
 - **Bounded agent diagnostics**: when a stream or tool fails, the agent stores a short, redacted, bounded summary — never the raw error or the raw HTTP body.
+
+Extension authors must not put secrets in logs, errors, tool results, or diagnostics. Beaver cannot enforce this for files or external services the extension writes to directly.
 
 ## Safe usage recommendations
 
 As a user, you can further reduce risk:
 
-- **Prefer manual permission mode** for agent tools if you are unsure — it asks before every read, write, or shell command.
+- **Prefer manual permission mode** for agent tools if you are unsure. It requests confirmation for operations covered by the permission policy; ordinary reads and some recognized safe commands do not require a prompt. Session approvals can also avoid repeated prompts. It is not an OS sandbox.
 - **Review MCP connectors** before enabling them; only install connectors from sources you trust.
+- **Review extensions and their dependencies** before approving them, especially advanced interface modules. If a secret may have leaked, disable the extension and revoke or rotate the credential at its provider; uninstalling alone is insufficient.
 - **Keep auto-permission mode** for trusted, scoped working directories only.
 - **Do not paste API keys** into chat messages or skills — always use the API Keys settings, which route them through the encrypted vault.
 - **Review forecast datasets** before sending them to a cloud provider (Nixtla TimeGPT); local datasets may contain sensitive business data.
@@ -127,16 +151,17 @@ This directory keeps its historical identifier for compatibility with existing
 installations. The most security-relevant files are:
 
 - `secrets.enc` — encrypted vault (XChaCha20-Poly1305)
-- `logs/wakeups.jsonl`, `logs/gateway-audit.jsonl` — rolling logs, no secrets
-- `agent-sessions/*.json` — conversation history, no raw API keys
+- `logs/wakeups.jsonl`, `logs/gateway-audit.jsonl` — rolling operational logs; review before sharing
+- `agent-sessions/*.json` — conversation history, which may include sensitive text pasted by the user or returned by tools; it is not protected by the credentials vault
 - `mcp-connectors.json` — connector config (tokens are in the vault, not here)
+- `extensions.json`, `extension-installs/` — extension approvals, metadata, and managed extension code; do not modify these to bypass validation
 
-See the main README for the full file inventory.
+See [README.md](README.md) for the broader file inventory. The credentials vault does not encrypt all application data.
 
 ## Limitations and known gaps
 
 - **No code signing**: macOS builds are not signed. Gatekeeper may block the app when downloaded through a browser; use the provided `install.sh` script (which uses `curl`) or build from source.
-- **Ollama is bundled, not signed by upstream**: on Windows, "Controlled folder access" may block `ollama.exe` on first launch — click "Allow".
+- **Ollama is downloaded separately**: Beaver installs its managed runtime when needed rather than including it in the application installer. Windows security controls may block `ollama.exe`; verify the origin of the executable before granting access.
 - **The OS keyring is a single point of trust**: if the OS keyring is compromised, the vault master key is exposed. This is inherent to desktop secret storage.
 - **Cloud providers see your prompts**: anything sent to OpenAI, Gemini, Mistral, etc. transits their servers. Use local Ollama models for sensitive content.
 

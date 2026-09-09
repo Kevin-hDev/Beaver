@@ -1,10 +1,12 @@
 # Beaver
 
-Beaver est un espace de travail agentique pour les modèles locaux via Ollama et les modèles cloud via une clé API ou un compte web. L'application réunit les conversations, les outils, la planification, les sous-agents, la mémoire persistante, un navigateur intégré, Git, les prévisions, les connecteurs MCP, les réveils automatiques, les aperçus de fichiers et un terminal.
+Beaver est un espace de travail agentique multi-fournisseurs, compatible avec les modèles cloud par clé API ou compte web connecté, ainsi qu'avec les modèles locaux via Ollama. L'application réunit les conversations, les outils, la planification, les sous-agents, la mémoire persistante, un navigateur intégré, Git, les prévisions, les connecteurs MCP, les réveils automatiques, les aperçus de fichiers et un terminal.
+
+Beaver fonctionne sur ton ordinateur ; le modèle choisi peut fonctionner dans le cloud ou localement. L'espace Agent prend en charge les deux, sans être réservé à l'IA locale.
 
 ## Fonctionnalités
 
-- **Agent local et outils** : utilise les modèles locaux ou cloud avec les fichiers, les commandes système, la recherche web, les documents Office, Git, MCP, Forecast, les diagnostics, les todos et les choix interactifs
+- **Agent et outils** : utilise les modèles cloud ou locaux avec les fichiers, les commandes système, la recherche web, les documents Office, Git, MCP, Forecast, les diagnostics, les todos et les choix interactifs
 - **Planification et permissions** : explore en sécurité avec le mode Plan, enregistre des plans Markdown, valide leur mise en œuvre et choisis des permissions automatiques, manuelles ou propres à chaque chat
 - **Conversations et projets** : gère les discussions en onglets, les pièces jointes, les favoris, les messages en attente, les branches de conversation, les archives, les résumés cachés et les dossiers de projet
 - **Sous-agents contrôlés par le parent** : coordonne des sessions enfant isolées, suis leur activité, corrige-les ou réutilise-les, examine leurs changements et nettoie leurs worktrees en sécurité
@@ -16,11 +18,26 @@ Beaver est un espace de travail agentique pour les modèles locaux via Ollama et
 - **Fournisseurs et consommation** : connecte OpenAI/Codex, Grok et Kimi avec un compte web ; configure Anthropic, Alibaba Cloud Qwen et les autres fournisseurs par clé API ; puis consulte les limites, crédits, tokens, requêtes et coûts estimés disponibles
 - **Raisonnement et continuité multimodale** : utilise les réglages de raisonnement et les images validées pour chaque modèle pendant que Beaver conserve le raisonnement natif du fournisseur entre les messages et les appels d'outils sans exposer son état privé
 - **Connecteurs MCP et canaux** : active des connecteurs MCP locaux ou cloud par conversation et relie éventuellement la Gateway à Telegram, Slack ou Discord
+- **Extensions personnalisées** : installe des extensions JavaScript ou TypeScript de confiance depuis une source locale, Git ou npm ; ajoute des outils agentiques, événements, onglets, réglages, actions et thèmes via l'[API d'extensions Beaver](./EXTENSIONS.md) versionnée
 - **Réveils** : programme des demandes ponctuelles, quotidiennes ou hebdomadaires avec le scheduler interne et conserve chaque résultat dans une conversation dédiée
-- **Ollama géré par Beaver** : télécharge Ollama au premier lancement, réutilise un service existant, parcourt et installe les modèles, modifie les modelfiles et configure les paramètres ou instructions de chaque modèle
+- **Modèles locaux via Ollama** : Beaver gère le téléchargement du runtime et la réutilisation d'un service disponible ; parcours et installe les modèles locaux, modifie leurs modelfiles et configure leurs paramètres ou instructions
 - **Espace de travail desktop** : utilise le terminal à onglets, l'arbre de fichiers, les aperçus enrichis et Office, les liens, le détail du contexte, six thèmes visuels et le compagnon Beaver interactif
 - **Démarrage et migration guidés** : configure Beaver au premier lancement et importe des instructions, skills ou règles depuis Claude Code, Codex, Agents, Hermes, Qwen Code, ZCode, OpenClaw, OpenCode et Kimi Code
-- **Stockage local sécurisé** : conserve les identifiants dans un coffre chiffré XChaCha20-Poly1305 dont la clé maître reste dans le trousseau du système ; les secrets bruts ne sont jamais envoyés à l'interface
+- **Stockage local sécurisé** : conserve les identifiants dans un coffre chiffré XChaCha20-Poly1305 dont la clé maître reste dans le trousseau du système
+
+## Plugins et extensions
+
+Beaver peut être enrichi sans maintenir une copie modifiée de l'application. Le système d'extensions est disponible et continue d'évoluer :
+
+- **Plugins Beaver** : active Documents, PDF, Feuilles de calcul et Présentations indépendamment. Ces plugins Office restent distincts des Tools internes
+- **Extensions personnalisées** : crée des extensions JavaScript ou TypeScript, ou installe une extension de confiance depuis un fichier ou dossier local, Git ou npm
+- **Capacités de l'agent** : ajoute des outils, des skills chargés à la demande, des ressources et des résultats contenant des fichiers ou aperçus d'images. Le Chat classique reste séparé : ses seuls outils sont la recherche web et la lecture de pages
+- **Personnalisation de l'interface** : ajoute des onglets, panneaux, réglages, actions et thèmes dans les emplacements prévus ; les modules d'interface avancés demandent une approbation explicite
+- **Gestion et récupération** : active ou désactive les extensions, choisis les raccourcis du chat, consulte les diagnostics et récupère une application perturbée par une extension grâce au mode sûr
+
+Les extensions exécutent du code de confiance, pas du code enfermé dans un bac à sable. Installe uniquement du code auquel tu fais confiance : une extension approuvée peut accéder aux ressources locales et aux identifiants pris en charge par l'API d'extensions. Les modules d'interface avancés comportent des risques supplémentaires.
+
+Le guide **[EXTENSIONS.md](EXTENSIONS.md)** détaille l'utilisation et la création d'extensions : installation, exemples, compatibilité, limites, permissions et dépannage. Ce guide est actuellement en français.
 
 ## Fournisseurs compatibles
 
@@ -59,6 +76,7 @@ Beaver inclut un espace Forecast dédié à l'analyse des séries temporelles :
 
 - **Backend** : Rust + Tauri 2
 - **Frontend** : React 19 + TypeScript + Vite
+- **Runtime d'extensions** : Node.js et npm embarqués, avec Jiti pour les extensions JavaScript et TypeScript
 - **Runtime LLM local** : Ollama géré et téléchargé par Beaver
 - **Forecast runtime** : sidecar local Forecast plus API Nixtla optionnelle
 - **Navigateur** : Chromium Embedded Framework isolé sur macOS et Windows
@@ -72,10 +90,12 @@ Beaver inclut un espace Forecast dédié à l'analyse des séries temporelles :
 ### Runtimes externes
 
 - macOS (Apple Silicon), Linux ou Windows
-- Node.js 24 LTS — environnement général de Beaver
+- Node.js 24 LTS — pour le développement et les outils externes nécessitant une installation système
 - CPython 3.14 — uniquement pour la solution locale SearXNG
 
-Node.js et CPython sont des prérequis externes : Beaver ne les embarque pas. CPython 3.14 est nécessaire uniquement pour la solution locale SearXNG, pas pour les fonctionnalités de Beaver qui ne l'utilisent pas.
+L'application distribuée embarque Node.js et npm pour son hôte d'extensions ; utiliser les extensions ne demande donc pas, à lui seul, d'installer Node.js séparément. Ce runtime embarqué n'installe pas Node.js globalement pour les autres programmes. CPython 3.14 reste un prérequis externe uniquement pour la solution locale SearXNG.
+
+Utilise les instructions suivantes lorsque tu as besoin de ces runtimes externes : ce ne sont pas des étapes obligatoires pour toute installation de Beaver.
 
 Les commandes ci-dessous ont été vérifiées le 31 août 2026 avec la [page officielle de téléchargement de Node.js](https://nodejs.org/en/download) (Node.js 24.20.0 LTS) et la [documentation d'Astral uv](https://docs.astral.sh/uv/getting-started/installation/). Elles évitent de dépendre d'un gestionnaire de paquets propre à une distribution Linux.
 
@@ -220,6 +240,8 @@ Beaver est le nouveau nom de CL-GO. Les utilisateurs existants passent par la ve
 
 ## Développement
 
+Installe d'abord Node.js et les prérequis de développement ci-dessus. CPython est nécessaire uniquement pour SearXNG local. Installe ensuite les dépendances du projet :
+
 ```bash
 # 1. Cloner le repo
 git clone https://github.com/Kevin-hDev/Beaver.git
@@ -229,7 +251,7 @@ cd Beaver
 npm install
 
 # 3. Télécharger le binaire Ollama pour votre OS
-cd src-tauri && bash scripts/download-ollama.sh
+(cd src-tauri && bash scripts/download-ollama.sh)
 ```
 
 ## Commandes
@@ -238,16 +260,16 @@ cd src-tauri && bash scripts/download-ollama.sh
 npm run tauri dev       # Mode dev (hot reload)
 npm run tauri build     # Build release (.dmg / -setup.exe / .deb)
 npm run lint            # Vérifications du frontend et des limites React
-npm test                # Tests du frontend et du navigateur intégré
+npm test                # Tests du frontend, navigateur, hôte d'extensions et scripts
 npx tsc --noEmit        # Check TypeScript
-cd src-tauri && cargo check    # Check Rust
-cd src-tauri && cargo clippy --all-targets  # Lint strict
-cd src-tauri && cargo test     # Tests unitaires
+(cd src-tauri && cargo check)    # Check Rust
+(cd src-tauri && cargo clippy --all-targets -- -D warnings)  # Lint strict
+(cd src-tauri && cargo test)     # Tests unitaires
 ```
 
 ## Architecture
 
-```
+```text
 src-tauri/                # Backend Rust + Tauri
 ├── src/
 │   ├── commands/         # Commandes Tauri organisées par domaine
@@ -256,6 +278,7 @@ src-tauri/                # Backend Rust + Tauri
 │   │   ├── agent_import/ # Import guidé depuis d'autres applications agentiques
 │   │   ├── browser/      # Sessions Chromium isolées et vues natives
 │   │   ├── compress/     # Profils de contexte, points de compression et résumés limités
+│   │   ├── extensions/   # Registre, permissions, hôtes et récupération des extensions
 │   │   ├── llm/          # Transports fournisseurs, catalogue, raisonnement, streaming
 │   │   ├── codex_client/ et *_oauth/  # Connexions web OpenAI, Grok, Kimi et MCP
 │   │   ├── provider_connections/  # Configuration des endpoints propres aux fournisseurs
@@ -272,7 +295,7 @@ src-tauri/                # Backend Rust + Tauri
 │   ├── tray.rs           # Intégration dans la barre système
 │   ├── storage_migration.rs  # Initialisation et compatibilité du stockage
 │   └── ollama_polling.rs # Surveillance de l'état d'Ollama
-└── resources/              # Icônes et ressources statiques
+└── resources/            # Icônes, ressources statiques et extension-host/ embarqué
 
 src/                      # Frontend React
 ├── components/
@@ -288,6 +311,7 @@ src/                      # Frontend React
 │   ├── mascot/           # Compagnon Beaver interactif
 │   ├── onboarding/ et settings/  # Démarrage et préférences
 │   └── terminal/ et ui/  # Terminal intégré et composants partagés
+├── features/extension-ui/ # Contributions d'interface des extensions et cycle de vie
 ├── hooks/                # Logique extraite par domaine
 ├── lib/                  # Outils partagés et détection du système
 ├── types/                # Types TS alignés sur Rust
@@ -304,7 +328,7 @@ identifiant historique pour rester compatible avec les installations existantes 
 | `secrets.enc` | Identifiants API et OAuth chiffrés |
 | `configured-providers.json`, `provider-usage.json` | Fournisseurs connectés et historique local de consommation |
 | `config.json`, `heartbeat-runtime.json` | Réglages de l'application et état des réveils |
-| `agent-sessions/*.json` | Conversations de l'Agent local |
+| `agent-sessions/*.json` | Conversations de l'Agent |
 | `agent-settings.json`, `session-tabs.json` | Permissions et onglets de conversation ouverts |
 | `compression-profiles.json` | Profils réutilisables de compression du contexte et sélection globale |
 | `projects.json`, `favorite-models.json`, `terminal-tabs.json` | Projets, modèles favoris et onglets du terminal |
@@ -315,6 +339,8 @@ identifiant historique pour rester compatible avec les installations existantes 
 | `memory/global/`, `memory/projects/`, `memory-settings.json` | Mémoire persistante globale et par projet |
 | `browser/` | Sessions chiffrées et profil Chromium privé |
 | `mcp-connectors.json`, `mcp-runtime/` | Configuration et données des connecteurs MCP |
+| `extensions.json`, `extension-installs/` | Registre des extensions et installations gérées |
+| `extension-discovery-preferences.json`, `extension-session-state/` | Préférences de découverte des extensions et état par conversation |
 | `gateway-session-map.json`, `logs/gateway-audit.jsonl` | Liens des sessions Gateway et historique d'audit |
 | `forecast-*` | Analyses, profils de données, modèles, réglages, brouillons, notes et exports Forecast |
 | `ollama-*` | Runtime Ollama, métadonnées des modèles et instructions personnalisées |
@@ -323,13 +349,11 @@ identifiant historique pour rester compatible avec les installations existantes 
 
 ## Ollama — runtime géré
 
-Beaver gère **Ollama** localement pour éviter une installation manuelle séparée :
+Pour les modèles locaux, Beaver gère **Ollama** afin d'éviter une installation manuelle séparée. Les requêtes aux modèles cloud passent par leurs fournisseurs, pas par Ollama :
 
 - Au premier lancement, un écran de setup télécharge Ollama automatiquement dans `~/.local/share/cl-go-dash/ollama-bundle/`
-- Au démarrage, l'app vérifie si un daemon Ollama tourne déjà sur `localhost:11434`
-- Si oui (Ollama.app déjà installée), elle l'utilise tel quel
-- Si non, elle lance son propre binaire téléchargé
-- À la fermeture, le sidecar est arrêté proprement (SIGTERM Unix / kill Windows + grace period 3s)
+- Beaver vérifie la disponibilité du runtime et gère le lancement ou la réutilisation d'un service Ollama
+- Le runtime géré dispose d'un démarrage, d'un arrêt et d'une récupération supervisés ; un service lancé indépendamment n'est pas traité comme un processus enfant appartenant à Beaver
 - Sur Linux, détection GPU automatique (AMD → archive ROCm, Nvidia → archive standard avec CUDA)
 - Les paramètres, instructions système et modelfiles complets peuvent être personnalisés dans Beaver
 
@@ -338,7 +362,7 @@ Beaver gère **Ollama** localement pour éviter une installation manuelle sépar
 ## Sécurité
 
 - **Vault chiffré** : clés API chiffrées XChaCha20-Poly1305, master key dans le keyring OS natif (Keychain / DPAPI / Secret Service)
-- **JS ne voit jamais une clé** : aucune commande Tauri n'expose `get_api_key` ; les secrets restent côté Rust et sont zéroïsés après usage
+- **Frontière des identifiants** : l'interface intégrée de gestion des clés ne propose pas de commande pour lire les clés API enregistrées. Les extensions approuvées peuvent demander les secrets pris en charge par l'API d'extensions ; cette frontière de confiance est détaillée dans [EXTENSIONS.md](EXTENSIONS.md)
 - **Protection des chemins** : les chemins demandés par l'interface sont validés, normalisés et maintenus dans leurs dossiers autorisés
 - **Collections bornées** : ActiveStreams (32), PTY sessions (16), messages par session (2000), profondeur/taille JSON MCP limitées
 - **HTTP sécurisé pour les credentials** : redirections bloquées, HTTPS imposé, messages d'erreur sanitizés
