@@ -48,6 +48,19 @@ mod tests {
     }
 
     #[test]
+    fn token_counts_accept_integral_floats_without_saturation() {
+        let parsed = parse_catalog(r#"{"model":{"max_input_tokens":2000000.0}}"#).unwrap();
+        assert_eq!(parsed["model"].max_input_tokens, Some(2_000_000));
+        for count in ["1.5", "-1.0", "18446744073709551616.0"] {
+            let body = format!(r#"{{"model":{{"max_input_tokens":{count}}}}}"#);
+            assert!(matches!(
+                parse_catalog(&body),
+                Err(CatalogParseError::InvalidEntry)
+            ));
+        }
+    }
+
+    #[test]
     fn rejects_invalid_json() {
         assert!(matches!(
             parse_catalog("not json at all"),

@@ -60,7 +60,8 @@ where
         .as_f64()
         .filter(|number| number.is_finite() && *number >= 0.0 && number.fract() == 0.0)
         .ok_or_else(|| serde::de::Error::custom("invalid token count"))?;
-    if float > u64::MAX as f64 {
+    // u64::MAX rounds up to 2^64 as f64; equality would saturate the cast.
+    if float >= u64::MAX as f64 {
         return Err(serde::de::Error::custom("invalid token count"));
     }
     Ok(Some(float as u64))
