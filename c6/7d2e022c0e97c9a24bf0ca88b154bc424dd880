@@ -5,3 +5,5 @@ Autorités: provider_error.rs pour les catégories; agent-error-codes.ts et les 
 RED: labs_access_denied_is_not_bad_api_key, 1 exécuté, échec auth_failed attendu; agent-error-codes.test.ts, 1 échec/2 succès, code absent.
 GREEN: labs 1/1; catalog_http_statuses_keep_api_categories 1/1; api_catalog_commands_return_closed_error_codes 1/1; provider_error 21/21; classification_tests 10/10; agent-error-codes 3/3. Les filtres littéraux openai_compat_http et stream_http_classification ont refusé zéro test; les modules ont été exécutés par leurs vrais noms. Warnings existants: ts-rs deny_unknown_fields et ld __eh_frame.
 Non exécuté: aucun appel provider, aucune application lancée.
+
+Revue parent: diff complet de c67d2e02 et appelants directs relus, aucune correction production identifiée pour cette étape. Vérifications exécutées par le parent dans le worktree: services::llm::openai_compat::tests 2 réussis/0 échec (classification + refus redirection); oauth_provider_models 1/0; Vitest agent-error-codes 3/0; git diff --check du commit exit 0. Le lot 1 reste incomplet: admission et diagnostics sont en cours, aucune validation live revendiquée.
