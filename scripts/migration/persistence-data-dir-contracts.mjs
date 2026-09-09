@@ -92,6 +92,7 @@ export const EXPECTED_DATA_DIR_REFERENCES = Object.freeze([
   ["src-tauri/src/services/git/worktree_list.rs", 1],
   ["src-tauri/src/services/llm/litellm_catalog_refresh.rs", 1],
   ["src-tauri/src/services/llm/provider_diagnostics.rs", 1],
+  ["src-tauri/src/services/llm/provider_diagnostics_openrouter.rs", 1],
   ["src-tauri/src/services/llm_oauth/headers.rs", 1],
   ["src-tauri/src/services/mcp_bridge/config.rs", 1],
   ["src-tauri/src/services/mcp_bridge/process_env.rs", 2],
