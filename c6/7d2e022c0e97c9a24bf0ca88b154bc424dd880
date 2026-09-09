@@ -1,0 +1,7 @@
+Motif: les réponses API 403 étaient confondues avec une clé invalide et les commandes catalogue exposaient LlmError::Display.
+Cause: le lecteur catalogue regroupait 401/403 en Unauthorized et les commandes convertissaient les erreurs par String::from.
+Avant/après: 401 API reste auth_failed, 401 OAuth reste oauth_reauthentication_required, 403 devient provider_access_unavailable, 429 reste rate_limit, 402 inconnu reste un refus générique, et les erreurs catalogue API deviennent des codes fermés traduits.
+Autorités: provider_error.rs pour les catégories; agent-error-codes.ts et les sept catalogues i18n pour la traduction UI.
+RED: labs_access_denied_is_not_bad_api_key, 1 exécuté, échec auth_failed attendu; agent-error-codes.test.ts, 1 échec/2 succès, code absent.
+GREEN: labs 1/1; catalog_http_statuses_keep_api_categories 1/1; api_catalog_commands_return_closed_error_codes 1/1; provider_error 21/21; classification_tests 10/10; agent-error-codes 3/3. Les filtres littéraux openai_compat_http et stream_http_classification ont refusé zéro test; les modules ont été exécutés par leurs vrais noms. Warnings existants: ts-rs deny_unknown_fields et ld __eh_frame.
+Non exécuté: aucun appel provider, aucune application lancée.
