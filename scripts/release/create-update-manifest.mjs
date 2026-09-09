@@ -1,8 +1,6 @@
-import { createHash, randomBytes } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import {
-  constants,
   lstat,
-  open,
   opendir,
   rename,
   rm,
@@ -10,6 +8,8 @@ import {
 } from "node:fs/promises";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
+
+import { hashRegularFile } from "../file-system/regular-file.mjs";
 
 export const MAX_UPDATE_ASSET_BYTES = 2 * 1024 * 1024 * 1024;
 const MAX_DIRECTORY_ENTRIES = 16;
@@ -63,32 +63,10 @@ async function listExactAssets(directory, version) {
 }
 
 async function hashAsset(path) {
-  const before = await lstat(path);
-  if (
-    !before.isFile() ||
-    before.isSymbolicLink() ||
-    !isValidAssetSize(before.size)
-  ) {
-    throw invalidManifest();
-  }
-  const noFollow = process.platform === "win32" ? 0 : constants.O_NOFOLLOW;
-  const handle = await open(path, constants.O_RDONLY | noFollow);
   try {
-    const opened = await handle.stat();
-    if (!opened.isFile() || opened.size !== before.size) throw invalidManifest();
-    const hash = createHash("sha256");
-    let bytes = 0;
-    for await (const chunk of handle.createReadStream({ autoClose: false })) {
-      bytes += chunk.length;
-      if (bytes > opened.size || bytes > MAX_UPDATE_ASSET_BYTES) {
-        throw invalidManifest();
-      }
-      hash.update(chunk);
-    }
-    if (bytes !== opened.size) throw invalidManifest();
-    return { sha256: hash.digest("hex"), size: bytes };
-  } finally {
-    await handle.close();
+    return await hashRegularFile(path, MAX_UPDATE_ASSET_BYTES);
+  } catch {
+    throw invalidManifest();
   }
 }
 

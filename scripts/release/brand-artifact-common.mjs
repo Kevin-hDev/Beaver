@@ -1,6 +1,11 @@
-import { createHash, timingSafeEqual } from "node:crypto";
-import { constants, lstat, open } from "node:fs/promises";
+import { timingSafeEqual } from "node:crypto";
+import { lstat } from "node:fs/promises";
 import { basename, relative, resolve, sep } from "node:path";
+
+import {
+  hashRegularFile,
+  readRegularFile,
+} from "../file-system/regular-file.mjs";
 
 export const MAX_ASSET_BYTES = 2 * 1024 * 1024 * 1024;
 export const MAX_MANIFEST_BYTES = 64 * 1024;
@@ -73,15 +78,10 @@ export async function metadata(path, maxBytes = MAX_ASSET_BYTES) {
 }
 
 export async function readBounded(path, maxBytes) {
-  const before = await metadata(path, maxBytes);
-  const noFollow = process.platform === "win32" ? 0 : constants.O_NOFOLLOW;
-  const handle = await open(path, constants.O_RDONLY | noFollow);
   try {
-    const opened = await handle.stat();
-    if (!opened.isFile() || opened.size !== before.size) throw invalid();
-    return await handle.readFile();
-  } finally {
-    await handle.close();
+    return await readRegularFile(path, maxBytes);
+  } catch {
+    throw invalid();
   }
 }
 
@@ -134,23 +134,10 @@ export async function validateAsset(platform, versionValue, pathValue) {
 }
 
 export async function hashFile(path) {
-  const before = await metadata(path);
-  const noFollow = process.platform === "win32" ? 0 : constants.O_NOFOLLOW;
-  const handle = await open(path, constants.O_RDONLY | noFollow);
   try {
-    const opened = await handle.stat();
-    if (!opened.isFile() || opened.size !== before.size) throw invalid();
-    const hash = createHash("sha256");
-    let size = 0;
-    for await (const chunk of handle.createReadStream({ autoClose: false })) {
-      size += chunk.length;
-      if (size > opened.size || size > MAX_ASSET_BYTES) throw invalid();
-      hash.update(chunk);
-    }
-    if (size !== opened.size) throw invalid();
-    return { size, sha256: hash.digest("hex") };
-  } finally {
-    await handle.close();
+    return await hashRegularFile(path, MAX_ASSET_BYTES);
+  } catch {
+    throw invalid();
   }
 }
 

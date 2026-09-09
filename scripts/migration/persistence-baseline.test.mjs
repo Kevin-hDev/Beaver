@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+
+import { readRegularTextSync } from "../file-system/regular-file.mjs";
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const MANIFEST_PATH = resolve(
@@ -15,8 +16,7 @@ const EXPECTED_BASELINE_ATTESTATION =
   "737aa2b543328885e163331f81fc343eb2b8cb8d62a0ae5a0a52b00c58cc8585";
 
 function loadManifest() {
-  assert.ok(statSync(MANIFEST_PATH).size <= MAX_MANIFEST_BYTES);
-  return JSON.parse(readFileSync(MANIFEST_PATH, "utf8"));
+  return JSON.parse(readRegularTextSync(MANIFEST_PATH, MAX_MANIFEST_BYTES));
 }
 
 function baselineAttestation(manifest) {

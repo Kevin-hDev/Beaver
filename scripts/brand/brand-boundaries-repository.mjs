@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
-import { lstatSync, readFileSync } from "node:fs";
 import { extname, isAbsolute, resolve, sep } from "node:path";
+
+import { readRegularTextSync } from "../file-system/regular-file.mjs";
 
 // Git inventory and text scanning have distinct caps so binary bundles cannot disable the audit.
 export const MAX_GIT_ENTRIES = 10_000;
@@ -78,11 +79,10 @@ export function loadTrackedEntries(root) {
   return selectScannableFiles(files, deleted).map((file) => {
     const absolute = resolve(safeRoot, file);
     if (!absolute.startsWith(`${safeRoot}${sep}`)) throw new Error("chemin suivi invalide");
-    const stats = lstatSync(absolute);
-    if (!stats.isFile() || stats.isSymbolicLink() || stats.size > MAX_TEXT_FILE_BYTES) {
-      throw new Error("fichier texte invalide");
-    }
-    return { file, content: readFileSync(absolute, "utf8") };
+    return {
+      file,
+      content: readRegularTextSync(absolute, MAX_TEXT_FILE_BYTES, { allowEmpty: true }),
+    };
   });
 }
 

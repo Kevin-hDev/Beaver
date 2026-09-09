@@ -1,13 +1,12 @@
 import {
-  existsSync,
-  lstatSync,
-  readFileSync,
   renameSync,
   unlinkSync,
   writeFileSync,
 } from "node:fs";
 import { randomBytes } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
+
+import { readRegularFileSync } from "../file-system/regular-file.mjs";
 
 const ACTIVE_PATH = "app-release-notes.json";
 const ARCHIVE_PATH = "app-release-notes-archive.json";
@@ -110,16 +109,15 @@ function verifyPrepared(active, archive, version) {
 }
 
 function readDocument(path, optional) {
-  if (!existsSync(path)) {
-    if (optional) return {};
-    fail("The active release notes are missing.");
-  }
-  if (!lstatSync(path).isFile()) {
+  let source;
+  try {
+    source = readRegularFileSync(path, MAX_SOURCE_BYTES);
+  } catch (error) {
+    if (optional && error?.code === "ENOENT") return {};
+    if (!optional && error?.code === "ENOENT") {
+      fail("The active release notes are missing.");
+    }
     fail("A release notes document is not a regular file.");
-  }
-  const source = readFileSync(path);
-  if (source.length === 0 || source.length > MAX_SOURCE_BYTES) {
-    fail("A release notes document has an invalid size.");
   }
   const parsed = JSON.parse(source.toString("utf8"));
   if (!isRecord(parsed) || Object.keys(parsed).length > MAX_ARCHIVE_ENTRIES) {
@@ -147,8 +145,16 @@ function writePairAtomically(activeText, archiveText) {
     renameSync(archiveTemp, ARCHIVE_PATH);
     renameSync(activeTemp, ACTIVE_PATH);
   } finally {
-    if (existsSync(activeTemp)) unlinkSync(activeTemp);
-    if (existsSync(archiveTemp)) unlinkSync(archiveTemp);
+    removeTemporary(activeTemp);
+    removeTemporary(archiveTemp);
+  }
+}
+
+function removeTemporary(path) {
+  try {
+    unlinkSync(path);
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
   }
 }
 

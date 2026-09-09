@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { statSync } from "node:fs";
 import { isAbsolute, relative, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+
+import { readRegularTextSync } from "../file-system/regular-file.mjs";
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const MANIFEST_PATH = resolve(
@@ -56,9 +58,16 @@ function safeRelativePath(value) {
 }
 
 function boundedRead(path, maxBytes) {
-  const size = statSync(path).size;
-  assert.ok(size <= maxBytes, `${path} dépasse la taille autorisée`);
-  return readFileSync(path, "utf8");
+  return readRegularTextSync(path, maxBytes);
+}
+
+function boundedReadIfPresent(path, maxBytes) {
+  try {
+    return boundedRead(path, maxBytes);
+  } catch (error) {
+    if (error?.code === "ENOENT") return undefined;
+    throw error;
+  }
 }
 
 function loadManifest() {
@@ -149,8 +158,10 @@ test("tous les contrats courants existent réellement dans les sources", () => {
     for (const contract of domain.contracts) {
       const path = safeRelativePath(contract.file);
       const scope = contract.scope ?? "baseline";
-      if (scope === "baseline" && !existsSync(path)) continue;
-      const source = boundedRead(path, MAX_SOURCE_BYTES);
+      const source = scope === "baseline"
+        ? boundedReadIfPresent(path, MAX_SOURCE_BYTES)
+        : boundedRead(path, MAX_SOURCE_BYTES);
+      if (source === undefined) continue;
       assert.ok(contract.snippets.length > 0 && contract.snippets.length <= 16);
       for (const snippet of contract.snippets) {
         const migrated = scope === "baseline" && domain.contracts.some((candidate) => {
@@ -187,11 +198,14 @@ test("aucune nouvelle identité de stockage Beaver n’est introduite", () => {
     "beaver-session-key",
   ];
   const sourceFiles = new Set(
-    manifest.domains.flatMap(({ contracts }) => contracts.map(({ file }) => file))
-      .filter((file) => existsSync(safeRelativePath(file))),
+    manifest.domains.flatMap(({ contracts }) => contracts.map(({ file }) => file)),
   );
   for (const file of sourceFiles) {
-    const source = boundedRead(safeRelativePath(file), MAX_SOURCE_BYTES).toLowerCase();
+    const source = boundedReadIfPresent(
+      safeRelativePath(file),
+      MAX_SOURCE_BYTES,
+    )?.toLowerCase();
+    if (source === undefined) continue;
     for (const value of forbidden) {
       assert.equal(source.includes(value), false, `${file}: identité interdite ${value}`);
     }

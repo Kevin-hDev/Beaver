@@ -3,13 +3,13 @@ import {
   mkdir,
   mkdtemp,
   open,
-  readFile,
   rename,
   rm,
   unlink,
   writeFile,
 } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
+import { readRegularFile } from "../file-system/regular-file.mjs";
 import { copyDirectoryBounded } from "./runtime-copy.mjs";
 import { COMPLETE_RUNTIME_COPY_LIMITS } from "./runtime-copy-limits.mjs";
 
@@ -71,9 +71,9 @@ export async function materializeRuntime(cached, destination, descriptor) {
 export async function runtimeIsValid(directory, descriptor) {
   try {
     const manifestPath = join(directory, MANIFEST_NAME);
-    const metadata = await lstat(manifestPath);
-    if (!metadata.isFile() || metadata.size > MAX_MANIFEST_BYTES) return false;
-    const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+    const manifest = JSON.parse(
+      (await readRegularFile(manifestPath, MAX_MANIFEST_BYTES)).toString("utf8"),
+    );
     if (JSON.stringify(manifest) !== JSON.stringify(descriptor)) return false;
     const executable = join(
       directory,

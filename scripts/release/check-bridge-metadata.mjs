@@ -1,5 +1,6 @@
-import fs from "node:fs";
 import { pathToFileURL } from "node:url";
+
+import { readRegularTextSync } from "../file-system/regular-file.mjs";
 
 const MAX_CONFIG_BYTES = 16 * 1024 * 1024;
 const INTERNAL_NAME = "cl-go-dash";
@@ -81,11 +82,11 @@ export function validateBridgeMetadata(metadata, tagValue) {
 }
 
 function readBoundedText(path) {
-  const stat = fs.lstatSync(path);
-  if (!stat.isFile() || stat.isSymbolicLink() || stat.size < 1 || stat.size > MAX_CONFIG_BYTES) {
+  try {
+    return readRegularTextSync(path, MAX_CONFIG_BYTES);
+  } catch {
     fail();
   }
-  return fs.readFileSync(path, "utf8");
 }
 
 function readJson(path) {

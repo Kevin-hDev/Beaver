@@ -1,15 +1,19 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { readFileSync, statSync } from "node:fs";
 import { relative, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
+import { readRegularTextSync } from "../file-system/regular-file.mjs";
 import { EXPECTED_DATA_DIR_REFERENCES } from "./persistence-data-dir-contracts.mjs";
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
+const MAX_MANIFEST_BYTES = 128 * 1024;
 const MANIFEST = JSON.parse(
-  readFileSync(resolve(ROOT, "scripts/migration/cl-go-v1.0.2-profile.json"), "utf8"),
+  readRegularTextSync(
+    resolve(ROOT, "scripts/migration/cl-go-v1.0.2-profile.json"),
+    MAX_MANIFEST_BYTES,
+  ),
 );
 const MAX_TRACKED_FILES = 5_000;
 const MAX_SOURCE_BYTES = 2 * 1024 * 1024;
@@ -36,9 +40,8 @@ function boundedRustSource(file) {
   const absolute = resolve(ROOT, file);
   const inside = relative(ROOT, absolute);
   assert.ok(inside && !inside.startsWith(".."));
-  assert.ok(statSync(absolute).size <= MAX_SOURCE_BYTES);
   // Test-only items may precede production items, so source order must not hide accesses.
-  return readFileSync(absolute, "utf8");
+  return readRegularTextSync(absolute, MAX_SOURCE_BYTES);
 }
 
 test("chaque racine Rust persistante est classée ou explicitement transitoire", () => {

@@ -1,19 +1,17 @@
 import assert from "node:assert/strict";
-import { readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { load as loadYaml } from "js-yaml";
+
+import { readRegularTextSync } from "../file-system/regular-file.mjs";
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const MAX_SOURCE_BYTES = 64 * 1024;
 
 function readBounded(relativePath) {
   const path = resolve(ROOT, relativePath);
-  const stat = statSync(path);
-  assert.equal(stat.isFile(), true);
-  assert.ok(stat.size > 0 && stat.size <= MAX_SOURCE_BYTES);
-  return readFileSync(path, "utf8");
+  return readRegularTextSync(path, MAX_SOURCE_BYTES);
 }
 
 test("le paquet Debian Beaver remplace uniquement le paquet historique", () => {
