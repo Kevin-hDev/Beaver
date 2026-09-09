@@ -1,0 +1,3 @@
+Motif: rendre les tests de classification conformes à rustfmt avant la clôture du lot.
+Changement: formatage mécanique uniquement dans trois fichiers de tests déjà introduits par c67d2e02; aucune assertion ni production modifiée.
+GREEN: cargo fmt --check exit 0; cargo clippy --all-targets -- -D warnings exit 0 (avertissement ts-rs deny_unknown_fields non bloquant).
