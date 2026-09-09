@@ -8,6 +8,13 @@ mod metadata;
 pub(super) use metadata::project;
 
 const MAX_SNAPSHOTS: usize = 4;
+const FILE_NAME: &str = "openrouter-routing.jsonl";
+
+pub(super) fn log_path() -> std::path::PathBuf {
+    crate::services::paths::data_dir()
+        .join("logs")
+        .join(FILE_NAME)
+}
 
 #[derive(Clone, Serialize)]
 struct ResponseContext {
@@ -110,7 +117,9 @@ impl Drop for Observation {
             routing: &self.routing,
             snapshots_truncated: self.snapshots_truncated,
         };
-        if super::write_at(&super::log_path(), &entry).is_err() {
+        // Successful routing observations have their own bounded file so they
+        // cannot evict provider failure evidence from provider-errors.jsonl.
+        if super::write_at(&log_path(), &entry).is_err() {
             log::warn!("[llm] routing diagnostic log unavailable");
         }
     }

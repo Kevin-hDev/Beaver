@@ -41,6 +41,7 @@ pub(crate) mod model_reasoning_contract;
 #[cfg(test)]
 mod model_reasoning_contract_tests;
 pub mod openai_compat;
+mod openai_compat_model_fields;
 mod openai_compat_model_limits;
 mod openai_compat_model_parser;
 mod openai_compat_models;

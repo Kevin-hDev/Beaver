@@ -187,6 +187,18 @@ async fn unrelated_provider_responses_never_create_openrouter_diagnostics() {
 }
 
 #[tokio::test]
+async fn successful_routing_observations_do_not_evict_provider_failures() {
+    let id = uuid::Uuid::new_v4().to_string();
+    let mut response = response(200, "unused").await;
+    openrouter::attach(&mut response, "openrouter", "meta/test", Some(&id));
+    drop(openrouter::take(&mut response));
+
+    let provider_log = std::fs::read_to_string(super::log_path()).unwrap_or_default();
+    assert!(!provider_log.contains(&id));
+    assert_eq!(routing_entries(&id).len(), 1);
+}
+
+#[tokio::test]
 async fn repeated_metadata_is_bounded_and_writes_only_one_observation() {
     let id = uuid::Uuid::new_v4().to_string();
     let mut response = response(200, "unused").await;
@@ -233,7 +245,11 @@ async fn cancellation_flushes_header_evidence_without_claiming_a_completed_gener
 }
 
 fn entries(id: &str) -> Vec<Value> {
-    std::fs::read_to_string(super::log_path())
+    routing_entries(id)
+}
+
+fn routing_entries(id: &str) -> Vec<Value> {
+    std::fs::read_to_string(openrouter::log_path())
         .unwrap_or_default()
         .lines()
         .filter_map(|line| serde_json::from_str::<Value>(line).ok())

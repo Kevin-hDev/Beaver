@@ -70,6 +70,13 @@ export function ModelSelector({
     }
     return out;
   }, [groups, query]);
+  const filteredIssues = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return issues;
+    return new Map(Array.from(issues.entries()).filter(([providerId, issue]) =>
+      providerId.toLowerCase().includes(q)
+      || issue.providerName.toLowerCase().includes(q)));
+  }, [issues, query]);
   const focusDropdownList = (direction: 1 | -1) => {
     focusLocalListItem(floatingRef.current, direction);
   };
@@ -105,7 +112,7 @@ export function ModelSelector({
         <div className="ms-list">
           <ModelSelectorList
             groups={filteredGroups}
-            issues={issues}
+            issues={filteredIssues}
             favorites={favorites}
             isFavorite={isFavorite}
             onToggleFavorite={(p, m) => void toggleFav(p, m)}

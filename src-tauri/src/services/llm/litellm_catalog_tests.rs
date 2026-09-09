@@ -69,6 +69,32 @@ mod tests {
     }
 
     #[test]
+    fn refresh_response_failures_receive_stable_safe_reasons() {
+        use reqwest::StatusCode;
+
+        assert_eq!(
+            litellm_catalog_refresh::response_rejection(StatusCode::BAD_GATEWAY, true, None,),
+            Some("upstream_status")
+        );
+        assert_eq!(
+            litellm_catalog_refresh::response_rejection(StatusCode::OK, false, None),
+            Some("untrusted_redirect")
+        );
+        assert_eq!(
+            litellm_catalog_refresh::response_rejection(
+                StatusCode::OK,
+                true,
+                Some((MAX_BODY_BYTES as u64) + 1),
+            ),
+            Some("body_too_large")
+        );
+        assert_eq!(
+            litellm_catalog_refresh::response_rejection(StatusCode::OK, true, None),
+            None
+        );
+    }
+
+    #[test]
     fn rejects_malformed_entries() {
         let json = r#"{"good": {"litellm_provider":"x","mode":"chat"}, "bad": "not an object"}"#;
         assert!(matches!(
@@ -197,7 +223,7 @@ mod tests {
             .await
             .unwrap_err();
         assert_eq!(rejection.reason(), "invalid_json");
-        assert_eq!(rejection.entries(), 0);
+        assert_eq!(rejection.entries_observed(), 0);
         assert_eq!(std::fs::read_to_string(&cache).unwrap(), healthy);
         let current = registry.read().await;
         assert_eq!(current.len(), 100);

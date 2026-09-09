@@ -129,6 +129,28 @@ describe("ModelSelector", () => {
     expect(screen.getByText("errors.providerAccessUnavailable")).toBeTruthy();
   });
 
+  it("masque une panne de catalogue qui ne correspond pas à la recherche", () => {
+    render(
+      <ModelSelector
+        groups={new Map()}
+        issues={new Map([["mistral", {
+          providerName: "Mistral",
+          code: "provider_access_unavailable",
+        }]])}
+        selectedModel=""
+        selectedProvider=""
+        onSelect={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("Select model"));
+    fireEvent.change(screen.getByPlaceholderText("agentLocal.modelSearch"), {
+      target: { value: "google" },
+    });
+    expect(screen.queryByText("Mistral")).toBeNull();
+    expect(screen.queryByText("errors.providerAccessUnavailable")).toBeNull();
+  });
+
   it("affiche le nom officiel mais sélectionne l'identifiant technique", () => {
     const onSelect = vi.fn();
     groups = new Map([["moonshot-oauth", [model({

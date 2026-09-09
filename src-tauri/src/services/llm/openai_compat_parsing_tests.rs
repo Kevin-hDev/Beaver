@@ -453,6 +453,23 @@ fn openrouter_unknown_effort_keeps_the_model_on_provider_default() {
 }
 
 #[test]
+fn malformed_supported_parameters_only_reject_openrouter_catalog_entries() {
+    let body = json!({
+        "data": [{
+            "id": "mistral-test",
+            "supported_parameters": "unexpected"
+        }]
+    });
+
+    let mistral = parse_models_list(&body, "mistral").unwrap();
+    assert_eq!(mistral.len(), 1);
+    assert!(mistral[0].supported_parameters.is_none());
+
+    let openrouter = parse_models_list(&body, "openrouter").unwrap();
+    assert!(openrouter.is_empty());
+}
+
+#[test]
 fn openrouter_documented_optional_reasoning_projects_a_toggle_without_efforts() {
     let body = json!({
         "data": [{

@@ -33,7 +33,9 @@ pub(super) fn parse_models_list(
         }
     }
     if invalid_ids > 0 {
-        ::log::warn!("[model catalog] ignored invalid identifiers count={invalid_ids}");
+        ::log::warn!(
+            "event=model_catalog_entries_ignored reason=invalid_identifier count={invalid_ids}"
+        );
     }
     if degraded_reasoning_contracts > 0 {
         ::log::warn!(
@@ -71,10 +73,17 @@ fn parse_model(
             .and_then(|limits| limits.max_output_tokens)
             .or_else(|| super::model_metadata::output_limit(model))
     };
-    if authoritative && !supports_text_output(model) {
+    if authoritative && !super::openai_compat_model_fields::supports_text_output(model) {
         return None;
     }
-    let supported_parameters = supported_parameters(model)?;
+    let supported_parameters = match super::openai_compat_model_fields::supported_parameters(model)
+    {
+        Some(parameters) => parameters,
+        None if authoritative => return None,
+        // OpenRouter owns this field. Other OpenAI-compatible providers may
+        // publish a different shape, which must not hide an otherwise usable model.
+        None => None,
+    };
     let has_param = |name: &str| {
         supported_parameters
             .as_deref()
@@ -147,7 +156,7 @@ fn parse_model(
     Some(ModelInfo {
         id: id.to_string(),
         display_name: None,
-        owned_by: safe_owner(&model["owned_by"]),
+        owned_by: super::openai_compat_model_fields::safe_owner(&model["owned_by"]),
         context_length,
         max_output_tokens,
         supported_parameters,
@@ -176,50 +185,4 @@ fn architecture_supports_vision(model: &Value) -> bool {
         || model["architecture"]["input_modalities"]
             .as_array()
             .is_some_and(|values| values.iter().any(|value| value.as_str() == Some("image")))
-}
-
-fn supported_parameters(model: &Value) -> Option<Option<Vec<String>>> {
-    let Some(value) = model.get("supported_parameters") else {
-        return Some(None);
-    };
-    if value.is_null() {
-        return Some(None);
-    }
-    let values = value.as_array()?;
-    if values.len() > 64 {
-        return None;
-    }
-    values
-        .iter()
-        .map(|value| safe_text(value, 64))
-        .collect::<Option<Vec<_>>>()
-        .map(Some)
-}
-
-fn supports_text_output(model: &Value) -> bool {
-    let value = &model["architecture"]["output_modalities"];
-    if value.is_null() {
-        return true;
-    }
-    let Some(values) = value.as_array().filter(|values| values.len() <= 8) else {
-        return false;
-    };
-    values
-        .iter()
-        .map(|value| safe_text(value, 32))
-        .collect::<Option<Vec<_>>>()
-        .is_some_and(|modalities| modalities.iter().any(|modality| modality == "text"))
-}
-
-fn safe_owner(value: &Value) -> Option<String> {
-    safe_text(value, 96)
-}
-
-fn safe_text(value: &Value, max_bytes: usize) -> Option<String> {
-    value
-        .as_str()
-        .filter(|text| {
-            !text.is_empty() && text.len() <= max_bytes && !text.chars().any(char::is_control)
-        })
-        .map(str::to_string)
 }

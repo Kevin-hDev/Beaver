@@ -1,4 +1,5 @@
 use super::xai_catalog_wire::{parse_catalog, XaiBackend};
+use serde_json::json;
 
 #[test]
 fn catalog_retry_after_uses_the_shared_bounded_contract() {
@@ -13,7 +14,6 @@ fn catalog_retry_after_uses_the_shared_bounded_contract() {
         assert_eq!(super::xai_catalog::catalog_retry_after(&headers), expected);
     }
 }
-use serde_json::json;
 
 #[test]
 fn parses_bounded_chat_and_responses_models() {

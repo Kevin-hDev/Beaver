@@ -6,7 +6,7 @@ import { normalizeReasoningMode, reasoningModeOptions } from "@/lib/reasoning-mo
 import {
   mapOAuthModels, mapOAuthResponse, useAvailableModels, withoutInteractiveOnlyModels,
 } from "../use-available-models";
-import { mapCloudModelSettlements } from "../cloud-models";
+import { fetchCloudModels, mapCloudModelSettlements } from "../cloud-models";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 vi.mock("@tauri-apps/api/event", () => ({
@@ -42,6 +42,26 @@ describe("OAuth models", () => {
       reason: "private upstream response",
     }]);
     expect(unknown.issues.get("mistral")?.code).toBe("model_catalog_unavailable");
+  });
+
+  it("rend une panne globale du catalogue visible pour chaque provider configuré", async () => {
+    vi.mocked(invoke).mockImplementation((command) => {
+      if (command === "list_llm_providers_catalog") {
+        return Promise.reject(new Error("private catalog failure"));
+      }
+      if (command === "list_configured_providers") {
+        return Promise.resolve(["mistral", "openrouter"]);
+      }
+      return Promise.reject(new Error(`unexpected command: ${command}`));
+    });
+
+    const result = await fetchCloudModels();
+
+    expect(Array.from(result.issues.entries())).toEqual([
+      ["mistral", { providerName: "mistral", code: "model_catalog_unavailable" }],
+      ["openrouter", { providerName: "openrouter", code: "model_catalog_unavailable" }],
+    ]);
+    expect(result.groups.size).toBe(0);
   });
 
   it("accepte un provider futur uniquement depuis ses métadonnées publiques", () => {

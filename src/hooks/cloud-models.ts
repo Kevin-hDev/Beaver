@@ -18,10 +18,24 @@ type CloudModelSettlement =
   | { status: "rejected"; reason: unknown };
 
 export async function fetchCloudModels(): Promise<CloudModelsResult> {
-  const [catalog, configuredIds] = await Promise.all([
+  const [catalogResult, configuredResult] = await Promise.allSettled([
     invoke<ProviderSpec[]>("list_llm_providers_catalog"),
     invoke<string[]>("list_configured_providers"),
   ]);
+  if (configuredResult.status === "rejected") {
+    throw new Error("configured providers unavailable");
+  }
+  const configuredIds = configuredResult.value;
+  if (catalogResult.status === "rejected") {
+    return {
+      groups: new Map(),
+      issues: new Map(configuredIds.map((providerId) => [providerId, {
+        providerName: providerId,
+        code: "model_catalog_unavailable",
+      }])),
+    };
+  }
+  const catalog = catalogResult.value;
   const configured = catalog.filter((spec) => configuredIds.includes(spec.id));
   const results = await Promise.allSettled(
     configured.map((spec) => invoke<LlmModelInfo[]>("list_llm_models", {
