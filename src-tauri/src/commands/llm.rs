@@ -35,7 +35,7 @@ fn provider_catalog_entries(providers: Vec<catalog::ProviderSpec>) -> Vec<Provid
 pub async fn list_llm_models(provider_id: String) -> Result<Vec<ModelInfo>, String> {
     crate::services::llm::model_catalog::list_models_for(&provider_id)
         .await
-        .map_err(String::from)
+        .map_err(api_catalog_error)
 }
 
 #[tauri::command]
@@ -64,7 +64,13 @@ pub async fn get_model_context(
 pub async fn test_llm_connection(provider_id: String) -> Result<(), String> {
     crate::services::llm::model_catalog::test_connection_for(&provider_id)
         .await
-        .map_err(String::from)
+        .map_err(api_catalog_error)
+}
+
+fn api_catalog_error(error: crate::services::llm::types::LlmError) -> String {
+    crate::services::llm::provider_error::api_catalog_code(&error)
+        .as_str()
+        .to_string()
 }
 
 #[tauri::command]

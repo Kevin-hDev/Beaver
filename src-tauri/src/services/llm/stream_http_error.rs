@@ -37,8 +37,11 @@ pub(super) fn classify_error(
                 .to_string(),
         ),
         401 if oauth => RequestError::Fatal("oauth_reauthentication_required".into()),
-        403 if oauth => RequestError::Fatal("provider_access_unavailable".into()),
-        401 | 403 => RequestError::Fatal("auth_failed".into()),
+        401 | 403 => RequestError::Fatal(
+            super::provider_error::classify_http(error_policy, status, body)
+                .as_str()
+                .to_string(),
+        ),
         413 => RequestError::PayloadTooLarge,
         429 if error_policy == super::route_profile::ErrorPolicy::XaiOauth
             && !has_retry_after

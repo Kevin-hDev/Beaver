@@ -14,7 +14,20 @@ pub async fn map_error_status(
 ) -> LlmError {
     let status = resp.status().as_u16();
     match status {
-        401 | 403 => LlmError::Unauthorized,
+        401 => LlmError::Unauthorized,
+        403 => {
+            let body = zeroize::Zeroizing::new(
+                read_bounded(resp, PROVIDER_ERROR_LIMIT)
+                    .await
+                    .map(|bytes| String::from_utf8_lossy(&bytes).into_owned())
+                    .unwrap_or_default(),
+            );
+            LlmError::KnownProvider(super::provider_error::classify_http(
+                error_policy,
+                status,
+                &body,
+            ))
+        }
         429 => {
             let retry_after_secs = resp
                 .headers()

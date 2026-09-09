@@ -33,6 +33,13 @@ describe("KNOWN_ERROR_KEYS", () => {
       "高速モードはこのリクエストでは利用できません。無効にするか、対応モデルを選択してください。",
     ]);
   });
+
+  it("traduit l'indisponibilite du catalogue API dans les sept langues", () => {
+    expect(isKnownAgentErrorCode("model_catalog_unavailable")).toBe(true);
+    for (const catalog of catalogs) {
+      expect(readTranslation(catalog, "errors.modelCatalogUnavailable")).not.toBeUndefined();
+    }
+  });
 });
 
 function readTranslation(catalog: Record<string, unknown>, path: string): unknown {

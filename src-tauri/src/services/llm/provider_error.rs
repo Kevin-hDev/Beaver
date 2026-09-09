@@ -8,6 +8,7 @@ mod quota;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ProviderErrorCode {
+    AuthenticationFailed,
     MoonshotMembershipUnverified,
     XaiSubscriptionOrCreditsRequired,
     OAuthReauthenticationRequired,
@@ -33,6 +34,7 @@ pub struct SafeProviderDetails {
 impl ProviderErrorCode {
     pub const fn as_str(self) -> &'static str {
         match self {
+            Self::AuthenticationFailed => "auth_failed",
             Self::MoonshotMembershipUnverified => "moonshot_membership_unverified",
             Self::XaiSubscriptionOrCreditsRequired => "xai_subscription_or_credits_required",
             Self::OAuthReauthenticationRequired => "oauth_reauthentication_required",
@@ -81,8 +83,12 @@ pub fn classify_http(
     status: u16,
     body: &str,
 ) -> ProviderErrorCode {
-    if status != 402 {
-        return ProviderErrorCode::ProviderAccessUnavailable;
+    match status {
+        401 => return ProviderErrorCode::AuthenticationFailed,
+        403 => return ProviderErrorCode::ProviderAccessUnavailable,
+        429 => return ProviderErrorCode::RateLimited,
+        402 => {}
+        _ => return ProviderErrorCode::ProviderRequestRejected,
     }
     let parsed = serde_json::from_str::<serde_json::Value>(body).ok();
     if policy == super::route_profile::ErrorPolicy::Moonshot
@@ -164,6 +170,15 @@ pub fn catalog_code(error: &LlmError) -> ProviderErrorCode {
         LlmError::KnownProvider(code) => *code,
         LlmError::Unauthorized => ProviderErrorCode::OAuthReauthenticationRequired,
         LlmError::RateLimit { .. } => ProviderErrorCode::RateLimited,
+        _ => ProviderErrorCode::ModelCatalogUnavailable,
+    }
+}
+
+pub fn api_catalog_code(error: &LlmError) -> ProviderErrorCode {
+    match error {
+        LlmError::Unauthorized => ProviderErrorCode::AuthenticationFailed,
+        LlmError::RateLimit { .. } => ProviderErrorCode::RateLimited,
+        LlmError::KnownProvider(code) => *code,
         _ => ProviderErrorCode::ModelCatalogUnavailable,
     }
 }

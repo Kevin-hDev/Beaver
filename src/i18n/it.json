@@ -1309,6 +1309,7 @@
     "modelNotFound": "Modello non trovato",
     "rateLimited": "Troppe richieste, riprova tra poco",
     "authFailed": "Autenticazione fallita, controlla la tua chiave API",
+    "modelCatalogUnavailable": "Il catalogo dei modelli non è temporaneamente disponibile. Riprova più tardi.",
     "moonshotMembershipUnverified": "Moonshot non riesce a confermare un abbonamento Kimi Code attivo.",
     "xaiSubscriptionOrCreditsRequired": "xAI segnala che è richiesto un abbonamento Grok o dei crediti.",
     "providerAccessUnavailable": "Il provider rifiuta attualmente l’accesso al modello.",

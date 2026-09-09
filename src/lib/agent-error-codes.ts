@@ -3,6 +3,7 @@ export const KNOWN_ERROR_KEYS: Readonly<Record<string, string>> = {
   model_not_found: "errors.modelNotFound",
   rate_limit: "errors.rateLimited",
   auth_failed: "errors.authFailed",
+  model_catalog_unavailable: "errors.modelCatalogUnavailable",
   moonshot_membership_unverified: "errors.moonshotMembershipUnverified",
   xai_subscription_or_credits_required: "errors.xaiSubscriptionOrCreditsRequired",
   provider_access_unavailable: "errors.providerAccessUnavailable",

@@ -1308,6 +1308,7 @@
     "modelNotFound": "未找到模型",
     "rateLimited": "请求过多，请稍后重试",
     "authFailed": "认证失败，请检查 API 密钥",
+    "modelCatalogUnavailable": "模型目录暂时不可用。请稍后重试。",
     "moonshotMembershipUnverified": "Moonshot 无法确认有效的 Kimi Code 订阅。",
     "xaiSubscriptionOrCreditsRequired": "xAI 表示需要 Grok 订阅或额度。",
     "providerAccessUnavailable": "提供商当前拒绝访问该模型。",
