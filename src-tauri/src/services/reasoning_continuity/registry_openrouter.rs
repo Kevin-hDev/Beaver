@@ -4,19 +4,23 @@ use super::registry_inventory::{disabled, live};
 
 // The gateway catalogue is not a replay proof; new models stay closed here.
 pub(super) const OPENROUTER: &[ModelPolicy] = &[
-    // 2026-09-09: the catalogue now exposes a toggle. Prove auto separately;
-    // never reuse a medium envelope or activate its replacement without live evidence.
-    disabled(
+    // 2026-09-09: the catalogue now exposes a toggle. Auto has its own live proof;
+    // historical medium envelopes retain their exact scope and are never relabelled.
+    live(
         "moonshotai/kimi-k2.5",
         ReasoningModeId::Auto,
         ContinuationUse::UserContinuation,
         ReplayRequirement::Required,
+        "openrouter-api-moonshotai-kimi-k2-5-auto-france-2026-09-09",
+        "2026-09-09",
     ),
-    disabled(
+    live(
         "moonshotai/kimi-k2.5",
         ReasoningModeId::Auto,
         ContinuationUse::ToolContinuation,
         ReplayRequirement::Required,
+        "openrouter-api-moonshotai-kimi-k2-5-auto-france-2026-09-09",
+        "2026-09-09",
     ),
     live(
         "moonshotai/kimi-k2.5",

@@ -73,6 +73,57 @@ fn api_and_oauth_routes_keep_distinct_scopes_without_exposing_them() {
     assert_eq!(api.reasoning_mode, ReasoningModeId::High);
 }
 
+#[tokio::test]
+async fn kimi_legacy_effort_resolves_to_proven_auto_replay_but_off_stays_forbidden() {
+    use crate::services::llm::model_reasoning_contract::ReasoningControl;
+    let _guard = crate::services::llm::runtime_models::test_mutation_lock().await;
+    let mut model = openrouter_contract_model(ReasoningControl::Toggle, Some(true), None);
+    model.id = "moonshotai/kimi-k2.5".into();
+    crate::services::llm::runtime_models::replace_provider("openrouter", &[model]).unwrap();
+    let session: crate::services::agent_local::types_session::AgentSession =
+        serde_json::from_value(serde_json::json!({
+            "schema_version": 1, "id": "test", "name": "test",
+            "created_at": "2026-09-09T00:00:00Z", "model": "moonshotai/kimi-k2.5",
+            "provider": "openrouter", "thinking_enabled": true, "reasoning_mode": "medium",
+            "preserve_reasoning": "remote", "accumulated_tokens": 0, "messages": []
+        }))
+        .unwrap();
+    let scope = CredentialScope::authenticated("test-scope").unwrap();
+    let active = resolve_session(
+        session.clone(),
+        RouteId::OpenRouter,
+        None,
+        Some(true),
+        Some(scope.clone()),
+    )
+    .unwrap();
+    let mut off = session;
+    off.thinking_enabled = false;
+    let inactive = resolve_session(
+        off,
+        RouteId::OpenRouter,
+        None,
+        Some(true),
+        Some(scope.clone()),
+    )
+    .unwrap();
+    crate::services::llm::runtime_models::replace_provider("openrouter", &[]).unwrap();
+    assert_eq!(active.reasoning.mode, ReasoningModeId::Auto);
+    let replay = active
+        .continuation
+        .replay()
+        .expect("proven current toggle mode must capture");
+    assert_eq!(replay.reasoning_mode, ReasoningModeId::Auto);
+    assert_eq!(replay.model_id, "moonshotai/kimi-k2.5");
+    assert_eq!(replay.route_id, RouteId::OpenRouter);
+    assert_eq!(replay.credential_scope, scope);
+    assert_eq!(inactive.reasoning.mode, ReasoningModeId::Off);
+    assert!(matches!(
+        inactive.continuation,
+        ContinuationTarget::Forbidden(_)
+    ));
+}
+
 #[test]
 fn unknown_routes_and_modes_fail_closed() {
     assert!(RouteId::from_provider_id("forged").is_none());
