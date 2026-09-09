@@ -1,0 +1,26 @@
+Follow-up corrections for docs/superpowers/plans/2026-09-09-review-correctif-fiabilisation-providers.md and the remaining T2/P2 items from the preceding review.
+
+Scope and decisions:
+- U1/U2: every LiteLLM refresh failure now emits the same structured event with a stable static reason, optional HTTP status, and an explicitly named entries_observed field. Network failure, rejected status, untrusted final redirect host, declared or streamed oversized body, stream failure, invalid UTF-8, parse rejection, cache-directory failure, and cache-write failure are observable. HTTP 304 remains an expected no-op.
+- U3/U4: xAI catalog test imports are ordered normally and the older model-catalog identifier warning now uses the same structured logging style.
+- V1: if the root provider catalog command fails while configured provider IDs remain available, each configured API provider receives a generic model_catalog_unavailable issue. The raw rejection never reaches the UI.
+- V2: catalog issues obey the model-selector search by provider ID or display name.
+- T2: OpenRouter routing observations now use their own bounded openrouter-routing.jsonl file. Successful routing evidence can no longer evict provider failures from provider-errors.jsonl.
+- P2: malformed supported_parameters remains fail-closed for OpenRouter, which owns that metadata contract. Other OpenAI-compatible catalogs degrade the field to absent instead of hiding a usable model.
+- Structural decision: catalog field validation moved to openai_compat_model_fields.rs after the parser crossed the 230-line project limit. Final production sizes are parser 188 lines and field validator 47 lines.
+- V3 remains unchanged because the row is informational rather than actionable.
+
+TDD evidence:
+- Before implementation, the new frontend tests failed because the global catalog rejection escaped fetchCloudModels and the unrelated Mistral issue remained visible for a Google search.
+- Before implementation, Rust failed because the isolated routing log and refresh response classifier did not exist; the malformed non-OpenRouter metadata regression test then passed only after the provider-owned policy was added.
+- Targeted suites: LiteLLM catalog 21 passed; OpenAI-compatible parsing 22 passed; OpenRouter routing 9 passed; the two modified frontend files 17 passed.
+- Full Rust suite after the final source change: 5394 passed, 0 failed, 21 ignored.
+- Full npm test: Vitest 3326 passed across 604 files; build scripts, CI scripts, CEF, E2E runner, extension host, reasoning fixtures, and contracts all completed with exit 0.
+- cargo fmt --check: passed.
+- cargo clippy --all-targets -- -D warnings: passed.
+- npx tsc --noEmit: passed.
+- npm run lint: passed; provider routing boundary count remains 65.
+- git diff --check: passed.
+- graphify update . completed: 42322 nodes, 96007 edges, 2047 communities.
+
+The installed /Applications/Beaver.app instance is not built from this worktree, so no false visual claim is made. The catalog-error rendering and search behavior are covered by real component tests; a two-theme visual check still requires a build of this branch. No provider API request or paid test was made.
