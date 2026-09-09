@@ -140,8 +140,21 @@ fn legacy_openai_chat_payload_never_reintroduces_flat_reasoning() {
     assert!(payload.get("reasoning").is_none());
 }
 
-#[test]
-fn openrouter_gpt_56_uses_max_completion_tokens() {
+#[tokio::test]
+async fn openrouter_uses_published_max_completion_tokens() {
+    let _guard = super::super::runtime_models::test_mutation_lock().await;
+    let parsed = super::super::openai_compat_parsing::parse_models_list(
+        &serde_json::json!({"data":[{
+            "id":"openai/gpt-5.6-sol",
+            "architecture":{"output_modalities":["text"]},
+            "supported_parameters":["max_completion_tokens"]
+        }]}),
+        "openrouter",
+    )
+    .unwrap();
+    super::super::model_catalog::enrich_models("openrouter", parsed, false)
+        .await
+        .unwrap();
     let cfg = RequestConfig {
         provider_id: "openrouter",
         model: "openai/gpt-5.6-sol",
@@ -257,8 +270,20 @@ fn chat_payload_respects_each_route_cache_and_usage_contract() {
     }
 }
 
-#[test]
-fn streaming_output_limit_field_matches_model_family() {
+#[tokio::test]
+async fn streaming_output_limit_field_matches_the_published_gateway_contract() {
+    let _guard = super::super::runtime_models::test_mutation_lock().await;
+    let parsed = super::super::openai_compat_parsing::parse_models_list(
+        &serde_json::json!({"data":[
+            {"id":"openai/o3","architecture":{"output_modalities":["text"]},"supported_parameters":["max_completion_tokens"]},
+            {"id":"openai/gpt-4o","architecture":{"output_modalities":["text"]},"supported_parameters":["max_tokens"]}
+        ]}),
+        "openrouter",
+    )
+    .unwrap();
+    super::super::model_catalog::enrich_models("openrouter", parsed, false)
+        .await
+        .unwrap();
     for (provider, model, expected, absent) in [
         (
             "openrouter",
@@ -320,7 +345,7 @@ fn payload_parameters_are_resolved_before_serialization() {
     assert!(!qwen.tool_stream);
     assert!(!openrouter_glm.tool_stream);
     assert!(openrouter.upstream_routing);
-    assert_eq!(openrouter.output_limit_field, "max_completion_tokens");
+    assert_eq!(openrouter.output_limit_field, "max_tokens");
 }
 
 #[tokio::test]

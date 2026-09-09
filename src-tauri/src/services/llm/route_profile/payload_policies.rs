@@ -40,7 +40,6 @@ fn output_limit_field(profile: &RouteProfile, model: &str) -> &'static str {
     }
     let completion_tokens = match profile.id.provider_id() {
         "openai" => super::super::providers::openai::uses_max_completion_tokens(model),
-        "openrouter" => super::super::providers::openai::uses_max_completion_tokens(model),
         "moonshot" | "moonshot-oauth" => super::super::providers::moonshot::is_k3(model),
         _ => false,
     };

@@ -57,6 +57,9 @@ mod openrouter_catalog_tests;
 mod openrouter_model_metadata;
 #[cfg(test)]
 mod openrouter_model_metadata_tests;
+mod openrouter_request_contract;
+#[cfg(test)]
+mod openrouter_request_contract_tests;
 pub(crate) mod prompt_cache_policy;
 #[cfg(test)]
 mod prompt_cache_policy_tests;
