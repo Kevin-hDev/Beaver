@@ -195,6 +195,8 @@ pub struct StreamResult {
     /// Diagnostic provider : raison de fin renvoyée par l'événement final.
     /// Exemples : "stop", "length", "tool_call". None si le champ est absent.
     pub done_reason: Option<String>,
+    /// Terminal failure retained with usage and partial output, never a paid retry.
+    pub(crate) completion_error: Option<&'static str>,
     /// Diagnostic Ollama : durée totale (ns) annoncée par le chunk final.
     pub total_duration_ns: Option<u64>,
     /// Diagnostic : nombre total d'événements de stream reçus du provider.

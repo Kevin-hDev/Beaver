@@ -89,6 +89,7 @@ pub mod stream;
 mod stream_chunk;
 #[cfg(test)]
 mod stream_chunk_tests;
+mod stream_completion;
 mod stream_consume;
 mod stream_consume_budget;
 mod stream_consume_record;

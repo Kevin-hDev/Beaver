@@ -36,14 +36,14 @@ pub(super) async fn finish_stream(
     measurement: Option<RequestMeasurement>,
     result: &Result<StreamOutcome, String>,
 ) {
-    let Some(measurement) = measurement else {
+    let Some(mut measurement) = measurement else {
         return;
     };
     let (status, usage, complete) = match result {
         Ok(StreamOutcome::Completed(stream)) => (
-            RequestMetricStatus::Completed,
+            completion_status(&mut measurement, stream),
             stream.usage.as_ref(),
-            stream.usage.is_some(),
+            stream.completion_error.is_none() && stream.usage.is_some(),
         ),
         Ok(StreamOutcome::InterruptedForCompression(stream)) => (
             RequestMetricStatus::Interrupted,
@@ -60,17 +60,35 @@ pub(super) async fn finish_silent(
     measurement: Option<RequestMeasurement>,
     result: &Result<StreamResult, String>,
 ) {
-    let Some(measurement) = measurement else {
+    let Some(mut measurement) = measurement else {
         return;
     };
     let (status, usage, complete) = match result {
         Ok(stream) => (
-            RequestMetricStatus::Completed,
+            completion_status(&mut measurement, stream),
             stream.usage.as_ref(),
-            stream.usage.is_some(),
+            stream.completion_error.is_none() && stream.usage.is_some(),
         ),
         Err(error) if error == "Annulé" => (RequestMetricStatus::Cancelled, None, false),
         Err(_) => (RequestMetricStatus::Failed, None, false),
     };
     measurement.finish(status, usage, complete).await;
 }
+
+fn completion_status(
+    measurement: &mut RequestMeasurement,
+    stream: &StreamResult,
+) -> RequestMetricStatus {
+    if let Some(reason) = stream.done_reason.as_deref() {
+        measurement.observe_finish_reason(reason);
+    }
+    if stream.completion_error.is_some() {
+        RequestMetricStatus::Failed
+    } else {
+        RequestMetricStatus::Completed
+    }
+}
+
+#[cfg(test)]
+#[path = "stream_metrics_tests.rs"]
+mod tests;

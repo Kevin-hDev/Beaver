@@ -65,7 +65,11 @@ pub(super) async fn consume_silent(
         }
     }
     flush_content(&mut result, &mut think_filter);
+    if super::stream_completion::terminal_error(&result).is_some() {
+        acc = ToolCallAccumulator::new();
+    }
     finalize_tools(&mut result, acc);
+    super::stream_completion::finish(&mut result);
     Ok(result)
 }
 
@@ -104,6 +108,7 @@ fn process_chunk(
                 result.usage = Some(usage);
             }
             ParsedChunk::GenerationDuration(_) => {}
+            ParsedChunk::FinishReason(reason) => result.done_reason = Some(reason.into()),
             ParsedChunk::ProviderError(status) => {
                 return Err(stream_chunk::provider_error_code(error_policy, status).to_string());
             }

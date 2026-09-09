@@ -8,6 +8,7 @@ pub enum ParsedChunk {
     ToolCalls(Vec<Value>),
     Usage(RequestUsage),
     GenerationDuration(u64),
+    FinishReason(&'static str),
     ProviderError(Option<u16>),
 }
 
@@ -41,6 +42,19 @@ pub fn parse_value_with_context(chunk: &Value, context: UsageContext<'_>) -> Vec
     let mut out = Vec::new();
     if let Some(choice) = chunk["choices"].as_array().and_then(|a| a.first()) {
         parse_delta(&choice["delta"], &mut out);
+        if let Some(
+            reason @ ("stop" | "length" | "tool_calls" | "content_filter" | "function_call"),
+        ) = choice["finish_reason"].as_str()
+        {
+            let reason = match reason {
+                "stop" => "stop",
+                "length" => "length",
+                "tool_calls" => "tool_calls",
+                "content_filter" => "content_filter",
+                _ => "function_call",
+            };
+            out.push(ParsedChunk::FinishReason(reason));
+        }
     }
     if let Some(usage) = parse_usage(chunk, context) {
         out.push(ParsedChunk::Usage(usage));

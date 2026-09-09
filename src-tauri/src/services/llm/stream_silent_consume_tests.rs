@@ -50,6 +50,32 @@ async fn consume_text_fixture(
 }
 
 #[tokio::test]
+async fn silent_token_limit_preserves_usage_but_rejects_partial_summary() {
+    let (_server, response) = streaming_response(concat!(
+        "data: {\"choices\":[{\"delta\":{\"content\":\"partial summary\"},\"finish_reason\":\"length\"}]}\n\n",
+        "data: {\"usage\":{\"prompt_tokens\":100,\"completion_tokens\":512}}\n\n",
+        "data: [DONE]\n\n",
+    )).await;
+    let result = consume_silent(
+        response,
+        CancellationToken::new(),
+        Duration::from_secs(2),
+        crate::services::provider_usage::UsageContext::chat("openrouter", "fixture"),
+        crate::services::llm::route_profile::FragmentMode::DifferentialFragments,
+        crate::services::llm::route_profile::ErrorPolicy::Responses,
+        None,
+    )
+    .await
+    .unwrap();
+    assert_eq!(result.done_reason.as_deref(), Some("length"));
+    assert_eq!(result.usage.as_ref().unwrap().output_tokens, Some(512));
+    assert_eq!(
+        super::super::stream_completion::require_complete(result).unwrap_err(),
+        "provider_output_limit",
+    );
+}
+
+#[tokio::test]
 async fn google_silent_usage_counts_all_generated_tokens() {
     let (_server, response) = streaming_response(concat!(
         "data: {\"choices\":[{\"delta\":{\"content\":\"323\"}}]}\n\n",

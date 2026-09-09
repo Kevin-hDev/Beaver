@@ -104,6 +104,9 @@ pub(super) fn classify_error(message: &str, is_connection: bool) -> String {
     if matches!(
         lower.as_str(),
         "rate_limit"
+            | "provider_empty_response"
+            | "provider_output_limit"
+            | "provider_content_filtered"
             | "auth_failed"
             | "oauth_reauthentication_required"
             | "provider_access_unavailable"
