@@ -67,7 +67,7 @@ test("patches a placeholder split across real PowerPoint runs", async () => {
     assert.notEqual(result.isError, true);
     const files = unzipSync(await readFile(join(workspace, "patched.pptx")));
     const xml = strFromU8(files["ppt/slides/slide1.xml"]);
-    assert.equal(powerPointText(xml).includes("Prepared for Beaver & Co"), true);
+    assert.equal(powerPointText(xml), "Prepared for Beaver & Co");
     assert.equal(xml.includes("{{customer}}"), false);
   });
 });
@@ -104,10 +104,20 @@ async function withFixture(name, assertion) {
 }
 
 function powerPointText(xml) {
-  return [...xml.matchAll(/<a:t(?:\s[^>]*)?>([\s\S]*?)<\/a:t>/gu)]
-    .map((match) => match[1])
-    .join("")
-    .replaceAll("&amp;", "&")
-    .replaceAll("&lt;", "<")
-    .replaceAll("&gt;", ">");
+  const parts = [];
+  let cursor = 0;
+  while (cursor < xml.length) {
+    const nodeStart = xml.indexOf("<a:t", cursor);
+    if (nodeStart < 0) break;
+    const contentStart = xml.indexOf(">", nodeStart + 4);
+    const contentEnd = xml.indexOf("</a:t>", contentStart + 1);
+    assert.ok(contentStart >= 0 && contentEnd >= 0, "balise texte PowerPoint incomplète");
+    parts.push(xml.slice(contentStart + 1, contentEnd));
+    cursor = contentEnd + 6;
+  }
+  return parts.join("").replace(/&(amp|lt|gt);/gu, (entity) => {
+    if (entity === "&amp;") return "&";
+    if (entity === "&lt;") return "<";
+    return ">";
+  });
 }

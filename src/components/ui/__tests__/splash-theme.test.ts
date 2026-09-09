@@ -2,9 +2,10 @@ import { readFileSync } from "node:fs";
 import { runInNewContext } from "node:vm";
 import { describe, expect, it } from "vitest";
 import { RESOLVED_THEME_OPTIONS, type ResolvedTheme } from "@/lib/app-themes";
+import { extractSplashBootstrap } from "@/test-utils/splash-bootstrap-source";
 
 const indexHtml = readFileSync("index.html", "utf8");
-const bootstrapSource = indexHtml.match(/<script>([\s\S]*?)<\/script>/)?.[1];
+const bootstrapSource = extractSplashBootstrap(indexHtml);
 
 function runBootstrap(
   choice: string | null,
@@ -28,8 +29,7 @@ function runBootstrap(
     },
   };
 
-  expect(bootstrapSource).toBeDefined();
-  runInNewContext(bootstrapSource!, context);
+  runInNewContext(bootstrapSource, context);
   return attributes;
 }
 

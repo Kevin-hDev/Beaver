@@ -48,11 +48,18 @@ test("les deux installateurs restent petits et ciblent Beaver", () => {
     assert.match(source, /Kevin-hDev\/Beaver/);
     assert.match(source, /update-manifest\.json/);
     assert.match(source, /2147483648/);
-    assert.match(source, /release-assets\.githubusercontent\.com/);
     const historicalRepository = `Kevin-hDev/${["CL", "GO", "DASH"].join("-")}`;
     assert.ok(!source.includes(historicalRepository));
     assert.doesNotMatch(source, /\b(?:eval|Invoke-Expression)\b/i);
   }
+  assert.match(
+    shell,
+    /^  case "\$1" in https:\/\/release-assets\.githubusercontent\.com\/\*\) return 0 ;; \*\) return 1 ;; esac$/mu,
+  );
+  assert.match(
+    powershell,
+    /^ {8}\$Uri\.Host -ceq "release-assets\.githubusercontent\.com" -and \$Uri\.IsDefaultPort -and$/mu,
+  );
 });
 
 test("le script shell borne et vérifie chaque téléchargement", () => {

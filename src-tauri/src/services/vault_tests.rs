@@ -1,12 +1,15 @@
 use super::*;
+use rand::RngCore;
 
 // Clé master 32 octets (XChaCha20-Poly1305) pour les tests.
-fn test_key() -> Vec<u8> {
-    let mut k = vec![0u8; 32];
-    for (i, b) in k.iter_mut().enumerate() {
-        *b = (i as u8).wrapping_mul(7);
-    }
-    k
+fn test_bytes<const N: usize>() -> [u8; N] {
+    let mut bytes = [0_u8; N];
+    rand::rngs::OsRng.fill_bytes(&mut bytes);
+    bytes
+}
+
+fn test_key() -> [u8; 32] {
+    test_bytes()
 }
 
 #[test]
@@ -42,8 +45,8 @@ fn decrypt_fails_with_wrong_key() {
     // Fail CLOSED : une mauvaise clé doit échouer (tag Poly1305 invalide),
     // jamais retourner du pseudo-plaintext silencieux.
     let key = test_key();
-    let mut wrong_key = vec![0u8; 32];
-    wrong_key.fill(0xFF);
+    let mut wrong_key = key;
+    wrong_key[0] ^= 1;
 
     let plaintext = b"top secret api key";
     let encrypted = encrypt(&key, plaintext).expect("encrypt");
@@ -124,7 +127,7 @@ fn vault_file_round_trips_through_serde() {
 fn encrypt_rejects_wrong_key_length() {
     // XChaCha20 exige une clé de 32 octets. Une clé trop courte doit échouer
     // explicitement (fail closed) plutôt que de tronquer/padder.
-    let short_key = vec![0u8; 16];
+    let short_key = test_bytes::<16>();
     let result = encrypt(&short_key, b"data");
     assert!(result.is_err(), "une clé trop courte doit être rejetée");
 }

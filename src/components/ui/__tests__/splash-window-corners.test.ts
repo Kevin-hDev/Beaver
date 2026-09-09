@@ -2,16 +2,17 @@ import { readFileSync } from "node:fs";
 import { runInNewContext } from "node:vm";
 import { describe, expect, it } from "vitest";
 import { IS_MAC } from "@/lib/platform";
+import { extractSplashBootstrap } from "@/test-utils/splash-bootstrap-source";
 
 const indexHtml = readFileSync("index.html", "utf8");
 const tokensCss = readFileSync("src/styles/tokens.css", "utf8");
 const onboardingCss = readFileSync("src/components/onboarding/onboarding.css", "utf8");
 const appCss = readFileSync("src/App.css", "utf8");
-const bootstrapSource = indexHtml.match(/<script>([\s\S]*?)<\/script>/)?.[1];
+const bootstrapSource = extractSplashBootstrap(indexHtml);
 
 function osFor(userAgent: string): string {
   const attributes: Record<string, string> = {};
-  runInNewContext(bootstrapSource!, {
+  runInNewContext(bootstrapSource, {
     localStorage: { getItem: () => "dark" },
     navigator: { userAgent },
     window: { matchMedia: () => ({ matches: true }) },
