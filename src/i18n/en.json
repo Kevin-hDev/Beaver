@@ -1333,6 +1333,7 @@
     "saveFailed": "Save failed",
     "projectOpenFailed": "Could not open folder",
     "sessionSaveFailed": "Session could not be saved",
+    "sessionRevisionFailed": "This message could not be retried or edited. Reopen the conversation and try again.",
     "downloadFailed": "Download failed",
     "updateFailed": "Update failed",
     "updatePrepareFailed": "The update could not be prepared",

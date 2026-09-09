@@ -15,7 +15,7 @@ export async function replaceSessionMessage(
     });
     return true;
   } catch (error) {
-    showToast(admissionErrorMessage(error, i18n.t, "errors.sessionSaveFailed"), "error");
+    showToast(admissionErrorMessage(error, i18n.t, "errors.sessionRevisionFailed"), "error");
     return false;
   }
 }

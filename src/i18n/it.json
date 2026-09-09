@@ -1300,6 +1300,7 @@
     "saveFailed": "Salvataggio non riuscito",
     "projectOpenFailed": "Impossibile aprire la cartella",
     "sessionSaveFailed": "Impossibile salvare la sessione",
+    "sessionRevisionFailed": "Impossibile riprovare o modificare questo messaggio. Riapri la conversazione e riprova.",
     "downloadFailed": "Download non riuscito",
     "updateFailed": "Aggiornamento non riuscito",
     "updatePrepareFailed": "Non è stato possibile preparare l'aggiornamento",

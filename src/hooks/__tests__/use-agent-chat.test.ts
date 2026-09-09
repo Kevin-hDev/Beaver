@@ -126,6 +126,53 @@ describe("useAgentChat", () => {
     await waitFor(() => expect(onPermission).toHaveBeenCalledWith(request));
   });
 
+  it("ne tronque et ne relance qu'une fois pendant une reprise en cours", async () => {
+    const pending = deferred<void>();
+    startStream.mockReturnValueOnce(pending.promise);
+    const { result } = renderHook(() => useAgentChat("session-1", "llama3", "ollama"));
+    await waitFor(() => expect(result.current.sessionLoading).toBe(false));
+    let first!: Promise<void>;
+    act(() => { first = result.current.reload("m2"); });
+    await waitFor(() => expect(startStream).toHaveBeenCalledTimes(1));
+    await act(async () => {
+      await result.current.reload("m2");
+      await result.current.edit("m1", "duplicate");
+    });
+    expect(startStream).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(invoke).mock.calls.filter(([command]) => command === "truncate_and_replace_at")).toHaveLength(1);
+    await act(async () => { pending.resolve(); await first; });
+    await act(async () => { await result.current.reload("m2"); });
+    expect(startStream).toHaveBeenCalledTimes(2);
+  });
+
+  it("ne présente pas une reprise refusée comme une panne de sauvegarde", async () => {
+    vi.mocked(invoke).mockImplementation((command: string) => {
+      if (command === "get_agent_session") return Promise.resolve(session);
+      if (command === "truncate_and_replace_at") return Promise.reject(new Error("Modification de session impossible"));
+      return Promise.resolve(undefined);
+    });
+    const { result } = renderHook(() => useAgentChat("session-1", "llama3", "ollama"));
+    await waitFor(() => expect(result.current.sessionLoading).toBe(false));
+    await act(async () => { await result.current.reload("m2"); });
+    expect(showToast).toHaveBeenCalledWith("errors.sessionRevisionFailed", "error");
+    expect(startStream).not.toHaveBeenCalled();
+    mockSessionInvoke(session);
+    await act(async () => { await result.current.reload("m2"); });
+    expect(startStream).toHaveBeenCalledOnce();
+  });
+
+  it("refuse une reprise tant que le gestionnaire possède un stream actif", async () => {
+    const { result } = renderHook(() => useAgentChat("session-1", "llama3", "ollama"));
+    await waitFor(() => expect(result.current.sessionLoading).toBe(false));
+    getStreamSnapshot.mockReturnValueOnce({
+      ...EMPTY_CHAT_STATE, messages: session.messages, isStreaming: true,
+      pendingPermissions: [], completed: false,
+    });
+    await act(async () => { await result.current.reload("m2"); });
+    expect(startStream).not.toHaveBeenCalled();
+    expect(vi.mocked(invoke).mock.calls.filter(([command]) => command === "truncate_and_replace_at")).toHaveLength(0);
+  });
+
   it("affiche le refus lecture seule et ne relance pas après un truncate refusé", async () => {
     vi.mocked(invoke).mockImplementation((command: string) => {
       if (command === "get_agent_session") return Promise.resolve(session);

@@ -8,7 +8,7 @@ import { clearInteractiveChoiceState, EMPTY_CHAT_STATE, type ChatState } from ".
 import { resolveSessionContext } from "./agent-token-estimate";
 import { useAgentMissingDirectory } from "./use-agent-missing-directory";
 import { useAgentMessageSend } from "./use-agent-message-send";
-import { replaceSessionMessage } from "./agent-chat-turn-revision";
+import { useAgentTurnRevision } from "./use-agent-turn-revision";
 import { restoredFailureState } from "./agent-chat-restored-failure";
 import type { AgentMessage, AgentSession } from "@/types/agent";
 import type { TurnStart } from "@/types/agent-turn.generated";
@@ -161,43 +161,10 @@ export function useAgentChat(
     return state.sessionTokenCount;
   }, [sessionId, state.sessionTokenCount]);
 
-  const reload = useCallback(async (messageId: string) => {
-    if (!sessionId) return;
-    const idx = state.messages.findIndex((m) => m.id === messageId);
-    if (idx < 0) return;
-    const userIdx = findUserMessageAtOrBefore(state.messages, idx);
-    if (userIdx < 0) return;
-    const userMessage = state.messages[userIdx];
-    if (!await replaceSessionMessage(sessionId, userMessage.id, userMessage.content)) return;
-    const freshTokenCount = await syncTokenCount();
-    const msgs = state.messages.slice(0, userIdx + 1);
-    await doStream(
-      { type: "resume", input: { message_id: userMessage.id } },
-      msgs,
-      sessionId,
-      undefined,
-      freshTokenCount,
-      permModeRef.current,
-    );
-  }, [sessionId, state.messages, doStream, syncTokenCount]);
-
-  const edit = useCallback(async (messageId: string, newContent: string) => {
-    if (!sessionId) return;
-    const idx = state.messages.findIndex((m) => m.id === messageId);
-    if (idx < 0 || state.messages[idx].role !== "user") return;
-    const newMsg = { ...state.messages[idx], content: newContent };
-    if (!await replaceSessionMessage(sessionId, messageId, newContent)) return;
-    const freshTokenCount = await syncTokenCount();
-    const msgs = [...state.messages.slice(0, idx), newMsg];
-    await doStream(
-      { type: "resume", input: { message_id: newMsg.id } },
-      msgs,
-      sessionId,
-      undefined,
-      freshTokenCount,
-      permModeRef.current,
-    );
-  }, [sessionId, state.messages, doStream, syncTokenCount]);
+  const { reload, edit } = useAgentTurnRevision({
+    sessionId, messages: state.messages, permissionModeRef: permModeRef,
+    getStreamSnapshot, syncTokenCount, doStream,
+  });
 
   const stop = useCallback(async () => {
     if (sessionId) await stopStream(sessionId);
@@ -216,11 +183,4 @@ export function useAgentChat(
     dismissForbiddenDirectory: dismissForbidden,
     sendMessage, reload, edit, stop, clearInteractiveChoice,
   };
-}
-
-function findUserMessageAtOrBefore(messages: AgentMessage[], index: number): number {
-  for (let cursor = index; cursor >= 0; cursor -= 1) {
-    if (messages[cursor].role === "user") return cursor;
-  }
-  return -1;
 }

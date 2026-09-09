@@ -9,7 +9,7 @@ async fn spawn(
     stream: super::agent_chat_admission::AgentChatAdmission,
     work: super::agent_chat_work::AgentStreamAdmission,
     admitted: crate::services::agent_local::conversation_admission::AdmittedTurn,
-    admission_rollback: super::agent_chat_turn::AdmissionRollback,
+    mut admission_rollback: super::agent_chat_turn::AdmissionRollback,
     target: super::agent_chat_target::ResolvedChatTarget,
     resolved_dir: super::agent_working_dir::ResolvedWorkingDir,
     result: ChatStreamAdmission,
@@ -25,15 +25,18 @@ async fn spawn(
     let generation = stream.generation;
     let spawn_rollback = admission_rollback.clone();
     let emitter = AgentEventEmitter::with_generation(app.clone(), session_id.clone(), generation);
-    let _ = emitter.send(StreamEvent::TurnAdmitted {
-        turn_id: result.turn_id.clone(),
-        user_message_id: result.user_message_id.clone(),
-        assistant_message_id: result.assistant_message_id.clone(),
-    });
     let spawn_result = super::agent_chat_work::spawn(
         work,
         stream.cancel.clone(),
         Box::pin(async move {
+            // No accepted event escapes a failed spawn. Later errors retain the
+            // admitted message rather than invalidating the UI's retry identity.
+            admission_rollback.accept_execution();
+            let _ = emitter.send(StreamEvent::TurnAdmitted {
+                turn_id: result.turn_id,
+                user_message_id: result.user_message_id,
+                assistant_message_id: result.assistant_message_id,
+            });
             let stream_request_id = request_id.clone();
             let outcome = run_stream_task(StreamTaskParams {
                 on_event: emitter.clone(),

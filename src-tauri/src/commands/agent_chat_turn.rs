@@ -13,6 +13,7 @@ pub(crate) struct AdmittedCurrentTurn {
 
 #[derive(Clone)]
 pub(crate) struct AdmissionRollback {
+    execution_accepted: bool,
     turn_id: String,
     user_message_id: String,
     before: crate::services::agent_local::types_session::AgentSession,
@@ -22,11 +23,18 @@ pub(crate) struct AdmissionRollback {
 impl AdmittedCurrentTurn {
     pub(crate) fn rollback(&self) -> AdmissionRollback {
         AdmissionRollback {
+            execution_accepted: false,
             turn_id: self.turn.turn_id.clone(),
             user_message_id: self.turn.user_message_id.clone(),
             before: self.before.clone(),
             kind: self.kind,
         }
+    }
+}
+
+impl AdmissionRollback {
+    pub(crate) fn accept_execution(&mut self) {
+        self.execution_accepted = true;
     }
 }
 
@@ -91,8 +99,8 @@ pub(crate) async fn admit_current(
     Ok(AdmittedCurrentTurn { turn, before, kind })
 }
 
-/// Annule l'admission durable si une étape préparatoire postérieure échoue
-/// avant le lancement du modèle. Le lease et la génération évitent d'écraser
+/// Annule l'admission durable uniquement avant l'acceptation de l'exécution.
+/// Le lease et la génération évitent d'écraser
 /// une nouvelle requête qui aurait déjà remplacé celle-ci.
 pub(crate) async fn rollback_current(
     streams: &crate::ActiveStreams,
@@ -100,6 +108,11 @@ pub(crate) async fn rollback_current(
     generation: u64,
     admitted: &AdmissionRollback,
 ) -> Result<(), String> {
+    // Once execution is accepted, even a preparation/provider failure must keep
+    // the user message: the UI already owns its durable ID for Retry.
+    if admitted.execution_accepted {
+        return Ok(());
+    }
     let lease =
         crate::services::agent_local::session_locks::acquire_admission_lease(session_id).await;
     let current = matches!(

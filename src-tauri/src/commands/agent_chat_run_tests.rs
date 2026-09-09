@@ -204,6 +204,61 @@ async fn projectless_main_chat_rolls_back_the_durable_turn_when_workspace_resolu
     cleanup(&session.id).await;
 }
 
+#[tokio::test]
+async fn accepted_execution_failure_keeps_the_user_message_resumable() {
+    let session = session("Retry after accepted provider failure").await;
+    let stream = admission(&session.id, 9).await;
+    let streams = ActiveStreams(Mutex::new(HashMap::from([(
+        session.id.clone(),
+        entry(&stream),
+    )])));
+    let admitted = super::agent_chat_turn::admit_current(
+        &streams,
+        &session.id,
+        stream.generation,
+        prepared_turn("Retry this message").await,
+        forbidden_target(),
+        reasoning_update(&session),
+    )
+    .await
+    .unwrap();
+    let mut rollback = admitted.rollback();
+    rollback.accept_execution();
+    super::agent_chat_turn::rollback_current(&streams, &session.id, stream.generation, &rollback)
+        .await
+        .unwrap();
+    let stored = crate::services::agent_local::session_store::get(&session.id)
+        .await
+        .unwrap();
+    assert_eq!(
+        stored.messages.len(),
+        1,
+        "accepted failures must not erase the user message"
+    );
+    assert_eq!(stored.messages[0].id, admitted.turn.user_message_id);
+    crate::services::agent_local::session_ops::edit_user_message(
+        &session.id,
+        crate::models::agent_session_contract::EditUserMessageInput {
+            message_id: admitted.turn.user_message_id.clone(),
+            new_content: "Retry this message".into(),
+        },
+    )
+    .await
+    .expect("Retry can find the persisted message");
+    let resumed = crate::services::agent_local::conversation_resume::resume_for_continuation(
+        &session.id,
+        crate::models::agent_turn_contract::ResumeTurnInput {
+            message_id: admitted.turn.user_message_id.clone(),
+        },
+        forbidden_target(),
+    )
+    .await
+    .expect("Retry resumes the same admitted turn");
+    assert_eq!(resumed.user_message_id, admitted.turn.user_message_id);
+    assert_eq!(resumed.turn_id, admitted.turn.turn_id);
+    cleanup(&session.id).await;
+}
+
 async fn session(title: &str) -> crate::services::agent_local::types_session::AgentSession {
     crate::services::agent_local::session_store::create_full(
         title,

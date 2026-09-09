@@ -1299,6 +1299,7 @@
     "saveFailed": "保存失败",
     "projectOpenFailed": "无法打开文件夹",
     "sessionSaveFailed": "会话无法保存",
+    "sessionRevisionFailed": "无法重试或编辑此消息。请重新打开对话后再试。",
     "downloadFailed": "下载失败",
     "updateFailed": "更新失败",
     "updatePrepareFailed": "无法准备更新",

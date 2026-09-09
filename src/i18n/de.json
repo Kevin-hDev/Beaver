@@ -1300,6 +1300,7 @@
     "saveFailed": "Speichern fehlgeschlagen",
     "projectOpenFailed": "Ordner konnte nicht geöffnet werden",
     "sessionSaveFailed": "Sitzung konnte nicht gespeichert werden",
+    "sessionRevisionFailed": "Diese Nachricht konnte nicht erneut gesendet oder bearbeitet werden. Öffne die Unterhaltung erneut und versuche es noch einmal.",
     "downloadFailed": "Download fehlgeschlagen",
     "updateFailed": "Aktualisierung fehlgeschlagen",
     "updatePrepareFailed": "Das Update konnte nicht vorbereitet werden",

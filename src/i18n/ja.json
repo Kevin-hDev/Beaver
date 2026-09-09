@@ -1299,6 +1299,7 @@
     "saveFailed": "保存に失敗しました",
     "projectOpenFailed": "フォルダーを開けませんでした",
     "sessionSaveFailed": "セッションを保存できませんでした",
+    "sessionRevisionFailed": "このメッセージを再試行または編集できませんでした。会話を開き直して、もう一度お試しください。",
     "downloadFailed": "ダウンロードに失敗しました",
     "updateFailed": "更新に失敗しました",
     "updatePrepareFailed": "アップデートを準備できませんでした",
