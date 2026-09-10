@@ -3,7 +3,9 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::services::agent_local::tool_result_budget::{apply_budget, CLEARED_PLACEHOLDER};
+    use crate::services::agent_local::tool_result_budget::{
+        apply_budget, old_results_in, remove_results, CLEARED_PLACEHOLDER,
+    };
     use crate::services::agent_local::types_ollama::ChatMessage;
 
     fn tool_msg(content: &str) -> ChatMessage {
@@ -142,5 +144,63 @@ mod tests {
         assert!(total <= 100_000);
         assert!(messages[0].content.starts_with(CLEARED_PLACEHOLDER));
         assert!(messages[1].content.starts_with(CLEARED_PLACEHOLDER));
+    }
+
+    #[test]
+    fn selectionne_un_vieux_resultat_et_le_supprime() {
+        let root = tempfile::TempDir::new().expect("temporary directory");
+        let result = root.path().join("tool-results/session");
+        std::fs::create_dir_all(&result).expect("result directory");
+        std::fs::write(result.join("full.txt"), b"result").expect("result");
+        let future = std::time::SystemTime::now()
+            + std::time::Duration::from_secs(2 * 86_400);
+        let selected = old_results_in(root.path(), future).expect("selection");
+        assert_eq!(selected, vec![(result.clone(), 6)]);
+        let outcome = remove_results(&selected.iter().map(|item| item.0.clone()).collect::<Vec<_>>());
+        assert_eq!(outcome.removed, 1);
+        assert!(outcome.failed.is_empty());
+        assert!(!result.exists());
+    }
+
+    #[test]
+    fn dossier_absent_est_une_selection_vide() {
+        let root = tempfile::TempDir::new().expect("temporary directory");
+        assert!(old_results_in(root.path(), std::time::SystemTime::now())
+            .expect("selection")
+            .is_empty());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn refuse_tool_results_lie_vers_exterieur() {
+        use std::os::unix::fs::symlink;
+
+        let root = tempfile::TempDir::new().expect("temporary directory");
+        let outside = tempfile::TempDir::new().expect("outside directory");
+        std::fs::create_dir(outside.path().join("victim")).expect("victim");
+        symlink(outside.path(), root.path().join("tool-results")).expect("symlink");
+        assert!(old_results_in(root.path(), std::time::SystemTime::now()).is_err());
+        assert!(outside.path().join("victim").exists());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn refuse_tool_results_lie_vers_conversations() {
+        use std::os::unix::fs::symlink;
+
+        let root = tempfile::TempDir::new().expect("temporary directory");
+        let sessions = root.path().join("agent-sessions");
+        std::fs::create_dir(&sessions).expect("sessions");
+        symlink(&sessions, root.path().join("tool-results")).expect("symlink");
+        assert!(old_results_in(root.path(), std::time::SystemTime::now()).is_err());
+    }
+
+    #[test]
+    fn suppression_retourne_chaque_echec() {
+        let root = tempfile::TempDir::new().expect("temporary directory");
+        let missing = root.path().join("tool-results/missing");
+        let outcome = remove_results(&[missing]);
+        assert_eq!(outcome.removed, 0);
+        assert_eq!(outcome.failed.len(), 1);
     }
 }

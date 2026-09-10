@@ -115,7 +115,7 @@ pub fn print_help(out: &Out) {
         ("doctor", "diagnostic local", "local diagnostics", true),
         ("logs", "lecture des journaux", "read logs", true),
         ("update", "mise à jour", "update", false),
-        ("cleanup", "nettoyage sûr", "safe cleanup", false),
+        ("cleanup", "nettoyage sûr", "safe cleanup", true),
     ] {
         let suffix = if ready {
             ""

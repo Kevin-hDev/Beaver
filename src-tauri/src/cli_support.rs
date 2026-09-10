@@ -32,9 +32,42 @@ pub fn ollama_bundle_receipt_tmp_path(root: &std::path::Path) -> std::path::Path
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct CliSupportError;
 
+pub struct CliRemovalOutcome {
+    pub removed: usize,
+    pub failed: Vec<std::path::PathBuf>,
+}
+
 pub fn abandoned_ollama_staging_dirs(
     root: &std::path::Path,
 ) -> Result<Vec<std::path::PathBuf>, CliSupportError> {
     crate::services::ollama_manager::cli_access::abandoned_staging_dirs(root)
         .map_err(|_| CliSupportError)
+}
+
+pub fn old_tool_results(
+    root: &std::path::Path,
+    now: std::time::SystemTime,
+) -> Result<Vec<(std::path::PathBuf, u64)>, CliSupportError> {
+    crate::services::agent_local::tool_result_budget::old_results_in(root, now)
+        .map_err(|_| CliSupportError)
+}
+
+pub fn remove_tool_results(paths: &[std::path::PathBuf]) -> CliRemovalOutcome {
+    let outcome = crate::services::agent_local::tool_result_budget::remove_results(paths);
+    CliRemovalOutcome {
+        removed: outcome.removed,
+        failed: outcome.failed.into_iter().map(|(path, _)| path).collect(),
+    }
+}
+
+pub fn remove_abandoned_ollama_staging(
+    root: &std::path::Path,
+    directories: &[std::path::PathBuf],
+) -> CliRemovalOutcome {
+    let outcome =
+        crate::services::ollama_manager::cli_access::remove_abandoned_staging(root, directories);
+    CliRemovalOutcome {
+        removed: outcome.removed,
+        failed: outcome.failed,
+    }
 }

@@ -71,6 +71,46 @@ pub(crate) fn abandoned_staging_dirs(
     Ok(abandoned)
 }
 
+pub(crate) struct StagingRemovalOutcome {
+    pub removed: usize,
+    pub failed: Vec<std::path::PathBuf>,
+}
+
+pub(crate) fn remove_abandoned_staging(
+    root: &std::path::Path,
+    directories: &[std::path::PathBuf],
+) -> StagingRemovalOutcome {
+    use super::durable_fs::OllamaDurableFs;
+
+    let paths = crate::services::paths::ollama_paths(root);
+    let models = super::recovery_entry::frozen_models_directory(&paths);
+    let fs = super::durable_fs::platform_fs();
+    let mut outcome = StagingRemovalOutcome {
+        removed: 0,
+        failed: Vec::with_capacity(directories.len()),
+    };
+    for directory in directories {
+        let still_abandoned = abandoned_staging_dirs(root)
+            .is_ok_and(|current| current.iter().any(|path| path == directory));
+        let removed = if still_abandoned {
+            models
+                .as_ref()
+                .and_then(|models| {
+                    super::cleanup_inspection::validate_trash(directory, root, models).ok()
+                })
+                .is_some_and(|validated| fs.remove_tree_verified(&validated).is_ok())
+        } else {
+            false
+        };
+        if removed {
+            outcome.removed += 1;
+        } else {
+            outcome.failed.push(directory.clone());
+        }
+    }
+    outcome
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -99,5 +139,12 @@ mod tests {
         assert!(abandoned_staging_dirs(root.path())
             .expect("inventory")
             .is_empty());
+        let outcome = remove_abandoned_staging(
+            root.path(),
+            &[root.path().join("ollama-bundle-update-staging")],
+        );
+        assert_eq!(outcome.removed, 0);
+        assert_eq!(outcome.failed.len(), 1);
+        assert!(root.path().join("ollama-bundle-update-staging").exists());
     }
 }

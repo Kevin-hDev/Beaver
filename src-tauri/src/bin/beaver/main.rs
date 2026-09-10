@@ -1,4 +1,5 @@
 mod app_detect;
+mod cleanup;
 mod doctor;
 mod logs;
 mod output;
@@ -31,6 +32,7 @@ fn dispatch(out: &output::Out, args: &[String]) -> i32 {
         Some("status") => status::run(out),
         Some("doctor") => doctor::run(out),
         Some("logs") => logs::run(out, &args[1..]),
+        Some("cleanup") => cleanup::run(out, &args[1..]),
         Some("--help") | Some("-h") | None => {
             output::print_help(out);
             0
