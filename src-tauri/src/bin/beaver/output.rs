@@ -12,15 +12,38 @@ pub enum Lang {
 }
 
 pub fn lang_from_locale(locale: &str) -> Lang {
-    if locale.to_lowercase().starts_with("fr") {
-        Lang::Fr
+    supported_lang(locale).unwrap_or(Lang::En)
+}
+
+fn supported_lang(locale: &str) -> Option<Lang> {
+    if locale.len() > MAX_CLI_TOKEN_CHARS || locale.chars().any(char::is_control) {
+        return None;
+    }
+    let prefix = locale.get(..2)?;
+    if prefix.eq_ignore_ascii_case("fr") {
+        Some(Lang::Fr)
+    } else if prefix.eq_ignore_ascii_case("en") {
+        Some(Lang::En)
     } else {
-        Lang::En
+        None
     }
 }
 
+fn lang_from_preferences(preferences: &[&str], system: &str) -> Lang {
+    preferences
+        .iter()
+        .find_map(|locale| supported_lang(locale))
+        .unwrap_or_else(|| lang_from_locale(system))
+}
+
 pub fn lang() -> Lang {
-    lang_from_locale(&sys_locale::get_locale().unwrap_or_default())
+    // Les variables standard permettent aux scripts et à la CI de choisir la langue.
+    let environment = ["LC_ALL", "LC_MESSAGES", "LANG"].map(std::env::var);
+    let preferences = environment
+        .iter()
+        .filter_map(|locale| locale.as_deref().ok())
+        .collect::<Vec<_>>();
+    lang_from_preferences(&preferences, &sys_locale::get_locale().unwrap_or_default())
 }
 
 pub struct Out {
@@ -162,6 +185,13 @@ mod tests {
     fn locale_autre_donne_en() {
         assert_eq!(lang_from_locale("en-US"), Lang::En);
         assert_eq!(lang_from_locale(""), Lang::En);
+    }
+
+    #[test]
+    fn locale_explicite_du_terminal_precede_celle_du_systeme() {
+        assert_eq!(lang_from_preferences(&["en_US.UTF-8"], "fr-FR"), Lang::En);
+        assert_eq!(lang_from_preferences(&["fr_FR.UTF-8"], "en-US"), Lang::Fr);
+        assert_eq!(lang_from_preferences(&["C.UTF-8"], "fr-FR"), Lang::Fr);
     }
 
     #[test]
