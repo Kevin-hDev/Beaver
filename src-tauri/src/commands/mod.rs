@@ -33,6 +33,7 @@ pub(crate) mod agent_working_dir;
 pub mod api_keys;
 pub mod app_update;
 pub(crate) mod app_update_assets;
+pub(crate) mod app_update_cli;
 pub(crate) mod app_update_download;
 pub(crate) mod app_update_helper;
 pub(crate) mod app_update_helper_process;

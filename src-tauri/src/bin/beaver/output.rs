@@ -1,4 +1,4 @@
-use std::io::IsTerminal;
+use std::io::{IsTerminal, Read};
 
 const KIB: u64 = 1024;
 const MIB: u64 = KIB * 1024;
@@ -69,6 +69,20 @@ impl Out {
     }
 }
 
+pub fn confirmation(out: &Out, prompt_fr: &str, prompt_en: &str) -> bool {
+    out.line(out.t(prompt_fr, prompt_en));
+    let mut answer = String::new();
+    if std::io::stdin()
+        .lock()
+        .take(16)
+        .read_to_string(&mut answer)
+        .is_err()
+    {
+        return false;
+    }
+    matches!((out.lang, answer.trim()), (Lang::Fr, "o") | (Lang::En, "y"))
+}
+
 pub fn format_size(bytes: u64) -> String {
     format_size_with(bytes, lang())
 }
@@ -114,7 +128,7 @@ pub fn print_help(out: &Out) {
         ("status", "état local", "local status", true),
         ("doctor", "diagnostic local", "local diagnostics", true),
         ("logs", "lecture des journaux", "read logs", true),
-        ("update", "mise à jour", "update", false),
+        ("update", "mise à jour", "update", true),
         ("cleanup", "nettoyage sûr", "safe cleanup", true),
     ] {
         let suffix = if ready {

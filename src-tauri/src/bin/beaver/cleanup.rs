@@ -1,5 +1,4 @@
-use crate::output::{format_size, Lang, Out};
-use std::io::Read;
+use crate::output::{confirmation, format_size, Out};
 use std::path::PathBuf;
 use std::time::SystemTime;
 
@@ -29,23 +28,6 @@ pub struct Candidate {
 #[derive(Debug)]
 pub struct InventoryError {
     pub(super) family: &'static str,
-}
-
-fn confirmation(out: &Out) -> bool {
-    out.line(out.t(
-        "Supprimer ces éléments ? [o/N]",
-        "Delete these items? [y/N]",
-    ));
-    let mut answer = String::new();
-    if std::io::stdin()
-        .lock()
-        .take(16)
-        .read_to_string(&mut answer)
-        .is_err()
-    {
-        return false;
-    }
-    matches!((out.lang, answer.trim()), (Lang::Fr, "o") | (Lang::En, "y"))
 }
 
 fn display_inventory(out: &Out, candidates: &[Candidate]) {
@@ -103,7 +85,11 @@ pub fn run(out: &Out, args: &[String]) -> i32 {
     if dry_run {
         return 0;
     }
-    if !confirmation(out) {
+    if !confirmation(
+        out,
+        "Supprimer ces éléments ? [o/N]",
+        "Delete these items? [y/N]",
+    ) {
         out.line(out.t("Rien n’a été supprimé.", "Nothing was deleted."));
         return 0;
     }

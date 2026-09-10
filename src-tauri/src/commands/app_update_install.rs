@@ -7,6 +7,7 @@ use super::app_update_assets::{
 };
 use super::app_update_download::{await_or_cancel, write_response_to_temporary};
 use super::app_update_helper_process::spawn_update_helper;
+use super::app_update_install_temp::TemporaryUpdate;
 use super::app_update_manifest::fetch_update_manifest;
 use super::app_update_source::{
     download_client, strict_version_gt, update_request, AssetReference, UPDATE_SOURCE,
@@ -75,13 +76,33 @@ async fn download_app_update_inner(
     updates: crate::services::update_handoff::AppUpdateRuntime,
     cancellation: crate::services::work_registry::ServiceWorkCancellation,
 ) -> Result<(), String> {
-    let asset = validate_update_url(&asset_url)?;
+    let tmp = download_verified_update(&asset_url, &cancellation, |progress| {
+        let _ = on_progress.send(progress);
+    })
+    .await?;
+    let helper = spawn_update_helper(&app, tmp.path(), &cancellation).await?;
+    helper.commit(updates.handoff(), &cancellation)?;
+    let _ = tmp.persist();
+    crate::app_exit::request(&app, 0);
+
+    Ok(())
+}
+
+pub(super) async fn download_verified_update<Progress>(
+    asset_url: &str,
+    cancellation: &crate::services::work_registry::ServiceWorkCancellation,
+    progress: Progress,
+) -> Result<TemporaryUpdate, String>
+where
+    Progress: FnMut(DownloadProgress),
+{
+    let asset = validate_update_url(asset_url)?;
     let client = download_client().map_err(|_| download_error())?;
     let manifest_url = UPDATE_SOURCE
         .manifest_url(&asset.version)
         .ok_or_else(download_error)?;
     let manifest = await_or_cancel(
-        &cancellation,
+        cancellation,
         fetch_update_manifest(&client, &manifest_url, &asset.version),
     )
     .await?
@@ -90,7 +111,7 @@ async fn download_app_update_inner(
         .asset_named(&asset.name)
         .ok_or_else(download_error)?;
     let response = await_or_cancel(
-        &cancellation,
+        cancellation,
         update_request(client.get(asset.url))
             .header(reqwest::header::ACCEPT_ENCODING, "identity")
             .send(),
@@ -109,16 +130,7 @@ async fn download_app_update_inner(
         return Err(download_error());
     }
     let ext = temp_extension(current_platform());
-    let tmp = write_response_to_temporary(response, expected, ext, &cancellation, |progress| {
-        let _ = on_progress.send(progress);
-    })
-    .await?;
-    let helper = spawn_update_helper(&app, tmp.path(), &cancellation).await?;
-    helper.commit(updates.handoff(), &cancellation)?;
-    let _ = tmp.persist();
-    crate::app_exit::request(&app, 0);
-
-    Ok(())
+    write_response_to_temporary(response, expected, ext, cancellation, progress).await
 }
 
 fn update_url_error() -> String {

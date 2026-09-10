@@ -6,6 +6,7 @@ mod output;
 mod paths_cmd;
 mod status;
 mod tail;
+mod update;
 mod version;
 
 const MAX_ARGS: usize = 64;
@@ -32,6 +33,7 @@ fn dispatch(out: &output::Out, args: &[String]) -> i32 {
         Some("status") => status::run(out),
         Some("doctor") => doctor::run(out),
         Some("logs") => logs::run(out, &args[1..]),
+        Some("update") => update::run(out, &args[1..]),
         Some("cleanup") => cleanup::run(out, &args[1..]),
         Some("--help") | Some("-h") | None => {
             output::print_help(out);

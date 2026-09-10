@@ -6,6 +6,13 @@ use crate::app_exit::{AppWorkAdmissionError, AppWorkSupervisor};
 use std::future::Future;
 
 impl ServiceWorkCancellation {
+    pub(crate) fn standalone() -> Self {
+        Self {
+            app: tokio_util::sync::CancellationToken::new(),
+            service: tokio_util::sync::CancellationToken::new(),
+        }
+    }
+
     pub async fn cancelled(&self) {
         tokio::select! {
             _ = self.app.cancelled() => {},

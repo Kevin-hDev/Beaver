@@ -1,5 +1,6 @@
 use super::app_update_helper::{
-    copy_helper_while, current_install_directory, helper_resource_name, TemporaryHelper,
+    cli_resource_directory, copy_helper_while, current_install_directory,
+    current_install_directory_for, helper_resource_name, TemporaryHelper,
 };
 use crate::services::process_identity::ProcessIdentity;
 use crate::services::update_handoff::UpdateHandoff;
@@ -24,23 +25,37 @@ fn spawn_update_helper_blocking(
     asset: &Path,
     cancellation: &ServiceWorkCancellation,
 ) -> Result<SpawnedUpdateHelper, String> {
-    check_cancelled(cancellation)?;
     let resource_root = app.path().resource_dir().map_err(|_| install_error())?;
+    let working_directory = current_install_directory()?;
+    spawn_update_helper_from_paths(
+        asset,
+        &resource_root,
+        &working_directory,
+        Some(cancellation),
+    )
+}
+
+fn spawn_update_helper_from_paths(
+    asset: &Path,
+    resource_root: &Path,
+    working_directory: &Path,
+    cancellation: Option<&ServiceWorkCancellation>,
+) -> Result<SpawnedUpdateHelper, String> {
+    check_cancelled(cancellation)?;
     let source = resource_root
         .join("target/updater-helper")
         .join(helper_resource_name());
-    let helper = copy_helper_while(&source, &resource_root, &std::env::temp_dir(), || {
-        cancellation.is_cancelled()
+    let helper = copy_helper_while(&source, resource_root, &std::env::temp_dir(), || {
+        cancellation.is_some_and(ServiceWorkCancellation::is_cancelled)
     })
     .map_err(|error| {
-        if cancellation.is_cancelled() {
+        if cancellation.is_some_and(ServiceWorkCancellation::is_cancelled) {
             download_error()
         } else {
             error
         }
     })?;
     check_cancelled(cancellation)?;
-    let working_directory = current_install_directory()?;
     let mut command = crate::services::background_command::new(helper.path());
     command
         .arg("--apply-update")
@@ -55,22 +70,38 @@ fn spawn_update_helper_blocking(
     check_cancelled(cancellation)?;
     let mut child = command.spawn().map_err(|_| install_error())?;
     let identity = ProcessIdentity::capture_child(child.id(), std::process::id(), helper.path());
-    if cancellation.is_cancelled() || identity.is_none() {
+    if cancellation.is_some_and(ServiceWorkCancellation::is_cancelled) || identity.is_none() {
         crate::services::process_tree::terminate(
             &mut child,
             crate::services::process_tree::ProcessKind::UpdateHelper,
         );
-        return Err(if cancellation.is_cancelled() {
-            download_error()
-        } else {
-            install_error()
-        });
+        return Err(
+            if cancellation.is_some_and(ServiceWorkCancellation::is_cancelled) {
+                download_error()
+            } else {
+                install_error()
+            },
+        );
     }
     Ok(SpawnedUpdateHelper {
         child: Some(child),
         helper: Some(helper),
         identity: identity.expect("identity checked above"),
     })
+}
+
+pub(crate) async fn launch_update_helper_for_cli(asset: &Path) -> Result<(), String> {
+    let asset = asset.to_path_buf();
+    run_helper_operation(move || {
+        let resource_root = cli_resource_directory()?;
+        let executable = std::env::current_exe().map_err(|_| install_error())?;
+        let working_directory = current_install_directory_for(&executable)?;
+        let helper =
+            spawn_update_helper_from_paths(&asset, &resource_root, &working_directory, None)?;
+        helper.detach();
+        Ok(())
+    })
+    .await?
 }
 
 async fn run_helper_operation<Operation, Output>(operation: Operation) -> Result<Output, String>
@@ -110,6 +141,13 @@ impl SpawnedUpdateHelper {
         Ok(())
     }
 
+    fn detach(mut self) {
+        if let Some(helper) = self.helper.take() {
+            helper.persist();
+        }
+        drop(self.child.take());
+    }
+
     #[cfg(test)]
     pub(crate) fn from_test_child(child: Child, identity: ProcessIdentity) -> Self {
         Self {
@@ -131,8 +169,8 @@ impl Drop for SpawnedUpdateHelper {
     }
 }
 
-fn check_cancelled(cancellation: &ServiceWorkCancellation) -> Result<(), String> {
-    if cancellation.is_cancelled() {
+fn check_cancelled(cancellation: Option<&ServiceWorkCancellation>) -> Result<(), String> {
+    if cancellation.is_some_and(ServiceWorkCancellation::is_cancelled) {
         Err("update-download-cancelled".to_string())
     } else {
         Ok(())

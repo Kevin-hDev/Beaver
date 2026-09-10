@@ -1,6 +1,7 @@
 //! Façade unique de la bibliothèque pour le binaire CLI `beaver`.
 //! Tout accès CLI vers la bibliothèque passe ici ; `services` reste privé.
 
+pub use crate::commands::app_update::{AppUpdateInfo, UpdateCheck};
 pub use crate::services::config::read_config;
 pub use crate::services::paths::data_dir;
 pub use crate::services::vault::vault_path;
@@ -8,6 +9,18 @@ pub use crate::services::vault::vault_path;
 pub const APP_LOG_MAX_BYTES: u64 = crate::services::app_log::MAX_FILE_BYTES as u64;
 pub const WAKEUP_LOG_MAX_LINES: usize = crate::services::scheduler::log::MAX_LINES;
 pub const WAKEUP_LOG_MAX_LINE_BYTES: usize = crate::services::scheduler::log::MAX_LOG_LINE_BYTES;
+
+pub fn version_gt(remote: &str, local: &str) -> bool {
+    crate::commands::app_update::version_gt(remote, local)
+}
+
+pub async fn check_app_update_detailed() -> Result<UpdateCheck, String> {
+    crate::commands::app_update::check_app_update_detailed().await
+}
+
+pub async fn download_and_launch_app_update(update: AppUpdateInfo) -> Result<(), String> {
+    crate::commands::app_update_cli::download_and_launch(update).await
+}
 
 pub fn ollama_bundle_dir(root: &std::path::Path) -> std::path::PathBuf {
     crate::services::paths::ollama_paths(root).active

@@ -182,3 +182,52 @@ fn rejects_drafts_prereleases_and_non_newer_versions() {
         .is_none());
     }
 }
+
+#[test]
+fn classification_distingue_version_identique_reponse_invalide_et_asset_absent() {
+    let name = expected_name(UpdatePlatform::Linux, UpdateArchitecture::X86_64);
+    assert!(matches!(
+        classify_app_update_json(
+            &release(REMOTE_VERSION, vec![asset(&name, REMOTE_VERSION)]),
+            REMOTE_VERSION,
+            UpdatePlatform::Linux,
+            UpdateArchitecture::X86_64,
+        ),
+        AppUpdateClassification::NotNewer
+    ));
+    assert!(matches!(
+        classify_app_update_json(
+            b"{",
+            "1.0.2",
+            UpdatePlatform::Linux,
+            UpdateArchitecture::X86_64,
+        ),
+        AppUpdateClassification::Invalid
+    ));
+    assert!(matches!(
+        classify_app_update_json(
+            &release(REMOTE_VERSION, vec![]),
+            "1.0.2",
+            UpdatePlatform::Linux,
+            UpdateArchitecture::X86_64,
+        ),
+        AppUpdateClassification::Invalid
+    ));
+}
+
+#[test]
+fn interface_app_aplatit_seulement_les_etats_sans_mise_a_jour() {
+    assert!(flatten_update_check(UpdateCheck::UpToDate).is_none());
+    assert!(flatten_update_check(UpdateCheck::Unknown("invalid-release")).is_none());
+    let name = expected_name(UpdatePlatform::Linux, UpdateArchitecture::X86_64);
+    let classification = classify_app_update_json(
+        &release(REMOTE_VERSION, vec![asset(&name, REMOTE_VERSION)]),
+        "1.0.2",
+        UpdatePlatform::Linux,
+        UpdateArchitecture::X86_64,
+    );
+    let AppUpdateClassification::Available(update) = classification else {
+        panic!("valid update");
+    };
+    assert!(flatten_update_check(UpdateCheck::Available(update)).is_some());
+}

@@ -103,11 +103,44 @@ fn create_helper_file(temp_root: &Path) -> Result<(TemporaryHelper, File), Strin
 
 pub(crate) fn current_install_directory() -> Result<PathBuf, String> {
     let executable = std::env::current_exe().map_err(|_| install_error())?;
-    if executable.file_name().and_then(|name| name.to_str()) != Some(main_executable_name()) {
+    current_install_directory_for(&executable)
+}
+
+pub(crate) fn current_install_directory_for(executable: &Path) -> Result<PathBuf, String> {
+    let metadata = std::fs::symlink_metadata(executable).map_err(|_| install_error())?;
+    if !metadata.is_file() || metadata.file_type().is_symlink() {
         return Err(install_error());
     }
-    let parent = executable.parent().ok_or_else(install_error)?;
-    std::fs::canonicalize(parent).map_err(|_| install_error())
+    let executable = std::fs::canonicalize(executable).map_err(|_| install_error())?;
+    let name = executable.file_name().and_then(|name| name.to_str());
+    if name != Some(main_executable_name()) && name != Some(cli_executable_name()) {
+        return Err(install_error());
+    }
+    let directory = executable.parent().ok_or_else(install_error)?.to_path_buf();
+    let main = directory.join(main_executable_name());
+    let main_metadata = std::fs::symlink_metadata(&main).map_err(|_| install_error())?;
+    if !main_metadata.is_file() || main_metadata.file_type().is_symlink() {
+        return Err(install_error());
+    }
+    let main = std::fs::canonicalize(main).map_err(|_| install_error())?;
+    if main.parent() != Some(directory.as_path()) {
+        return Err(install_error());
+    }
+    Ok(directory)
+}
+
+pub(crate) fn cli_resource_directory() -> Result<PathBuf, String> {
+    let package = tauri::utils::PackageInfo {
+        name: env!("CARGO_PKG_NAME").to_string(),
+        version: env!("CARGO_PKG_VERSION")
+            .parse()
+            .map_err(|_| install_error())?,
+        authors: env!("CARGO_PKG_AUTHORS"),
+        description: env!("CARGO_PKG_DESCRIPTION"),
+        crate_name: env!("CARGO_PKG_NAME"),
+    };
+    tauri::utils::platform::resource_dir(&package, &tauri::utils::Env::default())
+        .map_err(|_| install_error())
 }
 
 #[cfg(unix)]
@@ -135,6 +168,14 @@ fn main_executable_name() -> &'static str {
         "cl-go-dash.exe"
     } else {
         "cl-go-dash"
+    }
+}
+
+fn cli_executable_name() -> &'static str {
+    if cfg!(target_os = "windows") {
+        "beaver.exe"
+    } else {
+        "beaver"
     }
 }
 
