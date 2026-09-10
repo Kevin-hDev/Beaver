@@ -40,13 +40,28 @@ pub fn run(out: &Out, args: &[String]) -> i32 {
         ));
         return 1;
     }
-    if !crate::output::confirmation(
-        out,
-        "Télécharger et installer cette mise à jour ? [o/N]",
-        "Download and install this update? [y/N]",
+    match crate::app_detect::confirm_while_closed(
+        || {
+            crate::output::confirmation(
+                out,
+                "Télécharger et installer cette mise à jour ? [o/N]",
+                "Download and install this update? [y/N]",
+            )
+        },
+        crate::app_detect::app_is_running,
     ) {
-        out.line(out.t("Mise à jour annulée.", "Update cancelled."));
-        return 0;
+        crate::app_detect::ClosedConfirmation::Cancelled => {
+            out.line(out.t("Mise à jour annulée.", "Update cancelled."));
+            return 0;
+        }
+        crate::app_detect::ClosedConfirmation::AppOpened => {
+            out.line(out.t(
+                "Fermez Beaver puis relancez beaver update pour l’appliquer.",
+                "Close Beaver, then run beaver update again to apply it.",
+            ));
+            return 1;
+        }
+        crate::app_detect::ClosedConfirmation::Confirmed => {}
     }
     out.line(out.t("Téléchargement…", "Downloading…"));
     match runtime.block_on(cl_go_dash_lib::cli_support::download_and_launch_app_update(

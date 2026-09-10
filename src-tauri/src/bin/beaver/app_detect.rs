@@ -56,6 +56,27 @@ fn process_exists_in<'a>(
     matched
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ClosedConfirmation {
+    Cancelled,
+    AppOpened,
+    Confirmed,
+}
+
+// La confirmation peut attendre longtemps : l'état de l'app doit être relu après celle-ci.
+pub fn confirm_while_closed(
+    confirm: impl FnOnce() -> bool,
+    app_is_running: impl FnOnce() -> bool,
+) -> ClosedConfirmation {
+    if !confirm() {
+        ClosedConfirmation::Cancelled
+    } else if app_is_running() {
+        ClosedConfirmation::AppOpened
+    } else {
+        ClosedConfirmation::Confirmed
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -91,6 +112,26 @@ mod tests {
         ];
 
         assert!(process_exists_in(processes, 42, matches_app_process, true));
+    }
+
+    #[test]
+    fn reverifie_l_app_apres_la_confirmation() {
+        assert_eq!(
+            confirm_while_closed(|| true, || true),
+            ClosedConfirmation::AppOpened
+        );
+        assert_eq!(
+            confirm_while_closed(|| true, || false),
+            ClosedConfirmation::Confirmed
+        );
+    }
+
+    #[test]
+    fn annulation_ne_consulte_pas_une_seconde_fois_les_processus() {
+        assert_eq!(
+            confirm_while_closed(|| false, || panic!("must not inspect after cancellation")),
+            ClosedConfirmation::Cancelled
+        );
     }
 
     #[test]

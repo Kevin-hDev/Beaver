@@ -85,13 +85,25 @@ pub fn run(out: &Out, args: &[String]) -> i32 {
     if dry_run {
         return 0;
     }
-    if !confirmation(
-        out,
-        "Supprimer ces éléments ? [o/N]",
-        "Delete these items? [y/N]",
+    match crate::app_detect::confirm_while_closed(
+        || {
+            confirmation(
+                out,
+                "Supprimer ces éléments ? [o/N]",
+                "Delete these items? [y/N]",
+            )
+        },
+        crate::app_detect::app_is_running,
     ) {
-        out.line(out.t("Rien n’a été supprimé.", "Nothing was deleted."));
-        return 0;
+        crate::app_detect::ClosedConfirmation::Cancelled => {
+            out.line(out.t("Rien n’a été supprimé.", "Nothing was deleted."));
+            return 0;
+        }
+        crate::app_detect::ClosedConfirmation::AppOpened => {
+            out.line(out.t("Fermez Beaver d’abord.", "Close Beaver first."));
+            return 1;
+        }
+        crate::app_detect::ClosedConfirmation::Confirmed => {}
     }
     let summary = cleanup_remove::remove_candidates(&root, &candidates);
     for path in &summary.failed {
