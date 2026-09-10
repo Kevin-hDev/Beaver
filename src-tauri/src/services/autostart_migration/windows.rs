@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::ffi::OsString;
 use std::io::ErrorKind;
 use std::path::Path;
@@ -47,7 +48,7 @@ pub(super) fn install(name: &str, executable: &Path) -> Result<(), MigrationErro
             name,
             &RegValue {
                 vtype: REG_BINARY,
-                bytes: APPROVED.to_vec(),
+                bytes: Cow::Borrowed(&APPROVED),
             },
         )
         .map_err(|_| MigrationError::State)?;
@@ -77,7 +78,7 @@ fn approval(name: &str) -> Result<Option<Vec<u8>>, MigrationError> {
         Err(_) => return Err(MigrationError::State),
     };
     match key.get_raw_value(name) {
-        Ok(value) if value.vtype == REG_BINARY => Ok(Some(value.bytes)),
+        Ok(value) if value.vtype == REG_BINARY => Ok(Some(value.bytes.into_owned())),
         Ok(_) => Ok(Some(Vec::new())),
         Err(error) if error.kind() == ErrorKind::NotFound => Ok(None),
         Err(_) => Err(MigrationError::State),

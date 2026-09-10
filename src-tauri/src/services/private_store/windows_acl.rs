@@ -80,11 +80,17 @@ fn verify_entries(acl: *const ACL, sid: PSID, inheritance: u32) -> Result<(), St
     let mut count = 0_u32;
     let mut entries = std::ptr::null_mut();
     let status = unsafe { GetExplicitEntriesFromAclW(acl, &mut count, &mut entries) };
-    if status != ERROR_SUCCESS || count != 1 || entries.is_null() {
+    if status != ERROR_SUCCESS {
         return Err(private_store_error());
     }
-    let entries_guard = LocalAllocation(entries.cast());
-    let entry = unsafe { &*entries };
+    let entries = std::ptr::NonNull::new(entries).ok_or_else(private_store_error)?;
+    let entries_guard = LocalAllocation(entries.as_ptr().cast());
+    if count != 1 {
+        return Err(private_store_error());
+    }
+    // SAFETY: on ERROR_SUCCESS, Windows returns an array containing `count`
+    // EXPLICIT_ACCESS_W values. NonNull and count == 1 establish this first entry.
+    let entry = unsafe { entries.as_ref() };
     let entry_sid: PSID = entry.Trustee.ptstrName.cast();
     let valid_mode = matches!(entry.grfAccessMode, GRANT_ACCESS | SET_ACCESS);
     let valid = valid_mode

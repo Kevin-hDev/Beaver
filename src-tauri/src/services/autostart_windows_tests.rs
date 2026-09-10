@@ -1,4 +1,5 @@
 use super::*;
+use std::borrow::Cow;
 use std::ffi::OsString;
 use std::path::Path;
 use winreg::enums::{HKEY_CURRENT_USER, KEY_READ, KEY_SET_VALUE, REG_BINARY};
@@ -49,7 +50,7 @@ fn set_approval(name: &str, bytes: &[u8]) {
         name,
         &RegValue {
             vtype: REG_BINARY,
-            bytes: bytes.to_vec(),
+            bytes: Cow::Borrowed(bytes),
         },
     )
     .unwrap();
@@ -61,7 +62,7 @@ fn approval(name: &str) -> Option<Vec<u8>> {
         .ok()?
         .get_raw_value(name)
         .ok()
-        .map(|value| value.bytes)
+        .map(|value| value.bytes.into_owned())
 }
 
 #[test]
