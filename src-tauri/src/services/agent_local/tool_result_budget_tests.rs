@@ -223,7 +223,7 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
-    fn entree_detournee_n_empeche_pas_une_entree_sure() {
+    fn lien_imbrique_n_empeche_pas_une_entree_sure() {
         use std::os::unix::fs::symlink;
 
         let root = tempfile::TempDir::new().expect("temporary directory");
@@ -231,7 +231,9 @@ mod tests {
         let safe = results.join("safe");
         std::fs::create_dir_all(&safe).expect("safe result");
         std::fs::write(safe.join("full.txt"), b"safe").expect("safe result file");
-        symlink(root.path(), results.join("unsafe")).expect("unsafe result");
+        let unsafe_result = results.join("unsafe");
+        std::fs::create_dir(&unsafe_result).expect("unsafe result");
+        symlink(root.path(), unsafe_result.join("nested-link")).expect("nested symlink");
         let future = std::time::SystemTime::now()
             + std::time::Duration::from_secs(2 * 86_400);
 
