@@ -81,6 +81,16 @@ CLI_DIR="${TMP_DIR}/bin"
 install_cli_link "${APP_BUNDLE}" "${CLI_DIR}"
 assert_eq "${APP_BUNDLE}/Contents/MacOS/beaver" "$(/usr/bin/readlink "${CLI_DIR}/beaver")" "CLI symlink"
 
+THIRD_PARTY_DIR="${TMP_DIR}/third-party-bin"
+/bin/mkdir "${THIRD_PARTY_DIR}"
+printf "third-party\n" > "${THIRD_PARTY_DIR}/beaver"
+install_cli_link "${APP_BUNDLE}" "${THIRD_PARTY_DIR}" >/dev/null
+if [ -L "${THIRD_PARTY_DIR}/beaver" ] ||
+  [ "$(/bin/cat "${THIRD_PARTY_DIR}/beaver")" != "third-party" ]; then
+  printf "FAIL existing third-party CLI was replaced\n" >&2
+  exit 1
+fi
+
 CLI_HINT="$(install_cli_link "${APP_BUNDLE}" "${TMP_DIR}/missing-bin")"
 case "${CLI_HINT}" in
   *"sudo ln -sfn"*"Contents/MacOS/beaver"*) ;;

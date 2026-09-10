@@ -113,7 +113,16 @@ verify_bundle() {
     [ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$plist" 2>/dev/null)" = "com.clgo.dash" ] &&
     [ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$plist" 2>/dev/null)" = "cl-go-dash" ]
 }
-install_cli_link() { local source="$1/Contents/MacOS/beaver" destination="$2/beaver"; [ -d "$2" ] && [ -w "$2" ] && /bin/ln -sfn "$source" "$destination" 2>/dev/null || info "Pour la commande terminal : sudo ln -sfn \"$source\" \"$destination\""; }
+install_cli_link() {
+  local source="$1/Contents/MacOS/beaver" destination="$2/beaver"
+  # Un fichier ordinaire peut appartenir à un autre outil ; seul notre lien est remplaçable.
+  if [ -e "$destination" ] && [ ! -L "$destination" ]; then
+    info "Commande terminal non installée : $destination existe déjà."
+    return
+  fi
+  [ -d "$2" ] && [ -w "$2" ] && /bin/ln -sfn "$source" "$destination" 2>/dev/null ||
+    info "Pour la commande terminal : sudo ln -sfn \"$source\" \"$destination\""
+}
 install_macos() {
   local asset="$1" install_dir="/Applications" custom="" source="" token="" stage="" target="" stage_inode=""
   printf "\n\033[1;33m📁 Répertoire d'installation : /Applications\033[0m\n"
