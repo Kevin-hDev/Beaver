@@ -331,15 +331,15 @@ jobs:
         with:
           node-version: 24
 
-      # This boundary runs before CEF: it proves the verified Node executable
-      # bundled by Beaver can start and answer the extension protocol.
-      - name: Prepare bundled extension host runtime
-        run: npm run test:extensions-runtime-smoke
-
       - name: Rust cache
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
         with:
           workspaces: src-tauri
+
+      # Restore the Cargo target first because the prepared runtime also lives
+      # below src-tauri/target and must remain intact for the Rust smoke tests.
+      - name: Prepare bundled extension host runtime
+        run: npm run test:extensions-runtime-smoke
 
       # The second boundary exercises Windows Job Object admission and the
       # exact Rust-owned process path used by the installed application,

@@ -183,6 +183,13 @@ test("CI gates the Windows CEF journey on a real extension load", () => {
   assert.match(windowsJob, /needs: windows-extension-host-smoke/u);
   assert.match(smokeJob, /runs-on: windows-latest/u);
   assert.match(smokeJob, /npm run test:extensions-runtime-smoke/u);
+  const smokeSteps = ci.jobs["windows-extension-host-smoke"].steps;
+  const cacheIndex = smokeSteps.findIndex(({ name }) => name === "Rust cache");
+  const prepareIndex = smokeSteps.findIndex(
+    ({ name }) => name === "Prepare bundled extension host runtime",
+  );
+  assert.ok(cacheIndex >= 0);
+  assert.ok(prepareIndex > cacheIndex);
   assert.match(
     smokeJob,
     /--filter services::extensions::host_process::prepared_tests::prepared_runtime_[^\r\n]*--features windows-tests --ignored --nocapture/u,
