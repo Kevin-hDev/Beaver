@@ -4,6 +4,40 @@
 
 ---
 
+## v1.2.3
+
+### Security hardening
+
+- **Race-resistant file validation** — release metadata, migration documents, extension runtime manifests, and other bounded files are now opened once and verified before and after reading, preventing symbolic links or path replacement from changing the validated file during an operation.
+- **Safer operational logs** — Agent, Ollama, plan-mode, and subagent logs retain fixed diagnostic categories and bounded counters without recording session IDs, request IDs, model or tool names, user-derived content, or free-form failure details.
+- **Strict MCP icon sanitization** — connector SVGs are parsed as bounded XML and reduced to inert drawing elements with local references; scripts, event handlers, external URLs, unsupported elements, and editor metadata are removed before rendering.
+- **Authenticated transport restrictions** — authenticated HTTP clients require HTTPS, while plain HTTP remains available only to literal IPv4 or IPv6 loopback addresses used by local services. Redirects, response sizes, and public errors remain bounded and fail closed.
+- **Central operating-system randomness** — every security-sensitive key, nonce, OAuth state, PKCE verifier, browser token, temporary identity, and updater token now uses one operating-system CSPRNG boundary backed by `rand` 0.10.2.
+- **Windows private-store safety** — ACL buffers now have an explicit non-null ownership contract and are released on every rejection path, including oversized access-control lists.
+
+### Quality and correctness
+
+- **CodeQL cleanup** — redundant assignments, fragile parsing, ambiguous promise identity checks, and analyzer-only test patterns were replaced with direct, typed behavior without changing user-facing flows.
+- **Verified static-analysis results** — genuine findings were corrected, while reported cleartext-logging cases that only modified bounded in-memory buffers were individually reviewed and documented as false positives.
+- **Reliable Windows error classification** — native file errors preserve the correct not-found, already-exists, sharing, permission, and invalid-input categories across the Ollama lifecycle.
+- **Stable message layout tests** — `jsdom` 30 typography fixtures now declare their expected font metrics instead of depending on the simulator's browser defaults.
+- **Consistent compatibility checks** — brand, persistence, installer, release, and generated-document contracts recognize only their exact approved legacy references and continue to reject unclassified historical names.
+
+### Dependency updates
+
+- **JavaScript dependency refresh** — 20 application and development libraries were updated, including CodeMirror, Tauri plugins, i18n, Testing Library, WebdriverIO, XLSX Populate, esbuild, PDF.js, TypeScript ESLint, `js-yaml` 4.3.2, and `jsdom` 30.0.1.
+- **Synchronized Office runtime** — XLSX Populate 0.2.2, esbuild 0.28.2, and PDF.js 6.3.289 now use the same versions in the application and the bundled extension host, with matching third-party notices and dependency contracts.
+- **Rust dependency refresh** — 11 Rust libraries were refreshed through the lockfile, `winreg` was updated to 0.56 with its new byte-value contract, and `rand` was updated to 0.10.2.
+- **Pinned security actions** — the OSV Scanner and CodeQL GitHub Actions now use their current reviewed commit revisions while retaining immutable SHA pins.
+
+### CI reliability and regression coverage
+
+- **Reliable Windows extension smoke tests** — the Rust cache is restored before the bundled extension runtime is prepared, preventing a cache miss from replacing the runtime used by the following native tests.
+- **Expanded security regression suite** — CI now covers race-resistant file reads, hostile and malformed SVG input, HTTPS and loopback URL policy, Windows registry and ACL behavior, exact legacy-reference classification, and operating-system random generation.
+- **Cross-platform validation** — the security and quality changes are exercised by the frontend, Rust, Linux WebView, macOS CEF, Windows CEF, extension-host, packaged desktop, dependency-audit, and CodeQL pipelines.
+
+---
+
 ## v1.2.2
 
 ### New AI models
