@@ -7,7 +7,7 @@ Validation exécutée :
 - cargo test services::scheduler --no-fail-fast : 26 réussis
 - cargo test file_watcher::tests --no-fail-fast : 9 réussis
 - cargo check : réussi
-- cargo clippy --all-target -- -D warnings : réussi
+- cargo clippy --all-targets -- -D warnings : réussi
 - git diff --check : réussi
 - graphify update . : réussi
 
