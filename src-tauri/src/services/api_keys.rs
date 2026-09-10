@@ -95,10 +95,8 @@ pub fn init() -> Result<(), String> {
 
 #[cfg(feature = "e2e")]
 fn ephemeral_vault_state() -> VaultState {
-    use rand::RngCore;
-
     let mut master_key = vec![0_u8; 32];
-    rand::rngs::OsRng.fill_bytes(&mut master_key);
+    crate::services::secure_random::fill(&mut master_key);
     VaultState {
         master_key: Zeroizing::new(master_key),
         keys: HashMap::new(),

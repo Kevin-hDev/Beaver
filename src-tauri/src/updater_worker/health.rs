@@ -1,4 +1,3 @@
-use rand::RngCore;
 use std::fs::OpenOptions;
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -20,7 +19,7 @@ impl HealthToken {
     pub(crate) fn generate(data_root: PathBuf) -> Result<Self, WorkerError> {
         let data_root = validate_data_root(&data_root)?;
         let mut bytes = Zeroizing::new([0_u8; 32]);
-        rand::rngs::OsRng.fill_bytes(bytes.as_mut());
+        crate::services::secure_random::fill(bytes.as_mut());
         let value = Zeroizing::new(hex::encode(bytes.as_ref()));
         if !valid_health_token(&value) {
             return Err(WorkerError);

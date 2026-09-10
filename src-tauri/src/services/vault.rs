@@ -5,7 +5,6 @@ use chacha20poly1305::{
 };
 #[cfg(not(feature = "e2e"))]
 use keyring::Entry;
-use rand::RngCore;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use zeroize::Zeroize;
@@ -71,7 +70,7 @@ pub fn load_or_create_master_key() -> Result<Zeroizing<Vec<u8>>, String> {
                 );
             }
             let mut key = vec![0u8; 32];
-            rand::rngs::OsRng.fill_bytes(&mut key);
+            crate::services::secure_random::fill(&mut key);
             let mut b64 = B64.encode(&key);
             let set_result = entry.set_password(&b64);
             b64.zeroize();
@@ -90,7 +89,7 @@ pub(crate) fn encrypt(master_key: &[u8], plaintext: &[u8]) -> Result<Vec<u8>, St
         XChaCha20Poly1305::new_from_slice(master_key).map_err(|e| format!("cipher init: {e}"))?;
 
     let mut nonce_bytes = [0u8; 24];
-    rand::rngs::OsRng.fill_bytes(&mut nonce_bytes);
+    crate::services::secure_random::fill(&mut nonce_bytes);
     let nonce = XNonce::from(nonce_bytes);
 
     let ciphertext = cipher

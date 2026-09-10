@@ -72,9 +72,8 @@ mod utf8_decoder_tests;
 mod windows_parent_death_tests;
 
 fn generate_token() -> zeroize::Zeroizing<String> {
-    use rand::RngCore;
     let mut bytes = [0_u8; 16];
-    rand::rngs::OsRng.fill_bytes(&mut bytes);
+    crate::services::secure_random::fill(&mut bytes);
     encode_token(&mut bytes)
 }
 

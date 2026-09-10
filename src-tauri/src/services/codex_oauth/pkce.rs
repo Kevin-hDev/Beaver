@@ -1,5 +1,4 @@
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
-use rand::RngCore;
 use sha2::{Digest, Sha256};
 use zeroize::Zeroizing;
 
@@ -10,7 +9,7 @@ pub struct PkceChallenge {
 
 pub fn generate() -> PkceChallenge {
     let mut bytes = [0u8; 32];
-    rand::rngs::OsRng.fill_bytes(&mut bytes);
+    crate::services::secure_random::fill(&mut bytes);
     let verifier = URL_SAFE_NO_PAD.encode(bytes);
     bytes.fill(0);
     let hash = Sha256::digest(verifier.as_bytes());

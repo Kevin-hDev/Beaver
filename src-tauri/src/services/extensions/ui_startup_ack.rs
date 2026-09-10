@@ -1,7 +1,6 @@
 use std::path::PathBuf;
 use std::sync::Mutex;
 
-use rand::RngCore;
 use subtle::ConstantTimeEq;
 use zeroize::{Zeroize, Zeroizing};
 
@@ -34,9 +33,7 @@ impl UiLoadAcknowledger {
 
     pub(crate) fn begin(&self, extension_id: &str, attempts: u8) -> Result<UiAckToken, String> {
         self.begin_with_fill(extension_id, attempts, |token| {
-            rand::rngs::OsRng
-                .try_fill_bytes(token)
-                .map_err(|_| invalid())
+            crate::services::secure_random::try_fill(token).map_err(|_| invalid())
         })
     }
 

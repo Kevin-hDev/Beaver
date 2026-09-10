@@ -1,6 +1,5 @@
 use super::constants::{CEF_MARKER_MAX_BYTES, CEF_NONCE_BYTES, CEF_SLOT_CAPACITY};
 use super::CefProcessRole;
-use rand::{rngs::OsRng, RngCore};
 use std::fmt;
 use zeroize::Zeroizing;
 
@@ -31,7 +30,7 @@ impl CefLaunchMarker {
             return Err(CefMarkerError::Invalid);
         }
         let mut nonce = Zeroizing::new([0_u8; CEF_NONCE_BYTES]);
-        OsRng.fill_bytes(nonce.as_mut());
+        crate::services::secure_random::fill(nonce.as_mut());
         Ok(Self {
             slot,
             generation,

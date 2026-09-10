@@ -1,5 +1,4 @@
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
-use rand::RngCore;
 
 pub fn credential_scope(route: RouteId) -> Result<CredentialScope, String> {
     if route == RouteId::Ollama {
@@ -12,7 +11,7 @@ pub fn credential_scope(route: RouteId) -> Result<CredentialScope, String> {
 
 pub(crate) fn generate_credential_scope() -> Result<CredentialScope, String> {
     let mut bytes = [0_u8; 32];
-    rand::rngs::OsRng.fill_bytes(&mut bytes);
+    crate::services::secure_random::fill(&mut bytes);
     let encoded = URL_SAFE_NO_PAD.encode(bytes);
     bytes.zeroize();
     CredentialScope::authenticated(encoded).map_err(|_| scope_unavailable())

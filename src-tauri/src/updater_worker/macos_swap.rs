@@ -1,4 +1,3 @@
-use rand::RngCore;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
@@ -155,7 +154,7 @@ pub(crate) fn ditto_spec(source: &Path, destination: &Path) -> CommandSpec {
 fn unique_sibling(parent: &Path, marker: &str) -> Result<PathBuf, WorkerError> {
     for _ in 0..MAX_PATH_ATTEMPTS {
         let mut random = [0_u8; 32];
-        rand::rngs::OsRng.fill_bytes(&mut random);
+        crate::services::secure_random::fill(&mut random);
         let path = parent.join(format!("{marker}-{}", hex::encode(random)));
         match std::fs::symlink_metadata(&path) {
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(path),

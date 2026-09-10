@@ -58,7 +58,6 @@ pub(crate) fn prefixed_raw_key(key: &str) -> Result<String, String> {
 
 pub fn get_or_create_random_raw(key: &str, byte_len: usize) -> Result<Zeroizing<Vec<u8>>, String> {
     use base64::Engine;
-    use rand::RngCore;
 
     if key.is_empty() || key.len() > MAX_RAW_KEY_LEN || !(16..=64).contains(&byte_len) {
         return Err("clé du coffre invalide".to_string());
@@ -83,7 +82,7 @@ pub fn get_or_create_random_raw(key: &str, byte_len: usize) -> Result<Zeroizing<
     }
 
     let mut random = Zeroizing::new(vec![0_u8; byte_len]);
-    rand::rngs::OsRng.fill_bytes(&mut random);
+    crate::services::secure_random::fill(&mut random);
     let encoded = Zeroizing::new(base64::engine::general_purpose::STANDARD.encode(&*random));
     commit_candidate_with(
         current,

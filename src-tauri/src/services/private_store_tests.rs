@@ -5,11 +5,10 @@ use super::{
     BoundedReadFailure,
 };
 use super::{CachedStore, StoreErrorCodes, StoreFailure, StoreLoad};
-use rand::RngCore;
 
 fn test_dir() -> std::path::PathBuf {
     let mut random = [0_u8; 8];
-    rand::rngs::OsRng.fill_bytes(&mut random);
+    crate::services::secure_random::fill(&mut random);
     std::env::temp_dir().join(format!("cl-go-private-{}", hex::encode(random)))
 }
 

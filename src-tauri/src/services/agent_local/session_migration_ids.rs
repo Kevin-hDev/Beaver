@@ -1,7 +1,6 @@
 use std::collections::VecDeque;
 
 use base64::Engine;
-use rand::RngCore;
 use serde_json::Value;
 
 use super::session_limits::{self, CURRENT_SESSION_SCHEMA_VERSION};
@@ -214,7 +213,7 @@ fn assign_tool_result_id(
 
 fn legacy_id(kind: &str) -> String {
     let mut random = [0_u8; 24];
-    rand::rngs::OsRng.fill_bytes(&mut random);
+    crate::services::secure_random::fill(&mut random);
     format!(
         "{LEGACY_ID_PREFIX}{kind}-{}",
         base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(random)

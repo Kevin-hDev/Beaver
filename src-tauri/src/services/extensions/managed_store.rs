@@ -1,5 +1,4 @@
 use super::types::{ExtensionOriginKind, ExtensionRecord};
-use rand::RngCore;
 use std::path::{Component, Path, PathBuf};
 
 const DIRECTORY: &str = "extension-installs";
@@ -29,7 +28,7 @@ fn prepare_with_token(owned: Option<&str>) -> Result<StagingDirectory, String> {
     crate::services::private_store::ensure_private_dir(&root)
         .map_err(|_| "Stockage des extensions indisponible.".to_string())?;
     let mut random = [0_u8; 16];
-    rand::rngs::OsRng.fill_bytes(&mut random);
+    crate::services::secure_random::fill(&mut random);
     let token = owned
         .map(str::to_owned)
         .unwrap_or_else(|| hex::encode(random));

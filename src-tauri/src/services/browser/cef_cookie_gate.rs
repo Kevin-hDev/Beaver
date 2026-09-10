@@ -1,7 +1,6 @@
 use super::cef_cookie_gate_cleanup;
 use super::runtime_handle::BrowserRuntimeHandle;
 use cef::*;
-use rand::{rngs::OsRng, RngCore};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
@@ -82,7 +81,7 @@ pub(super) fn start(app: tauri::AppHandle, profile: PathBuf, runtime: BrowserRun
 
 fn generate_probe_value() -> Zeroizing<String> {
     let mut random = Zeroizing::new([0_u8; 32]);
-    OsRng.fill_bytes(random.as_mut());
+    crate::services::secure_random::fill(random.as_mut());
     Zeroizing::new(hex::encode(random.as_ref()))
 }
 

@@ -1,4 +1,3 @@
-use rand::RngCore;
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
@@ -83,7 +82,7 @@ fn create_helper_file(temp_root: &Path) -> Result<(TemporaryHelper, File), Strin
     let canonical_root = std::fs::canonicalize(temp_root).map_err(|_| install_error())?;
     for _ in 0..MAX_COPY_ATTEMPTS {
         let mut random = [0_u8; 32];
-        rand::rngs::OsRng.fill_bytes(&mut random);
+        crate::services::secure_random::fill(&mut random);
         let name = format!("cl-go-dash-updater-{}{}", hex::encode(random), exe_suffix());
         let path = canonical_root.join(name);
         let mut options = OpenOptions::new();

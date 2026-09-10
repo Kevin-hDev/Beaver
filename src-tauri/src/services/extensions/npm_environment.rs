@@ -1,4 +1,3 @@
-use rand::RngCore;
 use std::path::{Path, PathBuf};
 
 pub struct ProjectConfig {
@@ -26,7 +25,7 @@ impl ProjectConfig {
             .parent()
             .ok_or_else(|| "Configuration npm invalide.".to_string())?;
         let mut random = [0_u8; 16];
-        rand::rngs::OsRng.fill_bytes(&mut random);
+        crate::services::secure_random::fill(&mut random);
         let held = parent.join(format!(".npmrc-{}.held", hex::encode(random)));
         std::fs::rename(&original, &held)
             .map_err(|_| "Configuration npm impossible à isoler.".to_string())?;

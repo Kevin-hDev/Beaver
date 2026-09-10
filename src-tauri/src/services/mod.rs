@@ -87,6 +87,7 @@ pub mod scheduler;
 pub mod search;
 pub mod searxng;
 pub mod secure_http;
+pub mod secure_random;
 pub mod security_cleanup;
 mod security_cleanup_sessions;
 mod shutdown_completion;

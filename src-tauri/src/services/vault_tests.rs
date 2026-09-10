@@ -1,9 +1,10 @@
 use super::*;
-use rand::RngCore;
 
 // Clé master 32 octets (XChaCha20-Poly1305) pour les tests.
 fn test_bytes<const N: usize>() -> [u8; N] {
-    std::array::from_fn(|_| rand::rngs::OsRng.next_u32().to_ne_bytes()[0])
+    let mut bytes = [0_u8; N];
+    crate::services::secure_random::fill(&mut bytes);
+    bytes
 }
 
 fn test_key() -> [u8; 32] {

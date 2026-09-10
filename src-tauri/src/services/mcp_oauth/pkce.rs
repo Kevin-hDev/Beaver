@@ -1,5 +1,4 @@
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD as B64URL, Engine};
-use rand::RngCore;
 use sha2::{Digest, Sha256};
 use zeroize::Zeroizing;
 
@@ -7,7 +6,7 @@ const VERIFIER_LEN: usize = 64;
 
 pub fn generate() -> (Zeroizing<String>, String) {
     let mut bytes = [0u8; VERIFIER_LEN];
-    rand::rngs::OsRng.fill_bytes(&mut bytes);
+    crate::services::secure_random::fill(&mut bytes);
     let verifier = Zeroizing::new(B64URL.encode(bytes));
     bytes.fill(0);
 

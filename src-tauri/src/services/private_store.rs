@@ -1,4 +1,3 @@
-use rand::RngCore;
 use std::fs::{File, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -134,7 +133,7 @@ fn temp_path(path: &Path) -> Result<PathBuf, String> {
         .and_then(|name| name.to_str())
         .ok_or_else(private_store_error)?;
     let mut random = [0_u8; 16];
-    rand::rngs::OsRng.fill_bytes(&mut random);
+    crate::services::secure_random::fill(&mut random);
     Ok(path.with_file_name(format!(".{name}.{}.tmp", hex::encode(random))))
 }
 

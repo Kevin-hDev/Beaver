@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 import { act, render, waitFor } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { AppSurfaceActivityProvider } from "@/components/layout/app-surface-activity";
 import { useUserMessageOverflow } from "../use-user-message-overflow";
 
@@ -12,6 +12,14 @@ function Probe({ expanded = false }: { expanded?: boolean }) {
   const { contentRef, maxHeight } = useUserMessageOverflow("message long", expanded);
   return <div ref={contentRef} data-max-height={maxHeight ?? "none"} />;
 }
+
+beforeEach(() => {
+  document.documentElement.style.fontSize = "14px";
+});
+
+afterEach(() => {
+  document.documentElement.style.removeProperty("font-size");
+});
 
 describe("useUserMessageOverflow et l'activité", () => {
   it("régression: conserve une mesure réelle inactive et la remesure au retour", async () => {

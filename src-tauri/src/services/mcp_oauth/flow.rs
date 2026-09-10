@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD as B64URL, Engine};
-use rand::RngCore;
 use tauri::Emitter;
 use tokio_util::sync::CancellationToken;
 use zeroize::Zeroizing;
@@ -164,7 +163,7 @@ pub fn cancel(connector_id: &str) {
 
 fn generate_state() -> Zeroizing<String> {
     let mut bytes = [0u8; 32];
-    rand::rngs::OsRng.fill_bytes(&mut bytes);
+    crate::services::secure_random::fill(&mut bytes);
     let s = B64URL.encode(bytes);
     bytes.fill(0);
     Zeroizing::new(s)

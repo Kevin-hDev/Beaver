@@ -3,7 +3,6 @@ use super::{
     session_store, session_tabs,
 };
 use crate::services::git::{action_error::GitActionError, branch};
-use rand::RngCore;
 use serde::Serialize;
 use std::path::{Path, PathBuf};
 
@@ -113,7 +112,7 @@ async fn create_unique_branch_from_candidates(
 
 fn random_branch_name() -> String {
     let mut bytes = [0_u8; 4];
-    rand::rngs::OsRng.fill_bytes(&mut bytes);
+    crate::services::secure_random::fill(&mut bytes);
     format!("clone-{}", hex_lower(&bytes))
 }
 

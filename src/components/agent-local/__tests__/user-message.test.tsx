@@ -18,6 +18,7 @@ let measuredHeight = 100;
 const originalScrollHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "scrollHeight");
 
 beforeEach(() => {
+  document.documentElement.style.fontSize = "14px";
   localStorage.setItem("clgo-link-preview", "false");
   Object.defineProperty(HTMLElement.prototype, "scrollHeight", {
     configurable: true,
@@ -84,6 +85,7 @@ describe("UserMessage", () => {
 });
 
 afterEach(() => {
+  document.documentElement.style.removeProperty("font-size");
   localStorage.removeItem("clgo-link-preview");
   measuredHeight = 100;
   if (originalScrollHeight) {

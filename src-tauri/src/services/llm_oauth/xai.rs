@@ -1,5 +1,4 @@
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
-use rand::RngCore;
 use tauri::AppHandle;
 use tokio_util::sync::CancellationToken;
 use zeroize::Zeroizing;
@@ -82,7 +81,7 @@ fn device_config() -> DeviceFlowConfig {
 
 fn generate_state() -> Zeroizing<String> {
     let mut bytes = [0_u8; 32];
-    rand::rngs::OsRng.fill_bytes(&mut bytes);
+    crate::services::secure_random::fill(&mut bytes);
     let value = Zeroizing::new(URL_SAFE_NO_PAD.encode(bytes));
     bytes.fill(0);
     value

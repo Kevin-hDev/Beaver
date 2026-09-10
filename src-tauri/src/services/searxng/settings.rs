@@ -1,4 +1,3 @@
-use rand::{rngs::OsRng, RngCore};
 use std::net::TcpListener;
 use std::path::PathBuf;
 
@@ -35,7 +34,7 @@ pub(crate) fn render_settings(port: u16, secret: &str) -> String {
 
 fn generate_secret() -> String {
     let mut bytes = [0u8; 32];
-    OsRng.fill_bytes(&mut bytes);
+    crate::services::secure_random::fill(&mut bytes);
     hex::encode(bytes)
 }
 

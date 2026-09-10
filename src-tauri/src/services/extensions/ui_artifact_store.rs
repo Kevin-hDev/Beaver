@@ -1,7 +1,6 @@
 #[path = "ui_artifact_cleanup.rs"]
 mod cleanup;
 use cleanup::{cleanup_entry, invalid, remove_empty_parent, valid_token};
-use rand::RngCore;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::{LazyLock, Mutex};
@@ -42,9 +41,7 @@ fn prepare_with_token(owned: Option<&str>) -> Result<StagingArtifact, String> {
     let root = root();
     crate::services::private_store::ensure_private_dir(&root).map_err(|_| invalid())?;
     let mut random = [0_u8; 16];
-    rand::rngs::OsRng
-        .try_fill_bytes(&mut random)
-        .map_err(|_| invalid())?;
+    crate::services::secure_random::try_fill(&mut random).map_err(|_| invalid())?;
     let token = owned
         .map(str::to_owned)
         .unwrap_or_else(|| hex::encode(random));

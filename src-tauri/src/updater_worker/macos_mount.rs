@@ -1,4 +1,3 @@
-use rand::RngCore;
 use std::ffi::OsString;
 use std::path::{Component, Path, PathBuf};
 use std::time::Duration;
@@ -94,7 +93,7 @@ fn create_mount_point(temp_root: &Path) -> Result<PathBuf, WorkerError> {
     let root = std::fs::canonicalize(temp_root).map_err(|_| WorkerError)?;
     for _ in 0..MAX_MOUNT_ATTEMPTS {
         let mut random = [0_u8; 32];
-        rand::rngs::OsRng.fill_bytes(&mut random);
+        crate::services::secure_random::fill(&mut random);
         let path = root.join(format!("cl-go-dash-mount-{}", hex::encode(random)));
         match std::fs::create_dir(&path) {
             Ok(()) => {

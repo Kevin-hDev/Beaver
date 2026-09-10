@@ -1,4 +1,3 @@
-use rand::RngCore;
 use std::sync::LazyLock;
 use tokio::sync::Mutex;
 use tokio_util::sync::CancellationToken;
@@ -26,7 +25,7 @@ static ACTIVE_LOGIN: LazyLock<Mutex<Option<ActiveLogin>>> = LazyLock::new(|| Mut
 
 fn generate_state() -> Zeroizing<String> {
     let mut bytes = [0u8; 16];
-    rand::rngs::OsRng.fill_bytes(&mut bytes);
+    crate::services::secure_random::fill(&mut bytes);
     let s = hex::encode(bytes);
     bytes.fill(0);
     Zeroizing::new(s)

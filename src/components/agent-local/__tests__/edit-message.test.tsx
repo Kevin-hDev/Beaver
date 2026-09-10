@@ -19,6 +19,7 @@ const originalScrollHeight = Object.getOwnPropertyDescriptor(
 );
 
 beforeEach(() => {
+  document.documentElement.style.fontSize = "14px";
   Object.defineProperty(HTMLTextAreaElement.prototype, "scrollHeight", {
     configurable: true,
     get: () => measuredHeight,
@@ -27,6 +28,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  document.documentElement.style.removeProperty("font-size");
   measuredHeight = 20;
   if (originalScrollHeight) {
     Object.defineProperty(HTMLTextAreaElement.prototype, "scrollHeight", originalScrollHeight);
