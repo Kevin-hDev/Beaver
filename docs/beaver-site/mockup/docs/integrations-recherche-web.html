@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Recherche web</title>
+<meta name="description" content="Les quatre sources de recherche de Beaver, le métamoteur local embarqué, son prérequis Python, et ce que les moteurs interrogés voient réellement.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Intégrations / Recherche web</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="integrations-recherche-web.html" hreflang="fr" aria-current="true">FR</a>
+    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>La recherche <em>web</em></h1>
+    <p>Beaver sait chercher sur Internet sans qu'aucun compte soit configuré : il embarque son propre métamoteur, qui tourne sur ta machine. Cette page décrit les quatre sources disponibles, l'ordre dans lequel elles sont essayées, le prérequis qui bloque le plus souvent, et ce que les moteurs interrogés voient réellement de toi.</p>
+
+    <h2 id="quatre-sources-un-ordre-fixe">Quatre sources, un ordre fixe</h2>
+    <p>Beaver essaie les sources dans cet ordre et s'arrête à la première qui renvoie des résultats.</p>
+
+    <table>
+      <caption class="crumb">L'ordre d'essai des sources de recherche</caption>
+      <tr><th>Ordre</th><th>Source</th><th>Clé nécessaire</th></tr>
+      <tr><td>1</td><td><b>Brave Search</b></td><td>Oui</td></tr>
+      <tr><td>2</td><td><b>Exa</b></td><td>Oui</td></tr>
+      <tr><td>3</td><td><b>Firecrawl</b></td><td>Oui</td></tr>
+      <tr><td>4</td><td><b>Moteur local intégré</b></td><td><b>Non</b></td></tr>
+    </table>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      L'ordre n'est pas configurable. Configurer une clé Brave revient à la privilégier sur tout le reste, y compris sur le moteur local. Une source qui échoue ou qui ne renvoie rien passe la main à la suivante ; si toutes échouent, l'erreur remontée agrège les causes — et elle est expurgée avant affichage, aucune clé ne peut y apparaître.
+    </div>
+
+    <h2 id="le-moteur-local-integre">Le moteur local intégré</h2>
+    <p>C'est la partie la moins connue, et la plus intéressante. Beaver embarque <b>une véritable instance de SearXNG</b> — un métamoteur libre — qu'il lance comme un programme séparé sur ta machine. Ce n'est ni un service distant ni un intermédiaire : c'est un logiciel qui tourne en local.</p>
+
+    <p>Sa configuration est resserrée. Il <b>n'écoute que sur ta machine</b>, sur un port choisi au hasard à chaque démarrage : aucun autre appareil du réseau ne peut l'atteindre. <b>Aucune métrique n'est collectée</b>, la collecte de statistiques de SearXNG étant désactivée. <b>Aucune base de données de session</b> : rien n'est mémorisé entre deux recherches. Aucun proxy ni cache d'images, aucune interface publique, et il ne répond qu'en format de données brut, pas en pages web. Sa clé de session interne est générée aléatoirement à chaque démarrage avec un générateur cryptographique.</p>
+
+    <p>Côté fonctionnement : le moteur est <b>préchauffé au lancement de Beaver</b>, en arrière-plan, pour que la première recherche ne soit pas ralentie par son démarrage. Beaver attend jusqu'à <b>12 secondes</b> qu'il soit prêt, en l'interrogeant régulièrement. Après un échec de démarrage, il <b>n'essaie pas de nouveau pendant 30 secondes</b> — sans ce délai, chaque recherche relancerait une tentative coûteuse et vouée à l'échec. L'identifiant du processus est enregistré, et un moteur orphelin laissé par un arrêt brutal est nettoyé au démarrage suivant, avec un budget de <b>3 secondes</b>. Le contenu du moteur est validé avant lancement : quatre fichiers attendus doivent être présents, sinon Beaver refuse de démarrer plutôt que d'exécuter un programme incomplet.</p>
+
+    <p>Un point à connaître : <b>le moteur reste allumé tant que Beaver est ouvert.</b> Il n'est arrêté qu'à la fermeture de l'application, et il n'existe aucune mise en veille après inactivité, contrairement aux connecteurs MCP. Un processus Python résident occupe donc de la mémoire pendant toute la session.</p>
+
+    <h2 id="ce-que-voient-les-moteurs">Ce que voient les moteurs interrogés</h2>
+    <p>Un métamoteur ne possède pas d'index : il interroge d'autres moteurs de recherche publics et agrège leurs réponses. Il faut donc être précis, sans surpromettre.</p>
+
+    <ul>
+      <li><b>Les moteurs interrogés voient ton adresse IP</b>, exactement comme si tu visitais leur site. Il n'y a pas de relais anonymisant.</li>
+      <li><b>Aucun compte n'est associé à tes recherches.</b> Ni clé API, ni identifiant, ni cookie persistant : rien qui relie deux recherches entre elles ni qui les rattache à une personne.</li>
+      <li><b>L'agrégation se fait sur ta machine.</b> Aucun tiers ne voit la liste complète de ce que tu as cherché.</li>
+      <li><b>Beaver n'enregistre aucun historique de recherche</b>, ni les requêtes, ni les résultats.</li>
+    </ul>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      Sans compte ne veut pas dire anonyme. Tes recherches partent bien vers des moteurs publics, mais sans compte, sans profil et sans historique conservé : c'est l'absence d'identification, pas de l'anonymat. Si tu veux davantage, il faut passer par un réseau anonymisant au niveau de ton système — Beaver ne le fournit pas.
+    </div>
+
+    <h2 id="le-prerequis-python">Le prérequis Python</h2>
+    <p>Le moteur local a besoin d'un interpréteur Python présent sur la machine — et pas de n'importe lequel. <b>Ce n'est pas « un Python 3 récent », c'est une version précise.</b> Un fichier manifeste livré avec le moteur déclare l'implémentation et la version exigées ; Beaver essaie plusieurs commandes, interroge chacune, et <b>rejette toutes celles qui ne répondent pas exactement cette version</b> : l'implémentation doit être CPython, et les deux numéros de version doivent correspondre au manifeste. Pour Beaver <b>1.2.2</b>, le manifeste embarqué demande <b>CPython 3.14</b> — cette valeur suit le moteur livré, elle peut donc changer d'une version de Beaver à l'autre.</p>
+
+    <table>
+      <caption class="crumb">L'ordre des commandes essayées</caption>
+      <tr><th>Plateforme</th><th>Ordre</th></tr>
+      <tr><td>macOS, Linux</td><td><code>python&lt;majeure&gt;.&lt;mineure&gt;</code>, puis <code>python3</code>, puis <code>python</code></td></tr>
+      <tr><td>Windows</td><td><code>py -&lt;majeure&gt;.&lt;mineure&gt;</code> d'abord, puis les trois mêmes</td></tr>
+    </table>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      Avoir Python installé ne suffit pas. Une commande dont la version diffère du manifeste est rejetée, donc <b>un utilisateur qui a « Python 3 » peut quand même se voir refuser le moteur local</b>. S'il n'en trouve aucune qui convienne, le moteur ne démarre pas et la recherche sans clé est indisponible : il faut alors installer la version exacte, ou configurer une clé.
+    </div>
+
+    <p>Une fois la bonne version trouvée, Beaver fait le reste tout seul : il crée un environnement Python isolé dans ses propres données, y installe les dépendances nécessaires — depuis des paquets <b>fournis avec l'application</b> quand ils sont présents, donc sans accès réseau —, et calcule une empreinte de la source pour ne réinstaller que si elle a changé.</p>
+
+    <table>
+      <caption class="crumb">La version exacte est rarement présente par défaut</caption>
+      <tr><th>Plateforme</th><th>Une version de Python par défaut</th><th>La version exacte exigée</th></tr>
+      <tr><td>macOS</td><td>Généralement, parfois après installation des outils de développement</td><td><b>Peu probable</b></td></tr>
+      <tr><td>Linux</td><td>Presque toujours</td><td><b>Peu probable</b> — dépend de la version de la distribution</td></tr>
+      <tr><td><b>Windows</b></td><td><b>Non</b></td><td><b>Non</b></td></tr>
+    </table>
+
+    <p>Sur les trois systèmes, la recherche web sans clé peut donc être indisponible tant que la version exacte n'est pas installée. Voir <a href="demarrage-prerequis.html">Prérequis</a> et <a href="demarrage-installation-windows.html">Installation Windows</a>.</p>
+
+    <h2 id="les-trois-services-par-cle">Les trois services par clé</h2>
+
+    <table>
+      <caption class="crumb">Les services de recherche qui demandent une clé</caption>
+      <tr><th>Service</th><th>Nature</th><th>Où créer la clé</th></tr>
+      <tr><td><b>Brave Search</b></td><td>Moteur de recherche avec son propre index</td><td><code>api-dashboard.search.brave.com/app/keys</code></td></tr>
+      <tr><td><b>Exa</b></td><td>Recherche orientée sens plutôt que mots-clés</td><td><code>dashboard.exa.ai/api-keys</code></td></tr>
+      <tr><td><b>Firecrawl</b></td><td>Extraction de contenu de pages</td><td><code>www.firecrawl.dev/app/api-keys</code></td></tr>
+    </table>
+
+    <p>Ce qu'ils apportent par rapport au moteur local : des résultats plus rapides, plus pertinents, et un fonctionnement qui ne dépend ni de Python ni du démarrage d'un programme séparé. Ce qu'ils coûtent : une inscription, une facturation à l'usage, et <b>le service voit tes requêtes associées à ton compte</b>.</p>
+
+    <p>Le parcours de configuration est le même que pour les fournisseurs de modèles : <b>Réglages › Intégrations › Fournisseurs</b>, choisir le service, suivre le lien, coller la clé, tester. Chaque service dispose d'un test de connexion dédié. Les clés de recherche sont protégées exactement comme les clés de modèles — coffre chiffré, clé maîtresse dans le gestionnaire de mots de passe du système, aucune commande de lecture, effacement de la mémoire après usage.</p>
+
+    <table>
+      <caption class="crumb">Moteur local ou service par clé</caption>
+      <tr><th>&nbsp;</th><th>Moteur local</th><th>Services par clé</th></tr>
+      <tr><td>Inscription</td><td><b>Aucune</b></td><td>Requise</td></tr>
+      <tr><td>Coût</td><td><b>Gratuit</b></td><td>À l'usage</td></tr>
+      <tr><td>Compte associé aux requêtes</td><td><b>Non</b></td><td>Oui</td></tr>
+      <tr><td>Adresse IP visible des moteurs</td><td>Oui</td><td>Non — le service s'interpose</td></tr>
+      <tr><td>Prérequis</td><td><b>Une version précise de Python</b></td><td>Aucun</td></tr>
+      <tr><td>Vitesse</td><td>Plus lente</td><td>Rapide</td></tr>
+      <tr><td>Qualité des résultats</td><td>Correcte</td><td>Meilleure</td></tr>
+      <tr><td>Démarrage</td><td>Quelques secondes au premier usage</td><td>Immédiat</td></tr>
+    </table>
+
+    <h2 id="les-limites">Les limites communes</h2>
+
+    <table>
+      <caption class="crumb">Les bornes appliquées à toute recherche</caption>
+      <tr><th>Limite</th><th>Valeur</th></tr>
+      <tr><td>Longueur d'une requête</td><td><b>512 caractères</b></td></tr>
+      <tr><td>Résultats renvoyés</td><td><b>10</b></td></tr>
+      <tr><td>Longueur d'un titre, d'un extrait, d'une adresse</td><td><b>160</b>, <b>300</b> et <b>2 048 caractères</b></td></tr>
+      <tr><td>Réponse lue d'un service</td><td><b>512 Ko</b></td></tr>
+      <tr><td>Délai d'une recherche locale</td><td><b>15 secondes</b></td></tr>
+      <tr><td>Attente au démarrage du moteur local</td><td><b>12 secondes</b></td></tr>
+      <tr><td>Récupération d'un moteur orphelin</td><td><b>3 secondes</b></td></tr>
+      <tr><td>Délai avant nouvelle tentative après échec</td><td><b>30 secondes</b></td></tr>
+    </table>
+
+    <h2 id="quand-la-recherche-echoue">Quand la recherche échoue</h2>
+
+    <table>
+      <caption class="crumb">Les messages et ce qu'ils veulent dire</caption>
+      <tr><th>Message</th><th>Ce que ça veut dire</th></tr>
+      <tr><td>Authentification refusée</td><td>Clé invalide ou révoquée</td></tr>
+      <tr><td>Limite de requêtes atteinte</td><td>Trop de requêtes en peu de temps</td></tr>
+      <tr><td>Service indisponible</td><td>Panne côté service</td></tr>
+      <tr><td>Délai dépassé</td><td>Réseau lent</td></tr>
+      <tr><td>Aucun fournisseur configuré, et moteur local indisponible</td><td>Aucune source ne fonctionne — la cause la plus fréquente est l'absence de la version de Python attendue</td></tr>
+    </table>
+
+    <h2 id="pieges-frequents">Pièges fréquents</h2>
+
+    <table>
+      <caption class="crumb">Ce qui bloque le plus souvent</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>« Recherche web indisponible » sans clé configurée</td><td>Moteur local non démarré, le plus souvent faute de la version de Python exigée</td><td>Installer la version exacte, ou configurer une clé</td></tr>
+      <tr><td>Python est bien installé et ça ne marche pas</td><td>La version installée n'est pas celle du manifeste : un candidat qui répond une autre version est rejeté</td><td>Installer la version exacte, ou configurer une clé</td></tr>
+      <tr><td>La première recherche est lente</td><td>Démarrage du moteur local</td><td>Normal ; les suivantes sont rapides</td></tr>
+      <tr><td>Les résultats sont médiocres</td><td>Moteur local</td><td>Configurer une clé Brave ou Exa</td></tr>
+      <tr><td>La clé Brave est configurée mais Exa est utilisé</td><td>Brave a échoué ou n'a rien renvoyé</td><td>Vérifier la clé Brave</td></tr>
+      <tr><td>La recherche échoue puis refuse de réessayer</td><td>Délai de 30 secondes après un échec de démarrage</td><td>Attendre, puis réessayer</td></tr>
+      <tr><td>Le moteur local ne redémarre pas après un plantage</td><td>Processus orphelin</td><td>Nettoyé au démarrage suivant de Beaver</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="outils-web.html">Web</a> — les outils de recherche et de lecture de page côté agent.</li>
+      <li><a href="modeles-fournisseurs-api.html">Fournisseurs API</a> — le même parcours de configuration de clé.</li>
+      <li><a href="reference-coffre-et-cles.html">Le coffre et les clés API</a> — la protection des clés.</li>
+      <li><a href="reference-confidentialite.html">Confidentialité</a> — ce qui sort de la machine.</li>
+      <li><a href="demarrage-prerequis.html">Prérequis</a> — les versions attendues avant l'installation.</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../js/theme.js"></script>
+<script src="../js/docs-nav-data.js"></script>
+<script src="../js/docs-nav.js"></script>
+</body>
+</html>

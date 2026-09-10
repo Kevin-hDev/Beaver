@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Catalogue et favoris</title>
+<meta name="description" content="D'où vient la liste des modèles, ce que Beaver sait de chacun, et comment épingler ceux dont tu te sers.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Modèles / Catalogue et favoris</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="modeles-catalogue-et-favoris.html" hreflang="fr" aria-current="true">FR</a>
+    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>S'y <em>retrouver</em> parmi les modèles</h1>
+    <p>Deux ou trois fournisseurs configurés, et plusieurs centaines de modèles deviennent accessibles — l'un d'eux est un revendeur qui en propose à lui seul des centaines. Cette page explique d'où vient cette liste, ce que Beaver sait de chaque modèle, et comment garder sous la main ceux dont tu te sers vraiment.</p>
+
+    <h2 id="d-ou-vient-la-liste">D'où vient la liste des modèles</h2>
+    <p>Beaver combine trois sources, ce qui explique pourquoi certains modèles sont mieux documentés que d'autres :</p>
+    <ul>
+      <li><b>Ce que le fournisseur annonce.</b> Chaque fournisseur expose la liste des modèles accessibles à ton compte. C'est la source de vérité sur la disponibilité.</li>
+      <li><b>Le registre interne de Beaver</b>, qui complète les informations manquantes pour les modèles connus.</li>
+      <li><b>Un catalogue public</b>, téléchargé et tenu à jour, qui fournit les caractéristiques et les tarifs.</li>
+    </ul>
+    <p>Conséquence : <b>un modèle très récent peut apparaître avec des informations incomplètes</b>, le temps que les catalogues le référencent. Il reste utilisable.</p>
+
+    <h2 id="ce-que-beaver-sait">Ce que Beaver sait d'un modèle</h2>
+
+    <table>
+      <caption class="crumb">Les informations utiles au moment de choisir</caption>
+      <tr><th>Information</th><th>Pourquoi elle compte</th></tr>
+      <tr><td><b>Sait utiliser des outils</b></td><td><b>Décisif.</b> Sans cette capacité, le modèle ne peut ni lire de fichier ni lancer de commande</td></tr>
+      <tr><td><b>Sait lire des images</b></td><td>Nécessaire pour joindre une capture d'écran</td></tr>
+      <tr><td><b>Sait raisonner</b></td><td>Détermine si le réglage d'effort est disponible</td></tr>
+      <tr><td><b>Longueur de contexte</b></td><td>Combien il peut lire d'un coup</td></tr>
+      <tr><td><b>Limite de sortie</b></td><td>Longueur maximale d'une réponse</td></tr>
+      <tr><td><b>Gratuit</b></td><td>Certains modèles sont proposés sans frais chez certains fournisseurs</td></tr>
+    </table>
+
+    <p><b>La capacité à utiliser des outils est le premier critère dans Beaver.</b> Un modèle qui ne l'a pas tient une conversation, mais reste incapable de la moindre action. C'est la principale cause de déception quand on choisit un modèle sur sa réputation.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      Vérifie d'abord que le modèle sait utiliser des outils. C'est ce qui sépare un assistant capable d'agir d'un modèle qui se contente de répondre. Un excellent modèle sans cette capacité ne te servira presque à rien dans Beaver.
+    </div>
+
+    <h2 id="les-favoris">Les favoris</h2>
+    <p>Un modèle peut être épinglé. Les favoris sont enregistrés localement, dans un fichier propre, et identifient chaque modèle par son fournisseur <b>et</b> son nom — le même modèle chez deux fournisseurs compte donc pour deux entrées distinctes.</p>
+    <p>L'écriture est <b>atomique</b> : fichier temporaire puis renommage. Une interruption au mauvais moment ne peut pas laisser une liste de favoris corrompue.</p>
+    <p>Ajouter un favori déjà présent, ou en retirer un absent, ne provoque pas d'erreur : l'opération est simplement sans effet, et le fichier n'est même pas réécrit.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      Les favoris sont locaux. Ils vivent dans un fichier de l'application, pas dans un compte : changer de machine demande de les refaire.
+    </div>
+
+    <h2 id="choisir-un-modele">Choisir un modèle pour une conversation</h2>
+    <p>Le sélecteur se trouve <b>dans la barre de saisie</b>, sous le champ de message — pas en haut de la conversation. Voir <a href="interface-vue-densemble.html">Vue d'ensemble de l'interface</a>.</p>
+    <p>Le choix vaut pour la conversation en cours. Changer de modèle en cours de route est possible : la suite de la conversation utilise le nouveau.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      Le même modèle chez deux fournisseurs, ce sont deux entrées. Les prix, les limites et la disponibilité peuvent différer d'un fournisseur à l'autre pour un modèle identique.
+    </div>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+
+    <table>
+      <caption class="crumb">Ce qui surprend le plus souvent au moment de choisir un modèle</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>L'agent ne fait rien, il se contente de répondre</td><td>Le modèle ne sait pas utiliser d'outils</td><td>En choisir un qui le sait</td></tr>
+      <tr><td>Impossible de joindre une image</td><td>Le modèle ne lit pas les images</td><td>En choisir un qui le sait — voir <a href="agent-pieces-jointes.html">Pièces jointes</a></td></tr>
+      <tr><td>Le réglage d'effort a disparu</td><td>Le modèle ne raisonne pas</td><td>Comportement attendu — voir <a href="modeles-raisonnement.html">Raisonnement</a></td></tr>
+      <tr><td>Un modèle a disparu de la liste</td><td>Le fournisseur ne le propose plus à ce compte</td><td>Vérifier chez le fournisseur</td></tr>
+      <tr><td>Les favoris ont disparu</td><td>Fichier local, lié à la machine</td><td>Les refaire</td></tr>
+      <tr><td>Deux fois le même modèle dans la liste</td><td>Il est proposé par deux fournisseurs</td><td>Comportement attendu</td></tr>
+      <tr><td>Les caractéristiques d'un modèle sont vides</td><td>Modèle trop récent pour les catalogues</td><td>Il reste utilisable</td></tr>
+    </table>
+
+    <p>Pour accéder aux modèles d'un service, il faut d'abord le configurer : <a href="modeles-fournisseurs-api.html">Fournisseurs API</a>. Les modèles qui tournent sur ta machine sont traités dans <a href="modeles-modeles-locaux.html">Modèles locaux</a>, et l'origine des tarifs affichés dans <a href="modeles-usage-et-couts.html">Usage et coûts</a>.</p>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../js/theme.js"></script>
+<script src="../js/docs-nav-data.js"></script>
+<script src="../js/docs-nav.js"></script>
+</body>
+</html>

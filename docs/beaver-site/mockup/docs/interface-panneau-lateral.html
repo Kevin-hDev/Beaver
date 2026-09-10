@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Panneau latéral</title>
+<meta name="description" content="La zone à droite de la conversation affiche une seule chose à la fois : prévisualisation, navigateur ou Forecast.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Interface / Panneau latéral</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="interface-panneau-lateral.html" hreflang="fr" aria-current="true">FR</a>
+    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Un <em>seul</em> contenu à la fois</h1>
+    <p>Le panneau latéral est la zone à droite de la conversation. Prévisualisation, navigateur et Forecast s'y partagent le même espace : ouvrir l'un remplace l'autre. Ce n'est pas un bug, c'est une contrainte de place assumée — et c'est la première chose à savoir avant d'y toucher.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      Ouvrir le navigateur fait disparaître ton aperçu de fichier. Rien n'est perdu : il suffit de rebasculer sur Prévisualisation.
+    </div>
+
+    <h2 id="a-quoi-il-sert">Ce que contient le panneau</h2>
+    <p>Il sert à consulter sans quitter le fil de la conversation : un fichier, une page web, un graphique de prévision.</p>
+
+    <h2 id="les-trois-modes">Les trois modes</h2>
+
+    <table>
+      <caption class="crumb">Les trois contenus possibles du panneau latéral</caption>
+      <tr><th>Mode</th><th>Contenu</th><th>Disponibilité</th></tr>
+      <tr><td><b>Prévisualisation</b></td><td>Fichiers, images, tableurs, documents</td><td>Partout — mode par défaut</td></tr>
+      <tr><td><b>Navigateur</b></td><td>Navigateur web intégré</td><td>macOS et Windows</td></tr>
+      <tr><td><b>Forecast</b></td><td>Espace de prévision de séries temporelles</td><td>Partout</td></tr>
+    </table>
+
+    <p>Le mode <b>Prévisualisation</b> est actif par défaut. Chacun a sa page : <a href="interface-fichiers-et-previews.html">Fichiers et prévisualisations</a>, <a href="interface-navigateur.html">Navigateur intégré</a> et <a href="outils-forecast.html">Forecast</a>.</p>
+
+    <h2 id="basculer">Basculer d'un mode à l'autre</h2>
+    <ul>
+      <li>Un sélecteur dédié, dans l'interface de la conversation.</li>
+      <li>Raccourci <b>⌥⌘B</b> (Alt+Ctrl+B) pour afficher ou masquer le panneau.</li>
+    </ul>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      L'écran <b>Réglages › Raccourcis</b> annonce un raccourci erroné pour cette action. C'est bien <b>⌥⌘B</b> qui fonctionne. Voir <a href="reference-raccourcis-clavier.html">Raccourcis clavier</a>.
+    </div>
+
+    <h2 id="redimensionner-et-masquer">Redimensionner et masquer</h2>
+    <ul>
+      <li>La largeur du panneau se règle par glissement, avec une largeur minimale imposée : au-delà, il ne se réduit plus, il se masque.</li>
+      <li>La barre latérale gauche se masque avec <b>⌘B</b> (Ctrl+B), ce qui laisse plus de place au reste.</li>
+    </ul>
+
+    <h2 id="comportement-automatique">Le comportement automatique</h2>
+    <p>L'application ajuste la disposition selon la largeur disponible. Quand la fenêtre devient trop étroite pour afficher confortablement la barre latérale, la conversation et le panneau, la barre latérale se replie d'elle-même et la conversation passe en affichage compact. Élargir la fenêtre, ou <b>⌘B</b>, la ramène.</p>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+
+    <table>
+      <caption class="crumb">Symptômes courants et ce qu'il faut en comprendre</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>L'aperçu disparaît en ouvrant le navigateur</td><td>Les trois modes partagent le panneau</td><td>Rebasculer sur Prévisualisation</td></tr>
+      <tr><td>Le mode Navigateur est absent</td><td>Système Linux</td><td>Non disponible</td></tr>
+      <tr><td>La barre latérale se replie seule</td><td>Fenêtre trop étroite</td><td>Élargir la fenêtre, ou <b>⌘B</b></td></tr>
+      <tr><td>Le panneau ne se réduit pas davantage</td><td>Largeur minimale imposée</td><td>Masquer le panneau</td></tr>
+      <tr><td><b>⌥⌘B</b> ne fonctionne pas</td><td>Pas de conversation active, ou curseur dans un champ de saisie</td><td>Cliquer hors du champ</td></tr>
+    </table>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../js/theme.js"></script>
+<script src="../js/docs-nav-data.js"></script>
+<script src="../js/docs-nav.js"></script>
+</body>
+</html>

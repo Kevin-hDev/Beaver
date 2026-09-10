@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Usage et coûts</title>
+<meta name="description" content="Ce que Beaver mesure de ta consommation, d'où viennent les chiffres affichés, et pourquoi ils peuvent différer de ceux de ton fournisseur.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Modèles / Usage et coûts</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="modeles-usage-et-couts.html" hreflang="fr" aria-current="true">FR</a>
+    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Suivre ce que tu <em>consommes</em></h1>
+    <p>Beaver mesure chaque requête envoyée à un fournisseur et te montre ce que ça représente. Cette page explique d'où viennent ces chiffres, pourquoi ils ne coïncident pas toujours avec ta facture, et pourquoi aucun tarif ne figure sur ce site.</p>
+
+    <h2 id="ce-que-beaver-mesure">Ce que Beaver mesure</h2>
+    <p>Chaque requête envoyée à un fournisseur est mesurée : le modèle utilisé, les jetons consommés en entrée et en sortie, la durée, l'issue — terminée, interrompue, annulée, échouée.</p>
+    <p>Ces mesures sont enregistrées <b>localement</b>, dans les données de l'application. Elles ne sont transmises à personne. L'écran d'usage se met à jour <b>en direct</b> : dès qu'une requête se termine, les compteurs bougent.</p>
+
+    <div class="callout">
+      <span class="t">Confidentialité</span>
+      Les mesures de consommation restent sur ta machine. Aucune donnée d'usage n'est transmise à Beaver ni à un tiers. Voir <a href="reference-confidentialite.html">Confidentialité</a>.
+    </div>
+
+    <h2 id="les-trois-sources">Les trois sources de chiffres</h2>
+    <ul>
+      <li><b>Ce que Beaver a compté lui-même.</b> Le registre local, alimenté requête après requête. Il est complet pour l'usage fait <b>depuis Beaver</b>, et il ne connaît rien d'autre.</li>
+      <li><b>Ce que le fournisseur annonce.</b> Certains fournisseurs renvoient, dans leurs réponses, l'état des limites du compte : requêtes restantes, quota, fenêtre de renouvellement. Beaver les lit et les affiche.</li>
+      <li><b>Le détail requête par requête.</b> Un journal des requêtes récentes, avec leur modèle, leur issue et leur consommation.</li>
+    </ul>
+
+    <table>
+      <caption class="crumb">Ce que chaque source couvre et ce qu'elle ignore</caption>
+      <tr><th>Source</th><th>Ce qu'elle couvre</th><th>Ce qu'elle ignore</th></tr>
+      <tr><td>Registre local</td><td>Tout l'usage fait depuis Beaver</td><td>Ce qui passe par un autre outil</td></tr>
+      <tr><td>Données du fournisseur</td><td>L'état réel du compte</td><td>Le détail par conversation</td></tr>
+      <tr><td>Journal des requêtes</td><td>Le détail récent, avec les échecs</td><td>L'historique lointain</td></tr>
+    </table>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      Les chiffres de Beaver et ceux de ton fournisseur peuvent différer, et les deux sont justes : Beaver ne compte que ce qui est passé par lui. Si le même compte sert ailleurs — un autre outil, un script, le site du fournisseur — les totaux du fournisseur seront plus élevés.
+    </div>
+
+    <h2 id="exact-et-estime">Coût exact et coût estimé</h2>
+    <p><b>Coût exact</b> — certains fournisseurs renvoient le coût réel de la requête dans leur réponse. Beaver l'enregistre tel quel. C'est un chiffre facturé, pas une estimation.</p>
+    <p><b>Coût estimé</b> — sinon, Beaver le calcule : jetons d'entrée, jetons de sortie, et jetons lus ou écrits dans le cache, chacun à son propre tarif. Le calcul est fin — il ne facture pas au prix plein les jetons relus depuis un cache — mais il reste une estimation.</p>
+    <p>Un garde-fou mérite d'être connu : si le calcul donne un résultat aberrant — infini, négatif, ou supérieur à un million de dollars — <b>Beaver renonce à afficher un coût</b> plutôt que d'afficher une absurdité. Un chiffre manquant vaut mieux qu'un chiffre faux.</p>
+
+    <table>
+      <caption class="crumb">Quand un coût s'affiche, et sous quelle forme</caption>
+      <tr><th>Situation</th><th>Coût affiché</th></tr>
+      <tr><td>Le fournisseur renvoie le coût réel</td><td><b>Exact</b></td></tr>
+      <tr><td>Tarif connu, jetons connus</td><td><b>Estimé</b></td></tr>
+      <tr><td>Modèle local</td><td>Aucun — gratuit</td></tr>
+      <tr><td>Connexion par compte</td><td>Aucun — couvert par l'abonnement</td></tr>
+      <tr><td>Tarif inconnu ou calcul aberrant</td><td>Aucun — plutôt rien qu'un chiffre faux</td></tr>
+    </table>
+
+    <table>
+      <caption class="crumb">Ce qui est compté dans une requête</caption>
+      <tr><th>Élément</th><th>Facturé</th></tr>
+      <tr><td>Jetons d'entrée nouveaux</td><td>Au tarif d'entrée</td></tr>
+      <tr><td>Jetons d'entrée relus depuis le cache</td><td>À un tarif réduit</td></tr>
+      <tr><td>Jetons écrits dans le cache</td><td>À un tarif propre</td></tr>
+      <tr><td>Jetons de sortie</td><td>Au tarif de sortie</td></tr>
+      <tr><td><b>Jetons de raisonnement</b></td><td>Souvent au tarif de sortie</td></tr>
+    </table>
+
+    <h2 id="d-ou-viennent-les-tarifs">D'où viennent les tarifs</h2>
+    <p>Beaver <b>ne code aucun tarif en dur</b>. Il télécharge un catalogue public de tarifs, le conserve localement et le rafraîchit en ne retéléchargeant que si la source a changé. Trois protections encadrent ce téléchargement :</p>
+    <ul>
+      <li>seule la source attendue est acceptée ;</li>
+      <li>la taille du fichier est bornée ;</li>
+      <li><b>un catalogue de moins de cent entrées est rejeté</b> — une source tronquée ou vidée n'écrase pas un catalogue valide.</li>
+    </ul>
+    <p>Pour toi, ça veut dire que <b>les tarifs restent à jour sans que tu aies rien à faire</b>, et sans que Beaver ait besoin d'une mise à jour. C'est aussi la raison pour laquelle aucun prix ne figure sur ce site : l'autorité, c'est le fournisseur, et Beaver suit une source vivante.</p>
+
+    <h2 id="ce-qui-n-est-pas-chiffre">Ce qui n'est pas chiffré</h2>
+    <p>Trois cas où aucun coût n'apparaît — l'absence n'est pas un défaut :</p>
+    <ul>
+      <li><b>Les modèles locaux.</b> Ils ne coûtent rien en argent. Leur consommation en jetons est mesurée, pas leur prix.</li>
+      <li><b>Les connexions par compte.</b> L'usage est couvert par un abonnement, pas facturé à la requête : afficher un coût n'aurait pas de sens. Voir <a href="modeles-connexion-par-compte.html">Connexion par compte</a>.</li>
+      <li><b>Quelques modèles récents</b> dont la tarification n'est pas exprimable par le calcul simple entrée-sortie. Beaver préfère ne rien afficher plutôt qu'un chiffre approximatif.</li>
+    </ul>
+
+    <h2 id="journal-des-requetes">Le journal des requêtes</h2>
+    <p>Chaque requête laisse une trace : identifiant, modèle, tour de conversation, tentative, issue, jetons.</p>
+    <p>Ce journal sert à répondre à « qu'est-ce qui s'est passé ? » sans avoir à reproduire le problème — une requête peut avoir échoué, avoir été reprise, ou avoir été annulée en cours de route, et l'écran d'usage seul ne le dirait pas.</p>
+    <p>L'usage est aussi <b>attribué à son origine</b> : une conversation ordinaire, ou une tâche programmée. Si ta consommation te paraît élevée, tu peux ainsi voir si elle vient de ce que tu as fait, ou de ce que Beaver a fait tout seul pendant la nuit.</p>
+
+    <h2 id="changer-de-cle">Changer de clé remet les compteurs distants à zéro</h2>
+    <p>Quand une clé ou une connexion change, <b>les informations venant du fournisseur sont effacées</b>. La raison : elles décrivaient l'état d'un autre compte, et les conserver reviendrait à afficher le quota d'un compte pour un autre.</p>
+    <p>Le registre local, lui, est conservé — c'est l'historique de ce que Beaver a fait, indépendamment du compte utilisé.</p>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+
+    <table>
+      <caption class="crumb">Les questions les plus fréquentes sur les chiffres affichés</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>Les chiffres de Beaver ne correspondent pas à la facture</td><td>Le compte sert ailleurs, ou certains coûts sont estimés</td><td>Comportement attendu ; la facture du fournisseur fait foi</td></tr>
+      <tr><td>Aucun coût n'est affiché</td><td>Modèle local, connexion par compte, ou tarif inconnu</td><td>Comportement attendu</td></tr>
+      <tr><td>La consommation a augmenté sans plus d'usage</td><td>Effort de raisonnement élevé, ou tâches programmées</td><td>Vérifier l'origine dans le journal ; voir <a href="modeles-raisonnement.html">Raisonnement</a></td></tr>
+      <tr><td>Les compteurs de quota ont disparu</td><td>Clé ou connexion changée</td><td>Comportement voulu : ils décrivaient un autre compte</td></tr>
+      <tr><td>Le quota affiché est périmé</td><td>Il vient des réponses du fournisseur</td><td>Il se met à jour à la requête suivante ; forcer un rafraîchissement</td></tr>
+      <tr><td>Une requête a échoué : est-elle facturée ?</td><td>Selon le moment de l'échec</td><td>Le journal indique l'issue et les jetons réellement consommés</td></tr>
+    </table>
+
+    <p>Pour configurer un fournisseur, voir <a href="modeles-fournisseurs-api.html">Fournisseurs API</a>. Les modèles qui ne coûtent rien sont traités dans <a href="demarrage-choisir-son-modele.html">Choisir son modèle</a>.</p>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../js/theme.js"></script>
+<script src="../js/docs-nav-data.js"></script>
+<script src="../js/docs-nav.js"></script>
+</body>
+</html>

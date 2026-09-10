@@ -82,6 +82,9 @@ aside nav {
 .doc h1 { font-size: clamp(32px, 4vw, 46px); margin: 6px 0 20px; line-height: 1; }
 .doc h2 { font-size: clamp(19px, 2vw, 24px); margin: 46px 0 12px; line-height: 1.1; }
 .doc p { color: var(--ink-dim); margin-bottom: 15px; }
+.doc ul { color: var(--ink-dim); margin: 0 0 15px; padding-left: 22px; }
+.doc li { margin-bottom: 8px; }
+.doc li::marker { color: var(--accent); }
 .doc b { color: var(--ink); font-weight: 600; }
 .doc code {
   font-family: var(--f-mono);

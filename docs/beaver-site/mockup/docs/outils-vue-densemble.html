@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Les outils de l'agent</title>
+<meta name="description" content="Ce que l'agent sait faire sur ta machine, quels groupes d'outils sont actifs à l'installation et comment décider de ce qu'il peut atteindre.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Outils / Vue d'ensemble</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="outils-vue-densemble.html" hreflang="fr" aria-current="true">FR</a>
+    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Les outils <em>de l'agent.</em></h1>
+    <p>Un outil est une capacité que l'agent invoque lui-même pendant qu'il répond : lire un
+    fichier, lancer une commande, chercher sur le web, déléguer une tâche. Décider quels outils
+    sont actifs, c'est décider ce que l'agent peut atteindre — le réglage le plus structurant de
+    l'application, plus que le choix du modèle.</p>
+
+    <h2 id="ce-quest-un-outil">Ce qu'est un outil</h2>
+    <p>L'agent ne fait rien d'autre que produire du texte et appeler des outils.
+    <b>Tout ce que Beaver sait faire sur la machine passe par un outil</b>, sans exception.</p>
+    <p>Un outil désactivé n'est <b>jamais proposé au modèle</b> : le modèle ne sait pas qu'il
+    existe. Et s'il l'appelle quand même — parce que le réglage a changé au milieu d'une
+    conversation, par exemple — l'appel est refusé avec un message clair. Les deux barrières
+    existent ; la seconde ne sert qu'en rattrapage.</p>
+
+    <div class="callout">
+      <span class="t">À retenir</span>
+      Un outil désactivé est d'abord invisible, pas refusé. L'agent ne dira donc pas « je n'ai pas
+      le droit » : il contournera, ou il répondra à côté. Quand une capacité te manque, la première
+      chose à vérifier est l'écran <b>Réglages › Agent › Outils</b>.
+    </div>
+
+    <h2 id="essentiels-et-optionnels">Outils essentiels et outils optionnels</h2>
+    <p>Deux catégories, visibles telles quelles dans <b>Réglages › Agent › Outils</b>.</p>
+    <ul>
+      <li><b>Outils essentiels</b> — toujours actifs, aucun interrupteur, l'étiquette
+      <b>« Toujours actif »</b> à leur droite. Ils forment le socle sans lequel l'agent ne peut
+      rien faire d'utile.</li>
+      <li><b>Outils optionnels</b> — un interrupteur par groupe. Certains sont actifs à
+      l'installation, d'autres non.</li>
+    </ul>
+    <p>Le réglage porte sur <b>un groupe entier</b>, jamais sur un outil isolé. Activer
+    « Sous-agents » active les neuf outils du groupe d'un coup.</p>
+    <p>En chiffres : <b>5 groupes essentiels</b> pour 11 outils, <b>11 groupes optionnels</b> pour
+    32 outils, dont <b>5 actifs par défaut</b> et 6 éteints. Trois outils supplémentaires
+    (<code>list_extensions</code>, <code>inspect_extensions</code>,
+    <code>load_extension_resource</code>) sont toujours actifs, servent aux extensions et
+    n'apparaissent dans aucun des deux tableaux de l'écran des réglages.</p>
+
+    <h2 id="groupes-essentiels">Les groupes essentiels</h2>
+    <table>
+      <caption class="crumb">Les cinq groupes toujours actifs</caption>
+      <tr><th>Groupe</th><th>Outils</th><th>Ce qu'il permet</th></tr>
+      <tr><td>Terminal</td><td><code>bash</code>, <code>bash_control</code></td><td>Lancer des commandes sur la machine</td></tr>
+      <tr><td>Fichiers</td><td><code>read_file</code>, <code>write_file</code>, <code>edit_file</code>, <code>list_dir</code></td><td>Lire, créer, modifier des fichiers</td></tr>
+      <tr><td>Recherche de fichiers</td><td><code>grep</code>, <code>glob</code></td><td>Chercher un fichier ou un motif dans le projet</td></tr>
+      <tr><td>Web</td><td><code>web_search</code>, <code>web_fetch</code></td><td>Chercher en ligne et ouvrir une page</td></tr>
+      <tr><td>Connecteurs externes</td><td><code>search_mcp_tools</code></td><td>Utiliser les connecteurs MCP configurés</td></tr>
+    </table>
+
+    <h2 id="groupes-optionnels">Les groupes optionnels</h2>
+    <table>
+      <caption class="crumb">Les onze groupes à interrupteur, et leur état à l'installation</caption>
+      <tr><th>Groupe</th><th>Par défaut</th><th>Outils</th></tr>
+      <tr><td>Skills</td><td><b>Actif</b></td><td><code>load_skill</code></td></tr>
+      <tr><td>Automatisations</td><td><b>Actif</b></td><td><code>manage_automation</code></td></tr>
+      <tr><td>Choix utilisateur</td><td><b>Actif</b></td><td><code>ask_user_choice</code></td></tr>
+      <tr><td>Sous-agents</td><td><b>Actif</b></td><td><code>delegate_task</code>, <code>list_subagents</code>, <code>get_subagent</code>, <code>cancel_subagent</code>, <code>message_subagent</code>, <code>archive_subagent</code>, <code>inspect_subagent_changes</code>, <code>apply_subagent_changes</code>, <code>discard_subagent_changes</code></td></tr>
+      <tr><td>Plan mode</td><td><b>Actif</b></td><td><code>plan_mode</code></td></tr>
+      <tr><td>Todo list</td><td>Éteint</td><td><code>todo_write</code>, <code>todo_history</code>, <code>todo_pause</code>, <code>todo_resume</code>, <code>todo_delete</code></td></tr>
+      <tr><td>Branches Git</td><td>Éteint</td><td><code>create_branch</code>, <code>checkout_branch</code></td></tr>
+      <tr><td>Forecast</td><td>Éteint</td><td><code>forecast_data_audit</code>, <code>forecast_run</code>, <code>forecast_models</code>, <code>forecast_analyze</code>, <code>forecast_read</code>, <code>forecast_backtest</code>, <code>forecast_compare_models</code></td></tr>
+      <tr><td>Spreadsheet / Excel</td><td>Éteint</td><td><code>read_spreadsheet</code>, <code>write_spreadsheet</code></td></tr>
+      <tr><td>Document / Word</td><td>Éteint</td><td><code>read_document</code>, <code>write_document</code></td></tr>
+      <tr><td>Images</td><td>Éteint</td><td><code>transform_image</code></td></tr>
+    </table>
+
+    <h2 id="actif-a-linstallation">Ce qui est actif à l'installation</h2>
+    <p>Le choix de départ suit une logique simple : ce qui sert à presque toutes les conversations
+    est allumé, ce qui relève d'un usage précis est éteint pour ne pas encombrer le modèle.</p>
+    <p>Conséquence directe : si tu demandes « lis-moi ce fichier Excel » sans avoir activé le
+    groupe Spreadsheet, tu obtiendras une réponse évasive ou un contournement par le terminal,
+    <b>pas</b> un message d'erreur clair. Le modèle ignore que l'outil existe.</p>
+
+    <h2 id="activer-ou-desactiver">Activer ou désactiver un groupe</h2>
+    <ul>
+      <li>Chemin : <b>Réglages › Agent › Outils</b>, un interrupteur par groupe optionnel.</li>
+      <li>La bascule est immédiate et vaut pour <b>toutes les conversations</b> — ce n'est pas un
+      réglage par conversation. Les connecteurs externes, eux, s'activent conversation par
+      conversation.</li>
+      <li>L'écran affiche pour chaque groupe un titre et une phrase qui explique à quoi il sert et
+      quand le couper.</li>
+      <li>En cas d'échec d'enregistrement, l'interrupteur revient à sa position précédente et un
+      message d'erreur s'affiche.</li>
+      <li><b>Dépendance à connaître</b> : le groupe Sous-agents est piloté par
+      <code>delegate_task</code>. Sans lui, les huit autres outils du groupe sont retirés
+      automatiquement ; l'activer les ramène tous.</li>
+    </ul>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      Activer tout n'est pas gratuit. Chaque outil actif occupe de la place dans le contexte à
+      chaque requête, y compris quand l'agent ne s'en sert pas. Sur un modèle local à petite
+      fenêtre de contexte, activer les onze groupes optionnels laisse mécaniquement moins de place
+      à la conversation — voir <a href="agent-contexte.html">le contexte</a>.
+    </div>
+
+    <h2 id="ce-que-voit-le-modele">Ce que voit le modèle</h2>
+    <p>C'est le point qui n'est visible nulle part dans l'interface, et qui explique le
+    comportement de l'agent quand un groupe est coupé.</p>
+    <ul>
+      <li>Les définitions d'outils envoyées au modèle sont <b>filtrées</b> avant chaque requête :
+      un outil désactivé n'apparaît pas dans la liste.</li>
+      <li>Le <b>prompt système est filtré lui aussi</b>. Toute ligne qui nomme un outil désactivé
+      est retirée, et deux sections entières disparaissent quand leur groupe est éteint : celle des
+      choix interactifs quand <code>ask_user_choice</code> est coupé, celle du travail avec les
+      sous-agents quand <code>delegate_task</code> l'est. Un retrait ligne à ligne laisserait des
+      puces orphelines, puisque plusieurs lignes de ces sections ne nomment aucun outil.</li>
+      <li><b>Aucune liste des outils désactivés n'est transmise au modèle.</b> C'est un choix
+      délibéré : mentionner un outil absent conduisait le modèle à annoncer des capacités qu'il
+      n'avait pas.</li>
+    </ul>
+
+    <table>
+      <caption class="crumb">Ce que chaque interrupteur coupé retire au modèle</caption>
+      <tr><th>Interrupteur coupé</th><th>Effet direct</th><th>Effet sur le prompt système</th></tr>
+      <tr><td>Choix utilisateur</td><td>L'agent ne peut plus poser de question à choix, il tranche seul</td><td>La section des choix interactifs disparaît entièrement</td></tr>
+      <tr><td>Sous-agents</td><td>Aucune délégation possible</td><td>La section sur les sous-agents disparaît, et toute ligne qui en mentionne un est retirée</td></tr>
+      <tr><td>Spreadsheet / Excel</td><td>Les tableurs ne sont plus ni lus ni écrits</td><td>Les consignes sur les formules de tableur sont retirées</td></tr>
+      <tr><td>Tous les autres</td><td>L'outil disparaît de la liste proposée</td><td>Les lignes qui le nomment sont retirées</td></tr>
+    </table>
+
+    <h2 id="resultats-trop-gros">Les résultats trop gros</h2>
+    <p>Deux mécanismes se superposent.</p>
+    <p><b>1. La troncature par appel.</b> Certains outils ont un plafond de caractères pour un seul
+    résultat. Au-delà, le modèle reçoit un en-tête indiquant la taille totale, puis les
+    <b>2 000 premiers caractères</b>, puis le nombre de caractères omis. Le résultat complet est
+    écrit sur le disque et son chemin est donné au modèle, qui peut le relire avec
+    <code>read_file</code>.</p>
+
+    <div class="term">
+      <div class="term-bar"><i></i><i></i><i></i></div>
+      <pre class="term-body"><span class="prompt">$</span> ~/.local/share/cl-go-dash/tool-results/&lt;id de conversation&gt;/</pre>
+    </div>
+
+    <p>La découpe se fait <b>par caractère et non par octet</b> : un résultat plein d'accents ou
+    d'émojis n'est jamais coupé au milieu d'un caractère. Si l'écriture sur disque échoue, le
+    résultat porte un avertissement explicite — la sortie complète est alors perdue. Les fichiers
+    de résultats sont supprimés automatiquement au-delà de <b>24 heures</b>.</p>
+
+    <p><b>2. Le budget global de la conversation.</b> L'ensemble des résultats d'outils encore
+    présents dans une conversation est plafonné à <b>100 000 caractères</b>. Au-delà, les résultats
+    les plus anciens sont vidés et remplacés par une mention indiquant que la sortie a été retirée
+    du contexte, avec le chemin du fichier complet quand il existe. <b>Les deux résultats les plus
+    récents ne sont jamais vidés.</b></p>
+
+    <table>
+      <caption class="crumb">Plafond de résultat, outil par outil</caption>
+      <tr><th>Outil</th><th>Plafond avant troncature</th></tr>
+      <tr><td><code>web_fetch</code></td><td><b>50 000 caractères</b></td></tr>
+      <tr><td><code>bash</code>, <code>bash_control</code></td><td><b>30 000 caractères</b></td></tr>
+      <tr><td><code>grep</code>, <code>web_search</code>, <code>list_dir</code></td><td><b>10 000 caractères</b></td></tr>
+      <tr><td><code>glob</code></td><td><b>5 000 caractères</b></td></tr>
+      <tr><td>Tout résultat en erreur, quel que soit l'outil</td><td><b>30 000 caractères</b></td></tr>
+      <tr><td>Les autres outils</td><td>Pas de plafond à ce niveau</td></tr>
+    </table>
+
+    <p><code>read_file</code> n'a pas de plafond ici : ses limites sont ailleurs, 20 Mo par fichier
+    et 2 000 lignes par appel — voir <a href="outils-fichiers.html">Fichiers</a>.</p>
+
+    <h2 id="appel-mal-forme">Quand un appel est mal formé</h2>
+    <p>Tout appel d'outil est validé avant exécution. Un paramètre obligatoire manquant, un type
+    incorrect ou un paramètre inconnu produisent un message d'erreur qui <b>liste les paramètres
+    acceptés</b>. L'agent reçoit ce message et corrige de lui-même, en général au tour suivant. Tu
+    vois l'aller-retour dans la conversation, mais tu n'as rien à faire.</p>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+    <table>
+      <caption class="crumb">Symptôme, cause, résolution</caption>
+      <tr><th>Symptôme</th><th>Cause probable</th><th>Résolution</th></tr>
+      <tr><td>L'agent refuse de lire un fichier Excel</td><td>Groupe Spreadsheet éteint par défaut</td><td>Réglages › Agent › Outils › activer Spreadsheet / Excel</td></tr>
+      <tr><td>L'agent ne demande jamais ton avis</td><td>Groupe Choix utilisateur coupé</td><td>Le réactiver, ou accepter qu'il tranche seul</td></tr>
+      <tr><td>L'agent ne tient pas de liste de tâches</td><td>Groupe Todo list éteint par défaut</td><td>L'activer</td></tr>
+      <tr><td>L'agent ne délègue plus rien</td><td>Groupe Sous-agents coupé</td><td>L'activer — les neuf outils reviennent ensemble</td></tr>
+      <tr><td>Le résultat d'une commande est coupé</td><td>Plafond de 30 000 caractères sur <code>bash</code></td><td>Normal : le résultat complet est sur le disque et l'agent peut le relire</td></tr>
+      <tr><td>L'agent a perdu la sortie d'une commande d'il y a dix messages</td><td>Budget global de 100 000 caractères atteint</td><td>Normal ; lui redonner le chemin du fichier de résultat</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="agent-fonctionnement.html">Fonctionnement de l'agent</a> — comment il enchaîne
+      les appels d'outils.</li>
+      <li><a href="agent-permissions.html">Modes de permission</a> — quels outils déclenchent une
+      demande d'approbation.</li>
+      <li><a href="agent-contexte.html">Contexte</a> — pourquoi le nombre d'outils actifs pèse.</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../js/theme.js"></script>
+<script src="../js/docs-nav-data.js"></script>
+<script src="../js/docs-nav.js"></script>
+</body>
+</html>

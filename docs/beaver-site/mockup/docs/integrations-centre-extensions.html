@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Le centre d'extensions</title>
+<meta name="description" content="Trouver, ajouter, approuver, activer, mettre à jour et supprimer une extension — et ce que tu engages en exécutant du code tiers sur ta machine.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Intégrations / Centre d'extensions</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="integrations-centre-extensions.html" hreflang="fr" aria-current="true">FR</a>
+    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Le centre d'<em>extensions</em></h1>
+    <p>Une extension ajoute des capacités à Beaver : des outils pour l'agent, des skills, des ressources, des éléments d'interface. Cette page couvre le cycle complet — trouver, ajouter, approuver, activer, mettre à jour, supprimer — et dit sans détour ce que tu engages en installant du code écrit par quelqu'un d'autre.</p>
+
+    <h2 id="ce-quune-extension-peut-faire">Ce qu'une extension peut faire à ta machine</h2>
+    <p>Une extension, c'est du code écrit par quelqu'un d'autre, que Beaver exécute sur ton ordinateur <b>avec les droits de ton compte</b>. Il peut lire et écrire tes fichiers, lancer des programmes et utiliser le réseau, exactement comme un logiciel que tu installerais toi-même.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      Une extension n'est pas dans un bac à sable. Beaver isole chaque extension dans son propre processus : cela empêche l'une de faire tomber les autres, <b>cela ne l'empêche pas de faire ce qu'elle veut de ta machine</b>. La documentation technique de Beaver l'écrit elle-même — « une extension personnalisée est du code local de confiance, exécuté avec les droits du compte utilisateur. Ce n'est pas une sandbox » — et cette page ne l'adoucit pas.
+    </div>
+
+    <p>Deux conséquences directes. Une extension approuvée peut <b>demander tes clés d'API et tes jetons</b> directement, par l'interface du kit de développement : l'approbation porte sur tout son code et toutes ses dépendances, et <b>il n'existe pas d'autorisation clé par clé</b>. Et Beaver <b>ne vérifie pas ce que fait une extension</b> : il valide le manifeste et le protocole, ce qui ne remplace pas un audit du comportement. Le manifeste d'une extension Node.js déclare d'ailleurs <code>access: "full"</code>, et le code commente pourquoi : du code Node.js local ne constitue pas une frontière de sécurité.</p>
+
+    <p>Ce que l'isolation apporte malgré tout est réel : un processus séparé par extension tierce, donc le plantage de l'une n'arrête pas les autres ; une identité attribuée par Beaver et non déclarée par l'extension, donc aucune ne peut se faire passer pour une autre ; un environnement de processus minimal, donc tes variables d'environnement ne sont pas transmises ; une empreinte des fichiers, qui révoque l'approbation dès qu'un fichier change ; et un journal d'accès aux secrets, qui trace chaque remise sans écrire le secret.</p>
+
+    <h2 id="plugin-officiel-ou-extension">Plugin officiel ou extension personnalisée</h2>
+    <p>L'écran distingue deux choses qui n'ont ni la même origine ni le même niveau de confiance. C'est la distinction à tenir avant tout le reste.</p>
+
+    <table>
+      <caption class="crumb">Deux natures, deux traitements</caption>
+      <tr><th>&nbsp;</th><th>Plugin officiel</th><th>Extension personnalisée</th></tr>
+      <tr><td>Qui l'écrit</td><td>Beaver</td><td>Toi, un dépôt Git, un package npm</td></tr>
+      <tr><td>Audité</td><td>Oui, livré et audité avec Beaver</td><td><b>Non</b></td></tr>
+      <tr><td>Approbation</td><td><b>Approuvé d'office</b></td><td>Demandée explicitement, extension par extension</td></tr>
+      <tr><td>Actif au premier lancement</td><td>Oui</td><td><b>Non</b> : désactivé et non approuvé</td></tr>
+      <tr><td>Processus</td><td>Tous partagent <b>un</b> hôte officiel</td><td><b>Un hôte par extension</b></td></tr>
+      <tr><td>Suppression</td><td>Impossible — il fait partie de l'application</td><td>Possible</td></tr>
+      <tr><td>Onglet</td><td><b>Plugins</b></td><td><b>Extensions</b></td></tr>
+    </table>
+
+    <p>Quatre plugins officiels sont livrés avec Beaver <b>1.2.2</b>, tous activés et affichés dans le chat par défaut : <b>Documents</b> (<code>beaver.office.documents</code>) pour créer et modifier des DOCX éditables, <b>PDF</b> (<code>beaver.office.pdf</code>) pour lire, créer, fusionner et vérifier des PDF, <b>Feuilles de calcul</b> (<code>beaver.office.spreadsheets</code>) pour les classeurs XLSX, et <b>Présentations</b> (<code>beaver.office.presentations</code>) pour créer des PPTX et remplir des modèles. Dans l'application, le type est écrit en toutes lettres sous le nom : <b>Plugin officiel</b> ou <b>Extension locale</b>.</p>
+
+    <h2 id="ou-trouver-une-extension">Où trouver une extension</h2>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      Il n'existe pas de catalogue intégré ni de place de marché. Aucune extension ne t'est recommandée, et aucune n'est vérifiée à ta place. Tu apportes le code, tu en réponds. Trois questions valent d'être posées avant d'installer : sais-tu qui a écrit ce code et peux-tu le vérifier ? Peux-tu lire ce qu'il fait avant de l'approuver ? Cette extension a-t-elle une raison légitime de demander tes clés d'API ?
+    </div>
+
+    <table>
+      <caption class="crumb">Les quatre sources acceptées</caption>
+      <tr><th>Source</th><th>Ce que tu fournis</th></tr>
+      <tr><td>Fichier local</td><td>Un fichier JavaScript, TypeScript ou un manifeste JSON</td></tr>
+      <tr><td>Dossier local</td><td>Un dossier contenant un manifeste Beaver ou un <code>package.json</code></td></tr>
+      <tr><td>Dépôt Git</td><td>Une adresse <b>HTTPS ou SSH</b>, éventuellement suivie de <code>#branche</code>, <code>#tag</code> ou <code>#commit</code></td></tr>
+      <tr><td>Package npm</td><td>Un nom publié, par exemple <code>@exemple/extension</code> ou <code>extension@latest</code></td></tr>
+    </table>
+
+    <p>Le sélecteur de fichiers accepte <code>js</code>, <code>mjs</code>, <code>cjs</code>, <code>jsx</code>, <code>ts</code>, <code>mts</code>, <code>cts</code>, <code>tsx</code>, <code>mtsx</code>, <code>ctsx</code> et <code>json</code>. Côté Git, sont refusés le <b>HTTP non chiffré</b> et toute adresse contenant des identifiants. Un détail qui compte pour la suite : une extension ajoutée depuis un fichier ou un dossier local <b>n'est pas copiée</b> — Beaver charge la source là où elle se trouve chez toi. Une extension venue de Git ou de npm est copiée dans <code>~/.local/share/cl-go-dash/extension-installs/</code>, et c'est cette copie que Beaver exécute.</p>
+
+    <h2 id="ajouter-une-extension">Ajouter une extension</h2>
+    <ul>
+      <li><b>Ouvre l'écran.</b> <b>Réglages › Extensions</b>. Trois onglets : <b>Plugins</b>, <b>Extensions</b>, <b>Hôte</b> — l'hôte étant le processus séparé qui exécute le code des extensions.</li>
+      <li><b>Place-toi sur l'onglet Extensions.</b> Le bouton <b>Ajouter</b> n'apparaît que là : les plugins officiels ne s'ajoutent pas, ils sont livrés.</li>
+      <li><b>Clique sur Ajouter.</b> La fenêtre affiche d'abord un avertissement, avant toute option : « Le code sélectionné s'exécutera avec les droits de votre compte utilisateur. Installez uniquement une extension à laquelle vous choisissez de faire confiance. »</li>
+      <li><b>Choisis la source</b> parmi <b>Choisir un fichier</b>, <b>Choisir un dossier</b>, <b>Installer depuis Git</b>, <b>Installer depuis npm</b>.</li>
+      <li><b>Laisse l'installation travailler.</b> Elle s'exécute en arrière-plan : tu peux fermer la fenêtre et continuer, fermer le suivi n'annule rien. Le suivi apparaît sur la page Extensions et dans le panneau de notifications. Les étapes affichées : <b>Recherche de la source</b>, <b>Téléchargement</b>, <b>Installation des dépendances</b>, <b>Vérification</b>, <b>Préparation de l'interface</b>, <b>Finalisation</b>, <b>Nettoyage</b>. <b>Une seule installation travaille à la fois</b> ; la ligne en attente indique laquelle la bloque.</li>
+      <li><b>Réponds à la demande de volume, si elle apparaît.</b> Au-delà de <b>1 Gio</b> occupé par l'installation, Beaver arrête les écritures et propose <b>Continuer l'installation</b> ou <b>Annuler</b>. Il conserve une réserve de <b>1 Gio</b> d'espace libre. <b>Aucun délai ne vaut accord</b> : une demande sans réponse reste en attente indéfiniment.</li>
+      <li><b>Ouvre la fiche créée.</b> L'extension apparaît dans la liste — et elle ne fait rien. Son état est <b>Désactivée</b>, elle n'est pas approuvée. C'est voulu. La fiche affiche l'état, le niveau d'API (<b>Stable</b> ou <b>Avancé</b>), le runtime, l'auteur, le mode d'installation, la source, et le bouton <b>Ouvrir la source</b> qui montre le code réellement chargé.</li>
+    </ul>
+
+    <h2 id="installer-puis-faire-confiance">Installer, puis faire confiance</h2>
+    <p>C'est le point le plus important de cette page. <b>Installer ne donne aucun droit.</b> Le code refuse formellement d'activer une extension non approuvée si la confirmation n'accompagne pas la demande ; côté interface, basculer l'interrupteur d'une extension non approuvée n'active rien, cela ouvre une fenêtre de confirmation. Elle affiche le titre <b>« Activer {nom} ? »</b>, le texte <b>« Cette extension aura un accès total aux données, secrets et fonctions de votre compte. Beaver ne l'a pas auditée. »</b>, et deux boutons : <b>Annuler</b> et <b>Faire confiance et activer</b>.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      Approuver, c'est tout approuver d'un coup. L'approbation porte sur <b>tout le code de l'extension et sur toutes ses dépendances</b>. Il n'existe pas d'autorisation par clé, par fichier ou par dossier. Une extension approuvée peut demander tes clés d'API et tes jetons directement, sans nouvelle question.
+    </div>
+
+    <p>Si le manifeste déclare un module d'interface en mode <code>advanced</code>, la fenêtre ajoute un paragraphe — « Son module d'interface avancé s'exécute directement dans Beaver et peut modifier, consulter ou casser toute l'interface. » — et <b>une case à cocher obligatoire</b>. Le bouton de confirmation reste inactif tant qu'elle n'est pas cochée. Une interface avancée partage la même page que celle de Beaver, avec les mêmes droits : si tu ne sais pas pourquoi une extension a besoin de ce niveau, ne l'active pas.</p>
+
+    <p>Au moment où tu confirmes, Beaver calcule l'<b>empreinte</b> des fichiers, la stocke et note la date d'approbation, affichée ensuite sous <b>Approuvée depuis</b>. Elle couvre les sources JavaScript et TypeScript, le manifeste et l'artefact d'interface ; les liens symboliques sont refusés, la comparaison se fait en temps constant, et les limites sont de <b>2 000 fichiers</b>, <b>4 Mio par fichier</b>, <b>32 Mio au total</b>, profondeur <b>16</b>.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      L'empreinte ne couvre pas <code>node_modules</code> ni <code>.git</code>. Une dépendance modifiée localement ne redéclenche donc <b>pas</b> de demande d'approbation. Le raccourci du menu <code>+</code> du champ de saisie, lui, mène exactement à la même fenêtre de confirmation : ce n'est pas une porte dérobée.
+    </div>
+
+    <h2 id="activer-et-desactiver">Activer, désactiver, afficher dans le chat</h2>
+    <p><b>Activer</b> rend les outils de l'extension disponibles à l'agent et lance son processus. <b>Désactiver</b> marque l'extension désactivée dans le registre — ce changement est écrit sur le disque <b>avant</b> l'arrêt du processus —, efface les permissions accordées pendant les conversations, puis arrête le processus. <b>L'approbation survit à la désactivation</b> : réactiver ensuite ne redemande rien, tant que les fichiers n'ont pas changé.</p>
+
+    <div class="callout">
+      <span class="t">Sécurité</span>
+      Désactiver ne récupère pas ce qui est déjà parti. Si une extension a obtenu une de tes clés, la désactiver ou la supprimer ne l'annule pas : elle a pu en garder une copie. Beaver te le rappelle — « Par précaution, changez auprès de leur fournisseur les accès utilisés par cette extension. » La seule action efficace est de <b>révoquer la clé chez le service concerné</b>.
+    </div>
+
+    <p>Chaque extension porte un second interrupteur, <b>Afficher dans le chat</b>, indépendant de l'activation. Il ne change rien aux capacités du modèle : il ajoute un raccourci d'activation dans le menu <code>+</code> du champ de saisie, qui n'existe qu'en mode Agent. Ce menu affiche <b>huit lignes</b> avant de devenir défilable — c'est une hauteur d'affichage, pas une limite d'extensions. Par défaut : activé pour les quatre plugins officiels, désactivé pour toute extension ajoutée.</p>
+
+    <h2 id="mettre-a-jour-et-recharger">Mettre à jour et recharger</h2>
+    <p>Seules les extensions installées depuis <b>Git ou npm</b> ont un bouton <b>Mettre à jour</b>. Une extension venue d'un fichier ou d'un dossier local n'en a pas : c'est toi qui possèdes la source. Le bouton demande une confirmation en deux temps, sous un avertissement permanent : « La mise à jour désactivera l'extension. Examinez sa nouvelle version avant de lui refaire confiance. » Beaver prépare alors une nouvelle copie à côté de l'ancienne et ne remplace qu'après validation ; l'empreinte change, donc <b>l'approbation est révoquée</b>, l'extension passe en <b>Erreur</b> avec le message « Les fichiers de l'extension ont changé et doivent être vérifiés à nouveau ». Une mise à jour qui change l'identité de l'extension est refusée. <b>Aucune mise à jour automatique n'existe.</b></p>
+
+    <p>Pour une extension liée à un fichier ou à un dossier de ta machine, <b>Recharger</b> applique tes modifications. Deux conséquences surprennent : <b>Recharger redémarre l'hôte entier</b>, donc toutes les extensions s'arrêtent et se rechargent ensemble ; et tes modifications font changer l'empreinte, donc les extensions locales modifiées sont révoquées, désactivées, et redemandent une approbation.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      Développer une extension te fait repasser par la confiance à chaque rechargement. Ce n'est pas un défaut : c'est exactement la garantie qui protège les utilisateurs qui, eux, ne modifient jamais leur code.
+    </div>
+
+    <h2 id="supprimer">Supprimer</h2>
+    <p>Le bouton <b>Supprimer</b> demande une confirmation en deux temps. Beaver efface les permissions de conversation, <b>écrit la désactivation sur le disque avant</b> d'arrêter quoi que ce soit — ainsi un processus dont l'arrêt n'est pas confirmé ne peut jamais redevenir actif au redémarrage suivant —, arrête le processus et attend la confirmation de cet arrêt, retire l'extension du registre, supprime son artefact d'interface, puis la copie gérée si l'installation venait de Git ou npm.</p>
+
+    <p>Ce que la suppression ne fait pas : elle ne touche pas à ton fichier ou à ton dossier si l'extension était locale ; elle ne récupère aucun secret déjà remis ; elle ne supprime pas les fichiers que l'extension aurait écrits ailleurs pendant qu'elle tournait. Les copies gérées devenues orphelines sont nettoyées au démarrage suivant.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      La suppression n'est pas annulable. Beaver ne propose pas de restaurer une extension supprimée. Pour une installation Git ou npm, il faudra la réinstaller depuis sa source ; pour une extension locale, ton fichier ou ton dossier est intact.
+    </div>
+
+    <h2 id="quand-une-extension-plante">Quand une extension plante</h2>
+    <p>L'ordre de dépannage, du moins engageant au plus radical : lire le diagnostic dans <b>Réglages › Extensions › Hôte</b> ; ouvrir la fiche pour voir l'état, la source et la dernière erreur ; <b>Ouvrir la source</b> pour auditer le code réellement chargé ; <b>Recharger</b> après une correction locale, ou <b>Mettre à jour</b> pour une installation Git ou npm ; <b>Désactiver</b> l'extension ; <b>Redémarrer l'hôte</b> si le runtime lui-même est en erreur ; <b>Supprimer</b> si tu ne lui fais plus confiance.</p>
+
+    <p>L'onglet <b>Hôte</b> affiche l'état (Arrêté, Démarrage, En cours, Erreur), les versions de Node.js, de Jiti et de l'API Beaver, le nombre d'extensions actives, et les <b>Dernières erreurs de chargement</b> avec l'identifiant de l'extension fautive et le fichier concerné. Deux boutons y vivent : <b>Redémarrer l'hôte</b> et un <b>Mode de récupération</b> qui « désactive les plugins Beaver et les extensions locales afin de retrouver un Beaver fonctionnel ».</p>
+
+    <p>Un plantage n'entraîne pas les autres. Beaver redémarre automatiquement un hôte au plus <b>3 fois sur une fenêtre de 5 minutes</b>, puis cesse d'essayer. Si Beaver s'est arrêté pendant le chargement d'une extension, un parcours de récupération apparaît au démarrage suivant, avec quatre issues : <b>Ouvrir la fiche</b>, <b>Garder désactivée</b>, <b>Réessayer le chargement</b>, <b>Restaurer le registre précédent</b>. Si une interface avancée empêche Beaver de s'ouvrir, quitte complètement l'application puis maintiens <b>Maj</b> pendant le redémarrage — sous Linux avec Wayland, la touche est demandée après l'apparition de la fenêtre. L'exécutable accepte aussi un argument dédié.</p>
+
+    <div class="term">
+      <div class="term-bar"><i></i><i></i><i></i></div>
+      <pre class="term-body"><span class="prompt">$</span> beaver --safe-mode</pre>
+    </div>
+
+    <p>Ce lancement n'affiche aucune interface tierce et laisse l'écran Extensions accessible pour désactiver le module fautif. Si le registre lui-même est illisible ou vient d'une version plus récente de Beaver, l'application refuse le registre entier plutôt que de le remplacer par une liste vide : tes fichiers sont conservés, toute modification d'extension est bloquée, et les conversations continuent avec les seuls outils internes et un avertissement. Enfin, les sorties brutes d'une extension ne sont jamais conservées, parce qu'elles peuvent contenir des secrets : les diagnostics donnent l'étape, la catégorie et la position, pas le contenu.</p>
+
+    <h2 id="ce-que-lecran-outils-ne-montre-pas">Ce que l'écran Outils ne montre pas</h2>
+    <p>Sur la fiche d'une extension, la section <b>Contributions enregistrées</b> liste chaque outil déclaré avec son nom technique, sa <b>classe d'effet</b> traduite — Lecture seule, Écriture locale, Lecture externe, Écriture externe, Processus, Accès aux secrets, Effet inconnu — et, le cas échéant, la mention <b>Remplace un outil intégré</b>. Une section <b>Skills et ressources</b> liste les skills et ressources déclarés.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      L'écran <b>Réglages › Outils</b> ne dit pas tout : aucun outil d'extension n'y figure. Ces outils sont dynamiques et se pilotent uniquement depuis la fiche de leur extension. Et les trois outils internes par lesquels l'agent découvre les extensions — <code>list_extensions</code>, <code>inspect_extensions</code>, <code>load_extension_resource</code> — sont <b>toujours actifs</b> et n'apparaissent dans aucun écran. Ce n'est pas un trou de sécurité, ils ne font que lister et lire ce que tu as approuvé, mais mieux vaut le savoir. Voir <a href="outils-vue-densemble.html">Vue d'ensemble des outils</a>.
+    </div>
+
+    <p>Un dernier réglage à connaître : <b>Plugins prioritaires</b>. Quand les définitions des extensions dépassent <b>10 %</b> de la fenêtre de contexte du modèle, Beaver ne les envoie plus toutes et bascule en découverte progressive. Tu peux désigner jusqu'à <b>15</b> plugins à garder disponibles en priorité.</p>
+
+    <h2 id="les-limites">Les limites</h2>
+
+    <table>
+      <caption class="crumb">Les limites qui te concernent</caption>
+      <tr><th>Limite</th><th>Valeur</th></tr>
+      <tr><td>Extensions enregistrables</td><td><b>128</b> — <b>132</b> avec les plugins officiels</td></tr>
+      <tr><td>Processus hôtes simultanés</td><td><b>32</b>, dont un réservé aux plugins officiels</td></tr>
+      <tr><td>Outils au total, et par extension</td><td><b>256</b> et <b>64</b></td></tr>
+      <tr><td>Plugins prioritaires sélectionnables</td><td><b>15</b></td></tr>
+      <tr><td>Seuil de découverte progressive</td><td><b>10 %</b> de la fenêtre de contexte</td></tr>
+      <tr><td>Installations simultanées</td><td><b>1</b> en cours, <b>8</b> en file, <b>32</b> conservées dans le suivi</td></tr>
+      <tr><td>Confirmation de volume, réserve d'espace</td><td><b>1 Gio</b> et <b>1 Gio</b></td></tr>
+      <tr><td>Redémarrages automatiques d'un hôte</td><td><b>3 par tranche de 5 minutes</b></td></tr>
+      <tr><td>Durée maximale d'un appel d'outil</td><td><b>55 secondes</b></td></tr>
+      <tr><td>Taille des journaux d'extension</td><td><b>64 Kio</b> chacun</td></tr>
+    </table>
+
+    <p>Les limites qui concernent l'auteur d'une extension — schémas, événements, interface, dépôt Git — sont dans <a href="integrations-ecrire-une-extension.html">Écrire une extension</a>.</p>
+
+    <h2 id="pieges-frequents">Pièges fréquents</h2>
+
+    <table>
+      <caption class="crumb">Ce qui bloque le plus souvent</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>L'extension est installée mais l'agent l'ignore</td><td>Installée, pas approuvée ni activée — l'état normal après un ajout</td><td>Ouvrir sa fiche, basculer l'interrupteur, confirmer</td></tr>
+      <tr><td>Le bouton de confirmation reste grisé</td><td>L'extension déclare une interface avancée : la case à cocher est obligatoire</td><td>Cocher la case d'approbation explicite</td></tr>
+      <tr><td>Un fichier modifié désactive l'extension</td><td>L'empreinte a changé : l'approbation est révoquée</td><td>Vérifier ce qui a changé, puis reconfirmer</td></tr>
+      <tr><td>Il n'y a pas de bouton Mettre à jour</td><td>L'extension vient d'un fichier ou d'un dossier local</td><td>Modifier la source, puis <b>Recharger</b></td></tr>
+      <tr><td>Recharger a coupé les autres extensions</td><td>Recharger redémarre l'hôte entier</td><td>Comportement attendu : elles se rechargent ensemble</td></tr>
+      <tr><td>« Une confirmation est nécessaire » et rien n'avance</td><td>Une demande de volume attend une réponse</td><td>Ouvrir le suivi, cliquer sur <b>Afficher la demande</b>, répondre</td></tr>
+      <tr><td>« Cette extension n'est pas compatible avec cette version de Beaver »</td><td>Le champ <code>beaverApi</code> ne correspond pas</td><td>Mettre Beaver à jour, ou attendre une version compatible</td></tr>
+      <tr><td>Beaver ne s'ouvre plus depuis l'activation d'une extension</td><td>Un module d'interface avancé casse la page</td><td>Redémarrer en maintenant <b>Maj</b> ou avec <code>--safe-mode</code>, puis désactiver l'extension</td></tr>
+      <tr><td>Un hôte redémarre en boucle</td><td>L'extension plante à l'activation</td><td>Lire le diagnostic dans l'onglet Hôte, corriger, recharger</td></tr>
+      <tr><td>L'extension marche en mode Agent mais pas en Chatbot</td><td>Les outils d'extension ne sont pas disponibles en mode Chatbot</td><td>Passer en mode Agent — voir <a href="agent-permissions.html">Modes de permission</a></td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="integrations-remplacer-un-outil.html">Remplacer un outil</a> — prendre la place d'un outil natif de Beaver, et ce que ça implique.</li>
+      <li><a href="integrations-prompt-systeme.html">Prompt système et extensions</a> — ce qu'une extension peut et ne peut pas faire des instructions données au modèle.</li>
+      <li><a href="integrations-connecteurs-mcp.html">Connecteurs MCP</a> — à ne pas confondre avec les extensions : catalogue fermé d'un côté, code libre de l'autre.</li>
+      <li><a href="reference-modele-de-securite.html">Modèle de sécurité</a> — la place des extensions dans la vue d'ensemble.</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../js/theme.js"></script>
+<script src="../js/docs-nav-data.js"></script>
+<script src="../js/docs-nav.js"></script>
+</body>
+</html>
