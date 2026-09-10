@@ -1,5 +1,34 @@
 # Cross-plateforme — Installation, Build, Mise à jour
 
+## Statut du support Linux — décision du 10 septembre 2026
+
+Ce fichier fait autorité sur le statut du support Linux. Les autres documents du
+dépôt (README, README_FR, CHANGELOG) le résument et renvoient ici.
+
+**La décision** : Beaver 1.2.3 est la dernière version qui apporte de nouvelles
+fonctionnalités à Linux. À partir de la 1.2.4, Linux passe en maintenance seule.
+
+**La raison** : concentrer le développement sur macOS et Windows.
+
+**Ce qui reste garanti sur Linux** :
+- Les mises à jour de sécurité, de stabilité et de dépendances continuent.
+- Le code Linux présent dans le dépôt est conservé et maintenu.
+- Tout ce qui fonctionne aujourd'hui continue de fonctionner : les installations
+  Linux existantes ne sont pas cassées.
+
+**Ce qui s'arrête sur Linux** :
+- L'ajout de nouvelles fonctionnalités après la 1.2.3.
+
+**Conséquence pour le développement** :
+- Toute nouvelle fonctionnalité vise macOS et Windows.
+- Sur Linux, une fonctionnalité nouvelle doit être proprement absente ou
+  invisible — jamais visible et cassée. C'est la règle « disponible et
+  fonctionnelle, ou invisible » déjà appliquée par le navigateur intégré avec son
+  état `Hidden` sur Linux.
+- Aucun nouveau développement ne doit casser le code Linux existant.
+
+---
+
 ## Architecture du système de mise à jour
 
 ### Détection des mises à jour (identique sur les 3 OS)

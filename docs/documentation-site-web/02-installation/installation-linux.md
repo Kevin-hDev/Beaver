@@ -7,6 +7,16 @@
 
 ---
 
+## Décision produit — 10 septembre 2026
+
+Beaver **1.2.3 est la dernière version qui apporte de nouvelles fonctionnalités à Linux**. Ensuite, Linux passe en **maintenance seule** : correctifs de sécurité, correctifs de stabilité et mises à jour de dépendances. Tout ce qui existe aujourd'hui sur Linux continue de fonctionner et reste maintenu — rien n'est retiré. Les nouvelles fonctionnalités arrivent sur macOS et Windows, pour concentrer le développement sur ces deux systèmes.
+
+**Où c'est écrit sur le site** — cette page est l'autorité unique : l'encart « Où va Linux » / “Where Linux is going” vit en haut de `docs/demarrage-installation-linux.html` et de sa version française. Les pages Prérequis et Mise à jour n'en portent qu'un renvoi d'une phrase.
+
+**Ce que ça ne change pas** — toutes les mentions de Linux au présent restent vraies et ne se réécrivent pas. N'écris jamais qu'une fonctionnalité *arrivera* sur Linux.
+
+---
+
 ## Avertissement au rédacteur
 
 `CROSS-PLATFORM.md` annonce un support **Fedora/RHEL via `dnf`**. Le code ne l'implémente pas : `install.sh` n'appelle que `apt-get`, ne construit que le suffixe `_amd64.deb`, et vérifie le paquet avec `dpkg-deb` et `dpkg-query`.

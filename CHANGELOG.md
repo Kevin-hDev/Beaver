@@ -6,6 +6,10 @@
 
 ## v1.2.3
 
+### Platform support
+
+- **Linux status** — Beaver 1.2.3 is the last release bringing new features to Linux. Linux keeps receiving security, stability, and dependency updates, everything that exists today keeps working, and new features now target macOS and Windows. The full statement is in [CROSS-PLATFORM.md](CROSS-PLATFORM.md).
+
 ### Documentation
 
 - **Official documentation site** — the full Beaver documentation is now online at [kevin-hdev.github.io/Beaver](https://kevin-hdev.github.io/Beaver/): 95 pages covering getting started, the interface, the agent and its tools, models, integrations, automation, Forecast, settings, troubleshooting, and reference — in English and French, with automatic language detection.

@@ -81,6 +81,8 @@ Télécharge la dernière release, installe l'app et la lance automatiquement.
 
 L'installateur Linux utilise le fichier `.deb` de la release pour rendre l'app visible dans le menu système.
 
+> **Support Linux** : Beaver 1.2.3 est la dernière version qui apporte de nouvelles fonctionnalités à Linux ; ensuite, Linux continue de recevoir uniquement les mises à jour de sécurité, de stabilité et de dépendances. Tout ce qui existe aujourd'hui continue de fonctionner, et les nouvelles fonctionnalités visent macOS et Windows. Le détail complet est dans [CROSS-PLATFORM.md](CROSS-PLATFORM.md).
+
 ### Windows (PowerShell)
 
 ```powershell
