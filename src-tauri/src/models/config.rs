@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+use super::automation::ScheduledWakeup;
 use super::gateway_config::GatewayConfig;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -128,74 +129,4 @@ pub(crate) fn default_allowed_paths() -> Vec<String> {
 #[serde(default)]
 pub struct HeartbeatConfig {
     pub global_paused: bool,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ScheduledWakeup {
-    pub id: String,
-    pub name: String,
-    pub model: String,
-    pub provider: String,
-    pub prompt: String,
-    pub schedule: WakeupSchedule,
-    #[serde(default)]
-    pub description: String,
-    #[serde(default)]
-    pub project_id: Option<String>,
-    pub active: bool,
-    #[serde(default)]
-    pub paused_by_global: bool,
-    pub created_at: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "kind", rename_all = "lowercase")]
-pub enum WakeupSchedule {
-    Once { datetime: String },
-    Daily { time: String },
-    Weekly { weekday: u8, time: String },
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "lowercase")]
-pub enum WakeupRunStatus {
-    Ok,
-    Error,
-    Missed,
-    Cancelled,
-}
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "snake_case")]
-pub enum WakeupRunErrorCode {
-    Failed,
-    RateLimited,
-    AuthenticationFailed,
-    OllamaUnavailable,
-    MissedUnavailable,
-    SchedulerStopping,
-    CapacityReached,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct WakeupRun {
-    pub wakeup_id: String,
-    pub scheduled_for: String,
-    pub fired_at: String,
-    pub status: WakeupRunStatus,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error_code: Option<WakeupRunErrorCode>,
-    #[serde(rename = "error", default, skip_serializing)]
-    pub _legacy_error: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub session_id: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub tokens: Option<u32>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct WakeupStatusSummary {
-    pub wakeup_id: String,
-    pub next_fire_at: Option<String>,
-    pub last_run: Option<WakeupRun>,
 }

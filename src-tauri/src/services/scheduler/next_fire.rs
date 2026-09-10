@@ -1,136 +1,207 @@
-use crate::models::WakeupSchedule;
-use chrono::{DateTime, Datelike, Duration, Local, NaiveDateTime, NaiveTime, TimeZone, Weekday};
+use crate::models::{AutomationDefinition, AutomationSchedule, AutomationStatus};
+use chrono::{DateTime, Duration, LocalResult, NaiveDateTime, TimeZone, Utc};
+use chrono_tz::Tz;
+use croner::Cron;
+use std::str::FromStr;
 
-/// Renvoie la prochaine date/heure de déclenchement strictement future.
-/// `None` si :
-/// - Once dont la date est passée
-/// - parsing échoue
-pub fn next_fire_at(schedule: &WakeupSchedule, now: DateTime<Local>) -> Option<DateTime<Local>> {
-    match schedule {
-        WakeupSchedule::Once { datetime } => parse_once(datetime, now),
-        WakeupSchedule::Daily { time } => parse_daily(time, now),
-        WakeupSchedule::Weekly { weekday, time } => parse_weekly(*weekday, time, now),
-    }
+#[path = "next_fire_legacy.rs"]
+mod legacy;
+pub use legacy::{latest_fire_between, legacy_next_fire_at};
+
+const MAX_CRON_EXPRESSION_BYTES: usize = 128;
+const MAX_DELAY_MINUTES: u32 = 525_600;
+const MAX_DST_GAP_MINUTES: usize = 24 * 60;
+const MISSED_GRACE_MINUTES: i64 = 5;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ScheduleError {
+    InvalidSchedule,
+    InvalidTimezone,
+    CalculationFailed,
 }
 
-pub fn latest_fire_between(
-    schedule: &WakeupSchedule,
-    after: DateTime<Local>,
-    before: DateTime<Local>,
-) -> Option<DateTime<Local>> {
-    if before <= after {
-        return None;
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct NextFire {
+    pub at: DateTime<Utc>,
+    pub dst_adjusted: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DueRange {
+    pub first: DateTime<Utc>,
+    pub last: DateTime<Utc>,
+    pub count: u64,
+    pub dst_adjusted_count: u64,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct DueBatch {
+    pub missed: Option<DueRange>,
+    pub admissible: Option<DueRange>,
+}
+
+pub fn parse_timezone(value: &str) -> Result<Tz, ScheduleError> {
+    value
+        .parse::<Tz>()
+        .map_err(|_| ScheduleError::InvalidTimezone)
+}
+
+pub fn next_fire_at(
+    definition: &AutomationDefinition,
+    after: DateTime<Utc>,
+) -> Result<Option<NextFire>, ScheduleError> {
+    if definition.status != AutomationStatus::Active {
+        return Ok(None);
     }
-    match schedule {
-        WakeupSchedule::Once { datetime } => {
-            let dt = parse_once_raw(datetime)?;
-            (dt > after && dt <= before).then_some(dt)
+    let next = match &definition.schedule {
+        AutomationSchedule::Once {
+            local_datetime,
+            timezone,
+        } => resolve_local(*timezone, *local_datetime)?,
+        AutomationSchedule::Cron {
+            expression,
+            timezone,
+        } => next_cron(expression, *timezone, after)?,
+        AutomationSchedule::AfterCompletion { delay_minutes } => {
+            if !(1..=MAX_DELAY_MINUTES).contains(delay_minutes) {
+                return Err(ScheduleError::InvalidSchedule);
+            }
+            let anchor = definition.anchor_at.ok_or(ScheduleError::InvalidSchedule)?;
+            let at = anchor
+                .checked_add_signed(Duration::minutes(i64::from(*delay_minutes)))
+                .ok_or(ScheduleError::CalculationFailed)?;
+            NextFire {
+                at,
+                dst_adjusted: false,
+            }
         }
-        WakeupSchedule::Daily { time } => latest_daily_between(time, after, before),
-        WakeupSchedule::Weekly { weekday, time } => {
-            latest_weekly_between(*weekday, time, after, before)
+    };
+    Ok((next.at > after).then_some(next))
+}
+
+pub fn due_between(
+    definition: &AutomationDefinition,
+    checked_after: DateTime<Utc>,
+    through: DateTime<Utc>,
+) -> Result<DueBatch, ScheduleError> {
+    if definition.status != AutomationStatus::Active || through <= checked_after {
+        return Ok(DueBatch::default());
+    }
+    let mut batch = DueBatch::default();
+    let threshold = through - Duration::minutes(MISSED_GRACE_MINUTES);
+    let mut cursor = checked_after;
+    while let Some(next) = next_fire_at(definition, cursor)? {
+        if next.at > through {
+            break;
+        }
+        let range = if next.at < threshold {
+            &mut batch.missed
+        } else {
+            &mut batch.admissible
+        };
+        extend_range(range, next)?;
+        cursor = next.at;
+        if !matches!(definition.schedule, AutomationSchedule::Cron { .. }) {
+            break;
         }
     }
+    Ok(batch)
 }
 
-fn parse_once(s: &str, now: DateTime<Local>) -> Option<DateTime<Local>> {
-    let dt = parse_once_raw(s)?;
-    if dt > now {
-        Some(dt)
-    } else {
-        None
+fn extend_range(range: &mut Option<DueRange>, next: NextFire) -> Result<(), ScheduleError> {
+    match range {
+        Some(existing) => {
+            existing.last = next.at;
+            existing.count = existing
+                .count
+                .checked_add(1)
+                .ok_or(ScheduleError::CalculationFailed)?;
+            if next.dst_adjusted {
+                existing.dst_adjusted_count = existing
+                    .dst_adjusted_count
+                    .checked_add(1)
+                    .ok_or(ScheduleError::CalculationFailed)?;
+            }
+        }
+        None => {
+            *range = Some(DueRange {
+                first: next.at,
+                last: next.at,
+                count: 1,
+                dst_adjusted_count: u64::from(next.dst_adjusted),
+            });
+        }
+    }
+    Ok(())
+}
+
+fn next_cron(
+    expression: &str,
+    timezone: Tz,
+    after: DateTime<Utc>,
+) -> Result<NextFire, ScheduleError> {
+    let cron = parse_cron(expression)?;
+    let local_after = after.with_timezone(&timezone);
+    let next = cron
+        .find_next_occurrence(&local_after, false)
+        .map_err(|_| ScheduleError::CalculationFailed)?;
+    let dst_adjusted = !cron
+        .is_time_matching(&next)
+        .map_err(|_| ScheduleError::CalculationFailed)?;
+    Ok(NextFire {
+        at: next.with_timezone(&Utc),
+        dst_adjusted,
+    })
+}
+
+fn parse_cron(expression: &str) -> Result<Cron, ScheduleError> {
+    if expression.is_empty()
+        || expression.len() > MAX_CRON_EXPRESSION_BYTES
+        || expression.split_whitespace().count() != 5
+        || expression
+            .chars()
+            .any(|character| !matches!(character, '0'..='9' | '*' | ',' | '-' | '/' | ' '))
+    {
+        return Err(ScheduleError::InvalidSchedule);
+    }
+    Cron::from_str(expression).map_err(|_| ScheduleError::InvalidSchedule)
+}
+
+fn resolve_local(timezone: Tz, local_datetime: NaiveDateTime) -> Result<NextFire, ScheduleError> {
+    match timezone.from_local_datetime(&local_datetime) {
+        LocalResult::Single(at) => Ok(NextFire {
+            at: at.with_timezone(&Utc),
+            dst_adjusted: false,
+        }),
+        LocalResult::Ambiguous(first, second) => Ok(NextFire {
+            at: first.min(second).with_timezone(&Utc),
+            dst_adjusted: false,
+        }),
+        LocalResult::None => resolve_gap(timezone, local_datetime),
     }
 }
 
-fn parse_once_raw(s: &str) -> Option<DateTime<Local>> {
-    let naive = NaiveDateTime::parse_from_str(s, "%Y-%m-%dT%H:%M").ok()?;
-    Local.from_local_datetime(&naive).single()
-}
-
-fn parse_time_hhmm(s: &str) -> Option<NaiveTime> {
-    NaiveTime::parse_from_str(s, "%H:%M").ok()
-}
-
-fn parse_daily(time: &str, now: DateTime<Local>) -> Option<DateTime<Local>> {
-    let nt = parse_time_hhmm(time)?;
-    let today_at = Local
-        .from_local_datetime(&now.date_naive().and_time(nt))
-        .single()?;
-    if today_at > now {
-        Some(today_at)
-    } else {
-        let tomorrow = (now.date_naive() + Duration::days(1)).and_time(nt);
-        Local.from_local_datetime(&tomorrow).single()
+fn resolve_gap(timezone: Tz, start: NaiveDateTime) -> Result<NextFire, ScheduleError> {
+    let mut candidate = start;
+    for _ in 0..MAX_DST_GAP_MINUTES {
+        candidate = candidate
+            .checked_add_signed(Duration::minutes(1))
+            .ok_or(ScheduleError::CalculationFailed)?;
+        match timezone.from_local_datetime(&candidate) {
+            LocalResult::Single(at) => {
+                return Ok(NextFire {
+                    at: at.with_timezone(&Utc),
+                    dst_adjusted: true,
+                });
+            }
+            LocalResult::Ambiguous(first, second) => {
+                return Ok(NextFire {
+                    at: first.min(second).with_timezone(&Utc),
+                    dst_adjusted: true,
+                });
+            }
+            LocalResult::None => {}
+        }
     }
-}
-
-fn parse_weekly(weekday_idx: u8, time: &str, now: DateTime<Local>) -> Option<DateTime<Local>> {
-    let target_wd = weekday_from_idx(weekday_idx)?;
-    let nt = parse_time_hhmm(time)?;
-
-    let today_idx = now.weekday().num_days_from_monday() as i64;
-    let target_idx = target_wd.num_days_from_monday() as i64;
-    let mut delta = target_idx - today_idx;
-    if delta < 0 {
-        delta += 7;
-    }
-
-    let candidate = (now.date_naive() + Duration::days(delta)).and_time(nt);
-    let dt = Local.from_local_datetime(&candidate).single()?;
-    if dt > now {
-        Some(dt)
-    } else {
-        // Même jour mais heure passée → semaine suivante
-        let next_week = (now.date_naive() + Duration::days(delta + 7)).and_time(nt);
-        Local.from_local_datetime(&next_week).single()
-    }
-}
-
-fn latest_daily_between(
-    time: &str,
-    after: DateTime<Local>,
-    before: DateTime<Local>,
-) -> Option<DateTime<Local>> {
-    let nt = parse_time_hhmm(time)?;
-    let today = Local
-        .from_local_datetime(&before.date_naive().and_time(nt))
-        .single()?;
-    if today <= before && today > after {
-        return Some(today);
-    }
-    let yesterday = (before.date_naive() - Duration::days(1)).and_time(nt);
-    let dt = Local.from_local_datetime(&yesterday).single()?;
-    (dt > after && dt <= before).then_some(dt)
-}
-
-fn latest_weekly_between(
-    weekday_idx: u8,
-    time: &str,
-    after: DateTime<Local>,
-    before: DateTime<Local>,
-) -> Option<DateTime<Local>> {
-    let target = weekday_from_idx(weekday_idx)?;
-    let nt = parse_time_hhmm(time)?;
-    let before_idx = before.weekday().num_days_from_monday() as i64;
-    let target_idx = target.num_days_from_monday() as i64;
-    let mut delta = before_idx - target_idx;
-    if delta < 0 {
-        delta += 7;
-    }
-    let candidate = (before.date_naive() - Duration::days(delta)).and_time(nt);
-    let dt = Local.from_local_datetime(&candidate).single()?;
-    (dt > after && dt <= before).then_some(dt)
-}
-
-fn weekday_from_idx(idx: u8) -> Option<Weekday> {
-    match idx {
-        0 => Some(Weekday::Mon),
-        1 => Some(Weekday::Tue),
-        2 => Some(Weekday::Wed),
-        3 => Some(Weekday::Thu),
-        4 => Some(Weekday::Fri),
-        5 => Some(Weekday::Sat),
-        6 => Some(Weekday::Sun),
-        _ => None,
-    }
+    Err(ScheduleError::CalculationFailed)
 }

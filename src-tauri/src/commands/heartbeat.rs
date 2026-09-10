@@ -3,7 +3,7 @@ use crate::models::{
     HeartbeatConfig, ScheduledWakeup, WakeupRun, WakeupSchedule, WakeupStatusSummary,
 };
 use crate::services::config as cfg;
-use crate::services::scheduler::{log, next_fire::next_fire_at, Scheduler};
+use crate::services::scheduler::{log, next_fire::legacy_next_fire_at, Scheduler};
 use chrono::Local;
 use serde::Deserialize;
 use tauri::State;
@@ -172,7 +172,7 @@ pub async fn get_wakeup_status_summaries() -> Result<Vec<WakeupStatusSummary>, S
             {
                 None
             } else {
-                next_fire_at(&w.schedule, now).map(|dt| dt.to_rfc3339())
+                legacy_next_fire_at(&w.schedule, now).map(|dt| dt.to_rfc3339())
             };
             let last_run = runs.iter().find(|r| r.wakeup_id == w.id).cloned();
             WakeupStatusSummary {

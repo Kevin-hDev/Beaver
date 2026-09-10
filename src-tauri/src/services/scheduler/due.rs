@@ -1,7 +1,7 @@
 use crate::models::{ScheduledWakeup, WakeupSchedule};
 use chrono::{DateTime, Duration, Local};
 
-use super::next_fire::{latest_fire_between, next_fire_at};
+use super::next_fire::{latest_fire_between, legacy_next_fire_at};
 
 pub const MISSED_GRACE_MIN: i64 = 5;
 
@@ -30,7 +30,7 @@ pub fn due_wakeups_at(
     wakeups
         .iter()
         .filter(|w| w.active && !w.paused_by_global)
-        .filter(|w| next_fire_at(&w.schedule, now) == Some(target))
+        .filter(|w| legacy_next_fire_at(&w.schedule, now) == Some(target))
         .cloned()
         .collect()
 }

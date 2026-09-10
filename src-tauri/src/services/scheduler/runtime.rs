@@ -2,7 +2,7 @@ use super::due::{
     due_wakeups_at, is_late, is_once, missed_occurrences, reconciliation_cutoff, ReconciliationMode,
 };
 use super::in_flight::InFlightWakeups;
-use super::next_fire::next_fire_at;
+use super::next_fire::legacy_next_fire_at;
 use super::runtime_decisions::{
     handle_due_admission, persist_once_missed_decision, reserve_due_occurrence, warn_if_log_failed,
 };
@@ -100,7 +100,7 @@ fn next_scheduled_at(
     wakeups
         .iter()
         .filter(|wakeup| wakeup.active && !wakeup.paused_by_global)
-        .filter_map(|wakeup| next_fire_at(&wakeup.schedule, now))
+        .filter_map(|wakeup| legacy_next_fire_at(&wakeup.schedule, now))
         .min()
 }
 

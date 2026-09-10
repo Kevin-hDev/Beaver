@@ -6,6 +6,8 @@ pub mod fire;
 mod fire_once;
 mod in_flight;
 pub mod log;
+// Temporaire : Task 4 branche le calcul canonique sur la boucle du scheduler.
+#[allow(dead_code)]
 pub mod next_fire;
 #[cfg(test)]
 mod next_fire_tests;
