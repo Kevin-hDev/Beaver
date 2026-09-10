@@ -1,0 +1,25 @@
+Task 4 — beaver doctor
+
+Reason:
+- Doctor inspects raw config JSON because the application reader intentionally masks corruption with defaults.
+- Bundle health reuses the Ollama manager's receipt, executable, version, and fingerprint validation.
+- Abandoned staging is derived from the manager's journal-aware staging and archive recovery decisions; a staging directory referenced by pending recovery is preserved.
+- App and wakeup logs use their existing rotation limits through cli_support. scheduler/log_store.rs remains untouched for the Automatisations workstream.
+- All filesystem and line scans are bounded, reject symlinks, and fail closed on unreadable state.
+
+TDD evidence:
+- Initial doctor tests failed because doctor::run and run_checks did not exist.
+- A regression test exposed that an unterminated final wakeup-log line was not counted; it failed before the trailing-line fix and passes afterward.
+- Broken fixtures cover missing data root, malformed config, missing vault with configured providers, interrupted receipt, corrupt bundle, orphan staging, oversized app log, root temporary file, and the wakeup line boundary.
+- Ollama-owner tests prove orphan staging is reported and journal-referenced staging is preserved.
+
+Validation:
+- cargo fmt --all -- --check: PASS
+- cargo test --bin beaver: 23 passed, 0 failed
+- cargo check: PASS
+- cargo clippy --all-targets -- -D warnings: PASS
+- cargo test: 5399 library tests passed, 21 ignored, 0 failed; 23 beaver tests passed
+- cargo run --quiet --bin beaver -- doctor: 9 checks green, exit 0
+- git diff --check: PASS
+- graphify update .: PASS
+- scheduler/log_store.rs: untouched
