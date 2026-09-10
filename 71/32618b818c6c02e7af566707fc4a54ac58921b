@@ -1,0 +1,19 @@
+Task 2 — beaver paths
+
+Reason: the CLI must report paths from Beaver's existing path authority. cli_support exposes one ollama_bundle_dir adapter instead of duplicating the bundle name in the binary.
+
+Scope:
+- added the paths dispatch and removed its coming-soon marker
+- listed ten canonical data entries derived from the supplied root
+- reported absent entries as expected local state
+
+TDD red: cargo test --bin beaver paths_cmd failed with the expected missing known_entries symbol.
+
+Validation:
+- cargo test --bin beaver paths_cmd: 3 passed, 0 failed
+- cargo run --bin beaver -- paths: printed ten real paths under /Users/kevinh/.local/share/cl-go-dash
+- cargo check: exit 0
+- cargo clippy --all-targets -- -D warnings: exit 0
+- cargo test: library 5397 passed, 0 failed, 21 ignored; beaver 7 passed
+- cargo fmt --check and git diff --check: exit 0
+- graphify update .: exit 0
