@@ -111,7 +111,7 @@ pub fn print_help(out: &Out) {
     out.line(out.t("Usage : beaver <commande>", "Usage: beaver <command>"));
     for (command, fr, en, ready) in [
         ("--version", "version installée", "installed version", true),
-        ("paths", "chemins des données", "data paths", false),
+        ("paths", "chemins des données", "data paths", true),
         ("status", "état local", "local status", false),
         ("doctor", "diagnostic local", "local diagnostics", false),
         ("logs", "lecture des journaux", "read logs", false),

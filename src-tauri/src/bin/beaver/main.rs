@@ -1,4 +1,5 @@
 mod output;
+mod paths_cmd;
 mod version;
 
 const MAX_ARGS: usize = 64;
@@ -21,6 +22,7 @@ fn main() {
 fn dispatch(out: &output::Out, args: &[String]) -> i32 {
     match args.first().map(String::as_str) {
         Some("--version") | Some("-V") => version::run(out),
+        Some("paths") => paths_cmd::run(out),
         Some("--help") | Some("-h") | None => {
             output::print_help(out);
             0
