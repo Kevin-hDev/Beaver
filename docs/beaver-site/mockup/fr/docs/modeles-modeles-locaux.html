@@ -40,12 +40,12 @@
     <p>Beaver interroge le catalogue public d'Ollama et te permet d'y chercher un modèle par son nom, depuis l'application — sans passer par un navigateur ni par une ligne de commande. C'est le catalogue d'Ollama : les mêmes modèles, les mêmes noms.</p>
 
     <h2 id="choisir-une-variante">Choisir une variante</h2>
-    <p>Un modèle n'existe pas en un seul exemplaire. Il se décline en <b>variantes</b>, qui combinent une taille et un niveau de compression. Chaque variante a son propre poids sur le disque et sa propre demande en mémoire.</p>
+    <p>Un modèle n'existe pas en un seul exemplaire. Il se décline en <b>variantes</b>, qui combinent une taille et un niveau de quantification. Chaque variante a son propre poids sur le disque et sa propre demande en mémoire.</p>
     <p>C'est là que se joue le choix, et la table de correspondance est dans <a href="modeles-materiel.html">Matériel et VRAM</a>.</p>
 
     <div class="callout">
       <span class="t">Note</span>
-      Une variante, c'est une taille plus une compression. Le même modèle existe en plusieurs versions dont la demande en mémoire va du simple au décuple.
+      Une variante, c'est une taille plus une quantification. Le même modèle existe en plusieurs versions dont la demande en mémoire va du simple au décuple.
     </div>
 
     <h2 id="la-fiche-d-un-modele">Ce que dit la fiche d'un modèle</h2>
@@ -58,7 +58,7 @@
       <tr><td><b>Taille du fichier</b></td><td>Ce qu'il occupera sur le disque</td></tr>
       <tr><td><b>Nombre de paramètres</b></td><td>Sa « taille » — 3, 7, 13, 30, 70 milliards</td></tr>
       <tr><td><b>Longueur de contexte</b></td><td>Combien il peut lire d'un coup</td></tr>
-      <tr><td><b>Niveau de compression</b></td><td>Le compromis mémoire / qualité</td></tr>
+      <tr><td><b>Niveau de quantification</b></td><td>Le compromis mémoire / qualité</td></tr>
       <tr><td><b>Architecture</b></td><td>La famille technique</td></tr>
       <tr><td><b>Experts spécialisés</b></td><td>Si le modèle n'active qu'une partie de lui-même à chaque requête</td></tr>
       <tr><td><b>Empreinte</b></td><td>L'identifiant exact de la version</td></tr>
@@ -105,7 +105,7 @@
       <tr><td>Le modèle est installé mais n'utilise aucun outil</td><td>Modèle sans capacité d'appel d'outils</td><td>Vérifier les capacités avant installation</td></tr>
       <tr><td>Le téléchargement est très lent</td><td>Plusieurs gigaoctets</td><td>Normal ; il est annulable</td></tr>
       <tr><td>Impossible de lancer deux installations</td><td>Verrou volontaire</td><td>Attendre la fin de la première</td></tr>
-      <tr><td>Le modèle est installé mais ne se charge pas</td><td>Mémoire insuffisante</td><td>Prendre une variante plus compressée</td></tr>
+      <tr><td>Le modèle est installé mais ne se charge pas</td><td>Mémoire insuffisante</td><td>Prendre une variante plus fortement quantifiée</td></tr>
       <tr><td>Un modèle supprimé a disparu d'Ollama aussi</td><td>Stockage partagé</td><td>Comportement attendu</td></tr>
       <tr><td>Aucune mise à jour n'est proposée</td><td>Le modèle est à jour, ou sa famille n'a pas été examinée</td><td>Au-delà de 100 familles installées, toutes ne sont pas vérifiées</td></tr>
     </table>

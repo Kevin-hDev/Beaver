@@ -653,3 +653,11 @@ Visibilité **non tracée jusqu'à la ligne de rendu** (leçon de méthode ci-de
 Noms littéraux voisins mais **assumés** (le lecteur doit les retrouver à l'identique) : thème de code « Défaut » (`use-settings.ts:35`, seul nom traduit parmi des noms propres), feuilles Excel « Historique »/« Prévisions » (`export/xlsx.rs:13,20` — la huitième s'appelle déjà « Input data » : incohérence de langue dans un même classeur), légende du graphique exporté « Historique / Prevision / Confiance » (`export/chart.rs:88-90`, « Prevision » **sans accent**). Ces trois-là mériteraient une passe produit (anglais partout dans les exports, ou français cohérent).
 
 Incohérence corrigée le 10 septembre 2026 : le verdict `constrained` s'affichait « Juste » sur la page Modèles locaux et « Contraint » sur Sélection du modèle — aligné sur « Contraint » (fr) / « Constrained » (en) partout.
+
+### Vocabulaire quantification — relevé le 10 septembre 2026 (retour de Kevin sur la table VRAM du site)
+
+La doc du site disait « compression » pour parler de la quantification des modèles (Q4/Q5/Q8/f16), alors que l'app dit déjà « quantification » (`vramTableDesc`, fr.json:1084). Corrigé le 10 septembre 2026 sur les 8 pages concernées (les deux langues) et dans 4 briefs ; unités « Go »/« GB » ajoutées aux cellules des tables VRAM. Les sens « compression du contexte » et « compression d'archives Office » n'ont pas bougé. Reste deux anomalies **côté app**, dans fr.json :
+
+- `models.quantization` (fr.json:679) : le libellé français est le mot anglais « Quantization » — l'écran de détail d'un modèle l'affiche tel quel. Attendu : « Quantification ».
+- `vramFormula` (fr.json:1086) : la formule française affiche « 0.5 GB » (point décimal + unité anglaise). Attendu : « 0,5 Go ». La page du site cite l'écran tel qu'il est aujourd'hui ; si l'app est corrigée, mettre à jour la citation dans `modeles-materiel.html` (fr) et le brief `materiel-et-vram.md`.
+- Cas laissé ouvert : `06-modeles/ollama-runtime.md` l.164 parle de « compression du cache » (le réglage `OLLAMA_KV_CACHE_TYPE` d'Ollama, quantification du cache d'attention — un troisième objet). Phrase exacte mais vocabulaire à trancher si on veut « quantification du cache ».

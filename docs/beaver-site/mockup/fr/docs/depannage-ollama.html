@@ -166,7 +166,7 @@
       <li><b>Vérifier le réglage</b> dans Réglages › Ollama, hors Mac.</li>
       <li><b>Sous Linux, avec une carte AMD ou NVIDIA</b> : vérifier que la carte est vue par le système. Si rien n'y correspond, le pilote graphique n'est pas chargé — c'est un problème du système, pas de Beaver.</li>
       <li><b>Sous Windows</b> : le pilote de la carte doit être installé ; c'est lui qui fournit le nom que Beaver lit.</li>
-      <li><b>Prendre un modèle plus petit ou plus compressé</b> — voir <a href="modeles-materiel.html">Matériel et VRAM</a>.</li>
+      <li><b>Prendre un modèle plus petit ou une quantification plus forte</b> — voir <a href="modeles-materiel.html">Matériel et VRAM</a>.</li>
     </ul>
 
     <div class="term">
@@ -191,7 +191,7 @@
       <b>Une mémoire non mesurable a une seconde conséquence, plus discrète.</b> La mesure décide aussi de la taille de contexte accordée aux modèles locaux, en trois paliers : <b>32 768 jetons</b> au-dessus de 24 000 Mo, <b>24 576 jetons</b> au-dessus de 12 000 Mo, <b>8 192 jetons</b> en dessous — et <b>8 192 également quand la mesure échoue</b>. Un contexte bloqué à 8 192 jetons sur une machine bien dotée est donc le symptôme d'une mesure ratée, pas d'un choix. Ce n'est pas réglable depuis l'application.
     </div>
 
-    <p><b>Que faire</b> — prendre une compression plus forte du même modèle, ou descendre d'une taille. La table de correspondance complète est dans <a href="modeles-materiel.html">Matériel et VRAM</a>.</p>
+    <p><b>Que faire</b> — prendre une quantification plus forte du même modèle, ou descendre d'une taille. La table de correspondance complète est dans <a href="modeles-materiel.html">Matériel et VRAM</a>.</p>
 
     <h2 id="redemarrer">Redémarrer le moteur</h2>
     <p><b>Où</b> — Réglages › Ollama. Le bouton apparaît en permanence à côté du réglage d'accélération hors Mac, et une ligne <b>« Redémarrage nécessaire — Les changements seront appliqués après le redémarrage d'Ollama »</b> s'ajoute dès qu'un réglage concerné a été modifié.</p>

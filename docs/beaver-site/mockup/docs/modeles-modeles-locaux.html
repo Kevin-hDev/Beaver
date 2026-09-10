@@ -40,12 +40,12 @@
     <p>Beaver queries Ollama's public catalog and lets you search it for a model by name, from inside the application — with no browser and no command line. It is Ollama's catalog: the same models, the same names.</p>
 
     <h2 id="choisir-une-variante">Choosing a variant</h2>
-    <p>A model does not exist in a single copy. It comes in <b>variants</b>, which combine a size and a level of compression. Each variant has its own weight on disk and its own memory demand.</p>
+    <p>A model does not exist in a single copy. It comes in <b>variants</b>, which combine a size and a level of quantization. Each variant has its own weight on disk and its own memory demand.</p>
     <p>That is where the choice is made, and the conversion table is in <a href="modeles-materiel.html">Hardware and VRAM</a>.</p>
 
     <div class="callout">
       <span class="t">Note</span>
-      A variant is a size plus a compression level. The same model exists in several versions whose memory demand ranges from one to ten times as much.
+      A variant is a size plus a quantization level. The same model exists in several versions whose memory demand ranges from one to ten times as much.
     </div>
 
     <h2 id="la-fiche-d-un-modele">What a model's data sheet says</h2>
@@ -58,7 +58,7 @@
       <tr><td><b>File size</b></td><td>What it will take up on disk</td></tr>
       <tr><td><b>Number of parameters</b></td><td>Its "size" — 3, 7, 13, 30, 70 billion</td></tr>
       <tr><td><b>Context length</b></td><td>How much it can read at once</td></tr>
-      <tr><td><b>Compression level</b></td><td>The memory / quality trade-off</td></tr>
+      <tr><td><b>Quantization level</b></td><td>The memory / quality trade-off</td></tr>
       <tr><td><b>Architecture</b></td><td>The technical family</td></tr>
       <tr><td><b>Specialized experts</b></td><td>Whether the model activates only part of itself on each request</td></tr>
       <tr><td><b>Fingerprint</b></td><td>The exact identifier of the version</td></tr>
@@ -105,7 +105,7 @@
       <tr><td>The model is installed but uses no tool</td><td>Model without tool-calling capability</td><td>Check the capabilities before installing</td></tr>
       <tr><td>The download is very slow</td><td>Several gigabytes</td><td>Normal; it can be cancelled</td></tr>
       <tr><td>Two installations cannot be started</td><td>Deliberate lock</td><td>Wait for the first one to finish</td></tr>
-      <tr><td>The model is installed but will not load</td><td>Not enough memory</td><td>Take a more compressed variant</td></tr>
+      <tr><td>The model is installed but will not load</td><td>Not enough memory</td><td>Take a more heavily quantized variant</td></tr>
       <tr><td>A deleted model has disappeared from Ollama too</td><td>Shared storage</td><td>Expected behavior</td></tr>
       <tr><td>No update is offered</td><td>The model is up to date, or its family was not examined</td><td>Beyond 100 installed families, not all of them are checked</td></tr>
     </table>

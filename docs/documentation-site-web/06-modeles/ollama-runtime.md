@@ -230,7 +230,7 @@ Le fabricant détecté sert aussi au téléchargement : une carte AMD sous Linux
 | « Le moteur refuse de démarrer après un plantage » | Une installation ou une mise à jour interrompue doit être reprise avant tout démarrage | Relancer l'application ; la reprise se fait au démarrage |
 | « Mes réglages de moteur ne changent rien » | Beaver réutilise un moteur système | Quitter l'application Ollama officielle, puis relancer Beaver |
 | « Je ne peux pas créer de modèle personnalisé » | L'opération demande un moteur lancé par Beaver | Quitter l'application Ollama officielle, puis relancer Beaver |
-| « Le chargement du modèle échoue » | Mémoire insuffisante pour le modèle choisi | Modèle plus petit, ou version plus compressée |
+| « Le chargement du modèle échoue » | Mémoire insuffisante pour le modèle choisi | Modèle plus petit, ou quantification plus forte |
 | « Le premier message est très lent » | Chargement du modèle en mémoire | Normal ; augmenter la persistance en mémoire pour éviter le rechargement |
 | « Ma carte graphique n'est pas utilisée » | Fabricant non reconnu, ou pilotes absents | Forcer le mode processeur si besoin ; il n'y a pas de journal du moteur à consulter |
 | « Beaver a laissé un processus en arrière-plan » | Arrêt brutal | Il est reconnu par son reçu et arrêté au démarrage suivant |

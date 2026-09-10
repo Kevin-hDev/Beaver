@@ -166,7 +166,7 @@
       <li><b>Check the setting</b> in Settings › Ollama, outside Mac.</li>
       <li><b>On Linux, with an AMD or NVIDIA card</b>: check that the card is seen by the system. If nothing matches, the graphics driver is not loaded — that is a system problem, not a Beaver one.</li>
       <li><b>On Windows</b>: the card driver must be installed; it is what provides the name Beaver reads.</li>
-      <li><b>Take a smaller or more compressed model</b> — see <a href="modeles-materiel.html">Hardware and VRAM</a>.</li>
+      <li><b>Take a smaller or more heavily quantized model</b> — see <a href="modeles-materiel.html">Hardware and VRAM</a>.</li>
     </ul>
 
     <div class="term">
@@ -191,7 +191,7 @@
       <b>Unmeasurable memory has a second, more discreet consequence.</b> The measurement also decides the context size granted to local models, in three tiers: <b>32,768 tokens</b> above 24,000 MB, <b>24,576 tokens</b> above 12,000 MB, <b>8,192 tokens</b> below — and <b>8,192 as well when the measurement fails</b>. A context stuck at 8,192 tokens on a well-equipped machine is therefore the symptom of a failed measurement, not of a choice. This cannot be adjusted from the app.
     </div>
 
-    <p><b>What to do</b> — take a more heavily compressed version of the same model, or go down one size. The full mapping table is in <a href="modeles-materiel.html">Hardware and VRAM</a>.</p>
+    <p><b>What to do</b> — take a more heavily quantized version of the same model, or go down one size. The full mapping table is in <a href="modeles-materiel.html">Hardware and VRAM</a>.</p>
 
     <h2 id="redemarrer">Restarting the engine</h2>
     <p><b>Where</b> — Settings › Ollama. The button is always present next to the acceleration setting outside Mac, and a line <b>“Restart required — Changes will be applied after restarting Ollama”</b> is added as soon as an affected setting has been modified.</p>

@@ -29,7 +29,7 @@ Le catalogue est celui d'Ollama : les mêmes modèles, les mêmes noms.
 
 ### Choisir une variante
 
-Un modèle n'existe pas en un seul exemplaire. Il se décline en **variantes**, qui combinent une taille et un niveau de compression. Chaque variante a son propre poids sur le disque et sa propre demande en mémoire.
+Un modèle n'existe pas en un seul exemplaire. Il se décline en **variantes**, qui combinent une taille et un niveau de quantification. Chaque variante a son propre poids sur le disque et sa propre demande en mémoire.
 
 C'est là que se joue le choix, et le site doit y renvoyer vers `06-modeles/materiel-et-vram.md`, qui donne la table de correspondance.
 
@@ -43,7 +43,7 @@ Avant d'installer, Beaver affiche les caractéristiques réelles de la variante 
 | **Taille du fichier** | Ce qu'il occupera sur le disque |
 | **Nombre de paramètres** | Sa « taille » — 3, 7, 13, 30, 70 milliards |
 | **Longueur de contexte** | Combien il peut lire d'un coup |
-| **Niveau de compression** | Le compromis mémoire / qualité |
+| **Niveau de quantification** | Le compromis mémoire / qualité |
 | **Architecture** | La famille technique |
 | **Experts spécialisés** | Si le modèle n'active qu'une partie de lui-même à chaque requête |
 | **Empreinte** | L'identifiant exact de la version |
@@ -92,7 +92,7 @@ Conséquence à écrire : **supprimer un modèle depuis Beaver le supprime aussi
 > **Vérifiez que le modèle sait utiliser des outils.**
 > C'est la capacité qui décide de tout dans Beaver. Un modèle sans cette capacité tient une conversation mais ne lit aucun fichier et ne lance aucune commande.
 
-> **Une variante = une taille + une compression.**
+> **Une variante = une taille + une quantification.**
 > Le même modèle existe en plusieurs versions dont la demande en mémoire va du simple au décuple. Voir la table dans `06-modeles/materiel-et-vram.md`.
 
 > **Vos modèles sont partagés avec l'application Ollama.**
@@ -110,7 +110,7 @@ Conséquence à écrire : **supprimer un modèle depuis Beaver le supprime aussi
 | « Le modèle est installé mais n'utilise aucun outil » | Modèle sans capacité d'appel d'outils | Vérifier les capacités avant installation |
 | « Le téléchargement est très lent » | Plusieurs gigaoctets | Normal ; il est annulable et reprenable |
 | « Je n'arrive pas à lancer deux installations » | Verrou volontaire | Attendre la fin de la première |
-| « Le modèle est installé mais ne se charge pas » | Mémoire insuffisante | Prendre une variante plus compressée |
+| « Le modèle est installé mais ne se charge pas » | Mémoire insuffisante | Prendre une variante plus fortement quantifiée |
 | « J'ai supprimé un modèle et il a disparu d'Ollama aussi » | Stockage partagé | Comportement attendu |
 | « Aucune mise à jour n'est proposée » | Le modèle est à jour, ou sa famille n'a pas été examinée | Au-delà de 100 familles installées, toutes ne sont pas vérifiées |
 
