@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Installation Linux</title>
+<meta name="description" content="Installer Beaver sur Debian ou Ubuntu en x64, par le script d'installation ou par le paquet .deb, et connaître les limites de la plateforme.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Démarrage / Installation Linux</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="demarrage-installation-linux.html" hreflang="fr" aria-current="true">FR</a>
+    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Installation sur <em>Linux</em></h1>
+    <p>Beaver est distribué en paquet <code>.deb</code> pour Debian et Ubuntu en
+    x64. Le script d'installation vérifie l'empreinte du paquet et ses
+    métadonnées avant de l'installer.</p>
+
+    <div class="callout">
+      <span class="t">Debian et Ubuntu uniquement</span>
+      Le script d'installation ne prend en charge que les distributions de la
+      famille Debian, en x64. Fedora, RHEL, Arch et openSUSE ne sont pas gérés.
+    </div>
+
+    <h2 id="distributions">Distributions prises en charge</h2>
+    <p><b>Debian et Ubuntu, architecture x64 uniquement.</b> Le paquet est
+    construit sur <b>Ubuntu 22.04</b>, ce qui le rend compatible avec 22.04,
+    24.04 et 25.04 : la bibliothèque C standard étant rétro-compatible vers le
+    haut, construire sur la plus ancienne cible couvre les suivantes. Il n'y a
+    pas de build ARM.</p>
+
+    <h2 id="script">La méthode recommandée : le script</h2>
+    <p>C'est la même commande que sur macOS ; le script détecte le système
+    lui-même.</p>
+
+    <div class="term">
+      <div class="term-bar"><i></i><i></i><i></i></div>
+      <pre class="term-body"><span class="prompt">$</span> (
+    installer="$(mktemp /tmp/beaver-bootstrap.XXXXXXXX)" &amp;&amp;
+    trap 'rm -f "$installer"' EXIT &amp;&amp;
+    curl --proto '=https' --tlsv1.2 --fail --silent --show-error \
+      --output "$installer" \
+      https://raw.githubusercontent.com/Kevin-hDev/Beaver/main/install.sh &amp;&amp;
+    bash "$installer"
+  )</pre>
+    </div>
+
+    <h2 id="ce-que-fait-le-script">Ce que fait le script</h2>
+    <p>Il demande une élévation de privilèges pour installer le paquet.</p>
+    <ul>
+      <li>Il détecte le système et l'architecture, et n'accepte que
+      <code>Linux:x86_64</code> ou <code>Linux:amd64</code>.</li>
+      <li>Il interroge l'API GitHub Releases, avec une réponse plafonnée à
+      <b>512 Kio</b>.</li>
+      <li>Il exige l'asset <code>.deb</code> et le fichier
+      <code>update-manifest.json</code>.</li>
+      <li>Il suit <b>trois redirections au maximum</b>, uniquement vers
+      <code>release-assets.githubusercontent.com</code>.</li>
+      <li>Il télécharge le <code>.deb</code> avec un plafond de <b>2 Gio</b>, et
+      vérifie sa taille et son <b>SHA-256</b>.</li>
+      <li>Il refuse d'aller plus loin si un paquet <code>beaver</code> ou
+      <code>cl-go</code> est déjà installé.</li>
+      <li>Il contrôle les métadonnées du paquet avant installation — c'est
+      inhabituel, et détaillé dans le tableau ci-dessous.</li>
+      <li>Il installe via <code>apt-get install -y</code>, ce qui tire les
+      dépendances manquantes.</li>
+      <li>Il vérifie que <code>/usr/bin/cl-go-dash</code> existe et n'est pas un
+      lien symbolique.</li>
+      <li>Il lance l'application en arrière-plan.</li>
+    </ul>
+
+    <table>
+      <caption class="crumb">Métadonnées du paquet vérifiées avant installation</caption>
+      <tr><th>Champ vérifié</th><th>Valeur exigée</th></tr>
+      <tr><td><code>Package</code></td><td><code>beaver</code></td></tr>
+      <tr><td><code>Architecture</code></td><td><code>amd64</code></td></tr>
+      <tr><td><code>Version</code></td><td>Identique à la version annoncée par la release</td></tr>
+      <tr><td><code>Provides</code></td><td><code>cl-go</code></td></tr>
+      <tr><td><code>Conflicts</code></td><td><code>cl-go</code></td></tr>
+      <tr><td><code>Replaces</code></td><td><code>cl-go</code></td></tr>
+    </table>
+
+    <p>Un paquet qui ne correspond pas exactement est rejeté.</p>
+
+    <h2 id="deb">La méthode alternative : le paquet .deb</h2>
+    <p>Le <code>.deb</code> est attaché à chaque release GitHub. L'installation
+    manuelle se fait ainsi :</p>
+
+    <div class="term">
+      <div class="term-bar"><i></i><i></i><i></i></div>
+      <pre class="term-body"><span class="prompt">$</span> sudo apt install ./Beaver_X.Y.Z_amd64.deb</pre>
+    </div>
+
+    <p>Utilise <code>apt</code> plutôt que <code>dpkg -i</code> :
+    <code>apt</code> résout les dépendances, <code>dpkg</code> non et laisse un
+    paquet à moitié configuré. Le même <code>.deb</code> sert à la première
+    installation et aux mises à jour intégrées.</p>
+
+    <h2 id="dependances">Dépendances</h2>
+    <table>
+      <caption class="crumb">Installées automatiquement par apt-get</caption>
+      <tr><th>Paquet</th><th>Rôle</th></tr>
+      <tr><td><code>libwebkit2gtk-4.1-0</code></td><td>Moteur de rendu web de Tauri 2</td></tr>
+      <tr><td><code>libgtk-3-0</code></td><td>Boîte à outils graphique</td></tr>
+    </table>
+    <p>Aucune intervention manuelle n'est nécessaire en principe.</p>
+
+    <h2 id="limites">Limites connues sur Linux</h2>
+    <p><b>Le navigateur intégré n'est pas disponible.</b> Toutes les autres
+    fonctionnalités le sont.</p>
+    <p><b>Fenêtre au fond transparent</b> — un problème ouvert, sans cause
+    identifiée. Les pistes évoquées sont les réglages de décoration et de
+    transparence de la fenêtre, le compositeur (Wayland contre X11), ou le thème
+    GTK.</p>
+    <p><b>GPU AMD</b> — la détection fonctionne, par lecture des identifiants
+    constructeur dans <code>/sys/class/drm/*/device/vendor</code>, et l'archive
+    ROCm est bien téléchargée. Le résultat n'a pas été validé sur une machine
+    réellement équipée.</p>
+    <p><b>GPU NVIDIA</b> — pilote <b>531 ou supérieur</b> requis. CUDA est fourni
+    dans le bundle Ollama, il n'y a rien d'autre à installer.</p>
+
+    <div class="callout">
+      <span class="t">Navigateur intégré</span>
+      Le navigateur intégré n'est pas disponible sur Linux. Le reste de
+      l'application fonctionne normalement.
+    </div>
+
+    <h2 id="mettre-a-jour">Mettre à jour</h2>
+    <p><b>Le script refuse de mettre à jour</b> : « Une application est déjà
+    installée. Utilise sa mise à jour intégrée. » La détection couvre le paquet
+    <code>beaver</code> et le paquet <code>cl-go</code>, l'ancien nom. Les mises
+    à jour passent par la fonction intégrée, qui installe le même
+    <code>.deb</code> : <a href="demarrage-mise-a-jour.html">Mise à jour</a>.</p>
+
+    <h2 id="desinstaller">Désinstaller</h2>
+    <p>Le paquet se retire avec <code>sudo apt remove beaver</code>. Les données
+    restent dans <code>~/.local/share/cl-go-dash/</code>, et la clé maîtresse du
+    coffre reste dans le magasin de secrets du système (Secret Service).</p>
+
+    <h2 id="pieges">Si ça ne marche pas</h2>
+    <table>
+      <caption class="crumb">Symptômes rencontrés, cause et résolution</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>« Système non pris en charge »</td><td>Architecture non x64, ou système non reconnu</td><td>Aucune : il n'existe pas de build ARM</td></tr>
+      <tr><td>« Une application est déjà installée »</td><td>Paquet <code>beaver</code> ou <code>cl-go</code> présent</td><td>Utiliser la mise à jour intégrée, ou <code>apt remove</code> d'abord</td></tr>
+      <tr><td>« Paquet d'installation invalide »</td><td>Une métadonnée du <code>.deb</code> ne correspond pas</td><td>Signaler le problème : l'asset publié ne correspond pas à ce qu'attend le script</td></tr>
+      <tr><td>Dépendances manquantes après <code>dpkg -i</code></td><td><code>dpkg</code> ne résout pas les dépendances</td><td><code>sudo apt install -f</code>, ou réinstaller avec <code>apt install ./fichier.deb</code></td></tr>
+      <tr><td>Fenêtre transparente</td><td>Problème ouvert, cause inconnue</td><td>Aucune solution documentée ; essayer une session X11 si tu es sous Wayland</td></tr>
+      <tr><td>Modèles très lents malgré un GPU</td><td>GPU non exploité par Ollama</td><td>Vérifier la détection GPU dans Réglages › Ollama — le moteur n'écrit aucun fichier de traces</td></tr>
+    </table>
+
+    <p>La suite se passe dans
+    <a href="demarrage-premier-lancement.html">Premier lancement</a>, et les cas
+    non couverts ici dans
+    <a href="reference-depannage-installation.html">Dépannage installation</a>.
+    La restriction de plateforme du navigateur est détaillée dans
+    <a href="interface-navigateur.html">Navigateur intégré</a>.</p>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../js/theme.js"></script>
+<script src="../js/docs-nav-data.js"></script>
+<script src="../js/docs-nav.js"></script>
+</body>
+</html>

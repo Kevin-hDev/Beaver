@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Tour des fonctionnalités</title>
+<meta name="description" content="Le panorama de ce que Beaver sait faire, domaine par domaine, avec le renvoi vers la page qui détaille chacun.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Démarrage / Tour des fonctionnalités</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="demarrage-tour-des-fonctionnalites.html" hreflang="fr" aria-current="true">FR</a>
+    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Tour des <em>fonctionnalités</em></h1>
+    <p>Dix-sept domaines, quelques phrases chacun, et le lien vers la page qui
+    en dit plus. C'est une page d'aiguillage : elle sert à voir l'étendue en une
+    lecture, pas à tout apprendre.</p>
+
+    <h2 id="agent-et-outils">Agent et outils</h2>
+    <p>L'agent travaille avec un modèle local ou distant, et dispose d'un
+    catalogue d'outils : fichiers, commandes shell, recherche par nom ou par
+    contenu, recherche web, Git, documents bureautiques, tableurs, images,
+    prévision, connecteurs externes. Les outils sont rangés par famille ;
+    certains sont toujours disponibles, les autres s'activent, avec
+    <b>32 outils optionnels au maximum</b> actifs en même temps.
+    → <a href="agent-fonctionnement.html">Agent</a>,
+    <a href="outils-vue-densemble.html">Outils</a></p>
+
+    <h2 id="planification-et-permissions">Planification et permissions</h2>
+    <p>Le mode Plan fait explorer l'agent en lecture seule, lui fait rédiger un
+    plan Markdown, et attend ton approbation avant toute écriture. Les plans
+    sont conservés sur le disque. Indépendamment, chaque action modifiante peut
+    être soumise à confirmation, en réglage global ou conversation par
+    conversation.
+    → <a href="agent-permissions.html">Modes de permission</a></p>
+
+    <h2 id="conversations-et-projets">Conversations et projets</h2>
+    <p>La navigation se fait par la barre latérale. Tu peux joindre des fichiers,
+    mettre des messages en file d'attente pendant que l'agent travaille,
+    archiver une conversation, la rattacher à un projet enregistré. Le
+    <b>clonage</b> permet de repartir d'un message précis, en abandonnant la
+    suite ou en en gardant un résumé des erreurs et des décisions.
+    → <a href="interface-conversations.html">Conversations</a>,
+    <a href="agent-cloner-une-conversation.html">Cloner une conversation</a></p>
+
+    <h2 id="sous-agents">Sous-agents</h2>
+    <p>L'agent délègue une partie du travail à des sessions isolées, avec leur
+    propre contexte. Tu suis leur état en direct, tu corriges en cours de route,
+    tu inspectes les fichiers modifiés, puis tu appliques ou tu rejettes les
+    changements. Les copies de travail Git sont nettoyées ensuite.
+    → <a href="agent-sous-agents.html">Sous-agents</a></p>
+
+    <h2 id="memoire-persistante">Mémoire persistante</h2>
+    <p>Des notes conservées entre conversations, en portée globale ou par projet,
+    en mode manuel ou automatique. Elles sont rangées par sujet, bornées en
+    taille, et consultables depuis les réglages. Les sous-agents y accèdent en
+    lecture seule.
+    → <a href="agent-memoire.html">Mémoire persistante</a></p>
+
+    <h2 id="navigateur-integre">Navigateur intégré</h2>
+    <p>Jusqu'à <b>dix onglets par conversation</b>, avec les sessions connectées
+    conservées d'une fois sur l'autre et la détection des serveurs de
+    développement locaux. Le navigateur partage le panneau latéral avec les
+    prévisualisations et Forecast.
+    → <a href="interface-navigateur.html">Navigateur intégré</a></p>
+
+    <div class="callout">
+      <span class="t">Disponibilité par plateforme</span>
+      Le navigateur intégré est disponible sur macOS et Windows. Sur Linux, il
+      n'apparaît pas dans l'interface : la fonctionnalité est masquée plutôt
+      qu'affichée en panne. Toutes les autres fonctionnalités sont disponibles
+      sur les trois systèmes.
+    </div>
+
+    <h2 id="git">Git</h2>
+    <p>Créer, changer, fusionner et supprimer des branches et des copies de
+    travail. Committer et pousser. Parcourir les modifications non commitées.
+    Inspecter les différences récentes ou anciennes dans l'historique.
+    → <a href="outils-branches-git.html">Branches Git</a></p>
+
+    <h2 id="forecast">Forecast</h2>
+    <p>L'espace de prévision de séries temporelles : audit de qualité des
+    données, choix de modèle manuel ou automatique, exécution locale ou cloud,
+    backtests glissants, comparaison, ensembles pondérés, analyse avancée,
+    scénarios, notes, rapport et exports. <b>Dix familles</b> de modèles locaux
+    sont proposées, plus <b>une famille en cloud</b>, soit onze au total.
+    → <a href="outils-forecast.html">Forecast</a></p>
+
+    <h2 id="fournisseurs-et-usage">Fournisseurs et usage</h2>
+    <p><b>Onze</b> fournisseurs de modèles sont gérés par clé API, dont
+    <b>trois</b> acceptent aussi une connexion par compte web. Beaver affiche
+    les limites, les crédits, les jetons consommés, les requêtes et une
+    estimation de coût quand le fournisseur expose ces informations.
+    → <a href="modeles-fournisseurs-api.html">Fournisseurs API</a>,
+    <a href="modeles-usage-et-couts.html">Usage et coûts</a></p>
+
+    <h2 id="connecteurs-et-canaux">Connecteurs MCP et canaux</h2>
+    <p>Les connecteurs MCP, locaux ou distants, s'activent conversation par
+    conversation et ajoutent leurs outils à l'agent. Une passerelle
+    d'arrière-plan relie Beaver à Telegram, Slack et Discord, avec un journal
+    d'audit.
+    → <a href="integrations-connecteurs-mcp.html">Connecteurs MCP</a>,
+    <a href="integrations-canaux-externes.html">Canaux externes</a></p>
+
+    <h2 id="extensions">Extensions</h2>
+    <p>Les extensions sont des modules installables qui <b>modifient l'interface
+    elle-même</b>, distribués et mis à jour depuis une source Git. Une extension
+    contribue son propre onglet de réglages, des entrées de navigation, un thème
+    et des skills. Trois outils verrouillés du groupe <code>extensions</code> les
+    rendent visibles à l'agent. À ne pas confondre avec un connecteur MCP, qui
+    n'ajoute que des outils.
+    → <a href="integrations-centre-extensions.html">Centre d'extensions</a></p>
+
+    <h2 id="reveils">Réveils</h2>
+    <p>Des instructions programmées une fois, chaque jour ou chaque semaine,
+    déclenchées par un ordonnanceur interne à l'application. Chaque exécution
+    atterrit dans une conversation dédiée, et l'historique est conservé.</p>
+
+    <h2 id="runtime-ollama">Moteur local géré</h2>
+    <p>Ollama est téléchargé au premier lancement dans le dossier de données, et
+    un démon déjà présent est réutilisé. Depuis l'application, tu parcours et
+    installes des modèles, tu édites les modelfiles, tu règles les paramètres et
+    les prompts système. Les modèles sont partagés avec une installation Ollama
+    existante.
+    → <a href="modeles-moteur-local.html">Moteur local</a>,
+    <a href="modeles-modeles-locaux.html">Modèles locaux</a></p>
+
+    <h2 id="espace-de-travail">Espace de travail</h2>
+    <p>Un terminal multi-onglets multiplateforme, un arbre de fichiers avec
+    surveillance des modifications, des prévisualisations riches — texte,
+    images, tableurs, documents bureautiques, aperçus de liens —, le détail de
+    l'occupation du contexte, et un castor interactif.
+    → <a href="interface-vue-densemble.html">Interface</a>,
+    <a href="interface-terminal.html">Terminal intégré</a></p>
+
+    <h2 id="demarrage-et-migration">Démarrage guidé et migration</h2>
+    <p>Un parcours d'accueil au premier lancement, et un assistant d'import qui
+    reprend les instructions, les skills et les règles depuis <b>neuf</b>
+    applications : Claude Code, Codex, Agents, Hermes, Qwen Code, ZCode,
+    OpenClaw, OpenCode et Kimi Code.
+    → <a href="demarrage-parcours-accueil.html">Parcours d'accueil</a>,
+    <a href="demarrage-importer.html">Importer d'un autre agent</a></p>
+
+    <h2 id="stockage-securise">Stockage local sécurisé</h2>
+    <p>Les identifiants vivent dans un coffre chiffré <b>XChaCha20-Poly1305</b>,
+    dont la clé maîtresse est rangée dans le trousseau du système. Aucun secret
+    brut ne parvient à l'interface graphique.
+    → <a href="reference-coffre-et-cles.html">Le coffre et les clés API</a>,
+    <a href="reference-modele-de-securite.html">Modèle de sécurité</a></p>
+
+    <h2 id="langues-et-apparence">Langues et apparence</h2>
+    <p>L'interface existe en <b>sept langues</b> — français, anglais, espagnol,
+    allemand, italien, chinois, japonais — et propose <b>six thèmes</b> visuels,
+    plus le réglage de la taille de police et du thème de coloration du code.
+    → <a href="reference-themes.html">Thèmes et apparence</a>,
+    <a href="reference-langues.html">Langues</a></p>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../js/theme.js"></script>
+<script src="../js/docs-nav-data.js"></script>
+<script src="../js/docs-nav.js"></script>
+</body>
+</html>

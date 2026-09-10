@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Cloner une conversation</title>
+<meta name="description" content="Repartir d'un message précis sans perdre ce qui a été appris : les deux modes de clonage, ce que contient le clone et les limites du groupe d'onglets.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Agent / Cloner une conversation</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="agent-cloner-une-conversation.html" hreflang="fr" aria-current="true">FR</a>
+    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Cloner une <em>conversation</em></h1>
+    <p>Cloner crée une copie de la conversation <b>arrêtée à un message précis</b>, et l'ouvre dans un onglet à côté de l'originale. Ce n'est ni une copie complète, ni un simple résumé : c'est une reprise à un point choisi.</p>
+
+    <h2 id="a-quoi-ca-sert">À quoi ça sert</h2>
+    <p>Reprendre une conversation à partir d'un moment précis, quand la suite n'a pas donné ce que tu voulais. Cas typique : l'agent part sur une mauvaise piste au dixième message et s'y enfonce pendant vingt messages. Plutôt que de tout recommencer, tu repars du dixième — en gardant, si tu veux, la mémoire de ce qui n'a pas marché.</p>
+    <div class="callout">
+      <span class="t">L'originale n'est pas modifiée</span>
+      Cloner crée une nouvelle conversation. L'originale reste intacte, dans son propre onglet.
+    </div>
+
+    <h2 id="ou-est-le-bouton">Où se trouve le bouton</h2>
+    <p><b>Sous chaque message de la conversation, sauf le dernier.</b> Le dernier est exclu parce qu'il n'y a rien après lui : cloner à cet endroit reviendrait à dupliquer la conversation entière.</p>
+
+    <h2 id="deux-modes">Les deux modes</h2>
+    <p>Les deux modes copient la conversation jusqu'au message choisi. Ils diffèrent sur le traitement de <b>ce qui suivait</b>.</p>
+    <p><b>Mode « couper »</b> — tout ce qui suit le message choisi est abandonné. Le clone démarre exactement dans l'état où était la conversation à ce moment-là, aucun modèle n'est appelé, la création est immédiate. À utiliser quand la suite n'a rien apporté.</p>
+    <p><b>Mode « résumer »</b> — tout ce qui suit est résumé par un modèle, et le résumé est ajouté au clone sous forme de contexte caché. Le résumé retient les <b>erreurs rencontrées et à ne pas reproduire</b>, les <b>décisions prises</b> et l'<b>état d'avancement</b>. Les fichiers lus et les fichiers modifiés pendant la partie résumée sont relevés et attachés au clone. Tu peux préciser un <b>axe de résumé</b> pour orienter ce sur quoi le modèle se concentre, et annuler la génération en cours. À utiliser quand la suite a échoué mais a appris quelque chose.</p>
+    <p>Le mode « résumer » est refusé s'il n'y a rien après le message choisi : le résumé serait vide.</p>
+    <table>
+      <caption class="crumb">Couper ou résumer</caption>
+      <tr><th></th><th>Couper</th><th>Résumer</th></tr>
+      <tr><td>Ce qui suit le message</td><td>Abandonné</td><td>Résumé par un modèle</td></tr>
+      <tr><td>Appel à un modèle</td><td>Non</td><td>Oui</td></tr>
+      <tr><td>Durée</td><td>Immédiat</td><td>Dépend du modèle</td></tr>
+      <tr><td>Erreurs passées conservées</td><td>Non</td><td>Oui</td></tr>
+      <tr><td>Fichiers touchés relevés</td><td>Non</td><td>Oui</td></tr>
+      <tr><td>Axe de résumé personnalisable</td><td>—</td><td>Oui</td></tr>
+      <tr><td>Possible sur le dernier message</td><td>—</td><td>Non, refusé</td></tr>
+      <tr><td>Annulable</td><td>—</td><td>Oui</td></tr>
+    </table>
+
+    <h2 id="contenu-du-clone">Ce que contient le clone</h2>
+    <p><b>Repris de l'originale</b> : tous les messages jusqu'au message choisi inclus, le modèle, le fournisseur, les réglages de la conversation.</p>
+    <p><b>Réinitialisé</b> : le nom, qui devient « Clone - » suivi du nom de l'originale ; les dates de création et de modification ; l'état d'archivage ; l'historique des échecs de flux et des diagnostics ; <b>la branche Git</b>, un clone démarrant sans branche associée ; et tous les attributs de sous-agent.</p>
+    <p>En mode « résumer », un message de contexte caché contenant le résumé est ajouté. Enfin, <b>les conversations de sous-agents ne sont pas clonables</b> : le clonage y est refusé.</p>
+
+    <h2 id="onglets">Les onglets</h2>
+    <p>Point important : <b>les conversations ne s'ouvrent pas en onglets</b>. On navigue d'une conversation à l'autre par la barre latérale. <b>Les onglets n'existent que pour les clones</b> — une conversation et ses clones forment un groupe d'onglets.</p>
+    <ul>
+      <li><b>Trois onglets au maximum par groupe</b> : l'originale plus deux clones.</li>
+      <li>Un onglet peut être renommé.</li>
+      <li>Un onglet peut être fermé, avec une option de nettoyage de la branche Git associée.</li>
+    </ul>
+    <p>Chaque clone garde deux références : son <b>parent immédiat</b> et la <b>racine du groupe</b>. C'est ce qui permet de cloner un clone tout en gardant le groupe cohérent.</p>
+
+    <h2 id="git">Le lien avec Git</h2>
+    <p>Un clone démarre sans branche Git. Trois actions sont possibles ensuite : <b>créer</b> une branche liée au clone, <b>lier</b> une branche existante, ou <b>délier</b> la branche. À la fermeture d'un onglet, une commande dédiée permet de nettoyer la branche associée et de revenir à une branche de repli.</p>
+    <p>Le dépôt doit être un <b>projet enregistré</b> : les chemins non autorisés sont refusés. Voir <a href="agent-repertoire-de-travail.html">Répertoire de travail</a>.</p>
+
+    <h2 id="limites">Les limites</h2>
+    <table>
+      <caption class="crumb">Valeurs de référence</caption>
+      <tr><th>Limite</th><th>Valeur</th></tr>
+      <tr><td>Onglets par groupe</td><td><b>3</b> (l'originale + 2 clones)</td></tr>
+      <tr><td>Jetons du résumé</td><td><b>3 072</b></td></tr>
+      <tr><td>Contenu analysé pour le résumé</td><td><b>120 000 caractères</b></td></tr>
+      <tr><td>Résultat d'outil retenu</td><td><b>2 000 caractères</b></td></tr>
+      <tr><td>Fichiers suivis</td><td><b>200</b></td></tr>
+      <tr><td>Ancêtres dans une chaîne de clones</td><td><b>64</b></td></tr>
+      <tr><td>Délai appliqué à la génération du résumé</td><td><b>180 secondes</b> d'inactivité et <b>180 secondes</b> de requête, pour tous les fournisseurs</td></tr>
+    </table>
+    <p>Le résumé est généré par <b>le modèle de la conversation clonée</b>, pas par un modèle dédié : un modèle local lent allonge donc l'opération. <b>En cas d'échec du résumé</b>, le clone est supprimé et son onglet retiré — tu ne te retrouves pas avec une conversation à moitié construite.</p>
+
+    <h2 id="cloner-un-clone">Cloner un clone</h2>
+    <p>C'est autorisé, et c'est même l'usage prévu : tu peux réitérer sur une piste en <b>accumulant la mémoire des erreurs évitées</b>. Chaque clone en mode « résumer » ajoute son propre contexte caché, ce qui donne un résumé cumulatif au fil des tentatives. La chaîne est bornée à 64 ancêtres.</p>
+
+    <h2 id="clone-ou-sous-agent">Cloner ou déléguer ?</h2>
+    <table>
+      <caption class="crumb">Deux façons d'explorer une autre piste</caption>
+      <tr><th></th><th>Cloner</th><th>Déléguer à un sous-agent</th></tr>
+      <tr><td>Qui décide</td><td>Toi</td><td>L'agent, ou toi</td></tr>
+      <tr><td>Point de départ</td><td>Un message précis de la conversation</td><td>Des instructions neuves</td></tr>
+      <tr><td>Résultat</td><td>Une conversation que tu mènes, dans un onglet</td><td>Un travail rendu à l'agent parent</td></tr>
+      <tr><td>Clonable</td><td>Oui</td><td>Non</td></tr>
+    </table>
+
+    <h2 id="pieges">Ce qui surprend le plus souvent</h2>
+    <table>
+      <caption class="crumb">Symptôme, cause, résolution</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>Pas de bouton de clonage sous le dernier message</td><td>Volontaire : rien à cloner après lui</td><td>Cloner depuis un message antérieur</td></tr>
+      <tr><td>Le mode « résumer » est refusé</td><td>Aucun message après celui choisi</td><td>Utiliser « couper », ou choisir un message antérieur</td></tr>
+      <tr><td>Impossible de cloner une conversation</td><td>C'est une conversation de sous-agent</td><td>Non clonable</td></tr>
+      <tr><td>Impossible de créer un onglet de plus</td><td>Trois onglets déjà ouverts dans le groupe</td><td>Fermer un onglet</td></tr>
+      <tr><td>Le clonage prend du temps</td><td>Le résumé est généré par le modèle de la conversation</td><td>Annuler, ou utiliser le mode « couper »</td></tr>
+      <tr><td>Le clone a disparu après une erreur</td><td>Nettoyage volontaire en cas d'échec du résumé</td><td>Réessayer</td></tr>
+      <tr><td>Le clone n'est sur aucune branche Git</td><td>Un clone démarre sans branche</td><td>Créer ou lier une branche</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="interface-conversations.html">Conversations</a> — la navigation d'une conversation à l'autre.</li>
+      <li><a href="agent-sous-agents.html">Sous-agents</a> — l'autre façon de paralléliser.</li>
+      <li><a href="agent-contexte.html">Contexte</a> — cloner pour repartir plus léger.</li>
+      <li><a href="outils-branches-git.html">Branches Git</a> — lier une branche à un clone.</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../js/theme.js"></script>
+<script src="../js/docs-nav-data.js"></script>
+<script src="../js/docs-nav.js"></script>
+</body>
+</html>

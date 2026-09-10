@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Matériel et VRAM</title>
+<meta name="description" content="Combien de mémoire demande un modèle local, comment lire les niveaux de compression, et quoi faire quand un modèle ne tient pas.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Modèles / Matériel et VRAM</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="modeles-materiel.html" hreflang="fr" aria-current="true">FR</a>
+    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Ce que ta machine peut <em>porter</em></h1>
+    <p>Avant de télécharger plusieurs gigaoctets, une seule question compte : est-ce que ce modèle tient dans ta mémoire ? Cette page donne la table de correspondance, explique comment lire un nom de modèle, et dit quoi faire quand ça ne passe pas.</p>
+
+    <h2 id="la-question-a-se-poser">La question à se poser</h2>
+    <p>Un modèle de langage doit tenir <b>entièrement en mémoire</b> pour fonctionner correctement. Sur une carte graphique, c'est la mémoire vidéo ; sur un Mac récent, c'est la mémoire partagée entre le processeur et la partie graphique.</p>
+    <p>Quand un modèle ne tient pas, deux choses peuvent arriver : le chargement échoue, ou une partie du modèle bascule sur la mémoire ordinaire — et là, la génération devient dix à cinquante fois plus lente. Le second cas est le plus déroutant : rien n'échoue, tout est simplement inutilisable.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      Un modèle qui déborde ne plante pas forcément : il devient dix à cinquante fois plus lent. C'est le symptôme le plus courant, et le plus difficile à interpréter quand on ne s'y attend pas.
+    </div>
+
+    <h2 id="les-deux-chiffres">Les deux chiffres qui comptent</h2>
+    <p>Le nom d'un modèle local porte presque toujours ces deux informations.</p>
+    <p><b>Le nombre de paramètres</b>, écrit en milliards : 3B, 7B, 13B, 30B, 70B. C'est la « taille » du modèle. Plus il est grand, meilleures sont ses réponses, et plus il demande de mémoire.</p>
+    <p><b>Le niveau de compression</b> — noté Q4, Q5, Q8, f16. Un modèle est compressé pour tenir dans moins de mémoire, au prix d'une légère perte de qualité. C'est le levier le plus efficace : passer un modèle de 13 milliards de paramètres de la version non compressée à la version Q4 fait passer sa consommation de 28 Go à 8 Go.</p>
+
+    <h2 id="table-de-correspondance">La table de correspondance</h2>
+    <p>Beaver affiche cette table dans ses réglages avancés. Les valeurs sont en gigaoctets.</p>
+
+    <table>
+      <caption class="crumb">Mémoire nécessaire, en gigaoctets, selon la taille et la compression</caption>
+      <tr><th>Taille</th><th>Q4_K_M</th><th>Q5_K_M</th><th>Q8_0</th><th>f16</th></tr>
+      <tr><td><b>3 milliards</b></td><td>~2</td><td>~2,5</td><td>~3,5</td><td>~6</td></tr>
+      <tr><td><b>7 milliards</b></td><td>~4,5</td><td>~5,5</td><td>~8</td><td>~16</td></tr>
+      <tr><td><b>13 milliards</b></td><td>~8</td><td>~9,5</td><td>~14</td><td>~28</td></tr>
+      <tr><td><b>30 milliards</b></td><td>~20</td><td>~23</td><td>~34</td><td>~68</td></tr>
+      <tr><td><b>70 milliards</b></td><td>~40</td><td>~48</td><td>~70</td><td>~140</td></tr>
+    </table>
+
+    <p>Ce sont des <b>estimations</b>. Elles couvrent le modèle lui-même, pas le contexte de la conversation, qui occupe de la place en plus à mesure qu'elle s'allonge. Prévois une marge d'un à deux gigaoctets.</p>
+    <p>L'application affiche sous cette table la formule qui la sous-tend :</p>
+
+    <div class="term">
+      <div class="term-bar"><i></i><i></i><i></i></div>
+      <pre class="term-body"><span class="prompt">$</span> VRAM ≈ taille modèle + (contexte/1000 × 0.5 GB) + 0.5 GB</pre>
+    </div>
+
+    <h2 id="lire-la-compression">Comment lire la compression</h2>
+
+    <table>
+      <caption class="crumb">Les quatre niveaux de compression et quand les choisir</caption>
+      <tr><th>Notation</th><th>Ce que ça veut dire</th><th>Quand la choisir</th></tr>
+      <tr><td><b>Q4_K_M</b></td><td>Compression forte</td><td>Le choix par défaut. Le meilleur compromis dans la quasi-totalité des cas</td></tr>
+      <tr><td><b>Q5_K_M</b></td><td>Compression moyenne</td><td>Quand la mémoire le permet et que la qualité compte</td></tr>
+      <tr><td><b>Q8_0</b></td><td>Compression légère</td><td>Rarement justifié : double la mémoire pour un gain à peine perceptible</td></tr>
+      <tr><td><b>f16</b></td><td>Aucune compression</td><td>Réservé aux machines très bien dotées, ou à des mesures comparatives</td></tr>
+    </table>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      À mémoire égale, un grand modèle fortement compressé l'emporte presque toujours sur un petit modèle peu compressé : 13 milliards de paramètres en Q4 valent mieux que 7 milliards en Q8. C'est un consensus du domaine, pas une mesure faite sur Beaver — mais il tient dans la quasi-totalité des cas.
+    </div>
+
+    <h2 id="ce-que-beaver-detecte">Ce que Beaver détecte tout seul</h2>
+    <p>Au démarrage, Beaver identifie la carte graphique et mesure la mémoire disponible, puis en tire la taille de contexte accordée aux modèles locaux.</p>
+
+    <table>
+      <caption class="crumb">Le contexte accordé selon la mémoire détectée</caption>
+      <tr><th>Mémoire détectée</th><th>Contexte accordé</th></tr>
+      <tr><td>24 Go ou plus</td><td><b>32 768 jetons</b></td></tr>
+      <tr><td>12 à 24 Go</td><td><b>24 576 jetons</b></td></tr>
+      <tr><td>Moins de 12 Go, ou indétectable</td><td><b>8 192 jetons</b></td></tr>
+    </table>
+
+    <p>Quand la mesure échoue, Beaver prend la valeur la plus prudente plutôt que d'espérer.</p>
+    <p><b>Beaver ne réserve aucune mémoire vidéo au système.</b> La marge est donc à prendre par toi au moment de choisir ta variante — c'est la raison du conseil d'un à deux gigaoctets au-delà de la valeur du tableau.</p>
+    <p>L'écran de détail d'un modèle affiche ses caractéristiques réelles avant installation : taille du fichier, nombre de paramètres, longueur de contexte, niveau de compression, architecture, et s'il s'agit d'un modèle à experts spécialisés. Le détail de la détection matérielle est dans <a href="modeles-moteur-local.html">Moteur local</a>.</p>
+
+    <h2 id="mac-a-puce-apple">Le cas des Mac à puce Apple</h2>
+    <p>Sur un Mac à puce Apple, il n'y a pas de mémoire vidéo séparée : processeur et partie graphique <b>partagent la même mémoire</b>. Un Mac de 16 Go dispose donc d'environ 16 Go pour un modèle — moins ce qu'utilisent le système et les applications ouvertes.</p>
+    <p>C'est un avantage réel : un Mac de 32 Go fait tourner des modèles qui demanderaient une carte graphique haut de gamme sur un PC. Deux réserves cependant :</p>
+    <ul>
+      <li>il faut <b>laisser de la place au système</b> — compte 4 à 6 Go pris par macOS et les applications courantes ;</li>
+      <li>sur un <b>Mac à processeur Intel</b>, la mémoire n'est pas mesurée et Beaver retombe sur le contexte minimal de 8 192 jetons.</li>
+    </ul>
+
+    <h2 id="quand-ca-ne-tient-pas">Quand ça ne tient pas</h2>
+    <p>Par ordre de préférence :</p>
+    <ul>
+      <li><b>Prendre une compression plus forte</b> du même modèle — Q8 vers Q4 divise la mémoire par deux.</li>
+      <li><b>Descendre d'une taille</b> — 13 milliards vers 7 milliards.</li>
+      <li><b>Fermer les autres applications</b>, surtout les navigateurs, très gourmands en mémoire vidéo.</li>
+      <li><b>Vérifier qu'un seul modèle est chargé</b> — le multi-modèle se désactive dans les réglages avancés.</li>
+      <li><b>Passer en mode processeur seul</b> — ça fonctionne, c'est très lent, mais ça débloque une machine sans carte graphique utilisable.</li>
+      <li><b>Utiliser un modèle distant</b> pour cette tâche — voir <a href="demarrage-choisir-son-modele.html">Choisir son modèle</a>.</li>
+    </ul>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+
+    <table>
+      <caption class="crumb">Les symptômes d'un modèle trop grand pour la machine</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>Le modèle répond extrêmement lentement</td><td>Il déborde sur la mémoire ordinaire</td><td>Compression plus forte, ou modèle plus petit</td></tr>
+      <tr><td>Le chargement du modèle échoue</td><td>Mémoire insuffisante</td><td>Compression plus forte, ou modèle plus petit</td></tr>
+      <tr><td>Ça marchait, et maintenant c'est lent</td><td>Une autre application a pris de la mémoire</td><td>Fermer le navigateur, relancer</td></tr>
+      <tr><td>Le contexte est limité à 8 192 jetons</td><td>Moins de 12 Go détectés, ou mesure impossible</td><td>Comportement attendu</td></tr>
+      <tr><td>La carte graphique n'est pas utilisée</td><td>Fabricant non reconnu, ou pilotes absents</td><td>Forcer le mode processeur seul si besoin</td></tr>
+      <tr><td>16 Go de mémoire mais un modèle de 13 milliards ne passe pas</td><td>Le système et les applications occupent déjà de la place</td><td>Fermer des applications, ou passer en Q4</td></tr>
+    </table>
+
+    <p>Pour installer une variante et lire ses caractéristiques, voir <a href="modeles-modeles-locaux.html">Modèles locaux</a>. La configuration minimale de l'application est dans <a href="demarrage-prerequis.html">Prérequis</a>.</p>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../js/theme.js"></script>
+<script src="../js/docs-nav-data.js"></script>
+<script src="../js/docs-nav.js"></script>
+</body>
+</html>

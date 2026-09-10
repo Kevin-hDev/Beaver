@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Authentification des connecteurs</title>
+<meta name="description" content="Autoriser Beaver à accéder à ton Notion ou à ton GitHub : le parcours, ce que Beaver ne voit jamais, où vont les jetons et comment révoquer l'accès.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Intégrations / Authentification</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="integrations-authentification-mcp.html" hreflang="fr" aria-current="true">FR</a>
+    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Autoriser un <em>connecteur</em></h1>
+    <p>Un connecteur distant accède à des données personnelles ou d'entreprise : messages, documents, tickets, dépôts. Il faut donc l'autoriser explicitement, service par service. Beaver utilise pour cela le mécanisme standard d'autorisation déléguée : tu t'authentifies <b>chez le service</b>, qui remet à Beaver un jeton d'accès limité et révocable.</p>
+
+    <h2 id="le-parcours">Le parcours</h2>
+    <ul>
+      <li>Depuis <b>Réglages › Intégrations › Connecteurs</b>, tu lances la connexion du service.</li>
+      <li>Beaver ouvre ton navigateur sur la page du service.</li>
+      <li>Tu t'y authentifies et tu acceptes les accès demandés.</li>
+      <li>Le service renvoie vers Beaver, qui reçoit la réponse sur un petit serveur local <b>actif uniquement pendant la connexion</b>.</li>
+      <li>Beaver échange cette réponse contre un jeton d'accès et le range dans son coffre.</li>
+      <li>Le navigateur affiche une page de confirmation.</li>
+    </ul>
+
+    <p>La connexion est abandonnée au bout de <b>5 minutes</b> sans réponse. Jusqu'à <b>5 connexions</b> peuvent être en cours en même temps, et une connexion déjà lancée pour le même service n'est pas dupliquée.</p>
+
+    <h2 id="ce-que-beaver-ne-voit-jamais">Ce que Beaver ne voit jamais</h2>
+    <p><b>Beaver ne voit jamais tes identifiants.</b> Ni le mot de passe, ni le second facteur. L'authentification se déroule entièrement sur le site du service, dans ton navigateur.</p>
+
+    <p>Ce que Beaver reçoit est un <b>jeton d'accès</b> : une autorisation limitée à ce que le service a accepté d'accorder, révocable à tout moment depuis ton compte, et sans rapport avec ton mot de passe.</p>
+
+    <h2 id="les-protections-de-lechange">Les protections de l'échange</h2>
+    <p><b>Les adresses d'authentification sont vérifiées par service.</b> Beaver découvre automatiquement les adresses d'autorisation du service, mais il refuse toute adresse qui ne relève pas du domaine attendu pour ce connecteur précis : une adresse Notion présentée pour une connexion Sentry est refusée. C'est ce qui empêche un service compromis de rediriger l'authentification ailleurs.</p>
+
+    <p>Le <b>chiffrement est obligatoire</b>, et aucune adresse contenant des identifiants n'est acceptée. La demande est <b>liée à la session</b> par un secret à usage unique généré au moment du départ : un tiers qui intercepterait la réponse du service ne pourrait rien en faire. Le serveur local <b>n'écoute que sur ta machine</b>, sur un port choisi au hasard, uniquement pendant la connexion, et les requêtes qu'il accepte sont bornées en taille.</p>
+
+    <div class="callout">
+      <span class="t">Sécurité</span>
+      Ces vérifications s'appliquent aussi au <b>renouvellement</b>, pas seulement à la première connexion : l'adresse est revalidée à chaque échange. Un service compromis ne peut donc pas détourner l'authentification plus tard.
+    </div>
+
+    <table>
+      <caption class="crumb">Ce que Beaver refuse pendant l'échange</caption>
+      <tr><th>Tentative</th><th>Résultat</th></tr>
+      <tr><td>Adresse d'authentification hors du domaine du service</td><td><b>Refusé</b></td></tr>
+      <tr><td>Adresse d'un autre connecteur</td><td><b>Refusé</b></td></tr>
+      <tr><td>Adresse non chiffrée</td><td><b>Refusé</b></td></tr>
+      <tr><td>Adresse contenant des identifiants</td><td><b>Refusé</b></td></tr>
+      <tr><td>Réponse sans le secret de session attendu</td><td><b>Refusé</b></td></tr>
+      <tr><td>Réponse trop volumineuse</td><td><b>Refusé</b></td></tr>
+    </table>
+
+    <h2 id="ou-vont-les-jetons">Où vont les jetons</h2>
+    <p><b>Dans le coffre chiffré</b>, comme les clés API et les connexions par compte : chiffrement sur le disque, clé maîtresse dans le gestionnaire de mots de passe du système, aucune commande de lecture exposée à l'interface, mémoire protégée et effacée après usage. Chaque connecteur a <b>son entrée distincte</b> : déconnecter l'un ne touche pas aux autres. Le détail du coffre est dans <a href="reference-coffre-et-cles.html">Le coffre et les clés API</a>.</p>
+
+    <h2 id="le-renouvellement">Le renouvellement</h2>
+    <p>Un jeton d'accès expire. Beaver le renouvelle automatiquement, <b>30 secondes avant l'expiration réelle</b> — cette marge évite qu'une requête partie juste avant échoue en vol. Tu n'as rien à faire : une autorisation accordée reste valable jusqu'à ce que tu la révoques ou que le service l'invalide.</p>
+
+    <p>Deux détails de conception évitent des problèmes réels. <b>Un seul renouvellement à la fois par connecteur</b> : si plusieurs requêtes constatent en même temps qu'un jeton est périmé, une seule le renouvelle et les autres attendent le résultat — sans cela, plusieurs renouvellements simultanés peuvent invalider les jetons les uns des autres, car certains services n'en acceptent qu'un à la fois. Et <b>le jeton est revérifié après avoir obtenu le tour</b> : un autre appel l'a peut-être déjà renouvelé entre-temps, auquel cas aucun échange inutile n'a lieu. Quand un service ne renvoie pas de nouveau jeton de renouvellement, l'ancien est conservé — certains ne le renvoient qu'une fois.</p>
+
+    <h2 id="revoquer-lacces">Révoquer l'accès</h2>
+    <p>Deux endroits, et il faut les distinguer. <b>Dans Beaver</b>, la déconnexion efface les jetons du coffre et le connecteur redevient non authentifié. <b>Chez le service</b>, la page de sécurité de ton compte permet de retirer l'autorisation accordée à Beaver : c'est la révocation réelle, celle qui vaut même si des jetons subsistaient ailleurs.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      Se déconnecter dans Beaver ne suffit pas toujours. Pour couper l'accès complètement, révoque aussi l'autorisation depuis la page de sécurité de ton compte chez le service. Fais les deux.
+    </div>
+
+    <h2 id="les-limites">Les limites</h2>
+
+    <table>
+      <caption class="crumb">Les bornes de l'autorisation</caption>
+      <tr><th>Limite</th><th>Valeur</th></tr>
+      <tr><td>Délai d'une connexion</td><td><b>5 minutes</b></td></tr>
+      <tr><td>Connexions simultanées</td><td><b>5</b></td></tr>
+      <tr><td>Marge avant renouvellement</td><td><b>30 secondes</b></td></tr>
+      <tr><td>Renouvellements simultanés par connecteur</td><td><b>1</b></td></tr>
+      <tr><td>Taille d'une requête au serveur local</td><td><b>4 Ko</b></td></tr>
+      <tr><td>Délai d'un échange avec le service</td><td><b>15 secondes</b></td></tr>
+    </table>
+
+    <h2 id="pieges-frequents">Pièges fréquents</h2>
+
+    <table>
+      <caption class="crumb">Ce qui bloque le plus souvent</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>Rien ne se passe après l'autorisation dans le navigateur</td><td>La réponse n'a pas atteint Beaver</td><td>Vérifier qu'un pare-feu ne bloque pas les connexions locales</td></tr>
+      <tr><td>« La connexion a expiré »</td><td>Plus de 5 minutes se sont écoulées</td><td>Recommencer</td></tr>
+      <tr><td>« Endpoint OAuth non autorisé »</td><td>Le service annonce une adresse hors de son domaine</td><td>Refus volontaire ; à signaler si le service est légitime</td></tr>
+      <tr><td>Le connecteur a cessé de fonctionner</td><td>Autorisation révoquée chez le service, ou mot de passe changé</td><td>Se reconnecter</td></tr>
+      <tr><td>« Token expiré et pas de refresh »</td><td>Le service n'a pas fourni de jeton de renouvellement</td><td>Se reconnecter</td></tr>
+      <tr><td>Le service liste toujours Beaver après une déconnexion</td><td>La déconnexion locale ne révoque pas côté service</td><td>Révoquer depuis la page de sécurité du compte</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="integrations-connecteurs-mcp.html">Connecteurs MCP</a> — configurer un connecteur, et ce que Beaver verrouille.</li>
+      <li><a href="outils-connecteurs.html">Connecteurs externes côté agent</a> — comment l'agent s'en sert.</li>
+      <li><a href="modeles-connexion-par-compte.html">Connexion par compte</a> — le même mécanisme, appliqué aux modèles.</li>
+      <li><a href="reference-coffre-et-cles.html">Le coffre et les clés API</a> — où vivent les jetons.</li>
+      <li><a href="reference-confidentialite.html">Confidentialité</a> — ce qui sort de la machine.</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../js/theme.js"></script>
+<script src="../js/docs-nav-data.js"></script>
+<script src="../js/docs-nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Mascotte</title>
+<meta name="description" content="Un personnage animé qui reflète l'état de l'agent dans sa propre fenêtre — éteint par défaut, à activer dans les réglages.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Interface / Mascotte</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="interface-mascotte.html" hreflang="fr" aria-current="true">FR</a>
+    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Savoir où en est l'agent, <em>sans</em> regarder</h1>
+    <p>La mascotte est un personnage animé qui reflète l'état de l'agent : au repos, au travail, tâche réussie, tâche échouée. Elle vit dans sa propre fenêtre, et elle est éteinte tant que tu ne l'allumes pas.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      Elle est éteinte au départ. La mascotte n'apparaît pas tant que tu ne l'actives pas dans <b>Réglages › Mascotte</b>. C'est un choix, pas une panne.
+    </div>
+
+    <h2 id="a-quoi-elle-sert">À quoi elle sert</h2>
+    <p>Ce n'est pas seulement décoratif. Sur une tâche longue, elle t'indique d'un coup d'œil si l'agent travaille encore ou s'il a terminé, sans que tu aies à revenir dans la conversation.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      Surveiller sans rester devant : la mascotte a sa propre fenêtre. Laisse-la visible pendant que tu travailles ailleurs, elle t'indique quand l'agent a terminé.
+    </div>
+
+    <h2 id="les-huit-personnages">Les huit personnages</h2>
+    <p>Huit personnages sont disponibles. Le castor, <code>cl-go-beaver</code>, est celui par défaut.</p>
+
+    <table>
+      <caption class="crumb">Les huit personnages disponibles</caption>
+      <tr><th>Personnage</th></tr>
+      <tr><td><code>cl-go-beaver</code> — le castor, personnage par défaut</td></tr>
+      <tr><td><code>circuit</code></td></tr>
+      <tr><td><code>kova</code></td></tr>
+      <tr><td><code>nival</code></td></tr>
+      <tr><td><code>mokai</code></td></tr>
+      <tr><td><code>volt</code></td></tr>
+      <tr><td><code>raku</code></td></tr>
+      <tr><td><code>pico</code></td></tr>
+    </table>
+
+    <h2 id="les-etats">Les états</h2>
+    <p>Les états suivent les événements des conversations en cours. <b>Huit animations</b> existent : le repos (<code>Idle</code>), le travail (<code>Thinking</code>, <code>WorkLaptop</code>), ainsi que <code>ExploreBook</code>, <code>Waiting</code>, <code>Success</code>, <code>Failed</code> et <code>Alert</code>.</p>
+    <ul>
+      <li><b>Jusqu'à 32 conversations</b> sont suivies simultanément.</li>
+      <li>Un état de <b>réussite</b> s'affiche pendant <b>2,2 secondes</b>.</li>
+      <li>Un état d'<b>échec</b> s'affiche pendant <b>2,6 secondes</b>.</li>
+      <li>Un état d'<b>alerte</b> s'affiche pendant <b>1,8 seconde</b>.</li>
+      <li>L'état tient compte du fait que l'application a le focus ou non.</li>
+    </ul>
+
+    <h2 id="la-fenetre-dediee">La fenêtre dédiée</h2>
+    <p>La mascotte dispose de sa propre fenêtre, séparée de la fenêtre principale. Elle peut donc rester visible pendant que tu travailles dans une autre application — c'est là tout son intérêt pour surveiller une tâche longue sans garder Beaver au premier plan.</p>
+
+    <h2 id="les-reglages">Les réglages</h2>
+    <p>Un onglet dédié : <b>Réglages › Mascotte</b>. Trois réglages, pas deux.</p>
+    <ul>
+      <li><b>Activation</b> — <b>éteinte par défaut</b>. Rien ne s'affiche tant que tu ne l'allumes pas.</li>
+      <li><b>Choix du personnage</b>, parmi les huit.</li>
+      <li><b>Taille</b>, en pourcentage, de <b>70 %</b> à <b>140 %</b>, avec aperçu en direct. Le défaut est <b>100 %</b>, et une valeur hors de cet intervalle est ramenée dedans.</li>
+    </ul>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+
+    <table>
+      <caption class="crumb">Symptômes courants et ce qu'il faut en comprendre</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>La mascotte n'apparaît nulle part</td><td>Elle est éteinte par défaut</td><td>L'activer dans <b>Réglages › Mascotte</b></td></tr>
+      <tr><td>La mascotte ne réagit pas</td><td>Aucune conversation active, ou plus de 32 suivies</td><td>Vérifier qu'une conversation travaille</td></tr>
+      <tr><td>L'état de réussite disparaît trop vite</td><td>Affiché 2,2 secondes</td><td>Comportement voulu</td></tr>
+      <tr><td>La fenêtre est perdue de vue</td><td>Fenêtre séparée</td><td>La retrouver via le gestionnaire de fenêtres du système</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="reference-themes.html">Thèmes et apparence</a></li>
+      <li><a href="interface-vue-densemble.html">Vue d'ensemble de l'interface</a> — où trouver les réglages</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../js/theme.js"></script>
+<script src="../js/docs-nav-data.js"></script>
+<script src="../js/docs-nav.js"></script>
+</body>
+</html>

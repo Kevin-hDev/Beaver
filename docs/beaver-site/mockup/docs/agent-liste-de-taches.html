@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Liste de tâches</title>
+<meta name="description" content="La liste que l'agent tient pendant un travail long : séries, statuts, pause automatique et limites.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Agent / Liste de tâches</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="agent-liste-de-taches.html" hreflang="fr" aria-current="true">FR</a>
+    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>La liste de <em>tâches</em></h1>
+    <p>Sur un travail long, l'agent découpe lui-même la tâche en étapes et tient une liste visible en direct : ce qui est fait, ce qui est en cours, ce qui reste. Double intérêt — tu suis l'avancement sans relire toute la conversation, et l'agent garde le fil de ce qu'il doit faire au lieu de dériver.</p>
+
+    <div class="callout">
+      <span class="t">Fonction à activer</span>
+      La liste de tâches est un outil optionnel, <b>désactivé par défaut</b>. Si tu as vu cette fonction ailleurs, tu ne la trouveras pas tant que tu n'auras pas activé le groupe correspondant dans Réglages › Outils.
+    </div>
+
+    <h2 id="une-tache">Ce que contient une tâche</h2>
+    <p>Chaque tâche porte un <b>intitulé</b>, une <b>formulation en cours d'action</b> employée pendant l'exécution, et un <b>statut</b> parmi trois : à faire, en cours, terminée.</p>
+
+    <h2 id="series">Les séries de tâches</h2>
+    <p>Les tâches sont groupées en <b>séries</b>. Une série correspond à un travail donné, avec son propre titre.</p>
+    <table>
+      <caption class="crumb">Les trois états d'une série</caption>
+      <tr><th>État</th><th>Signification</th></tr>
+      <tr><td>Active</td><td>En cours de traitement</td></tr>
+      <tr><td>En pause</td><td>Suspendue, avec une raison enregistrée</td></tr>
+      <tr><td>Terminée</td><td>Toutes les tâches sont achevées</td></tr>
+    </table>
+    <p>Une série passe automatiquement en « terminée » quand toutes ses tâches le sont — et une série vide n'est jamais considérée comme terminée.</p>
+
+    <h2 id="outils">Les cinq outils</h2>
+    <table>
+      <caption class="crumb">Ce qui compose la fonction</caption>
+      <tr><th>Outil</th><th>Rôle</th></tr>
+      <tr><td><code>todo_write</code></td><td>L'agent crée ou met à jour ses tâches</td></tr>
+      <tr><td><code>todo_history</code></td><td>Consulter les séries passées</td></tr>
+      <tr><td><code>todo_pause</code></td><td>Suspendre la série en cours, avec une raison</td></tr>
+      <tr><td><code>todo_resume</code></td><td>Reprendre une série suspendue</td></tr>
+      <tr><td><code>todo_delete</code></td><td>Supprimer une série</td></tr>
+    </table>
+    <p>Quatre d'entre eux — tous sauf <code>todo_write</code> — restent disponibles en mode Plan, ce qui permet de consulter et de piloter les listes pendant une phase d'exploration.</p>
+
+    <h2 id="negligence">Quand l'agent néglige sa liste</h2>
+    <p>Quand une série est active et que l'agent n'avance pas dessus au fil des échanges, Beaver intervient : après <b>deux tours</b> sans progression, une relance lui est adressée ; après <b>quatre tours</b>, la série est <b>mise en pause automatiquement</b>.</p>
+    <div class="callout">
+      <span class="t">Pourquoi</span>
+      Une liste abandonnée en plein milieu ne doit pas rester indéfiniment marquée comme active : l'avancement affiché deviendrait faux.
+    </div>
+
+    <h2 id="limites">Les limites</h2>
+    <table>
+      <caption class="crumb">Valeurs de référence</caption>
+      <tr><th>Limite</th><th>Valeur</th></tr>
+      <tr><td>Séries conservées par conversation</td><td><b>20</b></td></tr>
+      <tr><td>Relance après</td><td>2 tours sans progression</td></tr>
+      <tr><td>Mise en pause automatique après</td><td>4 tours sans progression</td></tr>
+    </table>
+    <p>Au-delà de vingt séries, les plus anciennes sont écartées.</p>
+
+    <h2 id="pieges">Ce qui surprend le plus souvent</h2>
+    <table>
+      <caption class="crumb">Symptôme, cause, résolution</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>Aucune liste n'apparaît</td><td>Outil désactivé par défaut</td><td>L'activer dans Réglages › Outils</td></tr>
+      <tr><td>Une série passe en pause seule</td><td>Quatre tours sans progression</td><td>La reprendre avec <code>todo_resume</code></td></tr>
+      <tr><td>L'agent ne crée pas de liste</td><td>Tâche jugée trop courte, ou outil désactivé</td><td>Le lui demander explicitement</td></tr>
+      <tr><td>Une ancienne série a disparu</td><td>Vingt séries conservées par conversation</td><td>Normal</td></tr>
+      <tr><td>L'agent ne peut pas écrire ses tâches</td><td>Mode Plan actif : <code>todo_write</code> y est interdit</td><td>Approuver le plan d'abord</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="outils-vue-densemble.html">Vue d'ensemble des outils</a> — activer le groupe.</li>
+      <li><a href="agent-sous-agents.html">Sous-agents</a> — suivre un travail délégué.</li>
+      <li><a href="agent-fonctionnement.html">Fonctionnement</a> — ce qu'est un tour de conversation.</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../js/theme.js"></script>
+<script src="../js/docs-nav-data.js"></script>
+<script src="../js/docs-nav.js"></script>
+</body>
+</html>

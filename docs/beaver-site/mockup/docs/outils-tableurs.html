@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Tableurs</title>
+<meta name="description" content="Lire six formats de tableur, écrire du .xlsx opération par opération, et les protections qui encadrent l'ouverture d'un classeur.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Outils / Tableurs</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="outils-tableurs.html" hreflang="fr" aria-current="true">FR</a>
+    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Lire et écrire <em>des tableurs.</em></h1>
+    <p>Deux outils forment le groupe <b>Spreadsheet / Excel</b>, optionnel et <b>éteint par défaut</b>. Beaver lit six formats et n'en écrit qu'un.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      Tant que le groupe est éteint, l'agent <b>ignore que ces outils existent</b>. Une demande « ouvre-moi ce fichier Excel » se soldera par un contournement — une tentative de lecture en texte brut, qui échouera — plutôt que par un message clair. C'est le piège le plus courant de toute cette section.
+    </div>
+
+    <h2 id="un-groupe-a-activer">Un groupe à activer</h2>
+    <table>
+      <caption class="crumb">Le groupe Spreadsheet / Excel</caption>
+      <tr><th>Outil</th><th>Rôle</th><th>Approbation</th></tr>
+      <tr><td><code>read_spreadsheet</code></td><td>Lit les données d'un tableur</td><td>Non</td></tr>
+      <tr><td><code>write_spreadsheet</code></td><td>Crée ou modifie un fichier Excel</td><td><b>Oui</b></td></tr>
+    </table>
+
+    <h2 id="lire-un-tableur">Lire un tableur</h2>
+    <p><b>Formats acceptés en lecture</b> : <code>.xlsx</code>, <code>.xls</code>, <code>.xlsm</code>, <code>.ods</code>, <code>.csv</code>, <code>.tsv</code>.</p>
+    <ul>
+      <li>La <b>première ligne sert toujours d'en-têtes</b> de colonnes. Ce n'est pas configurable.</li>
+      <li>Sur un classeur, l'agent peut viser <b>une feuille précise</b> — la première par défaut — et <b>une plage de cellules</b>.</li>
+      <li>Sur un fichier CSV ou TSV, la feuille et la plage sont ignorées, et <b>le séparateur est détecté automatiquement</b> en analysant la première ligne : tabulation, point-virgule ou virgule.</li>
+      <li><b>Les formules sont rendues telles quelles</b>, sous forme de texte. L'agent voit la formule, pas son résultat calculé : demander « quel est le total » sur une cellule contenant une somme renverra la formule, à charge pour le modèle de la comprendre ou de la recalculer.</li>
+    </ul>
+
+    <div class="callout">
+      <span class="t">À retenir</span>
+      Les formules ne sont pas calculées : l'agent voit <code>=SOMME(A1:A5)</code>, pas le total. Pour obtenir des valeurs, il faut un fichier qui les contient, ou laisser l'agent faire le calcul lui-même.
+    </div>
+
+    <h2 id="ce-que-lagent-recoit">Ce que l'agent reçoit</h2>
+    <p>Un ensemble structuré contenant le nom de la feuille lue, <b>la liste de toutes les feuilles du classeur</b> — l'agent sait donc qu'il y en a d'autres —, les en-têtes, les lignes de données, <b>le nombre total de lignes</b> même quand toutes ne sont pas transmises, et un indicateur de troncature. L'agent sait ainsi qu'il n'a pas tout vu, et peut demander la suite.</p>
+    <p><b>Limites de lecture</b> : <b>500 lignes</b> par défaut, <b>5 000</b> au maximum, et <b>1 000 colonnes</b>.</p>
+
+    <h2 id="ecrire">Écrire un fichier Excel</h2>
+    <p><b>Un seul format en écriture : <code>.xlsx</code>.</b> L'agent ne fournit pas un fichier complet mais <b>une liste d'opérations</b> à appliquer, ce qui permet de modifier un fichier existant sans le réécrire.</p>
+    <p>Un fichier neuf reçoit une feuille par défaut : il n'est pas nécessaire d'en créer une pour un classeur à une seule feuille, c'est même explicitement déconseillé. Chaque opération peut viser <b>une feuille précise</b>, la première par défaut.</p>
+
+    <table>
+      <caption class="crumb">Les opérations d'écriture disponibles</caption>
+      <tr><th>Opération</th><th>Ce qu'elle fait</th></tr>
+      <tr><td>Écrire une cellule</td><td>Pose une valeur dans une cellule</td></tr>
+      <tr><td>Écrire une formule</td><td>Pose une formule</td></tr>
+      <tr><td>Écrire une ligne</td><td>Remplit une ligne entière d'un coup</td></tr>
+      <tr><td>Ajouter une feuille</td><td>Crée une feuille supplémentaire</td></tr>
+      <tr><td>Largeur de colonne</td><td>Ajuste une colonne</td></tr>
+      <tr><td>Hauteur de ligne</td><td>Ajuste une ligne</td></tr>
+      <tr><td>Mise en forme</td><td>Gras, italique, souligné, couleur de texte, couleur de fond, taille de police</td></tr>
+      <tr><td>Format de nombre</td><td>Décimales, date, monnaie, séparateur de milliers</td></tr>
+      <tr><td>Bordure</td><td>Fine, moyenne ou épaisse, sur les côtés choisis</td></tr>
+      <tr><td>Fusion de cellules</td><td>Fusionne un rectangle de cellules</td></tr>
+    </table>
+    <p>Les couleurs s'expriment en hexadécimal. La mise en forme peut au passage réécrire la valeur de la cellule, ce qui évite deux opérations.</p>
+    <p><b>Ce qui n'existe pas</b> : formules calculées, graphiques, tableaux croisés dynamiques, filtres, mise en forme conditionnelle, images. L'outil écrit des données et de l'apparence, pas des objets Excel avancés.</p>
+
+    <h2 id="les-formats">Les formats</h2>
+    <table>
+      <caption class="crumb">Six formats en lecture, un seul en écriture</caption>
+      <tr><th>Extension</th><th>Lecture</th><th>Écriture</th></tr>
+      <tr><td><code>.xlsx</code></td><td><b>Oui</b></td><td><b>Oui</b></td></tr>
+      <tr><td><code>.xlsm</code></td><td>Oui</td><td>Non</td></tr>
+      <tr><td><code>.xls</code></td><td>Oui</td><td>Non</td></tr>
+      <tr><td><code>.ods</code></td><td>Oui</td><td>Non</td></tr>
+      <tr><td><code>.csv</code></td><td>Oui</td><td>Non</td></tr>
+      <tr><td><code>.tsv</code></td><td>Oui</td><td>Non</td></tr>
+    </table>
+
+    <h2 id="limites-et-protections">Les limites et les protections</h2>
+    <p>Les fichiers de bureautique modernes sont des archives compressées, et une archive peut être fabriquée pour occuper une place démesurée une fois décompressée — c'est une attaque connue. Beaver s'en protège par une taille de fichier source plafonnée, un nombre d'entrées borné, un taux de compression refusé au-delà d'un seuil et une taille décompressée totale limitée.</p>
+    <p>S'ajoute une protection propre aux classeurs : une feuille peut <b>déclarer</b> des dimensions énormes tout en pesant quelques kilooctets. Beaver vérifie le produit lignes × colonnes <b>avant</b> de charger la feuille et refuse au-delà de <b>5 millions de cellules</b>. Sans ce contrôle, un petit fichier pourrait faire consommer plusieurs gigaoctets de mémoire.</p>
+
+    <table>
+      <caption class="crumb">Les bornes du groupe Spreadsheet / Excel</caption>
+      <tr><th>Limite</th><th>Valeur</th></tr>
+      <tr><td>Lignes lues par défaut</td><td><b>500</b></td></tr>
+      <tr><td>Lignes lues au maximum</td><td><b>5 000</b></td></tr>
+      <tr><td>Colonnes lues</td><td><b>1 000</b></td></tr>
+      <tr><td>Taille du fichier source</td><td><b>50 Mo</b></td></tr>
+      <tr><td>Cellules chargeables dans une feuille</td><td><b>5 millions</b></td></tr>
+      <tr><td>Opérations d'écriture</td><td><b>10 000</b></td></tr>
+      <tr><td>Entrées dans l'archive</td><td><b>4 096</b></td></tr>
+      <tr><td>Taux de compression accepté</td><td><b>100 pour 1</b></td></tr>
+      <tr><td>Taille décompressée totale</td><td><b>200 Mo</b></td></tr>
+    </table>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      La première ligne est toujours l'en-tête. Un fichier qui commence par un titre ou une ligne vide sera mal interprété : c'est une contrainte, pas un réglage.
+    </div>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+    <table>
+      <caption class="crumb">Symptôme, cause, résolution</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>L'agent n'ouvre pas ton fichier Excel</td><td>Groupe éteint par défaut</td><td>L'activer dans les réglages</td></tr>
+      <tr><td>L'agent donne une formule au lieu du résultat</td><td>Les formules sont rendues telles quelles</td><td>Comportement attendu</td></tr>
+      <tr><td>Les colonnes sont décalées</td><td>La première ligne n'était pas un en-tête</td><td>Ajouter une ligne d'en-têtes</td></tr>
+      <tr><td>L'agent n'a vu que 500 lignes</td><td>Limite par défaut</td><td>Il peut en demander jusqu'à 5 000</td></tr>
+      <tr><td>« Format non supporté »</td><td>Extension hors de la liste</td><td>Convertir en <code>.xlsx</code> ou <code>.csv</code></td></tr>
+      <tr><td>« Feuille trop volumineuse »</td><td>Plus de 5 millions de cellules déclarées</td><td>Réduire la plage utilisée dans le fichier</td></tr>
+      <tr><td>« Compression excessive »</td><td>Archive suspecte ou très inhabituelle</td><td>Rouvrir et réenregistrer le fichier depuis un tableur</td></tr>
+      <tr><td>L'agent ne peut pas modifier un <code>.csv</code></td><td>Écriture en <code>.xlsx</code> seulement</td><td>Lui demander d'écrire un <code>.xlsx</code>, ou passer par le terminal</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="outils-documents.html">Documents</a> — les documents Word et PDF.</li>
+      <li><a href="outils-vue-densemble.html">Vue d'ensemble des outils</a> — activer un groupe.</li>
+      <li><a href="outils-fichiers.html">Fichiers</a> — pourquoi <code>read_file</code> échoue sur un tableur.</li>
+      <li><a href="interface-fichiers-et-previews.html">Fichiers et prévisualisations</a> — la prévisualisation de tableurs dans le panneau latéral.</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../js/theme.js"></script>
+<script src="../js/docs-nav-data.js"></script>
+<script src="../js/docs-nav.js"></script>
+</body>
+</html>

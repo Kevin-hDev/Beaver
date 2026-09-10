@@ -36,6 +36,9 @@ src-tauri/resources/extension-host/ui-build.mjs
 !/docs/beaver-site/mockup/assets/
 # Version anglaise des pages (ajoutée le 9 sept. 2026) : publique, comme le reste de la maquette.
 !/docs/beaver-site/mockup/en/
+# Pages de la documentation (ajoutées le 10 sept. 2026) : publiques, comme le
+# reste de la maquette — c'est le contenu servi par le site.
+!/docs/beaver-site/mockup/docs/
 # Briefs de contenu de la documentation du site : suivis parce qu'ils sont
 # destinés au développeur qui construira les pages, donc partagés hors de cette
 # machine. Ils décrivent le comportement réel du produit, code à l'appui.

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Les fournisseurs par clé API</title>
+<meta name="description" content="Les onze fournisseurs de modèles qui se connectent avec une clé API, où la créer, et comment Beaver la protège.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Modèles / Fournisseurs API</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="modeles-fournisseurs-api.html" hreflang="fr" aria-current="true">FR</a>
+    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Une <em>clé</em>, un fournisseur</h1>
+    <p>Onze services de modèles se branchent dans Beaver avec une clé API. Cette page dit où créer cette clé, comment l'enregistrer, et surtout où elle va une fois saisie — c'est le point qui distingue Beaver d'une application qui écrirait ta clé dans un fichier de configuration.</p>
+
+    <h2 id="ce-qu-apporte-une-cle">Ce qu'apporte une clé</h2>
+    <p>Beaver fonctionne sans aucune clé, avec des modèles locaux. Ajouter une clé donne accès aux modèles distants d'un fournisseur : plus puissants, plus rapides, sans consommer les ressources de ta machine — et facturés à l'usage.</p>
+    <p>Le choix entre local et distant est traité dans <a href="demarrage-choisir-son-modele.html">Choisir son modèle</a>. Cette page-ci traite de la mise en place.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      Beaver fonctionne sans aucune clé. Les modèles locaux ne demandent aucun compte. Une clé ajoute des possibilités, elle n'est jamais un prérequis.
+    </div>
+
+    <h2 id="les-onze-fournisseurs">Les onze fournisseurs</h2>
+
+    <table>
+      <caption class="crumb">Les fournisseurs configurables par clé API, et où générer la clé</caption>
+      <tr><th>Fournisseur</th><th>Où créer la clé</th></tr>
+      <tr><td><b>Google Gemini</b></td><td><code>aistudio.google.com/app/apikey</code></td></tr>
+      <tr><td><b>Mistral</b></td><td><code>console.mistral.ai/api-keys</code></td></tr>
+      <tr><td><b>Cerebras</b></td><td><code>cloud.cerebras.ai</code></td></tr>
+      <tr><td><b>OpenRouter</b></td><td><code>openrouter.ai/settings/keys</code></td></tr>
+      <tr><td><b>OpenAI</b></td><td><code>platform.openai.com/api-keys</code></td></tr>
+      <tr><td><b>DeepSeek</b></td><td><code>platform.deepseek.com/api_keys</code></td></tr>
+      <tr><td><b>xAI</b></td><td><code>console.x.ai</code></td></tr>
+      <tr><td><b>Moonshot Kimi</b></td><td><code>platform.kimi.ai/console/api-keys</code></td></tr>
+      <tr><td><b>Z.ai GLM</b></td><td><code>z.ai/manage-apikey/apikey-list</code></td></tr>
+      <tr><td><b>Anthropic Claude</b></td><td><code>console.anthropic.com/settings/keys</code></td></tr>
+      <tr><td><b>Qwen</b></td><td><code>modelstudio.console.alibabacloud.com</code></td></tr>
+    </table>
+
+    <p>Ces adresses sont celles que Beaver affiche dans son écran de configuration : un bouton y mène directement, tu n'as rien à recopier.</p>
+    <p><b>Trois de ces fournisseurs proposent aussi une connexion par compte</b>, sans clé du tout — voir <a href="modeles-connexion-par-compte.html">Connexion par compte</a>.</p>
+    <p>Deux fournisseurs sortent du cadre commun, sans que ça change quoi que ce soit pour toi. <b>Anthropic Claude</b> n'emploie pas le même mode d'authentification que les autres : sa clé voyage dans un en-tête qui lui est propre. <b>Qwen</b> n'a pas d'adresse de service fixe : le point d'entrée est déterminé au moment de l'appel, à partir de la connexion configurée. Dans les deux cas, la saisie et le test se font comme partout ailleurs.</p>
+
+    <h2 id="ajouter-une-cle">Ajouter une clé</h2>
+    <ul>
+      <li>Ouvre <b>Réglages › Intégrations › Fournisseurs</b>.</li>
+      <li>Choisis le fournisseur : sa description et son offre d'entrée s'affichent.</li>
+      <li>Suis le lien vers la page du fournisseur, crée un compte, génère une clé.</li>
+      <li>Colle la clé dans Beaver.</li>
+      <li>Teste la connexion.</li>
+    </ul>
+    <p>La clé est <b>validée à la saisie</b> — format, longueur, caractères. Une clé manifestement erronée est refusée immédiatement, avant tout appel réseau.</p>
+    <p>Une fois enregistrée, le fournisseur apparaît comme configuré et ses modèles rejoignent le sélecteur de la barre de saisie.</p>
+
+    <h2 id="ou-va-la-cle">Où va la clé</h2>
+    <p><b>La clé est chiffrée sur le disque.</b> Elle vit dans un coffre chiffré avec un algorithme moderne. La clé qui déverrouille ce coffre — la clé maîtresse — n'est pas dans le coffre : elle est confiée au <b>gestionnaire de mots de passe du système d'exploitation</b> (Trousseau sur macOS, Gestionnaire d'identifiants sur Windows, portefeuille du bureau sur Linux).</p>
+    <p>Conséquence directe : <b>copier le fichier de coffre sur une autre machine ne donne accès à rien.</b> Sans la clé maîtresse du système, il est illisible.</p>
+    <p><b>L'interface de Beaver ne voit jamais une clé.</b> Les commandes disponibles permettent d'enregistrer une clé, de la supprimer, de savoir si elle existe, de lister les fournisseurs configurés et de tester la connexion. <b>Aucune ne permet de la relire.</b></p>
+    <p><b>En mémoire, la clé est protégée et effacée après usage</b> : elle est chargée au moment de l'appel au fournisseur, puis écrasée. Et <b>rien de tout cela n'apparaît dans les traces</b> — les corps de réponse des fournisseurs sont filtrés et tronqués avant écriture.</p>
+
+    <table>
+      <caption class="crumb">Les protections de la clé, résumées</caption>
+      <tr><th>Question</th><th>Réponse</th></tr>
+      <tr><td>Où est-elle stockée</td><td>Dans un coffre chiffré, dans les données de l'application</td></tr>
+      <tr><td>Qui détient la clé du coffre</td><td>Le gestionnaire de mots de passe du système d'exploitation</td></tr>
+      <tr><td>L'interface peut-elle la lire</td><td><b>Non</b> — aucune commande ne l'expose</td></tr>
+      <tr><td>Peut-on la réafficher après saisie</td><td><b>Non</b></td></tr>
+      <tr><td>Reste-t-elle en mémoire</td><td>Non — chargée à l'appel, effacée après</td></tr>
+      <tr><td>Apparaît-elle dans les traces</td><td>Non — les réponses sont filtrées</td></tr>
+      <tr><td>Copier le fichier suffit-il à la lire</td><td><b>Non</b> — la clé maîtresse reste sur la machine d'origine</td></tr>
+    </table>
+
+    <table>
+      <caption class="crumb">Ce que chaque commande de l'application a le droit de faire</caption>
+      <tr><th>Commande disponible</th><th>Ce qu'elle fait</th></tr>
+      <tr><td>Enregistrer</td><td>Valide et chiffre une clé</td></tr>
+      <tr><td>Supprimer</td><td>La retire du coffre</td></tr>
+      <tr><td>Vérifier la présence</td><td>Répond par oui ou non, sans donner la valeur</td></tr>
+      <tr><td>Lister les fournisseurs configurés</td><td>Donne les identifiants, jamais les clés</td></tr>
+      <tr><td>Tester</td><td>Envoie une requête minimale et rend un verdict</td></tr>
+    </table>
+
+    <p><b>Il n'existe aucune commande de lecture.</b> C'est volontaire : rien dans l'interface ne peut demander la valeur d'une clé. Le détail du coffre est dans <a href="reference-coffre-et-cles.html">Le coffre et les clés API</a>.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      Une clé saisie ne peut plus être affichée — pas même par Beaver. Si tu la perds, il faut en générer une nouvelle chez le fournisseur. C'est le prix d'une clé que l'application elle-même ne peut pas lire.
+    </div>
+
+    <h2 id="tester-et-retirer">Tester la connexion, retirer une clé</h2>
+    <p>Chaque fournisseur dispose d'un test qui envoie une requête minimale et rend un verdict clair. C'est le moyen de distinguer une clé invalide d'un problème de réseau, avant de commencer à travailler.</p>
+    <p>Supprimer une clé la retire du coffre : le fournisseur disparaît de la liste des services configurés et ses modèles quittent le sélecteur. L'écriture dans le coffre est <b>transactionnelle</b> — soit l'opération aboutit entièrement, soit le coffre reste dans son état précédent. Une interruption au mauvais moment ne peut pas le laisser à moitié écrit, donc illisible, donc toutes les clés perdues.</p>
+
+    <h2 id="groq-retire">Un fournisseur retiré : Groq</h2>
+    <p><b>Groq a été retiré du produit.</b> Il n'apparaît plus dans la liste ci-dessus et ne peut plus être configuré.</p>
+    <p>Si tu l'avais configuré : <b>au premier démarrage d'une version qui ne le propose plus, sa clé est effacée du coffre et du gestionnaire de mots de passe du système.</b> L'effacement suit la même prudence que le reste — une copie du coffre est faite avant l'opération et n'est supprimée qu'au démarrage suivant réussi, et un marqueur empêche que le nettoyage recommence.</p>
+    <p>Le mot « groq » peut encore apparaître comme <b>préfixe de noms de modèles revendus par OpenRouter</b>. Ce n'est pas un fournisseur configurable, c'est une indication d'origine dans un nom de modèle.</p>
+
+    <h2 id="quand-une-cle-ne-marche-pas">Quand une clé ne marche pas</h2>
+
+    <table>
+      <caption class="crumb">Les erreurs de fournisseur et ce qu'elles signifient</caption>
+      <tr><th>Ce qui se passe</th><th>Ce que ça veut dire</th></tr>
+      <tr><td>Authentification refusée</td><td>La clé est invalide, révoquée, ou pas celle de ce service</td></tr>
+      <tr><td>Limite de requêtes atteinte</td><td>Trop de requêtes en peu de temps — attendre</td></tr>
+      <tr><td>Quota épuisé</td><td>Le crédit ou le palier gratuit est consommé</td></tr>
+      <tr><td>Service indisponible</td><td>Panne côté fournisseur — réessayer plus tard</td></tr>
+      <tr><td>Délai dépassé</td><td>Réseau lent, ou fournisseur saturé</td></tr>
+    </table>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+
+    <table>
+      <caption class="crumb">Ce qui bloque le plus souvent au moment de configurer un fournisseur</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>La clé est refusée à la saisie</td><td>Format invalide, espace ou saut de ligne collé avec</td><td>Recopier la clé seule</td></tr>
+      <tr><td>« Authentification refusée » au test</td><td>Clé révoquée, ou clé d'un autre service</td><td>En générer une nouvelle</td></tr>
+      <tr><td>La clé n'est plus visible dans Beaver</td><td>Elle n'est jamais réaffichée, par conception</td><td>En générer une nouvelle chez le fournisseur</td></tr>
+      <tr><td>« Limite de requêtes atteinte »</td><td>Cadence trop élevée pour le palier du compte</td><td>Attendre, ou passer à un palier supérieur</td></tr>
+      <tr><td>Le modèle attendu n'apparaît pas</td><td>Le fournisseur ne le propose pas à ce compte</td><td>Voir <a href="modeles-catalogue-et-favoris.html">Catalogue et favoris</a></td></tr>
+      <tr><td>Les clés ont disparu après un changement de machine</td><td>Le coffre est lié au gestionnaire de mots de passe local</td><td>Ressaisir les clés sur la nouvelle machine</td></tr>
+    </table>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      Aucun tarif ne figure sur ce site. Les prix changent régulièrement, et chaque lien ci-dessus mène à la page tarifaire officielle du fournisseur, qui fait autorité. Beaver affiche de son côté une estimation dans son écran d'usage — voir <a href="modeles-usage-et-couts.html">Usage et coûts</a>.
+    </div>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../js/theme.js"></script>
+<script src="../js/docs-nav-data.js"></script>
+<script src="../js/docs-nav.js"></script>
+</body>
+</html>

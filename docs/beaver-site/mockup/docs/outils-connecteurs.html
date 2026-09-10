@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Connecteurs externes</title>
+<meta name="description" content="Comment l'agent utilise les services que tu as connectés par MCP, avec un seul outil à deux temps : chercher, puis appeler.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Outils / Connecteurs externes</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="outils-connecteurs.html" hreflang="fr" aria-current="true">FR</a>
+    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Les services <em>connectés.</em></h1>
+    <p>MCP est un protocole standard qui permet à un assistant d'utiliser des services extérieurs : gestionnaire de tâches, base de connaissances, messagerie, outil de conception, plateforme de déploiement. Une fois un connecteur configuré, l'agent peut créer un ticket, lire une page, poster un message — sans que Beaver ait écrit une ligne de code spécifique à ce service.</p>
+    <p>Cette page décrit <b>l'outil</b>. Pour ajouter un service et l'authentifier, voir <a href="integrations-connecteurs-mcp.html">Connecteurs MCP</a>.</p>
+
+    <h2 id="un-outil-unique">Un outil unique pour tous les services</h2>
+    <p><code>search_mcp_tools</code> fait partie du groupe <b>Connecteurs externes</b>, verrouillé. Il ne sert à rien tant qu'aucun connecteur n'est configuré et activé : dans ce cas, il répond simplement « Aucun connecteur MCP activé ».</p>
+    <p>Beaver <b>n'expose pas</b> les outils des connecteurs comme autant d'outils distincts au modèle. Un connecteur peut offrir cinquante fonctions ; les injecter toutes dans le contexte à chaque requête consommerait énormément de place, pour des fonctions qui ne servent presque jamais.</p>
+    <p>À la place, l'agent dispose d'<b>un seul outil à deux temps</b> : <b>chercher</b> — « quels outils externes existent pour parler d'issues ? » — puis <b>appeler</b> — « exécute cet outil précis avec ces arguments ». Le coût dans le contexte est celui d'un seul outil, quel que soit le nombre de connecteurs configurés.</p>
+
+    <h2 id="chercher">Chercher un outil externe</h2>
+    <ul>
+      <li>L'agent envoie un ou plusieurs mots-clés. Beaver interroge <b>tous les connecteurs activés</b> et renvoie les outils dont le nom, la description ou le nom du connecteur contiennent l'un des mots.</li>
+      <li>Une <b>recherche vide liste tout</b> ce qui est disponible.</li>
+      <li>Chaque outil est identifié sous la forme <code>service.nom_de_l_outil</code>, avec sa description.</li>
+      <li>Au plus <b>15 outils par connecteur</b> sont remontés dans une recherche : une recherche large peut donc ne pas tout montrer.</li>
+      <li>Quand un connecteur ne répond pas, le résultat le dit — il liste les connecteurs ignorés au lieu de faire comme s'ils n'existaient pas.</li>
+      <li>Si <b>aucun</b> connecteur ne répond, c'est une erreur franche, pas une liste vide.</li>
+    </ul>
+
+    <h2 id="appeler">Appeler un outil externe</h2>
+    <p>L'agent donne l'identifiant complet de l'outil et ses arguments. Beaver vérifie que le connecteur est bien activé, puis transmet. L'appel est abandonné au bout de <b>60 secondes</b>.</p>
+
+    <h2 id="lapprobation">L'approbation</h2>
+    <p><b>Chercher ne demande rien. Appeler demande une approbation</b> en mode Demande d'approbation. La distinction est logique : parcourir un catalogue n'a aucun effet, alors qu'un appel peut créer, modifier ou supprimer quelque chose dans un service extérieur — hors de la machine, et hors de portée d'une annulation.</p>
+
+    <table>
+      <caption class="crumb">Les deux temps de l'outil</caption>
+      <tr><th></th><th>Chercher</th><th>Appeler</th></tr>
+      <tr><td>Ce que fait l'agent</td><td>Explore le catalogue</td><td>Exécute une action</td></tr>
+      <tr><td>Approbation</td><td>Non</td><td><b>Oui</b></td></tr>
+      <tr><td>Effet extérieur</td><td>Aucun</td><td>Possible et durable</td></tr>
+      <tr><td>Délai maximal</td><td>Aucun explicite</td><td><b>60 secondes</b></td></tr>
+      <tr><td>Résultat</td><td>Liste d'outils avec leur description</td><td>Réponse du service</td></tr>
+    </table>
+
+    <div class="callout">
+      <span class="t">À retenir</span>
+      Chercher est gratuit, appeler engage. Un appel MCP agit sur un service extérieur : il n'est pas annulable depuis Beaver, et son effet survit à la conversation.
+    </div>
+
+    <h2 id="verifications">Ce qui est vérifié avant l'appel</h2>
+    <ul>
+      <li>L'identifiant doit avoir la forme <code>service.outil</code>.</li>
+      <li>Le nom du connecteur et celui de l'outil sont validés séparément. Un nom d'outil accepte au plus <b>64 caractères</b>, uniquement des lettres, des chiffres, des tirets et des soulignés.</li>
+      <li>Le connecteur doit être <b>activé</b>. Un connecteur configuré mais éteint est inaccessible — la vérification a lieu au moment de l'appel, pas seulement au moment de la recherche.</li>
+      <li><b>Les arguments sont validés contre le schéma déclaré par le service lui-même</b> avant d'être envoyés. Un appel mal formé est refusé localement, sans partir sur le réseau.</li>
+    </ul>
+
+    <h2 id="la-reponse">Ce que Beaver fait de la réponse</h2>
+    <p>La réponse d'un service externe est du contenu que Beaver ne contrôle pas. Elle est donc <b>nettoyée avant d'entrer dans la conversation</b>.</p>
+    <ul>
+      <li>Les <b>caractères de contrôle invisibles</b> sont retirés — notamment ceux qui inversent le sens de lecture du texte ou qui masquent du contenu. Un service compromis ne peut pas afficher une chose à l'écran et en transmettre une autre au modèle.</li>
+      <li>La réponse est plafonnée à <b>4 096 caractères</b>. Au-delà, elle est tronquée et le résultat le signale.</li>
+      <li><b>Une erreur renvoyée par le service reste une erreur.</b> Elle n'est jamais présentée à l'agent comme un succès sous prétexte que la communication, elle, a fonctionné.</li>
+    </ul>
+
+    <div class="callout">
+      <span class="t">Sécurité</span>
+      Les réponses des services externes sont nettoyées des caractères invisibles capables de tromper l'affichage, avant même d'entrer dans la conversation.
+    </div>
+
+    <h2 id="quand-ca-echoue">Quand ça échoue</h2>
+    <p>Les échecs sont classés, et cette classification décide si l'agent peut réessayer.</p>
+    <table>
+      <caption class="crumb">Les cinq types d'échec d'un appel MCP</caption>
+      <tr><th>Type d'échec</th><th>Réessayable</th><th>Pourquoi</th></tr>
+      <tr><td>Service injoignable</td><td><b>Oui</b></td><td>Aucun appel n'est parti : réessayer est sans risque</td></tr>
+      <tr><td>Erreur renvoyée par le service</td><td>Non</td><td>Le service a reçu l'appel et l'a refusé</td></tr>
+      <tr><td>Réponse incompréhensible</td><td>Non</td><td>Le service a reçu l'appel ; son état est inconnu</td></tr>
+      <tr><td>Échec de transmission</td><td>Non</td><td>Idem</td></tr>
+      <tr><td>Délai de 60 secondes dépassé</td><td>Non</td><td><b>L'action a peut-être abouti</b></td></tr>
+    </table>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      Un délai dépassé ne veut pas dire « rien ne s'est passé ». Le message d'erreur le dit explicitement : vérifier l'état du service avant de relancer. Sans cette précaution, une action lente peut être exécutée deux fois — et le même ticket créé deux fois.
+    </div>
+
+    <h2 id="les-limites">Les limites</h2>
+    <table>
+      <caption class="crumb">Les bornes des appels MCP</caption>
+      <tr><th>Limite</th><th>Valeur</th></tr>
+      <tr><td>Outils remontés par connecteur dans une recherche</td><td><b>15</b></td></tr>
+      <tr><td>Longueur d'un nom d'outil</td><td><b>64 caractères</b></td></tr>
+      <tr><td>Réponse d'un service transmise au modèle</td><td><b>4 096 caractères</b></td></tr>
+      <tr><td>Délai d'un appel</td><td><b>60 secondes</b></td></tr>
+    </table>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+    <table>
+      <caption class="crumb">Symptôme, cause, résolution</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>« Aucun connecteur MCP activé »</td><td>Aucun connecteur configuré, ou tous éteints</td><td>Voir <a href="integrations-connecteurs-mcp.html">Connecteurs MCP</a></td></tr>
+      <tr><td>« Aucun outil MCP ne correspond à la recherche »</td><td>Les mots-clés ne correspondent à rien</td><td>L'agent réessaie avec une recherche vide pour tout lister</td></tr>
+      <tr><td>« Catalogue MCP indisponible »</td><td>Aucun connecteur n'a répondu</td><td>Vérifier que les services démarrent, et l'authentification</td></tr>
+      <tr><td>« Outil MCP indisponible »</td><td>Connecteur désactivé, ou outil inexistant</td><td>Vérifier l'activation du connecteur</td></tr>
+      <tr><td>« Arguments MCP invalides »</td><td>L'agent a mal formé son appel</td><td>Il corrige seul en général</td></tr>
+      <tr><td>« Appel MCP expiré »</td><td>Service lent ou bloqué</td><td><b>Vérifier l'état du service avant de relancer</b></td></tr>
+      <tr><td>L'agent n'utilise pas un connecteur pourtant configuré</td><td>Il n'a pas pensé à chercher, ou ses mots-clés n'ont rien donné</td><td>Lui nommer le service explicitement dans ta demande</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="integrations-connecteurs-mcp.html">Connecteurs MCP</a> — ajouter et configurer un connecteur.</li>
+      <li><a href="integrations-authentification-mcp.html">Authentification des connecteurs</a> — les services qui demandent une connexion.</li>
+      <li><a href="agent-permissions.html">Modes de permission</a> — pourquoi un appel demande une approbation.</li>
+      <li><a href="agent-contexte.html">Contexte</a> — pourquoi les outils MCP ne sont pas exposés un par un.</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../js/theme.js"></script>
+<script src="../js/docs-nav-data.js"></script>
+<script src="../js/docs-nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Web</title>
+<meta name="description" content="Comment l'agent cherche sur Internet et lit une page, où part la requête, et les protections réseau qui encadrent chaque adresse ouverte.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Outils / Web</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="outils-web.html" hreflang="fr" aria-current="true">FR</a>
+    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Chercher et lire <em>le web.</em></h1>
+    <p>Deux outils forment le groupe <b>Web</b>, verrouillé et impossible à désactiver. L'un cherche, l'autre ouvre une adresse — et les deux ne sont pas traités de la même façon.</p>
+
+    <h2 id="deux-outils">Deux outils, deux usages</h2>
+    <table>
+      <caption class="crumb">Le groupe Web</caption>
+      <tr><th>Outil</th><th>Rôle</th><th>Approbation en mode Demande d'approbation</th></tr>
+      <tr><td><code>web_search</code></td><td>Cherche sur le web et renvoie une liste de résultats</td><td>Non</td></tr>
+      <tr><td><code>web_fetch</code></td><td>Ouvre une adresse et en extrait le texte</td><td><b>Oui, systématiquement</b></td></tr>
+    </table>
+    <p>La différence est volontaire : chercher n'expose rien, alors qu'ouvrir une adresse fait sortir une requête vers un serveur précis, choisi par le modèle.</p>
+
+    <h2 id="chercher-sur-le-web">Chercher sur le web</h2>
+    <ul>
+      <li>L'agent envoie une requête, il reçoit une liste : <b>titre, adresse, extrait</b>. Au plus <b>10 résultats</b>, pour une requête limitée à <b>512 caractères</b>.</li>
+      <li>Chaque champ est borné : <b>160 caractères</b> pour le titre, <b>300</b> pour l'extrait, <b>2 048</b> pour l'adresse.</li>
+      <li><b>L'agent ne choisit pas le moteur de recherche et ne peut pas filtrer par site.</b> C'est verrouillé dans la définition même de l'outil — un test automatisé vérifie d'ailleurs que les noms des services utilisés n'apparaissent nulle part dans ce que voit le modèle.</li>
+      <li>Une recherche sans résultat n'est <b>pas une erreur</b> : l'agent reçoit une liste vide et poursuit.</li>
+    </ul>
+
+    <h2 id="ou-part-la-requete">Où part la requête</h2>
+    <p>Beaver essaie les sources <b>dans cet ordre</b>, et s'arrête à la première qui répond : <b>Brave Search</b> si une clé a été saisie, puis <b>Exa</b>, puis <b>Firecrawl</b>, puis <b>une instance de recherche locale</b> embarquée dans Beaver, qui ne demande aucune clé.</p>
+    <p>La quatrième option est le point important : <b>la recherche web fonctionne sans qu'aucun compte ni aucune clé ne soit configuré</b>. Beaver embarque son propre moteur, qui tourne sur ta machine.</p>
+    <ul>
+      <li><b>Aucun compte n'est associé aux recherches</b>, puisqu'il n'y a pas de compte à configurer.</li>
+      <li>Les moteurs interrogés en aval <b>voient l'adresse IP de la machine</b> — le moteur local les interroge directement, sans relais anonymisant. Ce qu'ils ne voient pas, c'est ton identité ni le lien entre deux recherches.</li>
+      <li><b>Beaver ne conserve aucun historique de recherche.</b></li>
+      <li>En contrepartie, la qualité et la rapidité sont inférieures à celles d'un service payant dédié, et <b>le moteur local exige que Python 3 soit installé</b> sur la machine.</li>
+    </ul>
+    <p>Quand une source échoue, Beaver passe à la suivante. Si toutes échouent, l'erreur remontée <b>agrège les causes</b> — et elle est expurgée avant affichage : aucune clé, aucun jeton ne peut y apparaître.</p>
+
+    <div class="callout">
+      <span class="t">Confidentialité</span>
+      La recherche marche sans clé et sans compte. Mais sans compte ne signifie pas anonyme : le moteur local interroge des moteurs publics depuis ta machine, qui en voient donc l'adresse IP. Ce qui n'existe pas, c'est le compte, le profil et l'historique.
+    </div>
+
+    <table>
+      <caption class="crumb">Les quatre sources, dans leur ordre d'essai</caption>
+      <tr><th>Source</th><th>Clé nécessaire</th><th>Nature</th></tr>
+      <tr><td>Brave Search</td><td>Oui</td><td>Moteur de recherche</td></tr>
+      <tr><td>Exa</td><td>Oui</td><td>Recherche orientée contenu</td></tr>
+      <tr><td>Firecrawl</td><td>Oui</td><td>Extraction de pages</td></tr>
+      <tr><td>Moteur local embarqué</td><td><b>Non</b></td><td>Tourne sur la machine, utilisé en dernier recours</td></tr>
+    </table>
+    <p>L'ordre est fixe et ne se configure pas. Configurer une clé Brave revient à la privilégier sur tout le reste. Le détail est dans <a href="integrations-recherche-web.html">Recherche web</a>.</p>
+
+    <h2 id="lire-une-page">Lire une page</h2>
+    <p><code>web_fetch</code> ouvre une adresse et en extrait le contenu lisible.</p>
+    <ul>
+      <li>La réponse doit être du <b>texte</b> : page web, JSON, XML, texte brut. Une image, un PDF, un fichier binaire sont <b>refusés</b> — l'outil ne les convertit pas.</li>
+      <li>Pour une <b>page web</b>, l'outil isole le contenu principal de l'article et écarte la navigation, les menus et les pieds de page. Quand cette extraction donne un résultat trop maigre — typiquement une page très interactive — il bascule sur une conversion complète de la page en texte structuré, scripts et styles retirés.</li>
+      <li>Pour du <b>JSON, du XML ou du texte brut</b>, le contenu est rendu tel quel, sans transformation.</li>
+      <li><b>Il n'y a aucun cache.</b> Deux lectures de la même adresse dans la même conversation déclenchent deux requêtes réelles : l'agent voit toujours l'état courant de la page.</li>
+      <li><b>Les adresses en <code>http://</code> sont acceptées</b> telles quelles ; il n'y a pas de passage forcé en <code>https://</code>.</li>
+    </ul>
+
+    <table>
+      <caption class="crumb">Ce que <code>web_fetch</code> accepte et refuse</caption>
+      <tr><th>Accepté</th><th>Refusé</th></tr>
+      <tr><td>Pages web (<code>text/html</code>, XHTML)</td><td>Images</td></tr>
+      <tr><td>Texte brut, Markdown, CSV</td><td>PDF</td></tr>
+      <tr><td>JSON, y compris ses variantes</td><td>Documents Office</td></tr>
+      <tr><td>XML</td><td>Archives, exécutables, binaires</td></tr>
+    </table>
+    <p>Une réponse sans type déclaré est acceptée et traitée comme du texte.</p>
+
+    <h2 id="protections-reseau">Les protections réseau</h2>
+    <p>Toute adresse est validée <b>avant</b> la requête, et <b>à chaque redirection</b>. Ce qui est vérifié :</p>
+    <ul>
+      <li><b>Le schéma</b> — seuls <code>http</code> et <code>https</code>. Pas de <code>file://</code>, pas de <code>ftp://</code>, pas de schéma exotique.</li>
+      <li><b>La longueur</b> — 2 048 caractères maximum.</li>
+      <li><b>Les identifiants dans l'adresse</b> — une adresse contenant un nom d'utilisateur ou un mot de passe est refusée.</li>
+      <li><b>Les adresses privées</b> — tout ce qui pointe vers la machine elle-même ou vers le réseau local est bloqué : <code>localhost</code>, les plages privées, les adresses de lien local, leurs équivalents en IPv6, ainsi que les écritures détournées en octal ou en hexadécimal.</li>
+      <li><b>Les serveurs de métadonnées des hébergeurs cloud</b> — bloqués nommément. Ce sont les adresses qui, sur un serveur hébergé, livrent les identifiants de la machine.</li>
+      <li><b>Les ports sensibles</b> — une trentaine de ports de services internes sont refusés : bases de données, partage de fichiers, administration à distance, courrier, annuaires.</li>
+      <li><b>La résolution du nom de domaine</b> — le nom est résolu, <b>toutes</b> les adresses obtenues sont vérifiées, et la requête est ensuite <b>épinglée sur l'adresse validée</b>. Un serveur ne peut donc pas répondre une adresse publique à la vérification puis une adresse interne à la requête.</li>
+    </ul>
+    <p>Les redirections sont suivies <b>trois fois au maximum</b>, et chacune repasse l'intégralité de ces contrôles. Une redirection ne peut pas servir de porte dérobée vers le réseau local.</p>
+    <p>Les messages d'erreur sont volontairement <b>génériques</b> : ils disent qu'une requête a échoué, jamais pourquoi le serveur distant a répondu ce qu'il a répondu. Un message détaillé cartographierait ton réseau.</p>
+
+    <div class="callout">
+      <span class="t">Sécurité</span>
+      Le réseau local est inaccessible à l'agent par cet outil : un serveur de développement sur ta machine, un service interne, une base de données — <code>web_fetch</code> refuse. Pour interroger un service local, l'agent passe par une commande shell, qui est soumise au mode de permission et au bac à sable.
+    </div>
+
+    <table>
+      <caption class="crumb">Ce qui bloque une adresse</caption>
+      <tr><th>Motif</th><th>Message</th></tr>
+      <tr><td>Schéma autre que <code>http</code>/<code>https</code></td><td>Schéma non autorisé</td></tr>
+      <tr><td>Adresse trop longue</td><td>Adresse trop longue</td></tr>
+      <tr><td>Identifiants dans l'adresse</td><td>Identifiants interdits</td></tr>
+      <tr><td>Machine locale ou réseau privé</td><td>Adresse privée bloquée</td></tr>
+      <tr><td>Serveur de métadonnées d'hébergeur</td><td>Métadonnées cloud bloquées</td></tr>
+      <tr><td>Port de service interne</td><td>Port non autorisé</td></tr>
+      <tr><td>Nom de domaine non résolu</td><td>Résolution impossible</td></tr>
+      <tr><td>Plus de 3 redirections</td><td>Trop de redirections</td></tr>
+      <tr><td>Réponse au-delà de 5 Mo</td><td>Réponse trop volumineuse</td></tr>
+      <tr><td>Type de contenu non textuel</td><td>Type de contenu non supporté</td></tr>
+    </table>
+
+    <h2 id="les-limites">Les limites</h2>
+    <table>
+      <caption class="crumb">Les bornes du groupe Web</caption>
+      <tr><th>Limite</th><th>Valeur</th></tr>
+      <tr><td>Longueur d'une requête de recherche</td><td><b>512 caractères</b></td></tr>
+      <tr><td>Résultats de recherche</td><td><b>10</b></td></tr>
+      <tr><td>Longueur d'un titre de résultat</td><td><b>160 caractères</b></td></tr>
+      <tr><td>Longueur d'un extrait</td><td><b>300 caractères</b></td></tr>
+      <tr><td>Longueur d'une adresse</td><td><b>2 048 caractères</b></td></tr>
+      <tr><td>Corps téléchargé par <code>web_fetch</code></td><td><b>5 Mo</b></td></tr>
+      <tr><td>Délai de réponse</td><td><b>15 secondes</b></td></tr>
+      <tr><td>Redirections suivies</td><td><b>3</b></td></tr>
+      <tr><td>Texte transmis au modèle — recherche</td><td><b>10 000 caractères</b></td></tr>
+      <tr><td>Texte transmis au modèle — page</td><td><b>50 000 caractères</b></td></tr>
+    </table>
+    <p>Une page trop lourde renvoie une erreur avant d'être analysée : Beaver ne télécharge pas 200 Mo pour en garder 50 000 caractères.</p>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+    <table>
+      <caption class="crumb">Symptôme, cause, résolution</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>L'agent ne peut pas lire ton serveur local</td><td>Les adresses privées sont bloquées</td><td>Voulu ; passer par une commande shell</td></tr>
+      <tr><td>L'agent ne peut pas lire un PDF en ligne</td><td>Seul le texte est accepté</td><td>Télécharger le fichier puis activer le groupe <a href="outils-documents.html">Document</a></td></tr>
+      <tr><td>Les résultats de recherche sont médiocres</td><td>Aucune clé configurée : c'est le moteur local qui répond</td><td>Ajouter une clé Brave ou Exa dans les réglages</td></tr>
+      <tr><td>« Recherche web indisponible »</td><td>Toutes les sources ont échoué</td><td>Vérifier la connexion, puis les clés configurées</td></tr>
+      <tr><td>La page est vide alors qu'elle s'affiche dans ton navigateur</td><td>Page construite entièrement par du code exécuté côté navigateur</td><td>Utiliser le <a href="interface-navigateur.html">navigateur intégré</a>, ou donner une adresse d'API</td></tr>
+      <tr><td>L'agent demande une approbation pour chaque page</td><td><code>web_fetch</code> est toujours soumis à approbation</td><td>Passer en mode Accès complet, ou approuver au cas par cas</td></tr>
+      <tr><td>« Trop de redirections »</td><td>Plus de trois sauts</td><td>Donner l'adresse finale directement</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="integrations-recherche-web.html">Recherche web</a> — configurer Brave, Exa, Firecrawl et le moteur local.</li>
+      <li><a href="agent-permissions.html">Modes de permission</a> — pourquoi <code>web_fetch</code> déclenche une demande.</li>
+      <li><a href="reference-modele-de-securite.html">Modèle de sécurité</a> et <a href="reference-confidentialite.html">Confidentialité</a> — ce qui sort de la machine.</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../js/theme.js"></script>
+<script src="../js/docs-nav-data.js"></script>
+<script src="../js/docs-nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Documents</title>
+<meta name="description" content="Lire un PDF ou un document Word, créer un .docx bloc par bloc, et ce que l'extraction de texte laisse forcément de côté.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Outils / Documents</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="outils-documents.html" hreflang="fr" aria-current="true">FR</a>
+    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>PDF et <em>documents</em> Word.</h1>
+    <p>Deux outils forment le groupe <b>Document / Word</b>, optionnel et <b>éteint par défaut</b>. Beaver lit le PDF et le Word, mais n'écrit que le Word : il ne produit pas de PDF.</p>
+
+    <h2 id="un-groupe-a-activer">Un groupe à activer</h2>
+    <table>
+      <caption class="crumb">Le groupe Document / Word</caption>
+      <tr><th>Outil</th><th>Rôle</th><th>Approbation</th></tr>
+      <tr><td><code>read_document</code></td><td>Extrait le texte d'un PDF ou d'un <code>.docx</code></td><td>Non</td></tr>
+      <tr><td><code>write_document</code></td><td>Crée un document Word</td><td><b>Oui</b></td></tr>
+    </table>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      Tant que le groupe est éteint, l'agent ne sait pas qu'il peut lire un PDF. Il essaiera de l'ouvrir comme du texte et échouera, sans dire pourquoi. Active-le dans <b>Réglages › Agent › Outils</b>.
+    </div>
+
+    <h2 id="lire">Lire un PDF ou un document Word</h2>
+    <p><b>Formats acceptés</b> : <code>.pdf</code> et <code>.docx</code> — et rien d'autre. Ni <code>.doc</code> ancien format, ni <code>.odt</code>, ni <code>.rtf</code>, ni <code>.pages</code>. L'agent reçoit le texte extrait, son format d'origine et <b>le nombre de caractères</b>.</p>
+
+    <h2 id="ce-qui-est-perdu">Ce que la lecture perd</h2>
+    <p><b>Seul le texte est extrait.</b> Sont perdus, dans les deux formats :</p>
+    <ul>
+      <li>la mise en forme — gras, italique, couleurs, tailles ;</li>
+      <li>les images et les schémas ;</li>
+      <li>la mise en page — colonnes, en-têtes, pieds de page, numérotation ;</li>
+      <li><b>le contenu des tableaux en tant que tableaux</b> — leur texte peut sortir, mais sa structure en lignes et colonnes est perdue.</li>
+    </ul>
+    <p>Pour un document Word, l'extraction procède <b>paragraphe par paragraphe</b>, avec un soin particulier apporté aux espaces : le format Word découpe un paragraphe en fragments stylés, et une extraction naïve colle les mots entre eux. Beaver conserve les espaces significatifs et normalise ceux qui viennent de la mise en forme du fichier.</p>
+    <p>Pour un PDF, l'extraction dépend entièrement du fichier. <b>Un PDF qui n'est qu'une image scannée ne donnera aucun texte</b> : il n'y a pas de reconnaissance optique de caractères dans Beaver. Le texte extrait est plafonné à <b>1 million de caractères</b>.</p>
+
+    <div class="callout">
+      <span class="t">À retenir</span>
+      Un PDF scanné ne donne rien. Sans couche texte, un document numérisé est illisible pour l'agent — il faut le passer par une reconnaissance de caractères au préalable.
+    </div>
+
+    <h2 id="creer-un-document">Créer un document Word</h2>
+    <p><b>Un seul format en sortie : <code>.docx</code>.</b> L'agent ne fournit pas un fichier mais <b>une suite de blocs de contenu</b>, dans l'ordre où ils doivent apparaître. C'est proche de la façon dont on rédige, et cela donne un document propre plutôt qu'un assemblage de texte brut.</p>
+
+    <table>
+      <caption class="crumb">Les quatre blocs disponibles</caption>
+      <tr><th>Bloc</th><th>Ce qu'il produit</th><th>Options</th></tr>
+      <tr><td><b>Titre</b></td><td>Un titre de niveau 1 à 6</td><td>Alignement</td></tr>
+      <tr><td><b>Paragraphe</b></td><td>Un paragraphe de texte</td><td>Gras, italique, alignement, ou segments stylés</td></tr>
+      <tr><td><b>Tableau</b></td><td>Un tableau avec en-têtes et lignes</td><td>—</td></tr>
+      <tr><td><b>Liste</b></td><td>Une liste à puces ou numérotée</td><td>Ordonnée ou non</td></tr>
+    </table>
+    <p>Le mécanisme des <b>segments stylés</b> mérite une mention : plutôt qu'un paragraphe entièrement en gras, l'agent peut composer un paragraphe de plusieurs morceaux, chacun avec son propre style — gras, italique, souligné, couleur. C'est ce qui permet d'écrire une phrase dont deux mots seulement sont mis en évidence. L'alignement accepte quatre valeurs : à gauche, centré, à droite, justifié ; les couleurs s'expriment en hexadécimal.</p>
+    <p><b>Ce qui n'existe pas</b> : images, en-têtes et pieds de page, notes de bas de page, sommaire automatique, sauts de page, styles nommés, modèles. L'outil produit un document structuré et lisible, pas une mise en page élaborée. Un document est limité à <b>5 000 blocs</b>.</p>
+
+    <h2 id="les-formats">Les formats</h2>
+    <table>
+      <caption class="crumb">Ce qui se lit et ce qui s'écrit</caption>
+      <tr><th>Format</th><th>Lecture</th><th>Écriture</th></tr>
+      <tr><td><code>.docx</code></td><td><b>Oui</b></td><td><b>Oui</b></td></tr>
+      <tr><td><code>.pdf</code></td><td><b>Oui</b></td><td>Non</td></tr>
+      <tr><td><code>.doc</code> (ancien)</td><td>Non</td><td>Non</td></tr>
+      <tr><td><code>.odt</code>, <code>.rtf</code>, <code>.pages</code></td><td>Non</td><td>Non</td></tr>
+    </table>
+
+    <h2 id="limites-et-protections">Les limites et les protections</h2>
+    <p>Un fichier <code>.docx</code> est une archive compressée, et une archive peut être fabriquée pour saturer la mémoire une fois ouverte. Les mêmes protections que pour les <a href="outils-tableurs.html">tableurs</a> s'appliquent.</p>
+    <table>
+      <caption class="crumb">Les bornes du groupe Document / Word</caption>
+      <tr><th>Limite</th><th>Valeur</th></tr>
+      <tr><td>Taille du fichier source</td><td><b>50 Mo</b></td></tr>
+      <tr><td>Contenu interne d'un <code>.docx</code> décompressé</td><td><b>10 Mo</b></td></tr>
+      <tr><td>Texte extrait</td><td><b>1 million de caractères</b></td></tr>
+      <tr><td>Blocs par document créé</td><td><b>5 000</b></td></tr>
+      <tr><td>Entrées dans l'archive</td><td><b>4 096</b></td></tr>
+      <tr><td>Taux de compression accepté</td><td><b>100 pour 1</b></td></tr>
+      <tr><td>Taille décompressée totale</td><td><b>200 Mo</b></td></tr>
+    </table>
+    <p>Un document au contenu malformé est refusé avec un message clair plutôt que de produire un texte partiel présenté comme complet.</p>
+
+    <h2 id="les-erreurs">Les erreurs</h2>
+    <table>
+      <caption class="crumb">Message et cause</caption>
+      <tr><th>Message</th><th>Cause</th></tr>
+      <tr><td>Format non supporté. Formats acceptés : pdf, docx</td><td>Autre extension</td></tr>
+      <tr><td>Impossible de lire le fichier PDF</td><td>PDF corrompu, protégé, ou sans couche texte</td></tr>
+      <tr><td>Fichier DOCX invalide ou corrompu</td><td>Archive illisible</td></tr>
+      <tr><td>Structure DOCX invalide</td><td>Le contenu attendu est absent de l'archive</td></tr>
+      <tr><td>Document XML malformé</td><td>Contenu interne corrompu</td></tr>
+      <tr><td>Document trop volumineux</td><td>Plus d'un million de caractères</td></tr>
+      <tr><td>Document DOCX trop volumineux</td><td>Plus de 50 Mo</td></tr>
+      <tr><td>Compression excessive</td><td>Archive suspecte</td></tr>
+    </table>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      Beaver n'écrit pas de PDF, il crée des documents Word. Pour obtenir un PDF, il faut convertir ensuite — par le terminal ou par un autre logiciel.
+    </div>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+    <table>
+      <caption class="crumb">Symptôme, cause, résolution</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>L'agent n'ouvre pas ton PDF</td><td>Groupe éteint par défaut</td><td>L'activer dans les réglages</td></tr>
+      <tr><td>Le PDF est lu mais vide</td><td>Document scanné, sans couche texte</td><td>Passer le fichier par une reconnaissance de caractères</td></tr>
+      <tr><td>Un tableau est illisible dans le texte extrait</td><td>La structure des tableaux est perdue</td><td>Attendu ; convertir le tableau en tableur</td></tr>
+      <tr><td>L'agent ne peut pas lire un <code>.doc</code></td><td>Ancien format non supporté</td><td>Convertir en <code>.docx</code></td></tr>
+      <tr><td>Tu voulais un PDF, tu reçois un Word</td><td>L'outil n'écrit que du <code>.docx</code></td><td>Convertir ensuite</td></tr>
+      <tr><td>« Document trop volumineux »</td><td>Plus d'un million de caractères</td><td>Découper le document</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="outils-tableurs.html">Tableurs</a> — pour les données tabulaires.</li>
+      <li><a href="outils-fichiers.html">Fichiers</a> — pourquoi <code>read_file</code> échoue sur un PDF.</li>
+      <li><a href="interface-fichiers-et-previews.html">Fichiers et prévisualisations</a> — la prévisualisation de documents dans l'interface.</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../js/theme.js"></script>
+<script src="../js/docs-nav-data.js"></script>
+<script src="../js/docs-nav.js"></script>
+</body>
+</html>

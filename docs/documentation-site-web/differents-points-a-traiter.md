@@ -479,6 +479,14 @@ sourcé est dans les « Points à confirmer » des quatre briefs concernés.
   aligné sur la liste complète des connexions automatiques de
   `confidentialite-des-donnees.md`.
 
+### Relevé en construisant les pages du site (10 septembre 2026)
+
+- **Le message du garde-fou anti-boucle est en dur et non traduit** (texte
+  franco-anglais lu tel quel par un utilisateur en espagnol ou japonais). Détail
+  sourcé dans `04-agent/fonctionnement.md`. La page du site décrit le
+  comportement sans citer le message, donc publiable ; le défaut produit reste
+  à corriger ou à assumer.
+
 ### Constat de conception à mettre en avant sur le site
 
 - **Le bac à sable du shell ne s'active que si l'accès disque est restreint**

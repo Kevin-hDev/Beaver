@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Sous-agents</title>
+<meta name="description" content="Déléguer une partie du travail à une session enfant : isolation, suivi, inspection des changements, limites et ce qu'un sous-agent ne peut pas faire.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Agent / Sous-agents</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="agent-sous-agents.html" hreflang="fr" aria-current="true">FR</a>
+    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Les <em>sous-agents</em></h1>
+    <p>L'agent principal peut confier une partie du travail à une session enfant, qui dispose de son propre contexte et travaille de son côté. Deux bénéfices : ton contexte reste léger, parce que l'exploration fastidieuse a lieu chez l'enfant et que seul le résultat remonte ; et le travail est isolé, parce que l'enfant modifie des fichiers dans un espace séparé, pas directement dans ton dossier.</p>
+
+    <div class="callout">
+      <span class="t">Sécurité</span>
+      <b>Les sous-agents ne demandent pas de confirmation.</b> Ils s'exécutent dans un mode interne réservé aux sessions déléguées, qui contourne la garde de permission — même si ta conversation est en Demande d'approbation. Le contrôle ne disparaît pas, il se déplace : en amont, au moment de décider quoi déléguer, et en aval, en inspectant leurs changements avant de les appliquer.
+    </div>
+
+    <h2 id="les-outils">Les neuf outils</h2>
+    <table>
+      <caption class="crumb">Le groupe Sous-agents, actif par défaut</caption>
+      <tr><th>Outil</th><th>Rôle</th></tr>
+      <tr><td><code>delegate_task</code></td><td>Lancer un sous-agent sur une tâche</td></tr>
+      <tr><td><code>list_subagents</code></td><td>Lister les sous-agents et leur état</td></tr>
+      <tr><td><code>get_subagent</code></td><td>Consulter le détail de l'un d'eux</td></tr>
+      <tr><td><code>message_subagent</code></td><td>Lui envoyer une consigne en cours de route</td></tr>
+      <tr><td><code>cancel_subagent</code></td><td>L'interrompre</td></tr>
+      <tr><td><code>archive_subagent</code></td><td>L'archiver une fois terminé</td></tr>
+      <tr><td><code>inspect_subagent_changes</code></td><td>Voir ce qu'il a modifié</td></tr>
+      <tr><td><code>apply_subagent_changes</code></td><td>Appliquer ses changements</td></tr>
+      <tr><td><code>discard_subagent_changes</code></td><td>Les jeter</td></tr>
+    </table>
+    <p><b><code>apply_subagent_changes</code> est soumis à confirmation</b> en mode Demande d'approbation. C'est le point de contrôle central : l'enfant travaille librement, mais l'intégration de son travail passe par toi.</p>
+
+    <h2 id="isolation">L'isolation : deux types d'espace de travail</h2>
+    <table>
+      <caption class="crumb">Où travaille un sous-agent</caption>
+      <tr><th>Type</th><th>Mécanisme</th></tr>
+      <tr><td>Git</td><td>Une copie de travail Git séparée, dans <code>subagent-worktrees/</code></td></tr>
+      <tr><td>Dossier</td><td>Une copie du dossier, quand le projet n'est pas un dépôt Git</td></tr>
+    </table>
+    <p>Le second cas est borné, parce que copier un dossier peut coûter cher.</p>
+    <table>
+      <caption class="crumb">Limites d'un instantané de dossier</caption>
+      <tr><th>Limite</th><th>Valeur</th></tr>
+      <tr><td>Fichiers</td><td><b>20 000</b></td></tr>
+      <tr><td>Taille totale</td><td><b>512 Mo</b></td></tr>
+      <tr><td>Taille d'un fichier</td><td><b>64 Mo</b></td></tr>
+    </table>
+    <p>Au-delà, l'instantané est refusé — c'est ce qui explique qu'une délégation échoue sur un projet contenant un gros dossier de dépendances.</p>
+
+    <h2 id="suivre">Suivre et corriger un sous-agent en cours</h2>
+    <ul>
+      <li>L'état de chaque sous-agent est visible en direct.</li>
+      <li>Une <b>consigne peut lui être envoyée pendant qu'il travaille</b>, pour le corriger, le réorienter ou lui donner une précision.</li>
+      <li>Les consignes sont mises en file : <b>huit au maximum</b> en attente, <b>50 000 caractères</b> chacune au plus.</li>
+      <li>Un sous-agent peut être <b>interrompu</b> à tout moment.</li>
+    </ul>
+    <p>Un onglet de conversation peut réclamer l'attention quand un sous-agent attend une réponse.</p>
+
+    <h2 id="inspecter">Inspecter et appliquer les changements</h2>
+    <p>Chaque lot de changements passe par quatre états.</p>
+    <table>
+      <caption class="crumb">Le cycle d'un lot de changements</caption>
+      <tr><th>État</th><th>Signification</th></tr>
+      <tr><td>En attente</td><td>Le sous-agent a terminé, rien n'est appliqué</td></tr>
+      <tr><td>Conflit</td><td>Les changements entrent en conflit avec l'état actuel</td></tr>
+      <tr><td>Appliqué</td><td>Intégrés à ton dossier</td></tr>
+      <tr><td>Écarté</td><td>Jetés</td></tr>
+    </table>
+    <p>Avant d'appliquer, tu vois la <b>liste des fichiers touchés</b>, avec la nature de chaque modification.</p>
+    <div class="callout">
+      <span class="t">Conflit</span>
+      Si ton dossier a changé pendant que le sous-agent travaillait, ses changements passent en conflit. Beaver refuse de les appliquer aveuglément plutôt que d'écraser ton travail.
+    </div>
+
+    <h2 id="combien">Combien de sous-agents à la fois</h2>
+    <table>
+      <caption class="crumb">Deux plafonds, dont un global</caption>
+      <tr><th>Plafond</th><th>Valeur</th></tr>
+      <tr><td>Sous-agents actifs par session</td><td><b>4</b></td></tr>
+      <tr><td>Sous-agents actifs au total, toutes sessions confondues</td><td><b>8</b></td></tr>
+    </table>
+    <p>Le second est le plus surprenant : deux conversations qui délèguent en même temps se partagent le même budget global de huit.</p>
+
+    <h2 id="restrictions">Ce qu'un sous-agent ne peut pas faire</h2>
+    <p><b>Déléguer à son tour.</b> La cascade est explicitement interdite : l'arborescence est <b>plate, sur un seul niveau</b> — ta conversation et ses enfants, jamais de petits-enfants. C'est un choix de conception : la délégation en cascade rend le suivi impossible et la consommation de jetons imprévisible.</p>
+    <p>Les autres restrictions :</p>
+    <ul>
+      <li><b>Être cloné</b> — le clonage est refusé sur une conversation de sous-agent.</li>
+      <li><b>Écrire dans la mémoire</b> — un sous-agent peut la lire, pas la modifier ; il peut seulement proposer une note au parent.</li>
+      <li><b>Sortir de son dossier de travail</b> — chaque chemin passé à un outil est vérifié comme contenu dans le répertoire de travail du sous-agent, et toute remontée d'arborescence (<code>..</code>) est refusée, y compris le dossier de travail indiqué pour une commande shell.</li>
+      <li><b>Recevoir tes instructions permanentes</b> — ni <code>AGENTS.md</code> ni les fichiers de personnalité ne sont injectés dans une session de sous-agent. Si tes conventions comptent pour la tâche déléguée, reprends-les dans l'instruction de délégation.</li>
+      <li><b>Disposer de tous les outils</b> — chaque sous-agent reçoit un profil d'outils restreint selon son type, et un outil hors profil est refusé.</li>
+      <li><b>Être archivé dans n'importe quel état</b> — l'archivage refuse certains cas.</li>
+    </ul>
+    <p><b>Deux types de sous-agents, et deux seulement</b> : explorateur et codeur. Toute autre valeur est refusée à la délégation. Le type codeur exige en plus d'être lancé depuis un dossier valide.</p>
+
+    <h2 id="limites">Toutes les limites</h2>
+    <table>
+      <caption class="crumb">Valeurs de référence</caption>
+      <tr><th>Limite</th><th>Valeur</th></tr>
+      <tr><td>Taille d'une consigne</td><td>50 000 caractères</td></tr>
+      <tr><td>Consignes en file d'attente</td><td>8</td></tr>
+      <tr><td>Chemins modifiés par lot</td><td>128</td></tr>
+      <tr><td>Longueur d'un chemin</td><td>512 caractères</td></tr>
+      <tr><td>Lots de changements conservés</td><td>256</td></tr>
+      <tr><td>Descriptif d'un lot</td><td>128 Ko</td></tr>
+      <tr><td>Fichiers dans un instantané de dossier</td><td>20 000</td></tr>
+      <tr><td>Taille d'un instantané</td><td>512 Mo</td></tr>
+      <tr><td>Taille d'un fichier dans l'instantané</td><td>64 Mo</td></tr>
+      <tr><td>Sous-agents actifs par session</td><td><b>4</b></td></tr>
+      <tr><td>Sous-agents actifs au total</td><td><b>8</b></td></tr>
+      <tr><td>Profondeur de délégation</td><td>1 niveau — la cascade est interdite</td></tr>
+    </table>
+
+    <h2 id="sous-agent-ou-clone">Sous-agent ou clone ?</h2>
+    <table>
+      <caption class="crumb">Deux façons de paralléliser</caption>
+      <tr><th></th><th>Sous-agent</th><th>Clone</th></tr>
+      <tr><td>Qui le lance</td><td>L'agent, ou toi</td><td>Toi</td></tr>
+      <tr><td>Point de départ</td><td>Des instructions neuves</td><td>Un message précis d'une conversation</td></tr>
+      <tr><td>Espace de travail</td><td>Isolé, copie séparée</td><td>Le même que l'originale</td></tr>
+      <tr><td>Résultat</td><td>Rendu à l'agent parent</td><td>Une conversation que tu mènes</td></tr>
+      <tr><td>Demande de confirmation</td><td>Non</td><td>Selon ton mode</td></tr>
+      <tr><td>Clonable</td><td>Non</td><td>Oui</td></tr>
+    </table>
+
+    <h2 id="pieges">Ce qui surprend le plus souvent</h2>
+    <table>
+      <caption class="crumb">Symptôme, cause, résolution</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>Un sous-agent modifie des fichiers sans rien demander</td><td>Les sous-agents contournent la garde de permission</td><td>Inspecter ses changements avant de les appliquer</td></tr>
+      <tr><td>La délégation échoue sur un gros projet</td><td>Instantané au-delà de 20 000 fichiers ou 512 Mo</td><td>Exclure les dossiers volumineux, ou travailler dans un dépôt Git</td></tr>
+      <tr><td>Les changements sont en conflit</td><td>Le dossier a changé pendant le travail du sous-agent</td><td>Inspecter, puis appliquer ou jeter</td></tr>
+      <tr><td>Impossible d'envoyer une consigne de plus</td><td>Huit consignes déjà en file</td><td>Attendre qu'il en traite</td></tr>
+      <tr><td>Impossible de cloner un sous-agent</td><td>Volontaire</td><td>Cloner la conversation parente</td></tr>
+      <tr><td>Limite de 4 sous-agents par session atteinte</td><td>Quatre enfants actifs pour cette conversation</td><td>Attendre qu'un termine, ou en interrompre un</td></tr>
+      <tr><td>Limite de 8 sous-agents actifs atteinte</td><td>Huit enfants actifs toutes conversations confondues</td><td>Vérifier les autres conversations : le plafond est global</td></tr>
+      <tr><td>Un sous-agent ne peut pas en lancer un autre</td><td>La délégation en cascade est interdite</td><td>Faire déléguer par la conversation principale</td></tr>
+      <tr><td>Un sous-agent codeur est refusé au lancement</td><td>Pas de répertoire de travail utilisable</td><td>Définir un répertoire de travail valide</td></tr>
+      <tr><td>Un sous-agent ne peut pas écrire en mémoire</td><td>Accès en lecture seule</td><td>Normal : il peut proposer une note, pas l'écrire</td></tr>
+      <tr><td>Un chemin est refusé comme hors du dossier autorisé</td><td>Le sous-agent a visé un fichier hors de son espace isolé</td><td>Normal : sa portée disque est confinée</td></tr>
+      <tr><td>Un sous-agent ignore les conventions de <code>AGENTS.md</code></td><td>Les instructions permanentes ne lui sont pas injectées</td><td>Les reprendre dans l'instruction de délégation</td></tr>
+      <tr><td>Un sous-agent refuse d'être archivé</td><td>État incompatible</td><td>Attendre qu'il termine, ou l'interrompre</td></tr>
+      <tr><td>Un ancien lot de changements a disparu</td><td>256 lots conservés</td><td>Normal</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="agent-permissions.html">Modes de permission</a> — pourquoi les sous-agents ne demandent pas.</li>
+      <li><a href="agent-cloner-une-conversation.html">Cloner une conversation</a> — l'autre façon de paralléliser.</li>
+      <li><a href="outils-sous-agents.html">Sous-agents (outils)</a> — le détail des neuf outils et des profils.</li>
+      <li><a href="outils-branches-git.html">Branches Git</a> — les copies de travail.</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../js/theme.js"></script>
+<script src="../js/docs-nav-data.js"></script>
+<script src="../js/docs-nav.js"></script>
+</body>
+</html>

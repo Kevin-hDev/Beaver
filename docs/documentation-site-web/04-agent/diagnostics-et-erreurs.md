@@ -83,9 +83,8 @@ Plusieurs journaux existent dans le dossier de données, sous `logs/`. Ceux rep�
 | `permission-diagnostics.jsonl` | Décisions de permission | À 2 Mo |
 | `wakeups.jsonl` | Exécutions des réveils | 500 lignes |
 | `gateway-audit.jsonl` | Échanges des canaux externes | — |
-| `ollama-sidecar.log` | Sortie d'erreur d'Ollama | Écrasé à chaque démarrage |
 
-Le dernier est le plus utile en pratique : c'est là qu'on regarde quand un modèle local ne se comporte pas comme attendu, en particulier sur les questions de carte graphique.
+`ollama-sidecar.log` figurait ici et **n'existe plus** (corrigé le 10 sept. 2026) : le moteur Ollama n'écrit aucune trace — sa sortie d'erreur part vers `/dev/null` sous macOS/Linux et n'est pas redirigée sous Windows. Pour un problème de modèle local, ce sont les codes d'erreur nommés dans les traces de Beaver qui s'exploitent (`ollama-runtime.md` fait foi).
 
 Renvoyer vers *Référence › Journaux* pour la liste complète.
 

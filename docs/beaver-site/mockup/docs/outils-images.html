@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Images</title>
+<meta name="description" content="Redimensionner, recadrer et convertir une image depuis une conversation, avec les trois modes de redimensionnement et les limites de l'outil.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Outils / Images</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="outils-images.html" hreflang="fr" aria-current="true">FR</a>
+    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Transformer <em>une image.</em></h1>
+    <p><code>transform_image</code> forme à lui seul le groupe <b>Images</b>, optionnel et <b>éteint par défaut</b>. Il manipule des fichiers image : inspection, redimensionnement, recadrage, conversion. Joindre une image à un message pour en parler est un mécanisme distinct — voir <a href="agent-pieces-jointes.html">Pièces jointes</a>.</p>
+
+    <h2 id="trois-usages">Un outil, trois usages</h2>
+    <p>Un seul outil couvre trois intentions, distinguées par ce que l'agent fournit.</p>
+    <table>
+      <caption class="crumb">Les trois formes d'appel</caption>
+      <tr><th>Intention</th><th>Ce que fournit l'agent</th><th>Écrit un fichier</th></tr>
+      <tr><td><b>Inspecter</b></td><td>Une image, une liste d'opérations vide, <b>pas</b> de destination</td><td>Non</td></tr>
+      <tr><td><b>Convertir</b></td><td>Une image et une destination avec une autre extension, <b>pas</b> d'opérations</td><td>Oui</td></tr>
+      <tr><td><b>Transformer</b></td><td>Une image, une destination, et des opérations</td><td>Oui</td></tr>
+    </table>
+    <p>La combinaison « liste d'opérations vide <b>et</b> destination » est <b>refusée</b> comme ambiguë, avec un message qui explique les deux formes correctes. Plutôt que de deviner l'intention, l'outil demande de la clarifier.</p>
+    <p><b>L'approbation dépend de l'intention</b> : inspecter ne demande rien, transformer et convertir déclenchent une demande en mode Demande d'approbation. C'est cohérent, l'inspection ne touche à rien.</p>
+
+    <h2 id="inspecter">Inspecter une image</h2>
+    <p>Renvoie les <b>dimensions</b>, le <b>format</b> et la <b>taille du fichier</b>, sans rien écrire. C'est l'opération qui répond à « quelle taille fait cette image ? », ou qui prépare un redimensionnement en connaissant les proportions d'origine.</p>
+
+    <h2 id="redimensionner">Redimensionner</h2>
+    <table>
+      <caption class="crumb">Trois modes, trois résultats différents</caption>
+      <tr><th>Mode</th><th>Comportement</th></tr>
+      <tr><td><b>Ajuster</b> (par défaut)</td><td>L'image tient dans les dimensions demandées <b>en gardant ses proportions</b> — le résultat peut être plus petit que demandé</td></tr>
+      <tr><td><b>Remplir</b></td><td>L'image remplit exactement les dimensions demandées, <b>en rognant</b> ce qui dépasse</td></tr>
+      <tr><td><b>Exact</b></td><td>L'image prend exactement les dimensions demandées, <b>quitte à la déformer</b></td></tr>
+    </table>
+    <p>Le rééchantillonnage utilise un filtre de haute qualité : le résultat d'une réduction est net, pas crénelé.</p>
+
+    <h2 id="recadrer">Recadrer</h2>
+    <p>L'agent donne un point de départ et une taille. Un recadrage qui sortirait de l'image est <b>refusé</b> avec un message explicite, plutôt que d'être silencieusement ramené aux bords.</p>
+
+    <h2 id="convertir">Convertir</h2>
+    <p><b>Formats de sortie</b> : JPEG, PNG, WebP, GIF, BMP. Le format est déterminé par <b>l'extension du fichier de destination</b> — il n'y a pas de paramètre de format séparé. Pour une conversion simple, l'agent ne fournit aucune opération : une image d'entrée, une destination avec la bonne extension, et c'est tout.</p>
+
+    <div class="callout">
+      <span class="t">À retenir</span>
+      Le format de sortie vient de l'extension. Écrire vers un fichier en <code>.webp</code> produit du WebP, et il n'y a pas d'autre façon de choisir le format.
+    </div>
+
+    <h2 id="la-qualite">La qualité</h2>
+    <p>Le réglage de qualité va de <b>1 à 100</b> et ne s'applique <b>qu'au JPEG</b>.</p>
+    <ul>
+      <li>sur du <b>JPEG</b>, la qualité est appliquée ;</li>
+      <li>sur du <b>WebP</b>, elle est <b>ignorée</b> — l'encodage est sans perte — et le résultat porte un avertissement qui le dit ;</li>
+      <li>sur <b>tout autre format</b>, elle est ignorée, avec un avertissement également.</li>
+    </ul>
+    <p>L'agent n'apprend donc pas après coup que son réglage n'a servi à rien : il est prévenu dans le résultat même. Dans la même veine, quand Beaver ne parvient pas à relire la taille du fichier produit, il <b>le signale</b> au lieu d'annoncer une taille de zéro.</p>
+
+    <h2 id="les-operations">Les opérations</h2>
+    <table>
+      <caption class="crumb">Ce qu'une opération peut faire</caption>
+      <tr><th>Opération</th><th>Paramètres</th><th>Notes</th></tr>
+      <tr><td>Redimensionner</td><td>Largeur, hauteur, mode</td><td>Mode « ajuster » par défaut</td></tr>
+      <tr><td>Recadrer</td><td>Position de départ, largeur, hauteur</td><td>Refusé si hors limites</td></tr>
+      <tr><td>Qualité</td><td>Valeur de 1 à 100</td><td><b>JPEG uniquement</b></td></tr>
+    </table>
+    <p>Les opérations s'appliquent <b>dans l'ordre donné</b> : recadrer puis redimensionner ne donne pas le même résultat que l'inverse.</p>
+
+    <h2 id="les-formats">Les formats</h2>
+    <table>
+      <caption class="crumb">Ce qui se lit et ce qui s'écrit</caption>
+      <tr><th>Format</th><th>Entrée</th><th>Sortie</th></tr>
+      <tr><td>PNG</td><td>Oui</td><td><b>Oui</b></td></tr>
+      <tr><td>JPEG</td><td>Oui</td><td><b>Oui</b></td></tr>
+      <tr><td>WebP</td><td>Oui</td><td><b>Oui</b> (sans perte)</td></tr>
+      <tr><td>GIF</td><td>Oui</td><td><b>Oui</b></td></tr>
+      <tr><td>BMP</td><td>Oui</td><td><b>Oui</b></td></tr>
+    </table>
+
+    <h2 id="les-limites">Les limites</h2>
+    <table>
+      <caption class="crumb">Les bornes du groupe Images</caption>
+      <tr><th>Limite</th><th>Valeur</th></tr>
+      <tr><td>Taille du fichier source</td><td><b>50 Mo</b></td></tr>
+      <tr><td>Dimension maximale, en largeur comme en hauteur</td><td><b>8 000 pixels</b></td></tr>
+      <tr><td>Nombre total de pixels après transformation</td><td><b>50 millions</b></td></tr>
+      <tr><td>Opérations par appel</td><td><b>128</b></td></tr>
+      <tr><td>Qualité</td><td><b>1 à 100</b></td></tr>
+    </table>
+    <p>La limite en nombre de pixels est vérifiée <b>avant</b> la transformation. Sans elle, un redimensionnement demandant 8 000 × 8 000 pixels ferait allouer plusieurs centaines de mégaoctets de mémoire.</p>
+
+    <h2 id="les-erreurs">Les erreurs</h2>
+    <table>
+      <caption class="crumb">Message et cause</caption>
+      <tr><th>Message</th><th>Cause</th></tr>
+      <tr><td>Demande ambiguë</td><td>Liste d'opérations vide <b>avec</b> une destination</td></tr>
+      <tr><td><code>output_path</code> requis</td><td>Transformation demandée sans destination</td></tr>
+      <tr><td>Image trop volumineuse</td><td>Fichier au-delà de 50 Mo</td></tr>
+      <tr><td>Dimensions invalides</td><td>Image dépassant 8 000 pixels de côté</td></tr>
+      <tr><td>Impossible d'ouvrir l'image</td><td>Fichier corrompu ou format non reconnu</td></tr>
+      <tr><td>Recadrage hors limites</td><td>La zone demandée sort de l'image</td></tr>
+      <tr><td>Mode de redimensionnement invalide</td><td>Mode autre que les trois acceptés</td></tr>
+      <tr><td>Qualité hors bornes</td><td>Valeur en dehors de 1 à 100</td></tr>
+      <tr><td>Trop d'opérations</td><td>Plus de 128</td></tr>
+      <tr><td>Opération inconnue</td><td>Type d'opération non reconnu</td></tr>
+    </table>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      Le groupe est éteint par défaut. Sans activation dans <b>Réglages › Agent › Outils</b>, l'agent ne sait pas qu'il peut traiter une image.
+    </div>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+    <table>
+      <caption class="crumb">Symptôme, cause, résolution</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>L'agent ne traite pas tes images</td><td>Groupe éteint par défaut</td><td>L'activer dans les réglages</td></tr>
+      <tr><td>« Demande ambiguë »</td><td>Opérations vides et destination fournie</td><td>L'agent corrige seul</td></tr>
+      <tr><td>L'image redimensionnée est plus petite que demandé</td><td>Mode « ajuster » : les proportions sont préservées</td><td>Utiliser « remplir » ou « exact »</td></tr>
+      <tr><td>L'image est déformée</td><td>Mode « exact »</td><td>Utiliser « ajuster » ou « remplir »</td></tr>
+      <tr><td>La qualité n'a rien changé</td><td>Format autre que JPEG</td><td>L'avertissement le signale ; convertir en JPEG</td></tr>
+      <tr><td>« Dimensions invalides »</td><td>Image de plus de 8 000 pixels de côté</td><td>La réduire d'abord avec un autre outil</td></tr>
+      <tr><td>« Recadrage hors limites »</td><td>Zone dépassant les bords</td><td>Inspecter l'image d'abord pour connaître ses dimensions</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="outils-vue-densemble.html">Vue d'ensemble des outils</a> — activer un groupe.</li>
+      <li><a href="agent-pieces-jointes.html">Pièces jointes</a> — joindre une image à un message, ce qui est différent.</li>
+      <li><a href="outils-fichiers.html">Fichiers</a> — pourquoi <code>read_file</code> échoue sur une image.</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../js/theme.js"></script>
+<script src="../js/docs-nav-data.js"></script>
+<script src="../js/docs-nav.js"></script>
+</body>
+</html>

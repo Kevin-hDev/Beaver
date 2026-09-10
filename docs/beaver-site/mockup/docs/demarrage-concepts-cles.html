@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Concepts clés</title>
+<meta name="description" content="Le vocabulaire de Beaver : agent, conversation, outil, permission, sous-agent, mémoire, contexte, extension, coffre et le reste.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Démarrage / Concepts clés</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="demarrage-concepts-cles.html" hreflang="fr" aria-current="true">FR</a>
+    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Concepts <em>clés</em></h1>
+    <p>Les mots employés partout ailleurs dans cette documentation, définis une
+    fois. Chaque terme renvoie vers la page qui le détaille quand elle existe.</p>
+
+    <h2 id="agent-et-travail">L'agent et son travail</h2>
+    <p><b>Agent</b> — le modèle de langage augmenté d'outils. Il reçoit une
+    demande, décide des actions, les exécute, et recommence jusqu'à avoir
+    terminé. La différence avec un chat : le chat répond, l'agent agit.</p>
+    <p><b>Conversation</b> (ou session) — un fil de discussion. Chacune a son
+    historique, son modèle, son répertoire de travail, ses outils actifs et ses
+    permissions. On navigue de l'une à l'autre par la barre latérale ; elles ne
+    s'ouvrent pas en onglets.</p>
+    <p><b>Clone</b> — une copie d'une conversation arrêtée à un message précis,
+    ouverte dans un onglet à côté de l'originale. Deux modes : abandonner ce qui
+    suivait, ou en garder un résumé. Les onglets n'existent que pour les clones,
+    <b>trois au maximum</b> par groupe.</p>
+    <p><b>Outil</b> — une capacité concrète : lire un fichier, lancer une
+    commande, chercher sur le web. L'agent choisit lui-même lequel appeler et
+    avec quels arguments.</p>
+    <p><b>Groupe d'outils</b> — les outils sont rangés par famille, et on active
+    ou désactive un groupe entier. Il y a <b>onze</b> groupes : quatre
+    verrouillés — <code>core</code>, <code>web</code>, <code>mcp</code>,
+    <code>extensions</code> — et sept optionnels — <code>workflow</code>,
+    <code>automation</code>, <code>subagents</code>, <code>todo</code>,
+    <code>git</code>, <code>forecast</code>, <code>office</code>.</p>
+    <p><b>Outil verrouillé</b> — toujours disponible, non désactivable. Les
+    <b>quatre</b> groupes verrouillés portent <b>quatorze</b> outils :
+    <code>core</code> en fournit huit pour les fichiers, la recherche et les
+    commandes, <code>web</code> deux, <code>mcp</code> un et
+    <code>extensions</code> trois.</p>
+    <p><b>Outil optionnel</b> — s'active dans les réglages. <b>32</b> outils
+    optionnels peuvent être actifs simultanément, et le catalogue en compte
+    aujourd'hui exactement 32 : le plafond n'écarte donc rien.
+    → <a href="outils-vue-densemble.html">Outils — vue d'ensemble</a></p>
+
+    <h2 id="controle">Le contrôle de ce que fait l'agent</h2>
+    <p><b>Mode de permission</b> — détermine ce que l'agent peut faire sans
+    demander. Trois modes te sont proposés : <b>Accès complet</b>,
+    <b>Demande d'approbation</b> et <b>Chatbot</b>. Un quatrième mode existe
+    uniquement en interne, pour les sessions enfants ; il n'est jamais
+    proposé.</p>
+    <p><b>Garde de permission</b> — le mécanisme qui intercepte une action avant
+    exécution et demande approbation. Il ne s'applique qu'à une liste précise
+    d'outils, et sous conditions pour certains.
+    → <a href="agent-permissions.html">Modes de permission</a></p>
+    <p><b>Mode Plan</b> — l'agent explore sans rien modifier, rédige un plan
+    Markdown et le soumet. Aucune écriture n'a lieu avant approbation. Les plans
+    sont conservés dans <code>plans/&lt;session_id&gt;/*.md</code>.</p>
+    <p><b>Liste de tâches</b> (todos) — la liste que l'agent tient lui-même pour
+    découper un travail long, visible en direct. Cinq outils lui sont associés :
+    <code>todo_write</code>, <code>todo_history</code>, <code>todo_pause</code>,
+    <code>todo_resume</code>, <code>todo_delete</code>.
+    → <a href="agent-liste-de-taches.html">Liste de tâches</a></p>
+    <p><b>Répertoire de travail</b> — le dossier auquel une conversation est
+    rattachée. Il détermine ce que l'agent peut lire et écrire.
+    → <a href="agent-repertoire-de-travail.html">Répertoire de travail</a></p>
+    <p><b>Projet</b> — un répertoire de travail enregistré, retrouvé d'une
+    conversation à l'autre. Il est stocké dans <code>projects.json</code>.</p>
+
+    <h2 id="deleguer-et-se-souvenir">Déléguer et se souvenir</h2>
+    <p><b>Sous-agent</b> — une conversation enfant lancée par l'agent principal
+    pour traiter une partie du travail de façon isolée, avec son propre
+    contexte. Neuf outils servent à le contrôler.
+    → <a href="agent-sous-agents.html">Sous-agents</a></p>
+    <p><b>Worktree</b> (copie de travail) — une copie de travail Git séparée,
+    dans laquelle un sous-agent modifie des fichiers sans toucher au dossier
+    courant. Les changements s'inspectent avant d'être appliqués ou jetés. Elles
+    vivent dans <code>subagent-worktrees/</code>.</p>
+    <p><b>Mémoire</b> — des notes conservées d'une conversation à l'autre, en
+    portée <b>globale</b> ou <b>par projet</b>, en mode manuel ou automatique.
+    Stockage dans <code>memory/global/</code> et <code>memory/projects/</code>.
+    → <a href="agent-memoire.html">Mémoire persistante</a></p>
+    <p><b>Contexte</b> — l'information que le modèle garde sous les yeux : ta
+    demande, l'historique, les résultats d'outils, la mémoire, les instructions
+    système. Il est limité, et surveillé par l'application.
+    → <a href="agent-contexte.html">Contexte</a></p>
+    <p><b>Compression</b> — le résumé automatique de l'historique ancien quand le
+    contexte se remplit, pour que la conversation continue sans être coupée.</p>
+
+    <div class="callout">
+      <span class="t">Ne pas confondre</span>
+      La <b>mémoire</b> persiste entre les conversations ; le <b>contexte</b> est
+      ce que le modèle voit dans la conversation courante. C'est la confusion la
+      plus fréquente chez les utilisateurs d'agents.
+    </div>
+
+    <h2 id="instructions-permanentes">Les instructions permanentes</h2>
+    <p><b>Prompt système</b> — les instructions données au modèle avant le
+    premier message. Il en existe deux jeux, <b>Chatbot</b> et <b>Agentique</b>,
+    chacun en variante <b>Compact</b> et <b>Détaillée</b>. Ils se consultent, se
+    modifient, se remplacent et se désactivent.
+    → <a href="agent-prompts-systeme.html">Prompts système</a></p>
+    <p><b>AGENTS.md</b> — le fichier d'instructions permanentes que tu écris, lu
+    à chaque conversation : conventions à respecter, commandes du projet,
+    interdits.
+    → <a href="agent-instructions-permanentes.html">Instructions permanentes</a></p>
+    <p><b>Personnalité</b> — des fichiers Markdown décrivant le ton et le
+    comportement attendus, injectés dans les instructions. Ils sont stockés dans
+    <code>memory/core/</code>.</p>
+    <p><b>Skill</b> — un mode d'emploi rangé dans un dossier, chargé à la demande
+    quand la tâche correspond. Dossier <code>skills/</code>, outil
+    <code>load_skill</code>.
+    → <a href="agent-skills.html">Skills</a></p>
+
+    <h2 id="les-modeles">Les modèles</h2>
+    <p><b>Modèle local</b> — installé sur ton disque, servi par Ollama. Aucune
+    donnée ne quitte la machine, aucun coût par requête, et la performance
+    dépend de ton matériel.</p>
+    <p><b>Modèle distant</b> — exécuté chez un fournisseur, atteint par le
+    réseau. Généralement plus rapide et plus capable, facturé à l'usage.
+    → <a href="demarrage-choisir-son-modele.html">Choisir son modèle</a></p>
+    <p><b>Provider</b> (fournisseur) — le service qui héberge un modèle distant.
+    <b>Onze</b> fournisseurs sont gérés par clé API : Google Gemini, Mistral,
+    Cerebras, OpenRouter, OpenAI, DeepSeek, xAI, Moonshot Kimi, Z.ai GLM,
+    Anthropic Claude et Qwen.
+    → <a href="modeles-fournisseurs-api.html">Fournisseurs API</a></p>
+    <p><b>Clé API</b> — l'identifiant secret d'authentification auprès d'un
+    fournisseur. Stockée chiffrée, jamais exposée à l'interface.
+    → <a href="reference-coffre-et-cles.html">Le coffre et les clés API</a></p>
+    <p><b>Compte web</b> — une alternative à la clé API pour <b>trois</b>
+    fournisseurs : OpenAI/Codex, Grok (xAI) et Kimi (Moonshot, expérimental).
+    → <a href="modeles-connexion-par-compte.html">Connexion par compte</a></p>
+    <p><b>Ollama</b> — le logiciel qui exécute les modèles locaux, téléchargé et
+    piloté par Beaver.
+    → <a href="modeles-moteur-local.html">Moteur local</a></p>
+    <p><b>Raisonnement</b> (thinking) — la phase où certains modèles réfléchissent
+    avant de répondre. Beaver l'affiche, et permet d'en régler l'intensité quand
+    le modèle le supporte.
+    → <a href="modeles-raisonnement.html">Raisonnement</a></p>
+
+    <h2 id="les-integrations">Les intégrations</h2>
+    <p><b>MCP</b> (Model Context Protocol) — un standard qui permet à des
+    programmes externes d'exposer des outils au modèle, et donc d'ajouter des
+    capacités sans modifier Beaver.</p>
+    <p><b>Connecteur</b> — une instance de serveur MCP configurée dans Beaver,
+    locale ou distante. La configuration vit dans
+    <code>mcp-connectors.json</code>.
+    → <a href="integrations-connecteurs-mcp.html">Connecteurs MCP</a></p>
+    <p><b>Extension</b> — un module installable qui <b>modifie l'interface
+    elle-même</b>, distribué et mis à jour depuis une source Git. Une extension
+    peut contribuer son propre onglet de réglages, des entrées de navigation, un
+    thème et des skills, et trois outils verrouillés du groupe
+    <code>extensions</code> la rendent visible à l'agent. C'est ce qui la
+    distingue d'un connecteur MCP, qui n'ajoute que des outils.
+    → <a href="integrations-centre-extensions.html">Centre d'extensions</a></p>
+    <p><b>Channel</b> (canal) — une passerelle vers Telegram, Slack ou
+    Discord.</p>
+    <p><b>Gateway</b> — le service d'arrière-plan qui fait tourner les canaux,
+    associe chaque conversation externe à une session, et journalise les
+    échanges. L'audit est écrit dans <code>logs/gateway-audit.jsonl</code>.
+    → <a href="integrations-canaux-externes.html">Canaux externes</a></p>
+
+    <div class="callout">
+      <span class="t">Ne pas confondre</span>
+      Un <b>sous-agent</b> est une session enfant, un <b>connecteur</b> expose
+      des outils via MCP, une <b>extension</b> modifie l'application. Les trois
+      ajoutent des capacités, par des mécanismes sans rapport.
+    </div>
+
+    <h2 id="automatisation-donnees-securite">Automatisation, données, sécurité</h2>
+    <p><b>Réveil</b> (wakeup) — une instruction programmée, de trois types :
+    <code>once</code>, <code>daily</code>, <code>weekly</code>. Le résultat
+    atterrit dans une conversation dédiée.</p>
+    <p><b>Ordonnanceur</b> (scheduler) — le mécanisme interne qui déclenche les
+    réveils. Il est interne à l'application et n'utilise pas les tâches
+    planifiées du système.</p>
+    <p><b>Forecast</b> — l'espace de prévision de séries temporelles : audit,
+    choix de modèle, prévision, évaluation, comparaison, export.
+    → <a href="outils-forecast.html">Forecast</a></p>
+    <p><b>Backtest</b> — une évaluation qui rejoue le passé pour mesurer la
+    qualité d'un modèle sur des données dont on connaît la suite.</p>
+    <p><b>Coffre</b> (vault) — le fichier chiffré contenant les clés API et les
+    jetons. Chiffrement <b>XChaCha20-Poly1305</b>, fichier
+    <code>secrets.enc</code>.</p>
+    <p><b>Trousseau</b> (keyring) — le magasin de secrets du système : Trousseau
+    macOS, DPAPI Windows, Secret Service Linux. Il contient la clé maîtresse du
+    coffre, et rien d'autre.</p>
+    <p><b>Zéroïsation</b> — l'effacement volontaire d'un secret en mémoire après
+    usage, pour qu'il ne subsiste pas dans un fichier d'échange ou une image
+    mémoire.
+    → <a href="reference-modele-de-securite.html">Modèle de sécurité</a></p>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../js/theme.js"></script>
+<script src="../js/docs-nav-data.js"></script>
+<script src="../js/docs-nav.js"></script>
+</body>
+</html>

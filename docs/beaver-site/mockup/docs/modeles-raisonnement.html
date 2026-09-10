@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — L'effort de raisonnement</title>
+<meta name="description" content="À quoi sert le réglage d'effort, pourquoi ses options changent d'un modèle à l'autre, et ce que le raisonnement coûte en temps, en contexte et en jetons.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Modèles / Raisonnement</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="modeles-raisonnement.html" hreflang="fr" aria-current="true">FR</a>
+    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Combien le modèle doit <em>réfléchir</em></h1>
+    <p>Certains modèles produisent un cheminement interne avant de répondre. Ce travail améliore les réponses difficiles, coûte du temps et des jetons sur les questions faciles, et ne se règle pas de la même façon d'un modèle à l'autre. Cette page explique le réglage d'effort et ce qu'il implique.</p>
+
+    <h2 id="ce-qu-est-le-raisonnement">Ce qu'est le raisonnement</h2>
+    <p>Certains modèles réfléchissent avant de répondre : ils produisent un cheminement interne — hypothèses, vérifications, retours en arrière — puis rédigent leur réponse à partir de ce travail.</p>
+    <p>Ce cheminement est <b>facturé comme le reste</b> et occupe de la place dans le contexte, alors qu'il n'apparaît pas dans la réponse finale. D'où l'intérêt d'un réglage : sur une question simple, réfléchir longuement coûte sans rien apporter.</p>
+
+    <h2 id="le-reglage-d-effort">Le réglage d'effort</h2>
+    <p>Beaver expose une échelle commune, du moins au plus poussé.</p>
+
+    <table>
+      <caption class="crumb">Les huit paliers de l'échelle d'effort</caption>
+      <tr><th>Réglage</th><th>Ce qu'il demande</th></tr>
+      <tr><td><b>Désactivé</b></td><td>Répondre sans étape de réflexion</td></tr>
+      <tr><td><b>Automatique</b></td><td>Laisser le modèle décider</td></tr>
+      <tr><td><b>Faible</b></td><td>Réflexion brève</td></tr>
+      <tr><td><b>Moyen</b></td><td>Réflexion équilibrée</td></tr>
+      <tr><td><b>Élevé</b></td><td>Réflexion approfondie</td></tr>
+      <tr><td><b>Très élevé</b></td><td>Réflexion prolongée</td></tr>
+      <tr><td><b>Maximum</b></td><td>Le plus loin que le modèle accepte</td></tr>
+      <tr><td><b>Ultra</b></td><td>Palier supplémentaire, sur les rares modèles qui le proposent</td></tr>
+    </table>
+
+    <h2 id="options-selon-le-modele">Pourquoi les options changent selon le modèle</h2>
+    <p><b>Chaque fournisseur expose son propre réglage, avec ses propres paliers.</b> Beaver ne présente que ceux que le modèle sélectionné accepte réellement. Ce n'est pas une incohérence de l'interface : proposer un palier que le modèle ignore reviendrait à afficher un réglage sans effet.</p>
+    <ul>
+      <li><b>Certains modèles n'ont aucun réglage</b> — ils ne raisonnent pas, ou raisonnent toujours de la même façon.</li>
+      <li><b>Certains ne peuvent pas être désactivés</b> — leur réflexion fait partie de leur fonctionnement.</li>
+      <li><b>Le nombre de paliers varie de deux à six</b> selon le modèle.</li>
+    </ul>
+    <p>Une règle vaut partout : <b>un réglage non supporté n'est jamais envoyé de force.</b> Plutôt que de risquer un refus du fournisseur, Beaver retombe sur le palier supporté le plus proche, dans cet ordre : <b>Moyen</b>, puis <b>Automatique</b>, puis le premier palier disponible autre que <b>Désactivé</b>. Changer de modèle en cours de conversation ne laisse donc jamais un réglage orphelin.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      Les options changent selon le modèle, et c'est normal. Un réglage absent signifie que ce modèle ne le propose pas — Beaver n'affiche que les paliers réellement acceptés.
+    </div>
+
+    <h2 id="ce-que-ca-coute">Ce que ça coûte</h2>
+    <ul>
+      <li><b>Le temps.</b> Un effort élevé peut multiplier par plusieurs fois la durée avant la première ligne de réponse.</li>
+      <li><b>Le prix</b>, sur un modèle facturé : le raisonnement consomme des jetons, souvent au tarif de sortie.</li>
+      <li><b>Le contexte.</b> Le cheminement occupe de la place, donc réduit d'autant ce qui reste pour la conversation.</li>
+    </ul>
+    <p>En pratique : garde un effort faible ou automatique par défaut, et monte-le pour les tâches qui le justifient réellement — un bogue difficile, une conception à trancher, une analyse. Sur une reformulation ou une question factuelle, l'effort élevé coûte sans rien apporter.</p>
+
+    <table>
+      <caption class="crumb">Quel effort pour quelle tâche</caption>
+      <tr><th>Tâche</th><th>Effort conseillé</th></tr>
+      <tr><td>Reformuler, traduire, résumer</td><td>Désactivé ou Faible</td></tr>
+      <tr><td>Écrire du code simple, corriger une erreur évidente</td><td>Faible</td></tr>
+      <tr><td>Conversation ordinaire</td><td>Automatique</td></tr>
+      <tr><td>Déboguer un problème non reproductible</td><td>Élevé</td></tr>
+      <tr><td>Concevoir une architecture, arbitrer entre options</td><td>Élevé à Maximum</td></tr>
+      <tr><td>Analyser un système entier</td><td>Maximum</td></tr>
+    </table>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      Le raisonnement est facturé et occupe le contexte. Il n'apparaît pas dans la réponse mais consomme des jetons : un effort élevé sur chaque message se voit sur la consommation. Voir <a href="modeles-usage-et-couts.html">Usage et coûts</a>.
+    </div>
+
+    <h2 id="voir-le-raisonnement">Voir le raisonnement</h2>
+    <p>Quand un modèle expose son cheminement, Beaver l'affiche <b>séparément de la réponse</b>, dans une zone repliable.</p>
+    <ul>
+      <li>Certains fournisseurs livrent un <b>résumé</b> du raisonnement plutôt que son texte intégral. C'est leur choix, pas une troncature de Beaver.</li>
+      <li>Certains modèles locaux encadrent leur réflexion par des balises dans le texte. Beaver <b>les repère et les extrait</b> pour que le raisonnement n'apparaisse pas mélangé à la réponse.</li>
+    </ul>
+
+    <h2 id="cas-particuliers">Les cas particuliers</h2>
+    <ul>
+      <li><b>Modèles locaux</b> — la plupart n'offrent que « désactivé » ou « automatique ». Quelques familles récentes acceptent trois paliers.</li>
+      <li><b>Modèles à réflexion imposée</b> — le réglage est absent ou limité à « automatique ».</li>
+      <li><b>Google</b> — la traduction dépend de la génération du modèle. Sur les modèles de la génération Gemini 2.5, l'effort devient un <b>budget de réflexion chiffré, en jetons</b> : <b>1 024</b> pour un effort faible, <b>8 192</b> par défaut, <b>24 576</b> pour un effort élevé. Sur les générations plus récentes, c'est un <b>niveau de réflexion nommé</b> qui est transmis, pas un chiffre. Dans les deux cas, désactiver le raisonnement est bien transmis comme une désactivation.</li>
+      <li><b>Certains modèles récents</b> ajoutent des paliers au-delà du maximum habituel.</li>
+    </ul>
+
+    <table>
+      <caption class="crumb">Ordre de grandeur des paliers proposés, par famille de modèles</caption>
+      <tr><th>Famille de modèles</th><th>Étendue du réglage</th></tr>
+      <tr><td>Modèles locaux courants</td><td>Désactivé / Automatique</td></tr>
+      <tr><td>Modèles locaux à effort réglable</td><td>Faible à Élevé</td></tr>
+      <tr><td>Modèles généralistes distants</td><td>Désactivé, puis Faible à Très élevé</td></tr>
+      <tr><td>Modèles distants les plus récents</td><td>Jusqu'à Maximum, parfois Ultra</td></tr>
+      <tr><td>Modèles à réflexion imposée</td><td>Automatique seulement</td></tr>
+      <tr><td>Modèles sans raisonnement</td><td>Aucun réglage</td></tr>
+    </table>
+
+    <p>Ce tableau donne des ordres de grandeur, pas une liste par modèle : une liste nominative serait périmée à la première sortie de modèle. L'interface affiche toujours les options réellement disponibles pour le modèle sélectionné — c'est elle qui fait foi.</p>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+
+    <table>
+      <caption class="crumb">Ce qui surprend le plus souvent autour du raisonnement</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>Le réglage d'effort a disparu</td><td>Le modèle sélectionné ne raisonne pas</td><td>Comportement attendu</td></tr>
+      <tr><td>Impossible de désactiver la réflexion</td><td>Modèle à réflexion imposée</td><td>Changer de modèle si le délai gêne</td></tr>
+      <tr><td>Les réponses sont devenues très lentes</td><td>Effort monté à Élevé ou plus</td><td>Redescendre pour les tâches ordinaires</td></tr>
+      <tr><td>La facture a augmenté sans plus de messages</td><td>Le raisonnement consomme des jetons</td><td>Baisser l'effort par défaut</td></tr>
+      <tr><td>Le raisonnement n'apparaît pas</td><td>Le fournisseur ne l'expose pas, ou la zone est repliée</td><td>Déplier la zone dédiée</td></tr>
+      <tr><td>Le raisonnement apparaît mélangé à la réponse</td><td>Balises non reconnues sur un modèle local</td><td>À signaler — c'est un défaut</td></tr>
+      <tr><td>Le contexte se remplit vite</td><td>Le raisonnement occupe de la place</td><td>Baisser l'effort, ou voir <a href="agent-contexte.html">Contexte</a></td></tr>
+    </table>
+
+    <p>Pour savoir si un modèle sait raisonner avant de le choisir, voir <a href="modeles-catalogue-et-favoris.html">Catalogue et favoris</a>.</p>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../js/theme.js"></script>
+<script src="../js/docs-nav-data.js"></script>
+<script src="../js/docs-nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Thèmes et apparence</title>
+<meta name="description" content="Les six thèmes de Beaver, le mode Système, la taille du texte, les sept polices et la coloration du code.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Référence / Thèmes et apparence</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="reference-themes.html" hreflang="fr" aria-current="true">FR</a>
+    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>L'allure de <em>ton</em> Beaver</h1>
+    <p>Six thèmes, sept polices, cinq colorations de code et une taille de texte réglable. Tout se change en direct, sans redémarrer l'application, et tout vit au même endroit : <b>Réglages › Général</b>.</p>
+
+    <h2 id="les-themes">Les thèmes</h2>
+    <p><b>Six thèmes</b>, plus une option <b>Système</b>. Deux sont clairs, quatre sont sombres. Chaque thème est une palette complète, pas seulement une couleur d'accentuation : le passage de l'un à l'autre est immédiat.</p>
+
+    <table>
+      <caption class="crumb">Les six thèmes et l'option Système</caption>
+      <tr><th>Thème</th><th>Type</th></tr>
+      <tr><td>Clair</td><td>Clair</td></tr>
+      <tr><td>Sombre</td><td>Sombre</td></tr>
+      <tr><td>Emerald Night</td><td>Sombre</td></tr>
+      <tr><td>Cobalt Frost</td><td>Clair</td></tr>
+      <tr><td>Astral Mist</td><td>Sombre</td></tr>
+      <tr><td>Crimson Eclipse</td><td>Sombre</td></tr>
+      <tr><td>Système</td><td>Suit le système, entre Clair et Sombre</td></tr>
+    </table>
+
+    <h2 id="le-mode-systeme">Le mode Système</h2>
+    <p>L'option <b>Système</b> suit le réglage clair/sombre de ton système d'exploitation. Elle bascule entre <b>Clair</b> et <b>Sombre</b> uniquement.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      Les quatre thèmes colorés — Emerald Night, Cobalt Frost, Astral Mist, Crimson Eclipse — ne sont jamais choisis automatiquement. Si tu aimes Emerald Night et que tu mets « Système », tu ne retrouveras pas Emerald Night la nuit, mais le thème Sombre standard. Ces thèmes-là se choisissent explicitement.
+    </div>
+
+    <h2 id="la-taille-du-texte">La taille du texte</h2>
+    <p>Elle se règle par saisie directe ou par incréments d'un pixel, et se pilote aussi au clavier avec <b>⌘+</b>, <b>⌘-</b> et <b>⌘0</b> (voir <a href="reference-raccourcis-clavier.html">Raccourcis clavier</a>).</p>
+
+    <table>
+      <caption class="crumb">Les bornes de la taille du texte</caption>
+      <tr><th>Repère</th><th>Valeur</th></tr>
+      <tr><td>Minimum</td><td><b>10 px</b></td></tr>
+      <tr><td>Maximum</td><td><b>24 px</b></td></tr>
+      <tr><td>Défaut</td><td><b>18 px</b></td></tr>
+      <tr><td>Pas</td><td><b>1 px</b></td></tr>
+    </table>
+
+    <p>Toute valeur hors bornes est ramenée dans l'intervalle, et une saisie invalide revient à <b>18 px</b>. Une valeur qui change toute seule après la saisie n'est donc pas un défaut d'affichage.</p>
+
+    <h2 id="la-police">La police</h2>
+    <p><b>Sept familles</b> proposées. Quatre sont à chasse fixe — chaque caractère occupe la même largeur, ce qui est utile pour lire du code dans les réponses — et deux sont des polices manuscrites, à réserver à un usage décoratif.</p>
+
+    <table>
+      <caption class="crumb">Les sept polices disponibles</caption>
+      <tr><th>Police</th><th>Nature</th></tr>
+      <tr><td>System Default</td><td>Police du système</td></tr>
+      <tr><td>JetBrains Mono</td><td>Chasse fixe</td></tr>
+      <tr><td>Helvetica Neue</td><td>Proportionnelle</td></tr>
+      <tr><td>Menlo</td><td>Chasse fixe</td></tr>
+      <tr><td>UI Monospace</td><td>Chasse fixe</td></tr>
+      <tr><td>Pacifico</td><td>Manuscrite</td></tr>
+      <tr><td>Rancho</td><td>Manuscrite</td></tr>
+    </table>
+
+    <h2 id="la-coloration-du-code">La coloration du code</h2>
+    <p><b>Cinq thèmes de coloration</b> pour les blocs de code dans les réponses de l'agent : <b>Défaut</b>, <b>GitHub</b>, <b>One Dark Pro</b>, <b>Tokyo Night</b> et <b>Catppuccin</b>.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      Chacun possède une variante claire et une variante sombre, choisie automatiquement selon le thème de l'application. Tu n'as donc qu'un seul réglage à faire, pas un pour le clair et un pour le sombre. L'écran de réglage affiche un aperçu des deux variantes côte à côte sur un extrait de code.
+    </div>
+
+    <h2 id="ou-se-regle-quoi">Où se règle quoi</h2>
+    <p>Tout est dans <b>Réglages › Général</b>, à l'exception de ce qui touche à la mascotte, qui a son propre onglet — voir <a href="interface-mascotte.html">Mascotte</a>.</p>
+    <p>Le thème et la langue sont également proposés pendant le <a href="demarrage-parcours-accueil.html">parcours d'accueil</a>, au premier lancement.</p>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+
+    <table>
+      <caption class="crumb">Symptômes courants et ce qu'il faut faire</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>Le thème coloré disparaît la nuit</td><td>L'option Système est active et ne connaît que Clair et Sombre</td><td>Choisir le thème explicitement</td></tr>
+      <tr><td>La taille du texte ne descend pas plus bas</td><td>Bornée à 10 px</td><td>Aucune : c'est la limite basse</td></tr>
+      <tr><td>Une valeur saisie est remplacée</td><td>Valeur hors bornes ou non numérique</td><td>La valeur est ramenée dans l'intervalle, ou remise à 18 px</td></tr>
+      <tr><td>Le code est illisible dans un thème</td><td>La coloration ne convient pas à la palette</td><td>Essayer une autre coloration ; l'aperçu montre les deux variantes</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="reference-langues.html">Langues</a> — l'autre moitié de Réglages › Général.</li>
+      <li><a href="demarrage-parcours-accueil.html">Parcours d'accueil</a> — thème et langue au premier lancement.</li>
+      <li><a href="interface-mascotte.html">Mascotte</a> — le seul réglage d'apparence qui vit ailleurs.</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../js/theme.js"></script>
+<script src="../js/docs-nav-data.js"></script>
+<script src="../js/docs-nav.js"></script>
+</body>
+</html>

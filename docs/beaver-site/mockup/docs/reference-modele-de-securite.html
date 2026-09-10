@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Modèle de sécurité</title>
+<meta name="description" content="Ce qui sort de ta machine, ce qui n'en sort jamais, les cinq couches de protection de Beaver et les limites qu'elles ne couvrent pas.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Référence / Modèle de sécurité</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="reference-modele-de-securite.html" hreflang="fr" aria-current="true">FR</a>
+    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+  <main class="doc">
+    <h1>Ce qui te <em>protège</em>, et où ça s'arrête</h1>
+    <p>Cette page répond à quatre questions : qu'est-ce qui sort de ta machine, qu'est-ce qui n'en sort jamais, qu'est-ce qui te protège, et où sont les limites. Chaque protection y est écrite avec sa condition d'activation — une protection annoncée sans sa condition serait un mensonge par omission.</p>
+    <div class="callout">
+      <span class="t">Attention</span>
+      <b>Beaver démarre en accès complet.</b> À l'installation, l'agent peut exécuter ses outils sans rien demander, sur l'ensemble de ton disque. C'est le réglage d'origine et il est délibéré : Beaver est conçu pour travailler dans tes projets. Si tu préfères valider chaque action, passe en <b>Demande d'approbation</b> et <b>restreins l'accès disque</b> à tes dossiers de travail. Ce sont les deux réglages les plus importants de l'application.
+    </div>
+    <h2 id="une-application-de-bureau">Une application de bureau, pas un service</h2>
+    <p>Beaver s'exécute sur ton ordinateur, avec les droits de ton compte utilisateur. Il n'y a pas de serveur Beaver, pas de compte à créer, pas de synchronisation. Trois conséquences.</p>
+    <ul>
+      <li><b>Tes données restent des fichiers chez toi.</b> Tout vit sous <code>~/.local/share/cl-go-dash/</code>, identique sur macOS, Linux et Windows.</li>
+      <li><b>Ce qui part vers un service extérieur part parce que tu l'as demandé</b> — en choisissant un modèle cloud, un connecteur, une recherche web ou un canal de messagerie.</li>
+      <li><b>Beaver ne peut pas te protéger de ce que tu autorises.</b> Un agent en accès complet fait ce que le modèle décide, avec tes droits.</li>
+    </ul>
+    <p>Le moteur local <b>Ollama</b> n'écoute que la boucle locale : il est lancé sur <code>127.0.0.1</code> et son port y est réservé. <b>Aucune machine du réseau ne peut l'interroger.</b> Le méta-moteur de recherche <b>SearXNG</b>, quand il est utilisé, est lié de la même façon à <code>127.0.0.1</code>.</p>
+    <h2 id="ce-qui-sort">Ce qui sort de ta machine, et vers qui</h2>
+    <table>
+      <caption class="crumb">Chaque flux sortant, sa destination et son déclencheur</caption>
+      <tr><th>Fonction</th><th>Destination</th><th>Ce qui part</th><th>Déclenché par</th></tr>
+      <tr><td>Modèle cloud</td><td>Le fournisseur choisi</td><td>La conversation entière, <b>y compris le contenu rapporté par les outils</b></td><td>Toi, en choisissant le modèle</td></tr>
+      <tr><td>Modèle local (Ollama)</td><td><b>Rien ne sort</b> — boucle locale uniquement</td><td>—</td><td>—</td></tr>
+      <tr><td>Recherche web</td><td>Le moteur configuré (Brave, Exa, Firecrawl), ou SearXNG en local</td><td>La requête de recherche</td><td>L'agent, via son outil de recherche</td></tr>
+      <tr><td>Lecture d'une page web</td><td>Le site visé</td><td>La requête</td><td>L'agent, via son outil de lecture</td></tr>
+      <tr><td>Connecteur MCP</td><td>Le service du connecteur</td><td>Ce que l'appel d'outil transporte</td><td>Toi, en installant le connecteur</td></tr>
+      <tr><td>Canal externe</td><td>Telegram, Slack ou Discord</td><td>Les réponses de l'agent</td><td>Toi, en configurant le canal</td></tr>
+      <tr><td>Forecast cloud</td><td><code>api.nixtla.io</code></td><td>Le jeu de données envoyé</td><td>Toi, en choisissant un modèle cloud</td></tr>
+      <tr><td>Vérifications de mise à jour</td><td><code>api.github.com</code>, <code>github.com</code>, <code>ollama.com</code></td><td>L'en-tête <code>User-Agent</code> ; <code>ollama.com</code> reçoit en plus le nom des familles de modèles installées</td><td>Automatique, toutes les heures</td></tr>
+      <tr><td>Catalogue public des modèles</td><td><code>raw.githubusercontent.com</code></td><td>Une requête conditionnelle, rien de personnel</td><td>Automatique, au démarrage</td></tr>
+      <tr><td>Aperçu des liens</td><td>Le site de chaque lien affiché dans une conversation</td><td>Une requête, sans clic</td><td>Automatique, activé par défaut — désactivable</td></tr>
+      <tr><td>Télémétrie, statistiques d'usage</td><td><b>Aucune</b></td><td>—</td><td>—</td></tr>
+    </table>
+    <div class="callout">
+      <span class="t">Attention</span>
+      <b>Ce que l'agent lit, le fournisseur le lit aussi.</b> Avec un modèle cloud, la conversation envoyée contient aussi ce que les outils ont rapporté : le contenu des fichiers lus, la sortie des commandes exécutées, les pages web consultées. Pour un contenu que tu ne veux transmettre à personne, utilise un modèle local — rien ne quitte alors ta machine.
+    </div>
+    <div class="callout">
+      <span class="t">Note</span>
+      <b>Aucune télémétrie.</b> Beaver n'envoie ni statistique d'usage, ni identifiant d'installation, ni rapport de plantage. Les seules requêtes qu'il émet de lui-même sont les vérifications de mise à jour, le rafraîchissement du catalogue public des modèles et l'aperçu des liens. La méthode de vérification est publiée dans <a href="reference-confidentialite.html">Confidentialité</a>.
+    </div>
+    <h2 id="ce-qui-ne-sort-jamais">Ce qui n'en sort jamais</h2>
+    <ul>
+      <li><b>Tes clés d'API.</b> Elles ne quittent le coffre que pour la requête HTTPS qui les utilise, et l'interface ne peut pas les lire.</li>
+      <li><b>Le contenu de tes messages dans le journal d'audit des canaux externes.</b> Une ligne y contient l'horodatage, le canal, l'identifiant de compte, une <b>empreinte</b> de l'identifiant utilisateur, le type d'action, un code de décision et une catégorie d'erreur. Rien d'autre : le texte du message n'est jamais écrit.</li>
+      <li><b>Le corps brut des réponses des fournisseurs.</b> Avant toute écriture dans les traces, il passe par une fonction qui masque les formats de secret reconnus et tronque à <b>200 caractères</b>.</li>
+      <li><b>Les demandes d'approbation.</b> Même quand une conversation est pilotée depuis Telegram, Slack ou Discord, une demande d'approbation ne part pas dans la messagerie : elle s'affiche dans la fenêtre de Beaver.</li>
+    </ul>
+    <h2 id="les-cinq-couches">Les cinq couches de protection</h2>
+    <p>La sécurité de Beaver tient en cinq couches indépendantes. Chacune a ce qu'elle garantit, et ce qu'elle ne garantit pas.</p>
+    <table>
+      <caption class="crumb">Chaque couche et sa limite</caption>
+      <tr><th>Couche</th><th>Ce qu'elle contrôle</th><th>Sa limite</th></tr>
+      <tr><td>1 — Permissions de l'agent</td><td>Ce que l'agent fait sans te demander</td><td>Par défaut : <b>rien n'est demandé</b></td></tr>
+      <tr><td>2 — Bac à sable du système</td><td>Ce qu'une commande shell peut atteindre</td><td><b>Inactif</b> tant que l'accès disque n'est pas restreint</td></tr>
+      <tr><td>3 — Coffre des clés</td><td>Où vivent tes clés d'API</td><td>Ne chiffre <b>que</b> les clés, pas tes conversations</td></tr>
+      <tr><td>4 — Bornes</td><td>La mémoire et le disque que Beaver peut consommer</td><td>Ne s'appliquent pas au code d'une extension</td></tr>
+      <tr><td>5 — Isolation des extensions et connecteurs</td><td>Les pannes, l'identité, l'environnement</td><td><b>N'est pas un bac à sable</b> pour le code approuvé</td></tr>
+    </table>
+    <h2 id="couche-permissions">Couche 1 — Les permissions de l'agent</h2>
+    <p><b>Le mode par défaut est Accès complet.</b> À la première installation, Beaver démarre dans ce mode, et il y revient si son fichier de réglages est absent, illisible ou porte une valeur inconnue. En accès complet, l'agent exécute ses outils sans jamais demander : écrire un fichier, lancer une commande, modifier une branche Git.</p>
+    <p><b>La recommandation, sans détour :</b> passe en <b>Demande d'approbation</b> si tu n'as pas une raison précise de rester en accès complet. Le détail des trois modes est dans <a href="agent-permissions.html">Modes de permission</a>.</p>
+    <p><b>Un plafond protège les canaux externes.</b> Quand une conversation arrive de Telegram, Slack ou Discord, le pont demande l'accès complet, mais cette demande est plafonnée par ton réglage : si le mode demandé est plus permissif que le tien, c'est le tien qui est retenu. Un canal externe ne peut jamais obtenir plus de droits que ceux que tu as consentis dans l'application.</p>
+    <div class="callout">
+      <span class="t">Attention</span>
+      <b>Personne n'approuve à ta place, à distance.</b> Aucune demande d'approbation n'est envoyée dans la messagerie : elle s'affiche dans la fenêtre de Beaver, sur ton ordinateur. Une action sensible demandée depuis Telegram attend donc devant ton écran — elle ne s'approuve pas depuis le téléphone.
+    </div>
+    <div class="callout">
+      <span class="t">Attention</span>
+      <b>Les réveils programmés font exception.</b> Une conversation déclenchée par un réveil s'exécute en <b>Accès complet</b>, même si tes conversations manuelles sont en Demande d'approbation. C'est un choix assumé : un réveil travaille sans personne devant l'écran, et une demande d'approbation sans personne pour y répondre bloquerait l'exécution au lieu de la protéger. Ton consentement, tu le donnes au moment de créer le réveil et d'écrire la tâche qu'il exécutera. N'automatise que ce que tu accepterais de laisser tourner sans surveillance.
+    </div>
+    <h2 id="couche-bac-a-sable">Couche 2 — Le bac à sable du système, et sa condition</h2>
+    <p>Un bac à sable, ici, veut dire que le système d'exploitation enferme la commande dans un espace dont elle ne peut pas sortir. C'est l'argument le plus fort de Beaver, et il est conditionnel : les deux moitiés se lisent ensemble.</p>
+    <p><b>Ce que fait Beaver.</b> Quand tu restreins l'accès disque de l'agent à un ou plusieurs dossiers, chaque commande shell n'est plus lancée directement : elle passe par un processus intermédiaire qui applique une politique d'isolation avant d'exécuter la commande. Cette politique est appliquée par le <b>noyau du système d'exploitation</b>, pas par le code de Beaver.</p>
+    <table>
+      <caption class="crumb">Le mécanisme d'isolation employé sur chaque système</caption>
+      <tr><th>Système</th><th>Mécanisme</th></tr>
+      <tr><td>macOS</td><td><b>Seatbelt</b>, avec un profil de politique généré pour l'occasion</td></tr>
+      <tr><td>Linux</td><td><b>Landlock</b>, règles de lecture et d'écriture posées par chemin</td></tr>
+      <tr><td>Windows</td><td>Un <b>AppContainer</b> dédié, avec des droits accordés dossier par dossier</td></tr>
+    </table>
+    <div class="callout">
+      <span class="t">Sécurité</span>
+      <b>Une protection garantie par le système, pas par Beaver.</b> C'est le seul réglage de Beaver dont l'effet ne dépend pas du bon fonctionnement de Beaver : même en cas de défaut de l'application, le noyau refuse l'accès.
+    </div>
+    <div class="callout">
+      <span class="t">Attention</span>
+      <b>Et il ne s'active pas tout seul.</b> Ce bac à sable est conditionné à la restriction de la portée disque. La portée d'origine est la <b>racine du disque</b> — <code>/</code> sur macOS et Linux, <code>C:\</code> sur Windows — et tant que l'agent a accès à tout le disque, ses commandes s'exécutent <b>sans aucune isolation</b>. C'est la raison la plus concrète de déclarer tes dossiers de travail : tu ne fais pas que limiter une portée, tu allumes une protection.
+    </div>
+    <p><b>Ce que la restriction contrôle par ailleurs.</b> Tout chemin venant de l'interface est d'abord validé dans sa forme — chemin absolu, sans caractère de contrôle, sans segment <code>..</code>, au plus <b>4 096 caractères</b> — puis résolu, liens symboliques et raccourcis compris, puis comparé aux racines autorisées. Au plus <b>70 dossiers</b> peuvent être déclarés.</p>
+    <h2 id="couche-coffre">Couche 3 — Le coffre des clés</h2>
+    <p>Tes clés d'API sont rangées dans un fichier chiffré, <code>secrets.enc</code>, en <b>XChaCha20-Poly1305</b>. La clé qui ouvre ce coffre n'est pas sur le disque : elle vit dans le trousseau du système — Keychain sur macOS, Gestionnaire d'identifiants sur Windows, service de secrets du bureau sur Linux. Elle est lue une seule fois au démarrage. Aucune des commandes exposées au code JavaScript de l'application ne renvoie un secret ; le détail est dans <a href="reference-coffre-et-cles.html">Le coffre et les clés API</a>.</p>
+    <div class="callout">
+      <span class="t">Attention</span>
+      <b>Le coffre protège tes clés, pas tes conversations.</b> <code>secrets.enc</code> est chiffré ; tes conversations, elles, sont enregistrées en clair dans ton dossier personnel, protégées par les seules permissions du système de fichiers — <code>0600</code> pour les fichiers, <code>0700</code> pour les dossiers sur macOS et Linux, une liste d'accès restreinte sur Windows. Autrement dit : lisibles par tout programme lancé sous ton compte. Traite <code>~/.local/share/cl-go-dash/</code> comme un dossier sensible, et relis un journal avant de le partager.
+    </div>
+    <h2 id="couche-bornes">Couche 4 — Les bornes</h2>
+    <p>Beaver plafonne ce qu'il peut consommer, pour qu'un emballement — boucle d'agent, réponse démesurée, flot de messages entrants — ne finisse ni en saturation de mémoire ni en disque plein.</p>
+    <table>
+      <caption class="crumb">Les principales bornes de l'application</caption>
+      <tr><th>Ressource</th><th>Limite</th></tr>
+      <tr><td>Conversations d'agent en cours</td><td><b>32</b></td></tr>
+      <tr><td>Sous-agents simultanés</td><td><b>8</b></td></tr>
+      <tr><td>Commandes shell simultanées</td><td><b>64</b></td></tr>
+      <tr><td>Sessions de terminal</td><td><b>16</b></td></tr>
+      <tr><td>Messages par conversation</td><td><b>2 000</b></td></tr>
+      <tr><td>Dossiers autorisés déclarables</td><td><b>70</b></td></tr>
+      <tr><td>Longueur d'un chemin</td><td><b>4 096</b> caractères</td></tr>
+      <tr><td>Corps de réponse authentifiée</td><td><b>32 Mio</b></td></tr>
+      <tr><td>Réponse de vérification de mise à jour</td><td><b>512 Kio</b></td></tr>
+      <tr><td>Corps de fournisseur écrit dans les traces</td><td><b>200 caractères</b>, après masquage</td></tr>
+      <tr><td>Utilisateurs suivis par la limite de débit</td><td><b>10 000</b>, purgés après <b>5 minutes</b></td></tr>
+      <tr><td>Entrées d'une liste d'utilisateurs autorisés</td><td><b>1 000</b>, chacune de <b>128</b> caractères au plus</td></tr>
+    </table>
+    <p>Deux mécanismes méritent une phrase de plus. <b>Les requêtes qui portent un secret sont bridées</b> : le client HTTP employé pour ces requêtes refuse toute redirection et n'accepte que HTTPS, la seule exception étant un service local sur la boucle — une redirection malveillante ne peut donc pas emmener une clé vers un serveur tiers. <b>Les canaux externes sont fermés par défaut aux inconnus</b> : un message venant de Telegram, Slack ou Discord n'est traité que si son expéditeur figure dans la liste des utilisateurs autorisés du compte, et le joker <code>*</code> est refusé à la construction de cette liste. Un expéditeur absent est bloqué et journalisé, puis une limite de débit par utilisateur s'applique.</p>
+    <h2 id="couche-extensions">Couche 5 — Extensions et connecteurs</h2>
+    <p><b>Les connecteurs MCP sont durcis.</b> Beaver n'accepte de lancer que trois programmes — <code>npx</code>, <code>uvx</code>, <code>deno</code> —, ne passe jamais par un shell, et efface l'environnement du processus parent avant de transmettre une liste explicite de variables. Tes variables d'environnement et tes secrets ne fuitent donc pas vers un connecteur par simple héritage. Voir <a href="integrations-connecteurs-mcp.html">Connecteurs MCP</a>.</p>
+    <p><b>Les extensions ne sont pas dans un bac à sable.</b> Une extension que tu approuves est du code de confiance : elle s'exécute avec les droits de ton compte, peut lire et écrire tes fichiers, lancer des programmes, utiliser le réseau, et demander tes clés par l'interface de programmation du kit de développement. L'isolation par processus — un processus hôte par extension tierce — protège la <b>stabilité</b> de l'application, pas tes données.</p>
+    <p>Ce que Beaver garantit malgré tout : une double décision explicite — installer, puis faire confiance —, une empreinte des fichiers qui révoque l'approbation dès qu'ils changent, une identité attribuée par Beaver et non déclarée par l'extension, et un journal de chaque remise de secret. Le détail est dans <a href="integrations-centre-extensions.html">Centre d'extensions</a>.</p>
+    <h2 id="les-limites-assumees">Les limites assumées</h2>
+    <ul>
+      <li><b>Le mode par défaut est le plus permissif</b> — accès complet sur tout le disque. Passe en Demande d'approbation et restreins la portée disque.</li>
+      <li><b>Sans restriction de portée, aucune commande n'est isolée.</b> Déclare tes dossiers de travail : c'est ce qui allume la protection du noyau.</li>
+      <li><b>Les réveils programmés s'exécutent en accès complet</b>, quel que soit ton réglage. N'automatise que ce que tu accepterais de laisser tourner seul.</li>
+      <li><b>Le code d'une extension approuvée n'est contraint par rien.</b> Lis le code avant d'approuver ; en cas de doute, révoque la clé chez son fournisseur, pas seulement l'extension.</li>
+      <li><b>Tes conversations ne sont pas chiffrées.</b> Traite le dossier de données comme un dossier sensible, et relis les journaux avant de les partager.</li>
+      <li><b>Il n'y a pas de signature de code sur les binaires macOS.</b> Installe par le script fourni plutôt que par le navigateur — voir <a href="reference-depannage-installation.html">Dépannage installation</a>.</li>
+    </ul>
+    <h2 id="hors-de-portee">Ce qui est hors de portée de Beaver</h2>
+    <p>Trois cas qu'aucune application de bureau ne peut couvrir : un <b>accès physique à une machine déverrouillée</b>, où tout est lisible sous ta session ; un <b>logiciel malveillant tournant déjà sous ton compte</b>, qui a les mêmes droits que Beaver ; un <b>trousseau système compromis</b>, où vit la clé maîtresse du coffre — si le trousseau tombe, le coffre tombe. C'est une propriété inhérente au stockage de secrets sur un poste de travail, pas un choix de Beaver.</p>
+    <h2 id="les-cinq-reglages">Les cinq réglages qui changent tout</h2>
+    <p>Dans l'ordre d'effet décroissant.</p>
+    <ul>
+      <li><b>Restreindre l'accès disque</b> à tes dossiers de travail — le seul geste qui active une protection du noyau.</li>
+      <li><b>Passer en Demande d'approbation</b> — voir <a href="agent-permissions.html">Modes de permission</a>.</li>
+      <li><b>Choisir un modèle local</b> pour tout contenu sensible — voir <a href="demarrage-choisir-son-modele.html">Choisir son modèle</a>.</li>
+      <li><b>N'approuver une extension qu'après avoir lu son code</b> — et révoquer la clé, pas seulement l'extension, en cas de doute.</li>
+      <li><b>Restreindre la liste des utilisateurs autorisés</b> sur chaque canal externe — voir <a href="integrations-canaux-externes.html">Canaux externes</a>.</li>
+    </ul>
+    <h2 id="idees-recues">Idées reçues</h2>
+    <table>
+      <caption class="crumb">Ce qu'on croit, ce qui est vrai, ce qu'il faut faire</caption>
+      <tr><th>Idée reçue</th><th>Ce qui est vrai</th><th>Conduite à tenir</th></tr>
+      <tr><td>« Beaver est installé, donc il est en mode sécurisé »</td><td>Le mode d'origine est l'accès complet sur tout le disque</td><td>Changer les deux réglages dès le premier lancement</td></tr>
+      <tr><td>« Mes commandes sont dans un bac à sable »</td><td>Seulement si la portée disque est restreinte</td><td>Déclarer les dossiers de travail</td></tr>
+      <tr><td>« Mes conversations sont chiffrées comme mes clés »</td><td>Seul <code>secrets.enc</code> est chiffré ; les conversations sont en clair</td><td>Protéger le dossier de données ; préférer un modèle local pour le sensible</td></tr>
+      <tr><td>« Le modèle ne voit que ce que je tape »</td><td>Il voit aussi tout ce que les outils rapportent</td><td>Choisir un modèle local pour les contenus confidentiels</td></tr>
+      <tr><td>« Je peux approuver une action depuis Telegram »</td><td>Aucune demande d'approbation ne part dans la messagerie</td><td>Répondre depuis la fenêtre Beaver</td></tr>
+      <tr><td>« Mes réveils respectent mon mode de permission »</td><td>Ils s'exécutent en accès complet</td><td>N'automatiser que du travail acceptable sans surveillance</td></tr>
+      <tr><td>« Une extension est isolée dans son processus »</td><td>Le processus séparé protège la stabilité, pas tes données</td><td>Lire le code avant d'approuver</td></tr>
+      <tr><td>« Désactiver une extension récupère la clé qu'elle a obtenue »</td><td>Non : une copie a pu être conservée</td><td>Révoquer la clé chez son fournisseur</td></tr>
+      <tr><td>« Beaver envoie des statistiques d'usage »</td><td>Non, aucune télémétrie</td><td>—</td></tr>
+    </table>
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="reference-coffre-et-cles.html">Le coffre et les clés API</a> — le chiffrement, la clé maîtresse, ce que l'interface ne peut pas lire.</li>
+      <li><a href="reference-confidentialite.html">Confidentialité</a> — ce que voient les fournisseurs, les connexions automatiques, l'effacement des données.</li>
+      <li><a href="agent-permissions.html">Modes de permission</a> — les trois modes et ce qui déclenche une demande.</li>
+      <li><a href="integrations-centre-extensions.html">Centre d'extensions</a> — ce que l'approbation engage.</li>
+    </ul>
+  </main>
+  <div class="toc" id="docs-toc"></div>
+</div>
+<script src="../js/theme.js"></script>
+<script src="../js/docs-nav-data.js"></script>
+<script src="../js/docs-nav.js"></script>
+</body>
+</html>

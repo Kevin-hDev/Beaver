@@ -138,7 +138,7 @@ Par ordre de préférence :
 | « Le chargement du modèle échoue » | Mémoire insuffisante | Idem |
 | « Ça marchait, et maintenant c'est lent » | Une autre application a pris de la mémoire | Fermer le navigateur, relancer |
 | « Mon contexte est limité à 8 192 jetons » | Moins de 12 Go détectés, ou mesure impossible | Comportement attendu |
-| « Ma carte graphique n'est pas utilisée » | Fabricant non reconnu, ou pilotes absents | Vérifier les traces du moteur |
+| « Ma carte graphique n'est pas utilisée » | Fabricant non reconnu, ou pilotes absents | Forcer le mode processeur seul si besoin — le moteur n'écrit aucune trace (corrigé le 10 sept. 2026 d'après `ollama-runtime.md`, qui fait foi : seuls les codes d'erreur des traces de Beaver sont exploitables) |
 | « J'ai 16 Go mais un modèle de 13 milliards ne passe pas » | Le système et les applications occupent déjà de la place | Fermer des applications, ou passer en Q4 |
 
 ---
