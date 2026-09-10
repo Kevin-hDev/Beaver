@@ -1,0 +1,28 @@
+Task 5 — bounded beaver logs
+
+Reason:
+- Tail scans backward in 64 KiB blocks and never reads more than 8 MiB.
+- The returned collection is capped at the same 5000-line authority used by argument parsing.
+- Symlinked logs are refused and displayed lines strip terminal control characters and cap Unicode scalar output.
+- Parsing accepts only app, gateway, or reveils and a strict line count from 1 through 5000.
+
+TDD evidence:
+- Initial tests failed because last_lines did not exist.
+- Tail fixtures cover short files, oversized requests, missing files, multibyte UTF-8, and symbolic links.
+- Parser fixtures cover defaults, source selection, strict bounds, unknown sources, invalid syntax, and terminal-control sanitization.
+
+Validation:
+- cargo fmt --all -- --check: PASS
+- cargo test --bin beaver: 34 passed, 0 failed
+- cargo check: PASS
+- cargo clippy --all-targets -- -D warnings: PASS
+- cargo test: 5399 library tests passed, 21 ignored, 0 failed; 34 beaver tests passed
+- rebuilt cargo build --bin beaver before manual checks
+- beaver logs: real app log lines displayed
+- beaver logs reveils -n 10: real wakeup JSONL displayed
+- beaver logs inconnu: localized valid-source message, exit 2
+- git diff --check: PASS
+- graphify update .: PASS
+
+Plan deviation:
+- AGENTS.md and CLAUDE.md are intentionally ignored local instruction files and are absent from this worktree. Their current source copies already state that logs/ollama-sidecar.log no longer exists, so the stale replacement described by the plan was not force-added to Git.
