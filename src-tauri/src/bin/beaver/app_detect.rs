@@ -139,6 +139,9 @@ mod tests {
         assert!(matches_ollama_process("ollama"));
         assert!(matches_ollama_process("ollama.exe"));
         assert!(matches_ollama_process(".beaver-gated-19787-d1QCQW"));
+        #[cfg(target_os = "linux")]
+        assert!(matches_ollama_process(".beaver-gated-1"));
         assert!(!matches_ollama_process("ollama-helper"));
+        assert!(!matches_ollama_process(".beaver-gated-x"));
     }
 }

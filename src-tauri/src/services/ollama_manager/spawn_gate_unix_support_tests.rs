@@ -1,5 +1,18 @@
-use super::support::{close, pipe, stable_executable_link};
+use super::support::{close, is_linux_truncated_process_name, pipe, stable_executable_link};
 use std::os::unix::fs::MetadataExt;
+
+#[test]
+fn linux_comm_truncation_reconnait_uniquement_le_prefixe_et_un_chiffre() {
+    assert!(is_linux_truncated_process_name(std::ffi::OsStr::new(
+        ".beaver-gated-1"
+    )));
+    assert!(!is_linux_truncated_process_name(std::ffi::OsStr::new(
+        ".beaver-gated-x"
+    )));
+    assert!(!is_linux_truncated_process_name(std::ffi::OsStr::new(
+        ".beaver-gated-12"
+    )));
+}
 
 #[cfg(target_os = "macos")]
 #[test]

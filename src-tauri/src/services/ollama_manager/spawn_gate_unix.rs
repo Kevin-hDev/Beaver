@@ -17,7 +17,7 @@ use support::{
 };
 
 pub(super) fn is_process_name(name: &str) -> bool {
-    support::gated_link_owner(std::ffi::OsStr::new(name)).is_some()
+    support::is_process_name(std::ffi::OsStr::new(name))
 }
 
 pub(crate) struct NativeGatedProcess {

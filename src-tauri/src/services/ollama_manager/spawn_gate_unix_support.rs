@@ -20,6 +20,21 @@ pub(super) fn gated_link_owner(name: &std::ffi::OsStr) -> Option<u32> {
     owner.parse().ok()
 }
 
+pub(super) fn is_process_name(name: &std::ffi::OsStr) -> bool {
+    if gated_link_owner(name).is_some() {
+        return true;
+    }
+    cfg!(target_os = "linux") && is_linux_truncated_process_name(name)
+}
+
+pub(super) fn is_linux_truncated_process_name(name: &std::ffi::OsStr) -> bool {
+    // Linux /proc/<pid>/comm garde au plus 15 octets, soit le préfixe et un chiffre du PID.
+    let bytes = name.as_bytes();
+    bytes.len() == 15
+        && bytes.starts_with(GATE_LINK_PREFIX.as_bytes())
+        && bytes[14].is_ascii_digit()
+}
+
 pub(super) struct StableExecutableLink {
     path: PathBuf,
 }

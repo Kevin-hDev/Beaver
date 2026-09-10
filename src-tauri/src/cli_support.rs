@@ -50,6 +50,8 @@ pub struct CliRemovalOutcome {
     pub failed: Vec<std::path::PathBuf>,
 }
 
+/// Renvoie uniquement des dossiers directement enfants de `root` afin que la
+/// garde de suppression CLI puisse exiger l'égalité de leur parent canonique.
 pub fn abandoned_ollama_staging_dirs(
     root: &std::path::Path,
 ) -> Result<Vec<std::path::PathBuf>, CliSupportError> {
