@@ -113,7 +113,7 @@ pub fn print_help(out: &Out) {
         ("paths", "chemins des données", "data paths", true),
         ("status", "état local", "local status", true),
         ("doctor", "diagnostic local", "local diagnostics", true),
-        ("logs", "lecture des journaux", "read logs", false),
+        ("logs", "lecture des journaux", "read logs", true),
         ("update", "mise à jour", "update", false),
         ("cleanup", "nettoyage sûr", "safe cleanup", false),
     ] {

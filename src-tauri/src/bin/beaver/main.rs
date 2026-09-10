@@ -1,8 +1,10 @@
 mod app_detect;
 mod doctor;
+mod logs;
 mod output;
 mod paths_cmd;
 mod status;
+mod tail;
 mod version;
 
 const MAX_ARGS: usize = 64;
@@ -28,6 +30,7 @@ fn dispatch(out: &output::Out, args: &[String]) -> i32 {
         Some("paths") => paths_cmd::run(out),
         Some("status") => status::run(out),
         Some("doctor") => doctor::run(out),
+        Some("logs") => logs::run(out, &args[1..]),
         Some("--help") | Some("-h") | None => {
             output::print_help(out);
             0
