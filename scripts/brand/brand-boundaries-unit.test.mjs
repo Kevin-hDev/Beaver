@@ -85,6 +85,16 @@ test("classe les identifiants compatibles comme internes", () => {
       "`Provides`, `Conflicts`, `Replaces` valent tous `cl-go`.",
       "docs/documentation-site-web/13-depannage/installation.md",
     ],
+    [
+      "cl-go",
+      "L’ancien paquet <code>cl-go</code> est remplacé.",
+      "docs/beaver-site/mockup/docs/demarrage-installation-linux.html",
+    ],
+    [
+      "CL-GO",
+      "Supprimez l’ancienne application CL-GO.",
+      "docs/beaver-site/mockup/docs/reference-depannage-installation.html",
+    ],
   ];
 
   for (const [value, line, file] of samples) {

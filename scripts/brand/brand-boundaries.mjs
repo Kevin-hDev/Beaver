@@ -17,7 +17,9 @@ const BRAND_PATTERN = /CL-GO-DASH|CL-GO|cl-go-dash|cl_go_dash|CLGO|clgo|cl-go/g;
 const VISIBLE_VALUES = new Set(["CL-GO-DASH", "CL-GO"]);
 const INTERNAL_VALUES = new Set(["cl-go-dash", "cl_go_dash", "CLGO", "clgo"]);
 const PACKAGE_COMPATIBILITY_FILES = new Set([
-  // Ces pages documentent les métadonnées exactes de l'ancien paquet Linux.
+  // Ces sources et leurs pages générées documentent les métadonnées exactes de l'ancien paquet Linux.
+  "docs/beaver-site/mockup/docs/demarrage-installation-linux.html",
+  "docs/beaver-site/mockup/docs/reference-depannage-installation.html",
   "docs/documentation-site-web/02-installation/installation-linux.md",
   "docs/documentation-site-web/13-depannage/installation.md",
   "install.sh",
