@@ -65,8 +65,11 @@ pub fn old_tool_results(
         .map_err(|_| CliSupportError)
 }
 
-pub fn remove_tool_results(paths: &[std::path::PathBuf]) -> CliRemovalOutcome {
-    let outcome = crate::services::agent_local::tool_result_budget::remove_results(paths);
+pub fn remove_tool_results(
+    root: &std::path::Path,
+    paths: &[std::path::PathBuf],
+) -> CliRemovalOutcome {
+    let outcome = crate::services::agent_local::tool_result_budget::remove_results(root, paths);
     CliRemovalOutcome {
         removed: outcome.removed,
         failed: outcome.failed.into_iter().map(|(path, _)| path).collect(),

@@ -19,6 +19,14 @@ pub fn old_results_in(
     root: &std::path::Path,
     now: std::time::SystemTime,
 ) -> std::io::Result<Vec<(std::path::PathBuf, u64)>> {
+    old_results_in_bounded(root, now, MAX_OLD_RESULTS)
+}
+
+pub(crate) fn old_results_in_bounded(
+    root: &std::path::Path,
+    now: std::time::SystemTime,
+    max_results: usize,
+) -> std::io::Result<Vec<(std::path::PathBuf, u64)>> {
     let directory = root.join("tool-results");
     let metadata = match std::fs::symlink_metadata(&directory) {
         Ok(metadata) => metadata,
@@ -33,17 +41,25 @@ pub fn old_results_in(
         .unwrap_or(std::time::SystemTime::UNIX_EPOCH);
     let mut selected = Vec::new();
     for (index, entry) in std::fs::read_dir(&directory)?.enumerate() {
-        if index == MAX_OLD_RESULTS {
-            return Err(std::io::Error::from(std::io::ErrorKind::InvalidData));
+        if index == max_results {
+            return Ok(selected);
         }
-        let entry = entry?;
-        let metadata = std::fs::symlink_metadata(entry.path())?;
-        if metadata.file_type().is_symlink() || metadata.modified()? >= cutoff {
+        let Ok(entry) = entry else { continue };
+        let path = entry.path();
+        let Ok(metadata) = std::fs::symlink_metadata(&path) else {
+            continue;
+        };
+        let Ok(modified) = metadata.modified() else {
+            continue;
+        };
+        if metadata.file_type().is_symlink() || modified >= cutoff {
             continue;
         }
         let mut visited = 0_usize;
-        let bytes = result_tree_size(&entry.path(), 0, &mut visited)?;
-        selected.push((entry.path(), bytes));
+        let Ok(bytes) = result_tree_size(&path, 0, &mut visited) else {
+            continue;
+        };
+        selected.push((path, bytes));
     }
     Ok(selected)
 }
@@ -74,13 +90,16 @@ fn result_tree_size(
     Ok(bytes)
 }
 
-pub fn remove_results(paths: &[std::path::PathBuf]) -> RemovalOutcome {
+pub fn remove_results(
+    root: &std::path::Path,
+    paths: &[std::path::PathBuf],
+) -> RemovalOutcome {
     let mut outcome = RemovalOutcome {
         removed: 0,
         failed: Vec::with_capacity(paths.len()),
     };
     for path in paths {
-        match remove_result(path) {
+        match remove_result(root, path) {
             Ok(()) => outcome.removed += 1,
             Err(error) => outcome.failed.push((path.clone(), error)),
         }
@@ -88,17 +107,26 @@ pub fn remove_results(paths: &[std::path::PathBuf]) -> RemovalOutcome {
     outcome
 }
 
-fn remove_result(path: &std::path::Path) -> std::io::Result<()> {
+fn remove_result(root: &std::path::Path, path: &std::path::Path) -> std::io::Result<()> {
+    let root_metadata = std::fs::symlink_metadata(root)?;
+    let results = root.join("tool-results");
+    let results_metadata = std::fs::symlink_metadata(&results)?;
     let parent = path
         .parent()
         .ok_or_else(|| std::io::Error::from(std::io::ErrorKind::InvalidInput))?;
     let parent_metadata = std::fs::symlink_metadata(parent)?;
     let metadata = std::fs::symlink_metadata(path)?;
-    if parent.file_name().and_then(|name| name.to_str()) != Some("tool-results")
+    if root_metadata.file_type().is_symlink()
+        || !root_metadata.is_dir()
+        || results_metadata.file_type().is_symlink()
+        || !results_metadata.is_dir()
         || parent_metadata.file_type().is_symlink()
         || !parent_metadata.is_dir()
         || metadata.file_type().is_symlink()
     {
+        return Err(std::io::Error::from(std::io::ErrorKind::InvalidInput));
+    }
+    if std::fs::canonicalize(parent)? != std::fs::canonicalize(results)? {
         return Err(std::io::Error::from(std::io::ErrorKind::InvalidInput));
     }
     if metadata.is_dir() {
@@ -112,10 +140,8 @@ fn remove_result(path: &std::path::Path) -> std::io::Result<()> {
 
 /// Supprime les dossiers de résultats persistés datant de plus de 24h.
 pub fn cleanup_old_results() {
-    let selected = match old_results_in(
-        &crate::services::paths::data_dir(),
-        std::time::SystemTime::now(),
-    ) {
+    let root = crate::services::paths::data_dir();
+    let selected = match old_results_in(&root, std::time::SystemTime::now()) {
         Ok(selected) => selected,
         Err(_) => {
             ::log::error!("[tool-results] cleanup inventory unavailable");
@@ -126,7 +152,7 @@ pub fn cleanup_old_results() {
         .into_iter()
         .map(|(path, _)| path)
         .collect::<Vec<_>>();
-    let outcome = remove_results(&paths);
+    let outcome = remove_results(&root, &paths);
     if !outcome.failed.is_empty() {
         ::log::error!(
             "[tool-results] cleanup failures count={}",

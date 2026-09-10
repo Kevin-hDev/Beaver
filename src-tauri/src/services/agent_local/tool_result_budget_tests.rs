@@ -4,7 +4,7 @@
 #[cfg(test)]
 mod tests {
     use crate::services::agent_local::tool_result_budget::{
-        apply_budget, old_results_in, remove_results, CLEARED_PLACEHOLDER,
+        apply_budget, old_results_in, old_results_in_bounded, remove_results, CLEARED_PLACEHOLDER,
     };
     use crate::services::agent_local::types_ollama::ChatMessage;
 
@@ -156,7 +156,10 @@ mod tests {
             + std::time::Duration::from_secs(2 * 86_400);
         let selected = old_results_in(root.path(), future).expect("selection");
         assert_eq!(selected, vec![(result.clone(), 6)]);
-        let outcome = remove_results(&selected.iter().map(|item| item.0.clone()).collect::<Vec<_>>());
+        let outcome = remove_results(
+            root.path(),
+            &selected.iter().map(|item| item.0.clone()).collect::<Vec<_>>(),
+        );
         assert_eq!(outcome.removed, 1);
         assert!(outcome.failed.is_empty());
         assert!(!result.exists());
@@ -199,8 +202,56 @@ mod tests {
     fn suppression_retourne_chaque_echec() {
         let root = tempfile::TempDir::new().expect("temporary directory");
         let missing = root.path().join("tool-results/missing");
-        let outcome = remove_results(&[missing]);
+        let outcome = remove_results(root.path(), &[missing]);
         assert_eq!(outcome.removed, 0);
         assert_eq!(outcome.failed.len(), 1);
+    }
+
+    #[test]
+    fn borne_d_inventaire_retourne_la_selection_accumulee() {
+        let root = tempfile::TempDir::new().expect("temporary directory");
+        let results = root.path().join("tool-results");
+        std::fs::create_dir_all(results.join("a")).expect("first result");
+        std::fs::create_dir_all(results.join("b")).expect("second result");
+        let future = std::time::SystemTime::now()
+            + std::time::Duration::from_secs(2 * 86_400);
+
+        let selected = old_results_in_bounded(root.path(), future, 1).expect("selection");
+
+        assert_eq!(selected.len(), 1);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn entree_detournee_n_empeche_pas_une_entree_sure() {
+        use std::os::unix::fs::symlink;
+
+        let root = tempfile::TempDir::new().expect("temporary directory");
+        let results = root.path().join("tool-results");
+        let safe = results.join("safe");
+        std::fs::create_dir_all(&safe).expect("safe result");
+        std::fs::write(safe.join("full.txt"), b"safe").expect("safe result file");
+        symlink(root.path(), results.join("unsafe")).expect("unsafe result");
+        let future = std::time::SystemTime::now()
+            + std::time::Duration::from_secs(2 * 86_400);
+
+        let selected = old_results_in(root.path(), future).expect("selection");
+
+        assert_eq!(selected, vec![(safe, 4)]);
+    }
+
+    #[test]
+    fn suppression_refuse_un_autre_dossier_tool_results() {
+        let root = tempfile::TempDir::new().expect("temporary directory");
+        std::fs::create_dir(root.path().join("tool-results")).expect("owned results");
+        let outside = tempfile::TempDir::new().expect("outside directory");
+        let foreign = outside.path().join("tool-results/session");
+        std::fs::create_dir_all(&foreign).expect("foreign result");
+
+        let outcome = remove_results(root.path(), std::slice::from_ref(&foreign));
+
+        assert_eq!(outcome.removed, 0);
+        assert_eq!(outcome.failed.len(), 1);
+        assert!(foreign.exists());
     }
 }

@@ -33,7 +33,7 @@ pub(super) fn remove_candidates(root: &Path, candidates: &[Candidate]) -> Remova
     for (paths, outcome) in [
         (
             &tool_paths,
-            cl_go_dash_lib::cli_support::remove_tool_results(&tool_paths),
+            cl_go_dash_lib::cli_support::remove_tool_results(root, &tool_paths),
         ),
         (
             &ollama_paths,
