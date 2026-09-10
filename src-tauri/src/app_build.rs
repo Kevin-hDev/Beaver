@@ -215,6 +215,7 @@ fn configure_application(
     });
     crate::services::update_health::acknowledge_from_args(std::env::args_os())
         .map_err(std::io::Error::other)?;
+    crate::storage_migration::acknowledge_automation_migration().map_err(std::io::Error::other)?;
     Ok(())
 }
 

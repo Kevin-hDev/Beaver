@@ -10,6 +10,8 @@ static CONFIG_UPDATE_LOCK: Mutex<()> = Mutex::new(());
 
 #[path = "config_compression_migration.rs"]
 mod compression_migration;
+#[path = "config_legacy_wakeup_guard.rs"]
+mod legacy_wakeup_guard;
 
 pub(crate) use compression_migration::{
     acknowledge_compression_settings_backup_at, finalize_compression_settings_migration_at,
@@ -108,9 +110,23 @@ pub fn update_config<T>(
     let _guard = CONFIG_UPDATE_LOCK
         .lock()
         .unwrap_or_else(|error| error.into_inner());
+    legacy_wakeup_guard::ensure_round_trip(&config_path())?;
     let mut config = read_config_unlocked()?;
     let result = update(&mut config)?;
     write_config_unlocked(&config)?;
+    Ok(result)
+}
+
+#[cfg(test)]
+pub(crate) fn update_config_at_path<T>(
+    path: &Path,
+    data_dir: &Path,
+    update: impl FnOnce(&mut ClgoConfig) -> Result<T, String>,
+) -> Result<T, String> {
+    legacy_wakeup_guard::ensure_round_trip(path)?;
+    let mut config = read_config_from_path(path, data_dir)?;
+    let result = update(&mut config)?;
+    write_config_to_path(path, &config)?;
     Ok(result)
 }
 

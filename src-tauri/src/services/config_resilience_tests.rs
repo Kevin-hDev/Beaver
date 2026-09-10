@@ -10,7 +10,8 @@
 
 use crate::models::{ClgoConfig, ScheduledWakeup, WakeupSchedule};
 use crate::services::config::{
-    read_allowed_paths_strict_from_path, read_config_from_path, write_config_to_path,
+    read_allowed_paths_strict_from_path, read_config_from_path, update_config_at_path,
+    write_config_to_path,
 };
 use serde_json::json;
 
@@ -173,6 +174,22 @@ fn all_invalid_wakeups_dropped() {
         config.scheduled_wakeups.is_empty(),
         "tous les wakeups invalides doivent être droppés"
     );
+}
+
+#[test]
+fn update_refuses_unknown_wakeup_without_changing_a_byte() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("config.json");
+    let original =
+        br#"{"heartbeat":{"global_paused":false},"scheduled_wakeups":[{"kind":"future"}]}"#;
+    std::fs::write(&path, original).unwrap();
+
+    assert!(update_config_at_path(&path, dir.path(), |config| {
+        config.heartbeat.global_paused = true;
+        Ok(())
+    })
+    .is_err());
+    assert_eq!(std::fs::read(&path).unwrap(), original);
 }
 
 // --- Écriture atomique ------------------------------------------------------

@@ -1,0 +1,56 @@
+{
+  "scheduled_wakeups": [
+    {
+      "id": "44ddd259-54a5-42ae-81b5-5eb3ccee6ace",
+      "name": "Test quotidien",
+      "model": "gpt-5.6-luna",
+      "provider": "codex-oauth",
+      "prompt": "Vérifie un état factice et rédige un bref résultat.",
+      "schedule": { "kind": "daily", "time": "08:00" },
+      "description": "Fixture assainie",
+      "project_id": null,
+      "active": false,
+      "paused_by_global": true,
+      "created_at": "2026-08-22T10:36:53.729648+00:00"
+    }
+  ],
+  "heartbeat": { "global_paused": true },
+  "advanced": {
+    "autostart": false,
+    "start_hidden": false,
+    "show_tray": true,
+    "default_model": "codex-oauth:gpt-5.6-luna",
+    "keep_alive": "5m",
+    "allowed_paths": ["/"],
+    "session_outputs_directory": "",
+    "hardware_accel": "gpu",
+    "multi_model": false,
+    "show_gpu_status": true,
+    "response_language": "French",
+    "link_preview_enabled": true,
+    "ollama_setup_skipped": true,
+    "onboarding_completed": true
+  },
+  "gateway": {
+    "enabled": false,
+    "start_with_app": true,
+    "default_provider": "",
+    "default_model": "",
+    "max_sessions": 500,
+    "message_max_chars": 8000,
+    "rate_limits": {
+      "per_user_per_minute": 12,
+      "per_channel_per_minute": 120,
+      "global_per_minute": 300
+    },
+    "audit": { "enabled": true, "retention_days": 30 },
+    "channels": { "telegram": [], "slack": [], "discord": [] }
+  },
+  "mascot": {
+    "enabled": false,
+    "mascot_id": "test-mascot",
+    "size_percent": 140,
+    "position": { "x": 120, "y": 80 }
+  },
+  "future_section": { "kept": true }
+}

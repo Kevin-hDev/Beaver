@@ -1,8 +1,33 @@
+use crate::services::automations::migration::AutomationMigrationStatus;
 use crate::services::paths::data_dir;
 
 pub fn initialize(app_handle: &tauri::AppHandle) -> Result<(), String> {
     run(app_handle)?;
-    crate::services::private_store::repair_app_storage().map_err(|_| migration_error())
+    crate::services::private_store::repair_app_storage().map_err(|_| migration_error())?;
+    match migrate_automations()? {
+        AutomationMigrationStatus::Ready => {}
+        AutomationMigrationStatus::NeedsTimezone => {
+            ::log::warn!("[automations] timezone selection required");
+        }
+        AutomationMigrationStatus::Conflicts(items) => {
+            ::log::warn!("[automations] {} migration conflict(s)", items.len());
+        }
+    }
+    Ok(())
+}
+
+fn migrate_automations() -> Result<AutomationMigrationStatus, String> {
+    let timezone = iana_time_zone::get_timezone()
+        .ok()
+        .and_then(|value| value.parse::<chrono_tz::Tz>().ok());
+    tauri::async_runtime::block_on(crate::services::automations::migration::migrate_legacy(
+        &data_dir(),
+        timezone,
+    ))
+}
+
+pub fn acknowledge_automation_migration() -> Result<(), String> {
+    crate::services::automations::migration::acknowledge_successful_startup(&data_dir())
 }
 
 pub fn run(app_handle: &tauri::AppHandle) -> Result<(), String> {
