@@ -10,14 +10,14 @@ import { hostDirectory, root } from "./office-test-helpers.mjs";
 const expectedDependencies = {
   "@napi-rs/canvas": "1.0.8",
   "@cantoo/pdf-lib": "2.9.1",
-  "@xlsx/xlsx-populate": "0.2.0",
+  "@xlsx/xlsx-populate": "0.2.2",
   docx: "9.7.1",
-  esbuild: "0.28.1",
+  esbuild: "0.28.2",
   fflate: "0.8.3",
   fontkit: "2.0.4",
   "image-size": "file:vendor/image-size-disabled",
   jiti: "2.7.0",
-  "pdfjs-dist": "6.2.108",
+  "pdfjs-dist": "6.3.289",
   pptxgenjs: "4.0.1",
 };
 
