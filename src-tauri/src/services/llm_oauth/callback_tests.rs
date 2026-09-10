@@ -28,9 +28,11 @@ fn validates_state_in_constant_time_helper() {
 }
 
 #[tokio::test]
-async fn fixed_callback_port_reports_unavailable_for_device_fallback() {
-    let listener = tokio::net::TcpListener::bind(BIND_ADDR).await.unwrap();
-    let result = CallbackServer::bind(Zeroizing::new(STATE.to_string())).await;
+async fn occupied_callback_port_reports_unavailable_for_device_fallback() {
+    // An OS-assigned port avoids Windows ranges where even the first bind is forbidden.
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let occupied = listener.local_addr().unwrap().to_string();
+    let result = CallbackServer::bind_at(Zeroizing::new(STATE.to_string()), &occupied).await;
     assert!(matches!(result, Err(OAuthFailure::Generic)));
     drop(listener);
 }

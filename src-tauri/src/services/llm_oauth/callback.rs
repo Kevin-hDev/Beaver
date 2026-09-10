@@ -20,8 +20,15 @@ pub struct CallbackServer {
 
 impl CallbackServer {
     pub async fn bind(expected_state: Zeroizing<String>) -> Result<Self, OAuthFailure> {
+        Self::bind_at(expected_state, BIND_ADDR).await
+    }
+
+    async fn bind_at(
+        expected_state: Zeroizing<String>,
+        bind_addr: &str,
+    ) -> Result<Self, OAuthFailure> {
         verify_state(&expected_state, &expected_state)?;
-        let listener = TcpListener::bind(BIND_ADDR)
+        let listener = TcpListener::bind(bind_addr)
             .await
             .map_err(|_| OAuthFailure::Generic)?;
         Ok(Self {
