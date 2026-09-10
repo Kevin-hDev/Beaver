@@ -100,6 +100,25 @@ mod tests {
         assert_eq!(last_lines(&file, 1).expect("tail"), vec!["noël"]);
     }
 
+    #[test]
+    fn la_fenetre_de_lecture_borne_les_lignes_retournees() {
+        use std::io::{Seek, Write};
+
+        let directory = tempfile::TempDir::new().expect("temporary directory");
+        let file = directory.path().join("x.log");
+        let mut log = std::fs::File::create(&file).expect("log");
+        log.write_all(b"outside\npartial").expect("prefix");
+        log.set_len(8 * 1024 * 1024 + 16).expect("sparse log");
+        log.seek(std::io::SeekFrom::End(-8)).expect("tail position");
+        log.write_all(b"\ninside\n").expect("tail");
+        drop(log);
+
+        let lines = last_lines(&file, 50).expect("bounded tail");
+
+        assert_eq!(lines.len(), 1);
+        assert_eq!(lines[0], "inside");
+    }
+
     #[cfg(unix)]
     #[test]
     fn refuse_un_journal_symbolique() {
@@ -110,6 +129,7 @@ mod tests {
         std::fs::write(&target, "secret\n").expect("target");
         let link = directory.path().join("linked.log");
         symlink(target, &link).expect("symlink");
-        assert!(last_lines(&link, 1).is_err());
+        let error = last_lines(&link, 1).expect_err("symlink must be refused");
+        assert_eq!(error.kind(), std::io::ErrorKind::InvalidInput);
     }
 }
