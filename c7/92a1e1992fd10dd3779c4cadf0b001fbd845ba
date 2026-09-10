@@ -1,0 +1,6 @@
+Tâche 1/8 — Types canoniques et calcul des échéances.
+
+TDD RED : cargo test scheduler::next_fire_tests échouait sur les nouveaux types, fonctions et dépendances absents.
+Validation GREEN : cargo test scheduler::next_fire_tests (13 réussis), cargo test services::scheduler (47 réussis), cargo test models::config (6 réussis), cargo check, cargo clippy --all-targets -- -D warnings, git diff --check.
+Maintenance : graphify update . exécuté.
+Décision : compatibilité temporaire isolée dans next_fire_legacy.rs jusqu’au branchement du scheduler canonique prévu en tâche 4.
