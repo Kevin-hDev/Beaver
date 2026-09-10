@@ -9,6 +9,8 @@ pub(crate) mod attachment_access_identity;
 mod attachment_access_read;
 #[cfg(test)]
 mod attachment_access_tests;
+// Temporaire jusqu'au branchement des commandes et de l'outil à la tâche 6.
+#[allow(dead_code)]
 pub mod automations;
 pub mod autostart_migration;
 pub mod background_command;

@@ -1,0 +1,171 @@
+use super::{AutomationError, CreateAutomation, UpdateAutomation};
+use crate::models::{AutomationDefinition, AutomationSchedule, AutomationStatus, AutomationTarget};
+use crate::services::llm;
+
+pub(super) async fn validate_create(input: &CreateAutomation) -> Result<(), AutomationError> {
+    if input.status == AutomationStatus::Completed {
+        return Err(AutomationError::InvalidInput);
+    }
+    validate_text(&input.name, 120)?;
+    validate_optional_text(input.description.as_deref(), 300)?;
+    validate_text(&input.prompt, 12_000)?;
+    validate_target(&input.target)?;
+    validate_model(&input.provider, &input.model).await?;
+    validate_schedule(&input.schedule)
+}
+
+pub(super) async fn validate_update(
+    current: &AutomationDefinition,
+    patch: &UpdateAutomation,
+) -> Result<(), AutomationError> {
+    validate_update_locked(current, patch)?;
+    if let Some(model) = &patch.model {
+        validate_model(&current.provider, model).await?;
+    }
+    Ok(())
+}
+
+pub(super) fn validate_update_locked(
+    current: &AutomationDefinition,
+    patch: &UpdateAutomation,
+) -> Result<(), AutomationError> {
+    if patch.target.is_some() || patch.provider.is_some() || patch.creator_session_id.is_some() {
+        return Err(AutomationError::ImmutableField);
+    }
+    if patch.status == Some(AutomationStatus::Completed) {
+        return Err(AutomationError::InvalidInput);
+    }
+    if current.status == AutomationStatus::Completed
+        && patch.schedule.is_some()
+        && patch.status != Some(AutomationStatus::Active)
+    {
+        return Err(AutomationError::InvalidSchedule);
+    }
+    if let Some(name) = &patch.name {
+        validate_text(name, 120)?;
+    }
+    if let Some(description) = &patch.description {
+        validate_optional_text(description.as_deref(), 300)?;
+    }
+    if let Some(prompt) = &patch.prompt {
+        validate_text(prompt, 12_000)?;
+    }
+    if let Some(schedule) = &patch.schedule {
+        validate_schedule(schedule)?;
+    }
+    Ok(())
+}
+
+pub(super) fn validate_definition(
+    definition: &AutomationDefinition,
+) -> Result<(), AutomationError> {
+    validate_text(&definition.name, 120)?;
+    validate_optional_text(definition.description.as_deref(), 300)?;
+    validate_text(&definition.prompt, 12_000)?;
+    validate_target(&definition.target)?;
+    validate_schedule(&definition.schedule)?;
+    match definition.schedule {
+        AutomationSchedule::AfterCompletion { .. } if definition.anchor_at.is_some() => Ok(()),
+        AutomationSchedule::AfterCompletion { .. } => Err(AutomationError::InvalidSchedule),
+        _ if definition.anchor_at.is_none() => Ok(()),
+        _ => Err(AutomationError::InvalidSchedule),
+    }
+}
+
+async fn validate_model(provider: &str, model: &str) -> Result<(), AutomationError> {
+    if llm::route::canonical_provider_id(provider) != provider
+        || !llm::stream_dispatch::is_available(
+            provider,
+            llm::stream_dispatch::InvocationKind::Interactive,
+            llm::request_purpose::RequestPurpose::Automation,
+        )
+    {
+        return Err(AutomationError::ProviderUnavailable);
+    }
+    let info =
+        llm::runtime_models::lookup(provider, model).or_else(|| local_model(provider, model));
+    let info = match info {
+        Some(info) => info,
+        None => llm::model_catalog::list_models_for(provider)
+            .await
+            .map_err(|_| AutomationError::ModelUnavailable)?
+            .into_iter()
+            .find(|item| item.id == model)
+            .ok_or(AutomationError::ModelUnavailable)?,
+    };
+    if !info.supports_tools {
+        return Err(AutomationError::ModelToolsUnsupported);
+    }
+    Ok(())
+}
+
+fn local_model(provider: &str, model: &str) -> Option<llm::types::ModelInfo> {
+    if provider == crate::services::codex_client::PROVIDER_ID {
+        return crate::services::codex_client::model_catalog::fallback_models()
+            .into_iter()
+            .find(|item| item.id == model);
+    }
+    None
+}
+
+fn validate_schedule(schedule: &AutomationSchedule) -> Result<(), AutomationError> {
+    match schedule {
+        AutomationSchedule::Cron {
+            expression,
+            timezone,
+        } => {
+            let probe = AutomationDefinition {
+                id: uuid::Uuid::nil(),
+                revision: 1,
+                name: "probe".into(),
+                description: None,
+                prompt: "probe".into(),
+                creator_session_id: None,
+                target: AutomationTarget::NewSession { project_id: None },
+                provider: "probe".into(),
+                model: "probe".into(),
+                schedule: AutomationSchedule::Cron {
+                    expression: expression.clone(),
+                    timezone: *timezone,
+                },
+                status: AutomationStatus::Active,
+                created_at: chrono::Utc::now(),
+                anchor_at: None,
+            };
+            crate::services::scheduler::next_fire::next_fire_at(&probe, chrono::Utc::now())
+                .map(|_| ())
+                .map_err(|_| AutomationError::InvalidSchedule)
+        }
+        AutomationSchedule::AfterCompletion { delay_minutes }
+            if !(1..=525_600).contains(delay_minutes) =>
+        {
+            Err(AutomationError::InvalidSchedule)
+        }
+        _ => Ok(()),
+    }
+}
+
+fn validate_target(target: &AutomationTarget) -> Result<(), AutomationError> {
+    match target {
+        AutomationTarget::ResumeSession { session_id } => validate_text(session_id, 128),
+        AutomationTarget::NewSession { project_id } => {
+            validate_optional_text(project_id.as_deref(), 128)
+        }
+    }
+}
+
+fn validate_text(value: &str, max: usize) -> Result<(), AutomationError> {
+    if value.trim().is_empty() || value.chars().count() > max || value.chars().any(char::is_control)
+    {
+        return Err(AutomationError::InvalidInput);
+    }
+    Ok(())
+}
+
+fn validate_optional_text(value: Option<&str>, max: usize) -> Result<(), AutomationError> {
+    if value.is_some_and(|value| value.chars().count() > max || value.chars().any(char::is_control))
+    {
+        return Err(AutomationError::InvalidInput);
+    }
+    Ok(())
+}

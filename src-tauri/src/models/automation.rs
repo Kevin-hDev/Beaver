@@ -82,6 +82,7 @@ pub enum WakeupRunStatus {
     Error,
     Missed,
     Cancelled,
+    Interrupted,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]

@@ -170,6 +170,23 @@ pub(crate) async fn reserved_automation_ids_unlocked_at(
         .unwrap_or_default())
 }
 
+pub(crate) async fn remove_pending_unlocked_at(
+    root: &Path,
+    automation_id: Uuid,
+) -> Result<(), String> {
+    let Some(mut runtime) = read_unlocked_at(root).await? else {
+        return Ok(());
+    };
+    let before = runtime.occurrences.len();
+    runtime.occurrences.retain(|item| {
+        item.automation_id != automation_id || item.state != OccurrenceState::Pending
+    });
+    if runtime.occurrences.len() != before {
+        write_unlocked_at(root, &runtime).await?;
+    }
+    Ok(())
+}
+
 pub(crate) async fn read_unlocked_at(root: &Path) -> Result<Option<AutomationRuntime>, String> {
     let path = path(root);
     let bytes =
