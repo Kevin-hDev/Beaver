@@ -1,21 +1,15 @@
 mod agentic;
 #[cfg(test)]
 pub(crate) use agentic::admit_wakeup_turn;
-pub mod due;
 pub mod fire;
-mod fire_once;
-mod in_flight;
 pub mod log;
-// Temporaire : Task 4 branche le calcul canonique sur la boucle du scheduler.
-#[allow(dead_code)]
 pub mod next_fire;
 #[cfg(test)]
 mod next_fire_tests;
 mod runtime;
-mod runtime_decisions;
+mod runtime_publish;
 #[cfg(test)]
 mod runtime_tests;
-pub mod state;
 #[cfg(test)]
 #[path = "task_tests.rs"]
 mod task_tests;

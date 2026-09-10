@@ -1,75 +1,9 @@
-use super::{create_heartbeat_session, delete_empty_heartbeat};
-use crate::models::{ScheduledWakeup, WakeupSchedule};
-use crate::services::agent_local::session_store;
-use crate::services::reasoning_continuity::contract::{
-    ContinuationTarget, NonReplayTarget, ReasoningModeId, RouteId,
-};
+use super::error_code;
 
-fn wakeup(project_id: Option<String>) -> ScheduledWakeup {
-    ScheduledWakeup {
-        id: uuid::Uuid::new_v4().to_string(),
-        name: "Test scheduler session".into(),
-        model: "test-model".into(),
-        provider: "ollama".into(),
-        prompt: "Inspecte le projet".into(),
-        schedule: WakeupSchedule::Once {
-            datetime: "2026-08-22T12:00".into(),
-        },
-        description: String::new(),
-        project_id,
-        active: true,
-        paused_by_global: false,
-        created_at: "2026-08-22T10:00:00Z".into(),
-    }
-}
-
-#[tokio::test]
-async fn heartbeat_session_defers_prompt_persistence_to_conversation_admission() {
-    let session_id = create_heartbeat_session(&wakeup(None))
-        .await
-        .expect("create heartbeat session");
-    let session = session_store::get(&session_id)
-        .await
-        .expect("reload heartbeat session");
-
-    assert!(session.messages.is_empty());
-
-    crate::services::scheduler::admit_wakeup_turn(
-        &session_id,
-        "Inspecte le projet",
-        ContinuationTarget::Forbidden(NonReplayTarget {
-            route_id: RouteId::Ollama,
-            model_id: "test-model".into(),
-            reasoning_mode: ReasoningModeId::Off,
-        }),
-    )
-    .await
-    .expect("persist prompt through admission");
-
-    let resolved = crate::commands::agent_working_dir::resolve_for_session(&session_id, None)
-        .await
-        .expect("resolve projectless workspace from persisted prompt");
-    let workspace_root = resolved
-        .path
-        .parent()
-        .expect("workspace root")
-        .to_path_buf();
-
-    session_store::delete_one(&session_id)
-        .await
-        .expect("delete heartbeat session");
-    tokio::fs::remove_dir_all(workspace_root)
-        .await
-        .expect("delete test workspace");
-}
-
-#[tokio::test]
-async fn failed_admission_removes_an_empty_heartbeat_session() {
-    let session_id = create_heartbeat_session(&wakeup(None))
-        .await
-        .expect("create heartbeat session");
-
-    delete_empty_heartbeat(&session_id).await;
-
-    assert!(session_store::get(&session_id).await.is_err());
+#[test]
+fn provider_failures_are_stored_as_safe_codes() {
+    assert_eq!(error_code("HTTP 401"), "authentication_failed");
+    assert_eq!(error_code("model missing"), "model_unavailable");
+    assert_eq!(error_code("provider unavailable"), "provider_unavailable");
+    assert_eq!(error_code("/private/path exploded"), "failed");
 }

@@ -95,6 +95,10 @@ pub enum WakeupRunErrorCode {
     MissedUnavailable,
     SchedulerStopping,
     CapacityReached,
+    AppStopped,
+    TargetSessionMissing,
+    ProviderUnavailable,
+    ModelUnavailable,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

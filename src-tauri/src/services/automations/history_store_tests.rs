@@ -1,6 +1,8 @@
 use super::*;
 use crate::models::WakeupRunStatus;
 use chrono::{SecondsFormat, Utc};
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 use uuid::Uuid;
 
 fn entry(id: Uuid, run_id: Option<Uuid>, minute: usize) -> HistoryEntry {
@@ -109,4 +111,47 @@ async fn rotation_keeps_the_newest_half_and_expires_old_anchors() {
             .unwrap_err(),
         AutomationError::CursorExpired
     );
+}
+
+#[tokio::test]
+async fn appends_stay_incremental_until_rotation() {
+    let root = tempfile::tempdir().unwrap();
+    let path = root.path().join("incremental.jsonl");
+    let automation_id = Uuid::new_v4();
+    let reads = Arc::new(AtomicUsize::new(0));
+    for minute in 0..super::history_store::MAX_LINES {
+        let reads = Arc::clone(&reads);
+        super::history_store_test_support::append_with_read_observer(
+            &path,
+            entry(automation_id, Some(Uuid::new_v4()), minute),
+            move || {
+                reads.fetch_add(1, Ordering::Relaxed);
+            },
+        )
+        .await
+        .unwrap();
+    }
+    assert_eq!(reads.load(Ordering::Relaxed), 1);
+}
+
+#[tokio::test]
+async fn failed_rotation_keeps_the_previous_history() {
+    let root = tempfile::tempdir().unwrap();
+    let path = root.path().join("failure.jsonl");
+    let automation_id = Uuid::new_v4();
+    for minute in 0..super::history_store::MAX_LINES {
+        super::history_store::append_at(&path, entry(automation_id, Some(Uuid::new_v4()), minute))
+            .await
+            .unwrap();
+    }
+    let before = tokio::fs::read(&path).await.unwrap();
+    let result = super::history_store_test_support::append_with_atomic_writer(
+        &path,
+        entry(automation_id, Some(Uuid::new_v4()), 59),
+        |_, _| async { Err("injected".into()) },
+    )
+    .await;
+
+    assert!(result.is_err());
+    assert_eq!(tokio::fs::read(&path).await.unwrap(), before);
 }

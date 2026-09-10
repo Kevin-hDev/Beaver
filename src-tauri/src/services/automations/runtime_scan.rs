@@ -15,22 +15,48 @@ pub(crate) async fn scan_definitions_at(
     through: DateTime<Utc>,
     definitions: &[AutomationDefinition],
 ) -> Result<Vec<Uuid>, String> {
-    scan_and_advance_at(root, through, |last_checked| {
-        collect(definitions, last_checked, through)
+    let mut diagnostics = Vec::new();
+    let ids = scan_and_advance_at(root, through, |last_checked| {
+        collect(definitions, last_checked, through, &mut diagnostics)
     })
-    .await
+    .await?;
+    for diagnostic in diagnostics {
+        ::log::info!(
+            target: "automation_audit",
+            "{}",
+            serde_json::json!({
+                "event": "schedule_dst_adjusted",
+                "automation_id": diagnostic.automation_id,
+                "first_scheduled_for": diagnostic.first,
+                "last_scheduled_for": diagnostic.last,
+                "count": diagnostic.count,
+            })
+        );
+    }
+    Ok(ids)
 }
 
 fn collect(
     definitions: &[AutomationDefinition],
     last_checked: DateTime<Utc>,
     through: DateTime<Utc>,
+    diagnostics: &mut Vec<DstDiagnostic>,
 ) -> Result<Vec<AutomationOccurrence>, String> {
     let mut occurrences = Vec::new();
     for definition in definitions {
         let due =
             crate::services::scheduler::next_fire::due_between(definition, last_checked, through)
                 .map_err(|_| "AUTOMATION_SCHEDULE_INVALID".to_string())?;
+        for range in [due.missed, due.admissible].into_iter().flatten() {
+            if range.dst_adjusted_count > 0 {
+                diagnostics.push(DstDiagnostic {
+                    automation_id: definition.id,
+                    first: range.first,
+                    last: range.last,
+                    count: range.dst_adjusted_count,
+                });
+            }
+        }
         if let Some(range) = due.missed {
             occurrences.push(AutomationOccurrence::missed(
                 definition.id,
@@ -54,6 +80,13 @@ fn collect(
     Ok(occurrences)
 }
 
+struct DstDiagnostic {
+    automation_id: Uuid,
+    first: DateTime<Utc>,
+    last: DateTime<Utc>,
+    count: u64,
+}
+
 pub(super) fn merge_pending(
     current: &mut AutomationOccurrence,
     additional: &AutomationOccurrence,
@@ -64,8 +97,13 @@ pub(super) fn merge_pending(
     {
         return Err("AUTOMATION_RUNTIME_UNAVAILABLE".into());
     }
-    current.coalesced_count =
-        Some(current.coalesced_count.unwrap_or(0) + additional.coalesced_count.unwrap_or(0));
+    current.coalesced_count = Some(
+        current
+            .coalesced_count
+            .unwrap_or(0)
+            .checked_add(additional.coalesced_count.unwrap_or(0))
+            .ok_or_else(|| "AUTOMATION_RUNTIME_UNAVAILABLE".to_string())?,
+    );
     current.last_scheduled_for = additional.last_scheduled_for;
     current.updated_at = additional.updated_at;
     Ok(())

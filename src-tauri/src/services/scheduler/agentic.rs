@@ -17,9 +17,11 @@ pub async fn run(
     app: &AppHandle,
     wakeup: &ScheduledWakeup,
     session_id: &str,
+    stream: crate::commands::agent_chat_admission::AgentChatAdmission,
     cancel: CancellationToken,
 ) -> Result<ScheduledAgentResult, String> {
-    let target = crate::commands::agent_chat_target::resolve(
+    let streams = app.state::<crate::ActiveStreams>();
+    let target = match crate::commands::agent_chat_target::resolve(
         session_id,
         &wakeup.provider,
         &wakeup.model,
@@ -27,9 +29,18 @@ pub async fn run(
         None,
     )
     .await
-    .map_err(|error| error.ui_code().to_string())?;
-    let stream = crate::commands::agent_chat_admission::admit_background(app, session_id).await?;
-    let streams = app.state::<crate::ActiveStreams>();
+    {
+        Ok(target) => target,
+        Err(error) => {
+            crate::commands::agent_chat_streams::finish_active_stream(
+                &streams,
+                session_id,
+                stream.generation,
+            )
+            .await;
+            return Err(error.ui_code().to_string());
+        }
+    };
     let turn = crate::commands::agent_chat_turn::prepare(TurnStart::New(NewUserTurnInput {
         content: wakeup.prompt.clone(),
         files: Vec::new(),

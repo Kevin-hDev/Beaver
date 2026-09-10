@@ -68,7 +68,7 @@ fn terminalize_running(item: &mut AutomationOccurrence, now: DateTime<Utc>) {
     item.result = Some(OccurrenceResult {
         status: OccurrenceResultStatus::Interrupted,
         finished_at: now,
-        error_code: Some("APP_STOPPED".into()),
+        error_code: Some("app_stopped".into()),
         session_id: None,
         tokens: None,
         missed_count: None,

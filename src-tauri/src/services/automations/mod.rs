@@ -11,6 +11,7 @@ pub(crate) mod migration_conflict;
 mod migration_convert;
 mod migration_files;
 // Temporaire : les tâches 3 et 4 branchent ces stockages sur le service et le scheduler.
+mod runtime_lifecycle;
 #[allow(dead_code)]
 mod runtime_recovery;
 #[allow(dead_code)]
@@ -41,9 +42,18 @@ pub(crate) async fn store_lock() -> MutexGuard<'static, ()> {
     STORE_LOCK.get_or_init(|| Mutex::new(())).lock().await
 }
 
-#[cfg(test)]
-pub(crate) use history_store::parse as parse_history;
+pub(crate) async fn read_runtime() -> Result<AutomationRuntime, AutomationError> {
+    read_runtime_at(&crate::services::paths::data_dir()).await
+}
+
 pub(crate) use history_store::{all_at as all_history_at, append_at as append_history_at};
+#[cfg(test)]
+pub(crate) use runtime_lifecycle::{admit_at as admit_runtime_at, RuntimeAdmission};
+pub(crate) use runtime_lifecycle::{
+    mark_running_at as mark_runtime_running_at, mark_terminal_at as mark_runtime_terminal_at,
+    remove_terminal_at as remove_runtime_terminal_at, runtime_at as read_runtime_at,
+    terminal_at as read_terminal_at,
+};
 #[allow(unused_imports)]
 pub use runtime_store::{
     recover_startup, reserved_automation_ids, scan_and_advance, AutomationOccurrence,
@@ -53,6 +63,7 @@ pub use runtime_store::{
 pub use service::{
     create, delete, disable_missing_target, get, history, list, record_completion, update,
 };
+pub(crate) use service_mutations::record_completion_at;
 #[allow(unused_imports)]
 pub use store::{mutate, read_all};
 pub use types::*;
@@ -61,11 +72,9 @@ pub(crate) const fn history_max_lines() -> usize {
     history_store::MAX_LINES
 }
 
-#[cfg(test)]
-pub(crate) use history_store_test_support::{
-    append_with_atomic_writer as append_history_at_with_atomic_writer,
-    append_with_read_observer as append_history_at_with_read_observer,
-};
+pub(crate) const fn history_max_line_bytes() -> usize {
+    history_store::MAX_LINE_BYTES
+}
 
 #[cfg(test)]
 mod audit_store_tests;
@@ -75,7 +84,11 @@ mod history_store_tests;
 mod service_tests;
 
 #[cfg(test)]
-use service::{create_at, delete_at, get_at, list_at, record_completion_at, update_at};
+pub(crate) use runtime_store::recover_startup_at;
+#[cfg(test)]
+use service::{create_at, delete_at, get_at, list_at, update_at};
+#[cfg(test)]
+pub(crate) use store::{mutate_at as mutate_automations_at, read_all_at as read_automations_at};
 
 #[cfg(test)]
 mod migration_tests;

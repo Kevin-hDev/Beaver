@@ -104,5 +104,6 @@ pub(crate) async fn finish_active_stream(
     inbox.close().await;
     crate::services::agent_local::permission_gate::clear_session(session_id).await;
     crate::services::agent_local::session_store::remove_session_lock(session_id).await;
+    crate::services::scheduler::notify_config_changed();
     true
 }

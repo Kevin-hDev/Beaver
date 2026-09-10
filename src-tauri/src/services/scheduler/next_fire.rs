@@ -6,7 +6,7 @@ use std::str::FromStr;
 
 #[path = "next_fire_legacy.rs"]
 mod legacy;
-pub use legacy::{latest_fire_between, legacy_next_fire_at};
+pub use legacy::legacy_next_fire_at;
 
 const MAX_CRON_EXPRESSION_BYTES: usize = 128;
 const MAX_DELAY_MINUTES: u32 = 525_600;
@@ -40,6 +40,7 @@ pub struct DueBatch {
     pub admissible: Option<DueRange>,
 }
 
+#[allow(dead_code)]
 pub fn parse_timezone(value: &str) -> Result<Tz, ScheduleError> {
     value
         .parse::<Tz>()

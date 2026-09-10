@@ -1,190 +1,355 @@
-use super::due::{missed_occurrences, reconciliation_cutoff, ReconciliationMode};
-use super::in_flight::{InFlightReservationError, InFlightWakeups};
-use super::runtime_decisions::{handle_due_admission, persist_once_missed_decision};
-use super::work_supervision::SchedulerWorkServices;
-use crate::app_exit::AppExitCoordinator;
-use crate::services::work_registry::ServiceWorkAdmissionError;
-use chrono::{Local, TimeZone};
-use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant};
+use super::runtime::{
+    admit_due_at, mark_running_at, mark_terminal_at, publish_terminal_at, runtime_at, Admission,
+    AutomationRunResult,
+};
+use crate::models::{AutomationDefinition, AutomationSchedule, AutomationStatus, AutomationTarget};
+use crate::services::automations::{
+    all_history_at, append_history_at, mutate_automations_at, read_automations_at,
+    recover_startup_at, HistoryEntry, OccurrenceResultStatus, OccurrenceState,
+};
+use chrono::{TimeZone, Utc};
+use uuid::Uuid;
 
-fn daily_wakeup(
-    id: &str,
-    scheduled_for: chrono::DateTime<Local>,
-) -> crate::models::ScheduledWakeup {
-    crate::models::ScheduledWakeup {
-        id: id.into(),
-        name: id.into(),
-        model: "m".into(),
-        provider: "ollama".into(),
-        prompt: "p".into(),
-        schedule: crate::models::WakeupSchedule::Daily {
-            time: scheduled_for.format("%H:%M").to_string(),
+fn definition(id: Uuid) -> AutomationDefinition {
+    let created_at = Utc.with_ymd_and_hms(2026, 9, 10, 9, 0, 0).unwrap();
+    AutomationDefinition {
+        id,
+        revision: 1,
+        name: "CI".into(),
+        description: None,
+        prompt: "Vérifie la CI".into(),
+        creator_session_id: Some("session-a".into()),
+        target: AutomationTarget::ResumeSession {
+            session_id: "session-a".into(),
         },
-        description: String::new(),
-        project_id: None,
-        active: true,
-        paused_by_global: false,
-        created_at: "2026-05-17T00:00:00Z".into(),
+        provider: "codex-oauth".into(),
+        model: "gpt-5.6-luna".into(),
+        schedule: AutomationSchedule::Cron {
+            expression: "*/5 * * * *".into(),
+            timezone: chrono_tz::UTC,
+        },
+        status: AutomationStatus::Active,
+        created_at,
+        anchor_at: None,
     }
 }
 
-#[test]
-fn in_flight_occurrence_blocks_missed_decision_until_terminal_result() {
-    let scheduled_for = Local
-        .with_ymd_and_hms(2026, 8, 13, 8, 0, 0)
-        .single()
-        .unwrap();
-    let wakeup = daily_wakeup("daily", scheduled_for);
-    let in_flight = InFlightWakeups::default();
-    let guard = in_flight.reserve("daily", scheduled_for).unwrap();
-
-    let blocked = in_flight.partition(vec![(wakeup.clone(), scheduled_for)]);
-    assert!(blocked.decidable.is_empty());
-    assert!(blocked.has_in_flight);
-
-    drop(guard);
-    let released = in_flight.partition(vec![(wakeup, scheduled_for)]);
-    assert_eq!(released.decidable.len(), 1);
-    assert!(!released.has_in_flight);
-}
-
-#[test]
-fn in_flight_registry_rejects_duplicates_and_a_sixty_fifth_occurrence() {
-    let scheduled_for = Local
-        .with_ymd_and_hms(2026, 8, 13, 8, 0, 0)
-        .single()
-        .unwrap();
-    let in_flight = InFlightWakeups::default();
-    let first = in_flight.reserve("wakeup-0", scheduled_for).unwrap();
-    assert!(matches!(
-        in_flight.reserve("wakeup-0", scheduled_for),
-        Err(InFlightReservationError::Duplicate)
-    ));
-
-    let mut guards = vec![first];
-    for index in 1..64 {
-        guards.push(
-            in_flight
-                .reserve(&format!("wakeup-{index}"), scheduled_for)
-                .unwrap(),
-        );
-    }
-    assert!(matches!(
-        in_flight.reserve("wakeup-64", scheduled_for),
-        Err(InFlightReservationError::Capacity)
-    ));
+fn at(minute: u32) -> chrono::DateTime<Utc> {
+    Utc.with_ymd_and_hms(2026, 9, 10, 10, minute, 0).unwrap()
 }
 
 #[tokio::test]
-async fn saturated_wakeup_work_records_capacity_and_keeps_the_loop_alive() {
-    let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
-    let work = SchedulerWorkServices::new(coordinator.work_supervisor()).wakeups();
-    let refusal = loop {
-        match work.spawn(|cancel| async move { cancel.cancelled().await }) {
-            Ok(()) => {}
-            Err(error) => break error,
-        }
+async fn grace_is_ready_but_an_old_unclaimed_occurrence_is_missed() {
+    let root = tempfile::tempdir().unwrap();
+    let ready = admit_due_at(root.path(), &definition(Uuid::new_v4()), at(0), at(3))
+        .await
+        .unwrap();
+    assert!(matches!(ready, Admission::Ready { .. }));
+
+    let missed = admit_due_at(root.path(), &definition(Uuid::new_v4()), at(0), at(20))
+        .await
+        .unwrap();
+    assert!(matches!(missed, Admission::Missed { .. }));
+    let runtime = runtime_at(root.path()).await.unwrap();
+    assert_eq!(runtime.occurrences.len(), 2);
+    assert!(runtime.occurrences.iter().any(|item| {
+        item.state == OccurrenceState::Terminal
+            && item.result.as_ref().map(|result| &result.status)
+                == Some(&OccurrenceResultStatus::Missed)
+    }));
+}
+
+#[tokio::test]
+async fn running_has_one_pending_and_later_deadlines_coalesce_into_it() {
+    let root = tempfile::tempdir().unwrap();
+    let automation = definition(Uuid::new_v4());
+    let first = admit_due_at(root.path(), &automation, at(0), at(1))
+        .await
+        .unwrap();
+    let Admission::Ready { occurrence_id } = first else {
+        panic!("first occurrence must be ready")
     };
-    let recorded = Arc::new(Mutex::new(Vec::new()));
-    let recorded_by_writer = Arc::clone(&recorded);
-
-    let keep_running = handle_due_admission(
-        Err(refusal),
-        "capacity-wakeup".into(),
-        Local::now(),
-        move |_, _, error| async move {
-            recorded_by_writer.lock().unwrap().push(error);
-            Ok(())
-        },
-    )
-    .await;
-
-    assert!(keep_running.keep_running);
-    assert!(keep_running.decision_persisted);
-    assert_eq!(
-        recorded.lock().unwrap().as_slice(),
-        &[ServiceWorkAdmissionError::Capacity]
-    );
-    work.begin_closing();
-    assert!(
-        work.stop_and_wait(Instant::now() + Duration::from_secs(1))
+    mark_running_at(root.path(), occurrence_id, at(1))
+        .await
+        .unwrap();
+    assert!(matches!(
+        admit_due_at(root.path(), &automation, at(5), at(20))
             .await
-    );
+            .unwrap(),
+        Admission::Pending { .. }
+    ));
+    assert!(matches!(
+        admit_due_at(root.path(), &automation, at(10), at(20))
+            .await
+            .unwrap(),
+        Admission::Coalesced { .. }
+    ));
+    let runtime = runtime_at(root.path()).await.unwrap();
+    assert_eq!(runtime.occurrences.len(), 2);
+    let pending = runtime
+        .occurrences
+        .iter()
+        .find(|item| item.state == OccurrenceState::Pending)
+        .unwrap();
+    assert_eq!(pending.coalesced_count, Some(2));
+    assert_eq!(pending.last_scheduled_for, Some(at(10)));
 }
 
 #[tokio::test]
-async fn closed_wakeup_work_records_closing_and_stops_the_due_loop() {
-    let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
-    let work = SchedulerWorkServices::new(coordinator.work_supervisor()).wakeups();
-    work.begin_closing();
-    let refusal = work.spawn(|_| async {}).unwrap_err();
-    let recorded = Arc::new(Mutex::new(Vec::new()));
-    let recorded_by_writer = Arc::clone(&recorded);
-
-    let keep_running = handle_due_admission(
-        Err(refusal),
-        "closing-wakeup".into(),
-        Local::now(),
-        move |_, _, error| async move {
-            recorded_by_writer.lock().unwrap().push(error);
-            Ok(())
-        },
-    )
-    .await;
-
-    assert!(!keep_running.keep_running);
-    assert!(keep_running.decision_persisted);
-    assert_eq!(
-        recorded.lock().unwrap().as_slice(),
-        &[ServiceWorkAdmissionError::Closing]
-    );
+async fn a_busy_session_keeps_pending_without_age_expiration() {
+    let root = tempfile::tempdir().unwrap();
+    let automation = definition(Uuid::new_v4());
+    let Admission::Ready { occurrence_id } = admit_due_at(root.path(), &automation, at(0), at(1))
+        .await
+        .unwrap()
+    else {
+        panic!("occurrence must be ready")
+    };
+    let runtime = runtime_at(root.path()).await.unwrap();
+    let pending = runtime
+        .occurrences
+        .iter()
+        .find(|item| item.id == occurrence_id)
+        .unwrap();
+    assert_eq!(pending.state, OccurrenceState::Pending);
+    assert_eq!(pending.updated_at, at(1));
 }
 
 #[tokio::test]
-async fn failed_refusal_write_keeps_occurrence_reconcilable() {
-    let scheduled_for = Local::now() - chrono::Duration::minutes(6);
-    let outcome = handle_due_admission(
-        Err(ServiceWorkAdmissionError::Capacity),
-        "retry-wakeup".into(),
-        scheduled_for,
-        |_, _, _| async { Err("injected-log-failure".to_string()) },
-    )
-    .await;
+async fn terminal_publication_is_replayed_once_and_completes_once() {
+    let root = tempfile::tempdir().unwrap();
+    let mut automation = definition(Uuid::new_v4());
+    automation.schedule = AutomationSchedule::Once {
+        local_datetime: at(0).naive_utc(),
+        timezone: chrono_tz::UTC,
+    };
+    mutate_automations_at(root.path(), |items| {
+        items.push(automation.clone());
+        Ok(())
+    })
+    .await
+    .unwrap();
+    let Admission::Ready { occurrence_id } = admit_due_at(root.path(), &automation, at(0), at(1))
+        .await
+        .unwrap()
+    else {
+        panic!("occurrence must be ready")
+    };
+    mark_running_at(root.path(), occurrence_id, at(1))
+        .await
+        .unwrap();
+    let result = result();
+    mark_terminal_at(root.path(), occurrence_id, result.clone())
+        .await
+        .unwrap();
 
-    assert!(outcome.keep_running);
-    assert!(!outcome.decision_persisted);
-    let cutoff = reconciliation_cutoff(Local::now(), ReconciliationMode::Running);
-    let wakeup = daily_wakeup("retry-wakeup", scheduled_for);
+    append_history_at(
+        &root.path().join("logs/wakeups.jsonl"),
+        history_entry(occurrence_id, automation.id, &result),
+    )
+    .await
+    .unwrap();
+    publish_terminal_at(root.path(), occurrence_id)
+        .await
+        .unwrap();
+
+    let history = all_history_at(&root.path().join("logs/wakeups.jsonl"), None)
+        .await
+        .unwrap();
+    assert_eq!(history.len(), 1);
+    let definitions = read_automations_at(root.path()).await.unwrap();
+    assert_eq!(definitions[0].status, AutomationStatus::Completed);
+    assert_eq!(definitions[0].revision, 2);
+    assert!(runtime_at(root.path())
+        .await
+        .unwrap()
+        .occurrences
+        .is_empty());
+}
+
+#[tokio::test]
+async fn deleted_definition_is_not_resurrected_when_running_finishes() {
+    let root = tempfile::tempdir().unwrap();
+    let automation = definition(Uuid::new_v4());
+    mutate_automations_at(root.path(), |items| {
+        items.push(automation.clone());
+        Ok(())
+    })
+    .await
+    .unwrap();
+    let Admission::Ready { occurrence_id } = admit_due_at(root.path(), &automation, at(0), at(1))
+        .await
+        .unwrap()
+    else {
+        panic!("occurrence must be ready")
+    };
+    mark_running_at(root.path(), occurrence_id, at(1))
+        .await
+        .unwrap();
+    mutate_automations_at(root.path(), |items| {
+        items.clear();
+        Ok(())
+    })
+    .await
+    .unwrap();
+    mark_terminal_at(root.path(), occurrence_id, result())
+        .await
+        .unwrap();
+    publish_terminal_at(root.path(), occurrence_id)
+        .await
+        .unwrap();
+
+    assert!(read_automations_at(root.path()).await.unwrap().is_empty());
     assert_eq!(
-        missed_occurrences(
-            &[wakeup],
-            scheduled_for - chrono::Duration::minutes(1),
-            cutoff
-        )
-        .len(),
+        all_history_at(&root.path().join("logs/wakeups.jsonl"), None)
+            .await
+            .unwrap()
+            .len(),
         1
     );
 }
 
 #[tokio::test]
-async fn once_wakeup_is_not_claimed_before_its_missed_decision_is_durable() {
-    let calls = Arc::new(Mutex::new(Vec::new()));
-    let recorded = Arc::clone(&calls);
-    let claimed = Arc::clone(&calls);
+async fn startup_terminalizes_without_replaying_work() {
+    let root = tempfile::tempdir().unwrap();
+    let first = definition(Uuid::new_v4());
+    let second = definition(Uuid::new_v4());
+    let Admission::Ready { occurrence_id } = admit_due_at(root.path(), &first, at(0), at(1))
+        .await
+        .unwrap()
+    else {
+        panic!("occurrence must be ready")
+    };
+    mark_running_at(root.path(), occurrence_id, at(1))
+        .await
+        .unwrap();
+    assert!(matches!(
+        admit_due_at(root.path(), &second, at(0), at(1))
+            .await
+            .unwrap(),
+        Admission::Ready { .. }
+    ));
 
-    let result = persist_once_missed_decision(
-        move || async move {
-            recorded.lock().unwrap().push("record");
-            Err("injected-log-failure".to_string())
-        },
-        move || {
-            claimed.lock().unwrap().push("claim");
-            Ok(())
-        },
-    )
-    .await;
+    let recovered = recover_startup_at(root.path(), at(20)).await.unwrap();
+    assert_eq!(recovered.len(), 2);
+    let runtime = runtime_at(root.path()).await.unwrap();
+    assert!(runtime.occurrences.iter().any(|item| {
+        item.result.as_ref().is_some_and(|result| {
+            result.status == OccurrenceResultStatus::Interrupted
+                && result.error_code.as_deref() == Some("app_stopped")
+        })
+    }));
+    assert!(runtime.occurrences.iter().any(|item| {
+        item.result
+            .as_ref()
+            .is_some_and(|result| result.status == OccurrenceResultStatus::Missed)
+    }));
+}
 
-    assert!(result.is_err());
-    assert_eq!(calls.lock().unwrap().as_slice(), &["record"]);
+#[tokio::test]
+async fn interrupted_after_completion_reanchors_at_startup() {
+    let root = tempfile::tempdir().unwrap();
+    let mut automation = definition(Uuid::new_v4());
+    automation.schedule = AutomationSchedule::AfterCompletion { delay_minutes: 10 };
+    automation.anchor_at = Some(at(0));
+    mutate_automations_at(root.path(), |items| {
+        items.push(automation.clone());
+        Ok(())
+    })
+    .await
+    .unwrap();
+    let Admission::Ready { occurrence_id } = admit_due_at(root.path(), &automation, at(10), at(11))
+        .await
+        .unwrap()
+    else {
+        panic!("occurrence must be ready")
+    };
+    mark_running_at(root.path(), occurrence_id, at(11))
+        .await
+        .unwrap();
+
+    let recovered = recover_startup_at(root.path(), at(20)).await.unwrap();
+    publish_terminal_at(root.path(), recovered[0])
+        .await
+        .unwrap();
+
+    let definitions = read_automations_at(root.path()).await.unwrap();
+    assert_eq!(definitions[0].anchor_at, Some(at(20)));
+    assert_eq!(definitions[0].revision, 2);
+}
+
+#[tokio::test]
+async fn finalization_preserves_changes_made_while_running() {
+    let root = tempfile::tempdir().unwrap();
+    let automation = definition(Uuid::new_v4());
+    mutate_automations_at(root.path(), |items| {
+        items.push(automation.clone());
+        Ok(())
+    })
+    .await
+    .unwrap();
+    let Admission::Ready { occurrence_id } = admit_due_at(root.path(), &automation, at(0), at(1))
+        .await
+        .unwrap()
+    else {
+        panic!("occurrence must be ready")
+    };
+    mark_running_at(root.path(), occurrence_id, at(1))
+        .await
+        .unwrap();
+    mutate_automations_at(root.path(), |items| {
+        items[0].name = "CI renommée".into();
+        items[0].model = "gpt-6-astra".into();
+        items[0].schedule = AutomationSchedule::Cron {
+            expression: "*/20 * * * *".into(),
+            timezone: chrono_tz::UTC,
+        };
+        items[0].revision += 1;
+        Ok(())
+    })
+    .await
+    .unwrap();
+    mark_terminal_at(root.path(), occurrence_id, result())
+        .await
+        .unwrap();
+    publish_terminal_at(root.path(), occurrence_id)
+        .await
+        .unwrap();
+
+    let current = read_automations_at(root.path()).await.unwrap();
+    assert_eq!(current[0].name, "CI renommée");
+    assert_eq!(current[0].model, "gpt-6-astra");
+    assert!(matches!(
+        current[0].schedule,
+        AutomationSchedule::Cron { ref expression, .. } if expression == "*/20 * * * *"
+    ));
+}
+
+fn result() -> AutomationRunResult {
+    AutomationRunResult {
+        status: OccurrenceResultStatus::Ok,
+        finished_at: at(4),
+        error_code: None,
+        session_id: Some("session-a".into()),
+        tokens: Some(10),
+        missed_count: None,
+        first_scheduled_for: None,
+        last_scheduled_for: None,
+    }
+}
+
+fn history_entry(run_id: Uuid, automation_id: Uuid, result: &AutomationRunResult) -> HistoryEntry {
+    HistoryEntry {
+        run_id: Some(run_id),
+        automation_id: automation_id.to_string(),
+        scheduled_for: at(0).to_rfc3339(),
+        finished_at: result.finished_at.to_rfc3339(),
+        status: crate::models::WakeupRunStatus::Ok,
+        error_code: None,
+        session_id: result.session_id.clone(),
+        tokens: result.tokens,
+        missed_count: None,
+        first_scheduled_for: None,
+        last_scheduled_for: None,
+    }
 }

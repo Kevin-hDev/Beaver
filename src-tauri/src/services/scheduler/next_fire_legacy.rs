@@ -12,6 +12,7 @@ pub fn legacy_next_fire_at(
     }
 }
 
+#[allow(dead_code)]
 pub fn latest_fire_between(
     schedule: &WakeupSchedule,
     after: DateTime<Local>,

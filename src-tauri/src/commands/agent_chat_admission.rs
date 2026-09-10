@@ -14,6 +14,91 @@ pub(crate) struct AgentChatAdmission {
     pub request_id: String,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum BackgroundAdmissionError {
+    Busy,
+    Unavailable,
+}
+
+pub(crate) async fn admit_background_if_idle(
+    app: &tauri::AppHandle,
+    session_id: &str,
+) -> Result<AgentChatAdmission, BackgroundAdmissionError> {
+    crate::services::agent_local::session_user_write::ensure_allowed(session_id)
+        .await
+        .map_err(|_| BackgroundAdmissionError::Unavailable)?;
+    let permission_mode = crate::services::agent_local::session_permission_state::prepare_send(
+        session_id,
+        Some("auto"),
+    )
+    .await
+    .map_err(|_| BackgroundAdmissionError::Unavailable)?;
+    let streams = app.state::<ActiveStreams>();
+    let session_guard =
+        crate::services::agent_local::session_locks::acquire_admission_lease(session_id).await;
+    {
+        let map = streams.0.lock().await;
+        if map.contains_key(session_id) {
+            return Err(BackgroundAdmissionError::Busy);
+        }
+        if map.len()
+            >= crate::services::agent_local::agent_work_supervision::MAX_ACTIVE_AGENT_STREAMS
+        {
+            return Err(BackgroundAdmissionError::Unavailable);
+        }
+    }
+    let cancel = CancellationToken::new();
+    let parent_message_inbox =
+        Arc::new(crate::services::agent_local::parent_message_inbox::ParentMessageInbox::new());
+    let generation = crate::services::agent_local::stream_events::next_generation();
+    let request_id =
+        crate::services::agent_local::stream_diagnostics::start_request(session_id, generation)
+            .await;
+    let inserted = {
+        let mut map = streams.0.lock().await;
+        if map.contains_key(session_id)
+            || map.len()
+                >= crate::services::agent_local::agent_work_supervision::MAX_ACTIVE_AGENT_STREAMS
+        {
+            false
+        } else {
+            map.insert(
+                session_id.to_string(),
+                (
+                    cancel.clone(),
+                    generation,
+                    request_id.clone(),
+                    parent_message_inbox.clone(),
+                ),
+            );
+            true
+        }
+    };
+    if !inserted {
+        drop(session_guard);
+        crate::services::agent_local::stream_diagnostics::record_failure(
+            session_id,
+            Some(&request_id),
+            "conversation_admission_failed",
+            false,
+        )
+        .await;
+        return Err(BackgroundAdmissionError::Unavailable);
+    }
+    drop(session_guard);
+    crate::services::agent_local::subagent_registry::adopt_children_for_parent_stream(
+        session_id, &cancel,
+    )
+    .await;
+    Ok(AgentChatAdmission {
+        cancel,
+        generation,
+        parent_message_inbox,
+        permission_mode,
+        request_id,
+    })
+}
+
 pub(crate) async fn admit_background(
     app: &tauri::AppHandle,
     session_id: &str,

@@ -43,12 +43,18 @@ fn classify_path(n: &str) -> Option<&'static str> {
         return Some(EVENT_SKILLS);
     }
     if n.ends_with("config.json")
+        || n.ends_with("automations.json")
+        || n.ends_with("automation-runtime.json")
         || n.ends_with("favorite-models.json")
         || n.ends_with("agent-settings.json")
     {
         return Some(EVENT_CONFIG);
     }
-    if n.ends_with("logs/wakeups.jsonl") || n.ends_with("logs\\wakeups.jsonl") {
+    if n.ends_with("logs/wakeups.jsonl")
+        || n.ends_with("logs\\wakeups.jsonl")
+        || n.ends_with("logs/automation-audit.jsonl")
+        || n.ends_with("logs\\automation-audit.jsonl")
+    {
         return Some(EVENT_LOGS);
     }
     if n.contains("/inbox/") || n.contains("\\inbox\\") {

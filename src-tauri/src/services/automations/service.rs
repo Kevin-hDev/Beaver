@@ -169,4 +169,4 @@ pub(crate) async fn history_at(
 }
 
 #[cfg(test)]
-pub(crate) use super::service_mutations::{create_at, delete_at, record_completion_at, update_at};
+pub(crate) use super::service_mutations::{create_at, delete_at, update_at};

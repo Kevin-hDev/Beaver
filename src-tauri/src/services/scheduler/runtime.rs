@@ -1,214 +1,223 @@
-use super::due::{
-    due_wakeups_at, is_late, is_once, missed_occurrences, reconciliation_cutoff, ReconciliationMode,
-};
-use super::in_flight::InFlightWakeups;
-use super::next_fire::legacy_next_fire_at;
-use super::runtime_decisions::{
-    handle_due_admission, persist_once_missed_decision, reserve_due_occurrence, warn_if_log_failed,
-};
 use super::work_supervision::SchedulerWakeupWork;
-use super::{fire, log, state};
-use crate::services::config::read_config;
+use crate::models::{AutomationDefinition, AutomationStatus};
+#[cfg(test)]
+use crate::services::automations::RuntimeAdmission;
+use crate::services::automations::{
+    AutomationError, AutomationRuntime, OccurrenceResult, OccurrenceState,
+};
 use crate::services::work_registry::ServiceWorkCancellation;
-use chrono::{DateTime, Duration as ChronoDuration, Local};
+use chrono::{DateTime, Duration, Utc};
+use std::collections::HashSet;
+use std::path::Path;
 use tauri::AppHandle;
 use tokio::sync::watch;
 use tokio_util::sync::CancellationToken;
+use uuid::Uuid;
 
-const MAX_SLEEP_MIN: i64 = 60;
+#[cfg(test)]
+pub(crate) type Admission = RuntimeAdmission;
+pub type AutomationRunResult = OccurrenceResult;
 
 pub(super) async fn run_loop(
     app: AppHandle,
     mut reload_rx: watch::Receiver<u64>,
     lifetime: ServiceWorkCancellation,
-    wakeup_work: SchedulerWakeupWork,
+    work: SchedulerWakeupWork,
 ) {
-    let in_flight = InFlightWakeups::default();
-    let mut reconciliation_mode = ReconciliationMode::Startup;
+    recover_and_publish().await;
     loop {
         if lifetime.is_cancelled() {
             return;
         }
-        let config = match read_config() {
-            Ok(config) => config,
-            Err(_) => {
-                ::log::warn!("[scheduler] configuration indisponible");
-                tokio::select! {
-                    _ = lifetime.cancelled() => return,
-                    _ = tokio::time::sleep(std::time::Duration::from_secs(60)) => {}
-                }
-                continue;
-            }
-        };
-
-        let now = Local::now();
-        if config.heartbeat.global_paused {
-            if checkpoint(now).await {
-                reconciliation_mode = ReconciliationMode::Running;
-            }
-        } else {
-            if reconcile_missed(
-                &config.scheduled_wakeups,
-                now,
-                reconciliation_mode,
-                &in_flight,
-            )
-            .await
-            {
-                reconciliation_mode = ReconciliationMode::Running;
-            }
-        }
-        let cap = now + ChronoDuration::minutes(MAX_SLEEP_MIN);
-        let next = next_scheduled_at(
-            &config.scheduled_wakeups,
-            config.heartbeat.global_paused,
-            now,
-        );
-        let target = next.map(|time| time.min(cap)).unwrap_or(cap);
-        let sleep = (target - now)
-            .to_std()
-            .unwrap_or(std::time::Duration::from_secs(60));
-
+        let sleep = tick(&app, &lifetime, &work).await;
         tokio::select! {
             _ = lifetime.cancelled() => return,
-            _ = tokio::time::sleep(sleep) => {
-                if let Some(target) = next {
-                    handle_due(
-                        app.clone(),
-                        &config.scheduled_wakeups,
-                        now,
-                        target,
-                        &lifetime,
-                        &wakeup_work,
-                        &in_flight,
-                    ).await;
-                }
-            }
-            _ = reload_rx.changed() => {}
+            _ = tokio::time::sleep(sleep) => {},
+            _ = reload_rx.changed() => {},
         }
     }
 }
 
-fn next_scheduled_at(
-    wakeups: &[crate::models::ScheduledWakeup],
-    globally_paused: bool,
-    now: DateTime<Local>,
-) -> Option<DateTime<Local>> {
-    if globally_paused {
-        return None;
-    }
-    wakeups
-        .iter()
-        .filter(|wakeup| wakeup.active && !wakeup.paused_by_global)
-        .filter_map(|wakeup| legacy_next_fire_at(&wakeup.schedule, now))
-        .min()
-}
-
-async fn reconcile_missed(
-    wakeups: &[crate::models::ScheduledWakeup],
-    now: DateTime<Local>,
-    mode: ReconciliationMode,
-    in_flight: &InFlightWakeups,
-) -> bool {
-    let Some(last_checked) = state::read_last_checked().await else {
-        return checkpoint(now).await;
-    };
-    let cutoff = reconciliation_cutoff(now, mode);
-    let mut decisions_persisted = true;
-    let candidates = in_flight.partition(missed_occurrences(wakeups, last_checked, cutoff));
-    for (wakeup, scheduled_for) in candidates.decidable {
-        let result = if is_once(&wakeup) {
-            persist_once_missed_decision(
-                || log::log_missed(&wakeup.id, scheduled_for),
-                || {
-                    fire::claim_once(&wakeup.id).map(|_| ()).inspect_err(|_| {
-                        ::log::warn!("[scheduler] revendication ponctuelle impossible");
-                    })
-                },
-            )
-            .await
-        } else {
-            log::log_missed(&wakeup.id, scheduled_for).await
-        };
-        decisions_persisted &= warn_if_log_failed(result);
-    }
-    if candidates.has_in_flight {
-        // Advancing here would make a crash during the running wakeup
-        // impossible to reconcile at the next startup.
-        false
-    } else if decisions_persisted {
-        checkpoint(cutoff).await
-    } else {
-        false
+async fn recover_and_publish() {
+    match crate::services::automations::recover_startup(Utc::now()).await {
+        Ok(ids) => publish_all(ids).await,
+        Err(_) => ::log::warn!("[scheduler] reprise des automatisations indisponible"),
     }
 }
 
-async fn handle_due(
-    app: AppHandle,
-    wakeups: &[crate::models::ScheduledWakeup],
-    loop_now: DateTime<Local>,
-    target: DateTime<Local>,
+async fn tick(
+    app: &AppHandle,
     lifetime: &ServiceWorkCancellation,
     work: &SchedulerWakeupWork,
-    in_flight: &InFlightWakeups,
-) {
-    if lifetime.is_cancelled() {
-        return;
+) -> std::time::Duration {
+    let definitions = match crate::services::automations::read_all().await {
+        Ok(items) => items,
+        Err(_) => {
+            ::log::warn!("[scheduler] définitions d'automatisation indisponibles");
+            return std::time::Duration::from_secs(60);
+        }
+    };
+    let paused = crate::services::config::read_config()
+        .map(|config| config.heartbeat.global_paused)
+        .unwrap_or(true);
+    let now = Utc::now();
+    let scanned = if paused { &[][..] } else { &definitions };
+    match crate::services::automations::scan_and_advance(now, scanned).await {
+        Ok(ids) => publish_scanned_terminals(ids).await,
+        Err(_) => {
+            ::log::warn!("[scheduler] balayage des automatisations indisponible");
+            return std::time::Duration::from_secs(60);
+        }
     }
-    let current = Local::now();
-    if is_late(target, current) {
-        let _ = reconcile_missed(wakeups, current, ReconciliationMode::Running, in_flight).await;
-        return;
+    if !paused {
+        launch_ready(app, lifetime, work, &definitions).await;
     }
+    sleep_until_next(&definitions, paused, now)
+}
 
-    for wakeup in due_wakeups_at(wakeups, loop_now, target) {
+async fn publish_scanned_terminals(ids: Vec<Uuid>) {
+    let Ok(runtime) = crate::services::automations::read_runtime().await else {
+        return;
+    };
+    let terminals = ids
+        .into_iter()
+        .filter(|id| {
+            runtime
+                .occurrences
+                .iter()
+                .any(|item| item.id == *id && item.state == OccurrenceState::Terminal)
+        })
+        .collect();
+    publish_all(terminals).await;
+}
+
+async fn publish_all(ids: Vec<Uuid>) {
+    for id in ids {
+        if publish_terminal(id).await.is_err() {
+            ::log::warn!("[scheduler] publication terminale différée");
+        }
+    }
+}
+
+async fn launch_ready(
+    app: &AppHandle,
+    lifetime: &ServiceWorkCancellation,
+    work: &SchedulerWakeupWork,
+    definitions: &[AutomationDefinition],
+) {
+    let Ok(runtime) = crate::services::automations::read_runtime().await else {
+        return;
+    };
+    for (automation_id, occurrence_id) in ready(&runtime, definitions) {
         if lifetime.is_cancelled() {
             return;
         }
-        let wakeup_id = wakeup.id.clone();
-        let Some(occurrence) = reserve_due_occurrence(in_flight, &wakeup_id, target).await else {
-            continue;
-        };
-        let app_clone = app.clone();
+        let app = app.clone();
         let result = work.spawn(move |service_cancel| async move {
-            let _occurrence = occurrence;
             let cancel = CancellationToken::new();
-            let shutdown_cancel = cancel.clone();
-            let task = fire::fire_wakeup(app_clone, wakeup, target, cancel);
-            tokio::pin!(task);
+            let shutdown = cancel.clone();
+            let run = super::fire::fire_automation(app, automation_id, occurrence_id, cancel);
+            tokio::pin!(run);
             tokio::select! {
                 biased;
-                _ = service_cancel.cancelled() => {
-                    shutdown_cancel.cancel();
-                    task.await;
-                }
-                _ = &mut task => {}
+                _ = service_cancel.cancelled() => { shutdown.cancel(); run.await; }
+                _ = &mut run => {}
             }
         });
-        let outcome = handle_due_admission(
-            result,
-            wakeup_id,
-            target,
-            |wakeup_id, scheduled_for, error| async move {
-                log::log_refused(&wakeup_id, scheduled_for, error).await
-            },
-        )
-        .await;
-        if !outcome.decision_persisted {
-            ::log::warn!("[scheduler] refus conservé pour réconciliation");
-        }
-        if !outcome.keep_running {
+        if result.is_err() {
+            ::log::warn!("[scheduler] capacité d'exécution indisponible");
             return;
         }
     }
 }
 
-async fn checkpoint(now: DateTime<Local>) -> bool {
-    match state::write_last_checked(now).await {
-        Ok(()) => true,
-        Err(_) => {
-            ::log::warn!("[scheduler] état de contrôle indisponible");
-            false
-        }
-    }
+fn ready(runtime: &AutomationRuntime, definitions: &[AutomationDefinition]) -> Vec<(Uuid, Uuid)> {
+    let active = definitions
+        .iter()
+        .filter(|item| item.status == AutomationStatus::Active)
+        .map(|item| item.id)
+        .collect::<HashSet<_>>();
+    let running = runtime
+        .occurrences
+        .iter()
+        .filter(|item| item.state == OccurrenceState::Running)
+        .map(|item| item.automation_id)
+        .collect::<HashSet<_>>();
+    runtime
+        .occurrences
+        .iter()
+        .filter(|item| {
+            item.state == OccurrenceState::Pending
+                && active.contains(&item.automation_id)
+                && !running.contains(&item.automation_id)
+        })
+        .map(|item| (item.automation_id, item.id))
+        .collect()
 }
+
+fn sleep_until_next(
+    definitions: &[AutomationDefinition],
+    paused: bool,
+    now: DateTime<Utc>,
+) -> std::time::Duration {
+    if paused {
+        return std::time::Duration::from_secs(60);
+    }
+    let cap = now + Duration::minutes(60);
+    let next = definitions
+        .iter()
+        .filter_map(|item| super::next_fire::next_fire_at(item, now).ok().flatten())
+        .map(|item| item.at)
+        .min()
+        .unwrap_or(cap)
+        .min(cap);
+    (next - now)
+        .to_std()
+        .unwrap_or(std::time::Duration::from_secs(1))
+}
+
+pub async fn mark_running(id: Uuid, started_at: DateTime<Utc>) -> Result<(), AutomationError> {
+    mark_running_at(&crate::services::paths::data_dir(), id, started_at).await
+}
+
+pub async fn mark_terminal(id: Uuid, result: AutomationRunResult) -> Result<(), AutomationError> {
+    mark_terminal_at(&crate::services::paths::data_dir(), id, result).await
+}
+
+pub async fn publish_terminal(id: Uuid) -> Result<(), AutomationError> {
+    super::runtime_publish::publish_terminal_at(&crate::services::paths::data_dir(), id).await
+}
+
+#[cfg(test)]
+pub(crate) async fn admit_due_at(
+    root: &Path,
+    definition: &AutomationDefinition,
+    scheduled_for: DateTime<Utc>,
+    now: DateTime<Utc>,
+) -> Result<Admission, AutomationError> {
+    crate::services::automations::admit_runtime_at(root, definition, scheduled_for, now).await
+}
+
+pub(crate) async fn mark_running_at(
+    root: &Path,
+    id: Uuid,
+    started_at: DateTime<Utc>,
+) -> Result<(), AutomationError> {
+    crate::services::automations::mark_runtime_running_at(root, id, started_at).await
+}
+
+pub(crate) async fn mark_terminal_at(
+    root: &Path,
+    id: Uuid,
+    result: AutomationRunResult,
+) -> Result<(), AutomationError> {
+    crate::services::automations::mark_runtime_terminal_at(root, id, result).await
+}
+
+#[cfg(test)]
+pub(crate) async fn runtime_at(root: &Path) -> Result<AutomationRuntime, AutomationError> {
+    crate::services::automations::read_runtime_at(root).await
+}
+
+#[cfg(test)]
+pub(crate) use super::runtime_publish::publish_terminal_at;
