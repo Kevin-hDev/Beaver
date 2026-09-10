@@ -9,10 +9,10 @@ export const EXPECTED_INTERNAL_REFERENCE_COUNTS = Object.freeze({
   CLGO: 32,
   // Les parcours E2E nomment explicitement le binaire historique sur chaque OS.
   // Le test de surcouche Windows crée aussi ce binaire dans son installation isolée.
-  // Les guides Forecast, Réglages, Compression et Automatisation citent aussi les noms persistés.
-  "cl-go-dash": 403,
-  // Les thèmes d'extension, leurs parcours et le guide Réglages rejouent ces clés historiques.
-  clgo: 143,
+  // Les guides Forecast, Réglages, Compression, Automatisation et Dépannage citent les noms persistés.
+  "cl-go-dash": 424,
+  // Les thèmes d'extension, leurs parcours et les guides Réglages et Dépannage rejouent ces clés.
+  clgo: 146,
   // Les guides et leurs pages générées citent le nom exact de l'ancien paquet Linux.
   "cl-go": 111,
   // Les deux branches main appellent explicitement la bibliothèque Rust.
