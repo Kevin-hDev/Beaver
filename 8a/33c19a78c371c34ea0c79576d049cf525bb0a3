@@ -1,0 +1,11 @@
+Task 7 review evidence
+
+Investigation result: Case A. check_app_update has no AppHandle or Tauri global dependency. The existing download path validates the trusted release URL, manifest asset, size and SHA-256 outside the UI. AppHandle was used only for resource discovery and coordinated app exit. The CLI now uses Tauri's platform resource resolver, explicitly validates the sibling cl-go-dash installation, detaches the validated worker, and exits immediately.
+
+The update check now preserves three states end to end: UpToDate, Available, and Unknown. The existing Tauri command flattens UpToDate and Unknown back to None, preserving its public behavior. Truncated release JSON, a newer release without the platform asset, HTTP failure, and manifest failure can no longer be reported as up to date by the CLI.
+
+Validation: cargo fmt check passed; cargo check passed; cargo clippy --all-targets -- -D warnings passed; app update group 51 passed; helper CLI path 2 passed; worker parent tests 2 passed; complete Rust suite passed with library 5408 passed and 21 ignored, beaver 44 passed, integration 1 passed, no failures; real online beaver update returned A jour and exit 0; process-only network denial returned Verification impossible and exit 1; graphify update passed.
+
+Worker handoff proof: a complete minimal Beaver.app fixture with a fake asset crossed installation validation and failed only after its launcher exited at 2 seconds. The counterexample with a live launcher failed at exactly the worker's 120-second timeout. The worker waits for the explicitly supplied PID.
+
+Limitation for final review: no real newer Beaver release existed, so an actual update installation was not performed. This remains a release-time validation.
