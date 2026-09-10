@@ -13,6 +13,30 @@
   var current = article ? article[1] : null;
   var prefix = article ? '' : 'docs/';
 
+  // Liens vers le reste du site dans l'en-tête : sans eux, une page de doc
+  // n'offrait aucun retour visible vers l'accueil (relevé par Kevin le
+  // 10 sept. 2026). Injectés ici plutôt que copiés dans chaque page.
+  var top = document.querySelector('.docs-top');
+  var lang = top && top.querySelector('.lang');
+  if (top && lang) {
+    var root = article ? '../' : '';
+    var siteLinks = document.createElement('nav');
+    siteLinks.className = 'dt-links';
+    siteLinks.setAttribute('aria-label', 'Navigation du site');
+    [
+      ['Le harnais', root + 'index.html#harnais', false],
+      ['Ce qu’il embarque', root + 'barrage.html', false],
+      ['Docs', root + 'docs.html', true]
+    ].forEach(function (item) {
+      var link = document.createElement('a');
+      link.href = item[1];
+      link.textContent = item[0];
+      if (item[2]) link.setAttribute('aria-current', 'page');
+      siteLinks.appendChild(link);
+    });
+    top.insertBefore(siteLinks, lang);
+  }
+
   BEAVER_DOCS_NAV.forEach(function (section) {
     var group = document.createElement('div');
     group.className = 'group';

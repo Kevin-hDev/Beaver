@@ -19,6 +19,16 @@
   color: var(--ink-dim);
 }
 
+/* Liens vers le reste du site, poussés à droite de l'en-tête. */
+.dt-links {
+  margin-left: auto;
+  display: flex; align-items: center; gap: 22px;
+  font-size: var(--t-small);
+}
+.dt-links a { color: var(--ink-dim); text-decoration: none; transition: color .25s; }
+.dt-links a:hover, .dt-links a:focus-visible { color: var(--accent); }
+.dt-links a[aria-current="page"] { color: var(--accent); }
+
 .search {
   margin-left: auto;
   display: flex; align-items: center; gap: 11px;
@@ -186,6 +196,8 @@ td:first-child { color: var(--ink); }
 @media (max-width: 800px) {
   aside { display: none; }
   .wrap { grid-template-columns: 1fr; padding-top: 30px; }
+  /* Sur petit écran, la navigation prime sur le fil d'Ariane. */
+  .crumb { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   .beaver-book { animation: none; }

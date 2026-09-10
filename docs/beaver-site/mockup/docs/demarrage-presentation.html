@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Beaver Docs — Qu'est-ce que Beaver</title>
-<meta name="description" content="Beaver est une application de bureau qui héberge un agent autonome, avec des modèles locaux ou distants, sur macOS, Windows et Linux.">
+<meta name="description" content="Beaver est une application de bureau qui héberge un agent autonome, avec des modèles cloud ou locaux, sur macOS, Windows et Linux.">
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -41,8 +41,9 @@
     <h2 id="definition">En deux phrases</h2>
     <p>Beaver est une <b>application de bureau</b> — pas un site, pas un outil en
     ligne de commande. Elle fait tourner un agent qui travaille avec des modèles
-    <b>locaux</b>, servis par Ollama sur ta machine, ou <b>distants</b>, atteints
-    par clé API ou par un compte web existant. Elle fonctionne sur
+    <b>cloud</b>, atteints par clé API ou par un compte web existant, ou
+    <b>locaux</b>, servis par Ollama sur ta machine. L'application s'exécute sur
+    ton poste ; le modèle, lui, tourne où tu le décides. Elle fonctionne sur
     <b>macOS</b>, <b>Windows</b> et <b>Linux</b>.</p>
 
     <h2 id="ce-que-ce-n-est-pas">Ce que Beaver n'est pas</h2>
@@ -69,6 +70,9 @@
     </div>
 
     <h2 id="a-qui">À qui ça s'adresse</h2>
+    <p><b>Utiliser les modèles auxquels tu as déjà accès.</b> Un compte web
+    connecté ou une clé API suffit : l'agent travaille avec le fournisseur que
+    tu choisis, sans changer d'espace de travail.</p>
     <p><b>Travailler sur des fichiers locaux.</b> L'agent ouvre, modifie, lance
     les commandes, vérifie, et te propose ses changements.</p>
     <p><b>Garder les données sur la machine.</b> Avec un modèle local, aucune
@@ -78,6 +82,10 @@
     conversation à heure fixe, et le résultat t'attend dans l'application.</p>
 
     <h2 id="ce-qui-le-distingue">Ce qui le distingue</h2>
+    <p><b>Cloud et local dans le même espace de travail.</b> Beaver n'est pas
+    dédié à l'IA locale : comptes web connectés, clés API et modèles Ollama se
+    choisissent dans la même interface, conversation par conversation.</p>
+
     <p><b>Le moteur local est fourni.</b> Ollama est téléchargé et géré par
     l'application au premier lancement : il n'y a rien à installer à part
     Beaver. Si un démon Ollama tourne déjà sur <code>localhost:11434</code>,
@@ -125,8 +133,8 @@
     peux l'utiliser, l'étudier, le modifier et le redistribuer. En contrepartie,
     toute version <b>distribuée ou hébergée en réseau</b>, modifiée ou non, doit
     être publiée sous AGPL v3 avec son code source complet.</p>
-    <p>Les versions <b>jusqu'à la 1.1.2 incluse</b> ont été publiées sous
-    <b>Apache License 2.0</b> et restent disponibles selon ces termes. Une
+    <p>Les versions <b>jusqu'à la 1.1.2 incluse</b> avaient été publiées sous
+    <b>Apache License 2.0</b> ; elles ne sont plus distribuées. Une
     <b>licence commerciale</b> exemptant des obligations de l'AGPL est
     disponible sur demande. Les composants tiers gardent leurs licences propres,
     listées dans <code>THIRD_PARTY_NOTICES.md</code>. Contribuer suppose de
