@@ -1,1 +1,3 @@
 Review M5: macOS CLI link installation now replaces only absent destinations or existing symlinks; a regular file/directory named beaver is preserved and reported. Red-green proof: the installer test first failed with 'existing third-party CLI was replaced', then passed. bash -n, installer tests, and diff checks passed.
+
+Review M3: updated both local ignored authorities, /Users/kevinh/Projects/Beaver/AGENTS.md and CLAUDE.md, to document logs/beaver.log as the main Tauri log with KeepSome rotation and a 2 MiB per-file limit. These files remain intentionally outside Git, as required by the review.
