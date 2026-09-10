@@ -95,7 +95,7 @@ function readJson(path) {
   return value;
 }
 
-export function loadBridgeMetadata() {
+function loadBridgeMetadata() {
   return {
     packageJson: readJson("package.json"),
     packageLock: readJson("package-lock.json"),

@@ -89,7 +89,7 @@ export function readRegularTextSync(path, maxBytes, options = {}) {
   return readRegularFileSync(path, maxBytes, options).toString("utf8");
 }
 
-export async function withRegularFile(path, maxBytes, operation, options = {}) {
+async function withRegularFile(path, maxBytes, operation, options = {}) {
   validateLimit(maxBytes);
   let handle;
   try {

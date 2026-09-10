@@ -7,7 +7,7 @@ import {
   readRegularFile,
 } from "../file-system/regular-file.mjs";
 
-export const MAX_ASSET_BYTES = 2 * 1024 * 1024 * 1024;
+const MAX_ASSET_BYTES = 2 * 1024 * 1024 * 1024;
 export const MAX_MANIFEST_BYTES = 64 * 1024;
 export const ASSET_SUFFIXES = Object.freeze({
   macos: "_aarch64.dmg",
@@ -77,7 +77,7 @@ export async function metadata(path, maxBytes = MAX_ASSET_BYTES) {
   return value;
 }
 
-export async function readBounded(path, maxBytes) {
+async function readBounded(path, maxBytes) {
   try {
     return await readRegularFile(path, maxBytes);
   } catch {
