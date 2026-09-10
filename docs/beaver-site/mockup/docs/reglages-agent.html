@@ -43,7 +43,7 @@
       <tr><td><b>Mémoire</b></td><td>Ce que l'agent a le droit de retenir d'une conversation à l'autre</td></tr>
       <tr><td><b>System prompt</b></td><td>Les instructions qui définissent son comportement</td></tr>
       <tr><td><b>Outils</b></td><td>Ce qu'il a le droit de faire</td></tr>
-      <tr><td><b>Avancé</b></td><td>Le modèle par défaut, le moteur local, l'accès aux fichiers et aux dossiers</td></tr>
+      <tr><td><b>Avancé</b></td><td>Le modèle par défaut, la compression du contexte, le moteur local, l'accès aux fichiers et aux dossiers</td></tr>
     </table>
 
     <p>L'onglet <b>Avancé</b> est le plus chargé de toute l'application : il porte plusieurs blocs sans rapport direct entre eux. C'est là que vivent les deux réglages qu'on cherche le plus souvent ailleurs — <b>l'accès aux dossiers</b> et <b>le comportement du moteur Ollama</b>.</p>
@@ -153,6 +153,9 @@
     <p>Une carte avec deux réglages.</p>
     <p><b>Icône dans la barre</b> — « Garder Beaver dans la barre système ». <b>Activé par défaut</b>.</p>
     <p><b>Modèle par défaut</b> — « Modèle utilisé par défaut pour les nouvelles conversations ». Une liste déroulante avec recherche, groupée par fournisseur, alimentée par les modèles réellement disponibles. <b>Vide par défaut</b>.</p>
+
+    <h2 id="avance-compression">Avancé — la compression du contexte</h2>
+    <p>Entre le comportement général et le moteur Ollama, une carte titrée <b>« Compression »</b> règle la façon dont Beaver résume les conversations trop longues : le profil global, son seuil de déclenchement et l'éditeur avancé des profils. Tout son fonctionnement — ce qui déclenche une compression, ce qui est gardé, ce qui est supprimé, et chaque réglage de cette carte — est décrit sur la page <a href="agent-compression.html">Compression du contexte</a>.</p>
 
     <h2 id="avance-moteur-ollama">Avancé — le moteur Ollama</h2>
     <p>Un bloc titré <b>« Ollama »</b>, distinct de l'onglet Ollama de la section Modèles. La séparation est celle-ci : <b>l'onglet Ollama gère les modèles ; ce bloc-ci gère le moteur qui les fait tourner.</b></p>

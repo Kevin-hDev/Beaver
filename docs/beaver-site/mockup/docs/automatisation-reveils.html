@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Réveils programmés</title>
+<meta name="description" content="Faire travailler Beaver à heure fixe : les trois rythmes, le formulaire, la conversation créée en accès complet, la pause générale et ce qui se passe quand l'application n'était pas lancée.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Automatisation / Réveils</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="automatisation-reveils.html" hreflang="fr" aria-current="true">FR</a>
+    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Faire travailler Beaver <em>à heure fixe</em></h1>
+    <p>Un réveil est une consigne écrite d'avance, associée à une heure. À l'heure dite, Beaver ouvre une conversation, y pose la consigne et laisse l'agent travailler jusqu'à ce qu'il ait répondu. Cette page décrit le mécanisme et le formulaire ; la lecture des résultats passés est dans <a href="automatisation-historique-des-reveils.html">L'historique des réveils</a>.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      <b>Beaver doit tourner.</b> Le planificateur vit dans l'application, pas dans celui de ton système : aucune tâche n'est déposée dans le planificateur de macOS, de Windows ou de Linux. Ordinateur éteint ou Beaver fermé, rien ne se déclenche — l'occurrence sera simplement notée « Raté » au démarrage suivant. Le formulaire le dit d'ailleurs lui-même : « Les réveils ne se déclenchent que si votre ordinateur est allumé et Beaver lancé. »
+    </div>
+
+    <h2 id="ce-quest-un-reveil">Ce qu'est un réveil</h2>
+    <p>Ce n'est pas une notification. C'est <b>un tour d'agent complet</b>, avec ses outils : le planificateur n'a pas de second moteur, il emprunte celui de l'agent. Tout ce qu'une conversation normale peut faire, un réveil peut le faire — lire un dossier, lancer une commande, écrire un fichier, interroger un modèle.</p>
+    <p>L'écran s'appelle <b>« Réveils »</b>, et son sous-titre annonce <b>« Créer des réveils automatisés pour planifier différentes tâches »</b>. L'onglet qui y mène, lui, porte encore le nom <b>« Heartbeat »</b> — c'est le même endroit.</p>
+
+    <h2 id="les-trois-rythmes">Les trois rythmes possibles</h2>
+    <p>Le formulaire propose trois onglets.</p>
+
+    <table>
+      <caption class="crumb">Les trois rythmes et ce qu'ils demandent</caption>
+      <tr><th>Rythme</th><th>Ce que tu saisis</th><th>Ce que ça donne</th></tr>
+      <tr><td><b>« Ponctuel »</b></td><td>Une date et une heure</td><td>Un seul déclenchement, puis le réveil se désactive</td></tr>
+      <tr><td><b>« Journalier »</b></td><td>Une heure</td><td>Tous les jours à cette heure</td></tr>
+      <tr><td><b>« Hebdo »</b></td><td>Un jour de la semaine et une heure</td><td>Une fois par semaine, de « Lundi » à « Dimanche »</td></tr>
+    </table>
+
+    <p><b>Tout est en heure locale de ta machine.</b> Un réveil quotidien à 8 h reste à 8 h après un changement d'heure ou un déplacement dans un autre fuseau : c'est l'heure affichée par l'ordinateur qui fait foi, pas un décalage figé.</p>
+    <p><b>La valeur de départ du formulaire est « Journalier » à 08:00.</b> Changer d'onglet réinitialise l'heure : « Ponctuel » se pose sur l'instant présent, « Journalier » et « Hebdo » sur 08:00, et « Hebdo » sur lundi.</p>
+
+    <h2 id="creer-un-reveil">Créer un réveil, champ par champ</h2>
+    <p>Le bouton s'appelle <b>« Nouveau réveil »</b>, et le formulaire porte le titre <b>« Nouveau réveil »</b> ou <b>« Modifier le réveil »</b> selon le cas.</p>
+
+    <table>
+      <caption class="crumb">Les sept champs du formulaire</caption>
+      <tr><th>Champ</th><th>Obligatoire</th><th>Longueur maximale</th></tr>
+      <tr><td><b>« Nom »</b></td><td>Oui</td><td><b>120 caractères</b></td></tr>
+      <tr><td><b>« Description »</b></td><td>Non</td><td><b>200 caractères</b></td></tr>
+      <tr><td><b>« Fournisseur »</b></td><td>Oui</td><td><b>64 caractères</b></td></tr>
+      <tr><td><b>« Modèle »</b></td><td>Oui</td><td><b>160 caractères</b></td></tr>
+      <tr><td><b>« Projet »</b></td><td>Non</td><td>—</td></tr>
+      <tr><td><b>« Prompt »</b> — la consigne</td><td>Oui</td><td><b>12 000 caractères</b></td></tr>
+      <tr><td><b>« Planification »</b></td><td>Oui</td><td>—</td></tr>
+    </table>
+
+    <p><b>Un champ vide, ou fait uniquement d'espaces, est refusé</b> pour le nom, le modèle, le fournisseur et la consigne. Seule la description peut rester vide.</p>
+    <p><b>Seuls les modèles capables d'utiliser des outils sont proposés.</b> La liste des modèles est filtrée sur cette capacité ; quand aucun ne convient, le champ est désactivé et affiche <b>« Aucun modèle tool-capable »</b>. C'est logique : un réveil sans outils ne pourrait que produire du texte, jamais lire un fichier ni exécuter une commande.</p>
+    <p><b>Certains fournisseurs ne sont pas acceptés.</b> La règle tient en une phrase : le fournisseur doit être utilisable pour de l'automatisation. Le compte web OpenAI convient ; les comptes web <b>Grok</b> et <b>Kimi</b>, eux, sont réservés aux conversations manuelles et sont refusés. Pour ces deux-là, il faut passer par une clé API du même fournisseur — voir <a href="modeles-connexion-par-compte.html">Connexion par compte</a>.</p>
+    <p><b>Le champ « Projet »</b> rattache le réveil à un projet enregistré, dont le dossier devient le dossier de travail de la conversation créée. Sans projet, le réveil travaille dans l'espace par défaut, proposé sous le libellé <b>« Espace de travail Beaver »</b>.</p>
+    <p><b>Un réveil ponctuel dont la date est déjà passée est refusé</b> à la création, tant qu'il est actif.</p>
+
+    <h2 id="a-lheure-dite">Ce qui se passe à l'heure dite</h2>
+    <p>Le planificateur ne se réveille pas toutes les secondes : il calcule le prochain instant utile et dort jusque-là, avec un plafond d'<b>une heure</b>. Il est aussi réveillé sur-le-champ dès qu'un réveil est créé, modifié, activé ou supprimé — tu n'as jamais à attendre pour qu'un changement soit pris en compte.</p>
+    <p><b>Le prochain instant est toujours strictement futur.</b> Un réveil quotidien à 8 h consulté à 8 h précises pointe donc sur le lendemain, pas sur l'instant présent.</p>
+    <p><b>Les réveils dus à la même minute partent ensemble</b>, et <b>une même occurrence ne peut pas partir deux fois</b> : chaque déclenchement réserve sa place et un doublon est écarté sans bruit.</p>
+    <p>Un déclenchement peut être refusé pour deux raisons, et ce refus est inscrit au journal : <b>Beaver est en train de fermer</b>, ou <b>trop d'opérations sont déjà en cours</b> — la capacité est de <b>64 réveils en même temps</b>.</p>
+
+    <h2 id="la-conversation-creee">La conversation créée par un réveil</h2>
+    <p>Chaque déclenchement <b>crée une conversation neuve</b>. Il ne réutilise jamais celle du déclenchement précédent : un rapport quotidien produit trente conversations en trente jours, pas une conversation de trente messages.</p>
+    <p>Son nom est construit tout seul, à partir du nom du réveil, du fournisseur et du modèle. Il commence toujours par <code>Heartbeat •</code>, ce qui permet de repérer ces conversations dans la liste. Sur un modèle local, le nom prend la forme <code>Heartbeat • &lt;nom du réveil&gt; • &lt;modèle&gt;</code> ; ailleurs, le nom du fournisseur s'intercale.</p>
+    <p>Ce qu'un réveil dépense est compté à part : dans l'écran de consommation, tout ce qui vient d'un réveil est rangé sous l'origine <b>« Automatisation »</b>. Voir <a href="modeles-usage-et-couts.html">Usage et coûts</a>.</p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      <b>Un réveil travaille en accès complet, et c'est un choix assumé.</b> Il ne demande jamais d'approbation, parce qu'il n'y a personne devant l'écran pour répondre : une demande de confirmation à 3 h du matin bloquerait le réveil jusqu'au lendemain matin, ce qui reviendrait à ne pas l'exécuter. Tout ce que la consigne demande — lire un fichier, en écrire un, lancer une commande, supprimer quelque chose — se fait donc <b>sans confirmation possible</b>. Écris la consigne d'un réveil avec cette idée en tête, et vérifie-la comme tu vérifierais une commande que tu t'apprêtes à lancer toi-même. Les modes de permission des conversations normales sont décrits dans <a href="agent-permissions.html">Modes de permission</a> ; aucun d'eux ne s'applique ici.
+    </div>
+
+    <p><b>Deux fins possibles, et elles ne se ressemblent pas.</b> Si l'agent a produit du texte, le réveil est enregistré comme <b>« Réussi »</b>. S'il n'a produit <b>aucun</b> texte, c'est traité comme un échec — même si le travail a eu lieu. Une consigne de réveil doit donc toujours demander une réponse écrite, ne serait-ce qu'une ligne de compte rendu.</p>
+    <p><b>Une conversation restée vide est supprimée.</b> Si le tour échoue avant d'avoir écrit le moindre message, la conversation créée quelques instants plus tôt est effacée. Tu ne te retrouves pas avec une liste de coquilles vides après une panne de fournisseur.</p>
+
+    <h2 id="le-reveil-ponctuel">Le réveil ponctuel : une seule fois, vraiment</h2>
+    <p>Un réveil ponctuel <b>se désactive avant de commencer son travail</b>, pas après. L'ordre est délibéré : la décision « cette occurrence est consommée » est écrite sur le disque avant l'action, si bien qu'une coupure de courant en plein milieu ne peut pas produire un second déclenchement au redémarrage.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      <b>Un réveil ponctuel ne se supprime pas tout seul.</b> Après son unique exécution, il reste dans la liste, marqué <b>« Inactif »</b>. C'est utile pour retrouver ce qu'il a produit ; pense à le supprimer quand il ne sert plus.
+    </div>
+
+    <p>Un réveil ponctuel interrompu par la fermeture de l'application est inscrit au journal avec le statut <b>« Annulé »</b>, et il reste désactivé : il ne repartira pas au prochain démarrage.</p>
+
+    <h2 id="mettre-en-pause">Mettre en pause : un réveil, ou tous</h2>
+    <p>Deux interrupteurs existent, et ils ne font pas la même chose.</p>
+    <p><b>L'interrupteur individuel</b>, dans le détail d'un réveil, active ou désactive ce réveil seul. Son infobulle est <b>« Activer/Désactiver »</b>.</p>
+    <p><b>L'interrupteur général</b>, en haut du panneau latéral, met tout en veille. Son infobulle bascule entre <b>« Mettre en veille »</b> et <b>« Reprendre »</b>.</p>
+    <p>La veille générale procède en deux temps. Chaque réveil <b>actif</b> est désactivé et marqué comme éteint par la veille ; à la reprise, <b>seuls les réveils portant cette marque sont rallumés</b>.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      <b>La reprise ne réveille que ce que la veille avait endormi.</b> Un réveil que tu avais désactivé toi-même reste désactivé après une mise en veille générale suivie d'une reprise. C'est voulu : la veille est une parenthèse, pas une remise à zéro.
+    </div>
+
+    <p>Pendant la veille, l'interrupteur individuel est bloqué et son infobulle devient <b>« Réveils en veille — désactive le master switch »</b>. Un réveil créé pendant la veille naît désactivé et repartira à la reprise. Enfin, <b>plus aucun instant n'est calculé</b> : le champ <b>« Prochain déclenchement »</b> reste vide pour tous les réveils tant que la veille dure.</p>
+
+    <h2 id="si-beaver-netait-pas-la">Si Beaver n'était pas là à l'heure prévue</h2>
+    <p>C'est la question que tout le monde se pose, et la réponse est nette.</p>
+    <p>Beaver retient la date de son dernier passage. Au démarrage suivant, il compare cette date à l'heure présente et cherche, pour chaque réveil actif, les occurrences tombées dans l'intervalle. Chacune est inscrite au journal avec le statut <b>« Raté »</b> et le motif <b>« Le réveil a été manqué pendant l'indisponibilité de Beaver. »</b></p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      <b>Une occurrence ratée n'est jamais rattrapée.</b> Elle est constatée et enregistrée, pas exécutée. Un rapport quotidien de 8 h manqué ne sera pas produit à 10 h au lancement de l'application : il sera signalé raté, et le prochain sera celui du lendemain.
+    </div>
+
+    <p><b>Une tolérance de cinq minutes</b> sépare « en retard » de « raté ». Un réveil déclenché avec quatre minutes de retard — machine sortie de veille, disque occupé — s'exécute normalement. Au-delà de cinq minutes, il est classé raté.</p>
+    <p><b>Fermer la fenêtre ne veut pas dire la même chose partout</b>, et c'est le piège principal du domaine.</p>
+
+    <table>
+      <caption class="crumb">Ce que fait la fermeture de la fenêtre principale, par système</caption>
+      <tr><th>Système</th><th>Fermer la fenêtre</th><th>Les réveils continuent ?</th></tr>
+      <tr><td><b>macOS</b></td><td>La fenêtre est masquée, l'application reste vivante</td><td><b>Oui</b></td></tr>
+      <tr><td><b>Windows</b>, <b>Linux</b></td><td>L'application quitte</td><td><b>Non</b></td></tr>
+    </table>
+
+    <p>Deux réglages avancés servent précisément ce besoin : <b>« Lancer au démarrage »</b> — « Ouvrir Beaver automatiquement au démarrage du système » — et <b>« Démarrage masqué »</b> — « Démarrer en arrière-plan sans ouvrir la fenêtre ». Ensemble, ils font que Beaver est là quand l'heure arrive, sans que tu aies à y penser. Voir <a href="reglages-application.html">Réglages de l'application</a>.</p>
+    <p>À la fermeture volontaire, les réveils en cours sont prévenus et attendus dans le budget de temps commun à toute la fermeture. Un réveil interrompu là est inscrit <b>« Annulé »</b>, pas « Échoué ».</p>
+
+    <h2 id="les-limites">Les limites</h2>
+
+    <table>
+      <caption class="crumb">Les bornes du domaine, en un seul endroit</caption>
+      <tr><th>Ce qui est borné</th><th>Valeur</th></tr>
+      <tr><td>Réveils enregistrés</td><td><b>64</b></td></tr>
+      <tr><td>Réveils exécutés en même temps</td><td><b>64</b></td></tr>
+      <tr><td>Longueur de la consigne</td><td><b>12 000 caractères</b></td></tr>
+      <tr><td>Longueur du nom</td><td><b>120 caractères</b></td></tr>
+      <tr><td>Longueur de la description</td><td><b>200 caractères</b></td></tr>
+      <tr><td>Tolérance de retard avant « Raté »</td><td><b>5 minutes</b></td></tr>
+      <tr><td>Sommeil maximal du planificateur</td><td><b>60 minutes</b></td></tr>
+    </table>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+
+    <table>
+      <caption class="crumb">Symptôme, cause, résolution</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>« Mon réveil ne s'est pas déclenché cette nuit »</td><td>L'ordinateur était éteint, ou Beaver fermé</td><td>L'occurrence figure au journal en « Raté ». Activer « Lancer au démarrage » ; sur Windows et Linux, ne pas fermer la fenêtre</td></tr>
+      <tr><td>« Le modèle que je veux n'apparaît pas »</td><td>Il ne sait pas utiliser d'outils</td><td>Choisir un modèle capable d'outils ; le champ affiche « Aucun modèle tool-capable » quand aucun ne convient</td></tr>
+      <tr><td>« Mon compte Grok ou Kimi n'est pas proposé »</td><td>Ces connexions par compte sont réservées aux conversations manuelles</td><td>Utiliser une clé API du même fournisseur, ou un autre fournisseur</td></tr>
+      <tr><td>« Je ne peux pas activer un réveil »</td><td>La veille générale est active</td><td>Basculer l'interrupteur du haut du panneau</td></tr>
+      <tr><td>« Tous mes réveils se sont désactivés d'un coup »</td><td>La veille générale a été activée</td><td>Reprendre : ceux qu'elle avait éteints se rallument</td></tr>
+      <tr><td>« Mon réveil ponctuel est passé et il est toujours là »</td><td>Comportement attendu : il est désactivé, pas supprimé</td><td>Le supprimer à la main</td></tr>
+      <tr><td>« Le réveil s'est exécuté mais est marqué échoué »</td><td>L'agent n'a produit aucun texte</td><td>Reformuler la consigne pour qu'elle demande une réponse écrite</td></tr>
+      <tr><td>« La conversation du réveil a disparu »</td><td>Le tour a échoué avant d'écrire quoi que ce soit : la conversation vide est supprimée</td><td>Consulter <a href="automatisation-historique-des-reveils.html">l'historique</a> pour la cause</td></tr>
+      <tr><td>« Ma création de réveil échoue sans dire pourquoi »</td><td>Le formulaire affiche le même message quel que soit le motif</td><td>Vérifier les longueurs des champs, le fournisseur choisi et la date d'un réveil ponctuel</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="automatisation-historique-des-reveils.html">L'historique des réveils</a> — lire les résultats passés, les quatre statuts et les sept motifs d'échec.</li>
+      <li><a href="agent-permissions.html">Modes de permission</a> — ce que l'accès complet autorise dans une conversation normale.</li>
+      <li><a href="agent-fonctionnement.html">Fonctionnement de l'agent</a> — ce qu'est un tour d'agent, celui-là même qu'un réveil emprunte.</li>
+      <li><a href="reglages-application.html">Réglages de l'application</a> — « Lancer au démarrage » et « Démarrage masqué ».</li>
+      <li><a href="modeles-connexion-par-compte.html">Connexion par compte</a> — pourquoi certains comptes web ne peuvent pas servir à un réveil.</li>
+      <li><a href="modeles-usage-et-couts.html">Usage et coûts</a> — l'origine « Automatisation » dans l'écran de consommation.</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../js/theme.js"></script>
+<script src="../js/docs-nav-data.js"></script>
+<script src="../js/docs-nav.js"></script>
+</body>
+</html>

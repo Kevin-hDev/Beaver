@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Compression du contexte</title>
+<meta name="description" content="Ce que Beaver fait quand une conversation approche de la limite du modèle : ce qu'il garde, ce qu'il supprime, et comment le régler.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Agent / Compression du contexte</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="agent-compression.html" hreflang="fr" aria-current="true">FR</a>
+    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Quand la conversation <em>déborde</em></h1>
+    <p>Une conversation longue finit par ne plus tenir dans la fenêtre du modèle. Beaver la fait alors résumer, garde les derniers échanges et l'état du travail en cours, puis remplace l'historique par ce résumé. Cette page dit précisément ce qui est gardé, ce qui est supprimé, et ce que tu peux régler.</p>
+
+    <div class="callout">
+      <span class="t">La compression en quatre phrases</span>
+      Quand une conversation atteint <b>90 %</b> de la fenêtre du modèle, Beaver la fait résumer en neuf sections imposées, garde les derniers échanges et l'état du travail en cours, puis remplace l'historique par ce point de reprise. La conversation continue au même endroit, sans que tu aies rien à faire. Si quoi que ce soit échoue, ta conversation reste intacte. Tout est réglable dans <a href="reglages-agent.html#avance-compression"><b>Réglages › Avancé › Compression</b></a>, et tu peux déclencher l'opération à tout moment en envoyant <code>/compress</code>.
+    </div>
+
+    <h2 id="fenetre-de-contexte">La fenêtre de contexte est finie</h2>
+    <p>Un modèle de langage ne lit pas une conversation au fur et à mesure : il relit <b>toute</b> la conversation à chaque réponse. Cette relecture a une taille maximale, la <b>fenêtre de contexte</b>, comptée en jetons. Une conversation qui s'allonge finit donc par ne plus tenir dedans.</p>
+    <p>Cette fenêtre n'est pas la même partout, et Beaver la détermine différemment selon le type de modèle.</p>
+    <ul>
+      <li><b>Modèle distant</b> — la longueur déclarée par le catalogue du fournisseur.</li>
+      <li><b>Modèle local</b> — la première valeur disponible dans cet ordre : la fenêtre du modèle déjà chargé, puis celle écrite dans son fichier de définition, puis la plus petite entre la fenêtre native du modèle et le palier déduit de ton matériel.</li>
+    </ul>
+    <p>Autrement dit : sur un modèle local, la fenêtre réellement utilisée est souvent <b>plus petite</b> que celle annoncée par le modèle, parce que c'est ta machine qui commande. Voir <a href="modeles-materiel.html">Matériel et VRAM</a> et <a href="modeles-moteur-local.html">Moteur local</a>.</p>
+
+    <h2 id="ce-que-fait-la-compression">Ce que fait la compression</h2>
+    <p>Beaver demande à un modèle de <b>résumer la conversation dans un format imposé</b>, range ce résumé avec quelques éléments récents dans un <b>point de reprise</b>, puis remplace l'historique par ce point de reprise. La conversation continue au même endroit, dans le même fil, avec beaucoup moins de jetons.</p>
+    <p>Deux propriétés à connaître d'entrée.</p>
+    <ul>
+      <li><b>La conversation enregistrée est réellement remplacée.</b> Ce n'est pas un affichage replié : le fichier de ta conversation ne contient plus les anciens messages après l'opération.</li>
+      <li><b>Le remplacement est tout ou rien.</b> Beaver construit le point de reprise complet, le valide, vérifie qu'il tient dans la cible visée, et ne remplace la conversation qu'à la fin, en une seule écriture. Si quoi que ce soit échoue en chemin, <b>la conversation reste exactement telle qu'elle était</b>.</li>
+    </ul>
+
+    <h2 id="quand-elle-se-declenche">Quand elle se déclenche</h2>
+    <p>Deux déclencheurs, un seul moteur derrière.</p>
+    <p><b>Automatique.</b> Beaver vérifie après chaque réponse et après chaque série d'outils si la conversation a atteint le <b>seuil</b> du profil actif. La condition est simple : jetons estimés ≥ fenêtre × seuil. Le seuil du profil livré avec Beaver est de <b>90 %</b>. Il est réglable de <b>1 %</b> à <b>90 %</b>, et le moteur le replafonne à 90 % à l'exécution quoi qu'il arrive.</p>
+    <p>Une troisième vérification a lieu <b>pendant</b> la génération d'une réponse : Beaver surveille le total toutes les <b>32 jetons produits</b> et interrompt la réponse en cours dès que le seuil est franchi, au lieu d'attendre la fin. C'est ce qui explique qu'une réponse puisse s'arrêter net et être suivie d'une compression.</p>
+    <p><b>À la demande.</b> Tu envoies le message <code>/compress</code>. Voir <a href="#compress">La compression à la demande</a> plus bas.</p>
+
+    <table>
+      <caption class="crumb">Quatre différences entre le déclenchement automatique et <code>/compress</code></caption>
+      <tr><th>&nbsp;</th><th>Automatique</th><th><code>/compress</code></th></tr>
+      <tr><td>Respecte le seuil</td><td>Oui</td><td><b>Non</b> — s'exécute quel que soit le remplissage</td></tr>
+      <tr><td>Respecte l'interrupteur « Compression automatique »</td><td>Oui</td><td><b>Non</b></td></tr>
+      <tr><td>Si un tour est resté ouvert</td><td>Renonce en silence</td><td><b>Échoue avec un message</b></td></tr>
+      <tr><td>Si la compression est indisponible sous 64K</td><td>Renonce en silence</td><td><b>Échoue avec un message</b></td></tr>
+    </table>
+
+    <p>C'est le point le plus utile de cette section : <code>/compress</code> n'est pas « la même chose, en avance ». C'est <b>la version qui parle quand ça ne marche pas</b>.</p>
+
+    <h2 id="ce-que-tu-vois">Ce que tu vois à l'écran</h2>
+    <p><b>Pendant.</b> Un bandeau discret remplace l'indicateur de travail habituel : deux traits horizontaux qui pulsent de part et d'autre du texte <b>« Compression du contexte »</b>. Il n'affiche ni pourcentage ni durée, et n'est pas cliquable. L'animation s'efface si ton système demande moins d'animations.</p>
+    <p>Le bouton d'envoi devient un bouton d'arrêt pendant l'opération, comme pour une réponse normale. Le champ de saisie, lui, reste éditable.</p>
+    <p><b>Après.</b> À l'endroit exact de la coupure, le fil affiche une icône d'archive suivie du texte <b>« Contexte compressée »</b>. Ce marqueur n'est pas dépliable : le résumé produit n'est consultable nulle part dans l'application, même s'il existe bien dans le fichier de la conversation.</p>
+    <p><b>L'anneau de contexte</b>, près du champ de saisie, indique le profil de compression actif de la conversation sous le libellé <b>« Compression »</b>, ou <b>« Compression désactivée »</b> quand elle ne peut pas s'appliquer. Dans ce second cas, un bouton d'aide ouvre une explication. Voir <a href="interface-conversations.html">Conversations</a>.</p>
+    <p><b>En cas d'échec</b>, cinq messages distincts selon la cause — le tableau est en fin de page.</p>
+
+    <h2 id="garde-et-supprime">Ce qui est gardé, ce qui est supprimé</h2>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      <b>La compression supprime réellement les anciens messages.</b> Ce n'est pas un repli d'affichage : le fichier de ta conversation ne les contient plus après l'opération, et il n'existe aucun moyen de les retrouver. Ce qui subsiste est le résumé, les derniers échanges et l'état du travail. Si un échange ancien t'importe, copie-le ailleurs avant que la conversation ne s'allonge.
+    </div>
+
+    <p>Tout ce qui n'est pas dans le tableau ci-dessous disparaît de la conversation et ne survit que sous la forme du résumé.</p>
+
+    <table>
+      <caption class="crumb">Ce qui est repris tel quel, message par message</caption>
+      <tr><th>Élément</th><th>Comment il est choisi</th></tr>
+      <tr><td><b>Messages récents</b></td><td>Un quota par rôle — la moitié arrondie au supérieur pour toi, la moitié pour l'assistant — puis les emplacements restants sont comblés du plus récent au plus ancien</td></tr>
+      <tr><td><b>Chaînes d'outils</b></td><td>Un appel et ses résultats sont pris <b>entiers ou pas du tout</b> ; un résultat trop long est remplacé par un extrait borné qui renvoie au résultat complet conservé sur le disque</td></tr>
+      <tr><td><b>Le tour en cours</b></td><td>Toujours conservé intégralement, hors quota</td></tr>
+      <tr><td><b>Images</b></td><td>Les images des messages retenus, dans la limite du profil et de celle du fournisseur</td></tr>
+    </table>
+
+    <p>À côté de ces messages, Beaver <b>reconstruit</b> quatre blocs et les range dans le point de reprise, dans cet ordre et tant qu'il reste de la place :</p>
+    <ol>
+      <li><b>l'état du travail</b> — état Git, tâches en cours, échecs non résolus, rapports de sous-agents ;</li>
+      <li><b>les fichiers récents, relus depuis le disque</b> — c'est-à-dire leur contenu <b>actuel</b> ;</li>
+      <li><b>les pièces jointes texte</b>, au plus <b>8</b> ;</li>
+      <li><b>les références critiques</b>, au plus <b>32</b>.</li>
+    </ol>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      <b>Les fichiers sont relus, pas recopiés.</b> Le point de reprise contient le contenu <b>actuel</b> des fichiers récemment consultés, pas celui que l'agent avait vu. C'est voulu : cela lui permet de reprendre sur l'état réel de ton projet. Mais si un fichier a changé entre-temps, c'est bien la nouvelle version qui entre dans le point de reprise.
+    </div>
+
+    <p>Le message <code>/compress</code> lui-même est exclu partout : il n'entre ni dans les messages conservés, ni dans l'historique envoyé au modèle qui rédige le résumé.</p>
+
+    <table>
+      <caption class="crumb">Ce que la compression garde et ce qu'elle perd</caption>
+      <tr><th>&nbsp;</th><th>Devient</th><th>Retrouvable ensuite</th></tr>
+      <tr><td>Messages anciens</td><td>Le résumé en neuf sections</td><td><b>Non</b></td></tr>
+      <tr><td>Résultats d'outils anciens</td><td>Une mention dans le résumé</td><td>Les gros résultats restent sur le disque, référencés par les extraits</td></tr>
+      <tr><td>Fichiers lus</td><td>Leur contenu <b>actuel</b>, relu du disque</td><td>Oui, c'est le fichier réel</td></tr>
+      <tr><td>Images anciennes</td><td>Rien au-delà du quota du profil</td><td><b>Non</b></td></tr>
+      <tr><td>État Git, tâches, sous-agents</td><td>Une section compacte du point de reprise</td><td>Reflète l'état au moment de la compression</td></tr>
+      <tr><td>Messages récents, tour en cours</td><td>Repris tels quels</td><td>Oui</td></tr>
+    </table>
+
+    <h2 id="le-resume">Le résumé et ses neuf sections</h2>
+    <p>Beaver envoie la conversation à un modèle avec un <b>contrat fixe</b> que rien ne peut modifier. Ce contrat impose exactement neuf sections, dans cet ordre. Les titres sont produits en anglais ; la traduction ci-dessous est là pour la lecture, elle n'apparaît pas dans l'application.</p>
+    <ol>
+      <li><code>Primary Request and Intent</code> — la demande initiale et l'intention</li>
+      <li><code>Key Technical Concepts</code> — les notions techniques en jeu</li>
+      <li><code>Files and Code Sections</code> — les fichiers et portions de code</li>
+      <li><code>Errors and Fixes</code> — les erreurs rencontrées et leurs corrections</li>
+      <li><code>Problem Solving</code> — la résolution</li>
+      <li><code>User Intent and Corrections</code> — tes intentions et tes corrections</li>
+      <li><code>Pending Tasks</code> — ce qui reste à faire</li>
+      <li><code>Current Work</code> — le travail en cours</li>
+      <li><code>Next Step</code> — l'action suivante</li>
+    </ol>
+    <p><b>Le résumé est vérifié avant d'être accepté</b>, et un seul défaut le fait rejeter : un appel d'outil, une réponse tronquée, une balise d'ouverture ou de fermeture manquante, du texte après la fermeture, un contenu vide, <b>une des neuf sections absente ou dans le mauvais ordre</b>, ou un dépassement du plafond de jetons du profil.</p>
+
+    <div class="callout">
+      <span class="t">Sécurité</span>
+      <b>Ta conversation est traitée comme des données, jamais comme des instructions.</b> Le modèle qui rédige le résumé reçoit un contrat qu'aucun contenu de la conversation ne peut modifier, et l'historique lui est présenté explicitement comme des données non fiables. Le prompt personnalisé d'un profil est introduit comme un objectif supplémentaire, qui ne peut pas écraser le contrat. Il est interdit au modèle de révéler des secrets et de mentionner tes réglages de permission — et un filtrage automatique retire de toute façon les données sensibles du résumé, des sections et des messages envoyés. Voir <a href="reference-coffre-et-cles.html">Le coffre et les clés API</a>.
+    </div>
+
+    <h2 id="apres-la-compression">Ce que devient la conversation après</h2>
+    <p>Le point de reprise prend la forme de <b>deux messages techniques</b> portant le même identifiant de tour : un message contenant le document du point de reprise — numéro de format, identifiant, résumé et sections rangées par nom — et un message de frontière portant un texte fixe. Dans l'interface, le premier devient le marqueur « Contexte compressée » et le second est <b>entièrement masqué</b>.</p>
+    <p><b>La cible visée.</b> Beaver ne cherche pas à remplir un pourcentage de la fenêtre : il vise <b>20 % de ce qui est compressible</b>, c'est-à-dire tout sauf les instructions système et les définitions d'outils, plus ces dernières telles quelles. Ce résultat est en plus plafonné selon la taille de la fenêtre.</p>
+
+    <table>
+      <caption class="crumb">Plafond du point de reprise selon la fenêtre du modèle</caption>
+      <tr><th>Fenêtre du modèle</th><th>Plafond du point de reprise</th></tr>
+      <tr><td>Moins de 64K</td><td><b>10 000</b> jetons</td></tr>
+      <tr><td>De 64K à moins de 128K</td><td><b>20 000</b> jetons</td></tr>
+      <tr><td>128K et plus</td><td><b>28 000</b> jetons</td></tr>
+    </table>
+
+    <p>Deux garde-fous à la sortie : si le point de reprise construit dépasse la cible, la compression <b>échoue</b> au lieu de publier un résultat trop gros ; et si la compression était automatique et que le résultat reste <b>au-dessus du seuil</b>, elle échoue également — Beaver refuse de publier une compression qui n'aurait rien réglé.</p>
+
+    <h2 id="protections">Les protections : boucle, échec, écriture</h2>
+    <p><b>La garde anti-boucle.</b> Chaque tentative automatique est identifiée par un ensemble de repères : dernier tour, dernier message, nombre de messages, dernier point de reprise, fournisseur, modèle, fenêtre, profil et sa révision. Trois règles en découlent.</p>
+    <ul>
+      <li>Une tentative identique à la précédente <b>n'est pas rejouée</b>.</li>
+      <li>Une compression réussie <b>ne peut pas se relancer dans le même tour principal</b>.</li>
+      <li><b>Tout changement d'environnement remet le compteur à zéro</b> — changer de modèle ou de profil débloque une conversation coincée.</li>
+    </ul>
+    <p><b>Après trois échecs consécutifs, la compression automatique se met en pause pour cette conversation.</b> Le message affiché le dit et donne la sortie : <i>« La compression automatique est suspendue pour cette session après plusieurs échecs. Vous pouvez réessayer avec /compress. »</i></p>
+    <p><b>L'écriture est transactionnelle.</b> Avant de remplacer quoi que ce soit, Beaver vérifie que la conversation sur le disque est toujours identique, octet pour octet, à celle qu'il a photographiée au début. Si un message est arrivé entre-temps, la compression est abandonnée plutôt qu'appliquée sur un état périmé.</p>
+    <p>Enfin, la demande de résumé a un <b>plafond d'attente de 600 secondes</b>, avec la même valeur en délai d'inactivité : au-delà, elle est abandonnée et la conversation reste intacte.</p>
+
+    <h2 id="petits-modeles">Les trois tailles de fenêtre, et les petits modèles</h2>
+    <p>Un profil ne porte pas un réglage mais <b>trois</b>, un par taille de fenêtre. Les bornes sont fixes.</p>
+
+    <table>
+      <caption class="crumb">Les trois plages de fenêtre et leur libellé dans l'application</caption>
+      <tr><th>Plage</th><th>Fenêtre du modèle</th><th>Libellé affiché</th></tr>
+      <tr><td>Petite</td><td>moins de <b>64 000</b> jetons</td><td>« moins de 64K »</td></tr>
+      <tr><td>Moyenne</td><td>de 64 000 à moins de <b>128 000</b></td><td>« 64K – moins de 128K »</td></tr>
+      <tr><td>Grande</td><td><b>128 000</b> et plus</td><td>« 128K et plus »</td></tr>
+    </table>
+
+    <p><b>Sous 64 000 jetons, la compression est désactivée par défaut.</b> Ce n'est pas un oubli, et l'application donne la raison :</p>
+    <p><i>« La compression est désactivée parce que cette fenêtre de contexte est inférieure à 64K. Ces petites fenêtres peuvent ne pas laisser assez de place pour générer puis réinjecter un résumé, les instructions, les outils et les échanges récents. Vous pouvez l'autoriser dans le profil de compression avancé. »</i></p>
+    <p>L'autorisation existe donc, et l'éditeur avancé l'accompagne de son propre avertissement : <i>« Pour les modèles de moins de 64K, une configuration trop volumineuse peut saturer la fenêtre de contexte. La session peut rencontrer des problèmes et la compression peut échouer si elle réinjecte trop de contexte. »</i></p>
+
+    <div class="callout">
+      <span class="t">Attention</span>
+      <b>Sous 64K, rien ne se passe et rien ne le dit.</b> Sur un modèle dont la fenêtre effective est inférieure à 64 000 jetons, la compression est désactivée par défaut et le déclenchement automatique renonce <b>sans message</b>. La conversation continue de grossir jusqu'à saturer la fenêtre. Le seul endroit où cela se voit est l'anneau de contexte, qui affiche alors « Compression désactivée ».
+    </div>
+
+    <h2 id="profils">Les profils de compression</h2>
+    <p>Un <b>profil</b> rassemble tout ce qui est réglable : le seuil, l'autorisation sous 64K, les deux prompts, et les trois jeux de réglages par plage de fenêtre. Beaver en livre un seul, nommé <b>« Beaver »</b>. Voici ses valeurs.</p>
+
+    <table>
+      <caption class="crumb">Les valeurs du profil « Beaver », par plage de fenêtre</caption>
+      <tr><th>Réglage</th><th>moins de 64K</th><th>64K – 128K</th><th>128K et plus</th></tr>
+      <tr><td>Messages récents conservés</td><td><b>2</b></td><td><b>4</b></td><td><b>4</b></td></tr>
+      <tr><td>Taille maximale du résumé</td><td><b>2 000</b> jetons</td><td><b>4 000</b></td><td><b>6 000</b></td></tr>
+      <tr><td>Résultats d'outils</td><td><b>5</b></td><td><b>10</b></td><td><b>10</b></td></tr>
+      <tr><td>Fichiers récents relus</td><td><b>3</b></td><td><b>5</b></td><td><b>5</b></td></tr>
+      <tr><td>Images conservées</td><td><b>2</b></td><td><b>4</b></td><td><b>4</b></td></tr>
+      <tr><td>État du travail inclus</td><td>Oui</td><td>Oui</td><td>Oui</td></tr>
+    </table>
+
+    <p>Seuil : <b>90 %</b>. Compression sous 64K : <b>désactivée</b>.</p>
+    <p><b>Ce que tu peux faire.</b> Créer jusqu'à <b>20 profils</b>, les renommer, les modifier, les supprimer, revenir aux valeurs Beaver, et rétablir les seuls prompts sans toucher au reste. Le profil « Beaver » ne peut être <b>ni renommé ni supprimé</b> ; il peut seulement être remis à ses valeurs d'origine. La suppression d'un profil est <b>annulable pendant 30 secondes</b>, par un bouton dans une notification.</p>
+    <p><b>Deux niveaux de choix.</b> Le profil global se choisit dans <a href="reglages-agent.html#avance-compression"><b>Réglages › Avancé › Compression</b></a>. Une conversation peut en utiliser un autre, choisi depuis le menu <b>« + »</b> du champ de saisie, entrée « Compression ». Le choix par conversation l'emporte, <b>tant que la sélection globale n'a pas changé</b> : si tu changes le profil global, les conversations retombent dessus et il faut rechoisir.</p>
+
+    <h2 id="reglages-dun-profil">Ce que tu peux régler, et jusqu'où</h2>
+
+    <table>
+      <caption class="crumb">Les bornes de saisie, vérifiées à l'enregistrement</caption>
+      <tr><th>Réglage</th><th>Borne</th></tr>
+      <tr><td>Nom d'un profil</td><td><b>48 caractères</b>, jamais deux fois le même nom</td></tr>
+      <tr><td>Prompt personnalisé</td><td><b>32 000 caractères</b></td></tr>
+      <tr><td>Messages récents</td><td><b>8</b> au maximum</td></tr>
+      <tr><td>Résultats d'outils</td><td><b>50</b></td></tr>
+      <tr><td>Fichiers récents</td><td><b>15</b></td></tr>
+      <tr><td>Images</td><td><b>16</b></td></tr>
+      <tr><td>Taille du résumé</td><td>de <b>1 000</b> à <b>8 000</b> jetons</td></tr>
+      <tr><td>Seuil</td><td>de <b>1 %</b> à <b>90 %</b></td></tr>
+      <tr><td>Nombre de profils</td><td><b>20</b></td></tr>
+    </table>
+
+    <p><b>L'aperçu de budget.</b> Le pied de l'éditeur estime, avant tout usage, ce que le profil enverrait : la part système et outils, la part réinjectée par le profil, la cible estimée et la <b>réduction attendue en pourcentage</b>. Le calcul est fait sur une conversation de démonstration de <b>96 000 jetons</b>, dont <b>12 000</b> d'en-tête système, et non sur ta conversation réelle ; le résultat est arrondi par tranches de 8 000 jetons. C'est <b>un outil de comparaison entre profils, pas une prédiction</b>.</p>
+
+    <h2 id="compress">La compression à la demande : <code>/compress</code></h2>
+    <p>Le chemin, pas à pas :</p>
+    <ol>
+      <li>taper <code>/</code> dans le champ de saisie ouvre la liste des commandes ;</li>
+      <li><code>compress</code> y figure comme commande intégrée ;</li>
+      <li>la sélectionner <b>écrit seulement le texte</b> <code>/compress</code> dans le champ ;</li>
+      <li>il faut ensuite l'envoyer comme un message normal.</li>
+    </ol>
+    <p>Il n'existe aucun bouton ni raccourci clavier dédié. La commande n'est reconnue que si le message ne contient <b>rien d'autre</b> : les espaces autour sont tolérés, un mot ajouté ne l'est pas. À l'envoi, Beaver ne répond pas — il compresse et s'arrête là.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      <b><code>/compress</code> ignore tes réglages de déclenchement.</b> Il ne regarde ni le seuil, ni l'interrupteur « Compression automatique » : il compresse tout de suite. Et contrairement au déclenchement automatique, il te <b>dit</b> pourquoi quand il n'y arrive pas. C'est le bon réflexe dans trois cas : avant de changer de sujet dans une longue conversation, quand la compression automatique s'est suspendue, et quand tu veux compresser sans attendre le seuil.
+    </div>
+
+    <h2 id="ou-cest-range">Où tout cela est rangé</h2>
+    <p>Les profils, le profil global et l'interrupteur de compression automatique vivent dans un fichier unique du dossier de données de Beaver, <code>compression-profiles.json</code>. Les points de reprise et le compteur de compressions, eux, sont dans le fichier de la conversation elle-même.</p>
+
+    <div class="term">
+      <div class="term-bar"><i></i><i></i><i></i></div>
+      <pre class="term-body"><span class="prompt">$</span> ~/.local/share/cl-go-dash/compression-profiles.json</pre>
+    </div>
+
+    <p>Ce fichier porte un numéro de version, est borné à <b>1 Mio</b>, est écrit de façon atomique, et suit la règle de lecture tolérante du projet : un fichier écrit par une <b>version plus récente</b> de Beaver est refusé, jamais réécrit ; un fichier <b>illisible</b> est remplacé par les valeurs d'usine, mais la sauvegarde de l'ancien format est <b>conservée durablement</b>, à côté, sous le nom <code>compression-profiles.v1.bak</code> — parce qu'une réparation d'usine ne prouve pas que tes profils ont été récupérés.</p>
+    <p>Les réglages de compression vivaient auparavant dans <code>config.json</code>. Ils sont repris automatiquement au premier accès, puis retirés de ce fichier après sauvegarde.</p>
+
+    <h2 id="messages-derreur">Les cinq messages d'erreur</h2>
+
+    <table>
+      <caption class="crumb">Ce qui s'affiche, et ce que cela veut dire</caption>
+      <tr><th>Cause</th><th>Message affiché</th></tr>
+      <tr><td>Le moteur de compression est indisponible</td><td>« La compression est actuellement indisponible. »</td></tr>
+      <tr><td>Le fichier de profils est illisible ou d'une version future</td><td>« Les réglages de compression sont actuellement indisponibles. »</td></tr>
+      <tr><td>Fenêtre sous 64K et autorisation non donnée</td><td>« La compression est désactivée pour les fenêtres de contexte inférieures à 64K. Vous pouvez l'autoriser dans le profil de compression avancé. »</td></tr>
+      <tr><td>Trois échecs automatiques d'affilée</td><td>« La compression automatique est suspendue pour cette session après plusieurs échecs. Vous pouvez réessayer avec /compress. »</td></tr>
+      <tr><td>Toutes les autres causes</td><td>« Le contexte n'a pas pu être compressé. Votre conversation n'a pas été modifiée. »</td></tr>
+    </table>
+
+    <p>Le dernier message est un <b>fourre-tout</b> : une dizaine de causes internes distinctes aboutissent au même texte. Sa dernière phrase — « Votre conversation n'a pas été modifiée » — est exacte, et c'est l'information qui compte.</p>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+
+    <table>
+      <caption class="crumb">Symptôme, cause, résolution</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>Ma conversation n'est jamais compressée</td><td>Fenêtre sous 64 000 jetons et autorisation non donnée — l'automatique renonce en silence</td><td>Regarder l'anneau de contexte ; activer l'autorisation sous 64K, ou passer à un modèle à plus grande fenêtre</td></tr>
+      <tr><td>La compression automatique ne se déclenche plus du tout</td><td>Trois échecs d'affilée l'ont suspendue pour cette conversation</td><td>Envoyer <code>/compress</code>, ou changer de modèle ou de profil, ce qui remet le compteur à zéro</td></tr>
+      <tr><td>Une réponse s'est arrêtée en plein milieu, suivie d'une compression</td><td>Comportement voulu : le seuil est surveillé pendant la génération, toutes les 32 jetons</td><td>Rien à faire, la réponse reprend après</td></tr>
+      <tr><td>« Le contexte n'a pas pu être compressé »</td><td>Message générique couvrant une dizaine de causes internes</td><td>Réessayer avec <code>/compress</code>, qui donne parfois un message plus précis ; la conversation est intacte</td></tr>
+      <tr><td><code>/compress</code> ne fait rien</td><td>Le message contenait autre chose que <code>/compress</code> seul</td><td>Envoyer <code>/compress</code> seul, sans mot ajouté</td></tr>
+      <tr><td>J'ai perdu un détail dont l'agent avait besoin</td><td>Il n'entrait ni dans le résumé ni dans les éléments conservés</td><td>Le redonner dans un message ; augmenter les réglages du profil pour la suite</td></tr>
+      <tr><td>J'ai choisi un profil pour cette conversation et il est revenu au profil global</td><td>Le profil global a été changé depuis, ce qui annule les choix par conversation</td><td>Le rechoisir depuis le menu « + » du champ de saisie</td></tr>
+      <tr><td>Mes profils ont disparu après une mise à jour ratée</td><td>Fichier illisible, remplacé par les valeurs d'usine</td><td>La sauvegarde <code>compression-profiles.v1.bak</code> est conservée à côté</td></tr>
+      <tr><td>La réduction annoncée dans l'aperçu ne correspond pas</td><td>L'aperçu se calcule sur une conversation de démonstration de 96 000 jetons</td><td>C'est un outil de comparaison entre profils, pas une prédiction</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="agent-contexte.html">Contexte</a> — ce que l'agent a sous les yeux avant toute compression.</li>
+      <li><a href="agent-fonctionnement.html">Fonctionnement</a> — la boucle de l'agent, où la compression s'insère.</li>
+      <li><a href="agent-sous-agents.html">Sous-agents</a> — pourquoi leurs rapports entrent dans le point de reprise.</li>
+      <li><a href="agent-liste-de-taches.html">Liste de tâches</a> — les tâches en cours, reprises dans l'état du travail.</li>
+      <li><a href="modeles-materiel.html">Matériel et VRAM</a> — pourquoi la fenêtre d'un modèle local dépend de ta machine.</li>
+      <li><a href="modeles-moteur-local.html">Moteur local</a> — la fenêtre du modèle chargé et son effet sur la plage de compression.</li>
+      <li><a href="interface-conversations.html">Conversations</a> — l'anneau de contexte et le menu « + ».</li>
+      <li><a href="reference-coffre-et-cles.html">Le coffre et les clés API</a> — le masquage des données sensibles, appliqué ici aussi.</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../js/theme.js"></script>
+<script src="../js/docs-nav-data.js"></script>
+<script src="../js/docs-nav.js"></script>
+</body>
+</html>

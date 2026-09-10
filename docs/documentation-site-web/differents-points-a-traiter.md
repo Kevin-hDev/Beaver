@@ -72,7 +72,7 @@ On coche au fur et à mesure.
 - [x] `04-agent/prompts-systeme.md` — prompts Chatbot et Agentique, variantes Compact/Détaillé, remplacement, prompts natifs Ollama par modèle
 - [x] `04-agent/skills-locaux.md` — format d'un skill, chargement, dossier `skills/`
 - [x] `04-agent/contexte.md` — budget de contexte, élagage, écran d'usage du contexte, capacité dépassée
-- [ ] ⏸️ `04-agent/compression.md` — **gelé** : la compression va être revue
+- [x] `04-agent/compression.md` — dégelé et écrit le 10 septembre 2026 (refonte de la compression déclarée terminée par Kevin) : fenêtre de contexte, déclenchement automatique au seuil / manuel par `/compress`, conservé vs résumé, profils, gardes anti-boucle
 - [x] `04-agent/pieces-jointes.md` — types acceptés, limites, traitement
 - [x] `04-agent/diagnostics-et-erreurs.md` — diagnostics, redaction, circuit breaker, messages d'erreur courants
 
@@ -144,9 +144,9 @@ On coche au fur et à mesure.
 
 ## 9 — Automatisation
 
-- [ ] `09-automatisation/reveils.md` — réveils ponctuels, quotidiens, hebdomadaires ; scheduler interne ; conversations dédiées ; pause globale
-- [ ] `09-automatisation/historique-des-reveils.md` — journal `wakeups.jsonl`, rétention, lecture des résultats
-- [ ] `09-automatisation/git-workflow.md` — branches, worktrees, commits, push, merge, diffs, historique, changements non commités
+- [x] `09-automatisation/reveils.md` — écrit le 10 septembre 2026 : trois rythmes, scheduler interne, conversation dédiée en accès complet (choix assumé, tranché par Kevin), pause, occurrence ratée jamais rattrapée, différence macOS / Windows-Linux à la fermeture
+- [x] `09-automatisation/historique-des-reveils.md` — écrit le 10 septembre 2026 : journal `wakeups.jsonl`, 4 statuts, 7 codes d'erreur, rétention 500 lignes ramenées à 250
+- [x] `09-automatisation/git-workflow.md` — écrit le 10 septembre 2026 : ouvre sur ce qui n'existe pas (fetch, pull, clone, commit partiel, résolution de conflit), puis branches, worktrees, commit, push, merge, historique, diffs, surveillant
 
 ## 10 — Réglages (référence)
 
@@ -526,6 +526,46 @@ Relevé en écrivant les briefs Forecast et Réglages (10 septembre 2026, trois 
 - **Forecast seul onglet à tirer son libellé hors de `settings.tabs.*`** (`core-occupants.tsx:46-47`).
 - **Bornes divergentes du budget mémoire** : moteur ≥ 256 tokens, interface ≥ 512 (`memory_types.rs:47` vs `memory-settings.tsx:16`).
 - **Mises à jour de modèles Ollama détectées mais jamais affichées** (`use-update-checker.ts:78` vs `updates-settings.tsx`).
+
+### Relevé en écrivant les briefs Compression et Automatisation (10 septembre 2026, deux agents, chaque point sourcé dans le brief correspondant)
+
+Le détail complet et les sources fichier:ligne sont dans la section « Anomalies relevées » de chacun des quatre briefs.
+
+**Compression du contexte** (`04-agent/compression.md`)
+
+- **« Contexte compressée »** — faute d'accord dans la chaîne la plus visible de la fonctionnalité (`fr.json:339`), à répercuter sur les sept langues.
+- **Le résumé généré n'est consultable nulle part** : marqueur non cliquable, contenu jamais rendu — l'utilisateur ne peut pas vérifier ce que Beaver a retenu. L'écart le plus important du domaine.
+- **Aucune nouvelle tentative en cas d'échec réseau du résumé** : le module de reprise existe, le seul appel de production passe `0` tentative (`orchestrator_summary.rs:122`). Décision du 10 septembre 2026 : non documenté sur le site, à corriger dans l'app.
+- **Description de `/compress` en anglais, en dur, sans clé i18n** dans la palette de commandes.
+- Deux clés de traduction orphelines (`fr.json:1093-1094`) ; code résiduel dans `checkpoint_files.rs` (énumération à une variante).
+- `compression-profiles.json` absent de l'inventaire des données — **corrigé le 10 septembre 2026 dans CLAUDE.md et AGENTS.md** ; reste à l'ajouter au brief `12-reference/stockage-local.md` quand il sera écrit.
+
+**Réveils** (`09-automatisation/reveils.md`)
+
+- **Description bornée à 200 caractères à la saisie, 300 côté moteur** : deux autorités sur la même limite.
+- **Les motifs d'erreur précis du moteur sont remplacés à l'écran par un message unique** (« l'opération a échoué ») — et ces motifs sont en dur, en français, dans le code Rust, hors i18n.
+- **Le drapeau « issu d'un réveil » traverse la frontière et n'est jamais lu** : une conversation de réveil ne se distingue que par son préfixe `Heartbeat •`.
+- **Le panneau latéral n'affiche que les réveils actifs** : un ponctuel exécuté disparaît au moment où on le cherche.
+- **Deux vocabulaires pour la même chose** : onglet « Heartbeat » (jamais traduit), écran « Réveils », préfixe `Heartbeat •`.
+- Tutoiement et vouvoiement mêlés dans le même écran ; « master switch » en anglais et ne désigne rien de nommé ainsi.
+- **La liste identifie un réveil par son modèle, pas par son nom** : deux réveils sur le même modèle sans description sont indistinguables.
+- Repli du sélecteur de fournisseur sur une option `Ollama` en dur.
+
+**Historique des réveils** (`09-automatisation/historique-des-reveils.md`)
+
+- **L'heure prévue est enregistrée et jamais montrée** ; pour une occurrence ratée, l'heure affichée est celle du démarrage suivant — le chiffre est juste, la phrase est fausse.
+- **L'identifiant de la conversation produite est journalisé et jamais exploité** : aucun lien entre une exécution et sa conversation, alors que l'information existe des deux côtés.
+- Jetons produits enregistrés, jamais affichés ; champ `error` hérité en lecture tolérante ; pas de numéro de version dans `wakeups.jsonl`.
+
+**Git** (`09-automatisation/git-workflow.md`)
+
+- **L'état « position détachée » est calculé et jamais lu** ; le libellé « HEAD détaché » est déclenché par une condition (nom vide) que le moteur ne produit pas — il pourrait ne jamais s'afficher.
+- **Un champ du statut distant est perdu à la frontière** : type recopié à la main côté interface avec cinq champs sur six.
+- Code d'erreur `protected_branch` traduit mais jamais produit par ce domaine ; deux clés de traduction mortes (sept langues).
+- **Bornes de 500 branches et 100 worktrees appliquées en silence**, alors que le compteur de fichiers non validés, lui, signale sa troncature.
+- **Échec du listage des worktrees masqué en liste vide**, côté moteur et côté interface.
+- Deux dialogues hors du portail flottant commun (suppression, conflit d'extraction) — configuration propice à un menu coupé en deux ; deux composants court-circuitent les hooks Git.
+- Vocabulaire franco-anglais (« fichier(s) à Commit », « Merge dans… ») : défendable mais écrit nulle part ; tutoiement dominant ; date de commit sans heure (deux commits du même jour indistinguables).
 
 ### Constat de conception à mettre en avant sur le site
 

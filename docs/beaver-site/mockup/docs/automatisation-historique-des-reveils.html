@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — L'historique des réveils</title>
+<meta name="description" content="Savoir si un réveil s'est exécuté et pourquoi il a échoué : où se lit le journal, ses quatre statuts, ses sept motifs, sa conservation en nombre de lignes et ce qu'il ne contient jamais.">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/nav.css">
+<link rel="stylesheet" href="../css/forecast.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="../index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Automatisation / Historique</span>
+  <span class="lang" role="group" aria-label="Langue">
+    <a class="lang-opt" href="automatisation-historique-des-reveils.html" hreflang="fr" aria-current="true">FR</a>
+    <a class="lang-opt" href="../en/docs.html" hreflang="en">EN</a>
+  </span>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation" id="docs-nav"></nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Savoir ce qu'un réveil <em>a vraiment fait</em></h1>
+    <p>Chaque exécution de réveil laisse une trace : réussie, échouée, ratée ou annulée, avec son motif quand il y en a un. Cette page dit où lire ces traces, comment les interpréter, combien de temps elles restent — et ce qu'elles ne contiennent jamais. La création et le déclenchement des réveils sont dans <a href="automatisation-reveils.html">Réveils programmés</a>.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      <b>L'historique est par réveil, et court.</b> Il s'affiche dans la fiche d'un réveil, pas sur un écran commun à tous, et montre les <b>huit dernières</b> exécutions. Le fichier sur le disque en garde davantage, toutes exécutions confondues.
+    </div>
+
+    <h2 id="ou-se-lit">Où se lit l'historique</h2>
+    <p>Il n'existe pas d'écran général listant toutes les exécutions de tous les réveils. La section <b>« Historique »</b> est rendue en bas de la fiche d'un réveil, filtrée sur ce réveil seul. Quand il n'a jamais tourné, elle affiche <b>« Aucune exécution »</b>.</p>
+    <p>Deux informations résumées apparaissent plus haut dans la même fiche : <b>« Dernier statut »</b> et <b>« Dernière exécution »</b>.</p>
+    <p><b>L'affichage se rafraîchit tout seul.</b> Le journal est surveillé sur le disque : un réveil qui se termine pendant que la fiche est ouverte fait apparaître sa ligne immédiatement, sans que tu aies à recharger quoi que ce soit.</p>
+
+    <h2 id="ce-qui-est-enregistre">Ce qu'une exécution enregistre</h2>
+    <p>Le journal est un fichier de lignes, <code>~/.local/share/cl-go-dash/logs/wakeups.jsonl</code> — une ligne par exécution, chacune indépendante des autres.</p>
+
+    <table>
+      <caption class="crumb">Ce que porte une ligne du journal</caption>
+      <tr><th>Information</th><th>Contenu</th><th>Toujours présente</th></tr>
+      <tr><td>Identifiant du réveil</td><td>Le réveil concerné</td><td>Oui</td></tr>
+      <tr><td>Instant prévu</td><td>L'heure à laquelle le réveil devait partir, en heure locale</td><td>Oui</td></tr>
+      <tr><td>Instant d'inscription</td><td>L'heure à laquelle le résultat a été inscrit</td><td>Oui</td></tr>
+      <tr><td>Statut</td><td>Réussi, échoué, raté ou annulé</td><td>Oui</td></tr>
+      <tr><td>Motif</td><td>L'un des sept codes de la section suivante</td><td>En cas d'échec ou de ratage</td></tr>
+      <tr><td>Conversation produite</td><td>La conversation créée par le réveil</td><td>En cas de réussite</td></tr>
+      <tr><td>Jetons produits</td><td>Une estimation</td><td>En cas de réussite</td></tr>
+    </table>
+
+    <p><b>Les identifiants sont nettoyés avant d'être écrits</b> : seuls les lettres, les chiffres, le tiret et le tiret bas sont conservés, et la longueur est coupée à 128 caractères. <b>Une ligne identique n'est pas écrite deux fois</b> : Beaver garde en mémoire ce qu'il vient d'inscrire et écarte le doublon.</p>
+    <p>Les exécutions sont renvoyées <b>de la plus récente à la plus ancienne</b>.</p>
+
+    <h2 id="les-quatre-statuts">Les quatre statuts</h2>
+
+    <table>
+      <caption class="crumb">Ce que chaque statut veut dire</caption>
+      <tr><th>Statut</th><th>Ce qui s'est passé</th></tr>
+      <tr><td><b>« Réussi »</b></td><td>L'agent a produit du texte</td></tr>
+      <tr><td><b>« Échoué »</b></td><td>Le tour a échoué, ou n'a produit aucun texte</td></tr>
+      <tr><td><b>« Raté »</b></td><td>Beaver ne tournait pas à l'heure prévue</td></tr>
+      <tr><td><b>« Annulé »</b></td><td>L'application s'est fermée pendant l'exécution</td></tr>
+    </table>
+
+    <p>Quand aucune exécution n'a jamais eu lieu, le champ « Dernier statut » affiche <b>« Jamais exécuté »</b>. Quand une date manque ou est illisible, l'interface affiche <b>« Aucun »</b>.</p>
+
+    <h2 id="les-sept-motifs">Les sept motifs d'échec</h2>
+    <p>Un statut « Échoué » ou « Raté » porte un motif, traduit à l'écran par une phrase complète.</p>
+
+    <table>
+      <caption class="crumb">Les sept phrases de motif et ce qui les déclenche</caption>
+      <tr><th>Phrase affichée</th><th>Quand elle apparaît</th></tr>
+      <tr><td><b>« Le réveil a échoué. »</b></td><td>Motif par défaut, quand aucun autre ne correspond</td></tr>
+      <tr><td><b>« La limite de requêtes du fournisseur a été atteinte. »</b></td><td>Le fournisseur a refusé pour cause de débit</td></tr>
+      <tr><td><b>« L'authentification auprès du fournisseur a échoué. »</b></td><td>Clé API absente, expirée ou refusée</td></tr>
+      <tr><td><b>« Ollama était indisponible. »</b></td><td>Le moteur local n'a pas répondu</td></tr>
+      <tr><td><b>« Le réveil a été manqué pendant l'indisponibilité de Beaver. »</b></td><td>Occurrence constatée ratée au démarrage suivant</td></tr>
+      <tr><td><b>« Le réveil n'a pas démarré car Beaver était en cours de fermeture. »</b></td><td>L'heure est tombée pendant la fermeture de l'application</td></tr>
+      <tr><td><b>« Le réveil n'a pas démarré car trop d'opérations étaient déjà en cours. »</b></td><td>Plus de <b>64</b> réveils en même temps</td></tr>
+    </table>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      <b>Le motif est une indication, pas un diagnostic.</b> Trois des sept — limite de requêtes, authentification, Ollama — sont déduits du texte de l'erreur renvoyée par le fournisseur, pas d'un code que celui-ci fournirait. Une panne formulée autrement retombe sur « Le réveil a échoué. ». Ça ne veut pas dire que la cause est inconnue, seulement que Beaver n'a pas su la nommer : ouvre la conversation correspondante, elle porte l'erreur détaillée.
+    </div>
+
+    <p>Un motif que Beaver ne reconnaît pas retombe lui aussi sur « Le réveil a échoué. » : un journal écrit par une version plus récente ne casse pas l'affichage.</p>
+
+    <h2 id="conservation">Combien de temps l'historique est conservé</h2>
+    <p><b>Le journal est borné à 500 lignes.</b> Ce n'est pas une suppression ligne à ligne : quand l'ajout d'une ligne ferait dépasser le budget, Beaver <b>réécrit le fichier entier en ne gardant que les 250 lignes les plus récentes</b>. Le fichier retombe donc à 250 et remonte jusqu'à ce que le budget soit à nouveau atteint.</p>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      <b>Il n'y a pas de durée de conservation en jours.</b> La borne est un nombre de lignes, partagé par tous tes réveils : avec un seul réveil quotidien tu gardes des mois d'historique, avec vingt réveils quelques semaines. Et quand la limite est atteinte, la moitié la plus ancienne disparaît <b>d'un coup</b>, pas ligne par ligne. Si tu veux conserver au-delà, copie le fichier <code>wakeups.jsonl</code> ailleurs.
+    </div>
+
+    <p><b>La réécriture est atomique</b> : fichier temporaire puis renommage. Une coupure de courant pendant une rotation laisse soit l'ancien journal entier, soit le nouveau, jamais un mélange.</p>
+    <p><b>Une ligne trop longue est refusée plutôt que tronquée</b> : au-delà de 2 048 octets, l'écriture échoue. Vu ce qu'une ligne contient, ce cas ne devrait pas se produire ; il existe comme garde-fou.</p>
+    <p><b>En lecture, seul le dernier mégaoctet du fichier est parcouru</b>, et une première ligne coupée est écartée pour ne pas produire un enregistrement tronqué. Un fichier remplacé à la main par un fichier bien plus gros ne fera donc pas grossir la mémoire de Beaver.</p>
+
+    <table>
+      <caption class="crumb">Le fichier, en un coup d'œil</caption>
+      <tr><th>Propriété</th><th>Valeur</th></tr>
+      <tr><td>Emplacement</td><td><code>~/.local/share/cl-go-dash/logs/wakeups.jsonl</code></td></tr>
+      <tr><td>Format</td><td>Une ligne par exécution, indépendante</td></tr>
+      <tr><td>Lignes conservées</td><td><b>500</b>, ramenées à <b>250</b> à la rotation</td></tr>
+      <tr><td>Taille maximale d'une ligne</td><td><b>2 048 octets</b></td></tr>
+      <tr><td>Budget total</td><td>environ <b>1 Mo</b></td></tr>
+      <tr><td>Écriture</td><td>Ajout en fin de fichier, forcé sur le disque ; réécriture atomique à la rotation</td></tr>
+      <tr><td>Lecture</td><td>Le dernier mégaoctet, ligne coupée écartée</td></tr>
+      <tr><td>Tri</td><td>Du plus récent au plus ancien</td></tr>
+    </table>
+
+    <h2 id="ce-que-le-journal-ne-contient-pas">Ce que le journal ne contient pas</h2>
+    <p>C'est le point le plus important de la page si tu envisages de joindre ce fichier à un signalement de problème.</p>
+    <ul>
+      <li><b>Ni le texte de ta consigne</b> — il vit dans la configuration du réveil, pas ici.</li>
+      <li><b>Ni la réponse de l'agent</b> — elle vit dans la conversation produite.</li>
+      <li><b>Ni le message d'erreur brut du fournisseur</b> — il est réduit à l'un des sept motifs avant d'être écrit. Le journal ne contient donc aucun extrait de réponse d'un service externe.</li>
+    </ul>
+
+    <div class="callout">
+      <span class="t">Note</span>
+      <b>Le journal ne contient rien de sensible.</b> Seulement un identifiant, deux dates, un statut et un code de motif. C'est un fichier que tu peux joindre à un signalement de problème sans avoir à le relire ligne par ligne.
+    </div>
+
+    <p>Quand le journal lui-même devient indisponible, le réveil n'est pas interrompu pour autant : un avertissement est écrit dans les traces et le travail continue.</p>
+    <p><b>Une décision non inscrite au journal n'est pas considérée comme prise.</b> Si l'écriture échoue, Beaver n'avance pas sa date de dernier passage : l'occurrence sera réexaminée au tour suivant. Le journal fait autorité sur ce qui a été décidé, ce qui évite qu'une panne d'écriture fasse disparaître silencieusement une occurrence.</p>
+
+    <h2 id="pieges">Pièges fréquents</h2>
+
+    <table>
+      <caption class="crumb">Symptôme, cause, résolution</caption>
+      <tr><th>Symptôme</th><th>Cause</th><th>Résolution</th></tr>
+      <tr><td>« Mon historique s'arrête il y a deux semaines »</td><td>La rotation a effacé la moitié la plus ancienne</td><td>Comportement attendu ; copier le fichier ailleurs pour conserver au-delà</td></tr>
+      <tr><td>« Je ne vois que huit lignes »</td><td>La fiche n'en montre que huit</td><td>Le fichier <code>wakeups.jsonl</code> contient le reste</td></tr>
+      <tr><td>« Il n'y a pas d'écran listant tous mes réveils passés »</td><td>L'historique est par réveil</td><td>Ouvrir la fiche de chaque réveil</td></tr>
+      <tr><td>« Le réveil est marqué “Raté” alors que l'ordinateur tournait »</td><td>Beaver était fermé, ou le déclenchement avait plus de cinq minutes de retard</td><td>Voir <a href="automatisation-reveils.html">Réveils programmés</a> et le réglage « Lancer au démarrage »</td></tr>
+      <tr><td>« “Le réveil a échoué.” ne me dit rien »</td><td>Le motif n'a pas été reconnu</td><td>Ouvrir la conversation correspondante, qui porte l'erreur détaillée</td></tr>
+      <tr><td>« Deux réveils ont échoué avec “trop d'opérations en cours” »</td><td>Plus de 64 réveils en même temps</td><td>Espacer les horaires</td></tr>
+    </table>
+
+    <h2 id="pour-aller-plus-loin">Pour aller plus loin</h2>
+    <ul>
+      <li><a href="automatisation-reveils.html">Réveils programmés</a> — créer un réveil, la veille générale, ce qui se passe si Beaver est fermé.</li>
+      <li><a href="agent-diagnostics.html">Diagnostics et erreurs</a> — lire une erreur dans la conversation elle-même.</li>
+      <li><a href="reference-confidentialite.html">Confidentialité</a> — ce que Beaver écrit sur ton disque, et ce qu'il n'écrit pas.</li>
+    </ul>
+  </main>
+
+  <div class="toc" id="docs-toc"></div>
+</div>
+
+<script src="../js/theme.js"></script>
+<script src="../js/docs-nav-data.js"></script>
+<script src="../js/docs-nav.js"></script>
+</body>
+</html>
